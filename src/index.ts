@@ -430,3 +430,89 @@ export const instrument = ({
 
   return devtoolsHook;
 };
+
+let canvas: HTMLCanvasElement | null = null;
+let ctx: CanvasRenderingContext2D | null = null;
+const visualizedElements: Array<{ stateNode: HTMLElement }> = [];
+
+// Initialize canvas if not already initialized
+if (canvas === null) {
+  canvas = document.createElement('canvas');
+  canvas.id = 'visualizer-canvas';
+  canvas.style.position = 'fixed';
+  canvas.style.top = '0';
+  canvas.style.left = '0';
+  canvas.style.zIndex = '9999999999';
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  canvas.style.pointerEvents = 'none';
+  document.body.appendChild(canvas);
+
+  ctx = canvas.getContext('2d')!;
+
+  // Update canvas size on window resize
+  window.addEventListener('resize', updateCanvasSize);
+
+  // Update canvas on scroll
+  window.addEventListener('scroll', updateCanvas);
+} else {
+  ctx = (canvas as any).getContext('2d')!;
+}
+
+function updateCanvasSize() {
+  if (canvas) {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    updateCanvas();
+  }
+}
+
+function updateCanvas() {
+  if (canvas && ctx) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Re-draw the visualized elements
+    visualizedElements.forEach(({ stateNode }) => {
+      const rect = stateNode.getBoundingClientRect();
+
+      ctx.strokeStyle = 'red';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(rect.left, rect.top, rect.width, rect.height);
+
+      // Draw the innerText with white text on red background
+      ctx.font = '12px Arial';
+      const text = stateNode.innerText;
+      const textWidth = ctx.measureText(text).width;
+      const textHeight = 16; // approximate height
+      ctx.fillStyle = 'red'; // background color
+      ctx.fillRect(rect.left, rect.top, textWidth + 10, textHeight);
+      ctx.fillStyle = 'white'; // text color
+      ctx.fillText(text, rect.left + 5, rect.top + 12);
+    });
+  }
+}
+
+instrument({
+  onCommitFiberRoot: (rendererID, root) => {
+    // Clear the previous elements array
+    visualizedElements.length = 0;
+
+    traverseFiber(root.current, (fiber) => {
+      if (
+        isHostFiber(fiber) &&
+        fiber.memoizedProps &&
+        typeof fiber.memoizedProps === 'object' &&
+        fiber.stateNode instanceof HTMLElement &&
+        typeof fiber.type === 'string'
+      ) {
+        if ('onClick' in fiber.memoizedProps) {
+          const stateNode = fiber.stateNode;
+
+          // Add to visualized elements
+          visualizedElements.push({ stateNode });
+        }
+      }
+    });
+
+    updateCanvas();
+  },
+});
