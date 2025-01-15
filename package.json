@@ -65,13 +65,7 @@
 	"module": "dist/index.js",
 	"browser": "dist/index.global.js",
 	"types": "dist/index.d.ts",
-	"files": [
-		"dist",
-		"bin",
-		"package.json",
-		"README.md",
-		"LICENSE"
-	],
+	"files": ["dist", "bin", "package.json", "README.md", "LICENSE"],
 	"scripts": {
 		"build": "NODE_ENV=production tsup",
 		"dev": "NODE_ENV=development tsup --watch",
@@ -83,6 +77,12 @@
 		"coverage": "vitest run --coverage --dom",
 		"prepublishOnly": "pnpm build"
 	},
+	"dependencies": {
+		"@types/react-reconciler": "^0.28.9"
+	},
+	"peerDependencies": {
+		"react": "^19"
+	},
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",
 		"@testing-library/dom": "^10.4.0",
@@ -91,7 +91,6 @@
 		"@types/node": "^20",
 		"@types/react": "^18.3.12",
 		"@types/react-dom": "^19.0.2",
-		"@types/react-reconciler": "^0.28.9",
 		"@vitest/coverage-istanbul": "2.1.8",
 		"d3": "^7.9.0",
 		"esbuild": "^0.24.2",
