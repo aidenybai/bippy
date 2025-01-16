@@ -37,12 +37,8 @@ export const Route = createRootRoute({
     return (
       <>
         <div className="min-h-screen flex flex-col bg-neutral-900 text-white">
-          <Inspector enabled={true} dangerouslyRunInProduction={true} />
-          <div className="flex-1">
-            <Outlet />
-          </div>
           {process.env.NODE_ENV === 'development' && (
-            <div className="border-t border-gray-700 fixed w-full bg-neutral-800 z-50 bottom-0">
+            <div className="border-t border-gray-700 fixed w-full bg-neutral-800 z-50">
               <div className="p-2 flex flex-wrap gap-2">
                 {routes.map((route, i) => (
                   <React.Fragment key={route.path}>
@@ -60,6 +56,10 @@ export const Route = createRootRoute({
               </div>
             </div>
           )}
+          <Inspector enabled={true} dangerouslyRunInProduction={true} />
+          <div className="flex-1">
+            <Outlet />
+          </div>
         </div>
       </>
     );
