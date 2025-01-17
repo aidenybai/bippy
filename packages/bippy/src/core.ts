@@ -436,26 +436,74 @@ export const getNearestHostFibers = (fiber: Fiber): Fiber[] => {
   return hostFibers;
 };
 
-/**
- * Traverses up or down a {@link Fiber}, return `true` to stop and select a node.
- */
-export const traverseFiber = (
+export type FiberSelector = (node: Fiber) => boolean | undefined;
+
+export interface TraverseFiberOptions {
+  /**
+   * The handler to call when entering a fiber, return `true` to stop and select a node.
+   */
+  enter?: FiberSelector;
+  /**
+   * The handler to call when exiting a fiber, return `true` to stop and select a node.
+   */
+  leave?: FiberSelector;
+  /**
+   * Whether to traverse the fiber tree in ascending order.
+   */
+  ascending?: boolean;
+}
+
+export interface TraverseFiber {
+  (
+    fiber: Fiber | null,
+    /**
+     * The handler to call when entering a fiber.
+     */
+    selector: FiberSelector,
+    /** @deprecated In favor of `options.ascending`. */
+    ascending?: boolean,
+  ): Fiber | null;
+  (fiber: Fiber | null, options: TraverseFiberOptions): Fiber | null;
+}
+
+const traverseFiberImpl = (
   fiber: Fiber | null,
-  // biome-ignore lint/suspicious/noConfusingVoidType: may or may not exist
-  selector: (node: Fiber) => boolean | void,
-  ascending = false,
+  options: TraverseFiberOptions,
 ): Fiber | null => {
   if (!fiber) return null;
-  if (selector(fiber) === true) return fiber;
+  const { enter, leave, ascending } = options;
+
+  if (enter && enter(fiber) === true) return fiber;
 
   let child = ascending ? fiber.return : fiber.child;
   while (child) {
-    const match = traverseFiber(child, selector, ascending);
+    const match = traverseFiber(child, options);
     if (match) return match;
 
     child = ascending ? null : child.sibling;
   }
+
+  if (leave && leave(fiber) === true) return fiber;
+
   return null;
+};
+
+/**
+ * Traverses up or down a {@link Fiber}, return `true` to stop and select a node.
+ */
+export const traverseFiber: TraverseFiber = (
+  fiber,
+  selectorOrOpts,
+  ascendingOrNever = false,
+) => {
+  if (!fiber) return null;
+  if (typeof selectorOrOpts === 'function') {
+    const opts: TraverseFiberOptions = { enter: selectorOrOpts };
+    if (typeof ascendingOrNever === 'boolean')
+      opts.ascending = ascendingOrNever;
+    return traverseFiberImpl(fiber, opts);
+  }
+  return traverseFiberImpl(fiber, selectorOrOpts);
 };
 
 /**
