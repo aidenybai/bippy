@@ -18,6 +18,7 @@ import type {
   ReactDevToolsGlobalHook,
   ReactRenderer,
 } from './types.js';
+import { type StackNode, createStackNode } from './utilities.js';
 
 // https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactWorkTags.js
 export const FunctionComponentTag = 0;
@@ -306,18 +307,22 @@ export const didFiberCommit = (fiber: Fiber): boolean => {
  */
 export const getMutatedHostFibers = (fiber: Fiber): Fiber[] => {
   const mutations: Fiber[] = [];
-  const stack: Fiber[] = [fiber];
+  let head: StackNode<Fiber> | undefined = createStackNode(fiber);
 
-  while (stack.length) {
-    const node = stack.pop();
-    if (!node) continue;
+  while (head) {
+    const node: Fiber = head.value;
+    head = head.next;
 
     if (isHostFiber(node) && didFiberCommit(node) && didFiberRender(node)) {
       mutations.push(node);
     }
 
-    if (node.child) stack.push(node.child);
-    if (node.sibling) stack.push(node.sibling);
+    if (node.child) {
+      head = createStackNode(node.child, head);
+    }
+    if (node.sibling) {
+      head = createStackNode(node.sibling, head);
+    }
   }
 
   return mutations;
@@ -338,11 +343,7 @@ export const getFiberStack = (fiber: Fiber): Fiber[] => {
     stack.push(currentFiber);
     currentFiber = currentFiber.return;
   }
-  const newStack = new Array(stack.length);
-  for (let i = 0; i < stack.length; i++) {
-    newStack[i] = stack[stack.length - i - 1];
-  }
-  return newStack;
+  return stack;
 };
 
 /**
@@ -411,25 +412,26 @@ export const getNearestHostFiber = (
  */
 export const getNearestHostFibers = (fiber: Fiber): Fiber[] => {
   const hostFibers: Fiber[] = [];
-  const stack: Fiber[] = [];
+
+  let head: StackNode<Fiber> | undefined;
 
   if (isHostFiber(fiber)) {
     hostFibers.push(fiber);
   } else if (fiber.child) {
-    stack.push(fiber.child);
+    head = createStackNode(fiber.child);
   }
 
-  while (stack.length) {
-    const currentNode = stack.pop();
-    if (!currentNode) break;
-    if (isHostFiber(currentNode)) {
-      hostFibers.push(currentNode);
-    } else if (currentNode.child) {
-      stack.push(currentNode.child);
+  while (head) {
+    const current = head.value;
+    head = head.next;
+    if (isHostFiber(current)) {
+      hostFibers.push(current);
+    } else if (current.child) {
+      head = createStackNode(current.child, head);
     }
 
-    if (currentNode.sibling) {
-      stack.push(currentNode.sibling);
+    if (current.sibling) {
+      head = createStackNode(current.sibling, head);
     }
   }
 
@@ -499,11 +501,14 @@ type FiberType =
  * Returns the type (e.g. component definition) of the {@link Fiber}
  */
 export const getType = (type: unknown): React.ComponentType<unknown> | null => {
+  if (!type) {
+    return null;
+  }
   const currentType = type as FiberType;
   if (typeof currentType === 'function') {
     return currentType;
   }
-  if (typeof currentType === 'object' && currentType) {
+  if (typeof currentType === 'object') {
     // memo / forwardRef case
     return getType(
       (currentType as React.MemoExoticComponent<React.ComponentType<unknown>>)
@@ -518,11 +523,11 @@ export const getType = (type: unknown): React.ComponentType<unknown> | null => {
  * Returns the display name of the {@link Fiber}.
  */
 export const getDisplayName = (type: unknown): string | null => {
+  if (!type) {
+    return null;
+  }
   const currentType = type as FiberType;
-  if (
-    typeof currentType !== 'function' &&
-    !(typeof currentType === 'object' && currentType)
-  ) {
+  if (!(typeof currentType === 'function' || typeof currentType === 'object')) {
     return null;
   }
   const name = currentType.displayName || currentType.name || null;

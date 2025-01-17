@@ -371,11 +371,11 @@ const FiberGraph = React.memo(
       const nodes: Node[] = [];
       const links: Link[] = [];
       const nodeMap = new Map<string, Node>();
-      const stack: Array<{
-        fiber: Fiber;
-        depth: number;
-        parentId: string | null;
-      }> = [{ fiber, depth: 0, parentId: null }];
+      // const stack: Array<{
+      //   fiber: Fiber;
+      //   depth: number;
+      //   parentId: string | null;
+      // }> = [{ fiber, depth: 0, parentId: null }];
       let nodeCounter = 0;
 
       const baseId = getFiberId(fiber).toString();

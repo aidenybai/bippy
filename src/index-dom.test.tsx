@@ -813,8 +813,8 @@ describe("getFiberStack", () => {
 			onCommitFiberRoot: (_rendererID, fiberRoot) => {
 				manualFiberStack = [];
 				maybeFiber = fiberRoot.current.child.child;
-				manualFiberStack.push(fiberRoot.current.child);
 				manualFiberStack.push(fiberRoot.current.child.child);
+				manualFiberStack.push(fiberRoot.current.child);
 			},
 		});
 		render(
