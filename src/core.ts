@@ -17,6 +17,7 @@ import type {
   MemoizedState,
   ReactDevToolsGlobalHook,
   ReactRenderer,
+  Thenable,
 } from './types.js';
 
 // https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactWorkTags.js
@@ -257,6 +258,54 @@ export const traverseProps = (
       const nextValue = nextProps?.[propName];
 
       if (selector(propName, nextValue, prevValue) === true) return true;
+    }
+  } catch {}
+  return false;
+};
+
+export type ThenableData =
+  | ({ status: 'fulfilled'; value: unknown } & Thenable<unknown>)
+  | ({ status: 'rejected'; reason: unknown } & Thenable<unknown>)
+  | ({ status: 'pending' } & Thenable<unknown>);
+
+interface ThenableState {
+  _debugThenableState: ThenableData[] | { thenables: ThenableData[] };
+}
+
+function isThenableState(dependencies: object): dependencies is ThenableState {
+  return '_debugThenableState' in dependencies;
+}
+
+export const getThenables = (fiber: Fiber): ThenableData[] => {
+  if (fiber.dependencies && isThenableState(fiber.dependencies)) {
+    // https://github.com/facebook/react/blob/b3a95caf61bc716fb618997e6e9f3a0c8c9c8374/packages/react-reconciler/src/ReactFiberThenable.js#L80
+    if (Array.isArray(fiber.dependencies._debugThenableState)) {
+      return fiber.dependencies._debugThenableState;
+    }
+    return fiber.dependencies._debugThenableState.thenables;
+  }
+  return [];
+};
+
+/**
+ * Traverses up or down a {@link Fiber}'s Thenables, return `true` to stop and select the current and previous props value.
+ */
+export const traverseThenables = (
+  fiber: Fiber,
+  selector: (
+    prev?: ThenableData,
+    next?: ThenableData,
+    // biome-ignore lint/suspicious/noConfusingVoidType: may or may not exist
+  ) => boolean | void,
+): boolean => {
+  try {
+    const nextThenables = getThenables(fiber);
+    const prevThenables = fiber.alternate ? getThenables(fiber.alternate) : [];
+
+    const maxLength = Math.max(nextThenables.length, prevThenables.length);
+
+    for (let i = 0; i < maxLength; i++) {
+      if (selector(prevThenables[i], nextThenables[i]) === true) return true;
     }
   } catch {}
   return false;
