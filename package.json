@@ -81,7 +81,7 @@
 		"@types/react-reconciler": "^0.28.9"
 	},
 	"peerDependencies": {
-		"react": "^19"
+		"react": ">=16.9"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",
