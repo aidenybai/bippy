@@ -21,8 +21,5 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Go to correct directory
-        run: cd packages/bippy
-
       - name: Publish
-        run: pnpx pkg-pr-new publish --compact
+        run: pnpx pkg-pr-new publish --compact ./packages/bippy
