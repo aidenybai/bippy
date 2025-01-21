@@ -338,11 +338,7 @@ export const getFiberStack = (fiber: Fiber): Fiber[] => {
     stack.push(currentFiber);
     currentFiber = currentFiber.return;
   }
-  const newStack = new Array(stack.length);
-  for (let i = 0; i < stack.length; i++) {
-    newStack[i] = stack[stack.length - i - 1];
-  }
-  return newStack;
+  return stack;
 };
 
 /**
