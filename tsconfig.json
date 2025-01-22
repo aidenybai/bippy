@@ -1,6 +1,6 @@
 {
 	"compilerOptions": {
-		"jsx": "react-jsx",
+		"jsx": "react",
 		"module": "NodeNext",
 		"esModuleInterop": true,
 		"strictNullChecks": true,
