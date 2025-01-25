@@ -3,7 +3,6 @@ import type { Fiber, ContextDependency } from '../../types.js';
 import {
   traverseProps,
   traverseState,
-  traverseEffects,
   traverseContexts,
   instrument,
 } from '../../index.js';
@@ -100,21 +99,6 @@ describe('traverseState', () => {
     const selector = vi.fn(() => true);
     traverseState(maybeFiber as unknown as Fiber, selector);
     expect(selector).toBeCalledTimes(1);
-  });
-});
-
-describe('traverseEffects', () => {
-  it('should return the effects of the fiber', () => {
-    let maybeFiber: Fiber | null = null;
-    instrument({
-      onCommitFiberRoot: (_rendererID, fiberRoot) => {
-        maybeFiber = fiberRoot.current.child;
-      },
-    });
-    render(<ComplexComponent countProp={1} />);
-    const selector = vi.fn();
-    traverseEffects(maybeFiber as unknown as Fiber, selector);
-    expect(selector).toHaveBeenCalled();
   });
 });
 

@@ -11,7 +11,7 @@
 		"@codesandbox/sandpack-react": "^2.19.10",
 		"@codesandbox/sandpack-themes": "^2.0.21",
 		"@tanstack/react-router": "^1.95.1",
-		"bippy": "^0.2.22",
+		"bippy": "^0.2.23",
 		"clsx": "^2.1.1",
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",

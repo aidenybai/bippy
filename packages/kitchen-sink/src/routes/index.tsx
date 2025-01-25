@@ -231,7 +231,7 @@ onCommitFiberRoot((root) => {
               className="whitespace-pre-wrap"
               // biome-ignore lint/security/noDangerouslySetInnerHtml: OK
               dangerouslySetInnerHTML={{
-                __html: highlight(`import { Inspector } from 'bippy';
+                __html: highlight(`import { Inspector } from 'bippy/experiments/inspect';
 
 <Inspector enabled={true} />`),
               }}

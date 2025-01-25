@@ -5,20 +5,22 @@ await import('../../index.js');
 const React = require('react');
 import type { Fiber, FiberRoot } from '../../types.js';
 import {
-  isValidFiber,
-  isHostFiber,
-  isCompositeFiber,
-  didFiberRender,
   didFiberCommit,
-  getMutatedHostFibers,
+  didFiberRender,
+  getFiberFromHostInstance,
   getFiberStack,
+  getMutatedHostFibers,
   getNearestHostFiber,
   getNearestHostFibers,
   getTimings,
-  traverseFiber,
-  getFiberFromHostInstance,
   instrument,
+  isCompositeFiber,
+  isHostFiber,
+  isValidFiber,
+  traverseFiber,
 } from '../../index.js';
+// FIXME(Alexis): Both React and @testing-library/react should be after index.js
+// but the linter/import sorter keeps moving them on top
 import { render, type RenderOptions, screen } from '@testing-library/react';
 import {
   BasicComponent,
@@ -187,8 +189,8 @@ describe('getFiberStack', () => {
       onCommitFiberRoot: (_rendererID, fiberRoot) => {
         manualFiberStack = [];
         maybeFiber = fiberRoot.current.child.child;
-        manualFiberStack.push(fiberRoot.current.child);
         manualFiberStack.push(fiberRoot.current.child.child);
+        manualFiberStack.push(fiberRoot.current.child);
       },
     });
     render(

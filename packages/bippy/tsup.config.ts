@@ -36,7 +36,7 @@ export default defineConfig([
   {
     ...DEFAULT_OPTIONS,
     format: ['esm', 'cjs'],
-    entry: ['./src/index.ts', './src/core.ts', './src/inspect.tsx'],
+    entry: ['./src/index.ts', './src/core.ts', './src/experiments/inspect.tsx'],
     splitting: true,
     clean: true, // only run on first entry
   },

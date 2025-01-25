@@ -1,6 +1,6 @@
 {
 	"name": "bippy",
-	"version": "0.2.22",
+	"version": "0.2.23",
 	"description": "hack into react internals",
 	"keywords": [
 		"bippy",
@@ -57,14 +57,14 @@
 				"default": "./dist/sw.cjs"
 			}
 		},
-		"./inspect": {
+		"./experiments/inspect": {
 			"import": {
-				"types": "./dist/inspect.d.ts",
-				"default": "./dist/inspect.js"
+				"types": "./dist/experiments/inspect.d.ts",
+				"default": "./dist/experiments/inspect.js"
 			},
 			"require": {
-				"types": "./dist/inspect.d.cts",
-				"default": "./dist/inspect.cjs"
+				"types": "./dist/experiments/inspect.d.cts",
+				"default": "./dist/experiments/inspect.cjs"
 			}
 		},
 		"./dist/*": "./dist/*.js",
@@ -87,8 +87,8 @@
 		"build": "NODE_ENV=production tsup",
 		"dev": "NODE_ENV=development tsup --watch",
 		"publint": "publint",
-		"test": "vitest --dom",
-		"coverage": "vitest run --coverage --dom",
+		"test": "vitest",
+		"coverage": "vitest run --coverage",
 		"prepublishOnly": "cp ../../README.md . && pnpm build"
 	},
 	"devDependencies": {

@@ -1,5 +1,11 @@
 # bippy
 
+## 0.2.23
+
+### Patch Changes
+
+- fix onActive listeners
+
 ## 0.2.22
 
 ### Patch Changes

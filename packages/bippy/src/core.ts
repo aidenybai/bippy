@@ -11,7 +11,6 @@ import {
 } from './rdt-hook.js';
 import type {
   ContextDependency,
-  Effect,
   Fiber,
   FiberRoot,
   MemoizedState,
@@ -174,7 +173,7 @@ export const traverseContexts = (
 };
 
 /**
- * Traverses up or down a {@link Fiber}'s states, return `true` to stop and select the current and previous state value.
+ * Traverses up or down a {@link Fiber}'s states, return `true` to stop and select the current and previous state value. This stores both state values and effects.
  */
 export const traverseState = (
   fiber: Fiber,
@@ -192,38 +191,6 @@ export const traverseState = (
     while (nextState || prevState) {
       if (selector(nextState, prevState) === true) return true;
 
-      nextState = nextState?.next;
-      prevState = prevState?.next;
-    }
-  } catch {}
-  return false;
-};
-
-/**
- * Traverses up or down a {@link Fiber}'s effects that cause state changes, return `true` to stop and select the current and previous effect value.
- */
-export const traverseEffects = (
-  fiber: Fiber,
-  selector: (
-    nextValue: Effect | null | undefined,
-    prevValue: Effect | null | undefined,
-    // biome-ignore lint/suspicious/noConfusingVoidType: optional return
-  ) => boolean | void,
-): boolean => {
-  try {
-    let nextState: Effect | null | undefined =
-      // biome-ignore lint/suspicious/noExplicitAny: underlying type is unknown
-      (fiber.updateQueue as any)?.lastEffect;
-    let prevState: Effect | null | undefined =
-      // biome-ignore lint/suspicious/noExplicitAny: underlying type is unknown
-      (fiber.alternate?.updateQueue as any)?.lastEffect;
-
-    while (nextState || prevState) {
-      if (selector(nextState, prevState) === true) return true;
-
-      if (nextState?.next === nextState || prevState?.next === prevState) {
-        break;
-      }
       nextState = nextState?.next;
       prevState = prevState?.next;
     }
@@ -338,11 +305,7 @@ export const getFiberStack = (fiber: Fiber): Fiber[] => {
     stack.push(currentFiber);
     currentFiber = currentFiber.return;
   }
-  const newStack = new Array(stack.length);
-  for (let i = 0; i < stack.length; i++) {
-    newStack[i] = stack[stack.length - i - 1];
-  }
-  return newStack;
+  return stack;
 };
 
 /**
@@ -1032,6 +995,7 @@ export const secure = (
     dangerouslyRunInProduction?: boolean;
     onError?: (error?: unknown) => unknown;
     installCheckTimeout?: number;
+    isProduction?: boolean;
   } = {},
 ): InstrumentationOptions => {
   const onActive = options.onActive;
@@ -1039,13 +1003,12 @@ export const secure = (
   const isUsingRealReactDevtools = isRealReactDevtools();
   const isUsingReactRefresh = isReactRefresh();
   let timeout: number | undefined;
-  let isProduction = false;
+  let isProduction = secureOptions.isProduction ?? false;
 
   options.onActive = () => {
     clearTimeout(timeout);
     let isSecure = true;
     try {
-      onActive?.();
       const rdtHook = getRDTHook();
 
       for (const renderer of rdtHook.renderers.values()) {
@@ -1072,6 +1035,7 @@ export const secure = (
       options.onActive = undefined;
       return;
     }
+    onActive?.();
 
     try {
       const onCommitFiberRoot = options.onCommitFiberRoot;

@@ -10,7 +10,8 @@ import {
   type Fiber,
   getNearestHostFiber,
   hasRDTHook,
-} from './index.js';
+  isCompositeFiber,
+} from '../index.js';
 import React, {
   useState,
   useEffect,
@@ -267,21 +268,6 @@ export const RawInspector = React.memo(
 
     const handlePropertyLeave = () => {
       setTooltip(null);
-    };
-
-    const handleFiberSelect = (fiber: Fiber) => {
-      if (fiber !== selectedFiber) {
-        if (!isDialogMode) {
-          const currentFiber = getFiberForDisplay();
-          if (currentFiber) {
-            setFiberHistory([currentFiber]);
-          }
-          setIsDialogMode(true);
-        } else if (selectedFiber) {
-          setFiberHistory((prev) => [...prev, selectedFiber]);
-        }
-        setSelectedFiber(fiber);
-      }
     };
 
     const handleClose = useCallback(() => {
@@ -702,10 +688,7 @@ export const Inspector = React.memo(({ ...props }: InspectorProps) => {
 
   if (!root) return null;
 
-  return ReactDOM.createPortal(
-    <RawInspector {...props} />,
-    root
-  );
+  return ReactDOM.createPortal(<RawInspector {...props} />, root);
 });
 
 export default Inspector;

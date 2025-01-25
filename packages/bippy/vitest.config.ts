@@ -7,5 +7,6 @@ export default defineConfig({
       reporter: ['text', 'json', 'html'],
       include: ['src/*.ts'],
     },
+    environment: 'happy-dom',
   },
 });

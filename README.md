@@ -28,24 +28,6 @@ onCommitFiberRoot((root) => {
 });
 ```
 
-or, use the `/inspect` subpackage to graphically visualize the fiber tree:
-
-```jsx
-import { Inspector } from 'bippy/inspect';
-
-<Inspector enabled={true} />;
-```
-
-<table>
-  <tbody>
-    <tr>
-      <td>
-        <a href="https://bippy.dev"><b>open live demo ↗</b></a>
-      </td>
-    </tr>
-  </tbody>
-</table>
-
 ## how it works & motivation
 
 bippy allows you to **access** and **use** react fibers **outside** of react components.
@@ -271,20 +253,6 @@ import { traverseState } from 'bippy';
 
 traverseState(fiber, (next, prev) => {
   console.log(next, prev);
-});
-```
-
-### traverseEffects
-
-traverses the effects (useEffect, useLayoutEffect, etc.) of a fiber.
-
-```typescript
-import { traverseEffects } from 'bippy';
-
-// ...
-
-traverseEffects(fiber, (effect) => {
-  console.log(effect);
 });
 ```
 
