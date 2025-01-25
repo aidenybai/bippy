@@ -109,6 +109,8 @@
 		"react-inspector": "^6.0.2",
 		"react-reconciler": "^0.31.0",
 		"react-refresh": "^0.16.0",
+		"react-router": "^6.26.0",
+		"react-router-dom": "^6.26.0",
 		"terser": "^5.36.0",
 		"tsup": "^8.2.4",
 		"vitest": "^2.1.8"

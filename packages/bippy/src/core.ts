@@ -399,25 +399,93 @@ export const getNearestHostFibers = (fiber: Fiber): Fiber[] => {
   return hostFibers;
 };
 
+// biome-ignore lint/suspicious/noConfusingVoidType: <explanation>
+export type FiberSelector = (node: Fiber) => boolean | void;
+
+export interface TraverseFiberOptions {
+  /**
+   * The handler to call when entering a fiber, return `true` to stop and select a node.
+   */
+  enter?: FiberSelector;
+  /**
+   * The handler to call when exiting a fiber, return `true` to stop and select a node.
+   */
+  leave?: FiberSelector;
+  /**
+   * Whether to traverse the fiber tree in ascending order.
+   */
+  ascending?: boolean;
+}
+
+export interface TraverseFiber {
+  (
+    fiber: Fiber | null,
+    /**
+     * The handler to call when entering a fiber.
+     */
+    selector: FiberSelector,
+    /** @deprecated In favor of `options.ascending`. */
+    ascending?: boolean,
+  ): Fiber | null;
+  (fiber: Fiber | null, options: TraverseFiberOptions): Fiber | null;
+  (
+    fiber: Fiber | null,
+    selectorOrOpts: FiberSelector | TraverseFiberOptions,
+    ascendingOrNever?: boolean,
+  ): Fiber | null;
+}
+
 /**
  * Traverses up or down a {@link Fiber}, return `true` to stop and select a node.
  */
-export const traverseFiber = (
-  fiber: Fiber | null,
-  // biome-ignore lint/suspicious/noConfusingVoidType: may or may not exist
-  selector: (node: Fiber) => boolean | void,
-  ascending = false,
-): Fiber | null => {
+export const traverseFiber: TraverseFiber = (
+  fiber,
+  selectorOrOpts,
+  ascendingOrNever = false,
+) => {
   if (!fiber) return null;
-  if (selector(fiber) === true) return fiber;
+  let enter: FiberSelector | undefined;
+  let leave: FiberSelector | undefined;
+  let ascending = false;
 
-  let child = ascending ? fiber.return : fiber.child;
-  while (child) {
-    const match = traverseFiber(child, selector, ascending);
-    if (match) return match;
-
-    child = ascending ? null : child.sibling;
+  if (typeof selectorOrOpts === 'function') {
+    enter = selectorOrOpts;
+    if (typeof ascendingOrNever === 'boolean') ascending = ascendingOrNever;
+  } else {
+    enter = selectorOrOpts.enter;
+    leave = selectorOrOpts.leave;
+    ascending = selectorOrOpts.ascending ?? false;
   }
+
+  const stack: Fiber[] = [fiber];
+  const visited = new Set<Fiber>();
+
+  while (stack.length > 0) {
+    const current = stack[stack.length - 1];
+
+    if (!visited.has(current)) {
+      visited.add(current);
+
+      // Trigger enter handler only once per fiber.
+      if (enter && enter(current) === true) return current;
+
+      // Keep going down the tree. We will back up later.
+      const next = ascending ? current.return : current.child;
+      if (next) {
+        stack.push(next);
+        continue;
+      }
+    }
+
+    // Go back to the visited parent fiber and trigger leave handler.
+    stack.pop();
+
+    if (leave && leave(current) === true) return current;
+
+    const sibling = ascending ? null : current.sibling;
+    if (sibling) stack.push(sibling);
+  }
+
   return null;
 };
 
