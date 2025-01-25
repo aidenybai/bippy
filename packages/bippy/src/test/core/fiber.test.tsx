@@ -3,6 +3,7 @@ import { expect, it, describe, vi } from 'vitest';
 await import('../../index.js');
 // biome-ignore lint/correctness/noUnusedVariables: needed for JSX
 const React = require('react');
+import { createMemoryRouter, type UNSAFE_DataRouterContext, Outlet, RouterProvider, useLoaderData, type DataRouteMatch } from 'react-router-dom';
 import type { Fiber, FiberRoot } from '../../types.js';
 import {
   didFiberCommit,
@@ -21,7 +22,7 @@ import {
 } from '../../index.js';
 // FIXME(Alexis): Both React and @testing-library/react should be after index.js
 // but the linter/import sorter keeps moving them on top
-import { render, type RenderOptions, screen } from '@testing-library/react';
+import { render, type RenderOptions, screen, waitFor } from '@testing-library/react';
 import {
   BasicComponent,
   BasicComponentWithChildren,
@@ -412,6 +413,147 @@ describe('traverseFiber', () => {
     });
     expect(stack).toEqual([]);
   });
+
+
+  it('should traverse fibers of Data Router', async () => {
+    const router = createMemoryRouter([
+      {
+        path: "/",
+        loader: async () => {
+          return { message: "Root layout data" };
+        },
+        Component: function RootLayout() {
+          const { message } = useLoaderData() as { message: string };
+          return (
+            <div data-testid="root-layout">
+              <nav>Navigator</nav>
+              <main>
+                <h1>{message}</h1>
+                <Outlet />
+              </main>
+            </div>
+          );
+        },
+        children: [
+          {
+            index: true,
+            loader: async () => {
+              return { message: "Home page data" };
+            },
+            Component: function HomePage() {
+              const { message } = useLoaderData() as { message: string };
+              return <h2 data-testid="home-page">{message}</h2>;
+            },
+          },
+          {
+            path: "user",
+            loader: async () => {
+              return { message: "User layout data" };
+            },
+            Component: function UserLayout() {
+              const { message } = useLoaderData() as { message: string };
+              return (
+                <div data-testid="user-layout">
+                  <h2>{message}</h2>
+                  <Outlet />
+                </div>
+              );
+            },
+            children: [
+              {
+                index: true,
+                loader: async () => {
+                  return { users: ["user1", "user2", "user3"] };
+                },
+                Component:function UserListPage() {
+                  const { users } = useLoaderData() as { users: string[] };
+                  return (
+                    <ul data-testid="user-list-page">
+                      {users.map(user => (
+                        <li key={user}>{user}</li>
+                      ))}
+                    </ul>
+                  );
+                },
+              },
+              {
+                path: ":id",
+                loader: async ({ params }) => {
+                  return { userId: params.id };
+                },
+                Component: function UserDetailPage() {
+                  const { userId } = useLoaderData() as { userId: string };
+                  return <h3 data-testid="user-detail-page">User ID: {userId}</h3>;
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ], { initialEntries: ['/', '/user', '/user/123'], future: { v7_relativeSplatPath: true } });
+
+    
+    const onCommitFiberRoot = vi.fn();
+    instrument({ onCommitFiberRoot });
+
+    const { getByTestId } = render(<RouterProvider router={router} future={{ v7_startTransition: true }} />)
+    await waitFor(() => Promise.resolve());
+    const root = onCommitFiberRoot.mock.lastCall?.[1];
+
+    const cb = vi.fn();
+
+    type UnwrapContext<T> = T extends React.Context<infer U> ? NonNullable<U> : never;
+    type DataRouter = UnwrapContext<typeof UNSAFE_DataRouterContext>['router'];
+    interface RouterData {
+      fiber: Fiber;
+      router: DataRouter;
+      matches: (DataRouteMatch & { element?: Element })[]
+    }
+    const returns: Fiber[] = [];
+    const routeFibers: Fiber[] = [];
+    let routerData: RouterData | null = null;
+    traverseFiber(root.current, {
+      enter(fiber) {
+        if (isRouterProviderFiber(fiber)) {
+          const router = fiber.memoizedProps.router as DataRouter;
+          const matches = router.state.matches.map(match => ({ ...match }));
+          routerData = { fiber, router, matches }
+        }
+
+        if (isRenderedRouteFiber(fiber))
+          routeFibers.unshift(fiber);
+        returns.unshift(fiber);
+      },
+      leave(fiber) {
+        if (isRenderedRouteFiber(fiber))
+          routeFibers.shift();
+        returns.shift();
+        
+        if (fiber === routerData?.fiber) {
+          cb(routerData);
+          routerData = null;
+        }
+
+        if (routerData && fiber.stateNode instanceof Element) {
+          for (let i = 0; i < routeFibers.length; i++) {
+            routerData.matches[i].element = fiber.stateNode;
+          }
+        }
+      },
+    });
+    expect(cb).toHaveBeenCalledTimes(1);
+
+    const data = cb.mock.lastCall?.[0] as RouterData;
+    expect(data).toEqual(expect.objectContaining({
+      fiber: expect.any(Object),
+      router: expect.any(Object),
+      matches: expect.arrayContaining([
+        expect.objectContaining({ pathname: '/', element: getByTestId('root-layout') }),
+        expect.objectContaining({ pathname: '/user', element: getByTestId('user-layout') }),
+        expect.objectContaining({ pathname: '/user/123', element: getByTestId('user-detail-page') }),
+      ])
+    }))
+  });
 });
 
 describe('getFiberFromHostInstance', () => {
@@ -422,3 +564,11 @@ describe('getFiberFromHostInstance', () => {
     expect(fiber?.type).toBe('div');
   });
 });
+
+function isRouterProviderFiber(fiber: Fiber) {
+  return fiber.type === RouterProvider;
+}
+
+function isRenderedRouteFiber(fiber: Fiber) {
+  return fiber.type?.name === 'RenderedRoute';
+}
