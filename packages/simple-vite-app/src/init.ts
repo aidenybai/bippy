@@ -1,3 +1,14 @@
-import { patchRDTHook } from 'bippy';
+import { instrument, secure } from 'bippy';
 
-patchRDTHook();
+instrument(
+  secure(
+    {
+      onActive: () => {
+        console.log('onActive');
+      },
+    },
+    {
+      dangerouslyRunInProduction: true,
+    },
+  ),
+);

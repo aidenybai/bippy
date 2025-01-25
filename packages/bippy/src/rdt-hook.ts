@@ -124,13 +124,13 @@ export const patchRDTHook = (onActive?: () => unknown): void => {
         return;
       }
       const prevInject = rdtHook.inject;
-      if (isReactRefresh(rdtHook)) {
+      if (isReactRefresh(rdtHook) && !isRealReactDevtools()) {
         isReactRefreshOverride = true;
         // but since the underlying implementation doens't care,
         // it's ok: https://github.com/facebook/react/blob/18eaf51bd51fed8dfed661d64c306759101d0bfd/packages/react-refresh/src/ReactFreshRuntime.js#L430
         // @ts-expect-error this is not actually a ReactRenderer,
         let nextID = rdtHook.inject(null);
-        if (nextID) {
+        if (nextID > 0) {
           rdtHook._instrumentationIsActive = true;
         }
         rdtHook.inject = () => nextID++;
