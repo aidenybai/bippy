@@ -1,5 +1,11 @@
 # bippy
 
+## 0.2.24
+
+### Patch Changes
+
+- fix devtools fail
+
 ## 0.2.23
 
 ### Patch Changes
