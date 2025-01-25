@@ -1,7 +1,7 @@
 {
   "name": "@bippy/monorepo",
   "scripts": {
-    "dev": "pnpm -r run dev ",
+    "dev": "pnpm --parallel run dev",
     "build": "pnpm --filter=./packages/bippy run build",
     "test": "pnpm --filter=./packages/bippy run test",
     "publint": "pnpm --filter=./packages/bippy run publint",

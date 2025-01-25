@@ -256,20 +256,6 @@ traverseState(fiber, (next, prev) => {
 });
 ```
 
-### traverseEffects
-
-traverses the effects (useEffect, useLayoutEffect, etc.) of a fiber.
-
-```typescript
-import { traverseEffects } from 'bippy';
-
-// ...
-
-traverseEffects(fiber, (effect) => {
-  console.log(effect);
-});
-```
-
 ### traverseContexts
 
 traverses the contexts (useContext) of a fiber.
