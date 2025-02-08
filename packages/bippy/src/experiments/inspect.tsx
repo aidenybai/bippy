@@ -1,31 +1,31 @@
+import React, {
+  type MouseEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
+import ReactDOM from 'react-dom';
 import {
+  ObjectLabel,
+  ObjectRootLabel,
+  Inspector as ReactInspector,
+} from 'react-inspector';
+import {
+  type Fiber,
+  detectReactBuildType,
   getDisplayName,
   getFiberFromHostInstance,
-  traverseFiber,
-  isInstrumentationActive,
-  getRDTHook,
-  detectReactBuildType,
-  getFiberStack,
   getFiberId,
-  type Fiber,
+  getFiberSource,
+  getFiberStack,
   getNearestHostFiber,
+  getRDTHook,
   hasRDTHook,
   isCompositeFiber,
-  getFiberSource,
+  isInstrumentationActive,
+  traverseFiber,
 } from '../index.js';
-import React, {
-  useState,
-  useEffect,
-  type ReactNode,
-  type MouseEvent,
-  useCallback,
-} from 'react';
-import {
-  Inspector as ReactInspector,
-  ObjectRootLabel,
-  ObjectLabel,
-} from 'react-inspector';
-import ReactDOM from 'react-dom';
 
 const FIBER_PROP_EXPLANATIONS: Record<string, string> = {
   tag: 'Numeric type identifier for this fiber (e.g. 1=FunctionComponent, 5=HostComponent)',
@@ -254,30 +254,6 @@ export const RawInspector = React.memo(
     const getFiberForDisplay = useCallback(() => {
       if (selectedFiber) return selectedFiber;
       const fiber = getFiberFromHostInstance(element);
-      const parentCompositeFiber = traverseFiber(
-        fiber,
-        (f) => {
-          if (isCompositeFiber(f)) return true;
-        },
-        true,
-      );
-
-      console.group('fiber');
-      if (fiber) {
-        console.log(getDisplayName(fiber), fiber?._debugSource);
-      }
-      if (parentCompositeFiber) {
-        console.log(
-          getDisplayName(parentCompositeFiber),
-          parentCompositeFiber?._debugSource,
-        );
-      }
-      if (fiber) {
-        console.log(getDisplayName(fiber), getFiberSource(fiber));
-      }
-      console.groupEnd();
-
-      // );
       return fiber;
     }, [selectedFiber, element]);
 
@@ -543,7 +519,11 @@ export const RawInspector = React.memo(
                   margin: 0,
                 }}
               >
-                {`<${typeof fiber.type === 'string' ? fiber.type : getDisplayName(fiber.type) || 'unknown'}>`}
+                {`<${
+                  typeof fiber.type === 'string'
+                    ? fiber.type
+                    : getDisplayName(fiber.type) || 'unknown'
+                }>`}
                 {!isDialogMode && (
                   <span
                     style={{

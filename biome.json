@@ -11,10 +11,17 @@
     "ignore": ["*.gen.ts", "node_modules", "dist", "coverage"]
   },
   "formatter": {
+    "enabled": true,
     "indentStyle": "space",
     "indentWidth": 2,
     "lineWidth": 80,
     "lineEnding": "lf"
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "trailingCommas": "all"
+    }
   },
   "organizeImports": {
     "enabled": true
@@ -51,11 +58,6 @@
           "fix": "unsafe"
         }
       }
-    }
-  },
-  "javascript": {
-    "formatter": {
-      "quoteStyle": "single"
     }
   }
 }
