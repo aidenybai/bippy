@@ -254,28 +254,6 @@ export const RawInspector = React.memo(
     const getFiberForDisplay = useCallback(() => {
       if (selectedFiber) return selectedFiber;
       const fiber = getFiberFromHostInstance(element);
-      const parentCompositeFiber = traverseFiber(
-        fiber,
-        (f) => {
-          if (isCompositeFiber(f)) return true;
-        },
-        true,
-      );
-
-      console.group('fiber');
-      if (fiber) {
-        console.log(getDisplayName(fiber), fiber?._debugSource);
-      }
-      if (parentCompositeFiber) {
-        console.log(
-          getDisplayName(parentCompositeFiber),
-          parentCompositeFiber?._debugSource,
-        );
-      }
-      if (fiber) {
-        console.log(getDisplayName(fiber), getFiberSource(fiber));
-      }
-      console.groupEnd();
 
       // );
       return fiber;
