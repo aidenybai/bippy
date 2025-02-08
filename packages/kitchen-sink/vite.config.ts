@@ -24,7 +24,7 @@ export default defineConfig({
     __VERSION__: `"v${JSON.parse(fs.readFileSync('../bippy/package.json', 'utf8')).version}"`,
   },
   resolve:
-    process.env.NODE_ENV === 'production'
+    process.env.NODE_ENV === 'prodauction'
       ? {}
       : {
           alias: {

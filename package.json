@@ -18,5 +18,8 @@
     "@changesets/changelog-git": "^0.2.0",
     "@changesets/cli": "^2.27.11",
     "sherif": "^1.2.0"
+  },
+  "dependencies": {
+    "source-map": "^0.7.4"
   }
 }
