@@ -1,31 +1,31 @@
+import React, {
+  type MouseEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
+import ReactDOM from 'react-dom';
 import {
+  ObjectLabel,
+  ObjectRootLabel,
+  Inspector as ReactInspector,
+} from 'react-inspector';
+import {
+  type Fiber,
+  detectReactBuildType,
   getDisplayName,
   getFiberFromHostInstance,
-  traverseFiber,
-  isInstrumentationActive,
-  getRDTHook,
-  detectReactBuildType,
-  getFiberStack,
   getFiberId,
-  type Fiber,
+  getFiberSource,
+  getFiberStack,
   getNearestHostFiber,
+  getRDTHook,
   hasRDTHook,
   isCompositeFiber,
-  getFiberSource,
+  isInstrumentationActive,
+  traverseFiber,
 } from '../index.js';
-import React, {
-  useState,
-  useEffect,
-  type ReactNode,
-  type MouseEvent,
-  useCallback,
-} from 'react';
-import {
-  Inspector as ReactInspector,
-  ObjectRootLabel,
-  ObjectLabel,
-} from 'react-inspector';
-import ReactDOM from 'react-dom';
 
 const FIBER_PROP_EXPLANATIONS: Record<string, string> = {
   tag: 'Numeric type identifier for this fiber (e.g. 1=FunctionComponent, 5=HostComponent)',
@@ -543,7 +543,11 @@ export const RawInspector = React.memo(
                   margin: 0,
                 }}
               >
-                {`<${typeof fiber.type === 'string' ? fiber.type : getDisplayName(fiber.type) || 'unknown'}>`}
+                {`<${
+                  typeof fiber.type === 'string'
+                    ? fiber.type
+                    : getDisplayName(fiber.type) || 'unknown'
+                }>`}
                 {!isDialogMode && (
                   <span
                     style={{

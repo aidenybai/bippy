@@ -1,125 +1,127 @@
 {
-	"name": "bippy",
-	"version": "0.2.24",
-	"description": "hack into react internals",
-	"keywords": [
-		"bippy",
-		"react",
-		"react-instrumentation",
-		"react instrumentation",
-		"fiber",
-		"internals"
-	],
-	"homepage": "https://bippy.dev",
-	"bugs": {
-		"url": "https://github.com/aidenybai/bippy/issues"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/aidenybai/bippy.git"
-	},
-	"license": "MIT",
-	"author": {
-		"name": "Aiden Bai",
-		"email": "aiden@million.dev"
-	},
-	"sideEffects": false,
-	"type": "module",
-	"exports": {
-		"./package.json": "./package.json",
-		".": {
-			"import": {
-				"types": "./dist/index.d.ts",
-				"default": "./dist/index.js"
-			},
-			"require": {
-				"types": "./dist/index.d.cts",
-				"default": "./dist/index.cjs"
-			}
-		},
-		"./core": {
-			"import": {
-				"types": "./dist/core.d.ts",
-				"default": "./dist/core.js"
-			},
-			"require": {
-				"types": "./dist/core.d.cts",
-				"default": "./dist/core.cjs"
-			}
-		},
-		"./sw": {
-			"import": {
-				"types": "./dist/sw.d.ts",
-				"default": "./dist/sw.js"
-			},
-			"require": {
-				"types": "./dist/sw.d.cts",
-				"default": "./dist/sw.cjs"
-			}
-		},
-		"./experiments/inspect": {
-			"import": {
-				"types": "./dist/experiments/inspect.d.ts",
-				"default": "./dist/experiments/inspect.js"
-			},
-			"require": {
-				"types": "./dist/experiments/inspect.d.cts",
-				"default": "./dist/experiments/inspect.cjs"
-			}
-		},
-		"./dist/*": "./dist/*.js",
-		"./dist/*.js": "./dist/*.js",
-		"./dist/*.cjs": "./dist/*.cjs",
-		"./dist/*.mjs": "./dist/*.mjs"
-	},
-	"main": "dist/index.js",
-	"module": "dist/index.js",
-	"browser": "dist/index.global.js",
-	"types": "dist/index.d.ts",
-	"files": [
-		"dist",
-		"bin",
-		"package.json",
-		"README.md",
-		"LICENSE"
-	],
-	"scripts": {
-		"build": "NODE_ENV=production tsup",
-		"dev": "NODE_ENV=development tsup --watch",
-		"publint": "publint",
-		"test": "vitest",
-		"coverage": "vitest run --coverage",
-		"prepublishOnly": "cp ../../README.md . && pnpm build"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "1.9.4",
-		"@testing-library/dom": "^10.4.0",
-		"@testing-library/react": "^16.1.0",
-		"@types/node": "^20",
-		"@types/react": "^19.0.4",
-		"@types/react-dom": "^19.0.2",
-		"@vitest/coverage-istanbul": "2.1.8",
-		"esbuild": "^0.24.2",
-		"happy-dom": "^15.11.7",
-		"pkg-pr-new": "^0.0.39",
-		"publint": "^0.2.12",
-		"react": "19.0.0",
-		"react-devtools-inline": "^6.0.1",
-		"react-dom": "19.0.0",
-		"react-inspector": "^6.0.2",
-		"react-reconciler": "^0.31.0",
-		"react-refresh": "^0.16.0",
-		"terser": "^5.36.0",
-		"tsup": "^8.2.4",
-		"vitest": "^2.1.8"
-	},
-	"publishConfig": {
-		"access": "public"
-	},
-	"peerDependencies": {
-		"react": ">=17.0.1"
-	},
-	"dependencies": {
-		"@types/react-reconciler": "^0.28.9"
-	}
+  "name": "bippy",
+  "version": "0.2.24",
+  "description": "hack into react internals",
+  "keywords": [
+    "bippy",
+    "react",
+    "react-instrumentation",
+    "react instrumentation",
+    "fiber",
+    "internals"
+  ],
+  "homepage": "https://bippy.dev",
+  "bugs": {
+    "url": "https://github.com/aidenybai/bippy/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aidenybai/bippy.git"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Aiden Bai",
+    "email": "aiden@million.dev"
+  },
+  "sideEffects": false,
+  "type": "module",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./core": {
+      "import": {
+        "types": "./dist/core.d.ts",
+        "default": "./dist/core.js"
+      },
+      "require": {
+        "types": "./dist/core.d.cts",
+        "default": "./dist/core.cjs"
+      }
+    },
+    "./sw": {
+      "import": {
+        "types": "./dist/sw.d.ts",
+        "default": "./dist/sw.js"
+      },
+      "require": {
+        "types": "./dist/sw.d.cts",
+        "default": "./dist/sw.cjs"
+      }
+    },
+    "./experiments/inspect": {
+      "import": {
+        "types": "./dist/experiments/inspect.d.ts",
+        "default": "./dist/experiments/inspect.js"
+      },
+      "require": {
+        "types": "./dist/experiments/inspect.d.cts",
+        "default": "./dist/experiments/inspect.cjs"
+      }
+    },
+    "./dist/*": "./dist/*.js",
+    "./dist/*.js": "./dist/*.js",
+    "./dist/*.cjs": "./dist/*.cjs",
+    "./dist/*.mjs": "./dist/*.mjs"
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "browser": "dist/index.global.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "bin",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "NODE_ENV=production tsup",
+    "dev": "NODE_ENV=development tsup --watch",
+    "publint": "publint",
+    "test": "vitest",
+    "coverage": "vitest run --coverage",
+    "prepublishOnly": "cp ../../README.md . && pnpm build"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/react": "^16.1.0",
+    "@types/node": "^20",
+    "@types/react": "^19.0.4",
+    "@types/react-dom": "^19.0.2",
+    "@vitest/coverage-istanbul": "2.1.8",
+    "esbuild": "^0.24.2",
+    "happy-dom": "^15.11.7",
+    "pkg-pr-new": "^0.0.39",
+    "publint": "^0.2.12",
+    "react": "19.0.0",
+    "react-devtools-inline": "^6.0.1",
+    "react-dom": "19.0.0",
+    "react-inspector": "^6.0.2",
+    "react-reconciler": "^0.31.0",
+    "react-refresh": "^0.16.0",
+    "terser": "^5.36.0",
+    "tsup": "^8.2.4",
+    "vitest": "^2.1.8"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "react": ">=17.0.1"
+  },
+  "dependencies": {
+    "@types/react-reconciler": "^0.28.9",
+    "error-stack-parser-es": "^1.0.5",
+    "source-map-js": "^1.2.1"
+  }
 }

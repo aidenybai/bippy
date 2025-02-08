@@ -20,6 +20,6 @@
     "sherif": "^1.2.0"
   },
   "dependencies": {
-    "source-map": "^0.7.4"
+    "@biomejs/biome": "^1.9.4"
   }
 }

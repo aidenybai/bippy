@@ -8,9 +8,9 @@ importers:
 
   .:
     dependencies:
-      source-map:
-        specifier: ^0.7.4
-        version: 0.7.4
+      '@biomejs/biome':
+        specifier: ^1.9.4
+        version: 1.9.4
     devDependencies:
       '@changesets/changelog-git':
         specifier: ^0.2.0
@@ -27,6 +27,12 @@ importers:
       '@types/react-reconciler':
         specifier: ^0.28.9
         version: 0.28.9(@types/react@19.0.4)
+      error-stack-parser-es:
+        specifier: ^1.0.5
+        version: 1.0.5
+      source-map-js:
+        specifier: ^1.2.1
+        version: 1.2.1
     devDependencies:
       '@biomejs/biome':
         specifier: 1.9.4
@@ -1600,6 +1606,9 @@ packages:
     resolution: {integrity: sha512-V0hjH4dGPh9Ao5p0MoRY6BVqtwCjhz6vI5LT8AJ55H+4g9/4vbHx1I54fS0XuclLhDHArPQCiMjDxjaL8fPxhw==}
     engines: {node: '>=0.12'}
 
+  error-stack-parser-es@1.0.5:
+    resolution: {integrity: sha512-5qucVt2XcuGMcEGgWI7i+yZpmpByQ8J1lHhcL7PwqCwu9FPP3VUXzT4ltHe5i2z9dePwEHcDVOAfSnHsOlCXRA==}
+
   es-module-lexer@1.5.4:
     resolution: {integrity: sha512-MVNK56NiMrOwitFB7cqDwq0CQutbw+0BvLshJSse0MUNU+y1FC3bUS/AQg7oUng+/wKrrki7JfmwtVHkVfPLlw==}
 
@@ -2412,10 +2421,6 @@ packages:
   source-map@0.6.1:
     resolution: {integrity: sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==}
     engines: {node: '>=0.10.0'}
-
-  source-map@0.7.4:
-    resolution: {integrity: sha512-l3BikUxvPOcn5E74dZiq5BGsTb5yEwhaTSzccU6t4sDOH8NWJCstKO5QT2CvtFoK6F0saL7p9xHAqHOlCPJygA==}
-    engines: {node: '>= 8'}
 
   source-map@0.8.0-beta.0:
     resolution: {integrity: sha512-2ymg6oRBpebeZi9UUNsgQ89bhx01TcTkmNTGnNO88imTmbSgy4nfujrgVEFKWpMTEGA11EDkTt7mqObTPdigIA==}
@@ -4203,6 +4208,8 @@ snapshots:
 
   entities@4.5.0: {}
 
+  error-stack-parser-es@1.0.5: {}
+
   es-module-lexer@1.5.4: {}
 
   es5-ext@0.10.64:
@@ -5010,8 +5017,6 @@ snapshots:
       source-map: 0.6.1
 
   source-map@0.6.1: {}
-
-  source-map@0.7.4: {}
 
   source-map@0.8.0-beta.0:
     dependencies:
