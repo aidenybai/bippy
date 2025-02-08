@@ -47,14 +47,14 @@
         "default": "./dist/core.cjs"
       }
     },
-    "./sw": {
+    "./source": {
       "import": {
-        "types": "./dist/sw.d.ts",
-        "default": "./dist/sw.js"
+        "types": "./dist/source.d.ts",
+        "default": "./dist/source.js"
       },
       "require": {
-        "types": "./dist/sw.d.cts",
-        "default": "./dist/sw.cjs"
+        "types": "./dist/source.d.cts",
+        "default": "./dist/source.cjs"
       }
     },
     "./experiments/inspect": {
@@ -99,6 +99,7 @@
     "@types/react": "^19.0.4",
     "@types/react-dom": "^19.0.2",
     "@vitest/coverage-istanbul": "2.1.8",
+    "error-stack-parser-es": "^1.0.5",
     "esbuild": "^0.24.2",
     "happy-dom": "^15.11.7",
     "pkg-pr-new": "^0.0.39",
@@ -109,6 +110,7 @@
     "react-inspector": "^6.0.2",
     "react-reconciler": "^0.31.0",
     "react-refresh": "^0.16.0",
+    "source-map-js": "^1.2.1",
     "terser": "^5.36.0",
     "tsup": "^8.2.4",
     "vitest": "^2.1.8"
@@ -120,8 +122,6 @@
     "react": ">=17.0.1"
   },
   "dependencies": {
-    "@types/react-reconciler": "^0.28.9",
-    "error-stack-parser-es": "^1.0.5",
-    "source-map-js": "^1.2.1"
+    "@types/react-reconciler": "^0.28.9"
   }
 }

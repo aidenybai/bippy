@@ -17,7 +17,6 @@ import {
   getDisplayName,
   getFiberFromHostInstance,
   getFiberId,
-  getFiberSource,
   getFiberStack,
   getNearestHostFiber,
   getRDTHook,
@@ -26,6 +25,7 @@ import {
   isInstrumentationActive,
   traverseFiber,
 } from '../index.js';
+import { getFiberSource } from '../source.js';
 
 const FIBER_PROP_EXPLANATIONS: Record<string, string> = {
   tag: 'Numeric type identifier for this fiber (e.g. 1=FunctionComponent, 5=HostComponent)',

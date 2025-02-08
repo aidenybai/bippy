@@ -7,11 +7,10 @@ settings:
 importers:
 
   .:
-    dependencies:
-      '@biomejs/biome':
-        specifier: ^1.9.4
-        version: 1.9.4
     devDependencies:
+      '@biomejs/biome':
+        specifier: 1.9.4
+        version: 1.9.4
       '@changesets/changelog-git':
         specifier: ^0.2.0
         version: 0.2.0
@@ -27,12 +26,6 @@ importers:
       '@types/react-reconciler':
         specifier: ^0.28.9
         version: 0.28.9(@types/react@19.0.4)
-      error-stack-parser-es:
-        specifier: ^1.0.5
-        version: 1.0.5
-      source-map-js:
-        specifier: ^1.2.1
-        version: 1.2.1
     devDependencies:
       '@biomejs/biome':
         specifier: 1.9.4
@@ -55,6 +48,9 @@ importers:
       '@vitest/coverage-istanbul':
         specifier: 2.1.8
         version: 2.1.8(vitest@2.1.8)
+      error-stack-parser-es:
+        specifier: ^1.0.5
+        version: 1.0.5
       esbuild:
         specifier: ^0.24.2
         version: 0.24.2
@@ -85,6 +81,9 @@ importers:
       react-refresh:
         specifier: ^0.16.0
         version: 0.16.0
+      source-map-js:
+        specifier: ^1.2.1
+        version: 1.2.1
       terser:
         specifier: ^5.36.0
         version: 5.36.0

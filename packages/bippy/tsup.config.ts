@@ -30,6 +30,7 @@ const DEFAULT_OPTIONS: Options = {
     VERSION: JSON.parse(fs.readFileSync('package.json', 'utf8')).version,
   },
   external: ['react', 'react-dom', 'react-reconciler'],
+  noExternal: ['error-stack-parser-es', 'source-map-js'],
 };
 
 export default defineConfig([
@@ -41,6 +42,7 @@ export default defineConfig([
       './src/core.ts',
       './src/experiments/inspect.tsx',
       './src/experiments/shrinkwrap.ts',
+      './src/source.ts',
     ],
     splitting: true,
     clean: true, // only run on first entry
@@ -58,7 +60,15 @@ export default defineConfig([
     format: ['iife'],
     outDir: './dist',
     minify: process.env.NODE_ENV === 'production' ? 'terser' : false,
-    globalName: 'Shrinkwrap',
+    globalName: 'Bippy',
+    entry: ['./src/source.ts'],
+  },
+  {
+    ...DEFAULT_OPTIONS,
+    format: ['iife'],
+    outDir: './dist',
+    minify: process.env.NODE_ENV === 'production' ? 'terser' : false,
+    globalName: 'Bippy',
     entry: ['./src/experiments/shrinkwrap.ts'],
   },
 ]);
