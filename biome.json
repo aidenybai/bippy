@@ -8,7 +8,7 @@
   "files": {
     "ignoreUnknown": false,
     "include": ["packages/**/*.ts", "packages/**/*.tsx", "*.ts", "*.tsx"],
-    "ignore": ["*.gen.ts", "node_modules", "dist", "coverage"]
+    "ignore": ["*.gen.ts", "node_modules", "dist", "coverage", "css-to-tailwind.ts"]
   },
   "formatter": {
     "enabled": true,

@@ -60,6 +60,22 @@ export const POST = async (request: NextRequest) => {
   const { url } = await request.json();
   const page = (await browser.newPage()) as Page;
 
+  const stylesheets = new Map<string, string>();
+
+  await page.setRequestInterception(true);
+  page.on('request', async (request) => {
+    if (request.resourceType() === 'stylesheet') {
+      try {
+        const response = await fetch(request.url());
+        const cssContent = await response.text();
+        stylesheets.set(request.url(), cssContent);
+      } catch (error) {
+        console.error(`Failed to fetch stylesheet: ${request.url()}`, error);
+      }
+    }
+    request.continue();
+  });
+
   await page.setUserAgent(
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
   );
@@ -86,6 +102,17 @@ export const POST = async (request: NextRequest) => {
   });
 
   const html = await page.content();
+
+  const rawScreenshot = await page.screenshot({
+    optimizeForSpeed: true,
+    quality: 80,
+    type: 'jpeg',
+  });
+
+  await page.evaluate(() => {
+    const colors = getImageColors(rawScreenshot, 'image/jpeg');
+    console.log(colors);
+  });
 
   await delay(1000);
 

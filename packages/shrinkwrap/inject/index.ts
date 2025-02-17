@@ -1,5 +1,109 @@
 import type * as __BippyNamespace__ from 'bippy';
 import type { FiberRoot } from 'bippy';
+import { CssToTailwindTranslator } from './css-to-tailwind';
+import styleToCss from 'style-object-to-css-string';
+
+type StylesMap = Record<string, string>;
+
+let blankIframe: HTMLIFrameElement | undefined;
+
+const getStylesIframe = (): HTMLIFrameElement => {
+  if (blankIframe) {
+    return blankIframe;
+  }
+
+  const iframe = document.createElement('iframe');
+  document.body.appendChild(iframe);
+  blankIframe = iframe;
+
+  return iframe;
+};
+
+const getStylesObject = (node: Element, parentWindow: Window): StylesMap => {
+  const styles = parentWindow.getComputedStyle(node);
+  const stylesObject: StylesMap = {};
+
+  for (let i = 0; i < styles.length; i++) {
+    const property = styles[i];
+    const value = styles.getPropertyValue(property);
+    stylesObject[property] = value;
+  }
+
+  return stylesObject;
+};
+
+const getDefaultStyles = (node: Element): StylesMap => {
+  const iframe = getStylesIframe();
+  const iframeDocument = iframe.contentDocument;
+  if (!iframeDocument) {
+    throw new Error('Failed to get iframe document');
+  }
+
+  const targetElement = iframeDocument.createElement(node.tagName);
+  iframeDocument.body.appendChild(targetElement);
+
+  const contentWindow = iframe.contentWindow;
+  if (!contentWindow) {
+    targetElement.remove();
+    throw new Error('Failed to get iframe window');
+  }
+
+  const defaultStyles = getStylesObject(targetElement, contentWindow);
+  targetElement.remove();
+
+  return defaultStyles;
+};
+
+const getUserStyles = (node: Element): StylesMap => {
+  const defaultStyles = getDefaultStyles(node);
+  const styles = getStylesObject(node, window);
+  const userStyles: StylesMap = {};
+
+  for (const property in defaultStyles) {
+    if (styles[property] !== defaultStyles[property]) {
+      userStyles[property] = styles[property];
+    }
+  }
+
+  return userStyles;
+};
+
+const convertStylesToTailwind = (styleObj: StylesMap) => {
+  const styleStr = styleToCss(styleObj);
+  const fakeSelector = `body{${styleStr}}`;
+  const result = CssToTailwindTranslator(fakeSelector);
+  const resultVal = result.data[0]?.resultVal;
+  if (result.code !== 'OK' || !resultVal) {
+    throw new Error('Failed to convert styles to tailwind');
+  }
+  return resultVal;
+};
+
+const filterNoisyTailwindClasses = (tailwindClasses: string) => {
+  const classes = tailwindClasses.split(' ');
+  const noisyProperties = [
+    '[border-bottom',
+    '[border-left',
+    '[border-right',
+    '[border-top',
+    '[column-rule',
+    '[outline',
+    'cursor-pointer',
+    'font-[',
+    'h-auto',
+    'w-auto',
+  ];
+  return classes
+    .filter((className) => {
+      for (const noisyProperty of noisyProperties) {
+        if (className.includes(noisyProperty)) {
+          return false;
+        }
+      }
+      return true;
+    })
+    .join(' ');
+};
 
 const ShrinkwrapData: {
   isActive: boolean;
@@ -428,10 +532,30 @@ export const draw = async (
   return visibleIndices;
 };
 
+interface SpecNode {
+  id: number;
+  styles: string;
+  children: SpecNode[];
+}
+
+export const createSpecTree = (root: FiberRoot) => {
+  Bippy.traverseFiber(root.current, (fiber) => {
+    if (Bippy.isHostFiber(fiber)) {
+      console.log(
+        fiber.stateNode,
+        filterNoisyTailwindClasses(
+          convertStylesToTailwind(getUserStyles(fiber.stateNode)),
+        ),
+      );
+    }
+  });
+};
+
 let ctx: CanvasRenderingContext2D | null = null;
 let canvas: HTMLCanvasElement | null = null;
 
 const handleFiberRoot = (root: FiberRoot) => {
+  createSpecTree(root);
   const elements = new Set<Element>();
   Bippy.traverseFiber(root.current, (fiber) => {
     Bippy.setFiberId(fiber, Bippy.getFiberId(fiber));
