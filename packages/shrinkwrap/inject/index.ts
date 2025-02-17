@@ -1,10 +1,26 @@
-import {
-  type FiberRoot,
-  getFiberFromHostInstance,
-  instrument,
-  isHostFiber,
-  traverseFiber,
-} from '../index.js';
+import type * as __BippyNamespace__ from 'bippy';
+import type { FiberRoot } from 'bippy';
+
+const ShrinkwrapData: {
+  isActive: boolean;
+  elementMap: Map<number, Set<Element>>;
+} = {
+  isActive: false,
+  elementMap: new Map(),
+};
+// biome-ignore lint/suspicious/noExplicitAny: used by puppeteer
+(globalThis as any).ShrinkwrapData = ShrinkwrapData;
+
+// biome-ignore lint/suspicious/noExplicitAny: this exists since we injected the Bippy source
+const Bippy = (globalThis as any).Bippy as typeof __BippyNamespace__;
+
+const fiberRoots = Bippy._fiberRoots;
+
+if (!Bippy) {
+  throw new Error('Bippy failed to inject');
+}
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const getDpr = () => {
   return Math.min(window.devicePixelRatio || 1, 2);
@@ -107,7 +123,7 @@ export const isScrollable = (element: Element) => {
 };
 
 export const isInteractive = (element: Element) => {
-  const fiber = getFiberFromHostInstance(element);
+  const fiber = Bippy.getFiberFromHostInstance(element);
 
   if (fiber?.stateNode instanceof Element) {
     for (const propName of Object.keys(fiber.memoizedProps || {})) {
@@ -163,7 +179,7 @@ export const isInteractive = (element: Element) => {
   return hasInteractiveRole || isFormRelated || isDraggable || hasAriaProps;
 };
 
-const isElementVisible = (element: HTMLElement) => {
+export const isElementVisible = (element: HTMLElement) => {
   const style = window.getComputedStyle(element);
   return (
     element.offsetWidth > 0 &&
@@ -173,7 +189,7 @@ const isElementVisible = (element: HTMLElement) => {
   );
 };
 
-const isTopElement = (element: HTMLElement) => {
+export const isTopElement = (element: HTMLElement) => {
   const doc = element.ownerDocument;
 
   if (doc !== window.document) {
@@ -261,206 +277,6 @@ const isTopElement = (element: HTMLElement) => {
   }
 };
 
-export const createShrinkwrap = () => {
-  const draw = async (elements: Element[]) => {
-    if (!ctx) return;
-
-    const rectMap = await getRectMap(elements);
-    clear();
-
-    const drawnLabelBounds: {
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-    }[] = [];
-    let visibleCount = 0;
-    const visibleIndices = new Map<Element, number>();
-
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const COVERAGE_THRESHOLD = 0.97;
-
-    for (let i = 0, len = elements.length; i < len; i++) {
-      const element = elements[i];
-      const rect = rectMap.get(element);
-      if (!rect) continue;
-
-      const { width, height } = rect;
-      const x = rect.x;
-      const y = rect.y;
-
-      if (
-        width / viewportWidth > COVERAGE_THRESHOLD &&
-        height / viewportHeight > COVERAGE_THRESHOLD
-      )
-        continue;
-
-      const text = `${visibleCount + 1}`;
-      const textSize = 16;
-      ctx.textRendering = 'optimizeSpeed';
-      ctx.font = `${textSize}px monospace`;
-      const { width: textWidth } = ctx.measureText(text);
-
-      let labelY: number = y - textSize - 4;
-      if (labelY < 0) {
-        labelY = 0;
-      }
-
-      const labelBounds = {
-        x,
-        y: labelY,
-        width: textWidth + 4,
-        height: textSize + 4,
-      };
-
-      const hasCollision = drawnLabelBounds.some(
-        (bound) =>
-          labelBounds.x < bound.x + bound.width &&
-          labelBounds.x + labelBounds.width > bound.x &&
-          labelBounds.y < bound.y + bound.height &&
-          labelBounds.y + labelBounds.height > bound.y,
-      );
-
-      if (!hasCollision) {
-        drawnLabelBounds.push(labelBounds);
-        visibleCount++;
-        visibleIndices.set(element, visibleCount);
-
-        ctx.beginPath();
-        ctx.rect(x, y, width, height);
-        const color = COLORS[i % COLORS.length].join(',');
-        ctx.fillStyle = `rgba(${color},0.1)`;
-        ctx.strokeStyle = `rgba(${color})`;
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.fillStyle = `rgba(${color})`;
-        ctx.fillRect(x, labelY, textWidth + 4, textSize + 4);
-        ctx.fillStyle = 'rgba(255,255,255)';
-        ctx.fillText(text, x + 2, labelY + textSize);
-      }
-    }
-
-    return visibleIndices;
-  };
-
-  const clear = () => {
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
-  };
-
-  const host = document.createElement('div');
-  host.setAttribute('data-react-scan', 'true');
-  const root = host.attachShadow({ mode: 'open' });
-
-  root.innerHTML = CANVAS_HTML_STR;
-  const canvas = root.firstChild as HTMLCanvasElement;
-
-  let dpr = Math.min(window.devicePixelRatio || 1, 2);
-
-  const { innerWidth, innerHeight } = window;
-  canvas.style.width = `${innerWidth}px`;
-  canvas.style.height = `${innerHeight}px`;
-  const width = innerWidth * dpr;
-  const height = innerHeight * dpr;
-  canvas.width = width;
-  canvas.height = height;
-
-  const ctx = canvas.getContext('2d', { alpha: true });
-  if (ctx) {
-    ctx.scale(dpr, dpr);
-  }
-
-  root.appendChild(canvas);
-
-  document.documentElement.appendChild(host);
-
-  let isResizeScheduled = false;
-  const resizeHandler = () => {
-    if (!isResizeScheduled) {
-      isResizeScheduled = true;
-      setTimeout(() => {
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-        dpr = getDpr();
-        canvas.style.width = `${width}px`;
-        canvas.style.height = `${height}px`;
-
-        canvas.width = width * dpr;
-        canvas.height = height * dpr;
-        if (ctx) {
-          ctx.resetTransform();
-          ctx.scale(dpr, dpr);
-        }
-        shrinkwrap.trackInteractive();
-        isResizeScheduled = false;
-      });
-    }
-  };
-
-  let isScrollScheduled = false;
-  const scrollHandler = () => {
-    if (isScrollScheduled) return;
-    isScrollScheduled = true;
-    setTimeout(() => {
-      requestAnimationFrame(() => {
-        shrinkwrap.trackInteractive();
-      });
-      isScrollScheduled = false;
-    }, 8);
-  };
-
-  const fiberRoots = new Set<FiberRoot>();
-  const shrinkwrap = {
-    draw(elements: Element[]) {
-      draw(elements).then((visibleIndices) => {
-        if (!visibleIndices) return;
-        const elementMap: Record<string, Element> = {};
-        visibleIndices.forEach((index, element) => {
-          elementMap[index] = element;
-        });
-        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-        (window as any).shrinkwrap = {
-          elementMap,
-        };
-      });
-    },
-    trackInteractive() {
-      instrument({
-        onCommitFiberRoot(_, root) {
-          fiberRoots.add(root);
-          const elements: Element[] = [];
-          for (const fiberRoot of fiberRoots) {
-            traverseFiber(fiberRoot.current, (fiber) => {
-              if (
-                isHostFiber(fiber) &&
-                isInteractive(fiber.stateNode) &&
-                isElementVisible(fiber.stateNode) &&
-                isTopElement(fiber.stateNode)
-              ) {
-                elements.push(fiber.stateNode);
-              }
-            });
-          }
-          shrinkwrap.draw(elements);
-        },
-      });
-    },
-    cleanup() {
-      fiberRoots.clear();
-      window.removeEventListener('scroll', scrollHandler);
-      window.removeEventListener('resize', resizeHandler);
-      document.documentElement.removeChild(host);
-    },
-  };
-
-  window.addEventListener('scroll', scrollHandler);
-  window.addEventListener('resize', resizeHandler);
-
-  return shrinkwrap;
-};
-
 export const getRectMap = (
   elements: Element[],
 ): Promise<Map<Element, DOMRect>> => {
@@ -485,3 +301,248 @@ export const getRectMap = (
     }
   });
 };
+
+export const clear = (
+  ctx: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement,
+  dpr: number,
+) => {
+  if (!ctx) return;
+  ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+};
+
+export const draw = async (
+  ctx: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement,
+  elements: Element[],
+) => {
+  const dpr = getDpr();
+  const rectMap = await getRectMap(elements);
+  clear(ctx, canvas, dpr);
+
+  const drawnLabelBounds: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }[] = [];
+  const visibleIndices = new Map<Element, number>();
+  const objectFiberTypeMap = new WeakMap<object, number>();
+  const stringFiberTypeMap = new Map<string, number>();
+  let typeCount = 0;
+
+  ShrinkwrapData.elementMap.clear();
+
+  const getTypeIndex = (type: string | object) => {
+    if (typeof type === 'string') {
+      let index = stringFiberTypeMap.get(type);
+      if (index === undefined) {
+        index = typeCount++;
+        stringFiberTypeMap.set(type, index);
+      }
+      return index;
+    }
+
+    let index = objectFiberTypeMap.get(type);
+    if (index === undefined) {
+      index = typeCount++;
+      objectFiberTypeMap.set(type, index);
+    }
+    return index;
+  };
+
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const COVERAGE_THRESHOLD = 0.97;
+
+  for (let i = 0, len = elements.length; i < len; i++) {
+    const element = elements[i];
+    const rect = rectMap.get(element);
+    if (!rect) continue;
+
+    const fiber = Bippy.getFiberFromHostInstance(element);
+    if (!fiber?.type) continue;
+
+    const typeIndex = getTypeIndex(fiber.type);
+    const { width, height } = rect;
+    const x = rect.x;
+    const y = rect.y;
+
+    if (
+      width / viewportWidth > COVERAGE_THRESHOLD &&
+      height / viewportHeight > COVERAGE_THRESHOLD
+    )
+      continue;
+
+    const text = `${typeIndex + 1}`;
+    const textSize = 16;
+    ctx.textRendering = 'optimizeSpeed';
+    ctx.font = `${textSize}px monospace`;
+    const { width: textWidth } = ctx.measureText(text);
+
+    let labelY: number = y - textSize - 4;
+    if (labelY < 0) {
+      labelY = 0;
+    }
+
+    const labelBounds = {
+      x,
+      y: labelY,
+      width: textWidth + 4,
+      height: textSize + 4,
+    };
+
+    const hasCollision = drawnLabelBounds.some(
+      (bound) =>
+        labelBounds.x < bound.x + bound.width &&
+        labelBounds.x + labelBounds.width > bound.x &&
+        labelBounds.y < bound.y + bound.height &&
+        labelBounds.y + labelBounds.height > bound.y,
+    );
+
+    if (!hasCollision) {
+      drawnLabelBounds.push(labelBounds);
+      visibleIndices.set(element, typeIndex + 1);
+
+      const elementId = typeIndex + 1;
+      const elementSet =
+        ShrinkwrapData.elementMap.get(elementId) || new Set<Element>();
+      elementSet.add(element);
+      ShrinkwrapData.elementMap.set(elementId, elementSet);
+
+      ctx.beginPath();
+      ctx.rect(x, y, width, height);
+      const color = COLORS[typeIndex % COLORS.length].join(',');
+      ctx.fillStyle = `rgba(${color},0.1)`;
+      ctx.strokeStyle = `rgba(${color})`;
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = `rgba(${color})`;
+      ctx.fillRect(x, labelY, textWidth + 4, textSize + 4);
+      ctx.fillStyle = 'rgba(255,255,255)';
+      ctx.fillText(text, x + 2, labelY + textSize);
+    }
+  }
+
+  return visibleIndices;
+};
+
+let ctx: CanvasRenderingContext2D | null = null;
+let canvas: HTMLCanvasElement | null = null;
+
+const handleFiberRoot = (root: FiberRoot) => {
+  const elements = new Set<Element>();
+  Bippy.traverseFiber(root.current, (fiber) => {
+    Bippy.setFiberId(fiber, Bippy.getFiberId(fiber));
+    if (!Bippy.isCompositeFiber(fiber)) {
+      return;
+    }
+    const hostFiber = Bippy.getNearestHostFiber(fiber);
+    if (!hostFiber) return;
+    elements.add(hostFiber.stateNode);
+  });
+  return elements;
+};
+
+const init = () => {
+  if (ShrinkwrapData.isActive) return;
+  ShrinkwrapData.isActive = true;
+  const host = document.createElement('div');
+  host.setAttribute('data-shrinkwrap', 'true');
+  const root = host.attachShadow({ mode: 'open' });
+
+  root.innerHTML = CANVAS_HTML_STR;
+  canvas = root.firstChild as HTMLCanvasElement;
+
+  let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  const { innerWidth, innerHeight } = window;
+  canvas.style.width = `${innerWidth}px`;
+  canvas.style.height = `${innerHeight}px`;
+  const width = innerWidth * dpr;
+  const height = innerHeight * dpr;
+  canvas.width = width;
+  canvas.height = height;
+
+  ctx = canvas.getContext('2d', { alpha: true });
+  if (ctx) {
+    ctx.scale(dpr, dpr);
+  }
+
+  root.appendChild(canvas);
+
+  document.documentElement.appendChild(host);
+
+  let isResizeScheduled = false;
+  const resizeHandler = () => {
+    if (!isResizeScheduled) {
+      isResizeScheduled = true;
+      setTimeout(() => {
+        if (!canvas) return;
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        dpr = getDpr();
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        if (ctx) {
+          ctx.resetTransform();
+          ctx.scale(dpr, dpr);
+        }
+        const elements = new Set<Element>();
+        for (const root of Array.from(fiberRoots)) {
+          for (const element of Array.from(handleFiberRoot(root))) {
+            elements.add(element);
+          }
+        }
+        if (ctx && canvas) {
+          draw(ctx, canvas, Array.from(elements));
+        }
+        isResizeScheduled = false;
+      });
+    }
+  };
+
+  const scrollHandler = () => {
+    const elements = new Set<Element>();
+    for (const root of Array.from(fiberRoots)) {
+      for (const element of Array.from(handleFiberRoot(root))) {
+        elements.add(element);
+      }
+    }
+    if (ctx && canvas) {
+      draw(ctx, canvas, Array.from(elements));
+    }
+  };
+
+  window.addEventListener('scroll', scrollHandler);
+  window.addEventListener('resize', resizeHandler);
+
+  return () => {
+    window.removeEventListener('scroll', scrollHandler);
+    window.removeEventListener('resize', resizeHandler);
+  };
+};
+
+Bippy.instrument({
+  onActive() {
+    init();
+  },
+  onCommitFiberRoot(_, root) {
+    const elements = handleFiberRoot(root);
+    if (ctx && canvas) {
+      draw(ctx, canvas, Array.from(elements));
+    }
+  },
+});
+
+setTimeout(() => {
+  if (Bippy.isInstrumentationActive()) {
+    init();
+  } else {
+    console.error('Page is not using React');
+  }
+}, 3000);

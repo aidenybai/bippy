@@ -1,12 +1,16 @@
 {
   "name": "bippy",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "hack into react internals",
+  "publishConfig": {
+    "access": "public"
+  },
   "keywords": [
     "bippy",
     "react",
-    "react-instrumentation",
     "react instrumentation",
+    "react devtools",
+    "react fiber",
     "fiber",
     "internals"
   ],
@@ -134,9 +138,6 @@
     "terser": "^5.36.0",
     "tsup": "^8.2.4",
     "vitest": "^2.1.8"
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "peerDependencies": {
     "react": ">=17.0.1"

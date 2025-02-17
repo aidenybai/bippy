@@ -1,0 +1,28 @@
+{
+  "name": "shrinkwrap",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "pnpm build:inject && next build",
+    "dev:inject": "tsup --watch",
+    "build:inject": "tsup",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@ai-sdk/google": "^1.1.14",
+    "@sparticuz/chromium": "^123.0.0",
+    "@sparticuz/chromium-min": "^123.0.0",
+    "ai": "^4.1.41",
+    "bippy": "^0.3.3",
+    "next": "15.1.7",
+    "puppeteer": "^22.6.2",
+    "puppeteer-core": "^22.6.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "tsup": "^8.2.4",
+    "typescript": "^5"
+  }
+}

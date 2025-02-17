@@ -43,7 +43,6 @@ export default defineConfig([
       './src/jsx-runtime.ts',
       './src/jsx-dev-runtime.ts',
       './src/experiments/inspect.tsx',
-      './src/experiments/shrinkwrap.ts',
       './src/source.ts',
     ],
     splitting: true,
@@ -64,13 +63,5 @@ export default defineConfig([
     minify: process.env.NODE_ENV === 'production' ? 'terser' : false,
     globalName: 'Bippy',
     entry: ['./src/source.ts'],
-  },
-  {
-    ...DEFAULT_OPTIONS,
-    format: ['iife'],
-    outDir: './dist',
-    minify: process.env.NODE_ENV === 'production' ? 'terser' : false,
-    globalName: 'Bippy',
-    entry: ['./src/experiments/shrinkwrap.ts'],
   },
 ]);

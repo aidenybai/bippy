@@ -1,5 +1,11 @@
 # bippy
 
+## 0.3.3
+
+### Patch Changes
+
+- remove log in inspect
+
 ## 0.3.2
 
 ### Patch Changes
