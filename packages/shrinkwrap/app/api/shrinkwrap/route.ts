@@ -179,7 +179,7 @@ Key points to consider:
 - Identify interactive elements and complex UI patterns
 - Skip basic containers or simple text elements
 - Be careful, do not assume a components role, look through the page exhaustively
-- The reactComponentFunctionDefinition should be a valid React component function snippet that can be rendered in a React application. Don't just return the html, return a valid React component function snippet.
+- The reactComponentFunctionDefinition should be a valid React component function. Don't just return the html, return a valid React component function snippet.
 
 Provide detailed information about ALL numbered components visible in the screenshot, even if they seem minor. Each component should have a clear role description that would allow recreation.`,
       },
