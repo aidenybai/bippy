@@ -8,24 +8,21 @@ const nextConfig = {
     }
   },
   serverExternalPackages: ['puppeteer-core', '@sparticuz/chromium'],
-  env: {
-    get BIPPY_SOURCE() {
-      return readFileSync(
-        'node_modules/bippy/dist/index.global.js',
-        'utf-8',
-      );
-    },
-    get INJECT_SOURCE() {
-      return readFileSync(
-        'inject/dist/index.global.js',
-        'utf-8',
-      );
-    },
-  },
   webpack: (config, { isServer }) => {
     config.module.rules.push({
       test: /\.js\.map$/,
       use: 'null-loader',
+    });
+
+    // Add support for importing source bundles
+    config.module.rules.push({
+      test: /\.global\.js$/,
+      type: 'asset/source',
+      parser: {
+        dataUrlCondition: {
+          maxSize: 1000 * 1024 // 1MB
+        }
+      }
     });
 
     config.resolve.fallback = {
@@ -36,6 +33,5 @@ const nextConfig = {
     return config;
   }
 };
-
 
 export default nextConfig;

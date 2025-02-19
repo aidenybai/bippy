@@ -5,15 +5,57 @@ import { z } from 'zod';
 import type { Page, Browser } from 'puppeteer-core';
 import { TailwindConverter } from 'css-to-tailwindcss';
 import postcss from 'postcss';
+import { extractColors } from 'extract-colors';
+import { createCanvas, loadImage } from 'canvas';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const maxDuration = 300;
 
+let cachedInjectSource: string | undefined;
+let cachedBippySource: string | undefined;
+
+const loadSources = async () => {
+  if (process.env.NODE_ENV === 'development') {
+    const [injectSource, bippySource] = await Promise.all([
+      fs.readFile(
+        path.join(process.cwd(), 'inject/dist/index.global.js'),
+        'utf-8'
+      ),
+      fs.readFile(
+        path.join(process.cwd(), 'node_modules/bippy/dist/index.global.js'),
+        'utf-8'
+      )
+    ]);
+    return { injectSource, bippySource };
+  }
+
+  if (cachedInjectSource && cachedBippySource) {
+    return { injectSource: cachedInjectSource, bippySource: cachedBippySource };
+  }
+
+  const [injectSource, bippySource] = await Promise.all([
+    fs.readFile(
+      path.join(process.cwd(), 'inject/dist/index.global.js'),
+      'utf-8'
+    ),
+    fs.readFile(
+      path.join(process.cwd(), 'node_modules/bippy/dist/index.global.js'),
+      'utf-8'
+    )
+  ]);
+
+  cachedInjectSource = injectSource;
+  cachedBippySource = bippySource;
+
+  return { injectSource, bippySource };
+};
+
+const shouldCloseBrowser = true;
+
 const CHROMIUM_PATH = 'https://fs.bippy.dev/chromium.tar';
-const BIPPY_SOURCE = process.env.BIPPY_SOURCE as string;
-const EXTRACT_COLORS_SOURCE = process.env.EXTRACT_COLORS_SOURCE as string;
-const INJECT_SOURCE = process.env.INJECT_SOURCE as string;
 
 const CHROMIUM_ARGS = [
   '--enable-webgl',
@@ -72,7 +114,6 @@ const getBrowser = async (): Promise<Browser> => {
   }
 
   const puppeteer = await import('puppeteer').then((mod) => mod.default);
-  // Cast the development browser to match production type
   return (await puppeteer.launch({
     defaultViewport: null,
     args: CHROMIUM_ARGS,
@@ -81,266 +122,282 @@ const getBrowser = async (): Promise<Browser> => {
 };
 
 export const POST = async (request: NextRequest) => {
-  if (!BIPPY_SOURCE || !INJECT_SOURCE) {
+  const { injectSource, bippySource } = await loadSources();
+
+  if (!bippySource || !injectSource) {
     return NextResponse.json(
-      { error: 'Failed to inject sources' },
+      { error: 'Failed to load sources' },
       { status: 500 },
     );
   }
 
-  const browser = await getBrowser();
   const { url, prompt } = await request.json();
-  const page = (await browser.newPage()) as Page;
 
-  const stylesheets = new Map<string, string>();
-
-  await page.setRequestInterception(true);
-  page.on('request', async (request) => {
-    if (request.resourceType() === 'stylesheet') {
-      const response = await fetch(request.url());
-      const cssContent = await response.text();
-      stylesheets.set(request.url(), cssContent);
-    }
-    request.continue();
-  });
-
-  await page.setUserAgent(
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
-  );
-  await page.evaluateOnNewDocument(() => {
-    Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-    Object.defineProperty(navigator, 'languages', {
-      get: () => ['en-US', 'en'],
-    });
-    Object.defineProperty(navigator, 'plugins', {
-      get: () => [0, 1, 2, 3, 4, 5],
-    });
-    Object.defineProperty(navigator, 'headless', { get: () => undefined });
-  });
-
-  const scripts = [BIPPY_SOURCE, EXTRACT_COLORS_SOURCE, INJECT_SOURCE];
-
-  await page.evaluateOnNewDocument(scripts.join('\n\n'));
-
-  await page.goto(url, { waitUntil: ['domcontentloaded', 'load'] });
-
-  const cssSelectors: Record<string, string[]> = {};
-
-  const rules = Array.from(stylesheets.values());
-
-  await Promise.all(
-    rules.map(async (rawCSS) => {
-      try {
-        const strippedCSS = stripCSSKeyframes(rawCSS);
-        const { nodes } = await converter.convertCSS(strippedCSS);
-        for (const node of nodes) {
-          cssSelectors[node.rule.selector] = node.tailwindClasses;
-        }
-      } catch {}
-    }),
-  );
-
-  const title = await page.title();
-  const description = await page.evaluate(() => {
-    return document
-      .querySelector('meta[name="description"]')
-      ?.getAttribute('content');
-  });
-
-  const html = await page.content();
-  const body = await page.evaluate(() => {
-    const bodyClone = document.body.cloneNode(true) as HTMLElement;
-
-    const elementsToRemove = bodyClone.querySelectorAll(
-      'script, link, style, noscript, iframe, [aria-hidden="true"], .hidden, [hidden]',
+  // Validate URL
+  if (!url) {
+    return NextResponse.json(
+      { error: 'URL is required' },
+      { status: 400 },
     );
-    for (const el of elementsToRemove) {
-      el.remove();
-    }
-
-    const removeEmpty = (element: HTMLElement) => {
-      for (const child of element.children) {
-        if (child instanceof HTMLElement) {
-          removeEmpty(child);
-        }
-      }
-
-      if (!element.innerHTML.trim() && element.parentElement) {
-        element.remove();
-      }
-    };
-
-    removeEmpty(bodyClone);
-
-    return bodyClone.innerHTML.trim();
-  });
-
-  const bodyChunks: string[] = [];
-
-  // Chunk the body by approximately 900,000 tokens (text.length / 4 = tokens)
-  const chunkSize = 900000 * 4;
-  for (let i = 0; i < body.length; i += chunkSize) {
-    bodyChunks.push(body.slice(i, i + chunkSize));
   }
 
-  const rawScreenshot = await page.screenshot({
-    optimizeForSpeed: true,
-    quality: 80,
-    type: 'jpeg',
-  });
-  const rawScreenshotDataUrl = convertBufferToDataUrl(
-    rawScreenshot,
-    'image/jpeg',
-  );
+  let browser: Browser | undefined;
+  try {
+    browser = await getBrowser();
 
-  const palette = await page.evaluate((rawScreenshotDataUrl) => {
-    // biome-ignore lint/suspicious/noExplicitAny: OK
-    const extractColors = (globalThis as any).extractColors;
-    const img = new Image();
-    img.src = rawScreenshotDataUrl;
-    const colors = extractColors(img);
-    return colors;
-  }, rawScreenshotDataUrl);
+    const abortController = new AbortController();
+    request.signal.addEventListener('abort', () => {
+      abortController.abort();
+      if (browser) {
+        browser.close().catch(console.error);
+      }
+    });
 
-  const summaryChunks = await Promise.all(
-    bodyChunks.map((bodyChunk) =>
-      generateText({
+    const page = (await browser.newPage()) as Page;
+
+    const stylesheets = new Map<string, string>();
+
+    await page.setRequestInterception(true);
+    page.on('request', async (request) => {
+      if (request.resourceType() === 'stylesheet') {
+        const response = await fetch(request.url());
+        const cssContent = await response.text();
+        stylesheets.set(request.url(), cssContent);
+      }
+      request.continue();
+    });
+
+    await page.setUserAgent(
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
+    );
+    await page.evaluateOnNewDocument(() => {
+      Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+      Object.defineProperty(navigator, 'languages', {
+        get: () => ['en-US', 'en'],
+      });
+      Object.defineProperty(navigator, 'plugins', {
+        get: () => [0, 1, 2, 3, 4, 5],
+      });
+      Object.defineProperty(navigator, 'headless', { get: () => undefined });
+    });
+
+    const scripts = [bippySource, injectSource];
+    await page.evaluateOnNewDocument(scripts.join('\n\n'));
+
+    await page.goto(url, { waitUntil: ['domcontentloaded', 'load'] });
+
+    const cssPromise = Promise.all(
+      Array.from(stylesheets.values()).map(async (rawCSS) => {
+        try {
+          const strippedCSS = stripCSSKeyframes(rawCSS);
+          const { nodes } = await converter.convertCSS(strippedCSS);
+          return nodes.map(node => ({ selector: node.rule.selector, classes: node.tailwindClasses }));
+        } catch {
+          return [];
+        }
+      })
+    );
+
+    await delay(1000);
+
+    const [
+      title,
+      description,
+      html,
+      rawScreenshot,
+      cssResults
+    ] = await Promise.all([
+      page.title(),
+      page.evaluate(() =>
+        document.querySelector('meta[name="description"]')?.getAttribute('content')
+      ),
+      page.evaluate(() => {
+        const bodyClone = document.body.cloneNode(true) as HTMLElement;
+        const removeElements = bodyClone.querySelectorAll(
+          'script, link, style, noscript, iframe, [aria-hidden="true"], .hidden, [hidden]'
+        );
+        for (const el of removeElements) el.remove();
+
+        const removeEmpty = (element: HTMLElement) => {
+          for (const child of element.children) {
+            if (child instanceof HTMLElement) removeEmpty(child);
+          }
+          if (!element.innerHTML.trim() && element.parentElement) {
+            element.remove();
+          }
+        };
+        removeEmpty(bodyClone);
+        return bodyClone.innerHTML.trim();
+      }),
+      page.screenshot(
+        {
+          optimizeForSpeed: true,
+          quality: 80,
+          type: 'jpeg' as const,
+          encoding: 'binary' as const,
+          omitBackground: true,
+        }
+      ),
+      cssPromise
+    ]);
+
+    const cssSelectors: Record<string, string[]> = {};
+    for (const result of cssResults.flat()) {
+      if (result.selector && result.classes) {
+        cssSelectors[result.selector] = result.classes;
+      }
+    }
+
+    const [imageData, screenshotDataUrl, bodyChunks] = await Promise.all([
+      (async () => {
+        const image = await loadImage(rawScreenshot);
+        const canvas = createCanvas(image.width, image.height);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(image, 0, 0);
+        return ctx.getImageData(0, 0, canvas.width, canvas.height);
+      })(),
+      convertBufferToDataUrl(rawScreenshot, 'image/jpeg'),
+      (async () => {
+        const chunks: string[] = [];
+        const chunkSize = 900000 * 4;
+        for (let i = 0; i < html.length; i += chunkSize) {
+          chunks.push(html.slice(i, i + chunkSize));
+        }
+        return chunks;
+      })()
+    ]);
+
+    type GeminiResponse = { text: string };
+
+    const [palette, summaryChunks] = await Promise.all([
+      extractColors(imageData),
+      (async () => {
+        const results: GeminiResponse[] = [];
+        const concurrencyLimit = Math.min(3, bodyChunks.length);
+        for (let i = 0; i < bodyChunks.length; i += concurrencyLimit) {
+          const batch = bodyChunks.slice(i, i + concurrencyLimit);
+          const batchPromises = batch.map(async (chunk) => {
+            try {
+              const response = await generateText({
+                model: google('gemini-2.0-flash'),
+                messages: [
+                  {
+                    role: 'user',
+                    content: `Page: ${url}\nTitle: ${title}\nDescription: ${description}\n\n\`\`\`html\n${chunk}\n\`\`\`\n\nProvide a concise list of steps to re-create this page. Only return the steps, no other text.`,
+                  },
+                  {
+                    role: 'user',
+                    content: [{ type: 'image', image: screenshotDataUrl }],
+                  },
+                ],
+              });
+              return response as GeminiResponse;
+            } catch (error) {
+              console.error('Chunk processing error:', error);
+              return { text: '' } as GeminiResponse;
+            }
+          });
+
+          const batchResults = await Promise.all(batchPromises);
+          results.push(...batchResults.filter(r => r.text));
+        }
+        return results;
+      })()
+    ]);
+
+    let summary = summaryChunks.map((r: GeminiResponse) => r.text).join('\n');
+
+    if (summaryChunks.length > 1) {
+      const combinedSummaryChunks = await generateText({
         model: google('gemini-2.0-flash'),
         messages: [
           {
             role: 'user',
-            content: `Page: ${url}
-Title: ${title}
-Description: ${description}
-
-\`\`\`html
-${bodyChunk}
-\`\`\`
-
-Provide a concise list of steps to re-create this page. Only return the steps, no other text.
-`,
-          },
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'image',
-                image: rawScreenshotDataUrl,
-              },
-            ],
-          },
-        ],
-      }),
-    ),
-  );
-
-  let summary = summaryChunks.map((r) => r.text).join('\n');
-
-  if (summaryChunks.length > 1) {
-    const combinedSummaryChunks = await generateText({
-      model: google('gemini-2.0-flash'),
-      messages: [
-        {
-          role: 'user',
-          content: `Combine the following steps into a single list of steps to re-create this page:
+            content: `Combine the following steps into a single list of steps to re-create this page:
 
 ${summaryChunks
   .map(
-    (r, i) => `Chunk of steps ${i + 1}:
+    (r: GeminiResponse, i) => `Chunk of steps ${i + 1}:
 ${r.text}`,
   )
   .join('\n\n')}
 `,
-        },
-      ],
-    });
-    summary = combinedSummaryChunks.text;
-  }
-
-  await delay(1000);
-
-  const screenshot = await page.screenshot({
-    optimizeForSpeed: true,
-    quality: 80,
-    type: 'jpeg',
-  });
-
-  const replacements: Record<string, string> = {};
-
-  const stringifiedElementMap = await page.evaluate(() => {
-    // https://x.com/theo/status/1889972653785764084
-    const estimateTokenCount = (text?: string | undefined) => {
-      if (!text) return 0;
-      return text.length / 4;
-    };
-
-    let allocatedTokens = 800_000;
-    let stringifiedElementMap = '';
-
-    // biome-ignore lint/suspicious/noExplicitAny: OK
-    const elementMap = (globalThis as any).ShrinkwrapData.elementMap;
-
-    for (const [id, elements] of elementMap.entries()) {
-      let stringPart = `# id: ${id}\n`;
-      for (const element of Array.from(elements)) {
-        const html = (element as Element).outerHTML;
-        const tokens = estimateTokenCount(html);
-        if (tokens > allocatedTokens) {
-          break;
-        }
-        allocatedTokens -= tokens;
-        stringPart += `## html: ${html}\n`;
-      }
-      stringifiedElementMap += `${stringPart}\n\n`;
+          },
+        ],
+      }) as GeminiResponse;
+      summary = combinedSummaryChunks.text;
     }
 
-    return stringifiedElementMap.trim();
-  });
-
-  const serializedTree = await page.evaluate(() => {
-    // biome-ignore lint/suspicious/noExplicitAny: OK
-    const Bippy = (globalThis as any).Bippy;
-    const fiberRoots = Bippy._fiberRoots;
-    const root = Array.from(fiberRoots)[0];
-    if (!root) return '';
-
-    return Bippy.specTree;
-  });
-
-  const { object } = await generateObject({
-    model: google('gemini-2.0-flash', { structuredOutputs: true }),
-    // @ts-expect-error ai sdk is being stupid
-    schema: z.object({
-      page_summary: z
-        .string()
-        .describe('A summary of the page and what it is for'),
-      components: z.array(
-        z.object({
-          id: z
-            .number()
-            .describe('The number id displayed in the provided image'),
-          role: z
-            .string()
-            .describe(
-              'The role of the component. Be descriptive such that a human can understand the purpose of the component and recreate it.',
-            ),
-          isImportant: z
-            .boolean()
-            .describe(
-              'Whether the component is important to the overall design of the page',
-            ),
-          reactComponentFunctionDefinition: z
-            .string()
-            .describe(
-              'The code that would recreate the component. This should be a valid React component function snippet that can be rendered in a React application.',
-            ),
-        }),
+    const [screenshot, elementMap, serializedTree] = await Promise.all([
+      page.screenshot(
+        {
+          optimizeForSpeed: true,
+          quality: 80,
+          type: 'jpeg' as const,
+          encoding: 'binary' as const,
+          omitBackground: true,
+        }
       ),
-    }),
-    messages: [
-      {
-        role: 'user',
-        content: `Page: ${url}
+      page.evaluate(() => {
+        const estimateTokenCount = (text?: string | undefined) => text ? text.length / 4 : 0;
+        let allocatedTokens = 800_000;
+        let stringifiedElementMap = '';
+        const elementMap = globalThis.ShrinkwrapData.elementMap;
+
+        for (const [id, elements] of elementMap.entries()) {
+          let stringPart = `# id: ${id}\n`;
+          for (const element of Array.from(elements)) {
+            const html = (element as Element).outerHTML;
+            const tokens = estimateTokenCount(html);
+            if (tokens > allocatedTokens) break;
+            allocatedTokens -= tokens;
+            stringPart += `## html: ${html}\n`;
+          }
+          stringifiedElementMap += `${stringPart}\n\n`;
+        }
+        return stringifiedElementMap.trim();
+      }),
+      page.evaluate(() => {
+        const Bippy = globalThis.Bippy;
+        const fiberRoots = Bippy._fiberRoots;
+        const root = Array.from(fiberRoots)[0];
+        return root ? Bippy.specTree : '';
+      })
+    ]);
+
+    const { object } = await generateObject({
+      model: google('gemini-2.0-flash', { structuredOutputs: true }),
+      schema: z.object({
+        page_summary: z
+          .string()
+          .describe('A summary of the page and what it is for'),
+        components: z.array(
+          z.object({
+            id: z
+              .number()
+              .describe('The number id displayed in the provided image'),
+            role: z
+              .string()
+              .describe(
+                'The role of the component. Be descriptive such that a human can understand the purpose of the component and recreate it.',
+              ),
+            isImportant: z
+              .boolean()
+              .describe(
+                'Whether the component is important to the overall design of the page',
+              ),
+            reactComponentFunctionDefinition: z
+              .string()
+              .describe(
+                'The code that would recreate the component. This should be a valid React component function snippet that can be rendered in a React application.',
+              ),
+          }),
+        ),
+      }),
+      messages: [
+        {
+          role: 'user',
+          content: `Page: ${url}
 Title: ${title}
 Description: ${description}
 
@@ -367,35 +424,41 @@ Key points to consider:
 - Skip basic containers or simple text elements
 - Be careful, do not assume a components role, look through the page exhaustively
 - The reactComponentFunctionDefinition should be a valid React component function. Don't just return the html, return a valid React component function snippet.`,
-      },
-      {
-        role: 'user',
-        content: `Element Map: ${stringifiedElementMap}`,
-      },
-      {
-        role: 'user',
-        content: [
-          {
-            type: 'image',
-            image: screenshot,
-          },
-        ],
-      },
-    ],
-  });
+        },
+        {
+          role: 'user',
+          content: `Element Map: ${elementMap}`,
+        },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              image: screenshot,
+            },
+          ],
+        },
+      ],
+    });
 
-  return NextResponse.json({
-    summary,
-    component_info: object,
-    // meta: {
-    //   title,
-    //   description,
-    //   prompt,
-    // },
-    // code: {
-    //   replacements,
-    // },
-    palette: palette.map(({ hex }: { hex: string }) => hex),
-    // screenshot: convertBufferToDataUrl(screenshot, 'image/jpeg'),
-  });
+    const response = {
+      summary,
+      component_info: object,
+      palette: palette.map(({ hex }: { hex: string }) => hex),
+    };
+
+    if (shouldCloseBrowser) {
+      await browser.close();
+    }
+
+    return NextResponse.json(response);
+  } catch {
+    if (browser) {
+      await browser.close();
+    }
+    return NextResponse.json(
+      { error: 'Failed to process page' },
+      { status: 500 }
+    );
+  }
 };

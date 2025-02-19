@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "concurrently \"pnpm dev:inject\" \"pnpm dev:next\" --kill-others --names \"INJECT,NEXT\" --prefix-colors \"blue,green\"",
+    "dev:next": "next dev",
     "build": "pnpm build:inject && next build",
     "dev:inject": "tsup --watch",
     "build:inject": "tsup",
@@ -16,6 +17,7 @@
     "@sparticuz/chromium-min": "^123.0.0",
     "ai": "^4.1.41",
     "bippy": "^0.3.4",
+    "canvas": "^3.1.0",
     "css-to-tailwindcss": "^1.0.5",
     "extract-colors": "^4.1.1",
     "next": "15.1.7",
@@ -31,6 +33,7 @@
     "@types/node": "^20",
     "@types/react": "^19.0.4",
     "@types/react-dom": "^19.0.2",
+    "concurrently": "^9.1.2",
     "tsup": "^8.2.4",
     "typescript": "^5"
   }

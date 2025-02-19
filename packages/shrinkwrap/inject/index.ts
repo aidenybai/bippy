@@ -2,12 +2,8 @@ import type * as __BippyNamespace__ from 'bippy';
 import type { Fiber, FiberRoot } from 'bippy';
 import { CssToTailwindTranslator } from './css-to-tailwind';
 import styleToCss from 'style-object-to-css-string';
-import { extractColors } from 'extract-colors';
 import { renderToString } from 'react-dom/server';
 import { Children } from 'react';
-
-// biome-ignore lint/suspicious/noExplicitAny: used by puppeteer
-(globalThis as any).extractColors = extractColors;
 
 type StylesMap = Record<string, string>;
 
