@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { google } from '@ai-sdk/google';
 import { generateObject, generateText } from 'ai';
 import { z } from 'zod';
-import type { Page, Browser } from 'puppeteer-core';
+import type { Browser } from 'puppeteer-core';
 import { TailwindConverter } from 'css-to-tailwindcss';
 import postcss from 'postcss';
 import { extractColors } from 'extract-colors';
@@ -153,7 +153,8 @@ export const POST = async (request: NextRequest) => {
       }
     });
 
-    const page = (await browser.newPage()) as Page;
+    // Get the default page instead of creating a new one
+    const [page] = await browser.pages();
 
     const stylesheets = new Map<string, string>();
 
