@@ -1,5 +1,11 @@
 # bippy
 
+## 0.3.4
+
+### Patch Changes
+
+- fix inspect
+
 ## 0.3.3
 
 ### Patch Changes

@@ -15,7 +15,7 @@
     "@sparticuz/chromium": "^123.0.0",
     "@sparticuz/chromium-min": "^123.0.0",
     "ai": "^4.1.41",
-    "bippy": "^0.3.3",
+    "bippy": "^0.3.4",
     "css-to-tailwindcss": "^1.0.5",
     "extract-colors": "^4.1.1",
     "next": "15.1.7",

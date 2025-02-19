@@ -97,8 +97,8 @@ importers:
   packages/kitchen-sink:
     dependencies:
       bippy:
-        specifier: ^0.3.3
-        version: 0.3.3(@types/react@19.0.4)(react@19.0.0)
+        specifier: ^0.3.4
+        version: 0.3.4(@types/react@19.0.4)(react@19.0.0)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -155,8 +155,8 @@ importers:
         specifier: ^4.1.41
         version: 4.1.41(react@19.0.0)(zod@3.24.2)
       bippy:
-        specifier: ^0.3.3
-        version: 0.3.3(@types/react@19.0.4)(react@19.0.0)
+        specifier: ^0.3.4
+        version: 0.3.4(@types/react@19.0.4)(react@19.0.0)
       css-to-tailwindcss:
         specifier: ^1.0.5
         version: 1.0.5
@@ -1576,8 +1576,8 @@ packages:
     resolution: {integrity: sha512-Ceh+7ox5qe7LJuLHoY0feh3pHuUDHAcRUeyL2VYghZwfpkNIy/+8Ocg0a3UuSoYzavmylwuLWQOf3hl0jjMMIw==}
     engines: {node: '>=8'}
 
-  bippy@0.3.3:
-    resolution: {integrity: sha512-l5zfUvHAKYg77SnevNS1yB4s+4CWaUIc+EuKdNfs+tm0HvkZG4F4SQ/RE44Dwm5P0lpi/v/JnhwRo9m647fThA==}
+  bippy@0.3.4:
+    resolution: {integrity: sha512-2BFhT2NImD/D/KXeLAYWIdoj1l87K9x7pYANdkyRE8Nbd2YZsjLgHa8ZfCJD7H59IrHs7n0dinuRsf9t0EQC6Q==}
     peerDependencies:
       react: '>=17.0.1'
 
@@ -4528,7 +4528,7 @@ snapshots:
 
   binary-extensions@2.3.0: {}
 
-  bippy@0.3.3(@types/react@19.0.4)(react@19.0.0):
+  bippy@0.3.4(@types/react@19.0.4)(react@19.0.0):
     dependencies:
       '@types/react-reconciler': 0.28.9(@types/react@19.0.4)
       react: 19.0.0
