@@ -3,16 +3,14 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import fs from 'node:fs';
-import { TanStackRouterVite } from '@tanstack/router-plugin/vite';
 
 export default defineConfig({
   build: {
     minify: false,
   },
   plugins: [
-    TanStackRouterVite(),
     react({
-      jsxImportSource: 'bippy/dist',
+      // jsxImportSource: 'bippy/dist',
       // babel: {
       //   plugins: [['babel-plugin-react-compiler', {}]],
       // },

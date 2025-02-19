@@ -544,6 +544,92 @@ export const getLatestFiber = (fiber: Fiber): Fiber => {
   return fiber;
 };
 
+interface FiberDiff {
+  path: ('child' | 'sibling')[];
+  type: 'props' | 'state' | 'type' | 'ref' | 'children';
+  thisFiber: Fiber;
+  otherFiber: Fiber;
+}
+
+export const diffFiber = (thisFiber: Fiber, otherFiber: Fiber): FiberDiff[] => {
+  const path: FiberDiff['path'] = [];
+  const diffs: FiberDiff[] = [];
+
+  const traverse = (current: Fiber, other: Fiber, currentPath: ('child' | 'sibling')[]) => {
+    if (current.type !== other.type) {
+      diffs.push({
+        path: [...currentPath],
+        type: 'type',
+        thisFiber: current,
+        otherFiber: other
+      });
+    }
+
+    if (current.ref !== other.ref) {
+      diffs.push({
+        path: [...currentPath],
+        type: 'ref',
+        thisFiber: current,
+        otherFiber: other
+      });
+    }
+
+    // Compare props
+    const currentProps = current.memoizedProps || {};
+    const otherProps = other.memoizedProps || {};
+    const allProps = new Set([...Object.keys(currentProps), ...Object.keys(otherProps)]);
+
+    for (const prop of allProps) {
+      if (currentProps[prop] !== otherProps[prop]) {
+        diffs.push({
+          path: [...currentPath],
+          type: 'props',
+          thisFiber: current,
+          otherFiber: other
+        });
+        break; // Only record one props difference per fiber
+      }
+    }
+
+    // Compare state
+    if (current.memoizedState !== other.memoizedState) {
+      diffs.push({
+        path: [...currentPath],
+        type: 'state',
+        thisFiber: current,
+        otherFiber: other
+      });
+    }
+
+    // Recursively traverse children
+    if (current.child && other.child) {
+      traverse(current.child, other.child, [...currentPath, 'child']);
+    } else if (current.child || other.child) {
+      diffs.push({
+        path: [...currentPath],
+        type: 'children',
+        thisFiber: current,
+        otherFiber: other
+      });
+    }
+
+    // Recursively traverse siblings
+    if (current.sibling && other.sibling) {
+      traverse(current.sibling, other.sibling, [...currentPath, 'sibling']);
+    } else if (current.sibling || other.sibling) {
+      diffs.push({
+        path: [...currentPath],
+        type: 'children',
+        thisFiber: current,
+        otherFiber: other
+      });
+    }
+  };
+
+  traverse(thisFiber, otherFiber, path);
+  return diffs;
+};
+
 export type RenderPhase = 'mount' | 'update' | 'unmount';
 
 export type RenderHandler = <S>(

@@ -28,41 +28,6 @@
   </head>
   <body>
     <div id="root"></div>
-    <script>
-      // (() => {
-      //   try {
-      //     var t = () => {};
-      //     const n = new Map();
-      //     let o = 0;
-      //     globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ = {
-      //       checkDCE: t,
-      //       supportsFiber: !0,
-      //       supportsFlight: !0,
-      //       hasUnsupportedRendererAttached: !1,
-      //       renderers: n,
-      //       onCommitFiberRoot: t,
-      //       onCommitFiberUnmount: t,
-      //       onPostCommitFiberRoot: t,
-      //       inject(t) {
-      //         var e = ++o;
-      //         return (
-      //           n.set(e, t),
-      //           (globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__._instrumentationIsActive =
-      //             !0),
-      //           e
-      //         );
-      //       },
-      //       _instrumentationIsActive: !1,
-      //       _script: !0,
-      //     };
-      //   } catch {}
-      // })();
-      try {
-        console.log(Object.keys(__REACT_DEVTOOLS_GLOBAL_HOOK__));
-      } catch (e) {
-        console.error('No existing hook found');
-      }
-    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -1,5 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { useState, type ReactNode, Fragment } from 'react';
+import { useState, type ReactNode, Fragment, type JSX } from 'react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { highlight } from 'sugar-high';
@@ -115,7 +114,7 @@ function ListItem({ children }: ListItemProps) {
   return <li className="pl-[1ch]">{children}</li>;
 }
 
-export default function Main() {
+export default function App() {
   const [imgSize, setImgSize] = useState(50);
   const [isSpinning, setIsSpinning] = useState(false);
   const [activeTab, setActiveTab] = useState<'basic' | 'inspect'>('basic');
@@ -279,7 +278,3 @@ onCommitFiberRoot((root) => {
     </div>
   );
 }
-
-export const Route = createFileRoute('/')({
-  component: Main,
-});
