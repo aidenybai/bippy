@@ -3,6 +3,8 @@ import { google } from '@ai-sdk/google';
 import { generateObject, generateText } from 'ai';
 import { z } from 'zod';
 import type { Page, Browser } from 'puppeteer-core';
+import { TailwindConverter } from 'css-to-tailwindcss';
+import postcss from 'postcss';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -19,6 +21,31 @@ const CHROMIUM_ARGS = [
   '--disable-blink-features=AutomationControlled',
   '--disable-web-security',
 ];
+
+const postCSSStripKeyframes = postcss([
+  {
+    postcssPlugin: 'strip-keyframes',
+    Once(root) {
+      root.walkAtRules('keyframes', (rule) => {
+        rule.remove();
+      });
+    },
+  },
+]);
+
+const stripCSSKeyframes = (rawCSS: string) => {
+  const { css: strippedCSS } = postCSSStripKeyframes.process(rawCSS);
+  return strippedCSS;
+};
+
+const converter = new TailwindConverter({
+  tailwindConfig: {
+    content: [],
+    theme: {
+      extend: {},
+    },
+  },
+});
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -70,13 +97,9 @@ export const POST = async (request: NextRequest) => {
   await page.setRequestInterception(true);
   page.on('request', async (request) => {
     if (request.resourceType() === 'stylesheet') {
-      try {
-        const response = await fetch(request.url());
-        const cssContent = await response.text();
-        stylesheets.set(request.url(), cssContent);
-      } catch (error) {
-        console.error(`Failed to fetch stylesheet: ${request.url()}`, error);
-      }
+      const response = await fetch(request.url());
+      const cssContent = await response.text();
+      stylesheets.set(request.url(), cssContent);
     }
     request.continue();
   });
@@ -100,6 +123,22 @@ export const POST = async (request: NextRequest) => {
   await page.evaluateOnNewDocument(scripts.join('\n\n'));
 
   await page.goto(url, { waitUntil: ['domcontentloaded', 'load'] });
+
+  const cssSelectors: Record<string, string[]> = {};
+
+  const rules = Array.from(stylesheets.values());
+
+  await Promise.all(
+    rules.map(async (rawCSS) => {
+      try {
+        const strippedCSS = stripCSSKeyframes(rawCSS);
+        const { nodes } = await converter.convertCSS(strippedCSS);
+        for (const node of nodes) {
+          cssSelectors[node.rule.selector] = node.tailwindClasses;
+        }
+      } catch {}
+    }),
+  );
 
   const title = await page.title();
   const description = await page.evaluate(() => {
@@ -265,8 +304,7 @@ ${r.text}`,
     const root = Array.from(fiberRoots)[0];
     if (!root) return '';
 
-    const specTree = Bippy.createSpecTree(root);
-    return Bippy.serializeSpecTree(specTree);
+    return Bippy.specTree;
   });
 
   const { object } = await generateObject({
