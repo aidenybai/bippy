@@ -5,6 +5,8 @@ import { z } from 'zod';
 import type { Page, Browser } from 'puppeteer-core';
 import { TailwindConverter } from 'css-to-tailwindcss';
 import postcss from 'postcss';
+import util from 'node:util';
+
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -148,6 +150,8 @@ export const POST = async (request: NextRequest) => {
       ?.getAttribute('content');
   });
 
+  // const snapshot = await page.accessibility.snapshot();
+
   const body = await page.evaluate(() => {
     const bodyClone = document.body.cloneNode(true) as HTMLElement;
 
@@ -176,11 +180,20 @@ export const POST = async (request: NextRequest) => {
   });
 
   const bodyChunks: string[] = [];
+  const maxChunkSize = 900000 * 4; // Approximately 900k tokens
 
-  // Chunk the body by approximately 900,000 tokens (text.length / 4 = tokens)
-  const chunkSize = 900000 * 4;
-  for (let i = 0; i < body.length; i += chunkSize) {
-    bodyChunks.push(body.slice(i, i + chunkSize));
+  if (body.length <= maxChunkSize) {
+    bodyChunks.push(body);
+  } else {
+    // Calculate optimal number of chunks needed
+    const numChunks = Math.ceil(body.length / maxChunkSize);
+    const targetChunkSize = Math.ceil(body.length / numChunks);
+
+    for (let i = 0; i < numChunks; i++) {
+      const start = i * targetChunkSize;
+      const end = Math.min((i + 1) * targetChunkSize, body.length);
+      bodyChunks.push(body.slice(start, end));
+    }
   }
 
   const rawScreenshot = await page.screenshot({
@@ -269,6 +282,60 @@ ${r.text}`,
     quality: 80,
     type: 'jpeg',
   });
+
+  const safeComponentMap = await page.evaluate(() => {
+    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+    const ShrinkwrapData = (globalThis as any).ShrinkwrapData;
+
+    const safeComponentMap: Record<
+      string,
+      { html: string; childrenComponents: number[] }
+    > = {};
+
+    for (const fiberRoot of ShrinkwrapData.fiberRoots) {
+      const { componentMap, componentKeyMap } =
+        ShrinkwrapData.createComponentMap(fiberRoot);
+
+      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+      const invertedComponentTypeMap = new WeakMap<any, number>();
+
+      for (const [key, value] of ShrinkwrapData.componentTypeMap.entries()) {
+        for (const type of value) {
+          invertedComponentTypeMap.set(type, key);
+        }
+      }
+
+      for (const [key, value] of ShrinkwrapData.componentTypeMap.entries()) {
+        for (const type of value) {
+          const { elements, childrenComponents: rawChildrenComponents } =
+            componentMap.get(type);
+          if (!elements.size) continue;
+          let html = '';
+
+          for (const element of elements) {
+            html += element.outerHTML;
+          }
+
+          const childrenComponents: number[] = [];
+          for (const rawChildComponent of rawChildrenComponents) {
+            if (invertedComponentTypeMap.has(rawChildComponent)) {
+              // basically need to get the key of the value:
+              childrenComponents.push(
+                invertedComponentTypeMap.get(rawChildComponent) as number,
+              );
+            }
+          }
+          safeComponentMap[key] = {
+            html,
+            childrenComponents,
+          };
+        }
+      }
+    }
+    return safeComponentMap;
+  });
+
+  console.log(safeComponentMap);
 
   //   const stringifiedElementMap = await page.evaluate(() => {
   //     // https://x.com/theo/status/1889972653785764084

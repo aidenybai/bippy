@@ -18,14 +18,14 @@ import { registerGlobal } from './puppeteer-utils';
 const ShrinkwrapData: {
   isActive: boolean;
   elementMap: Map<number, Set<Element>>;
-  typeMap: Map<number, string | object>;
-  fiberRoots: FiberRoot[];
+  componentTypeMap: Map<number, Set<object>>;
+  fiberRoots: Set<FiberRoot>;
   createComponentMap: typeof createComponentMap | undefined;
 } = {
   isActive: false,
   elementMap: new Map(),
-  typeMap: new Map(),
-  fiberRoots: [],
+  componentTypeMap: new Map(),
+  fiberRoots,
   createComponentMap: undefined,
 };
 
@@ -207,7 +207,7 @@ export const draw = async (
   let typeCount = 0;
 
   ShrinkwrapData.elementMap.clear();
-  ShrinkwrapData.typeMap.clear();
+  ShrinkwrapData.componentTypeMap.clear();
 
   const getTypeIndex = (type: string | object) => {
     if (typeof type === 'string') {
@@ -286,7 +286,19 @@ export const draw = async (
         ShrinkwrapData.elementMap.get(elementId) || new Set<Element>();
       elementSet.add(element);
       ShrinkwrapData.elementMap.set(elementId, elementSet);
-      ShrinkwrapData.typeMap.set(elementId, fiberType);
+      const componentTypeSet =
+        ShrinkwrapData.componentTypeMap.get(elementId) || new Set<object>();
+
+      const compositeFiber = traverseFiber(fiber, (innerFiber) => {
+        return isCompositeFiber(innerFiber);
+      });
+      const compositeFiberType =
+        getType(compositeFiber) || compositeFiber?.type;
+
+      if (compositeFiber) {
+        componentTypeSet.add(compositeFiberType);
+      }
+      ShrinkwrapData.componentTypeMap.set(elementId, componentTypeSet);
 
       ctx.beginPath();
       ctx.rect(x, y, width, height);
@@ -395,7 +407,7 @@ export const createComponentMap = (fiberRoot: FiberRoot) => {
     }
   });
 
-  return componentMap;
+  return { componentMap, componentKeyMap };
 };
 
 ShrinkwrapData.createComponentMap = createComponentMap;
