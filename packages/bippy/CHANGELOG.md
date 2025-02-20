@@ -1,5 +1,17 @@
 # bippy
 
+## 0.3.6
+
+### Patch Changes
+
+- fix side effects
+
+## 0.3.5
+
+### Patch Changes
+
+- fix instrument
+
 ## 0.3.4
 
 ### Patch Changes

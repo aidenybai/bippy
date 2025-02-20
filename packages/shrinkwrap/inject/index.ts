@@ -1,136 +1,35 @@
-import type * as __BippyNamespace__ from 'bippy';
-import type { Fiber, FiberRoot } from 'bippy';
-import { CssToTailwindTranslator } from './css-to-tailwind';
-import styleToCss from 'style-object-to-css-string';
-import { extractColors } from 'extract-colors';
-import { renderToString } from 'react-dom/server';
-import { Children } from 'react';
-
-// biome-ignore lint/suspicious/noExplicitAny: used by puppeteer
-(globalThis as any).extractColors = extractColors;
-
-type StylesMap = Record<string, string>;
-
-let blankIframe: HTMLIFrameElement | undefined;
-
-const getStylesIframe = (): HTMLIFrameElement => {
-  if (blankIframe) {
-    return blankIframe;
-  }
-
-  const iframe = document.createElement('iframe');
-  document.body.appendChild(iframe);
-  blankIframe = iframe;
-
-  return iframe;
-};
-
-const getStylesObject = (node: Element, parentWindow: Window): StylesMap => {
-  const styles = parentWindow.getComputedStyle(node);
-  const stylesObject: StylesMap = {};
-
-  for (let i = 0; i < styles.length; i++) {
-    const property = styles[i];
-    const value = styles.getPropertyValue(property);
-    stylesObject[property] = value;
-  }
-
-  return stylesObject;
-};
-
-const getDefaultStyles = (node: Element): StylesMap => {
-  const iframe = getStylesIframe();
-  const iframeDocument = iframe.contentDocument;
-  if (!iframeDocument) {
-    throw new Error('Failed to get iframe document');
-  }
-
-  const targetElement = iframeDocument.createElement(node.tagName);
-  iframeDocument.body.appendChild(targetElement);
-
-  const contentWindow = iframe.contentWindow;
-  if (!contentWindow) {
-    targetElement.remove();
-    throw new Error('Failed to get iframe window');
-  }
-
-  const defaultStyles = getStylesObject(targetElement, contentWindow);
-  targetElement.remove();
-
-  return defaultStyles;
-};
-
-const getUserStyles = (node: Element): StylesMap => {
-  const defaultStyles = getDefaultStyles(node);
-  const styles = getStylesObject(node, window);
-  const userStyles: StylesMap = {};
-
-  for (const property in defaultStyles) {
-    if (styles[property] !== defaultStyles[property]) {
-      userStyles[property] = styles[property];
-    }
-  }
-
-  return userStyles;
-};
-
-const convertStylesToTailwind = (styleObj: StylesMap) => {
-  const styleStr = styleToCss(styleObj);
-  const fakeSelector = `body{${styleStr}}`;
-  const result = CssToTailwindTranslator(fakeSelector);
-  const resultVal = result.data[0]?.resultVal;
-  if (result.code !== 'OK' || !resultVal) {
-    throw new Error('Failed to convert styles to tailwind');
-  }
-  return resultVal;
-};
-
-const filterNoisyTailwindClasses = (tailwindClasses: string) => {
-  const classes = tailwindClasses.split(' ');
-  const noisyProperties = [
-    '[border-bottom',
-    '[border-left',
-    '[border-right',
-    '[border-top',
-    '[column-rule',
-    '[outline',
-    'cursor-pointer',
-    'font-[',
-    'h-auto',
-    'w-auto',
-  ];
-  return classes
-    .filter((className) => {
-      for (const noisyProperty of noisyProperties) {
-        if (className.includes(noisyProperty)) {
-          return false;
-        }
-      }
-      return true;
-    })
-    .join(' ');
-};
+import {
+  getFiberFromHostInstance,
+  getFiberId,
+  getNearestHostFiber,
+  getNearestHostFibers,
+  getType,
+  isCompositeFiber,
+  setFiberId,
+  traverseFiber,
+  type Fiber,
+  type FiberRoot,
+  _fiberRoots as fiberRoots,
+  instrument,
+  isInstrumentationActive,
+} from 'bippy';
+import { registerGlobal } from './puppeteer-utils';
 
 const ShrinkwrapData: {
   isActive: boolean;
   elementMap: Map<number, Set<Element>>;
-  specTree: string;
+  typeMap: Map<number, string | object>;
+  fiberRoots: FiberRoot[];
+  createComponentMap: typeof createComponentMap | undefined;
 } = {
   isActive: false,
   elementMap: new Map(),
-  specTree: '',
+  typeMap: new Map(),
+  fiberRoots: [],
+  createComponentMap: undefined,
 };
-// biome-ignore lint/suspicious/noExplicitAny: used by puppeteer
-(globalThis as any).ShrinkwrapData = ShrinkwrapData;
 
-// biome-ignore lint/suspicious/noExplicitAny: this exists since we injected the Bippy source
-const Bippy = (globalThis as any).Bippy as typeof __BippyNamespace__;
-
-const fiberRoots = Bippy._fiberRoots;
-
-if (!Bippy) {
-  throw new Error('Bippy failed to inject');
-}
+registerGlobal('ShrinkwrapData', ShrinkwrapData);
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -154,142 +53,6 @@ const COLORS = [
   [220, 20, 60],
   [70, 130, 180],
 ];
-
-const interactiveElements = [
-  'a',
-  'button',
-  'details',
-  'embed',
-  'input',
-  'label',
-  'menu',
-  'menuitem',
-  'object',
-  'select',
-  'textarea',
-  'summary',
-];
-
-const interactiveRoles = [
-  'button',
-  'menu',
-  'menuitem',
-  'link',
-  'checkbox',
-  'radio',
-  'slider',
-  'tab',
-  'tabpanel',
-  'textbox',
-  'combobox',
-  'grid',
-  'listbox',
-  'option',
-  'progressbar',
-  'scrollbar',
-  'searchbox',
-  'switch',
-  'tree',
-  'treeitem',
-  'spinbutton',
-  'tooltip',
-  'a-button-inner',
-  'a-dropdown-button',
-  'click',
-  'menuitemcheckbox',
-  'menuitemradio',
-  'a-button-text',
-  'button-text',
-  'button-icon',
-  'button-icon-only',
-  'button-text-icon-only',
-  'dropdown',
-  'combobox',
-];
-
-const interactiveEvents = [
-  'click',
-  'mousedown',
-  'mouseup',
-  'touchstart',
-  'touchend',
-  'keydown',
-  'keyup',
-  'focus',
-  'blur',
-];
-
-export const isScrollable = (element: Element) => {
-  const isScrollable =
-    element.hasAttribute('aria-scrollable') ||
-    element.hasAttribute('scrollable') ||
-    ('style' in element &&
-      ((element.style as CSSStyleDeclaration).overflow === 'auto' ||
-        (element.style as CSSStyleDeclaration).overflow === 'scroll' ||
-        (element.style as CSSStyleDeclaration).overflowY === 'auto' ||
-        (element.style as CSSStyleDeclaration).overflowY === 'scroll' ||
-        (element.style as CSSStyleDeclaration).overflowX === 'auto' ||
-        (element.style as CSSStyleDeclaration).overflowX === 'scroll'));
-
-  return isScrollable;
-};
-
-export const isInteractive = (element: Element) => {
-  const fiber = Bippy.getFiberFromHostInstance(element);
-
-  if (fiber?.stateNode instanceof Element) {
-    for (const propName of Object.keys(fiber.memoizedProps || {})) {
-      if (!propName.startsWith('on')) continue;
-      const event = propName
-        .slice(2)
-        .toLowerCase()
-        .replace(/capture$/, '');
-      if (!interactiveEvents.includes(event)) continue;
-      if (fiber.memoizedProps[propName]) {
-        return true;
-      }
-    }
-  }
-
-  for (const event of interactiveEvents) {
-    const dotOnHandler = element[`on${event}` as keyof typeof element];
-    const explicitOnHandler = element.hasAttribute(`on${event}`);
-    const ngClick = element.hasAttribute(`ng-${event}`);
-    const atClick = element.hasAttribute(`@${event}`);
-    const vOnClick = element.hasAttribute(`v-on:${event}`);
-
-    if (dotOnHandler || explicitOnHandler || ngClick || atClick || vOnClick) {
-      return true;
-    }
-  }
-
-  const tagName = element.tagName.toLowerCase();
-  const role = element.getAttribute('role');
-  const ariaRole = element.getAttribute('aria-role');
-  const tabIndex = element.getAttribute('tabindex');
-
-  const hasInteractiveRole =
-    interactiveElements.includes(tagName) ||
-    (role && interactiveRoles.includes(role)) ||
-    (ariaRole && interactiveRoles.includes(ariaRole)) ||
-    (tabIndex !== null && tabIndex !== '-1');
-
-  const hasAriaProps =
-    element.hasAttribute('aria-expanded') ||
-    element.hasAttribute('aria-pressed') ||
-    element.hasAttribute('aria-selected') ||
-    element.hasAttribute('aria-checked');
-
-  const isFormRelated =
-    ('form' in element && element.form !== undefined) ||
-    element.hasAttribute('contenteditable');
-
-  const isDraggable =
-    ('draggable' in element && element.draggable) ||
-    element.getAttribute('draggable') === 'true';
-
-  return hasInteractiveRole || isFormRelated || isDraggable || hasAriaProps;
-};
 
 export const isElementVisible = (element: HTMLElement) => {
   const style = window.getComputedStyle(element);
@@ -444,6 +207,7 @@ export const draw = async (
   let typeCount = 0;
 
   ShrinkwrapData.elementMap.clear();
+  ShrinkwrapData.typeMap.clear();
 
   const getTypeIndex = (type: string | object) => {
     if (typeof type === 'string') {
@@ -472,10 +236,11 @@ export const draw = async (
     const rect = rectMap.get(element);
     if (!rect) continue;
 
-    const fiber = Bippy.getFiberFromHostInstance(element);
+    const fiber = getFiberFromHostInstance(element);
     if (!fiber?.type) continue;
 
-    const typeIndex = getTypeIndex(fiber.type);
+    const fiberType = getType(fiber) || fiber.type;
+    const typeIndex = getTypeIndex(fiberType);
     const { width, height } = rect;
     const x = rect.x;
     const y = rect.y;
@@ -521,6 +286,7 @@ export const draw = async (
         ShrinkwrapData.elementMap.get(elementId) || new Set<Element>();
       elementSet.add(element);
       ShrinkwrapData.elementMap.set(elementId, elementSet);
+      ShrinkwrapData.typeMap.set(elementId, fiberType);
 
       ctx.beginPath();
       ctx.rect(x, y, width, height);
@@ -540,95 +306,111 @@ export const draw = async (
   return visibleIndices;
 };
 
-interface SpecNode {
-  fiber: Fiber;
-  children: SpecNode[];
-}
-
-export const createSpecTree = (root: FiberRoot) => {
-  const buildSpecNode = (fiber: Fiber): SpecNode => {
-    const node: SpecNode = {
-      fiber,
-      children: [],
-    };
-
-    let child = fiber.child;
-    while (child) {
-      node.children.push(buildSpecNode(child));
-      child = child.sibling;
+export const createComponentMap = (fiberRoot: FiberRoot) => {
+  // biome-ignore lint/suspicious/noExplicitAny: OK
+  const componentKeyMap = new Map<number, any>();
+  const componentMap = new Map<
+    // biome-ignore lint/suspicious/noExplicitAny: OK
+    any,
+    {
+      elements: WeakSet<Element>;
+      // biome-ignore lint/suspicious/noExplicitAny: OK
+      childrenComponents: WeakSet<any>;
     }
+  >();
 
-    return node;
-  };
+  const findNearestCompositeFibers = (
+    startFiber: Fiber,
+    results: Set<Fiber>,
+  ) => {
+    const stack: Array<{ fiber: Fiber; visited: boolean }> = [
+      { fiber: startFiber, visited: false },
+    ];
 
-  return buildSpecNode(root.current);
-};
+    while (stack.length > 0) {
+      const { fiber, visited } = stack[stack.length - 1];
 
-export const serializeSpecTree = (node: SpecNode) => {
-  const serializeProps = (fiber: Fiber) => {
-    let result = '';
-    Bippy.traverseProps(fiber, (key, value) => {
-      if (key === 'children') return;
-      if (typeof value === 'string') {
-        result += ` ${key}="${value}"`;
-      } else if (typeof value === 'number' || typeof value === 'boolean') {
-        result += ` ${key}={${value}}`;
-      } else if (value === null || value === undefined) {
-        result += ` ${key}={${String(value)}}`;
-      } else if (typeof value === 'object') {
-        result += ` ${key}={${JSON.stringify(value)}}`;
-      } else if (typeof value === 'function') {
-        result += ` ${key}={/* function */}`;
-      }
-    });
-    return result;
-  };
+      if (!visited) {
+        stack[stack.length - 1].visited = true;
 
-  const serialize = (specNode: SpecNode, indent = 0): string => {
-    const { fiber } = specNode;
-    const displayName = Bippy.getDisplayName(fiber.type) || 'Unknown';
-    const props = Bippy.isHostFiber(fiber) ? serializeProps(fiber) : '';
-    const indentation = '  '.repeat(indent);
-    const children = fiber.memoizedProps?.children;
-    if (children) {
-      try {
-        const childrenArray = Children.toArray(children as React.ReactNode);
-        if (childrenArray.length > 0) {
-          const renderedChildren = renderToString(children as React.ReactNode);
-          if (renderedChildren) {
-            return `>{${renderedChildren}}</`;
-          }
+        if (isCompositeFiber(fiber)) {
+          results.add(fiber);
+          stack.pop();
+          continue;
         }
-      } catch {
-        // If we can't render the children, just skip them
+
+        if (fiber.child) {
+          stack.push({ fiber: fiber.child, visited: false });
+          continue;
+        }
+      }
+
+      stack.pop();
+      if (fiber.sibling) {
+        stack.push({ fiber: fiber.sibling, visited: false });
+      }
+    }
+  };
+
+  traverseFiber(fiberRoot.current, (fiber) => {
+    if (!isCompositeFiber(fiber)) {
+      return;
+    }
+
+    const type = getType(fiber) || fiber.type;
+
+    if (!type) return;
+
+    componentKeyMap.set(componentKeyMap.size, type);
+
+    if (!componentMap.has(type)) {
+      componentMap.set(type, {
+        elements: new Set(),
+        childrenComponents: new Set(),
+      });
+    }
+    const component = componentMap.get(type);
+
+    if (!component) return;
+
+    const compositeFibers = new Set<Fiber>();
+
+    if (fiber.child) {
+      findNearestCompositeFibers(fiber.child, compositeFibers);
+    }
+
+    for (const compositeFiber of compositeFibers) {
+      const childType = getType(compositeFiber) || compositeFiber.type;
+      if (childType) {
+        component.childrenComponents.add(childType);
       }
     }
 
-    if (specNode.children.length === 0) {
-      return `${indentation}<${displayName}${props} />`;
+    const hostFibers = getNearestHostFibers(fiber);
+    for (let i = 0; i < hostFibers.length; i++) {
+      const hostFiber = hostFibers[i];
+      if (hostFiber.stateNode instanceof Element) {
+        component.elements.add(hostFiber.stateNode);
+      }
     }
+  });
 
-    const childrenJsx = specNode.children
-      .map((child) => serialize(child, indent + 1))
-      .join('\n');
-
-    return `${indentation}<${displayName}${props}>\n${childrenJsx}\n${indentation}</${displayName}>`;
-  };
-
-  return serialize(node);
+  return componentMap;
 };
+
+ShrinkwrapData.createComponentMap = createComponentMap;
 
 let ctx: CanvasRenderingContext2D | null = null;
 let canvas: HTMLCanvasElement | null = null;
 
 const handleFiberRoot = (root: FiberRoot) => {
   const elements = new Set<Element>();
-  Bippy.traverseFiber(root.current, (fiber) => {
-    Bippy.setFiberId(fiber, Bippy.getFiberId(fiber));
-    if (!Bippy.isCompositeFiber(fiber)) {
+  traverseFiber(root.current, (fiber) => {
+    setFiberId(fiber, getFiberId(fiber));
+    if (!isCompositeFiber(fiber)) {
       return;
     }
-    const hostFiber = Bippy.getNearestHostFiber(fiber);
+    const hostFiber = getNearestHostFiber(fiber);
     if (
       !hostFiber ||
       !isElementVisible(hostFiber.stateNode) ||
@@ -637,10 +419,6 @@ const handleFiberRoot = (root: FiberRoot) => {
       return;
     elements.add(hostFiber.stateNode);
   });
-  const specTree = createSpecTree(root);
-  const serializedTree = serializeSpecTree(specTree);
-  // biome-ignore lint/suspicious/noExplicitAny: OK
-  (globalThis as any).ShrinkwrapData.specTree = serializedTree;
   return elements;
 };
 
@@ -727,6 +505,13 @@ const init = () => {
   window.addEventListener('scroll', scrollHandler);
   window.addEventListener('resize', resizeHandler);
 
+  for (const root of Array.from(fiberRoots)) {
+    const elements = handleFiberRoot(root);
+    if (ctx && canvas) {
+      draw(ctx, canvas, Array.from(elements));
+    }
+  }
+
   return () => {
     window.removeEventListener('wheel', scrollHandler);
     window.removeEventListener('scroll', scrollHandler);
@@ -734,23 +519,35 @@ const init = () => {
   };
 };
 
-Bippy.instrument({
-  onActive() {
+let hasPageLoaded = false;
+const loadListeners = new Set<() => void>();
+window.addEventListener('load', async () => {
+  hasPageLoaded = true;
+  // average LCP (2.5s) - 500ms buffer time
+  await delay(2000);
+  if (isInstrumentationActive()) {
     init();
-  },
-  onCommitFiberRoot(_, root) {
-    fiberRoots.add(root);
-    const elements = handleFiberRoot(root);
-    if (ctx && canvas) {
-      draw(ctx, canvas, Array.from(elements));
+    for (const listener of loadListeners) {
+      listener();
     }
-  },
-});
-
-setTimeout(() => {
-  if (Bippy.isInstrumentationActive()) {
-    init();
   } else {
     console.error('Page is not using React');
   }
-}, 3000);
+});
+
+instrument({
+  onCommitFiberRoot(_, root) {
+    fiberRoots.add(root);
+    const handle = () => {
+      const elements = handleFiberRoot(root);
+      if (ctx && canvas) {
+        draw(ctx, canvas, Array.from(elements));
+      }
+    };
+    if (!hasPageLoaded) {
+      loadListeners.add(handle);
+    } else {
+      handle();
+    }
+  },
+});

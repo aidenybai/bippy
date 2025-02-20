@@ -97,8 +97,8 @@ importers:
   packages/kitchen-sink:
     dependencies:
       bippy:
-        specifier: ^0.3.4
-        version: 0.3.4(@types/react@19.0.4)(react@19.0.0)
+        specifier: ^0.3.6
+        version: 0.3.6(@types/react@19.0.4)(react@19.0.0)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -155,14 +155,17 @@ importers:
         specifier: ^4.1.41
         version: 4.1.41(react@19.0.0)(zod@3.24.2)
       bippy:
-        specifier: ^0.3.4
-        version: 0.3.4(@types/react@19.0.4)(react@19.0.0)
+        specifier: ^0.3.6
+        version: 0.3.6(@types/react@19.0.4)(react@19.0.0)
       css-to-tailwindcss:
         specifier: ^1.0.5
         version: 1.0.5
       extract-colors:
         specifier: ^4.1.1
         version: 4.1.1
+      nanoid:
+        specifier: ^5.1.0
+        version: 5.1.0
       next:
         specifier: 15.1.7
         version: 15.1.7(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -1576,8 +1579,8 @@ packages:
     resolution: {integrity: sha512-Ceh+7ox5qe7LJuLHoY0feh3pHuUDHAcRUeyL2VYghZwfpkNIy/+8Ocg0a3UuSoYzavmylwuLWQOf3hl0jjMMIw==}
     engines: {node: '>=8'}
 
-  bippy@0.3.4:
-    resolution: {integrity: sha512-2BFhT2NImD/D/KXeLAYWIdoj1l87K9x7pYANdkyRE8Nbd2YZsjLgHa8ZfCJD7H59IrHs7n0dinuRsf9t0EQC6Q==}
+  bippy@0.3.6:
+    resolution: {integrity: sha512-fIGGudbf3v7TjIH0bc/vXoTYdTngiTCrmxUe2OVLgG67E3Z/IQAEF17VUvGIvZRKTB1V5ex0a2BLaiLi8pgznQ==}
     peerDependencies:
       react: '>=17.0.1'
 
@@ -2363,6 +2366,11 @@ packages:
   nanoid@3.3.8:
     resolution: {integrity: sha512-WNLf5Sd8oZxOm+TzppcYk8gVOgP+l58xNy58D0nbUnOxOWRWvlcCV4kUF7ltmI6PsrLl/BgKEyS4mqsGChFN0w==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
+    hasBin: true
+
+  nanoid@5.1.0:
+    resolution: {integrity: sha512-zDAl/llz8Ue/EblwSYwdxGBYfj46IM1dhjVi8dyp9LQffoIGxJEAHj2oeZ4uNcgycSRcQ83CnfcZqEJzVDLcDw==}
+    engines: {node: ^18 || >=20}
     hasBin: true
 
   netmask@2.0.2:
@@ -4528,7 +4536,7 @@ snapshots:
 
   binary-extensions@2.3.0: {}
 
-  bippy@0.3.4(@types/react@19.0.4)(react@19.0.0):
+  bippy@0.3.6(@types/react@19.0.4)(react@19.0.0):
     dependencies:
       '@types/react-reconciler': 0.28.9(@types/react@19.0.4)
       react: 19.0.0
@@ -5313,6 +5321,8 @@ snapshots:
       thenify-all: 1.6.0
 
   nanoid@3.3.8: {}
+
+  nanoid@5.1.0: {}
 
   netmask@2.0.2: {}
 

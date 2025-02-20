@@ -9,12 +9,6 @@ const nextConfig = {
   },
   serverExternalPackages: ['puppeteer-core', '@sparticuz/chromium'],
   env: {
-    get BIPPY_SOURCE() {
-      return readFileSync(
-        'node_modules/bippy/dist/index.global.js',
-        'utf-8',
-      );
-    },
     get INJECT_SOURCE() {
       return readFileSync(
         'inject/dist/index.global.js',

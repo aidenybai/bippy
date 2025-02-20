@@ -48,7 +48,7 @@ export const installRDTHook = (
 ): ReactDevToolsGlobalHook => {
   const renderers = new Map<number, ReactRenderer>();
   let i = 0;
-  const rdtHook: ReactDevToolsGlobalHook = {
+  let rdtHook: ReactDevToolsGlobalHook = {
     checkDCE,
     supportsFiber: true,
     supportsFlight: true,
@@ -78,7 +78,7 @@ export const installRDTHook = (
       set(newHook) {
         if (newHook && typeof newHook === 'object') {
           const ourRenderers = rdtHook.renderers;
-          globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ = newHook;
+          rdtHook = newHook;
           if (ourRenderers.size > 0) {
             ourRenderers.forEach((renderer, id) => {
               newHook.renderers.set(id, renderer);
