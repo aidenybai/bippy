@@ -360,12 +360,12 @@ export const Inspector = forwardRef<InspectorHandle, InspectorProps>(
 
     useEffect(() => {
       const div = document.createElement('div');
-      document.body.appendChild(div);
+      document.documentElement.appendChild(div);
       const shadowRoot = div.attachShadow({ mode: 'open' });
       setRoot(shadowRoot);
 
       return () => {
-        document.body.removeChild(div);
+        document.documentElement.removeChild(div);
       };
     }, []);
 
