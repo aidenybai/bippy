@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "concurrently \"pnpm dev:inject\" \"pnpm dev:next\" --kill-others --names \"INJECT,NEXT\" --prefix-colors \"blue,green\"",
+    "dev:next": "next dev",
     "build": "pnpm build:inject && next build",
     "dev:inject": "tsup --watch",
     "build:inject": "tsup",
@@ -32,6 +33,7 @@
     "@types/node": "^20",
     "@types/react": "^19.0.4",
     "@types/react-dom": "^19.0.2",
+    "concurrently": "^9.1.2",
     "tsup": "^8.2.4",
     "typescript": "^5"
   }
