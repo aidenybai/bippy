@@ -8,14 +8,6 @@ const nextConfig = {
     }
   },
   serverExternalPackages: ['puppeteer-core', '@sparticuz/chromium'],
-  env: {
-    get INJECT_SOURCE() {
-      return readFileSync(
-        'inject/dist/index.global.js',
-        'utf-8',
-      );
-    },
-  },
   webpack: (config, { isServer }) => {
     config.module.rules.push({
       test: /\.js\.map$/,

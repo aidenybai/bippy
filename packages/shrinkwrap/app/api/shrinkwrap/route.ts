@@ -5,14 +5,44 @@ import { z } from 'zod';
 import type { Page, Browser } from 'puppeteer-core';
 import { TailwindConverter } from 'css-to-tailwindcss';
 import postcss from 'postcss';
-import util from 'node:util';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const maxDuration = 300;
 
+let cachedInjectSource: string | undefined;
+
+const loadSources = async () => {
+  if (process.env.NODE_ENV === 'development') {
+    const [injectSource] = await Promise.all([
+      fs.readFile(
+        path.join(process.cwd(), 'inject/dist/index.global.js'),
+        'utf-8'
+      ),
+    ]);
+    return { injectSource };
+  }
+
+  if (cachedInjectSource) {
+    return { injectSource: cachedInjectSource };
+  }
+
+  const [injectSource] = await Promise.all([
+    fs.readFile(
+      path.join(process.cwd(), 'inject/dist/index.global.js'),
+      'utf-8'
+    ),
+  ]);
+
+  cachedInjectSource = injectSource;
+
+  return { injectSource };
+};
+
+const shouldCloseBrowser = true;
 const CHROMIUM_PATH = 'https://fs.bippy.dev/chromium.tar';
-const INJECT_SOURCE = process.env.INJECT_SOURCE as string;
 
 const CHROMIUM_ARGS = [
   '--enable-webgl',
@@ -80,7 +110,9 @@ const getBrowser = async (): Promise<Browser> => {
 };
 
 export const POST = async (request: NextRequest) => {
-  if (!INJECT_SOURCE) {
+  const { injectSource } = await loadSources();
+
+  if (!injectSource) {
     return NextResponse.json(
       { error: 'Failed to inject sources' },
       { status: 500 },
@@ -89,7 +121,9 @@ export const POST = async (request: NextRequest) => {
 
   const browser = await getBrowser();
   const { url, prompt } = await request.json();
-  const page = (await browser.newPage()) as Page;
+
+  // Get the default page instead of creating a new one
+  const page = (await browser.pages())[0] as Page;
 
   const stylesheets = new Map<string, string>();
 
@@ -117,7 +151,7 @@ export const POST = async (request: NextRequest) => {
     Object.defineProperty(navigator, 'headless', { get: () => undefined });
   });
 
-  await page.evaluateOnNewDocument(INJECT_SOURCE);
+  await page.evaluateOnNewDocument(injectSource);
 
   await page.goto(url, { waitUntil: ['domcontentloaded', 'load'] });
 
@@ -425,6 +459,10 @@ ${r.text}`,
       },
     ],
   });
+
+  if (shouldCloseBrowser) {
+    await browser.close();
+  }
 
   return NextResponse.json({
     summary,
