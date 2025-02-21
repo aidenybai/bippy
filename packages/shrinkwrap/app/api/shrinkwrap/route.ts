@@ -14,6 +14,8 @@ export const maxDuration = 300;
 
 let cachedInjectSource: string | undefined;
 
+const SKIP_AI = true; // Set to true to skip AI requests
+
 const loadSources = async () => {
   if (process.env.NODE_ENV === 'development') {
     const [injectSource] = await Promise.all([
@@ -41,7 +43,7 @@ const loadSources = async () => {
   return { injectSource };
 };
 
-const shouldCloseBrowser = true;
+const shouldCloseBrowser = false;
 const CHROMIUM_PATH = 'https://fs.bippy.dev/chromium.tar';
 
 const CHROMIUM_ARGS = [
@@ -109,6 +111,12 @@ const getBrowser = async (): Promise<Browser> => {
   })) as unknown as Browser;
 };
 
+const debug = (...args: unknown[]) => {
+  if (process.env.NODE_ENV === 'development') {
+    console.info(...args);
+  }
+};
+
 export const POST = async (request: NextRequest) => {
   const { injectSource } = await loadSources();
 
@@ -137,9 +145,20 @@ export const POST = async (request: NextRequest) => {
     request.continue();
   });
 
+  // Add navigation handling
+  let navigationOccurred = false;
+  page.on('framenavigated', async (frame) => {
+    if (frame === page.mainFrame()) {
+      navigationOccurred = true;
+      debug('Navigation occurred to:', frame.url());
+    }
+  });
+
   await page.setUserAgent(
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
   );
+
+  await page.evaluateOnNewDocument(injectSource);
   await page.evaluateOnNewDocument(() => {
     Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
     Object.defineProperty(navigator, 'languages', {
@@ -151,12 +170,14 @@ export const POST = async (request: NextRequest) => {
     Object.defineProperty(navigator, 'headless', { get: () => undefined });
   });
 
-  await page.evaluateOnNewDocument(injectSource);
+  debug('Navigating to:', url);
+  await page.goto(url, {
+    waitUntil: ['networkidle0', 'domcontentloaded'],
+    timeout: 30000
+  });
 
-  await page.goto(url, { waitUntil: ['domcontentloaded', 'load'] });
-
+  // Process CSS selectors first
   const cssSelectors: Record<string, string[]> = {};
-
   const rules = Array.from(stylesheets.values());
 
   await Promise.all(
@@ -171,11 +192,53 @@ export const POST = async (request: NextRequest) => {
     }),
   );
 
+  // Inject CSS selectors before component collection
   await page.evaluate((cssSelectors) => {
     // biome-ignore lint/suspicious/noExplicitAny: OK
     const ShrinkwrapData = (globalThis as any).ShrinkwrapData;
     ShrinkwrapData.cssSelectors = cssSelectors;
   }, cssSelectors);
+
+  // Force a component map creation for each fiber root
+  await page.evaluate(() => {
+    // biome-ignore lint/suspicious/noExplicitAny: OK
+    const ShrinkwrapData = (globalThis as any).ShrinkwrapData;
+    for (const fiberRoot of ShrinkwrapData.fiberRoots) {
+      ShrinkwrapData.createComponentMap(fiberRoot);
+    }
+  });
+
+  // Give React a moment to process everything
+  await delay(1000);
+
+  // Now collect the component data
+  let safeComponentMap: Record<string, {
+    html: string;
+    childrenComponents: number[];
+    computedStyles: Record<string, string>;
+    tailwindClasses: string[];
+  }>;
+  try {
+    safeComponentMap = await page.evaluate(() => {
+      // biome-ignore lint/suspicious/noExplicitAny: OK
+      const ShrinkwrapData = (globalThis as any).ShrinkwrapData;
+      return ShrinkwrapData.safeComponentMap || {};
+    });
+
+    debug('Collected component data:', {
+      componentCount: Object.keys(safeComponentMap).length,
+      hasHtml: Object.values(safeComponentMap).some(comp => comp.html.length > 0)
+    });
+  } catch (error) {
+    debug('Error collecting component data:', error);
+    if (navigationOccurred) {
+      return NextResponse.json(
+        { error: 'Page navigation occurred before data collection completed' },
+        { status: 500 },
+      );
+    }
+    throw error;
+  }
 
   const title = await page.title();
   const description = await page.evaluate(() => {
@@ -251,6 +314,43 @@ export const POST = async (request: NextRequest) => {
 
   const hexColors = palette.map(({ hex }: { hex: string }) => hex);
 
+  if (SKIP_AI) {
+    // Ensure we have the latest component data
+    const finalComponentData = await page.evaluate(() => {
+      // biome-ignore lint/suspicious/noExplicitAny: OK
+      const ShrinkwrapData = (window as any).ShrinkwrapData;
+      return {
+        components: ShrinkwrapData.safeComponentMap || {},
+        fiberRoots: Array.from(ShrinkwrapData.fiberRoots || []).length,
+        elementMapSize: ShrinkwrapData.elementMap?.size || 0,
+        componentTypeMapSize: ShrinkwrapData.componentTypeMap?.size || 0
+      };
+    });
+
+    debug('Component collection stats:', finalComponentData);
+
+    if (shouldCloseBrowser) {
+      await browser.close();
+    }
+
+    return NextResponse.json({
+      debug: {
+        url,
+        title,
+        description,
+        stylesheetCount: stylesheets.size,
+        selectorCount: Object.keys(cssSelectors).length,
+        components: finalComponentData.components,
+        cssSelectors,
+        stats: {
+          fiberRoots: finalComponentData.fiberRoots,
+          elementMapSize: finalComponentData.elementMapSize,
+          componentTypeMapSize: finalComponentData.componentTypeMapSize
+        }
+      }
+    });
+  }
+
   const summaryChunks = await Promise.all(
     bodyChunks.map((bodyChunk) =>
       generateText({
@@ -317,59 +417,59 @@ ${r.text}`,
     type: 'jpeg',
   });
 
-  const safeComponentMap = await page.evaluate(() => {
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-    const ShrinkwrapData = (globalThis as any).ShrinkwrapData;
+  // const safeComponentMap = await page.evaluate(() => {
+  //   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  //   const ShrinkwrapData = (globalThis as any).ShrinkwrapData;
 
-    const safeComponentMap: Record<
-      string,
-      { html: string; childrenComponents: number[] }
-    > = {};
+  //   const safeComponentMap: Record<
+  //     string,
+  //     { html: string; childrenComponents: number[] }
+  //   > = {};
 
-    for (const fiberRoot of ShrinkwrapData.fiberRoots) {
-      const { componentMap, componentKeyMap } =
-        ShrinkwrapData.createComponentMap(fiberRoot);
+  //   for (const fiberRoot of ShrinkwrapData.fiberRoots) {
+  //     const { componentMap, componentKeyMap } =
+  //       ShrinkwrapData.createComponentMap(fiberRoot);
 
-      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-      const invertedComponentTypeMap = new WeakMap<any, number>();
+  //     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  //     const invertedComponentTypeMap = new WeakMap<any, number>();
 
-      for (const [key, value] of ShrinkwrapData.componentTypeMap.entries()) {
-        for (const type of value) {
-          invertedComponentTypeMap.set(type, key);
-        }
-      }
+  //     for (const [key, value] of ShrinkwrapData.componentTypeMap.entries()) {
+  //       for (const type of value) {
+  //         invertedComponentTypeMap.set(type, key);
+  //       }
+  //     }
 
-      for (const [key, value] of ShrinkwrapData.componentTypeMap.entries()) {
-        for (const type of value) {
-          const { elements, childrenComponents: rawChildrenComponents } =
-            componentMap.get(type);
-          if (!elements.size) continue;
-          let html = '';
+  //     for (const [key, value] of ShrinkwrapData.componentTypeMap.entries()) {
+  //       for (const type of value) {
+  //         const { elements, childrenComponents: rawChildrenComponents } =
+  //           componentMap.get(type);
+  //         if (!elements.size) continue;
+  //         let html = '';
 
-          for (const element of elements) {
-            html += element.outerHTML;
-          }
+  //         for (const element of elements) {
+  //           html += element.outerHTML;
+  //         }
 
-          const childrenComponents: number[] = [];
-          for (const rawChildComponent of rawChildrenComponents) {
-            if (invertedComponentTypeMap.has(rawChildComponent)) {
-              // basically need to get the key of the value:
-              childrenComponents.push(
-                invertedComponentTypeMap.get(rawChildComponent) as number,
-              );
-            }
-          }
-          safeComponentMap[key] = {
-            html,
-            childrenComponents,
-          };
-        }
-      }
-    }
-    return safeComponentMap;
-  });
+  //         const childrenComponents: number[] = [];
+  //         for (const rawChildComponent of rawChildrenComponents) {
+  //           if (invertedComponentTypeMap.has(rawChildComponent)) {
+  //             // basically need to get the key of the value:
+  //             childrenComponents.push(
+  //               invertedComponentTypeMap.get(rawChildComponent) as number,
+  //             );
+  //           }
+  //         }
+  //         safeComponentMap[key] = {
+  //           html,
+  //           childrenComponents,
+  //         };
+  //       }
+  //     }
+  //   }
+  //   return safeComponentMap;
+  // });
 
-  console.log(safeComponentMap);
+  // console.log(safeComponentMap);
 
   //   const stringifiedElementMap = await page.evaluate(() => {
   //     // https://x.com/theo/status/1889972653785764084
