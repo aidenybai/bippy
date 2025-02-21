@@ -14,6 +14,7 @@ import {
   isInstrumentationActive,
 } from 'bippy';
 import { registerGlobal } from './puppeteer-utils';
+import { twMerge } from 'tailwind-merge';
 
 const ShrinkwrapData: {
   isActive: boolean;
@@ -21,17 +22,24 @@ const ShrinkwrapData: {
   componentTypeMap: Map<number, Set<object>>;
   fiberRoots: Set<FiberRoot>;
   createComponentMap: typeof createComponentMap | undefined;
+  cssSelectors: Record<string, string[]>;
 } = {
   isActive: false,
   elementMap: new Map(),
   componentTypeMap: new Map(),
   fiberRoots,
   createComponentMap: undefined,
+  cssSelectors: {},
 };
 
 registerGlobal('ShrinkwrapData', ShrinkwrapData);
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+export const getTailwindClasses = (element: HTMLElement) => {
+  const tailwindClasses = new Set<string>();
+  element.matches('');
+};
 
 const getDpr = () => {
   return Math.min(window.devicePixelRatio || 1, 2);

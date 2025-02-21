@@ -7,6 +7,7 @@ import { TailwindConverter } from 'css-to-tailwindcss';
 import postcss from 'postcss';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import type { CoreMessage } from 'ai';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -19,7 +20,7 @@ const loadSources = async () => {
     const [injectSource] = await Promise.all([
       fs.readFile(
         path.join(process.cwd(), 'inject/dist/index.global.js'),
-        'utf-8'
+        'utf-8',
       ),
     ]);
     return { injectSource };
@@ -32,7 +33,7 @@ const loadSources = async () => {
   const [injectSource] = await Promise.all([
     fs.readFile(
       path.join(process.cwd(), 'inject/dist/index.global.js'),
-      'utf-8'
+      'utf-8',
     ),
   ]);
 
@@ -214,18 +215,26 @@ export const POST = async (request: NextRequest) => {
   });
 
   const bodyChunks: string[] = [];
-  const maxChunkSize = 900000 * 4; // Approximately 900k tokens
+  const maxChunkSize = 900000 * 3; // Reduced to account for CSS content
 
-  if (body.length <= maxChunkSize) {
+  // Convert CSS selectors to string format
+  const cssSelectorsString = Object.entries(cssSelectors)
+    .map(([selector, classes]) => `${selector} { ${classes.join(' ')} }`)
+    .join('\n');
+
+  if (body.length + cssSelectorsString.length <= maxChunkSize) {
     bodyChunks.push(body);
   } else {
-    // Calculate optimal number of chunks needed
-    const numChunks = Math.ceil(body.length / maxChunkSize);
-    const targetChunkSize = Math.ceil(body.length / numChunks);
+    // Calculate optimal number of chunks needed, accounting for CSS content
+    const totalLength = body.length;
+    const numChunks = Math.ceil(
+      totalLength / (maxChunkSize - cssSelectorsString.length),
+    );
+    const targetChunkSize = Math.ceil(totalLength / numChunks);
 
     for (let i = 0; i < numChunks; i++) {
       const start = i * targetChunkSize;
-      const end = Math.min((i + 1) * targetChunkSize, body.length);
+      const end = Math.min((i + 1) * targetChunkSize, totalLength);
       bodyChunks.push(body.slice(start, end));
     }
   }
@@ -251,38 +260,111 @@ export const POST = async (request: NextRequest) => {
 
   const hexColors = palette.map(({ hex }: { hex: string }) => hex);
 
-  const summaryChunks = await Promise.all(
-    bodyChunks.map((bodyChunk) =>
-      generateText({
-        model: google('gemini-2.0-flash'),
-        messages: [
-          {
-            role: 'user',
-            content: `Page: ${url}
-Title: ${title}
-Description: ${description}
+  const generatePageDescription = async (
+    params: {
+      url: string;
+      title: string;
+      description: string | null | undefined;
+      cssSelectorsString: string;
+      bodyChunk: string;
+      hexColors: string[];
+      rawScreenshotDataUrl: string;
+    },
+    isInitialRequest = true,
+    previousSteps = '',
+  ) => {
+    const model = google('gemini-2.0-flash-thinking-exp-01-21');
+    const basePrompt = `Page: ${params.url}
+Title: ${params.title}
+Description: ${params.description || 'No description available'}
 
-Color palette: ${hexColors.join(', ')}
+Color palette: ${params.hexColors.join(', ')}`;
 
-\`\`\`html
-${bodyChunk}
+    const response = await generateText({
+      model,
+      messages: [
+        {
+          role: 'user',
+          content: isInitialRequest
+            ? `${basePrompt}
+
+CSS Stylesheets:
+
+\`\`\`css
+${params.cssSelectorsString}
 \`\`\`
 
-You are an expert at recreating web pages. Provide a list of steps to re-create this page. Describe each step in great detail (styles, positioning, structure, etc) such that a human can reconstruct this page with pixel-perfect accuracy. Only return the steps, no other text.
-`,
-          },
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'image',
-                image: rawScreenshotDataUrl,
-              },
-            ],
-          },
-        ],
+HTML Body:
+
+\`\`\`html
+${params.bodyChunk}
+\`\`\`
+
+You are an expert at recreating web pages. Provide a list of steps to re-create this page. Describe each step (styles, positioning, structure) such that a human can reconstruct the ENTIRE page with pixel-perfect accuracy. Only return the steps, no other text. Say "<PAGE_COMPLETE>" if you have described all the steps.`
+            : `${basePrompt}
+
+Previous steps:
+${previousSteps}
+
+Look at the image and the previous steps carefully. Are there any visible UI elements, sections, or components that haven't been described in the steps yet? If yes, continue listing ONLY the missing steps. If no, respond with "<PAGE_COMPLETE>". Be thorough - check navigation, footers, sidebars, and any interactive elements.`,
+        },
+        {
+          role: 'user',
+          content: params.rawScreenshotDataUrl,
+        },
+      ],
+    });
+
+    const text = response.text;
+    if (typeof text !== 'string') return '';
+    return text.trim();
+  };
+
+  const processPageChunk = async (params: {
+    url: string;
+    title: string;
+    description: string | null | undefined;
+    cssSelectorsString: string;
+    bodyChunk: string;
+    hexColors: string[];
+    rawScreenshotDataUrl: string;
+  }) => {
+    const initialResponse = await generatePageDescription(params);
+    let fullText = initialResponse;
+
+    if (fullText.includes('<PAGE_COMPLETE>')) {
+      return fullText.replace('<PAGE_COMPLETE>', '').trim();
+    }
+
+    const MAX_CONTINUATION_ATTEMPTS = 3;
+    let attempts = 0;
+
+    while (attempts < MAX_CONTINUATION_ATTEMPTS) {
+      attempts++;
+      const continuationText = await generatePageDescription(params, false, fullText);
+
+      if (continuationText === '<PAGE_COMPLETE>') {
+        break;
+      }
+
+      fullText = `${fullText}\n${continuationText}`;
+    }
+
+    return fullText;
+  };
+
+  const summaryChunks = await Promise.all(
+    bodyChunks.map(async (bodyChunk) => ({
+      text: await processPageChunk({
+        url,
+        title,
+        description,
+        cssSelectorsString,
+        bodyChunk,
+        hexColors,
+        rawScreenshotDataUrl,
       }),
-    ),
+    })),
   );
 
   let summary = summaryChunks.map((r) => r.text).join('\n');
@@ -316,6 +398,17 @@ ${r.text}`,
     quality: 80,
     type: 'jpeg',
   });
+
+  // const classes = await page.evaluate(() => {
+  //   const classesMap: Record<string, string[]> = {};
+  //   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  //   const ShrinkwrapData = (globalThis as any).ShrinkwrapData;
+  //   for (const [selector, classes] of ShrinkwrapData.cssSelectors.entries()) {
+
+  //   }
+
+  //   return classesMap;
+  // });
 
   const safeComponentMap = await page.evaluate(() => {
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
