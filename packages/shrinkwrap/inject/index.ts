@@ -14,19 +14,71 @@ import {
   isInstrumentationActive,
 } from 'bippy';
 import { registerGlobal } from './puppeteer-utils';
+import { getClassStyles, stylesToCSS, type StylesMap } from './styles';
+import { TailwindConverter } from 'css-to-tailwindcss';
+
+const converter = new TailwindConverter({
+  remInPx: 16,
+  tailwindConfig: {
+    content: ['./src/**/*.{js,jsx,ts,tsx}'],
+    theme: {
+      extend: {},
+    },
+  }
+});
+
+const debug = (...args: unknown[]) => {
+  console.info('[Shrinkwrap]', ...args);
+};
+
+export const findNearestCompositeFibers = (startFiber: Fiber, results: Set<Fiber>) => {
+  debug('Finding nearest composite fibers for:', startFiber);
+  const stack: Array<{ fiber: Fiber; visited: boolean }> = [
+    { fiber: startFiber, visited: false },
+  ];
+
+  while (stack.length > 0) {
+    const { fiber, visited } = stack[stack.length - 1];
+
+    if (!visited) {
+      stack[stack.length - 1].visited = true;
+
+      if (isCompositeFiber(fiber)) {
+        results.add(fiber);
+        stack.pop();
+        continue;
+      }
+
+      if (fiber.child) {
+        stack.push({ fiber: fiber.child, visited: false });
+        continue;
+      }
+    }
+
+    stack.pop();
+    if (fiber.sibling) {
+      stack.push({ fiber: fiber.sibling, visited: false });
+    }
+  }
+};
 
 const ShrinkwrapData: {
-  isActive: boolean;
   elementMap: Map<number, Set<Element>>;
   componentTypeMap: Map<number, Set<object>>;
   fiberRoots: Set<FiberRoot>;
   createComponentMap: typeof createComponentMap | undefined;
+  cssSelectors: Record<string, string[]>;
+  findNearestCompositeFibers: typeof findNearestCompositeFibers;
+  safeComponentMap?: Record<string, {
+    html: string;
+  }>;
 } = {
-  isActive: false,
   elementMap: new Map(),
   componentTypeMap: new Map(),
   fiberRoots,
   createComponentMap: undefined,
+  cssSelectors: {},
+  findNearestCompositeFibers,
 };
 
 registerGlobal('ShrinkwrapData', ShrinkwrapData);
@@ -208,6 +260,7 @@ export const draw = async (
 
   ShrinkwrapData.elementMap.clear();
   ShrinkwrapData.componentTypeMap.clear();
+  ShrinkwrapData.safeComponentMap = {};
 
   const getTypeIndex = (type: string | object) => {
     if (typeof type === 'string') {
@@ -230,6 +283,8 @@ export const draw = async (
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
   const COVERAGE_THRESHOLD = 0.97;
+
+  const visibleElements = new Set<Element>();
 
   for (let i = 0, len = elements.length; i < len; i++) {
     const element = elements[i];
@@ -280,25 +335,13 @@ export const draw = async (
     if (!hasCollision) {
       drawnLabelBounds.push(labelBounds);
       visibleIndices.set(element, typeIndex + 1);
+      visibleElements.add(element);
 
       const elementId = typeIndex + 1;
       const elementSet =
         ShrinkwrapData.elementMap.get(elementId) || new Set<Element>();
       elementSet.add(element);
       ShrinkwrapData.elementMap.set(elementId, elementSet);
-      const componentTypeSet =
-        ShrinkwrapData.componentTypeMap.get(elementId) || new Set<object>();
-
-      const compositeFiber = traverseFiber(fiber, (innerFiber) => {
-        return isCompositeFiber(innerFiber);
-      });
-      const compositeFiberType =
-        getType(compositeFiber) || compositeFiber?.type;
-
-      if (compositeFiber) {
-        componentTypeSet.add(compositeFiberType);
-      }
-      ShrinkwrapData.componentTypeMap.set(elementId, componentTypeSet);
 
       ctx.beginPath();
       ctx.rect(x, y, width, height);
@@ -315,81 +358,155 @@ export const draw = async (
     }
   }
 
+  for (const element of visibleElements) {
+    const fiber = getFiberFromHostInstance(element);
+    if (!fiber?.type) continue;
+
+    const fiberType = getType(fiber) || fiber.type;
+    const typeIndex = getTypeIndex(fiberType);
+    const elementId = typeIndex + 1;
+    const componentId = elementId.toString();
+
+    if (!ShrinkwrapData.safeComponentMap[componentId]) {
+      const processElement = async (el: Element): Promise<string> => {
+        const tailwindClasses = new Set<string>();
+
+        const normalStyles = getClassStyles(el);
+        const cssString = `.converted-element{${stylesToCSS(normalStyles)}}`;
+
+        try {
+          const { nodes } = await converter.convertCSS(cssString);
+          debug('Normal styles:', {
+            element: el.tagName,
+            styles: normalStyles,
+            convertedClasses: nodes?.[0]?.tailwindClasses || []
+          });
+
+          if (nodes?.[0]?.tailwindClasses) {
+            for (const cls of nodes[0].tailwindClasses) {
+              if (!cls.includes('undefined') && !cls.includes('NaN')) {
+                tailwindClasses.add(cls);
+              }
+            }
+          }
+
+          const hoverStyles = getClassStyles(el, ':hover');
+          const diffHoverStyles: StylesMap = {};
+
+          for (const [prop, value] of Object.entries(hoverStyles)) {
+            if (value !== normalStyles[prop]) {
+              diffHoverStyles[prop] = value;
+            }
+          }
+
+          if (Object.keys(diffHoverStyles).length > 0) {
+            const hoverCss = `.converted-element:hover{${stylesToCSS(diffHoverStyles)}}`;
+            const { nodes: hoverNodes } = await converter.convertCSS(hoverCss);
+            debug('Hover styles:', {
+              element: el.tagName,
+              styles: diffHoverStyles,
+              classes: hoverNodes?.[0]?.tailwindClasses || []
+            });
+
+            if (hoverNodes?.[0]?.tailwindClasses) {
+              for (const cls of hoverNodes[0].tailwindClasses) {
+                if (cls.startsWith('hover:') && !cls.includes('undefined') && !cls.includes('NaN')) {
+                  tailwindClasses.add(cls);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          debug('Error converting styles to Tailwind:', error);
+        }
+
+        const childrenHTML = await Promise.all(
+          Array.from(el.children).map(child => processElement(child))
+        );
+
+        const textContent = Array.from(el.childNodes)
+          .filter(node => node.nodeType === Node.TEXT_NODE)
+          .map(node => node.textContent)
+          .join('')
+          .trim();
+
+        const tag = el.tagName.toLowerCase();
+        const attrs = Array.from(el.attributes)
+          .filter(attr => attr.name !== 'class')
+          .map(attr => `${attr.name}="${attr.value}"`)
+          .join(' ');
+
+        const classString = Array.from(tailwindClasses).join(' ');
+        return `<${tag}${classString ? ` class="${classString}"` : ''}${attrs ? ` ${attrs}` : ''}>${textContent}${childrenHTML.join('')}</${tag}>`;
+      };
+
+      const html = await processElement(element);
+      ShrinkwrapData.safeComponentMap[componentId] = { html };
+
+      debug('Processed component:', {
+        id: componentId,
+        tag: element.tagName.toLowerCase()
+      });
+    }
+  }
+
   return visibleIndices;
 };
 
 export const createComponentMap = (fiberRoot: FiberRoot) => {
-  // biome-ignore lint/suspicious/noExplicitAny: OK
-  const componentKeyMap = new Map<number, any>();
+  debug('Starting component map creation for fiber root:', fiberRoot);
+
+  const componentKeyMap = new Map<number, object>();
   const componentMap = new Map<
-    // biome-ignore lint/suspicious/noExplicitAny: OK
-    any,
+    object,
     {
       elements: WeakSet<Element>;
-      // biome-ignore lint/suspicious/noExplicitAny: OK
-      childrenComponents: WeakSet<any>;
+      childrenComponents: WeakSet<object>;
     }
   >();
 
-  const findNearestCompositeFibers = (
-    startFiber: Fiber,
-    results: Set<Fiber>,
-  ) => {
-    const stack: Array<{ fiber: Fiber; visited: boolean }> = [
-      { fiber: startFiber, visited: false },
-    ];
-
-    while (stack.length > 0) {
-      const { fiber, visited } = stack[stack.length - 1];
-
-      if (!visited) {
-        stack[stack.length - 1].visited = true;
-
-        if (isCompositeFiber(fiber)) {
-          results.add(fiber);
-          stack.pop();
-          continue;
-        }
-
-        if (fiber.child) {
-          stack.push({ fiber: fiber.child, visited: false });
-          continue;
-        }
-      }
-
-      stack.pop();
-      if (fiber.sibling) {
-        stack.push({ fiber: fiber.sibling, visited: false });
-      }
-    }
-  };
+  let componentCount = 0;
 
   traverseFiber(fiberRoot.current, (fiber) => {
-    if (!isCompositeFiber(fiber)) {
-      return;
-    }
+    if (!isCompositeFiber(fiber)) return;
 
     const type = getType(fiber) || fiber.type;
-
     if (!type) return;
+
+    componentCount++;
+    debug('Found component:', {
+      count: componentCount,
+      type: typeof type === 'function' ? type.name : type,
+      hasElements: fiber.stateNode instanceof Element
+    });
 
     componentKeyMap.set(componentKeyMap.size, type);
 
     if (!componentMap.has(type)) {
       componentMap.set(type, {
-        elements: new Set(),
-        childrenComponents: new Set(),
+        elements: new WeakSet(),
+        childrenComponents: new WeakSet(),
       });
     }
-    const component = componentMap.get(type);
 
+    const component = componentMap.get(type);
     if (!component) return;
 
-    const compositeFibers = new Set<Fiber>();
+    const hostFibers = getNearestHostFibers(fiber);
+    debug('Found host fibers:', hostFibers.length);
 
+    for (const hostFiber of hostFibers) {
+      if (hostFiber.stateNode instanceof Element) {
+        component.elements.add(hostFiber.stateNode);
+      }
+    }
+
+    const compositeFibers = new Set<Fiber>();
     if (fiber.child) {
       findNearestCompositeFibers(fiber.child, compositeFibers);
     }
+
+    debug('Found child components:', compositeFibers.size);
 
     for (const compositeFiber of compositeFibers) {
       const childType = getType(compositeFiber) || compositeFiber.type;
@@ -397,14 +514,11 @@ export const createComponentMap = (fiberRoot: FiberRoot) => {
         component.childrenComponents.add(childType);
       }
     }
+  });
 
-    const hostFibers = getNearestHostFibers(fiber);
-    for (let i = 0; i < hostFibers.length; i++) {
-      const hostFiber = hostFibers[i];
-      if (hostFiber.stateNode instanceof Element) {
-        component.elements.add(hostFiber.stateNode);
-      }
-    }
+  debug('Component map creation complete:', {
+    totalComponents: componentCount,
+    componentsWithElements: componentMap.size
   });
 
   return { componentMap, componentKeyMap };
@@ -435,8 +549,6 @@ const handleFiberRoot = (root: FiberRoot) => {
 };
 
 const init = () => {
-  if (ShrinkwrapData.isActive) return;
-  ShrinkwrapData.isActive = true;
   const host = document.createElement('div');
   host.setAttribute('data-shrinkwrap', 'true');
   const root = host.attachShadow({ mode: 'open' });
