@@ -1,5 +1,11 @@
 # bippy
 
+## 0.3.7
+
+### Patch Changes
+
+- fix inspect mounting
+
 ## 0.3.6
 
 ### Patch Changes

@@ -97,8 +97,8 @@ importers:
   packages/kitchen-sink:
     dependencies:
       bippy:
-        specifier: ^0.3.6
-        version: 0.3.6(@types/react@19.0.4)(react@19.0.0)
+        specifier: ^0.3.7
+        version: 0.3.7(@types/react@19.0.4)(react@19.0.0)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -146,17 +146,17 @@ importers:
         specifier: ^1.1.14
         version: 1.1.14(zod@3.24.2)
       '@sparticuz/chromium':
-        specifier: ^123.0.0
-        version: 123.0.1
+        specifier: ^132.0.0
+        version: 132.0.0
       '@sparticuz/chromium-min':
-        specifier: ^123.0.0
-        version: 123.0.1
+        specifier: ^132.0.0
+        version: 132.0.0
       ai:
         specifier: ^4.1.41
         version: 4.1.41(react@19.0.0)(zod@3.24.2)
       bippy:
-        specifier: ^0.3.6
-        version: 0.3.6(@types/react@19.0.4)(react@19.0.0)
+        specifier: ^0.3.7
+        version: 0.3.7(@types/react@19.0.4)(react@19.0.0)
       css-to-tailwindcss:
         specifier: ^1.0.5
         version: 1.0.5
@@ -169,6 +169,9 @@ importers:
       next:
         specifier: 15.1.7
         version: 15.1.7(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      p-limit:
+        specifier: ^6.2.0
+        version: 6.2.0
       postcss:
         specifier: ^8.5.2
         version: 8.5.2
@@ -190,6 +193,9 @@ importers:
       tailwind-merge:
         specifier: ^2.6.0
         version: 2.6.0
+      turndown:
+        specifier: ^7.2.0
+        version: 7.2.0
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -1033,6 +1039,9 @@ packages:
   '@manypkg/get-packages@1.1.3':
     resolution: {integrity: sha512-fo+QhuU3qE/2TQMQmbVMqaQ6EWbMhi4ABWP+O4AM1NqPBuy0OrApV5LO6BrrgnhtAHS2NH6RrVk9OL181tTi8A==}
 
+  '@mixmark-io/domino@2.2.0':
+    resolution: {integrity: sha512-Y28PR25bHXUg88kCV7nivXrP2Nj2RueZ3/l/jdx6J9f8J4nsEGcgX0Qe6lt7Pa+J79+kPiJU3LguR6O/6zrLOw==}
+
   '@next/env@15.1.7':
     resolution: {integrity: sha512-d9jnRrkuOH7Mhi+LHav2XW91HOgTAWHxjMPkXMGBc9B2b7614P7kjt8tAplRvJpbSt4nbO1lugcT/kAaWzjlLQ==}
 
@@ -1258,12 +1267,12 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@sparticuz/chromium-min@123.0.1':
-    resolution: {integrity: sha512-xB0lGecfZQf1rQZi+x0vA97zrrDBH5opgrZIxzI+ITrwXKeJtBOrXMv5L2dEpHDq9bMBXXhdGap0P7iCDSUvPg==}
+  '@sparticuz/chromium-min@132.0.0':
+    resolution: {integrity: sha512-Wqz6DK0fkXNrcQ/POablGRoip4NVPYoZ8yYPuipKTox6sRGzGKTdhgNHS4yK1UUPc47IfP7Wm8hTPxyXI5zgmg==}
     engines: {node: '>= 16'}
 
-  '@sparticuz/chromium@123.0.1':
-    resolution: {integrity: sha512-RPrA99xrddbXXZjhUH1WZkTCK3QDQ77t/0y+vULtiW1uAlWLBxorxGnNTuzBDk6eNolxOVFrXZ2aoAN+/eB5TA==}
+  '@sparticuz/chromium@132.0.0':
+    resolution: {integrity: sha512-7SAhVa4nHAP7bxEhnMFuwV7KNDqAF4RVGZNwRhvyss8lJNT7Syi9nPwIPYvsHtjJ1S7Nx8OL8uqe9V3a/ED/Mg==}
     engines: {node: '>= 16'}
 
   '@swc/counter@0.1.3':
@@ -1585,8 +1594,8 @@ packages:
     resolution: {integrity: sha512-Ceh+7ox5qe7LJuLHoY0feh3pHuUDHAcRUeyL2VYghZwfpkNIy/+8Ocg0a3UuSoYzavmylwuLWQOf3hl0jjMMIw==}
     engines: {node: '>=8'}
 
-  bippy@0.3.6:
-    resolution: {integrity: sha512-fIGGudbf3v7TjIH0bc/vXoTYdTngiTCrmxUe2OVLgG67E3Z/IQAEF17VUvGIvZRKTB1V5ex0a2BLaiLi8pgznQ==}
+  bippy@0.3.7:
+    resolution: {integrity: sha512-nY9cP//b0SbEHmcsAogMZicomKz0arc4jT9o17E73vFVFyen+jkV/bzHHq4USRNgcYrpYn/M8FUbJuxlTLX2Tg==}
     peerDependencies:
       react: '>=17.0.1'
 
@@ -2458,6 +2467,10 @@ packages:
     resolution: {integrity: sha512-//88mFWSJx8lxCzwdAABTJL2MyWB12+eIY7MDL2SqLmAkeKU9qxRvWuSyTjm3FUmpBEMuFfckAIqEaVGUDxb6w==}
     engines: {node: '>=6'}
 
+  p-limit@6.2.0:
+    resolution: {integrity: sha512-kuUqqHNUqoIWp/c467RI4X6mmyuojY5jGutNU0wVTmEOOfcuwLqyMVoAi9MKi2Ak+5i9+nhmrK4ufZE8069kHA==}
+    engines: {node: '>=18'}
+
   p-locate@4.1.0:
     resolution: {integrity: sha512-R79ZZ/0wAxKGu3oYMlz8jy/kbhsNrS7SKZ7PxEHBgJ5+F2mtFW2fK2cOtBh1cHYkQsbzFV7I+EoRKe6Yt0oK7A==}
     engines: {node: '>=8'}
@@ -3108,6 +3121,9 @@ packages:
     engines: {node: '>=18.0.0'}
     hasBin: true
 
+  turndown@7.2.0:
+    resolution: {integrity: sha512-eCZGBN4nNNqM9Owkv9HAtWRYfLA4h909E/WGAWWBpmB275ehNhZyk87/Tpvjbp0jjNl9XwCsbe6bm6CqFsgD+A==}
+
   type-detect@4.1.0:
     resolution: {integrity: sha512-Acylog8/luQ8L7il+geoSxhEkazvkslg7PSNKOX59mbB9cOveP5aq9h74Y7YU8yDpJwetzQQrfIwtf4Wp4LKcw==}
     engines: {node: '>=4'}
@@ -3332,6 +3348,10 @@ packages:
 
   yauzl@2.10.0:
     resolution: {integrity: sha512-p4a9I6X6nu6IhoGmBqAcbJy1mlC4j27vEPZX9F4L4/vZT3Lyq1VkFHw/V/PUcB9Buo+DG3iHkT0x3Qya58zc3g==}
+
+  yocto-queue@1.1.1:
+    resolution: {integrity: sha512-b4JR1PFR10y1mKjhHY9LaGo6tmrgjit7hxVIeAmyMw3jegXR4dhYqLaQF5zMXZxY7tLpMyJeLjr1C4rLmkVe8g==}
+    engines: {node: '>=12.20'}
 
   zod-package-json@1.0.3:
     resolution: {integrity: sha512-Mb6GzuRyUEl8X+6V6xzHbd4XV0au/4gOYrYP+CAfHL32uPmGswES+v2YqonZiW1NZWVA3jkssCKSU2knonm/aQ==}
@@ -4040,6 +4060,8 @@ snapshots:
       globby: 11.1.0
       read-yaml-file: 1.1.0
 
+  '@mixmark-io/domino@2.2.0': {}
+
   '@next/env@15.1.7': {}
 
   '@next/swc-darwin-arm64@15.1.7':
@@ -4226,7 +4248,7 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.28.0':
     optional: true
 
-  '@sparticuz/chromium-min@123.0.1':
+  '@sparticuz/chromium-min@132.0.0':
     dependencies:
       follow-redirects: 1.15.9
       tar-fs: 3.0.8
@@ -4234,7 +4256,7 @@ snapshots:
       - bare-buffer
       - debug
 
-  '@sparticuz/chromium@123.0.1':
+  '@sparticuz/chromium@132.0.0':
     dependencies:
       follow-redirects: 1.15.9
       tar-fs: 3.0.8
@@ -4561,7 +4583,7 @@ snapshots:
 
   binary-extensions@2.3.0: {}
 
-  bippy@0.3.6(@types/react@19.0.4)(react@19.0.0):
+  bippy@0.3.7(@types/react@19.0.4)(react@19.0.0):
     dependencies:
       '@types/react-reconciler': 0.28.9(@types/react@19.0.4)
       react: 19.0.0
@@ -5426,6 +5448,10 @@ snapshots:
     dependencies:
       p-try: 2.2.0
 
+  p-limit@6.2.0:
+    dependencies:
+      yocto-queue: 1.1.1
+
   p-locate@4.1.0:
     dependencies:
       p-limit: 2.3.0
@@ -6116,6 +6142,10 @@ snapshots:
       fsevents: 2.3.3
     optional: true
 
+  turndown@7.2.0:
+    dependencies:
+      '@mixmark-io/domino': 2.2.0
+
   type-detect@4.1.0: {}
 
   typescript@5.7.3: {}
@@ -6292,6 +6322,8 @@ snapshots:
     dependencies:
       buffer-crc32: 0.2.13
       fd-slicer: 1.1.0
+
+  yocto-queue@1.1.1: {}
 
   zod-package-json@1.0.3:
     dependencies:
