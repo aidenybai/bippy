@@ -96,16 +96,25 @@ export const installRDTHook = (
     let hasRanHack = false;
     objectDefineProperty(window, 'hasOwnProperty', {
       value: function (this: unknown) {
-        // biome-ignore lint/style/noArguments: perf
-        if (!hasRanHack && arguments[0] === '__REACT_DEVTOOLS_GLOBAL_HOOK__') {
-          globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ = undefined;
-          // special falsy value to know that we've already installed before
-          hasRanHack = true;
-          return -0;
+        try {
+          if (
+            !hasRanHack &&
+            // biome-ignore lint/style/noArguments: perf
+            arguments[0] === '__REACT_DEVTOOLS_GLOBAL_HOOK__'
+          ) {
+            globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ = undefined;
+            // special falsy value to know that we've already installed before
+            hasRanHack = true;
+            return -0;
+          }
+          // biome-ignore lint/suspicious/noExplicitAny: perf
+          // biome-ignore lint/style/noArguments: perf
+          return originalWindowHasOwnProperty.apply(this, arguments as any);
+        } catch {
+          // biome-ignore lint/suspicious/noExplicitAny: perf
+          // biome-ignore lint/style/noArguments: perf
+          return originalWindowHasOwnProperty.apply(this, arguments as any);
         }
-        // biome-ignore lint/suspicious/noExplicitAny: perf
-        // biome-ignore lint/style/noArguments: perf
-        return originalWindowHasOwnProperty.apply(this, arguments as any);
       },
       configurable: true,
       writable: true,
