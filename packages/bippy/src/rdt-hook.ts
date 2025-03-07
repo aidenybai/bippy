@@ -107,14 +107,10 @@ export const installRDTHook = (
             hasRanHack = true;
             return -0;
           }
-          // biome-ignore lint/suspicious/noExplicitAny: perf
-          // biome-ignore lint/style/noArguments: perf
-          return originalWindowHasOwnProperty.apply(this, arguments as any);
-        } catch {
-          // biome-ignore lint/suspicious/noExplicitAny: perf
-          // biome-ignore lint/style/noArguments: perf
-          return originalWindowHasOwnProperty.apply(this, arguments as any);
-        }
+        } catch {}
+        // biome-ignore lint/suspicious/noExplicitAny: perf
+        // biome-ignore lint/style/noArguments: perf
+        return originalWindowHasOwnProperty.apply(this, arguments as any);
       },
       configurable: true,
       writable: true,
