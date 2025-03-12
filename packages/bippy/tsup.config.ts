@@ -64,4 +64,17 @@ export default defineConfig([
     globalName: 'Bippy',
     entry: ['./src/source.ts'],
   },
+  {
+    ...DEFAULT_OPTIONS,
+    format: ['esm', 'cjs'],
+    target: 'es2015',
+    entry: [
+      './src/index.ts',
+      './src/core.ts',
+      './src/experiments/inspect.tsx',
+      './src/experiments/shrinkwrap.ts',
+    ],
+    splitting: true,
+    clean: true, // only run on first entry
+  },
 ]);
