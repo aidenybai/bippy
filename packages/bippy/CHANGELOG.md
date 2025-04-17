@@ -1,5 +1,11 @@
 # bippy
 
+## 0.3.9
+
+### Patch Changes
+
+- fix getLatestFiber bug
+
 ## 0.3.7
 
 ### Patch Changes
