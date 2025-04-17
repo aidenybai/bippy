@@ -539,7 +539,7 @@ export const getLatestFiber = (fiber: Fiber): Fiber => {
     const latestFiber = traverseFiber(root.current, (innerFiber) => {
       if (innerFiber === fiber) return true;
     });
-    return latestFiber || alternate;
+    if (latestFiber) return latestFiber;
   }
   return fiber;
 };
