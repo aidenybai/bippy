@@ -47,7 +47,7 @@ importers:
         version: 19.0.2(@types/react@19.0.4)
       '@vitest/coverage-istanbul':
         specifier: 2.1.8
-        version: 2.1.8(vitest@2.1.8(@types/node@20.17.12)(@vitest/ui@2.1.8)(happy-dom@15.11.7)(lightningcss@1.28.2)(terser@5.36.0))
+        version: 2.1.8(vitest@2.1.8)
       error-stack-parser-es:
         specifier: ^1.0.5
         version: 1.0.5
@@ -97,8 +97,8 @@ importers:
   packages/kitchen-sink:
     dependencies:
       bippy:
-        specifier: ^0.3.7
-        version: 0.3.7(@types/react@19.0.4)(react@19.0.0)
+        specifier: ^0.3.9
+        version: 0.3.9(@types/react@19.0.4)(react@19.0.0)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -1208,8 +1208,8 @@ packages:
     resolution: {integrity: sha512-pbnl5XzGBdrFU/wT4jqmJVPn2B6UHPBOhzMQkY/SPUPB6QtUXtmBHBIwCbXJol93mOpGMnQyP/+BB19q04xj7g==}
     engines: {node: '>=4'}
 
-  bippy@0.3.7:
-    resolution: {integrity: sha512-nY9cP//b0SbEHmcsAogMZicomKz0arc4jT9o17E73vFVFyen+jkV/bzHHq4USRNgcYrpYn/M8FUbJuxlTLX2Tg==}
+  bippy@0.3.9:
+    resolution: {integrity: sha512-VRAaUmdLkHPvnhXA7RewaAgYlG1JJZfsCE5ljkooQPMvKgosblkisZtkuj1DSOleuoTxVrlmFNA+tICGBdr2bA==}
     peerDependencies:
       react: '>=17.0.1'
 
@@ -3280,7 +3280,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@vitest/coverage-istanbul@2.1.8(vitest@2.1.8(@types/node@20.17.12)(@vitest/ui@2.1.8)(happy-dom@15.11.7)(lightningcss@1.28.2)(terser@5.36.0))':
+  '@vitest/coverage-istanbul@2.1.8(vitest@2.1.8)':
     dependencies:
       '@istanbuljs/schema': 0.1.3
       debug: 4.3.7
@@ -3386,7 +3386,7 @@ snapshots:
     dependencies:
       is-windows: 1.0.2
 
-  bippy@0.3.7(@types/react@19.0.4)(react@19.0.0):
+  bippy@0.3.9(@types/react@19.0.4)(react@19.0.0):
     dependencies:
       '@types/react-reconciler': 0.28.9(@types/react@19.0.4)
       react: 19.0.0
