@@ -1,5 +1,11 @@
 # bippy
 
+## 0.3.10
+
+### Patch Changes
+
+- upgrade getFiberSource
+
 ## 0.3.9
 
 ### Patch Changes
