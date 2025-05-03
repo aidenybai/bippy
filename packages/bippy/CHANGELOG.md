@@ -1,5 +1,11 @@
 # bippy
 
+## 0.3.11
+
+### Patch Changes
+
+- remove react bundle from bippy/source
+
 ## 0.3.10
 
 ### Patch Changes
