@@ -43,6 +43,8 @@ export const isReactRefresh = (rdtHook = getRDTHook()): boolean => {
 
 const onActiveListeners = new Set<() => unknown>();
 
+export const _renderers = new Set<ReactRenderer>();
+
 export const installRDTHook = (
   onActive?: () => unknown,
 ): ReactDevToolsGlobalHook => {
@@ -60,6 +62,7 @@ export const installRDTHook = (
     inject(renderer) {
       const nextID = ++i;
       renderers.set(nextID, renderer);
+      _renderers.add(renderer);
       if (!rdtHook._instrumentationIsActive) {
         rdtHook._instrumentationIsActive = true;
         // biome-ignore lint/complexity/noForEach: prefer forEach for Set
@@ -81,6 +84,7 @@ export const installRDTHook = (
           rdtHook = newHook;
           if (ourRenderers.size > 0) {
             ourRenderers.forEach((renderer, id) => {
+              _renderers.add(renderer);
               newHook.renderers.set(id, renderer);
             });
             patchRDTHook(onActive);
@@ -156,6 +160,7 @@ export const patchRDTHook = (onActive?: () => unknown): void => {
       }
       rdtHook.inject = (renderer) => {
         const id = prevInject(renderer);
+        _renderers.add(renderer);
         rdtHook._instrumentationIsActive = true;
         // biome-ignore lint/complexity/noForEach: prefer forEach for Set
         onActiveListeners.forEach((listener) => listener());

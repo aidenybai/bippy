@@ -1,4 +1,4 @@
-import * as errorStackParser from 'error-stack-parser-es/lite';
+import { parseStack } from 'error-stack-parser-es/lite';
 import { type RawSourceMap, SourceMapConsumer } from 'source-map-js';
 import type { Fiber } from './types.js';
 import {
@@ -7,10 +7,9 @@ import {
   isCompositeFiber,
   isHostFiber,
   traverseFiber,
-  getRDTHook,
   getDisplayName,
+  _renderers,
 } from './index.js';
-import React from 'react';
 
 export interface FiberSource {
   fileName: string;
@@ -81,7 +80,7 @@ const getActualFileSource = (path: string): string => {
 };
 
 const parseStackFrame = async (frame: string): Promise<FiberSource | null> => {
-  const source = errorStackParser.parseStack(frame);
+  const source = parseStack(frame);
 
   if (!source.length) {
     return null;
@@ -125,7 +124,6 @@ const parseStackFrame = async (frame: string): Promise<FiberSource | null> => {
 const describeNativeComponentFrame = (
   fn: React.ComponentType<unknown>,
   construct: boolean,
-  currentDispatcherRef: React.MutableRefObject<unknown>,
 ): string => {
   if (!fn || reentry) {
     return '';
@@ -135,8 +133,8 @@ const describeNativeComponentFrame = (
   Error.prepareStackTrace = undefined;
   reentry = true;
 
-  const previousDispatcher = currentDispatcherRef.current;
-  currentDispatcherRef.current = null;
+  const previousDispatcher = getCurrentDispatcher();
+  setCurrentDispatcher(null);
   const prevLogs = disableLogs();
   try {
     /**
@@ -318,8 +316,7 @@ const describeNativeComponentFrame = (
 
     Error.prepareStackTrace = previousPrepareStackTrace;
 
-    // biome-ignore lint/suspicious/noExplicitAny: OK
-    (currentDispatcherRef as any).H = previousDispatcher;
+    setCurrentDispatcher(previousDispatcher);
     reenableLogs(prevLogs);
   }
 
@@ -328,12 +325,31 @@ const describeNativeComponentFrame = (
   return syntheticFrame;
 };
 
-const ReactSharedInternals =
-  // biome-ignore lint/suspicious/noExplicitAny: OK
-  (React as any)
-    ?.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE ||
-  // biome-ignore lint/suspicious/noExplicitAny: OK
-  (React as any)?.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
+export const getCurrentDispatcher = (): React.RefObject<unknown> | null => {
+  for (const renderer of _renderers) {
+    const currentDispatcherRef = renderer.currentDispatcherRef;
+    if (currentDispatcherRef) {
+      // @ts-expect-error
+      return currentDispatcherRef.H || currentDispatcherRef.current;
+    }
+  }
+  return null;
+};
+
+export const setCurrentDispatcher = (
+  value: React.RefObject<unknown> | null,
+): void => {
+  for (const renderer of _renderers) {
+    const currentDispatcherRef = renderer.currentDispatcherRef;
+    if (currentDispatcherRef) {
+      if ('H' in currentDispatcherRef) {
+        currentDispatcherRef.H = value;
+      } else {
+        currentDispatcherRef.current = value;
+      }
+    }
+  }
+};
 
 export const getFiberSource = async (
   fiber: Fiber,
@@ -357,17 +373,7 @@ export const getFiberSource = async (
     return fiber.memoizedProps.__source as FiberSource;
   }
 
-  const rdtHook = getRDTHook();
-
-  let currentDispatcherRef: React.MutableRefObject<unknown> | undefined =
-    ReactSharedInternals?.ReactCurrentDispatcher || ReactSharedInternals?.H;
-  for (const renderer of rdtHook.renderers.values()) {
-    // biome-ignore lint/suspicious/noExplicitAny: OK
-    currentDispatcherRef = (renderer as any).currentDispatcherRef;
-    if (currentDispatcherRef) {
-      break;
-    }
-  }
+  const currentDispatcherRef = getCurrentDispatcher();
 
   if (!currentDispatcherRef) {
     return null;
@@ -391,7 +397,6 @@ export const getFiberSource = async (
   const frame = describeNativeComponentFrame(
     componentFunction,
     fiber.tag === ClassComponentTag,
-    ReactSharedInternals,
   );
   return parseStackFrame(frame);
 };

@@ -124,6 +124,7 @@ export interface ReactRenderer {
   version: string;
   bundleType: 0 /* PROD */ | 1 /* DEV */;
   findFiberByHostInstance?: (hostInstance: unknown) => Fiber | null;
+  currentDispatcherRef: React.RefObject<unknown>;
 }
 
 export interface ContextDependency<T> {

@@ -97,20 +97,20 @@ importers:
   packages/kitchen-sink:
     dependencies:
       bippy:
-        specifier: ^0.3.9
-        version: 0.3.9(@types/react@19.0.4)(react@19.0.0)
+        specifier: ^0.3.10
+        version: 0.3.10(@types/react@19.0.4)(react@19.1.0)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
       react:
-        specifier: 19.0.0
-        version: 19.0.0
+        specifier: 19.1.0
+        version: 19.1.0
       react-dom:
-        specifier: 19.0.0
-        version: 19.0.0(react@19.0.0)
+        specifier: 19.1.0
+        version: 19.1.0(react@19.1.0)
       react-inspector:
         specifier: ^6.0.2
-        version: 6.0.2(react@19.0.0)
+        version: 6.0.2(react@19.1.0)
       sugar-high:
         specifier: ^0.7.5
         version: 0.7.5
@@ -1208,8 +1208,8 @@ packages:
     resolution: {integrity: sha512-pbnl5XzGBdrFU/wT4jqmJVPn2B6UHPBOhzMQkY/SPUPB6QtUXtmBHBIwCbXJol93mOpGMnQyP/+BB19q04xj7g==}
     engines: {node: '>=4'}
 
-  bippy@0.3.9:
-    resolution: {integrity: sha512-VRAaUmdLkHPvnhXA7RewaAgYlG1JJZfsCE5ljkooQPMvKgosblkisZtkuj1DSOleuoTxVrlmFNA+tICGBdr2bA==}
+  bippy@0.3.10:
+    resolution: {integrity: sha512-5FMGE+0aEfgzzJJrNOEcn/ci0WJOdzrVtUa3FEcSQtVSGwKi26PL9gGhLT1L0MUoI5QknfJmfCHDJbQYsof7IA==}
     peerDependencies:
       react: '>=17.0.1'
 
@@ -1934,6 +1934,11 @@ packages:
     peerDependencies:
       react: ^19.0.0
 
+  react-dom@19.1.0:
+    resolution: {integrity: sha512-Xs1hdnE+DyKgeHJeJznQmYMIBG3TKIHJJT95Q58nHLSrElKlGQqDTR2HQ9fx5CN/Gk6Vh/kupBTDLU11/nDk/g==}
+    peerDependencies:
+      react: ^19.1.0
+
   react-inspector@6.0.2:
     resolution: {integrity: sha512-x+b7LxhmHXjHoU/VrFAzw5iutsILRoYyDq97EDYdFpPLcvqtEzk4ZSZSQjnFPbr5T57tLXnHcqFYoN1pI6u8uQ==}
     peerDependencies:
@@ -1958,6 +1963,10 @@ packages:
 
   react@19.0.0:
     resolution: {integrity: sha512-V8AVnmPIICiWpGfm6GLzCR/W5FXLchHop40W4nXBmdlEceh16rCN8O8LNWm5bh5XUX91fh7KpA+W0TgMKmgTpQ==}
+    engines: {node: '>=0.10.0'}
+
+  react@19.1.0:
+    resolution: {integrity: sha512-FS+XFBNvn3GTAWq26joslQgWNoFu08F4kl0J4CgdNKADkdSGXQyTCnKteIAJy96Br6YbpEU1LSzV5dYtjMkMDg==}
     engines: {node: '>=0.10.0'}
 
   read-yaml-file@1.1.0:
@@ -1999,6 +2008,9 @@ packages:
 
   scheduler@0.25.0:
     resolution: {integrity: sha512-xFVuu11jh+xcO7JOAGJNOXld8/TcEHK/4CituBUeUb5hqxJLj9YuemAEuvm9gQ/+pgXYfbQuqAkiYu+u7YEsNA==}
+
+  scheduler@0.26.0:
+    resolution: {integrity: sha512-NlHwttCI/l5gCPR3D1nNXtWABUmBwvZpEQiD4IXSbIDq8BzLIK/7Ir5gTFSGZDUu37K5cMNp0hFtzO38sC7gWA==}
 
   semver@6.3.1:
     resolution: {integrity: sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==}
@@ -3386,10 +3398,10 @@ snapshots:
     dependencies:
       is-windows: 1.0.2
 
-  bippy@0.3.9(@types/react@19.0.4)(react@19.0.0):
+  bippy@0.3.10(@types/react@19.0.4)(react@19.1.0):
     dependencies:
       '@types/react-reconciler': 0.28.9(@types/react@19.0.4)
-      react: 19.0.0
+      react: 19.1.0
     transitivePeerDependencies:
       - '@types/react'
 
@@ -4094,9 +4106,18 @@ snapshots:
       react: 19.0.0
       scheduler: 0.25.0
 
+  react-dom@19.1.0(react@19.1.0):
+    dependencies:
+      react: 19.1.0
+      scheduler: 0.26.0
+
   react-inspector@6.0.2(react@19.0.0):
     dependencies:
       react: 19.0.0
+
+  react-inspector@6.0.2(react@19.1.0):
+    dependencies:
+      react: 19.1.0
 
   react-is@17.0.2: {}
 
@@ -4110,6 +4131,8 @@ snapshots:
   react-refresh@0.16.0: {}
 
   react@19.0.0: {}
+
+  react@19.1.0: {}
 
   read-yaml-file@1.1.0:
     dependencies:
@@ -4164,6 +4187,8 @@ snapshots:
   safer-buffer@2.1.2: {}
 
   scheduler@0.25.0: {}
+
+  scheduler@0.26.0: {}
 
   semver@6.3.1: {}
 
