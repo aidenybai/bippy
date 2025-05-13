@@ -1,0 +1,3 @@
+{
+  "rewrites": [{ "source": "/challenge", "destination": "https://github.com/aidenybai/bippy/blob/main/challenge.md" }]
+}
