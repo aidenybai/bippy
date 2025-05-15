@@ -9,6 +9,11 @@ type Params = {
   slug?: string[];
 };
 
+type Frontmatter = {
+  title: string;
+  description?: string;
+};
+
 async function getMdxContent(slug?: string[]) {
   try {
     const contentDir = path.join(process.cwd(), 'content/docs');
@@ -24,14 +29,14 @@ async function getMdxContent(slug?: string[]) {
     
     const content = await fs.readFile(filePath, 'utf8');
     
-    const { frontmatter, content: mdxContent } = await compileMDX({
+    const { frontmatter, content: mdxContent } = await compileMDX<Frontmatter>({
       source: content,
       options: { parseFrontmatter: true }
     });
     
     return {
       content: mdxContent,
-      frontmatter
+      frontmatter: frontmatter as Frontmatter
     };
   } catch (error) {
     console.error('Error loading MDX file:', error);
@@ -39,8 +44,9 @@ async function getMdxContent(slug?: string[]) {
   }
 }
 
-export default async function Page({ params }: { params: Params }) {
-  const mdxData = await getMdxContent(params.slug);
+export default async function Page({ params }: { params: Promise<Params> }) {
+  const resolvedParams = await params;
+  const mdxData = await getMdxContent(resolvedParams.slug);
   
   if (!mdxData) {
     notFound();
@@ -87,8 +93,9 @@ export async function generateStaticParams() {
   }
 }
 
-export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
-  const mdxData = await getMdxContent(params.slug);
+export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
+  const resolvedParams = await params;
+  const mdxData = await getMdxContent(resolvedParams.slug);
   
   if (!mdxData) {
     notFound();

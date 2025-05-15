@@ -10,7 +10,9 @@
     "format": "pnpm biome format --write",
     "check": "pnpm biome check --write",
     "bump": "changeset && changeset version",
-    "release": "changeset publish"
+    "release": "changeset publish",
+    "docs:dev": "pnpm --filter=./packages/docs run dev",
+    "docs:build": "pnpm --filter=./packages/docs run build"
   },
   "packageManager": "pnpm@9.15.5",
   "private": true,

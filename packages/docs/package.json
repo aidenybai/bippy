@@ -1,8 +1,8 @@
 {
-  "name": "docs",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "@bippy/docs",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Bippy documentation website",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -10,13 +10,10 @@
     "lint": "next lint"
   },
   "keywords": [],
-  "author": "",
+  "author": "Aiden Bai",
   "license": "ISC",
   "dependencies": {
     "@types/react-dom": "^19.0.2",
-    "fumadocs-core": "^15.3.1",
-    "fumadocs-mdx": "^11.6.3",
-    "fumadocs-ui": "^15.3.1",
     "geist": "^1.4.2",
     "next": "^15.3.2",
     "next-mdx-remote": "^5.0.0",
@@ -29,6 +26,9 @@
     "@types/react": "^19.0.4",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.26.0",
+    "fumadocs-core": "^15.3.1",
+    "fumadocs-mdx": "^11.6.3",
+    "fumadocs-ui": "^15.3.1",
     "postcss": "^8.5.3",
     "tailwindcss": "4.0.0-beta.8",
     "typescript": "^5.7.3"

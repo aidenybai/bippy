@@ -1,34 +1,27 @@
-import { Inter } from 'next/font/google';
-import { GeistMono } from 'geist/font';
-import { RootProvider } from 'fumadocs-ui/provider';
-import type { ReactNode } from 'react';
-import 'fumadocs-ui/style.css';
+import type { Metadata } from 'next';
+import { Inter, Geist_Mono } from 'next/font/google';
 import './globals.css';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' });
+
+export const metadata: Metadata = {
+  title: 'Bippy Documentation',
+  description: 'Documentation for accessing React internals with Bippy',
+};
 
 export default function RootLayout({
   children,
-}: {
-  children: ReactNode;
-}) {
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
-      <body 
-        className={`${inter.className} ${GeistMono.variable}`}
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: '100vh',
-        }}
-      >
-        <RootProvider>{children}</RootProvider>
+    <html lang="en" className="dark">
+      <body className={`${inter.variable} ${geistMono.variable} bg-neutral-950 text-neutral-100 font-mono antialiased`}>
+        <main className="min-h-screen">
+          {children}
+        </main>
       </body>
     </html>
   );
 }
-
-export const metadata = {
-  title: 'Bippy Documentation',
-  description: 'Documentation for Bippy - a toolkit to hack into React internals',
-};
