@@ -1,0 +1,32 @@
+{
+  "node_modules/fumadocs-core/dist/search/client.js -> ../algolia-NTWLS6J3.js": {
+    "id": "node_modules/fumadocs-core/dist/search/client.js -> ../algolia-NTWLS6J3.js",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_fumadocs-core_dist_algolia-NTWLS6J3_js.js"
+    ]
+  },
+  "node_modules/fumadocs-core/dist/search/client.js -> ../fetch-W5EHIBOE.js": {
+    "id": "node_modules/fumadocs-core/dist/search/client.js -> ../fetch-W5EHIBOE.js",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_fumadocs-core_dist_fetch-W5EHIBOE_js.js"
+    ]
+  },
+  "node_modules/fumadocs-core/dist/search/client.js -> ../orama-cloud-USLSOSXS.js": {
+    "id": "node_modules/fumadocs-core/dist/search/client.js -> ../orama-cloud-USLSOSXS.js",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_fumadocs-core_dist_orama-cloud-USLSOSXS_js.js"
+    ]
+  },
+  "node_modules/fumadocs-core/dist/search/client.js -> ../static-VESU2S64.js": {
+    "id": "node_modules/fumadocs-core/dist/search/client.js -> ../static-VESU2S64.js",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_fumadocs-core_dist_static-VESU2S64_js.js"
+    ]
+  },
+  "node_modules/fumadocs-ui/dist/provider/base.js -> ../components/dialog/search-default.js": {
+    "id": "node_modules/fumadocs-ui/dist/provider/base.js -> ../components/dialog/search-default.js",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_fumadocs-ui_dist_components_dialog_search-default_js.js"
+    ]
+  }
+}

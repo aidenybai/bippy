@@ -1,0 +1,33 @@
+---
+title: bippy
+description: A toolkit to hack into react internals
+---
+
+# bippy
+
+[![size](https://img.shields.io/bundlephobia/minzip/bippy?label=gzip&style=flat&colorA=000000&colorB=000000)](https://bundlephobia.com/package/bippy)
+[![version](https://img.shields.io/npm/v/bippy?style=flat&colorA=000000&colorB=000000)](https://npmjs.com/package/bippy)
+[![downloads](https://img.shields.io/npm/dt/bippy.svg?style=flat&colorA=000000&colorB=000000)](https://npmjs.com/package/bippy)
+
+> ⚠️⚠️⚠️ **this project may break production apps and cause unexpected behavior** ⚠️⚠️⚠️
+>
+> this project uses react internals, which can change at any time. it is not recommended to depend on internals unless you really, _really_ have to. by proceeding, you acknowledge the risk of breaking your own code or apps that use your code.
+
+bippy is a toolkit to **hack into react internals**
+
+by default, you cannot access react internals. bippy bypasses this by "pretending" to be react devtools, giving you access to the fiber tree and other internals.
+
+- works outside of react – no react code modification needed
+- utility functions that work across modern react (v17-19)
+- no prior react source code knowledge required
+
+```jsx
+import { onCommitFiberRoot, traverseFiber } from 'bippy';
+
+onCommitFiberRoot((root) => {
+  traverseFiber(root.current, (fiber) => {
+    // prints every fiber in the current React tree
+    console.log('fiber:', fiber);
+  });
+});
+```

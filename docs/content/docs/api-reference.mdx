@@ -1,0 +1,287 @@
+---
+title: API Reference
+description: Complete documentation of the bippy API
+---
+
+# API Reference
+
+## onCommitFiberRoot
+
+a utility function that wraps the `instrument` function and sets the `onCommitFiberRoot` hook.
+
+```typescript
+import { onCommitFiberRoot } from 'bippy';
+
+onCommitFiberRoot((root) => {
+  console.log('root ready to commit', root);
+});
+```
+
+## instrument
+
+> the underlying implementation for the `onCommitFiberRoot()` function. this is optional, unless you want to plug into more less common, advanced functionality.
+
+patches `window.__REACT_DEVTOOLS_GLOBAL_HOOK__` with your handlers. must be imported before react, and must be initialized to properly run any other methods.
+
+> use with the `secure` function to prevent uncaught errors from crashing your app.
+
+```typescript
+import { instrument, secure } from 'bippy'; // must be imported BEFORE react
+import * as React from 'react';
+
+instrument(
+  secure({
+    onCommitFiberRoot(rendererID, root) {
+      console.log('root ready to commit', root);
+    },
+    onPostCommitFiberRoot(rendererID, root) {
+      console.log('root with effects committed', root);
+    },
+    onCommitFiberUnmount(rendererID, fiber) {
+      console.log('fiber unmounted', fiber);
+    },
+  })
+);
+```
+
+## getRDTHook
+
+returns the `window.__REACT_DEVTOOLS_GLOBAL_HOOK__` object. great for advanced use cases, such as accessing or modifying the `renderers` property.
+
+```typescript
+import { getRDTHook } from 'bippy';
+
+const hook = getRDTHook();
+console.log(hook);
+```
+
+## traverseRenderedFibers
+
+not every fiber in the fiber tree renders. `traverseRenderedFibers` allows you to traverse the fiber tree and determine which fibers have actually rendered.
+
+```typescript
+import { instrument, secure, traverseRenderedFibers } from 'bippy'; // must be imported BEFORE react
+import * as React from 'react';
+
+instrument(
+  secure({
+    onCommitFiberRoot(rendererID, root) {
+      traverseRenderedFibers(root, (fiber) => {
+        console.log('fiber rendered', fiber);
+      });
+    },
+  })
+);
+```
+
+## traverseFiber
+
+calls a callback on every fiber in the fiber tree.
+
+```typescript
+import { instrument, secure, traverseFiber } from 'bippy'; // must be imported BEFORE react
+import * as React from 'react';
+
+instrument(
+  secure({
+    onCommitFiberRoot(rendererID, root) {
+      traverseFiber(root.current, (fiber) => {
+        console.log(fiber);
+      });
+    },
+  })
+);
+```
+
+## traverseProps
+
+traverses the props of a fiber.
+
+```typescript
+import { traverseProps } from 'bippy';
+
+// ...
+
+traverseProps(fiber, (propName, next, prev) => {
+  console.log(propName, next, prev);
+});
+```
+
+## traverseState
+
+traverses the state (useState, useReducer, etc.) and effects that set state of a fiber.
+
+```typescript
+import { traverseState } from 'bippy';
+
+// ...
+
+traverseState(fiber, (next, prev) => {
+  console.log(next, prev);
+});
+```
+
+## traverseContexts
+
+traverses the contexts (useContext) of a fiber.
+
+```typescript
+import { traverseContexts } from 'bippy';
+
+// ...
+
+traverseContexts(fiber, (next, prev) => {
+  console.log(next, prev);
+});
+```
+
+## setFiberId / getFiberId
+
+set and get a persistent identity for a fiber. by default, fibers are anonymous and have no identity.
+
+```typescript
+import { setFiberId, getFiberId } from 'bippy';
+
+// ...
+
+setFiberId(fiber);
+console.log('unique id for fiber:', getFiberId(fiber));
+```
+
+## isHostFiber
+
+returns `true` if the fiber is a host fiber (e.g., a DOM node in react-dom).
+
+```typescript
+import { isHostFiber } from 'bippy';
+
+if (isHostFiber(fiber)) {
+  console.log('fiber is a host fiber');
+}
+```
+
+## isCompositeFiber
+
+returns `true` if the fiber is a composite fiber. composite fibers represent class components, function components, memoized components, and so on (anything that can actually render output).
+
+```typescript
+import { isCompositeFiber } from 'bippy';
+
+if (isCompositeFiber(fiber)) {
+  console.log('fiber is a composite fiber');
+}
+```
+
+## getDisplayName
+
+returns the display name of the fiber's component, falling back to the component's function or class name if available.
+
+```typescript
+import { getDisplayName } from 'bippy';
+
+console.log(getDisplayName(fiber));
+```
+
+## getType
+
+returns the underlying type (the component definition) for a given fiber. for example, this could be a function component or class component.
+
+```jsx
+import { getType } from 'bippy';
+import { memo } from 'react';
+
+const RealComponent = () => {
+  return <div>hello</div>;
+};
+const MemoizedComponent = memo(() => {
+  return <div>hello</div>;
+});
+
+console.log(getType(fiberForMemoizedComponent) === RealComponent);
+```
+
+## getNearestHostFiber / getNearestHostFibers
+
+getNearestHostFiber returns the closest host fiber above or below a given fiber. getNearestHostFibers(fiber) returns all host fibers associated with the provided fiber and its subtree.
+
+```jsx
+import { getNearestHostFiber, getNearestHostFibers } from 'bippy';
+
+// ...
+
+function Component() {
+  return (
+    <>
+      <div>hello</div>
+      <div>world</div>
+    </>
+  );
+}
+
+console.log(getNearestHostFiber(fiberForComponent)); // <div>hello</div>
+console.log(getNearestHostFibers(fiberForComponent)); // [<div>hello</div>, <div>world</div>]
+```
+
+## getTimings
+
+returns the self and total render times for the fiber.
+
+```typescript
+// timings don't exist in react production builds
+if (fiber.actualDuration !== undefined) {
+  const { selfTime, totalTime } = getTimings(fiber);
+  console.log(selfTime, totalTime);
+}
+```
+
+## getFiberStack
+
+returns an array representing the stack of fibers from the current fiber up to the root.
+
+```typescript
+[fiber, fiber.return, fiber.return.return, ...]
+```
+
+## getMutatedHostFibers
+
+returns an array of all host fibers that have committed and rendered in the provided fiber's subtree.
+
+```typescript
+import { getMutatedHostFibers } from 'bippy';
+
+console.log(getMutatedHostFibers(fiber));
+```
+
+## isValidFiber
+
+returns `true` if the given object is a valid React Fiber (i.e., has a tag, stateNode, return, child, sibling, etc.).
+
+```typescript
+import { isValidFiber } from 'bippy';
+
+console.log(isValidFiber(fiber));
+```
+
+## getFiberFromHostInstance
+
+returns the fiber associated with a given host instance (e.g., a DOM element).
+
+```typescript
+import { getFiberFromHostInstance } from 'bippy';
+
+const fiber = getFiberFromHostInstance(document.querySelector('div'));
+console.log(fiber);
+```
+
+## getLatestFiber
+
+returns the latest fiber (since it may be double-buffered). usually use this in combination with `getFiberFromHostInstance`.
+
+```typescript
+import { getLatestFiber } from 'bippy';
+
+const latestFiber = getLatestFiber(
+  getFiberFromHostInstance(document.querySelector('div'))
+);
+console.log(latestFiber);
+```
