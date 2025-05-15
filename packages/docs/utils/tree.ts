@@ -1,6 +1,4 @@
-import { createTree } from 'fumadocs-core/server';
-
-export const tree = createTree({
+export const tree = {
   main: {
     label: 'Documentation',
     items: [
@@ -29,6 +27,14 @@ export const tree = createTree({
         label: 'Examples',
         link: '/docs/examples',
       },
+      {
+        label: 'Glossary',
+        link: '/docs/glossary',
+      },
+      {
+        label: 'Development',
+        link: '/docs/development',
+      },
     ],
   },
-});
+};

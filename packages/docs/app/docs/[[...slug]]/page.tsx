@@ -1,53 +1,96 @@
 import { notFound } from 'next/navigation';
 import fs from 'fs/promises';
 import path from 'path';
+import { MDXRemote } from 'next-mdx-remote/rsc';
+import { compileMDX } from 'next-mdx-remote/rsc';
 
-type PageData = {
-  title: string;
-  description: string;
-  content: string;
-  slug: string[];
-};
-
-async function getPageData(slug?: string[]): Promise<PageData | null> {
-  if (!slug || slug.length === 0) {
+async function getMdxContent(slug?: string[]) {
+  try {
+    const contentDir = path.join(process.cwd(), 'content/docs');
+    let filePath;
+    
+    if (!slug || slug.length === 0) {
+      filePath = path.join(contentDir, 'index.mdx');
+    } else if (slug.length === 1) {
+      filePath = path.join(contentDir, `${slug[0]}.mdx`);
+    } else {
+      filePath = path.join(contentDir, ...slug) + '.mdx';
+    }
+    
+    const content = await fs.readFile(filePath, 'utf8');
+    
+    const { frontmatter, content: mdxContent } = await compileMDX({
+      source: content,
+      options: { parseFrontmatter: true }
+    });
+    
     return {
-      title: 'Bippy Documentation',
-      description: 'Documentation for Bippy - a toolkit to hack into React internals',
-      content: 'Welcome to the Bippy documentation.',
-      slug: [],
+      content: mdxContent,
+      frontmatter
     };
+  } catch (error) {
+    console.error('Error loading MDX file:', error);
+    return null;
   }
-  return null;
 }
 
-export default async function Page(props: {
-  params: { slug?: string[] };
-}) {
-  const page = await getPageData(props.params.slug);
-  if (!page) notFound();
+export default async function Page({ params }: { params: { slug?: string[] } }) {
+  const mdxData = await getMdxContent(params.slug);
+  
+  if (!mdxData) {
+    notFound();
+  }
   
   return (
     <div className="prose prose-neutral dark:prose-invert max-w-none">
-      <h1>{page.title}</h1>
-      <p className="text-lg text-neutral-600 dark:text-neutral-400">{page.description}</p>
-      <div>{page.content}</div>
+      <h1>{mdxData.frontmatter.title}</h1>
+      {mdxData.frontmatter.description && (
+        <p className="text-lg text-neutral-600 dark:text-neutral-400">
+          {mdxData.frontmatter.description}
+        </p>
+      )}
+      <div>{mdxData.content}</div>
     </div>
   );
 }
 
 export async function generateStaticParams() {
-  return [{ slug: [] }];
+  try {
+    const contentDir = path.join(process.cwd(), 'content/docs');
+    const files = await fs.readdir(contentDir, { recursive: true });
+    
+    const paths = files
+      .filter(file => file.endsWith('.mdx'))
+      .map(file => {
+        if (file === 'index.mdx') {
+          return { slug: [] };
+        } else if (file.includes('/')) {
+          return { 
+            slug: file.replace(/\.mdx$/, '').split('/').filter(Boolean)
+          };
+        } else {
+          return { 
+            slug: [file.replace(/\.mdx$/, '')]
+          };
+        }
+      });
+    
+    return paths;
+  } catch (error) {
+    console.error('Error generating static params:', error);
+    return [{ slug: [] }];
+  }
 }
 
-export async function generateMetadata(props: {
-  params: { slug?: string[] };
-}) {
-  const page = await getPageData(props.params.slug);
-  if (!page) notFound();
+export async function generateMetadata({ params }: { params: { slug?: string[] } }) {
+  const mdxData = await getMdxContent(params.slug);
+  
+  if (!mdxData) {
+    notFound();
+  }
   
   return {
-    title: page.title,
-    description: page.description,
+    title: mdxData.frontmatter.title,
+    description: mdxData.frontmatter.description,
   };
 }

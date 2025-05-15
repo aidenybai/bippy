@@ -1,0 +1,96 @@
+---
+title: How It Works & Motivation
+description: Understanding how Bippy accesses React internals
+---
+
+# How It Works & Motivation
+
+Bippy allows you to **access** and **use** react fibers **outside** of react components.
+
+A react fiber is a "unit of execution." This means react will do something based on the data in a fiber. Each fiber either represents a composite (function/class component) or a host (dom element).
+
+> Here is a [live visualization](https://jser.pro/ddir/rie?reactVersion=18.3.1&snippetKey=hq8jm2ylzb9u8eh468) of what the fiber tree looks like, and here is a [deep dive article](https://jser.dev/2023-07-18-how-react-rerenders/).
+
+Fibers are useful because they contain information about the react app (component props, state, contexts, etc.). A simplified version of a fiber looks roughly like this:
+
+```typescript
+interface Fiber {
+  // component type (function/class)
+  type: any;
+
+  child: Fiber | null;
+  sibling: Fiber | null;
+
+  // stateNode is the host fiber (e.g. DOM element)
+  stateNode: Node | null;
+
+  // parent fiber
+  return: Fiber | null;
+
+  // the previous or current version of the fiber
+  alternate: Fiber | null;
+
+  // saved props input
+  memoizedProps: any;
+
+  // state (useState, useReducer, useSES, etc.)
+  memoizedState: any;
+
+  // contexts (useContext)
+  dependencies: Dependencies | null;
+
+  // effects (useEffect, useLayoutEffect, etc.)
+  updateQueue: any;
+}
+```
+
+Here, the `child`, `sibling`, and `return` properties are pointers to other fibers in the tree.
+
+Additionally, `memoizedProps`, `memoizedState`, and `dependencies` are the fiber's props, state, and contexts.
+
+While all of the information is there, it's not super easy to work with, and changes frequently across different versions of react. Bippy simplifies this by providing utility functions like:
+
+- `traverseRenderedFibers` to detect renders and `traverseFiber` to traverse the overall fiber tree
+  - _(instead of `child`, `sibling`, and `return` pointers)_
+- `traverseProps`, `traverseState`, and `traverseContexts` to traverse the fiber's props, state, and contexts
+  - _(instead of `memoizedProps`, `memoizedState`, and `dependencies`)_
+
+However, fibers aren't directly accessible by the user. So, we have to hack our way around to accessing it.
+
+Luckily, react [reads from a property](https://github.com/facebook/react/blob/6a4b46cd70d2672bc4be59dcb5b8dede22ed0cef/packages/react-reconciler/src/reactFiberDevToolsHook.js#L48) in the window object: `window.__REACT_DEVTOOLS_GLOBAL_HOOK__` and runs handlers on it when certain events happen. This property must exist before react's bundle is executed. This is intended for react devtools, but we can use it to our advantage.
+
+Here's what it roughly looks like:
+
+```typescript
+interface __REACT_DEVTOOLS_GLOBAL_HOOK__ {
+  // list of renderers (react-dom, react-native, etc.)
+  renderers: Map<RendererID, reactRenderer>;
+
+  // called when react has rendered everything for an update and the fiber tree is fully built and ready to
+  // apply changes to the host tree (e.g. DOM mutations)
+  onCommitFiberRoot: (
+    rendererID: RendererID,
+    root: FiberRoot,
+    commitPriority?: number
+  ) => void;
+
+  // called when effects run
+  onPostCommitFiberRoot: (rendererID: RendererID, root: FiberRoot) => void;
+
+  // called when a specific fiber unmounts
+  onCommitFiberUnmount: (rendererID: RendererID, fiber: Fiber) => void;
+}
+```
+
+Bippy works by monkey-patching `window.__REACT_DEVTOOLS_GLOBAL_HOOK__` with our own custom handlers. Bippy simplifies this by providing utility functions like:
+
+- `instrument` to safely patch `window.__REACT_DEVTOOLS_GLOBAL_HOOK__`
+  - _(instead of directly mutating `onCommitFiberRoot`, ...)_
+- `secure` to wrap your handlers in a try/catch and determine if handlers are safe to run
+  - _(instead of rawdogging `window.__REACT_DEVTOOLS_GLOBAL_HOOK__` handlers, which may crash your app)_
+- `traverseRenderedFibers` to traverse the fiber tree and determine which fibers have actually rendered
+  - _(instead of `child`, `sibling`, and `return` pointers)_
+- `traverseFiber` to traverse the fiber tree, regardless of whether it has rendered
+  - _(instead of `child`, `sibling`, and `return` pointers)_
+- `setFiberId` / `getFiberId` to set and get a fiber's id
+  - _(instead of anonymous fibers with no identity)_

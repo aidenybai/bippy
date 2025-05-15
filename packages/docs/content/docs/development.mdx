@@ -1,0 +1,35 @@
+---
+title: Development
+description: Contributing to Bippy development
+---
+
+# Development
+
+Pre-requisite: you should understand how react works internally. If you don't, please give this [series of articles](https://jser.dev/series/react-source-code-walkthrough) a read.
+
+We use a pnpm monorepo, get started by running:
+
+```shell
+pnpm install
+# create dev builds
+pnpm run dev
+# run unit tests
+pnpm run test
+```
+
+You can ad-hoc test by running `pnpm run dev` in the `/kitchen-sink` directory.
+
+```shell
+cd kitchen-sink
+pnpm run dev
+```
+
+## Misc
+
+We use this project internally in [react-scan](https://github.com/aidenybai/react-scan), which is deployed with proper safeguards to ensure it's only used in development or error-guarded in production.
+
+While i maintain this specifically for react-scan, those seeking more robust solutions might consider [its-fine](https://github.com/pmndrs/its-fine) for accessing fibers within react using hooks, or [react-devtools-inline](https://www.npmjs.com/package/react-devtools-inline) for a headful interface.
+
+If you plan to use this project beyond experimentation, please review [react-scan's source code](https://github.com/aidenybai/react-scan) to understand our safeguarding practices.
+
+The original bippy character is owned and created by [@dairyfreerice](https://www.instagram.com/dairyfreerice). This project is not related to the bippy brand, i just think the character is cute.
