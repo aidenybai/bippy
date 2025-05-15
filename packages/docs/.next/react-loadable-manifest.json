@@ -1,0 +1,32 @@
+{
+  "../../node_modules/.pnpm/fumadocs-core@15.3.1_@types+react@19.0.4_next@15.3.2_react-dom@19.1.0_react@19.1.0__react@19._7zbj6dsbbqhvxbldkwazklxpvy/node_modules/fumadocs-core/dist/search/client.js -> ../algolia-NTWLS6J3.js": {
+    "id": "../../node_modules/.pnpm/fumadocs-core@15.3.1_@types+react@19.0.4_next@15.3.2_react-dom@19.1.0_react@19.1.0__react@19._7zbj6dsbbqhvxbldkwazklxpvy/node_modules/fumadocs-core/dist/search/client.js -> ../algolia-NTWLS6J3.js",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_pnpm_fumadocs-core_15_3_1__types_react_19_0_4_next_15_3_2_rea-f40a52.js"
+    ]
+  },
+  "../../node_modules/.pnpm/fumadocs-core@15.3.1_@types+react@19.0.4_next@15.3.2_react-dom@19.1.0_react@19.1.0__react@19._7zbj6dsbbqhvxbldkwazklxpvy/node_modules/fumadocs-core/dist/search/client.js -> ../fetch-W5EHIBOE.js": {
+    "id": "../../node_modules/.pnpm/fumadocs-core@15.3.1_@types+react@19.0.4_next@15.3.2_react-dom@19.1.0_react@19.1.0__react@19._7zbj6dsbbqhvxbldkwazklxpvy/node_modules/fumadocs-core/dist/search/client.js -> ../fetch-W5EHIBOE.js",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_pnpm_fumadocs-core_15_3_1__types_react_19_0_4_next_15_3_2_rea-0a3860.js"
+    ]
+  },
+  "../../node_modules/.pnpm/fumadocs-core@15.3.1_@types+react@19.0.4_next@15.3.2_react-dom@19.1.0_react@19.1.0__react@19._7zbj6dsbbqhvxbldkwazklxpvy/node_modules/fumadocs-core/dist/search/client.js -> ../orama-cloud-USLSOSXS.js": {
+    "id": "../../node_modules/.pnpm/fumadocs-core@15.3.1_@types+react@19.0.4_next@15.3.2_react-dom@19.1.0_react@19.1.0__react@19._7zbj6dsbbqhvxbldkwazklxpvy/node_modules/fumadocs-core/dist/search/client.js -> ../orama-cloud-USLSOSXS.js",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_pnpm_fumadocs-core_15_3_1__types_react_19_0_4_next_15_3_2_rea-5f6da2.js"
+    ]
+  },
+  "../../node_modules/.pnpm/fumadocs-core@15.3.1_@types+react@19.0.4_next@15.3.2_react-dom@19.1.0_react@19.1.0__react@19._7zbj6dsbbqhvxbldkwazklxpvy/node_modules/fumadocs-core/dist/search/client.js -> ../static-VESU2S64.js": {
+    "id": "../../node_modules/.pnpm/fumadocs-core@15.3.1_@types+react@19.0.4_next@15.3.2_react-dom@19.1.0_react@19.1.0__react@19._7zbj6dsbbqhvxbldkwazklxpvy/node_modules/fumadocs-core/dist/search/client.js -> ../static-VESU2S64.js",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_pnpm_fumadocs-core_15_3_1__types_react_19_0_4_next_15_3_2_rea-5c699e.js"
+    ]
+  },
+  "../../node_modules/.pnpm/fumadocs-ui@15.3.1_@types+react-dom@19.0.2_@types+react@19.0.4__@types+react@19.0.4_next@15.3_ws2ueyvhtaeej2i3ld72qmxd6m/node_modules/fumadocs-ui/dist/provider/base.js -> ../components/dialog/search-default.js": {
+    "id": "../../node_modules/.pnpm/fumadocs-ui@15.3.1_@types+react-dom@19.0.2_@types+react@19.0.4__@types+react@19.0.4_next@15.3_ws2ueyvhtaeej2i3ld72qmxd6m/node_modules/fumadocs-ui/dist/provider/base.js -> ../components/dialog/search-default.js",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_pnpm_fumadocs-ui_15_3_1__types_react-dom_19_0_2__types_react_-1c4397.js"
+    ]
+  }
+}

@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+
+:root {
+  color-scheme: dark;
+  --sh-class: #f0f0f0;
+  --sh-identifier: #f0f0f0;
+  --sh-sign: #9b9b9b;
+  --sh-property: #dfb58f;
+  --sh-entity: #dfb58f;
+  --sh-jsxliterals: #dfb58f;
+  --sh-string: #9b9b9b;
+  --sh-keyword: #9b9b9b;
+  --sh-comment: #a19595;
+}
+
+html,
+body {
+  font-family: "Geist Mono", Menlo, Consolas, Monaco, Liberation Mono, Lucida Console, monospace;
+  background-color: #101010;
+  color: white;
+}
+
+.font-sans {
+  font-family: "Geist", sans-serif;
+}
+
+pre code {
+  counter-reset: sh-line-number;
+}
+
+.sh__line::before {
+  counter-increment: sh-line-number 1;
+  content: counter(sh-line-number);
+  margin-right: 2ch;
+  text-align: right;
+  color: #9b9b9b71;
+}
