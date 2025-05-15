@@ -1,0 +1,40 @@
+---
+title: Glossary
+description: Key terms and concepts in Bippy
+---
+
+# Glossary
+
+This page provides definitions for key terms and concepts used in Bippy and React internals.
+
+- **fiber**: a "unit of execution" in react, representing a component or dom element
+- **commit**: the process of applying changes to the host tree (e.g. DOM mutations)
+- **render**: the process of building the fiber tree by executing component function/classes
+- **host tree**: the tree of UI elements that react mutates (e.g. DOM elements)
+- **reconciler** (or "renderer"): custom bindings for react, e.g. react-dom, react-native, react-three-fiber, etc to mutate the host tree
+- **rendererID**: the id of the reconciler, starting at 1 (can be from multiple reconciler instances)
+- **root**: a special `FiberRoot` type that contains the container fiber (the one you pass to `ReactDOM.createRoot`) in the `current` property
+- **onCommitFiberRoot**: called when react is ready to commit a fiber root
+- **onPostCommitFiberRoot**: called when react has committed a fiber root and effects have run
+- **onCommitFiberUnmount**: called when a fiber unmounts
+- **FiberRoot**: Special type containing the container fiber passed to `ReactDOM.createRoot`
+- **Fiber**: React's internal representation of a component. Has complex tree structure
+- **Host Fiber**: A fiber that represents a DOM element or native component
+- **Composite Fiber**: A fiber that represents a React component (function or class)
+- **instrument(options)**: Primary function to patch React DevTools hook. Enables all other Bippy features
+- **getRDTHook()**: Retrieves or installs the React DevTools global hook
+- **secure(handlers)**: Wraps handlers in try/catch to prevent errors from crashing the application
+- **traverseRenderedFibers(root, callback)**: Walks fiber tree, calling callback only on rendered fibers
+- **traverseFiber(fiber, callback)**: Traverses the entire fiber tree, calling callback on every fiber
+- **traverseProps(fiber, callback)**: Examines props of a fiber, providing prop name, current and previous values
+- **traverseState(fiber, callback)**: Examines state (useState, useReducer) of a fiber
+- **traverseContexts(fiber, callback)**: Traverses contexts (useContext) of a fiber
+- **getFiberSource(fiber)**: Retrieves source code location of a component
+- **RDTHook**: Abbreviation for React DevTools Hook
+- **isHostFiber(fiber)**: Determines if fiber represents a DOM element
+- **isCompositeFiber(fiber)**: Determines if fiber represents a React component
+- **getDisplayName(fiber)**: Returns human-readable name of component
+- **getNearestHostFiber(fiber)**: Returns closest host fiber to given fiber
+- **FiberSource**: Object containing file name, line number, and column number of component source
+- **BIPPY_INSTRUMENTATION_STRING**: Identifier for Bippy's instrumentation in the hook
+- **PerformedWork**: Flag indicating fiber performed work during reconciliation

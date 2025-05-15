@@ -1,0 +1,138 @@
+---
+title: Core API
+description: Core functions for accessing React internals
+---
+
+# Core API
+
+This page documents the core API functions provided by Bippy for accessing React internals.
+
+## Installation
+
+You can either install via npm (recommended) or a script tag.
+
+This package should be imported before a React app runs. This will add a special object to the global which is used by React for providing its internals to the tool for analysis (React Devtools does the same). As soon as React library is loaded and attached to the tool, bippy starts collecting data about what is going on in React's internals.
+
+```shell
+npm install bippy
+```
+
+Or, use via script tag:
+
+```html
+<script src="https://unpkg.com/bippy"></script>
+```
+
+> This will cause bippy to be accessible under a `window.Bippy` global.
+
+## onCommitFiberRoot
+
+A utility function that wraps the `instrument` function and sets the `onCommitFiberRoot` hook.
+
+```typescript
+import { onCommitFiberRoot } from 'bippy';
+
+onCommitFiberRoot((root) => {
+  console.log('root ready to commit', root);
+});
+```
+
+## instrument
+
+> The underlying implementation for the `onCommitFiberRoot()` function. This is optional, unless you want to plug into more less common, advanced functionality.
+
+Patches `window.__REACT_DEVTOOLS_GLOBAL_HOOK__` with your handlers. Must be imported before react, and must be initialized to properly run any other methods.
+
+> Use with the `secure` function to prevent uncaught errors from crashing your app.
+
+```typescript
+import { instrument, secure } from 'bippy'; // must be imported BEFORE react
+import * as React from 'react';
+
+instrument(
+  secure({
+    onCommitFiberRoot(rendererID, root) {
+      console.log('root ready to commit', root);
+    },
+    onPostCommitFiberRoot(rendererID, root) {
+      console.log('root with effects committed', root);
+    },
+    onCommitFiberUnmount(rendererID, fiber) {
+      console.log('fiber unmounted', fiber);
+    },
+  })
+);
+```
+
+## getRDTHook
+
+Returns the `window.__REACT_DEVTOOLS_GLOBAL_HOOK__` object. Great for advanced use cases, such as accessing or modifying the `renderers` property.
+
+```typescript
+import { getRDTHook } from 'bippy';
+
+const hook = getRDTHook();
+console.log(hook);
+```
+
+## traverseRenderedFibers
+
+Not every fiber in the fiber tree renders. `traverseRenderedFibers` allows you to traverse the fiber tree and determine which fibers have actually rendered.
+
+```typescript
+import { instrument, secure, traverseRenderedFibers } from 'bippy'; // must be imported BEFORE react
+import * as React from 'react';
+
+instrument(
+  secure({
+    onCommitFiberRoot(rendererID, root) {
+      traverseRenderedFibers(root, (fiber) => {
+        console.log('fiber rendered', fiber);
+      });
+    },
+  })
+);
+```
+
+## traverseFiber
+
+Calls a callback on every fiber in the fiber tree.
+
+```typescript
+import { instrument, secure, traverseFiber } from 'bippy'; // must be imported BEFORE react
+import * as React from 'react';
+
+instrument(
+  secure({
+    onCommitFiberRoot(rendererID, root) {
+      traverseFiber(root.current, (fiber) => {
+        console.log(fiber);
+      });
+    },
+  })
+);
+```
+
+## getFiberFromHostInstance
+
+Returns the fiber associated with a given host instance (e.g., a DOM element).
+
+```typescript
+import { getFiberFromHostInstance } from 'bippy';
+
+const fiber = getFiberFromHostInstance(document.querySelector('div'));
+console.log(fiber);
+```
+
+## getLatestFiber
+
+Returns the latest fiber (since it may be double-buffered). Usually use this in combination with `getFiberFromHostInstance`.
+
+```typescript
+import { getLatestFiber } from 'bippy';
+
+const latestFiber = getLatestFiber(
+  getFiberFromHostInstance(document.querySelector('div'))
+);
+console.log(latestFiber);
+```
