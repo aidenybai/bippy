@@ -3,6 +3,11 @@ import fs from 'fs/promises';
 import path from 'path';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import { compileMDX } from 'next-mdx-remote/rsc';
+import type { Metadata } from 'next';
+
+type Params = {
+  slug?: string[];
+};
 
 async function getMdxContent(slug?: string[]) {
   try {
@@ -34,7 +39,7 @@ async function getMdxContent(slug?: string[]) {
   }
 }
 
-export default async function Page({ params }: { params: { slug?: string[] } }) {
+export default async function Page({ params }: { params: Params }) {
   const mdxData = await getMdxContent(params.slug);
   
   if (!mdxData) {
@@ -82,7 +87,7 @@ export async function generateStaticParams() {
   }
 }
 
-export async function generateMetadata({ params }: { params: { slug?: string[] } }) {
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const mdxData = await getMdxContent(params.slug);
   
   if (!mdxData) {
