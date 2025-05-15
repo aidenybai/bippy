@@ -99,15 +99,6 @@ importers:
       '@types/react-dom':
         specifier: ^19.0.2
         version: 19.0.2(@types/react@19.0.4)
-      fumadocs-core:
-        specifier: ^15.3.1
-        version: 15.3.1(@types/react@19.0.4)(next@15.3.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      fumadocs-mdx:
-        specifier: ^11.6.3
-        version: 11.6.3(acorn@8.14.0)(fumadocs-core@15.3.1(@types/react@19.0.4)(next@15.3.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(next@15.3.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))
-      fumadocs-ui:
-        specifier: ^15.3.1
-        version: 15.3.1(@types/react-dom@19.0.2(@types/react@19.0.4))(@types/react@19.0.4)(next@15.3.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(tailwindcss@4.0.0-beta.8)
       geist:
         specifier: ^1.4.2
         version: 1.4.2(next@15.3.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))
@@ -139,6 +130,15 @@ importers:
       eslint:
         specifier: ^9.26.0
         version: 9.26.0(jiti@2.4.2)
+      fumadocs-core:
+        specifier: ^15.3.1
+        version: 15.3.1(@types/react@19.0.4)(next@15.3.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      fumadocs-mdx:
+        specifier: ^11.6.3
+        version: 11.6.3(acorn@8.14.0)(fumadocs-core@15.3.1(@types/react@19.0.4)(next@15.3.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(next@15.3.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))
+      fumadocs-ui:
+        specifier: ^15.3.1
+        version: 15.3.1(@types/react-dom@19.0.2(@types/react@19.0.4))(@types/react@19.0.4)(next@15.3.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(tailwindcss@4.0.0-beta.8)
       postcss:
         specifier: ^8.5.3
         version: 8.5.3
@@ -4663,9 +4663,6 @@ packages:
     peerDependencies:
       zod: ^3.24.1
 
-  zod@3.24.1:
-    resolution: {integrity: sha512-muH7gBL9sI1nciMZV67X5fTKKBLtwpZ5VBp1vsOQzj1MhrBZ4wlVCm3gedKZWLp0Oyel8sIGfeiz54Su+OVT+A==}
-
   zod@3.24.4:
     resolution: {integrity: sha512-OdqJE9UDRPwWsrHjLN2F8bPxvwJBK22EHLWtanu0LSYr5YqzsaaW3RMgmjwr8Rypg5k+meEJdSPXJZXE/yqOMg==}
 
@@ -8128,7 +8125,7 @@ snapshots:
   micromark@4.0.2:
     dependencies:
       '@types/debug': 4.1.12
-      debug: 4.3.7
+      debug: 4.4.1
       decode-named-character-reference: 1.1.0
       devlop: 1.1.0
       micromark-core-commonmark: 2.0.3
@@ -8460,7 +8457,7 @@ snapshots:
       quick-lru: 7.0.0
       url-join: 5.0.0
       validate-npm-package-name: 5.0.1
-      zod: 3.24.1
+      zod: 3.24.4
       zod-package-json: 1.0.3
 
   query-string@9.1.1:
@@ -9364,8 +9361,6 @@ snapshots:
   zod-to-json-schema@3.24.5(zod@3.24.4):
     dependencies:
       zod: 3.24.4
-
-  zod@3.24.1: {}
 
   zod@3.24.4: {}
 
