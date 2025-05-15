@@ -53,14 +53,14 @@ export default async function Page({ params }: { params: Promise<Params> }) {
   }
   
   return (
-    <div className="prose prose-neutral dark:prose-invert max-w-none">
-      <h1>{mdxData.frontmatter.title}</h1>
+    <div className="prose prose-invert max-w-none bg-neutral-950 text-neutral-100">
+      <h1 className="text-white">{mdxData.frontmatter.title}</h1>
       {mdxData.frontmatter.description && (
-        <p className="text-lg text-neutral-600 dark:text-neutral-400">
+        <p className="text-lg text-neutral-400">
           {mdxData.frontmatter.description}
         </p>
       )}
-      <div>{mdxData.content}</div>
+      <div className="text-neutral-100">{mdxData.content}</div>
     </div>
   );
 }

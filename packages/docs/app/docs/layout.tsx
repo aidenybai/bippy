@@ -1,10 +1,11 @@
 import { tree } from '@/utils/source';
 import type { ReactNode } from 'react';
+import '../globals.css';
 
 export default function Layout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-background">
+    <div className="flex min-h-screen flex-col bg-neutral-950 text-neutral-100">
+      <header className="border-b border-neutral-800 bg-neutral-900">
         <div className="mx-auto flex h-16 max-w-screen-xl items-center justify-between px-4">
           <div className="font-bold">Bippy Documentation</div>
           <nav className="hidden md:flex space-x-6">
@@ -12,7 +13,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               <a 
                 key={item.label} 
                 href={item.link} 
-                className="text-sm hover:text-neutral-500 dark:hover:text-neutral-400"
+                className="text-sm hover:text-neutral-400"
               >
                 {item.label}
               </a>
@@ -21,7 +22,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       </header>
       <div className="flex flex-1">
-        <aside className="w-64 border-r border-neutral-200 dark:border-neutral-800 hidden md:block p-4">
+        <aside className="w-64 border-r border-neutral-800 hidden md:block p-4">
           <nav>
             <ul className="space-y-2">
               {tree.main.items.map((item) => (
@@ -34,7 +35,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                           <li key={subItem.label}>
                             <a 
                               href={subItem.link} 
-                              className="text-sm hover:text-neutral-500 dark:hover:text-neutral-400"
+                              className="text-sm hover:text-neutral-400"
                             >
                               {subItem.label}
                             </a>
@@ -45,7 +46,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                   ) : (
                     <a 
                       href={item.link} 
-                      className="text-sm hover:text-neutral-500 dark:hover:text-neutral-400"
+                      className="text-sm hover:text-neutral-400"
                     >
                       {item.label}
                     </a>
