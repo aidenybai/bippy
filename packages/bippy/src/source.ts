@@ -9,6 +9,7 @@ import {
   traverseFiber,
   getDisplayName,
   _renderers,
+  getRDTHook,
 } from './index.js';
 
 export interface FiberSource {
@@ -86,15 +87,11 @@ const parseStackFrame = async (frame: string): Promise<FiberSource | null> => {
     return null;
   }
 
-  const { file, line, col } = source[0];
+  const { file: fileName, line: lineNumber, col: columnNumber = 0 } = source[0];
 
-  if (!file || !line) {
+  if (!fileName || !lineNumber) {
     return null;
   }
-
-  const fileName = file || '';
-  const lineNumber = line || 0;
-  const columnNumber = col || 0;
 
   const response = await fetch(getActualFileSource(fileName));
   if (response.ok) {
@@ -106,10 +103,11 @@ const parseStackFrame = async (frame: string): Promise<FiberSource | null> => {
         line: lineNumber,
         column: columnNumber,
       });
+
       return {
-        fileName: sourcemap.file || '',
-        lineNumber: result.line || 0,
-        columnNumber: result.column || 0,
+        fileName: sourcemap.file || result.source,
+        lineNumber: result.line,
+        columnNumber: result.column,
       };
     }
   }
@@ -123,7 +121,7 @@ const parseStackFrame = async (frame: string): Promise<FiberSource | null> => {
 // https://github.com/facebook/react/blob/f739642745577a8e4dcb9753836ac3589b9c590a/packages/react-devtools-shared/src/backend/shared/DevToolsComponentStackFrame.js#L22
 const describeNativeComponentFrame = (
   fn: React.ComponentType<unknown>,
-  construct: boolean,
+  construct: boolean
 ): string => {
   if (!fn || reentry) {
     return '';
@@ -224,7 +222,7 @@ const describeNativeComponentFrame = (
       'DetermineComponentFrameRoot';
     const namePropDescriptor = Object.getOwnPropertyDescriptor(
       RunInRootFrame.DetermineComponentFrameRoot,
-      'name',
+      'name'
     );
     // Before ES6, the `name` property was not configurable.
     if (namePropDescriptor?.configurable) {
@@ -235,7 +233,7 @@ const describeNativeComponentFrame = (
         // is set to `false`.
         // $FlowFixMe[cannot-write]
         'name',
-        { value: 'DetermineComponentFrameRoot' },
+        { value: 'DetermineComponentFrameRoot' }
       );
     }
 
@@ -326,7 +324,11 @@ const describeNativeComponentFrame = (
 };
 
 export const getCurrentDispatcher = (): React.RefObject<unknown> | null => {
-  for (const renderer of _renderers) {
+  const rdtHook = getRDTHook();
+  for (const renderer of [
+    ...Array.from(_renderers),
+    ...Array.from(rdtHook.renderers.values()),
+  ]) {
     const currentDispatcherRef = renderer.currentDispatcherRef;
     if (currentDispatcherRef) {
       // @ts-expect-error
@@ -337,7 +339,7 @@ export const getCurrentDispatcher = (): React.RefObject<unknown> | null => {
 };
 
 export const setCurrentDispatcher = (
-  value: React.RefObject<unknown> | null,
+  value: React.RefObject<unknown> | null
 ): void => {
   for (const renderer of _renderers) {
     const currentDispatcherRef = renderer.currentDispatcherRef;
@@ -352,7 +354,7 @@ export const setCurrentDispatcher = (
 };
 
 export const getFiberSource = async (
-  fiber: Fiber,
+  fiber: Fiber
 ): Promise<FiberSource | null> => {
   const debugSource = fiber._debugSource;
   if (debugSource) {
@@ -386,8 +388,8 @@ export const getFiberSource = async (
           (f) => {
             if (isCompositeFiber(f)) return true;
           },
-          true,
-        )?.type,
+          true
+        )?.type
       )
     : getType(fiber.type);
   if (!componentFunction || reentry) {
@@ -396,7 +398,7 @@ export const getFiberSource = async (
 
   const frame = describeNativeComponentFrame(
     componentFunction,
-    fiber.tag === ClassComponentTag,
+    fiber.tag === ClassComponentTag
   );
   return parseStackFrame(frame);
 };
