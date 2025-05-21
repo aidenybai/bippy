@@ -1,5 +1,11 @@
 # bippy
 
+## 0.3.12
+
+### Patch Changes
+
+- fix: getFiberSource on next.js
+
 ## 0.3.11
 
 ### Patch Changes
