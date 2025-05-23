@@ -2,6 +2,8 @@ import { useState, type ReactNode, Fragment, type JSX } from 'react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { highlight } from 'sugar-high';
+import { getFiberSource } from 'bippy/dist/source';
+import { getFiberFromHostInstance } from 'bippy';
 
 declare const __VERSION__: string;
 
@@ -37,9 +39,15 @@ interface TabsProps<T extends string> {
   onChange: (value: T) => void;
 }
 
+setTimeout(async () => {
+  const tabs = document.getElementById('tabs');
+  // @ts-ignore
+  console.log(await getFiberSource(getFiberFromHostInstance(tabs)));
+}, 1000);
+
 function Tabs<T extends string>({ tabs, value, onChange }: TabsProps<T>) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2" id="tabs">
       {tabs.map((tab, i) => (
         <Fragment key={tab.value}>
           {i > 0 && <span className="text-white/40">·</span>}

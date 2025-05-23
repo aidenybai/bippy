@@ -73,12 +73,20 @@ const getSourceMap = async (url: string, content: string) => {
   return new SourceMapConsumer(rawSourceMap);
 };
 
-const getActualFileSource = (path: string): string => {
-  if (path.startsWith('file://')) {
-    return `/_build/@fs${path.substring('file://'.length)}`;
+const getRemovedFileProtocolPath = (path: string): string => {
+  const protocol = 'file://';
+  if (path.startsWith(protocol)) {
+    return path.substring(protocol.length);
   }
   return path;
 };
+
+// const getActualFileSource = (path: string): string => {
+//   if (path.startsWith('file://')) {
+//     return `/_build/@fs${path.substring('file://'.length)}`;
+//   }
+//   return path;
+// };
 
 const parseStackFrame = async (frame: string): Promise<FiberSource | null> => {
   const source = parseStack(frame);
@@ -93,7 +101,7 @@ const parseStackFrame = async (frame: string): Promise<FiberSource | null> => {
     return null;
   }
 
-  const response = await fetch(getActualFileSource(fileName));
+  const response = await fetch(fileName);
   if (response.ok) {
     const content = await response.text();
     const sourcemap = await getSourceMap(fileName, content);
@@ -105,14 +113,14 @@ const parseStackFrame = async (frame: string): Promise<FiberSource | null> => {
       });
 
       return {
-        fileName: sourcemap.file || result.source,
+        fileName: getRemovedFileProtocolPath(sourcemap.file || result.source),
         lineNumber: result.line,
         columnNumber: result.column,
       };
     }
   }
   return {
-    fileName,
+    fileName: getRemovedFileProtocolPath(fileName),
     lineNumber,
     columnNumber,
   };
