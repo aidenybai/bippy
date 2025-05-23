@@ -12,7 +12,7 @@
     "bump": "changeset && changeset version",
     "release": "changeset publish"
   },
-  "packageManager": "pnpm@9.15.5",
+  "packageManager": "pnpm@10.11.0",
   "private": true,
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
