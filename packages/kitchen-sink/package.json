@@ -8,7 +8,7 @@
 		"dev": "rm -rf node_modules/.vite && pnpm i && vite"
 	},
 	"dependencies": {
-		"bippy": "^0.3.12",
+		"bippy": "^0.3.13",
 		"clsx": "^2.1.1",
 		"react": "19.1.0",
 		"react-dom": "19.1.0",

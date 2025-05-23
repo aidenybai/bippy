@@ -1,5 +1,11 @@
 # bippy
 
+## 0.3.13
+
+### Patch Changes
+
+- remove file protocol
+
 ## 0.3.12
 
 ### Patch Changes
