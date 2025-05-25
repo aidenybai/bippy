@@ -92,12 +92,11 @@
     },
     "./dist/*": "./dist/*.js",
     "./dist/*.js": "./dist/*.js",
-    "./dist/*.cjs": "./dist/*.cjs",
-    "./dist/*.mjs": "./dist/*.mjs"
+    "./dist/*.cjs": "./dist/*.cjs"
   },
   "main": "dist/index.js",
   "module": "dist/index.js",
-  "browser": "dist/index.global.js",
+  "browser": "dist/index.iife.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist",
@@ -107,8 +106,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "NODE_ENV=production tsup",
-    "dev": "NODE_ENV=development tsup --watch",
+    "build": "NODE_ENV=production tsdown && bun scripts/append-banner.ts",
+    "dev": "NODE_ENV=development tsdown --watch",
     "publint": "publint",
     "test": "vitest",
     "coverage": "vitest run --coverage",
@@ -135,7 +134,7 @@
     "react-refresh": "^0.16.0",
     "source-map-js": "^1.2.1",
     "terser": "^5.36.0",
-    "tsup": "^8.2.4",
+    "tsdown": "^0.12.3",
     "vitest": "^2.1.8"
   },
   "peerDependencies": {

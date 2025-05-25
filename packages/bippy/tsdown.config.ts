@@ -1,23 +1,10 @@
-import { defineConfig, type Options } from 'tsup';
+import { defineConfig, type Options } from 'tsdown';
 import fs from 'node:fs';
-
-const banner = `/**
- * @license bippy
- *
- * Copyright (c) Aiden Bai, Million Software, Inc.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */`;
 
 const DEFAULT_OPTIONS: Options = {
   entry: [],
-  banner: {
-    js: banner,
-  },
   clean: false,
   outDir: './dist',
-  splitting: false,
   sourcemap: false,
   format: [],
   target: 'esnext',
@@ -45,14 +32,13 @@ export default defineConfig([
       './src/experiments/inspect.tsx',
       './src/source.ts',
     ],
-    splitting: true,
     clean: true, // only run on first entry
   },
   {
     ...DEFAULT_OPTIONS,
     format: ['iife'],
     outDir: './dist',
-    minify: process.env.NODE_ENV === 'production' ? 'terser' : false,
+    minify: process.env.NODE_ENV === 'production',
     globalName: 'Bippy',
     entry: ['./src/index.ts'],
   },
@@ -60,7 +46,7 @@ export default defineConfig([
     ...DEFAULT_OPTIONS,
     format: ['iife'],
     outDir: './dist',
-    minify: process.env.NODE_ENV === 'production' ? 'terser' : false,
+    minify: process.env.NODE_ENV === 'production',
     globalName: 'Bippy',
     entry: ['./src/source.ts'],
   },
