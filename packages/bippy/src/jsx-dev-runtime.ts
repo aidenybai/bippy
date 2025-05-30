@@ -18,7 +18,6 @@ export const jsxDEV = (
 ) => {
   let props = originalProps;
   try {
-    // check if is server component:
     if (
       originalProps &&
       typeof originalProps === 'object' &&
