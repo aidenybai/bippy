@@ -1,4 +1,7 @@
 {
+  "compilerOptions": {
+    "jsxImportSource": "bippy/dist"
+  },
   "files": [],
   "references": [
     { "path": "./tsconfig.app.json" },

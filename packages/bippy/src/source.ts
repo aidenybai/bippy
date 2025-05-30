@@ -101,24 +101,26 @@ const parseStackFrame = async (frame: string): Promise<FiberSource | null> => {
     return null;
   }
 
-  const response = await fetch(fileName);
-  if (response.ok) {
-    const content = await response.text();
-    const sourcemap = await getSourceMap(fileName, content);
+  try {
+    const response = await fetch(fileName);
+    if (response.ok) {
+      const content = await response.text();
+      const sourcemap = await getSourceMap(fileName, content);
 
-    if (sourcemap) {
-      const result = sourcemap.originalPositionFor({
-        line: lineNumber,
-        column: columnNumber,
-      });
+      if (sourcemap) {
+        const result = sourcemap.originalPositionFor({
+          line: lineNumber,
+          column: columnNumber,
+        });
 
-      return {
-        fileName: getRemovedFileProtocolPath(sourcemap.file || result.source),
-        lineNumber: result.line,
-        columnNumber: result.column,
-      };
+        return {
+          fileName: getRemovedFileProtocolPath(sourcemap.file || result.source),
+          lineNumber: result.line,
+          columnNumber: result.column,
+        };
+      }
     }
-  }
+  } catch {}
   return {
     fileName: getRemovedFileProtocolPath(fileName),
     lineNumber,
@@ -379,8 +381,14 @@ export const getFiberSource = async (
   }
 
   // passed by bippy's jsx-dev-runtime
-  if (fiber.memoizedProps?.__source) {
-    return fiber.memoizedProps.__source as FiberSource;
+  if (typeof fiber.memoizedProps?._source === 'string') {
+    const [fileName, lineNumber, columnNumber] =
+      fiber.memoizedProps._source.split(':');
+    return {
+      fileName,
+      lineNumber: Number.parseInt(lineNumber),
+      columnNumber: Number.parseInt(columnNumber),
+    };
   }
 
   const currentDispatcherRef = getCurrentDispatcher();

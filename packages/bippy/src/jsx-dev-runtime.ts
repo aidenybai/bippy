@@ -14,31 +14,21 @@ export const jsxDEV = (
   key: React.Key | undefined,
   isStatic: boolean,
   source?: JSXSource,
-  self?: unknown,
+  self?: unknown
 ) => {
   let props = originalProps;
   try {
+    // check if is server component:
     if (
       originalProps &&
       typeof originalProps === 'object' &&
       source &&
       String(type) !== 'Symbol(react.fragment)'
     ) {
-      // prevent attributes from rendering in DOM for host fibers
-      if (typeof type === 'string') {
-        const proto = Object.getPrototypeOf(originalProps);
-        const descriptors = Object.getOwnPropertyDescriptors(originalProps);
-        descriptors.__source = {
-          value: source,
-          enumerable: false,
-          configurable: true,
-          writable: true,
-        };
-        props = Object.create(proto, descriptors);
-      } else {
-        // @ts-expect-error
-        props.__source = source;
-      }
+      props = {
+        ...originalProps,
+        _source: `${source.fileName}:${source.lineNumber}:${source.columnNumber}`,
+      };
     }
   } catch {}
   return jsxDEVImpl(type, props, key, isStatic, source, self);

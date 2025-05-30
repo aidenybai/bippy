@@ -7,10 +7,10 @@ import { useEffect } from 'react';
 
 export default function Home() {
   useEffect(() => {
-    setTimeout(async() => {
+    setTimeout(async () => {
       const fiber = getFiberFromHostInstance(
         // biome-ignore lint/style/noNonNullAssertion: <explanation>
-        document.getElementById('bippy-source')!,
+        document.getElementById('bippy-source')!
       );
       if (fiber) {
         // biome-ignore lint/suspicious/noConsoleLog: <explanation>
