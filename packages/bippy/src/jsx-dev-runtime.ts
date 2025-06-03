@@ -26,7 +26,7 @@ export const jsxDEV = (
     ) {
       props = {
         ...originalProps,
-        _source: `${source.fileName}:${source.lineNumber}:${source.columnNumber}`,
+        'data-react-source': `${source.fileName}:${source.lineNumber}:${source.columnNumber}`,
       };
     }
   } catch {}
