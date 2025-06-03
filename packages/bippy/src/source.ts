@@ -380,10 +380,11 @@ export const getFiberSource = async (
     };
   }
 
+  const dataReactSource = fiber.memoizedProps?.['data-react-source'];
+
   // passed by bippy's jsx-dev-runtime
-  if (typeof fiber.memoizedProps?._source === 'string') {
-    const [fileName, lineNumber, columnNumber] =
-      fiber.memoizedProps._source.split(':');
+  if (typeof dataReactSource === 'string') {
+    const [fileName, lineNumber, columnNumber] = dataReactSource.split(':');
     return {
       fileName,
       lineNumber: Number.parseInt(lineNumber),
