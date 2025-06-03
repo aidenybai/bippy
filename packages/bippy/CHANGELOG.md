@@ -1,5 +1,11 @@
 # bippy
 
+## 0.3.16
+
+### Patch Changes
+
+- rename \_source to data-react-source
+
 ## 0.3.15
 
 ### Patch Changes
