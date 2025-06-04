@@ -68,7 +68,7 @@ const MutationMask =
  * @see https://react.dev/reference/react/isValidElement
  */
 export const isValidElement = (
-  element: unknown,
+  element: unknown
 ): element is React.ReactElement =>
   typeof element === 'object' &&
   element != null &&
@@ -134,9 +134,9 @@ export const traverseContexts = (
   fiber: Fiber,
   selector: (
     nextValue: ContextDependency<unknown> | null | undefined,
-    prevValue: ContextDependency<unknown> | null | undefined,
+    prevValue: ContextDependency<unknown> | null | undefined
     // biome-ignore lint/suspicious/noConfusingVoidType: optional return
-  ) => boolean | void,
+  ) => boolean | void
 ): boolean => {
   try {
     const nextDependencies = fiber.dependencies;
@@ -179,9 +179,9 @@ export const traverseState = (
   fiber: Fiber,
   selector: (
     nextValue: MemoizedState | null | undefined,
-    prevValue: MemoizedState | null | undefined,
+    prevValue: MemoizedState | null | undefined
     // biome-ignore lint/suspicious/noConfusingVoidType: optional return
-  ) => boolean | void,
+  ) => boolean | void
 ): boolean => {
   try {
     let nextState: MemoizedState | null | undefined = fiber.memoizedState;
@@ -206,9 +206,9 @@ export const traverseProps = (
   selector: (
     propName: string,
     nextValue: unknown,
-    prevValue: unknown,
+    prevValue: unknown
     // biome-ignore lint/suspicious/noConfusingVoidType: may or may not exist
-  ) => boolean | void,
+  ) => boolean | void
 ): boolean => {
   try {
     const nextProps = fiber.memoizedProps;
@@ -264,7 +264,7 @@ export const didFiberRender = (fiber: Fiber): boolean => {
 export const didFiberCommit = (fiber: Fiber): boolean => {
   return Boolean(
     (fiber.flags & (MutationMask | Cloned)) !== 0 ||
-      (fiber.subtreeFlags & (MutationMask | Cloned)) !== 0,
+      (fiber.subtreeFlags & (MutationMask | Cloned)) !== 0
   );
 };
 
@@ -301,9 +301,9 @@ export const getMutatedHostFibers = (fiber: Fiber): Fiber[] => {
 export const getFiberStack = (fiber: Fiber): Fiber[] => {
   const stack: Fiber[] = [];
   let currentFiber = fiber;
-  while (currentFiber.return) {
+  while (currentFiber._debugOwner || currentFiber.return) {
     stack.push(currentFiber);
-    currentFiber = currentFiber.return;
+    currentFiber = (currentFiber._debugOwner || currentFiber.return) as Fiber;
   }
   return stack;
 };
@@ -360,7 +360,7 @@ export const shouldFilterFiber = (fiber: Fiber): boolean => {
  */
 export const getNearestHostFiber = (
   fiber: Fiber,
-  ascending = false,
+  ascending = false
 ): Fiber | null => {
   let hostFiber = traverseFiber(fiber, isHostFiber, ascending);
   if (!hostFiber) {
@@ -406,7 +406,7 @@ export const traverseFiber = (
   fiber: Fiber | null,
   // biome-ignore lint/suspicious/noConfusingVoidType: may or may not exist
   selector: (node: Fiber) => boolean | void,
-  ascending = false,
+  ascending = false
 ): Fiber | null => {
   if (!fiber) return null;
   if (selector(fiber) === true) return fiber;
@@ -431,7 +431,7 @@ export const traverseFiber = (
  * ```
  */
 export const getTimings = (
-  fiber?: Fiber | null | undefined,
+  fiber?: Fiber | null | undefined
 ): { selfTime: number; totalTime: number } => {
   const totalTime = fiber?.actualDuration ?? 0;
   let selfTime = totalTime;
@@ -449,7 +449,7 @@ export const getTimings = (
  */
 export const hasMemoCache = (fiber: Fiber): boolean => {
   return Boolean(
-    (fiber.updateQueue as unknown as { memoCache: unknown })?.memoCache,
+    (fiber.updateQueue as unknown as { memoCache: unknown })?.memoCache
   );
 };
 
@@ -471,7 +471,7 @@ export const getType = (type: unknown): React.ComponentType<unknown> | null => {
     return getType(
       (currentType as React.MemoExoticComponent<React.ComponentType<unknown>>)
         .type ||
-        (currentType as { render: React.ComponentType<unknown> }).render,
+        (currentType as { render: React.ComponentType<unknown> }).render
     );
   }
   return null;
@@ -502,7 +502,7 @@ export const getDisplayName = (type: unknown): string | null => {
  * Returns the build type of the React renderer.
  */
 export const detectReactBuildType = (
-  renderer: ReactRenderer,
+  renderer: ReactRenderer
 ): 'development' | 'production' => {
   try {
     if (typeof renderer.version === 'string' && renderer.bundleType > 0) {
@@ -549,7 +549,7 @@ export type RenderPhase = 'mount' | 'update' | 'unmount';
 export type RenderHandler = <S>(
   fiber: Fiber,
   phase: RenderPhase,
-  state?: S,
+  state?: S
 ) => unknown;
 
 let fiberId = 0;
@@ -577,7 +577,7 @@ export const getFiberId = (fiber: Fiber): number => {
 export const mountFiberRecursively = (
   onRender: RenderHandler,
   firstChild: Fiber,
-  traverseSiblings: boolean,
+  traverseSiblings: boolean
 ): void => {
   let fiber: Fiber | null = firstChild;
 
@@ -630,7 +630,7 @@ export const updateFiberRecursively = (
   onRender: RenderHandler,
   nextFiber: Fiber,
   prevFiber: Fiber,
-  parentFiber: Fiber | null,
+  parentFiber: Fiber | null
 ): void => {
   if (!fiberIdMap.has(nextFiber)) {
     getFiberId(nextFiber);
@@ -673,7 +673,7 @@ export const updateFiberRecursively = (
         onRender,
         nextFallbackChildSet,
         prevFallbackChildSet,
-        nextFiber,
+        nextFiber
       );
     }
   } else if (prevDidTimeout && !nextDidTimeOut) {
@@ -719,7 +719,7 @@ export const updateFiberRecursively = (
           onRender,
           nextChild,
           prevChild,
-          shouldIncludeInTree ? nextFiber : parentFiber,
+          shouldIncludeInTree ? nextFiber : parentFiber
         );
       } else {
         mountFiberRecursively(onRender, nextChild, false);
@@ -741,7 +741,7 @@ export const unmountFiber = (onRender: RenderHandler, fiber: Fiber): void => {
 
 export const unmountFiberChildrenRecursively = (
   onRender: RenderHandler,
-  fiber: Fiber,
+  fiber: Fiber
 ): void => {
   // We might meet a nested Suspense on our way.
   const isTimedOutSuspense =
@@ -787,7 +787,7 @@ const rootInstanceMap = new WeakMap<
  */
 export const traverseRenderedFibers = (
   root: FiberRoot,
-  onRender: RenderHandler,
+  onRender: RenderHandler
 ): void => {
   const fiber = 'current' in root ? root.current : root;
 
@@ -848,7 +848,7 @@ export interface InstrumentationOptions {
     rendererID: number,
     root: FiberRoot,
     // biome-ignore lint/suspicious/noConfusingVoidType: may be undefined
-    priority: void | number,
+    priority: void | number
   ) => unknown;
   onCommitFiberUnmount?: (rendererID: number, fiber: Fiber) => unknown;
   onPostCommitFiberRoot?: (rendererID: number, root: FiberRoot) => unknown;
@@ -869,7 +869,7 @@ export interface InstrumentationOptions {
  * });
  */
 export const instrument = (
-  options: InstrumentationOptions,
+  options: InstrumentationOptions
 ): ReactDevToolsGlobalHook => {
   return getRDTHook(() => {
     const rdtHook = getRDTHook();
@@ -885,7 +885,7 @@ export const instrument = (
         rendererID: number,
         root: FiberRoot,
         // biome-ignore lint/suspicious/noConfusingVoidType: may be undefined
-        priority: void | number,
+        priority: void | number
       ) => {
         if (prevOnCommitFiberRoot)
           prevOnCommitFiberRoot(rendererID, root, priority);
@@ -953,7 +953,7 @@ export const secure = (
     onError?: (error?: unknown) => unknown;
     installCheckTimeout?: number;
     isProduction?: boolean;
-  } = {},
+  } = {}
 ): InstrumentationOptions => {
   const onActive = options.onActive;
   const isRDTHookInstalled = hasRDTHook();
@@ -1060,14 +1060,14 @@ export const secure = (
  * });
  */
 export const onCommitFiberRoot = (
-  handler: (root: FiberRoot) => void,
+  handler: (root: FiberRoot) => void
 ): ReactDevToolsGlobalHook => {
   return instrument(
     secure({
       onCommitFiberRoot: (_, root) => {
         handler(root);
       },
-    }),
+    })
   );
 };
 
