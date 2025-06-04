@@ -397,7 +397,7 @@ import { isValidFiber } from 'bippy';
 console.log(isValidFiber(fiber));
 ```
 
-## getFiberFromHostInstance
+### getFiberFromHostInstance
 
 returns the fiber associated with a given host instance (e.g., a DOM element).
 
@@ -408,7 +408,7 @@ const fiber = getFiberFromHostInstance(document.querySelector('div'));
 console.log(fiber);
 ```
 
-## getLatestFiber
+### getLatestFiber
 
 returns the latest fiber (since it may be double-buffered). usually use this in combination with `getFiberFromHostInstance`.
 
@@ -420,6 +420,28 @@ const latestFiber = getLatestFiber(
 );
 console.log(latestFiber);
 ```
+
+### getFiberSource
+
+returns the source code location of a fiber.
+
+```typescript
+import { getFiberSource } from 'bippy/source';
+
+const fiber = getFiberFromHostInstance(document.querySelector('div'));
+
+console.log(await getFiberSource(fiber));
+```
+
+> note: in order to get accurate source locations in react >= 19, you need to add this in your `tsconfig.json`:
+>
+> ```json
+> {
+>   "compilerOptions": {
+>     "jsxImportSource": "bippy/dist"
+>   }
+> }
+> ```
 
 ## examples
 
