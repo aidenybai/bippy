@@ -301,9 +301,9 @@ export const getMutatedHostFibers = (fiber: Fiber): Fiber[] => {
 export const getFiberStack = (fiber: Fiber): Fiber[] => {
   const stack: Fiber[] = [];
   let currentFiber = fiber;
-  while (currentFiber._debugOwner || currentFiber.return) {
+  while (currentFiber.return) {
     stack.push(currentFiber);
-    currentFiber = (currentFiber._debugOwner || currentFiber.return) as Fiber;
+    currentFiber = currentFiber.return as Fiber;
   }
   return stack;
 };
