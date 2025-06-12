@@ -82,7 +82,7 @@ while all of the information is there, it's not super easy to work with, and cha
 
 however, fibers aren't directly accessible by the user. so, we have to hack our way around to accessing it.
 
-luckily, react [reads from a property](https://github.com/facebook/react/blob/6a4b46cd70d2672bc4be59dcb5b8dede22ed0cef/packages/react-reconciler/src/reactFiberDevToolsHook.js#L48) in the window object: `window.__REACT_DEVTOOLS_GLOBAL_HOOK__` and runs handlers on it when certain events happen. this property must exist before react's bundle is executed. this is intended for react devtools, but we can use it to our advantage.
+luckily, react [reads from a property](https://github.com/facebook/react/blob/6a4b46cd70d2672bc4be59dcb5b8dede22ed0cef/packages/react-reconciler/src/ReactFiberDevToolsHook.js#L48) in the window object: `window.__REACT_DEVTOOLS_GLOBAL_HOOK__` and runs handlers on it when certain events happen. this property must exist before react's bundle is executed. this is intended for react devtools, but we can use it to our advantage.
 
 here's what it roughly looks like:
 
@@ -397,7 +397,7 @@ import { isValidFiber } from 'bippy';
 console.log(isValidFiber(fiber));
 ```
 
-## getFiberFromHostInstance
+### getFiberFromHostInstance
 
 returns the fiber associated with a given host instance (e.g., a DOM element).
 
@@ -408,7 +408,7 @@ const fiber = getFiberFromHostInstance(document.querySelector('div'));
 console.log(fiber);
 ```
 
-## getLatestFiber
+### getLatestFiber
 
 returns the latest fiber (since it may be double-buffered). usually use this in combination with `getFiberFromHostInstance`.
 
@@ -420,6 +420,28 @@ const latestFiber = getLatestFiber(
 );
 console.log(latestFiber);
 ```
+
+### getFiberSource
+
+returns the source code location of a fiber.
+
+```typescript
+import { getFiberSource } from 'bippy/source';
+
+const fiber = getFiberFromHostInstance(document.querySelector('div'));
+
+console.log(await getFiberSource(fiber));
+```
+
+> note: in order to get accurate source locations in react >= 19, you need to add this in your `tsconfig.json`:
+>
+> ```json
+> {
+>   "compilerOptions": {
+>     "jsxImportSource": "bippy/dist"
+>   }
+> }
+> ```
 
 ## examples
 

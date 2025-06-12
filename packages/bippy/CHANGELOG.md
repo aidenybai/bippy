@@ -1,5 +1,11 @@
 # bippy
 
+## 0.3.17
+
+### Patch Changes
+
+- Add override methods
+
 ## 0.3.16
 
 ### Patch Changes
