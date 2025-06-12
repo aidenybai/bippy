@@ -17,7 +17,7 @@ describe('instrument', () => {
     render(<BasicComponent />);
     const onCommitFiberRoot = vi.fn();
     instrument(
-      secure({ onCommitFiberRoot }, { dangerouslyRunInProduction: true }),
+      secure({ onCommitFiberRoot }, { dangerouslyRunInProduction: true })
     );
     render(<BasicComponent />);
     expect(onCommitFiberRoot).toHaveBeenCalled();
@@ -61,9 +61,11 @@ describe('instrument', () => {
   it('should safeguard if version <17 or in production', () => {
     render(<BasicComponent />);
     const rdtHook = getRDTHook();
+    const currentDispatcherRef = { current: null };
     rdtHook.renderers.set(1, {
       version: '16.0.0',
       bundleType: 0,
+      currentDispatcherRef,
     });
     const onCommitFiberRoot1 = vi.fn();
     instrument(secure({ onCommitFiberRoot: onCommitFiberRoot1 }));
@@ -80,6 +82,7 @@ describe('instrument', () => {
     rdtHook.renderers.set(1, {
       version: '17.0.0',
       bundleType: 1,
+      currentDispatcherRef,
     });
     instrument(secure({ onCommitFiberRoot: onCommitFiberRoot2 }));
     render(<BasicComponent />);

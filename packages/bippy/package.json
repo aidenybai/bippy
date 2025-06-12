@@ -60,6 +60,16 @@
         "default": "./dist/source.cjs"
       }
     },
+    "./override": {
+      "import": {
+        "types": "./dist/override.d.ts",
+        "default": "./dist/override.js"
+      },
+      "require": {
+        "types": "./dist/override.d.cts",
+        "default": "./dist/override.cjs"
+      }
+    },
     "./jsx-runtime": {
       "import": {
         "types": "./dist/jsx-runtime.d.ts",

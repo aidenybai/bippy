@@ -31,6 +31,7 @@ export default defineConfig([
       './src/jsx-dev-runtime.ts',
       './src/experiments/inspect.tsx',
       './src/source.ts',
+      './src/override.ts',
     ],
     clean: true, // only run on first entry
   },
@@ -41,13 +42,5 @@ export default defineConfig([
     minify: process.env.NODE_ENV === 'production',
     globalName: 'Bippy',
     entry: ['./src/index.ts'],
-  },
-  {
-    ...DEFAULT_OPTIONS,
-    format: ['iife'],
-    outDir: './dist',
-    minify: process.env.NODE_ENV === 'production',
-    globalName: 'Bippy',
-    entry: ['./src/source.ts'],
   },
 ]);

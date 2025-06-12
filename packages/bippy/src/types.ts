@@ -77,7 +77,7 @@ export interface ReactDevToolsGlobalHook {
     rendererID: number,
     root: FiberRoot,
     // biome-ignore lint/suspicious/noConfusingVoidType: may or may not exist
-    priority: void | number,
+    priority: void | number
   ) => void;
   onCommitFiberUnmount: (rendererID: number, fiber: Fiber) => void;
   onPostCommitFiberRoot: (rendererID: number, root: FiberRoot) => void;
@@ -123,8 +123,23 @@ export type Fiber<T = any> = Omit<
 export interface ReactRenderer {
   version: string;
   bundleType: 0 /* PROD */ | 1 /* DEV */;
-  findFiberByHostInstance?: (hostInstance: unknown) => Fiber | null;
   currentDispatcherRef: React.RefObject<unknown>;
+
+  // dev only
+  findFiberByHostInstance?: (hostInstance: unknown) => Fiber | null;
+  overrideHookState?: (
+    fiber: Fiber,
+    id: string,
+    path: string[],
+    value: unknown
+  ) => void;
+  overrideProps?: (fiber: Fiber, path: string[], value: unknown) => void;
+  overrideContext?: (
+    fiber: Fiber,
+    contextType: unknown,
+    path: string[],
+    value: unknown
+  ) => void;
 }
 
 export interface ContextDependency<T> {
