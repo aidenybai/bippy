@@ -443,6 +443,79 @@ console.log(await getFiberSource(fiber));
 > }
 > ```
 
+## override apis
+
+> [!WARNING]
+> these are advanced apis for runtime modification of react state. use with extreme caution as they can cause unexpected behavior and should primarily be used for debugging and development tools.
+
+the override apis allow you to modify react component props, hook state, and context values at runtime. these functions work by injecting override methods into react devtools renderers.
+
+```typescript
+import { overrideProps, overrideHookState, overrideContext } from 'bippy/override';
+```
+
+### overrideProps
+
+overrides component props at runtime by modifying the fiber's props.
+
+```typescript
+import { overrideProps } from 'bippy/override';
+
+// override props on a fiber
+overrideProps(fiber, {
+  title: 'new title',
+  config: {
+    enabled: true,
+    count: 42
+  }
+});
+```
+
+the function accepts a fiber and a partial object containing the props to override. nested objects are automatically flattened into property paths.
+
+### overrideHookState
+
+overrides hook state (usestate, usereducer, etc.) at runtime by hook id.
+
+```typescript
+import { overrideHookState } from 'bippy/override';
+
+// override the first hook (id: 0) with a new value
+overrideHookState(fiber, 0, 'new state value');
+
+// override nested state object
+overrideHookState(fiber, 1, {
+  user: {
+    name: 'john',
+    age: 30
+  }
+});
+```
+
+the hook id parameter corresponds to the order of hooks in the component (0-indexed). the function can accept either a primitive value or an object for nested state updates.
+
+### overrideContext
+
+overrides react context values at runtime by finding the appropriate context provider.
+
+```typescript
+import { overrideContext } from 'bippy/override';
+
+// override context value
+overrideContext(fiber, MyContext, {
+  theme: 'dark',
+  user: {
+    id: 123,
+    name: 'jane'
+  }
+});
+
+// override with primitive value
+overrideContext(fiber, ThemeContext, 'dark');
+```
+
+the function traverses up the fiber tree to find the context provider matching the provided context type and overrides its value.
+
 ## examples
 
 the best way to understand bippy is to [read the source code](https://github.com/aidenybai/bippy/blob/main/src/core.ts). here are some examples of how you can use it:
