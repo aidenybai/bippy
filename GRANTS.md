@@ -1,5 +1,7 @@
 ## grants
 
+> WIP, still drafting out what this might look like.
+
 hey, I'm aiden. i'm the creator of [React Scan](https://github.com/aidenybai/react-scan) (and other devtools like [Million.js](https://github.com/aidenybai/million)).
 
 you've probably seen react's infamous `React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED` export. while you probably shouldn't use it for production, it's a good way to access what lurks under the hood of the public API and see how it works.
