@@ -421,6 +421,12 @@ const latestFiber = getLatestFiber(
 console.log(latestFiber);
 ```
 
+## source apis
+
+> these are advanced apis for debugging and development tools. use with extreme caution as they can cause unexpected behavior and should primarily be used for debugging and development tools.
+
+the source apis allow you to get the source code location of a fiber.
+
 ### getFiberSource
 
 returns the source code location of a fiber.

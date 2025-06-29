@@ -70,26 +70,6 @@
         "default": "./dist/override.cjs"
       }
     },
-    "./jsx-runtime": {
-      "import": {
-        "types": "./dist/jsx-runtime.d.ts",
-        "default": "./dist/jsx-runtime.js"
-      },
-      "require": {
-        "types": "./dist/jsx-runtime.d.cts",
-        "default": "./dist/jsx-runtime.cjs"
-      }
-    },
-    "./jsx-dev-runtime": {
-      "import": {
-        "types": "./dist/jsx-dev-runtime.d.ts",
-        "default": "./dist/jsx-dev-runtime.js"
-      },
-      "require": {
-        "types": "./dist/jsx-dev-runtime.d.cts",
-        "default": "./dist/jsx-dev-runtime.cjs"
-      }
-    },
     "./experiments/inspect": {
       "import": {
         "types": "./dist/experiments/inspect.d.ts",

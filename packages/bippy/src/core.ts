@@ -109,6 +109,7 @@ export const isHostFiber = (fiber: Fiber): boolean => {
       return typeof fiber.type === 'string';
   }
 };
+
 /**
  * Returns `true` if fiber is a composite fiber. Composite fibers are fibers that can render (like functional components, class components, etc.)
  *
@@ -125,6 +126,17 @@ export const isCompositeFiber = (fiber: Fiber): boolean => {
     default:
       return false;
   }
+};
+
+/**
+ * Returns `true` if the two {@link Fiber}s are the same reference
+ */
+export const areFiberEqual = (fiberA: Fiber, fiberB: Fiber): boolean => {
+  return (
+    fiberA === fiberB ||
+    fiberA.alternate === fiberB ||
+    fiberB.alternate === fiberA
+  );
 };
 
 /**
