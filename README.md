@@ -773,14 +773,13 @@ bippy includes safety checks that prevent it from running in production builds. 
 import { instrument } from 'bippy';
 
 // bypass production check (use with extreme caution)
-instrument(
-  {
-    onCommitFiberRoot(rendererID, root) {
-      // your code here
-    },
+instrument({
+  onCommitFiberRoot(rendererID, root) {
+    // your code here
   },
-  false // skip safety checks
-);
+  // note: to bypass safety checks, don't use the secure() wrapper
+  // and ensure you handle errors manually
+});
 ```
 
 #### performance impact
