@@ -140,6 +140,34 @@ or, use via script tag:
 
 next, you can use the api to get data about the fiber tree. below is a (useful) subset of the api. for the full api, read the [source code](https://github.com/aidenybai/bippy/blob/main/src/core.ts).
 
+### basic example
+
+here's a simple example to get started - detecting when any component in your app renders:
+
+```typescript
+import { onCommitFiberRoot, traverseRenderedFibers, getDisplayName, isCompositeFiber } from 'bippy';
+
+// track component renders
+let renderCount = 0;
+
+onCommitFiberRoot((root) => {
+  renderCount++;
+  console.log(`render #${renderCount} - react app updated!`);
+  
+  // optional: log which components rendered
+  traverseRenderedFibers(root, (fiber) => {
+    if (isCompositeFiber(fiber)) {
+      const name = getDisplayName(fiber);
+      if (name) {
+        console.log(`component rendered: ${name}`);
+      }
+    }
+  });
+});
+```
+
+this basic setup will log every time your react app updates, helping you understand when and why renders happen.
+
 ### onCommitFiberRoot
 
 a utility function that wraps the `instrument` function and sets the `onCommitFiberRoot` hook.
@@ -709,6 +737,90 @@ instrument(
 - `onCommitFiberRoot`: called when react is ready to commit a fiber root
 - `onPostCommitFiberRoot`: called when react has committed a fiber root and effects have run
 - `onCommitFiberUnmount`: called when a fiber unmounts
+
+## troubleshooting
+
+### common issues
+
+#### "bippy is not detecting my react app"
+
+make sure bippy is imported **before** react in your application:
+
+```javascript
+// ✅ correct - bippy first
+import 'bippy';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+
+// ❌ incorrect - react first
+import React from 'react';
+import 'bippy'; // too late!
+```
+
+#### "cannot read properties of undefined (reading 'renderers')"
+
+this usually means react hasn't been loaded yet, or bippy wasn't imported before react. ensure:
+
+1. bippy is imported before react
+2. you're not calling bippy functions before react has initialized
+3. you're using a supported react version (17+)
+
+#### "bippy functions are not working in production"
+
+bippy includes safety checks that prevent it from running in production builds. this is intentional for safety. if you need to use bippy in production (not recommended), you can bypass this with:
+
+```javascript
+import { instrument } from 'bippy';
+
+// bypass production check (use with extreme caution)
+instrument(
+  {
+    onCommitFiberRoot(rendererID, root) {
+      // your code here
+    },
+  },
+  false // skip safety checks
+);
+```
+
+#### performance impact
+
+bippy adds minimal overhead when inactive, but can impact performance when actively traversing large fiber trees. for production monitoring, consider:
+
+- limiting traversal depth
+- using throttling/debouncing
+- only monitoring specific components
+- using performance.mark() to measure impact
+
+#### "fiber is null or undefined"
+
+this can happen when:
+
+1. the component has unmounted
+2. you're accessing fibers outside the commit phase
+3. react has cleaned up the fiber tree
+
+always check if fibers exist before using them:
+
+```javascript
+onCommitFiberRoot((root) => {
+  if (root && root.current) {
+    traverseFiber(root.current, (fiber) => {
+      if (fiber && fiber.type) {
+        // safe to use fiber
+      }
+    });
+  }
+});
+```
+
+### compatibility
+
+bippy is tested with react versions 17, 18, and 19. it may work with older versions but is not guaranteed. if you encounter issues:
+
+1. check your react version: `npm list react`
+2. ensure you're using a supported version
+3. check the [changelog](./CHANGELOG.md) for breaking changes
 
 ## development
 
