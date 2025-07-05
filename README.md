@@ -421,12 +421,6 @@ const latestFiber = getLatestFiber(
 console.log(latestFiber);
 ```
 
-## source apis
-
-> these are advanced apis for debugging and development tools. use with extreme caution as they can cause unexpected behavior and should primarily be used for debugging and development tools.
-
-the source apis allow you to get the source code location of a fiber.
-
 ### getFiberSource
 
 returns the source code location of a fiber.
@@ -448,17 +442,6 @@ console.log(await getFiberSource(fiber));
 >   }
 > }
 > ```
-
-## override apis
-
-> [!WARNING]
-> these are advanced apis for runtime modification of react state. use with extreme caution as they can cause unexpected behavior and should primarily be used for debugging and development tools.
-
-the override apis allow you to modify react component props, hook state, and context values at runtime. these functions work by injecting override methods into react devtools renderers.
-
-```typescript
-import { overrideProps, overrideHookState, overrideContext } from 'bippy/override';
-```
 
 ### overrideProps
 
@@ -735,7 +718,7 @@ pnpm run dev
 
 we use this project internally in [react-scan](https://github.com/aidenybai/react-scan), which is deployed with proper safeguards to ensure it's only used in development or error-guarded in production.
 
-while i maintain this specifically for react-scan, those seeking more robust solutions might consider [its-fine](https://github.com/pmndrs/its-fine) for accessing fibers within react using hooks, or [react-devtools-inline](https://www.npmjs.com/package/react-devtools-inline) for a headful interface.
+if you're seeking more robust solutions, you might consider [its-fine](https://github.com/pmndrs/its-fine) for accessing fibers within react using hooks, or [react-devtools-inline](https://www.npmjs.com/package/react-devtools-inline) for a headful interface.
 
 if you plan to use this project beyond experimentation, please review [react-scan's source code](https://github.com/aidenybai/react-scan) to understand our safeguarding practices.
 
