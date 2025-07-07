@@ -716,12 +716,10 @@ pnpm run dev
 
 ## misc
 
-we use this project internally in [react-scan](https://github.com/aidenybai/react-scan), which is deployed with proper safeguards to ensure it's only used in development or error-guarded in production.
+bippy was initially created for [react-scan](https://github.com/aidenybai/react-scan), which is deployed with proper safeguards to ensure it's only used in development or error-guarded in production.
 
 if you're seeking more robust solutions, you might consider [its-fine](https://github.com/pmndrs/its-fine) for accessing fibers within react using hooks, or [react-devtools-inline](https://www.npmjs.com/package/react-devtools-inline) for a headful interface.
 
 if you plan to use this project beyond experimentation, please review [react-scan's source code](https://github.com/aidenybai/react-scan) to understand our safeguarding practices.
 
 the original bippy character is owned and created by [@dairyfreerice](https://www.instagram.com/dairyfreerice). this project is not related to the bippy brand, i just think the character is cute.
-
-DEVIN
