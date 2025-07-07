@@ -18,7 +18,7 @@ by default, you cannot access react internals. bippy bypasses this by "pretendin
 - no prior react source code knowledge required
 
 ```jsx
-import { onCommitFiberRoot, traverseFiber } from 'bippy';
+import { onCommitFiberRoot, traverseFiber } from 'bippy'; // must be imported BEFORE react
 
 onCommitFiberRoot((root) => {
   traverseFiber(root.current, (fiber) => {
