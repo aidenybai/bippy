@@ -516,7 +516,7 @@ here's a mini toy version of [`react-scan`](https://github.com/aidenybai/react-s
 ```javascript
 import {
   instrument,
-  isHostFiber,
+  secure,
   getNearestHostFiber,
   traverseRenderedFibers,
 } from 'bippy'; // must be imported BEFORE react
@@ -532,7 +532,7 @@ const highlightFiber = (fiber) => {
   highlight.style.left = `${rect.left}px`;
   highlight.style.width = `${rect.width}px`;
   highlight.style.height = `${rect.height}px`;
-  highlight.style.zIndex = 999999999;
+  highlight.style.zIndex = '999999999';
   document.documentElement.appendChild(highlight);
   setTimeout(() => {
     document.documentElement.removeChild(highlight);
@@ -589,10 +589,10 @@ instrument(
 
 here's a mini toy version of [`why-did-you-render`](https://github.com/welldone-software/why-did-you-render) that logs why components re-render.
 
-```typescript
+```javascript
 import {
   instrument,
-  isHostFiber,
+  secure,
   traverseRenderedFibers,
   isCompositeFiber,
   getDisplayName,
@@ -656,11 +656,11 @@ instrument(
          * State don't have a "name" like props, so we use an id to identify them.
          */
         traverseState(fiber, (value, prevValue) => {
-          if (next !== prev) {
+          if (value !== prevValue) {
             changes.push({
               name: `state ${stateId}`,
-              prev,
-              next,
+              prev: prevValue,
+              next: value,
             });
           }
           stateId++;

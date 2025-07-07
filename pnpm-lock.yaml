@@ -94,6 +94,12 @@ importers:
         specifier: ^2.1.8
         version: 2.1.8(@types/node@20.17.12)(@vitest/ui@2.1.8)(happy-dom@15.11.7)(lightningcss@1.30.1)(terser@5.36.0)
 
+  packages/gists:
+    dependencies:
+      bippy:
+        specifier: workspace:*
+        version: link:../bippy
+
   packages/kitchen-sink:
     dependencies:
       bippy:
