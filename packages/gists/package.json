@@ -2,7 +2,7 @@
 	"name": "@bippy/gists",
 	"private": true,
 	"type": "module",
-  "dependencies": {
-    "bippy": "workspace:*"
-  }
+	"dependencies": {
+		"bippy": "workspace:*"
+	}
 }

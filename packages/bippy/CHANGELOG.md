@@ -1,5 +1,11 @@
 # bippy
 
+## 0.3.18
+
+### Patch Changes
+
+- fixes minor issues with mounting alongside devtools
+
 ## 0.3.17
 
 ### Patch Changes

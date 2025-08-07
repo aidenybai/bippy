@@ -18,7 +18,7 @@ by default, you cannot access react internals. bippy bypasses this by "pretendin
 - no prior react source code knowledge required
 
 ```jsx
-import { onCommitFiberRoot, traverseFiber } from 'bippy';
+import { onCommitFiberRoot, traverseFiber } from 'bippy'; // must be imported BEFORE react
 
 onCommitFiberRoot((root) => {
   traverseFiber(root.current, (fiber) => {
@@ -443,17 +443,6 @@ console.log(await getFiberSource(fiber));
 > }
 > ```
 
-## override apis
-
-> [!WARNING]
-> these are advanced apis for runtime modification of react state. use with extreme caution as they can cause unexpected behavior and should primarily be used for debugging and development tools.
-
-the override apis allow you to modify react component props, hook state, and context values at runtime. these functions work by injecting override methods into react devtools renderers.
-
-```typescript
-import { overrideProps, overrideHookState, overrideContext } from 'bippy/override';
-```
-
 ### overrideProps
 
 overrides component props at runtime by modifying the fiber's props.
@@ -527,7 +516,7 @@ here's a mini toy version of [`react-scan`](https://github.com/aidenybai/react-s
 ```javascript
 import {
   instrument,
-  isHostFiber,
+  secure,
   getNearestHostFiber,
   traverseRenderedFibers,
 } from 'bippy'; // must be imported BEFORE react
@@ -543,7 +532,7 @@ const highlightFiber = (fiber) => {
   highlight.style.left = `${rect.left}px`;
   highlight.style.width = `${rect.width}px`;
   highlight.style.height = `${rect.height}px`;
-  highlight.style.zIndex = 999999999;
+  highlight.style.zIndex = '999999999';
   document.documentElement.appendChild(highlight);
   setTimeout(() => {
     document.documentElement.removeChild(highlight);
@@ -600,10 +589,10 @@ instrument(
 
 here's a mini toy version of [`why-did-you-render`](https://github.com/welldone-software/why-did-you-render) that logs why components re-render.
 
-```typescript
+```javascript
 import {
   instrument,
-  isHostFiber,
+  secure,
   traverseRenderedFibers,
   isCompositeFiber,
   getDisplayName,
@@ -667,11 +656,11 @@ instrument(
          * State don't have a "name" like props, so we use an id to identify them.
          */
         traverseState(fiber, (value, prevValue) => {
-          if (next !== prev) {
+          if (value !== prevValue) {
             changes.push({
               name: `state ${stateId}`,
-              prev,
-              next,
+              prev: prevValue,
+              next: value,
             });
           }
           stateId++;
@@ -727,9 +716,9 @@ pnpm run dev
 
 ## misc
 
-we use this project internally in [react-scan](https://github.com/aidenybai/react-scan), which is deployed with proper safeguards to ensure it's only used in development or error-guarded in production.
+bippy was initially created for [react-scan](https://github.com/aidenybai/react-scan), which is deployed with proper safeguards to ensure it's only used in development or error-guarded in production.
 
-while i maintain this specifically for react-scan, those seeking more robust solutions might consider [its-fine](https://github.com/pmndrs/its-fine) for accessing fibers within react using hooks, or [react-devtools-inline](https://www.npmjs.com/package/react-devtools-inline) for a headful interface.
+if you're seeking more robust solutions, you might consider [its-fine](https://github.com/pmndrs/its-fine) for accessing fibers within react using hooks, or [react-devtools-inline](https://www.npmjs.com/package/react-devtools-inline) for a headful interface.
 
 if you plan to use this project beyond experimentation, please review [react-scan's source code](https://github.com/aidenybai/react-scan) to understand our safeguarding practices.
 
