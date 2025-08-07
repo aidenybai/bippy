@@ -972,7 +972,7 @@ export const secure = (
   const isUsingRealReactDevtools = isRealReactDevtools();
   const isUsingReactRefresh = isReactRefresh();
   let timeout: number | undefined;
-  let isProduction = secureOptions.isProduction ?? false;
+  let isDevelopment = !secureOptions.isProduction;
 
   options.onActive = () => {
     clearTimeout(timeout);
@@ -986,11 +986,10 @@ export const secure = (
           isSecure = false;
         }
         const buildType = detectReactBuildType(renderer);
-        if (buildType !== 'development') {
-          isProduction = true;
-          if (!secureOptions.dangerouslyRunInProduction) {
-            isSecure = false;
-          }
+        if (buildType === 'development') {
+          isDevelopment = true;
+        } else if (!secureOptions.dangerouslyRunInProduction) {
+          isSecure = false;
         }
       }
     } catch (err) {
@@ -1053,7 +1052,7 @@ export const secure = (
     !isUsingReactRefresh
   ) {
     timeout = setTimeout(() => {
-      if (!isProduction) {
+      if (isDevelopment) {
         secureOptions.onError?.(INSTALL_ERROR);
       }
       stop();
