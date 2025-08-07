@@ -19,7 +19,7 @@ const checkDCE = (fn: unknown): void => {
           'React is running in production mode, but dead code ' +
             'elimination has not been applied. Read how to correctly ' +
             'configure React for production: ' +
-            'https://reactjs.org/link/perf-use-production-build',
+            'https://reactjs.org/link/perf-use-production-build'
         );
       });
     }
@@ -46,7 +46,7 @@ const onActiveListeners = new Set<() => unknown>();
 export const _renderers = new Set<ReactRenderer>();
 
 export const installRDTHook = (
-  onActive?: () => unknown,
+  onActive?: () => unknown
 ): ReactDevToolsGlobalHook => {
   const renderers = new Map<number, ReactRenderer>();
   let i = 0;
@@ -59,6 +59,7 @@ export const installRDTHook = (
     onCommitFiberRoot: NO_OP,
     onCommitFiberUnmount: NO_OP,
     onPostCommitFiberRoot: NO_OP,
+    on: NO_OP,
     inject(renderer) {
       const nextID = ++i;
       renderers.set(nextID, renderer);
@@ -139,6 +140,7 @@ export const patchRDTHook = (onActive?: () => unknown): void => {
       rdtHook.hasUnsupportedRendererAttached = false;
       rdtHook._instrumentationSource = BIPPY_INSTRUMENTATION_STRING;
       rdtHook._instrumentationIsActive = false;
+      rdtHook.on = NO_OP;
       if (rdtHook.renderers.size) {
         rdtHook._instrumentationIsActive = true;
         // biome-ignore lint/complexity/noForEach: prefer forEach for Set
@@ -181,7 +183,7 @@ export const patchRDTHook = (onActive?: () => unknown): void => {
 export const hasRDTHook = (): boolean => {
   return objectHasOwnProperty.call(
     globalThis,
-    '__REACT_DEVTOOLS_GLOBAL_HOOK__',
+    '__REACT_DEVTOOLS_GLOBAL_HOOK__'
   );
 };
 
@@ -189,7 +191,7 @@ export const hasRDTHook = (): boolean => {
  * Returns the current React DevTools global hook.
  */
 export const getRDTHook = (
-  onActive?: () => unknown,
+  onActive?: () => unknown
 ): ReactDevToolsGlobalHook => {
   if (!hasRDTHook()) {
     return installRDTHook(onActive);
@@ -203,7 +205,7 @@ export const isClientEnvironment = (): boolean => {
   return Boolean(
     typeof window !== 'undefined' &&
       (window.document?.createElement ||
-        window.navigator?.product === 'ReactNative'),
+        window.navigator?.product === 'ReactNative')
   );
 };
 

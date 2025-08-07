@@ -84,7 +84,9 @@ export interface ReactDevToolsGlobalHook {
   inject: (renderer: ReactRenderer) => number;
   _instrumentationSource?: string;
   _instrumentationIsActive?: boolean;
-  _sw?: boolean;
+
+  // https://github.com/aidenybai/bippy/issues/43
+  on: () => void;
 }
 
 /**
