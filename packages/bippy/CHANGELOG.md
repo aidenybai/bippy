@@ -1,5 +1,11 @@
 # bippy
 
+## 0.3.21
+
+### Patch Changes
+
+- fix: reactContainer (again)
+
 ## 0.3.20
 
 ### Patch Changes
