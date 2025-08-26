@@ -97,8 +97,8 @@ importers:
   packages/kitchen-sink:
     dependencies:
       bippy:
-        specifier: ^0.3.18
-        version: 0.3.18(@types/react@19.0.4)(react@19.1.0)
+        specifier: ^0.3.19
+        version: 0.3.19(@types/react@19.0.4)(react@19.1.0)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -1907,8 +1907,8 @@ packages:
     resolution: {integrity: sha512-pbnl5XzGBdrFU/wT4jqmJVPn2B6UHPBOhzMQkY/SPUPB6QtUXtmBHBIwCbXJol93mOpGMnQyP/+BB19q04xj7g==}
     engines: {node: '>=4'}
 
-  bippy@0.3.18:
-    resolution: {integrity: sha512-ndTOYOJh/yf988NVRS8W0dhhqSXS88kWVbmKbePtbUP1eaRCN07cjjRVZwIFSdL1HtQ4mhtxJYmqCBT8NyAl/g==}
+  bippy@0.3.19:
+    resolution: {integrity: sha512-zvawJoVA5EmsGrju3wOyS6Xx2c/SkROc4S5v9F90V6iCikBRkN7a+2A73Uukk0PEsCnhahi373LISyemAIg9gQ==}
     peerDependencies:
       react: '>=17.0.1'
 
@@ -5549,7 +5549,7 @@ snapshots:
     dependencies:
       is-windows: 1.0.2
 
-  bippy@0.3.18(@types/react@19.0.4)(react@19.1.0):
+  bippy@0.3.19(@types/react@19.0.4)(react@19.1.0):
     dependencies:
       '@types/react-reconciler': 0.28.9(@types/react@19.0.4)
       react: 19.1.0

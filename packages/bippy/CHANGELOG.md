@@ -1,5 +1,11 @@
 # bippy
 
+## 0.3.19
+
+### Patch Changes
+
+- fix: getFiberFromHostInstance for containers
+
 ## 0.3.18
 
 ### Patch Changes
