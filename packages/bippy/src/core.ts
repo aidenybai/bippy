@@ -943,7 +943,7 @@ export const getFiberFromHostInstance = <T>(hostInstance: T): Fiber | null => {
 
     for (const key in hostInstance) {
       if (
-        key.startsWith('__reactRootContainer$') ||
+        key.startsWith('__reactContainer$') ||
         key.startsWith('__reactInternalInstance$') ||
         key.startsWith('__reactFiber')
       ) {
