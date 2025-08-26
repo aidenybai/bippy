@@ -1,8 +1,0 @@
-{
-	"name": "@bippy/gists",
-	"private": true,
-	"type": "module",
-	"dependencies": {
-		"bippy": "workspace:*"
-	}
-}
