@@ -942,6 +942,10 @@ export const getFiberFromHostInstance = <T>(hostInstance: T): Fiber | null => {
     }
 
     for (const key in hostInstance) {
+      if (key.startsWith('__reactRootContainer$')) {
+        // biome-ignore lint/suspicious/noExplicitAny: OK
+        return (hostInstance[key] as any)?._internalRoot?.current?.child;
+      }
       if (
         key.startsWith('__reactInternalInstance$') ||
         key.startsWith('__reactFiber')
@@ -1082,6 +1086,5 @@ export const onCommitFiberRoot = (
   );
 };
 
-export * from './install-hook-script-string.js';
 export * from './rdt-hook.js';
 export type * from './types.js';
