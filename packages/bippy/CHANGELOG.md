@@ -1,5 +1,11 @@
 # bippy
 
+## 0.3.22
+
+### Patch Changes
+
+- fix: renderer types
+
 ## 0.3.21
 
 ### Patch Changes
