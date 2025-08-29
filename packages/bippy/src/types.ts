@@ -121,13 +121,20 @@ export type Fiber<T = any> = Omit<
   };
 };
 
+export interface Family {
+  current: unknown;
+}
+
 // https://github.com/facebook/react/blob/6a4b46cd70d2672bc4be59dcb5b8dede22ed0cef/packages/react-devtools-shared/src/backend/types.js
 export interface ReactRenderer {
   version: string;
   bundleType: 0 /* PROD */ | 1 /* DEV */;
-  currentDispatcherRef: React.RefObject<unknown>;
+  // biome-ignore lint/suspicious/noExplicitAny: ReactSharedInternals
+  currentDispatcherRef: any;
+  reconcilerVersion: string;
+  rendererPackageName: string;
 
-  // dev only
+  // dev only: https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactFiberReconciler.js#L842
   findFiberByHostInstance?: (hostInstance: unknown) => Fiber | null;
   overrideHookState?: (
     fiber: Fiber,
@@ -142,6 +149,47 @@ export interface ReactRenderer {
     path: string[],
     value: unknown
   ) => void;
+  overrideHookStateDeletePath?: (
+    fiber: Fiber,
+    id: number,
+    path: Array<string | number>
+  ) => void;
+  overrideHookStateRenamePath?: (
+    fiber: Fiber,
+    id: number,
+    oldPath: Array<string | number>,
+    newPath: Array<string | number>
+  ) => void;
+  overridePropsDeletePath?: (
+    fiber: Fiber,
+    path: Array<string | number>
+  ) => void;
+  overridePropsRenamePath?: (
+    fiber: Fiber,
+    oldPath: Array<string | number>,
+    newPath: Array<string | number>
+  ) => void;
+  scheduleUpdate?: (fiber: Fiber) => void;
+  setErrorHandler?: (newShouldErrorImpl: (fiber: Fiber) => boolean) => void;
+  setSuspenseHandler?: (
+    newShouldSuspendImpl: (suspenseInstance: unknown) => void
+  ) => void;
+
+  // react refresh
+  scheduleRefresh?: (
+    root: FiberRoot,
+    update: {
+      staleFamilies: Set<Family>;
+      updatedFamilies: Set<Family>;
+    }
+  ) => void;
+  scheduleRoot?: (root: FiberRoot, element: React.ReactNode) => void;
+  setRefreshHandler?: (
+    handler: ((fiber: Fiber) => Family | null) | null
+  ) => void;
+
+  // react devtools
+  getCurrentFiber?: (fiber: Fiber) => Fiber | null;
 }
 
 export interface ContextDependency<T> {

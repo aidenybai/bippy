@@ -864,6 +864,11 @@ export interface InstrumentationOptions {
   ) => unknown;
   onCommitFiberUnmount?: (rendererID: number, fiber: Fiber) => unknown;
   onPostCommitFiberRoot?: (rendererID: number, root: FiberRoot) => unknown;
+  onScheduleFiberRoot?: (
+    rendererID: number,
+    root: FiberRoot,
+    children: React.ReactNode
+  ) => unknown;
   onActive?: () => unknown;
   name?: string;
 }
