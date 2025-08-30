@@ -1,5 +1,11 @@
 # bippy
 
+## 0.3.23
+
+### Patch Changes
+
+- fix: async traverseFiber
+
 ## 0.3.22
 
 ### Patch Changes
