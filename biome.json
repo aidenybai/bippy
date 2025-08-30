@@ -34,7 +34,8 @@
         "noConsoleLog": {
           "level": "warn",
           "fix": "unsafe"
-        }
+        },
+        "noConfusingVoidType": "off"
       },
       "correctness": {
         "noUnusedFunctionParameters": {

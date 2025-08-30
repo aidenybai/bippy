@@ -414,9 +414,40 @@ export const getNearestHostFibers = (fiber: Fiber): Fiber[] => {
 /**
  * Traverses up or down a {@link Fiber}, return `true` to stop and select a node.
  */
-export const traverseFiber = (
+export function traverseFiber(
   fiber: Fiber | null,
-  // biome-ignore lint/suspicious/noConfusingVoidType: may or may not exist
+  selector: (node: Fiber) => boolean | void,
+  ascending?: boolean
+): Fiber | null;
+export function traverseFiber(
+  fiber: Fiber | null,
+  selector: (node: Fiber) => Promise<boolean | void>,
+  ascending?: boolean
+): Promise<Fiber | null>;
+export function traverseFiber(
+  fiber: Fiber | null,
+  selector: (node: Fiber) => boolean | void | Promise<boolean | void>,
+  ascending = false
+): Fiber | null | Promise<Fiber | null> {
+  const isAsync = fiber && selector(fiber) instanceof Promise;
+
+  if (isAsync) {
+    return traverseFiberAsync(
+      fiber,
+      selector as (node: Fiber) => Promise<boolean | void>,
+      ascending
+    );
+  }
+
+  return traverseFiberSync(
+    fiber,
+    selector as (node: Fiber) => boolean | void,
+    ascending
+  );
+}
+
+export const traverseFiberSync = (
+  fiber: Fiber | null,
   selector: (node: Fiber) => boolean | void,
   ascending = false
 ): Fiber | null => {
@@ -425,7 +456,25 @@ export const traverseFiber = (
 
   let child = ascending ? fiber.return : fiber.child;
   while (child) {
-    const match = traverseFiber(child, selector, ascending);
+    const match = traverseFiberSync(child, selector, ascending);
+    if (match) return match;
+
+    child = ascending ? null : child.sibling;
+  }
+  return null;
+};
+
+export const traverseFiberAsync = async (
+  fiber: Fiber | null,
+  selector: (node: Fiber) => Promise<boolean | void>,
+  ascending = false
+): Promise<Fiber | null> => {
+  if (!fiber) return null;
+  if ((await selector(fiber)) === true) return fiber;
+
+  let child = ascending ? fiber.return : fiber.child;
+  while (child) {
+    const match = await traverseFiberAsync(child, selector, ascending);
     if (match) return match;
 
     child = ascending ? null : child.sibling;
