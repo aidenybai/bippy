@@ -76,7 +76,6 @@ export interface ReactDevToolsGlobalHook {
   onCommitFiberRoot: (
     rendererID: number,
     root: FiberRoot,
-    // biome-ignore lint/suspicious/noConfusingVoidType: may or may not exist
     priority: void | number
   ) => void;
   onCommitFiberUnmount: (rendererID: number, fiber: Fiber) => void;
@@ -119,6 +118,15 @@ export type Fiber<T = any> = Omit<
     lastEffect: Effect | null;
     [key: string]: unknown;
   };
+
+  // dev only
+  _debugSource?: {
+    fileName: string;
+    lineNumber: number;
+    columnNumber?: number;
+  };
+  _debugStack?: Error;
+  _debugOwner?: Fiber;
 };
 
 export interface Family {

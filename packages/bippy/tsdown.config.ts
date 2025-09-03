@@ -24,15 +24,11 @@ export default defineConfig([
   {
     ...DEFAULT_OPTIONS,
     format: ['esm', 'cjs'],
-    entry: [
-      './src/index.ts',
-      './src/core.ts',
-      './src/jsx-runtime.ts',
-      './src/jsx-dev-runtime.ts',
-      './src/experiments/inspect.tsx',
-      './src/source.ts',
-      './src/override.ts',
-    ],
+    entry: {
+      index: './src/index.ts',
+      source: './src/source.ts',
+      override: './src/override.ts',
+    },
     clean: true, // only run on first entry
   },
   {

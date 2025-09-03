@@ -147,7 +147,6 @@ export const traverseContexts = (
   selector: (
     nextValue: ContextDependency<unknown> | null | undefined,
     prevValue: ContextDependency<unknown> | null | undefined
-    // biome-ignore lint/suspicious/noConfusingVoidType: optional return
   ) => boolean | void
 ): boolean => {
   try {
@@ -192,7 +191,6 @@ export const traverseState = (
   selector: (
     nextValue: MemoizedState | null | undefined,
     prevValue: MemoizedState | null | undefined
-    // biome-ignore lint/suspicious/noConfusingVoidType: optional return
   ) => boolean | void
 ): boolean => {
   try {
@@ -219,7 +217,6 @@ export const traverseProps = (
     propName: string,
     nextValue: unknown,
     prevValue: unknown
-    // biome-ignore lint/suspicious/noConfusingVoidType: may or may not exist
   ) => boolean | void
 ): boolean => {
   try {
@@ -908,7 +905,6 @@ export interface InstrumentationOptions {
   onCommitFiberRoot?: (
     rendererID: number,
     root: FiberRoot,
-    // biome-ignore lint/suspicious/noConfusingVoidType: may be undefined
     priority: void | number
   ) => unknown;
   onCommitFiberUnmount?: (rendererID: number, fiber: Fiber) => unknown;
@@ -950,7 +946,6 @@ export const instrument = (
       rdtHook.onCommitFiberRoot = (
         rendererID: number,
         root: FiberRoot,
-        // biome-ignore lint/suspicious/noConfusingVoidType: may be undefined
         priority: void | number
       ) => {
         if (prevOnCommitFiberRoot)

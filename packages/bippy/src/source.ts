@@ -81,13 +81,6 @@ const getRemovedFileProtocolPath = (path: string): string => {
   return path;
 };
 
-// const getActualFileSource = (path: string): string => {
-//   if (path.startsWith('file://')) {
-//     return `/_build/@fs${path.substring('file://'.length)}`;
-//   }
-//   return path;
-// };
-
 const parseStackFrame = async (frame: string): Promise<FiberSource | null> => {
   const source = parseStack(frame);
 
@@ -340,9 +333,10 @@ export const getCurrentDispatcher = (): React.RefObject<unknown> | null => {
     ...Array.from(rdtHook.renderers.values()),
   ]) {
     const currentDispatcherRef = renderer.currentDispatcherRef;
-    if (currentDispatcherRef) {
-      // @ts-expect-error
-      return currentDispatcherRef.H || currentDispatcherRef.current;
+    if (currentDispatcherRef && typeof currentDispatcherRef === 'object') {
+      return 'H' in currentDispatcherRef
+        ? currentDispatcherRef.H
+        : currentDispatcherRef.current;
     }
   }
   return null;
@@ -353,7 +347,7 @@ export const setCurrentDispatcher = (
 ): void => {
   for (const renderer of _renderers) {
     const currentDispatcherRef = renderer.currentDispatcherRef;
-    if (currentDispatcherRef) {
+    if (currentDispatcherRef && typeof currentDispatcherRef === 'object') {
       if ('H' in currentDispatcherRef) {
         currentDispatcherRef.H = value;
       } else {
@@ -366,6 +360,7 @@ export const setCurrentDispatcher = (
 export const getFiberSource = async (
   fiber: Fiber
 ): Promise<FiberSource | null> => {
+  // only available in react <18
   const debugSource = fiber._debugSource;
   if (debugSource) {
     const { fileName, lineNumber } = debugSource;
@@ -380,16 +375,27 @@ export const getFiberSource = async (
     };
   }
 
-  const dataReactSource = fiber.memoizedProps?.['data-react-source'];
+  const debugStack = fiber._debugStack;
+  // react 19
+  if (debugStack instanceof Error && typeof debugStack?.stack === 'string') {
+    const stackLines = debugStack.stack.split('\n');
 
-  // passed by bippy's jsx-dev-runtime
-  if (typeof dataReactSource === 'string') {
-    const [fileName, lineNumber, columnNumber] = dataReactSource.split(':');
-    return {
-      fileName,
-      lineNumber: Number.parseInt(lineNumber),
-      columnNumber: Number.parseInt(columnNumber),
-    };
+    for (const line of stackLines.slice(1)) {
+      if (
+        line.includes('react_stack_bottom_frame') ||
+        line.includes('renderWithHooks') ||
+        line.includes('beginWork') ||
+        line.includes('performUnitOfWork') ||
+        line.includes('workLoop')
+      ) {
+        continue;
+      }
+
+      const frame = await parseStackFrame(line);
+      if (frame) {
+        return frame;
+      }
+    }
   }
 
   const currentDispatcherRef = getCurrentDispatcher();
