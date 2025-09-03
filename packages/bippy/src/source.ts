@@ -357,6 +357,45 @@ export const setCurrentDispatcher = (
   }
 };
 
+// https://github.com/facebook/react/blob/main/packages/react-devtools-shared/src/backend/shared/DevToolsOwnerStack.js#L12
+export const formatOwnerStack = (error: Error): string => {
+  const prevPrepareStackTrace = Error.prepareStackTrace;
+  Error.prepareStackTrace = undefined;
+  let stack = error.stack;
+  if (!stack) {
+    return '';
+  }
+  Error.prepareStackTrace = prevPrepareStackTrace;
+
+  if (stack.startsWith('Error: react-stack-top-frame\n')) {
+    // V8's default formatting prefixes with the error message which we
+    // don't want/need.
+    stack = stack.slice(29);
+  }
+  let idx = stack.indexOf('\n');
+  if (idx !== -1) {
+    // Pop the JSX frame.
+    stack = stack.slice(idx + 1);
+  }
+  idx = stack.indexOf('react_stack_bottom_frame');
+  if (idx === -1) {
+    idx = stack.indexOf('react-stack-bottom-frame');
+  }
+  if (idx !== -1) {
+    idx = stack.lastIndexOf('\n', idx);
+  }
+  if (idx !== -1) {
+    // Cut off everything after the bottom frame since it'll be internals.
+    stack = stack.slice(0, idx);
+  } else {
+    // We didn't find any internal callsite out to user space.
+    // This means that this was called outside an owner or the owner is fully internal.
+    // To keep things light we exclude the entire trace in this case.
+    return '';
+  }
+  return stack;
+};
+
 export const getFiberSource = async (
   fiber: Fiber
 ): Promise<FiberSource | null> => {
@@ -378,24 +417,9 @@ export const getFiberSource = async (
   const debugStack = fiber._debugStack;
   // react 19
   if (debugStack instanceof Error && typeof debugStack?.stack === 'string') {
-    const stackLines = debugStack.stack.split('\n');
-
-    for (const line of stackLines.slice(1)) {
-      if (
-        line.includes('react_stack_bottom_frame') ||
-        line.includes('renderWithHooks') ||
-        line.includes('beginWork') ||
-        line.includes('performUnitOfWork') ||
-        line.includes('workLoop') ||
-        line.includes('react_jsx-dev-runtime')
-      ) {
-        continue;
-      }
-
-      const frame = await parseStackFrame(line);
-      if (frame) {
-        return frame;
-      }
+    const frame = formatOwnerStack(debugStack);
+    if (frame) {
+      return await parseStackFrame(frame);
     }
   }
 
