@@ -1,5 +1,11 @@
 # bippy
 
+## 0.3.26
+
+### Patch Changes
+
+- fix: getOwnerStack has host fibers
+
 ## 0.3.25
 
 ### Patch Changes
