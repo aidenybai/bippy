@@ -13,7 +13,6 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "jsxImportSource": "../dist",
     "plugins": [
       {
         "name": "next"

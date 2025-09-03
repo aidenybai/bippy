@@ -1,8 +1,20 @@
 import { parseStack } from 'error-stack-parser-es/lite';
 import { type RawSourceMap, SourceMapConsumer } from 'source-map-js';
+import type * as React from 'react';
 import type { Fiber } from './types.js';
 import {
   ClassComponentTag,
+  FunctionComponentTag,
+  ForwardRefTag,
+  SimpleMemoComponentTag,
+  HostComponentTag,
+  SuspenseComponentTag,
+  HostHoistableTag,
+  HostSingletonTag,
+  LazyComponentTag,
+  SuspenseListComponentTag,
+  ActivityComponentTag,
+  ViewTransitionComponentTag,
   getType,
   isCompositeFiber,
   isHostFiber,
@@ -20,11 +32,11 @@ export interface FiberSource {
 
 let reentry = false;
 
-const describeBuiltInComponentFrame = (name: string): string => {
+export const describeBuiltInComponentFrame = (name: string): string => {
   return `\n    in ${name}`;
 };
 
-const disableLogs = () => {
+export const disableLogs = () => {
   const prev = {
     error: console.error,
     warn: console.warn,
@@ -34,7 +46,7 @@ const disableLogs = () => {
   return prev;
 };
 
-const reenableLogs = (prev: {
+export const reenableLogs = (prev: {
   error: typeof console.error;
   warn: typeof console.warn;
 }) => {
@@ -46,7 +58,7 @@ const INLINE_SOURCEMAP_REGEX = /^data:application\/json[^,]+base64,/;
 const SOURCEMAP_REGEX =
   /(?:\/\/[@#][ \t]+sourceMappingURL=([^\s'"]+?)[ \t]*$)|(?:\/\*[@#][ \t]+sourceMappingURL=([^*]+?)[ \t]*(?:\*\/)[ \t]*$)/;
 
-const getSourceMap = async (url: string, content: string) => {
+export const getSourceMap = async (url: string, content: string) => {
   const lines = content.split('\n');
   let sourceMapUrl: string | undefined;
   for (let i = lines.length - 1; i >= 0 && !sourceMapUrl; i--) {
@@ -73,7 +85,7 @@ const getSourceMap = async (url: string, content: string) => {
   return new SourceMapConsumer(rawSourceMap);
 };
 
-const getRemovedFileProtocolPath = (path: string): string => {
+export const getRemovedFileProtocolPath = (path: string): string => {
   const protocol = 'file://';
   if (path.startsWith(protocol)) {
     return path.substring(protocol.length);
@@ -81,7 +93,9 @@ const getRemovedFileProtocolPath = (path: string): string => {
   return path;
 };
 
-const parseStackFrame = async (frame: string): Promise<FiberSource | null> => {
+export const parseStackFrame = async (
+  frame: string
+): Promise<FiberSource | null> => {
   const source = parseStack(frame);
 
   if (!source.length) {
@@ -120,7 +134,7 @@ const parseStackFrame = async (frame: string): Promise<FiberSource | null> => {
 };
 
 // https://github.com/facebook/react/blob/f739642745577a8e4dcb9753836ac3589b9c590a/packages/react-devtools-shared/src/backend/shared/DevToolsComponentStackFrame.js#L22
-const describeNativeComponentFrame = (
+export const describeNativeComponentFrame = (
   fn: React.ComponentType<unknown>,
   construct: boolean
 ): string => {
@@ -394,34 +408,12 @@ export const formatOwnerStack = (error: Error): string => {
   return stack;
 };
 
-export const getFiberSource = async (
-  fiber: Fiber
-): Promise<FiberSource | null> => {
-  // only available in react <18
-  const debugSource = fiber._debugSource;
-  if (debugSource) {
-    const { fileName, lineNumber } = debugSource;
-    return {
-      fileName,
-      lineNumber,
-      columnNumber:
-        'columnNumber' in debugSource &&
-        typeof debugSource.columnNumber === 'number'
-          ? debugSource.columnNumber
-          : 0,
-    };
-  }
-
+export const getFiberStackFrame = (fiber: Fiber): string | null => {
   const debugStack = fiber._debugStack;
   // react 19
   if (debugStack instanceof Error && typeof debugStack?.stack === 'string') {
     const frame = formatOwnerStack(debugStack);
-    if (frame) {
-      try {
-        const source = await parseStackFrame(frame);
-        if (source) return source;
-      } catch {}
-    }
+    if (frame) return frame;
   }
 
   const currentDispatcherRef = getCurrentDispatcher();
@@ -449,9 +441,199 @@ export const getFiberSource = async (
     componentFunction,
     fiber.tag === ClassComponentTag
   );
-  try {
-    return await parseStackFrame(frame);
-  } catch {
-    return null;
+  return frame;
+};
+
+export const getFiberSource = async (
+  fiber: Fiber
+): Promise<FiberSource | null> => {
+  // only available in react <18
+  const debugSource = fiber._debugSource;
+  if (debugSource) {
+    const { fileName, lineNumber } = debugSource;
+    return {
+      fileName,
+      lineNumber,
+      columnNumber:
+        'columnNumber' in debugSource &&
+        typeof debugSource.columnNumber === 'number'
+          ? debugSource.columnNumber
+          : 0,
+    };
   }
+
+  try {
+    const stackFrame = getFiberStackFrame(fiber);
+    if (stackFrame) {
+      return await parseStackFrame(stackFrame);
+    }
+  } catch {}
+
+  return null;
+};
+
+// https://github.com/facebook/react/blob/ac3e705a18696168acfcaed39dce0cfaa6be8836/packages/react-reconciler/src/ReactFiberComponentStack.js#L180
+export const describeFiber = (
+  fiber: Fiber,
+  childFiber: null | Fiber
+): string => {
+  const tag = fiber.tag as number;
+  switch (tag) {
+    case HostHoistableTag:
+    case HostSingletonTag:
+    case HostComponentTag:
+      return describeBuiltInComponentFrame(fiber.type as string);
+    case LazyComponentTag:
+      // TODO: When we support Thenables as component types we should rename this.
+      return describeBuiltInComponentFrame('Lazy');
+    case SuspenseComponentTag:
+      if (fiber.child !== childFiber && childFiber !== null) {
+        // If we came from the second Fiber then we're in the Suspense Fallback.
+        return describeBuiltInComponentFrame('Suspense Fallback');
+      }
+      return describeBuiltInComponentFrame('Suspense');
+    case SuspenseListComponentTag:
+      return describeBuiltInComponentFrame('SuspenseList');
+    case FunctionComponentTag:
+    case SimpleMemoComponentTag:
+      return describeFunctionComponentFrame(fiber.type);
+    case ForwardRefTag:
+      return describeFunctionComponentFrame(
+        (fiber.type as { render: React.ComponentType<unknown> }).render
+      );
+    case ClassComponentTag:
+      return describeClassComponentFrame(fiber.type);
+    case ActivityComponentTag:
+      return describeBuiltInComponentFrame('Activity');
+    case ViewTransitionComponentTag:
+      // Note: enableViewTransition feature flag is not available in this codebase,
+      // so we'll always include ViewTransition
+      return describeBuiltInComponentFrame('ViewTransition');
+    default:
+      return '';
+  }
+};
+
+export const describeFunctionComponentFrame = (
+  fn: React.ComponentType<unknown>
+): string => {
+  if (!fn || reentry) {
+    return '';
+  }
+  return describeNativeComponentFrame(fn, false);
+};
+
+export const describeClassComponentFrame = (
+  fn: React.ComponentType<unknown>
+): string => {
+  if (!fn || reentry) {
+    return '';
+  }
+  return describeNativeComponentFrame(fn, true);
+};
+
+export const describeDebugInfoFrame = (
+  name: string,
+  env?: string,
+  _debugLocation?: unknown
+): string => {
+  let result = `\n    in ${name}`;
+  if (env) {
+    result += ` (at ${env})`;
+  }
+  return result;
+};
+
+export const getFiberStackTrace = (workInProgress: Fiber): string => {
+  try {
+    let info = '';
+    let node: Fiber | null = workInProgress;
+    let previous: null | Fiber = null;
+    do {
+      info += describeFiber(node, previous);
+
+      // Add any Server Component stack frames in reverse order (dev only).
+      // Since we don't have __DEV__ in this codebase, we'll check for _debugInfo
+      const debugInfo = node._debugInfo;
+      if (debugInfo && Array.isArray(debugInfo)) {
+        for (let i = debugInfo.length - 1; i >= 0; i--) {
+          const entry = debugInfo[i];
+          if (typeof entry.name === 'string') {
+            info += describeDebugInfoFrame(
+              entry.name,
+              entry.env,
+              entry.debugLocation
+            );
+          }
+        }
+      }
+
+      previous = node;
+      node = node.return;
+    } while (node);
+    return info;
+  } catch (error) {
+    if (error instanceof Error) {
+      return `\nError generating stack: ${error.message}\n${error.stack}`;
+    }
+    return '';
+  }
+};
+
+export const isCapitalized = (str: string): boolean => {
+  if (!str.length) {
+    return false;
+  }
+  return str[0] === str[0].toUpperCase();
+};
+
+export interface OwnerStackItem {
+  componentName: string;
+  source?: FiberSource;
+}
+
+export const getOwnerStack = async (
+  stackTrace: string
+): Promise<OwnerStackItem[]> => {
+  // parse the stack trace to extract component names
+  // formats:
+  // - "\n    in ComponentName"
+  // - "\n    in ComponentName (at Server)"
+  // - "\n    at ComponentName (http://...)"
+  const componentPattern =
+    /\n\s+(?:in|at)\s+([^\s(]+)(?:\s+\((?:at\s+)?([^)]+)\))?/g;
+  const matches: OwnerStackItem[] = [];
+
+  let match: RegExpExecArray | null;
+  match = componentPattern.exec(stackTrace);
+  while (match !== null) {
+    const componentName = match[1];
+    const locationStr = match[2];
+
+    if (!isCapitalized(componentName)) {
+      match = componentPattern.exec(stackTrace);
+      continue;
+    }
+
+    let source: FiberSource | undefined;
+
+    if (locationStr && locationStr !== 'Server') {
+      try {
+        const mockFrame = `    at ${componentName} (${locationStr})`;
+        const parsedSource = await parseStackFrame(mockFrame);
+        if (parsedSource) {
+          source = parsedSource;
+        }
+      } catch {}
+    }
+
+    matches.push({
+      componentName,
+      source: source || undefined,
+    });
+
+    match = componentPattern.exec(stackTrace);
+  }
+
+  return matches;
 };

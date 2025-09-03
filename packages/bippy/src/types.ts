@@ -127,6 +127,11 @@ export type Fiber<T = any> = Omit<
   };
   _debugStack?: Error;
   _debugOwner?: Fiber;
+  _debugInfo?: Array<{
+    name?: string;
+    env?: string;
+    debugLocation?: unknown;
+  }>;
 };
 
 export interface Family {

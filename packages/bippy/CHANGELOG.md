@@ -1,5 +1,11 @@
 # bippy
 
+## 0.3.24
+
+### Patch Changes
+
+- fix: improve getFiberSource accuracy
+
 ## 0.3.23
 
 ### Patch Changes
