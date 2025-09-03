@@ -588,7 +588,7 @@ export const isCapitalized = (str: string): boolean => {
 };
 
 export interface OwnerStackItem {
-  componentName: string;
+  name: string;
   source?: FiberSource;
 }
 
@@ -607,11 +607,15 @@ export const getOwnerStack = async (
   let match: RegExpExecArray | null;
   match = componentPattern.exec(stackTrace);
   while (match !== null) {
-    const componentName = match[1];
+    const name = match[1];
     const locationStr = match[2];
 
-    if (!isCapitalized(componentName)) {
+    if (!isCapitalized(name)) {
       match = componentPattern.exec(stackTrace);
+      matches.push({
+        name: name,
+        source: undefined,
+      });
       continue;
     }
 
@@ -619,7 +623,7 @@ export const getOwnerStack = async (
 
     if (locationStr && locationStr !== 'Server') {
       try {
-        const mockFrame = `    at ${componentName} (${locationStr})`;
+        const mockFrame = `    at ${name} (${locationStr})`;
         const parsedSource = await parseStackFrame(mockFrame);
         if (parsedSource) {
           source = parsedSource;
@@ -628,7 +632,7 @@ export const getOwnerStack = async (
     }
 
     matches.push({
-      componentName,
+      name: name,
       source: source || undefined,
     });
 
