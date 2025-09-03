@@ -152,8 +152,8 @@ export const patchRDTHook = (onActive?: () => unknown): void => {
         isReactRefreshOverride = true;
         // but since the underlying implementation doens't care,
         // it's ok: https://github.com/facebook/react/blob/18eaf51bd51fed8dfed661d64c306759101d0bfd/packages/react-refresh/src/ReactFreshRuntime.js#L430
+        // @ts-expect-error this is not actually a ReactRenderer,
         const nextID = rdtHook.inject({
-          // @ts-expect-error this is not actually a ReactRenderer,
           scheduleRefresh() {},
         });
         if (nextID) {
