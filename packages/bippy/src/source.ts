@@ -386,7 +386,8 @@ export const getFiberSource = async (
         line.includes('renderWithHooks') ||
         line.includes('beginWork') ||
         line.includes('performUnitOfWork') ||
-        line.includes('workLoop')
+        line.includes('workLoop') ||
+        line.includes('react_jsx-dev-runtime')
       ) {
         continue;
       }
@@ -408,8 +409,8 @@ export const getFiberSource = async (
     ? getType(
         traverseFiber(
           fiber,
-          (f) => {
-            if (isCompositeFiber(f)) return true;
+          (innerFiber) => {
+            if (isCompositeFiber(innerFiber)) return true;
           },
           true
         )?.type
