@@ -1,5 +1,11 @@
 # bippy
 
+## 0.3.25
+
+### Patch Changes
+
+- feat: getOwnerStack & getFiberStackTrace
+
 ## 0.3.24
 
 ### Patch Changes
