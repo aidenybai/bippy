@@ -94,26 +94,24 @@ const parseStackFrame = async (frame: string): Promise<FiberSource | null> => {
     return null;
   }
 
-  try {
-    const response = await fetch(fileName);
-    if (response.ok) {
-      const content = await response.text();
-      const sourcemap = await getSourceMap(fileName, content);
+  const response = await fetch(fileName);
+  if (response.ok) {
+    const content = await response.text();
+    const sourcemap = await getSourceMap(fileName, content);
 
-      if (sourcemap) {
-        const result = sourcemap.originalPositionFor({
-          line: lineNumber,
-          column: columnNumber,
-        });
+    if (sourcemap) {
+      const result = sourcemap.originalPositionFor({
+        line: lineNumber,
+        column: columnNumber,
+      });
 
-        return {
-          fileName: getRemovedFileProtocolPath(sourcemap.file || result.source),
-          lineNumber: result.line,
-          columnNumber: result.column,
-        };
-      }
+      return {
+        fileName: getRemovedFileProtocolPath(sourcemap.file || result.source),
+        lineNumber: result.line,
+        columnNumber: result.column,
+      };
     }
-  } catch {}
+  }
   return {
     fileName: getRemovedFileProtocolPath(fileName),
     lineNumber,
@@ -419,7 +417,10 @@ export const getFiberSource = async (
   if (debugStack instanceof Error && typeof debugStack?.stack === 'string') {
     const frame = formatOwnerStack(debugStack);
     if (frame) {
-      return await parseStackFrame(frame);
+      try {
+        const source = await parseStackFrame(frame);
+        if (source) return source;
+      } catch {}
     }
   }
 
@@ -448,5 +449,9 @@ export const getFiberSource = async (
     componentFunction,
     fiber.tag === ClassComponentTag
   );
-  return parseStackFrame(frame);
+  try {
+    return await parseStackFrame(frame);
+  } catch {
+    return null;
+  }
 };
