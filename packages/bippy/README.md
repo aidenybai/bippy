@@ -448,7 +448,7 @@ console.log(await getFiberSource(fiber));
 overrides component props at runtime by modifying the fiber's props.
 
 ```typescript
-import { overrideProps } from 'bippy/override';
+import { overrideProps } from 'bippy';
 
 // override props on a fiber
 overrideProps(fiber, {
@@ -467,7 +467,7 @@ the function accepts a fiber and a partial object containing the props to overri
 overrides hook state (usestate, usereducer, etc.) at runtime by hook id.
 
 ```typescript
-import { overrideHookState } from 'bippy/override';
+import { overrideHookState } from 'bippy';
 
 // override the first hook (id: 0) with a new value
 overrideHookState(fiber, 0, 'new state value');
@@ -488,7 +488,7 @@ the hook id parameter corresponds to the order of hooks in the component (0-inde
 overrides react context values at runtime by finding the appropriate context provider.
 
 ```typescript
-import { overrideContext } from 'bippy/override';
+import { overrideContext } from 'bippy';
 
 // override context value
 overrideContext(fiber, MyContext, {

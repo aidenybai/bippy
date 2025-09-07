@@ -448,7 +448,7 @@ console.log(await getFiberSource(fiber));
 overrides component props at runtime by modifying the fiber's props.
 
 ```typescript
-import { overrideProps } from 'bippy/override';
+import { overrideProps } from 'bippy';
 
 // override props on a fiber
 overrideProps(fiber, {

@@ -27,7 +27,6 @@ export default defineConfig([
     entry: {
       index: './src/index.ts',
       source: './src/source.ts',
-      override: './src/override.ts',
       'experiments/inspect': './src/experiments/inspect.tsx',
     },
     clean: true, // only run on first entry

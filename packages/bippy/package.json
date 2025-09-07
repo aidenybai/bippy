@@ -60,16 +60,6 @@
         "default": "./dist/source.cjs"
       }
     },
-    "./override": {
-      "import": {
-        "types": "./dist/override.d.ts",
-        "default": "./dist/override.js"
-      },
-      "require": {
-        "types": "./dist/override.d.cts",
-        "default": "./dist/override.cjs"
-      }
-    },
     "./experiments/inspect": {
       "import": {
         "types": "./dist/experiments/inspect.d.ts",

@@ -36,23 +36,6 @@ export const describeBuiltInComponentFrame = (name: string): string => {
   return `\n    in ${name}`;
 };
 
-export const disableLogs = () => {
-  const prev = {
-    error: console.error,
-    warn: console.warn,
-  };
-  console.error = () => {};
-  console.warn = () => {};
-  return prev;
-};
-
-export const reenableLogs = (prev: {
-  error: typeof console.error;
-  warn: typeof console.warn;
-}) => {
-  console.error = prev.error;
-  console.warn = prev.warn;
-};
 
 const INLINE_SOURCEMAP_REGEX = /^data:application\/json[^,]+base64,/;
 const SOURCEMAP_REGEX =
@@ -85,13 +68,6 @@ export const getSourceMap = async (url: string, content: string) => {
   return new SourceMapConsumer(rawSourceMap);
 };
 
-export const getRemovedFileProtocolPath = (path: string): string => {
-  const protocol = 'file://';
-  if (path.startsWith(protocol)) {
-    return path.substring(protocol.length);
-  }
-  return path;
-};
 
 export const parseStackFrame = async (
   frame: string
@@ -120,14 +96,14 @@ export const parseStackFrame = async (
       });
 
       return {
-        fileName: getRemovedFileProtocolPath(sourcemap.file || result.source),
+        fileName: (sourcemap.file || result.source).replace(/^file:\/\//, ''),
         lineNumber: result.line,
         columnNumber: result.column,
       };
     }
   }
   return {
-    fileName: getRemovedFileProtocolPath(fileName),
+    fileName: fileName.replace(/^file:\/\//, ''),
     lineNumber,
     columnNumber,
   };
@@ -148,7 +124,10 @@ export const describeNativeComponentFrame = (
 
   const previousDispatcher = getCurrentDispatcher();
   setCurrentDispatcher(null);
-  const prevLogs = disableLogs();
+  const prevError = console.error;
+  const prevWarn = console.warn;
+  console.error = () => {};
+  console.warn = () => {};
   try {
     /**
      * Finding a common stack frame between sample and control errors can be
@@ -259,54 +238,54 @@ export const describeNativeComponentFrame = (
       // Skipping one frame that we assume is the frame that calls the two.
       const sampleLines = sampleStack.split('\n');
       const controlLines = controlStack.split('\n');
-      let s = 0;
-      let c = 0;
+      let sampleIndex = 0;
+      let controlIndex = 0;
       while (
-        s < sampleLines.length &&
-        !sampleLines[s].includes('DetermineComponentFrameRoot')
+        sampleIndex < sampleLines.length &&
+        !sampleLines[sampleIndex].includes('DetermineComponentFrameRoot')
       ) {
-        s++;
+        sampleIndex++;
       }
       while (
-        c < controlLines.length &&
-        !controlLines[c].includes('DetermineComponentFrameRoot')
+        controlIndex < controlLines.length &&
+        !controlLines[controlIndex].includes('DetermineComponentFrameRoot')
       ) {
-        c++;
+        controlIndex++;
       }
       // We couldn't find our intentionally injected common root frame, attempt
       // to find another common root frame by search from the bottom of the
       // control stack...
-      if (s === sampleLines.length || c === controlLines.length) {
-        s = sampleLines.length - 1;
-        c = controlLines.length - 1;
-        while (s >= 1 && c >= 0 && sampleLines[s] !== controlLines[c]) {
+      if (sampleIndex === sampleLines.length || controlIndex === controlLines.length) {
+        sampleIndex = sampleLines.length - 1;
+        controlIndex = controlLines.length - 1;
+        while (sampleIndex >= 1 && controlIndex >= 0 && sampleLines[sampleIndex] !== controlLines[controlIndex]) {
           // We expect at least one stack frame to be shared.
           // Typically this will be the root most one. However, stack frames may be
           // cut off due to maximum stack limits. In this case, one maybe cut off
           // earlier than the other. We assume that the sample is longer or the same
           // and there for cut off earlier. So we should find the root most frame in
           // the sample somewhere in the control.
-          c--;
+          controlIndex--;
         }
       }
-      for (; s >= 1 && c >= 0; s--, c--) {
+      for (; sampleIndex >= 1 && controlIndex >= 0; sampleIndex--, controlIndex--) {
         // Next we find the first one that isn't the same which should be the
         // frame that called our sample function and the control.
-        if (sampleLines[s] !== controlLines[c]) {
+        if (sampleLines[sampleIndex] !== controlLines[controlIndex]) {
           // In V8, the first line is describing the message but other VMs don't.
           // If we're about to return the first line, and the control is also on the same
           // line, that's a pretty good indicator that our sample threw at same line as
           // the control. I.e. before we entered the sample frame. So we ignore this result.
           // This can happen if you passed a class to function component, or non-function.
-          if (s !== 1 || c !== 1) {
+          if (sampleIndex !== 1 || controlIndex !== 1) {
             do {
-              s--;
-              c--;
+              sampleIndex--;
+              controlIndex--;
               // We may still have similar intermediate frames from the construct call.
               // The next one that isn't the same should be our match though.
-              if (c < 0 || sampleLines[s] !== controlLines[c]) {
+              if (controlIndex < 0 || sampleLines[sampleIndex] !== controlLines[controlIndex]) {
                 // V8 adds a "new" prefix for native classes. Let's remove it to make it prettier.
-                let frame = `\n${sampleLines[s].replace(' at new ', ' at ')}`;
+                let frame = `\n${sampleLines[sampleIndex].replace(' at new ', ' at ')}`;
 
                 const displayName = getDisplayName(fn);
                 // If our component frame is labeled "<anonymous>"
@@ -318,7 +297,7 @@ export const describeNativeComponentFrame = (
                 // Return the line we found.
                 return frame;
               }
-            } while (s >= 1 && c >= 0);
+            } while (sampleIndex >= 1 && controlIndex >= 0);
           }
           break;
         }
@@ -330,7 +309,8 @@ export const describeNativeComponentFrame = (
     Error.prepareStackTrace = previousPrepareStackTrace;
 
     setCurrentDispatcher(previousDispatcher);
-    reenableLogs(prevLogs);
+    console.error = prevError;
+    console.warn = prevWarn;
   }
 
   const name = fn ? getDisplayName(fn) : '';
@@ -389,10 +369,7 @@ export const formatOwnerStack = (error: Error): string => {
     // Pop the JSX frame.
     stack = stack.slice(idx + 1);
   }
-  idx = stack.indexOf('react_stack_bottom_frame');
-  if (idx === -1) {
-    idx = stack.indexOf('react-stack-bottom-frame');
-  }
+  idx = Math.max(stack.indexOf('react_stack_bottom_frame'), stack.indexOf('react-stack-bottom-frame'));
   if (idx !== -1) {
     idx = stack.lastIndexOf('\n', idx);
   }
@@ -496,13 +473,14 @@ export const describeFiber = (
       return describeBuiltInComponentFrame('SuspenseList');
     case FunctionComponentTag:
     case SimpleMemoComponentTag:
-      return describeFunctionComponentFrame(fiber.type);
+      return describeNativeComponentFrame(fiber.type, false);
     case ForwardRefTag:
-      return describeFunctionComponentFrame(
-        (fiber.type as { render: React.ComponentType<unknown> }).render
+      return describeNativeComponentFrame(
+        (fiber.type as { render: React.ComponentType<unknown> }).render,
+        false
       );
     case ClassComponentTag:
-      return describeClassComponentFrame(fiber.type);
+      return describeNativeComponentFrame(fiber.type, true);
     case ActivityComponentTag:
       return describeBuiltInComponentFrame('Activity');
     case ViewTransitionComponentTag:
@@ -514,23 +492,6 @@ export const describeFiber = (
   }
 };
 
-export const describeFunctionComponentFrame = (
-  fn: React.ComponentType<unknown>
-): string => {
-  if (!fn || reentry) {
-    return '';
-  }
-  return describeNativeComponentFrame(fn, false);
-};
-
-export const describeClassComponentFrame = (
-  fn: React.ComponentType<unknown>
-): string => {
-  if (!fn || reentry) {
-    return '';
-  }
-  return describeNativeComponentFrame(fn, true);
-};
 
 export const describeDebugInfoFrame = (
   name: string,
