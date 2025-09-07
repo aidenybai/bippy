@@ -1,5 +1,11 @@
 # bippy
 
+## 0.3.27
+
+### Patch Changes
+
+- feat: fold in override
+
 ## 0.3.26
 
 ### Patch Changes
