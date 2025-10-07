@@ -36,7 +36,6 @@ export const describeBuiltInComponentFrame = (name: string): string => {
   return `\n    in ${name}`;
 };
 
-
 const INLINE_SOURCEMAP_REGEX = /^data:application\/json[^,]+base64,/;
 const SOURCEMAP_REGEX =
   /(?:\/\/[@#][ \t]+sourceMappingURL=([^\s'"]+?)[ \t]*$)|(?:\/\*[@#][ \t]+sourceMappingURL=([^*]+?)[ \t]*(?:\*\/)[ \t]*$)/;
@@ -68,45 +67,64 @@ export const getSourceMap = async (url: string, content: string) => {
   return new SourceMapConsumer(rawSourceMap);
 };
 
-
 export const parseStackFrame = async (
-  frame: string
-): Promise<FiberSource | null> => {
-  const source = parseStack(frame);
+  frame: string,
+  maxDepth?: number
+): Promise<FiberSource[]> => {
+  const sources = parseStack(frame);
 
-  if (!source.length) {
-    return null;
+  if (!sources.length) {
+    return [];
   }
 
-  const { file: fileName, line: lineNumber, col: columnNumber = 0 } = source[0];
+  const pendingSources = maxDepth ? sources.slice(0, maxDepth) : sources;
 
-  if (!fileName || !lineNumber) {
-    return null;
-  }
+  const results = await Promise.all(
+    pendingSources.map(
+      async ({ file: fileName, line: lineNumber, col: columnNumber = 0 }) => {
+        if (!fileName || !lineNumber) {
+          return null;
+        }
 
-  const response = await fetch(fileName);
-  if (response.ok) {
-    const content = await response.text();
-    const sourcemap = await getSourceMap(fileName, content);
+        try {
+          const response = await fetch(fileName);
+          if (response.ok) {
+            const content = await response.text();
+            const sourcemap = await getSourceMap(fileName, content);
 
-    if (sourcemap) {
-      const result = sourcemap.originalPositionFor({
-        line: lineNumber,
-        column: columnNumber,
-      });
+            if (sourcemap) {
+              const result = sourcemap.originalPositionFor({
+                line: lineNumber,
+                column: columnNumber,
+              });
 
-      return {
-        fileName: (sourcemap.file || result.source).replace(/^file:\/\//, ''),
-        lineNumber: result.line,
-        columnNumber: result.column,
-      };
-    }
-  }
-  return {
-    fileName: fileName.replace(/^file:\/\//, ''),
-    lineNumber,
-    columnNumber,
-  };
+              return {
+                fileName: (sourcemap.file || result.source).replace(
+                  /^file:\/\//,
+                  ''
+                ),
+                lineNumber: result.line,
+                columnNumber: result.column,
+              };
+            }
+          }
+          return {
+            fileName: fileName.replace(/^file:\/\//, ''),
+            lineNumber,
+            columnNumber,
+          };
+        } catch {
+          return {
+            fileName: fileName.replace(/^file:\/\//, ''),
+            lineNumber,
+            columnNumber,
+          };
+        }
+      }
+    )
+  );
+
+  return results.filter((result): result is FiberSource => result !== null);
 };
 
 // https://github.com/facebook/react/blob/f739642745577a8e4dcb9753836ac3589b9c590a/packages/react-devtools-shared/src/backend/shared/DevToolsComponentStackFrame.js#L22
@@ -255,10 +273,17 @@ export const describeNativeComponentFrame = (
       // We couldn't find our intentionally injected common root frame, attempt
       // to find another common root frame by search from the bottom of the
       // control stack...
-      if (sampleIndex === sampleLines.length || controlIndex === controlLines.length) {
+      if (
+        sampleIndex === sampleLines.length ||
+        controlIndex === controlLines.length
+      ) {
         sampleIndex = sampleLines.length - 1;
         controlIndex = controlLines.length - 1;
-        while (sampleIndex >= 1 && controlIndex >= 0 && sampleLines[sampleIndex] !== controlLines[controlIndex]) {
+        while (
+          sampleIndex >= 1 &&
+          controlIndex >= 0 &&
+          sampleLines[sampleIndex] !== controlLines[controlIndex]
+        ) {
           // We expect at least one stack frame to be shared.
           // Typically this will be the root most one. However, stack frames may be
           // cut off due to maximum stack limits. In this case, one maybe cut off
@@ -268,7 +293,11 @@ export const describeNativeComponentFrame = (
           controlIndex--;
         }
       }
-      for (; sampleIndex >= 1 && controlIndex >= 0; sampleIndex--, controlIndex--) {
+      for (
+        ;
+        sampleIndex >= 1 && controlIndex >= 0;
+        sampleIndex--, controlIndex--
+      ) {
         // Next we find the first one that isn't the same which should be the
         // frame that called our sample function and the control.
         if (sampleLines[sampleIndex] !== controlLines[controlIndex]) {
@@ -283,9 +312,15 @@ export const describeNativeComponentFrame = (
               controlIndex--;
               // We may still have similar intermediate frames from the construct call.
               // The next one that isn't the same should be our match though.
-              if (controlIndex < 0 || sampleLines[sampleIndex] !== controlLines[controlIndex]) {
+              if (
+                controlIndex < 0 ||
+                sampleLines[sampleIndex] !== controlLines[controlIndex]
+              ) {
                 // V8 adds a "new" prefix for native classes. Let's remove it to make it prettier.
-                let frame = `\n${sampleLines[sampleIndex].replace(' at new ', ' at ')}`;
+                let frame = `\n${sampleLines[sampleIndex].replace(
+                  ' at new ',
+                  ' at '
+                )}`;
 
                 const displayName = getDisplayName(fn);
                 // If our component frame is labeled "<anonymous>"
@@ -369,7 +404,10 @@ export const formatOwnerStack = (error: Error): string => {
     // Pop the JSX frame.
     stack = stack.slice(idx + 1);
   }
-  idx = Math.max(stack.indexOf('react_stack_bottom_frame'), stack.indexOf('react-stack-bottom-frame'));
+  idx = Math.max(
+    stack.indexOf('react_stack_bottom_frame'),
+    stack.indexOf('react-stack-bottom-frame')
+  );
   if (idx !== -1) {
     idx = stack.lastIndexOf('\n', idx);
   }
@@ -442,7 +480,8 @@ export const getFiberSource = async (
   try {
     const stackFrame = getFiberStackFrame(fiber);
     if (stackFrame) {
-      return await parseStackFrame(stackFrame);
+      const sources = await parseStackFrame(stackFrame, 1);
+      return sources[0] || null;
     }
   } catch {}
 
@@ -491,7 +530,6 @@ export const describeFiber = (
       return '';
   }
 };
-
 
 export const describeDebugInfoFrame = (
   name: string,
@@ -585,9 +623,9 @@ export const getOwnerStack = async (
     if (locationStr && locationStr !== 'Server') {
       try {
         const mockFrame = `    at ${name} (${locationStr})`;
-        const parsedSource = await parseStackFrame(mockFrame);
-        if (parsedSource) {
-          source = parsedSource;
+        const parsedSources = await parseStackFrame(mockFrame, 1);
+        if (parsedSources.length > 0) {
+          source = parsedSources[0];
         }
       } catch {}
     }
