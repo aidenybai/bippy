@@ -1,5 +1,11 @@
 # bippy
 
+## 0.3.28
+
+### Patch Changes
+
+- feat: parseStackFrame now returns multiple sources
+
 ## 0.3.27
 
 ### Patch Changes
