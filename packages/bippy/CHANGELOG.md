@@ -1,5 +1,11 @@
 # bippy
 
+## 0.3.29
+
+### Patch Changes
+
+- fix: file resolution
+
 ## 0.3.28
 
 ### Patch Changes
