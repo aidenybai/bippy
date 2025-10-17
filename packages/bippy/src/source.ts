@@ -98,11 +98,17 @@ export const parseStackFrame = async (
                 column: columnNumber,
               });
 
+              let resolvedFileName = sourcemap.file || result.source;
+
+              // if the source is a relative path, resolve it relative to the original file URL
+              if (resolvedFileName && !resolvedFileName.startsWith('/') && !resolvedFileName.startsWith('file://') && !resolvedFileName.startsWith('http')) {
+                const parsedURL = fileName.split('/');
+                parsedURL[parsedURL.length - 1] = resolvedFileName;
+                resolvedFileName = parsedURL.join('/');
+              }
+
               return {
-                fileName: (sourcemap.file || result.source).replace(
-                  /^file:\/\//,
-                  ''
-                ),
+                fileName: resolvedFileName.replace(/^file:\/\//, ''),
                 lineNumber: result.line,
                 columnNumber: result.column,
               };
