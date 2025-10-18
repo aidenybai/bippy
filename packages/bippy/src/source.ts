@@ -98,7 +98,8 @@ export const parseStackFrame = async (
                 column: columnNumber,
               });
 
-              let resolvedFileName = sourcemap.file || result.source;
+              // prefer result.source (original source file like .tsx) over sourcemap.file (compiled output like .js)
+              let resolvedFileName = result.source || sourcemap.file;
 
               // if the source is a relative path, resolve it relative to the original file URL
               if (resolvedFileName && !resolvedFileName.startsWith('/') && !resolvedFileName.startsWith('file://') && !resolvedFileName.startsWith('http')) {
@@ -108,7 +109,7 @@ export const parseStackFrame = async (
               }
 
               return {
-                fileName: resolvedFileName.replace(/^file:\/\//, ''),
+                fileName: (resolvedFileName || fileName).replace(/^file:\/\//, ''),
                 lineNumber: result.line,
                 columnNumber: result.column,
               };
