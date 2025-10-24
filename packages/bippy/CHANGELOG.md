@@ -1,5 +1,11 @@
 # bippy
 
+## 0.3.32
+
+### Patch Changes
+
+- fix: source maps
+
 ## 0.3.31
 
 ### Patch Changes
