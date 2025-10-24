@@ -46,7 +46,7 @@ export const getSourceMap = async (url: string, content: string) => {
   for (let i = lines.length - 1; i >= 0 && !sourceMapUrl; i--) {
     const result = lines[i].match(SOURCEMAP_REGEX);
     if (result) {
-      sourceMapUrl = result[1];
+      sourceMapUrl = result[1] || result[2];
     }
   }
 
@@ -54,8 +54,9 @@ export const getSourceMap = async (url: string, content: string) => {
     return null;
   }
 
+  const hasScheme = /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(sourceMapUrl);
   if (
-    !(INLINE_SOURCEMAP_REGEX.test(sourceMapUrl) || sourceMapUrl.startsWith('/'))
+    !(INLINE_SOURCEMAP_REGEX.test(sourceMapUrl) || hasScheme || sourceMapUrl.startsWith('/'))
   ) {
     const parsedURL = url.split('/');
     parsedURL[parsedURL.length - 1] = sourceMapUrl;
@@ -98,13 +99,15 @@ export const parseStackFrame = async (
                 column: columnNumber,
               });
 
+              const originalSource =
+                (result && typeof result.source === 'string'
+                  ? result.source
+                  : undefined) || undefined;
+
               return {
-                fileName: (sourcemap.file || result.source).replace(
-                  /^file:\/\//,
-                  ''
-                ),
-                lineNumber: result.line,
-                columnNumber: result.column,
+                fileName: (originalSource || fileName).replace(/^file:\/\//, ''),
+                lineNumber: result?.line ?? lineNumber,
+                columnNumber: result?.column ?? columnNumber,
               };
             }
           }

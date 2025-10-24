@@ -1,11 +1,7 @@
 'use client';
 
 import { getFiberFromHostInstance } from '../dist/index';
-import {
-  // getFiberSource,
-  getOwnerStack,
-  getFiberStackTrace,
-} from '../dist/source';
+import { getFiberSource, getOwnerStack, getFiberStackTrace } from '../dist/source';
 import { useEffect } from 'react';
 
 export function ClientFiber() {
@@ -19,8 +15,20 @@ export function ClientFiber() {
         document.getElementById('bippy-source')!
       );
       if (fiber) {
+        const files = (await getOwnerStack(getFiberStackTrace(fiber))).map(
+          (i) => i.source?.fileName ?? null
+        );
         // biome-ignore lint/suspicious/noConsoleLog: <explanation>
-        console.log(await getOwnerStack(getFiberStackTrace(fiber)));
+        console.log('owner files:', files);
+        const src = await getFiberSource(fiber);
+        // biome-ignore lint/suspicious/noConsoleLog: <explanation>
+        console.log('fiber source:', src);
+        if (typeof window !== 'undefined') {
+          // @ts-expect-error debug
+          window.__bippyOwnerFiles = files;
+          // @ts-expect-error debug
+          window.__bippyFiberSource = src;
+        }
       }
     }, 1000);
   }, []);
