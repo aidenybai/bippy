@@ -96,7 +96,7 @@ interface __REACT_DEVTOOLS_GLOBAL_HOOK__ {
   onCommitFiberRoot: (
     rendererID: RendererID,
     root: FiberRoot,
-    commitPriority?: number
+    commitPriority?: number,
   ) => void;
 
   // called when effects run
@@ -175,7 +175,7 @@ instrument(
     onCommitFiberUnmount(rendererID, fiber) {
       console.log('fiber unmounted', fiber);
     },
-  })
+  }),
 );
 ```
 
@@ -205,7 +205,7 @@ instrument(
         console.log('fiber rendered', fiber);
       });
     },
-  })
+  }),
 );
 ```
 
@@ -224,7 +224,7 @@ instrument(
         console.log(fiber);
       });
     },
-  })
+  }),
 );
 ```
 
@@ -416,7 +416,7 @@ returns the latest fiber (since it may be double-buffered). usually use this in 
 import { getLatestFiber } from 'bippy';
 
 const latestFiber = getLatestFiber(
-  getFiberFromHostInstance(document.querySelector('div'))
+  getFiberFromHostInstance(document.querySelector('div')),
 );
 console.log(latestFiber);
 ```
@@ -455,8 +455,8 @@ overrideProps(fiber, {
   title: 'new title',
   config: {
     enabled: true,
-    count: 42
-  }
+    count: 42,
+  },
 });
 ```
 
@@ -476,8 +476,8 @@ overrideHookState(fiber, 0, 'new state value');
 overrideHookState(fiber, 1, {
   user: {
     name: 'john',
-    age: 30
-  }
+    age: 30,
+  },
 });
 ```
 
@@ -495,8 +495,8 @@ overrideContext(fiber, MyContext, {
   theme: 'dark',
   user: {
     id: 123,
-    name: 'jane'
-  }
+    name: 'jane',
+  },
 });
 
 // override with primitive value
@@ -581,7 +581,7 @@ instrument(
         highlightFiber(hostFiber);
       });
     },
-  })
+  }),
 );
 ```
 
@@ -668,7 +668,7 @@ instrument(
 
         console.group(
           `%c${displayName}`,
-          'background: hsla(0,0%,70%,.3); border-radius:3px; padding: 0 2px;'
+          'background: hsla(0,0%,70%,.3); border-radius:3px; padding: 0 2px;',
         );
         for (const { name, prev, next } of changes) {
           console.log(`${name}:`, prev, '!==', next);
@@ -676,7 +676,7 @@ instrument(
         console.groupEnd();
       });
     },
-  })
+  }),
 );
 ```
 

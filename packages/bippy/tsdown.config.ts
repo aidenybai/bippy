@@ -1,42 +1,43 @@
-import { defineConfig, type Options } from 'tsdown';
 import fs from 'node:fs';
+import { defineConfig, type Options } from 'tsdown';
 
 const DEFAULT_OPTIONS: Options = {
-  entry: [],
   clean: false,
-  outDir: './dist',
-  sourcemap: false,
-  format: [],
-  target: 'esnext',
-  platform: 'browser',
-  treeshake: true,
   dts: true,
-  minify: false,
+  entry: [],
   env: {
     NODE_ENV: process.env.NODE_ENV ?? 'development',
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     VERSION: JSON.parse(fs.readFileSync('package.json', 'utf8')).version,
   },
   external: ['react', 'react-dom', 'react-reconciler'],
+  format: [],
+  minify: false,
   noExternal: ['error-stack-parser-es', 'source-map-js'],
+  outDir: './dist',
+  platform: 'browser',
+  sourcemap: false,
+  target: 'esnext',
+  treeshake: true,
 };
 
 export default defineConfig([
   {
     ...DEFAULT_OPTIONS,
-    format: ['esm', 'cjs'],
+    clean: true, // only run on first entry
     entry: {
+      'experiments/inspect': './src/experiments/inspect.tsx',
       index: './src/index.ts',
       source: './src/source.ts',
-      'experiments/inspect': './src/experiments/inspect.tsx',
     },
-    clean: true, // only run on first entry
+    format: ['esm', 'cjs'],
   },
   {
     ...DEFAULT_OPTIONS,
-    format: ['iife'],
-    outDir: './dist',
-    minify: process.env.NODE_ENV === 'production',
-    globalName: 'Bippy',
     entry: ['./src/index.ts'],
+    format: ['iife'],
+    globalName: 'Bippy',
+    minify: process.env.NODE_ENV === 'production',
+    outDir: './dist',
   },
 ]);

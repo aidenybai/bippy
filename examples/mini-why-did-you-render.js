@@ -76,7 +76,7 @@ instrument(
 
         console.group(
           `%c${displayName}`,
-          'background: hsla(0,0%,70%,.3); border-radius:3px; padding: 0 2px;'
+          'background: hsla(0,0%,70%,.3); border-radius:3px; padding: 0 2px;',
         );
         for (const { name, prev, next } of changes) {
           console.log(`${name}:`, prev, '!==', next);
@@ -84,5 +84,5 @@ instrument(
         console.groupEnd();
       });
     },
-  })
+  }),
 );

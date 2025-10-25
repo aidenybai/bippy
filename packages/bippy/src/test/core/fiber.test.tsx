@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { describe, expect, it } from 'vitest';
 import {
   didFiberCommit,
@@ -15,9 +18,6 @@ import {
   traverseFiber,
 } from '../../index.js';
 import type { Fiber } from '../../types.js';
-// FIXME(Alexis): Both React and @testing-library/react should be after index.js
-// but the linter/import sorter keeps moving them on top
-// biome-ignore lint/correctness/noUnusedImports: needed for JSX
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import {

@@ -1,36 +1,42 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 html,
 body {
-	font-family: "Geist Mono", Menlo, Consolas, Monaco, Liberation Mono, Lucida
-		Console, monospace;
+  font-family:
+    'Geist Mono',
+    Menlo,
+    Consolas,
+    Monaco,
+    Liberation Mono,
+    Lucida Console,
+    monospace;
 }
 
 :root {
-	color-scheme: dark;
-	--sh-class: #f0f0f0;
-	--sh-identifier: #f0f0f0;
-	--sh-sign: #9b9b9b;
-	--sh-property: #dfb58f;
-	--sh-entity: #dfb58f;
-	--sh-jsxliterals: #dfb58f;
-	--sh-string: #9b9b9b;
-	--sh-keyword: #9b9b9b;
-	--sh-comment: #a19595;
+  color-scheme: dark;
+  --sh-class: #f0f0f0;
+  --sh-identifier: #f0f0f0;
+  --sh-sign: #9b9b9b;
+  --sh-property: #dfb58f;
+  --sh-entity: #dfb58f;
+  --sh-jsxliterals: #dfb58f;
+  --sh-string: #9b9b9b;
+  --sh-keyword: #9b9b9b;
+  --sh-comment: #a19595;
 }
 
 .font-sans {
-	font-family: "Geist", sans-serif;
+  font-family: 'Geist', sans-serif;
 }
 
 pre code {
-	counter-reset: sh-line-number;
+  counter-reset: sh-line-number;
 }
 
 .sh__line::before {
-	counter-increment: sh-line-number 1;
-	content: counter(sh-line-number);
-	margin-right: 2ch;
-	text-align: right;
-	color: #9b9b9b71;
+  counter-increment: sh-line-number 1;
+  content: counter(sh-line-number);
+  margin-right: 2ch;
+  text-align: right;
+  color: #9b9b9b71;
 }

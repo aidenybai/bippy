@@ -65,5 +65,5 @@ instrument(
         highlightFiber(hostFiber);
       });
     },
-  })
+  }),
 );

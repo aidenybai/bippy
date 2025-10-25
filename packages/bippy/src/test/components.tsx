@@ -10,6 +10,7 @@ export const BasicComponent = () => {
 BasicComponent.displayName = 'BasicComponent';
 
 export const BasicComponentWithEffect = () => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_shouldUnmount, _setShouldUnmount] = React.useState(true);
   React.useEffect(() => {}, []);
   return <div>Hello</div>;
@@ -33,7 +34,9 @@ export const BasicComponentWithMutation = () => {
 
 export const BasicComponentWithChildren = ({
   children,
-}: { children: React.ReactNode }) => {
+}: {
+  children: React.ReactNode;
+}) => {
   return <div>{children}</div>;
 };
 
@@ -62,13 +65,17 @@ export class ClassComponent extends React.Component {
 
 export const ComplexComponent = ({
   countProp = 0,
-}: { countProp?: number; extraProp?: unknown }) => {
+}: {
+  countProp?: number;
+  extraProp?: unknown;
+}) => {
   const countContextValue = React.useContext(CountContext);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _extraContextValue = React.useContext(ExtraContext);
   const [countState, setCountState] = React.useState(0);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_extraState, _setExtraState] = React.useState(0);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: OK
   React.useEffect(() => {
     setCountState(countState + 1);
   }, []);

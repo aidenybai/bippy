@@ -89,12 +89,11 @@
     "build": "NODE_ENV=production tsdown && bun scripts/append-banner.ts",
     "dev": "NODE_ENV=development tsdown --watch",
     "publint": "publint",
-    "test": "vitest",
+    "test": "vitest run",
     "coverage": "vitest run --coverage",
     "prepublishOnly": "cp ../../README.md . && pnpm build"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.9.4",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.1.0",
     "@types/node": "^20",

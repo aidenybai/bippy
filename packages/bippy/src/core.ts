@@ -1,14 +1,16 @@
 // Note: do not import React in this file
 // since it will be executed before the react devtools hook is created
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-redundant-type-constituents */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 
 import type * as React from 'react';
-import {
-  BIPPY_INSTRUMENTATION_STRING,
-  getRDTHook,
-  hasRDTHook,
-  isReactRefresh,
-  isRealReactDevtools,
-} from './rdt-hook.js';
+
 import type {
   ContextDependency,
   Fiber,
@@ -17,6 +19,14 @@ import type {
   ReactDevToolsGlobalHook,
   ReactRenderer,
 } from './types.js';
+
+import {
+  BIPPY_INSTRUMENTATION_STRING,
+  getRDTHook,
+  hasRDTHook,
+  isReactRefresh,
+  isRealReactDevtools,
+} from './rdt-hook.js';
 
 // https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactWorkTags.js
 export const FunctionComponentTag = 0;
@@ -121,11 +131,11 @@ export const isHostFiber = (fiber: Fiber): boolean => {
  */
 export const isCompositeFiber = (fiber: Fiber): boolean => {
   switch (fiber.tag) {
-    case FunctionComponentTag:
     case ClassComponentTag:
-    case SimpleMemoComponentTag:
-    case MemoComponentTag:
     case ForwardRefTag:
+    case FunctionComponentTag:
+    case MemoComponentTag:
+    case SimpleMemoComponentTag:
       return true;
     default:
       return false;
@@ -228,8 +238,8 @@ export const traverseProps = (
     const prevProps = fiber.alternate?.memoizedProps || {};
 
     const allKeys = new Set([
-      ...Object.keys(prevProps),
       ...Object.keys(nextProps),
+      ...Object.keys(prevProps),
     ]);
 
     for (const propName of allKeys) {
@@ -253,9 +263,9 @@ export const didFiberRender = (fiber: Fiber): boolean => {
 
   switch (fiber.tag) {
     case ClassComponentTag:
-    case FunctionComponentTag:
     case ContextConsumerTag:
     case ForwardRefTag:
+    case FunctionComponentTag:
     case MemoComponentTag:
     case SimpleMemoComponentTag: {
       return (flags & PerformedWork) === PerformedWork;
@@ -334,8 +344,8 @@ export const shouldFilterFiber = (fiber: Fiber): boolean => {
       // https://github.com/bvaughn/react-devtools-experimental/issues/197
       return true;
 
-    case HostTextTag:
     case FragmentTag:
+    case HostTextTag:
     case LegacyHiddenComponentTag:
     case OffscreenComponentTag:
       return true;
@@ -427,7 +437,7 @@ export function traverseFiber(
 ): Promise<Fiber | null>;
 export function traverseFiber(
   fiber: Fiber | null,
-  selector: (node: Fiber) => boolean | void | Promise<boolean | void>,
+  selector: (node: Fiber) => boolean | Promise<boolean | void> | void,
   ascending = false
 ): Fiber | null | Promise<Fiber | null> {
   const isAsync = fiber && selector(fiber) instanceof Promise;
@@ -493,7 +503,7 @@ export const traverseFiberAsync = async (
  * ```
  */
 export const getTimings = (
-  fiber?: Fiber | null | undefined
+  fiber?: Fiber | null
 ): { selfTime: number; totalTime: number } => {
   const totalTime = fiber?.actualDuration ?? 0;
   let selfTime = totalTime;
@@ -523,7 +533,7 @@ type FiberType =
 /**
  * Returns the type (e.g. component definition) of the {@link Fiber}
  */
-export const getType = (type: unknown): React.ComponentType<unknown> | null => {
+export const getType = (type: unknown): null | React.ComponentType<unknown> => {
   const currentType = type as FiberType;
   if (typeof currentType === 'function') {
     return currentType;
@@ -542,7 +552,7 @@ export const getType = (type: unknown): React.ComponentType<unknown> | null => {
 /**
  * Returns the display name of the {@link Fiber} type.
  */
-export const getDisplayName = (type: unknown): string | null => {
+export const getDisplayName = (type: unknown): null | string => {
   const currentType = type as FiberType;
   if (typeof currentType === 'string') {
     return currentType;
@@ -606,13 +616,13 @@ export const getLatestFiber = (fiber: Fiber): Fiber => {
   return fiber;
 };
 
-export type RenderPhase = 'mount' | 'update' | 'unmount';
-
 export type RenderHandler = <S>(
   fiber: Fiber,
   phase: RenderPhase,
   state?: S
 ) => unknown;
+
+export type RenderPhase = 'mount' | 'unmount' | 'update';
 
 let fiberId = 0;
 export const fiberIdMap = new WeakMap<Fiber, number>();
@@ -835,8 +845,8 @@ let commitId = 0;
 const rootInstanceMap = new WeakMap<
   FiberRoot,
   {
-    prevFiber: Fiber | null;
     id: number;
+    prevFiber: Fiber | null;
   }
 >();
 
@@ -856,7 +866,7 @@ export const traverseRenderedFibers = (
   let rootInstance = rootInstanceMap.get(root);
 
   if (!rootInstance) {
-    rootInstance = { prevFiber: null, id: commitId++ };
+    rootInstance = { id: commitId++, prevFiber: null };
     rootInstanceMap.set(root, rootInstance);
   }
 
@@ -897,17 +907,17 @@ export const traverseRenderedFibers = (
 export const createFiberVisitor = ({
   onRender,
 }: {
-  onRender: RenderHandler;
   onError: (error: unknown) => unknown;
-}): (<S>(_rendererID: number, root: FiberRoot | Fiber, _state?: S) => void) => {
-  return <S>(_rendererID: number, root: FiberRoot | Fiber, _state?: S) => {
+  onRender: RenderHandler;
+}): (<S>(_rendererID: number, root: Fiber | FiberRoot, _state?: S) => void) => {
+  return <S>(_rendererID: number, root: Fiber | FiberRoot, _state?: S) => {
     traverseRenderedFibers(root, onRender);
   };
 };
 
-let _overrideProps: ReactRenderer['overrideProps'] | null = null;
-let _overrideHookState: ReactRenderer['overrideHookState'] | null = null;
-let _overrideContext: ReactRenderer['overrideContext'] | null = null;
+let _overrideProps: null | ReactRenderer['overrideProps'] = null;
+let _overrideHookState: null | ReactRenderer['overrideHookState'] = null;
+let _overrideContext: null | ReactRenderer['overrideContext'] = null;
 
 export const injectOverrideMethods = () => {
   if (!hasRDTHook()) return null;
@@ -916,9 +926,9 @@ export const injectOverrideMethods = () => {
 
   if (_overrideProps || _overrideHookState || _overrideContext) {
     return {
-      overrideProps: _overrideProps,
-      overrideHookState: _overrideHookState,
       overrideContext: _overrideContext,
+      overrideHookState: _overrideHookState,
+      overrideProps: _overrideProps,
     };
   }
 
@@ -1089,10 +1099,12 @@ export const overrideContext = (
 };
 
 export interface InstrumentationOptions {
+  name?: string;
+  onActive?: () => unknown;
   onCommitFiberRoot?: (
     rendererID: number,
     root: FiberRoot,
-    priority: void | number
+    priority: number | void
   ) => unknown;
   onCommitFiberUnmount?: (rendererID: number, fiber: Fiber) => unknown;
   onPostCommitFiberRoot?: (rendererID: number, root: FiberRoot) => unknown;
@@ -1101,8 +1113,6 @@ export interface InstrumentationOptions {
     root: FiberRoot,
     children: React.ReactNode
   ) => unknown;
-  onActive?: () => unknown;
-  name?: string;
 }
 
 /**
@@ -1133,7 +1143,7 @@ export const instrument = (
       rdtHook.onCommitFiberRoot = (
         rendererID: number,
         root: FiberRoot,
-        priority: void | number
+        priority: number | void
       ) => {
         if (prevOnCommitFiberRoot)
           prevOnCommitFiberRoot(rendererID, root, priority);
@@ -1172,7 +1182,6 @@ export const getFiberFromHostInstance = <T>(hostInstance: T): Fiber | null => {
 
   if (typeof hostInstance === 'object' && hostInstance != null) {
     if ('_reactRootContainer' in hostInstance) {
-      // biome-ignore lint/suspicious/noExplicitAny: OK
       return (hostInstance._reactRootContainer as any)?._internalRoot?.current
         ?.child;
     }
@@ -1197,11 +1206,11 @@ export const _fiberRoots = new Set<FiberRoot>();
 export const secure = (
   options: InstrumentationOptions,
   secureOptions: {
-    minReactMajorVersion?: number;
     dangerouslyRunInProduction?: boolean;
-    onError?: (error?: unknown) => unknown;
     installCheckTimeout?: number;
     isProduction?: boolean;
+    minReactMajorVersion?: number;
+    onError?: (error?: unknown) => unknown;
   } = {}
 ): InstrumentationOptions => {
   const onActive = options.onActive;

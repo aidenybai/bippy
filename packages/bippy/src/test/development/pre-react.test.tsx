@@ -1,8 +1,7 @@
 // import react, then bippy
 
-import { expect, it, vi } from 'vitest';
-// biome-ignore lint/correctness/noUnusedImports: needed for JSX
 import React from 'react';
+import { expect, it, vi } from 'vitest';
 const { instrument } = await import('../../index.js'); // delay it
 import { render } from '@testing-library/react';
 

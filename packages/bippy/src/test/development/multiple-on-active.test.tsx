@@ -1,6 +1,6 @@
+import { expect, it, vi } from 'vitest';
+
 import { instrument } from '../../index.js';
-import { it, vi, expect } from 'vitest';
-// biome-ignore lint/correctness/noUnusedImports: needed for JSX
 import React from 'react';
 import { render } from '@testing-library/react';
 import { BasicComponent } from '../components.js';

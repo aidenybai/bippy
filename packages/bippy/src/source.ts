@@ -1,33 +1,45 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/unbound-method */
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import type * as React from 'react';
+
 import { parseStack } from 'error-stack-parser-es/lite';
 import { type RawSourceMap, SourceMapConsumer } from 'source-map-js';
-import type * as React from 'react';
+
 import type { Fiber } from './types.js';
+
 import {
+  _renderers,
+  ActivityComponentTag,
   ClassComponentTag,
-  FunctionComponentTag,
   ForwardRefTag,
-  SimpleMemoComponentTag,
+  FunctionComponentTag,
+  getDisplayName,
+  getRDTHook,
+  getType,
   HostComponentTag,
-  SuspenseComponentTag,
   HostHoistableTag,
   HostSingletonTag,
-  LazyComponentTag,
-  SuspenseListComponentTag,
-  ActivityComponentTag,
-  ViewTransitionComponentTag,
-  getType,
   isCompositeFiber,
   isHostFiber,
+  LazyComponentTag,
+  SimpleMemoComponentTag,
+  SuspenseComponentTag,
+  SuspenseListComponentTag,
   traverseFiber,
-  getDisplayName,
-  _renderers,
-  getRDTHook,
+  ViewTransitionComponentTag,
 } from './index.js';
 
 export interface FiberSource {
+  columnNumber: number;
   fileName: string;
   lineNumber: number;
-  columnNumber: number;
 }
 
 let reentry = false;
@@ -82,7 +94,7 @@ export const parseStackFrame = async (
 
   const results = await Promise.all(
     pendingSources.map(
-      async ({ file: fileName, line: lineNumber, col: columnNumber = 0 }) => {
+      async ({ col: columnNumber = 0, file: fileName, line: lineNumber }) => {
         if (!fileName || !lineNumber) {
           return null;
         }
@@ -95,8 +107,8 @@ export const parseStackFrame = async (
 
             if (sourcemap) {
               const result = sourcemap.originalPositionFor({
-                line: lineNumber,
                 column: columnNumber,
+                line: lineNumber,
               });
 
               const originalSource =
@@ -105,22 +117,22 @@ export const parseStackFrame = async (
                   : undefined) || undefined;
 
               return {
+                columnNumber: result?.column ?? columnNumber,
                 fileName: (originalSource || fileName).replace(/^file:\/\//, ''),
                 lineNumber: result?.line ?? lineNumber,
-                columnNumber: result?.column ?? columnNumber,
               };
             }
           }
           return {
+            columnNumber,
             fileName: fileName.replace(/^file:\/\//, ''),
             lineNumber,
-            columnNumber,
           };
         } catch {
           return {
+            columnNumber,
             fileName: fileName.replace(/^file:\/\//, ''),
             lineNumber,
-            columnNumber,
           };
         }
       }
@@ -163,19 +175,15 @@ export const describeNativeComponentFrame = (
      */
     const RunInRootFrame = {
       DetermineComponentFrameRoot() {
-        // biome-ignore lint/suspicious/noExplicitAny: OK
         let control: any;
         try {
           // This should throw.
           if (construct) {
             // Something should be setting the props in the constructor.
-            // biome-ignore lint/complexity/useArrowFunction: OK
             const Fake = function () {
               throw Error();
             };
-            // $FlowFixMe[prop-missing]
             Object.defineProperty(Fake.prototype, 'props', {
-              // biome-ignore lint/complexity/useArrowFunction: OK
               set: function () {
                 // We use a throwing setter instead of frozen or non-writable props
                 // because that won't throw in a non-strict mode function.
@@ -198,7 +206,6 @@ export const describeNativeComponentFrame = (
               } catch (x) {
                 control = x;
               }
-              // @ts-expect-error
               fn.call(Fake.prototype);
             }
           } else {
@@ -221,7 +228,6 @@ export const describeNativeComponentFrame = (
               maybePromise.catch(() => {});
             }
           }
-          // biome-ignore lint/suspicious/noExplicitAny: OK
         } catch (sample: any) {
           // This is inlined manually because closure doesn't do it for us.
           if (sample && control && typeof sample.stack === 'string') {
@@ -356,7 +362,7 @@ export const describeNativeComponentFrame = (
   return syntheticFrame;
 };
 
-export const getCurrentDispatcher = (): React.RefObject<unknown> | null => {
+export const getCurrentDispatcher = (): null | React.RefObject<unknown> => {
   const rdtHook = getRDTHook();
   for (const renderer of [
     ...Array.from(_renderers),
@@ -373,7 +379,7 @@ export const getCurrentDispatcher = (): React.RefObject<unknown> | null => {
 };
 
 export const setCurrentDispatcher = (
-  value: React.RefObject<unknown> | null
+  value: null | React.RefObject<unknown>
 ): void => {
   for (const renderer of _renderers) {
     const currentDispatcherRef = renderer.currentDispatcherRef;
@@ -426,7 +432,7 @@ export const formatOwnerStack = (error: Error): string => {
   return stack;
 };
 
-export const getFiberStackFrame = (fiber: Fiber): string | null => {
+export const getFiberStackFrame = (fiber: Fiber): null | string => {
   const debugStack = fiber._debugStack;
   // react 19
   if (debugStack instanceof Error && typeof debugStack?.stack === 'string') {
@@ -470,13 +476,13 @@ export const getFiberSource = async (
   if (debugSource) {
     const { fileName, lineNumber } = debugSource;
     return {
-      fileName,
-      lineNumber,
       columnNumber:
         'columnNumber' in debugSource &&
         typeof debugSource.columnNumber === 'number'
           ? debugSource.columnNumber
           : 0,
+      fileName,
+      lineNumber,
     };
   }
 
@@ -494,13 +500,25 @@ export const getFiberSource = async (
 // https://github.com/facebook/react/blob/ac3e705a18696168acfcaed39dce0cfaa6be8836/packages/react-reconciler/src/ReactFiberComponentStack.js#L180
 export const describeFiber = (
   fiber: Fiber,
-  childFiber: null | Fiber
+  childFiber: Fiber | null
 ): string => {
   const tag = fiber.tag as number;
   switch (tag) {
+    case ActivityComponentTag:
+      return describeBuiltInComponentFrame('Activity');
+    case ClassComponentTag:
+      return describeNativeComponentFrame(fiber.type, true);
+    case ForwardRefTag:
+      return describeNativeComponentFrame(
+        (fiber.type as { render: React.ComponentType<unknown> }).render,
+        false
+      );
+    case FunctionComponentTag:
+    case SimpleMemoComponentTag:
+      return describeNativeComponentFrame(fiber.type, false);
+    case HostComponentTag:
     case HostHoistableTag:
     case HostSingletonTag:
-    case HostComponentTag:
       return describeBuiltInComponentFrame(fiber.type as string);
     case LazyComponentTag:
       // TODO: When we support Thenables as component types we should rename this.
@@ -513,18 +531,6 @@ export const describeFiber = (
       return describeBuiltInComponentFrame('Suspense');
     case SuspenseListComponentTag:
       return describeBuiltInComponentFrame('SuspenseList');
-    case FunctionComponentTag:
-    case SimpleMemoComponentTag:
-      return describeNativeComponentFrame(fiber.type, false);
-    case ForwardRefTag:
-      return describeNativeComponentFrame(
-        (fiber.type as { render: React.ComponentType<unknown> }).render,
-        false
-      );
-    case ClassComponentTag:
-      return describeNativeComponentFrame(fiber.type, true);
-    case ActivityComponentTag:
-      return describeBuiltInComponentFrame('Activity');
     case ViewTransitionComponentTag:
       // Note: enableViewTransition feature flag is not available in this codebase,
       // so we'll always include ViewTransition
@@ -550,7 +556,7 @@ export const getFiberStackTrace = (workInProgress: Fiber): string => {
   try {
     let info = '';
     let node: Fiber | null = workInProgress;
-    let previous: null | Fiber = null;
+    let previous: Fiber | null = null;
     do {
       info += describeFiber(node, previous);
 
@@ -606,7 +612,7 @@ export const getOwnerStack = async (
     /\n\s+(?:in|at)\s+([^\s(]+)(?:\s+\((?:at\s+)?([^)]+)\))?/g;
   const matches: OwnerStackItem[] = [];
 
-  let match: RegExpExecArray | null;
+  let match: null | RegExpExecArray;
   match = componentPattern.exec(stackTrace);
   while (match !== null) {
     const name = match[1];

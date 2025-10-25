@@ -1,13 +1,16 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-redundant-type-constituents */
+/* eslint-disable @typescript-eslint/require-await */
 import { describe, expect, it, vi } from 'vitest';
 import type { FiberRoot } from '../../types.js';
 import {
+  getRDTHook,
   instrument,
   isInstrumentationActive,
-  secure,
   onCommitFiberRoot,
-  getRDTHook,
+  secure,
 } from '../../index.js';
-// biome-ignore lint/correctness/noUnusedImports: needed for JSX
 import React from 'react';
 import { render } from '@testing-library/react';
 import { BasicComponent, BasicComponentWithEffect } from '../components.js';
@@ -63,9 +66,11 @@ describe('instrument', () => {
     const rdtHook = getRDTHook();
     const currentDispatcherRef = { current: null };
     rdtHook.renderers.set(1, {
-      version: '16.0.0',
       bundleType: 0,
       currentDispatcherRef,
+      reconcilerVersion: '16.0.0',
+      rendererPackageName: 'react-dom',
+      version: '16.0.0',
     });
     const onCommitFiberRoot1 = vi.fn();
     instrument(secure({ onCommitFiberRoot: onCommitFiberRoot1 }));
@@ -80,9 +85,11 @@ describe('instrument', () => {
     const onCommitFiberRoot2 = vi.fn();
 
     rdtHook.renderers.set(1, {
-      version: '17.0.0',
       bundleType: 1,
       currentDispatcherRef,
+      reconcilerVersion: '17.0.0',
+      rendererPackageName: 'react-dom',
+      version: '17.0.0',
     });
     instrument(secure({ onCommitFiberRoot: onCommitFiberRoot2 }));
     render(<BasicComponent />);

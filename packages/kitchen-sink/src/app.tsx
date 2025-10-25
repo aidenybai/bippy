@@ -1,17 +1,11 @@
-import { useState, type ReactNode, Fragment, type JSX } from 'react';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-import { highlight } from 'sugar-high';
-import { getFiberSource } from 'bippy/dist/source';
 import { getFiberFromHostInstance } from 'bippy';
+import { getFiberSource } from 'bippy/dist/source';
+import { clsx } from 'clsx';
+import { Fragment, type JSX, type ReactNode, useState } from 'react';
+import { highlight } from 'sugar-high';
+import { twMerge } from 'tailwind-merge';
 
 declare const __VERSION__: string;
-
-interface TextProps {
-  as?: keyof JSX.IntrinsicElements;
-  children: ReactNode;
-  className?: string;
-}
 
 interface LinkProps {
   children: ReactNode;
@@ -20,13 +14,13 @@ interface LinkProps {
   onClick?: () => void;
 }
 
+interface ListItemProps {
+  children: ReactNode;
+}
+
 interface ListProps {
   children: ReactNode;
   className?: string;
-}
-
-interface ListItemProps {
-  children: ReactNode;
 }
 
 interface SideLayoutProps {
@@ -34,93 +28,24 @@ interface SideLayoutProps {
 }
 
 interface TabsProps<T extends string> {
-  tabs: { value: T; label: string }[];
-  value: T;
   onChange: (value: T) => void;
+  tabs: { label: string; value: T; }[];
+  value: T;
 }
 
-setTimeout(async () => {
-  const tabs = document.getElementById('tabs');
-  // @ts-ignore
-  console.log(await getFiberSource(getFiberFromHostInstance(tabs)));
+interface TextProps {
+  as?: keyof JSX.IntrinsicElements;
+  children: ReactNode;
+  className?: string;
+}
+
+setTimeout(() => {
+  void (async () => {
+    const tabs = document.getElementById('tabs');
+    // @ts-expect-error - Investigating fiber internals
+    console.log(await getFiberSource(getFiberFromHostInstance(tabs)));
+  })();
 }, 1000);
-
-function Tabs<T extends string>({ tabs, value, onChange }: TabsProps<T>) {
-  return (
-    <div className="flex items-center gap-2" id="tabs">
-      {tabs.map((tab, i) => (
-        <Fragment key={tab.value}>
-          {i > 0 && <span className="text-white/40">·</span>}
-          <button
-            type="button"
-            onClick={() => onChange(tab.value)}
-            className={cn(
-              'text-white/70 hover:text-white underline transition-colors',
-              value === tab.value && 'text-white',
-            )}
-          >
-            {tab.label}
-          </button>
-        </Fragment>
-      ))}
-    </div>
-  );
-}
-
-export function cn(...inputs: (string | undefined | boolean)[]) {
-  return twMerge(clsx(inputs));
-}
-
-function SideLayout({ children }: SideLayoutProps) {
-  return (
-    <div className="relative leading-normal pl-[2ch] pt-[1lh] pr-[2ch] sm:pt-[2lh] sm:pl-[7ch] min-h-[100dvh] pb-[1lh] sm:max-w-[80ch] text-white">
-      {children}
-    </div>
-  );
-}
-
-function Text({
-  as: Component = 'p',
-  children,
-  className,
-  ...props
-}: TextProps) {
-  return (
-    <Component className={cn('text-lg', className)} {...props}>
-      {children}
-    </Component>
-  );
-}
-
-function Link({ children, className, href, onClick, ...props }: LinkProps) {
-  return (
-    <a
-      href={href}
-      onClick={onClick}
-      className={cn('underline hover:bg-black hover:text-white', className)}
-      {...props}
-    >
-      {children}
-    </a>
-  );
-}
-
-function List({ children, className }: ListProps) {
-  return (
-    <ul
-      className={cn(
-        "pl-[2ch] list-disc marker:content-['→'] marker:text-neutral-400 marker:pr-[1ch] space-y-[1ch]",
-        className,
-      )}
-    >
-      {children}
-    </ul>
-  );
-}
-
-function ListItem({ children }: ListItemProps) {
-  return <li className="pl-[1ch]">{children}</li>;
-}
 
 export default function App() {
   const [imgSize, setImgSize] = useState(50);
@@ -128,8 +53,8 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'basic' | 'inspect'>('basic');
 
   const tabs = [
-    { value: 'basic' as const, label: '1. quick start' },
-    { value: 'inspect' as const, label: '2. use <Inspector>' },
+    { label: '1. quick start', value: 'basic' as const },
+    { label: '2. use <Inspector>', value: 'inspect' as const },
   ];
 
   return (
@@ -138,10 +63,8 @@ export default function App() {
         <div className="flex items-center gap-[1ch]">
           <div className="flex items-center gap-[0.5ch]">
             <img
-              src="/bippy.png"
               alt="bippy logo"
               className={cn('select-none', isSpinning && 'animate-spin')}
-              width={imgSize}
               height={imgSize}
               onClick={() => setImgSize(imgSize + 10)}
               onKeyDown={(e) => {
@@ -151,14 +74,16 @@ export default function App() {
               }}
               onMouseEnter={() => setIsSpinning(true)}
               onMouseLeave={() => setIsSpinning(false)}
+              src="/bippy.png"
+              width={imgSize}
             />
-            <Text className="font-bold text-2xl" as="h1">
+            <Text as="h1" className="font-bold text-2xl">
               bippy
             </Text>
           </div>
           <Link
-            href="https://github.com/aidenybai/bippy"
             className="hidden sm:flex"
+            href="https://github.com/aidenybai/bippy"
           >
             <Text as="span">{__VERSION__}</Text>
           </Link>
@@ -214,13 +139,12 @@ export default function App() {
 
         <pre className="bg-[#101010] mt-[2ch] p-[1.5ch] pt-[1ch] sm:p-[2ch] sm:pt-[1.5ch] rounded-lg border border-white/10">
           <div className="mb-[1.5ch]">
-            <Tabs tabs={tabs} value={activeTab} onChange={setActiveTab} />
+            <Tabs onChange={setActiveTab} tabs={tabs} value={activeTab} />
             <hr className="my-[1ch] border-neutral-700" />
           </div>
           {activeTab === 'basic' && (
             <code
               className="whitespace-pre-wrap"
-              // biome-ignore lint/security/noDangerouslySetInnerHtml: OK
               dangerouslySetInnerHTML={{
                 __html:
                   highlight(`import { onCommitFiberRoot, traverseFiber } from 'bippy';
@@ -236,7 +160,6 @@ onCommitFiberRoot((root) => {
           {activeTab === 'inspect' && (
             <code
               className="whitespace-pre-wrap"
-              // biome-ignore lint/security/noDangerouslySetInnerHtml: OK
               dangerouslySetInnerHTML={{
                 __html:
                   highlight(`import { Inspector } from 'bippy/experiments/inspect';
@@ -250,8 +173,8 @@ onCommitFiberRoot((root) => {
         <div className="flex my-[2ch]">
           <a href="https://github.com/aidenybai/bippy">
             <button
-              type="button"
               className="bg-white text-black px-[1ch] py-[0.5ch] rounded-sm hover:bg-white/90 transition-all duration-150 font-bold text-lg"
+              type="button"
             >
               try bippy →
             </button>
@@ -284,5 +207,82 @@ onCommitFiberRoot((root) => {
         </div>
       </SideLayout>
     </div>
+  );
+}
+
+export function cn(...inputs: (boolean | string | undefined)[]) {
+  return twMerge(clsx(inputs));
+}
+
+function Link({ children, className, href, onClick, ...props }: LinkProps) {
+  return (
+    <a
+      className={cn('underline hover:bg-black hover:text-white', className)}
+      href={href}
+      onClick={onClick}
+      {...props}
+    >
+      {children}
+    </a>
+  );
+}
+
+function List({ children, className }: ListProps) {
+  return (
+    <ul
+      className={cn(
+        "pl-[2ch] list-disc marker:content-['→'] marker:text-neutral-400 marker:pr-[1ch] space-y-[1ch]",
+        className,
+      )}
+    >
+      {children}
+    </ul>
+  );
+}
+
+function ListItem({ children }: ListItemProps) {
+  return <li className="pl-[1ch]">{children}</li>;
+}
+
+function SideLayout({ children }: SideLayoutProps) {
+  return (
+    <div className="relative leading-normal pl-[2ch] pt-[1lh] pr-[2ch] sm:pt-[2lh] sm:pl-[7ch] min-h-[100dvh] pb-[1lh] sm:max-w-[80ch] text-white">
+      {children}
+    </div>
+  );
+}
+
+function Tabs<T extends string>({ onChange, tabs, value }: TabsProps<T>) {
+  return (
+    <div className="flex items-center gap-2" id="tabs">
+      {tabs.map((tab, i) => (
+        <Fragment key={tab.value}>
+          {i > 0 && <span className="text-white/40">·</span>}
+          <button
+            className={cn(
+              'text-white/70 hover:text-white underline transition-colors',
+              value === tab.value && 'text-white',
+            )}
+            onClick={() => onChange(tab.value)}
+            type="button"
+          >
+            {tab.label}
+          </button>
+        </Fragment>
+      ))}
+    </div>
+  );
+}
+
+function Text({
+  as: Component = 'p',
+  children,
+  className,
+  ...props
+}: TextProps) {
+  return (
+    <Component className={cn('text-lg', className)} {...props}>
+      {children}
+    </Component>
   );
 }

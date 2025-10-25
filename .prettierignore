@@ -1,0 +1,7 @@
+node_modules
+dist
+coverage
+css-to-tailwind.ts
+*.cjs
+*.mjs
+pnpm-lock.yaml

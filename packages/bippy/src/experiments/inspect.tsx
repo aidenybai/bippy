@@ -1,3 +1,13 @@
+import React, {
+  forwardRef,
+  useEffect,
+  useImperativeHandle as useImperativeHandleOriginal,
+  useMemo,
+  useState,
+} from 'react';
+import ReactDOM from 'react-dom';
+import { Inspector as ReactInspector } from 'react-inspector';
+
 import {
   detectReactBuildType,
   type Fiber,
@@ -8,24 +18,13 @@ import {
   hasRDTHook,
   isInstrumentationActive,
 } from '../index.js';
-import { getFiberSource, type FiberSource } from '../source.js';
-// biome-ignore lint/style/useImportType: needed for jsx
-import React, {
-  useEffect,
-  useState,
-  useImperativeHandle as useImperativeHandleOriginal,
-  forwardRef,
-  useMemo,
-} from 'react';
-import ReactDOM from 'react-dom';
-import { Inspector as ReactInspector } from 'react-inspector';
+import { type FiberSource, getFiberSource } from '../source.js';
 
 const useImperativeHandlePolyfill = (
   ref: React.RefCallback<unknown> | React.RefObject<unknown>,
   init: () => unknown,
   deps: React.DependencyList,
 ) => {
-  // biome-ignore lint/correctness/useExhaustiveDependencies: biome is wrong
   useEffect(() => {
     if (ref) {
       if (typeof ref === 'function') {
@@ -40,82 +39,81 @@ const useImperativeHandlePolyfill = (
 const useImperativeHandle =
   useImperativeHandleOriginal || useImperativeHandlePolyfill;
 
-// biome-ignore lint/suspicious/noExplicitAny: OK
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const throttle = (fn: (...args: any[]) => void, wait: number) => {
-  let timeout: ReturnType<typeof setTimeout> | null = null;
-  return function (this: unknown) {
+  let timeout: null | ReturnType<typeof setTimeout> = null;
+  return function (this: unknown, ...args: unknown[]) {
     if (!timeout) {
       timeout = setTimeout(() => {
-        // biome-ignore lint/style/noArguments: perf
-        fn.apply(this, arguments as unknown as unknown[]);
+        fn.apply(this, args as never[]);
         timeout = null;
       }, wait);
     }
   };
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: react-inspector types are wrong
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const theme: any = {
+  ARROW_ANIMATION_DURATION: '0',
+  ARROW_COLOR: '#A0A0A0',
+  ARROW_FONT_SIZE: 12,
+
+  ARROW_MARGIN_RIGHT: 3,
+  BASE_BACKGROUND_COLOR: 'none',
+
+  BASE_COLOR: '#FFF',
   BASE_FONT_FAMILY: 'Menlo, monospace',
   BASE_FONT_SIZE: '12px',
   BASE_LINE_HEIGHT: 1.2,
-
-  BASE_BACKGROUND_COLOR: 'none',
-  BASE_COLOR: '#FFF',
-
-  OBJECT_PREVIEW_ARRAY_MAX_PROPERTIES: 10,
-  OBJECT_PREVIEW_OBJECT_MAX_PROPERTIES: 5,
-  OBJECT_NAME_COLOR: '#FFC799',
-  OBJECT_VALUE_NULL_COLOR: '#A0A0A0',
-  OBJECT_VALUE_UNDEFINED_COLOR: '#A0A0A0',
-  OBJECT_VALUE_REGEXP_COLOR: '#FF8080',
-  OBJECT_VALUE_STRING_COLOR: '#99FFE4',
-  OBJECT_VALUE_SYMBOL_COLOR: '#FFC799',
-  OBJECT_VALUE_NUMBER_COLOR: '#FFC799',
-  OBJECT_VALUE_BOOLEAN_COLOR: '#FFC799',
-  OBJECT_VALUE_FUNCTION_PREFIX_COLOR: '#FFC799',
-
-  HTML_TAG_COLOR: '#FFC799',
-  HTML_TAGNAME_COLOR: '#FFC799',
-  HTML_TAGNAME_TEXT_TRANSFORM: 'lowercase',
   HTML_ATTRIBUTE_NAME_COLOR: '#A0A0A0',
   HTML_ATTRIBUTE_VALUE_COLOR: '#99FFE4',
   HTML_COMMENT_COLOR: '#8b8b8b94',
   HTML_DOCTYPE_COLOR: '#A0A0A0',
+  HTML_TAG_COLOR: '#FFC799',
+  HTML_TAGNAME_COLOR: '#FFC799',
+  HTML_TAGNAME_TEXT_TRANSFORM: 'lowercase',
 
-  ARROW_COLOR: '#A0A0A0',
-  ARROW_MARGIN_RIGHT: 3,
-  ARROW_FONT_SIZE: 12,
-  ARROW_ANIMATION_DURATION: '0',
+  OBJECT_NAME_COLOR: '#FFC799',
+  OBJECT_PREVIEW_ARRAY_MAX_PROPERTIES: 10,
+  OBJECT_PREVIEW_OBJECT_MAX_PROPERTIES: 5,
+  OBJECT_VALUE_BOOLEAN_COLOR: '#FFC799',
+  OBJECT_VALUE_FUNCTION_PREFIX_COLOR: '#FFC799',
+  OBJECT_VALUE_NULL_COLOR: '#A0A0A0',
+  OBJECT_VALUE_NUMBER_COLOR: '#FFC799',
 
+  OBJECT_VALUE_REGEXP_COLOR: '#FF8080',
+  OBJECT_VALUE_STRING_COLOR: '#99FFE4',
+  OBJECT_VALUE_SYMBOL_COLOR: '#FFC799',
+  OBJECT_VALUE_UNDEFINED_COLOR: '#A0A0A0',
+
+  TABLE_BORDER_COLOR: '#282828',
+  TABLE_DATA_BACKGROUND_IMAGE: 'none',
+  TABLE_DATA_BACKGROUND_SIZE: '0',
+  TABLE_SORT_ICON_COLOR: '#A0A0A0',
+
+  TABLE_TH_BACKGROUND_COLOR: '#161616',
+  TABLE_TH_HOVER_COLOR: '#232323',
   TREENODE_FONT_FAMILY: 'Menlo, monospace',
   TREENODE_FONT_SIZE: '11px',
   TREENODE_LINE_HEIGHT: 1.2,
   TREENODE_PADDING_LEFT: 12,
-
-  TABLE_BORDER_COLOR: '#282828',
-  TABLE_TH_BACKGROUND_COLOR: '#161616',
-  TABLE_TH_HOVER_COLOR: '#232323',
-  TABLE_SORT_ICON_COLOR: '#A0A0A0',
-  TABLE_DATA_BACKGROUND_IMAGE: 'none',
-  TABLE_DATA_BACKGROUND_SIZE: '0',
 };
 
-export interface InspectorProps {
-  enabled?: boolean;
-  children?: React.ReactNode;
-  dangerouslyRunInProduction?: boolean;
+export interface InspectorHandle {
+  disable: () => void;
+  enable: () => void;
+  inspectElement: (element: Element) => void;
 }
 
-export interface InspectorHandle {
-  enable: () => void;
-  disable: () => void;
-  inspectElement: (element: Element) => void;
+export interface InspectorProps {
+  children?: React.ReactNode;
+  dangerouslyRunInProduction?: boolean;
+  enabled?: boolean;
 }
 
 export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
   (
-    { enabled = true, dangerouslyRunInProduction = false }: InspectorProps,
+    { dangerouslyRunInProduction = false, enabled = true }: InspectorProps,
     ref,
   ) => {
     const [element, setElement] = useState<Element | null>(null);
@@ -125,12 +123,13 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
     const [rect, setRect] = useState<DOMRect | null>(null);
     const [isActive, setIsActive] = useState(true);
     const [isEnabled, setIsEnabled] = useState(enabled);
-    const [position, setPosition] = useState({ top: 0, left: 0 });
+    const [position, setPosition] = useState({ left: 0, top: 0 });
 
     const currentCleanedFiber = useMemo(() => {
       if (!currentFiber) return null;
       const clonedFiber = { ...currentFiber };
       for (const key in clonedFiber) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const value = clonedFiber[key as keyof Fiber];
         if (!value) delete clonedFiber[key as keyof Fiber];
       }
@@ -138,12 +137,12 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
     }, [currentFiber]);
 
     useImperativeHandle(ref, () => ({
-      enable: () => setIsEnabled(true),
       disable: () => {
         setIsEnabled(false);
         setElement(null);
         setRect(null);
       },
+      enable: () => setIsEnabled(true),
       inspectElement: (element: Element) => {
         if (!isEnabled) return;
         setElement(element);
@@ -152,7 +151,7 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
     }));
 
     useEffect(() => {
-      (async () => {
+      void (async () => {
         if (!element) return;
         const fiber = getFiberFromHostInstance(element);
         if (!fiber) return;
@@ -235,7 +234,7 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
         Math.min(left, window.innerWidth - inspectorWidth - padding),
       );
 
-      setPosition({ top, left });
+      setPosition({ left, top });
     }, [rect]);
 
     if (!rect || !isActive || !isEnabled) return null;
@@ -247,66 +246,60 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
         <div
           className="inspector-container"
           style={{
-            position: 'fixed',
             backgroundColor: '#101010',
-            color: '#FFF',
-            zIndex: 50,
-            padding: '1rem',
-            width: '30ch',
-            height: '25ch',
-            transition: 'all 150ms ease-in-out',
-            overflow: 'auto',
-            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.5)',
             border: '1px solid #444',
             borderRadius: '8px',
-            opacity: rect ? 1 : 0,
-            transform: rect ? 'translateY(0)' : 'translateY(10px)',
-            pointerEvents: rect ? 'auto' : 'none',
-            top: position.top,
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.5)',
+            color: '#FFF',
+            height: '25ch',
             left: position.left,
+            opacity: rect ? 1 : 0,
+            overflow: 'auto',
+            padding: '1rem',
+            pointerEvents: rect ? 'auto' : 'none',
+            position: 'fixed',
+            top: position.top,
+            transform: rect ? 'translateY(0)' : 'translateY(10px)',
+            transition: 'all 150ms ease-in-out',
+            width: '30ch',
+            zIndex: 50,
           }}
         >
-          {currentFiber && (
-            <ReactInspector
-              theme={theme}
-              data={currentCleanedFiber}
-              expandLevel={1}
-              table={false}
-            />
-          )}
+          {/* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment */}
+          {currentFiber && <ReactInspector data={currentCleanedFiber} expandLevel={1} table={false} theme={theme} />}
 
           <div
             style={{
-              position: 'absolute',
-              bottom: '0',
-              left: '0',
-              right: '0',
-              display: 'flex',
               alignItems: 'center',
-              gap: '1rem',
               backgroundColor: '#101010',
-              padding: '0.75rem 1rem',
-              borderTop: '1px solid #555',
               borderBottomLeftRadius: '8px',
               borderBottomRightRadius: '8px',
+              borderTop: '1px solid #555',
+              bottom: '0',
+              display: 'flex',
+              gap: '1rem',
+              left: '0',
+              padding: '0.75rem 1rem',
+              position: 'absolute',
+              right: '0',
               zIndex: 1000,
             }}
           >
             <div
               style={{
-                fontSize: '0.875rem',
-                color: '#FFF',
-                padding: '0.25rem 0.5rem',
-                borderRadius: '4px',
                 backgroundColor: '#3a3a3a',
+                borderRadius: '4px',
+                color: '#FFF',
+                fontSize: '0.875rem',
+                padding: '0.25rem 0.5rem',
               }}
             >
               {`<${getDisplayName(currentFiber.type) || 'unknown'}>`}
             </div>
             <div
               style={{
-                fontSize: '0.75rem',
                 color: '#CCC',
+                fontSize: '0.75rem',
               }}
             >
               {currentFiberSource ? (
@@ -337,16 +330,16 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
         `}</style>
         <div
           style={{
-            position: 'fixed',
-            zIndex: 40,
-            pointerEvents: 'none',
-            transition: 'all 150ms',
             border: '1px dashed #505050',
-            left: rect.left,
-            top: rect.top,
-            width: rect.width,
             height: rect.height,
+            left: rect.left,
             opacity: rect ? 1 : 0,
+            pointerEvents: 'none',
+            position: 'fixed',
+            top: rect.top,
+            transition: 'all 150ms',
+            width: rect.width,
+            zIndex: 40,
           }}
         />
       </>
@@ -356,7 +349,7 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
 
 export const Inspector = forwardRef<InspectorHandle, InspectorProps>(
   (props, ref) => {
-    const [root, setRoot] = useState<ShadowRoot | null>(null);
+    const [root, setRoot] = useState<null | ShadowRoot>(null);
 
     useEffect(() => {
       const div = document.createElement('div');

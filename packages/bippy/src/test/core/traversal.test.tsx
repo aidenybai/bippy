@@ -1,12 +1,14 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { describe, expect, it, vi } from 'vitest';
-import type { Fiber, ContextDependency } from '../../types.js';
+import type { ContextDependency, Fiber } from '../../types.js';
 import {
+  instrument,
+  traverseContexts,
   traverseProps,
   traverseState,
-  traverseContexts,
-  instrument,
 } from '../../index.js';
-// biome-ignore lint/correctness/noUnusedImports: needed for JSX
 import React from 'react';
 import { render } from '@testing-library/react';
 import { ComplexComponent, CountContext, ExtraContext } from '../components.js';

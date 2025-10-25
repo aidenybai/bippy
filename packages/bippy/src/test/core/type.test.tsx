@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { getType, getDisplayName } from '../../index.js';
+
+import { getDisplayName, getType } from '../../index.js';
 import {
   BasicComponent,
   ClassComponent,

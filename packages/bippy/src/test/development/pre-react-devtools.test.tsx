@@ -1,15 +1,15 @@
 // import react devtools, then bippy
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
-import { expect, vi, it } from 'vitest';
-
-// @ts-ignore
+// @ts-expect-error - react-devtools-inline types not available
 import { activate, initialize } from 'react-devtools-inline/backend';
-// @ts-ignore
+// @ts-expect-error - react-devtools-inline types not available
 import { initialize as initializeFrontend } from 'react-devtools-inline/frontend';
+import { expect, it, vi } from 'vitest';
 
 initialize(window);
 
-// biome-ignore lint/correctness/noUnusedVariables: needed for JSX
 const React = await import('react');
 
 const DevTools = initializeFrontend(window);

@@ -4,6 +4,7 @@ export const version = process.env.VERSION;
 export const BIPPY_INSTRUMENTATION_STRING = `bippy-${version}`;
 
 const objectDefineProperty = Object.defineProperty;
+// eslint-disable-next-line @typescript-eslint/unbound-method
 const objectHasOwnProperty = Object.prototype.hasOwnProperty;
 
 const NO_OP = () => {
@@ -51,61 +52,63 @@ export const installRDTHook = (
   const renderers = new Map<number, ReactRenderer>();
   let i = 0;
   let rdtHook: ReactDevToolsGlobalHook = {
+    _instrumentationIsActive: false,
+    _instrumentationSource: BIPPY_INSTRUMENTATION_STRING,
     checkDCE,
-    supportsFiber: true,
-    supportsFlight: true,
     hasUnsupportedRendererAttached: false,
-    renderers,
-    onCommitFiberRoot: NO_OP,
-    onCommitFiberUnmount: NO_OP,
-    onPostCommitFiberRoot: NO_OP,
-    on: NO_OP,
     inject(renderer) {
       const nextID = ++i;
       renderers.set(nextID, renderer);
       _renderers.add(renderer);
       if (!rdtHook._instrumentationIsActive) {
         rdtHook._instrumentationIsActive = true;
-        // biome-ignore lint/complexity/noForEach: prefer forEach for Set
         onActiveListeners.forEach((listener) => listener());
       }
       return nextID;
     },
-    _instrumentationSource: BIPPY_INSTRUMENTATION_STRING,
-    _instrumentationIsActive: false,
+    on: NO_OP,
+    onCommitFiberRoot: NO_OP,
+    onCommitFiberUnmount: NO_OP,
+    onPostCommitFiberRoot: NO_OP,
+    renderers,
+    supportsFiber: true,
+    supportsFlight: true,
   };
   try {
     objectDefineProperty(globalThis, '__REACT_DEVTOOLS_GLOBAL_HOOK__', {
+      configurable: true,
+      enumerable: true,
       get() {
         return rdtHook;
       },
       set(newHook) {
         if (newHook && typeof newHook === 'object') {
           const ourRenderers = rdtHook.renderers;
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           rdtHook = newHook;
           if (ourRenderers.size > 0) {
             ourRenderers.forEach((renderer, id) => {
               _renderers.add(renderer);
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
               newHook.renderers.set(id, renderer);
             });
             patchRDTHook(onActive);
           }
         }
       },
-      configurable: true,
-      enumerable: true,
     });
     // [!] this is a hack for chrome extensions - if we install before React DevTools, we could accidently prevent React DevTools from installing:
     // https://github.com/facebook/react/blob/18eaf51bd51fed8dfed661d64c306759101d0bfd/packages/react-devtools-extensions/src/contentScripts/installHook.js#L30C6-L30C27
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     const originalWindowHasOwnProperty = window.hasOwnProperty;
     let hasRanHack = false;
     objectDefineProperty(window, 'hasOwnProperty', {
-      value: function (this: unknown) {
+      configurable: true,
+      value: function (this: unknown, ...args: [PropertyKey]) {
         try {
           if (
             !hasRanHack &&
-            // biome-ignore lint/style/noArguments: perf
-            arguments[0] === '__REACT_DEVTOOLS_GLOBAL_HOOK__'
+            args[0] === '__REACT_DEVTOOLS_GLOBAL_HOOK__'
           ) {
             globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ = undefined;
             // special falsy value to know that we've already installed before
@@ -113,11 +116,8 @@ export const installRDTHook = (
             return -0;
           }
         } catch {}
-        // biome-ignore lint/suspicious/noExplicitAny: perf
-        // biome-ignore lint/style/noArguments: perf
-        return originalWindowHasOwnProperty.apply(this, arguments as any);
+        return originalWindowHasOwnProperty.apply(this, args);
       },
-      configurable: true,
       writable: true,
     });
   } catch {
@@ -143,7 +143,6 @@ export const patchRDTHook = (onActive?: () => unknown): void => {
       rdtHook.on = NO_OP;
       if (rdtHook.renderers.size) {
         rdtHook._instrumentationIsActive = true;
-        // biome-ignore lint/complexity/noForEach: prefer forEach for Set
         onActiveListeners.forEach((listener) => listener());
         return;
       }
@@ -152,7 +151,6 @@ export const patchRDTHook = (onActive?: () => unknown): void => {
         isReactRefreshOverride = true;
         // but since the underlying implementation doens't care,
         // it's ok: https://github.com/facebook/react/blob/18eaf51bd51fed8dfed661d64c306759101d0bfd/packages/react-refresh/src/ReactFreshRuntime.js#L430
-        // @ts-expect-error this is not actually a ReactRenderer,
         const nextID = rdtHook.inject({
           scheduleRefresh() {},
         });
@@ -164,7 +162,6 @@ export const patchRDTHook = (onActive?: () => unknown): void => {
         const id = prevInject(renderer);
         _renderers.add(renderer);
         rdtHook._instrumentationIsActive = true;
-        // biome-ignore lint/complexity/noForEach: prefer forEach for Set
         onActiveListeners.forEach((listener) => listener());
         return id;
       };
@@ -204,8 +201,9 @@ export const getRDTHook = (
 export const isClientEnvironment = (): boolean => {
   return Boolean(
     typeof window !== 'undefined' &&
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       (window.document?.createElement ||
-        window.navigator?.product === 'ReactNative')
+        window.navigator?.product === 'ReactNative'),
   );
 };
 

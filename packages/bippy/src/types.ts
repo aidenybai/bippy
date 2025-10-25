@@ -1,193 +1,219 @@
 import type {
-  HostConfig,
-  Thenable,
-  RootTag,
-  WorkTag,
+  BundleType,
+  ComponentSelector,
+  DevToolsConfig,
+  FiberRoot,
+  Flags,
+  HasPseudoClassSelector,
   HookType,
-  Source,
+  HostConfig,
   LanePriority,
   Lanes,
-  Flags,
-  TypeOfMode,
-  ReactProvider,
-  ReactProviderType,
-  ReactConsumer,
-  ReactContext,
-  ReactPortal,
-  RefObject,
-  Fiber as ReactFiber,
-  FiberRoot,
   MutableSource,
   OpaqueHandle,
   OpaqueRoot,
-  BundleType,
-  DevToolsConfig,
-  SuspenseHydrationCallbacks,
-  TransitionTracingCallbacks,
-  ComponentSelector,
-  HasPseudoClassSelector,
-  RoleSelector,
-  TextSelector,
-  TestNameSelector,
-  Selector,
   React$AbstractComponent,
+  ReactConsumer,
+  ReactContext,
+  Fiber as ReactFiber,
+  ReactPortal,
+  ReactProvider,
+  ReactProviderType,
+  RefObject,
+  RoleSelector,
+  RootTag,
+  Selector,
+  Source,
+  SuspenseHydrationCallbacks,
+  TestNameSelector,
+  TextSelector,
+  Thenable,
+  TransitionTracingCallbacks,
+  TypeOfMode,
+  WorkTag,
 } from 'react-reconciler';
 
 export type {
-  HostConfig,
-  Thenable,
-  RootTag,
-  WorkTag,
+  BundleType,
+  ComponentSelector,
+  DevToolsConfig,
+  FiberRoot,
+  Flags,
+  HasPseudoClassSelector,
   HookType,
-  Source,
+  HostConfig,
   LanePriority,
   Lanes,
-  Flags,
-  TypeOfMode,
-  ReactProvider,
-  ReactProviderType,
-  ReactConsumer,
-  ReactContext,
-  ReactPortal,
-  RefObject,
-  FiberRoot,
   MutableSource,
   OpaqueHandle,
   OpaqueRoot,
-  BundleType,
-  DevToolsConfig,
-  SuspenseHydrationCallbacks,
-  TransitionTracingCallbacks,
-  ComponentSelector,
-  HasPseudoClassSelector,
-  RoleSelector,
-  TextSelector,
-  TestNameSelector,
-  Selector,
   React$AbstractComponent,
+  ReactConsumer,
+  ReactContext,
+  ReactPortal,
+  ReactProvider,
+  ReactProviderType,
+  RefObject,
+  RoleSelector,
+  RootTag,
+  Selector,
+  Source,
+  SuspenseHydrationCallbacks,
+  TestNameSelector,
+  TextSelector,
+  Thenable,
+  TransitionTracingCallbacks,
+  TypeOfMode,
+  WorkTag,
 };
 
-export interface ReactDevToolsGlobalHook {
-  checkDCE: (fn: unknown) => void;
-  supportsFiber: boolean;
-  supportsFlight: boolean;
-  renderers: Map<number, ReactRenderer>;
-  hasUnsupportedRendererAttached: boolean;
-  onCommitFiberRoot: (
-    rendererID: number,
-    root: FiberRoot,
-    priority: void | number
-  ) => void;
-  onCommitFiberUnmount: (rendererID: number, fiber: Fiber) => void;
-  onPostCommitFiberRoot: (rendererID: number, root: FiberRoot) => void;
-  inject: (renderer: ReactRenderer) => number;
-  _instrumentationSource?: string;
-  _instrumentationIsActive?: boolean;
-
-  // https://github.com/aidenybai/bippy/issues/43
-  on: () => void;
+export interface ContextDependency<T> {
+  context: ReactContext<T>;
+  memoizedValue: T;
+  next: ContextDependency<unknown> | null;
+  observedBits: number;
 }
 
-/**
- * Represents a react-internal Fiber node.
- */
-// biome-ignore lint/suspicious/noExplicitAny: stateNode is not typed in react-reconciler
-export type Fiber<T = any> = Omit<
-  ReactFiber,
-  | 'stateNode'
-  | 'dependencies'
-  | 'child'
-  | 'sibling'
-  | 'return'
-  | 'alternate'
-  | 'memoizedProps'
-  | 'pendingProps'
-  | 'memoizedState'
-  | 'updateQueue'
-> & {
-  stateNode: T;
-  dependencies: Dependencies | null;
-  child: Fiber | null;
-  sibling: Fiber | null;
-  return: Fiber | null;
-  alternate: Fiber | null;
-  memoizedProps: Props;
-  pendingProps: Props;
-  memoizedState: MemoizedState;
-  updateQueue: {
-    lastEffect: Effect | null;
-    [key: string]: unknown;
-  };
+export interface Dependencies {
+  firstContext: ContextDependency<unknown> | null;
+  lanes: Lanes;
+}
 
-  // dev only
-  _debugSource?: {
-    fileName: string;
-    lineNumber: number;
-    columnNumber?: number;
-  };
-  _debugStack?: Error;
-  _debugOwner?: Fiber;
-  _debugInfo?: Array<{
-    name?: string;
-    env?: string;
-    debugLocation?: unknown;
-  }>;
-};
+export interface Effect {
+  [key: string]: unknown;
+  create: (...args: unknown[]) => unknown;
+  deps: null | unknown[];
+  destroy: ((...args: unknown[]) => unknown) | null;
+  next: Effect | null;
+  tag: number;
+}
 
 export interface Family {
   current: unknown;
 }
 
+/**
+ * Represents a react-internal Fiber node.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Fiber<T = any> = Omit<
+  ReactFiber,
+  | 'alternate'
+  | 'child'
+  | 'dependencies'
+  | 'memoizedProps'
+  | 'memoizedState'
+  | 'pendingProps'
+  | 'return'
+  | 'sibling'
+  | 'stateNode'
+  | 'updateQueue'
+> & {
+  _debugInfo?: Array<{
+    debugLocation?: unknown;
+    env?: string;
+    name?: string;
+  }>;
+  _debugOwner?: Fiber;
+  // dev only
+  _debugSource?: {
+    columnNumber?: number;
+    fileName: string;
+    lineNumber: number;
+  };
+  _debugStack?: Error;
+  alternate: Fiber | null;
+  child: Fiber | null;
+  dependencies: Dependencies | null;
+  memoizedProps: Props;
+  memoizedState: MemoizedState;
+  pendingProps: Props;
+
+  return: Fiber | null;
+  sibling: Fiber | null;
+  stateNode: T;
+  updateQueue: {
+    [key: string]: unknown;
+    lastEffect: Effect | null;
+  };
+};
+
+export interface MemoizedState {
+  [key: string]: unknown;
+  memoizedState: unknown;
+  next: MemoizedState | null;
+}
+
+export interface Props {
+  [key: string]: unknown;
+}
+
+export interface ReactDevToolsGlobalHook {
+  _instrumentationIsActive?: boolean;
+  _instrumentationSource?: string;
+  checkDCE: (fn: unknown) => void;
+  hasUnsupportedRendererAttached: boolean;
+  inject: (renderer: ReactRenderer) => number;
+  // https://github.com/aidenybai/bippy/issues/43
+  on: () => void;
+  onCommitFiberRoot: (
+    rendererID: number,
+    root: FiberRoot,
+    priority: number | void
+  ) => void;
+  onCommitFiberUnmount: (rendererID: number, fiber: Fiber) => void;
+  onPostCommitFiberRoot: (rendererID: number, root: FiberRoot) => void;
+  renderers: Map<number, ReactRenderer>;
+  supportsFiber: boolean;
+
+  supportsFlight: boolean;
+}
+
 // https://github.com/facebook/react/blob/6a4b46cd70d2672bc4be59dcb5b8dede22ed0cef/packages/react-devtools-shared/src/backend/types.js
 export interface ReactRenderer {
-  version: string;
   bundleType: 0 /* PROD */ | 1 /* DEV */;
-  // biome-ignore lint/suspicious/noExplicitAny: ReactSharedInternals
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   currentDispatcherRef: any;
-  reconcilerVersion: string;
-  rendererPackageName: string;
-
   // dev only: https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactFiberReconciler.js#L842
   findFiberByHostInstance?: (hostInstance: unknown) => Fiber | null;
-  overrideHookState?: (
-    fiber: Fiber,
-    id: string,
-    path: string[],
-    value: unknown
-  ) => void;
-  overrideProps?: (fiber: Fiber, path: string[], value: unknown) => void;
+  // react devtools
+  getCurrentFiber?: (fiber: Fiber) => Fiber | null;
   overrideContext?: (
     fiber: Fiber,
     contextType: unknown,
     path: string[],
     value: unknown
   ) => void;
+
+  overrideHookState?: (
+    fiber: Fiber,
+    id: string,
+    path: string[],
+    value: unknown
+  ) => void;
   overrideHookStateDeletePath?: (
     fiber: Fiber,
     id: number,
-    path: Array<string | number>
+    path: Array<number | string>
   ) => void;
   overrideHookStateRenamePath?: (
     fiber: Fiber,
     id: number,
-    oldPath: Array<string | number>,
-    newPath: Array<string | number>
+    oldPath: Array<number | string>,
+    newPath: Array<number | string>
   ) => void;
+  overrideProps?: (fiber: Fiber, path: string[], value: unknown) => void;
   overridePropsDeletePath?: (
     fiber: Fiber,
-    path: Array<string | number>
+    path: Array<number | string>
   ) => void;
   overridePropsRenamePath?: (
     fiber: Fiber,
-    oldPath: Array<string | number>,
-    newPath: Array<string | number>
+    oldPath: Array<number | string>,
+    newPath: Array<number | string>
   ) => void;
-  scheduleUpdate?: (fiber: Fiber) => void;
-  setErrorHandler?: (newShouldErrorImpl: (fiber: Fiber) => boolean) => void;
-  setSuspenseHandler?: (
-    newShouldSuspendImpl: (suspenseInstance: unknown) => void
-  ) => void;
-
+  reconcilerVersion: string;
+  rendererPackageName: string;
   // react refresh
   scheduleRefresh?: (
     root: FiberRoot,
@@ -197,45 +223,20 @@ export interface ReactRenderer {
     }
   ) => void;
   scheduleRoot?: (root: FiberRoot, element: React.ReactNode) => void;
+  scheduleUpdate?: (fiber: Fiber) => void;
+
+  setErrorHandler?: (newShouldErrorImpl: (fiber: Fiber) => boolean) => void;
   setRefreshHandler?: (
     handler: ((fiber: Fiber) => Family | null) | null
   ) => void;
+  setSuspenseHandler?: (
+    newShouldSuspendImpl: (suspenseInstance: unknown) => void
+  ) => void;
 
-  // react devtools
-  getCurrentFiber?: (fiber: Fiber) => Fiber | null;
-}
-
-export interface ContextDependency<T> {
-  context: ReactContext<T>;
-  memoizedValue: T;
-  observedBits: number;
-  next: ContextDependency<unknown> | null;
-}
-
-export interface Dependencies {
-  lanes: Lanes;
-  firstContext: ContextDependency<unknown> | null;
-}
-
-export interface Effect {
-  next: Effect | null;
-  create: (...args: unknown[]) => unknown;
-  destroy: ((...args: unknown[]) => unknown) | null;
-  deps: unknown[] | null;
-  tag: number;
-  [key: string]: unknown;
-}
-
-export interface MemoizedState {
-  memoizedState: unknown;
-  next: MemoizedState | null;
-  [key: string]: unknown;
-}
-
-export interface Props {
-  [key: string]: unknown;
+  version: string;
 }
 
 declare global {
+  // eslint-disable-next-line no-var
   var __REACT_DEVTOOLS_GLOBAL_HOOK__: ReactDevToolsGlobalHook | undefined;
 }
