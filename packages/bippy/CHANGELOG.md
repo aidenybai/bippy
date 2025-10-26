@@ -1,5 +1,11 @@
 # bippy
 
+## 0.3.33
+
+### Patch Changes
+
+- fix: compat with react devtools
+
 ## 0.3.32
 
 ### Patch Changes
