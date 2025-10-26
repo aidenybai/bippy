@@ -1,9 +1,9 @@
 import 'bippy/dist/index';
-import Inspector from 'bippy/dist/experiments/inspect';
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 
 import App from './app';
+import Inspector from './inspector';
 // @ts-expect-error - CSS import type checking
 import './main.css';
 

@@ -1,7 +1,7 @@
 import { getFiberFromHostInstance } from 'bippy';
 import { getFiberSource } from 'bippy/dist/source';
 import { clsx } from 'clsx';
-import { Fragment, type JSX, type ReactNode, useState } from 'react';
+import { type JSX, type ReactNode, useState } from 'react';
 import { highlight } from 'sugar-high';
 import { twMerge } from 'tailwind-merge';
 
@@ -27,12 +27,6 @@ interface SideLayoutProps {
   children: ReactNode;
 }
 
-interface TabsProps<T extends string> {
-  onChange: (value: T) => void;
-  tabs: { label: string; value: T; }[];
-  value: T;
-}
-
 interface TextProps {
   as?: keyof JSX.IntrinsicElements;
   children: ReactNode;
@@ -50,12 +44,6 @@ setTimeout(() => {
 export default function App() {
   const [imgSize, setImgSize] = useState(50);
   const [isSpinning, setIsSpinning] = useState(false);
-  const [activeTab, setActiveTab] = useState<'basic' | 'inspect'>('basic');
-
-  const tabs = [
-    { label: '1. quick start', value: 'basic' as const },
-    { label: '2. use <Inspector>', value: 'inspect' as const },
-  ];
 
   return (
     <div className="bg-[#101010]">
@@ -138,36 +126,19 @@ export default function App() {
         </div>
 
         <pre className="bg-[#101010] mt-[2ch] p-[1.5ch] pt-[1ch] sm:p-[2ch] sm:pt-[1.5ch] rounded-lg border border-white/10">
-          <div className="mb-[1.5ch]">
-            <Tabs onChange={setActiveTab} tabs={tabs} value={activeTab} />
-            <hr className="my-[1ch] border-neutral-700" />
-          </div>
-          {activeTab === 'basic' && (
-            <code
-              className="whitespace-pre-wrap"
-              dangerouslySetInnerHTML={{
-                __html:
-                  highlight(`import { onCommitFiberRoot, traverseFiber } from 'bippy';
+          <code
+            className="whitespace-pre-wrap"
+            dangerouslySetInnerHTML={{
+              __html:
+                highlight(`import { onCommitFiberRoot, traverseFiber } from 'bippy';
 
 onCommitFiberRoot((root) => {
   traverseFiber(root.current, (fiber) => {
     console.log('fiber:', fiber);
   });
 })`),
-              }}
-            />
-          )}
-          {activeTab === 'inspect' && (
-            <code
-              className="whitespace-pre-wrap"
-              dangerouslySetInnerHTML={{
-                __html:
-                  highlight(`import { Inspector } from 'bippy/experiments/inspect';
-
-<Inspector enabled={true} />`),
-              }}
-            />
-          )}
+            }}
+          />
         </pre>
 
         <div className="flex my-[2ch]">
@@ -248,28 +219,6 @@ function SideLayout({ children }: SideLayoutProps) {
   return (
     <div className="relative leading-normal pl-[2ch] pt-[1lh] pr-[2ch] sm:pt-[2lh] sm:pl-[7ch] min-h-[100dvh] pb-[1lh] sm:max-w-[80ch] text-white">
       {children}
-    </div>
-  );
-}
-
-function Tabs<T extends string>({ onChange, tabs, value }: TabsProps<T>) {
-  return (
-    <div className="flex items-center gap-2" id="tabs">
-      {tabs.map((tab, i) => (
-        <Fragment key={tab.value}>
-          {i > 0 && <span className="text-white/40">·</span>}
-          <button
-            className={cn(
-              'text-white/70 hover:text-white underline transition-colors',
-              value === tab.value && 'text-white',
-            )}
-            onClick={() => onChange(tab.value)}
-            type="button"
-          >
-            {tab.label}
-          </button>
-        </Fragment>
-      ))}
     </div>
   );
 }

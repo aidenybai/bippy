@@ -20,7 +20,7 @@ const checkDCE = (fn: unknown): void => {
           'React is running in production mode, but dead code ' +
             'elimination has not been applied. Read how to correctly ' +
             'configure React for production: ' +
-            'https://reactjs.org/link/perf-use-production-build'
+            'https://reactjs.org/link/perf-use-production-build',
         );
       });
     }
@@ -47,7 +47,7 @@ const onActiveListeners = new Set<() => unknown>();
 export const _renderers = new Set<ReactRenderer>();
 
 export const installRDTHook = (
-  onActive?: () => unknown
+  onActive?: () => unknown,
 ): ReactDevToolsGlobalHook => {
   const renderers = new Map<number, ReactRenderer>();
   let i = 0;
@@ -106,10 +106,7 @@ export const installRDTHook = (
       configurable: true,
       value: function (this: unknown, ...args: [PropertyKey]) {
         try {
-          if (
-            !hasRanHack &&
-            args[0] === '__REACT_DEVTOOLS_GLOBAL_HOOK__'
-          ) {
+          if (!hasRanHack && args[0] === '__REACT_DEVTOOLS_GLOBAL_HOOK__') {
             globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ = undefined;
             // special falsy value to know that we've already installed before
             hasRanHack = true;
@@ -153,7 +150,7 @@ export const patchRDTHook = (onActive?: () => unknown): void => {
         // it's ok: https://github.com/facebook/react/blob/18eaf51bd51fed8dfed661d64c306759101d0bfd/packages/react-refresh/src/ReactFreshRuntime.js#L430
         const nextID = rdtHook.inject({
           scheduleRefresh() {},
-        });
+        } as unknown as ReactRenderer);
         if (nextID) {
           rdtHook._instrumentationIsActive = true;
         }
@@ -180,7 +177,7 @@ export const patchRDTHook = (onActive?: () => unknown): void => {
 export const hasRDTHook = (): boolean => {
   return objectHasOwnProperty.call(
     globalThis,
-    '__REACT_DEVTOOLS_GLOBAL_HOOK__'
+    '__REACT_DEVTOOLS_GLOBAL_HOOK__',
   );
 };
 
@@ -188,7 +185,7 @@ export const hasRDTHook = (): boolean => {
  * Returns the current React DevTools global hook.
  */
 export const getRDTHook = (
-  onActive?: () => unknown
+  onActive?: () => unknown,
 ): ReactDevToolsGlobalHook => {
   if (!hasRDTHook()) {
     return installRDTHook(onActive);
