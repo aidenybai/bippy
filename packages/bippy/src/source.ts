@@ -206,6 +206,7 @@ export const describeNativeComponentFrame = (
               } catch (x) {
                 control = x;
               }
+              // @ts-expect-error -- Fake is a constructor function
               fn.call(Fake.prototype);
             }
           } else {
