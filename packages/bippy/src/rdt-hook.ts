@@ -131,20 +131,23 @@ export const patchRDTHook = (onActive?: () => unknown): void => {
     const rdtHook = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
     if (!rdtHook) return;
     if (!rdtHook._instrumentationSource) {
+      const isReactDevtools = isRealReactDevtools();
       rdtHook.checkDCE = checkDCE;
       rdtHook.supportsFiber = true;
       rdtHook.supportsFlight = true;
       rdtHook.hasUnsupportedRendererAttached = false;
       rdtHook._instrumentationSource = BIPPY_INSTRUMENTATION_STRING;
       rdtHook._instrumentationIsActive = false;
-      rdtHook.on = NO_OP;
+      if (!isReactDevtools) {
+        rdtHook.on = NO_OP;
+      }
       if (rdtHook.renderers.size) {
         rdtHook._instrumentationIsActive = true;
         onActiveListeners.forEach((listener) => listener());
         return;
       }
       const prevInject = rdtHook.inject;
-      if (isReactRefresh(rdtHook) && !isRealReactDevtools()) {
+      if (isReactRefresh(rdtHook) && !isReactDevtools) {
         isReactRefreshOverride = true;
         // but since the underlying implementation doens't care,
         // it's ok: https://github.com/facebook/react/blob/18eaf51bd51fed8dfed661d64c306759101d0bfd/packages/react-refresh/src/ReactFreshRuntime.js#L430
