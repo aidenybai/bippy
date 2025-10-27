@@ -270,6 +270,7 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
               data={currentCleanedFiber}
               expandLevel={1}
               table={false}
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
               theme={theme}
             />
           )}

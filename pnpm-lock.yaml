@@ -36,6 +36,9 @@ importers:
         specifier: ^0.28.9
         version: 0.28.9(@types/react@19.0.4)
     devDependencies:
+      '@jridgewell/sourcemap-codec':
+        specifier: ^1.5.0
+        version: 1.5.0
       '@testing-library/dom':
         specifier: ^10.4.0
         version: 10.4.0
@@ -97,8 +100,8 @@ importers:
   packages/kitchen-sink:
     dependencies:
       bippy:
-        specifier: ^0.3.32
-        version: 0.3.32(@types/react@19.0.4)(react@19.1.0)
+        specifier: ^0.3.33
+        version: 0.3.33(@types/react@19.0.4)(react@19.1.0)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -142,6 +145,12 @@ importers:
 
   packages/next-kitchen-sink:
     dependencies:
+      bippy:
+        specifier: workspace:*
+        version: link:../bippy
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       next:
         specifier: 15.3.2
         version: 15.3.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -151,6 +160,9 @@ importers:
       react-dom:
         specifier: ^19.0.0
         version: 19.1.0(react@19.1.0)
+      tailwind-merge:
+        specifier: ^2.6.0
+        version: 2.6.0
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3
@@ -1850,8 +1862,8 @@ packages:
     resolution: {integrity: sha512-pbnl5XzGBdrFU/wT4jqmJVPn2B6UHPBOhzMQkY/SPUPB6QtUXtmBHBIwCbXJol93mOpGMnQyP/+BB19q04xj7g==}
     engines: {node: '>=4'}
 
-  bippy@0.3.32:
-    resolution: {integrity: sha512-hJnncyDOOK/QAgQeSsvaz8gFj93GGmJGBQU91M/E4+G5zS/u5nANPWL0j4bTOfY1asVkXIozG6H/qxlR/yCeYA==}
+  bippy@0.3.33:
+    resolution: {integrity: sha512-nOU5YM0uYLNT+ItZldc4RrBDCreNHkdlw2FJb3AYugqMK1tIGzlee+1NXEBRyJ//PLZvJdgHekWREUlb//2jow==}
     peerDependencies:
       react: '>=17.0.1'
 
@@ -5400,7 +5412,7 @@ snapshots:
     dependencies:
       is-windows: 1.0.2
 
-  bippy@0.3.32(@types/react@19.0.4)(react@19.1.0):
+  bippy@0.3.33(@types/react@19.0.4)(react@19.1.0):
     dependencies:
       '@types/react-reconciler': 0.28.9(@types/react@19.0.4)
       react: 19.1.0
