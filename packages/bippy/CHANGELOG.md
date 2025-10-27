@@ -1,5 +1,11 @@
 # bippy
 
+## 0.3.34
+
+### Patch Changes
+
+- 479464
+
 ## 0.3.33
 
 ### Patch Changes
