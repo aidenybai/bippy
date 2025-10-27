@@ -1130,45 +1130,46 @@ export interface InstrumentationOptions {
 export const instrument = (
   options: InstrumentationOptions
 ): ReactDevToolsGlobalHook => {
-  return getRDTHook(() => {
-    const rdtHook = getRDTHook();
+  const rdtHook = getRDTHook(options.onActive);
 
-    options.onActive?.();
+  rdtHook._instrumentationSource =
+    options.name ?? BIPPY_INSTRUMENTATION_STRING;
 
-    rdtHook._instrumentationSource =
-      options.name ?? BIPPY_INSTRUMENTATION_STRING;
+  const prevOnCommitFiberRoot = rdtHook.onCommitFiberRoot;
+  if (options.onCommitFiberRoot) {
+    const handler = (
+      rendererID: number,
+      root: FiberRoot,
+      priority: number | void
+    ) => {
+      if (rdtHook.onCommitFiberRoot !== handler) return;
+      prevOnCommitFiberRoot?.(rendererID, root, priority);
+      options.onCommitFiberRoot?.(rendererID, root, priority);
+    };
+    rdtHook.onCommitFiberRoot = handler;
+  }
 
-    const prevOnCommitFiberRoot = rdtHook.onCommitFiberRoot;
-    if (options.onCommitFiberRoot) {
-      rdtHook.onCommitFiberRoot = (
-        rendererID: number,
-        root: FiberRoot,
-        priority: number | void
-      ) => {
-        if (prevOnCommitFiberRoot)
-          prevOnCommitFiberRoot(rendererID, root, priority);
-        options.onCommitFiberRoot?.(rendererID, root, priority);
-      };
-    }
+  const prevOnCommitFiberUnmount = rdtHook.onCommitFiberUnmount;
+  if (options.onCommitFiberUnmount) {
+    const handler = (rendererID: number, root: FiberRoot) => {
+      if (rdtHook.onCommitFiberUnmount !== handler) return;
+      prevOnCommitFiberUnmount?.(rendererID, root);
+      options.onCommitFiberUnmount?.(rendererID, root);
+    };
+    rdtHook.onCommitFiberUnmount = handler;
+  }
 
-    const prevOnCommitFiberUnmount = rdtHook.onCommitFiberUnmount;
-    if (options.onCommitFiberUnmount) {
-      rdtHook.onCommitFiberUnmount = (rendererID: number, root: FiberRoot) => {
-        if (prevOnCommitFiberUnmount)
-          prevOnCommitFiberUnmount(rendererID, root);
-        options.onCommitFiberUnmount?.(rendererID, root);
-      };
-    }
+  const prevOnPostCommitFiberRoot = rdtHook.onPostCommitFiberRoot;
+  if (options.onPostCommitFiberRoot) {
+    const handler = (rendererID: number, root: FiberRoot) => {
+      if (rdtHook.onPostCommitFiberRoot !== handler) return;
+      prevOnPostCommitFiberRoot?.(rendererID, root);
+      options.onPostCommitFiberRoot?.(rendererID, root);
+    };
+    rdtHook.onPostCommitFiberRoot = handler;
+  }
 
-    const prevOnPostCommitFiberRoot = rdtHook.onPostCommitFiberRoot;
-    if (options.onPostCommitFiberRoot) {
-      rdtHook.onPostCommitFiberRoot = (rendererID: number, root: FiberRoot) => {
-        if (prevOnPostCommitFiberRoot)
-          prevOnPostCommitFiberRoot(rendererID, root);
-        options.onPostCommitFiberRoot?.(rendererID, root);
-      };
-    }
-  });
+  return rdtHook;
 };
 
 export const getFiberFromHostInstance = <T>(hostInstance: T): Fiber | null => {
