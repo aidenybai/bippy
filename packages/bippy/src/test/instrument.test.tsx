@@ -3,17 +3,17 @@
 /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
 /* eslint-disable @typescript-eslint/require-await */
 import { describe, expect, it, vi } from 'vitest';
-import type { FiberRoot } from '../../types.js';
+import type { FiberRoot } from '../types.js';
 import {
   getRDTHook,
   instrument,
   isInstrumentationActive,
   onCommitFiberRoot,
   secure,
-} from '../../index.js';
+} from '../index.js';
 import React from 'react';
 import { render } from '@testing-library/react';
-import { BasicComponent, BasicComponentWithEffect } from '../components.js';
+import { BasicComponent, BasicComponentWithEffect } from './components.js';
 
 describe('instrument', () => {
   it('should not fail if __REACT_DEVTOOLS_GLOBAL_HOOK__ exists already', () => {

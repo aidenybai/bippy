@@ -17,7 +17,7 @@ const DevTools = initializeFrontend(window);
 activate(window);
 
 const { render } = await import('@testing-library/react');
-const { instrument } = await import('../../index.js');
+const { instrument } = await import('../index.js');
 
 it('should be active', () => {
   render(<div>Hello</div>);

@@ -264,7 +264,6 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
             zIndex: 50,
           }}
         >
-          {/* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment */}
           {currentFiber && (
             <ReactInspector
               data={currentCleanedFiber}

@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { getDisplayName, getType } from '../../index.js';
+import { getDisplayName, getType } from '../index.js';
 import {
   BasicComponent,
   ClassComponent,
   ForwardRefComponent,
   MemoizedComponent,
-} from '../components.js';
+} from './components.js';
 
 describe('getType', () => {
   it('should return the type of the forwardRef component', () => {

@@ -13,7 +13,7 @@ const DEFAULT_OPTIONS: Options = {
   external: ['react', 'react-dom', 'react-reconciler'],
   format: [],
   minify: false,
-  noExternal: ['error-stack-parser-es', 'source-map-js'],
+  noExternal: ['error-stack-parser-es', '@jridgewell/sourcemap-codec'],
   outDir: './dist',
   platform: 'browser',
   sourcemap: false,
@@ -22,16 +22,6 @@ const DEFAULT_OPTIONS: Options = {
 };
 
 export default defineConfig([
-  {
-    ...DEFAULT_OPTIONS,
-    clean: true, // only run on first entry
-    entry: {
-      'experiments/inspect': './src/experiments/inspect.tsx',
-      index: './src/index.ts',
-      source: './src/source.ts',
-    },
-    format: ['esm', 'cjs'],
-  },
   {
     ...DEFAULT_OPTIONS,
     entry: ['./src/index.ts'],
