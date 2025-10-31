@@ -1,5 +1,3 @@
-import { getFiberFromHostInstance } from 'bippy';
-import { getFiberSource } from 'bippy/dist/source';
 import { clsx } from 'clsx';
 import { type JSX, type ReactNode, useState } from 'react';
 import { highlight } from 'sugar-high';
@@ -32,14 +30,6 @@ interface TextProps {
   children: ReactNode;
   className?: string;
 }
-
-setTimeout(() => {
-  void (async () => {
-    const tabs = document.getElementById('tabs');
-    // @ts-expect-error - Investigating fiber internals
-    console.log(await getFiberSource(getFiberFromHostInstance(tabs)));
-  })();
-}, 1000);
 
 export default function App() {
   const [imgSize, setImgSize] = useState(50);
