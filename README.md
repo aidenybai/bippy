@@ -244,7 +244,7 @@ traverseProps(fiber, (propName, next, prev) => {
 
 ### traverseState
 
-traverses the state (useState, useReducer, etc.) and effects that set state of a fiber.
+traverses the state (`useState`, `useReducer`, etc.) and effects that set state of a fiber.
 
 ```typescript
 import { traverseState } from 'bippy';
@@ -258,7 +258,7 @@ traverseState(fiber, (next, prev) => {
 
 ### traverseContexts
 
-traverses the contexts (useContext) of a fiber.
+traverses the contexts (`useContext`) of a fiber.
 
 ```typescript
 import { traverseContexts } from 'bippy';
@@ -464,7 +464,7 @@ the function accepts a fiber and a partial object containing the props to overri
 
 ### overrideHookState
 
-overrides hook state (usestate, usereducer, etc.) at runtime by hook id.
+overrides hook state (`useState`, `useReducer`, etc.) at runtime by hook id.
 
 ```typescript
 import { overrideHookState } from 'bippy';
