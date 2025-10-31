@@ -19,8 +19,11 @@ const pendingSourceMapFetches = new Map<
   null | Promise<null | SourceMap>
 >();
 
-const getCachedSourceMap = async (file: string): Promise<null | SourceMap> => {
-  if (sourceMapCache.has(file)) {
+const getCachedSourceMap = async (
+  file: string,
+  useCache = true,
+): Promise<null | SourceMap> => {
+  if (useCache && sourceMapCache.has(file)) {
     const cachedValue = sourceMapCache.get(file);
     if (cachedValue === null || cachedValue === undefined) {
       return null;
@@ -36,23 +39,29 @@ const getCachedSourceMap = async (file: string): Promise<null | SourceMap> => {
     }
   }
 
-  if (pendingSourceMapFetches.has(file)) {
+  if (useCache && pendingSourceMapFetches.has(file)) {
     return pendingSourceMapFetches.get(file)!;
   }
 
   const fetchPromise = getSourceMap(file);
-  pendingSourceMapFetches.set(file, fetchPromise);
+  if (useCache) {
+    pendingSourceMapFetches.set(file, fetchPromise);
+  }
 
   const sourceMap = await fetchPromise;
-  pendingSourceMapFetches.delete(file);
+  if (useCache) {
+    pendingSourceMapFetches.delete(file);
+  }
 
-  if (sourceMap === null) {
-    sourceMapCache.set(file, null);
-  } else {
-    sourceMapCache.set(
-      file,
-      supportsWeakRef ? new WeakRef(sourceMap) : sourceMap,
-    );
+  if (useCache) {
+    if (sourceMap === null) {
+      sourceMapCache.set(file, null);
+    } else {
+      sourceMapCache.set(
+        file,
+        supportsWeakRef ? new WeakRef(sourceMap) : sourceMap,
+      );
+    }
   }
 
   return sourceMap;
@@ -94,6 +103,10 @@ export interface FiberSource {
   lineNumber?: number;
 }
 
+export interface GetSourceOptions {
+  cache?: boolean;
+}
+
 /**
  * gets the source of where the component is used. available only in dev, for composite fibers.
  *
@@ -108,7 +121,11 @@ export interface FiberSource {
  * }
  * ```
  */
-export const getSource = async (fiber: Fiber): Promise<FiberSource | null> => {
+export const getSource = async (
+  fiber: Fiber,
+  options?: GetSourceOptions,
+): Promise<FiberSource | null> => {
+  const useCache = options?.cache ?? true;
   if (hasDebugSource(fiber)) {
     const source = fiber._debugSource;
     return source || null;
@@ -120,7 +137,7 @@ export const getSource = async (fiber: Fiber): Promise<FiberSource | null> => {
     if (!stackFrame?.file) {
       return null;
     }
-    const sourceMap = await getCachedSourceMap(stackFrame.file);
+    const sourceMap = await getCachedSourceMap(stackFrame.file, useCache);
     if (!sourceMap || !stackFrame.line || !stackFrame.col) {
       return null;
     }
@@ -148,7 +165,7 @@ export const getSource = async (fiber: Fiber): Promise<FiberSource | null> => {
   if (!stackFrame?.file) {
     return null;
   }
-  const sourceMap = await getCachedSourceMap(stackFrame.file);
+  const sourceMap = await getCachedSourceMap(stackFrame.file, useCache);
   if (!sourceMap || !stackFrame.line || !stackFrame.col) {
     return null;
   }
