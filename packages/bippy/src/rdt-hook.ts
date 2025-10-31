@@ -84,12 +84,11 @@ export const installRDTHook = (
       set(newHook) {
         if (newHook && typeof newHook === 'object') {
           const ourRenderers = rdtHook.renderers;
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           rdtHook = newHook;
           if (ourRenderers.size > 0) {
             ourRenderers.forEach((renderer, id) => {
               _renderers.add(renderer);
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-call
               newHook.renderers.set(id, renderer);
             });
             patchRDTHook(onActive);

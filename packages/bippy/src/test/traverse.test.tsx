@@ -1,17 +1,43 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
+import '../index.js'; // KEEP THIS LINE ON TOP
+
 import { describe, expect, it, vi } from 'vitest';
 import type { ContextDependency, Fiber } from '../types.js';
 import {
   instrument,
   traverseContexts,
+  traverseFiber,
   traverseProps,
   traverseState,
 } from '../index.js';
 import React from 'react';
 import { render } from '@testing-library/react';
-import { ComplexComponent, CountContext, ExtraContext } from './components.js';
+
+export const Context1 = React.createContext(0);
+export const Context2 = React.createContext(0);
+
+export const Example = () => {
+  return <div>Hello</div>;
+};
+
+export const ComplexComponent = ({
+  countProp = 0,
+}: {
+  countProp?: number;
+  extraProp?: unknown;
+}) => {
+  const countContextValue = React.useContext(Context1);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _extraContextValue = React.useContext(Context2);
+  const [countState, setCountState] = React.useState(0);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_extraState, _setExtraState] = React.useState(0);
+
+  React.useEffect(() => {
+    setCountState(countState + 1);
+  }, []);
+
+  return <div>{countContextValue + countState + countProp}</div>;
+};
 
 describe('traverseProps', () => {
   it('should return the props of the fiber', () => {
@@ -113,9 +139,9 @@ describe('traverseContexts', () => {
       },
     });
     render(
-      <CountContext.Provider value={1}>
+      <Context1.Provider value={1}>
         <ComplexComponent countProp={1} />
-      </CountContext.Provider>,
+      </Context1.Provider>,
     );
     const contexts: ContextDependency<unknown>[] = [];
     const selector = vi.fn((context) => {
@@ -123,9 +149,9 @@ describe('traverseContexts', () => {
     });
     traverseContexts(maybeFiber as unknown as Fiber, selector);
     expect(contexts).toHaveLength(2);
-    expect(contexts[0].context).toBe(CountContext);
+    expect(contexts[0].context).toBe(Context1);
     expect(contexts[0].memoizedValue).toBe(1);
-    expect(contexts[1].context).toBe(ExtraContext);
+    expect(contexts[1].context).toBe(Context2);
     expect(contexts[1].memoizedValue).toBe(0);
   });
 
@@ -140,5 +166,23 @@ describe('traverseContexts', () => {
     const selector = vi.fn(() => true);
     traverseContexts(maybeFiber as unknown as Fiber, selector);
     expect(selector).toBeCalledTimes(1);
+  });
+});
+
+describe('traverseFiber', () => {
+  it('should return the nearest host fiber', () => {
+    let maybeFiber: Fiber | null = null;
+    instrument({
+      onCommitFiberRoot: (_rendererID, fiberRoot) => {
+        maybeFiber = fiberRoot.current.child;
+      },
+    });
+    render(<Example />);
+    expect(
+      traverseFiber(
+        maybeFiber as unknown as Fiber,
+        (fiber) => fiber.type === 'div',
+      ),
+    ).toBe((maybeFiber as unknown as Fiber)?.child);
   });
 });

@@ -1,6 +1,5 @@
 // import react devtools, then bippy
 /* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
 // @ts-expect-error - react-devtools-inline types not available
 import { activate, initialize } from 'react-devtools-inline/backend';

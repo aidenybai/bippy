@@ -40,14 +40,14 @@
         "default": "./dist/index.cjs"
       }
     },
-    "./core": {
+    "./lite": {
       "import": {
-        "types": "./dist/core.d.ts",
-        "default": "./dist/core.js"
+        "types": "./dist/lite.d.ts",
+        "default": "./dist/lite.js"
       },
       "require": {
-        "types": "./dist/core.d.cts",
-        "default": "./dist/core.cjs"
+        "types": "./dist/lite.d.cts",
+        "default": "./dist/lite.cjs"
       }
     },
     "./source": {

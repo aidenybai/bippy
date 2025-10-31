@@ -16,10 +16,10 @@
   "packageManager": "pnpm@10.12.1",
   "private": true,
   "devDependencies": {
+    "@antfu/ni": "^27.0.1",
     "@changesets/changelog-git": "^0.2.0",
     "@changesets/cli": "^2.27.11",
     "eslint": "^9.15.0",
-    "eslint-plugin-perfectionist": "^4.3.0",
     "prettier": "^3.3.3",
     "sherif": "^1.2.0",
     "typescript-eslint": "^8.15.0"

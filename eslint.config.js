@@ -1,5 +1,4 @@
 import tseslint from 'typescript-eslint';
-import perfectionist from 'eslint-plugin-perfectionist';
 
 export default tseslint.config(
   {
@@ -24,7 +23,6 @@ export default tseslint.config(
   },
   ...tseslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
-  perfectionist.configs['recommended-natural'],
   {
     languageOptions: {
       parserOptions: {
@@ -34,12 +32,13 @@ export default tseslint.config(
     },
     rules: {
       'import/order': 'off',
-    },
-  },
-  {
-    files: ['**/test/**/*.{ts,tsx}', '**/*.test.{ts,tsx}'],
-    rules: {
-      'perfectionist/sort-imports': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      'eslint-disable @typescript-eslint/no-explicit-any': 'off',
+      'eslint-disable @typescript-eslint/no-redundant-type-constituents': 'off',
+      'eslint-disable @typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
     },
   },
 );

@@ -1,6 +1,5 @@
 // import bippy, then react devtools
 /* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
 import { expect, it, vi } from 'vitest';
 const { instrument } = await import('../index.js');

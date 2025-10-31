@@ -1,5 +1,3 @@
-import { safelyInstallRDTHook } from './rdt-hook.js';
-
-safelyInstallRDTHook();
+import './index-lite.js';
 
 export * from './core.js';

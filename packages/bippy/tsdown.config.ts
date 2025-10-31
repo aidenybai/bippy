@@ -7,7 +7,6 @@ const DEFAULT_OPTIONS: Options = {
   entry: [],
   env: {
     NODE_ENV: process.env.NODE_ENV ?? 'development',
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     VERSION: JSON.parse(fs.readFileSync('package.json', 'utf8')).version,
   },
   external: ['react', 'react-dom', 'react-reconciler'],
@@ -28,6 +27,7 @@ export default defineConfig([
     entry: {
       index: './src/index.ts',
       source: './src/source/index.ts',
+      lite: './src/index-lite.ts',
     },
     format: ['esm', 'cjs'],
   },

@@ -1,13 +1,5 @@
-// Note: do not import React in this file
+// [!!!] IMPORTANT: do not import React in this file
 // since it will be executed before the react devtools hook is created
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-redundant-type-constituents */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 
 import type * as React from 'react';
 
@@ -140,6 +132,16 @@ export const isCompositeFiber = (fiber: Fiber): boolean => {
     default:
       return false;
   }
+};
+
+/**
+ * Returns `true` if the object is a {@link Fiber}
+ */
+export const isFiber = (maybeFiber: unknown): maybeFiber is Fiber => {
+  if (!maybeFiber || typeof maybeFiber !== 'object') return true;
+  // this is a fast check. pendingProps will ALWAYS exist in fiber
+  // `containerInfo` is in FiberRootNode, not FiberNode
+  return 'pendingProps' in maybeFiber && !('containerInfo' in maybeFiber);
 };
 
 /**
@@ -901,20 +903,6 @@ export const traverseRenderedFibers = (
   rootInstance.prevFiber = fiber;
 };
 
-/**
- * @deprecated use `traverseRenderedFibers` instead
- */
-export const createFiberVisitor = ({
-  onRender,
-}: {
-  onError: (error: unknown) => unknown;
-  onRender: RenderHandler;
-}): (<S>(_rendererID: number, root: Fiber | FiberRoot, _state?: S) => void) => {
-  return <S>(_rendererID: number, root: Fiber | FiberRoot, _state?: S) => {
-    traverseRenderedFibers(root, onRender);
-  };
-};
-
 let _overrideProps: null | ReactRenderer['overrideProps'] = null;
 let _overrideHookState: null | ReactRenderer['overrideHookState'] = null;
 let _overrideContext: null | ReactRenderer['overrideContext'] = null;
@@ -932,7 +920,7 @@ export const injectOverrideMethods = () => {
     };
   }
 
-  for (const [_, renderer] of Array.from(rdtHook.renderers)) {
+  for (const [, renderer] of Array.from(rdtHook.renderers)) {
     try {
       if (_overrideHookState) {
         const prevOverrideHookState = _overrideHookState;
@@ -1014,7 +1002,7 @@ const isPOJO = (maybePOJO: unknown): maybePOJO is Record<string, unknown> => {
 };
 
 const buildPathsFromValue = (
-  maybePOJO: Record<string, unknown> | unknown,
+  maybePOJO: Record<string, unknown>,
   basePath: string[] = [],
 ): Array<{ path: string[]; value: unknown }> => {
   if (!isPOJO(maybePOJO)) {
@@ -1055,7 +1043,7 @@ export const overrideProps = (
 export const overrideHookState = (
   fiber: Fiber,
   id: number,
-  partialValue: Record<string, unknown> | unknown,
+  partialValue: Record<string, unknown>,
 ) => {
   injectOverrideMethods();
 
@@ -1079,7 +1067,7 @@ export const overrideHookState = (
 export const overrideContext = (
   fiber: Fiber,
   contextType: unknown,
-  partialValue: Record<string, unknown> | unknown,
+  partialValue: Record<string, unknown>,
 ) => {
   injectOverrideMethods();
 
@@ -1132,21 +1120,23 @@ export const instrument = (
 ): ReactDevToolsGlobalHook => {
   const rdtHook = getRDTHook(options.onActive);
 
-  rdtHook._instrumentationSource =
-    options.name ?? BIPPY_INSTRUMENTATION_STRING;
+  rdtHook._instrumentationSource = options.name ?? BIPPY_INSTRUMENTATION_STRING;
 
   const prevOnCommitFiberRoot = rdtHook.onCommitFiberRoot;
   if (options.onCommitFiberRoot) {
-    const handler = (
+    const nextOnCommitFiberRoot = (
       rendererID: number,
       root: FiberRoot,
-      priority: number | void
+      priority: number | void,
     ) => {
-      if (rdtHook.onCommitFiberRoot !== handler) return;
+      if (prevOnCommitFiberRoot === nextOnCommitFiberRoot) return;
+      // TODO: validate whether the bottom version is more correct here
+      // for preventing infinite loops
+      // if (rdtHook.onCommitFiberRoot !== handler) return;
       prevOnCommitFiberRoot?.(rendererID, root, priority);
       options.onCommitFiberRoot?.(rendererID, root, priority);
     };
-    rdtHook.onCommitFiberRoot = handler;
+    rdtHook.onCommitFiberRoot = nextOnCommitFiberRoot;
   }
 
   const prevOnCommitFiberUnmount = rdtHook.onCommitFiberUnmount;
@@ -1183,6 +1173,7 @@ export const getFiberFromHostInstance = <T>(hostInstance: T): Fiber | null => {
 
   if (typeof hostInstance === 'object' && hostInstance != null) {
     if ('_reactRootContainer' in hostInstance) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (hostInstance._reactRootContainer as any)?._internalRoot?.current
         ?.child;
     }
@@ -1307,26 +1298,6 @@ export const secure = (
   }
 
   return options;
-};
-
-/**
- * a wrapper around the {@link instrument} function that sets the `onCommitFiberRoot` hook.
- *
- * @example
- * onCommitFiberRoot((root) => {
- *   console.log(root.current);
- * });
- */
-export const onCommitFiberRoot = (
-  handler: (root: FiberRoot) => void,
-): ReactDevToolsGlobalHook => {
-  return instrument(
-    secure({
-      onCommitFiberRoot: (_, root) => {
-        handler(root);
-      },
-    }),
-  );
 };
 
 export * from './rdt-hook.js';
