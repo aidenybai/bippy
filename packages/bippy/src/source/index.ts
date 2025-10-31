@@ -2,10 +2,61 @@ import { parseStack } from 'error-stack-parser-es/lite';
 
 import { Fiber } from '../types.js';
 import { formatOwnerStack, getFallbackOwnerStack } from './component-stack.js';
-import { getOriginalPositionFor, getSourceMap } from './symbolication.js';
+import {
+  getOriginalPositionFor,
+  getSourceMap,
+  type SourceMap,
+} from './symbolication.js';
 
 export { getFallbackOwnerStack as getOwnerStack } from './component-stack.js';
 export { getOriginalPositionFor, getSourceMap } from './symbolication.js';
+
+const supportsWeakRef = typeof WeakRef !== 'undefined';
+
+const sourceMapCache = new Map<string, null | SourceMap | WeakRef<SourceMap>>();
+const pendingSourceMapFetches = new Map<
+  string,
+  null | Promise<null | SourceMap>
+>();
+
+const getCachedSourceMap = async (file: string): Promise<null | SourceMap> => {
+  if (sourceMapCache.has(file)) {
+    const cachedValue = sourceMapCache.get(file);
+    if (cachedValue === null || cachedValue === undefined) {
+      return null;
+    }
+    if (supportsWeakRef && cachedValue instanceof WeakRef) {
+      const sourceMap = cachedValue.deref();
+      if (sourceMap) {
+        return sourceMap;
+      }
+      sourceMapCache.delete(file);
+    } else {
+      return cachedValue as SourceMap;
+    }
+  }
+
+  if (pendingSourceMapFetches.has(file)) {
+    return pendingSourceMapFetches.get(file)!;
+  }
+
+  const fetchPromise = getSourceMap(file);
+  pendingSourceMapFetches.set(file, fetchPromise);
+
+  const sourceMap = await fetchPromise;
+  pendingSourceMapFetches.delete(file);
+
+  if (sourceMap === null) {
+    sourceMapCache.set(file, null);
+  } else {
+    sourceMapCache.set(
+      file,
+      supportsWeakRef ? new WeakRef(sourceMap) : sourceMap,
+    );
+  }
+
+  return sourceMap;
+};
 
 export const hasDebugStack = (
   fiber: Fiber,
@@ -69,7 +120,7 @@ export const getSource = async (fiber: Fiber): Promise<FiberSource | null> => {
     if (!stackFrame?.file) {
       return null;
     }
-    const sourceMap = await getSourceMap(stackFrame.file);
+    const sourceMap = await getCachedSourceMap(stackFrame.file);
     if (!sourceMap || !stackFrame.line || !stackFrame.col) {
       return null;
     }
@@ -97,7 +148,7 @@ export const getSource = async (fiber: Fiber): Promise<FiberSource | null> => {
   if (!stackFrame?.file) {
     return null;
   }
-  const sourceMap = await getSourceMap(stackFrame.file);
+  const sourceMap = await getCachedSourceMap(stackFrame.file);
   if (!sourceMap || !stackFrame.line || !stackFrame.col) {
     return null;
   }
