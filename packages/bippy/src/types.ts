@@ -115,13 +115,15 @@ export type Fiber<T = any> = Omit<
     name?: string;
   }>;
   _debugOwner?: Fiber;
-  // dev only
+  // react <19
   _debugSource?: {
     columnNumber?: number;
     fileName: string;
     lineNumber: number;
   };
-  _debugStack?: Error;
+  // react 19+
+  // https://github.com/facebook/react/issues/29092?utm_source=chatgpt.com
+  _debugStack?: Error & { stack: string };
   alternate: Fiber | null;
   child: Fiber | null;
   dependencies: Dependencies | null;
@@ -159,7 +161,7 @@ export interface ReactDevToolsGlobalHook {
   onCommitFiberRoot: (
     rendererID: number,
     root: FiberRoot,
-    priority: number | void
+    priority: number | void,
   ) => void;
   onCommitFiberUnmount: (rendererID: number, fiber: Fiber) => void;
   onPostCommitFiberRoot: (rendererID: number, root: FiberRoot) => void;
@@ -182,35 +184,35 @@ export interface ReactRenderer {
     fiber: Fiber,
     contextType: unknown,
     path: string[],
-    value: unknown
+    value: unknown,
   ) => void;
 
   overrideHookState?: (
     fiber: Fiber,
     id: string,
     path: string[],
-    value: unknown
+    value: unknown,
   ) => void;
   overrideHookStateDeletePath?: (
     fiber: Fiber,
     id: number,
-    path: Array<number | string>
+    path: Array<number | string>,
   ) => void;
   overrideHookStateRenamePath?: (
     fiber: Fiber,
     id: number,
     oldPath: Array<number | string>,
-    newPath: Array<number | string>
+    newPath: Array<number | string>,
   ) => void;
   overrideProps?: (fiber: Fiber, path: string[], value: unknown) => void;
   overridePropsDeletePath?: (
     fiber: Fiber,
-    path: Array<number | string>
+    path: Array<number | string>,
   ) => void;
   overridePropsRenamePath?: (
     fiber: Fiber,
     oldPath: Array<number | string>,
-    newPath: Array<number | string>
+    newPath: Array<number | string>,
   ) => void;
   reconcilerVersion: string;
   rendererPackageName: string;
@@ -220,17 +222,17 @@ export interface ReactRenderer {
     update: {
       staleFamilies: Set<Family>;
       updatedFamilies: Set<Family>;
-    }
+    },
   ) => void;
   scheduleRoot?: (root: FiberRoot, element: React.ReactNode) => void;
   scheduleUpdate?: (fiber: Fiber) => void;
 
   setErrorHandler?: (newShouldErrorImpl: (fiber: Fiber) => boolean) => void;
   setRefreshHandler?: (
-    handler: ((fiber: Fiber) => Family | null) | null
+    handler: ((fiber: Fiber) => Family | null) | null,
   ) => void;
   setSuspenseHandler?: (
-    newShouldSuspendImpl: (suspenseInstance: unknown) => void
+    newShouldSuspendImpl: (suspenseInstance: unknown) => void,
   ) => void;
 
   version: string;

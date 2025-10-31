@@ -2,6 +2,9 @@
   "name": "@bippy/next-kitchen-sink",
   "version": "0.1.0",
   "private": true,
+  "exports": {
+    "./components/*": "./components/*.tsx"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",

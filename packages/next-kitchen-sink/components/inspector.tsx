@@ -2,7 +2,7 @@
 
 import 'bippy';
 import { getFiberFromHostInstance, getLatestFiber } from 'bippy';
-import { getOwnerStack, getFiberStackTrace } from 'bippy/dist/source';
+import { getSource } from 'bippy/dist/source';
 import { useEffect, useRef, useState } from 'react';
 
 import { cn } from './cn';
@@ -33,17 +33,7 @@ export function Inspector() {
 
         void (async () => {
           try {
-            // Fetch function for source maps
-            const fetchFile = async (url: string): Promise<string> => {
-              const response = await fetch(url);
-              return await response.text();
-            };
-
-            const rawStackTrace = getFiberStackTrace(latestFiber);
-            console.log('Raw Stack Trace:', rawStackTrace);
-
-            const stack = await getOwnerStack(rawStackTrace);
-            console.log('Symbolicated Stack:', JSON.stringify(stack, null, 2));
+            console.log(await getSource(latestFiber));
           } catch (error) {
             console.error('Error symbolicating stack:', error);
           }
