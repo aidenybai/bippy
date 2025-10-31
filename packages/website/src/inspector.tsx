@@ -8,7 +8,6 @@ import {
   hasRDTHook,
   isInstrumentationActive,
 } from 'bippy';
-import { type FiberSource, getFiberSource } from 'bippy/dist/source';
 import React, {
   forwardRef,
   useEffect,
@@ -117,8 +116,6 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
   ) => {
     const [element, setElement] = useState<Element | null>(null);
     const [currentFiber, setCurrentFiber] = useState<Fiber | null>(null);
-    const [currentFiberSource, setCurrentFiberSource] =
-      useState<FiberSource | null>(null);
     const [rect, setRect] = useState<DOMRect | null>(null);
     const [isActive, setIsActive] = useState(true);
     const [isEnabled, setIsEnabled] = useState(enabled);
@@ -150,17 +147,11 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
     }));
 
     useEffect(() => {
-      void (async () => {
-        if (!element) return;
-        const fiber = getFiberFromHostInstance(element);
-        if (!fiber) return;
-        const latestFiber = getLatestFiber(fiber);
-        const source = await getFiberSource(latestFiber);
-        setCurrentFiber(latestFiber);
-        if (source) {
-          setCurrentFiberSource(source);
-        }
-      })();
+      if (!element) return;
+      const fiber = getFiberFromHostInstance(element);
+      if (!fiber) return;
+      const latestFiber = getLatestFiber(fiber);
+      setCurrentFiber(latestFiber);
     }, [element]);
 
     useEffect(() => {
@@ -264,12 +255,12 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
             zIndex: 50,
           }}
         >
-          {/* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment */}
           {currentFiber && (
             <ReactInspector
               data={currentCleanedFiber}
               expandLevel={1}
               table={false}
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
               theme={theme}
             />
           )}
@@ -301,20 +292,6 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
               }}
             >
               {`<${getDisplayName(currentFiber.type) || 'unknown'}>`}
-            </div>
-            <div
-              style={{
-                color: '#CCC',
-                fontSize: '0.75rem',
-              }}
-            >
-              {currentFiberSource ? (
-                <>
-                  {currentFiberSource.fileName.split('/').slice(-2).join('/')}{' '}
-                  <br />@ line {currentFiberSource.lineNumber}, column{' '}
-                  {currentFiberSource.columnNumber}
-                </>
-              ) : null}
             </div>
           </div>
         </div>

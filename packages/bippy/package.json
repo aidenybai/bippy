@@ -60,16 +60,6 @@
         "default": "./dist/source.cjs"
       }
     },
-    "./experiments/inspect": {
-      "import": {
-        "types": "./dist/experiments/inspect.d.ts",
-        "default": "./dist/experiments/inspect.js"
-      },
-      "require": {
-        "types": "./dist/experiments/inspect.d.cts",
-        "default": "./dist/experiments/inspect.cjs"
-      }
-    },
     "./dist/*": "./dist/*.js",
     "./dist/*.js": "./dist/*.js",
     "./dist/*.cjs": "./dist/*.cjs"
@@ -109,7 +99,7 @@
     "react-dom": "19.0.0",
     "react-reconciler": "^0.31.0",
     "react-refresh": "^0.16.0",
-    "source-map-js": "^1.2.1",
+    "@jridgewell/sourcemap-codec": "^1.5.0",
     "terser": "^5.36.0",
     "tsdown": "^0.12.3",
     "vitest": "^2.1.8"

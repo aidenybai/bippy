@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
 import { expect, it, vi } from 'vitest';
-const { instrument } = await import('../../index.js');
+const { instrument } = await import('../index.js');
 
 // @ts-expect-error - react-devtools-inline types not available
 import { activate, initialize } from 'react-devtools-inline/backend';

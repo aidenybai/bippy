@@ -1,9 +1,9 @@
 import { expect, it, vi } from 'vitest';
 
-import { instrument } from '../../index.js';
+import { instrument } from '../index.js';
 import React from 'react';
 import { render } from '@testing-library/react';
-import { BasicComponent } from '../components.js';
+import { BasicComponent } from './components.js';
 
 it('handle multiple onActive calls', () => {
   const onActive = vi.fn();

@@ -1,16 +1,12 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/unbound-method */
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+
 import type * as React from 'react';
 
+import { decode } from '@jridgewell/sourcemap-codec';
 import { parseStack } from 'error-stack-parser-es/lite';
-import { type RawSourceMap, SourceMapConsumer } from 'source-map-js';
 
 import type { Fiber } from './types.js';
 
@@ -52,6 +48,58 @@ const INLINE_SOURCEMAP_REGEX = /^data:application\/json[^,]+base64,/;
 const SOURCEMAP_REGEX =
   /(?:\/\/[@#][ \t]+sourceMappingURL=([^\s'"]+?)[ \t]*$)|(?:\/\*[@#][ \t]+sourceMappingURL=([^*]+?)[ \t]*(?:\*\/)[ \t]*$)/;
 
+interface DecodedSourceMap {
+  mappings: number[][][];
+  sources: string[];
+}
+
+interface SourceMap {
+  mappings: string;
+  sources: string[];
+}
+
+const sourceMapCache = new Map<string, DecodedSourceMap | null>();
+
+const originalPositionFor = (
+  decodedMap: DecodedSourceMap,
+  line: number,
+  column: number,
+): { column: null | number; line: null | number; source: null | string } => {
+  const lineIndex = line - 1;
+
+  if (lineIndex < 0 || lineIndex >= decodedMap.mappings.length) {
+    return { column: null, line: null, source: null };
+  }
+
+  const lineMapping = decodedMap.mappings[lineIndex];
+  if (!lineMapping || lineMapping.length === 0) {
+    return { column: null, line: null, source: null };
+  }
+
+  let closestSegment: null | number[] = null;
+  for (const segment of lineMapping) {
+    if (segment[0] <= column) {
+      closestSegment = segment;
+    } else {
+      break;
+    }
+  }
+
+  if (!closestSegment || closestSegment.length < 4) {
+    return { column: null, line: null, source: null };
+  }
+
+  const sourceIndex = closestSegment[1];
+  const sourceLine = closestSegment[2] + 1;
+  const sourceColumn = closestSegment[3];
+
+  return {
+    column: sourceColumn,
+    line: sourceLine,
+    source: decodedMap.sources[sourceIndex] || null,
+  };
+};
+
 export const getSourceMap = async (url: string, content: string) => {
   const lines = content.split('\n');
   let sourceMapUrl: string | undefined;
@@ -68,21 +116,41 @@ export const getSourceMap = async (url: string, content: string) => {
 
   const hasScheme = /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(sourceMapUrl);
   if (
-    !(INLINE_SOURCEMAP_REGEX.test(sourceMapUrl) || hasScheme || sourceMapUrl.startsWith('/'))
+    !(
+      INLINE_SOURCEMAP_REGEX.test(sourceMapUrl) ||
+      hasScheme ||
+      sourceMapUrl.startsWith('/')
+    )
   ) {
     const parsedURL = url.split('/');
     parsedURL[parsedURL.length - 1] = sourceMapUrl;
     sourceMapUrl = parsedURL.join('/');
   }
-  const response = await fetch(sourceMapUrl);
-  const rawSourceMap: RawSourceMap = await response.json();
 
-  return new SourceMapConsumer(rawSourceMap);
+  if (sourceMapCache.has(sourceMapUrl)) {
+    return sourceMapCache.get(sourceMapUrl);
+  }
+
+  try {
+    const response = await fetch(sourceMapUrl);
+    const rawSourceMap = (await response.json()) as unknown as SourceMap;
+
+    const decodedMap: DecodedSourceMap = {
+      mappings: decode(rawSourceMap.mappings),
+      sources: rawSourceMap.sources,
+    };
+
+    sourceMapCache.set(sourceMapUrl, decodedMap);
+    return decodedMap;
+  } catch {
+    sourceMapCache.delete(sourceMapUrl);
+    return null;
+  }
 };
 
 export const parseStackFrame = async (
   frame: string,
-  maxDepth?: number
+  maxDepth?: number,
 ): Promise<FiberSource[]> => {
   const sources = parseStack(frame);
 
@@ -106,10 +174,11 @@ export const parseStackFrame = async (
             const sourcemap = await getSourceMap(fileName, content);
 
             if (sourcemap) {
-              const result = sourcemap.originalPositionFor({
-                column: columnNumber,
-                line: lineNumber,
-              });
+              const result = originalPositionFor(
+                sourcemap,
+                lineNumber,
+                columnNumber,
+              );
 
               const originalSource =
                 (result && typeof result.source === 'string'
@@ -118,7 +187,10 @@ export const parseStackFrame = async (
 
               return {
                 columnNumber: result?.column ?? columnNumber,
-                fileName: (originalSource || fileName).replace(/^file:\/\//, ''),
+                fileName: (originalSource || fileName).replace(
+                  /^file:\/\//,
+                  '',
+                ),
                 lineNumber: result?.line ?? lineNumber,
               };
             }
@@ -135,8 +207,8 @@ export const parseStackFrame = async (
             lineNumber,
           };
         }
-      }
-    )
+      },
+    ),
   );
 
   return results.filter((result): result is FiberSource => result !== null);
@@ -145,7 +217,7 @@ export const parseStackFrame = async (
 // https://github.com/facebook/react/blob/f739642745577a8e4dcb9753836ac3589b9c590a/packages/react-devtools-shared/src/backend/shared/DevToolsComponentStackFrame.js#L22
 export const describeNativeComponentFrame = (
   fn: React.ComponentType<unknown>,
-  construct: boolean
+  construct: boolean,
 ): string => {
   if (!fn || reentry) {
     return '';
@@ -175,7 +247,7 @@ export const describeNativeComponentFrame = (
      */
     const RunInRootFrame = {
       DetermineComponentFrameRoot() {
-        let control: any;
+        let control: unknown;
         try {
           // This should throw.
           if (construct) {
@@ -201,7 +273,7 @@ export const describeNativeComponentFrame = (
               Reflect.construct(fn, [], Fake);
             } else {
               try {
-                // @ts-expect-error
+                // @ts-expect-error -- Fake is a constructor function
                 Fake.call();
               } catch (x) {
                 control = x;
@@ -218,20 +290,24 @@ export const describeNativeComponentFrame = (
             // TODO(luna): This will currently only throw if the function component
             // tries to access React/ReactDOM/props. We should probably make this throw
             // in simple components too
-            // @ts-expect-error
-            const maybePromise = fn();
+            const maybePromise = (fn as () => Promise<unknown>)();
 
             // If the function component returns a promise, it's likely an async
             // component, which we don't yet support. Attach a noop catch handler to
             // silence the error.
             // TODO: Implement component stacks for async client components?
+            // eslint-disable-next-line @typescript-eslint/no-misused-promises -- we literally check if this is a promise here
             if (maybePromise && typeof maybePromise.catch === 'function') {
               maybePromise.catch(() => {});
             }
           }
-        } catch (sample: any) {
+        } catch (sample: unknown) {
           // This is inlined manually because closure doesn't do it for us.
-          if (sample && control && typeof sample.stack === 'string') {
+          if (
+            sample instanceof Error &&
+            control instanceof Error &&
+            typeof sample.stack === 'string'
+          ) {
             return [sample.stack, control.stack];
           }
         }
@@ -239,23 +315,25 @@ export const describeNativeComponentFrame = (
       },
     };
 
-    // @ts-expect-error
+    // @ts-expect-error --- displayName is not a property of the function
     RunInRootFrame.DetermineComponentFrameRoot.displayName =
       'DetermineComponentFrameRoot';
     const namePropDescriptor = Object.getOwnPropertyDescriptor(
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       RunInRootFrame.DetermineComponentFrameRoot,
-      'name'
+      'name',
     );
     // Before ES6, the `name` property was not configurable.
     if (namePropDescriptor?.configurable) {
       // V8 utilizes a function's `name` property when generating a stack trace.
       Object.defineProperty(
+        // eslint-disable-next-line @typescript-eslint/unbound-method
         RunInRootFrame.DetermineComponentFrameRoot,
         // Configurable properties can be updated even if its writable descriptor
         // is set to `false`.
         // $FlowFixMe[cannot-write]
         'name',
-        { value: 'DetermineComponentFrameRoot' }
+        { value: 'DetermineComponentFrameRoot' },
       );
     }
 
@@ -329,7 +407,7 @@ export const describeNativeComponentFrame = (
                 // V8 adds a "new" prefix for native classes. Let's remove it to make it prettier.
                 let frame = `\n${sampleLines[sampleIndex].replace(
                   ' at new ',
-                  ' at '
+                  ' at ',
                 )}`;
 
                 const displayName = getDisplayName(fn);
@@ -380,7 +458,7 @@ export const getCurrentDispatcher = (): null | React.RefObject<unknown> => {
 };
 
 export const setCurrentDispatcher = (
-  value: null | React.RefObject<unknown>
+  value: null | React.RefObject<unknown>,
 ): void => {
   for (const renderer of _renderers) {
     const currentDispatcherRef = renderer.currentDispatcherRef;
@@ -416,7 +494,7 @@ export const formatOwnerStack = (error: Error): string => {
   }
   idx = Math.max(
     stack.indexOf('react_stack_bottom_frame'),
-    stack.indexOf('react-stack-bottom-frame')
+    stack.indexOf('react-stack-bottom-frame'),
   );
   if (idx !== -1) {
     idx = stack.lastIndexOf('\n', idx);
@@ -454,8 +532,8 @@ export const getFiberStackFrame = (fiber: Fiber): null | string => {
           (innerFiber) => {
             if (isCompositeFiber(innerFiber)) return true;
           },
-          true
-        )?.type
+          true,
+        )?.type,
       )
     : getType(fiber.type);
   if (!componentFunction || reentry) {
@@ -464,13 +542,13 @@ export const getFiberStackFrame = (fiber: Fiber): null | string => {
 
   const frame = describeNativeComponentFrame(
     componentFunction,
-    fiber.tag === ClassComponentTag
+    fiber.tag === ClassComponentTag,
   );
   return frame;
 };
 
 export const getFiberSource = async (
-  fiber: Fiber
+  fiber: Fiber,
 ): Promise<FiberSource | null> => {
   // only available in react <18
   const debugSource = fiber._debugSource;
@@ -501,7 +579,7 @@ export const getFiberSource = async (
 // https://github.com/facebook/react/blob/ac3e705a18696168acfcaed39dce0cfaa6be8836/packages/react-reconciler/src/ReactFiberComponentStack.js#L180
 export const describeFiber = (
   fiber: Fiber,
-  childFiber: Fiber | null
+  childFiber: Fiber | null,
 ): string => {
   const tag = fiber.tag as number;
   switch (tag) {
@@ -512,7 +590,7 @@ export const describeFiber = (
     case ForwardRefTag:
       return describeNativeComponentFrame(
         (fiber.type as { render: React.ComponentType<unknown> }).render,
-        false
+        false,
       );
     case FunctionComponentTag:
     case SimpleMemoComponentTag:
@@ -541,11 +619,7 @@ export const describeFiber = (
   }
 };
 
-export const describeDebugInfoFrame = (
-  name: string,
-  env?: string,
-  _debugLocation?: unknown
-): string => {
+export const describeDebugInfoFrame = (name: string, env?: string): string => {
   let result = `\n    in ${name}`;
   if (env) {
     result += ` (at ${env})`;
@@ -568,11 +642,7 @@ export const getFiberStackTrace = (workInProgress: Fiber): string => {
         for (let i = debugInfo.length - 1; i >= 0; i--) {
           const entry = debugInfo[i];
           if (typeof entry.name === 'string') {
-            info += describeDebugInfoFrame(
-              entry.name,
-              entry.env,
-              entry.debugLocation
-            );
+            info += describeDebugInfoFrame(entry.name, entry.env);
           }
         }
       }
@@ -602,7 +672,7 @@ export interface OwnerStackItem {
 }
 
 export const getOwnerStack = async (
-  stackTrace: string
+  stackTrace: string,
 ): Promise<OwnerStackItem[]> => {
   // parse the stack trace to extract component names
   // formats:

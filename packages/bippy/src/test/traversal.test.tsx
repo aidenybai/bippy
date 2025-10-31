@@ -2,16 +2,16 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { describe, expect, it, vi } from 'vitest';
-import type { ContextDependency, Fiber } from '../../types.js';
+import type { ContextDependency, Fiber } from '../types.js';
 import {
   instrument,
   traverseContexts,
   traverseProps,
   traverseState,
-} from '../../index.js';
+} from '../index.js';
 import React from 'react';
 import { render } from '@testing-library/react';
-import { ComplexComponent, CountContext, ExtraContext } from '../components.js';
+import { ComplexComponent, CountContext, ExtraContext } from './components.js';
 
 describe('traverseProps', () => {
   it('should return the props of the fiber', () => {

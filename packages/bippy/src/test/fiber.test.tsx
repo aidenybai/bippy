@@ -16,8 +16,8 @@ import {
   isHostFiber,
   isValidFiber,
   traverseFiber,
-} from '../../index.js';
-import type { Fiber } from '../../types.js';
+} from '../index.js';
+import type { Fiber } from '../types.js';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import {
@@ -27,7 +27,7 @@ import {
   BasicComponentWithMutation,
   BasicComponentWithUnmount,
   SlowComponent,
-} from '../components.js';
+} from './components.js';
 
 describe('isValidFiber', () => {
   it('should return true for a valid fiber', () => {

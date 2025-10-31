@@ -82,7 +82,7 @@ const MutationMask =
  * @see https://react.dev/reference/react/isValidElement
  */
 export const isValidElement = (
-  element: unknown
+  element: unknown,
 ): element is React.ReactElement =>
   typeof element === 'object' &&
   element != null &&
@@ -160,8 +160,8 @@ export const traverseContexts = (
   fiber: Fiber,
   selector: (
     nextValue: ContextDependency<unknown> | null | undefined,
-    prevValue: ContextDependency<unknown> | null | undefined
-  ) => boolean | void
+    prevValue: ContextDependency<unknown> | null | undefined,
+  ) => boolean | void,
 ): boolean => {
   try {
     const nextDependencies = fiber.dependencies;
@@ -204,8 +204,8 @@ export const traverseState = (
   fiber: Fiber,
   selector: (
     nextValue: MemoizedState | null | undefined,
-    prevValue: MemoizedState | null | undefined
-  ) => boolean | void
+    prevValue: MemoizedState | null | undefined,
+  ) => boolean | void,
 ): boolean => {
   try {
     let nextState: MemoizedState | null | undefined = fiber.memoizedState;
@@ -230,8 +230,8 @@ export const traverseProps = (
   selector: (
     propName: string,
     nextValue: unknown,
-    prevValue: unknown
-  ) => boolean | void
+    prevValue: unknown,
+  ) => boolean | void,
 ): boolean => {
   try {
     const nextProps = fiber.memoizedProps;
@@ -287,7 +287,7 @@ export const didFiberRender = (fiber: Fiber): boolean => {
 export const didFiberCommit = (fiber: Fiber): boolean => {
   return Boolean(
     (fiber.flags & (MutationMask | Cloned)) !== 0 ||
-      (fiber.subtreeFlags & (MutationMask | Cloned)) !== 0
+      (fiber.subtreeFlags & (MutationMask | Cloned)) !== 0,
   );
 };
 
@@ -383,7 +383,7 @@ export const shouldFilterFiber = (fiber: Fiber): boolean => {
  */
 export const getNearestHostFiber = (
   fiber: Fiber,
-  ascending = false
+  ascending = false,
 ): Fiber | null => {
   let hostFiber = traverseFiber(fiber, isHostFiber, ascending);
   if (!hostFiber) {
@@ -428,17 +428,17 @@ export const getNearestHostFibers = (fiber: Fiber): Fiber[] => {
 export function traverseFiber(
   fiber: Fiber | null,
   selector: (node: Fiber) => boolean | void,
-  ascending?: boolean
+  ascending?: boolean,
 ): Fiber | null;
 export function traverseFiber(
   fiber: Fiber | null,
   selector: (node: Fiber) => Promise<boolean | void>,
-  ascending?: boolean
+  ascending?: boolean,
 ): Promise<Fiber | null>;
 export function traverseFiber(
   fiber: Fiber | null,
   selector: (node: Fiber) => boolean | Promise<boolean | void> | void,
-  ascending = false
+  ascending = false,
 ): Fiber | null | Promise<Fiber | null> {
   const isAsync = fiber && selector(fiber) instanceof Promise;
 
@@ -446,21 +446,21 @@ export function traverseFiber(
     return traverseFiberAsync(
       fiber,
       selector as (node: Fiber) => Promise<boolean | void>,
-      ascending
+      ascending,
     );
   }
 
   return traverseFiberSync(
     fiber,
     selector as (node: Fiber) => boolean | void,
-    ascending
+    ascending,
   );
 }
 
 export const traverseFiberSync = (
   fiber: Fiber | null,
   selector: (node: Fiber) => boolean | void,
-  ascending = false
+  ascending = false,
 ): Fiber | null => {
   if (!fiber) return null;
   if (selector(fiber) === true) return fiber;
@@ -478,7 +478,7 @@ export const traverseFiberSync = (
 export const traverseFiberAsync = async (
   fiber: Fiber | null,
   selector: (node: Fiber) => Promise<boolean | void>,
-  ascending = false
+  ascending = false,
 ): Promise<Fiber | null> => {
   if (!fiber) return null;
   if ((await selector(fiber)) === true) return fiber;
@@ -503,7 +503,7 @@ export const traverseFiberAsync = async (
  * ```
  */
 export const getTimings = (
-  fiber?: Fiber | null
+  fiber?: Fiber | null,
 ): { selfTime: number; totalTime: number } => {
   const totalTime = fiber?.actualDuration ?? 0;
   let selfTime = totalTime;
@@ -521,7 +521,7 @@ export const getTimings = (
  */
 export const hasMemoCache = (fiber: Fiber): boolean => {
   return Boolean(
-    (fiber.updateQueue as unknown as { memoCache: unknown })?.memoCache
+    (fiber.updateQueue as unknown as { memoCache: unknown })?.memoCache,
   );
 };
 
@@ -543,7 +543,7 @@ export const getType = (type: unknown): null | React.ComponentType<unknown> => {
     return getType(
       (currentType as React.MemoExoticComponent<React.ComponentType<unknown>>)
         .type ||
-        (currentType as { render: React.ComponentType<unknown> }).render
+        (currentType as { render: React.ComponentType<unknown> }).render,
     );
   }
   return null;
@@ -574,7 +574,7 @@ export const getDisplayName = (type: unknown): null | string => {
  * Returns the build type of the React renderer.
  */
 export const detectReactBuildType = (
-  renderer: ReactRenderer
+  renderer: ReactRenderer,
 ): 'development' | 'production' => {
   try {
     if (typeof renderer.version === 'string' && renderer.bundleType > 0) {
@@ -619,7 +619,7 @@ export const getLatestFiber = (fiber: Fiber): Fiber => {
 export type RenderHandler = <S>(
   fiber: Fiber,
   phase: RenderPhase,
-  state?: S
+  state?: S,
 ) => unknown;
 
 export type RenderPhase = 'mount' | 'unmount' | 'update';
@@ -649,7 +649,7 @@ export const getFiberId = (fiber: Fiber): number => {
 export const mountFiberRecursively = (
   onRender: RenderHandler,
   firstChild: Fiber,
-  traverseSiblings: boolean
+  traverseSiblings: boolean,
 ): void => {
   let fiber: Fiber | null = firstChild;
 
@@ -702,7 +702,7 @@ export const updateFiberRecursively = (
   onRender: RenderHandler,
   nextFiber: Fiber,
   prevFiber: Fiber,
-  parentFiber: Fiber | null
+  parentFiber: Fiber | null,
 ): void => {
   if (!fiberIdMap.has(nextFiber)) {
     getFiberId(nextFiber);
@@ -745,7 +745,7 @@ export const updateFiberRecursively = (
         onRender,
         nextFallbackChildSet,
         prevFallbackChildSet,
-        nextFiber
+        nextFiber,
       );
     }
   } else if (prevDidTimeout && !nextDidTimeOut) {
@@ -791,7 +791,7 @@ export const updateFiberRecursively = (
           onRender,
           nextChild,
           prevChild,
-          shouldIncludeInTree ? nextFiber : parentFiber
+          shouldIncludeInTree ? nextFiber : parentFiber,
         );
       } else {
         mountFiberRecursively(onRender, nextChild, false);
@@ -813,7 +813,7 @@ export const unmountFiber = (onRender: RenderHandler, fiber: Fiber): void => {
 
 export const unmountFiberChildrenRecursively = (
   onRender: RenderHandler,
-  fiber: Fiber
+  fiber: Fiber,
 ): void => {
   // We might meet a nested Suspense on our way.
   const isTimedOutSuspense =
@@ -859,7 +859,7 @@ const rootInstanceMap = new WeakMap<
  */
 export const traverseRenderedFibers = (
   root: FiberRoot,
-  onRender: RenderHandler
+  onRender: RenderHandler,
 ): void => {
   const fiber = 'current' in root ? root.current : root;
 
@@ -940,7 +940,7 @@ export const injectOverrideMethods = () => {
           fiber: Fiber,
           id: string,
           path: string[],
-          value: unknown
+          value: unknown,
         ) => {
           let current = fiber.memoizedState;
           for (let i = 0; i < Number(id); i++) {
@@ -969,7 +969,7 @@ export const injectOverrideMethods = () => {
         _overrideProps = (
           fiber: Fiber,
           path: Array<string>,
-          value: unknown
+          value: unknown,
         ) => {
           prevOverrideProps(fiber, path, value);
           renderer.overrideProps?.(fiber, path, value);
@@ -982,7 +982,7 @@ export const injectOverrideMethods = () => {
         fiber: Fiber,
         contextType: unknown,
         path: string[],
-        value: unknown
+        value: unknown,
       ) => {
         let current: Fiber | null = fiber;
         while (current) {
@@ -1015,7 +1015,7 @@ const isPOJO = (maybePOJO: unknown): maybePOJO is Record<string, unknown> => {
 
 const buildPathsFromValue = (
   maybePOJO: Record<string, unknown> | unknown,
-  basePath: string[] = []
+  basePath: string[] = [],
 ): Array<{ path: string[]; value: unknown }> => {
   if (!isPOJO(maybePOJO)) {
     return [{ path: basePath, value: maybePOJO }];
@@ -1039,7 +1039,7 @@ const buildPathsFromValue = (
 
 export const overrideProps = (
   fiber: Fiber,
-  partialValue: Record<string, unknown>
+  partialValue: Record<string, unknown>,
 ) => {
   injectOverrideMethods();
 
@@ -1055,7 +1055,7 @@ export const overrideProps = (
 export const overrideHookState = (
   fiber: Fiber,
   id: number,
-  partialValue: Record<string, unknown> | unknown
+  partialValue: Record<string, unknown> | unknown,
 ) => {
   injectOverrideMethods();
 
@@ -1079,7 +1079,7 @@ export const overrideHookState = (
 export const overrideContext = (
   fiber: Fiber,
   contextType: unknown,
-  partialValue: Record<string, unknown> | unknown
+  partialValue: Record<string, unknown> | unknown,
 ) => {
   injectOverrideMethods();
 
@@ -1104,14 +1104,14 @@ export interface InstrumentationOptions {
   onCommitFiberRoot?: (
     rendererID: number,
     root: FiberRoot,
-    priority: number | void
+    priority: number | void,
   ) => unknown;
   onCommitFiberUnmount?: (rendererID: number, fiber: Fiber) => unknown;
   onPostCommitFiberRoot?: (rendererID: number, root: FiberRoot) => unknown;
   onScheduleFiberRoot?: (
     rendererID: number,
     root: FiberRoot,
-    children: React.ReactNode
+    children: React.ReactNode,
   ) => unknown;
 }
 
@@ -1128,7 +1128,7 @@ export interface InstrumentationOptions {
  * });
  */
 export const instrument = (
-  options: InstrumentationOptions
+  options: InstrumentationOptions,
 ): ReactDevToolsGlobalHook => {
   const rdtHook = getRDTHook(options.onActive);
 
@@ -1212,7 +1212,7 @@ export const secure = (
     isProduction?: boolean;
     minReactMajorVersion?: number;
     onError?: (error?: unknown) => unknown;
-  } = {}
+  } = {},
 ): InstrumentationOptions => {
   const onActive = options.onActive;
   const isRDTHookInstalled = hasRDTHook();
@@ -1318,14 +1318,14 @@ export const secure = (
  * });
  */
 export const onCommitFiberRoot = (
-  handler: (root: FiberRoot) => void
+  handler: (root: FiberRoot) => void,
 ): ReactDevToolsGlobalHook => {
   return instrument(
     secure({
       onCommitFiberRoot: (_, root) => {
         handler(root);
       },
-    })
+    }),
   );
 };
 
