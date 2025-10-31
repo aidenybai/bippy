@@ -1,5 +1,11 @@
 # bippy
 
+## 0.4.0
+
+### Minor Changes
+
+- feat: new sources subpackage, cleanups
+
 ## 0.3.34
 
 ### Patch Changes

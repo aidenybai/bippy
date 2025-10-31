@@ -244,7 +244,7 @@ traverseProps(fiber, (propName, next, prev) => {
 
 ### traverseState
 
-traverses the state (useState, useReducer, etc.) and effects that set state of a fiber.
+traverses the state (`useState`, `useReducer`, etc.) and effects that set state of a fiber.
 
 ```typescript
 import { traverseState } from 'bippy';
@@ -258,7 +258,7 @@ traverseState(fiber, (next, prev) => {
 
 ### traverseContexts
 
-traverses the contexts (useContext) of a fiber.
+traverses the contexts (`useContext`) of a fiber.
 
 ```typescript
 import { traverseContexts } from 'bippy';
@@ -464,7 +464,7 @@ the function accepts a fiber and a partial object containing the props to overri
 
 ### overrideHookState
 
-overrides hook state (usestate, usereducer, etc.) at runtime by hook id.
+overrides hook state (`useState`, `useReducer`, etc.) at runtime by hook id.
 
 ```typescript
 import { overrideHookState } from 'bippy';
@@ -504,6 +504,35 @@ overrideContext(fiber, ThemeContext, 'dark');
 ```
 
 the function traverses up the fiber tree to find the context provider matching the provided context type and overrides its value.
+
+### getSource
+
+gets the source code location of a composite fiber.
+
+```typescript
+import { getSource } from 'bippy/source';
+
+// random fiber on the DOM
+const hostFiber = getFiberFromHostInstance(document.querySelector('div'));
+
+// get nearest composite fiber up the tree
+const compositeFiber = traverseFiber(
+  hostFiber,
+  (fiber) => {
+    if (isCompositeFiber(fiber)) {
+      return fiber;
+    }
+  },
+  true,
+);
+
+const source = await getSource(compositeFiber);
+// {
+//   columnNumber: 12,
+//   fileName: 'path/to/file.tsx',
+//   lineNumber: 12,
+// }
+```
 
 ## examples
 

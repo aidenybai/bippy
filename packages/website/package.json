@@ -1,5 +1,5 @@
 {
-  "name": "@bippy/kitchen-sink",
+  "name": "@bippy/website",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +8,7 @@
     "dev": "rm -rf node_modules/.vite && pnpm i && vite"
   },
   "dependencies": {
-    "bippy": "^0.3.34",
+    "bippy": "^0.4.0",
     "clsx": "^2.1.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
