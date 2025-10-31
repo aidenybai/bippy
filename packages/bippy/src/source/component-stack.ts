@@ -350,6 +350,11 @@ export const describeFiber = (
   return stackFrame;
 };
 
+/**
+ * react 19 introduces the _debugStack property, which we can use to grab the stack.
+ * however, for versions that don't have this property, we need to construct
+ * a "fake" version of the owner stack
+ */
 export const getFallbackOwnerStack = (thisFiber: Fiber): string => {
   try {
     let componentStack = '';

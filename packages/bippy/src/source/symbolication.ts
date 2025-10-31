@@ -1,4 +1,10 @@
-import { decode, type SourceMapSegment } from '@jridgewell/sourcemap-codec';
+import {
+  decode,
+  SourceMapMappings,
+  type SourceMapSegment,
+} from '@jridgewell/sourcemap-codec';
+
+import { FiberSource } from './types.js';
 
 export interface DecodedSourceMapSection {
   map: {
@@ -62,62 +68,62 @@ const INLINE_SOURCEMAP_REGEX = /^data:application\/json[^,]+base64,/;
 const SOURCEMAP_REGEX =
   /(?:\/\/[@#][ \t]+sourceMappingURL=([^\s'"]+?)[ \t]*$)|(?:\/\*[@#][ \t]+sourceMappingURL=([^*]+?)[ \t]*(?:\*\/)[ \t]*$)/;
 
-export interface OriginalPosition {
-  column: null | number;
-  line: null | number;
-  source: null | string;
-}
-
-const lookupPosition = (
-  mappings: SourceMapSegment[][],
+const lookupSourceFromMappings = (
+  mappings: SourceMapMappings,
   sources: string[],
-  lineIndex: number,
+  lineIndexInMappings: number,
   column: number,
-): OriginalPosition => {
-  if (lineIndex < 0 || lineIndex >= mappings.length) {
-    return { column: null, line: null, source: null };
+): FiberSource | null => {
+  if (lineIndexInMappings < 0 || lineIndexInMappings >= mappings.length) {
+    return null;
   }
 
-  const lineMapping = mappings[lineIndex];
+  const lineMapping = mappings[lineIndexInMappings];
   if (!lineMapping || lineMapping.length === 0) {
-    return { column: null, line: null, source: null };
+    return null;
   }
 
-  let closestSegment: null | SourceMapSegment = null;
-  for (const segment of lineMapping) {
-    if (segment[0] <= column) {
-      closestSegment = segment;
+  let closestLineSegment: null | SourceMapSegment = null;
+  for (const lineSegment of lineMapping) {
+    if (lineSegment[0] <= column) {
+      closestLineSegment = lineSegment;
     } else {
       break;
     }
   }
 
-  if (!closestSegment || closestSegment.length < 4) {
-    return { column: null, line: null, source: null };
+  if (!closestLineSegment || closestLineSegment.length < 4) {
+    return null;
   }
 
-  const [, sourceIndex, sourceLine, sourceColumn] = closestSegment;
+  const [, sourceIndex, sourceLine, sourceColumn] = closestLineSegment;
 
   if (
     sourceIndex === undefined ||
     sourceLine === undefined ||
     sourceColumn === undefined
   ) {
-    return { column: null, line: null, source: null };
+    return null;
+  }
+
+  const fileName = sources[sourceIndex];
+
+  if (!fileName) {
+    return null;
   }
 
   return {
-    column: sourceColumn,
-    line: sourceLine + 1,
-    source: sources[sourceIndex] ?? null,
+    columnNumber: sourceColumn,
+    fileName,
+    lineNumber: sourceLine + 1,
   };
 };
 
-export const getOriginalPositionFor = (
+export const lookupSourceFromSourceMap = (
   sourceMap: SourceMap,
   line: number,
   column: number,
-): OriginalPosition => {
+): FiberSource | null => {
   if (sourceMap.sections) {
     let targetSection: DecodedSourceMapSection | null = null;
 
@@ -133,7 +139,7 @@ export const getOriginalPositionFor = (
     }
 
     if (!targetSection) {
-      return { column: null, line: null, source: null };
+      return null;
     }
 
     const relativeLine = line - targetSection.offset.line;
@@ -142,7 +148,7 @@ export const getOriginalPositionFor = (
         ? column - targetSection.offset.column
         : column;
 
-    return lookupPosition(
+    return lookupSourceFromMappings(
       targetSection.map.mappings,
       targetSection.map.sources,
       relativeLine,
@@ -150,7 +156,7 @@ export const getOriginalPositionFor = (
     );
   }
 
-  return lookupPosition(
+  return lookupSourceFromMappings(
     sourceMap.mappings,
     sourceMap.sources,
     line - 1,
