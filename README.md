@@ -505,6 +505,35 @@ overrideContext(fiber, ThemeContext, 'dark');
 
 the function traverses up the fiber tree to find the context provider matching the provided context type and overrides its value.
 
+### getSource
+
+gets the source code location of a composite fiber.
+
+```typescript
+import { getSource } from 'bippy/source';
+
+// random fiber on the DOM
+const hostFiber = getFiberFromHostInstance(document.querySelector('div'));
+
+// get nearest composite fiber up the tree
+const compositeFiber = traverseFiber(
+  hostFiber,
+  (fiber) => {
+    if (isCompositeFiber(fiber)) {
+      return fiber;
+    }
+  },
+  true,
+);
+
+const source = await getSource(compositeFiber);
+// {
+//   columnNumber: 12,
+//   fileName: 'path/to/file.tsx',
+//   lineNumber: 12,
+// }
+```
+
 ## examples
 
 the best way to understand bippy is to [read the source code](https://github.com/aidenybai/bippy/blob/main/src/core.ts). here are some examples of how you can use it:
