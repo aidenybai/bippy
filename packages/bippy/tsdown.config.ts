@@ -26,8 +26,9 @@ export default defineConfig([
     clean: true, // only run on first entry
     entry: {
       index: './src/index.ts',
+      core: './src/core.ts',
       source: './src/source/index.ts',
-      lite: './src/index-lite.ts',
+      ['install-hook-only']: './src/install-hook-only.ts',
     },
     format: ['esm', 'cjs'],
   },

@@ -1,5 +1,11 @@
 # bippy
 
+## 0.5.1
+
+### Patch Changes
+
+- fix: rename lite to install-hook-only
+
 ## 0.5.0
 
 ### Minor Changes

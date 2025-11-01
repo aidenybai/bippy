@@ -1,6 +1,6 @@
 {
   "name": "bippy",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "hack into react internals",
   "publishConfig": {
     "access": "public"
@@ -40,14 +40,24 @@
         "default": "./dist/index.cjs"
       }
     },
-    "./lite": {
+    "./core": {
       "import": {
-        "types": "./dist/lite.d.ts",
-        "default": "./dist/lite.js"
+        "types": "./dist/core.d.ts",
+        "default": "./dist/core.js"
       },
       "require": {
-        "types": "./dist/lite.d.cts",
-        "default": "./dist/lite.cjs"
+        "types": "./dist/core.d.cts",
+        "default": "./dist/core.cjs"
+      }
+    },
+    "./install-hook-only": {
+      "import": {
+        "types": "./dist/install-hook-only.d.ts",
+        "default": "./dist/install-hook-only.js"
+      },
+      "require": {
+        "types": "./dist/install-hook-only.d.cts",
+        "default": "./dist/install-hook-only.cjs"
       }
     },
     "./source": {

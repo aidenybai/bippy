@@ -1,3 +1,3 @@
-import './index-lite.js';
+import './install-hook-only.js';
 
 export * from './core.js';
