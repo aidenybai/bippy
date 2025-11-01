@@ -1,5 +1,11 @@
 # bippy
 
+## 0.5.0
+
+### Minor Changes
+
+- fix: overhaul source, introduce /lite
+
 ## 0.4.0
 
 ### Minor Changes
