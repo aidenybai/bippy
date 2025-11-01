@@ -8,50 +8,33 @@ import {
   hasRDTHook,
   isInstrumentationActive,
 } from 'bippy';
+import { type FiberSource, getSource } from 'bippy/dist/source';
 import React, {
   forwardRef,
   useEffect,
-  useImperativeHandle as useImperativeHandleOriginal,
+  useImperativeHandle,
   useMemo,
   useState,
 } from 'react';
 import ReactDOM from 'react-dom';
 import { Inspector as ReactInspector } from 'react-inspector';
 
-const useImperativeHandlePolyfill = (
-  ref: React.RefCallback<unknown> | React.RefObject<unknown>,
-  init: () => unknown,
-  deps: React.DependencyList,
+const throttle = <Args extends unknown[]>(
+  callback: (...args: Args) => void,
+  wait: number,
 ) => {
-  useEffect(() => {
-    if (ref) {
-      if (typeof ref === 'function') {
-        ref(init());
-      } else if (typeof ref === 'object' && 'current' in ref) {
-        ref.current = init();
-      }
-    }
-  }, deps);
-};
-
-const useImperativeHandle =
-  useImperativeHandleOriginal || useImperativeHandlePolyfill;
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const throttle = (fn: (...args: any[]) => void, wait: number) => {
-  let timeout: null | ReturnType<typeof setTimeout> = null;
-  return function (this: unknown, ...args: unknown[]) {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  return (...args: Args) => {
     if (!timeout) {
       timeout = setTimeout(() => {
-        fn.apply(this, args as never[]);
+        callback(...args);
         timeout = null;
       }, wait);
     }
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const theme: any = {
+const theme = {
   ARROW_ANIMATION_DURATION: '0',
   ARROW_COLOR: '#A0A0A0',
   ARROW_FONT_SIZE: 12,
@@ -116,6 +99,8 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
   ) => {
     const [element, setElement] = useState<Element | null>(null);
     const [currentFiber, setCurrentFiber] = useState<Fiber | null>(null);
+    const [currentFiberSource, setCurrentFiberSource] =
+      useState<FiberSource | null>(null);
     const [rect, setRect] = useState<DOMRect | null>(null);
     const [isActive, setIsActive] = useState(true);
     const [isEnabled, setIsEnabled] = useState(enabled);
@@ -125,9 +110,9 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
       if (!currentFiber) return null;
       const clonedFiber = { ...currentFiber };
       for (const key in clonedFiber) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const value = clonedFiber[key as keyof Fiber];
-        if (!value) delete clonedFiber[key as keyof Fiber];
+        const fiberKey = key as keyof Fiber;
+        const value = clonedFiber[fiberKey];
+        if (!value) delete clonedFiber[fiberKey];
       }
       return clonedFiber;
     }, [currentFiber]);
@@ -139,25 +124,31 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
         setRect(null);
       },
       enable: () => setIsEnabled(true),
-      inspectElement: (element: Element) => {
+      inspectElement: (targetElement: Element) => {
         if (!isEnabled) return;
-        setElement(element);
-        setRect(element.getBoundingClientRect());
+        setElement(targetElement);
+        setRect(targetElement.getBoundingClientRect());
       },
     }));
 
     useEffect(() => {
-      if (!element) return;
-      const fiber = getFiberFromHostInstance(element);
-      if (!fiber) return;
-      const latestFiber = getLatestFiber(fiber);
-      setCurrentFiber(latestFiber);
+      void (async () => {
+        if (!element) return;
+        const fiber = getFiberFromHostInstance(element);
+        if (!fiber) return;
+        const latestFiber = getLatestFiber(fiber);
+        const source = await getSource(latestFiber);
+        setCurrentFiber(latestFiber);
+        if (source) {
+          setCurrentFiberSource(source);
+        }
+      })();
     }, [element]);
 
     useEffect(() => {
       const handleMouseMove = (event: globalThis.MouseEvent) => {
-        const isActive = isInstrumentationActive() || hasRDTHook();
-        if (!isActive) {
+        const hasInstrumentation = isInstrumentationActive() || hasRDTHook();
+        if (!hasInstrumentation) {
           setIsActive(false);
           return;
         }
@@ -179,10 +170,10 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
           return;
         }
 
-        const element = document.elementFromPoint(event.clientX, event.clientY);
-        if (!element) return;
-        setElement(element);
-        setRect(element.getBoundingClientRect());
+        const hoveredElement = document.elementFromPoint(event.clientX, event.clientY);
+        if (!hoveredElement) return;
+        setElement(hoveredElement);
+        setRect(hoveredElement.getBoundingClientRect());
       };
 
       const throttledMouseMove = throttle(handleMouseMove, 16);
@@ -260,8 +251,7 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
               data={currentCleanedFiber}
               expandLevel={1}
               table={false}
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-              theme={theme}
+              theme={theme as never}
             />
           )}
 
@@ -292,6 +282,20 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
               }}
             >
               {`<${getDisplayName(currentFiber.type) || 'unknown'}>`}
+            </div>
+            <div
+              style={{
+                color: '#CCC',
+                fontSize: '0.75rem',
+              }}
+            >
+              {currentFiberSource ? (
+                <>
+                  {currentFiberSource.fileName.split('/').slice(-2).join('/')}{' '}
+                  <br />@ line {currentFiberSource.lineNumber}, column{' '}
+                  {currentFiberSource.columnNumber}
+                </>
+              ) : null}
             </div>
           </div>
         </div>
@@ -332,16 +336,16 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
 
 export const Inspector = forwardRef<InspectorHandle, InspectorProps>(
   (props, ref) => {
-    const [root, setRoot] = useState<null | ShadowRoot>(null);
+    const [root, setRoot] = useState<ShadowRoot | null>(null);
 
     useEffect(() => {
-      const div = document.createElement('div');
-      document.documentElement.appendChild(div);
-      const shadowRoot = div.attachShadow({ mode: 'open' });
+      const containerDiv = document.createElement('div');
+      document.documentElement.appendChild(containerDiv);
+      const shadowRoot = containerDiv.attachShadow({ mode: 'open' });
       setRoot(shadowRoot);
 
       return () => {
-        document.documentElement.removeChild(div);
+        document.documentElement.removeChild(containerDiv);
       };
     }, []);
 
