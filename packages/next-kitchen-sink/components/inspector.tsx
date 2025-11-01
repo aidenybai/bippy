@@ -2,7 +2,7 @@
 
 import 'bippy';
 import { getFiberFromHostInstance, getLatestFiber } from 'bippy';
-import { getSource } from 'bippy/dist/source';
+import { getSource, getOwnerStackSources } from 'bippy/dist/source';
 import { useEffect, useRef, useState } from 'react';
 
 import { cn } from './cn';
@@ -34,6 +34,7 @@ export function Inspector() {
         void (async () => {
           try {
             console.log(await getSource(latestFiber));
+            console.log(await getOwnerStackSources(latestFiber));
           } catch (error) {
             console.error('Error symbolicating stack:', error);
           }

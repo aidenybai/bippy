@@ -57,9 +57,6 @@ importers:
       '@vitest/coverage-istanbul':
         specifier: 2.1.8
         version: 2.1.8(vitest@2.1.8)
-      error-stack-parser-es:
-        specifier: ^1.0.5
-        version: 1.0.5
       esbuild:
         specifier: ^0.24.2
         version: 0.24.2
@@ -2154,9 +2151,6 @@ packages:
   entities@4.5.0:
     resolution: {integrity: sha512-V0hjH4dGPh9Ao5p0MoRY6BVqtwCjhz6vI5LT8AJ55H+4g9/4vbHx1I54fS0XuclLhDHArPQCiMjDxjaL8fPxhw==}
     engines: {node: '>=0.12'}
-
-  error-stack-parser-es@1.0.5:
-    resolution: {integrity: sha512-5qucVt2XcuGMcEGgWI7i+yZpmpByQ8J1lHhcL7PwqCwu9FPP3VUXzT4ltHe5i2z9dePwEHcDVOAfSnHsOlCXRA==}
 
   es-abstract@1.23.9:
     resolution: {integrity: sha512-py07lI0wjxAC/DcfK1S6G7iANonniZwTISvdPzk9hzeH0IZIshbuuFxLIU96OyF89Yb9hiqWn8M/bY83KY5vzA==}
@@ -5339,7 +5333,7 @@ snapshots:
       flatted: 3.3.2
       pathe: 1.1.2
       sirv: 3.0.0
-      tinyglobby: 0.2.13
+      tinyglobby: 0.2.15
       tinyrainbow: 1.2.0
       vitest: 2.1.8(@types/node@20.17.12)(@vitest/ui@2.1.8)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.36.0)
     optional: true
@@ -5701,8 +5695,6 @@ snapshots:
       strip-ansi: 6.0.1
 
   entities@4.5.0: {}
-
-  error-stack-parser-es@1.0.5: {}
 
   es-abstract@1.23.9:
     dependencies:

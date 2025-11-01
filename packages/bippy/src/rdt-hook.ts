@@ -1,3 +1,8 @@
+// IMPORTANT:
+// this file is super important to load the __REACT_DEVTOOLS_GLOBAL_HOOK__ object
+// without this, we can't stub the React DevTools global hook, we don't have a way to instrument the application
+// make sure you import this file first before anything else (particularly React)
+
 import type { ReactDevToolsGlobalHook, ReactRenderer } from './types.js';
 
 export const version = process.env.VERSION;
