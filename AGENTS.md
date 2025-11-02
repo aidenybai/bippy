@@ -1,8 +1,3 @@
----
-description: Codebase Guidelines
-alwaysApply: true
----
-
 - MUST: We use @antfu/ni. Use `ni` to install, `nr SCRIPT_NAME` to run script, `nun` to uninstall package
 - MUST: Use TypeScript interfaces over types
 - MUST: Use arrow functions over function declarations
