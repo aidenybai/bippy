@@ -11,7 +11,10 @@ import { FiberSource } from './types.js';
 
 const supportsWeakRef = typeof WeakRef !== 'undefined';
 
-const sourceMapCache = new Map<string, null | SourceMap | WeakRef<SourceMap>>();
+export const sourceMapCache = new Map<
+  string,
+  null | SourceMap | WeakRef<SourceMap>
+>();
 const pendingSourceMapFetches = new Map<
   string,
   null | Promise<null | SourceMap>
@@ -95,10 +98,6 @@ export const hasDebugSource = (
   );
 };
 
-export interface GetSourceOptions {
-  cache?: boolean;
-}
-
 /**
  * gets the source of where the component is used. available only in dev, for composite fibers.
  *
@@ -115,76 +114,49 @@ export interface GetSourceOptions {
  */
 export const getSource = async (
   fiber: Fiber,
-  options?: GetSourceOptions,
+  cache = true,
 ): Promise<FiberSource | null> => {
-  const shouldUseCache = options?.cache ?? true;
   if (hasDebugSource(fiber)) {
     const debugSource = fiber._debugSource;
     return debugSource || null;
   }
 
-  const ownerStackString = hasDebugStack(fiber)
-    ? formatOwnerStack(fiber._debugStack.stack)
-    : getFallbackOwnerStack(fiber);
-  const ownerStackFrames = parseStack(ownerStackString, { slice: 1 });
-  const nearestOwnerFrame = ownerStackFrames[0];
-  if (!nearestOwnerFrame?.file) {
-    return null;
-  }
-  const bundleSourceMap = await getCachedSourceMap(
-    nearestOwnerFrame.file,
-    shouldUseCache,
-  );
-  if (!bundleSourceMap || !nearestOwnerFrame.line || !nearestOwnerFrame.col) {
-    return null;
-  }
-  const mappedSource = lookupSourceFromSourceMap(
-    bundleSourceMap,
-    nearestOwnerFrame.line,
-    nearestOwnerFrame.col,
-  );
-  return mappedSource;
+  const ownerStack = getOwnerStack(fiber);
+
+  return getSourceFromStack(ownerStack, cache);
 };
 
-export const getOwnerStackSources = async (
-  fiber: Fiber,
-  options?: GetSourceOptions,
-): Promise<(Partial<FiberSource> & { functionName?: string })[]> => {
-  const shouldUseCache = options?.cache ?? true;
-  const ownerStackString = getFallbackOwnerStack(fiber);
-  const ownerStackFrames = parseStack(ownerStackString, {
-    includeInElement: true,
-  });
+export const getOwnerStack = (fiber: Fiber) => {
+  return hasDebugStack(fiber)
+    ? formatOwnerStack(fiber._debugStack.stack)
+    : getFallbackOwnerStack(fiber);
+};
 
-  const mappedEntries = await Promise.all(
-    ownerStackFrames.map(async (ownerFrame) => {
-      if (!ownerFrame.file || !ownerFrame.line || !ownerFrame.col) {
-        return {
-          fileName: ownerFrame.file,
-          lineNumber: ownerFrame.line,
-          columnNumber: ownerFrame.col,
-          functionName: ownerFrame.function,
-        };
-      }
-      const bundleSourceMap = await getCachedSourceMap(
-        ownerFrame.file,
-        shouldUseCache,
-      );
-      const source = bundleSourceMap
-        ? lookupSourceFromSourceMap(
-            bundleSourceMap,
-            ownerFrame.line,
-            ownerFrame.col,
-          )
-        : null;
-      return {
-        fileName: source?.fileName ?? ownerFrame.file,
-        lineNumber: source?.lineNumber ?? ownerFrame.line,
-        columnNumber: source?.columnNumber ?? ownerFrame.col,
-        functionName: ownerFrame.function,
-      };
-    }),
-  );
+export const getSourceFromStack = async (ownerStack: string, cache = true) => {
+  const stackFrames = parseStack(ownerStack, { slice: 1 });
+  const stackFrame = stackFrames[0];
+  if (!stackFrame?.file) {
+    return null;
+  }
+  const bundleSourceMap = await getCachedSourceMap(stackFrame.file, cache);
+  if (
+    bundleSourceMap &&
+    typeof stackFrame.line === 'number' &&
+    typeof stackFrame.col === 'number'
+  ) {
+    const source = lookupSourceFromSourceMap(
+      bundleSourceMap,
+      stackFrame.line,
+      stackFrame.col,
+    );
+    if (source) {
+      return source;
+    }
+  }
 
-  return mappedEntries;
+  return {
+    fileName: stackFrame.file,
+    lineNumber: stackFrame.line,
+    columnNumber: stackFrame.col,
+  };
 };

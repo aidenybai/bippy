@@ -170,7 +170,10 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
           return;
         }
 
-        const hoveredElement = document.elementFromPoint(event.clientX, event.clientY);
+        const hoveredElement = document.elementFromPoint(
+          event.clientX,
+          event.clientY,
+        );
         if (!hoveredElement) return;
         setElement(hoveredElement);
         setRect(hoveredElement.getBoundingClientRect());
@@ -291,7 +294,7 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
             >
               {currentFiberSource ? (
                 <>
-                  {currentFiberSource.fileName.split('/').slice(-2).join('/')}{' '}
+                  {currentFiberSource.fileName.split('/').slice(-2).join('/') || 'no source available'}{' '}
                   <br />@ line {currentFiberSource.lineNumber}, column{' '}
                   {currentFiberSource.columnNumber}
                 </>
