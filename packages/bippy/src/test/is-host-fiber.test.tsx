@@ -23,7 +23,6 @@ it('should return false for a composite fiber', () => {
       maybeCompositeFiber = fiberRoot.current.child;
     },
   });
-  console.log(__REACT_DEVTOOLS_GLOBAL_HOOK__)
 
   render(<Example />);
 

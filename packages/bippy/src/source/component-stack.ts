@@ -177,7 +177,6 @@ const describeNativeComponentFrame = (
         RunInRootFrame.DetermineComponentFrameRoot,
         // Configurable properties can be updated even if its writable descriptor
         // is set to `false`.
-        // $FlowFixMe[cannot-write]
         'name',
         { value: 'DetermineComponentFrameRoot' },
       );

@@ -23,6 +23,7 @@ const pendingSourceMapFetches = new Map<
 const getCachedSourceMap = async (
   file: string,
   useCache = true,
+  fetchFn?: (url: string) => Promise<Response>,
 ): Promise<null | SourceMap> => {
   if (useCache && sourceMapCache.has(file)) {
     const cachedValue = sourceMapCache.get(file);
@@ -44,7 +45,7 @@ const getCachedSourceMap = async (
     return pendingSourceMapFetches.get(file)!;
   }
 
-  const fetchPromise = getSourceMap(file);
+  const fetchPromise = getSourceMap(file, fetchFn);
   if (useCache) {
     pendingSourceMapFetches.set(file, fetchPromise);
   }
@@ -115,6 +116,7 @@ export const hasDebugSource = (
 export const getSource = async (
   fiber: Fiber,
   cache = true,
+  fetchFn?: (url: string) => Promise<Response>,
 ): Promise<FiberSource | null> => {
   if (hasDebugSource(fiber)) {
     const debugSource = fiber._debugSource;
@@ -123,7 +125,7 @@ export const getSource = async (
 
   const ownerStack = getOwnerStack(fiber);
 
-  return getSourceFromStack(ownerStack, cache);
+  return getSourceFromStack(ownerStack, cache, fetchFn);
 };
 
 export const getOwnerStack = (fiber: Fiber) => {
@@ -132,13 +134,21 @@ export const getOwnerStack = (fiber: Fiber) => {
     : getFallbackOwnerStack(fiber);
 };
 
-export const getSourceFromStack = async (ownerStack: string, cache = true) => {
+export const getSourceFromStack = async (
+  ownerStack: string,
+  cache = true,
+  fetchFn?: (url: string) => Promise<Response>,
+) => {
   const stackFrames = parseStack(ownerStack, { slice: 1 });
   const stackFrame = stackFrames[0];
   if (!stackFrame?.file) {
     return null;
   }
-  const bundleSourceMap = await getCachedSourceMap(stackFrame.file, cache);
+  const bundleSourceMap = await getCachedSourceMap(
+    stackFrame.file,
+    cache,
+    fetchFn,
+  );
   if (
     bundleSourceMap &&
     typeof stackFrame.line === 'number' &&
