@@ -6,10 +6,9 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   build: {
-    minify: false,
+    sourcemap: true,
   },
   define: {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     __VERSION__: `"v${JSON.parse(fs.readFileSync('../bippy/package.json', 'utf8')).version}"`,
   },
   plugins: [
