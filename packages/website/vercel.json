@@ -1,8 +1,5 @@
 {
-  "rewrites": [
-    {
-      "source": "/challenge",
-      "destination": "https://github.com/aidenybai/bippy/blob/main/challenge.md"
-    }
-  ]
+  "buildCommand": "pnpm --filter=bippy run build && pnpm --filter=@bippy/website run build",
+  "outputDirectory": "packages/website/dist",
+  "installCommand": "pnpm install --frozen-lockfile"
 }

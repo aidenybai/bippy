@@ -1,7 +1,6 @@
 import {
   detectReactBuildType,
   type Fiber,
-  getDisplayName,
   getFiberFromHostInstance,
   getLatestFiber,
   getRDTHook,
@@ -10,7 +9,11 @@ import {
   isInstrumentationActive,
   traverseFiber,
 } from 'bippy';
-import { type FiberSource, getSource } from 'bippy/dist/source';
+import {
+  type FiberSource,
+  getSource,
+  getDisplayNameFromSource,
+} from 'bippy/dist/source';
 import React, {
   forwardRef,
   useEffect,
@@ -103,6 +106,7 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
     const [currentFiber, setCurrentFiber] = useState<Fiber | null>(null);
     const [currentFiberSource, setCurrentFiberSource] =
       useState<FiberSource | null>(null);
+    const [displayName, setDisplayName] = useState<string | null>(null);
     const [rect, setRect] = useState<DOMRect | null>(null);
     const [isActive, setIsActive] = useState(true);
     const [isEnabled, setIsEnabled] = useState(enabled);
@@ -146,7 +150,9 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
         });
         if (!compositeFiber) return;
         const source = await getSource(compositeFiber);
+        const name = await getDisplayNameFromSource(compositeFiber);
         setCurrentFiber(compositeFiber);
+        setDisplayName(name);
         if (source) {
           setCurrentFiberSource(source);
         }
@@ -292,7 +298,7 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
                 padding: '0.25rem 0.5rem',
               }}
             >
-              {`<${getDisplayName(currentFiber.type) || 'unknown'}>`}
+              {`<${displayName || 'unknown'}>`}
             </div>
             <div
               style={{

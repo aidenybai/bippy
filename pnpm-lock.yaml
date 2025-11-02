@@ -186,8 +186,8 @@ importers:
   packages/website:
     dependencies:
       bippy:
-        specifier: ^0.5.2
-        version: 0.5.2(@types/react@19.0.4)(react@19.1.0)
+        specifier: workspace:*
+        version: link:../bippy
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -1907,11 +1907,6 @@ packages:
   better-path-resolve@1.0.0:
     resolution: {integrity: sha512-pbnl5XzGBdrFU/wT4jqmJVPn2B6UHPBOhzMQkY/SPUPB6QtUXtmBHBIwCbXJol93mOpGMnQyP/+BB19q04xj7g==}
     engines: {node: '>=4'}
-
-  bippy@0.5.2:
-    resolution: {integrity: sha512-791FKUs1Uz7X9FVt5DFH07RI/8kD2dU+EDhLRBxks6G/YXRrVfR4tkaLGiojA2QFxoBU+El2wHHZ4UJUL/XtGQ==}
-    peerDependencies:
-      react: '>=17.0.1'
 
   birpc@2.3.0:
     resolution: {integrity: sha512-ijbtkn/F3Pvzb6jHypHRyve2QApOCZDR25D/VnkY2G/lBNcXCTsnsCxgY4k4PkVB7zfwzYbY3O9Lcqe3xufS5g==}
@@ -5478,13 +5473,6 @@ snapshots:
   better-path-resolve@1.0.0:
     dependencies:
       is-windows: 1.0.2
-
-  bippy@0.5.2(@types/react@19.0.4)(react@19.1.0):
-    dependencies:
-      '@types/react-reconciler': 0.28.9(@types/react@19.0.4)
-      react: 19.1.0
-    transitivePeerDependencies:
-      - '@types/react'
 
   birpc@2.3.0: {}
 
