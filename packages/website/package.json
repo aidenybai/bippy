@@ -5,7 +5,8 @@
   "scripts": {
     "preview": "vite preview",
     "build": "vite build",
-    "dev": "rm -rf node_modules/.vite && pnpm i && vite"
+    "dev": "rm -rf node_modules/.vite && pnpm i && vite",
+    "build:watch": "vite build --watch & vite preview"
   },
   "dependencies": {
     "bippy": "workspace:*",

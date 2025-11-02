@@ -6,7 +6,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   build: {
-    minify: true,
+    minify: false,
     sourcemap: true,
   },
   define: {

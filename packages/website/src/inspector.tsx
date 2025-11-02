@@ -151,6 +151,7 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
         if (!compositeFiber) return;
         const source = await getSource(compositeFiber);
         const name = await getDisplayNameFromSource(compositeFiber);
+        console.log('name', name);
         setCurrentFiber(compositeFiber);
         setDisplayName(name);
         if (source) {
