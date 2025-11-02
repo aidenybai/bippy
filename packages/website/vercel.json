@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm --filter=bippy run build && pnpm --filter=@bippy/website run build",
-  "outputDirectory": "packages/website/dist",
-  "installCommand": "pnpm install --frozen-lockfile"
+  "buildCommand": "cd ../.. && pnpm --filter=bippy run build && pnpm --filter=@bippy/website run build",
+  "outputDirectory": "dist",
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile"
 }
