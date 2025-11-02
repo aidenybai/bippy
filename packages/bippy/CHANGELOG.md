@@ -1,5 +1,11 @@
 # bippy
 
+## 0.5.2
+
+### Patch Changes
+
+- fix: new source stack
+
 ## 0.5.1
 
 ### Patch Changes
