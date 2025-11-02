@@ -142,21 +142,18 @@ or, use via script tag:
 
 next, you can use the api to get data about the fiber tree. below is a (useful) subset of the api. for the full api, read the [source code](https://github.com/aidenybai/bippy/blob/main/src/core.ts).
 
-### onCommitFiberRoot
-
-a utility function that wraps the `instrument` function and sets the `onCommitFiberRoot` hook.
-
-```typescript
-import { onCommitFiberRoot } from 'bippy';
-
-onCommitFiberRoot((root) => {
-  console.log('root ready to commit', root);
-});
-```
+> **note for library maintainers**: if you're building a library and want to define your own utility functions while minimizing bundle size, you can use `bippy/install-hook-only` instead of the main `bippy` export. this only installs the react devtools hook without importing any utility functions, allowing you to import only what you need from `bippy/core` or define your own fiber utilities. that said, the full `bippy` package is only ~4kb gzipped, so bundle size is rarely a concern.
+>
+> ```typescript
+> import 'bippy/install-hook-only'; // only installs the hook
+> import { getRDTHook, traverseFiber } from 'bippy/core'; // import only what you need
+> import * as React from 'react'; // import react AFTER the hook is installed
+>
+> const hook = getRDTHook();
+> // define your own utilities or use only specific ones
+> ```
 
 ### instrument
-
-> the underlying implementation for the `onCommitFiberRoot()` function. this is optional, unless you want to plug into more less common, advanced functionality.
 
 patches `window.__REACT_DEVTOOLS_GLOBAL_HOOK__` with your handlers. must be imported before react, and must be initialized to properly run any other methods.
 
