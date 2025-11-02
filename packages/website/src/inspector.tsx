@@ -6,7 +6,9 @@ import {
   getLatestFiber,
   getRDTHook,
   hasRDTHook,
+  isCompositeFiber,
   isInstrumentationActive,
+  traverseFiber,
 } from 'bippy';
 import { type FiberSource, getSource } from 'bippy/dist/source';
 import React, {
@@ -137,8 +139,14 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
         const fiber = getFiberFromHostInstance(element);
         if (!fiber) return;
         const latestFiber = getLatestFiber(fiber);
-        const source = await getSource(latestFiber);
-        setCurrentFiber(latestFiber);
+        const compositeFiber = traverseFiber(latestFiber, (fiber) => {
+          if (isCompositeFiber(fiber)) {
+            return true;
+          }
+        });
+        if (!compositeFiber) return;
+        const source = await getSource(compositeFiber);
+        setCurrentFiber(compositeFiber);
         if (source) {
           setCurrentFiberSource(source);
         }
