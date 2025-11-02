@@ -294,11 +294,13 @@ export const RawInspector = forwardRef<InspectorHandle, InspectorProps>(
             >
               {currentFiberSource ? (
                 <>
-                  {currentFiberSource.fileName.split('/').slice(-2).join('/') || 'no source available'}{' '}
+                  {currentFiberSource.fileName.split('/').slice(-2).join('/')}{' '}
                   <br />@ line {currentFiberSource.lineNumber}, column{' '}
                   {currentFiberSource.columnNumber}
                 </>
-              ) : null}
+              ) : (
+                'no source available'
+              )}
             </div>
           </div>
         </div>

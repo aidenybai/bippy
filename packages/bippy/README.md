@@ -533,6 +533,13 @@ const source = await getSource(compositeFiber);
 // }
 ```
 
+> **caveats:**
+> - only available in dev mode
+> - only works for composite fibers (function/class components)
+> - captures the location where the component is _used_, not where it's _defined_
+> - in react 18, resolves `_debugSource` directly (see [react#31981](https://github.com/facebook/react/issues/31981))
+> - in react >18, `_debugSource` is not available for host fibers
+
 ## examples
 
 the best way to understand bippy is to [read the source code](https://github.com/aidenybai/bippy/blob/main/src/core.ts). here are some examples of how you can use it:
