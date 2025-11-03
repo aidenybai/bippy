@@ -3,7 +3,7 @@ import { getDisplayName } from '../core.js';
 import { parseStack } from './parse-stack.js';
 import { getOwnerStack } from './get-source.js';
 import { getCachedSourceMap } from './get-source.js';
-import { lookupSourceFromSourceMap } from './symbolication.js';
+import { getSourceFromSourceMap } from './symbolication.js';
 import { FiberSource } from './types.js';
 
 const extractComponentNameFromSource = (
@@ -68,7 +68,7 @@ export const getDisplayNameFromSource = async (
     typeof stackFrame.line === 'number' &&
     typeof stackFrame.col === 'number'
   ) {
-    source = lookupSourceFromSourceMap(
+    source = getSourceFromSourceMap(
       bundleSourceMap,
       stackFrame.line,
       stackFrame.col,

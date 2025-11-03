@@ -5,6 +5,7 @@ import {
 } from '@jridgewell/sourcemap-codec';
 
 import { FiberSource } from './types.js';
+import { SCHEME_REGEX } from './utils.js';
 
 export interface DecodedSourceMapSection {
   map: {
@@ -59,16 +60,13 @@ export interface StandardSourceMap {
   version: 3;
 }
 
-// has a scheme, e.g. http://, https://, file://, data:, etc.
-// https://datatracker.ietf.org/doc/html/rfc3986#section-3.1
-const SCHEME_REGEX = /^[a-zA-Z][a-zA-Z\d+\-.]*:/;
 // inline sourcemap, e.g. data:application/json;base64,...
 const INLINE_SOURCEMAP_REGEX = /^data:application\/json[^,]+base64,/;
 // sourcemap url, e.g. //@ sourceMappingURL=... or /* @ sourceMappingURL=... */ at the end of the file
 const SOURCEMAP_REGEX =
   /(?:\/\/[@#][ \t]+sourceMappingURL=([^\s'"]+?)[ \t]*$)|(?:\/\*[@#][ \t]+sourceMappingURL=([^*]+?)[ \t]*(?:\*\/)[ \t]*$)/;
 
-const lookupSourceFromMappings = (
+const getSourceFromMappings = (
   mappings: SourceMapMappings,
   sources: string[],
   lineIndexInMappings: number,
@@ -119,7 +117,7 @@ const lookupSourceFromMappings = (
   };
 };
 
-export const lookupSourceFromSourceMap = (
+export const getSourceFromSourceMap = (
   sourceMap: SourceMap,
   line: number,
   column: number,
@@ -148,7 +146,7 @@ export const lookupSourceFromSourceMap = (
         ? column - targetSection.offset.column
         : column;
 
-    return lookupSourceFromMappings(
+    return getSourceFromMappings(
       targetSection.map.mappings,
       targetSection.map.sources,
       relativeLine,
@@ -156,7 +154,7 @@ export const lookupSourceFromSourceMap = (
     );
   }
 
-  return lookupSourceFromMappings(
+  return getSourceFromMappings(
     sourceMap.mappings,
     sourceMap.sources,
     line - 1,

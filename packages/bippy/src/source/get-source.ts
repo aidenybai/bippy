@@ -4,7 +4,7 @@ import { Fiber } from '../types.js';
 import { formatOwnerStack, getFallbackOwnerStack } from './component-stack.js';
 import {
   getSourceMap,
-  lookupSourceFromSourceMap,
+  getSourceFromSourceMap,
   type SourceMap,
 } from './symbolication.js';
 import { FiberSource } from './types.js';
@@ -154,7 +154,7 @@ export const getSourceFromStack = async (
     typeof stackFrame.line === 'number' &&
     typeof stackFrame.col === 'number'
   ) {
-    const source = lookupSourceFromSourceMap(
+    const source = getSourceFromSourceMap(
       bundleSourceMap,
       stackFrame.line,
       stackFrame.col,
