@@ -146,8 +146,8 @@ next, you can use the api to get data about the fiber tree. below is a (useful) 
 >
 > ```typescript
 > import 'bippy/install-hook-only'; // only installs the hook
-> import * as React from 'react'; // import react AFTER the hook is installed
 > import { getRDTHook, traverseFiber } from 'bippy/core'; // import only what you need
+> import * as React from 'react'; // import react AFTER the hook is installed
 >
 > const hook = getRDTHook();
 > // define your own utilities or use only specific ones
