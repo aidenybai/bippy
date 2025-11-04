@@ -1,5 +1,11 @@
 # bippy
 
+## 0.5.4
+
+### Patch Changes
+
+- fix: query strings in file names
+
 ## 0.5.3
 
 ### Patch Changes
