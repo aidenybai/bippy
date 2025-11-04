@@ -40,4 +40,12 @@ export default defineConfig([
     minify: process.env.NODE_ENV === 'production',
     outDir: './dist',
   },
+  {
+    ...DEFAULT_OPTIONS,
+    entry: ['./src/install-hook-only.ts'],
+    format: ['iife'],
+    globalName: 'Bippy',
+    minify: process.env.NODE_ENV === 'production',
+    outDir: './dist',
+  },
 ]);
