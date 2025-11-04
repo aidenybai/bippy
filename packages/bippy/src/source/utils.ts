@@ -17,7 +17,8 @@ const ANONYMOUS_FILE_PATTERNS = ['<anonymous>', 'eval', ''] as const;
 const SOURCE_FILE_EXTENSION_REGEX = /\.(jsx|tsx|ts|js)$/;
 
 const BUNDLED_FILE_PATTERN_REGEX =
-  /\.(min|bundle|chunk|vendor|vendors|runtime|polyfill|polyfills)\.(js|mjs|cjs)$|(chunk|bundle|vendor|vendors|runtime|polyfill|polyfills|framework|app|main|index)[-_.][A-Za-z0-9_-]{4,}\.(js|mjs|cjs)$|[\da-f]{8,}\.(js|mjs|cjs)$|[-_.][\da-f]{20,}\.(js|mjs|cjs)$|\/dist\/|\/build\/|\/\.next\/|\/out\/|\.webpack\.|\.vite\.|\.turbopack\./i;
+  /(\.min|bundle|chunk|vendor|vendors|runtime|polyfill|polyfills)\.(js|mjs|cjs)$|(chunk|bundle|vendor|vendors|runtime|polyfill|polyfills|framework|app|main|index)[-_.][A-Za-z0-9_-]{4,}\.(js|mjs|cjs)$|[\da-f]{8,}\.(js|mjs|cjs)$|[-_.][\da-f]{20,}\.(js|mjs|cjs)$|\/dist\/|\/build\/|\/.next\/|\/out\/|\.webpack\.|\.vite\.|\.turbopack\./i;
+const QUERY_PARAMETER_PATTERN_REGEX = /^\?[\w~.\-]+(?:=[^&#]*)?(?:&[\w~.\-]+(?:=[^&#]*)?)*$/;
 
 export const normalizeFileName = (fileName: string): string => {
   if (!fileName) {
@@ -41,6 +42,14 @@ export const normalizeFileName = (fileName: string): string => {
     const schemeMatch = normalizedFileName.match(SCHEME_REGEX);
     if (schemeMatch) {
       normalizedFileName = normalizedFileName.slice(schemeMatch[0].length);
+    }
+  }
+
+  const queryParameterIndex = normalizedFileName.indexOf('?');
+  if (queryParameterIndex !== -1) {
+    const potentialQueryParameters = normalizedFileName.slice(queryParameterIndex);
+    if (QUERY_PARAMETER_PATTERN_REGEX.test(potentialQueryParameters)) {
+      normalizedFileName = normalizedFileName.slice(0, queryParameterIndex);
     }
   }
 
