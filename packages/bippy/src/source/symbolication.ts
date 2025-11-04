@@ -5,7 +5,6 @@ import {
 } from '@jridgewell/sourcemap-codec';
 
 import { FiberSource } from './types.js';
-import { SCHEME_REGEX } from './utils.js';
 
 export interface DecodedSourceMapSection {
   map: {
@@ -60,6 +59,9 @@ export interface StandardSourceMap {
   version: 3;
 }
 
+// has a scheme, e.g. http://, https://, file://, data:, etc.
+// https://datatracker.ietf.org/doc/html/rfc3986#section-3.1
+const SCHEME_REGEX = /^[a-zA-Z][a-zA-Z\d+\-.]*:/;
 // inline sourcemap, e.g. data:application/json;base64,...
 const INLINE_SOURCEMAP_REGEX = /^data:application\/json[^,]+base64,/;
 // sourcemap url, e.g. //@ sourceMappingURL=... or /* @ sourceMappingURL=... */ at the end of the file
@@ -234,10 +236,36 @@ const decodeIndexSourceMap = (rawSourceMap: IndexSourceMap): SourceMap => {
   };
 };
 
+const isFetchableUrl = (url: string): boolean => {
+  if (!url) {
+    return false;
+  }
+
+  const trimmedUrl = url.trim();
+
+  if (!trimmedUrl) {
+    return false;
+  }
+
+  const schemeMatch = trimmedUrl.match(SCHEME_REGEX);
+
+  if (!schemeMatch) {
+    return true;
+  }
+
+  const scheme = schemeMatch[0].toLowerCase();
+
+  return scheme === 'http:' || scheme === 'https:';
+};
+
 export const getSourceMap = async (
   bundleUrl: string,
   fetchFn: (url: string) => Promise<Response> = fetch,
 ): Promise<null | SourceMap> => {
+  if (!isFetchableUrl(bundleUrl)) {
+    return null;
+  }
+
   let bundleContent: string | undefined;
   try {
     const bundleResponse = await fetchFn(bundleUrl);
@@ -253,6 +281,9 @@ export const getSourceMap = async (
   const sourceMapUrl = getSourceMapUrl(bundleUrl, bundleContent);
 
   if (!sourceMapUrl) return null;
+  if (!isFetchableUrl(sourceMapUrl)) {
+    return null;
+  }
 
   try {
     const sourceMapResponse = await fetchFn(sourceMapUrl);
