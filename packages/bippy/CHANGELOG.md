@@ -1,5 +1,11 @@
 # bippy
 
+## 0.5.5
+
+### Patch Changes
+
+- fix: remove useless utils
+
 ## 0.5.4
 
 ### Patch Changes
