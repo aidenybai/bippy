@@ -1,5 +1,11 @@
 # bippy
 
+## 0.5.7
+
+### Patch Changes
+
+- fix: custom iife
+
 ## 0.5.6
 
 ### Patch Changes
