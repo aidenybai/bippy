@@ -44,6 +44,7 @@ export const isReactRefresh = (rdtHook = getRDTHook()): boolean => {
   if (typeof rdtHook.inject === 'function') {
     injectFnStr = rdtHook.inject.toString();
   }
+  // https://github.com/facebook/react/blob/8f8b336734d7c807f5aa11b0f31540e63302d789/packages/react-refresh/src/ReactFreshRuntime.js#L459
   return Boolean(injectFnStr?.includes('(injected)'));
 };
 
@@ -135,13 +136,14 @@ export const patchRDTHook = (onActive?: () => unknown): void => {
     const rdtHook = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
     if (!rdtHook) return;
     if (!rdtHook._instrumentationSource) {
-      const isReactDevtools = isRealReactDevtools();
       rdtHook.checkDCE = checkDCE;
       rdtHook.supportsFiber = true;
       rdtHook.supportsFlight = true;
       rdtHook.hasUnsupportedRendererAttached = false;
       rdtHook._instrumentationSource = BIPPY_INSTRUMENTATION_STRING;
       rdtHook._instrumentationIsActive = false;
+      // we need to be careful here (needs to be below _instrumentationSource) else it causes excessive recursion
+      const isReactDevtools = isRealReactDevtools(rdtHook);
       if (!isReactDevtools) {
         rdtHook.on = NO_OP;
       }
@@ -165,6 +167,7 @@ export const patchRDTHook = (onActive?: () => unknown): void => {
       rdtHook.inject = (renderer) => {
         const id = prevInject(renderer);
         _renderers.add(renderer);
+        rdtHook.renderers.set(id, renderer);
         rdtHook._instrumentationIsActive = true;
         onActiveListeners.forEach((listener) => listener());
         return id;
@@ -197,6 +200,7 @@ export const getRDTHook = (
   if (!hasRDTHook()) {
     return installRDTHook(onActive);
   }
+
   patchRDTHook(onActive);
   // must exist at this point
   return globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ as ReactDevToolsGlobalHook;
