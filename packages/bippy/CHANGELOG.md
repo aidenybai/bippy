@@ -1,5 +1,11 @@
 # bippy
 
+## 0.5.8
+
+### Patch Changes
+
+- fix: react refresh injection
+
 ## 0.5.7
 
 ### Patch Changes

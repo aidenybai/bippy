@@ -153,7 +153,8 @@ export const patchRDTHook = (onActive?: () => unknown): void => {
         return;
       }
       const prevInject = rdtHook.inject;
-      if (isReactRefresh(rdtHook) && !isReactDevtools) {
+      const isRefresh = isReactRefresh(rdtHook);
+      if (isRefresh && !isReactDevtools) {
         isReactRefreshOverride = true;
         // but since the underlying implementation doens't care,
         // it's ok: https://github.com/facebook/react/blob/18eaf51bd51fed8dfed661d64c306759101d0bfd/packages/react-refresh/src/ReactFreshRuntime.js#L430
@@ -167,7 +168,11 @@ export const patchRDTHook = (onActive?: () => unknown): void => {
       rdtHook.inject = (renderer) => {
         const id = prevInject(renderer);
         _renderers.add(renderer);
-        rdtHook.renderers.set(id, renderer);
+        if (isRefresh) {
+          // react refresh doesn't inject this properly
+          // https://github.com/facebook/react/blob/18eaf51bd51fed8dfed661d64c306759101d0bfd/packages/react-refresh/src/ReactFreshRuntime.js#L430
+          rdtHook.renderers.set(id, renderer);
+        }
         rdtHook._instrumentationIsActive = true;
         onActiveListeners.forEach((listener) => listener());
         return id;
