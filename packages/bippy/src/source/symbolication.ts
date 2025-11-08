@@ -68,6 +68,23 @@ const INLINE_SOURCEMAP_REGEX = /^data:application\/json[^,]+base64,/;
 const SOURCEMAP_REGEX =
   /(?:\/\/[@#][ \t]+sourceMappingURL=([^\s'"]+?)[ \t]*$)|(?:\/\*[@#][ \t]+sourceMappingURL=([^*]+?)[ \t]*(?:\*\/)[ \t]*$)/;
 
+const supportsWeakRef = typeof WeakRef !== 'undefined';
+
+export const sourceMapCache = new Map<
+  string,
+  null | SourceMap | WeakRef<SourceMap>
+>();
+const _pendingSourceMapRequests = new Map<
+  string,
+  null | Promise<null | SourceMap>
+>();
+
+const isWeakRefSourceMap = (
+  cachedValue: SourceMap | WeakRef<SourceMap>,
+): cachedValue is WeakRef<SourceMap> => {
+  return supportsWeakRef && cachedValue instanceof WeakRef;
+};
+
 const getSourceFromMappings = (
   mappings: SourceMapMappings,
   sources: string[],
@@ -258,7 +275,7 @@ const isFetchableUrl = (url: string): boolean => {
   return scheme === 'http:' || scheme === 'https:';
 };
 
-export const getSourceMap = async (
+export const getSourceMapImpl = async (
   bundleUrl: string,
   fetchFn: (url: string) => Promise<Response> = fetch,
 ): Promise<null | SourceMap> => {
@@ -295,4 +312,53 @@ export const getSourceMap = async (
   } catch {
     return null;
   }
+};
+
+export const getSourceMap = async (
+  file: string,
+  useCache = true,
+  fetchFn?: (url: string) => Promise<Response>,
+): Promise<null | SourceMap> => {
+  if (useCache && sourceMapCache.has(file)) {
+    const cachedValue = sourceMapCache.get(file);
+    if (cachedValue === null || cachedValue === undefined) {
+      return null;
+    }
+    if (isWeakRefSourceMap(cachedValue)) {
+      const sourceMap = cachedValue.deref();
+      if (sourceMap) {
+        return sourceMap;
+      }
+      sourceMapCache.delete(file);
+    } else {
+      return cachedValue;
+    }
+  }
+
+  if (useCache && _pendingSourceMapRequests.has(file)) {
+    return _pendingSourceMapRequests.get(file)!;
+  }
+
+  const fetchPromise = getSourceMapImpl(file, fetchFn);
+  if (useCache) {
+    _pendingSourceMapRequests.set(file, fetchPromise);
+  }
+
+  const sourceMap = await fetchPromise;
+  if (useCache) {
+    _pendingSourceMapRequests.delete(file);
+  }
+
+  if (useCache) {
+    if (sourceMap === null) {
+      sourceMapCache.set(file, null);
+    } else {
+      sourceMapCache.set(
+        file,
+        supportsWeakRef ? new WeakRef(sourceMap) : sourceMap,
+      );
+    }
+  }
+
+  return sourceMap;
 };

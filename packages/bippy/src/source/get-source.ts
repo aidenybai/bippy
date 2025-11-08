@@ -2,72 +2,8 @@ import { parseStack } from './parse-stack.js';
 
 import { Fiber } from '../types.js';
 import { formatOwnerStack, getFallbackOwnerStack } from './component-stack.js';
-import {
-  getSourceMap,
-  getSourceFromSourceMap,
-  type SourceMap,
-} from './symbolication.js';
+import { getSourceFromSourceMap, getSourceMap } from './symbolication.js';
 import { FiberSource } from './types.js';
-
-const supportsWeakRef = typeof WeakRef !== 'undefined';
-
-export const sourceMapCache = new Map<
-  string,
-  null | SourceMap | WeakRef<SourceMap>
->();
-const pendingSourceMapFetches = new Map<
-  string,
-  null | Promise<null | SourceMap>
->();
-
-export const getCachedSourceMap = async (
-  file: string,
-  useCache = true,
-  fetchFn?: (url: string) => Promise<Response>,
-): Promise<null | SourceMap> => {
-  if (useCache && sourceMapCache.has(file)) {
-    const cachedValue = sourceMapCache.get(file);
-    if (cachedValue === null || cachedValue === undefined) {
-      return null;
-    }
-    if (supportsWeakRef && cachedValue instanceof WeakRef) {
-      const sourceMap = cachedValue.deref();
-      if (sourceMap) {
-        return sourceMap;
-      }
-      sourceMapCache.delete(file);
-    } else {
-      return cachedValue as SourceMap;
-    }
-  }
-
-  if (useCache && pendingSourceMapFetches.has(file)) {
-    return pendingSourceMapFetches.get(file)!;
-  }
-
-  const fetchPromise = getSourceMap(file, fetchFn);
-  if (useCache) {
-    pendingSourceMapFetches.set(file, fetchPromise);
-  }
-
-  const sourceMap = await fetchPromise;
-  if (useCache) {
-    pendingSourceMapFetches.delete(file);
-  }
-
-  if (useCache) {
-    if (sourceMap === null) {
-      sourceMapCache.set(file, null);
-    } else {
-      sourceMapCache.set(
-        file,
-        supportsWeakRef ? new WeakRef(sourceMap) : sourceMap,
-      );
-    }
-  }
-
-  return sourceMap;
-};
 
 export const hasDebugStack = (
   fiber: Fiber,
@@ -144,11 +80,7 @@ export const getSourceFromStack = async (
   if (!stackFrame?.file) {
     return null;
   }
-  const bundleSourceMap = await getCachedSourceMap(
-    stackFrame.file,
-    cache,
-    fetchFn,
-  );
+  const bundleSourceMap = await getSourceMap(stackFrame.file, cache, fetchFn);
   if (
     bundleSourceMap &&
     typeof stackFrame.line === 'number' &&

@@ -2,8 +2,7 @@ import { Fiber } from '../types.js';
 import { getDisplayName } from '../core.js';
 import { parseStack } from './parse-stack.js';
 import { getOwnerStack } from './get-source.js';
-import { getCachedSourceMap } from './get-source.js';
-import { getSourceFromSourceMap } from './symbolication.js';
+import { getSourceFromSourceMap, getSourceMap } from './symbolication.js';
 import { FiberSource } from './types.js';
 
 const extractComponentNameFromSource = (
@@ -56,7 +55,7 @@ export const getDisplayNameFromSource = async (
     return getDisplayName(fiber.type);
   }
 
-  const bundleSourceMap = await getCachedSourceMap(stackFrame.file, cache, fetchFn);
+  const bundleSourceMap = await getSourceMap(stackFrame.file, cache, fetchFn);
 
   if (!bundleSourceMap) {
     return getDisplayName(fiber.type);
