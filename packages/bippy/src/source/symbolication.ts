@@ -276,7 +276,7 @@ const isFetchableUrl = (url: string): boolean => {
 };
 
 export const isStandardSourceMap = (
-  sourceMap: IndexSourceMap | StandardSourceMap | RawSourceMap,
+  sourceMap: IndexSourceMap | StandardSourceMap | RawSourceMap | SourceMap,
 ): sourceMap is StandardSourceMap => {
   return !('sections' in sourceMap);
 };
