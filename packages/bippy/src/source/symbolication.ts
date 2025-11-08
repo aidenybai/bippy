@@ -275,6 +275,12 @@ const isFetchableUrl = (url: string): boolean => {
   return scheme === 'http:' || scheme === 'https:';
 };
 
+export const isStandardSourceMap = (
+  sourceMap: IndexSourceMap | StandardSourceMap | RawSourceMap,
+): sourceMap is StandardSourceMap => {
+  return !('sections' in sourceMap);
+};
+
 export const getSourceMapImpl = async (
   bundleUrl: string,
   fetchFn: (url: string) => Promise<Response> = fetch,
@@ -306,9 +312,9 @@ export const getSourceMapImpl = async (
     const sourceMapResponse = await fetchFn(sourceMapUrl);
     const rawSourceMap = (await sourceMapResponse.json()) as RawSourceMap;
 
-    return 'sections' in rawSourceMap
-      ? decodeIndexSourceMap(rawSourceMap)
-      : decodeStandardSourceMap(rawSourceMap);
+    return isStandardSourceMap(rawSourceMap)
+      ? decodeStandardSourceMap(rawSourceMap)
+      : decodeIndexSourceMap(rawSourceMap);
   } catch {
     return null;
   }
