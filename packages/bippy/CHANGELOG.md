@@ -1,5 +1,11 @@
 # bippy
 
+## 0.5.9
+
+### Patch Changes
+
+- fix: sourcemap types
+
 ## 0.5.8
 
 ### Patch Changes
