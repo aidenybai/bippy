@@ -1,5 +1,11 @@
 # bippy
 
+## 0.5.10
+
+### Patch Changes
+
+- fix: isStandardSourceMap type
+
 ## 0.5.9
 
 ### Patch Changes
