@@ -133,15 +133,34 @@ this package should be imported before a React app runs. this will add a special
 npm install bippy
 ```
 
-or, use via script tag:
 
-```html
-<script src="https://unpkg.com/bippy"></script>
+since bippy needs to be imported before react, some bundlers require specific configuration to ensure the correct import order.
+
+### next.js
+
+in next.js 15.3+, use the [`instrumentation-client.js`](https://nextjs.org/docs/app/api-reference/file-conventions/instrumentation-client) file to ensure bippy loads before react. create this file at the root of your application (or inside the `src` folder if you're using the src directory structure):
+
+```typescript
+// instrumentation-client.ts
+import 'bippy/install-hook-only';
 ```
 
-> this will cause bippy to be accessible under a `window.Bippy` global.
+this file executes before react hydration, making it the ideal place to initialize bippy.
 
-next, you can use the api to get data about the fiber tree. below is a (useful) subset of the api. for the full api, read the [source code](https://github.com/aidenybai/bippy/blob/main/src/core.ts).
+### vite
+
+in vite, import bippy at the very top of your main entry point (typically `src/main.tsx` or `src/main.ts`) before any react imports:
+
+```typescript
+// src/main.tsx
+import 'bippy/install-hook-only';
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+
+// ... rest of your code
+```
+
+the import order is critical: bippy must be imported before any react packages.
 
 > **note for library maintainers**: if you're building a library and want to define your own utility functions while minimizing bundle size, you can use `bippy/install-hook-only` instead of the main `bippy` export. this only installs the react devtools hook without importing any utility functions, allowing you to import only what you need from `bippy/core` or define your own fiber utilities. that said, the full `bippy` package is only ~4kb gzipped, so bundle size is rarely a concern.
 >
@@ -153,6 +172,8 @@ next, you can use the api to get data about the fiber tree. below is a (useful) 
 > const hook = getRDTHook();
 > // define your own utilities or use only specific ones
 > ```
+
+## API reference
 
 ### instrument
 
