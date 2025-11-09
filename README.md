@@ -125,14 +125,13 @@ bippy works by monkey-patching `window.__REACT_DEVTOOLS_GLOBAL_HOOK__` with our 
 
 ## how to use
 
-you can either install via a npm (recommended) or a script tag.
+we recommend installing via npm.
 
 this package should be imported before a React app runs. this will add a special object to the global which is used by React for providing its internals to the tool for analysis (React Devtools does the same). as soon as React library is loaded and attached to the tool, bippy starts collecting data about what is going on in React's internals.
 
 ```shell
 npm install bippy
 ```
-
 
 since bippy needs to be imported before react, some bundlers require specific configuration to ensure the correct import order.
 
@@ -556,6 +555,7 @@ const source = await getSource(compositeFiber);
 ```
 
 > **caveats:**
+>
 > - only available in dev mode
 > - only works for composite fibers (function/class components)
 > - captures the location where the component is _used_, not where it's _defined_
