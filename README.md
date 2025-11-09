@@ -562,6 +562,65 @@ const source = await getSource(compositeFiber);
 > - in react 18, resolves `_debugSource` directly (see [react#31981](https://github.com/facebook/react/issues/31981))
 > - in react >18, `_debugSource` is not available for host fibers
 
+### getNearestValidSource
+
+finds the nearest available source location by traversing up the fiber tree to find the nearest composite fiber with a valid source file.
+
+a "valid source" is a source file that is not bundled, minified, or from node_modules. this ensures you get meaningful file paths that point to your actual source code rather than build artifacts.
+
+```typescript
+import { getNearestValidSource } from 'bippy/source';
+
+const hostFiber = getFiberFromHostInstance(document.querySelector('div'));
+const source = await getNearestValidSource(hostFiber);
+if (source) {
+  console.log(`${source.fileName}:${source.lineNumber}:${source.columnNumber}`);
+}
+```
+
+### getSourceFromHostInstance
+
+gets the source location from a DOM node or element by finding its associated fiber.
+
+```typescript
+import { getSourceFromHostInstance } from 'bippy/source';
+
+const element = document.querySelector('.my-component');
+const source = await getSourceFromHostInstance(element);
+if (source) {
+  console.log(`Component defined at ${source.fileName}:${source.lineNumber}`);
+}
+```
+
+### getOwnerStack
+
+gets the owner stack for a fiber, either from react's `_debugStack` or by constructing a fallback stack.
+
+```typescript
+import { getOwnerStack } from 'bippy/source';
+
+const stack = getOwnerStack(fiber);
+console.log(stack);
+// example output:
+// at TodoItem (rsc://React/Server/file:///path/to/project/.next/server/chunks/ssr/chunk.js)
+// at TodoList (rsc://React/Server/file:///path/to/project/.next/server/chunks/ssr/chunk.js)
+```
+
+### getSourceFromStack
+
+parses a stack trace and returns the source location by analyzing source maps.
+
+```typescript
+import { getSourceFromStack } from 'bippy/source';
+
+const source = await getSourceFromStack(stackTrace);
+// {
+//   columnNumber: 5,
+//   fileName: '/path/to/component.tsx',
+//   lineNumber: 42,
+// }
+```
+
 ## examples
 
 the best way to understand bippy is to [read the source code](https://github.com/aidenybai/bippy/blob/main/src/core.ts). here are some examples of how you can use it:
