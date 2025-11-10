@@ -592,40 +592,7 @@ if (source) {
 }
 ```
 
-### getOwnerStack
-
-gets the owner stack for a fiber, either from react's `_debugStack` or by constructing a fallback stack.
-
-```typescript
-import { getOwnerStack } from 'bippy/source';
-
-const stack = getOwnerStack(fiber);
-console.log(stack);
-// example output:
-// at TodoItem (rsc://React/Server/file:///path/to/project/.next/server/chunks/ssr/chunk.js)
-// at TodoList (rsc://React/Server/file:///path/to/project/.next/server/chunks/ssr/chunk.js)
-```
-
-### getSourceFromStack
-
-parses a stack trace and returns the source location by analyzing source maps.
-
-```typescript
-import { getSourceFromStack } from 'bippy/source';
-
-const source = await getSourceFromStack(stackTrace);
-// {
-//   columnNumber: 5,
-//   fileName: '/path/to/component.tsx',
-//   lineNumber: 42,
-// }
-```
-
-## examples
-
-the best way to understand bippy is to [read the source code](https://github.com/aidenybai/bippy/blob/main/src/core.ts). here are some examples of how you can use it:
-
-### a mini react-scan
+## example
 
 here's a mini toy version of [`react-scan`](https://github.com/aidenybai/react-scan) that highlights renders in your app.
 
@@ -695,101 +662,6 @@ instrument(
          */
         const hostFiber = getNearestHostFiber(fiber);
         highlightFiber(hostFiber);
-      });
-    },
-  }),
-);
-```
-
-### a mini why-did-you-render
-
-here's a mini toy version of [`why-did-you-render`](https://github.com/welldone-software/why-did-you-render) that logs why components re-render.
-
-```javascript
-import {
-  instrument,
-  secure,
-  traverseRenderedFibers,
-  isCompositeFiber,
-  getDisplayName,
-  traverseProps,
-  traverseContexts,
-  traverseState,
-} from 'bippy'; // must be imported BEFORE react
-
-instrument(
-  secure({
-    onCommitFiberRoot(rendererID, root) {
-      traverseRenderedFibers(root, (fiber) => {
-        /**
-         * `isCompositeFiber` is a utility function that checks if a fiber is a composite fiber.
-         * a composite fiber is a fiber that represents a function or class component.
-         */
-        if (!isCompositeFiber(fiber)) return;
-
-        /**
-         * `getDisplayName` is a utility function that gets the display name of a fiber.
-         */
-        const displayName = getDisplayName(fiber);
-        if (!displayName) return;
-
-        const changes = [];
-
-        /**
-         * `traverseProps` is a utility function that traverses the props of a fiber.
-         */
-        traverseProps(fiber, (propName, next, prev) => {
-          if (next !== prev) {
-            changes.push({
-              name: `prop ${propName}`,
-              prev,
-              next,
-            });
-          }
-        });
-
-        let contextId = 0;
-        /**
-         * `traverseContexts` is a utility function that traverses the contexts of a fiber.
-         * Contexts don't have a "name" like props, so we use an id to identify them.
-         */
-        traverseContexts(fiber, (next, prev) => {
-          if (next !== prev) {
-            changes.push({
-              name: `context ${contextId}`,
-              prev,
-              next,
-              contextId,
-            });
-          }
-          contextId++;
-        });
-
-        let stateId = 0;
-        /**
-         * `traverseState` is a utility function that traverses the state of a fiber.
-         *
-         * State don't have a "name" like props, so we use an id to identify them.
-         */
-        traverseState(fiber, (value, prevValue) => {
-          if (value !== prevValue) {
-            changes.push({
-              name: `state ${stateId}`,
-              prev: prevValue,
-              next: value,
-            });
-          }
-          stateId++;
-        });
-
-        console.group(
-          `%c${displayName}`,
-          'background: hsla(0,0%,70%,.3); border-radius:3px; padding: 0 2px;',
-        );
-        for (const { name, prev, next } of changes) {
-          console.log(`${name}:`, prev, '!==', next);
-        }
-        console.groupEnd();
       });
     },
   }),
