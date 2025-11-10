@@ -141,7 +141,7 @@ in next.js 15.3+, use the [`instrumentation-client.js`](https://nextjs.org/docs/
 
 ```typescript
 // instrumentation-client.ts
-import 'bippy/install-hook-only';
+import 'bippy';
 ```
 
 this file executes before react hydration, making it the ideal place to initialize bippy.
@@ -152,7 +152,7 @@ in vite, import bippy at the very top of your main entry point (typically `src/m
 
 ```typescript
 // src/main.tsx
-import 'bippy/install-hook-only';
+import 'bippy';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -161,7 +161,8 @@ import { createRoot } from 'react-dom/client';
 
 the import order is critical: bippy must be imported before any react packages.
 
-> **note for library maintainers**: if you're building a library and want to define your own utility functions while minimizing bundle size, you can use `bippy/install-hook-only` instead of the main `bippy` export. this only installs the react devtools hook without importing any utility functions, allowing you to import only what you need from `bippy/core` or define your own fiber utilities. that said, the full `bippy` package is only ~4kb gzipped, so bundle size is rarely a concern.
+> **note for library maintainers**: if you're building a library and want to define your own utility functions while minimizing bundle size, you can use `bippy/install-hook-only` (~90 bytes) instead of the main `bippy` export. this only installs the react devtools hook without importing any utility functions, allowing you to import only what you need from `bippy/core` or define your own fiber utilities. that said, the full `bippy` package is only ~4kb gzipped, so bundle size is rarely a concern.
+
 >
 > ```typescript
 > import 'bippy/install-hook-only'; // only installs the hook
