@@ -1,0 +1,31 @@
+{
+  "{{chrome}}.manifest_version": 3,
+  "{{firefox}}.manifest_version": 2,
+  "icons": {
+    "16": "icon/bippy.png",
+    "32": "icon/bippy.png",
+    "48": "icon/bippy.png",
+    "96": "icon/bippy.png",
+    "128": "icon/bippy.png"
+  },
+  "background": {
+    "{{chrome}}.service_worker": "src/background.ts",
+    "{{firefox}}.scripts": ["src/background.ts"]
+  },
+  "{{chrome}}.host_permissions": ["<all_urls>"],
+  "{{firefox}}.permissions": ["<all_urls>"],
+  "devtools_page": "src/devtools.html",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content-script.ts"],
+      "{{chrome}}.world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content-script-bridge.ts"],
+      "run_at": "document_start"
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--sys-color-base, #ffffff);
+  color: var(--sys-color-on-surface, #000000);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-color-scheme: dark) {
+  html,
+  body {
+    background-color: var(--sys-color-base, #1e1e1e);
+    color: var(--sys-color-on-surface, #cccccc);
+  }
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+.panel-container {
+  padding: 20px;
+}
+
+.panel-container h1 {
+  margin: 0 0 10px 0;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--sys-color-on-surface, inherit);
+}
+
+.panel-container p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--sys-color-on-surface-subtle, rgba(0, 0, 0, 0.6));
+}
+
+@media (prefers-color-scheme: dark) {
+  .panel-container p {
+    color: var(--sys-color-on-surface-subtle, rgba(255, 255, 255, 0.6));
+  }
+}
