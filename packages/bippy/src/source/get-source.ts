@@ -81,7 +81,12 @@ export const getSource = async (
 
   const ownerStack = getOwnerStack(fiber);
 
-  return getSourceFromStack(ownerStack, cache, fetchFn);
+  return getSourceFromStack(
+    ownerStack,
+    undefined,
+    cache,
+    fetchFn,
+  ) as Promise<FiberSource | null>;
 };
 
 export const getOwnerStack = (fiber: Fiber): string => {
@@ -92,35 +97,43 @@ export const getOwnerStack = (fiber: Fiber): string => {
 
 export const getSourceFromStack = async (
   ownerStack: string,
+  slice?: number,
   cache = true,
   fetchFn?: (url: string) => Promise<Response>,
-) => {
-  const stackFrames = parseStack(ownerStack, { slice: 1 });
-  const stackFrame = stackFrames[0];
-  if (!stackFrame?.file) {
-    return null;
-  }
-  const bundleSourceMap = await getSourceMap(stackFrame.file, cache, fetchFn);
-  if (
-    bundleSourceMap &&
-    typeof stackFrame.line === 'number' &&
-    typeof stackFrame.col === 'number'
-  ) {
-    const source = getSourceFromSourceMap(
-      bundleSourceMap,
-      stackFrame.line,
-      stackFrame.col,
-    );
-    if (source) {
-      return source;
+): Promise<FiberSource | FiberSource[] | null> => {
+  const stackFrames = parseStack(ownerStack, { slice: slice ?? 1 });
+  const sources: FiberSource[] = [];
+
+  for (const stackFrame of stackFrames) {
+    if (!stackFrame?.file) {
+      continue;
     }
+
+    const bundleSourceMap = await getSourceMap(stackFrame.file, cache, fetchFn);
+    if (
+      bundleSourceMap &&
+      typeof stackFrame.line === 'number' &&
+      typeof stackFrame.col === 'number'
+    ) {
+      const source = getSourceFromSourceMap(
+        bundleSourceMap,
+        stackFrame.line,
+        stackFrame.col,
+      );
+      if (source) {
+        sources.push(source);
+        continue;
+      }
+    }
+
+    sources.push({
+      fileName: stackFrame.file,
+      lineNumber: stackFrame.line,
+      columnNumber: stackFrame.col,
+    });
   }
 
-  return {
-    fileName: stackFrame.file,
-    lineNumber: stackFrame.line,
-    columnNumber: stackFrame.col,
-  };
+  return slice !== undefined ? sources : (sources[0] ?? null);
 };
 
 export const normalizeFileName = (fileName: string): string => {
@@ -247,8 +260,13 @@ export const getNearestValidSource = async (
       continue;
     }
 
-    const source = await getSourceFromStack(stackFrame.raw, cache, fetchFn);
-    if (source) {
+    const source = await getSourceFromStack(
+      stackFrame.raw,
+      undefined,
+      cache,
+      fetchFn,
+    );
+    if (source && !Array.isArray(source)) {
       const fileName = normalizeFileName(source.fileName);
       return {
         fileName,
