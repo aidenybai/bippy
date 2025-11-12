@@ -142,6 +142,7 @@ export const getSourcesFromStack = async (
       fileName: stackFrame.file,
       lineNumber: stackFrame.line,
       columnNumber: stackFrame.col,
+      functionName: stackFrame.function,
     });
   }
 
@@ -255,6 +256,7 @@ export const getNearestValidSource = async (
           fileName,
           lineNumber: source.lineNumber,
           columnNumber: source.columnNumber,
+          functionName: source.functionName,
         };
       }
     }
@@ -279,6 +281,7 @@ export const getNearestValidSource = async (
         fileName,
         lineNumber: source.lineNumber,
         columnNumber: source.columnNumber,
+        functionName: source.functionName,
       };
     }
     const fileName = normalizeFileName(stackFrame.file);
@@ -286,6 +289,7 @@ export const getNearestValidSource = async (
       fileName,
       lineNumber: stackFrame.line,
       columnNumber: stackFrame.col,
+      functionName: stackFrame.function,
     };
   }
 
