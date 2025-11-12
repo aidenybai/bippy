@@ -1,5 +1,11 @@
 # bippy
 
+## 0.5.14
+
+### Patch Changes
+
+- fix: functionName on FiberSource
+
 ## 0.5.13
 
 ### Patch Changes
