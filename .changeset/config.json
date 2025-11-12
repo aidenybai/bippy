@@ -9,7 +9,7 @@
   "updateInternalDependencies": "patch",
   "ignore": [
     "@bippy/website",
-    "@bippy/next-kitchen-sink",
-    "@bippy/vite-kitchen-sink"
+    "@bippy/next-playground",
+    "@bippy/vite-playground"
   ]
 }

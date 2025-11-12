@@ -695,10 +695,10 @@ pnpm run dev
 pnpm run test
 ```
 
-you can ad-hoc test by running `pnpm run dev` in the `/kitchen-sink` directory.
+you can ad-hoc test by running `pnpm run dev` in the `/playground` directory.
 
 ```shell
-cd kitchen-sink
+cd playground
 pnpm run dev
 ```
 

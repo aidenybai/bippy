@@ -163,7 +163,6 @@ the import order is critical: bippy must be imported before any react packages.
 
 > **note for library maintainers**: if you're building a library and want to define your own utility functions while minimizing bundle size, you can use `bippy/install-hook-only` (~90 bytes) instead of the main `bippy` export. this only installs the react devtools hook without importing any utility functions, allowing you to import only what you need from `bippy/core` or define your own fiber utilities. that said, the full `bippy` package is only ~4kb gzipped, so bundle size is rarely a concern.
 
->
 > ```typescript
 > import 'bippy/install-hook-only'; // only installs the hook
 > import { getRDTHook, traverseFiber } from 'bippy/core'; // import only what you need
@@ -681,27 +680,6 @@ instrument(
 - `onCommitFiberRoot`: called when react is ready to commit a fiber root
 - `onPostCommitFiberRoot`: called when react has committed a fiber root and effects have run
 - `onCommitFiberUnmount`: called when a fiber unmounts
-
-## development
-
-pre-requisite: you should understand how react works internally. if you don't, please give this [series of articles](https://jser.dev/series/react-source-code-walkthrough) a read.
-
-we use a pnpm monorepo, get started by running:
-
-```shell
-pnpm install
-# create dev builds
-pnpm run dev
-# run unit tests
-pnpm run test
-```
-
-you can ad-hoc test by running `pnpm run dev` in the `/kitchen-sink` directory.
-
-```shell
-cd kitchen-sink
-pnpm run dev
-```
 
 ## misc
 
