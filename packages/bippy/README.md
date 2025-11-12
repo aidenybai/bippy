@@ -681,27 +681,6 @@ instrument(
 - `onPostCommitFiberRoot`: called when react has committed a fiber root and effects have run
 - `onCommitFiberUnmount`: called when a fiber unmounts
 
-## development
-
-pre-requisite: you should understand how react works internally. if you don't, please give this [series of articles](https://jser.dev/series/react-source-code-walkthrough) a read.
-
-we use a pnpm monorepo, get started by running:
-
-```shell
-pnpm install
-# create dev builds
-pnpm run dev
-# run unit tests
-pnpm run test
-```
-
-you can ad-hoc test by running `pnpm run dev` in the `/playground` directory.
-
-```shell
-cd playground
-pnpm run dev
-```
-
 ## misc
 
 bippy was initially created for [react-scan](https://github.com/aidenybai/react-scan), which is deployed with proper safeguards to ensure it's only used in development or error-guarded in production.
