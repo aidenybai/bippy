@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   description: '',
-  title: 'kitchen-sink',
+  title: 'playground',
 };
 
 export default function RootLayout({

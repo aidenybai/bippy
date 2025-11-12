@@ -1,5 +1,5 @@
 {
-  "name": "@bippy/vite-kitchen-sink",
+  "name": "@bippy/vite-playground",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@bippy/next-kitchen-sink": "workspace:*",
+    "@bippy/next-playground": "workspace:*",
     "bippy": "workspace:*",
     "clsx": "^2.1.1",
     "react": "19.1.0",
