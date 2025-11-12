@@ -81,7 +81,7 @@ export const getSource = async (
 
   const ownerStack = getOwnerStack(fiber);
 
-  return getSourceFromStack(
+  return getSourcesFromStack(
     ownerStack,
     undefined,
     cache,
@@ -97,10 +97,22 @@ export const getOwnerStack = (fiber: Fiber): string => {
 
 export const getSourceFromStack = async (
   ownerStack: string,
-  slice?: number,
   cache = true,
   fetchFn?: (url: string) => Promise<Response>,
-): Promise<FiberSource | FiberSource[] | null> => {
+): Promise<FiberSource | null> => {
+  const sources = await getSourcesFromStack(ownerStack, 1, cache, fetchFn);
+  if (!sources || sources.length === 0) {
+    return null;
+  }
+  return sources[0];
+};
+
+export const getSourcesFromStack = async (
+  ownerStack: string,
+  slice: number = 1,
+  cache = true,
+  fetchFn?: (url: string) => Promise<Response>,
+): Promise<FiberSource[] | null> => {
   const stackFrames = parseStack(ownerStack, { slice: slice ?? 1 });
   const sources: FiberSource[] = [];
 
@@ -133,7 +145,7 @@ export const getSourceFromStack = async (
     });
   }
 
-  return slice !== undefined ? sources : (sources[0] ?? null);
+  return sources;
 };
 
 export const normalizeFileName = (fileName: string): string => {
@@ -260,13 +272,8 @@ export const getNearestValidSource = async (
       continue;
     }
 
-    const source = await getSourceFromStack(
-      stackFrame.raw,
-      undefined,
-      cache,
-      fetchFn,
-    );
-    if (source && !Array.isArray(source)) {
+    const source = await getSourceFromStack(stackFrame.raw, cache, fetchFn);
+    if (source) {
       const fileName = normalizeFileName(source.fileName);
       return {
         fileName,
