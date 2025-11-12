@@ -3,7 +3,7 @@
 >
 > this project uses react internals, which can change at any time. it is not recommended to depend on internals unless you really, _really_ have to. by proceeding, you acknowledge the risk of breaking your own code or apps that use your code.
 
-# <img src="https://github.com/aidenybai/bippy/blob/main/.github/assets/bippy.png?raw=true" width="60" align="center" /> bippy
+# <img src="https://github.com/aidenybai/bippy/blob/main/.github/public/bippy.png?raw=true" width="60" align="center" /> bippy
 
 [![size](https://img.shields.io/bundlephobia/minzip/bippy?label=gzip&style=flat&colorA=000000&colorB=000000)](https://bundlephobia.com/package/bippy)
 [![version](https://img.shields.io/npm/v/bippy?style=flat&colorA=000000&colorB=000000)](https://npmjs.com/package/bippy)
@@ -163,7 +163,6 @@ the import order is critical: bippy must be imported before any react packages.
 
 > **note for library maintainers**: if you're building a library and want to define your own utility functions while minimizing bundle size, you can use `bippy/install-hook-only` (~90 bytes) instead of the main `bippy` export. this only installs the react devtools hook without importing any utility functions, allowing you to import only what you need from `bippy/core` or define your own fiber utilities. that said, the full `bippy` package is only ~4kb gzipped, so bundle size is rarely a concern.
 
->
 > ```typescript
 > import 'bippy/install-hook-only'; // only installs the hook
 > import { getRDTHook, traverseFiber } from 'bippy/core'; // import only what you need
