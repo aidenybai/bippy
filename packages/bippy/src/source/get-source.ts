@@ -81,12 +81,11 @@ export const getSource = async (
 
   const ownerStack = getOwnerStack(fiber);
 
-  return getSourcesFromStack(
-    ownerStack,
-    undefined,
-    cache,
-    fetchFn,
-  ) as Promise<FiberSource | null>;
+  const sources = await getSourcesFromStack(ownerStack, 1, cache, fetchFn);
+  if (!sources || sources.length === 0) {
+    return null;
+  }
+  return sources[0];
 };
 
 export const getOwnerStack = (fiber: Fiber): string => {
