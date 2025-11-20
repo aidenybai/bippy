@@ -1,5 +1,11 @@
 # bippy
 
+## 0.5.16
+
+### Patch Changes
+
+- fix: traverseFiber behavior
+
 ## 0.5.15
 
 ### Patch Changes
