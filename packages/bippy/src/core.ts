@@ -445,7 +445,6 @@ export function traverseFiber(
   if (!fiber) return null;
 
   const firstResult = selector(fiber);
-
   if (firstResult instanceof Promise) {
     return (async () => {
       if ((await firstResult) === true) return fiber;
