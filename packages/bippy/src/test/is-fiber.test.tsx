@@ -22,3 +22,15 @@ it('should return true for a composite fiber', () => {
   const hostFiber = getFiberFromHostInstance(container.firstChild);
   expect(isHostFiber(hostFiber as unknown as Fiber)).toBe(true);
 });
+
+it('should return false for non-object types', () => {
+  expect(isFiber(null)).toBe(false);
+  expect(isFiber(undefined)).toBe(false);
+  expect(isFiber('')).toBe(false);
+  expect(isFiber('string')).toBe(false);
+  expect(isFiber(123)).toBe(false);
+  expect(isFiber(0)).toBe(false);
+  expect(isFiber(true)).toBe(false);
+  expect(isFiber(false)).toBe(false);
+  expect(isFiber(Symbol('test'))).toBe(false);
+});

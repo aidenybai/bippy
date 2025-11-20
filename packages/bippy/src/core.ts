@@ -138,7 +138,7 @@ export const isCompositeFiber = (fiber: Fiber): boolean => {
  * Returns `true` if the object is a {@link Fiber}
  */
 export const isFiber = (maybeFiber: unknown): maybeFiber is Fiber => {
-  if (!maybeFiber || typeof maybeFiber !== 'object') return true;
+  if (!maybeFiber || typeof maybeFiber !== 'object') return false;
   // this is a fast check. pendingProps will ALWAYS exist in fiber
   // `containerInfo` is in FiberRootNode, not FiberNode
   return 'pendingProps' in maybeFiber && !('containerInfo' in maybeFiber);
@@ -451,7 +451,11 @@ export function traverseFiber(
 
       let child = ascending ? fiber.return : fiber.child;
       while (child) {
-        const match = await traverseFiberAsync(child, selector as (node: Fiber) => Promise<boolean | void>, ascending);
+        const match = await traverseFiberAsync(
+          child,
+          selector as (node: Fiber) => Promise<boolean | void>,
+          ascending,
+        );
         if (match) return match;
         child = ascending ? null : child.sibling;
       }
@@ -463,7 +467,11 @@ export function traverseFiber(
 
   let child = ascending ? fiber.return : fiber.child;
   while (child) {
-    const match = traverseFiberSync(child, selector as (node: Fiber) => boolean | void, ascending);
+    const match = traverseFiberSync(
+      child,
+      selector as (node: Fiber) => boolean | void,
+      ascending,
+    );
     if (match) return match;
     child = ascending ? null : child.sibling;
   }
