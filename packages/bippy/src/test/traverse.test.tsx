@@ -185,4 +185,162 @@ describe('traverseFiber', () => {
       ),
     ).toBe((maybeFiber as unknown as Fiber)?.child);
   });
+
+  it('should call selector only once per node (descending)', () => {
+    let maybeFiber: Fiber | null = null;
+    instrument({
+      onCommitFiberRoot: (_rendererID, fiberRoot) => {
+        maybeFiber = fiberRoot.current.child;
+      },
+    });
+    render(<Example />);
+    const selector = vi.fn((fiber) => fiber.type === 'div');
+    const result = traverseFiber(maybeFiber as unknown as Fiber, selector);
+    expect(result).toBeTruthy();
+    const callCounts = new Map<Fiber, number>();
+    selector.mock.calls.forEach(([fiber]) => {
+      callCounts.set(fiber, (callCounts.get(fiber) || 0) + 1);
+    });
+    callCounts.forEach((count, fiber) => {
+      expect(count).toBe(1);
+    });
+  });
+
+  it('should call selector only once per node (ascending)', () => {
+    let maybeFiber: Fiber | null = null;
+    instrument({
+      onCommitFiberRoot: (_rendererID, fiberRoot) => {
+        maybeFiber = fiberRoot.current.child?.child;
+      },
+    });
+    render(<Example />);
+    const selector = vi.fn((fiber) => fiber.tag === 3);
+    const result = traverseFiber(
+      maybeFiber as unknown as Fiber,
+      selector,
+      true,
+    );
+    expect(result).toBeTruthy();
+    const callCounts = new Map<Fiber, number>();
+    selector.mock.calls.forEach(([fiber]) => {
+      callCounts.set(fiber, (callCounts.get(fiber) || 0) + 1);
+    });
+    callCounts.forEach((count, fiber) => {
+      expect(count).toBe(1);
+    });
+  });
+
+  it('should call async selector only once per node (descending)', async () => {
+    let maybeFiber: Fiber | null = null;
+    instrument({
+      onCommitFiberRoot: (_rendererID, fiberRoot) => {
+        maybeFiber = fiberRoot.current.child;
+      },
+    });
+    render(<Example />);
+    const selector = vi.fn(async (fiber) => fiber.type === 'div');
+    const result = await traverseFiber(
+      maybeFiber as unknown as Fiber,
+      selector,
+    );
+    expect(result).toBeTruthy();
+    const callCounts = new Map<Fiber, number>();
+    selector.mock.calls.forEach(([fiber]) => {
+      callCounts.set(fiber, (callCounts.get(fiber) || 0) + 1);
+    });
+    callCounts.forEach((count, fiber) => {
+      expect(count).toBe(1);
+    });
+  });
+
+  it('should call async selector only once per node (ascending)', async () => {
+    let maybeFiber: Fiber | null = null;
+    instrument({
+      onCommitFiberRoot: (_rendererID, fiberRoot) => {
+        maybeFiber = fiberRoot.current.child?.child;
+      },
+    });
+    render(<Example />);
+    const selector = vi.fn(async (fiber) => fiber.tag === 3);
+    const result = await traverseFiber(
+      maybeFiber as unknown as Fiber,
+      selector,
+      true,
+    );
+    expect(result).toBeTruthy();
+    const callCounts = new Map<Fiber, number>();
+    selector.mock.calls.forEach(([fiber]) => {
+      callCounts.set(fiber, (callCounts.get(fiber) || 0) + 1);
+    });
+    callCounts.forEach((count, fiber) => {
+      expect(count).toBe(1);
+    });
+  });
+
+  it('should find first node when it matches (descending)', () => {
+    let maybeFiber: Fiber | null = null;
+    instrument({
+      onCommitFiberRoot: (_rendererID, fiberRoot) => {
+        maybeFiber = fiberRoot.current.child;
+      },
+    });
+    render(<Example />);
+    const selector = vi.fn((fiber) => fiber === maybeFiber);
+    const result = traverseFiber(maybeFiber as unknown as Fiber, selector);
+    expect(result).toBe(maybeFiber);
+    expect(selector).toBeCalledTimes(1);
+  });
+
+  it('should find first node when it matches (ascending)', () => {
+    let maybeFiber: Fiber | null = null;
+    instrument({
+      onCommitFiberRoot: (_rendererID, fiberRoot) => {
+        maybeFiber = fiberRoot.current.child;
+      },
+    });
+    render(<Example />);
+    const selector = vi.fn((fiber) => fiber === maybeFiber);
+    const result = traverseFiber(
+      maybeFiber as unknown as Fiber,
+      selector,
+      true,
+    );
+    expect(result).toBe(maybeFiber);
+    expect(selector).toBeCalledTimes(1);
+  });
+
+  it('should find first node when it matches (async descending)', async () => {
+    let maybeFiber: Fiber | null = null;
+    instrument({
+      onCommitFiberRoot: (_rendererID, fiberRoot) => {
+        maybeFiber = fiberRoot.current.child;
+      },
+    });
+    render(<Example />);
+    const selector = vi.fn(async (fiber) => fiber === maybeFiber);
+    const result = await traverseFiber(
+      maybeFiber as unknown as Fiber,
+      selector,
+    );
+    expect(result).toBe(maybeFiber);
+    expect(selector).toBeCalledTimes(1);
+  });
+
+  it('should find first node when it matches (async ascending)', async () => {
+    let maybeFiber: Fiber | null = null;
+    instrument({
+      onCommitFiberRoot: (_rendererID, fiberRoot) => {
+        maybeFiber = fiberRoot.current.child;
+      },
+    });
+    render(<Example />);
+    const selector = vi.fn(async (fiber) => fiber === maybeFiber);
+    const result = await traverseFiber(
+      maybeFiber as unknown as Fiber,
+      selector,
+      true,
+    );
+    expect(result).toBe(maybeFiber);
+    expect(selector).toBeCalledTimes(1);
+  });
 });

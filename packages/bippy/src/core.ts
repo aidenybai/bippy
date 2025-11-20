@@ -442,21 +442,33 @@ export function traverseFiber(
   selector: (node: Fiber) => boolean | Promise<boolean | void> | void,
   ascending = false,
 ): Fiber | null | Promise<Fiber | null> {
-  const isAsync = fiber && selector(fiber) instanceof Promise;
+  if (!fiber) return null;
 
-  if (isAsync) {
-    return traverseFiberAsync(
-      fiber,
-      selector as (node: Fiber) => Promise<boolean | void>,
-      ascending,
-    );
+  const firstResult = selector(fiber);
+
+  if (firstResult instanceof Promise) {
+    return (async () => {
+      if ((await firstResult) === true) return fiber;
+
+      let child = ascending ? fiber.return : fiber.child;
+      while (child) {
+        const match = await traverseFiberAsync(child, selector as (node: Fiber) => Promise<boolean | void>, ascending);
+        if (match) return match;
+        child = ascending ? null : child.sibling;
+      }
+      return null;
+    })();
   }
 
-  return traverseFiberSync(
-    fiber,
-    selector as (node: Fiber) => boolean | void,
-    ascending,
-  );
+  if (firstResult === true) return fiber;
+
+  let child = ascending ? fiber.return : fiber.child;
+  while (child) {
+    const match = traverseFiberSync(child, selector as (node: Fiber) => boolean | void, ascending);
+    if (match) return match;
+    child = ascending ? null : child.sibling;
+  }
+  return null;
 }
 
 export const traverseFiberSync = (
