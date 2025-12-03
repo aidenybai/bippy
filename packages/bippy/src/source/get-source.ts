@@ -3,7 +3,7 @@ import { parseStack } from './parse-stack.js';
 import { Fiber } from '../types.js';
 import { formatOwnerStack, getFallbackOwnerStack } from './component-stack.js';
 import { getSourceFromSourceMap, getSourceMap } from './symbolication.js';
-import { FiberSource } from './types.js';
+import { FiberSource, MaybeFiberSource } from './types.js';
 import {
   getFiberFromHostInstance,
   isHostFiber,
@@ -20,6 +20,12 @@ import {
   BUNDLED_FILE_PATTERN_REGEX,
   QUERY_PARAMETER_PATTERN_REGEX,
 } from './constants.js';
+
+export const isFiberSource = (
+  source: MaybeFiberSource | FiberSource | null,
+): source is FiberSource => {
+  return source?.fileName != undefined;
+};
 
 export const hasDebugStack = (
   fiber: Fiber,
@@ -81,11 +87,21 @@ export const getSource = async (
 
   const ownerStack = getOwnerStack(fiber);
 
-  const sources = await getSourcesFromStack(ownerStack, 1, cache, fetchFn);
+  const sources = await getSourcesFromStack(
+    ownerStack,
+    Number.MAX_SAFE_INTEGER,
+    cache,
+    fetchFn,
+  );
   if (!sources || sources.length === 0) {
     return null;
   }
-  return sources[0];
+  for (const source of sources) {
+    if (isFiberSource(source)) {
+      return source;
+    }
+  }
+  return null;
 };
 
 export const getOwnerStack = (fiber: Fiber): string => {
@@ -99,24 +115,40 @@ export const getSourceFromStack = async (
   cache = true,
   fetchFn?: (url: string) => Promise<Response>,
 ): Promise<FiberSource | null> => {
-  const sources = await getSourcesFromStack(ownerStack, 1, cache, fetchFn);
+  const sources = await getSourcesFromStack(
+    ownerStack,
+    Number.MAX_SAFE_INTEGER,
+    cache,
+    fetchFn,
+  );
   if (!sources || sources.length === 0) {
     return null;
   }
-  return sources[0];
+  for (const source of sources) {
+    if (isFiberSource(source)) {
+      return source;
+    }
+  }
+  return null;
 };
 
 export const getSourcesFromStack = async (
   ownerStack: string,
-  slice: number = 1,
+  slice: number = Number.MAX_SAFE_INTEGER,
   cache = true,
   fetchFn?: (url: string) => Promise<Response>,
-): Promise<FiberSource[] | null> => {
-  const stackFrames = parseStack(ownerStack, { slice: slice ?? 1 });
-  const sources: FiberSource[] = [];
+): Promise<(FiberSource | MaybeFiberSource)[] | null> => {
+  const stackFrames = parseStack(ownerStack, { slice });
+  const sources: (FiberSource | MaybeFiberSource)[] = [];
 
   for (const stackFrame of stackFrames) {
     if (!stackFrame?.file) {
+      sources.push({
+        fileName: undefined,
+        lineNumber: stackFrame?.line,
+        columnNumber: stackFrame?.col,
+        functionName: stackFrame?.function,
+      });
       continue;
     }
 
