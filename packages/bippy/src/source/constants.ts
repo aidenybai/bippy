@@ -4,6 +4,7 @@ export const INTERNAL_SCHEME_PREFIXES = [
   'rsc://',
   'file:///',
   'webpack://',
+  'webpack-internal://',
   'node:',
   'turbopack://',
   'metro://',
