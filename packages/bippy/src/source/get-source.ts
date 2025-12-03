@@ -203,15 +203,20 @@ export const normalizeFileName = (fileName: string): string => {
     }
   }
 
-  for (const prefix of INTERNAL_SCHEME_PREFIXES) {
-    if (normalizedFileName.startsWith(prefix)) {
-      normalizedFileName = normalizedFileName.slice(prefix.length);
+  let didStripPrefix = true;
+  while (didStripPrefix) {
+    didStripPrefix = false;
+    for (const prefix of INTERNAL_SCHEME_PREFIXES) {
+      if (normalizedFileName.startsWith(prefix)) {
+        normalizedFileName = normalizedFileName.slice(prefix.length);
 
-      if (prefix === 'file:///') {
-        normalizedFileName = `/${normalizedFileName.replace(/^\/+/, '')}`;
+        if (prefix === 'file:///') {
+          normalizedFileName = `/${normalizedFileName.replace(/^\/+/, '')}`;
+        }
+
+        didStripPrefix = true;
+        break;
       }
-
-      break;
     }
   }
 
