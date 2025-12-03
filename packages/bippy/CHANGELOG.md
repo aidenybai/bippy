@@ -1,5 +1,11 @@
 # bippy
 
+## 0.5.22
+
+### Patch Changes
+
+- fix: stripping again
+
 ## 0.5.21
 
 ### Patch Changes
