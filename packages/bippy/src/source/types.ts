@@ -5,8 +5,6 @@ export interface FiberSource {
   functionName?: string;
 }
 
-export type MaybeFiberSource =
-  | FiberSource
-  | {
-      fileName?: string;
-    };
+export type MaybeFiberSource = FiberSource & {
+  fileName?: string | undefined;
+};
