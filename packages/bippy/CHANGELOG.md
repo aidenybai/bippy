@@ -1,5 +1,11 @@
 # bippy
 
+## 0.5.21
+
+### Patch Changes
+
+- fix: app-pages-internal
+
 ## 0.5.20
 
 ### Patch Changes

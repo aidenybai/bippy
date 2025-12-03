@@ -1,6 +1,6 @@
 {
   "name": "bippy",
-  "version": "0.5.20",
+  "version": "0.5.21",
   "description": "hack into react internals",
   "publishConfig": {
     "access": "public"
