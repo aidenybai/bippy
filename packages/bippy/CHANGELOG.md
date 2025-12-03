@@ -1,5 +1,11 @@
 # bippy
 
+## 0.5.18
+
+### Patch Changes
+
+- fix: webpack protocol
+
 ## 0.5.17
 
 ### Patch Changes
