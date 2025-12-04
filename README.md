@@ -562,36 +562,6 @@ const source = await getSource(compositeFiber);
 > - in react 18, resolves `_debugSource` directly (see [react#31981](https://github.com/facebook/react/issues/31981))
 > - in react >18, `_debugSource` is not available for host fibers
 
-### getNearestValidSource
-
-finds the nearest available source location by traversing up the fiber tree to find the nearest composite fiber with a valid source file.
-
-a "valid source" is a source file that is not bundled, minified, or from node_modules. this ensures you get meaningful file paths that point to your actual source code rather than build artifacts.
-
-```typescript
-import { getNearestValidSource } from 'bippy/source';
-
-const hostFiber = getFiberFromHostInstance(document.querySelector('div'));
-const source = await getNearestValidSource(hostFiber);
-if (source) {
-  console.log(`${source.fileName}:${source.lineNumber}:${source.columnNumber}`);
-}
-```
-
-### getSourceFromHostInstance
-
-gets the source location from a DOM node or element by finding its associated fiber.
-
-```typescript
-import { getSourceFromHostInstance } from 'bippy/source';
-
-const element = document.querySelector('.my-component');
-const source = await getSourceFromHostInstance(element);
-if (source) {
-  console.log(`Component defined at ${source.fileName}:${source.lineNumber}`);
-}
-```
-
 ## example
 
 here's a mini toy version of [`react-scan`](https://github.com/aidenybai/react-scan) that highlights renders in your app.

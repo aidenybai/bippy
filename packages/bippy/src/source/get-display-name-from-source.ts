@@ -1,9 +1,8 @@
 import { Fiber } from '../types.js';
 import { getDisplayName } from '../core.js';
-import { parseStack } from './parse-stack.js';
-import { getOwnerStack } from './get-source.js';
+import { getComponentStack } from './get-source.js';
 import { getSourceFromSourceMap, getSourceMap } from './symbolication.js';
-import { FiberSource } from './types.js';
+import { StackFrame } from './parse-stack.js';
 
 const extractComponentNameFromSource = (
   sourceContent: string,
@@ -47,30 +46,33 @@ export const getDisplayNameFromSource = async (
   cache = true,
   fetchFn?: (url: string) => Promise<Response>,
 ): Promise<string | null> => {
-  const ownerStack = getOwnerStack(fiber);
-  const stackFrames = parseStack(ownerStack, { slice: 1 });
-  const stackFrame = stackFrames[0];
+  const ownerStack = await getComponentStack(fiber, cache, fetchFn);
+  const stackFrame = ownerStack.filter((stackFrame) => stackFrame.fileName)[0];
 
-  if (!stackFrame?.file) {
+  if (!stackFrame?.fileName) {
     return getDisplayName(fiber.type);
   }
 
-  const bundleSourceMap = await getSourceMap(stackFrame.file, cache, fetchFn);
+  const bundleSourceMap = await getSourceMap(
+    stackFrame.fileName,
+    cache,
+    fetchFn,
+  );
 
   if (!bundleSourceMap) {
     return getDisplayName(fiber.type);
   }
 
-  let source: FiberSource | null = null;
+  let source: StackFrame | null = null;
 
   if (
-    typeof stackFrame.line === 'number' &&
-    typeof stackFrame.col === 'number'
+    typeof stackFrame.lineNumber === 'number' &&
+    typeof stackFrame.columnNumber === 'number'
   ) {
     source = getSourceFromSourceMap(
       bundleSourceMap,
-      stackFrame.line,
-      stackFrame.col,
+      stackFrame.lineNumber,
+      stackFrame.columnNumber,
     );
   }
 

@@ -4,7 +4,7 @@ import {
   type SourceMapSegment,
 } from '@jridgewell/sourcemap-codec';
 
-import { FiberSource } from './types.js';
+import { StackFrame } from './parse-stack.js';
 
 export interface DecodedSourceMapSection {
   map: {
@@ -90,7 +90,7 @@ const getSourceFromMappings = (
   sources: string[],
   lineIndexInMappings: number,
   column: number,
-): FiberSource | null => {
+): StackFrame | null => {
   if (lineIndexInMappings < 0 || lineIndexInMappings >= mappings.length) {
     return null;
   }
@@ -140,7 +140,7 @@ export const getSourceFromSourceMap = (
   sourceMap: SourceMap,
   line: number,
   column: number,
-): FiberSource | null => {
+): StackFrame | null => {
   if (sourceMap.sections) {
     let targetSection: DecodedSourceMapSection | null = null;
 
@@ -361,4 +361,44 @@ export const getSourceMap = async (
   }
 
   return sourceMap;
+};
+
+export const symbolicateStack = async (
+  stack: StackFrame[],
+  cache = true,
+  fetchFn?: (url: string) => Promise<Response>,
+): Promise<StackFrame[]> => {
+  return await Promise.all(
+    stack.map(async (stackFrame) => {
+      if (!stackFrame.fileName) return stackFrame;
+      const sourceMap = await getSourceMap(stackFrame.fileName, cache, fetchFn);
+      if (
+        !sourceMap ||
+        typeof stackFrame.lineNumber !== 'number' ||
+        typeof stackFrame.columnNumber !== 'number'
+      ) {
+        return stackFrame;
+      }
+      const symbolicatedSource = getSourceFromSourceMap(
+        sourceMap,
+        stackFrame.lineNumber,
+        stackFrame.columnNumber,
+      );
+      if (!symbolicatedSource) return stackFrame;
+      return {
+        ...stackFrame,
+        source:
+          symbolicatedSource.fileName && stackFrame.source
+            ? stackFrame.source.replace(
+                stackFrame.fileName,
+                symbolicatedSource.fileName,
+              )
+            : stackFrame.source,
+        fileName: symbolicatedSource.fileName,
+        lineNumber: symbolicatedSource.lineNumber,
+        columnNumber: symbolicatedSource.columnNumber,
+        isSymbolicated: true,
+      };
+    }),
+  );
 };

@@ -4,7 +4,3 @@ export interface FiberSource {
   lineNumber?: number;
   functionName?: string;
 }
-
-export type MaybeFiberSource = FiberSource & {
-  fileName?: string | undefined;
-};

@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { expect, it } from 'vitest';
 import type { Fiber } from '../types.js';
 import { instrument } from '../index.js';
-import { getSource, getOwnerStack } from '../source/index.js';
+import { getSource, getComponentStack } from '../source/index.js';
 import { normalizeFileName } from '../source/get-source.js';
 
 const mockFetch = (): Promise<Response> => {
@@ -34,7 +34,7 @@ const ExampleWithChild = ({ children }: { children: React.ReactNode }) => {
   return <div>{children}</div>;
 };
 
-it('getOwnerStack should return stack for simple component', () => {
+it('getOwnerStack should return stack for simple component', async () => {
   let capturedFiber: Fiber | null = null;
   instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {
@@ -43,14 +43,14 @@ it('getOwnerStack should return stack for simple component', () => {
   });
   render(<SimpleComponent />);
 
-  const result = getOwnerStack(capturedFiber as unknown as Fiber);
+  const result = await getComponentStack(capturedFiber as unknown as Fiber);
 
-  expect(result).toBeTruthy();
-  expect(typeof result).toBe('string');
-  expect(result).toContain('SimpleComponent');
+  expect(result).toHaveLength(1);
+  expect(result[0].functionName).toBe('SimpleComponent');
+  expect(result[0].source).toBe('    in SimpleComponent');
 });
 
-it('getOwnerStack should return stack for component with props', () => {
+it('getOwnerStack should return stack for component with props', async () => {
   let capturedFiber: Fiber | null = null;
   instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {
@@ -59,13 +59,16 @@ it('getOwnerStack should return stack for component with props', () => {
   });
   render(<ComponentWithProps message="test" />);
 
-  const result = getOwnerStack(capturedFiber as unknown as Fiber);
+  const result = await getComponentStack(capturedFiber as unknown as Fiber);
 
-  expect(result).toBeTruthy();
-  expect(typeof result).toBe('string');
+  expect(result).toHaveLength(1);
+  expect(result[0].functionName).toBe('ComponentWithProps');
+  expect(result[0].fileName).toContain('source.test.tsx');
+  expect(result[0].lineNumber).toBe(26);
+  expect(result[0].columnNumber).toBe(31);
 });
 
-it('getOwnerStack should return stack for component with hooks', () => {
+it('getOwnerStack should return stack for component with hooks', async () => {
   let capturedFiber: Fiber | null = null;
   instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {
@@ -74,13 +77,16 @@ it('getOwnerStack should return stack for component with hooks', () => {
   });
   render(<ComponentWithHooks />);
 
-  const result = getOwnerStack(capturedFiber as unknown as Fiber);
+  const result = await getComponentStack(capturedFiber as unknown as Fiber);
 
-  expect(result).toBeTruthy();
-  expect(typeof result).toBe('string');
+  expect(result).toHaveLength(1);
+  expect(result[0].functionName).toBe('ComponentWithHooks');
+  expect(result[0].fileName).toContain('source.test.tsx');
+  expect(result[0].lineNumber).toBe(30);
+  expect(result[0].columnNumber).toBe(41);
 });
 
-it('getOwnerStack should return stack for nested component with props', () => {
+it('getOwnerStack should return stack for nested component with props', async () => {
   let capturedFiber: Fiber | null = null;
   instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {
@@ -93,10 +99,18 @@ it('getOwnerStack should return stack for nested component with props', () => {
     </ExampleWithChild>,
   );
 
-  const result = getOwnerStack(capturedFiber as unknown as Fiber);
+  const result = await getComponentStack(capturedFiber as unknown as Fiber);
 
-  expect(result).toBeTruthy();
-  expect(typeof result).toBe('string');
+  expect(result).toHaveLength(3);
+  expect(result[0].functionName).toBe('ComponentWithProps');
+  expect(result[0].fileName).toContain('source.test.tsx');
+  expect(result[0].lineNumber).toBe(26);
+  expect(result[0].columnNumber).toBe(31);
+  expect(result[1].functionName).toBe('div');
+  expect(result[2].functionName).toBe('ExampleWithChild');
+  expect(result[2].fileName).toContain('source.test.tsx');
+  expect(result[2].lineNumber).toBe(33);
+  expect(result[2].columnNumber).toBe(29);
 });
 
 it('getSource should return null for simple component without props/hooks', async () => {

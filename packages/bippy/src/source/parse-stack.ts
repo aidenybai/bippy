@@ -5,15 +5,8 @@ export interface StackFrame {
   fileName?: string;
   functionName?: string;
   source?: string;
-}
-
-export interface StackFrameLite {
-  function?: string;
-  args?: unknown[];
-  file?: string;
-  col?: number;
-  line?: number;
-  raw?: string;
+  isServer?: boolean;
+  isSymbolicated?: boolean;
 }
 
 export interface ParseOptions {
@@ -37,10 +30,10 @@ const getNonStandardStacktrace = (error: unknown): string | null => {
 export const parseStack = (
   stackString: string,
   options?: ParseOptions,
-): StackFrameLite[] => {
+): StackFrame[] => {
   if (options?.includeInElement !== false) {
     const lines = stackString.split('\n');
-    const frames: StackFrameLite[] = [];
+    const frames: StackFrame[] = [];
     for (const rawLine of lines) {
       if (/^\s*at\s+/.test(rawLine)) {
         const parsed = parseV8OrIeString(rawLine, undefined)[0];
@@ -49,7 +42,7 @@ export const parseStack = (
         const elementName = rawLine
           .replace(/^\s*in\s+/, '')
           .replace(/\s*\(at .*\)$/, '');
-        frames.push({ function: elementName, raw: rawLine });
+        frames.push({ functionName: elementName, source: rawLine });
       } else if (rawLine.match(FIREFOX_SAFARI_STACK_REGEXP)) {
         const parsed = parseFFOrSafariString(rawLine, undefined)[0];
         if (parsed) frames.push(parsed);
@@ -66,7 +59,6 @@ export const parseStack = (
 export const extractLocation = (
   urlLike: string,
 ): [string, string | undefined, string | undefined] => {
-  // Fail-fast but return locations like "(native)"
   if (!urlLike.includes(':')) return [urlLike, undefined, undefined];
 
   const regExp = /(.+?)(?::(\d+))?(?::(\d+))?$/;
@@ -86,14 +78,14 @@ const applySlice = <T>(lines: T[], options?: ParseOptions): T[] => {
 export const parseV8OrIE = (
   error: Error,
   options?: ParseOptions,
-): StackFrameLite[] => {
+): StackFrame[] => {
   return parseV8OrIeString(error.stack!, options);
 };
 
 export const parseV8OrIeString = (
   stack: string,
   options?: ParseOptions,
-): StackFrameLite[] => {
+): StackFrame[] => {
   const filteredLines = applySlice(
     stack.split('\n').filter((line) => {
       return !!line.match(CHROME_IE_STACK_REGEXP);
@@ -101,10 +93,9 @@ export const parseV8OrIeString = (
     options,
   );
 
-  return filteredLines.map((line): StackFrameLite => {
+  return filteredLines.map((line): StackFrame => {
     let currentLine = line;
     if (currentLine.includes('(eval ')) {
-      // Throw away eval information until we implement stacktrace.js/stackframe#8
       currentLine = currentLine
         .replace(/eval code/g, 'eval')
         .replace(/(\(eval at [^()]*)|(,.*$)/g, '');
@@ -114,17 +105,12 @@ export const parseV8OrIeString = (
       .replace(/\(eval code/g, '(')
       .replace(/^.*?\s+/, '');
 
-    // capture and preseve the parenthesized location "(/foo/my bar.js:12:87)" in
-    // case it has spaces in it, as the string is split on \s+ later on
     const locationMatch = sanitizedLine.match(/ (\(.+\)$)/);
 
-    // remove the parenthesized location from the line, if it was matched
     sanitizedLine = locationMatch
       ? sanitizedLine.replace(locationMatch[0], '')
       : sanitizedLine;
 
-    // if a location was matched, pass it to extractLocation() otherwise pass all sanitizedLine
-    // because this line doesn't have function name
     const locationParts = extractLocation(
       locationMatch ? locationMatch[1] : sanitizedLine,
     );
@@ -134,11 +120,11 @@ export const parseV8OrIeString = (
       : locationParts[0];
 
     return {
-      function: functionName,
-      file: fileName,
-      line: locationParts[1] ? +locationParts[1] : undefined,
-      col: locationParts[2] ? +locationParts[2] : undefined,
-      raw: currentLine,
+      functionName,
+      fileName,
+      lineNumber: locationParts[1] ? +locationParts[1] : undefined,
+      columnNumber: locationParts[2] ? +locationParts[2] : undefined,
+      source: currentLine,
     };
   });
 };
@@ -146,14 +132,14 @@ export const parseV8OrIeString = (
 export const parseFFOrSafari = (
   error: Error,
   options?: ParseOptions,
-): StackFrameLite[] => {
+): StackFrame[] => {
   return parseFFOrSafariString(error.stack!, options);
 };
 
 export const parseFFOrSafariString = (
   stack: string,
   options?: ParseOptions,
-): StackFrameLite[] => {
+): StackFrame[] => {
   const filteredLines = applySlice(
     stack.split('\n').filter((line) => {
       return !line.match(SAFARI_NATIVE_CODE_REGEXP);
@@ -161,9 +147,8 @@ export const parseFFOrSafariString = (
     options,
   );
 
-  return filteredLines.map((line): StackFrameLite => {
+  return filteredLines.map((line): StackFrame => {
     let currentLine = line;
-    // Throw away eval information until we implement stacktrace.js/stackframe#8
     if (currentLine.includes(' > eval'))
       currentLine = currentLine.replace(
         / line (\d+)(?: > eval line \d+)* > eval:\d+:\d+/g,
@@ -171,9 +156,8 @@ export const parseFFOrSafariString = (
       );
 
     if (!currentLine.includes('@') && !currentLine.includes(':')) {
-      // Safari eval frames only have function names and nothing else
       return {
-        function: currentLine,
+        functionName: currentLine,
       };
     } else {
       const functionNameRegex =
@@ -185,11 +169,11 @@ export const parseFFOrSafariString = (
       );
 
       return {
-        function: functionName,
-        file: locationParts[0],
-        line: locationParts[1] ? +locationParts[1] : undefined,
-        col: locationParts[2] ? +locationParts[2] : undefined,
-        raw: currentLine,
+        functionName,
+        fileName: locationParts[0],
+        lineNumber: locationParts[1] ? +locationParts[1] : undefined,
+        columnNumber: locationParts[2] ? +locationParts[2] : undefined,
+        source: currentLine,
       };
     }
   });
@@ -198,7 +182,7 @@ export const parseFFOrSafariString = (
 export const parseOpera = (
   error: Error,
   options?: ParseOptions,
-): StackFrameLite[] => {
+): StackFrame[] => {
   const nonStandardStacktrace = getNonStandardStacktrace(error);
   if (
     !nonStandardStacktrace ||
@@ -215,18 +199,18 @@ export const parseOpera = (
 export const parseOpera9 = (
   error: Error,
   options?: ParseOptions,
-): StackFrameLite[] => {
+): StackFrame[] => {
   const lineRegex = /Line (\d+).*script (?:in )?(\S+)/i;
   const messageLines = error.message.split('\n');
-  const parsedFrames: StackFrameLite[] = [];
+  const parsedFrames: StackFrame[] = [];
 
   for (let i = 2, len = messageLines.length; i < len; i += 2) {
     const match = lineRegex.exec(messageLines[i]);
     if (match) {
       parsedFrames.push({
-        file: match[2],
-        line: +match[1],
-        raw: messageLines[i],
+        fileName: match[2],
+        lineNumber: +match[1],
+        source: messageLines[i],
       });
     }
   }
@@ -237,21 +221,21 @@ export const parseOpera9 = (
 export const parseOpera10 = (
   error: Error,
   options?: ParseOptions,
-): StackFrameLite[] => {
+): StackFrame[] => {
   const lineRegex =
     /Line (\d+).*script (?:in )?(\S+)(?:: In function (\S+))?$/i;
   const nonStandardStacktrace = getNonStandardStacktrace(error);
   const stacktraceLines = (nonStandardStacktrace || '').split('\n');
-  const parsedFrames: StackFrameLite[] = [];
+  const parsedFrames: StackFrame[] = [];
 
   for (let i = 0, len = stacktraceLines.length; i < len; i += 2) {
     const match = lineRegex.exec(stacktraceLines[i]);
     if (match) {
       parsedFrames.push({
-        function: match[3] || undefined,
-        file: match[2],
-        line: match[1] ? +match[1] : undefined,
-        raw: stacktraceLines[i],
+        functionName: match[3] || undefined,
+        fileName: match[2],
+        lineNumber: match[1] ? +match[1] : undefined,
+        source: stacktraceLines[i],
       });
     }
   }
@@ -259,11 +243,10 @@ export const parseOpera10 = (
   return applySlice(parsedFrames, options);
 };
 
-// Opera 10.65+ Error.stack very similar to FF/Safari
 export const parseOpera11 = (
   error: Error,
   options?: ParseOptions,
-): StackFrameLite[] => {
+): StackFrame[] => {
   const filteredLines = applySlice(
     // @ts-expect-error missing stack property
     error.stack.split('\n').filter((line) => {
@@ -275,7 +258,7 @@ export const parseOpera11 = (
     options,
   );
 
-  return filteredLines.map<StackFrameLite>((line) => {
+  return filteredLines.map<StackFrame>((line) => {
     const tokens = line.split('@');
     const locationParts = extractLocation(tokens.pop()!);
     const functionCall = tokens.shift() || '';
@@ -293,12 +276,12 @@ export const parseOpera11 = (
         : argsRaw.split(',');
 
     return {
-      function: functionName,
+      functionName,
       args,
-      file: locationParts[0],
-      line: locationParts[1] ? +locationParts[1] : undefined,
-      col: locationParts[2] ? +locationParts[2] : undefined,
-      raw: line,
+      fileName: locationParts[0],
+      lineNumber: locationParts[1] ? +locationParts[1] : undefined,
+      columnNumber: locationParts[2] ? +locationParts[2] : undefined,
+      source: line,
     };
   });
 };

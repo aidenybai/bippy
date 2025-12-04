@@ -5,7 +5,6 @@ import {
   Fiber,
   ForwardRefTag,
   FunctionComponentTag,
-  getDisplayName,
   getRDTHook,
   HostComponentTag,
   HostHoistableTag,
@@ -15,7 +14,24 @@ import {
   SuspenseComponentTag,
   SuspenseListComponentTag,
   ViewTransitionComponentTag,
-} from '../index.js';
+  getDisplayName,
+  traverseFiber,
+} from '../core.js';
+import { SERVER_FRAME_MARKER } from './constants.js';
+
+import { parseStack, StackFrame } from './parse-stack.js';
+import { symbolicateStack } from './symbolication.js';
+
+export const hasDebugStack = (
+  fiber: Fiber,
+): fiber is Fiber & {
+  _debugStack: NonNullable<Fiber['_debugStack']>;
+} => {
+  return (
+    fiber._debugStack instanceof Error &&
+    typeof fiber._debugStack?.stack === 'string'
+  );
+};
 
 const getCurrentDispatcher = (): null | React.RefObject<unknown> => {
   const rdtHook = getRDTHook();
@@ -438,4 +454,136 @@ export const formatOwnerStack = (stack: string): string => {
     return '';
   }
   return formattedStack;
+};
+
+interface OwnerStackEntry {
+  componentName: string;
+  stackFrames: StackFrame[];
+}
+
+const isReactServerComponentFrame = (stackFrame: StackFrame): boolean =>
+  Boolean(stackFrame.fileName?.startsWith('rsc://') && stackFrame.functionName);
+
+const areStackFramesEqual = (
+  firstFrame: StackFrame,
+  secondFrame: StackFrame,
+): boolean =>
+  firstFrame.fileName === secondFrame.fileName &&
+  firstFrame.lineNumber === secondFrame.lineNumber &&
+  firstFrame.columnNumber === secondFrame.columnNumber;
+
+const buildFunctionNameToRscFramesMap = (
+  ownerStackEntries: OwnerStackEntry[],
+): Map<string, StackFrame[]> => {
+  const functionNameToRscFrames = new Map<string, StackFrame[]>();
+
+  for (const ownerEntry of ownerStackEntries) {
+    for (const stackFrame of ownerEntry.stackFrames) {
+      if (!isReactServerComponentFrame(stackFrame)) continue;
+
+      const functionName = stackFrame.functionName!;
+      const framesForFunction = functionNameToRscFrames.get(functionName) ?? [];
+      const isDuplicateFrame = framesForFunction.some((existingFrame) =>
+        areStackFramesEqual(existingFrame, stackFrame),
+      );
+
+      if (!isDuplicateFrame) {
+        framesForFunction.push(stackFrame);
+        functionNameToRscFrames.set(functionName, framesForFunction);
+      }
+    }
+  }
+
+  return functionNameToRscFrames;
+};
+
+const getEnrichedServerStackFrame = (
+  serverFrame: StackFrame,
+  functionNameToRscFrames: Map<string, StackFrame[]>,
+  functionNameToUsageIndex: Map<string, number>,
+): StackFrame => {
+  if (!serverFrame.functionName) {
+    return { ...serverFrame, isServer: true };
+  }
+
+  const availableRscFrames = functionNameToRscFrames.get(
+    serverFrame.functionName,
+  );
+  if (!availableRscFrames || availableRscFrames.length === 0) {
+    return { ...serverFrame, isServer: true };
+  }
+
+  const currentUsageIndex =
+    functionNameToUsageIndex.get(serverFrame.functionName) ?? 0;
+  const resolvedRscFrame =
+    availableRscFrames[currentUsageIndex % availableRscFrames.length];
+  functionNameToUsageIndex.set(serverFrame.functionName, currentUsageIndex + 1);
+
+  return {
+    ...serverFrame,
+    isServer: true,
+    fileName: resolvedRscFrame.fileName,
+    lineNumber: resolvedRscFrame.lineNumber,
+    columnNumber: resolvedRscFrame.columnNumber,
+    source: serverFrame.source?.replace(
+      SERVER_FRAME_MARKER,
+      `(${resolvedRscFrame.fileName}:${resolvedRscFrame.lineNumber}:${resolvedRscFrame.columnNumber})`,
+    ),
+  };
+};
+
+const getOwnerStackEntries = (rootFiber: Fiber): OwnerStackEntry[] => {
+  const ownerStackEntries: OwnerStackEntry[] = [];
+
+  traverseFiber(
+    rootFiber,
+    (currentFiber) => {
+      if (!hasDebugStack(currentFiber)) return;
+
+      const componentName =
+        typeof currentFiber.type !== 'string'
+          ? getDisplayName(currentFiber.type) || '<anonymous>'
+          : currentFiber.type;
+
+      ownerStackEntries.push({
+        componentName,
+        stackFrames: parseStack(
+          formatOwnerStack(currentFiber._debugStack?.stack),
+        ),
+      });
+    },
+    true,
+  );
+
+  return ownerStackEntries;
+};
+
+export const getComponentStack = async (
+  fiber: Fiber,
+  shouldCache = true,
+  fetchFunction?: (url: string) => Promise<Response>,
+): Promise<StackFrame[]> => {
+  const ownerStackEntries = getOwnerStackEntries(fiber);
+  const fallbackStackFrames = parseStack(getFallbackOwnerStack(fiber));
+  const functionNameToRscFrames = buildFunctionNameToRscFramesMap(ownerStackEntries);
+  const functionNameToUsageIndex = new Map<string, number>();
+
+  const enrichedStackFrames = fallbackStackFrames.map(
+    (stackFrame): StackFrame => {
+      const isServerFrame =
+        stackFrame.source?.includes(SERVER_FRAME_MARKER) ?? false;
+
+      if (isServerFrame) {
+        return getEnrichedServerStackFrame(
+          stackFrame,
+          functionNameToRscFrames,
+          functionNameToUsageIndex,
+        );
+      }
+
+      return stackFrame;
+    },
+  );
+
+  return symbolicateStack(enrichedStackFrames, shouldCache, fetchFunction);
 };

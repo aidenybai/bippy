@@ -1,16 +1,6 @@
-import { parseStack } from './parse-stack.js';
-
 import { Fiber } from '../types.js';
-import { formatOwnerStack, getFallbackOwnerStack } from './component-stack.js';
-import { getSourceFromSourceMap, getSourceMap } from './symbolication.js';
-import { FiberSource, MaybeFiberSource } from './types.js';
-import {
-  getFiberFromHostInstance,
-  isHostFiber,
-  getLatestFiber,
-  traverseFiber,
-  isCompositeFiber,
-} from '../core.js';
+
+import { FiberSource } from './types.js';
 import {
   SCHEME_REGEX,
   INTERNAL_SCHEME_PREFIXES,
@@ -20,23 +10,7 @@ import {
   BUNDLED_FILE_PATTERN_REGEX,
   QUERY_PARAMETER_PATTERN_REGEX,
 } from './constants.js';
-
-export const isFiberSource = (
-  source: MaybeFiberSource | FiberSource | null,
-): source is FiberSource => {
-  return source?.fileName != undefined;
-};
-
-export const hasDebugStack = (
-  fiber: Fiber,
-): fiber is Fiber & {
-  _debugStack: NonNullable<Fiber['_debugStack']>;
-} => {
-  return (
-    fiber._debugStack instanceof Error &&
-    typeof fiber._debugStack?.stack === 'string'
-  );
-};
+import { getComponentStack } from './owner-stack.js';
 
 export const hasDebugSource = (
   fiber: Fiber,
@@ -85,99 +59,19 @@ export const getSource = async (
     return debugSource || null;
   }
 
-  const ownerStack = getOwnerStack(fiber);
+  const componentStack = await getComponentStack(fiber, cache, fetchFn);
 
-  const sources = await getSourcesFromStack(
-    ownerStack,
-    Number.MAX_SAFE_INTEGER,
-    cache,
-    fetchFn,
-  );
-  if (!sources || sources.length === 0) {
-    return null;
-  }
-  for (const source of sources) {
-    if (isFiberSource(source)) {
-      return source;
+  for (const stackFrame of componentStack) {
+    if (stackFrame.fileName) {
+      return {
+        fileName: stackFrame.fileName,
+        lineNumber: stackFrame.lineNumber,
+        columnNumber: stackFrame.columnNumber,
+        functionName: stackFrame.functionName,
+      };
     }
   }
   return null;
-};
-
-export const getOwnerStack = (fiber: Fiber): string => {
-  return hasDebugStack(fiber)
-    ? formatOwnerStack(fiber._debugStack.stack)
-    : getFallbackOwnerStack(fiber);
-};
-
-export const getSourceFromStack = async (
-  ownerStack: string,
-  cache = true,
-  fetchFn?: (url: string) => Promise<Response>,
-): Promise<FiberSource | null> => {
-  const sources = await getSourcesFromStack(
-    ownerStack,
-    Number.MAX_SAFE_INTEGER,
-    cache,
-    fetchFn,
-  );
-  if (!sources || sources.length === 0) {
-    return null;
-  }
-  for (const source of sources) {
-    if (isFiberSource(source)) {
-      return source;
-    }
-  }
-  return null;
-};
-
-export const getSourcesFromStack = async (
-  ownerStack: string,
-  slice: number = Number.MAX_SAFE_INTEGER,
-  cache = true,
-  fetchFn?: (url: string) => Promise<Response>,
-): Promise<(FiberSource | MaybeFiberSource)[] | null> => {
-  const stackFrames = parseStack(ownerStack, { slice });
-  const sources: (FiberSource | MaybeFiberSource)[] = [];
-
-  for (const stackFrame of stackFrames) {
-    if (!stackFrame?.file) {
-      sources.push({
-        fileName: undefined,
-        lineNumber: stackFrame?.line,
-        columnNumber: stackFrame?.col,
-        functionName: stackFrame?.function,
-      });
-      continue;
-    }
-
-    const bundleSourceMap = await getSourceMap(stackFrame.file, cache, fetchFn);
-    if (
-      bundleSourceMap &&
-      typeof stackFrame.line === 'number' &&
-      typeof stackFrame.col === 'number'
-    ) {
-      const source = getSourceFromSourceMap(
-        bundleSourceMap,
-        stackFrame.line,
-        stackFrame.col,
-      );
-      if (source) {
-        sources.push(source);
-        continue;
-      }
-    }
-
-    sources.push({
-      fileName: stackFrame.file,
-      lineNumber: stackFrame.line,
-      columnNumber: stackFrame.col,
-      functionName: stackFrame.function,
-    });
-  }
-
-  return sources;
 };
 
 export const normalizeFileName = (fileName: string): string => {
@@ -255,109 +149,4 @@ export const isSourceFile = (fileName: string): boolean => {
   }
 
   return true;
-};
-
-/**
- * Returns the nearest available source location for a {@link Fiber}. Traverses up the fiber tree to find the nearest composite fiber with a valid source file, falling back to stack parsing if needed.
- *
- * @example
- * ```ts
- * const source = await getNearestValidSource(hostFiber);
- * if (source) {
- *   console.log(`${source.fileName}:${source.lineNumber}:${source.columnNumber}`);
- * }
- * ```
- */
-export const getNearestValidSource = async (
-  fiber: Fiber,
-  cache = true,
-  fetchFn?: (url: string) => Promise<Response>,
-) => {
-  const nearestCompositeFiber = traverseFiber(
-    fiber,
-    (innerFiber) => {
-      if (isCompositeFiber(innerFiber)) {
-        return true;
-      }
-    },
-    true,
-  );
-
-  if (nearestCompositeFiber) {
-    const source = await getSource(nearestCompositeFiber, cache, fetchFn);
-    if (source?.fileName) {
-      const fileName = normalizeFileName(source.fileName);
-      if (isSourceFile(fileName)) {
-        return {
-          fileName,
-          lineNumber: source.lineNumber,
-          columnNumber: source.columnNumber,
-          functionName: source.functionName,
-        };
-      }
-    }
-  }
-
-  const ownerStack = parseStack(getOwnerStack(fiber), {
-    includeInElement: false,
-  });
-
-  let nearestFallbackSource: FiberSource | null = null;
-
-  while (ownerStack.length) {
-    const stackFrame = ownerStack.pop();
-    if (!stackFrame || !stackFrame.raw || !stackFrame.file) {
-      continue;
-    }
-
-    const source = await getSourceFromStack(stackFrame.raw, cache, fetchFn);
-    if (source) {
-      const fileName = normalizeFileName(source.fileName);
-      return {
-        fileName,
-        lineNumber: source.lineNumber,
-        columnNumber: source.columnNumber,
-        functionName: source.functionName,
-      };
-    }
-    const fileName = normalizeFileName(stackFrame.file);
-    nearestFallbackSource = {
-      fileName,
-      lineNumber: stackFrame.line,
-      columnNumber: stackFrame.col,
-      functionName: stackFrame.function,
-    };
-  }
-
-  return nearestFallbackSource;
-};
-
-/**
- * Returns the source location from a DOM node or element by finding its associated {@link Fiber} and traversing to the nearest available source.
- *
- * @example
- * ```ts
- * const element = document.querySelector('.my-component');
- * const source = await getSourceFromHostInstance(element);
- * if (source) {
- *   console.log(`Component defined at ${source.fileName}:${source.lineNumber}`);
- * }
- * ```
- */
-export const getSourceFromHostInstance = async (
-  target: Node | Element,
-  cache = true,
-  fetchFn?: (url: string) => Promise<Response>,
-): Promise<FiberSource | null> => {
-  const maybeHostFiber = getFiberFromHostInstance(target);
-  if (!maybeHostFiber || !isHostFiber(maybeHostFiber)) {
-    return null;
-  }
-  const hostFiber = getLatestFiber(maybeHostFiber);
-
-  if (!hostFiber) {
-    return null;
-  }
-
-  return getNearestValidSource(hostFiber, cache, fetchFn);
 };

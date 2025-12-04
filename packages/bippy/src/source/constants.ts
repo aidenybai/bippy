@@ -22,3 +22,5 @@ export const BUNDLED_FILE_PATTERN_REGEX =
 
 export const QUERY_PARAMETER_PATTERN_REGEX =
   /^\?[\w~.\-]+(?:=[^&#]*)?(?:&[\w~.\-]+(?:=[^&#]*)?)*$/;
+
+export const SERVER_FRAME_MARKER = '(at Server)';
