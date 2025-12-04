@@ -586,5 +586,13 @@ export const getOwnerStack = async (
     },
   );
 
-  return symbolicateStack(enrichedStackFrames, shouldCache, fetchFunction);
+  const deduplicatedStackFrames = enrichedStackFrames.filter(
+    (stackFrame, index, frames) => {
+      if (index === 0) return true;
+      const previousFrame = frames[index - 1];
+      return stackFrame.functionName !== previousFrame.functionName;
+    },
+  );
+
+  return symbolicateStack(deduplicatedStackFrames, shouldCache, fetchFunction);
 };
