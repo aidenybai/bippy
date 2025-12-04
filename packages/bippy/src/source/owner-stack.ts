@@ -558,14 +558,15 @@ const getOwnerStackEntries = (rootFiber: Fiber): OwnerStackEntry[] => {
   return ownerStackEntries;
 };
 
-export const getComponentStack = async (
+export const getOwnerStack = async (
   fiber: Fiber,
   shouldCache = true,
   fetchFunction?: (url: string) => Promise<Response>,
 ): Promise<StackFrame[]> => {
   const ownerStackEntries = getOwnerStackEntries(fiber);
   const fallbackStackFrames = parseStack(getFallbackOwnerStack(fiber));
-  const functionNameToRscFrames = buildFunctionNameToRscFramesMap(ownerStackEntries);
+  const functionNameToRscFrames =
+    buildFunctionNameToRscFramesMap(ownerStackEntries);
   const functionNameToUsageIndex = new Map<string, number>();
 
   const enrichedStackFrames = fallbackStackFrames.map(

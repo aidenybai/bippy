@@ -10,7 +10,7 @@ import {
   BUNDLED_FILE_PATTERN_REGEX,
   QUERY_PARAMETER_PATTERN_REGEX,
 } from './constants.js';
-import { getComponentStack } from './owner-stack.js';
+import { getOwnerStack } from './owner-stack.js';
 
 export const hasDebugSource = (
   fiber: Fiber,
@@ -59,7 +59,7 @@ export const getSource = async (
     return debugSource || null;
   }
 
-  const componentStack = await getComponentStack(fiber, cache, fetchFn);
+  const componentStack = await getOwnerStack(fiber, cache, fetchFn);
 
   for (const stackFrame of componentStack) {
     if (stackFrame.fileName) {

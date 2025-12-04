@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { expect, it } from 'vitest';
 import type { Fiber } from '../types.js';
 import { instrument } from '../index.js';
-import { getSource, getComponentStack } from '../source/index.js';
+import { getSource, getOwnerStack } from '../source/index.js';
 import { normalizeFileName } from '../source/get-source.js';
 
 const mockFetch = (): Promise<Response> => {
@@ -43,7 +43,7 @@ it('getOwnerStack should return stack for simple component', async () => {
   });
   render(<SimpleComponent />);
 
-  const result = await getComponentStack(capturedFiber as unknown as Fiber);
+  const result = await getOwnerStack(capturedFiber as unknown as Fiber);
 
   expect(result).toHaveLength(1);
   expect(result[0].functionName).toBe('SimpleComponent');
@@ -59,7 +59,7 @@ it('getOwnerStack should return stack for component with props', async () => {
   });
   render(<ComponentWithProps message="test" />);
 
-  const result = await getComponentStack(capturedFiber as unknown as Fiber);
+  const result = await getOwnerStack(capturedFiber as unknown as Fiber);
 
   expect(result).toHaveLength(1);
   expect(result[0].functionName).toBe('ComponentWithProps');
@@ -77,7 +77,7 @@ it('getOwnerStack should return stack for component with hooks', async () => {
   });
   render(<ComponentWithHooks />);
 
-  const result = await getComponentStack(capturedFiber as unknown as Fiber);
+  const result = await getOwnerStack(capturedFiber as unknown as Fiber);
 
   expect(result).toHaveLength(1);
   expect(result[0].functionName).toBe('ComponentWithHooks');
@@ -99,7 +99,7 @@ it('getOwnerStack should return stack for nested component with props', async ()
     </ExampleWithChild>,
   );
 
-  const result = await getComponentStack(capturedFiber as unknown as Fiber);
+  const result = await getOwnerStack(capturedFiber as unknown as Fiber);
 
   expect(result).toHaveLength(3);
   expect(result[0].functionName).toBe('ComponentWithProps');

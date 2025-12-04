@@ -1,6 +1,6 @@
 import { Fiber } from '../types.js';
 import { getDisplayName } from '../core.js';
-import { getComponentStack } from './owner-stack.js';
+import { getOwnerStack } from './owner-stack.js';
 import { getSourceFromSourceMap, getSourceMap } from './symbolication.js';
 import { StackFrame } from './parse-stack.js';
 
@@ -46,7 +46,7 @@ export const getDisplayNameFromSource = async (
   cache = true,
   fetchFn?: (url: string) => Promise<Response>,
 ): Promise<string | null> => {
-  const ownerStack = await getComponentStack(fiber, cache, fetchFn);
+  const ownerStack = await getOwnerStack(fiber, cache, fetchFn);
   const stackFrame = ownerStack.filter((stackFrame) => stackFrame.fileName)[0];
 
   if (!stackFrame?.fileName) {
