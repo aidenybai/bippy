@@ -1,5 +1,11 @@
 # bippy
 
+## 0.5.24
+
+### Patch Changes
+
+- fix: method name
+
 ## 0.5.23
 
 ### Patch Changes
