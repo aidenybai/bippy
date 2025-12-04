@@ -1,6 +1,6 @@
 import { Fiber } from '../types.js';
 import { getDisplayName } from '../core.js';
-import { getComponentStack } from './get-source.js';
+import { getComponentStack } from './owner-stack.js';
 import { getSourceFromSourceMap, getSourceMap } from './symbolication.js';
 import { StackFrame } from './parse-stack.js';
 
