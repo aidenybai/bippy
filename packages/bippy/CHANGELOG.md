@@ -1,5 +1,11 @@
 # bippy
 
+## 0.5.25
+
+### Patch Changes
+
+- fix: duplication
+
 ## 0.5.24
 
 ### Patch Changes
