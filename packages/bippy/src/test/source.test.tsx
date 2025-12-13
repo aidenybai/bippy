@@ -217,3 +217,21 @@ it('normalizeFileName should strip /app-pages-browser/ prefix', () => {
   const result = normalizeFileName(input);
   expect(result).toBe('./src/components/test.tsx');
 });
+
+it('normalizeFileName should strip http:// host prefix (Vite dev server)', () => {
+  const input = 'http://localhost:5173/src/features/my-component.tsx';
+  const result = normalizeFileName(input);
+  expect(result).toBe('/src/features/my-component.tsx');
+});
+
+it('normalizeFileName should strip http:// host prefix and query parameters', () => {
+  const input = 'http://127.0.0.1:5173/src/main.tsx?t=123';
+  const result = normalizeFileName(input);
+  expect(result).toBe('/src/main.tsx');
+});
+
+it('normalizeFileName should strip https:// host prefix for /@fs/ paths', () => {
+  const input = 'https://example.local:5173/@fs/Users/me/proj/src/app.tsx';
+  const result = normalizeFileName(input);
+  expect(result).toBe('/@fs/Users/me/proj/src/app.tsx');
+});

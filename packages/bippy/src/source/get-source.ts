@@ -79,11 +79,21 @@ export const normalizeFileName = (fileName: string): string => {
     return '';
   }
 
-  if (ANONYMOUS_FILE_PATTERNS.includes(fileName as never)) {
+  if (ANONYMOUS_FILE_PATTERNS.some((pattern) => pattern === fileName)) {
     return '';
   }
 
   let normalizedFileName = fileName;
+
+  if (
+    normalizedFileName.startsWith('http://') ||
+    normalizedFileName.startsWith('https://')
+  ) {
+    try {
+      const parsedUrl = new URL(normalizedFileName);
+      normalizedFileName = parsedUrl.pathname;
+    } catch {}
+  }
 
   if (normalizedFileName.startsWith(ABOUT_REACT_PREFIX)) {
     const remainder = normalizedFileName.slice(ABOUT_REACT_PREFIX.length);
@@ -119,6 +129,14 @@ export const normalizeFileName = (fileName: string): string => {
     if (schemeMatch) {
       normalizedFileName = normalizedFileName.slice(schemeMatch[0].length);
     }
+  }
+
+  if (normalizedFileName.startsWith('//')) {
+    const firstPathSlashIndex = normalizedFileName.indexOf('/', 2);
+    normalizedFileName =
+      firstPathSlashIndex === -1
+        ? ''
+        : normalizedFileName.slice(firstPathSlashIndex);
   }
 
   const queryParameterIndex = normalizedFileName.indexOf('?');
