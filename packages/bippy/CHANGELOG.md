@@ -1,5 +1,11 @@
 # bippy
 
+## 0.5.26
+
+### Patch Changes
+
+- fix: localhost for vite links
+
 ## 0.5.25
 
 ### Patch Changes
