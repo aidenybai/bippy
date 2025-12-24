@@ -111,7 +111,7 @@ export default function App() {
 
         <div className="flex flex-col gap-[1ch] my-[1ch]">
           <Text className="text-muted-foreground">
-            you can get started in {'<'}6 lines of code:
+            you can get started in {'<'}10 lines of code:
           </Text>
         </div>
 
@@ -120,13 +120,15 @@ export default function App() {
             className="whitespace-pre-wrap"
             dangerouslySetInnerHTML={{
               __html:
-                highlight(`import { onCommitFiberRoot, traverseFiber } from 'bippy';
+                highlight(`import { instrument, traverseFiber } from 'bippy';
 
-onCommitFiberRoot((root) => {
-  traverseFiber(root.current, (fiber) => {
-    console.log('fiber:', fiber);
-  });
-})`),
+instrument({
+  onCommitFiberRoot(rendererID, root) {
+    traverseFiber(root.current, (fiber) => {
+      console.log('fiber:', fiber);
+    });
+  },
+});`),
             }}
           />
         </pre>

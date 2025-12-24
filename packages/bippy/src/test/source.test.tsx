@@ -264,3 +264,13 @@ it('extractLocation should handle path without any parentheses', () => {
   const result = extractLocation('/src/components/button.tsx:25:10');
   expect(result).toEqual(['/src/components/button.tsx', '25', '10']);
 });
+
+it('extractLocation should handle path starting with route group (no Chrome wrap)', () => {
+  const result = extractLocation('(docs)/page.tsx:10:5');
+  expect(result).toEqual(['(docs)/page.tsx', '10', '5']);
+});
+
+it('extractLocation should handle file with parentheses in name', () => {
+  const result = extractLocation('file(1).js:10:5');
+  expect(result).toEqual(['file(1).js', '10', '5']);
+});

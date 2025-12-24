@@ -61,14 +61,16 @@ export const extractLocation = (
 ): [string, string | undefined, string | undefined] => {
   if (!urlLike.includes(':')) return [urlLike, undefined, undefined];
 
+  // HACK: Chrome/V8 stack traces wrap location in parens: "(file.js:10:5)"
+  // We need to strip these outer parens but preserve parens in paths (e.g., Next.js route groups like "(docs)")
+  // Chrome format always ends with `:col)` where digit comes right before the closing paren
+  const isWrappedLocation =
+    urlLike.startsWith('(') && /:\d+\)$/.test(urlLike);
+  const sanitizedResult = isWrappedLocation ? urlLike.slice(1, -1) : urlLike;
+
   const regExp = /(.+?)(?::(\d+))?(?::(\d+))?$/;
-  // HACK: Only strip outer wrapping parentheses (from stack trace format like "(file.js:10:5)"),
-  // not parentheses within the path (e.g., Next.js route groups like "(docs)")
-  const sanitized =
-    urlLike.startsWith('(') && urlLike.endsWith(')')
-      ? urlLike.slice(1, -1)
-      : urlLike;
-  const parts = regExp.exec(sanitized)!;
+  const parts = regExp.exec(sanitizedResult);
+  if (!parts) return [sanitizedResult, undefined, undefined];
   return [parts[1], parts[2] || undefined, parts[3] || undefined] as const;
 };
 
