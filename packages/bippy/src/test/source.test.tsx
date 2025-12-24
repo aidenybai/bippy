@@ -7,6 +7,7 @@ import type { Fiber } from '../types.js';
 import { instrument } from '../index.js';
 import { getSource, getOwnerStack } from '../source/index.js';
 import { normalizeFileName } from '../source/get-source.js';
+import { extractLocation } from '../source/parse-stack.js';
 
 const mockFetch = (): Promise<Response> => {
   return Promise.resolve(
@@ -64,7 +65,7 @@ it('getOwnerStack should return stack for component with props', async () => {
   expect(result).toHaveLength(1);
   expect(result[0].functionName).toBe('ComponentWithProps');
   expect(result[0].fileName).toContain('source.test.tsx');
-  expect(result[0].lineNumber).toBe(26);
+  expect(result[0].lineNumber).toBe(28);
   expect(result[0].columnNumber).toBe(31);
 });
 
@@ -82,7 +83,7 @@ it('getOwnerStack should return stack for component with hooks', async () => {
   expect(result).toHaveLength(1);
   expect(result[0].functionName).toBe('ComponentWithHooks');
   expect(result[0].fileName).toContain('source.test.tsx');
-  expect(result[0].lineNumber).toBe(30);
+  expect(result[0].lineNumber).toBe(32);
   expect(result[0].columnNumber).toBe(41);
 });
 
@@ -104,12 +105,12 @@ it('getOwnerStack should return stack for nested component with props', async ()
   expect(result).toHaveLength(3);
   expect(result[0].functionName).toBe('ComponentWithProps');
   expect(result[0].fileName).toContain('source.test.tsx');
-  expect(result[0].lineNumber).toBe(26);
+  expect(result[0].lineNumber).toBe(28);
   expect(result[0].columnNumber).toBe(31);
   expect(result[1].functionName).toBe('div');
   expect(result[2].functionName).toBe('ExampleWithChild');
   expect(result[2].fileName).toContain('source.test.tsx');
-  expect(result[2].lineNumber).toBe(33);
+  expect(result[2].lineNumber).toBe(35);
   expect(result[2].columnNumber).toBe(29);
 });
 
@@ -234,4 +235,32 @@ it('normalizeFileName should strip https:// host prefix for /@fs/ paths', () => 
   const input = 'https://example.local:5173/@fs/Users/me/proj/src/app.tsx';
   const result = normalizeFileName(input);
   expect(result).toBe('/@fs/Users/me/proj/src/app.tsx');
+});
+
+it('extractLocation should strip outer parentheses from Chrome stack trace format', () => {
+  const result = extractLocation('(file.js:10:5)');
+  expect(result).toEqual(['file.js', '10', '5']);
+});
+
+it('extractLocation should preserve parentheses in Next.js route group paths', () => {
+  const result = extractLocation(
+    '/_next/static/chunks/09f9e_(docs)_some-page__components.js:42:15',
+  );
+  expect(result).toEqual([
+    '/_next/static/chunks/09f9e_(docs)_some-page__components.js',
+    '42',
+    '15',
+  ]);
+});
+
+it('extractLocation should handle Chrome stack trace with route group path', () => {
+  const result = extractLocation(
+    '(/_next/static/chunks/(docs)/page.js:10:5)',
+  );
+  expect(result).toEqual(['/_next/static/chunks/(docs)/page.js', '10', '5']);
+});
+
+it('extractLocation should handle path without any parentheses', () => {
+  const result = extractLocation('/src/components/button.tsx:25:10');
+  expect(result).toEqual(['/src/components/button.tsx', '25', '10']);
 });

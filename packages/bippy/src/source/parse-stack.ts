@@ -62,7 +62,13 @@ export const extractLocation = (
   if (!urlLike.includes(':')) return [urlLike, undefined, undefined];
 
   const regExp = /(.+?)(?::(\d+))?(?::(\d+))?$/;
-  const parts = regExp.exec(urlLike.replace(/[()]/g, ''))!;
+  // HACK: Only strip outer wrapping parentheses (from stack trace format like "(file.js:10:5)"),
+  // not parentheses within the path (e.g., Next.js route groups like "(docs)")
+  const sanitized =
+    urlLike.startsWith('(') && urlLike.endsWith(')')
+      ? urlLike.slice(1, -1)
+      : urlLike;
+  const parts = regExp.exec(sanitized)!;
   return [parts[1], parts[2] || undefined, parts[3] || undefined] as const;
 };
 
