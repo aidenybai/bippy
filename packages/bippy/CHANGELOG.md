@@ -1,5 +1,11 @@
 # bippy
 
+## 0.5.27
+
+### Patch Changes
+
+- fix: parse stack accidently stripping parens for next.js paths
+
 ## 0.5.26
 
 ### Patch Changes
