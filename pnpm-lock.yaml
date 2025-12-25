@@ -93,9 +93,6 @@ importers:
 
   packages/next-playground:
     dependencies:
-      '@jridgewell/sourcemap-codec':
-        specifier: ^1.5.0
-        version: 1.5.0
       bippy:
         specifier: workspace:*
         version: link:../bippy
