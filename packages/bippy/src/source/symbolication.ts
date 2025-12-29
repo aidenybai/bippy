@@ -286,6 +286,9 @@ export const getSourceMapImpl = async (
   let bundleContent: string | undefined;
   try {
     const bundleResponse = await fetchFn(bundleUrl);
+    if (!bundleResponse.ok) {
+      return null;
+    }
     bundleContent = await bundleResponse.text();
   } catch {
     return null;
@@ -304,6 +307,9 @@ export const getSourceMapImpl = async (
 
   try {
     const sourceMapResponse = await fetchFn(sourceMapUrl);
+    if (!sourceMapResponse.ok) {
+      return null;
+    }
     const rawSourceMap = (await sourceMapResponse.json()) as RawSourceMap;
 
     return 'sections' in rawSourceMap
