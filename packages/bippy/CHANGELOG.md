@@ -1,5 +1,11 @@
 # bippy
 
+## 0.5.28
+
+### Patch Changes
+
+- fix: handle fetch errors
+
 ## 0.5.27
 
 ### Patch Changes
