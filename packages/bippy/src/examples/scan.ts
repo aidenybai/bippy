@@ -41,26 +41,26 @@ const getChangeReasons = (fiber: Fiber): string[] => {
     return reasons;
   }
 
-  let didPropsChange = false;
-  traverseProps(fiber, (_propName, nextValue, prevValue) => {
+  const changedProps: string[] = [];
+  traverseProps(fiber, (propName, nextValue, prevValue) => {
     if (!Object.is(nextValue, prevValue)) {
-      didPropsChange = true;
-      return true;
+      changedProps.push(propName);
     }
   });
-  if (didPropsChange) {
-    reasons.push('props');
+  if (changedProps.length > 0) {
+    reasons.push(`props: ${changedProps.join(', ')}`);
   }
 
-  let didStateChange = false;
+  const changedStateIndices: number[] = [];
+  let stateIndex = 0;
   traverseState(fiber, (nextState, prevState) => {
     if (!Object.is(nextState?.memoizedState, prevState?.memoizedState)) {
-      didStateChange = true;
-      return true;
+      changedStateIndices.push(stateIndex);
     }
+    stateIndex++;
   });
-  if (didStateChange) {
-    reasons.push('state');
+  if (changedStateIndices.length > 0) {
+    reasons.push(`state: [${changedStateIndices.join(', ')}]`);
   }
 
   let didContextChange = false;
@@ -78,9 +78,9 @@ const getChangeReasons = (fiber: Fiber): string[] => {
 };
 
 const logRender = (info: RenderInfo, phase: string): void => {
-  const reasonText = info.reasons.length > 0 ? info.reasons.join(', ') : 'mount';
   const fileText = info.fileName ? ` (${info.fileName})` : '';
-  console.log(`[${phase}] ${info.displayName}${fileText} - ${reasonText}`);
+  const reasonText = info.reasons.length > 0 ? ` { ${info.reasons.join(' | ')} }` : '';
+  console.log(`[${phase}] ${info.displayName}${fileText}${reasonText}`);
 };
 
 let currentStopFunction: StopFunction | null = null;
