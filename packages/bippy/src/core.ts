@@ -1341,24 +1341,25 @@ const uninstallDispatcherProxy = (renderer: ReactRenderer): void => {
 };
 
 /**
- * Freezes all React state updates by patching hook queues and dispatchers.
- * When frozen, all `useState` and `useReducer` dispatch functions become no-ops.
+ * Pauses all React state updates by patching hook queues and dispatchers.
+ * When paused, all `useState`, `useReducer`, and `useSyncExternalStore` updates become no-ops.
  *
  * This works by:
  * 1. Intercepting the update queue's `pending` property to prevent updates from being enqueued
- * 2. Patching dispatchers so new components also get frozen behavior
+ * 2. Wrapping `getSnapshot` for external stores to return frozen values
+ * 3. Patching dispatchers so new components also get paused behavior
  *
- * @returns An unfreeze function to restore normal React behavior.
+ * @returns A function to resume normal React behavior.
  *
  * @example
  * ```ts
- * const unfreeze = freeze();
- * // All setState calls are now no-ops
- * unfreeze();
+ * const resumeUpdates = pauseUpdates();
+ * // All setState/dispatch calls are now no-ops
+ * resumeUpdates();
  * // React updates work normally again
  * ```
  */
-export const freeze = (): (() => void) => {
+export const pauseUpdates = (): (() => void) => {
   if (isFrozen) {
     return () => {};
   }
@@ -1391,9 +1392,9 @@ export const freeze = (): (() => void) => {
 };
 
 /**
- * Returns whether React updates are currently frozen.
+ * Returns whether React updates are currently paused.
  */
-export const isFreezeActive = (): boolean => {
+export const areUpdatesPaused = (): boolean => {
   return isFrozen;
 };
 

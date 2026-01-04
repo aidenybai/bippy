@@ -3,7 +3,7 @@ import '../index.js';
 import * as React from 'react';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
-import { freeze, isFreezeActive, instrument, secure, getRDTHook, _fiberRoots } from '../core.js';
+import { pauseUpdates, areUpdatesPaused, instrument, secure, getRDTHook, _fiberRoots } from '../core.js';
 
 const Counter = () => {
   const [count, setCount] = React.useState(0);
@@ -68,7 +68,7 @@ const ExternalStoreCounter = ({ store }: { store: ReturnType<typeof createExtern
   );
 };
 
-describe('freeze', () => {
+describe('pauseUpdates', () => {
   beforeEach(() => {
     cleanup();
     instrument(
@@ -85,32 +85,32 @@ describe('freeze', () => {
     cleanup();
   });
 
-  it('should return unfreeze function', () => {
-    const unfreeze = freeze();
-    expect(typeof unfreeze).toBe('function');
-    unfreeze();
+  it('should return resume function', () => {
+    const resumeUpdates = pauseUpdates();
+    expect(typeof resumeUpdates).toBe('function');
+    resumeUpdates();
   });
 
-  it('should report isFreezeActive correctly', () => {
-    expect(isFreezeActive()).toBe(false);
-    const unfreeze = freeze();
-    expect(isFreezeActive()).toBe(true);
-    unfreeze();
-    expect(isFreezeActive()).toBe(false);
+  it('should report areUpdatesPaused correctly', () => {
+    expect(areUpdatesPaused()).toBe(false);
+    const resumeUpdates = pauseUpdates();
+    expect(areUpdatesPaused()).toBe(true);
+    resumeUpdates();
+    expect(areUpdatesPaused()).toBe(false);
   });
 
-  it('should handle multiple freeze calls', () => {
-    const unfreeze1 = freeze();
-    expect(isFreezeActive()).toBe(true);
-    const unfreeze2 = freeze();
-    expect(isFreezeActive()).toBe(true);
-    unfreeze1();
-    expect(isFreezeActive()).toBe(false);
-    unfreeze2();
-    expect(isFreezeActive()).toBe(false);
+  it('should handle multiple pauseUpdates calls', () => {
+    const resume1 = pauseUpdates();
+    expect(areUpdatesPaused()).toBe(true);
+    const resume2 = pauseUpdates();
+    expect(areUpdatesPaused()).toBe(true);
+    resume1();
+    expect(areUpdatesPaused()).toBe(false);
+    resume2();
+    expect(areUpdatesPaused()).toBe(false);
   });
 
-  it('should freeze useState updates', async () => {
+  it('should pause useState updates', async () => {
     render(<Counter />);
 
     expect(_fiberRoots.size).toBeGreaterThan(0);
@@ -125,7 +125,7 @@ describe('freeze', () => {
     });
     expect(countElement.textContent).toBe('1');
 
-    const unfreeze = freeze();
+    const resumeUpdates = pauseUpdates();
 
     await act(async () => {
       fireEvent.click(incrementButton);
@@ -137,7 +137,7 @@ describe('freeze', () => {
     });
     expect(countElement.textContent).toBe('1');
 
-    unfreeze();
+    resumeUpdates();
 
     await act(async () => {
       fireEvent.click(incrementButton);
@@ -145,7 +145,7 @@ describe('freeze', () => {
     expect(countElement.textContent).toBe('2');
   });
 
-  it('should freeze useReducer updates', async () => {
+  it('should pause useReducer updates', async () => {
     render(<ReducerCounter />);
 
     expect(_fiberRoots.size).toBeGreaterThan(0);
@@ -160,14 +160,14 @@ describe('freeze', () => {
     });
     expect(countElement.textContent).toBe('1');
 
-    const unfreeze = freeze();
+    const resumeUpdates = pauseUpdates();
 
     await act(async () => {
       fireEvent.click(incrementButton);
     });
     expect(countElement.textContent).toBe('1');
 
-    unfreeze();
+    resumeUpdates();
 
     await act(async () => {
       fireEvent.click(incrementButton);
@@ -175,7 +175,7 @@ describe('freeze', () => {
     expect(countElement.textContent).toBe('2');
   });
 
-  it('should freeze useSyncExternalStore updates', async () => {
+  it('should pause useSyncExternalStore updates', async () => {
     const store = createExternalStore(0);
     render(<ExternalStoreCounter store={store} />);
 
@@ -190,7 +190,7 @@ describe('freeze', () => {
     });
     expect(countElement.textContent).toBe('1');
 
-    const unfreeze = freeze();
+    const resumeUpdates = pauseUpdates();
 
     await act(async () => {
       store.increment();
@@ -202,7 +202,7 @@ describe('freeze', () => {
     });
     expect(countElement.textContent).toBe('1');
 
-    unfreeze();
+    resumeUpdates();
 
     await act(async () => {
       store.increment();
