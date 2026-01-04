@@ -14,7 +14,7 @@ interface RenderInfo {
   displayName: string;
   fileName: string | null;
   reasons: string[];
-  causedBy: string | null;
+  causedBy: RenderCause | null;
 }
 
 type StopFunction = () => void;
@@ -95,11 +95,33 @@ const getChangeInfo = (fiber: Fiber): ChangeInfo => {
   return { reasons, didPropsChange, didStateChange, didContextChange };
 };
 
+interface RenderCause {
+  componentName: string;
+  prop: string | null;
+}
+
+const getChangedProps = (fiber: Fiber): string[] => {
+  const changedProps: string[] = [];
+  traverseProps(fiber, (propName, nextValue, prevValue) => {
+    if (!Object.is(nextValue, prevValue)) {
+      changedProps.push(propName);
+    }
+  });
+  return changedProps;
+};
+
 const findRenderCause = (
   fiber: Fiber,
   renderedFiberIds: Set<number>,
-): string | null => {
+): RenderCause | null => {
   let currentFiber = fiber.return;
+  let lastRenderedParent: Fiber | null = null;
+  let propFromParent: string | null = null;
+
+  const changedProps = getChangedProps(fiber);
+  if (changedProps.length > 0) {
+    propFromParent = changedProps[0];
+  }
 
   while (currentFiber) {
     if (!isCompositeFiber(currentFiber)) {
@@ -112,12 +134,24 @@ const findRenderCause = (
       break;
     }
 
+    lastRenderedParent = currentFiber;
+
     const parentChangeInfo = getChangeInfo(currentFiber);
     if (parentChangeInfo.didStateChange || parentChangeInfo.didContextChange) {
-      return getDisplayName(currentFiber.type) || 'Unknown';
+      return {
+        componentName: getDisplayName(currentFiber.type) || 'Unknown',
+        prop: propFromParent,
+      };
     }
 
     currentFiber = currentFiber.return;
+  }
+
+  if (lastRenderedParent) {
+    return {
+      componentName: getDisplayName(lastRenderedParent.type) || 'Unknown',
+      prop: propFromParent,
+    };
   }
 
   return null;
@@ -138,7 +172,11 @@ const flushLog = (): void => {
 const logRender = (info: RenderInfo, phase: string): void => {
   const fileText = info.fileName ? ` (${info.fileName})` : '';
   const reasonText = info.reasons.length > 0 ? ` { ${info.reasons.join(' | ')} }` : '';
-  const causedByText = info.causedBy ? ` ← ${info.causedBy}` : '';
+  let causedByText = '';
+  if (info.causedBy) {
+    const propText = info.causedBy.prop ? `.${info.causedBy.prop}` : '';
+    causedByText = ` ← ${info.causedBy.componentName}${propText}`;
+  }
   const message = `[${phase}] ${info.displayName}${fileText}${reasonText}${causedByText}`;
 
   if (message === lastLogMessage) {
