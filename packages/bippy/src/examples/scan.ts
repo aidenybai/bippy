@@ -9,6 +9,7 @@ import {
   traverseContexts,
   getFiberId,
   getTimings,
+  hasMemoCache,
 } from '../core.js';
 
 interface RenderInfo {
@@ -17,6 +18,7 @@ interface RenderInfo {
   reasons: string[];
   causedBy: RenderCause | null;
   time: number | null;
+  isCompiled: boolean;
 }
 
 type StopFunction = () => void;
@@ -160,6 +162,7 @@ const findRenderCause = (
 };
 
 const formatRenderInfo = (info: RenderInfo, phase: string): string => {
+  const compiledText = info.isCompiled ? ' ⚛' : '';
   const fileText = info.fileName ? ` (${info.fileName})` : '';
   const reasonText = info.reasons.length > 0 ? ` { ${info.reasons.join(' | ')} }` : '';
   let causedByText = '';
@@ -168,7 +171,7 @@ const formatRenderInfo = (info: RenderInfo, phase: string): string => {
     causedByText = ` ← ${info.causedBy.componentName}${propText}`;
   }
   const timeText = info.time !== null && info.time > 0 ? ` ${info.time.toFixed(2)}ms` : '';
-  return `[${phase}] ${info.displayName}${fileText}${reasonText}${causedByText}${timeText}`;
+  return `[${phase}] ${info.displayName}${compiledText}${fileText}${reasonText}${causedByText}${timeText}`;
 };
 
 interface LogEntry {
@@ -225,9 +228,10 @@ const scan = (): StopFunction => {
       const displayName = getDisplayName(fiber.type) || 'Unknown';
       const fileName = getFileName(fiber);
       const { selfTime } = getTimings(fiber);
+      const isCompiled = hasMemoCache(fiber);
 
       if (phase === 'unmount') {
-        const message = formatRenderInfo({ displayName, fileName, reasons: [], causedBy: null, time: null }, phase);
+        const message = formatRenderInfo({ displayName, fileName, reasons: [], causedBy: null, time: null, isCompiled }, phase);
         logEntries.push({ message, totalTime: 0 });
         continue;
       }
@@ -239,7 +243,7 @@ const scan = (): StopFunction => {
         causedBy = findRenderCause(fiber, renderedFiberIds);
       }
 
-      const message = formatRenderInfo({ displayName, fileName, reasons: changeInfo.reasons, causedBy, time: selfTime }, phase);
+      const message = formatRenderInfo({ displayName, fileName, reasons: changeInfo.reasons, causedBy, time: selfTime, isCompiled }, phase);
       logEntries.push({ message, totalTime: selfTime });
     }
 
