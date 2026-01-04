@@ -82,10 +82,30 @@ const getChangeReasons = (fiber: Fiber): string[] => {
   return reasons;
 };
 
+let lastLogMessage: string | null = null;
+let lastLogCount = 0;
+
+const flushLog = (): void => {
+  if (lastLogMessage && lastLogCount > 0) {
+    const countSuffix = lastLogCount > 1 ? ` x${lastLogCount}` : '';
+    globalThis.scanLog?.(`${lastLogMessage}${countSuffix}`);
+  }
+  lastLogMessage = null;
+  lastLogCount = 0;
+};
+
 const logRender = (info: RenderInfo, phase: string): void => {
   const fileText = info.fileName ? ` (${info.fileName})` : '';
   const reasonText = info.reasons.length > 0 ? ` { ${info.reasons.join(' | ')} }` : '';
-  globalThis.scanLog?.(`[${phase}] ${info.displayName}${fileText}${reasonText}`);
+  const message = `[${phase}] ${info.displayName}${fileText}${reasonText}`;
+
+  if (message === lastLogMessage) {
+    lastLogCount++;
+  } else {
+    flushLog();
+    lastLogMessage = message;
+    lastLogCount = 1;
+  }
 };
 
 let currentStopFunction: StopFunction | null = null;
@@ -113,6 +133,8 @@ const scan = (): StopFunction => {
 
       logRender({ displayName, fileName, reasons }, phase);
     });
+
+    flushLog();
   };
 
   instrument({ onCommitFiberRoot });
