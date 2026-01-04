@@ -7,12 +7,14 @@ import {
   traverseProps,
   traverseState,
   traverseContexts,
+  getFiberId,
 } from '../core.js';
 
 interface RenderInfo {
   displayName: string;
   fileName: string | null;
   reasons: string[];
+  causedBy: string | null;
 }
 
 type StopFunction = () => void;
@@ -39,11 +41,21 @@ const getFileName = (fiber: Fiber): string | null => {
   return parts[parts.length - 1] || null;
 };
 
-const getChangeReasons = (fiber: Fiber): string[] => {
+interface ChangeInfo {
+  reasons: string[];
+  didPropsChange: boolean;
+  didStateChange: boolean;
+  didContextChange: boolean;
+}
+
+const getChangeInfo = (fiber: Fiber): ChangeInfo => {
   const reasons: string[] = [];
+  let didPropsChange = false;
+  let didStateChange = false;
+  let didContextChange = false;
 
   if (!fiber.alternate) {
-    return reasons;
+    return { reasons, didPropsChange, didStateChange, didContextChange };
   }
 
   const changedProps: string[] = [];
@@ -53,6 +65,7 @@ const getChangeReasons = (fiber: Fiber): string[] => {
     }
   });
   if (changedProps.length > 0) {
+    didPropsChange = true;
     reasons.push(`props: ${changedProps.join(', ')}`);
   }
 
@@ -65,10 +78,10 @@ const getChangeReasons = (fiber: Fiber): string[] => {
     stateIndex++;
   });
   if (changedStateIndices.length > 0) {
+    didStateChange = true;
     reasons.push(`state: [${changedStateIndices.join(', ')}]`);
   }
 
-  let didContextChange = false;
   traverseContexts(fiber, (nextContext, prevContext) => {
     if (!Object.is(nextContext?.memoizedValue, prevContext?.memoizedValue)) {
       didContextChange = true;
@@ -79,7 +92,35 @@ const getChangeReasons = (fiber: Fiber): string[] => {
     reasons.push('context');
   }
 
-  return reasons;
+  return { reasons, didPropsChange, didStateChange, didContextChange };
+};
+
+const findRenderCause = (
+  fiber: Fiber,
+  renderedFiberIds: Set<number>,
+): string | null => {
+  let currentFiber = fiber.return;
+
+  while (currentFiber) {
+    if (!isCompositeFiber(currentFiber)) {
+      currentFiber = currentFiber.return;
+      continue;
+    }
+
+    const parentId = getFiberId(currentFiber);
+    if (!renderedFiberIds.has(parentId)) {
+      break;
+    }
+
+    const parentChangeInfo = getChangeInfo(currentFiber);
+    if (parentChangeInfo.didStateChange || parentChangeInfo.didContextChange) {
+      return getDisplayName(currentFiber.type) || 'Unknown';
+    }
+
+    currentFiber = currentFiber.return;
+  }
+
+  return null;
 };
 
 let lastLogMessage: string | null = null;
@@ -97,7 +138,8 @@ const flushLog = (): void => {
 const logRender = (info: RenderInfo, phase: string): void => {
   const fileText = info.fileName ? ` (${info.fileName})` : '';
   const reasonText = info.reasons.length > 0 ? ` { ${info.reasons.join(' | ')} }` : '';
-  const message = `[${phase}] ${info.displayName}${fileText}${reasonText}`;
+  const causedByText = info.causedBy ? ` ← ${info.causedBy}` : '';
+  const message = `[${phase}] ${info.displayName}${fileText}${reasonText}${causedByText}`;
 
   if (message === lastLogMessage) {
     lastLogCount++;
@@ -124,15 +166,27 @@ const scan = (): StopFunction => {
   const onCommitFiberRoot = (_rendererID: number, root: FiberRoot): void => {
     if (!isActive) return;
 
+    const renderedFiberIds = new Set<number>();
+    const renderedFibers: Array<{ fiber: Fiber; phase: string }> = [];
+
     traverseRenderedFibers(root, (fiber: Fiber, phase) => {
       if (!isCompositeFiber(fiber)) return;
+      renderedFiberIds.add(getFiberId(fiber));
+      renderedFibers.push({ fiber, phase });
+    });
 
+    for (const { fiber, phase } of renderedFibers) {
       const displayName = getDisplayName(fiber.type) || 'Unknown';
       const fileName = getFileName(fiber);
-      const reasons = phase === 'update' ? getChangeReasons(fiber) : [];
+      const changeInfo = phase === 'update' ? getChangeInfo(fiber) : { reasons: [], didPropsChange: false, didStateChange: false, didContextChange: false };
 
-      logRender({ displayName, fileName, reasons }, phase);
-    });
+      let causedBy: string | null = null;
+      if (phase === 'update' && changeInfo.didPropsChange && !changeInfo.didStateChange && !changeInfo.didContextChange) {
+        causedBy = findRenderCause(fiber, renderedFiberIds);
+      }
+
+      logRender({ displayName, fileName, reasons: changeInfo.reasons, causedBy }, phase);
+    }
 
     flushLog();
   };
