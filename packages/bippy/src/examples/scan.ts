@@ -162,7 +162,7 @@ const findRenderCause = (
 };
 
 const formatRenderInfo = (info: RenderInfo, phase: string): string => {
-  const compiledText = info.isCompiled ? ' ⚛' : '';
+  const compiledText = info.isCompiled ? ' [react-compiler]' : '';
   const fileText = info.fileName ? ` (${info.fileName})` : '';
   const reasonText = info.reasons.length > 0 ? ` { ${info.reasons.join(' | ')} }` : '';
   let causedByText = '';
