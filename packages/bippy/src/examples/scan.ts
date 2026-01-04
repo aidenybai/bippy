@@ -29,6 +29,8 @@ declare global {
   // eslint-disable-next-line no-var
   var stopScan: typeof stopScan | undefined;
   // eslint-disable-next-line no-var
+  var copyScan: typeof copyScan | undefined;
+  // eslint-disable-next-line no-var
   var scanLog: typeof console.log | undefined;
 }
 
@@ -179,6 +181,8 @@ interface LogEntry {
   totalTime: number;
 }
 
+let logHistory: string[] = [];
+
 const flushLogs = (entries: LogEntry[]): void => {
   const grouped = new Map<string, { count: number; totalTime: number }>();
   for (const entry of entries) {
@@ -193,7 +197,9 @@ const flushLogs = (entries: LogEntry[]): void => {
   for (const [message, { count, totalTime }] of grouped) {
     const countSuffix = count > 1 ? ` x${count}` : '';
     const aggregateTime = count > 1 && totalTime > 0 ? ` (total: ${totalTime.toFixed(2)}ms)` : '';
-    globalThis.scanLog?.(`${message}${countSuffix}${aggregateTime}`);
+    const fullMessage = `${message}${countSuffix}${aggregateTime}`;
+    logHistory.push(fullMessage);
+    globalThis.scanLog?.(fullMessage);
   }
 };
 
@@ -208,6 +214,7 @@ const scan = (): StopFunction => {
     currentStopFunction();
   }
 
+  logHistory = [];
   let isActive = true;
 
   const onCommitFiberRoot = (_rendererID: number, root: FiberRoot): void => {
@@ -270,7 +277,15 @@ const stopScan = (): void => {
   }
 };
 
+const copyScan = async (): Promise<void> => {
+  const text = logHistory.join('\n');
+  if (typeof navigator !== 'undefined' && navigator.clipboard) {
+    await navigator.clipboard.writeText(text);
+  }
+};
+
 if (typeof globalThis !== 'undefined') {
   globalThis.scan = scan;
   globalThis.stopScan = stopScan;
+  globalThis.copyScan = copyScan;
 }
