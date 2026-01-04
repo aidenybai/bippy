@@ -29,6 +29,7 @@ export default defineConfig([
       core: './src/core.ts',
       source: './src/source/index.ts',
       ['install-hook-only']: './src/install-hook-only.ts',
+      ['examples/scan']: './src/examples/scan.ts',
     },
     format: ['esm', 'cjs'],
   },
