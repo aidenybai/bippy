@@ -8,6 +8,7 @@ import {
   traverseState,
   traverseContexts,
   getFiberId,
+  getTimings,
 } from '../core.js';
 
 interface RenderInfo {
