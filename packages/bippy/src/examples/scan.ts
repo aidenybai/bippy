@@ -22,7 +22,12 @@ declare global {
   var scan: typeof scan | undefined;
   // eslint-disable-next-line no-var
   var stopScan: typeof stopScan | undefined;
+  // eslint-disable-next-line no-var
+  var scanLog: typeof console.log | undefined;
 }
+
+// HACK: replace globalThis.scanLog to customize logging (e.g. for Cursor debug mode)
+globalThis.scanLog = globalThis.scanLog ?? console.log;
 
 const getFileName = (fiber: Fiber): string | null => {
   const debugSource = fiber._debugSource;
@@ -80,7 +85,7 @@ const getChangeReasons = (fiber: Fiber): string[] => {
 const logRender = (info: RenderInfo, phase: string): void => {
   const fileText = info.fileName ? ` (${info.fileName})` : '';
   const reasonText = info.reasons.length > 0 ? ` { ${info.reasons.join(' | ')} }` : '';
-  console.log(`[${phase}] ${info.displayName}${fileText}${reasonText}`);
+  globalThis.scanLog?.(`[${phase}] ${info.displayName}${fileText}${reasonText}`);
 };
 
 let currentStopFunction: StopFunction | null = null;
