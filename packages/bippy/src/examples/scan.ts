@@ -17,6 +17,13 @@ interface RenderInfo {
 
 type StopFunction = () => void;
 
+declare global {
+  // eslint-disable-next-line no-var
+  var scan: typeof scan | undefined;
+  // eslint-disable-next-line no-var
+  var stopScan: typeof stopScan | undefined;
+}
+
 const getFileName = (fiber: Fiber): string | null => {
   const debugSource = fiber._debugSource;
   if (!debugSource?.fileName) {
@@ -78,8 +85,8 @@ const logRender = (info: RenderInfo, phase: string): void => {
 
 let currentStopFunction: StopFunction | null = null;
 
-export const scan = (): StopFunction => {
-  if (typeof window === 'undefined') {
+const scan = (): StopFunction => {
+  if (typeof globalThis === 'undefined') {
     return () => {};
   }
 
@@ -117,8 +124,13 @@ export const scan = (): StopFunction => {
   return stop;
 };
 
-export const stopScan = (): void => {
+const stopScan = (): void => {
   if (currentStopFunction) {
     currentStopFunction();
   }
 };
+
+if (typeof globalThis !== 'undefined') {
+  globalThis.scan = scan;
+  globalThis.stopScan = stopScan;
+}

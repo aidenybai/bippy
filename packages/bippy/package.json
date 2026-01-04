@@ -70,16 +70,6 @@
         "default": "./dist/source.cjs"
       }
     },
-    "./examples/scan": {
-      "import": {
-        "types": "./dist/examples/scan.d.ts",
-        "default": "./dist/examples/scan.js"
-      },
-      "require": {
-        "types": "./dist/examples/scan.d.cts",
-        "default": "./dist/examples/scan.cjs"
-      }
-    },
     "./dist/*": "./dist/*.js",
     "./dist/*.js": "./dist/*.js",
     "./dist/*.cjs": "./dist/*.cjs"
