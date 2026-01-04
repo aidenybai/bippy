@@ -157,19 +157,7 @@ const findRenderCause = (
   return null;
 };
 
-let lastLogMessage: string | null = null;
-let lastLogCount = 0;
-
-const flushLog = (): void => {
-  if (lastLogMessage && lastLogCount > 0) {
-    const countSuffix = lastLogCount > 1 ? ` x${lastLogCount}` : '';
-    globalThis.scanLog?.(`${lastLogMessage}${countSuffix}`);
-  }
-  lastLogMessage = null;
-  lastLogCount = 0;
-};
-
-const logRender = (info: RenderInfo, phase: string): void => {
+const formatRenderInfo = (info: RenderInfo, phase: string): string => {
   const fileText = info.fileName ? ` (${info.fileName})` : '';
   const reasonText = info.reasons.length > 0 ? ` { ${info.reasons.join(' | ')} }` : '';
   let causedByText = '';
@@ -177,14 +165,17 @@ const logRender = (info: RenderInfo, phase: string): void => {
     const propText = info.causedBy.prop ? `.${info.causedBy.prop}` : '';
     causedByText = ` ← ${info.causedBy.componentName}${propText}`;
   }
-  const message = `[${phase}] ${info.displayName}${fileText}${reasonText}${causedByText}`;
+  return `[${phase}] ${info.displayName}${fileText}${reasonText}${causedByText}`;
+};
 
-  if (message === lastLogMessage) {
-    lastLogCount++;
-  } else {
-    flushLog();
-    lastLogMessage = message;
-    lastLogCount = 1;
+const flushLogs = (messages: string[]): void => {
+  const counts = new Map<string, number>();
+  for (const message of messages) {
+    counts.set(message, (counts.get(message) || 0) + 1);
+  }
+  for (const [message, count] of counts) {
+    const countSuffix = count > 1 ? ` x${count}` : '';
+    globalThis.scanLog?.(`${message}${countSuffix}`);
   }
 };
 
