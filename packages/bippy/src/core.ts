@@ -1142,127 +1142,131 @@ interface HookState {
   next: HookState | null;
 }
 
-interface FrozenQueueData {
+interface PausedQueueState {
   originalPendingDescriptor?: PropertyDescriptor;
   originalGetSnapshot?: () => unknown;
-  frozenSnapshotValue?: unknown;
+  snapshotValueAtPause?: unknown;
 }
 
-let isFrozen = false;
-const originalDispatcherRefs = new Map<ReactRenderer, { key: 'H' | 'current'; originalDescriptor: PropertyDescriptor | undefined }>();
-const frozenQueues = new WeakMap<HookQueue, FrozenQueueData>();
+interface PausedDispatcherState {
+  dispatcherKey: 'H' | 'current';
+  originalDescriptor: PropertyDescriptor | undefined;
+}
 
-const freezeStateQueue = (queue: HookQueue): void => {
-  if (!queue || frozenQueues.has(queue)) return;
+let isUpdatesPaused = false;
+const pausedDispatcherStates = new Map<ReactRenderer, PausedDispatcherState>();
+const pausedQueueStates = new WeakMap<HookQueue, PausedQueueState>();
 
-  const data: FrozenQueueData = {};
+const pauseHookQueue = (queue: HookQueue): void => {
+  if (!queue || pausedQueueStates.has(queue)) return;
+
+  const queuePauseState: PausedQueueState = {};
 
   if ('pending' in queue) {
-    data.originalPendingDescriptor = Object.getOwnPropertyDescriptor(queue, 'pending');
-    let storedPending = queue.pending;
+    queuePauseState.originalPendingDescriptor = Object.getOwnPropertyDescriptor(queue, 'pending');
+    let currentPendingValue = queue.pending;
 
     Object.defineProperty(queue, 'pending', {
       configurable: true,
       enumerable: true,
       get() {
-        return storedPending;
+        return currentPendingValue;
       },
       set(newValue) {
-        if (isFrozen) return;
-        storedPending = newValue;
+        if (isUpdatesPaused) return;
+        currentPendingValue = newValue;
       },
     });
   }
 
   if ('getSnapshot' in queue && typeof queue.getSnapshot === 'function') {
-    data.originalGetSnapshot = queue.getSnapshot;
-    data.frozenSnapshotValue = queue.getSnapshot();
+    queuePauseState.originalGetSnapshot = queue.getSnapshot;
+    queuePauseState.snapshotValueAtPause = queue.getSnapshot();
 
     queue.getSnapshot = () => {
-      if (isFrozen) {
-        return data.frozenSnapshotValue;
+      if (isUpdatesPaused) {
+        return queuePauseState.snapshotValueAtPause;
       }
-      return data.originalGetSnapshot!();
+      return queuePauseState.originalGetSnapshot!();
     };
   }
 
-  frozenQueues.set(queue, data);
+  pausedQueueStates.set(queue, queuePauseState);
 };
 
-const unfreezeQueue = (queue: HookQueue): void => {
-  const stored = frozenQueues.get(queue);
-  if (!stored) return;
+const resumeHookQueue = (queue: HookQueue): void => {
+  const queuePauseState = pausedQueueStates.get(queue);
+  if (!queuePauseState) return;
 
-  if (stored.originalPendingDescriptor) {
-    const currentValue = queue.pending;
-    Object.defineProperty(queue, 'pending', stored.originalPendingDescriptor);
-    if (!stored.originalPendingDescriptor.get && !stored.originalPendingDescriptor.set) {
-      queue.pending = currentValue;
+  if (queuePauseState.originalPendingDescriptor) {
+    const currentPendingValue = queue.pending;
+    Object.defineProperty(queue, 'pending', queuePauseState.originalPendingDescriptor);
+    if (!queuePauseState.originalPendingDescriptor.get && !queuePauseState.originalPendingDescriptor.set) {
+      queue.pending = currentPendingValue;
     }
   } else if ('pending' in queue) {
-    const currentValue = queue.pending;
+    const currentPendingValue = queue.pending;
     delete (queue as Record<string, unknown>).pending;
-    queue.pending = currentValue;
+    queue.pending = currentPendingValue;
   }
 
-  if (stored.originalGetSnapshot) {
-    queue.getSnapshot = stored.originalGetSnapshot;
+  if (queuePauseState.originalGetSnapshot) {
+    queue.getSnapshot = queuePauseState.originalGetSnapshot;
   }
 
-  frozenQueues.delete(queue);
+  pausedQueueStates.delete(queue);
 };
 
-const wrapFiberQueues = (fiber: Fiber): void => {
-  let hookState = fiber.memoizedState as HookState | null;
-  while (hookState) {
-    if (hookState.queue && typeof hookState.queue === 'object') {
-      freezeStateQueue(hookState.queue);
+const pauseFiberHookQueues = (fiber: Fiber): void => {
+  let currentHookState = fiber.memoizedState as HookState | null;
+  while (currentHookState) {
+    if (currentHookState.queue && typeof currentHookState.queue === 'object') {
+      pauseHookQueue(currentHookState.queue);
     }
-    hookState = hookState?.next ?? null;
+    currentHookState = currentHookState?.next ?? null;
   }
 };
 
-const unwrapFiberQueues = (fiber: Fiber): void => {
-  let hookState = fiber.memoizedState as HookState | null;
-  while (hookState) {
-    if (hookState.queue && typeof hookState.queue === 'object') {
-      unfreezeQueue(hookState.queue);
+const resumeFiberHookQueues = (fiber: Fiber): void => {
+  let currentHookState = fiber.memoizedState as HookState | null;
+  while (currentHookState) {
+    if (currentHookState.queue && typeof currentHookState.queue === 'object') {
+      resumeHookQueue(currentHookState.queue);
     }
-    hookState = hookState?.next ?? null;
+    currentHookState = currentHookState?.next ?? null;
   }
 };
 
-const traverseAndFreezeQueues = (fiber: Fiber | null): void => {
+const traverseAndPauseHookQueues = (fiber: Fiber | null): void => {
   if (!fiber) return;
 
   if (isCompositeFiber(fiber)) {
-    wrapFiberQueues(fiber);
+    pauseFiberHookQueues(fiber);
   }
 
-  traverseAndFreezeQueues(fiber.child);
-  traverseAndFreezeQueues(fiber.sibling);
+  traverseAndPauseHookQueues(fiber.child);
+  traverseAndPauseHookQueues(fiber.sibling);
 };
 
-const traverseAndUnfreezeQueues = (fiber: Fiber | null): void => {
+const traverseAndResumeHookQueues = (fiber: Fiber | null): void => {
   if (!fiber) return;
 
   if (isCompositeFiber(fiber)) {
-    unwrapFiberQueues(fiber);
+    resumeFiberHookQueues(fiber);
   }
 
-  traverseAndUnfreezeQueues(fiber.child);
-  traverseAndUnfreezeQueues(fiber.sibling);
+  traverseAndResumeHookQueues(fiber.child);
+  traverseAndResumeHookQueues(fiber.sibling);
 };
 
-const createFrozenDispatcher = (originalDispatcher: Dispatcher): Dispatcher => {
+const createPausedDispatcher = (originalDispatcher: Dispatcher): Dispatcher => {
   return new Proxy(originalDispatcher, {
     get(target, prop, receiver) {
-      const value = Reflect.get(target, prop, receiver);
+      const originalMethod = Reflect.get(target, prop, receiver);
 
       if (prop === 'useState') {
         return <S>(initialState: S | (() => S)): [S, (action: S | ((prev: S) => S)) => void] => {
-          const result = (value as Dispatcher['useState'])(initialState);
-          return result;
+          return (originalMethod as Dispatcher['useState'])(initialState);
         };
       }
 
@@ -1272,8 +1276,7 @@ const createFrozenDispatcher = (originalDispatcher: Dispatcher): Dispatcher => {
           initialArg: S,
           init?: (arg: S) => S,
         ): [S, (action: A) => void] => {
-          const result = (value as Dispatcher['useReducer'])(reducer, initialArg, init);
-          return result;
+          return (originalMethod as Dispatcher['useReducer'])(reducer, initialArg, init);
         };
       }
 
@@ -1283,18 +1286,18 @@ const createFrozenDispatcher = (originalDispatcher: Dispatcher): Dispatcher => {
           getSnapshot: () => T,
           getServerSnapshot?: () => T,
         ): T => {
-          const wrappedSubscribe = (onStoreChange: () => void) => {
-            const wrappedCallback = () => {
-              if (isFrozen) return;
+          const pauseAwareSubscribe = (onStoreChange: () => void) => {
+            const pauseAwareCallback = () => {
+              if (isUpdatesPaused) return;
               onStoreChange();
             };
-            return subscribe(wrappedCallback);
+            return subscribe(pauseAwareCallback);
           };
-          return (value as Dispatcher['useSyncExternalStore'])(wrappedSubscribe, getSnapshot, getServerSnapshot);
+          return (originalMethod as Dispatcher['useSyncExternalStore'])(pauseAwareSubscribe, getSnapshot, getServerSnapshot);
         };
       }
 
-      return value;
+      return originalMethod;
     },
   });
 };
@@ -1302,42 +1305,43 @@ const createFrozenDispatcher = (originalDispatcher: Dispatcher): Dispatcher => {
 const installDispatcherProxy = (renderer: ReactRenderer): void => {
   const dispatcherRef = renderer.currentDispatcherRef as DispatcherRef | null;
   if (!dispatcherRef || typeof dispatcherRef !== 'object') return;
-  if (originalDispatcherRefs.has(renderer)) return;
+  if (pausedDispatcherStates.has(renderer)) return;
 
-  const key: 'H' | 'current' = 'H' in dispatcherRef ? 'H' : 'current';
-  originalDispatcherRefs.set(renderer, { key, originalDescriptor: Object.getOwnPropertyDescriptor(dispatcherRef, key) });
+  const dispatcherKey: 'H' | 'current' = 'H' in dispatcherRef ? 'H' : 'current';
+  const originalDescriptor = Object.getOwnPropertyDescriptor(dispatcherRef, dispatcherKey);
+  pausedDispatcherStates.set(renderer, { dispatcherKey, originalDescriptor });
 
-  let currentDispatcher = dispatcherRef[key];
+  let currentDispatcherValue = dispatcherRef[dispatcherKey];
 
-  Object.defineProperty(dispatcherRef, key, {
+  Object.defineProperty(dispatcherRef, dispatcherKey, {
     configurable: true,
     enumerable: true,
     get() {
-      if (isFrozen && currentDispatcher) {
-        return createFrozenDispatcher(currentDispatcher as Dispatcher);
+      if (isUpdatesPaused && currentDispatcherValue) {
+        return createPausedDispatcher(currentDispatcherValue as Dispatcher);
       }
-      return currentDispatcher;
+      return currentDispatcherValue;
     },
-    set(newValue) {
-      currentDispatcher = newValue;
+    set(newDispatcher) {
+      currentDispatcherValue = newDispatcher;
     },
   });
 };
 
 const uninstallDispatcherProxy = (renderer: ReactRenderer): void => {
-  const stored = originalDispatcherRefs.get(renderer);
-  if (!stored) return;
+  const dispatcherPauseState = pausedDispatcherStates.get(renderer);
+  if (!dispatcherPauseState) return;
 
   const dispatcherRef = renderer.currentDispatcherRef as DispatcherRef | null;
   if (!dispatcherRef) return;
 
-  if (stored.originalDescriptor) {
-    Object.defineProperty(dispatcherRef, stored.key, stored.originalDescriptor);
+  if (dispatcherPauseState.originalDescriptor) {
+    Object.defineProperty(dispatcherRef, dispatcherPauseState.dispatcherKey, dispatcherPauseState.originalDescriptor);
   } else {
-    delete (dispatcherRef as Record<string, unknown>)[stored.key];
+    delete (dispatcherRef as Record<string, unknown>)[dispatcherPauseState.dispatcherKey];
   }
 
-  originalDispatcherRefs.delete(renderer);
+  pausedDispatcherStates.delete(renderer);
 };
 
 /**
@@ -1346,7 +1350,7 @@ const uninstallDispatcherProxy = (renderer: ReactRenderer): void => {
  *
  * This works by:
  * 1. Intercepting the update queue's `pending` property to prevent updates from being enqueued
- * 2. Wrapping `getSnapshot` for external stores to return frozen values
+ * 2. Wrapping `getSnapshot` for external stores to return the value captured at pause time
  * 3. Patching dispatchers so new components also get paused behavior
  *
  * @returns A function to resume normal React behavior.
@@ -1360,7 +1364,7 @@ const uninstallDispatcherProxy = (renderer: ReactRenderer): void => {
  * ```
  */
 export const pauseUpdates = (): (() => void) => {
-  if (isFrozen) {
+  if (isUpdatesPaused) {
     return () => {};
   }
 
@@ -1370,19 +1374,19 @@ export const pauseUpdates = (): (() => void) => {
     installDispatcherProxy(renderer);
   }
 
-  for (const root of _fiberRoots) {
-    traverseAndFreezeQueues(root.current);
+  for (const fiberRoot of _fiberRoots) {
+    traverseAndPauseHookQueues(fiberRoot.current);
   }
 
-  isFrozen = true;
+  isUpdatesPaused = true;
 
   return () => {
-    if (!isFrozen) return;
+    if (!isUpdatesPaused) return;
 
-    isFrozen = false;
+    isUpdatesPaused = false;
 
-    for (const root of _fiberRoots) {
-      traverseAndUnfreezeQueues(root.current);
+    for (const fiberRoot of _fiberRoots) {
+      traverseAndResumeHookQueues(fiberRoot.current);
     }
 
     for (const renderer of rdtHook.renderers.values()) {
@@ -1395,7 +1399,7 @@ export const pauseUpdates = (): (() => void) => {
  * Returns whether React updates are currently paused.
  */
 export const areUpdatesPaused = (): boolean => {
-  return isFrozen;
+  return isUpdatesPaused;
 };
 
 export interface InstrumentationOptions {
