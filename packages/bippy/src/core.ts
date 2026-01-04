@@ -1105,6 +1105,245 @@ export const overrideContext = (
   }
 };
 
+interface DispatcherRef {
+  H?: unknown;
+  current?: unknown;
+}
+
+interface Dispatcher {
+  useState: <S>(initialState: S | (() => S)) => [S, (action: S | ((prev: S) => S)) => void];
+  useReducer: <S, A>(
+    reducer: (state: S, action: A) => S,
+    initialArg: S,
+    init?: (arg: S) => S,
+  ) => [S, (action: A) => void];
+  [key: string]: unknown;
+}
+
+interface HookQueue {
+  pending: unknown;
+  dispatch?: (...args: unknown[]) => void;
+  lastRenderedReducer?: unknown;
+  lanes?: number;
+}
+
+interface HookState {
+  memoizedState: unknown;
+  baseState: unknown;
+  baseQueue: unknown;
+  queue: HookQueue | null;
+  next: HookState | null;
+}
+
+let isFrozen = false;
+const originalDispatcherRefs = new Map<ReactRenderer, { key: 'H' | 'current'; originalDescriptor: PropertyDescriptor | undefined }>();
+const frozenQueues = new WeakMap<HookQueue, { originalPendingDescriptor: PropertyDescriptor | undefined }>();
+
+const freezeQueue = (queue: HookQueue): void => {
+  if (!queue || frozenQueues.has(queue)) return;
+
+  const originalDescriptor = Object.getOwnPropertyDescriptor(queue, 'pending');
+  frozenQueues.set(queue, { originalPendingDescriptor: originalDescriptor });
+
+  let storedPending = queue.pending;
+
+  Object.defineProperty(queue, 'pending', {
+    configurable: true,
+    enumerable: true,
+    get() {
+      return storedPending;
+    },
+    set(newValue) {
+      if (isFrozen) return;
+      storedPending = newValue;
+    },
+  });
+};
+
+const unfreezeQueue = (queue: HookQueue): void => {
+  const stored = frozenQueues.get(queue);
+  if (!stored) return;
+
+  const currentValue = queue.pending;
+
+  if (stored.originalPendingDescriptor) {
+    Object.defineProperty(queue, 'pending', stored.originalPendingDescriptor);
+  } else {
+    delete (queue as Record<string, unknown>).pending;
+    queue.pending = currentValue;
+  }
+
+  frozenQueues.delete(queue);
+};
+
+const wrapFiberQueues = (fiber: Fiber): void => {
+  let hookState = fiber.memoizedState as HookState | null;
+  while (hookState) {
+    if (hookState.queue && typeof hookState.queue === 'object') {
+      freezeQueue(hookState.queue);
+    }
+    hookState = hookState?.next ?? null;
+  }
+};
+
+const unwrapFiberQueues = (fiber: Fiber): void => {
+  let hookState = fiber.memoizedState as HookState | null;
+  while (hookState) {
+    if (hookState.queue && typeof hookState.queue === 'object') {
+      unfreezeQueue(hookState.queue);
+    }
+    hookState = hookState?.next ?? null;
+  }
+};
+
+const traverseAndFreezeQueues = (fiber: Fiber | null): void => {
+  if (!fiber) return;
+
+  if (isCompositeFiber(fiber)) {
+    wrapFiberQueues(fiber);
+  }
+
+  traverseAndFreezeQueues(fiber.child);
+  traverseAndFreezeQueues(fiber.sibling);
+};
+
+const traverseAndUnfreezeQueues = (fiber: Fiber | null): void => {
+  if (!fiber) return;
+
+  if (isCompositeFiber(fiber)) {
+    unwrapFiberQueues(fiber);
+  }
+
+  traverseAndUnfreezeQueues(fiber.child);
+  traverseAndUnfreezeQueues(fiber.sibling);
+};
+
+const createFrozenDispatcher = (originalDispatcher: Dispatcher): Dispatcher => {
+  return new Proxy(originalDispatcher, {
+    get(target, prop, receiver) {
+      const value = Reflect.get(target, prop, receiver);
+
+      if (prop === 'useState') {
+        return <S>(initialState: S | (() => S)): [S, (action: S | ((prev: S) => S)) => void] => {
+          const result = (value as Dispatcher['useState'])(initialState);
+          return result;
+        };
+      }
+
+      if (prop === 'useReducer') {
+        return <S, A>(
+          reducer: (state: S, action: A) => S,
+          initialArg: S,
+          init?: (arg: S) => S,
+        ): [S, (action: A) => void] => {
+          const result = (value as Dispatcher['useReducer'])(reducer, initialArg, init);
+          return result;
+        };
+      }
+
+      return value;
+    },
+  });
+};
+
+const installDispatcherProxy = (renderer: ReactRenderer): void => {
+  const dispatcherRef = renderer.currentDispatcherRef as DispatcherRef | null;
+  if (!dispatcherRef || typeof dispatcherRef !== 'object') return;
+  if (originalDispatcherRefs.has(renderer)) return;
+
+  const key: 'H' | 'current' = 'H' in dispatcherRef ? 'H' : 'current';
+  originalDispatcherRefs.set(renderer, { key, originalDescriptor: Object.getOwnPropertyDescriptor(dispatcherRef, key) });
+
+  let currentDispatcher = dispatcherRef[key];
+
+  Object.defineProperty(dispatcherRef, key, {
+    configurable: true,
+    enumerable: true,
+    get() {
+      if (isFrozen && currentDispatcher) {
+        return createFrozenDispatcher(currentDispatcher as Dispatcher);
+      }
+      return currentDispatcher;
+    },
+    set(newValue) {
+      currentDispatcher = newValue;
+    },
+  });
+};
+
+const uninstallDispatcherProxy = (renderer: ReactRenderer): void => {
+  const stored = originalDispatcherRefs.get(renderer);
+  if (!stored) return;
+
+  const dispatcherRef = renderer.currentDispatcherRef as DispatcherRef | null;
+  if (!dispatcherRef) return;
+
+  if (stored.originalDescriptor) {
+    Object.defineProperty(dispatcherRef, stored.key, stored.originalDescriptor);
+  } else {
+    delete (dispatcherRef as Record<string, unknown>)[stored.key];
+  }
+
+  originalDispatcherRefs.delete(renderer);
+};
+
+/**
+ * Freezes all React state updates by patching hook queues and dispatchers.
+ * When frozen, all `useState` and `useReducer` dispatch functions become no-ops.
+ *
+ * This works by:
+ * 1. Intercepting the update queue's `pending` property to prevent updates from being enqueued
+ * 2. Patching dispatchers so new components also get frozen behavior
+ *
+ * @returns An unfreeze function to restore normal React behavior.
+ *
+ * @example
+ * ```ts
+ * const unfreeze = freeze();
+ * // All setState calls are now no-ops
+ * unfreeze();
+ * // React updates work normally again
+ * ```
+ */
+export const freeze = (): (() => void) => {
+  if (isFrozen) {
+    return () => {};
+  }
+
+  const rdtHook = getRDTHook();
+
+  for (const renderer of rdtHook.renderers.values()) {
+    installDispatcherProxy(renderer);
+  }
+
+  for (const root of _fiberRoots) {
+    traverseAndFreezeQueues(root.current);
+  }
+
+  isFrozen = true;
+
+  return () => {
+    if (!isFrozen) return;
+
+    isFrozen = false;
+
+    for (const root of _fiberRoots) {
+      traverseAndUnfreezeQueues(root.current);
+    }
+
+    for (const renderer of rdtHook.renderers.values()) {
+      uninstallDispatcherProxy(renderer);
+    }
+  };
+};
+
+/**
+ * Returns whether React updates are currently frozen.
+ */
+export const isFreezeActive = (): boolean => {
+  return isFrozen;
+};
+
 export interface InstrumentationOptions {
   name?: string;
   onActive?: () => unknown;
