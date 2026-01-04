@@ -162,38 +162,61 @@ const findRenderCause = (
 };
 
 const formatRenderInfo = (info: RenderInfo, phase: string): string => {
-  const compiledText = info.isCompiled ? ' [react-compiler]' : '';
-  const fileText = info.fileName ? ` (${info.fileName})` : '';
-  const reasonText = info.reasons.length > 0 ? ` { ${info.reasons.join(' | ')} }` : '';
-  let causedByText = '';
+  const parts: string[] = [`phase=${phase}`, `component=${info.displayName}`];
+
+  if (info.fileName) {
+    parts.push(`file=${info.fileName}`);
+  }
+
+  if (info.isCompiled) {
+    parts.push('compiled=true');
+  }
+
+  if (info.reasons.length > 0) {
+    parts.push(`changed={${info.reasons.join(', ')}}`);
+  }
+
   if (info.causedBy) {
     const propText = info.causedBy.prop ? `.${info.causedBy.prop}` : '';
-    causedByText = ` ← ${info.causedBy.componentName}${propText}`;
+    parts.push(`caused_by=${info.causedBy.componentName}${propText}`);
   }
-  const timeText = info.time !== null && info.time > 0 ? ` ${info.time.toFixed(2)}ms` : '';
-  return `[${phase}] ${info.displayName}${compiledText}${fileText}${reasonText}${causedByText}${timeText}`;
+
+  if (info.time !== null && info.time > 0) {
+    parts.push(`time=${info.time.toFixed(2)}ms`);
+  }
+
+  return `[RENDER] ${parts.join(' | ')}`;
 };
 
 interface LogEntry {
-  message: string;
-  totalTime: number;
+  info: RenderInfo;
+  phase: string;
+  time: number;
 }
 
 const flushLogs = (entries: LogEntry[]): void => {
-  const grouped = new Map<string, { count: number; totalTime: number }>();
+  const grouped = new Map<string, { count: number; totalTime: number; info: RenderInfo; phase: string }>();
+
   for (const entry of entries) {
-    const existing = grouped.get(entry.message);
+    const key = formatRenderInfo(entry.info, entry.phase);
+    const existing = grouped.get(key);
     if (existing) {
       existing.count++;
-      existing.totalTime += entry.totalTime;
+      existing.totalTime += entry.time;
     } else {
-      grouped.set(entry.message, { count: 1, totalTime: entry.totalTime });
+      grouped.set(key, { count: 1, totalTime: entry.time, info: entry.info, phase: entry.phase });
     }
   }
-  for (const [message, { count, totalTime }] of grouped) {
-    const countSuffix = count > 1 ? ` x${count}` : '';
-    const aggregateTime = count > 1 && totalTime > 0 ? ` (total: ${totalTime.toFixed(2)}ms)` : '';
-    globalThis.scanLog?.(`${message}${countSuffix}${aggregateTime}`);
+
+  for (const [baseMessage, { count, totalTime }] of grouped) {
+    const parts: string[] = [baseMessage];
+    if (count > 1) {
+      parts.push(`count=${count}`);
+      if (totalTime > 0) {
+        parts.push(`total_time=${totalTime.toFixed(2)}ms`);
+      }
+    }
+    globalThis.scanLog?.(parts.join(' | '));
   }
 };
 
@@ -231,8 +254,8 @@ const scan = (): StopFunction => {
       const isCompiled = hasMemoCache(fiber);
 
       if (phase === 'unmount') {
-        const message = formatRenderInfo({ displayName, fileName, reasons: [], causedBy: null, time: null, isCompiled }, phase);
-        logEntries.push({ message, totalTime: 0 });
+        const info: RenderInfo = { displayName, fileName, reasons: [], causedBy: null, time: null, isCompiled };
+        logEntries.push({ info, phase, time: 0 });
         continue;
       }
 
@@ -243,8 +266,8 @@ const scan = (): StopFunction => {
         causedBy = findRenderCause(fiber, renderedFiberIds);
       }
 
-      const message = formatRenderInfo({ displayName, fileName, reasons: changeInfo.reasons, causedBy, time: selfTime, isCompiled }, phase);
-      logEntries.push({ message, totalTime: selfTime });
+      const info: RenderInfo = { displayName, fileName, reasons: changeInfo.reasons, causedBy, time: selfTime, isCompiled };
+      logEntries.push({ info, phase, time: selfTime });
     }
 
     flushLogs(logEntries);
