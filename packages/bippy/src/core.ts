@@ -1117,14 +1117,21 @@ interface Dispatcher {
     initialArg: S,
     init?: (arg: S) => S,
   ) => [S, (action: A) => void];
+  useSyncExternalStore: <T>(
+    subscribe: (onStoreChange: () => void) => () => void,
+    getSnapshot: () => T,
+    getServerSnapshot?: () => T,
+  ) => T;
   [key: string]: unknown;
 }
 
 interface HookQueue {
-  pending: unknown;
+  pending?: unknown;
   dispatch?: (...args: unknown[]) => void;
   lastRenderedReducer?: unknown;
   lanes?: number;
+  value?: unknown;
+  getSnapshot?: () => unknown;
 }
 
 interface HookState {
@@ -1135,42 +1142,71 @@ interface HookState {
   next: HookState | null;
 }
 
+interface FrozenQueueData {
+  originalPendingDescriptor?: PropertyDescriptor;
+  originalGetSnapshot?: () => unknown;
+  frozenSnapshotValue?: unknown;
+}
+
 let isFrozen = false;
 const originalDispatcherRefs = new Map<ReactRenderer, { key: 'H' | 'current'; originalDescriptor: PropertyDescriptor | undefined }>();
-const frozenQueues = new WeakMap<HookQueue, { originalPendingDescriptor: PropertyDescriptor | undefined }>();
+const frozenQueues = new WeakMap<HookQueue, FrozenQueueData>();
 
-const freezeQueue = (queue: HookQueue): void => {
+const freezeStateQueue = (queue: HookQueue): void => {
   if (!queue || frozenQueues.has(queue)) return;
 
-  const originalDescriptor = Object.getOwnPropertyDescriptor(queue, 'pending');
-  frozenQueues.set(queue, { originalPendingDescriptor: originalDescriptor });
+  const data: FrozenQueueData = {};
 
-  let storedPending = queue.pending;
+  if ('pending' in queue) {
+    data.originalPendingDescriptor = Object.getOwnPropertyDescriptor(queue, 'pending');
+    let storedPending = queue.pending;
 
-  Object.defineProperty(queue, 'pending', {
-    configurable: true,
-    enumerable: true,
-    get() {
-      return storedPending;
-    },
-    set(newValue) {
-      if (isFrozen) return;
-      storedPending = newValue;
-    },
-  });
+    Object.defineProperty(queue, 'pending', {
+      configurable: true,
+      enumerable: true,
+      get() {
+        return storedPending;
+      },
+      set(newValue) {
+        if (isFrozen) return;
+        storedPending = newValue;
+      },
+    });
+  }
+
+  if ('getSnapshot' in queue && typeof queue.getSnapshot === 'function') {
+    data.originalGetSnapshot = queue.getSnapshot;
+    data.frozenSnapshotValue = queue.getSnapshot();
+
+    queue.getSnapshot = () => {
+      if (isFrozen) {
+        return data.frozenSnapshotValue;
+      }
+      return data.originalGetSnapshot!();
+    };
+  }
+
+  frozenQueues.set(queue, data);
 };
 
 const unfreezeQueue = (queue: HookQueue): void => {
   const stored = frozenQueues.get(queue);
   if (!stored) return;
 
-  const currentValue = queue.pending;
-
   if (stored.originalPendingDescriptor) {
+    const currentValue = queue.pending;
     Object.defineProperty(queue, 'pending', stored.originalPendingDescriptor);
-  } else {
+    if (!stored.originalPendingDescriptor.get && !stored.originalPendingDescriptor.set) {
+      queue.pending = currentValue;
+    }
+  } else if ('pending' in queue) {
+    const currentValue = queue.pending;
     delete (queue as Record<string, unknown>).pending;
     queue.pending = currentValue;
+  }
+
+  if (stored.originalGetSnapshot) {
+    queue.getSnapshot = stored.originalGetSnapshot;
   }
 
   frozenQueues.delete(queue);
@@ -1180,7 +1216,7 @@ const wrapFiberQueues = (fiber: Fiber): void => {
   let hookState = fiber.memoizedState as HookState | null;
   while (hookState) {
     if (hookState.queue && typeof hookState.queue === 'object') {
-      freezeQueue(hookState.queue);
+      freezeStateQueue(hookState.queue);
     }
     hookState = hookState?.next ?? null;
   }
@@ -1238,6 +1274,23 @@ const createFrozenDispatcher = (originalDispatcher: Dispatcher): Dispatcher => {
         ): [S, (action: A) => void] => {
           const result = (value as Dispatcher['useReducer'])(reducer, initialArg, init);
           return result;
+        };
+      }
+
+      if (prop === 'useSyncExternalStore') {
+        return <T>(
+          subscribe: (onStoreChange: () => void) => () => void,
+          getSnapshot: () => T,
+          getServerSnapshot?: () => T,
+        ): T => {
+          const wrappedSubscribe = (onStoreChange: () => void) => {
+            const wrappedCallback = () => {
+              if (isFrozen) return;
+              onStoreChange();
+            };
+            return subscribe(wrappedCallback);
+          };
+          return (value as Dispatcher['useSyncExternalStore'])(wrappedSubscribe, getSnapshot, getServerSnapshot);
         };
       }
 

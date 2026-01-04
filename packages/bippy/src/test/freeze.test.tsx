@@ -42,6 +42,32 @@ const ReducerCounter = () => {
   );
 };
 
+const createExternalStore = (initialValue: number) => {
+  let value = initialValue;
+  const listeners = new Set<() => void>();
+
+  return {
+    getSnapshot: () => value,
+    subscribe: (listener: () => void) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    increment: () => {
+      value++;
+      listeners.forEach((listener) => listener());
+    },
+  };
+};
+
+const ExternalStoreCounter = ({ store }: { store: ReturnType<typeof createExternalStore> }) => {
+  const count = React.useSyncExternalStore(store.subscribe, store.getSnapshot);
+  return (
+    <div>
+      <span data-testid="external-count">{count}</span>
+    </div>
+  );
+};
+
 describe('freeze', () => {
   beforeEach(() => {
     cleanup();
@@ -147,6 +173,41 @@ describe('freeze', () => {
       fireEvent.click(incrementButton);
     });
     expect(countElement.textContent).toBe('2');
+  });
+
+  it('should freeze useSyncExternalStore updates', async () => {
+    const store = createExternalStore(0);
+    render(<ExternalStoreCounter store={store} />);
+
+    expect(_fiberRoots.size).toBeGreaterThan(0);
+
+    const countElement = screen.getByTestId('external-count');
+
+    expect(countElement.textContent).toBe('0');
+
+    await act(async () => {
+      store.increment();
+    });
+    expect(countElement.textContent).toBe('1');
+
+    const unfreeze = freeze();
+
+    await act(async () => {
+      store.increment();
+    });
+    expect(countElement.textContent).toBe('1');
+
+    await act(async () => {
+      store.increment();
+    });
+    expect(countElement.textContent).toBe('1');
+
+    unfreeze();
+
+    await act(async () => {
+      store.increment();
+    });
+    expect(countElement.textContent).toBe('4');
   });
 
   it('should work with renderers accessed via getRDTHook', () => {
