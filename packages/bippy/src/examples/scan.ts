@@ -19,6 +19,7 @@ interface RenderInfo {
   causedBy: RenderCause | null;
   time: number | null;
   isCompiled: boolean;
+  warnings: string[];
 }
 
 type StopFunction = () => void;
@@ -36,6 +37,94 @@ declare global {
 
 // HACK: replace globalThis.scanLog to customize logging (e.g. for Cursor debug mode)
 globalThis.scanLog = globalThis.scanLog ?? console.log;
+
+const isShallowEqual = (objA: unknown, objB: unknown): boolean => {
+  if (Object.is(objA, objB)) return true;
+  if (typeof objA !== 'object' || objA === null || typeof objB !== 'object' || objB === null) {
+    return false;
+  }
+  const keysA = Object.keys(objA);
+  const keysB = Object.keys(objB);
+  if (keysA.length !== keysB.length) return false;
+  for (const key of keysA) {
+    if (!Object.prototype.hasOwnProperty.call(objB, key) || !Object.is((objA as Record<string, unknown>)[key], (objB as Record<string, unknown>)[key])) {
+      return false;
+    }
+  }
+  return true;
+};
+
+const isDeepEqual = (objA: unknown, objB: unknown, depth = 0): boolean => {
+  if (depth > 5) return false;
+  if (Object.is(objA, objB)) return true;
+  if (typeof objA !== typeof objB) return false;
+  if (typeof objA === 'function' && typeof objB === 'function') {
+    return objA.toString() === objB.toString();
+  }
+  if (typeof objA !== 'object' || objA === null || typeof objB !== 'object' || objB === null) {
+    return false;
+  }
+  if (Array.isArray(objA) !== Array.isArray(objB)) return false;
+  const keysA = Object.keys(objA);
+  const keysB = Object.keys(objB);
+  if (keysA.length !== keysB.length) return false;
+  for (const key of keysA) {
+    if (!Object.prototype.hasOwnProperty.call(objB, key)) return false;
+    if (!isDeepEqual((objA as Record<string, unknown>)[key], (objB as Record<string, unknown>)[key], depth + 1)) {
+      return false;
+    }
+  }
+  return true;
+};
+
+interface UnstableInfo {
+  unstableProps: string[];
+  unstableFunctions: string[];
+  unstableState: number[];
+}
+
+const getUnstableInfo = (fiber: Fiber): UnstableInfo => {
+  const unstableProps: string[] = [];
+  const unstableFunctions: string[] = [];
+  const unstableState: number[] = [];
+
+  if (!fiber.alternate) {
+    return { unstableProps, unstableFunctions, unstableState };
+  }
+
+  traverseProps(fiber, (propName, nextValue, prevValue) => {
+    if (Object.is(nextValue, prevValue)) return;
+    if (propName === 'children') return;
+
+    if (typeof nextValue === 'function' && typeof prevValue === 'function') {
+      if (nextValue.toString() === prevValue.toString()) {
+        unstableFunctions.push(propName);
+      }
+    } else if (typeof nextValue === 'object' && nextValue !== null && typeof prevValue === 'object' && prevValue !== null) {
+      if (isShallowEqual(nextValue, prevValue)) {
+        unstableProps.push(`${propName} (shallow)`);
+      } else if (isDeepEqual(nextValue, prevValue)) {
+        unstableProps.push(`${propName} (deep)`);
+      }
+    }
+  });
+
+  let stateIndex = 0;
+  traverseState(fiber, (nextState, prevState) => {
+    const nextVal = nextState?.memoizedState;
+    const prevVal = prevState?.memoizedState;
+    if (!Object.is(nextVal, prevVal)) {
+      if (typeof nextVal === 'object' && nextVal !== null && typeof prevVal === 'object' && prevVal !== null) {
+        if (isShallowEqual(nextVal, prevVal) || isDeepEqual(nextVal, prevVal)) {
+          unstableState.push(stateIndex);
+        }
+      }
+    }
+    stateIndex++;
+  });
+
+  return { unstableProps, unstableFunctions, unstableState };
+};
 
 const getFileName = (fiber: Fiber): string | null => {
   const debugSource = fiber._debugSource;
@@ -173,7 +262,8 @@ const formatRenderInfo = (info: RenderInfo, phase: string): string => {
     causedByText = ` ← ${info.causedBy.componentName}${propText}`;
   }
   const timeText = info.time !== null && info.time > 0 ? ` ${info.time.toFixed(2)}ms` : '';
-  return `[${phase}] ${info.displayName}${compiledText}${fileText}${reasonText}${causedByText}${timeText}`;
+  const warningText = info.warnings.length > 0 ? ` ⚠️ ${info.warnings.join(', ')}` : '';
+  return `[${phase}] ${info.displayName}${compiledText}${fileText}${reasonText}${causedByText}${timeText}${warningText}`;
 };
 
 interface LogEntry {
@@ -238,7 +328,7 @@ const scan = (): StopFunction => {
       const isCompiled = hasMemoCache(fiber);
 
       if (phase === 'unmount') {
-        const message = formatRenderInfo({ displayName, fileName, reasons: [], causedBy: null, time: null, isCompiled }, phase);
+        const message = formatRenderInfo({ displayName, fileName, reasons: [], causedBy: null, time: null, isCompiled, warnings: [] }, phase);
         logEntries.push({ message, totalTime: 0 });
         continue;
       }
@@ -250,7 +340,21 @@ const scan = (): StopFunction => {
         causedBy = findRenderCause(fiber, renderedFiberIds);
       }
 
-      const message = formatRenderInfo({ displayName, fileName, reasons: changeInfo.reasons, causedBy, time: selfTime, isCompiled }, phase);
+      const warnings: string[] = [];
+      if (phase === 'update') {
+        const unstableInfo = getUnstableInfo(fiber);
+        if (unstableInfo.unstableFunctions.length > 0) {
+          warnings.push(`unstable function: ${unstableInfo.unstableFunctions.join(', ')}`);
+        }
+        if (unstableInfo.unstableProps.length > 0) {
+          warnings.push(`unstable object: ${unstableInfo.unstableProps.join(', ')}`);
+        }
+        if (unstableInfo.unstableState.length > 0) {
+          warnings.push(`unstable state: [${unstableInfo.unstableState.join(', ')}]`);
+        }
+      }
+
+      const message = formatRenderInfo({ displayName, fileName, reasons: changeInfo.reasons, causedBy, time: selfTime, isCompiled, warnings }, phase);
       logEntries.push({ message, totalTime: selfTime });
     }
 
