@@ -1,0 +1,29 @@
+{
+  "name": "@bippy/website",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "preview": "vite preview",
+    "build": "vite build",
+    "dev": "rm -rf node_modules/.vite && pnpm i && vite",
+    "build:watch": "vite build --watch & vite preview"
+  },
+  "dependencies": {
+    "bippy": "workspace:*",
+    "clsx": "^2.1.1",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-inspector": "^6.0.2",
+    "sugar-high": "^0.7.5",
+    "tailwind-merge": "^2.6.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.0.0-beta.8",
+    "@types/react": "^19.0.4",
+    "@types/react-dom": "^19.0.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "4.0.0-beta.8",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.2"
+  }
+}
