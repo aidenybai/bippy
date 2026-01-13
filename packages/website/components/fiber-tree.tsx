@@ -689,11 +689,11 @@ export const FiberTree = () => {
         type="button"
         onClick={handleCounterClick}
         disabled={isPlaying}
-        className="w-full rounded-[4px] border border-[#333333] bg-[#1a1a1a] px-2 py-3 text-sm font-mono disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full rounded-[4px] bg-white text-[#111] px-2 py-3 text-sm font-mono disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Pressed{' '}
         <span
-          className={`inline-block px-1 rounded-[2px] transition-all duration-300 ${isFlashing ? 'bg-[#f5be93] text-[#111]' : 'text-[#f5be93]'}`}
+          className={`inline-block px-1 rounded-[2px] transition-all duration-300 ${isFlashing ? 'bg-[#f5be93]' : 'bg-[#f5be93]/20'}`}
         >
           {displayCount}
         </span>{' '}
@@ -766,7 +766,7 @@ export const FiberTree = () => {
               const gapBetweenTrees = 80;
               const wipOffsetX = maxX + gapBetweenTrees;
               const totalWidth = wipOffsetX + maxX;
-              
+
               return (
                 <div key={`commit-${stepIndex}`} className="relative">
                   <svg width={totalWidth} height={maxY + 24} className="overflow-visible">
@@ -793,7 +793,7 @@ export const FiberTree = () => {
               const gapBetweenTrees = 80;
               const wipOffsetX = maxX + gapBetweenTrees;
               const totalWidth = wipOffsetX + maxX;
-              
+
               return (
                 <div key={`done-${stepIndex}`} className="shrink-0">
                   <svg width={totalWidth} height={maxY + 24} className="overflow-visible">
@@ -830,7 +830,7 @@ export const FiberTree = () => {
 
                     <g
                       transform={`translate(${wipOffsetX}, 0)`}
-                      style={{ 
+                      style={{
                         opacity: showWipTree ? 1 : 0,
                         transition: 'opacity 0.3s ease-out'
                       }}

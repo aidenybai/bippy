@@ -4,6 +4,7 @@ import { InlineCodeBlock } from '@/components/inline-code-block';
 import { FiberTree } from '@/components/fiber-tree';
 import { Collapsible } from '@/components/collapsible';
 import { Mermaid } from '@/components/mermaid';
+import { InspectorDemo } from '@/components/inspector-demo';
 
 export default function Home() {
   return (
@@ -15,56 +16,31 @@ export default function Home() {
 
       <p>bippy is a library that allows you to hack into react internals</p>
 
-      <Collapsible title="examples" defaultOpen={false}>
-        <p>
-          <strong>listening to commits</strong> — use{' '}
-          <InlineCodeBlock>instrument</InlineCodeBlock> to hook into react and{' '}
-          <InlineCodeBlock>traverseRenderedFibers</InlineCodeBlock> to walk the
-          tree:
-        </p>
-
-        <CodeBlock>{`import { instrument, traverseRenderedFibers } from 'bippy';
-
-instrument({
-  onCommitFiberRoot(rendererID, root) {
-    traverseRenderedFibers(root, (fiber, phase) => {
-      console.log(fiber, phase); // 'mount' | 'update' | 'unmount'
-    });
-  },
-});`}</CodeBlock>
-
-        <p>
-          <strong>fiber from dom</strong> — get the fiber backing any dom
-          element:
-        </p>
-
-        <CodeBlock>{`import { getFiberFromHostInstance } from 'bippy';
-
-const button = document.querySelector('button');
-const fiber = getFiberFromHostInstance(button);
-
-console.log(fiber.memoizedProps); // { onClick: f, children: '...' }`}</CodeBlock>
-
-        <p>
-          <strong>source location</strong> — find where a component is defined
-          (dev only):
-        </p>
-
-        <CodeBlock>{`import { getSource } from 'bippy/source';
-
-const source = await getSource(fiber);
-console.log(source);
-// { fileName: '/src/App.tsx', lineNumber: 42, columnNumber: 5 }`}</CodeBlock>
-      </Collapsible>
-
-      <a
-        href="https://github.com/aidenybai/bippy"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="underline"
-      >
-        view on github
-      </a>
+      <div className="flex gap-2">
+        <a
+          href="#examples"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-white text-[#111] font-medium rounded-md hover:bg-[#e0e0e0] transition-colors"
+        >
+          get started
+        </a>
+        <a
+          href="https://github.com/aidenybai/bippy"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#f5be93] text-[#111] font-medium rounded-md hover:bg-[#f0a870] transition-colors"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+          </svg>
+          github
+        </a>
+      </div>
 
       <hr className="border-[#292929]" />
 
@@ -147,33 +123,6 @@ Greeting('World')
         </p>
       </Collapsible>
 
-      <Collapsible title="reconciliation vs rendering">
-        <p>
-          the dom is just one rendering target. react can also render to native
-          ios and android views via react native, canvas, terminal UIs, and
-          more. this is why &quot;virtual dom&quot; is a bit of a misnomer.
-        </p>
-
-        <p>
-          react separates <strong>reconciliation</strong> (computing what
-          changed) from <strong>rendering</strong> (applying those changes to a
-          target):
-        </p>
-
-        <Mermaid
-          chart={`flowchart LR
-  R[reconciler] --> |diff| DOM[react-dom]
-  R --> |diff| Native[react-native]
-  R --> |diff| Other[...]
-  style R fill:#f5be93,color:#111`}
-        />
-
-        <p>
-          this lets react-dom and react-native share the same reconciler while
-          using their own renderers.
-        </p>
-      </Collapsible>
-
       <Collapsible title="scheduling">
         <p>
           in earlier versions, react walked the tree recursively in one
@@ -239,7 +188,7 @@ Greeting('World')
         />
 
         <p>
-          this structure lets react pause mid-tree, resume later, or abort — 
+          this structure lets react pause mid-tree, resume later, or abort —
           impossible with a native call stack.
         </p>
 
@@ -354,64 +303,135 @@ Greeting('World')
         />
       </Collapsible>
 
-      <Collapsible title="why bippy?">
+      <Collapsible title="hack a react app with bippy" id="examples">
         <p>
-          react internals are unstable. field names change, data structures get
-          reorganized, and behaviors shift between versions without warning.
-          code that works on react 17 might break on react 18, and react 19
-          changed even more.
+          now let&apos;s put what we learned into practice. we&apos;ll build an
+          inspector that shows you which react component you&apos;re hovering
+          over — like react devtools, but simpler and yours.
         </p>
 
         <p>
-          bippy handles this so you don&apos;t have to:
+          <strong>step 1: get the fiber from a dom element</strong>
+        </p>
+
+        <p>
+          every dom element rendered by react has a fiber attached to it. use{' '}
+          <InlineCodeBlock>getFiberFromHostInstance</InlineCodeBlock>:
+        </p>
+
+        <CodeBlock>{`import { getFiberFromHostInstance } from 'bippy';
+
+const fiber = getFiberFromHostInstance(element);`}</CodeBlock>
+
+        <p>
+          <strong>step 2: find the component</strong>
+        </p>
+
+        <p>
+          dom elements are &quot;host&quot; fibers. use{' '}
+          <InlineCodeBlock>traverseFiber</InlineCodeBlock> to walk up and find
+          the nearest component:
+        </p>
+
+        <CodeBlock>{`import {
+  traverseFiber,
+  isCompositeFiber,
+  getDisplayName
+} from 'bippy';
+
+const componentFiber = traverseFiber(
+  fiber,
+  isCompositeFiber,
+  true
+);
+const name = getDisplayName(componentFiber.type);`}</CodeBlock>
+
+        <p>
+          <strong>step 3: highlight it</strong>
+        </p>
+
+        <p>
+          use <InlineCodeBlock>getNearestHostFiber</InlineCodeBlock> to get the
+          dom node from a component fiber, then draw a box around it:
+        </p>
+
+        <CodeBlock>{`import { getNearestHostFiber } from 'bippy';
+
+const hostFiber = getNearestHostFiber(componentFiber);
+const rect = hostFiber.stateNode.getBoundingClientRect();`}</CodeBlock>
+
+        <p>
+          try it yourself on this page:
+        </p>
+
+        <InspectorDemo />
+
+        <p>
+          that&apos;s it! a working react inspector in ~50 lines of code. bippy
+          handles the hard parts: finding fibers, walking the tree, extracting
+          names, and staying compatible across react 16.8 through 19.
+        </p>
+
+        <p>
+          <strong>why use bippy for this?</strong>
+        </p>
+
+        <p>
+          without bippy, you&apos;d need to:
         </p>
 
         <ul className="list-disc pl-6 flex flex-col gap-1">
           <li>
-            compatibility shims for react 16.8 through 19
+            find the secret <InlineCodeBlock>__reactFiber$</InlineCodeBlock>{' '}
+            property on dom nodes (the key changes between react versions)
           </li>
           <li>
-            stable api that abstracts away internal changes
+            handle differences in fiber structure between react 16, 17, 18, and
+            19
           </li>
           <li>
-            lightweight (~3kb minified + gzipped, zero dependencies)
+            write your own tree traversal and name extraction
           </li>
           <li>
-            handles edge cases: multiple react instances, strict mode double
-            renders, concurrent features
-          </li>
-          <li>
-            barebones primitives for building powerful tools, with guardrails to
-            help you not mess up
+            deal with edge cases like fragments, portals, and strict mode
           </li>
         </ul>
 
         <p>
-          without bippy, you&apos;d need to maintain version-specific code paths
-          and constantly update when react changes. bippy consolidates this into
-          one tested, maintained library.
+          bippy is ~3kb and does all of this for you. go build something cool.
         </p>
       </Collapsible>
 
-      <div className="bg-[#eda33b]/25 text-white p-[1ch]">
-        <div>
-          <p className="text-xs">
-            <span className="text-xs font-semibold">⚠️ warning: </span>
-            <span className="text-xs">
-              this project may break production apps and cause unexpected
-              behavior
-            </span>
-          </p>
-        </div>
-        <div className="mt-[1ch]">
-          <p className="text-xs">
-            this project uses react internals, which can change at any time. it
-            is not recommended to depend on internals unless you really,{' '}
-            <span className="text-xs italic">really have to.</span> by
-            proceeding, you acknowledge the risk of breaking your own code or
-            apps that use your code.
-          </p>
-        </div>
+      <hr className="border-[#292929]" />
+
+      <div className="flex flex-col items-center gap-4 py-8">
+        <p className="text-center">
+          if bippy helped you, consider giving it a star on github
+        </p>
+        <a
+          href="https://github.com/aidenybai/bippy"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#f5be93] text-[#111] font-medium rounded-md hover:bg-[#f0a870] transition-colors"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+          </svg>
+          star on github
+        </a>
+        <Image
+          src="/sig.webp"
+          alt="signature"
+          width={100}
+          height={40}
+          className="mt-4 opacity-50 invert"
+        />
       </div>
     </div>
   );

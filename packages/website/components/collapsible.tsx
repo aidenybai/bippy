@@ -6,17 +6,19 @@ interface CollapsibleProps {
   title: string;
   children: ReactNode;
   defaultOpen?: boolean;
+  id?: string;
 }
 
 export const Collapsible = ({
   title,
   children,
   defaultOpen = true,
+  id,
 }: CollapsibleProps) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4" id={id}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
