@@ -19,7 +19,7 @@ export default function Home() {
       <div className="flex gap-2">
         <a
           href="#examples"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-white text-[#111] font-medium rounded-md hover:bg-[#e0e0e0] transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-white text-[#111] font-medium hover:bg-[#e0e0e0] transition-colors"
         >
           get started
         </a>
@@ -27,7 +27,7 @@ export default function Home() {
           href="https://github.com/aidenybai/bippy"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#f5be93] text-[#111] font-medium rounded-md hover:bg-[#f0a870] transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#333] text-white font-medium hover:bg-[#444] transition-colors"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -433,7 +433,7 @@ const rect = hostFiber.stateNode.getBoundingClientRect();`}</CodeBlock>
           href="https://github.com/aidenybai/bippy"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-white text-[#111] font-medium rounded-md hover:bg-[#e0e0e0] transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-white text-[#111] font-medium hover:bg-[#e0e0e0] transition-colors"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"

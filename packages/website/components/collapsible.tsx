@@ -18,7 +18,7 @@ export const Collapsible = ({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className="flex flex-col gap-4 mt-8" id={id}>
+    <div className="flex flex-col gap-4" id={id}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}

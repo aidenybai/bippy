@@ -1,5 +1,5 @@
 {
-  "name": "website",
+  "name": "@bippy/website",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -12,6 +12,7 @@
     "@types/turndown": "^5.0.6",
     "bippy": "workspace:*",
     "clsx": "^2.1.1",
+    "react-inspector": "^6.0.2",
     "mermaid": "^11.12.2",
     "next": "16.1.1",
     "react": "19.2.3",

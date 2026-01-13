@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { cn } from '@/lib/cn';
 
 interface CopyButtonProps {
   content: string;
@@ -20,7 +21,10 @@ export const CopyButton = ({ content }: CopyButtonProps) => {
   return (
     <button
       onClick={handleCopy}
-      className={`absolute right-0 top-0 rounded-[4px] border border-[#333333] bg-[#1a1a1a] px-1 py-[0.5px] text-sm ${isCopied ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+      className={cn(
+        'absolute right-0 top-0 border border-[#333333] bg-[#1a1a1a] px-1 py-[0.5px] text-sm',
+        isCopied ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
+      )}
     >
       {isCopied ? 'Copied!' : 'Copy'}
     </button>

@@ -208,7 +208,6 @@ const FiberNodeComponent = ({
           stroke="#585858"
           strokeWidth={1}
           strokeDasharray="4 2"
-          rx={4}
         />
       </g>
     );
@@ -231,7 +230,6 @@ const FiberNodeComponent = ({
         fill={isCurrent ? '#f5be93' : isActive ? '#ffffff' : '#585858'}
         stroke={isCurrent ? '#f5be93' : '#585858'}
         strokeWidth={1}
-        rx={4}
         style={{ transition: 'all 0.2s ease' }}
       />
       <text
@@ -689,11 +687,11 @@ export const FiberTree = () => {
         type="button"
         onClick={handleCounterClick}
         disabled={isPlaying}
-        className="w-full rounded-[4px] bg-white text-[#111] px-2 py-3 text-sm font-mono disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full  bg-white text-[#111] px-2 py-3 text-sm font-mono disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Pressed{' '}
         <span
-          className={`inline-block px-1 rounded-[2px] transition-all duration-300 ${isFlashing ? 'bg-[#f5be93]' : 'bg-[#f5be93]/20'}`}
+          className={`inline-block px-1 transition-all duration-300 ${isFlashing ? 'bg-[#f5be93]' : 'bg-[#f5be93]/20'}`}
         >
           {displayCount}
         </span>{' '}
@@ -705,34 +703,34 @@ export const FiberTree = () => {
             <button
               onClick={handleStepBack}
               disabled={stepIndex === 0}
-              className="p-2 lg:p-1 rounded-[4px] hover:bg-[#585858] active:bg-[#585858] disabled:opacity-30 text-[#9f9f9f] hover:text-white transition-colors"
+              className="p-2 lg:p-1  hover:bg-[#585858] active:bg-[#585858] disabled:opacity-30 text-[#9f9f9f] hover:text-white transition-colors"
             >
               <StepBackIcon />
             </button>
             {isPlaying ? (
               <button
                 onClick={handlePause}
-                className="p-2 lg:p-1 rounded-[4px] hover:bg-[#585858] active:bg-[#585858] text-[#9f9f9f] hover:text-white transition-colors"
+                className="p-2 lg:p-1  hover:bg-[#585858] active:bg-[#585858] text-[#9f9f9f] hover:text-white transition-colors"
               >
                 <PauseIcon />
               </button>
             ) : (
               <button
                 onClick={handlePlay}
-                className="p-2 lg:p-1 rounded-[4px] hover:bg-[#585858] active:bg-[#585858] text-[#9f9f9f] hover:text-white transition-colors"
+                className="p-2 lg:p-1  hover:bg-[#585858] active:bg-[#585858] text-[#9f9f9f] hover:text-white transition-colors"
               >
                 <PlayIcon />
               </button>
             )}
             <button
               onClick={handleStepForward}
-              className="p-2 lg:p-1 rounded-[4px] hover:bg-[#585858] active:bg-[#585858] text-[#9f9f9f] hover:text-white transition-colors"
+              className="p-2 lg:p-1  hover:bg-[#585858] active:bg-[#585858] text-[#9f9f9f] hover:text-white transition-colors"
             >
               <StepForwardIcon />
             </button>
             <button
               onClick={handleReset}
-              className="p-2 lg:p-1 rounded-[4px] hover:bg-[#585858] active:bg-[#585858] text-[#9f9f9f] hover:text-white transition-colors"
+              className="p-2 lg:p-1  hover:bg-[#585858] active:bg-[#585858] text-[#9f9f9f] hover:text-white transition-colors"
             >
               <ResetIcon />
             </button>
@@ -740,16 +738,16 @@ export const FiberTree = () => {
 
           <div
             ref={progressBarRef}
-            className="flex-1 h-2 lg:h-1 bg-[#585858] cursor-pointer relative rounded-full min-w-16 select-none touch-none"
+            className="flex-1 h-2 lg:h-1 bg-[#585858] cursor-pointer relative min-w-16 select-none touch-none"
             onMouseDown={handleProgressMouseDown}
             onTouchStart={handleProgressTouchStart}
           >
             <div
-              className="h-full bg-[#9f9f9f] rounded-full pointer-events-none"
+              className="h-full bg-[#9f9f9f] pointer-events-none"
               style={{ width: `${(stepIndex / (steps.length - 1)) * 100}%` }}
             />
             <div
-              className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow pointer-events-none"
+              className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white pointer-events-none"
               style={{ left: `calc(${(stepIndex / (steps.length - 1)) * 100}% - 6px)` }}
             />
           </div>
@@ -927,7 +925,7 @@ export const FiberTree = () => {
 
         {hoveredNode && highlightedHtml && (
           <div
-            className="fixed z-50 rounded-[4px] border border-[#585858]/50 bg-[#111] px-2 py-1 shadow-xl max-w-[360px]"
+            className="fixed z-50  border border-[#585858]/50 bg-[#111] px-2 py-1 shadow-xl max-w-[360px]"
             style={{
               left: Math.min(hoveredNode.x + 10, window.innerWidth - 380),
               top: hoveredNode.y + 30,
