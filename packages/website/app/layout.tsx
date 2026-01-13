@@ -15,6 +15,17 @@ export const metadata: Metadata = {
   icons: {
     icon: '/logo.png',
   },
+  openGraph: {
+    title: 'bippy',
+    description: 'hack into react internals',
+    images: ['/thumbnail.png'],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'bippy',
+    description: 'hack into react internals',
+    images: ['/thumbnail.png'],
+  },
 };
 
 export default function RootLayout({
