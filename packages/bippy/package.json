@@ -80,6 +80,8 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist",
+    "src",
+    "!src/test/**",
     "bin",
     "package.json",
     "README.md",
