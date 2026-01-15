@@ -209,8 +209,8 @@ Greeting('World')
         />
 
         <p>
-          this structure lets react pause mid-tree, resume later, or abort —
-          impossible with a native call stack.
+          this structure lets react pause mid-tree, resume later, or abort.
+          this is impossible with a native call stack.
         </p>
 
         <p>
@@ -328,7 +328,7 @@ Greeting('World')
         <p>
           now let&apos;s put what we learned into practice. we&apos;ll build an
           inspector that shows you which react component you&apos;re hovering
-          over — like react devtools, but simpler and yours.
+          over. it&apos;s like react devtools, but simpler and yours.
         </p>
 
         <p>
