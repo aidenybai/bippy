@@ -214,4 +214,137 @@ describe('pauseUpdates', () => {
     const rdtHook = getRDTHook();
     expect(rdtHook.renderers).toBeDefined();
   });
+
+  it('should pause context updates', async () => {
+    const TestContext = React.createContext(0);
+
+    const ContextConsumer = () => {
+      const value = React.useContext(TestContext);
+      return <span data-testid="context-value">{value}</span>;
+    };
+
+    const ContextProvider = () => {
+      const [contextValue, setContextValue] = React.useState(0);
+      return (
+        <TestContext.Provider value={contextValue}>
+          <ContextConsumer />
+          <button data-testid="update-context" onClick={() => setContextValue((previousValue) => previousValue + 1)}>
+            Update Context
+          </button>
+        </TestContext.Provider>
+      );
+    };
+
+    render(<ContextProvider />);
+
+    const valueElement = screen.getByTestId('context-value');
+    const updateButton = screen.getByTestId('update-context');
+
+    expect(valueElement.textContent).toBe('0');
+
+    await act(async () => {
+      fireEvent.click(updateButton);
+    });
+    expect(valueElement.textContent).toBe('1');
+
+    const resumeUpdates = pauseUpdates();
+
+    await act(async () => {
+      fireEvent.click(updateButton);
+    });
+    expect(valueElement.textContent).toBe('1');
+
+    resumeUpdates();
+
+    await act(async () => {
+      fireEvent.click(updateButton);
+    });
+    expect(valueElement.textContent).toBe('2');
+  });
+
+  it('should pause useTransition updates', async () => {
+    const TransitionComponent = () => {
+      const [count, setCount] = React.useState(0);
+      const [isPending, startTransition] = React.useTransition();
+
+      return (
+        <div>
+          <span data-testid="transition-count">{count}</span>
+          <span data-testid="transition-pending">{isPending ? 'pending' : 'idle'}</span>
+          <button
+            data-testid="transition-update"
+            onClick={() => {
+              startTransition(() => {
+                setCount((previousCount) => previousCount + 1);
+              });
+            }}
+          >
+            Update
+          </button>
+        </div>
+      );
+    };
+
+    render(<TransitionComponent />);
+
+    const countElement = screen.getByTestId('transition-count');
+    const updateButton = screen.getByTestId('transition-update');
+
+    expect(countElement.textContent).toBe('0');
+
+    await act(async () => {
+      fireEvent.click(updateButton);
+    });
+    expect(countElement.textContent).toBe('1');
+
+    const resumeUpdates = pauseUpdates();
+
+    await act(async () => {
+      fireEvent.click(updateButton);
+    });
+    expect(countElement.textContent).toBe('1');
+
+    resumeUpdates();
+
+    await act(async () => {
+      fireEvent.click(updateButton);
+    });
+    expect(countElement.textContent).toBe('2');
+  });
+
+  it('should handle useDeferredValue gracefully', async () => {
+    const DeferredComponent = () => {
+      const [input, setInput] = React.useState('initial');
+      const deferredInput = React.useDeferredValue(input);
+
+      return (
+        <div>
+          <span data-testid="deferred-value">{deferredInput}</span>
+          <button data-testid="update-input" onClick={() => setInput('updated')}>
+            Update
+          </button>
+        </div>
+      );
+    };
+
+    render(<DeferredComponent />);
+
+    const valueElement = screen.getByTestId('deferred-value');
+    const updateButton = screen.getByTestId('update-input');
+
+    expect(valueElement.textContent).toBe('initial');
+
+    await act(async () => {
+      fireEvent.click(updateButton);
+    });
+    expect(valueElement.textContent).toBe('updated');
+
+    const resumeUpdates = pauseUpdates();
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('update-input'));
+    });
+
+    resumeUpdates();
+  });
 });
