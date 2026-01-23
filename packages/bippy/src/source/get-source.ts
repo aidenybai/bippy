@@ -95,6 +95,14 @@ export const normalizeFileName = (fileName: string): string => {
     } catch {}
   }
 
+  // Strip Vite base path if present
+  if (typeof import.meta !== 'undefined' && (import.meta as any).env?.BASE_URL) {
+    const basePath = ((import.meta as any).env.BASE_URL as string).replace(/\/$/, '');
+    if (basePath && basePath !== '/' && normalizedFileName.startsWith(basePath)) {
+      normalizedFileName = normalizedFileName.slice(basePath.length) || '/';
+    }
+  }
+
   if (normalizedFileName.startsWith(ABOUT_REACT_PREFIX)) {
     const remainder = normalizedFileName.slice(ABOUT_REACT_PREFIX.length);
     const slashIndex = remainder.indexOf('/');
