@@ -609,7 +609,7 @@ describe('TimeTravel', () => {
       const lastSnapshot = history[history.length - 1];
       for (const fiberSnapshot of lastSnapshot.fibers.values()) {
         if (fiberSnapshot.displayName === 'MultiStateComponent') {
-          expect(fiberSnapshot.hookStates.length).toBeGreaterThan(0);
+          expect(fiberSnapshot.hooks.length).toBeGreaterThan(0);
         }
       }
     });
@@ -651,6 +651,213 @@ describe('TimeTravel', () => {
 
       const history = timeTravel.getHistory();
       expect(history.length).toBeGreaterThan(0);
+    });
+
+    it('should identify hook types correctly', async () => {
+      const timeTravel = createTimeTravel({
+        trackComponents: ['MultiStateComponent'],
+        dangerouslyRunInProduction: true,
+      });
+
+      render(<MultiStateComponent />);
+
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      });
+
+      const history = timeTravel.getHistory();
+      expect(history.length).toBeGreaterThan(0);
+
+      const lastSnapshot = history[history.length - 1];
+      for (const fiberSnapshot of lastSnapshot.fibers.values()) {
+        if (fiberSnapshot.displayName === 'MultiStateComponent') {
+          const stateHooks = fiberSnapshot.hooks.filter((hook) => hook.hookType === 'State');
+          expect(stateHooks.length).toBeGreaterThan(0);
+          expect(stateHooks.every((hook) => hook.isEditable)).toBe(true);
+        }
+      }
+    });
+  });
+
+  describe('external state support', () => {
+    it('should capture external state if provided', async () => {
+      let externalCounter = 0;
+      const captureExternalState = vi.fn(() => [
+        { key: 'counter', value: externalCounter },
+      ]);
+
+      const timeTravel = createTimeTravel({
+        dangerouslyRunInProduction: true,
+        captureExternalState,
+      });
+
+      render(<Counter />);
+
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      });
+
+      expect(captureExternalState).toHaveBeenCalled();
+    });
+
+    it('should restore external state if provided', async () => {
+      let externalCounter = 0;
+      const restoreExternalState = vi.fn((entries) => {
+        const counterEntry = entries.find((entry: { key: string }) => entry.key === 'counter');
+        if (counterEntry) {
+          externalCounter = counterEntry.value;
+        }
+      });
+
+      const timeTravel = createTimeTravel({
+        dangerouslyRunInProduction: true,
+        captureExternalState: () => [{ key: 'counter', value: externalCounter }],
+        restoreExternalState,
+      });
+
+      render(<Counter />);
+
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      });
+
+      externalCounter = 5;
+
+      const incrementButton = screen.getByTestId('increment');
+
+      await act(async () => {
+        fireEvent.click(incrementButton);
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      });
+
+      if (timeTravel.canGoBack()) {
+        timeTravel.goBack();
+        expect(restoreExternalState).toHaveBeenCalled();
+      }
+    });
+  });
+
+  describe('onBeforeRestore callback', () => {
+    it('should call onBeforeRestore before restoring', async () => {
+      const onBeforeRestore = vi.fn(() => true);
+      const timeTravel = createTimeTravel({
+        onBeforeRestore,
+        dangerouslyRunInProduction: true,
+      });
+
+      render(<Counter />);
+
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      });
+
+      const incrementButton = screen.getByTestId('increment');
+
+      await act(async () => {
+        fireEvent.click(incrementButton);
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      });
+
+      if (timeTravel.canGoBack()) {
+        timeTravel.goBack();
+        expect(onBeforeRestore).toHaveBeenCalled();
+      }
+    });
+
+    it('should prevent restore if onBeforeRestore returns false', async () => {
+      const onBeforeRestore = vi.fn(() => false);
+      const onRestore = vi.fn();
+      const timeTravel = createTimeTravel({
+        onBeforeRestore,
+        onRestore,
+        dangerouslyRunInProduction: true,
+      });
+
+      render(<Counter />);
+
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      });
+
+      const incrementButton = screen.getByTestId('increment');
+
+      await act(async () => {
+        fireEvent.click(incrementButton);
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      });
+
+      const indexBeforeGoBack = timeTravel.getCurrentIndex();
+
+      if (timeTravel.canGoBack()) {
+        timeTravel.goBack();
+        expect(onBeforeRestore).toHaveBeenCalled();
+        expect(onRestore).not.toHaveBeenCalled();
+        expect(timeTravel.getCurrentIndex()).toBe(indexBeforeGoBack);
+      }
+    });
+  });
+
+  describe('utility methods', () => {
+    it('should return tracked fiber IDs', async () => {
+      const timeTravel = createTimeTravel({
+        dangerouslyRunInProduction: true,
+      });
+
+      render(<Counter />);
+
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      });
+
+      const fiberIds = timeTravel.getTrackedFiberIds();
+      expect(Array.isArray(fiberIds)).toBe(true);
+    });
+
+    it('should return tracked component names', async () => {
+      const timeTravel = createTimeTravel({
+        dangerouslyRunInProduction: true,
+      });
+
+      render(<Counter />);
+
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      });
+
+      const componentNames = timeTravel.getTrackedComponentNames();
+      expect(Array.isArray(componentNames)).toBe(true);
+    });
+
+    it('should return editable state count', async () => {
+      const timeTravel = createTimeTravel({
+        dangerouslyRunInProduction: true,
+      });
+
+      render(<Counter />);
+
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      });
+
+      const fiberIds = timeTravel.getTrackedFiberIds();
+      if (fiberIds.length > 0) {
+        const count = timeTravel.getEditableStateCount(fiberIds[0]);
+        expect(typeof count).toBe('number');
+      }
+    });
+
+    it('should report restore in progress state', async () => {
+      const timeTravel = createTimeTravel({
+        dangerouslyRunInProduction: true,
+      });
+
+      render(<Counter />);
+
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      });
+
+      expect(timeTravel.isRestoreInProgress()).toBe(false);
     });
   });
 });
