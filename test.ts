@@ -71,6 +71,9 @@ interface CommitSnapshot {
 
 interface HistoryOptions {
   maxSnapshots?: number;
+  animationSamplingInterval?: number;
+  maxAnimationElements?: number;
+  maxAnimationsPerElement?: number;
 }
 
 interface HistoryController {
@@ -195,15 +198,34 @@ const getDocumentAnimations = (): Animation[] => {
   return [];
 };
 
+const getFallbackPointerEventType = (type: string): string => {
+  if (typeof PointerEvent === 'function' || !type.startsWith('pointer')) {
+    return type;
+  }
+  switch (type) {
+    case 'pointerover':
+      return 'mouseover';
+    case 'pointerout':
+      return 'mouseout';
+    case 'pointerdown':
+      return 'mousedown';
+    case 'pointerup':
+      return 'mouseup';
+    default:
+      return type;
+  }
+};
+
 const createPointerEvent = (type: string): Event => {
   const eventOptions = { bubbles: true, cancelable: true };
+  const eventType = getFallbackPointerEventType(type);
   if (typeof PointerEvent === 'function') {
-    return new PointerEvent(type, eventOptions);
+    return new PointerEvent(eventType, eventOptions);
   }
   if (typeof MouseEvent === 'function') {
-    return new MouseEvent(type, eventOptions);
+    return new MouseEvent(eventType, eventOptions);
   }
-  return new Event(type, eventOptions);
+  return new Event(eventType, eventOptions);
 };
 
 const getQueueDispatch = (queue: unknown): DispatchFunction | null => {
@@ -243,8 +265,11 @@ const createHistoryController = (
   const latestFibersById = new Map<number, Fiber>();
   const hostFibersById = new Map<number, Fiber>();
   const elementIdByElement = new WeakMap<Element, number>();
+  const hoveredElementIds = new Set<number>();
+  const activeElementIds = new Set<number>();
   const hookTimelinesByFiberId = new Map<number, Map<number, HookTimeline>>();
   const rendererById = new Map<number, ReactRenderer>();
+  const runningAnimationCountsByElement = new Map<Element, number>();
   const dispatchWrapperByOriginal = new WeakMap<
     DispatchFunction,
     DispatchFunction
@@ -259,6 +284,12 @@ const createHistoryController = (
   let isRewindPending = false;
   let isInteractionTrackingInitialized = false;
   let lastInteractionWasKeyboard = false;
+  let focusedElementId: number | null = null;
+  let focusVisibleElementId: number | null = null;
+  let animationSamplingCounter = 0;
+  const animationSamplingInterval = options.animationSamplingInterval ?? 10;
+  const maxAnimationElements = options.maxAnimationElements ?? 200;
+  const maxAnimationsPerElement = options.maxAnimationsPerElement ?? 20;
 
   const nextActionSequence = () => {
     actionSequence += 1;
@@ -283,6 +314,56 @@ const createHistoryController = (
       return;
     }
     isInteractionTrackingInitialized = true;
+    const resolveEventTarget = (event: Event): Element | null => {
+      const target = event.target;
+      return isElement(target) ? target : null;
+    };
+    const updateElementSet = (
+      elementSet: Set<number>,
+      element: Element,
+      isActive: boolean,
+    ) => {
+      const elementId = resolveElementId(element);
+      if (elementId == null) {
+        return;
+      }
+      if (isActive) {
+        elementSet.add(elementId);
+      } else {
+        elementSet.delete(elementId);
+      }
+    };
+    const clearElementSet = (elementSet: Set<number>) => {
+      if (elementSet.size > 0) {
+        elementSet.clear();
+      }
+    };
+    const updateFocusState = (element: Element, isFocused: boolean) => {
+      const elementId = resolveElementId(element);
+      if (elementId == null) {
+        return;
+      }
+      if (isFocused) {
+        focusedElementId = elementId;
+        focusVisibleElementId = lastInteractionWasKeyboard ? elementId : null;
+        return;
+      }
+      if (focusedElementId === elementId) {
+        focusedElementId = null;
+      }
+      if (focusVisibleElementId === elementId) {
+        focusVisibleElementId = null;
+      }
+    };
+    const updateAnimationCount = (element: Element, delta: number) => {
+      const currentCount = runningAnimationCountsByElement.get(element) ?? 0;
+      const nextCount = currentCount + delta;
+      if (nextCount <= 0) {
+        runningAnimationCountsByElement.delete(element);
+      } else {
+        runningAnimationCountsByElement.set(element, nextCount);
+      }
+    };
     document.addEventListener(
       'keydown',
       () => {
@@ -290,20 +371,78 @@ const createHistoryController = (
       },
       true,
     );
-    document.addEventListener(
-      'pointerdown',
-      () => {
-        lastInteractionWasKeyboard = false;
-      },
-      true,
-    );
-    document.addEventListener(
-      'mousedown',
-      () => {
-        lastInteractionWasKeyboard = false;
-      },
-      true,
-    );
+    const handlePointerOver = (event: Event) => {
+      const element = resolveEventTarget(event);
+      if (element) {
+        updateElementSet(hoveredElementIds, element, true);
+      }
+    };
+    const handlePointerOut = (event: Event) => {
+      const element = resolveEventTarget(event);
+      if (element) {
+        updateElementSet(hoveredElementIds, element, false);
+      }
+    };
+    const handlePointerDown = (event: Event) => {
+      lastInteractionWasKeyboard = false;
+      focusVisibleElementId = null;
+      const element = resolveEventTarget(event);
+      if (element) {
+        updateElementSet(activeElementIds, element, true);
+      }
+    };
+    const handlePointerUp = (event: Event) => {
+      const element = resolveEventTarget(event);
+      if (element) {
+        updateElementSet(activeElementIds, element, false);
+      }
+      clearElementSet(activeElementIds);
+    };
+    const handleFocusIn = (event: Event) => {
+      const element = resolveEventTarget(event);
+      if (element) {
+        updateFocusState(element, true);
+      }
+    };
+    const handleFocusOut = (event: Event) => {
+      const element = resolveEventTarget(event);
+      if (element) {
+        updateFocusState(element, false);
+      }
+    };
+    const handleAnimationStart = (event: Event) => {
+      const element = resolveEventTarget(event);
+      if (element) {
+        updateAnimationCount(element, 1);
+      }
+    };
+    const handleAnimationEnd = (event: Event) => {
+      const element = resolveEventTarget(event);
+      if (element) {
+        updateAnimationCount(element, -1);
+      }
+    };
+    const usePointerEvents = typeof PointerEvent === 'function';
+    if (usePointerEvents) {
+      document.addEventListener('pointerover', handlePointerOver, true);
+      document.addEventListener('pointerout', handlePointerOut, true);
+      document.addEventListener('pointerdown', handlePointerDown, true);
+      document.addEventListener('pointerup', handlePointerUp, true);
+      document.addEventListener('pointercancel', handlePointerUp, true);
+    } else {
+      document.addEventListener('mouseover', handlePointerOver, true);
+      document.addEventListener('mouseout', handlePointerOut, true);
+      document.addEventListener('mousedown', handlePointerDown, true);
+      document.addEventListener('mouseup', handlePointerUp, true);
+    }
+    document.addEventListener('focusin', handleFocusIn, true);
+    document.addEventListener('focusout', handleFocusOut, true);
+    document.addEventListener('animationstart', handleAnimationStart, true);
+    document.addEventListener('animationend', handleAnimationEnd, true);
+    document.addEventListener('animationcancel', handleAnimationEnd, true);
+    document.addEventListener('transitionrun', handleAnimationStart, true);
+    document.addEventListener('transitionend', handleAnimationEnd, true);
+    document.addEventListener('transitioncancel', handleAnimationEnd, true);
   };
 
   const resolveElementId = (element: Element): number | null => {
@@ -340,28 +479,6 @@ const createHistoryController = (
     return stateNode;
   };
 
-  const captureSelectorElementIds = (selector: string): number[] => {
-    if (!isDocumentAvailable()) {
-      return [];
-    }
-    try {
-      const elements = Array.from(document.querySelectorAll(selector));
-      const elementIds: number[] = [];
-      for (const element of elements) {
-        if (!isElement(element)) {
-          continue;
-        }
-        const elementId = resolveElementId(element);
-        if (elementId != null) {
-          elementIds.push(elementId);
-        }
-      }
-      return elementIds;
-    } catch {
-      return [];
-    }
-  };
-
   const capturePseudoClassSnapshot = (): PseudoClassSnapshot => {
     if (!isDocumentAvailable()) {
       return {
@@ -371,48 +488,101 @@ const createHistoryController = (
         activeElementIds: [],
       };
     }
-    const hoveredElementIds = captureSelectorElementIds(':hover');
-    const activeElementIds = captureSelectorElementIds(':active');
-    const focusVisibleIds = captureSelectorElementIds(':focus-visible');
-    const activeElement = document.activeElement;
-    const focusedElementId = isElement(activeElement)
-      ? resolveElementId(activeElement)
-      : null;
-    const focusVisibleElementId =
-      focusVisibleIds.length > 0 ? focusVisibleIds[0] ?? null : null;
+    if (focusedElementId == null) {
+      const activeElement = document.activeElement;
+      if (isElement(activeElement)) {
+        focusedElementId = resolveElementId(activeElement);
+      }
+    }
     return {
       focusedElementId,
       focusVisibleElementId,
-      hoveredElementIds,
-      activeElementIds,
+      hoveredElementIds: Array.from(hoveredElementIds),
+      activeElementIds: Array.from(activeElementIds),
     };
+  };
+
+  const appendAnimationSnapshot = (
+    animationsByElement: Map<Element, AnimationStateSnapshot[]>,
+    element: Element,
+    animationSnapshot: AnimationStateSnapshot,
+  ) => {
+    if (animationsByElement.size >= maxAnimationElements) {
+      return;
+    }
+    const existingSnapshots = animationsByElement.get(element) ?? [];
+    if (existingSnapshots.length >= maxAnimationsPerElement) {
+      return;
+    }
+    existingSnapshots.push(animationSnapshot);
+    animationsByElement.set(element, existingSnapshots);
+  };
+
+  const collectElementAnimations = (
+    element: Element,
+    animationsByElement: Map<Element, AnimationStateSnapshot[]>,
+  ) => {
+    try {
+      const animations = element.getAnimations();
+      if (animations.length === 0) {
+        runningAnimationCountsByElement.delete(element);
+        return;
+      }
+      for (const animation of animations) {
+        const animationSnapshot: AnimationStateSnapshot = {
+          id: typeof animation.id === 'string' ? animation.id : null,
+          name: getAnimationName(animation),
+          playState: animation.playState,
+          currentTime:
+            typeof animation.currentTime === 'number'
+              ? animation.currentTime
+              : null,
+          playbackRate: animation.playbackRate,
+          startTime:
+            typeof animation.startTime === 'number' ? animation.startTime : null,
+        };
+        appendAnimationSnapshot(animationsByElement, element, animationSnapshot);
+        if (animationsByElement.size >= maxAnimationElements) {
+          return;
+        }
+      }
+    } catch {
+      runningAnimationCountsByElement.delete(element);
+    }
   };
 
   const captureAnimationSnapshots = (): ElementAnimationSnapshot[] => {
     if (!isDocumentAvailable()) {
       return [];
     }
-    const animations = getDocumentAnimations();
     const animationsByElement = new Map<Element, AnimationStateSnapshot[]>();
-    for (const animation of animations) {
-      const effect = animation.effect;
-      const target = isRecord(effect) ? Reflect.get(effect, 'target') : null;
-      if (!isElement(target)) {
-        continue;
+    const animationTargets = Array.from(runningAnimationCountsByElement.keys());
+    const shouldSampleDocumentAnimations =
+      animationSamplingInterval > 0 &&
+      animationSamplingCounter % animationSamplingInterval === 0;
+    animationSamplingCounter += 1;
+    for (const element of animationTargets.slice(0, maxAnimationElements)) {
+      collectElementAnimations(element, animationsByElement);
+      if (animationsByElement.size >= maxAnimationElements) {
+        break;
       }
-      const animationSnapshot: AnimationStateSnapshot = {
-        id: typeof animation.id === 'string' ? animation.id : null,
-        name: getAnimationName(animation),
-        playState: animation.playState,
-        currentTime:
-          typeof animation.currentTime === 'number' ? animation.currentTime : null,
-        playbackRate: animation.playbackRate,
-        startTime:
-          typeof animation.startTime === 'number' ? animation.startTime : null,
-      };
-      const existingSnapshots = animationsByElement.get(target) ?? [];
-      existingSnapshots.push(animationSnapshot);
-      animationsByElement.set(target, existingSnapshots);
+    }
+    if (shouldSampleDocumentAnimations || animationTargets.length === 0) {
+      const animations = getDocumentAnimations();
+      for (const animation of animations) {
+        const effect = animation.effect;
+        const target = isRecord(effect) ? Reflect.get(effect, 'target') : null;
+        if (!isElement(target)) {
+          continue;
+        }
+        if (animationsByElement.has(target)) {
+          continue;
+        }
+        collectElementAnimations(target, animationsByElement);
+        if (animationsByElement.size >= maxAnimationElements) {
+          break;
+        }
+      }
     }
     const elementSnapshots: ElementAnimationSnapshot[] = [];
     for (const [element, animationSnapshots] of animationsByElement) {
@@ -432,6 +602,26 @@ const createHistoryController = (
     if (!isDocumentAvailable()) {
       return;
     }
+    const targetHoveredIds = new Set(snapshot.hoveredElementIds);
+    const targetActiveIds = new Set(snapshot.activeElementIds);
+    for (const hoveredId of hoveredElementIds) {
+      if (!targetHoveredIds.has(hoveredId)) {
+        const hoveredElement = getElementForHostFiberId(hoveredId);
+        if (hoveredElement) {
+          hoveredElement.dispatchEvent(createPointerEvent('pointerout'));
+        }
+      }
+    }
+    for (const activeId of activeElementIds) {
+      if (!targetActiveIds.has(activeId)) {
+        const activeElement = getElementForHostFiberId(activeId);
+        if (activeElement) {
+          activeElement.dispatchEvent(createPointerEvent('pointerup'));
+        }
+      }
+    }
+    hoveredElementIds.clear();
+    activeElementIds.clear();
     const focusElement =
       snapshot.focusedElementId != null
         ? getElementForHostFiberId(snapshot.focusedElementId)
@@ -461,16 +651,18 @@ const createHistoryController = (
       const hoveredElement = getElementForHostFiberId(hoveredElementId);
       if (hoveredElement) {
         hoveredElement.dispatchEvent(createPointerEvent('pointerover'));
-        hoveredElement.dispatchEvent(createPointerEvent('mouseover'));
+        hoveredElementIds.add(hoveredElementId);
       }
     }
     for (const activeElementId of snapshot.activeElementIds) {
       const activeElement = getElementForHostFiberId(activeElementId);
       if (activeElement) {
         activeElement.dispatchEvent(createPointerEvent('pointerdown'));
-        activeElement.dispatchEvent(createPointerEvent('mousedown'));
+        activeElementIds.add(activeElementId);
       }
     }
+    focusedElementId = snapshot.focusedElementId;
+    focusVisibleElementId = snapshot.focusVisibleElementId;
   };
 
   const applyAnimationSnapshots = (
