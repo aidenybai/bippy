@@ -1,6 +1,6 @@
 import 'bippy/install-hook-only';
 
-import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
+import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
 import { useState } from 'react';
 import {
@@ -24,70 +24,6 @@ const Counter = () => {
   );
 };
 
-interface TodoItem {
-  id: number;
-  text: string;
-  completed: boolean;
-}
-
-const TodoList = () => {
-  const [todos, setTodos] = useState<TodoItem[]>([
-    { id: 1, text: 'Initial todo', completed: false },
-  ]);
-
-  const addTodo = () => {
-    setTodos([
-      ...todos,
-      { id: Date.now(), text: `Todo ${todos.length + 1}`, completed: false },
-    ]);
-  };
-
-  const toggleTodo = (id: number) => {
-    setTodos(
-      todos.map((todo) =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo,
-      ),
-    );
-  };
-
-  const deleteTodo = (id: number) => {
-    setTodos(todos.filter((todo) => todo.id !== id));
-  };
-
-  return (
-    <div>
-      <div data-testid="todo-count">{todos.length}</div>
-      <div data-testid="completed-count">
-        {todos.filter((t) => t.completed).length}
-      </div>
-      <button data-testid="add-todo" onClick={addTodo}>
-        Add
-      </button>
-      <ul>
-        {todos.map((todo) => (
-          <li key={todo.id} data-testid={`todo-${todo.id}`}>
-            <span data-testid={`todo-text-${todo.id}`}>{todo.text}</span>
-            <span data-testid={`todo-status-${todo.id}`}>
-              {todo.completed ? 'done' : 'pending'}
-            </span>
-            <button
-              data-testid={`toggle-${todo.id}`}
-              onClick={() => toggleTodo(todo.id)}
-            >
-              Toggle
-            </button>
-            <button
-              data-testid={`delete-${todo.id}`}
-              onClick={() => deleteTodo(todo.id)}
-            >
-              Delete
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-};
 
 describe('Time Travel', () => {
   let timeTravel: TimeTravelInstance;
