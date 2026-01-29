@@ -1,6 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
-import { useState, useEffect } from 'react';
 import {
   createTimeTravelStore,
   useTimeTravelStore,
@@ -15,9 +14,9 @@ interface CounterState {
 }
 
 const counterReducer = createReducer<CounterState>({
-  INCREMENT: (state) => ({ count: state.count + 1 }),
-  DECREMENT: (state) => ({ count: state.count - 1 }),
-  SET: (state, payload) => ({ count: payload as number }),
+  INCREMENT: (counterState) => ({ count: counterState.count + 1 }),
+  DECREMENT: (counterState) => ({ count: counterState.count - 1 }),
+  SET: (_counterState, payload) => ({ count: payload as number }),
 });
 
 describe('createTimeTravelStore', () => {
