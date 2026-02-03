@@ -74,6 +74,50 @@ export const getSource = async (
   return null;
 };
 
+const getPathSegmentCount = (path: string): number =>
+  path.split('/').filter(Boolean).length;
+
+const getFirstPathSegment = (path: string): string | null => {
+  const segments = path.split('/').filter(Boolean);
+  return segments[0] ?? null;
+};
+
+const stripSingleBasePathPrefix = (path: string): string => {
+  const firstSlashIndex = path.indexOf('/', 1);
+  if (firstSlashIndex === -1) {
+    return path;
+  }
+
+  const basePath = path.slice(0, firstSlashIndex);
+  if (getPathSegmentCount(basePath) !== 1) {
+    return path;
+  }
+
+  const remainderPath = path.slice(firstSlashIndex);
+  if (!SOURCE_FILE_EXTENSION_REGEX.test(remainderPath)) {
+    return path;
+  }
+
+  if (getPathSegmentCount(remainderPath) < 2) {
+    return path;
+  }
+
+  const firstRemainderSegment = getFirstPathSegment(remainderPath);
+  if (!firstRemainderSegment) {
+    return path;
+  }
+
+  if (firstRemainderSegment.startsWith('@')) {
+    return path;
+  }
+
+  if (firstRemainderSegment.length > 4) {
+    return path;
+  }
+
+  return remainderPath;
+};
+
 export const normalizeFileName = (fileName: string): string => {
   if (!fileName) {
     return '';
@@ -85,14 +129,18 @@ export const normalizeFileName = (fileName: string): string => {
 
   let normalizedFileName = fileName;
 
-  if (
+  const isHttpUrl =
     normalizedFileName.startsWith('http://') ||
-    normalizedFileName.startsWith('https://')
-  ) {
+    normalizedFileName.startsWith('https://');
+  if (isHttpUrl) {
     try {
       const parsedUrl = new URL(normalizedFileName);
       normalizedFileName = parsedUrl.pathname;
     } catch {}
+  }
+
+  if (isHttpUrl) {
+    normalizedFileName = stripSingleBasePathPrefix(normalizedFileName);
   }
 
   if (normalizedFileName.startsWith(ABOUT_REACT_PREFIX)) {

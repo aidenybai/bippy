@@ -15,9 +15,16 @@ const DevTools = initializeFrontend(window);
 
 activate(window);
 const React = await import('react');
+const reactMajorVersion = Number.parseInt(
+  React.version.split('.')[0] ?? '0',
+  10,
+);
+const isUnsupportedReactVersion = reactMajorVersion >= 19;
 const { render } = await import('@testing-library/react');
 
-it('should be active', () => {
+const testOrSkip = isUnsupportedReactVersion ? it.skip : it;
+
+testOrSkip('should be active', () => {
   render(<div>Hello</div>);
   render(<DevTools />);
 

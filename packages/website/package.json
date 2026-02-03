@@ -1,0 +1,17 @@
+{
+  "name": "@bippy/website",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "15.3.2",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  }
+}

@@ -225,16 +225,54 @@ it('normalizeFileName should strip http:// host prefix (Vite dev server)', () =>
   expect(result).toBe('/src/features/my-component.tsx');
 });
 
+it('normalizeFileName should strip single-segment base path', () => {
+  const input =
+    'http://localhost:5173/dashboard/src/routes/orders/button.tsx';
+  const result = normalizeFileName(input);
+  expect(result).toBe('/src/routes/orders/button.tsx');
+});
+
+it('normalizeFileName should keep multi-segment base path', () => {
+  const input =
+    'http://localhost:5173/dashboard/admin/src/routes/orders/button.tsx';
+  const result = normalizeFileName(input);
+  expect(result).toBe('/dashboard/admin/src/routes/orders/button.tsx');
+});
+
+it('normalizeFileName should keep same path when root has no base path', () => {
+  const input = 'http://localhost:5173/src/app.tsx';
+  const result = normalizeFileName(input);
+  expect(result).toBe('/src/app.tsx');
+});
+
+it('normalizeFileName should keep same path when /src is the end', () => {
+  const input = 'http://localhost:5173/src';
+  const result = normalizeFileName(input);
+  expect(result).toBe('/src');
+});
+
+it('normalizeFileName should keep single-segment base path for non-source file', () => {
+  const input = 'http://localhost:5173/dashboard/assets/main.css';
+  const result = normalizeFileName(input);
+  expect(result).toBe('/dashboard/assets/main.css');
+});
+
+it('normalizeFileName should strip single-segment base path for long segment', () => {
+  const input = 'http://localhost:5173/feature/src/page.tsx';
+  const result = normalizeFileName(input);
+  expect(result).toBe('/src/page.tsx');
+});
+
+it('normalizeFileName should keep single-segment base path for /@fs/', () => {
+  const input = 'https://example.local:5173/@fs/Users/me/proj/src/app.tsx';
+  const result = normalizeFileName(input);
+  expect(result).toBe('/@fs/Users/me/proj/src/app.tsx');
+});
+
 it('normalizeFileName should strip http:// host prefix and query parameters', () => {
   const input = 'http://127.0.0.1:5173/src/main.tsx?t=123';
   const result = normalizeFileName(input);
   expect(result).toBe('/src/main.tsx');
-});
-
-it('normalizeFileName should strip https:// host prefix for /@fs/ paths', () => {
-  const input = 'https://example.local:5173/@fs/Users/me/proj/src/app.tsx';
-  const result = normalizeFileName(input);
-  expect(result).toBe('/@fs/Users/me/proj/src/app.tsx');
 });
 
 it('extractLocation should strip outer parentheses from Chrome stack trace format', () => {
