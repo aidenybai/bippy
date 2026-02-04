@@ -9,8 +9,9 @@
     "lint": "oxlint --fix",
     "sherif": "sherif --fix",
     "check": "pnpm lint",
-    "bump": "changeset && changeset version",
-    "release": "changeset publish"
+    "changeset": "changeset",
+    "version": "changeset version",
+    "publish": "changeset publish"
   },
   "packageManager": "pnpm@10.12.1",
   "private": true,
