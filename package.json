@@ -10,8 +10,8 @@
     "sherif": "sherif --fix",
     "check": "pnpm lint",
     "changeset": "changeset",
-    "version": "changeset version",
-    "publish": "changeset publish"
+    "changeset:version": "changeset version",
+    "changeset:publish": "changeset publish"
   },
   "packageManager": "pnpm@10.12.1",
   "private": true,
