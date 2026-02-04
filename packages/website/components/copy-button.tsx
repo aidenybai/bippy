@@ -10,8 +10,8 @@ interface CopyButtonProps {
 export const CopyButton = ({ text }: CopyButtonProps): React.JSX.Element => {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = async (): Promise<void> => {
-    await navigator.clipboard.writeText(text);
+  const handleCopy = (): void => {
+    navigator.clipboard.writeText(text).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };

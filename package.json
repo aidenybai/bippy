@@ -6,10 +6,9 @@
     "build": "pnpm --filter=./packages/bippy run build",
     "test": "pnpm --filter=./packages/bippy run test",
     "publint": "pnpm --filter=./packages/bippy run publint",
-    "lint": "eslint . --fix",
+    "lint": "oxlint --fix",
     "sherif": "sherif --fix",
-    "format": "prettier --write .",
-    "check": "pnpm lint && pnpm format",
+    "check": "pnpm lint",
     "bump": "changeset && changeset version",
     "release": "changeset publish"
   },
@@ -19,9 +18,7 @@
     "@antfu/ni": "^27.0.1",
     "@changesets/changelog-git": "^0.2.0",
     "@changesets/cli": "^2.27.11",
-    "eslint": "^9.15.0",
-    "prettier": "^3.3.3",
-    "sherif": "^1.2.0",
-    "typescript-eslint": "^8.15.0"
+    "oxlint": "^1.43.0",
+    "sherif": "^1.2.0"
   }
 }

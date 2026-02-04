@@ -201,7 +201,7 @@ describe('traverseFiber', () => {
     selector.mock.calls.forEach(([fiber]) => {
       callCounts.set(fiber, (callCounts.get(fiber) || 0) + 1);
     });
-    callCounts.forEach((count, fiber) => {
+    callCounts.forEach((count, _fiber) => {
       expect(count).toBe(1);
     });
   });
@@ -225,7 +225,7 @@ describe('traverseFiber', () => {
     selector.mock.calls.forEach(([fiber]) => {
       callCounts.set(fiber, (callCounts.get(fiber) || 0) + 1);
     });
-    callCounts.forEach((count, fiber) => {
+    callCounts.forEach((count, _fiber) => {
       expect(count).toBe(1);
     });
   });
@@ -248,7 +248,7 @@ describe('traverseFiber', () => {
     selector.mock.calls.forEach(([fiber]) => {
       callCounts.set(fiber, (callCounts.get(fiber) || 0) + 1);
     });
-    callCounts.forEach((count, fiber) => {
+    callCounts.forEach((count, _fiber) => {
       expect(count).toBe(1);
     });
   });
@@ -272,7 +272,7 @@ describe('traverseFiber', () => {
     selector.mock.calls.forEach(([fiber]) => {
       callCounts.set(fiber, (callCounts.get(fiber) || 0) + 1);
     });
-    callCounts.forEach((count, fiber) => {
+    callCounts.forEach((count, _fiber) => {
       expect(count).toBe(1);
     });
   });

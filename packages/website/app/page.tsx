@@ -119,15 +119,19 @@ const Page = async (): Promise<React.JSX.Element> => {
             <Markdown
               remarkPlugins={[remarkGfm]}
               components={{
-                h2: ({ children, ...props }) => (
-                  <h2
-                    className="text-neutral-100 font-medium mt-12 mb-3 pt-8 border-t border-neutral-800 scroll-mt-8"
-                    id={String(children).toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '')}
-                    {...props}
-                  >
-                    {children}
-                  </h2>
-                ),
+                h2: ({ children, node, ...props }) => {
+                  const text = node?.children?.[0] && 'value' in node.children[0] ? node.children[0].value : '';
+                  const id = text.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+                  return (
+                    <h2
+                      className="text-neutral-100 font-medium mt-12 mb-3 pt-8 border-t border-neutral-800 scroll-mt-8"
+                      id={id}
+                      {...props}
+                    >
+                      {children}
+                    </h2>
+                  );
+                },
                 h3: ({ children, ...props }) => (
                   <h3 className="text-neutral-200 font-medium mt-8 mb-2 text-[15px]" {...props}>
                     {children}
@@ -157,7 +161,7 @@ const Page = async (): Promise<React.JSX.Element> => {
                   <em className="text-neutral-400 not-italic">{children}</em>
                 ),
                 img: () => null,
-                code: ({ children, className, ...props }) => {
+                code: ({ children, className, node, ...props }) => {
                   const isInline = !className;
                   if (isInline) {
                     return (
@@ -166,9 +170,10 @@ const Page = async (): Promise<React.JSX.Element> => {
                       </code>
                     );
                   }
+                  const codeText = node?.children?.[0] && 'value' in node.children[0] ? node.children[0].value : '';
                   return (
                     <CodeBlock className={className}>
-                      {String(children)}
+                      {codeText}
                     </CodeBlock>
                   );
                 },
