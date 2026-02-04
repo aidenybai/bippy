@@ -1,0 +1,44 @@
+@import 'tailwindcss';
+
+:root {
+  color-scheme: dark;
+}
+
+@keyframes slam {
+  0% {
+    transform: scale(1) translateY(0);
+  }
+  15% {
+    transform: scale(1.15) translateY(-4px);
+  }
+  40% {
+    transform: scale(0.95) translateY(2px);
+  }
+  60% {
+    transform: scale(1.02) translateY(-1px);
+  }
+  80% {
+    transform: scale(0.99) translateY(0);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+  }
+}
+
+.slam-hover:hover {
+  animation: slam 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::selection {
+  background-color: rgba(251, 146, 60, 0.1);
+  color: rgba(251, 146, 60, 1);
+}
+
+::-moz-selection {
+  background-color: rgba(251, 146, 60, 0.3);
+  color: inherit;
+}
+
+[style="color:#99FFE4"] {
+  color: #FFF !important;
+}

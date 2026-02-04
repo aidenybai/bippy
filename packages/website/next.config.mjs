@@ -1,11 +1,3 @@
-const nextConfig = {
-  redirects: async () => [
-    {
-      source: "/:path*",
-      destination: "https://github.com/aidenybai/bippy#readme",
-      permanent: true
-    }
-  ]
-};
+const nextConfig = {};
 
 export default nextConfig;
