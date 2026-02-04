@@ -240,6 +240,13 @@ importers:
       react-dom:
         specifier: ^19.2.4
         version: 19.2.4(react@19.2.4)
+    devDependencies:
+      '@types/react':
+        specifier: ^19
+        version: 19.0.4
+      '@types/react-dom':
+        specifier: ^19
+        version: 19.0.2(@types/react@19.0.4)
 
 packages:
 
