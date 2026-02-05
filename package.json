@@ -9,7 +9,7 @@
     "lint": "oxlint --fix",
     "sherif": "sherif --fix",
     "check": "pnpm lint",
-    "changeset": "changeset",
+    "changeset": "nr build && changeset",
     "version": "changeset version",
     "release": "changeset publish"
   },
