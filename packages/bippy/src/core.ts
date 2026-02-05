@@ -609,11 +609,11 @@ export const detectReactBuildType = (
  * Returns `true` if bippy's instrumentation is active.
  */
 export const isInstrumentationActive = (): boolean => {
-  const rdtHook = getRDTHook();
+  const rdtHook = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
   return (
-    Boolean(rdtHook._instrumentationIsActive) ||
-    isRealReactDevtools() ||
-    isReactRefresh()
+    Boolean(rdtHook?._instrumentationIsActive) ||
+    isRealReactDevtools(rdtHook) ||
+    isReactRefresh(rdtHook)
   );
 };
 
@@ -1182,12 +1182,14 @@ export const instrument = (
 };
 
 export const getFiberFromHostInstance = <T>(hostInstance: T): Fiber | null => {
-  const rdtHook = getRDTHook();
-  for (const renderer of rdtHook.renderers.values()) {
-    try {
-      const fiber = renderer.findFiberByHostInstance?.(hostInstance);
-      if (fiber) return fiber;
-    } catch {}
+  const rdtHook = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+  if (rdtHook?.renderers) {
+    for (const renderer of rdtHook.renderers.values()) {
+      try {
+        const fiber = renderer.findFiberByHostInstance?.(hostInstance);
+        if (fiber) return fiber;
+      } catch {}
+    }
   }
 
   if (typeof hostInstance === 'object' && hostInstance != null) {

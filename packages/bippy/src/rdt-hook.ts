@@ -32,16 +32,20 @@ const checkDCE = (fn: unknown): void => {
   } catch {}
 };
 
-export const isRealReactDevtools = (rdtHook = getRDTHook()): boolean => {
-  return 'getFiberRoots' in rdtHook;
+export const isRealReactDevtools = (
+  rdtHook: ReactDevToolsGlobalHook | undefined | null = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__,
+): boolean => {
+  return Boolean(rdtHook && 'getFiberRoots' in rdtHook);
 };
 
 let isReactRefreshOverride = false;
 let injectFnStr: string | undefined = undefined;
 
-export const isReactRefresh = (rdtHook = getRDTHook()): boolean => {
+export const isReactRefresh = (
+  rdtHook: ReactDevToolsGlobalHook | undefined | null = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__,
+): boolean => {
   if (isReactRefreshOverride) return true;
-  if (typeof rdtHook.inject === 'function') {
+  if (rdtHook && typeof rdtHook.inject === 'function') {
     injectFnStr = rdtHook.inject.toString();
   }
   // https://github.com/facebook/react/blob/8f8b336734d7c807f5aa11b0f31540e63302d789/packages/react-refresh/src/ReactFreshRuntime.js#L459
