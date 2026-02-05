@@ -1,5 +1,11 @@
 # bippy
 
+## 0.5.29
+
+### Patch Changes
+
+- fix: recursive failure
+
 ## 0.5.28
 
 ### Patch Changes
