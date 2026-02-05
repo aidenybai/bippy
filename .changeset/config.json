@@ -10,7 +10,6 @@
   "ignore": [
     "@bippy/website",
     "@bippy/next-playground",
-    "@bippy/vite-playground",
-    "@bippy/old-website"
+    "@bippy/vite-playground"
   ]
 }
