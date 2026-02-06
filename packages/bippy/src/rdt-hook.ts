@@ -3,7 +3,7 @@
 // without this, we can't stub the React DevTools global hook, we don't have a way to instrument the application
 // make sure you import this file first before anything else (particularly React)
 
-import type { ReactDevToolsGlobalHook, ReactRenderer } from './types.js';
+import type { Family, ReactDevToolsGlobalHook, ReactRenderer } from './types.js';
 
 export const version = process.env.VERSION;
 export const BIPPY_INSTRUMENTATION_STRING = `bippy-${version}`;
@@ -14,6 +14,121 @@ const objectHasOwnProperty = Object.prototype.hasOwnProperty;
 
 const NO_OP = () => {
   /**/
+};
+
+const patchedRefreshRenderers = new WeakSet<object>();
+const refreshFamiliesByType = new WeakMap<object, Family>();
+const didSetRefreshHandlerByRenderer = new WeakSet<object>();
+
+const canBeRefreshKey = (value: unknown): value is object => {
+  return (
+    typeof value === 'function' || (typeof value === 'object' && value != null)
+  );
+};
+
+const hasTypeProperty = (value: unknown): value is { type: unknown } => {
+  return typeof value === 'object' && value != null && 'type' in value;
+};
+
+const hasRenderProperty = (value: unknown): value is { render: unknown } => {
+  return typeof value === 'object' && value != null && 'render' in value;
+};
+
+const getRefreshCandidates = (value: unknown): object[] => {
+  if (!canBeRefreshKey(value)) return [];
+
+  const candidates: object[] = [];
+  const visited = new Set<object>();
+
+  let current: unknown = value;
+  while (canBeRefreshKey(current) && !visited.has(current)) {
+    visited.add(current);
+    candidates.push(current);
+
+    if (hasTypeProperty(current) && canBeRefreshKey(current.type)) {
+      current = current.type;
+      continue;
+    }
+
+    if (hasRenderProperty(current) && canBeRefreshKey(current.render)) {
+      current = current.render;
+      continue;
+    }
+
+    break;
+  }
+
+  return candidates;
+};
+
+export const getReactRefreshFamily = (type: unknown): Family | null => {
+  const candidates = getRefreshCandidates(type);
+  for (const candidate of candidates) {
+    const existing = refreshFamiliesByType.get(candidate);
+    if (existing) return existing;
+  }
+  return null;
+};
+
+export const linkReactRefreshFamily = (
+  previousType: unknown,
+  nextType: unknown,
+): Family | null => {
+  const previousCandidates = getRefreshCandidates(previousType);
+  const nextCandidates = getRefreshCandidates(nextType);
+
+  const existingFamily =
+    getReactRefreshFamily(previousType) ?? getReactRefreshFamily(nextType);
+
+  const family: Family = existingFamily ?? { current: nextType };
+
+  for (const candidate of [...previousCandidates, ...nextCandidates]) {
+    refreshFamiliesByType.set(candidate, family);
+  }
+
+  return family;
+};
+
+const patchRefreshRenderer = (renderer: ReactRenderer): void => {
+  if (!canBeRefreshKey(renderer)) return;
+  if (patchedRefreshRenderers.has(renderer)) return;
+  patchedRefreshRenderers.add(renderer);
+
+  const originalSetRefreshHandler = renderer.setRefreshHandler;
+  if (typeof originalSetRefreshHandler !== 'function') return;
+
+  renderer.setRefreshHandler = (handler) => {
+    const wrappedHandler: typeof handler =
+      handler == null
+        ? null
+        : (fiberOrType) => {
+            const maybeFiberOrType: unknown = fiberOrType;
+            const maybeType =
+              hasTypeProperty(maybeFiberOrType) ? maybeFiberOrType.type : null;
+
+            return (
+              getReactRefreshFamily(maybeType ?? maybeFiberOrType) ??
+              handler(fiberOrType)
+            );
+          };
+
+    didSetRefreshHandlerByRenderer.add(renderer);
+    originalSetRefreshHandler(wrappedHandler);
+  };
+};
+
+export const ensureReactRefreshHandler = (renderer: ReactRenderer): void => {
+  if (!canBeRefreshKey(renderer)) return;
+  if (didSetRefreshHandlerByRenderer.has(renderer)) return;
+  if (typeof renderer.setRefreshHandler !== 'function') return;
+
+  renderer.setRefreshHandler((fiberOrType) => {
+    const maybeFiberOrType: unknown = fiberOrType;
+    const maybeType = hasTypeProperty(maybeFiberOrType)
+      ? maybeFiberOrType.type
+      : null;
+    return getReactRefreshFamily(maybeType ?? maybeFiberOrType);
+  });
 };
 
 const checkDCE = (fn: unknown): void => {
@@ -70,6 +185,7 @@ export const installRDTHook = (
       const nextID = ++i;
       renderers.set(nextID, renderer);
       _renderers.add(renderer);
+      patchRefreshRenderer(renderer);
       if (!rdtHook._instrumentationIsActive) {
         rdtHook._instrumentationIsActive = true;
         onActiveListeners.forEach((listener) => listener());
@@ -98,6 +214,7 @@ export const installRDTHook = (
           if (ourRenderers.size > 0) {
             ourRenderers.forEach((renderer, id) => {
               _renderers.add(renderer);
+              patchRefreshRenderer(renderer);
               // eslint-disable-next-line @typescript-eslint/no-unsafe-call
               newHook.renderers.set(id, renderer);
             });
@@ -172,6 +289,7 @@ export const patchRDTHook = (onActive?: () => unknown): void => {
       rdtHook.inject = (renderer) => {
         const id = prevInject(renderer);
         _renderers.add(renderer);
+        patchRefreshRenderer(renderer);
         if (isRefresh) {
           // react refresh doesn't inject this properly
           // https://github.com/facebook/react/blob/18eaf51bd51fed8dfed661d64c306759101d0bfd/packages/react-refresh/src/ReactFreshRuntime.js#L430
