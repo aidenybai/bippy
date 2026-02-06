@@ -1105,6 +1105,418 @@ export const overrideContext = (
   }
 };
 
+interface DispatcherRef {
+  H?: unknown;
+  current?: unknown;
+}
+
+interface Dispatcher {
+  useState: <S>(initialState: S | (() => S)) => [S, (action: S | ((prev: S) => S)) => void];
+  useReducer: <S, A>(
+    reducer: (state: S, action: A) => S,
+    initialArg: S,
+    init?: (arg: S) => S,
+  ) => [S, (action: A) => void];
+  useSyncExternalStore: <T>(
+    subscribe: (onStoreChange: () => void) => () => void,
+    getSnapshot: () => T,
+    getServerSnapshot?: () => T,
+  ) => T;
+  [key: string]: unknown;
+}
+
+interface HookQueue {
+  pending?: unknown;
+  dispatch?: (...args: unknown[]) => void;
+  lastRenderedReducer?: unknown;
+  lanes?: number;
+  value?: unknown;
+  getSnapshot?: () => unknown;
+}
+
+interface HookState {
+  memoizedState: unknown;
+  baseState: unknown;
+  baseQueue: unknown;
+  queue: HookQueue | null;
+  next: HookState | null;
+}
+
+interface PausedQueueState {
+  originalPendingDescriptor?: PropertyDescriptor;
+  originalGetSnapshot?: () => unknown;
+  snapshotValueAtPause?: unknown;
+}
+
+interface PausedDispatcherState {
+  dispatcherKey: 'H' | 'current';
+  originalDescriptor: PropertyDescriptor | undefined;
+}
+
+interface PausedContextState {
+  originalDescriptor?: PropertyDescriptor;
+  frozenValue: unknown;
+}
+
+let isUpdatesPaused = false;
+const pausedDispatcherStates = new Map<ReactRenderer, PausedDispatcherState>();
+const pausedQueueStates = new WeakMap<HookQueue, PausedQueueState>();
+const pausedContextStates = new WeakMap<ContextDependency<unknown>, PausedContextState>();
+
+const pauseHookQueue = (queue: HookQueue): void => {
+  if (!queue || pausedQueueStates.has(queue)) return;
+
+  const queuePauseState: PausedQueueState = {};
+
+  if ('pending' in queue) {
+    queuePauseState.originalPendingDescriptor = Object.getOwnPropertyDescriptor(queue, 'pending');
+    let currentPendingValue = queue.pending;
+
+    Object.defineProperty(queue, 'pending', {
+      configurable: true,
+      enumerable: true,
+      get() {
+        return currentPendingValue;
+      },
+      set(newValue) {
+        if (isUpdatesPaused) return;
+        currentPendingValue = newValue;
+      },
+    });
+  }
+
+  if ('getSnapshot' in queue && typeof queue.getSnapshot === 'function') {
+    queuePauseState.originalGetSnapshot = queue.getSnapshot;
+    queuePauseState.snapshotValueAtPause = queue.getSnapshot();
+
+    queue.getSnapshot = () => {
+      if (isUpdatesPaused) {
+        return queuePauseState.snapshotValueAtPause;
+      }
+      return queuePauseState.originalGetSnapshot!();
+    };
+  }
+
+  pausedQueueStates.set(queue, queuePauseState);
+};
+
+const resumeHookQueue = (queue: HookQueue): void => {
+  const queuePauseState = pausedQueueStates.get(queue);
+  if (!queuePauseState) return;
+
+  if (queuePauseState.originalPendingDescriptor) {
+    const currentPendingValue = queue.pending;
+    Object.defineProperty(queue, 'pending', queuePauseState.originalPendingDescriptor);
+    if (!queuePauseState.originalPendingDescriptor.get && !queuePauseState.originalPendingDescriptor.set) {
+      queue.pending = currentPendingValue;
+    }
+  } else if ('pending' in queue) {
+    const currentPendingValue = queue.pending;
+    delete (queue as Record<string, unknown>).pending;
+    queue.pending = currentPendingValue;
+  }
+
+  if (queuePauseState.originalGetSnapshot) {
+    queue.getSnapshot = queuePauseState.originalGetSnapshot;
+  }
+
+  pausedQueueStates.delete(queue);
+};
+
+const pauseContextDependency = (contextDependency: ContextDependency<unknown>): void => {
+  if (pausedContextStates.has(contextDependency)) return;
+
+  const frozenValue = contextDependency.memoizedValue;
+  const originalDescriptor = Object.getOwnPropertyDescriptor(contextDependency, 'memoizedValue');
+
+  const pausedState: PausedContextState = {
+    originalDescriptor,
+    frozenValue,
+  };
+
+  Object.defineProperty(contextDependency, 'memoizedValue', {
+    configurable: true,
+    enumerable: true,
+    get() {
+      if (isUpdatesPaused) {
+        return pausedState.frozenValue;
+      }
+      if (originalDescriptor?.get) {
+        return originalDescriptor.get.call(this);
+      }
+      return (this as unknown as { _memoizedValue?: unknown })._memoizedValue;
+    },
+    set(newValue) {
+      if (isUpdatesPaused) return;
+      if (originalDescriptor?.set) {
+        originalDescriptor.set.call(this, newValue);
+      } else {
+        (this as unknown as { _memoizedValue: unknown })._memoizedValue = newValue;
+      }
+    },
+  });
+
+  pausedContextStates.set(contextDependency, pausedState);
+};
+
+const resumeContextDependency = (contextDependency: ContextDependency<unknown>): void => {
+  const pausedState = pausedContextStates.get(contextDependency);
+  if (!pausedState) return;
+
+  if (pausedState.originalDescriptor) {
+    Object.defineProperty(contextDependency, 'memoizedValue', pausedState.originalDescriptor);
+  } else {
+    delete (contextDependency as unknown as Record<string, unknown>).memoizedValue;
+  }
+
+  pausedContextStates.delete(contextDependency);
+};
+
+const pauseFiberContextDependencies = (fiber: Fiber): void => {
+  if (!fiber.dependencies) return;
+  
+  try {
+    let contextDependency = fiber.dependencies.firstContext as ContextDependency<unknown> | null;
+    
+    while (contextDependency && typeof contextDependency === 'object' && 'memoizedValue' in contextDependency) {
+      pauseContextDependency(contextDependency);
+      contextDependency = contextDependency.next;
+    }
+  } catch {}
+};
+
+const resumeFiberContextDependencies = (fiber: Fiber): void => {
+  if (!fiber.dependencies) return;
+  
+  try {
+    let contextDependency = fiber.dependencies.firstContext as ContextDependency<unknown> | null;
+    
+    while (contextDependency && typeof contextDependency === 'object' && 'memoizedValue' in contextDependency) {
+      resumeContextDependency(contextDependency);
+      contextDependency = contextDependency.next;
+    }
+  } catch {}
+};
+
+const pauseFiberHookQueues = (fiber: Fiber): void => {
+  let currentHookState = fiber.memoizedState as HookState | null;
+  while (currentHookState) {
+    if (currentHookState.queue && typeof currentHookState.queue === 'object') {
+      pauseHookQueue(currentHookState.queue);
+    }
+    currentHookState = currentHookState?.next ?? null;
+  }
+};
+
+const resumeFiberHookQueues = (fiber: Fiber): void => {
+  let currentHookState = fiber.memoizedState as HookState | null;
+  while (currentHookState) {
+    if (currentHookState.queue && typeof currentHookState.queue === 'object') {
+      resumeHookQueue(currentHookState.queue);
+    }
+    currentHookState = currentHookState?.next ?? null;
+  }
+};
+
+const traverseAndPauseHookQueues = (fiber: Fiber | null): void => {
+  if (!fiber) return;
+
+  if (isCompositeFiber(fiber)) {
+    pauseFiberHookQueues(fiber);
+    pauseFiberContextDependencies(fiber);
+  }
+
+  traverseAndPauseHookQueues(fiber.child);
+  traverseAndPauseHookQueues(fiber.sibling);
+};
+
+const traverseAndResumeHookQueues = (fiber: Fiber | null): void => {
+  if (!fiber) return;
+
+  if (isCompositeFiber(fiber)) {
+    resumeFiberHookQueues(fiber);
+    resumeFiberContextDependencies(fiber);
+  }
+
+  traverseAndResumeHookQueues(fiber.child);
+  traverseAndResumeHookQueues(fiber.sibling);
+};
+
+const createPausedDispatcher = (originalDispatcher: Dispatcher): Dispatcher => {
+  return new Proxy(originalDispatcher, {
+    get(target, prop, receiver) {
+      const originalMethod = Reflect.get(target, prop, receiver);
+
+      if (prop === 'useState') {
+        return <S>(initialState: S | (() => S)): [S, (action: S | ((prev: S) => S)) => void] => {
+          return (originalMethod as Dispatcher['useState'])(initialState);
+        };
+      }
+
+      if (prop === 'useReducer') {
+        return <S, A>(
+          reducer: (state: S, action: A) => S,
+          initialArg: S,
+          init?: (arg: S) => S,
+        ): [S, (action: A) => void] => {
+          return (originalMethod as Dispatcher['useReducer'])(reducer, initialArg, init);
+        };
+      }
+
+      if (prop === 'useSyncExternalStore') {
+        return <T>(
+          subscribe: (onStoreChange: () => void) => () => void,
+          getSnapshot: () => T,
+          getServerSnapshot?: () => T,
+        ): T => {
+          const pauseAwareSubscribe = (onStoreChange: () => void) => {
+            const pauseAwareCallback = () => {
+              if (isUpdatesPaused) return;
+              onStoreChange();
+            };
+            return subscribe(pauseAwareCallback);
+          };
+          return (originalMethod as Dispatcher['useSyncExternalStore'])(pauseAwareSubscribe, getSnapshot, getServerSnapshot);
+        };
+      }
+
+      if (prop === 'useTransition' && typeof originalMethod === 'function') {
+        return (...args: unknown[]): unknown => {
+          const result = originalMethod(...args);
+          
+          if (!Array.isArray(result) || result.length !== 2) {
+            return result;
+          }
+
+          const [isPending, startTransition] = result as [boolean, (callback: () => void) => void];
+          
+          if (typeof startTransition !== 'function') {
+            return result;
+          }
+
+          const pausedStartTransition = (callback: () => void) => {
+            if (isUpdatesPaused) return;
+            startTransition(callback);
+          };
+
+          return [isPending, pausedStartTransition];
+        };
+      }
+
+      if (prop === 'useDeferredValue' && typeof originalMethod === 'function') {
+        return <T>(...args: unknown[]): T => {
+          return (originalMethod as (...args: unknown[]) => T)(...args);
+        };
+      }
+
+      return originalMethod;
+    },
+  });
+};
+
+const installDispatcherProxy = (renderer: ReactRenderer): void => {
+  const dispatcherRef = renderer.currentDispatcherRef as DispatcherRef | null;
+  if (!dispatcherRef || typeof dispatcherRef !== 'object') return;
+  if (pausedDispatcherStates.has(renderer)) return;
+
+  const dispatcherKey: 'H' | 'current' = 'H' in dispatcherRef ? 'H' : 'current';
+  const originalDescriptor = Object.getOwnPropertyDescriptor(dispatcherRef, dispatcherKey);
+  pausedDispatcherStates.set(renderer, { dispatcherKey, originalDescriptor });
+
+  let currentDispatcherValue = dispatcherRef[dispatcherKey];
+
+  Object.defineProperty(dispatcherRef, dispatcherKey, {
+    configurable: true,
+    enumerable: true,
+    get() {
+      if (isUpdatesPaused && currentDispatcherValue) {
+        return createPausedDispatcher(currentDispatcherValue as Dispatcher);
+      }
+      return currentDispatcherValue;
+    },
+    set(newDispatcher) {
+      currentDispatcherValue = newDispatcher;
+    },
+  });
+};
+
+const uninstallDispatcherProxy = (renderer: ReactRenderer): void => {
+  const dispatcherPauseState = pausedDispatcherStates.get(renderer);
+  if (!dispatcherPauseState) return;
+
+  const dispatcherRef = renderer.currentDispatcherRef as DispatcherRef | null;
+  if (!dispatcherRef) return;
+
+  if (dispatcherPauseState.originalDescriptor) {
+    Object.defineProperty(dispatcherRef, dispatcherPauseState.dispatcherKey, dispatcherPauseState.originalDescriptor);
+  } else {
+    delete (dispatcherRef as Record<string, unknown>)[dispatcherPauseState.dispatcherKey];
+  }
+
+  pausedDispatcherStates.delete(renderer);
+};
+
+/**
+ * Pauses all React state updates by patching hook queues, dispatchers, and context dependencies.
+ * When paused, all `useState`, `useReducer`, `useSyncExternalStore`, `useTransition`, `useDeferredValue`,
+ * and context updates become no-ops.
+ *
+ * This works by:
+ * 1. Intercepting the update queue's `pending` property to prevent updates from being enqueued
+ * 2. Wrapping `getSnapshot` for external stores to return the value captured at pause time
+ * 3. Freezing context dependencies to prevent context changes from triggering updates
+ * 4. Blocking `startTransition` calls when paused
+ * 5. Patching dispatchers so new components also get paused behavior
+ *
+ * @returns A function to resume normal React behavior.
+ *
+ * @example
+ * ```ts
+ * const resumeUpdates = pauseUpdates();
+ * // All setState/dispatch calls are now no-ops
+ * resumeUpdates();
+ * // React updates work normally again
+ * ```
+ */
+export const pauseUpdates = (): (() => void) => {
+  if (isUpdatesPaused) {
+    return () => {};
+  }
+
+  const rdtHook = getRDTHook();
+
+  for (const renderer of rdtHook.renderers.values()) {
+    installDispatcherProxy(renderer);
+  }
+
+  for (const fiberRoot of _fiberRoots) {
+    traverseAndPauseHookQueues(fiberRoot.current);
+  }
+
+  isUpdatesPaused = true;
+
+  return () => {
+    if (!isUpdatesPaused) return;
+
+    isUpdatesPaused = false;
+
+    for (const fiberRoot of _fiberRoots) {
+      traverseAndResumeHookQueues(fiberRoot.current);
+    }
+
+    for (const renderer of rdtHook.renderers.values()) {
+      uninstallDispatcherProxy(renderer);
+    }
+  };
+};
+
+/**
+ * Returns whether React updates are currently paused.
+ */
+export const areUpdatesPaused = (): boolean => {
+  return isUpdatesPaused;
+};
+
 export interface InstrumentationOptions {
   name?: string;
   onActive?: () => unknown;
