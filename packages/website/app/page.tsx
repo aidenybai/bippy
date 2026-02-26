@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 import { Github } from 'lucide-react';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
@@ -82,7 +83,7 @@ const Page = async (): Promise<React.JSX.Element> => {
       <main className="py-10 sm:py-16">
         <div className="max-w-[560px] mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between mb-4">
-            <a
+            <Link
               href="/"
               className="text-neutral-100 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 rounded-sm"
             >
@@ -99,7 +100,7 @@ const Page = async (): Promise<React.JSX.Element> => {
                   <span className="font-medium">bippy</span>
                 </div>
               </h1>
-            </a>
+            </Link>
             <nav className="flex items-center gap-2.5 sm:gap-4 text-[13px] sm:text-sm">
               <a href="#how-to-use" className={NAV_LINK_CLASS}>Install</a>
               <a href="#api-reference" className={NAV_LINK_CLASS}>API</a>
