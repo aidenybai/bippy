@@ -95,16 +95,11 @@ const clampMenuPosition = (
 
 const buildContextMenuEntries = (
   selectedElement: Element,
-  downwardSelectionStack: Element[],
 ): BuildContextMenuEntriesResult => {
   const candidateElements: Element[] = [selectedElement];
   const parentElement = selectedElement.parentElement;
   if (isInspectableElement(parentElement)) {
     candidateElements.push(parentElement);
-  }
-  const nextDownwardElement = downwardSelectionStack[0];
-  if (nextDownwardElement && isInspectableElement(nextDownwardElement)) {
-    candidateElements.push(nextDownwardElement);
   }
   const childElements = Array.from(selectedElement.children)
     .filter((innerChildElement) => isInspectableElement(innerChildElement))
@@ -121,9 +116,23 @@ const buildContextMenuEntries = (
     deduplicatedElements.push(candidateElement);
   }
 
+  const getElementPathId = (element: Element): string => {
+    const pathSegments: string[] = [];
+    let currentElement: Element | null = element;
+    while (currentElement && pathSegments.length < 8) {
+      const currentParentElement: Element | null = currentElement.parentElement;
+      const siblingIndex = currentParentElement
+        ? Array.from(currentParentElement.children).indexOf(currentElement)
+        : 0;
+      pathSegments.unshift(`${currentElement.tagName.toLowerCase()}-${siblingIndex}`);
+      currentElement = currentParentElement;
+    }
+    return pathSegments.join('/');
+  };
+
   const entryElementMap = new Map<string, Element>();
-  const entries = deduplicatedElements.map((innerElement, innerIndex) => {
-    const entryId = `entry-${innerIndex}`;
+  const entries = deduplicatedElements.map((innerElement) => {
+    const entryId = getElementPathId(innerElement);
     entryElementMap.set(entryId, innerElement);
     const elementSummary = getElementSummary(innerElement);
     return {
@@ -132,26 +141,14 @@ const buildContextMenuEntries = (
       previewText: elementSummary.previewText,
     };
   });
+  const activeEntryId = entryElementMap.size > 0
+    ? Array.from(entryElementMap.entries()).find(([, innerElement]) => innerElement === selectedElement)?.[0] ?? null
+    : null;
   return {
-    activeEntryId: entries[0]?.entryId ?? null,
+    activeEntryId,
     entries,
     entryElementMap,
   };
-};
-
-const getEntryIdForElement = (
-  entryElementMap: Map<string, Element>,
-  targetElement: Element | null,
-): string | null => {
-  if (!targetElement) {
-    return null;
-  }
-  for (const [entryId, entryElement] of entryElementMap.entries()) {
-    if (entryElement === targetElement) {
-      return entryId;
-    }
-  }
-  return null;
 };
 
 export const Inspector = (): React.JSX.Element => {
@@ -167,7 +164,6 @@ export const Inspector = (): React.JSX.Element => {
   const [selectedElement, setSelectedElement] = useState<Element | null>(null);
   const activeEntryIdRef = useRef(activeEntryId);
   const contextMenuEntriesRef = useRef(contextMenuEntries);
-  const downwardSelectionStackRef = useRef<Element[]>([]);
   const entryElementMapRef = useRef<Map<string, Element>>(new Map());
   const isContextMenuVisibleRef = useRef(isContextMenuVisible);
   const isEnabledRef = useRef(isEnabled);
@@ -183,11 +179,12 @@ export const Inspector = (): React.JSX.Element => {
     setIsContextMenuVisible(false);
     setContextMenuEntries([]);
     setActiveEntryId(null);
+    entryElementMapRef.current = new Map();
   }, []);
 
   const selectElement = useCallback((nextSelectedElement: Element, shouldResetDownwardSelection: boolean): void => {
     if (shouldResetDownwardSelection) {
-      downwardSelectionStackRef.current = [];
+      setActiveEntryId(null);
     }
     selectedElementRef.current = nextSelectedElement;
     setSelectedElement(nextSelectedElement);
@@ -200,14 +197,108 @@ export const Inspector = (): React.JSX.Element => {
   ): void => {
     const builtEntries = buildContextMenuEntries(
       targetElement,
-      downwardSelectionStackRef.current,
     );
     entryElementMapRef.current = builtEntries.entryElementMap;
-    setContextMenuEntries(builtEntries.entries);
-    setActiveEntryId(builtEntries.activeEntryId);
+    if (builtEntries.entries.length > 0) {
+      setContextMenuEntries(builtEntries.entries);
+      setActiveEntryId(builtEntries.activeEntryId ?? builtEntries.entries[0].entryId);
+    } else {
+      const fallbackElementSummary = getElementSummary(targetElement);
+      const fallbackEntryId = 'fallback-selected-element';
+      entryElementMapRef.current = new Map([[fallbackEntryId, targetElement]]);
+      setContextMenuEntries([
+        {
+          entryId: fallbackEntryId,
+          elementTag: fallbackElementSummary.elementTag,
+          previewText: fallbackElementSummary.previewText,
+        },
+      ]);
+      setActiveEntryId(fallbackEntryId);
+    }
     setContextMenuPosition(clampMenuPosition(requestedPosition));
     setIsContextMenuVisible(true);
   }, []);
+
+  const openMenuForSelectedElement = useCallback((targetElement: Element): void => {
+    openContextMenuForElement(targetElement, getLabelPosition(targetElement.getBoundingClientRect()));
+  }, [openContextMenuForElement]);
+
+  const moveActiveMenuEntry = useCallback((movementDirection: 'up' | 'down'): void => {
+    const menuEntries = contextMenuEntriesRef.current;
+    if (menuEntries.length === 0) {
+      return;
+    }
+    const currentEntryIndex = menuEntries.findIndex(
+      (innerEntry) => innerEntry.entryId === activeEntryIdRef.current,
+    );
+    const normalizedCurrentIndex = currentEntryIndex >= 0 ? currentEntryIndex : 0;
+    const nextEntryIndex = movementDirection === 'up'
+      ? (normalizedCurrentIndex <= 0 ? menuEntries.length - 1 : normalizedCurrentIndex - 1)
+      : (normalizedCurrentIndex >= menuEntries.length - 1 ? 0 : normalizedCurrentIndex + 1);
+    const nextEntry = menuEntries[nextEntryIndex];
+    if (!nextEntry) {
+      return;
+    }
+    setActiveEntryId(nextEntry.entryId);
+  }, []);
+
+  const navigateSelectionUp = useCallback((): void => {
+    if (!isEnabledRef.current) {
+      return;
+    }
+    const currentSelectedElement = selectedElementRef.current;
+    if (!currentSelectedElement) {
+      return;
+    }
+    if (isContextMenuVisibleRef.current) {
+      moveActiveMenuEntry('up');
+      return;
+    }
+    const parentElement = currentSelectedElement.parentElement;
+    if (!isInspectableElement(parentElement)) {
+      return;
+    }
+    selectElement(parentElement, false);
+    openMenuForSelectedElement(parentElement);
+  }, [moveActiveMenuEntry, openMenuForSelectedElement, selectElement]);
+
+  const navigateSelectionDown = useCallback((): void => {
+    if (!isEnabledRef.current) {
+      return;
+    }
+    const currentSelectedElement = selectedElementRef.current;
+    if (!currentSelectedElement) {
+      return;
+    }
+    if (isContextMenuVisibleRef.current) {
+      moveActiveMenuEntry('down');
+      return;
+    }
+    const firstChildElement = Array.from(currentSelectedElement.children).find(
+      (innerChildElement) => isInspectableElement(innerChildElement),
+    );
+    if (!firstChildElement) {
+      return;
+    }
+    selectElement(firstChildElement, false);
+    openMenuForSelectedElement(firstChildElement);
+  }, [moveActiveMenuEntry, openMenuForSelectedElement, selectElement]);
+
+  useEffect(() => {
+    if (!isEnabled) {
+      return;
+    }
+    const previousBodyTabIndex = document.body.getAttribute('tabindex');
+    document.body.setAttribute('tabindex', '-1');
+    document.body.focus();
+    return () => {
+      if (previousBodyTabIndex === null) {
+        document.body.removeAttribute('tabindex');
+        return;
+      }
+      document.body.setAttribute('tabindex', previousBodyTabIndex);
+    };
+  }, [isEnabled]);
 
   useEffect(() => {
     if (!isEnabled) {
@@ -215,30 +306,9 @@ export const Inspector = (): React.JSX.Element => {
       setHighlightRect(null);
       setSelectedElement(null);
       selectedElementRef.current = null;
-      downwardSelectionStackRef.current = [];
       entryElementMapRef.current = new Map();
     }
   }, [closeContextMenu, isEnabled]);
-
-  useEffect(() => {
-    if (!isContextMenuVisible) {
-      return;
-    }
-    const currentSelectedElement = selectedElementRef.current;
-    if (!currentSelectedElement) {
-      return;
-    }
-    const rebuiltEntries = buildContextMenuEntries(
-      currentSelectedElement,
-      downwardSelectionStackRef.current,
-    );
-    entryElementMapRef.current = rebuiltEntries.entryElementMap;
-    setContextMenuEntries(rebuiltEntries.entries);
-    setActiveEntryId(
-      getEntryIdForElement(rebuiltEntries.entryElementMap, currentSelectedElement)
-      ?? rebuiltEntries.activeEntryId,
-    );
-  }, [isContextMenuVisible, selectedElement]);
 
   useEffect(() => {
     const getInspectableElementFromPoint = (clientX: number, clientY: number): Element | null => {
@@ -346,61 +416,22 @@ export const Inspector = (): React.JSX.Element => {
         closeContextMenu();
         return;
       }
-      if (event.key === 'ArrowUp') {
+      const isArrowUpKey = event.key === 'ArrowUp'
+        || event.code === 'ArrowUp'
+        || event.key === 'Up'
+        || event.keyCode === 38;
+      const isArrowDownKey = event.key === 'ArrowDown'
+        || event.code === 'ArrowDown'
+        || event.key === 'Down'
+        || event.keyCode === 40;
+      if (isArrowUpKey) {
         event.preventDefault();
-        if (isContextMenuVisibleRef.current && contextMenuEntriesRef.current.length > 0) {
-          const currentEntryIndex = contextMenuEntriesRef.current.findIndex(
-            (innerEntry) => innerEntry.entryId === activeEntryIdRef.current,
-          );
-          const nextEntryIndex = currentEntryIndex <= 0
-            ? contextMenuEntriesRef.current.length - 1
-            : currentEntryIndex - 1;
-          const nextEntry = contextMenuEntriesRef.current[nextEntryIndex];
-          if (nextEntry) {
-            setActiveEntryId(nextEntry.entryId);
-          }
-          return;
-        }
-        const parentElement = currentSelectedElement.parentElement;
-        if (!isInspectableElement(parentElement)) {
-          return;
-        }
-        downwardSelectionStackRef.current = [
-          currentSelectedElement,
-          ...downwardSelectionStackRef.current,
-        ];
-        selectElement(parentElement, false);
-        openContextMenuForElement(
-          parentElement,
-          getLabelPosition(parentElement.getBoundingClientRect()),
-        );
+        navigateSelectionUp();
         return;
       }
-      if (event.key === 'ArrowDown') {
+      if (isArrowDownKey) {
         event.preventDefault();
-        if (isContextMenuVisibleRef.current && contextMenuEntriesRef.current.length > 0) {
-          const currentEntryIndex = contextMenuEntriesRef.current.findIndex(
-            (innerEntry) => innerEntry.entryId === activeEntryIdRef.current,
-          );
-          const nextEntryIndex = currentEntryIndex >= contextMenuEntriesRef.current.length - 1
-            ? 0
-            : currentEntryIndex + 1;
-          const nextEntry = contextMenuEntriesRef.current[nextEntryIndex];
-          if (nextEntry) {
-            setActiveEntryId(nextEntry.entryId);
-          }
-          return;
-        }
-        const nextDownwardElement = downwardSelectionStackRef.current[0];
-        if (!nextDownwardElement || !isInspectableElement(nextDownwardElement)) {
-          return;
-        }
-        downwardSelectionStackRef.current = downwardSelectionStackRef.current.slice(1);
-        selectElement(nextDownwardElement, false);
-        openContextMenuForElement(
-          nextDownwardElement,
-          getLabelPosition(nextDownwardElement.getBoundingClientRect()),
-        );
+        navigateSelectionDown();
       }
     };
 
@@ -423,20 +454,20 @@ export const Inspector = (): React.JSX.Element => {
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('click', handleClick);
     document.addEventListener('contextmenu', handleContextMenu);
-    document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('mousedown', handleOutsideMouseDown);
+    window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('resize', handleViewportChange);
     window.addEventListener('scroll', handleViewportChange, true);
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('click', handleClick);
       document.removeEventListener('contextmenu', handleContextMenu);
-      document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('mousedown', handleOutsideMouseDown);
+      window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('resize', handleViewportChange);
       window.removeEventListener('scroll', handleViewportChange, true);
     };
-  }, [closeContextMenu, openContextMenuForElement, selectElement]);
+  }, [closeContextMenu, navigateSelectionDown, navigateSelectionUp, openContextMenuForElement, selectElement]);
 
   const selectedElementSummary = useMemo(() => {
     if (!selectedElement) {
@@ -455,6 +486,24 @@ export const Inspector = (): React.JSX.Element => {
   const handleMenuEntryHover = (entryId: string): void => {
     setActiveEntryId(entryId);
   };
+
+  const menuEntriesForRender = useMemo(() => {
+    if (contextMenuEntries.length > 0) {
+      return contextMenuEntries;
+    }
+    if (!selectedElementSummary) {
+      return [];
+    }
+    return [
+      {
+        entryId: 'fallback-selected-element',
+        elementTag: selectedElementSummary.elementTag,
+        previewText: selectedElementSummary.previewText,
+      },
+    ];
+  }, [contextMenuEntries, selectedElementSummary]);
+
+  const isMenuRenderable = isContextMenuVisible && menuEntriesForRender.length > 0;
 
   const handleMenuEntrySelect = (entryId: string): void => {
     const selectedMenuElement = entryElementMapRef.current.get(entryId);
@@ -478,6 +527,27 @@ export const Inspector = (): React.JSX.Element => {
       >
         {isEnabled ? 'Disable' : 'Enable'}
       </button>
+      {isEnabled && (
+        <div
+          className="mt-2 inline-flex items-center gap-2 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs text-neutral-200"
+          data-inspector-ui="true"
+        >
+          <button
+            className="rounded border border-neutral-600 bg-neutral-800 px-2 py-0.5 font-mono text-neutral-100 hover:bg-neutral-700"
+            onClick={navigateSelectionUp}
+            type="button"
+          >
+            ↑
+          </button>
+          <button
+            className="rounded border border-neutral-600 bg-neutral-800 px-2 py-0.5 font-mono text-neutral-100 hover:bg-neutral-700"
+            onClick={navigateSelectionDown}
+            type="button"
+          >
+            ↓
+          </button>
+        </div>
+      )}
       {isEnabled && highlightRect && (
         <div
           className="fixed pointer-events-none border border-dashed border-red-600"
@@ -490,7 +560,7 @@ export const Inspector = (): React.JSX.Element => {
           }}
         ></div>
       )}
-      {isEnabled && selectedElementSummary && labelPosition && !isContextMenuVisible && (
+      {isEnabled && selectedElementSummary && labelPosition && !isMenuRenderable && (
         <div
           className="fixed z-[999998] pointer-events-none flex max-w-[320px] items-center gap-2 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-[11px] text-neutral-100 shadow-md"
           data-inspector-ui="true"
@@ -507,10 +577,10 @@ export const Inspector = (): React.JSX.Element => {
           </span>
         </div>
       )}
-      {isEnabled && isContextMenuVisible && contextMenuEntries.length > 0 && (
+      {isEnabled && isMenuRenderable && (
         <InspectorContextMenu
-          activeEntryId={activeEntryId}
-          entries={contextMenuEntries}
+          activeEntryId={activeEntryId ?? menuEntriesForRender[0]?.entryId ?? null}
+          entries={menuEntriesForRender}
           onHoverEntry={handleMenuEntryHover}
           onSelectEntry={handleMenuEntrySelect}
           position={contextMenuPosition}
