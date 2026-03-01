@@ -1,20 +1,25 @@
 declare module '/@react-refresh' {
-  interface ViteReactRefreshFamily {
-    current: unknown;
+  interface ViteReactRefreshDefaultExport {
+    injectIntoGlobalHook: (globalObject: unknown) => void;
   }
 
-  interface ViteReactRefreshUpdate {
-    staleFamilies: Set<ViteReactRefreshFamily>;
-    updatedFamilies: Set<ViteReactRefreshFamily>;
-  }
+  export const __hmr_import: (module: string) => Promise<unknown>;
+  export const createSignatureFunctionForTransform: () => (
+    componentType: unknown,
+  ) => unknown;
+  export const getRefreshReg: (
+    filename: string,
+  ) => (componentType: unknown, registrationId: string) => void;
+  export const registerExportsForReactRefresh: (
+    filename: string,
+    moduleExports: Record<string, unknown>,
+  ) => void;
+  export const validateRefreshBoundaryAndEnqueueUpdate: (
+    moduleId: string,
+    previousExports: Record<string, unknown>,
+    nextExports: Record<string, unknown>,
+  ) => string | undefined;
+  const viteReactRefreshDefaultExport: ViteReactRefreshDefaultExport;
 
-  interface ViteReactRefreshRuntime {
-    getFamilyByID: (familyId: string) => ViteReactRefreshFamily | undefined;
-    performReactRefresh: () => ViteReactRefreshUpdate | null;
-    register: (componentType: unknown, familyId: string) => void;
-  }
-
-  const viteReactRefreshRuntime: ViteReactRefreshRuntime;
-
-  export default viteReactRefreshRuntime;
+  export default viteReactRefreshDefaultExport;
 }

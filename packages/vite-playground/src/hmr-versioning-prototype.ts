@@ -1,26 +1,24 @@
-interface RefreshFamily {
-  current: unknown;
-}
-
-interface RefreshUpdate {
-  staleFamilies: Set<RefreshFamily>;
-  updatedFamilies: Set<RefreshFamily>;
-}
-
 interface RefreshRuntime {
-  getFamilyByID: (familyId: string) => RefreshFamily | undefined;
-  performReactRefresh: () => RefreshUpdate | null;
-  register: (componentType: unknown, familyId: string) => void;
-}
-
-interface RefreshRuntimeModule {
-  default: unknown;
+  getRefreshReg: (
+    filename: string,
+  ) => (componentType: unknown, registrationId: string) => void;
+  validateRefreshBoundaryAndEnqueueUpdate: (
+    moduleId: string,
+    previousExports: Record<string, unknown>,
+    nextExports: Record<string, unknown>,
+  ) => string | undefined;
 }
 
 interface PendingFamilyChange {
   familyId: string;
   nextType: unknown;
   previousType: unknown;
+}
+
+interface FamilyRegistrationMetadata {
+  familyId: string;
+  modulePath: string;
+  registrationId: string;
 }
 
 interface VersionSnapshot {
@@ -40,10 +38,16 @@ interface VersionSummary {
 interface HmrVersioningInternalState {
   currentVersionIndex: number;
   familyFirstSeenVersionById: Map<string, number>;
+  familyRegistrationMetadataByFamilyId: Map<string, FamilyRegistrationMetadata>;
   isApplyingVersion: boolean;
-  isPatched: boolean;
-  knownFamilyIds: Set<string>;
+  isBeforePerformHookInstalled: boolean;
+  isRefreshRegTrackingInstalled: boolean;
+  moduleFallbackCounter: number;
   pendingFamilyChangeById: Map<string, PendingFamilyChange>;
+  refreshRegistrationHandlerByModulePath: Map<
+    string,
+    (componentType: unknown, registrationId: string) => void
+  >;
   timelineSnapshots: VersionSnapshot[];
 }
 
@@ -57,11 +61,15 @@ interface HmrVersioningController {
 
 declare global {
   interface Window {
+    $RefreshReg$?: unknown;
     __BIPPY_HMR_VERSIONING__?: HmrVersioningController;
     __BIPPY_HMR_VERSIONING_INTERNAL_STATE__?: HmrVersioningInternalState;
     __BIPPY_HMR_VERSIONING_KEYDOWN_LISTENER__?: (
       keyboardEvent: KeyboardEvent,
     ) => void;
+    __registerBeforePerformReactRefresh?: (
+      callback: () => unknown,
+    ) => unknown;
   }
 }
 
@@ -96,23 +104,13 @@ const isRefreshRuntime = (
     return false;
   }
 
-  const maybeRegister = maybeRefreshRuntime['register'];
-  const maybePerformReactRefresh = maybeRefreshRuntime['performReactRefresh'];
-  const maybeGetFamilyByID = maybeRefreshRuntime['getFamilyByID'];
+  const maybeGetRefreshReg = maybeRefreshRuntime['getRefreshReg'];
+  const maybeValidateRefreshBoundaryAndEnqueueUpdate =
+    maybeRefreshRuntime['validateRefreshBoundaryAndEnqueueUpdate'];
 
   return (
-    typeof maybeRegister === 'function' &&
-    typeof maybePerformReactRefresh === 'function' &&
-    typeof maybeGetFamilyByID === 'function'
-  );
-};
-
-const isRefreshRuntimeModule = (
-  maybeRefreshRuntimeModule: unknown,
-): maybeRefreshRuntimeModule is RefreshRuntimeModule => {
-  return (
-    isObjectRecord(maybeRefreshRuntimeModule) &&
-    'default' in maybeRefreshRuntimeModule
+    typeof maybeGetRefreshReg === 'function' &&
+    typeof maybeValidateRefreshBoundaryAndEnqueueUpdate === 'function'
   );
 };
 
@@ -126,16 +124,11 @@ const loadRefreshRuntime = async (): Promise<RefreshRuntime | null> => {
     const runtimeModuleImportResult: unknown =
       await importRuntimeModule(runtimeModulePath);
 
-    if (!isRefreshRuntimeModule(runtimeModuleImportResult)) {
+    if (!isRefreshRuntime(runtimeModuleImportResult)) {
       return null;
     }
 
-    const maybeRefreshRuntime = runtimeModuleImportResult.default;
-    if (!isRefreshRuntime(maybeRefreshRuntime)) {
-      return null;
-    }
-
-    return maybeRefreshRuntime;
+    return runtimeModuleImportResult;
   } catch {
     return null;
   }
@@ -150,14 +143,56 @@ const getOrCreateInternalState = (): HmrVersioningInternalState => {
   const nextInternalState: HmrVersioningInternalState = {
     currentVersionIndex: 0,
     familyFirstSeenVersionById: new Map<string, number>(),
+    familyRegistrationMetadataByFamilyId: new Map<
+      string,
+      FamilyRegistrationMetadata
+    >(),
     isApplyingVersion: false,
-    isPatched: false,
-    knownFamilyIds: new Set<string>(),
+    isBeforePerformHookInstalled: false,
+    isRefreshRegTrackingInstalled: false,
+    moduleFallbackCounter: 0,
     pendingFamilyChangeById: new Map<string, PendingFamilyChange>(),
+    refreshRegistrationHandlerByModulePath: new Map<
+      string,
+      (componentType: unknown, registrationId: string) => void
+    >(),
     timelineSnapshots: [createInitialVersionSnapshot()],
   };
   window.__BIPPY_HMR_VERSIONING_INTERNAL_STATE__ = nextInternalState;
   return nextInternalState;
+};
+
+const prototypeModulePath = '/src/hmr-versioning-prototype.ts';
+
+const extractModulePathFromStack = (errorStack: string | undefined): string | null => {
+  if (!errorStack) {
+    return null;
+  }
+
+  for (const stackLine of errorStack.split('\n')) {
+    const urlMatch = stackLine.match(/https?:\/\/[^\s)]+/);
+    if (!urlMatch) {
+      continue;
+    }
+
+    try {
+      const parsedUrl = new URL(urlMatch[0]);
+      if (
+        parsedUrl.pathname.startsWith('/src/') &&
+        parsedUrl.pathname !== prototypeModulePath
+      ) {
+        return parsedUrl.pathname;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+};
+
+const createFamilyId = (modulePath: string, registrationId: string): string => {
+  return `${modulePath}::${registrationId}`;
 };
 
 const backfillFamilyTypeInHistory = (
@@ -235,72 +270,203 @@ const finalizePendingRefreshChanges = (
   internalState.currentVersionIndex = internalState.timelineSnapshots.length - 1;
 };
 
-const patchRefreshRuntime = (
-  refreshRuntime: RefreshRuntime,
+const trackRefreshRegistration = (
   internalState: HmrVersioningInternalState,
+  modulePath: string,
+  registrationId: string,
+  componentType: unknown,
 ): void => {
-  if (internalState.isPatched) {
+  if (internalState.isApplyingVersion) {
     return;
   }
 
-  const originalRegister = refreshRuntime.register.bind(refreshRuntime);
-  const originalPerformReactRefresh =
-    refreshRuntime.performReactRefresh.bind(refreshRuntime);
-
-  refreshRuntime.register = (componentType: unknown, familyId: string) => {
-    const existingFamily = refreshRuntime.getFamilyByID(familyId);
-    const previousType = existingFamily?.current;
-    const didFamilyExistBeforeRegistration = existingFamily !== undefined;
-
-    originalRegister(componentType, familyId);
-
-    const updatedFamily = refreshRuntime.getFamilyByID(familyId);
-    if (!updatedFamily) {
-      return;
-    }
-
-    internalState.knownFamilyIds.add(familyId);
-
-    if (!internalState.familyFirstSeenVersionById.has(familyId)) {
-      internalState.familyFirstSeenVersionById.set(
-        familyId,
-        internalState.currentVersionIndex,
-      );
-    }
-
-    const currentVersionSnapshot =
-      internalState.timelineSnapshots[internalState.currentVersionIndex];
-
-    if (!didFamilyExistBeforeRegistration) {
-      currentVersionSnapshot.familyTypeById.set(familyId, updatedFamily.current);
-      return;
-    }
-
-    if (internalState.isApplyingVersion) {
-      return;
-    }
-
-    const nextType = updatedFamily.current;
-    if (previousType === nextType) {
-      return;
-    }
-
-    internalState.pendingFamilyChangeById.set(familyId, {
+  const familyId = createFamilyId(modulePath, registrationId);
+  if (!internalState.familyFirstSeenVersionById.has(familyId)) {
+    internalState.familyFirstSeenVersionById.set(
       familyId,
-      nextType,
-      previousType,
-    });
-  };
+      internalState.currentVersionIndex,
+    );
+  }
 
-  refreshRuntime.performReactRefresh = () => {
-    const refreshUpdate = originalPerformReactRefresh();
+  internalState.familyRegistrationMetadataByFamilyId.set(familyId, {
+    familyId,
+    modulePath,
+    registrationId,
+  });
+
+  const currentVersionSnapshot =
+    internalState.timelineSnapshots[internalState.currentVersionIndex];
+  const previousType = currentVersionSnapshot.familyTypeById.get(familyId);
+  if (previousType === undefined) {
+    currentVersionSnapshot.familyTypeById.set(familyId, componentType);
+    return;
+  }
+
+  if (previousType === componentType) {
+    return;
+  }
+
+  internalState.pendingFamilyChangeById.set(familyId, {
+    familyId,
+    nextType: componentType,
+    previousType,
+  });
+};
+
+const installRefreshRegTracking = (
+  internalState: HmrVersioningInternalState,
+): void => {
+  if (internalState.isRefreshRegTrackingInstalled) {
+    return;
+  }
+
+  let currentRefreshRegValue = window.$RefreshReg$;
+  const wrappedModulePathByRefreshRegistrationHandler = new WeakMap<
+    object,
+    string
+  >();
+
+  const existingRefreshRegDescriptor = Object.getOwnPropertyDescriptor(
+    window,
+    '$RefreshReg$',
+  );
+  if (existingRefreshRegDescriptor && !existingRefreshRegDescriptor.configurable) {
+    return;
+  }
+
+  Object.defineProperty(window, '$RefreshReg$', {
+    configurable: true,
+    get: () => {
+      return currentRefreshRegValue;
+    },
+    set: (nextRefreshRegValue: unknown) => {
+      if (typeof nextRefreshRegValue !== 'function') {
+        currentRefreshRegValue = nextRefreshRegValue;
+        return;
+      }
+
+      if (
+        wrappedModulePathByRefreshRegistrationHandler.has(nextRefreshRegValue)
+      ) {
+        currentRefreshRegValue = nextRefreshRegValue;
+        return;
+      }
+
+      const wrappedRefreshRegistrationHandler = (
+        componentType: unknown,
+        registrationId: string,
+      ) => {
+        nextRefreshRegValue(componentType, registrationId);
+
+        const modulePathFromStack = extractModulePathFromStack(new Error().stack);
+        if (!modulePathFromStack) {
+          internalState.moduleFallbackCounter += 1;
+        }
+        const modulePath =
+          modulePathFromStack ??
+          `__module_${internalState.moduleFallbackCounter}`;
+
+        internalState.refreshRegistrationHandlerByModulePath.set(
+          modulePath,
+          wrappedRefreshRegistrationHandler,
+        );
+        trackRefreshRegistration(
+          internalState,
+          modulePath,
+          registrationId,
+          componentType,
+        );
+      };
+      wrappedModulePathByRefreshRegistrationHandler.set(
+        wrappedRefreshRegistrationHandler,
+        prototypeModulePath,
+      );
+      currentRefreshRegValue = wrappedRefreshRegistrationHandler;
+    },
+  });
+
+  if (typeof currentRefreshRegValue === 'function') {
+    window.$RefreshReg$ = currentRefreshRegValue;
+  }
+
+  internalState.isRefreshRegTrackingInstalled = true;
+};
+
+const installBeforePerformRefreshHook = (
+  internalState: HmrVersioningInternalState,
+): void => {
+  if (internalState.isBeforePerformHookInstalled) {
+    return;
+  }
+
+  const registerBeforePerformHook = window.__registerBeforePerformReactRefresh;
+  if (typeof registerBeforePerformHook !== 'function') {
+    return;
+  }
+
+  registerBeforePerformHook(() => {
     if (!internalState.isApplyingVersion) {
       finalizePendingRefreshChanges(internalState);
     }
-    return refreshUpdate;
-  };
+  });
+  internalState.isBeforePerformHookInstalled = true;
+};
 
-  internalState.isPatched = true;
+const refreshBoundaryModuleExports = {
+  RefreshTriggerComponent: () => null,
+};
+
+const triggerRefreshUpdate = (refreshRuntime: RefreshRuntime): void => {
+  refreshRuntime.validateRefreshBoundaryAndEnqueueUpdate(
+    '__bippy_hmr_versioning__',
+    refreshBoundaryModuleExports,
+    refreshBoundaryModuleExports,
+  );
+};
+
+const registerFamilyTypeForVersionApply = (
+  refreshRuntime: RefreshRuntime,
+  internalState: HmrVersioningInternalState,
+  familyId: string,
+  componentType: unknown,
+): boolean => {
+  const familyRegistrationMetadata =
+    internalState.familyRegistrationMetadataByFamilyId.get(familyId);
+  if (!familyRegistrationMetadata) {
+    return false;
+  }
+
+  const refreshRegistrationHandler =
+    internalState.refreshRegistrationHandlerByModulePath.get(
+      familyRegistrationMetadata.modulePath,
+    ) ?? refreshRuntime.getRefreshReg(familyRegistrationMetadata.modulePath);
+
+  const registrationType = (() => {
+    if (typeof componentType !== 'function') {
+      return componentType;
+    }
+
+    const maybeComponentPrototype = isObjectRecord(componentType.prototype)
+      ? componentType.prototype
+      : null;
+    const isClassComponent = Boolean(
+      maybeComponentPrototype && 'isReactComponent' in maybeComponentPrototype,
+    );
+    if (isClassComponent) {
+      return componentType;
+    }
+
+    const wrappedComponentType = (receivedProps: unknown) => {
+      return Reflect.apply(componentType, undefined, [receivedProps]);
+    };
+    return wrappedComponentType;
+  })();
+
+  refreshRegistrationHandler(
+    registrationType,
+    familyRegistrationMetadata.registrationId,
+  );
+  return true;
 };
 
 const createHmrVersioningController = (
@@ -319,37 +485,34 @@ const createHmrVersioningController = (
       return true;
     }
 
-    const currentVersionSnapshot =
-      internalState.timelineSnapshots[internalState.currentVersionIndex];
     const targetVersionSnapshot =
       internalState.timelineSnapshots[targetVersionIndex];
-    const allFamilyIds = new Set<string>([
-      ...Array.from(currentVersionSnapshot.familyTypeById.keys()),
-      ...Array.from(targetVersionSnapshot.familyTypeById.keys()),
-    ]);
+    const targetFamilyEntries = Array.from(
+      targetVersionSnapshot.familyTypeById.entries(),
+    );
 
     let didQueueRefreshUpdate = false;
     internalState.isApplyingVersion = true;
 
     try {
-      for (const familyId of allFamilyIds) {
-        const currentType = currentVersionSnapshot.familyTypeById.get(familyId);
-        const targetType = targetVersionSnapshot.familyTypeById.get(familyId);
-
-        if (currentType === targetType) {
-          continue;
-        }
-
+      for (const [familyId, targetType] of targetFamilyEntries) {
         if (targetType === undefined) {
           continue;
         }
 
-        refreshRuntime.register(targetType, familyId);
-        didQueueRefreshUpdate = true;
+        const didRegisterFamilyType = registerFamilyTypeForVersionApply(
+          refreshRuntime,
+          internalState,
+          familyId,
+          targetType,
+        );
+        if (didRegisterFamilyType) {
+          didQueueRefreshUpdate = true;
+        }
       }
 
       if (didQueueRefreshUpdate) {
-        refreshRuntime.performReactRefresh();
+        triggerRefreshUpdate(refreshRuntime);
       }
       internalState.currentVersionIndex = targetVersionIndex;
       return true;
@@ -420,6 +583,10 @@ const initializeHmrVersioningPrototype = async (): Promise<void> => {
     return;
   }
 
+  const internalState = getOrCreateInternalState();
+  installRefreshRegTracking(internalState);
+  installBeforePerformRefreshHook(internalState);
+
   if (window.__BIPPY_HMR_VERSIONING__) {
     return;
   }
@@ -429,8 +596,7 @@ const initializeHmrVersioningPrototype = async (): Promise<void> => {
     return;
   }
 
-  const internalState = getOrCreateInternalState();
-  patchRefreshRuntime(refreshRuntime, internalState);
+  installBeforePerformRefreshHook(internalState);
 
   const hmrVersioningController = createHmrVersioningController(
     refreshRuntime,
