@@ -14,10 +14,12 @@ import type {
 
 import {
   BIPPY_INSTRUMENTATION_STRING,
+  ensureReactRefreshHandler,
   getRDTHook,
   hasRDTHook,
   isReactRefresh,
   isRealReactDevtools,
+  linkReactRefreshFamily,
 } from './rdt-hook.js';
 
 // https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactWorkTags.js
@@ -1149,6 +1151,9 @@ export const instrument = (
       priority: number | void,
     ) => {
       if (prevOnCommitFiberRoot === nextOnCommitFiberRoot) return;
+      if (!_fiberRoots.has(root)) {
+        _fiberRoots.add(root);
+      }
       // TODO: validate whether the bottom version is more correct here
       // for preventing infinite loops
       // if (rdtHook.onCommitFiberRoot !== handler) return;
@@ -1215,6 +1220,43 @@ export const getFiberFromHostInstance = <T>(hostInstance: T): Fiber | null => {
 export const INSTALL_ERROR = new Error();
 
 export const _fiberRoots = new Set<FiberRoot>();
+
+export interface HmrSwapComponentOptions {
+  shouldRemount?: boolean;
+}
+
+export const hmrSwapComponent = (
+  previousType: unknown,
+  nextType: unknown,
+  options: HmrSwapComponentOptions = {},
+): boolean => {
+  const family = linkReactRefreshFamily(previousType, nextType);
+  if (!family) return false;
+
+  family.current = nextType;
+
+  const updatedFamilies = options.shouldRemount ? new Set() : new Set([family]);
+  const staleFamilies = options.shouldRemount ? new Set([family]) : new Set();
+
+  const rootsToRefresh = new Set<FiberRoot>(_fiberRoots);
+  if (!rootsToRefresh.size) return false;
+
+  const rdtHook = getRDTHook();
+
+  let didSchedule = false;
+  for (const renderer of rdtHook.renderers.values()) {
+    try {
+      ensureReactRefreshHandler(renderer);
+      if (!renderer.scheduleRefresh) continue;
+      for (const root of rootsToRefresh) {
+        renderer.scheduleRefresh(root, { staleFamilies, updatedFamilies });
+      }
+      didSchedule = true;
+    } catch {}
+  }
+
+  return didSchedule;
+};
 
 export const secure = (
   options: InstrumentationOptions,
