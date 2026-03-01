@@ -168,6 +168,7 @@ export const Inspector = (): React.JSX.Element => {
   const isContextMenuVisibleRef = useRef(isContextMenuVisible);
   const isEnabledRef = useRef(isEnabled);
   const selectedElementRef = useRef<Element | null>(selectedElement);
+  const lastPointerPositionRef = useRef({ clientX: 0, clientY: 0 });
 
   activeEntryIdRef.current = activeEntryId;
   contextMenuEntriesRef.current = contextMenuEntries;
@@ -320,6 +321,10 @@ export const Inspector = (): React.JSX.Element => {
     };
 
     const handleMouseMove = (event: MouseEvent) => {
+      lastPointerPositionRef.current = {
+        clientX: event.clientX,
+        clientY: event.clientY,
+      };
       if (!isEnabledRef.current || isContextMenuVisibleRef.current) {
         return;
       }
@@ -331,6 +336,10 @@ export const Inspector = (): React.JSX.Element => {
     };
 
     const handleClick = (event: MouseEvent) => {
+      lastPointerPositionRef.current = {
+        clientX: event.clientX,
+        clientY: event.clientY,
+      };
       if (!isEnabledRef.current || event.button !== 0) {
         return;
       }
@@ -355,6 +364,10 @@ export const Inspector = (): React.JSX.Element => {
     };
 
     const handleContextMenu = (event: MouseEvent) => {
+      lastPointerPositionRef.current = {
+        clientX: event.clientX,
+        clientY: event.clientY,
+      };
       if (!isEnabledRef.current) {
         return;
       }
@@ -385,10 +398,15 @@ export const Inspector = (): React.JSX.Element => {
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) {
+        return;
+      }
       if (!isEnabledRef.current) {
         return;
       }
-      const currentSelectedElement = selectedElementRef.current;
+      const pointerPosition = lastPointerPositionRef.current;
+      const currentSelectedElement = selectedElementRef.current
+        ?? getInspectableElementFromPoint(pointerPosition.clientX, pointerPosition.clientY);
       if (!currentSelectedElement) {
         return;
       }
@@ -455,7 +473,8 @@ export const Inspector = (): React.JSX.Element => {
     document.addEventListener('click', handleClick);
     document.addEventListener('contextmenu', handleContextMenu);
     document.addEventListener('mousedown', handleOutsideMouseDown);
-    window.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown, true);
+    window.addEventListener('keydown', handleKeyDown, true);
     window.addEventListener('resize', handleViewportChange);
     window.addEventListener('scroll', handleViewportChange, true);
     return () => {
@@ -463,7 +482,8 @@ export const Inspector = (): React.JSX.Element => {
       document.removeEventListener('click', handleClick);
       document.removeEventListener('contextmenu', handleContextMenu);
       document.removeEventListener('mousedown', handleOutsideMouseDown);
-      window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown, true);
+      window.removeEventListener('keydown', handleKeyDown, true);
       window.removeEventListener('resize', handleViewportChange);
       window.removeEventListener('scroll', handleViewportChange, true);
     };
