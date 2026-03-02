@@ -11,7 +11,9 @@ interface RefreshRuntime {
 
 interface PendingFamilyChange {
   familyId: string;
+  nextTypeFingerprint: string;
   nextType: unknown;
+  previousTypeFingerprint: string | undefined;
   previousType: unknown;
 }
 
@@ -23,6 +25,7 @@ interface FamilyRegistrationMetadata {
 
 interface VersionSnapshot {
   changedFamilyIds: string[];
+  familyTypeFingerprintById: Map<string, string>;
   familyTypeById: Map<string, unknown>;
   timestamp: number;
   version: number;
@@ -36,6 +39,7 @@ interface VersionSummary {
 }
 
 interface HmrVersioningInternalState {
+  componentTypeByFingerprint: Map<string, unknown>;
   currentVersionIndex: number;
   familyFirstSeenVersionById: Map<string, number>;
   familyRegistrationMetadataByFamilyId: Map<string, FamilyRegistrationMetadata>;
@@ -49,6 +53,19 @@ interface HmrVersioningInternalState {
     (componentType: unknown, registrationId: string) => void
   >;
   timelineSnapshots: VersionSnapshot[];
+}
+
+interface PersistedVersionSnapshot {
+  changedFamilyIds: string[];
+  familyTypeFingerprintById: Record<string, string>;
+  timestamp: number;
+  version: number;
+}
+
+interface PersistedHmrVersioningState {
+  familyFirstSeenVersionById: Record<string, number>;
+  persistedAtTimestamp: number;
+  timelineSnapshots: PersistedVersionSnapshot[];
 }
 
 interface HmrVersioningController {
@@ -76,6 +93,7 @@ declare global {
 const createInitialVersionSnapshot = (): VersionSnapshot => {
   return {
     changedFamilyIds: [],
+    familyTypeFingerprintById: new Map<string, string>(),
     familyTypeById: new Map<string, unknown>(),
     timestamp: Date.now(),
     version: 0,
@@ -95,6 +113,184 @@ const isObjectRecord = (
   maybeObjectRecord: unknown,
 ): maybeObjectRecord is Record<string, unknown> => {
   return typeof maybeObjectRecord === 'object' && maybeObjectRecord !== null;
+};
+
+const sessionStorageStateKey = '__BIPPY_HMR_VERSIONING_STATE__';
+const persistedStateSchemaVersion = 1;
+
+const mapFromRecord = <Value>(
+  recordObject: Record<string, Value>,
+): Map<string, Value> => {
+  return new Map<string, Value>(Object.entries(recordObject));
+};
+
+const mapToRecord = <Value>(valueByKeyMap: Map<string, Value>): Record<string, Value> => {
+  return Object.fromEntries(valueByKeyMap.entries());
+};
+
+const createTextHash = (inputText: string): string => {
+  let hashValue = 2166136261;
+  for (let characterIndex = 0; characterIndex < inputText.length; characterIndex += 1) {
+    hashValue ^= inputText.charCodeAt(characterIndex);
+    hashValue +=
+      (hashValue << 1) +
+      (hashValue << 4) +
+      (hashValue << 7) +
+      (hashValue << 8) +
+      (hashValue << 24);
+  }
+  return (hashValue >>> 0).toString(36);
+};
+
+const getComponentTypeFingerprint = (
+  familyId: string,
+  componentType: unknown,
+): string => {
+  const componentTypeSignature =
+    typeof componentType === 'function' || typeof componentType === 'object'
+      ? String(componentType)
+      : typeof componentType;
+  return createTextHash(`${familyId}::${componentTypeSignature}`);
+};
+
+const serializeVersionSnapshot = (
+  versionSnapshot: VersionSnapshot,
+): PersistedVersionSnapshot => {
+  return {
+    changedFamilyIds: [...versionSnapshot.changedFamilyIds],
+    familyTypeFingerprintById: mapToRecord(
+      versionSnapshot.familyTypeFingerprintById,
+    ),
+    timestamp: versionSnapshot.timestamp,
+    version: versionSnapshot.version,
+  };
+};
+
+const deserializeVersionSnapshot = (
+  persistedVersionSnapshot: PersistedVersionSnapshot,
+): VersionSnapshot => {
+  return {
+    changedFamilyIds: [...persistedVersionSnapshot.changedFamilyIds],
+    familyTypeFingerprintById: mapFromRecord(
+      persistedVersionSnapshot.familyTypeFingerprintById,
+    ),
+    familyTypeById: new Map<string, unknown>(),
+    timestamp: persistedVersionSnapshot.timestamp,
+    version: persistedVersionSnapshot.version,
+  };
+};
+
+const loadPersistedState = (): PersistedHmrVersioningState | null => {
+  try {
+    const persistedStateString = window.sessionStorage.getItem(
+      sessionStorageStateKey,
+    );
+    if (!persistedStateString) {
+      return null;
+    }
+
+    const persistedStateCandidate: unknown = JSON.parse(persistedStateString);
+    if (!isObjectRecord(persistedStateCandidate)) {
+      return null;
+    }
+
+    const schemaVersion = persistedStateCandidate['schemaVersion'];
+    const timelineSnapshots = persistedStateCandidate['timelineSnapshots'];
+    const familyFirstSeenVersionById =
+      persistedStateCandidate['familyFirstSeenVersionById'];
+    const persistedAtTimestamp = persistedStateCandidate['persistedAtTimestamp'];
+
+    if (
+      schemaVersion !== persistedStateSchemaVersion ||
+      !Array.isArray(timelineSnapshots) ||
+      !isObjectRecord(familyFirstSeenVersionById) ||
+      typeof persistedAtTimestamp !== 'number'
+    ) {
+      return null;
+    }
+
+    const deserializedTimelineSnapshots: PersistedVersionSnapshot[] = [];
+    for (const timelineSnapshotCandidate of timelineSnapshots) {
+      if (!isObjectRecord(timelineSnapshotCandidate)) {
+        return null;
+      }
+      const changedFamilyIds = timelineSnapshotCandidate['changedFamilyIds'];
+      const familyTypeFingerprintById =
+        timelineSnapshotCandidate['familyTypeFingerprintById'];
+      const timestamp = timelineSnapshotCandidate['timestamp'];
+      const version = timelineSnapshotCandidate['version'];
+
+      if (
+        !Array.isArray(changedFamilyIds) ||
+        !changedFamilyIds.every(
+          (changedFamilyId) => typeof changedFamilyId === 'string',
+        ) ||
+        !isObjectRecord(familyTypeFingerprintById) ||
+        typeof timestamp !== 'number' ||
+        typeof version !== 'number'
+      ) {
+        return null;
+      }
+
+      const normalizedFamilyTypeFingerprintById: Record<string, string> = {};
+      for (const [familyId, fingerprintValue] of Object.entries(
+        familyTypeFingerprintById,
+      )) {
+        if (typeof fingerprintValue !== 'string') {
+          return null;
+        }
+        normalizedFamilyTypeFingerprintById[familyId] = fingerprintValue;
+      }
+
+      deserializedTimelineSnapshots.push({
+        changedFamilyIds,
+        familyTypeFingerprintById: normalizedFamilyTypeFingerprintById,
+        timestamp,
+        version,
+      });
+    }
+
+    const normalizedFamilyFirstSeenVersionById: Record<string, number> = {};
+    for (const [familyId, firstSeenVersion] of Object.entries(
+      familyFirstSeenVersionById,
+    )) {
+      if (typeof firstSeenVersion !== 'number') {
+        return null;
+      }
+      normalizedFamilyFirstSeenVersionById[familyId] = firstSeenVersion;
+    }
+
+    return {
+      familyFirstSeenVersionById: normalizedFamilyFirstSeenVersionById,
+      persistedAtTimestamp,
+      timelineSnapshots: deserializedTimelineSnapshots,
+    };
+  } catch {
+    return null;
+  }
+};
+
+const persistInternalState = (internalState: HmrVersioningInternalState): void => {
+  try {
+    const persistedState: PersistedHmrVersioningState = {
+      familyFirstSeenVersionById: mapToRecord(
+        internalState.familyFirstSeenVersionById,
+      ),
+      persistedAtTimestamp: Date.now(),
+      timelineSnapshots: internalState.timelineSnapshots.map(
+        serializeVersionSnapshot,
+      ),
+    };
+    window.sessionStorage.setItem(
+      sessionStorageStateKey,
+      JSON.stringify({
+        ...persistedState,
+        schemaVersion: persistedStateSchemaVersion,
+      }),
+    );
+  } catch {
+    return;
+  }
 };
 
 const isRefreshRuntime = (
@@ -140,9 +336,21 @@ const getOrCreateInternalState = (): HmrVersioningInternalState => {
     return existingInternalState;
   }
 
+  const persistedState = loadPersistedState();
+  const persistedTimelineSnapshots =
+    persistedState?.timelineSnapshots.map(deserializeVersionSnapshot) ?? [];
+  const timelineSnapshots =
+    persistedTimelineSnapshots.length > 0
+      ? persistedTimelineSnapshots
+      : [createInitialVersionSnapshot()];
+  const currentVersionIndex = timelineSnapshots.length - 1;
+
   const nextInternalState: HmrVersioningInternalState = {
-    currentVersionIndex: 0,
-    familyFirstSeenVersionById: new Map<string, number>(),
+    componentTypeByFingerprint: new Map<string, unknown>(),
+    currentVersionIndex,
+    familyFirstSeenVersionById: persistedState
+      ? mapFromRecord(persistedState.familyFirstSeenVersionById)
+      : new Map<string, number>(),
     familyRegistrationMetadataByFamilyId: new Map<
       string,
       FamilyRegistrationMetadata
@@ -156,9 +364,10 @@ const getOrCreateInternalState = (): HmrVersioningInternalState => {
       string,
       (componentType: unknown, registrationId: string) => void
     >(),
-    timelineSnapshots: [createInitialVersionSnapshot()],
+    timelineSnapshots,
   };
   window.__BIPPY_HMR_VERSIONING_INTERNAL_STATE__ = nextInternalState;
+  persistInternalState(nextInternalState);
   return nextInternalState;
 };
 
@@ -223,6 +432,57 @@ const backfillFamilyTypeInHistory = (
   }
 };
 
+const backfillFamilyTypeFingerprintInHistory = (
+  internalState: HmrVersioningInternalState,
+  familyId: string,
+  previousTypeFingerprint: string | undefined,
+): void => {
+  if (!previousTypeFingerprint) {
+    return;
+  }
+
+  const firstSeenVersionIndex =
+    internalState.familyFirstSeenVersionById.get(familyId) ?? 0;
+  const latestBackfillVersionIndex = Math.min(
+    internalState.currentVersionIndex,
+    internalState.timelineSnapshots.length - 1,
+  );
+
+  for (
+    let versionIndex = firstSeenVersionIndex;
+    versionIndex <= latestBackfillVersionIndex;
+    versionIndex += 1
+  ) {
+    const timelineSnapshot = internalState.timelineSnapshots[versionIndex];
+    if (!timelineSnapshot.familyTypeFingerprintById.has(familyId)) {
+      timelineSnapshot.familyTypeFingerprintById.set(
+        familyId,
+        previousTypeFingerprint,
+      );
+    }
+  }
+};
+
+const hydrateFamilyTypeFromFingerprint = (
+  internalState: HmrVersioningInternalState,
+  familyId: string,
+  componentTypeFingerprint: string,
+  componentType: unknown,
+): void => {
+  for (const timelineSnapshot of internalState.timelineSnapshots) {
+    const timelineFingerprint = timelineSnapshot.familyTypeFingerprintById.get(
+      familyId,
+    );
+    if (timelineFingerprint !== componentTypeFingerprint) {
+      continue;
+    }
+
+    if (!timelineSnapshot.familyTypeById.has(familyId)) {
+      timelineSnapshot.familyTypeById.set(familyId, componentType);
+    }
+  }
+};
+
 const finalizePendingRefreshChanges = (
   internalState: HmrVersioningInternalState,
 ): void => {
@@ -240,6 +500,9 @@ const finalizePendingRefreshChanges = (
   const nextFamilyTypeById = new Map<string, unknown>(
     currentVersionSnapshot.familyTypeById,
   );
+  const nextFamilyTypeFingerprintById = new Map<string, string>(
+    currentVersionSnapshot.familyTypeFingerprintById,
+  );
   const changedFamilyIds: string[] = [];
 
   for (const pendingFamilyChange of internalState.pendingFamilyChangeById.values()) {
@@ -248,9 +511,18 @@ const finalizePendingRefreshChanges = (
       pendingFamilyChange.familyId,
       pendingFamilyChange.previousType,
     );
+    backfillFamilyTypeFingerprintInHistory(
+      internalState,
+      pendingFamilyChange.familyId,
+      pendingFamilyChange.previousTypeFingerprint,
+    );
     nextFamilyTypeById.set(
       pendingFamilyChange.familyId,
       pendingFamilyChange.nextType,
+    );
+    nextFamilyTypeFingerprintById.set(
+      pendingFamilyChange.familyId,
+      pendingFamilyChange.nextTypeFingerprint,
     );
     changedFamilyIds.push(pendingFamilyChange.familyId);
   }
@@ -262,12 +534,14 @@ const finalizePendingRefreshChanges = (
 
   const nextVersionSnapshot: VersionSnapshot = {
     changedFamilyIds,
+    familyTypeFingerprintById: nextFamilyTypeFingerprintById,
     familyTypeById: nextFamilyTypeById,
     timestamp: Date.now(),
     version: internalState.timelineSnapshots.length,
   };
   internalState.timelineSnapshots.push(nextVersionSnapshot);
   internalState.currentVersionIndex = internalState.timelineSnapshots.length - 1;
+  persistInternalState(internalState);
 };
 
 const trackRefreshRegistration = (
@@ -281,6 +555,14 @@ const trackRefreshRegistration = (
   }
 
   const familyId = createFamilyId(modulePath, registrationId);
+  const componentTypeFingerprint = getComponentTypeFingerprint(
+    familyId,
+    componentType,
+  );
+  internalState.componentTypeByFingerprint.set(
+    componentTypeFingerprint,
+    componentType,
+  );
   if (!internalState.familyFirstSeenVersionById.has(familyId)) {
     internalState.familyFirstSeenVersionById.set(
       familyId,
@@ -297,20 +579,38 @@ const trackRefreshRegistration = (
   const currentVersionSnapshot =
     internalState.timelineSnapshots[internalState.currentVersionIndex];
   const previousType = currentVersionSnapshot.familyTypeById.get(familyId);
+  const previousTypeFingerprint = currentVersionSnapshot.familyTypeFingerprintById.get(
+    familyId,
+  );
+  currentVersionSnapshot.familyTypeFingerprintById.set(
+    familyId,
+    componentTypeFingerprint,
+  );
+  hydrateFamilyTypeFromFingerprint(
+    internalState,
+    familyId,
+    componentTypeFingerprint,
+    componentType,
+  );
   if (previousType === undefined) {
     currentVersionSnapshot.familyTypeById.set(familyId, componentType);
+    persistInternalState(internalState);
     return;
   }
 
   if (previousType === componentType) {
+    persistInternalState(internalState);
     return;
   }
 
   internalState.pendingFamilyChangeById.set(familyId, {
     familyId,
+    nextTypeFingerprint: componentTypeFingerprint,
     nextType: componentType,
+    previousTypeFingerprint,
     previousType,
   });
+  persistInternalState(internalState);
 };
 
 const installRefreshRegTracking = (
@@ -487,16 +787,28 @@ const createHmrVersioningController = (
 
     const targetVersionSnapshot =
       internalState.timelineSnapshots[targetVersionIndex];
-    const targetFamilyEntries = Array.from(
-      targetVersionSnapshot.familyTypeById.entries(),
+    const targetFamilyIds = Array.from(
+      targetVersionSnapshot.familyTypeFingerprintById.keys(),
     );
 
     let didQueueRefreshUpdate = false;
+    let didSkipAnyFamily = false;
     internalState.isApplyingVersion = true;
 
     try {
-      for (const [familyId, targetType] of targetFamilyEntries) {
+      for (const familyId of targetFamilyIds) {
+        const targetTypeFingerprint =
+          targetVersionSnapshot.familyTypeFingerprintById.get(familyId);
+        if (!targetTypeFingerprint) {
+          didSkipAnyFamily = true;
+          continue;
+        }
+
+        const targetType =
+          targetVersionSnapshot.familyTypeById.get(familyId) ??
+          internalState.componentTypeByFingerprint.get(targetTypeFingerprint);
         if (targetType === undefined) {
+          didSkipAnyFamily = true;
           continue;
         }
 
@@ -514,7 +826,11 @@ const createHmrVersioningController = (
       if (didQueueRefreshUpdate) {
         triggerRefreshUpdate(refreshRuntime);
       }
+      if (!didQueueRefreshUpdate && didSkipAnyFamily) {
+        return false;
+      }
       internalState.currentVersionIndex = targetVersionIndex;
+      persistInternalState(internalState);
       return true;
     } finally {
       internalState.isApplyingVersion = false;
