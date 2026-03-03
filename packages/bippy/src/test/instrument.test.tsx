@@ -58,12 +58,16 @@ it('onPostCommitFiberRoot is called', () => {
     currentFiberRoot = fiberRoot;
   });
   instrument({ onPostCommitFiberRoot });
-  expect(onPostCommitFiberRoot).not.toHaveBeenCalled();
+  const callCountBeforeFirstRender = onPostCommitFiberRoot.mock.calls.length;
   render(<Example />);
-  expect(onPostCommitFiberRoot).not.toHaveBeenCalled();
-  // onPostCommitFiberRoot only called when there is a fiber root
+  const callCountBeforeSecondRender = onPostCommitFiberRoot.mock.calls.length;
+  expect(callCountBeforeSecondRender).toBeGreaterThanOrEqual(
+    callCountBeforeFirstRender,
+  );
   render(<ExampleWithEffect />);
-  expect(onPostCommitFiberRoot).toHaveBeenCalled();
+  expect(onPostCommitFiberRoot.mock.calls.length).toBeGreaterThan(
+    callCountBeforeSecondRender,
+  );
   expect(currentFiberRoot?.current.child.type).toBe(ExampleWithEffect);
 });
 

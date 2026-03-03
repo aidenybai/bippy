@@ -1,15 +1,13 @@
-import { normalizeFileName, parseStack } from 'bippy/source';
-
-interface RefreshRuntime {
-  getRefreshReg: (
-    filename: string,
-  ) => (componentType: unknown, registrationId: string) => void;
-  validateRefreshBoundaryAndEnqueueUpdate: (
-    moduleId: string,
-    previousExports: Record<string, unknown>,
-    nextExports: Record<string, unknown>,
-  ) => string | undefined;
-}
+import {
+  createFamilyId,
+  extractModulePathFromStack,
+  getComponentTypeFingerprint,
+  isObjectRecord,
+  loadViteRefreshRuntime,
+  mapFromRecord,
+  mapToRecord,
+} from 'bippy/hmr';
+import type { RefreshRuntime } from 'bippy/hmr';
 
 interface PendingFamilyChange {
   familyId: string;
@@ -108,49 +106,8 @@ const createVersionSummary = (versionSnapshot: VersionSnapshot): VersionSummary 
   };
 };
 
-const isObjectRecord = (
-  maybeObjectRecord: unknown,
-): maybeObjectRecord is Record<string, unknown> => {
-  return typeof maybeObjectRecord === 'object' && maybeObjectRecord !== null;
-};
-
 const sessionStorageStateKey = '__BIPPY_HMR_VERSIONING_STATE__';
 const persistedStateSchemaVersion = 1;
-
-const mapFromRecord = <Value>(
-  recordObject: Record<string, Value>,
-): Map<string, Value> => {
-  return new Map<string, Value>(Object.entries(recordObject));
-};
-
-const mapToRecord = <Value>(valueByKeyMap: Map<string, Value>): Record<string, Value> => {
-  return Object.fromEntries(valueByKeyMap.entries());
-};
-
-const createTextHash = (inputText: string): string => {
-  let hashValue = 2166136261;
-  for (let characterIndex = 0; characterIndex < inputText.length; characterIndex += 1) {
-    hashValue ^= inputText.charCodeAt(characterIndex);
-    hashValue +=
-      (hashValue << 1) +
-      (hashValue << 4) +
-      (hashValue << 7) +
-      (hashValue << 8) +
-      (hashValue << 24);
-  }
-  return (hashValue >>> 0).toString(36);
-};
-
-const getComponentTypeFingerprint = (
-  familyId: string,
-  componentType: unknown,
-): string => {
-  const componentTypeSignature =
-    typeof componentType === 'function' || typeof componentType === 'object'
-      ? String(componentType)
-      : typeof componentType;
-  return createTextHash(`${familyId}::${componentTypeSignature}`);
-};
 
 const serializeVersionSnapshot = (
   versionSnapshot: VersionSnapshot,
@@ -299,43 +256,6 @@ const persistInternalState = (internalState: HmrVersioningInternalState): void =
   }
 };
 
-const isRefreshRuntime = (
-  maybeRefreshRuntime: unknown,
-): maybeRefreshRuntime is RefreshRuntime => {
-  if (!isObjectRecord(maybeRefreshRuntime)) {
-    return false;
-  }
-
-  const maybeGetRefreshReg = maybeRefreshRuntime['getRefreshReg'];
-  const maybeValidateRefreshBoundaryAndEnqueueUpdate =
-    maybeRefreshRuntime['validateRefreshBoundaryAndEnqueueUpdate'];
-
-  return (
-    typeof maybeGetRefreshReg === 'function' &&
-    typeof maybeValidateRefreshBoundaryAndEnqueueUpdate === 'function'
-  );
-};
-
-const loadRefreshRuntime = async (): Promise<RefreshRuntime | null> => {
-  try {
-    const runtimeModulePath = ['/', '@react-refresh'].join('');
-    const importRuntimeModule = new Function(
-      'modulePath',
-      'return import(modulePath)',
-    );
-    const runtimeModuleImportResult: unknown =
-      await importRuntimeModule(runtimeModulePath);
-
-    if (!isRefreshRuntime(runtimeModuleImportResult)) {
-      return null;
-    }
-
-    return runtimeModuleImportResult;
-  } catch {
-    return null;
-  }
-};
-
 const getOrCreateInternalState = (): HmrVersioningInternalState => {
   const existingInternalState = window.__BIPPY_HMR_VERSIONING_INTERNAL_STATE__;
   if (existingInternalState) {
@@ -378,32 +298,8 @@ const getOrCreateInternalState = (): HmrVersioningInternalState => {
 };
 
 const prototypeModulePath = '/src/hmr-versioning-prototype.ts';
-
-const extractModulePathFromStack = (errorStack: string | undefined): string | null => {
-  if (!errorStack) {
-    return null;
-  }
-
-  const stackFrames = parseStack(errorStack, { includeInElement: false });
-  for (const stackFrame of stackFrames) {
-    if (!stackFrame.fileName) {
-      continue;
-    }
-
-    const normalizedFileName = normalizeFileName(stackFrame.fileName);
-    if (
-      normalizedFileName.startsWith('/src/') &&
-      normalizedFileName !== prototypeModulePath
-    ) {
-      return normalizedFileName;
-    }
-  }
-
-  return null;
-};
-
-const createFamilyId = (modulePath: string, registrationId: string): string => {
-  return `${modulePath}::${registrationId}`;
+const modulePathExtractOptions = {
+  ignoredModulePaths: [prototypeModulePath],
 };
 
 const backfillFamilyTypeInHistory = (
@@ -660,7 +556,10 @@ const installRefreshRegTracking = (
       ) => {
         nextRefreshRegValue(componentType, registrationId);
 
-        const modulePathFromStack = extractModulePathFromStack(new Error().stack);
+        const modulePathFromStack = extractModulePathFromStack(
+          new Error().stack,
+          modulePathExtractOptions,
+        );
         if (!modulePathFromStack) {
           internalState.moduleFallbackCounter += 1;
         }
@@ -873,7 +772,7 @@ const initializeHmrVersioningPrototype = async (): Promise<void> => {
     return;
   }
 
-  const refreshRuntime = await loadRefreshRuntime();
+  const refreshRuntime = await loadViteRefreshRuntime();
   if (!refreshRuntime) {
     return;
   }

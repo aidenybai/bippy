@@ -70,6 +70,16 @@
         "default": "./dist/source.cjs"
       }
     },
+    "./hmr": {
+      "import": {
+        "types": "./dist/hmr.d.ts",
+        "default": "./dist/hmr.js"
+      },
+      "require": {
+        "types": "./dist/hmr.d.cts",
+        "default": "./dist/hmr.cjs"
+      }
+    },
     "./dist/*": "./dist/*.js",
     "./dist/*.js": "./dist/*.js",
     "./dist/*.cjs": "./dist/*.cjs"
