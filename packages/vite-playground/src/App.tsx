@@ -1,5 +1,5 @@
-import { Inspector } from '@bippy/next-playground/components/inspector';
-import { TodoList } from '@bippy/next-playground/components/todo-list';
+import { Inspector } from "@bippy/next-playground/components/inspector";
+import { TodoList } from "@bippy/next-playground/components/todo-list";
 
 export default function App() {
   return (
