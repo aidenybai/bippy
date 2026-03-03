@@ -1,14 +1,25 @@
 import fs from 'node:fs';
 import { defineConfig, type Options } from 'tsdown';
 
+const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+
 const DEFAULT_OPTIONS: Options = {
   clean: false,
   dts: true,
   entry: [],
   env: {
     NODE_ENV: process.env.NODE_ENV ?? 'development',
-    VERSION: JSON.parse(fs.readFileSync('package.json', 'utf8')).version,
   },
+  inputOptions: (options) => ({
+    ...options,
+    transform: {
+      ...options.transform,
+      define: {
+        ...(options.transform as Record<string, any>)?.define,
+        'process.env.VERSION': JSON.stringify(pkg.version),
+      },
+    },
+  }),
   external: ['react', 'react-dom', 'react-reconciler'],
   format: [],
   minify: process.env.NODE_ENV === 'production',
