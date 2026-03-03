@@ -81,9 +81,6 @@ declare global {
     $RefreshReg$?: unknown;
     __BIPPY_HMR_VERSIONING__?: HmrVersioningController;
     __BIPPY_HMR_VERSIONING_INTERNAL_STATE__?: HmrVersioningInternalState;
-    __BIPPY_HMR_VERSIONING_KEYDOWN_LISTENER__?: (
-      keyboardEvent: KeyboardEvent,
-    ) => void;
     __registerBeforePerformReactRefresh?: (
       callback: () => unknown,
     ) => unknown;
@@ -858,42 +855,6 @@ const createHmrVersioningController = (
   };
 };
 
-const installKeyboardShortcuts = (
-  hmrVersioningController: HmrVersioningController,
-): void => {
-  const previousKeydownListener = window.__BIPPY_HMR_VERSIONING_KEYDOWN_LISTENER__;
-  if (previousKeydownListener) {
-    window.removeEventListener('keydown', previousKeydownListener);
-  }
-
-  const keydownListener = (keyboardEvent: KeyboardEvent) => {
-    const isCommandKeyPressed = keyboardEvent.metaKey || keyboardEvent.ctrlKey;
-    if (!isCommandKeyPressed || keyboardEvent.altKey) {
-      return;
-    }
-
-    const normalizedKey = keyboardEvent.key.toLowerCase();
-    const isUndoShortcut = normalizedKey === 'z' && !keyboardEvent.shiftKey;
-    const isRedoShortcut =
-      (normalizedKey === 'z' && keyboardEvent.shiftKey) ||
-      (normalizedKey === 'y' && keyboardEvent.ctrlKey && !keyboardEvent.metaKey);
-
-    if (isUndoShortcut) {
-      keyboardEvent.preventDefault();
-      hmrVersioningController.undo();
-      return;
-    }
-
-    if (isRedoShortcut) {
-      keyboardEvent.preventDefault();
-      hmrVersioningController.redo();
-    }
-  };
-
-  window.addEventListener('keydown', keydownListener);
-  window.__BIPPY_HMR_VERSIONING_KEYDOWN_LISTENER__ = keydownListener;
-};
-
 const initializeHmrVersioningPrototype = async (): Promise<void> => {
   if (typeof window === 'undefined' || !import.meta.hot) {
     return;
@@ -920,7 +881,6 @@ const initializeHmrVersioningPrototype = async (): Promise<void> => {
   );
 
   window.__BIPPY_HMR_VERSIONING__ = hmrVersioningController;
-  installKeyboardShortcuts(hmrVersioningController);
 };
 
 if (import.meta.hot) {
