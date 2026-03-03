@@ -1,3 +1,5 @@
+import { normalizeFileName, parseStack } from 'bippy/source';
+
 interface RefreshRuntime {
   getRefreshReg: (
     filename: string,
@@ -382,22 +384,18 @@ const extractModulePathFromStack = (errorStack: string | undefined): string | nu
     return null;
   }
 
-  for (const stackLine of errorStack.split('\n')) {
-    const urlMatch = stackLine.match(/https?:\/\/[^\s)]+/);
-    if (!urlMatch) {
+  const stackFrames = parseStack(errorStack, { includeInElement: false });
+  for (const stackFrame of stackFrames) {
+    if (!stackFrame.fileName) {
       continue;
     }
 
-    try {
-      const parsedUrl = new URL(urlMatch[0]);
-      if (
-        parsedUrl.pathname.startsWith('/src/') &&
-        parsedUrl.pathname !== prototypeModulePath
-      ) {
-        return parsedUrl.pathname;
-      }
-    } catch {
-      continue;
+    const normalizedFileName = normalizeFileName(stackFrame.fileName);
+    if (
+      normalizedFileName.startsWith('/src/') &&
+      normalizedFileName !== prototypeModulePath
+    ) {
+      return normalizedFileName;
     }
   }
 
