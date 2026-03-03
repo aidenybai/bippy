@@ -269,6 +269,13 @@ const loadPersistedState = (): PersistedHmrVersioningState | null => {
 
 const persistInternalState = (internalState: HmrVersioningInternalState): void => {
   try {
+    const existingPersistedState = loadPersistedState();
+    const hasPersistedTimelineEntries =
+      (existingPersistedState?.timelineSnapshots.length ?? 0) > 0;
+    if (hasPersistedTimelineEntries) {
+      return;
+    }
+
     const persistedState: PersistedHmrVersioningState = {
       familyFirstSeenVersionById: mapToRecord(
         internalState.familyFirstSeenVersionById,
