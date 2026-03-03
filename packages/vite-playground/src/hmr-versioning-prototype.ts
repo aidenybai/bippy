@@ -54,6 +54,25 @@ interface VersionSummary {
   version: number;
 }
 
+interface ParsedFamilyId {
+  modulePath: string;
+  registrationId: string;
+}
+
+interface ChangedFamilyDerivation {
+  componentContent: string;
+  familyId: string;
+  modulePath: string;
+  registrationId: string;
+}
+
+interface CheckpointDerivation {
+  changedFamilies: ChangedFamilyDerivation[];
+  changedModulePaths: string[];
+  timestamp: number;
+  version: number;
+}
+
 interface HmrVersioningInternalState {
   activeRefreshModulePath: string | null;
   componentTypeByFingerprint: Map<string, unknown>;
@@ -88,6 +107,7 @@ interface PersistedHmrVersioningState {
 }
 
 interface HmrVersioningController {
+  getCheckpointDerivations: () => CheckpointDerivation[];
   getCurrentVersion: () => VersionSummary;
   getTimeline: () => VersionSummary[];
   jumpToVersion: (targetVersionIndex: number) => boolean;
@@ -122,6 +142,87 @@ const createVersionSummary = (versionSnapshot: VersionSnapshot): VersionSummary 
   return {
     changedFamilyIds: [...versionSnapshot.changedFamilyIds],
     familyCount: versionSnapshot.familyTypeById.size,
+    timestamp: versionSnapshot.timestamp,
+    version: versionSnapshot.version,
+  };
+};
+
+const parseFamilyId = (familyId: string): ParsedFamilyId => {
+  const separatorIndex = familyId.lastIndexOf('::');
+  if (separatorIndex === -1) {
+    return {
+      modulePath: familyId,
+      registrationId: '',
+    };
+  }
+
+  return {
+    modulePath: familyId.slice(0, separatorIndex),
+    registrationId: familyId.slice(separatorIndex + 2),
+  };
+};
+
+const deriveComponentContent = (componentType: unknown): string => {
+  if (componentType === undefined) {
+    return 'undefined';
+  }
+
+  if (componentType === null) {
+    return 'null';
+  }
+
+  if (typeof componentType === 'function') {
+    return String(componentType);
+  }
+
+  if (typeof componentType === 'object') {
+    try {
+      return JSON.stringify(componentType);
+    } catch {
+      return String(componentType);
+    }
+  }
+
+  return String(componentType);
+};
+
+const createCheckpointDerivation = (
+  internalState: HmrVersioningInternalState,
+  versionSnapshot: VersionSnapshot,
+): CheckpointDerivation => {
+  const changedModulePathSet = new Set<string>();
+  const changedFamilies = versionSnapshot.changedFamilyIds.map(
+    (changedFamilyId): ChangedFamilyDerivation => {
+      const familyRegistrationMetadata =
+        internalState.familyRegistrationMetadataByFamilyId.get(changedFamilyId);
+      const parsedFamilyId = parseFamilyId(changedFamilyId);
+      const modulePath = familyRegistrationMetadata?.modulePath ?? parsedFamilyId.modulePath;
+      if (modulePath) {
+        changedModulePathSet.add(modulePath);
+      }
+      const registrationId =
+        familyRegistrationMetadata?.registrationId ?? parsedFamilyId.registrationId;
+      const familyTypeFingerprint = versionSnapshot.familyTypeFingerprintById.get(
+        changedFamilyId,
+      );
+      const componentType =
+        versionSnapshot.familyTypeById.get(changedFamilyId) ??
+        (familyTypeFingerprint
+          ? internalState.componentTypeByFingerprint.get(familyTypeFingerprint)
+          : undefined);
+
+      return {
+        componentContent: deriveComponentContent(componentType),
+        familyId: changedFamilyId,
+        modulePath,
+        registrationId,
+      };
+    },
+  );
+
+  return {
+    changedFamilies,
+    changedModulePaths: Array.from(changedModulePathSet),
     timestamp: versionSnapshot.timestamp,
     version: versionSnapshot.version,
   };
@@ -912,6 +1013,11 @@ const createHmrVersioningController = (
   };
 
   return {
+    getCheckpointDerivations: () => {
+      return internalState.timelineSnapshots.map((timelineSnapshot) =>
+        createCheckpointDerivation(internalState, timelineSnapshot),
+      );
+    },
     getCurrentVersion: () => {
       return createVersionSummary(
         internalState.timelineSnapshots[internalState.currentVersionIndex],
