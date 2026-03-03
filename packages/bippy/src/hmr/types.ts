@@ -9,7 +9,23 @@ export interface RefreshRuntime {
   ) => string | undefined;
 }
 
+export interface NextRefreshHelpers {
+  getRefreshBoundarySignature: (moduleExports: unknown) => unknown[];
+  isReactRefreshBoundary: (moduleExports: unknown) => boolean;
+  registerExportsForReactRefresh: (
+    moduleExports: unknown,
+    moduleId: string | number,
+  ) => void;
+  scheduleUpdate: () => void;
+  shouldInvalidateReactRefreshBoundary: (
+    previousSignature: unknown[],
+    nextSignature: unknown[],
+  ) => boolean;
+}
+
 export interface ExtractModulePathFromStackOptions {
   ignoredModulePaths?: string[];
+  modulePathPredicate?: (normalizedFileName: string) => boolean;
   sourcePathPrefix?: string;
+  sourcePathPrefixes?: string[];
 }

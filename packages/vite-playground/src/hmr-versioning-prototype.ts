@@ -1,13 +1,29 @@
 import {
   createFamilyId,
   extractModulePathFromStack,
+  getNextRefreshHelpers,
   getComponentTypeFingerprint,
   isObjectRecord,
   loadViteRefreshRuntime,
+  normalizeRefreshModulePath,
   mapFromRecord,
   mapToRecord,
 } from 'bippy/hmr';
-import type { RefreshRuntime } from 'bippy/hmr';
+
+interface RefreshRuntime {
+  getRefreshReg: (
+    filename: string,
+  ) => (componentType: unknown, registrationId: string) => void;
+  validateRefreshBoundaryAndEnqueueUpdate: (
+    moduleId: string,
+    previousExports: Record<string, unknown>,
+    nextExports: Record<string, unknown>,
+  ) => string | undefined;
+}
+
+interface NextRefreshHelpers {
+  scheduleUpdate: () => void;
+}
 
 interface PendingFamilyChange {
   familyId: string;
@@ -39,12 +55,15 @@ interface VersionSummary {
 }
 
 interface HmrVersioningInternalState {
+  activeRefreshModulePath: string | null;
   componentTypeByFingerprint: Map<string, unknown>;
   currentVersionIndex: number;
   familyFirstSeenVersionById: Map<string, number>;
   familyRegistrationMetadataByFamilyId: Map<string, FamilyRegistrationMetadata>;
   isApplyingVersion: boolean;
   isBeforePerformHookInstalled: boolean;
+  isNextScheduleHookInstalled: boolean;
+  isRefreshInterceptTrackingInstalled: boolean;
   isRefreshRegTrackingInstalled: boolean;
   moduleFallbackCounter: number;
   pendingFamilyChangeById: Map<string, PendingFamilyChange>;
@@ -78,6 +97,8 @@ interface HmrVersioningController {
 
 declare global {
   interface Window {
+    $RefreshHelpers$?: unknown;
+    $RefreshInterceptModuleExecution$?: unknown;
     $RefreshReg$?: unknown;
     __BIPPY_HMR_VERSIONING__?: HmrVersioningController;
     __BIPPY_HMR_VERSIONING_INTERNAL_STATE__?: HmrVersioningInternalState;
@@ -104,6 +125,12 @@ const createVersionSummary = (versionSnapshot: VersionSnapshot): VersionSummary 
     timestamp: versionSnapshot.timestamp,
     version: versionSnapshot.version,
   };
+};
+
+const isObjectRecordValue = (
+  maybeObjectRecord: unknown,
+): maybeObjectRecord is Record<string, unknown> => {
+  return isObjectRecord(maybeObjectRecord);
 };
 
 const sessionStorageStateKey = '__BIPPY_HMR_VERSIONING_STATE__';
@@ -146,7 +173,7 @@ const loadPersistedState = (): PersistedHmrVersioningState | null => {
     }
 
     const persistedStateCandidate: unknown = JSON.parse(persistedStateString);
-    if (!isObjectRecord(persistedStateCandidate)) {
+    if (!isObjectRecordValue(persistedStateCandidate)) {
       return null;
     }
 
@@ -159,7 +186,7 @@ const loadPersistedState = (): PersistedHmrVersioningState | null => {
     if (
       schemaVersion !== persistedStateSchemaVersion ||
       !Array.isArray(timelineSnapshots) ||
-      !isObjectRecord(familyFirstSeenVersionById) ||
+      !isObjectRecordValue(familyFirstSeenVersionById) ||
       typeof persistedAtTimestamp !== 'number'
     ) {
       return null;
@@ -167,7 +194,7 @@ const loadPersistedState = (): PersistedHmrVersioningState | null => {
 
     const deserializedTimelineSnapshots: PersistedVersionSnapshot[] = [];
     for (const timelineSnapshotCandidate of timelineSnapshots) {
-      if (!isObjectRecord(timelineSnapshotCandidate)) {
+      if (!isObjectRecordValue(timelineSnapshotCandidate)) {
         return null;
       }
       const changedFamilyIds = timelineSnapshotCandidate['changedFamilyIds'];
@@ -181,7 +208,7 @@ const loadPersistedState = (): PersistedHmrVersioningState | null => {
         !changedFamilyIds.every(
           (changedFamilyId) => typeof changedFamilyId === 'string',
         ) ||
-        !isObjectRecord(familyTypeFingerprintById) ||
+        !isObjectRecordValue(familyTypeFingerprintById) ||
         typeof timestamp !== 'number' ||
         typeof version !== 'number'
       ) {
@@ -272,6 +299,7 @@ const getOrCreateInternalState = (): HmrVersioningInternalState => {
   const currentVersionIndex = timelineSnapshots.length - 1;
 
   const nextInternalState: HmrVersioningInternalState = {
+    activeRefreshModulePath: null,
     componentTypeByFingerprint: new Map<string, unknown>(),
     currentVersionIndex,
     familyFirstSeenVersionById: persistedState
@@ -283,6 +311,8 @@ const getOrCreateInternalState = (): HmrVersioningInternalState => {
     >(),
     isApplyingVersion: false,
     isBeforePerformHookInstalled: false,
+    isNextScheduleHookInstalled: false,
+    isRefreshInterceptTrackingInstalled: false,
     isRefreshRegTrackingInstalled: false,
     moduleFallbackCounter: 0,
     pendingFamilyChangeById: new Map<string, PendingFamilyChange>(),
@@ -300,6 +330,17 @@ const getOrCreateInternalState = (): HmrVersioningInternalState => {
 const prototypeModulePath = '/src/hmr-versioning-prototype.ts';
 const modulePathExtractOptions = {
   ignoredModulePaths: [prototypeModulePath],
+  modulePathPredicate: (normalizedModulePath: string) => {
+    if (normalizedModulePath.endsWith('/hmr-versioning-prototype.ts')) {
+      return false;
+    }
+    return (
+      normalizedModulePath.startsWith('/src/') ||
+      normalizedModulePath.startsWith('/app/') ||
+      normalizedModulePath.startsWith('/components/') ||
+      normalizedModulePath.includes('/packages/next-playground/')
+    );
+  },
 };
 
 const backfillFamilyTypeInHistory = (
@@ -511,6 +552,90 @@ const trackRefreshRegistration = (
   persistInternalState(internalState);
 };
 
+const installRefreshInterceptTracking = (
+  internalState: HmrVersioningInternalState,
+): void => {
+  if (internalState.isRefreshInterceptTrackingInstalled) {
+    return;
+  }
+
+  let currentRefreshInterceptValue = window.$RefreshInterceptModuleExecution$;
+  const wrappedRefreshInterceptByFunction = new WeakMap<
+    object,
+    (modulePath: unknown) => unknown
+  >();
+
+  const existingRefreshInterceptDescriptor = Object.getOwnPropertyDescriptor(
+    window,
+    '$RefreshInterceptModuleExecution$',
+  );
+  if (
+    existingRefreshInterceptDescriptor &&
+    !existingRefreshInterceptDescriptor.configurable
+  ) {
+    return;
+  }
+
+  Object.defineProperty(window, '$RefreshInterceptModuleExecution$', {
+    configurable: true,
+    get: () => {
+      return currentRefreshInterceptValue;
+    },
+    set: (nextRefreshInterceptValue: unknown) => {
+      if (typeof nextRefreshInterceptValue !== 'function') {
+        currentRefreshInterceptValue = nextRefreshInterceptValue;
+        return;
+      }
+
+      const existingWrappedRefreshIntercept =
+        wrappedRefreshInterceptByFunction.get(nextRefreshInterceptValue);
+      if (existingWrappedRefreshIntercept) {
+        currentRefreshInterceptValue = existingWrappedRefreshIntercept;
+        return;
+      }
+
+      const wrappedRefreshInterceptModuleExecution = (
+        modulePathCandidate: unknown,
+      ) => {
+        const previousActiveRefreshModulePath = internalState.activeRefreshModulePath;
+        const normalizedRefreshModulePath = normalizeRefreshModulePath(
+          modulePathCandidate,
+        );
+        if (normalizedRefreshModulePath) {
+          internalState.activeRefreshModulePath = normalizedRefreshModulePath;
+        }
+
+        const cleanupRefreshIntercept = nextRefreshInterceptValue(
+          modulePathCandidate,
+        );
+
+        return () => {
+          if (typeof cleanupRefreshIntercept === 'function') {
+            cleanupRefreshIntercept();
+          }
+          internalState.activeRefreshModulePath = previousActiveRefreshModulePath;
+        };
+      };
+
+      wrappedRefreshInterceptByFunction.set(
+        nextRefreshInterceptValue,
+        wrappedRefreshInterceptModuleExecution,
+      );
+      wrappedRefreshInterceptByFunction.set(
+        wrappedRefreshInterceptModuleExecution,
+        wrappedRefreshInterceptModuleExecution,
+      );
+      currentRefreshInterceptValue = wrappedRefreshInterceptModuleExecution;
+    },
+  });
+
+  if (typeof currentRefreshInterceptValue === 'function') {
+    window.$RefreshInterceptModuleExecution$ = currentRefreshInterceptValue;
+  }
+
+  internalState.isRefreshInterceptTrackingInstalled = true;
+};
+
 const installRefreshRegTracking = (
   internalState: HmrVersioningInternalState,
 ): void => {
@@ -560,10 +685,12 @@ const installRefreshRegTracking = (
           new Error().stack,
           modulePathExtractOptions,
         );
-        if (!modulePathFromStack) {
+        const modulePathFromRefreshIntercept = internalState.activeRefreshModulePath;
+        if (!modulePathFromRefreshIntercept && !modulePathFromStack) {
           internalState.moduleFallbackCounter += 1;
         }
         const modulePath =
+          modulePathFromRefreshIntercept ??
           modulePathFromStack ??
           `__module_${internalState.moduleFallbackCounter}`;
 
@@ -613,20 +740,51 @@ const installBeforePerformRefreshHook = (
   internalState.isBeforePerformHookInstalled = true;
 };
 
+const installNextScheduleHook = (
+  internalState: HmrVersioningInternalState,
+  nextRefreshHelpers: NextRefreshHelpers,
+): void => {
+  if (internalState.isNextScheduleHookInstalled) {
+    return;
+  }
+
+  const originalScheduleUpdate = nextRefreshHelpers.scheduleUpdate;
+  nextRefreshHelpers.scheduleUpdate = () => {
+    if (!internalState.isApplyingVersion) {
+      finalizePendingRefreshChanges(internalState);
+    }
+    originalScheduleUpdate();
+  };
+  internalState.isNextScheduleHookInstalled = true;
+};
+
 const refreshBoundaryModuleExports = {
   RefreshTriggerComponent: () => null,
 };
 
-const triggerRefreshUpdate = (refreshRuntime: RefreshRuntime): void => {
-  refreshRuntime.validateRefreshBoundaryAndEnqueueUpdate(
-    '__bippy_hmr_versioning__',
-    refreshBoundaryModuleExports,
-    refreshBoundaryModuleExports,
-  );
+const triggerRefreshUpdate = (
+  refreshRuntime: RefreshRuntime | null,
+  nextRefreshHelpers: NextRefreshHelpers | null,
+): boolean => {
+  if (refreshRuntime) {
+    refreshRuntime.validateRefreshBoundaryAndEnqueueUpdate(
+      '__bippy_hmr_versioning__',
+      refreshBoundaryModuleExports,
+      refreshBoundaryModuleExports,
+    );
+    return true;
+  }
+
+  if (nextRefreshHelpers) {
+    nextRefreshHelpers.scheduleUpdate();
+    return true;
+  }
+
+  return false;
 };
 
 const registerFamilyTypeForVersionApply = (
-  refreshRuntime: RefreshRuntime,
+  refreshRuntime: RefreshRuntime | null,
   internalState: HmrVersioningInternalState,
   familyId: string,
   componentType: unknown,
@@ -637,17 +795,25 @@ const registerFamilyTypeForVersionApply = (
     return false;
   }
 
-  const refreshRegistrationHandler =
+  const refreshRegistrationHandlerFromHistory =
     internalState.refreshRegistrationHandlerByModulePath.get(
       familyRegistrationMetadata.modulePath,
-    ) ?? refreshRuntime.getRefreshReg(familyRegistrationMetadata.modulePath);
+    );
+  const refreshRegistrationHandler =
+    refreshRegistrationHandlerFromHistory ??
+    (refreshRuntime
+      ? refreshRuntime.getRefreshReg(familyRegistrationMetadata.modulePath)
+      : null);
+  if (!refreshRegistrationHandler) {
+    return false;
+  }
 
   const registrationType = (() => {
     if (typeof componentType !== 'function') {
       return componentType;
     }
 
-    const maybeComponentPrototype = isObjectRecord(componentType.prototype)
+    const maybeComponentPrototype = isObjectRecordValue(componentType.prototype)
       ? componentType.prototype
       : null;
     const isClassComponent = Boolean(
@@ -671,7 +837,8 @@ const registerFamilyTypeForVersionApply = (
 };
 
 const createHmrVersioningController = (
-  refreshRuntime: RefreshRuntime,
+  refreshRuntime: RefreshRuntime | null,
+  nextRefreshHelpers: NextRefreshHelpers | null,
   internalState: HmrVersioningInternalState,
 ): HmrVersioningController => {
   const applyVersionAtIndex = (targetVersionIndex: number): boolean => {
@@ -725,7 +892,13 @@ const createHmrVersioningController = (
       }
 
       if (didQueueRefreshUpdate) {
-        triggerRefreshUpdate(refreshRuntime);
+        const didTriggerRefreshUpdate = triggerRefreshUpdate(
+          refreshRuntime,
+          nextRefreshHelpers,
+        );
+        if (!didTriggerRefreshUpdate) {
+          return false;
+        }
       }
       if (!didQueueRefreshUpdate && didSkipAnyFamily) {
         return false;
@@ -760,11 +933,23 @@ const createHmrVersioningController = (
 };
 
 const initializeHmrVersioningPrototype = async (): Promise<void> => {
-  if (typeof window === 'undefined' || !import.meta.hot) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const isViteHotEnvironment =
+    typeof window.$RefreshReg$ === 'function' ||
+    typeof window.__registerBeforePerformReactRefresh === 'function';
+  const isHotEnvironment =
+    isViteHotEnvironment ||
+    typeof window.$RefreshInterceptModuleExecution$ === 'function' ||
+    isObjectRecordValue(window.$RefreshHelpers$);
+  if (!isHotEnvironment) {
     return;
   }
 
   const internalState = getOrCreateInternalState();
+  installRefreshInterceptTracking(internalState);
   installRefreshRegTracking(internalState);
   installBeforePerformRefreshHook(internalState);
 
@@ -773,20 +958,25 @@ const initializeHmrVersioningPrototype = async (): Promise<void> => {
   }
 
   const refreshRuntime = await loadViteRefreshRuntime();
-  if (!refreshRuntime) {
+  const nextRefreshHelpers = getNextRefreshHelpers();
+  if (!refreshRuntime && !nextRefreshHelpers) {
     return;
   }
 
   installBeforePerformRefreshHook(internalState);
+  if (nextRefreshHelpers) {
+    installNextScheduleHook(internalState, nextRefreshHelpers);
+  }
 
   const hmrVersioningController = createHmrVersioningController(
     refreshRuntime,
+    nextRefreshHelpers,
     internalState,
   );
 
   window.__BIPPY_HMR_VERSIONING__ = hmrVersioningController;
 };
 
-if (import.meta.hot) {
+if (typeof window !== 'undefined') {
   void initializeHmrVersioningPrototype();
 }

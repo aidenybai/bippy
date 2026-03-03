@@ -52,6 +52,23 @@ export const createFamilyId = (
   return `${modulePath}::${registrationId}`;
 };
 
+export const normalizeRefreshModulePath = (
+  maybeRefreshModulePath: unknown,
+): string | null => {
+  if (typeof maybeRefreshModulePath === 'string') {
+    return maybeRefreshModulePath;
+  }
+
+  if (
+    typeof maybeRefreshModulePath === 'number' &&
+    Number.isFinite(maybeRefreshModulePath)
+  ) {
+    return String(maybeRefreshModulePath);
+  }
+
+  return null;
+};
+
 export const extractModulePathFromStack = (
   errorStack: string | undefined,
   options?: ExtractModulePathFromStackOptions,
@@ -61,7 +78,10 @@ export const extractModulePathFromStack = (
   }
 
   const ignoredModulePathSet = new Set(options?.ignoredModulePaths ?? []);
-  const sourcePathPrefix = options?.sourcePathPrefix ?? '/src/';
+  const sourcePathPrefixes =
+    options?.sourcePathPrefixes ??
+    (options?.sourcePathPrefix ? [options.sourcePathPrefix] : ['/src/']);
+  const modulePathPredicate = options?.modulePathPredicate;
   const stackFrames = parseStack(errorStack, { includeInElement: false });
   for (const stackFrame of stackFrames) {
     if (!stackFrame.fileName) {
@@ -69,8 +89,20 @@ export const extractModulePathFromStack = (
     }
 
     const normalizedFileName = normalizeFileName(stackFrame.fileName);
+    if (modulePathPredicate) {
+      if (
+        modulePathPredicate(normalizedFileName) &&
+        !ignoredModulePathSet.has(normalizedFileName)
+      ) {
+        return normalizedFileName;
+      }
+      continue;
+    }
+
     if (
-      normalizedFileName.startsWith(sourcePathPrefix) &&
+      sourcePathPrefixes.some((sourcePathPrefix) =>
+        normalizedFileName.startsWith(sourcePathPrefix),
+      ) &&
       !ignoredModulePathSet.has(normalizedFileName)
     ) {
       return normalizedFileName;
