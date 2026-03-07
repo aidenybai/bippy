@@ -1,5 +1,11 @@
 # bippy
 
+## 0.5.31
+
+### Patch Changes
+
+- fix: app-pages-browser edge case
+
 ## 0.5.30
 
 ### Patch Changes
