@@ -9,6 +9,7 @@ export const INTERNAL_SCHEME_PREFIXES = [
   'turbopack://',
   'metro://',
   '/app-pages-browser/',
+  '/(app-pages-browser)/',
 ] as const;
 
 export const ABOUT_REACT_PREFIX = 'about://React/';

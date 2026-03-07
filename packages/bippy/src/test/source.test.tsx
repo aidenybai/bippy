@@ -219,6 +219,19 @@ it('normalizeFileName should strip /app-pages-browser/ prefix', () => {
   expect(result).toBe('./src/components/test.tsx');
 });
 
+it('normalizeFileName should strip /(app-pages-browser)/ prefix (Next.js App Router)', () => {
+  const input = '/(app-pages-browser)/./src/components/test.tsx';
+  const result = normalizeFileName(input);
+  expect(result).toBe('./src/components/test.tsx');
+});
+
+it('normalizeFileName should strip webpack-internal:// with (app-pages-browser) parens', () => {
+  const input =
+    'webpack-internal:///(app-pages-browser)/./src/app/components/Button.tsx';
+  const result = normalizeFileName(input);
+  expect(result).toBe('./src/app/components/Button.tsx');
+});
+
 it('normalizeFileName should strip http:// host prefix (Vite dev server)', () => {
   const input = 'http://localhost:5173/src/features/my-component.tsx';
   const result = normalizeFileName(input);

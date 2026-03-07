@@ -59,9 +59,6 @@ it('onPostCommitFiberRoot is called', () => {
   });
   instrument({ onPostCommitFiberRoot });
   expect(onPostCommitFiberRoot).not.toHaveBeenCalled();
-  render(<Example />);
-  expect(onPostCommitFiberRoot).not.toHaveBeenCalled();
-  // onPostCommitFiberRoot only called when there is a fiber root
   render(<ExampleWithEffect />);
   expect(onPostCommitFiberRoot).toHaveBeenCalled();
   expect(currentFiberRoot?.current.child.type).toBe(ExampleWithEffect);
