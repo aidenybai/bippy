@@ -6,6 +6,7 @@ const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 const DEFAULT_OPTIONS: Options = {
   clean: false,
   dts: true,
+  hash: false,
   entry: [],
   env: {
     NODE_ENV: process.env.NODE_ENV ?? 'development',
