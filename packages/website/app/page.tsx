@@ -1,31 +1,32 @@
-import Image from 'next/image';
-import Link from 'next/link';
-import { Github } from 'lucide-react';
-import { readFile } from 'fs/promises';
-import { join } from 'path';
-import Markdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import { highlight } from '@/lib/shiki';
-import { CopyButton } from '@/components/copy-button';
+import Link from "next/link";
+import { readFile } from "fs/promises";
+import { join } from "path";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { highlight } from "@/lib/shiki";
+import { CopyButton } from "@/components/copy-button";
+import { SiteProvider } from "@/providers/site-provider";
+import { ProjectInfo } from "@/components/project-info";
+import { CommandDisplay } from "@/components/command-display";
+import { ActionButtons } from "@/components/action-buttons";
 
-export const dynamic = 'force-static';
+export const dynamic = "force-static";
 export const revalidate = false;
 
-const NAV_LINK_CLASS =
-  'text-neutral-400 hover:text-neutral-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 rounded-sm';
+const GITHUB_URL = "https://github.com/aidenybai/bippy";
 
 interface CodeBlockProps {
   children: string;
   className?: string;
 }
 
-const CodeBlock = async ({ children, className }: CodeBlockProps): Promise<React.JSX.Element> => {
-  const language = className?.replace('language-', '') ?? 'bash';
+const CodeBlock = async ({ children, className }: CodeBlockProps) => {
+  const language = className?.replace("language-", "") ?? "bash";
   const code = children.trim();
   const html = await highlight(code, language);
 
   return (
-    <div className="relative group max-w-full bg-neutral-900/80 border border-neutral-800/50 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 text-[12px] sm:text-[13px] font-[family-name:var(--font-geist-mono)] [&_pre]:bg-transparent! [&_pre]:p-0! [&_pre]:whitespace-pre-wrap [&_pre]:break-words [&_code]:bg-transparent! my-4">
+    <div className="group relative my-4 max-w-full overflow-hidden rounded-xs border bg-muted px-3 py-2.5 font-mono text-xs dark:bg-background sm:px-4 sm:py-3 sm:text-[13px] [&_pre]:bg-transparent! [&_pre]:p-0! [&_pre]:whitespace-pre-wrap [&_pre]:break-words [&_code]:bg-transparent!">
       <CopyButton text={code} />
       <div dangerouslySetInnerHTML={{ __html: html }} />
     </div>
@@ -33,17 +34,24 @@ const CodeBlock = async ({ children, className }: CodeBlockProps): Promise<React
 };
 
 const processReadme = (content: string): string => {
-  const lines = content.split('\n');
+  const lines = content.split("\n");
   const result: string[] = [];
   let isInWarningBlock = false;
   let isInBadgesBlock = false;
+  let reachedMiscSection = false;
 
   for (const line of lines) {
-    const isWarningStart = line.startsWith('> [!WARNING]') || line.startsWith('> ⚠️');
-    const isBlockquoteLine = line.startsWith('>');
-    const isTitleWithImage = line.startsWith('# <img');
-    const isBadgeLine = line.startsWith('[![');
-    const isEmpty = line.trim() === '';
+    const isWarningStart = line.startsWith("> [!WARNING]") || line.startsWith("> ⚠️");
+    const isBlockquoteLine = line.startsWith(">");
+    const isTitleWithImage = line.startsWith("# <img");
+    const isBadgeLine = line.startsWith("[![");
+    const isEmpty = line.trim() === "";
+
+    if (line.startsWith("## misc")) {
+      reachedMiscSection = true;
+      continue;
+    }
+    if (reachedMiscSection) continue;
 
     if (isWarningStart) {
       isInWarningBlock = true;
@@ -70,62 +78,32 @@ const processReadme = (content: string): string => {
     result.push(line);
   }
 
-  return result.join('\n');
+  return result.join("\n");
 };
 
-const Page = async (): Promise<React.JSX.Element> => {
-  const readmePath = join(process.cwd(), '..', 'bippy', 'README.md');
-  const rawReadme = await readFile(readmePath, 'utf-8');
+const Home = async () => {
+  const readmePath = join(process.cwd(), "..", "bippy", "README.md");
+  const rawReadme = await readFile(readmePath, "utf-8");
   const readme = processReadme(rawReadme);
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-400">
-      <main className="py-10 sm:py-16">
-        <div className="max-w-[560px] mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between mb-4">
-            <Link
-              href="/"
-              className="text-neutral-100 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 rounded-sm"
-            >
-              <h1>
-                <div className="flex items-center gap-1.5">
-                  <Image
-                    src="/bippy.png"
-                    alt="bippy"
-                    width={24}
-                    height={24}
-                    className="rounded slam-hover"
-                    unoptimized
-                  />
-                  <span className="font-medium">bippy</span>
-                </div>
-              </h1>
-            </Link>
-            <nav className="flex items-center gap-2.5 sm:gap-4 text-[13px] sm:text-sm">
-              <a href="#how-to-use" className={NAV_LINK_CLASS}>Install</a>
-              <a href="#api-reference" className={NAV_LINK_CLASS}>API</a>
-              <a
-                href="https://github.com/aidenybai/bippy"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="GitHub"
-                className={NAV_LINK_CLASS}
-              >
-                <Github className="w-3.5 h-3.5" />
-              </a>
-            </nav>
-          </div>
+    <div className="flex min-h-svh flex-col items-center">
+      <SiteProvider>
+        <main className="flex w-full max-w-lg flex-col items-start gap-10 px-6 py-16">
+          <ProjectInfo />
+          <CommandDisplay />
+          <ActionButtons />
 
-          <article className="text-[14px] sm:text-[15px] space-y-4 [&>*:first-child]:mt-6">
+          <article className="w-full space-y-4 text-sm sm:text-[15px]">
             <Markdown
               remarkPlugins={[remarkGfm]}
               components={{
                 h2: ({ children, node, ...props }) => {
-                  const text = node?.children?.[0] && 'value' in node.children[0] ? node.children[0].value : '';
-                  const id = text.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+                  const text = node?.children?.[0] && "value" in node.children[0] ? node.children[0].value : "";
+                  const id = text.toLowerCase().replace(/\s+/g, "-").replace(/[^\w-]/g, "");
                   return (
                     <h2
-                      className="text-neutral-100 font-medium mt-12 mb-3 pt-8 border-t border-neutral-800 scroll-mt-8"
+                      className="mt-12 mb-3 scroll-mt-8 border-t border-border pt-8 text-base font-medium text-foreground"
                       id={id}
                       {...props}
                     >
@@ -134,44 +112,45 @@ const Page = async (): Promise<React.JSX.Element> => {
                   );
                 },
                 h3: ({ children, ...props }) => (
-                  <h3 className="text-neutral-200 font-medium mt-8 mb-2 text-[15px]" {...props}>
+                  <h3 className="mt-8 mb-2 text-[15px] font-medium text-foreground" {...props}>
                     {children}
                   </h3>
                 ),
                 p: ({ children }) => (
-                  <p className="text-neutral-400 leading-relaxed my-3">{children}</p>
+                  <p className="my-3 leading-relaxed text-muted-foreground">{children}</p>
                 ),
                 ul: ({ children }) => (
-                  <ul className="text-neutral-400 my-4 space-y-2 text-[13px] sm:text-[14px] [&_ul]:my-1 [&_ul]:ml-4 [&_ul]:space-y-1">{children}</ul>
+                  <ul className="my-4 space-y-2 text-[13px] text-muted-foreground sm:text-sm [&_ul]:my-1 [&_ul]:ml-4 [&_ul]:space-y-1">{children}</ul>
                 ),
                 li: ({ children }) => (
-                  <li className="text-neutral-400 pl-4 relative before:content-['–'] before:absolute before:left-0 before:text-neutral-600 [&_p]:inline">
+                  <li className="relative pl-4 text-muted-foreground [&_p]:inline">
+                    <span className="absolute left-0 text-muted-foreground/50">&ndash;</span>
                     {children}
                   </li>
                 ),
                 blockquote: ({ children }) => (
-                  <blockquote className="border-l-2 border-neutral-800 pl-4 text-neutral-500 text-[13px] my-4 [&_p]:my-1">
+                  <blockquote className="my-4 border-l-2 border-border pl-4 text-[13px] text-muted-foreground [&_p]:my-1">
                     {children}
                   </blockquote>
                 ),
-                hr: () => <hr className="border-neutral-800 my-10" />,
+                hr: () => <hr className="my-10 border-border" />,
                 strong: ({ children }) => (
-                  <span className="text-neutral-100 font-medium">{children}</span>
+                  <span className="font-medium text-foreground">{children}</span>
                 ),
                 em: ({ children }) => (
-                  <em className="text-neutral-400 not-italic">{children}</em>
+                  <em className="not-italic text-muted-foreground">{children}</em>
                 ),
                 img: () => null,
                 code: ({ children, className, node, ...props }) => {
                   const isInline = !className;
                   if (isInline) {
                     return (
-                      <code className="text-neutral-200 bg-neutral-800/60 px-1.5 py-0.5 rounded font-[family-name:var(--font-geist-mono)] text-[12px] sm:text-[13px]" {...props}>
+                      <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground sm:text-[13px]" {...props}>
                         {children}
                       </code>
                     );
                   }
-                  const codeText = node?.children?.[0] && 'value' in node.children[0] ? node.children[0].value : '';
+                  const codeText = node?.children?.[0] && "value" in node.children[0] ? node.children[0].value : "";
                   return (
                     <CodeBlock className={className}>
                       {codeText}
@@ -182,9 +161,9 @@ const Page = async (): Promise<React.JSX.Element> => {
                 a: ({ href, children }) => (
                   <a
                     href={href}
-                    target={href?.startsWith('http') ? '_blank' : undefined}
-                    rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined}
-                    className="text-neutral-300 hover:text-white transition-colors"
+                    target={href?.startsWith("http") ? "_blank" : undefined}
+                    rel={href?.startsWith("http") ? "noopener noreferrer" : undefined}
+                    className="text-foreground underline decoration-border underline-offset-4 transition-none hover:decoration-foreground"
                   >
                     {children}
                   </a>
@@ -194,34 +173,25 @@ const Page = async (): Promise<React.JSX.Element> => {
               {readme}
             </Markdown>
           </article>
+        </main>
 
-          <footer className="mt-10 sm:mt-16 pt-6 sm:pt-8 border-t border-neutral-800">
-            <p className="text-sm text-neutral-500 flex items-center justify-between w-full">
-              <span className="inline-flex items-center gap-1.5">
-                Made by{' '}
-                <a
-                  href="https://x.com/aidenybai"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-neutral-300 hover:text-white hover:underline inline-flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 rounded-sm"
-                >
-                  Aiden Bai
-                </a>
-              </span>
-              <a
-                href="https://github.com/aidenybai/bippy"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-neutral-300 hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 rounded-sm"
-              >
-                GitHub
-              </a>
-            </p>
-          </footer>
-        </div>
-      </main>
+        <footer className="mt-auto flex w-full max-w-lg flex-col gap-6 border-t border-border px-6 pt-8 pb-12">
+          <div className="flex items-center gap-3.75 text-caption font-medium leading-5.75">
+            <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-none hover:text-foreground">
+              GitHub
+            </a>
+            <a href="https://www.npmjs.com/package/bippy" target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-none hover:text-foreground">
+              npm
+            </a>
+            <Link href="/llms.txt" className="text-muted-foreground transition-none hover:text-foreground">
+              llms.txt
+            </Link>
+          </div>
+        </footer>
+
+      </SiteProvider>
     </div>
   );
 };
 
-export default Page;
+export default Home;

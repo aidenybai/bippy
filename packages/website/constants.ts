@@ -1,0 +1,1 @@
+export const COPY_FEEDBACK_DURATION_MS = 2000;
