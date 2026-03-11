@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useSite } from "@/providers/site-provider";
 
 const BIPPY_COMMAND = "npm install bippy";
-const BIPPY_AGENT_PROMPT = "Install bippy (must be imported before React) and set up instrument() with secure() to hook into React DevTools internals. Use traverseRenderedFibers to detect re-renders, traverseFiber to walk the fiber tree, and traverseProps/traverseState/traverseContexts to inspect component data. See https://bippy.dev for the full API.";
+const BIPPY_AGENT_PROMPT = "npm install bippy, then fetch bippy.dev/llms.txt for more info";
 
 export const CommandDisplay = () => {
   const { activeTab, copied, setActiveTab, copyCommand } = useSite();
