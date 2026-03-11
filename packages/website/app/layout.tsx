@@ -47,7 +47,7 @@ const RootLayout = ({ children }: RootLayoutProps) => {
         )}
       </head>
       <body className={`${geistMono.variable} antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
           <TooltipProvider delay={0} closeDelay={0}>{children}</TooltipProvider>
           <Toaster />
         </ThemeProvider>

@@ -4,10 +4,8 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 import { COPY_FEEDBACK_DURATION_MS } from "@/constants";
 
 interface SiteContextValue {
-  activeGrayScale: string;
   activeTab: string;
   copied: boolean;
-  setActiveGrayScale: (scale: string) => void;
   setActiveTab: (tab: string) => void;
   copyCommand: () => void;
 }
@@ -30,7 +28,6 @@ interface SiteProviderProps {
 }
 
 export const SiteProvider = ({ children }: SiteProviderProps) => {
-  const [activeGrayScale, setActiveGrayScale] = useState("neutral");
   const [activeTab, setActiveTab] = useState("command");
   const [copied, setCopied] = useState(false);
 
@@ -49,10 +46,8 @@ export const SiteProvider = ({ children }: SiteProviderProps) => {
   return (
     <SiteContext.Provider
       value={{
-        activeGrayScale,
         activeTab,
         copied,
-        setActiveGrayScale,
         setActiveTab: handleTabChange,
         copyCommand,
       }}
