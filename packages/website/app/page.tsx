@@ -35,50 +35,14 @@ const CodeBlock = async ({ children, className }: CodeBlockProps) => {
 
 const processReadme = (content: string): string => {
   const lines = content.split("\n");
-  const result: string[] = [];
-  let isInWarningBlock = false;
-  let isInBadgesBlock = false;
-  let reachedMiscSection = false;
 
-  for (const line of lines) {
-    const isWarningStart = line.startsWith("> [!WARNING]") || line.startsWith("> ⚠️");
-    const isBlockquoteLine = line.startsWith(">");
-    const isTitleWithImage = line.startsWith("# <img");
-    const isBadgeLine = line.startsWith("[![");
-    const isEmpty = line.trim() === "";
+  const firstHeadingIndex = lines.findIndex((line) => line.startsWith("## "));
+  if (firstHeadingIndex === -1) return "";
 
-    if (line.startsWith("## misc")) {
-      reachedMiscSection = true;
-      continue;
-    }
-    if (reachedMiscSection) continue;
+  const miscHeadingIndex = lines.findIndex((line, index) => index >= firstHeadingIndex && line.startsWith("## misc"));
+  const endIndex = miscHeadingIndex === -1 ? lines.length : miscHeadingIndex;
 
-    if (isWarningStart) {
-      isInWarningBlock = true;
-      continue;
-    }
-
-    if (isInWarningBlock) {
-      if (!isBlockquoteLine) isInWarningBlock = false;
-      else continue;
-    }
-
-    if (isTitleWithImage) continue;
-
-    if (isBadgeLine) {
-      isInBadgesBlock = true;
-      continue;
-    }
-
-    if (isInBadgesBlock) {
-      if (!isBadgeLine && !isEmpty) isInBadgesBlock = false;
-      else continue;
-    }
-
-    result.push(line);
-  }
-
-  return result.join("\n");
+  return lines.slice(firstHeadingIndex, endIndex).join("\n");
 };
 
 const Home = async () => {
@@ -103,7 +67,7 @@ const Home = async () => {
                   const id = text.toLowerCase().replace(/\s+/g, "-").replace(/[^\w-]/g, "");
                   return (
                     <h2
-                      className="mt-12 mb-3 scroll-mt-8 border-t border-border pt-8 text-base font-medium text-foreground"
+                      className="mt-12 mb-3 scroll-mt-8 border-t border-border pt-8 text-base font-medium text-foreground first:mt-0 first:border-t-0 first:pt-0"
                       id={id}
                       {...props}
                     >

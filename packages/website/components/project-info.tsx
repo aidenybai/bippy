@@ -20,13 +20,13 @@ export const ProjectInfo = () => {
         />
         <h1 className="text-base font-medium tracking-tight">bippy</h1>
       </div>
-      <p className="text-sm leading-relaxed text-muted-foreground">
+      <p className="text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
         bippy is a toolkit to <span className="font-medium text-foreground">hack into React internals</span>
       </p>
-      <p className="text-sm leading-relaxed text-muted-foreground">
+      <p className="text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
         by default, you cannot access React internals. bippy bypasses this by &ldquo;pretending&rdquo; to be React DevTools, giving you access to the fiber tree and other internals.
       </p>
-      <ul className="list-disc space-y-0.5 pl-4 text-sm leading-relaxed text-muted-foreground">
+      <ul className="list-disc space-y-0.5 pl-4 text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
         {BIPPY_FEATURES.map((feature) => (
           <li key={feature}>{feature}</li>
         ))}
