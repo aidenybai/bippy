@@ -1,5 +1,3 @@
-"use client"
-
 import * as React from "react"
 import { CircleIcon } from "lucide-react"
 import { RadioGroup as RadioGroupPrimitive } from "radix-ui"

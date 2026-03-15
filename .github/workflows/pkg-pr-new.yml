@@ -9,6 +9,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - run: curl -fsSL https://vite.plus | bash
       - run: npm i -g --force corepack && corepack enable
       - uses: oven-sh/setup-bun@v2
       - uses: actions/setup-node@v4

@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 const BIPPY_FEATURES = [
   "Works outside of React \u2013 no React code modification needed",
   "Utility functions that work across modern React (v17\u201319)",
@@ -10,13 +8,12 @@ export const ProjectInfo = () => {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-1.5">
-        <Image
+        <img
           src="/bippy.png"
           alt="bippy"
           width={24}
           height={24}
           className="rounded"
-          unoptimized
         />
         <h1 className="text-base font-medium tracking-tight">bippy</h1>
       </div>

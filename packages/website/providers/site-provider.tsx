@@ -1,5 +1,3 @@
-"use client";
-
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { COPY_FEEDBACK_DURATION_MS } from "@/constants";
 

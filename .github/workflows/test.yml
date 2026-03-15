@@ -7,8 +7,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - run: npm i -g --force corepack && corepack enable
       - uses: actions/checkout@v4
+      - run: curl -fsSL https://vite.plus | bash
+      - run: npm i -g --force corepack && corepack enable
       - uses: pnpm/action-setup@v4
       - uses: oven-sh/setup-bun@v2
       - uses: actions/setup-node@v4

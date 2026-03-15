@@ -88,11 +88,11 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "NODE_ENV=production tsdown && bun scripts/append-banner.ts",
-    "dev": "NODE_ENV=development tsdown --watch",
+    "build": "NODE_ENV=production vp pack && bun scripts/append-banner.ts",
+    "dev": "NODE_ENV=development vp pack --watch",
     "publint": "publint",
-    "test": "vitest run",
-    "coverage": "vitest run --coverage",
+    "test": "vp test",
+    "coverage": "vp test --coverage",
     "prepublishOnly": "cp ../../README.md . && pnpm build"
   },
   "devDependencies": {
@@ -112,8 +112,7 @@
     "react-reconciler": "^0.31.0",
     "react-refresh": "^0.16.0",
     "terser": "^5.36.0",
-    "tsdown": "^0.12.3",
-    "vitest": "^2.1.8"
+    "vite-plus": "latest"
   },
   "peerDependencies": {
     "react": ">=17.0.1"

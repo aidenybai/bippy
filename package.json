@@ -6,9 +6,10 @@
     "build": "pnpm --filter=./packages/bippy run build",
     "test": "pnpm --filter=./packages/bippy run test",
     "publint": "pnpm --filter=./packages/bippy run publint",
-    "lint": "oxlint --fix",
+    "fmt": "vp fmt",
+    "lint": "vp lint",
+    "check": "vp check",
     "sherif": "sherif --fix",
-    "check": "pnpm lint",
     "changeset": "nr build && changeset",
     "version": "changeset version",
     "release": "changeset publish"
@@ -25,7 +26,7 @@
     "@antfu/ni": "^27.0.1",
     "@changesets/changelog-git": "^0.2.0",
     "@changesets/cli": "^2.27.11",
-    "oxlint": "^1.43.0",
-    "sherif": "^1.2.0"
+    "sherif": "^1.2.0",
+    "vite-plus": "latest"
   }
 }
