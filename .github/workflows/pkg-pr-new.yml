@@ -9,7 +9,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - run: curl -fsSL https://vite.plus | bash
       - run: npm i -g --force corepack && corepack enable
       - uses: pnpm/action-setup@v4
       - uses: oven-sh/setup-bun@v2
@@ -17,6 +16,7 @@ jobs:
         with:
           node-version: 20
           cache: "pnpm"
+      - run: curl -fsSL https://vite.plus | bash
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
