@@ -1,0 +1,57 @@
+name: E2E Tests
+
+on: [push, pull_request]
+
+jobs:
+  e2e-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: curl -fsSL https://vite.plus | bash
+      - run: npm i -g --force corepack && corepack enable
+      - uses: pnpm/action-setup@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm build
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: packages/e2e
+      - name: Run Playwright tests
+        run: npx playwright test
+        working-directory: packages/e2e
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: packages/e2e/playwright-report/
+          retention-days: 14
+
+  e2e-native:
+    runs-on: macos-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - run: curl -fsSL https://vite.plus | bash
+      - run: npm i -g --force corepack && corepack enable
+      - uses: pnpm/action-setup@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm build
+      - name: Install applesimutils
+        run: brew tap wix/brew && brew install applesimutils
+      - name: Prebuild and build iOS app
+        run: |
+          cd packages/e2e/fixtures/expo-app
+          npx expo prebuild --platform ios --clean
+          xcodebuild -workspace ios/bippye2eexpo.xcworkspace -scheme bippye2eexpo -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build -quiet
+      - name: Run Detox tests
+        run: npx detox test --configuration ios.sim.debug --headless
+        working-directory: packages/e2e

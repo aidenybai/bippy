@@ -1,0 +1,24 @@
+{
+  "name": "@bippy/e2e-expo",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "private": true,
+  "scripts": {
+    "start": "expo start",
+    "ios": "expo start --ios",
+    "android": "expo start --android",
+    "build:ios": "expo prebuild --platform ios && xcodebuild -workspace ios/bippye2eexpo.xcworkspace -scheme bippye2eexpo -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build",
+    "detox:build:ios": "detox build --configuration ios.sim.debug",
+    "detox:test:ios": "detox test --configuration ios.sim.debug"
+  },
+  "dependencies": {
+    "bippy": "workspace:*",
+    "expo": "~54.0.33",
+    "react": "19.1.0",
+    "react-native": "0.81.5"
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.0",
+    "typescript": "~5.9.2"
+  }
+}

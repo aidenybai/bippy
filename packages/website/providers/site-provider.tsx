@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
-import { COPY_FEEDBACK_DURATION_MS } from "@/constants";
 
 interface SiteContextValue {
   activeTab: string;
@@ -38,7 +37,7 @@ export const SiteProvider = ({ children }: SiteProviderProps) => {
     const text = activeTab === "command" ? BIPPY_COMMAND : BIPPY_AGENT_PROMPT;
     navigator.clipboard.writeText(text);
     setCopied(true);
-    setTimeout(() => setCopied(false), COPY_FEEDBACK_DURATION_MS);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (

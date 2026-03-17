@@ -1,0 +1,18 @@
+{
+  "name": "@bippy/e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:web": "npx playwright test",
+    "test:native": "detox test --configuration ios.sim.debug",
+    "test": "nr test:web"
+  },
+  "devDependencies": {
+    "@playwright/test": "latest",
+    "@types/node": "^20",
+    "detox": "latest",
+    "jest": "latest",
+    "ts-jest": "latest",
+    "typescript": "^5"
+  }
+}

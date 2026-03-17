@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "bippy-e2e-expo",
+    "slug": "bippy-e2e-expo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "dev.bippy.e2e-expo"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      }
+    }
+  }
+}

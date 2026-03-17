@@ -1,24 +1,17 @@
 import { readFileSync } from 'node:fs';
-import { defineConfig, type PackOptions } from 'vite-plus';
+import { defineConfig } from 'vite-plus';
 
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
 
-const sharedPackOptions: PackOptions = {
+const sharedPackOptions = {
   clean: false,
   hash: false,
   env: {
     NODE_ENV: process.env.NODE_ENV ?? 'development',
   },
-  inputOptions: (options) => ({
-    ...options,
-    transform: {
-      ...options.transform,
-      define: {
-        ...(options.transform as Record<string, any>)?.define,
-        'process.env.VERSION': JSON.stringify(pkg.version),
-      },
-    },
-  }),
+  define: {
+    'process.env.VERSION': JSON.stringify(pkg.version),
+  },
   deps: {
     neverBundle: ['react', 'react-dom', 'react-reconciler'],
     alwaysBundle: ['error-stack-parser-es', '@jridgewell/sourcemap-codec'],

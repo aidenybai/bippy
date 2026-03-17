@@ -1,14 +1,13 @@
-name: Publish Any Commit
+name: CI
+
 on: [push, pull_request]
 
 jobs:
-  build:
+  ci:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - run: curl -fsSL https://vite.plus | bash
       - run: npm i -g --force corepack && corepack enable
       - uses: pnpm/action-setup@v4
@@ -17,11 +16,7 @@ jobs:
         with:
           node-version: 20
           cache: 'pnpm'
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Build
-        run: pnpm build
-
-      - name: Publish
-        run: pnpx pkg-pr-new publish --compact ./packages/bippy
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm build
+      - run: pnpm check

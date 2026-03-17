@@ -86,7 +86,8 @@ const describeNativeComponentFrame = (
   }
 
   const previousPrepareStackTrace = Error.prepareStackTrace;
-  Error.prepareStackTrace = undefined;
+  // HACK: V8 API allows undefined but bun-types declares it as non-optional
+  (Error as { prepareStackTrace?: typeof Error.prepareStackTrace }).prepareStackTrace = undefined;
   reEntry = true;
 
   const previousDispatcher = getCurrentDispatcher();
@@ -420,7 +421,8 @@ export const getFallbackOwnerStack = (thisFiber: Fiber): string => {
  */
 export const formatOwnerStack = (stack: string): string => {
   const prevPrepareStackTrace = Error.prepareStackTrace;
-  Error.prepareStackTrace = undefined;
+  // HACK: V8 API allows undefined but bun-types declares it as non-optional
+  (Error as { prepareStackTrace?: typeof Error.prepareStackTrace }).prepareStackTrace = undefined;
   let formattedStack = stack;
   if (!formattedStack) {
     return '';

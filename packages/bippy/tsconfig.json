@@ -6,7 +6,11 @@
     "strictNullChecks": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
-    "lib": ["esnext", "dom"]
+    "skipLibCheck": true,
+    "lib": ["esnext", "dom"],
+    "paths": {
+      "vitest": ["../../node_modules/@voidzero-dev/vite-plus-test/dist/index.d.ts"]
+    }
   },
   "include": ["src", "vite.config.ts"],
   "exclude": ["**/node_modules/**", "**/dist/**"]

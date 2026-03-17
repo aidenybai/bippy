@@ -1,7 +1,7 @@
 {
   "name": "@bippy/expo-playground",
   "version": "1.0.0",
-  "main": "index.ts",
+  "main": "src/index.ts",
   "scripts": {
     "dev": "expo start --dev-client",
     "start": "expo start",
@@ -10,13 +10,15 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@bippy/next-playground": "workspace:*",
     "bippy": "workspace:*",
+    "clsx": "^2.1.1",
     "expo": "~54.0.33",
-    "expo-status-bar": "~3.0.9",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
-    "react-native-web": "^0.21.2"
+    "react-native-web": "^0.21.2",
+    "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
