@@ -5,8 +5,6 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      NODE_OPTIONS: "--experimental-strip-types --disable-warning=ExperimentalWarning"
 
     steps:
       - uses: actions/checkout@v4
@@ -19,4 +17,7 @@ jobs:
           cache: "pnpm"
       - run: curl -fsSL https://vite.plus | bash
       - run: pnpm install --no-frozen-lockfile
+      - run: pnpm lint
+        env:
+          NODE_OPTIONS: "--experimental-strip-types --disable-warning=ExperimentalWarning"
       - run: pnpm test
