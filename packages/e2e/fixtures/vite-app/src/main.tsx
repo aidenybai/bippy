@@ -1,11 +1,11 @@
-import 'bippy/install-hook-only';
+import "bippy/install-hook-only";
 
-import * as bippy from 'bippy';
-import * as bippySource from 'bippy/source';
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
+import * as bippy from "bippy";
+import * as bippySource from "bippy/source";
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
 
-import { TestParent } from './test-app';
+import { TestParent } from "./test-app";
 
 declare global {
   interface Window {
@@ -15,7 +15,7 @@ declare global {
 
 window.__BIPPY__ = { ...bippy, ...bippySource };
 
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <TestParent />
   </StrictMode>,

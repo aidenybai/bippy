@@ -17,13 +17,13 @@ by default, you cannot access react internals. bippy bypasses this by "pretendin
 - no prior react source code knowledge required
 
 ```jsx
-import { onCommitFiberRoot, traverseFiber } from 'bippy'; // must be imported BEFORE react
+import { onCommitFiberRoot, traverseFiber } from "bippy"; // must be imported BEFORE react
 
 instrument({
   onCommitFiberRoot: (root) => {
     traverseFiber(root.current, (fiber) => {
       // prints every fiber in the current React tree
-      console.log('fiber:', fiber);
+      console.log("fiber:", fiber);
     });
   },
 });
@@ -94,11 +94,7 @@ interface __REACT_DEVTOOLS_GLOBAL_HOOK__ {
 
   // called when react has rendered everything for an update and the fiber tree is fully built and ready to
   // apply changes to the host tree (e.g. DOM mutations)
-  onCommitFiberRoot: (
-    rendererID: RendererID,
-    root: FiberRoot,
-    commitPriority?: number,
-  ) => void;
+  onCommitFiberRoot: (rendererID: RendererID, root: FiberRoot, commitPriority?: number) => void;
 
   // called when effects run
   onPostCommitFiberRoot: (rendererID: RendererID, root: FiberRoot) => void;
@@ -139,7 +135,7 @@ in next.js 15.3+, use the [`instrumentation-client.js`](https://nextjs.org/docs/
 
 ```typescript
 // instrumentation-client.ts
-import 'bippy';
+import "bippy";
 ```
 
 this file executes before react hydration, making it the ideal place to initialize bippy.
@@ -150,9 +146,9 @@ in vite, import bippy at the very top of your main entry point (typically `src/m
 
 ```typescript
 // src/main.tsx
-import 'bippy';
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
+import "bippy";
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
 
 // ... rest of your code
 ```
@@ -162,9 +158,9 @@ the import order is critical: bippy must be imported before any react packages.
 > **note for library maintainers**: if you're building a library and want to define your own utility functions while minimizing bundle size, you can use `bippy/install-hook-only` (~90 bytes) instead of the main `bippy` export. this only installs the react devtools hook without importing any utility functions, allowing you to import only what you need from `bippy/core` or define your own fiber utilities. that said, the full `bippy` package is only ~4kb gzipped, so bundle size is rarely a concern.
 
 > ```typescript
-> import 'bippy/install-hook-only'; // only installs the hook
-> import { getRDTHook, traverseFiber } from 'bippy/core'; // import only what you need
-> import * as React from 'react'; // import react AFTER the hook is installed
+> import "bippy/install-hook-only"; // only installs the hook
+> import { getRDTHook, traverseFiber } from "bippy/core"; // import only what you need
+> import * as React from "react"; // import react AFTER the hook is installed
 >
 > const hook = getRDTHook();
 > // define your own utilities or use only specific ones
@@ -179,19 +175,19 @@ patches `window.__REACT_DEVTOOLS_GLOBAL_HOOK__` with your handlers. must be impo
 > use with the `secure` function to prevent uncaught errors from crashing your app.
 
 ```typescript
-import { instrument, secure } from 'bippy'; // must be imported BEFORE react
-import * as React from 'react';
+import { instrument, secure } from "bippy"; // must be imported BEFORE react
+import * as React from "react";
 
 instrument(
   secure({
     onCommitFiberRoot(rendererID, root) {
-      console.log('root ready to commit', root);
+      console.log("root ready to commit", root);
     },
     onPostCommitFiberRoot(rendererID, root) {
-      console.log('root with effects committed', root);
+      console.log("root with effects committed", root);
     },
     onCommitFiberUnmount(rendererID, fiber) {
-      console.log('fiber unmounted', fiber);
+      console.log("fiber unmounted", fiber);
     },
   }),
 );
@@ -202,7 +198,7 @@ instrument(
 returns the `window.__REACT_DEVTOOLS_GLOBAL_HOOK__` object. great for advanced use cases, such as accessing or modifying the `renderers` property.
 
 ```typescript
-import { getRDTHook } from 'bippy';
+import { getRDTHook } from "bippy";
 
 const hook = getRDTHook();
 console.log(hook);
@@ -213,14 +209,14 @@ console.log(hook);
 not every fiber in the fiber tree renders. `traverseRenderedFibers` allows you to traverse the fiber tree and determine which fibers have actually rendered.
 
 ```typescript
-import { instrument, secure, traverseRenderedFibers } from 'bippy'; // must be imported BEFORE react
-import * as React from 'react';
+import { instrument, secure, traverseRenderedFibers } from "bippy"; // must be imported BEFORE react
+import * as React from "react";
 
 instrument(
   secure({
     onCommitFiberRoot(rendererID, root) {
       traverseRenderedFibers(root, (fiber) => {
-        console.log('fiber rendered', fiber);
+        console.log("fiber rendered", fiber);
       });
     },
   }),
@@ -232,8 +228,8 @@ instrument(
 calls a callback on every fiber in the fiber tree.
 
 ```typescript
-import { instrument, secure, traverseFiber } from 'bippy'; // must be imported BEFORE react
-import * as React from 'react';
+import { instrument, secure, traverseFiber } from "bippy"; // must be imported BEFORE react
+import * as React from "react";
 
 instrument(
   secure({
@@ -251,7 +247,7 @@ instrument(
 traverses the props of a fiber.
 
 ```typescript
-import { traverseProps } from 'bippy';
+import { traverseProps } from "bippy";
 
 // ...
 
@@ -265,7 +261,7 @@ traverseProps(fiber, (propName, next, prev) => {
 traverses the state (`useState`, `useReducer`, etc.) and effects that set state of a fiber.
 
 ```typescript
-import { traverseState } from 'bippy';
+import { traverseState } from "bippy";
 
 // ...
 
@@ -279,7 +275,7 @@ traverseState(fiber, (next, prev) => {
 traverses the contexts (`useContext`) of a fiber.
 
 ```typescript
-import { traverseContexts } from 'bippy';
+import { traverseContexts } from "bippy";
 
 // ...
 
@@ -293,12 +289,12 @@ traverseContexts(fiber, (next, prev) => {
 set and get a persistent identity for a fiber. by default, fibers are anonymous and have no identity.
 
 ```typescript
-import { setFiberId, getFiberId } from 'bippy';
+import { setFiberId, getFiberId } from "bippy";
 
 // ...
 
 setFiberId(fiber);
-console.log('unique id for fiber:', getFiberId(fiber));
+console.log("unique id for fiber:", getFiberId(fiber));
 ```
 
 ### isHostFiber
@@ -306,10 +302,10 @@ console.log('unique id for fiber:', getFiberId(fiber));
 returns `true` if the fiber is a host fiber (e.g., a DOM node in react-dom).
 
 ```typescript
-import { isHostFiber } from 'bippy';
+import { isHostFiber } from "bippy";
 
 if (isHostFiber(fiber)) {
-  console.log('fiber is a host fiber');
+  console.log("fiber is a host fiber");
 }
 ```
 
@@ -318,10 +314,10 @@ if (isHostFiber(fiber)) {
 returns `true` if the fiber is a composite fiber. composite fibers represent class components, function components, memoized components, and so on (anything that can actually render output).
 
 ```typescript
-import { isCompositeFiber } from 'bippy';
+import { isCompositeFiber } from "bippy";
 
 if (isCompositeFiber(fiber)) {
-  console.log('fiber is a composite fiber');
+  console.log("fiber is a composite fiber");
 }
 ```
 
@@ -330,7 +326,7 @@ if (isCompositeFiber(fiber)) {
 returns the display name of the fiber's component, falling back to the component's function or class name if available.
 
 ```typescript
-import { getDisplayName } from 'bippy';
+import { getDisplayName } from "bippy";
 
 console.log(getDisplayName(fiber));
 ```
@@ -340,8 +336,8 @@ console.log(getDisplayName(fiber));
 returns the underlying type (the component definition) for a given fiber. for example, this could be a function component or class component.
 
 ```jsx
-import { getType } from 'bippy';
-import { memo } from 'react';
+import { getType } from "bippy";
+import { memo } from "react";
 
 const RealComponent = () => {
   return <div>hello</div>;
@@ -358,7 +354,7 @@ console.log(getType(fiberForMemoizedComponent) === RealComponent);
 getNearestHostFiber returns the closest host fiber above or below a given fiber. getNearestHostFibers(fiber) returns all host fibers associated with the provided fiber and its subtree.
 
 ```jsx
-import { getNearestHostFiber, getNearestHostFibers } from 'bippy';
+import { getNearestHostFiber, getNearestHostFibers } from "bippy";
 
 // ...
 
@@ -400,7 +396,7 @@ returns an array representing the stack of fibers from the current fiber up to t
 returns an array of all host fibers that have committed and rendered in the provided fiber's subtree.
 
 ```typescript
-import { getMutatedHostFibers } from 'bippy';
+import { getMutatedHostFibers } from "bippy";
 
 console.log(getMutatedHostFibers(fiber));
 ```
@@ -410,7 +406,7 @@ console.log(getMutatedHostFibers(fiber));
 returns `true` if the given object is a valid React Fiber (i.e., has a tag, stateNode, return, child, sibling, etc.).
 
 ```typescript
-import { isValidFiber } from 'bippy';
+import { isValidFiber } from "bippy";
 
 console.log(isValidFiber(fiber));
 ```
@@ -420,9 +416,9 @@ console.log(isValidFiber(fiber));
 returns the fiber associated with a given host instance (e.g., a DOM element).
 
 ```typescript
-import { getFiberFromHostInstance } from 'bippy';
+import { getFiberFromHostInstance } from "bippy";
 
-const fiber = getFiberFromHostInstance(document.querySelector('div'));
+const fiber = getFiberFromHostInstance(document.querySelector("div"));
 console.log(fiber);
 ```
 
@@ -431,11 +427,9 @@ console.log(fiber);
 returns the latest fiber (since it may be double-buffered). usually use this in combination with `getFiberFromHostInstance`.
 
 ```typescript
-import { getLatestFiber } from 'bippy';
+import { getLatestFiber } from "bippy";
 
-const latestFiber = getLatestFiber(
-  getFiberFromHostInstance(document.querySelector('div')),
-);
+const latestFiber = getLatestFiber(getFiberFromHostInstance(document.querySelector("div")));
 console.log(latestFiber);
 ```
 
@@ -444,9 +438,9 @@ console.log(latestFiber);
 returns the source code location of a fiber.
 
 ```typescript
-import { getFiberSource } from 'bippy/source';
+import { getFiberSource } from "bippy/source";
 
-const fiber = getFiberFromHostInstance(document.querySelector('div'));
+const fiber = getFiberFromHostInstance(document.querySelector("div"));
 
 console.log(await getFiberSource(fiber));
 ```
@@ -466,11 +460,11 @@ console.log(await getFiberSource(fiber));
 overrides component props at runtime by modifying the fiber's props.
 
 ```typescript
-import { overrideProps } from 'bippy';
+import { overrideProps } from "bippy";
 
 // override props on a fiber
 overrideProps(fiber, {
-  title: 'new title',
+  title: "new title",
   config: {
     enabled: true,
     count: 42,
@@ -485,15 +479,15 @@ the function accepts a fiber and a partial object containing the props to overri
 overrides hook state (`useState`, `useReducer`, etc.) at runtime by hook id.
 
 ```typescript
-import { overrideHookState } from 'bippy';
+import { overrideHookState } from "bippy";
 
 // override the first hook (id: 0) with a new value
-overrideHookState(fiber, 0, 'new state value');
+overrideHookState(fiber, 0, "new state value");
 
 // override nested state object
 overrideHookState(fiber, 1, {
   user: {
-    name: 'john',
+    name: "john",
     age: 30,
   },
 });
@@ -506,19 +500,19 @@ the hook id parameter corresponds to the order of hooks in the component (0-inde
 overrides react context values at runtime by finding the appropriate context provider.
 
 ```typescript
-import { overrideContext } from 'bippy';
+import { overrideContext } from "bippy";
 
 // override context value
 overrideContext(fiber, MyContext, {
-  theme: 'dark',
+  theme: "dark",
   user: {
     id: 123,
-    name: 'jane',
+    name: "jane",
   },
 });
 
 // override with primitive value
-overrideContext(fiber, ThemeContext, 'dark');
+overrideContext(fiber, ThemeContext, "dark");
 ```
 
 the function traverses up the fiber tree to find the context provider matching the provided context type and overrides its value.
@@ -528,10 +522,10 @@ the function traverses up the fiber tree to find the context provider matching t
 gets the source code location of a composite fiber.
 
 ```typescript
-import { getSource } from 'bippy/source';
+import { getSource } from "bippy/source";
 
 // random fiber on the DOM
-const hostFiber = getFiberFromHostInstance(document.querySelector('div'));
+const hostFiber = getFiberFromHostInstance(document.querySelector("div"));
 
 // get nearest composite fiber up the tree
 const compositeFiber = traverseFiber(
@@ -565,25 +559,20 @@ const source = await getSource(compositeFiber);
 here's a mini toy version of [`react-scan`](https://github.com/aidenybai/react-scan) that highlights renders in your app.
 
 ```javascript
-import {
-  instrument,
-  secure,
-  getNearestHostFiber,
-  traverseRenderedFibers,
-} from 'bippy'; // must be imported BEFORE react
+import { instrument, secure, getNearestHostFiber, traverseRenderedFibers } from "bippy"; // must be imported BEFORE react
 
 const highlightFiber = (fiber) => {
   if (!(fiber.stateNode instanceof HTMLElement)) return;
   // fiber.stateNode is a DOM element
   const rect = fiber.stateNode.getBoundingClientRect();
-  const highlight = document.createElement('div');
-  highlight.style.border = '1px solid red';
-  highlight.style.position = 'fixed';
+  const highlight = document.createElement("div");
+  highlight.style.border = "1px solid red";
+  highlight.style.position = "fixed";
   highlight.style.top = `${rect.top}px`;
   highlight.style.left = `${rect.left}px`;
   highlight.style.width = `${rect.width}px`;
   highlight.style.height = `${rect.height}px`;
-  highlight.style.zIndex = '999999999';
+  highlight.style.zIndex = "999999999";
   document.documentElement.appendChild(highlight);
   setTimeout(() => {
     document.documentElement.removeChild(highlight);

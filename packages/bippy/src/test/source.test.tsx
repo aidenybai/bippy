@@ -1,19 +1,19 @@
-import '../index.js'; // KEEP THIS LINE ON TOP
+import "../index.js"; // KEEP THIS LINE ON TOP
 
-import { render } from '@testing-library/react';
-import React, { useState } from 'react';
-import { expect, it } from 'vitest';
-import type { Fiber } from '../types.js';
-import { instrument } from '../index.js';
-import { getSource, getOwnerStack } from '../source/index.js';
-import { normalizeFileName } from '../source/get-source.js';
-import { extractLocation } from '../source/parse-stack.js';
+import { render } from "@testing-library/react";
+import React, { useState } from "react";
+import { expect, it } from "vitest";
+import type { Fiber } from "../types.js";
+import { instrument } from "../index.js";
+import { getSource, getOwnerStack } from "../source/index.js";
+import { normalizeFileName } from "../source/get-source.js";
+import { extractLocation } from "../source/parse-stack.js";
 
 const mockFetch = (): Promise<Response> => {
   return Promise.resolve(
     new Response(JSON.stringify({}), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     }),
   );
 };
@@ -35,7 +35,7 @@ const ExampleWithChild = ({ children }: { children: React.ReactNode }) => {
   return <div>{children}</div>;
 };
 
-it('getOwnerStack should return stack for simple component', async () => {
+it("getOwnerStack should return stack for simple component", async () => {
   let capturedFiber: Fiber | null = null;
   instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {
@@ -47,11 +47,11 @@ it('getOwnerStack should return stack for simple component', async () => {
   const result = await getOwnerStack(capturedFiber as unknown as Fiber);
 
   expect(result).toHaveLength(1);
-  expect(result[0].functionName).toBe('SimpleComponent');
-  expect(result[0].source).toBe('    in SimpleComponent');
+  expect(result[0].functionName).toBe("SimpleComponent");
+  expect(result[0].source).toBe("    in SimpleComponent");
 });
 
-it('getOwnerStack should return stack for component with props', async () => {
+it("getOwnerStack should return stack for component with props", async () => {
   let capturedFiber: Fiber | null = null;
   instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {
@@ -63,13 +63,13 @@ it('getOwnerStack should return stack for component with props', async () => {
   const result = await getOwnerStack(capturedFiber as unknown as Fiber);
 
   expect(result).toHaveLength(1);
-  expect(result[0].functionName).toBe('ComponentWithProps');
-  expect(result[0].fileName).toContain('source.test.tsx');
-  expect(result[0].lineNumber).toBe(28);
+  expect(result[0].functionName).toBe("ComponentWithProps");
+  expect(result[0].fileName).toContain("source.test.tsx");
+  expect(result[0].lineNumber).toBe(34);
   expect(result[0].columnNumber).toBe(31);
 });
 
-it('getOwnerStack should return stack for component with hooks', async () => {
+it("getOwnerStack should return stack for component with hooks", async () => {
   let capturedFiber: Fiber | null = null;
   instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {
@@ -81,13 +81,13 @@ it('getOwnerStack should return stack for component with hooks', async () => {
   const result = await getOwnerStack(capturedFiber as unknown as Fiber);
 
   expect(result).toHaveLength(1);
-  expect(result[0].functionName).toBe('ComponentWithHooks');
-  expect(result[0].fileName).toContain('source.test.tsx');
-  expect(result[0].lineNumber).toBe(32);
-  expect(result[0].columnNumber).toBe(41);
+  expect(result[0].functionName).toBe("ComponentWithHooks");
+  expect(result[0].fileName).toContain("source.test.tsx");
+  expect(result[0].lineNumber).toBe(45);
+  expect(result[0].columnNumber).toBe(52);
 });
 
-it('getOwnerStack should return stack for nested component with props', async () => {
+it("getOwnerStack should return stack for nested component with props", async () => {
   let capturedFiber: Fiber | null = null;
   instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {
@@ -103,18 +103,18 @@ it('getOwnerStack should return stack for nested component with props', async ()
   const result = await getOwnerStack(capturedFiber as unknown as Fiber);
 
   expect(result).toHaveLength(3);
-  expect(result[0].functionName).toBe('ComponentWithProps');
-  expect(result[0].fileName).toContain('source.test.tsx');
-  expect(result[0].lineNumber).toBe(28);
+  expect(result[0].functionName).toBe("ComponentWithProps");
+  expect(result[0].fileName).toContain("source.test.tsx");
+  expect(result[0].lineNumber).toBe(34);
   expect(result[0].columnNumber).toBe(31);
-  expect(result[1].functionName).toBe('div');
-  expect(result[2].functionName).toBe('ExampleWithChild');
-  expect(result[2].fileName).toContain('source.test.tsx');
-  expect(result[2].lineNumber).toBe(35);
+  expect(result[1].functionName).toBe("div");
+  expect(result[2].functionName).toBe("ExampleWithChild");
+  expect(result[2].fileName).toContain("source.test.tsx");
+  expect(result[2].lineNumber).toBe(55);
   expect(result[2].columnNumber).toBe(29);
 });
 
-it('getSource should return null for simple component without props/hooks', async () => {
+it("getSource should return null for simple component without props/hooks", async () => {
   let capturedFiber: Fiber | null = null;
   instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {
@@ -123,16 +123,12 @@ it('getSource should return null for simple component without props/hooks', asyn
   });
   render(<SimpleComponent />);
 
-  const result = await getSource(
-    capturedFiber as unknown as Fiber,
-    false,
-    mockFetch,
-  );
+  const result = await getSource(capturedFiber as unknown as Fiber, false, mockFetch);
 
   expect(result).toBeNull();
 });
 
-it('getSource should work for component with props', async () => {
+it("getSource should work for component with props", async () => {
   let capturedFiber: Fiber | null = null;
   instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {
@@ -141,17 +137,13 @@ it('getSource should work for component with props', async () => {
   });
   render(<ComponentWithProps message="test" />);
 
-  const result = await getSource(
-    capturedFiber as unknown as Fiber,
-    false,
-    mockFetch,
-  );
+  const result = await getSource(capturedFiber as unknown as Fiber, false, mockFetch);
 
   expect(result?.fileName).toBeTruthy();
-  expect(typeof result?.fileName).toBe('string');
+  expect(typeof result?.fileName).toBe("string");
 });
 
-it('getSource should work for component with hooks', async () => {
+it("getSource should work for component with hooks", async () => {
   let capturedFiber: Fiber | null = null;
   instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {
@@ -160,17 +152,13 @@ it('getSource should work for component with hooks', async () => {
   });
   render(<ComponentWithHooks />);
 
-  const result = await getSource(
-    capturedFiber as unknown as Fiber,
-    false,
-    mockFetch,
-  );
+  const result = await getSource(capturedFiber as unknown as Fiber, false, mockFetch);
 
   expect(result?.fileName).toBeTruthy();
-  expect(typeof result?.fileName).toBe('string');
+  expect(typeof result?.fileName).toBe("string");
 });
 
-it('getSource should work for nested component with props', async () => {
+it("getSource should work for nested component with props", async () => {
   let capturedFiber: Fiber | null = null;
   instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {
@@ -183,145 +171,135 @@ it('getSource should work for nested component with props', async () => {
     </ExampleWithChild>,
   );
 
-  const result = await getSource(
-    capturedFiber as unknown as Fiber,
-    false,
-    mockFetch,
-  );
+  const result = await getSource(capturedFiber as unknown as Fiber, false, mockFetch);
 
   expect(result?.fileName).toBeTruthy();
-  expect(typeof result?.fileName).toBe('string');
+  expect(typeof result?.fileName).toBe("string");
 });
 
-it('normalizeFileName should strip webpack-internal:// prefix', () => {
+it("normalizeFileName should strip webpack-internal:// prefix", () => {
+  const input = "webpack-internal:///app-pages-browser/./src/components/providers.tsx";
+  const result = normalizeFileName(input);
+  expect(result).toBe("./src/components/providers.tsx");
+});
+
+it("normalizeFileName should strip webpack-internal:// with different app-pages-browser path", () => {
   const input =
-    'webpack-internal:///app-pages-browser/./src/components/providers.tsx';
+    "webpack-internal:///app-pages-browser/./src/components/sections/hero/project-showcase.tsx";
   const result = normalizeFileName(input);
-  expect(result).toBe('./src/components/providers.tsx');
+  expect(result).toBe("./src/components/sections/hero/project-showcase.tsx");
 });
 
-it('normalizeFileName should strip webpack-internal:// with different app-pages-browser path', () => {
-  const input =
-    'webpack-internal:///app-pages-browser/./src/components/sections/hero/project-showcase.tsx';
+it("normalizeFileName should strip webpack:// prefix", () => {
+  const input = "webpack://./src/app.tsx";
   const result = normalizeFileName(input);
-  expect(result).toBe('./src/components/sections/hero/project-showcase.tsx');
+  expect(result).toBe("./src/app.tsx");
 });
 
-it('normalizeFileName should strip webpack:// prefix', () => {
-  const input = 'webpack://./src/app.tsx';
+it("normalizeFileName should strip /app-pages-browser/ prefix", () => {
+  const input = "/app-pages-browser/./src/components/test.tsx";
   const result = normalizeFileName(input);
-  expect(result).toBe('./src/app.tsx');
+  expect(result).toBe("./src/components/test.tsx");
 });
 
-it('normalizeFileName should strip /app-pages-browser/ prefix', () => {
-  const input = '/app-pages-browser/./src/components/test.tsx';
+it("normalizeFileName should strip /(app-pages-browser)/ prefix (Next.js App Router)", () => {
+  const input = "/(app-pages-browser)/./src/components/test.tsx";
   const result = normalizeFileName(input);
-  expect(result).toBe('./src/components/test.tsx');
+  expect(result).toBe("./src/components/test.tsx");
 });
 
-it('normalizeFileName should strip /(app-pages-browser)/ prefix (Next.js App Router)', () => {
-  const input = '/(app-pages-browser)/./src/components/test.tsx';
+it("normalizeFileName should strip webpack-internal:// with (app-pages-browser) parens", () => {
+  const input = "webpack-internal:///(app-pages-browser)/./src/app/components/Button.tsx";
   const result = normalizeFileName(input);
-  expect(result).toBe('./src/components/test.tsx');
+  expect(result).toBe("./src/app/components/Button.tsx");
 });
 
-it('normalizeFileName should strip webpack-internal:// with (app-pages-browser) parens', () => {
-  const input =
-    'webpack-internal:///(app-pages-browser)/./src/app/components/Button.tsx';
+it("normalizeFileName should strip http:// host prefix (Vite dev server)", () => {
+  const input = "http://localhost:5173/src/features/my-component.tsx";
   const result = normalizeFileName(input);
-  expect(result).toBe('./src/app/components/Button.tsx');
+  expect(result).toBe("/src/features/my-component.tsx");
 });
 
-it('normalizeFileName should strip http:// host prefix (Vite dev server)', () => {
-  const input = 'http://localhost:5173/src/features/my-component.tsx';
+it("normalizeFileName should strip single-segment base path", () => {
+  const input = "http://localhost:5173/dashboard/src/routes/orders/button.tsx";
   const result = normalizeFileName(input);
-  expect(result).toBe('/src/features/my-component.tsx');
+  expect(result).toBe("/src/routes/orders/button.tsx");
 });
 
-it('normalizeFileName should strip single-segment base path', () => {
-  const input =
-    'http://localhost:5173/dashboard/src/routes/orders/button.tsx';
+it("normalizeFileName should keep multi-segment base path", () => {
+  const input = "http://localhost:5173/dashboard/admin/src/routes/orders/button.tsx";
   const result = normalizeFileName(input);
-  expect(result).toBe('/src/routes/orders/button.tsx');
+  expect(result).toBe("/dashboard/admin/src/routes/orders/button.tsx");
 });
 
-it('normalizeFileName should keep multi-segment base path', () => {
-  const input =
-    'http://localhost:5173/dashboard/admin/src/routes/orders/button.tsx';
+it("normalizeFileName should keep same path when root has no base path", () => {
+  const input = "http://localhost:5173/src/app.tsx";
   const result = normalizeFileName(input);
-  expect(result).toBe('/dashboard/admin/src/routes/orders/button.tsx');
+  expect(result).toBe("/src/app.tsx");
 });
 
-it('normalizeFileName should keep same path when root has no base path', () => {
-  const input = 'http://localhost:5173/src/app.tsx';
+it("normalizeFileName should keep same path when /src is the end", () => {
+  const input = "http://localhost:5173/src";
   const result = normalizeFileName(input);
-  expect(result).toBe('/src/app.tsx');
+  expect(result).toBe("/src");
 });
 
-it('normalizeFileName should keep same path when /src is the end', () => {
-  const input = 'http://localhost:5173/src';
+it("normalizeFileName should keep single-segment base path for non-source file", () => {
+  const input = "http://localhost:5173/dashboard/assets/main.css";
   const result = normalizeFileName(input);
-  expect(result).toBe('/src');
+  expect(result).toBe("/dashboard/assets/main.css");
 });
 
-it('normalizeFileName should keep single-segment base path for non-source file', () => {
-  const input = 'http://localhost:5173/dashboard/assets/main.css';
+it("normalizeFileName should strip single-segment base path for long segment", () => {
+  const input = "http://localhost:5173/feature/src/page.tsx";
   const result = normalizeFileName(input);
-  expect(result).toBe('/dashboard/assets/main.css');
+  expect(result).toBe("/src/page.tsx");
 });
 
-it('normalizeFileName should strip single-segment base path for long segment', () => {
-  const input = 'http://localhost:5173/feature/src/page.tsx';
+it("normalizeFileName should keep single-segment base path for /@fs/", () => {
+  const input = "https://example.local:5173/@fs/Users/me/proj/src/app.tsx";
   const result = normalizeFileName(input);
-  expect(result).toBe('/src/page.tsx');
+  expect(result).toBe("/@fs/Users/me/proj/src/app.tsx");
 });
 
-it('normalizeFileName should keep single-segment base path for /@fs/', () => {
-  const input = 'https://example.local:5173/@fs/Users/me/proj/src/app.tsx';
+it("normalizeFileName should strip http:// host prefix and query parameters", () => {
+  const input = "http://127.0.0.1:5173/src/main.tsx?t=123";
   const result = normalizeFileName(input);
-  expect(result).toBe('/@fs/Users/me/proj/src/app.tsx');
+  expect(result).toBe("/src/main.tsx");
 });
 
-it('normalizeFileName should strip http:// host prefix and query parameters', () => {
-  const input = 'http://127.0.0.1:5173/src/main.tsx?t=123';
-  const result = normalizeFileName(input);
-  expect(result).toBe('/src/main.tsx');
+it("extractLocation should strip outer parentheses from Chrome stack trace format", () => {
+  const result = extractLocation("(file.js:10:5)");
+  expect(result).toEqual(["file.js", "10", "5"]);
 });
 
-it('extractLocation should strip outer parentheses from Chrome stack trace format', () => {
-  const result = extractLocation('(file.js:10:5)');
-  expect(result).toEqual(['file.js', '10', '5']);
-});
-
-it('extractLocation should preserve parentheses in Next.js route group paths', () => {
+it("extractLocation should preserve parentheses in Next.js route group paths", () => {
   const result = extractLocation(
-    '/_next/static/chunks/09f9e_(docs)_some-page__components.js:42:15',
+    "/_next/static/chunks/09f9e_(docs)_some-page__components.js:42:15",
   );
   expect(result).toEqual([
-    '/_next/static/chunks/09f9e_(docs)_some-page__components.js',
-    '42',
-    '15',
+    "/_next/static/chunks/09f9e_(docs)_some-page__components.js",
+    "42",
+    "15",
   ]);
 });
 
-it('extractLocation should handle Chrome stack trace with route group path', () => {
-  const result = extractLocation(
-    '(/_next/static/chunks/(docs)/page.js:10:5)',
-  );
-  expect(result).toEqual(['/_next/static/chunks/(docs)/page.js', '10', '5']);
+it("extractLocation should handle Chrome stack trace with route group path", () => {
+  const result = extractLocation("(/_next/static/chunks/(docs)/page.js:10:5)");
+  expect(result).toEqual(["/_next/static/chunks/(docs)/page.js", "10", "5"]);
 });
 
-it('extractLocation should handle path without any parentheses', () => {
-  const result = extractLocation('/src/components/button.tsx:25:10');
-  expect(result).toEqual(['/src/components/button.tsx', '25', '10']);
+it("extractLocation should handle path without any parentheses", () => {
+  const result = extractLocation("/src/components/button.tsx:25:10");
+  expect(result).toEqual(["/src/components/button.tsx", "25", "10"]);
 });
 
-it('extractLocation should handle path starting with route group (no Chrome wrap)', () => {
-  const result = extractLocation('(docs)/page.tsx:10:5');
-  expect(result).toEqual(['(docs)/page.tsx', '10', '5']);
+it("extractLocation should handle path starting with route group (no Chrome wrap)", () => {
+  const result = extractLocation("(docs)/page.tsx:10:5");
+  expect(result).toEqual(["(docs)/page.tsx", "10", "5"]);
 });
 
-it('extractLocation should handle file with parentheses in name', () => {
-  const result = extractLocation('file(1).js:10:5');
-  expect(result).toEqual(['file(1).js', '10', '5']);
+it("extractLocation should handle file with parentheses in name", () => {
+  const result = extractLocation("file(1).js:10:5");
+  expect(result).toEqual(["file(1).js", "10", "5"]);
 });

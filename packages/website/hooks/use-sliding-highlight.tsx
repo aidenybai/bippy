@@ -1,72 +1,69 @@
-import * as React from "react"
-import { motion } from "motion/react"
+import * as React from "react";
+import { motion } from "motion/react";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 interface SlidingHighlightPosition {
-  top: number
-  left: number
-  height: number
-  width: number
+  top: number;
+  left: number;
+  height: number;
+  width: number;
 }
 
 interface SlidingHighlightContextValue {
-  setActiveElement: (element: HTMLElement | null, variant?: string) => void
+  setActiveElement: (element: HTMLElement | null, variant?: string) => void;
 }
 
-const SlidingHighlightContext =
-  React.createContext<SlidingHighlightContextValue>({
-    setActiveElement: () => {},
-  })
+const SlidingHighlightContext = React.createContext<SlidingHighlightContextValue>({
+  setActiveElement: () => {},
+});
 
 interface SlidingHighlightConfig {
-  className?: string
-  lineHeight?: number
+  className?: string;
+  lineHeight?: number;
 }
 
 const useSlidingHighlight = (config: SlidingHighlightConfig = {}) => {
-  const [highlightPosition, setHighlightPosition] =
-    React.useState<SlidingHighlightPosition | null>(null)
-  const [highlightVariant, setHighlightVariant] = React.useState("default")
+  const [highlightPosition, setHighlightPosition] = React.useState<SlidingHighlightPosition | null>(
+    null,
+  );
+  const [highlightVariant, setHighlightVariant] = React.useState("default");
 
   const setActiveElement = React.useCallback(
     (element: HTMLElement | null, variant = "default") => {
       if (!element) {
-        setHighlightPosition(null)
-        return
+        setHighlightPosition(null);
+        return;
       }
-      setHighlightVariant(variant)
+      setHighlightVariant(variant);
       if (config.lineHeight != null) {
-        const parent = element.parentElement
-        const style = getComputedStyle(element)
-        const paddingLeft = parseFloat(style.paddingLeft)
-        const paddingRight = parseFloat(style.paddingRight)
+        const parent = element.parentElement;
+        const style = getComputedStyle(element);
+        const paddingLeft = parseFloat(style.paddingLeft);
+        const paddingRight = parseFloat(style.paddingRight);
         setHighlightPosition({
           top: parent ? parent.offsetHeight - config.lineHeight : 0,
           left: element.offsetLeft + paddingLeft,
           height: config.lineHeight,
           width: element.offsetWidth - paddingLeft - paddingRight,
-        })
+        });
       } else {
         setHighlightPosition({
           top: element.offsetTop,
           left: element.offsetLeft,
           height: element.offsetHeight,
           width: element.offsetWidth,
-        })
+        });
       }
     },
-    [config.lineHeight]
-  )
+    [config.lineHeight],
+  );
 
-  const contextValue = React.useMemo(
-    () => ({ setActiveElement }),
-    [setActiveElement]
-  )
+  const contextValue = React.useMemo(() => ({ setActiveElement }), [setActiveElement]);
 
   const clearHighlight = React.useCallback(() => {
-    setHighlightPosition(null)
-  }, [])
+    setHighlightPosition(null);
+  }, []);
 
   const highlightElement = highlightPosition ? (
     <motion.div
@@ -74,7 +71,7 @@ const useSlidingHighlight = (config: SlidingHighlightConfig = {}) => {
         "pointer-events-none absolute top-0 left-0 -z-10 rounded-sm",
         highlightVariant === "destructive"
           ? "bg-destructive/10 dark:bg-destructive/20"
-          : config.className ?? "bg-accent"
+          : (config.className ?? "bg-accent"),
       )}
       initial={false}
       animate={{
@@ -85,33 +82,29 @@ const useSlidingHighlight = (config: SlidingHighlightConfig = {}) => {
       }}
       transition={{ type: "spring", bounce: 0.1, duration: 0.15 }}
     />
-  ) : null
+  ) : null;
 
   return {
     contextValue,
     clearHighlight,
     highlightElement,
     highlightVariant,
-  }
-}
+  };
+};
 
 const useSlidingHighlightItem = (variant = "default") => {
-  const itemRef = React.useRef<HTMLElement>(null)
-  const { setActiveElement } = React.useContext(SlidingHighlightContext)
+  const itemRef = React.useRef<HTMLElement>(null);
+  const { setActiveElement } = React.useContext(SlidingHighlightContext);
 
   const handlePointerEnter = React.useCallback(() => {
-    setActiveElement(itemRef.current, variant)
-  }, [setActiveElement, variant])
+    setActiveElement(itemRef.current, variant);
+  }, [setActiveElement, variant]);
 
   const handleFocus = React.useCallback(() => {
-    setActiveElement(itemRef.current, variant)
-  }, [setActiveElement, variant])
+    setActiveElement(itemRef.current, variant);
+  }, [setActiveElement, variant]);
 
-  return { itemRef, handlePointerEnter, handleFocus }
-}
+  return { itemRef, handlePointerEnter, handleFocus };
+};
 
-export {
-  SlidingHighlightContext,
-  useSlidingHighlight,
-  useSlidingHighlightItem,
-}
+export { SlidingHighlightContext, useSlidingHighlight, useSlidingHighlightItem };

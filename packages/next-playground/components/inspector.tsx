@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import 'bippy';
-import { getFiberFromHostInstance, getLatestFiber } from 'bippy';
-import { getSource } from 'bippy/dist/source';
-import { useEffect, useRef, useState } from 'react';
+import "bippy";
+import { getFiberFromHostInstance, getLatestFiber } from "bippy";
+import { getSource } from "bippy/dist/source";
+import { useEffect, useRef, useState } from "react";
 
-import { cn } from './cn';
+import { cn } from "./cn";
 
 export function Inspector() {
   const [rect, setRect] = useState<DOMRect | null>(null);
@@ -29,22 +29,22 @@ export function Inspector() {
       const fiber = getFiberFromHostInstance(element);
       if (fiber) {
         const latestFiber = getLatestFiber(fiber);
-        console.log('Fiber:', latestFiber);
+        console.log("Fiber:", latestFiber);
 
         void (async () => {
           try {
             console.log(await getSource(latestFiber));
           } catch (error) {
-            console.error('Error symbolicating stack:', error);
+            console.error("Error symbolicating stack:", error);
           }
         })();
       }
     };
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('click', handleClick);
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("click", handleClick);
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('click', handleClick);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("click", handleClick);
     };
   }, []);
 
@@ -52,14 +52,12 @@ export function Inspector() {
     <div>
       <button
         className={cn(
-          'transition-colors text-black px-2 py-1 rounded-md',
-          isEnabled
-            ? 'bg-red-600 text-white hover:bg-red-700'
-            : 'bg-white hover:bg-neutral-200',
+          "transition-colors text-black px-2 py-1 rounded-md",
+          isEnabled ? "bg-red-600 text-white hover:bg-red-700" : "bg-white hover:bg-neutral-200",
         )}
         onClick={() => setIsEnabled(!isEnabled)}
       >
-        {isEnabled ? 'Disable' : 'Enable'}
+        {isEnabled ? "Disable" : "Enable"}
       </button>
       {isEnabled && rect && (
         <div
@@ -67,7 +65,7 @@ export function Inspector() {
           style={{
             height: rect?.height,
             left: rect?.left,
-            position: 'fixed',
+            position: "fixed",
             top: rect?.top,
             width: rect?.width,
           }}

@@ -1,16 +1,19 @@
 import React, {
   Component,
+  Fragment,
+  Suspense,
   createContext,
   forwardRef,
   memo,
   useContext,
   useState,
-} from 'react';
+} from "react";
 
-const TestContext = createContext('default-context');
+const TestContext = createContext("default-context");
 
 export const TestParent = () => {
   const [count, setCount] = useState(0);
+  const [showConditional, setShowConditional] = useState(true);
   return (
     <TestContext.Provider value="provided-value">
       <div data-testid="parent-host">
@@ -19,18 +22,29 @@ export const TestParent = () => {
         <TestForwardRefChild />
         <TestContextConsumer />
         <TestClassComponent />
-        <button
-          data-testid="increment"
-          onClick={() => setCount((previous) => previous + 1)}
-        >
+        <Suspense fallback={<div data-testid="suspense-fallback">loading</div>}>
+          <div data-testid="suspense-child">resolved</div>
+        </Suspense>
+        <Fragment>
+          <div data-testid="fragment-child-a">a</div>
+          <div data-testid="fragment-child-b">b</div>
+        </Fragment>
+        {showConditional && <div data-testid="conditional-child">conditional</div>}
+        <button data-testid="increment" onClick={() => setCount((previous) => previous + 1)}>
           Increment
+        </button>
+        <button
+          data-testid="toggle-conditional"
+          onClick={() => setShowConditional((previous) => !previous)}
+        >
+          Toggle
         </button>
       </div>
     </TestContext.Provider>
   );
 };
 
-const TestChild = ({ name, count }: { name: string; count: number }) => {
+export const TestChild = ({ name, count }: { name: string; count: number }) => {
   return (
     <div data-testid="test-child">
       {name} {count}
@@ -38,7 +52,7 @@ const TestChild = ({ name, count }: { name: string; count: number }) => {
   );
 };
 
-function MemoChild({ value }: { value: string }) {
+export function MemoChild({ value }: { value: string }) {
   return <div data-testid="memo-child">{value}</div>;
 }
 const TestMemoChild = memo(MemoChild);

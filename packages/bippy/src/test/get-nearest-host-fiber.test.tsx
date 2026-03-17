@@ -1,24 +1,15 @@
-import '../index.js'; // KEEP THIS LINE ON TOP
+import "../index.js"; // KEEP THIS LINE ON TOP
 
-import { render } from '@testing-library/react';
-import React from 'react';
-import { describe, expect, it } from 'vitest';
-import {
-  Fiber,
-  getNearestHostFiber,
-  getNearestHostFibers,
-  instrument,
-} from '../index.js';
+import { render } from "@testing-library/react";
+import React from "react";
+import { describe, expect, it } from "vitest";
+import { Fiber, getNearestHostFiber, getNearestHostFibers, instrument } from "../index.js";
 
 export const Example = () => {
   return <div>Hello</div>;
 };
 
-export const ExampleWithChildrenProp = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
+export const ExampleWithChildrenProp = ({ children }: { children: React.ReactNode }) => {
   return <div>{children}</div>;
 };
 
@@ -39,8 +30,8 @@ export const ExampleWithUnmount = () => {
   return shouldUnmount ? <div>Hello</div> : null;
 };
 
-describe('getNearestHostFiber', () => {
-  it('should return the nearest host fiber', () => {
+describe("getNearestHostFiber", () => {
+  it("should return the nearest host fiber", () => {
     let maybeFiber: Fiber | null = null;
     let maybeHostFiber: Fiber | null = null;
     instrument({
@@ -53,12 +44,10 @@ describe('getNearestHostFiber', () => {
     expect(getNearestHostFiber(maybeFiber as unknown as Fiber)).toBe(
       (maybeFiber as unknown as Fiber).child,
     );
-    expect(maybeHostFiber).toBe(
-      getNearestHostFiber(maybeFiber as unknown as Fiber),
-    );
+    expect(maybeHostFiber).toBe(getNearestHostFiber(maybeFiber as unknown as Fiber));
   });
 
-  it('should return null for unmounted fiber', () => {
+  it("should return null for unmounted fiber", () => {
     let maybeFiber: Fiber | null = null;
     instrument({
       onCommitFiberRoot: (_rendererID, fiberRoot) => {
@@ -70,8 +59,8 @@ describe('getNearestHostFiber', () => {
   });
 });
 
-describe('getNearestHostFibers', () => {
-  it('should return all host fibers', () => {
+describe("getNearestHostFibers", () => {
+  it("should return all host fibers", () => {
     let maybeFiber: Fiber | null = null;
     instrument({
       onCommitFiberRoot: (_rendererID, fiberRoot) => {
@@ -79,8 +68,6 @@ describe('getNearestHostFibers', () => {
       },
     });
     render(<ExampleWithMultipleChildElements />);
-    expect(getNearestHostFibers(maybeFiber as unknown as Fiber)).toHaveLength(
-      2,
-    );
+    expect(getNearestHostFibers(maybeFiber as unknown as Fiber)).toHaveLength(2);
   });
 });

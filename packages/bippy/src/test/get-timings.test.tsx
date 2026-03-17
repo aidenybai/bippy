@@ -1,17 +1,17 @@
-import '../index.js'; // KEEP THIS LINE ON TOP
+import "../index.js"; // KEEP THIS LINE ON TOP
 
-import { render } from '@testing-library/react';
-import React from 'react';
-import { expect, it } from 'vitest';
-import { getTimings, instrument } from '../index.js';
-import type { Fiber } from '../types.js';
+import { render } from "@testing-library/react";
+import React from "react";
+import { expect, it } from "vitest";
+import { getTimings, instrument } from "../index.js";
+import type { Fiber } from "../types.js";
 
 const SlowComponent = () => {
   for (let i = 0; i < 100; i++) {} // simulate slowdown
   return <div>Hello</div>;
 };
 
-it('should return the timings of the fiber', () => {
+it("should return the timings of the fiber", () => {
   let maybeFiber: Fiber | null = null;
   instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {

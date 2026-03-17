@@ -2,32 +2,42 @@
   "name": "bippy",
   "version": "0.5.32",
   "description": "hack into react internals",
-  "publishConfig": {
-    "access": "public"
-  },
   "keywords": [
     "bippy",
+    "fiber",
+    "internals",
     "react",
-    "react instrumentation",
     "react devtools",
     "react fiber",
-    "fiber",
-    "internals"
+    "react instrumentation"
   ],
   "homepage": "https://bippy.dev",
   "bugs": {
     "url": "https://github.com/aidenybai/bippy/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/aidenybai/bippy.git"
   },
   "license": "MIT",
   "author": {
     "name": "Aiden Bai",
     "email": "aiden@million.dev"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aidenybai/bippy.git"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/test/**",
+    "bin",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ],
   "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "browser": "dist/index.iife.js",
+  "types": "dist/index.d.ts",
   "exports": {
     "./package.json": "./package.json",
     ".": {
@@ -74,19 +84,9 @@
     "./dist/*.js": "./dist/*.js",
     "./dist/*.cjs": "./dist/*.cjs"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "browser": "dist/index.iife.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist",
-    "src",
-    "!src/test/**",
-    "bin",
-    "package.json",
-    "README.md",
-    "LICENSE"
-  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "NODE_ENV=production vp pack && bun scripts/append-banner.ts",
     "dev": "NODE_ENV=development vp pack --watch",
@@ -94,6 +94,9 @@
     "test": "vp test",
     "coverage": "vp test --coverage",
     "prepublishOnly": "cp ../../README.md . && pnpm build"
+  },
+  "dependencies": {
+    "@types/react-reconciler": "^0.28.9"
   },
   "devDependencies": {
     "@jridgewell/sourcemap-codec": "^1.5.0",
@@ -115,8 +118,5 @@
   },
   "peerDependencies": {
     "react": ">=17.0.1"
-  },
-  "dependencies": {
-    "@types/react-reconciler": "^0.28.9"
   }
 }

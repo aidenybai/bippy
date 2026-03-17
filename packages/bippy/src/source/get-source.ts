@@ -1,6 +1,6 @@
-import { Fiber } from '../types.js';
+import { Fiber } from "../types.js";
 
-import { FiberSource } from './types.js';
+import { FiberSource } from "./types.js";
 import {
   SCHEME_REGEX,
   INTERNAL_SCHEME_PREFIXES,
@@ -9,25 +9,25 @@ import {
   SOURCE_FILE_EXTENSION_REGEX,
   BUNDLED_FILE_PATTERN_REGEX,
   QUERY_PARAMETER_PATTERN_REGEX,
-} from './constants.js';
-import { getOwnerStack } from './owner-stack.js';
+} from "./constants.js";
+import { getOwnerStack } from "./owner-stack.js";
 
 export const hasDebugSource = (
   fiber: Fiber,
 ): fiber is Fiber & {
-  _debugSource: NonNullable<Fiber['_debugSource']>;
+  _debugSource: NonNullable<Fiber["_debugSource"]>;
 } => {
   const debugSource = fiber._debugSource;
   if (!debugSource) {
     return false;
   }
   return (
-    typeof debugSource === 'object' &&
+    typeof debugSource === "object" &&
     debugSource !== null &&
-    'fileName' in debugSource &&
-    typeof debugSource.fileName === 'string' &&
-    'lineNumber' in debugSource &&
-    typeof debugSource.lineNumber === 'number'
+    "fileName" in debugSource &&
+    typeof debugSource.fileName === "string" &&
+    "lineNumber" in debugSource &&
+    typeof debugSource.lineNumber === "number"
   );
 };
 
@@ -74,16 +74,15 @@ export const getSource = async (
   return null;
 };
 
-const getPathSegmentCount = (path: string): number =>
-  path.split('/').filter(Boolean).length;
+const getPathSegmentCount = (path: string): number => path.split("/").filter(Boolean).length;
 
 const getFirstPathSegment = (path: string): string | null => {
-  const segments = path.split('/').filter(Boolean);
+  const segments = path.split("/").filter(Boolean);
   return segments[0] ?? null;
 };
 
 const stripSingleBasePathPrefix = (path: string): string => {
-  const firstSlashIndex = path.indexOf('/', 1);
+  const firstSlashIndex = path.indexOf("/", 1);
   if (firstSlashIndex === -1) {
     return path;
   }
@@ -107,7 +106,7 @@ const stripSingleBasePathPrefix = (path: string): string => {
     return path;
   }
 
-  if (firstRemainderSegment.startsWith('@')) {
+  if (firstRemainderSegment.startsWith("@")) {
     return path;
   }
 
@@ -120,18 +119,17 @@ const stripSingleBasePathPrefix = (path: string): string => {
 
 export const normalizeFileName = (fileName: string): string => {
   if (!fileName) {
-    return '';
+    return "";
   }
 
   if (ANONYMOUS_FILE_PATTERNS.some((pattern) => pattern === fileName)) {
-    return '';
+    return "";
   }
 
   let normalizedFileName = fileName;
 
   const isHttpUrl =
-    normalizedFileName.startsWith('http://') ||
-    normalizedFileName.startsWith('https://');
+    normalizedFileName.startsWith("http://") || normalizedFileName.startsWith("https://");
   if (isHttpUrl) {
     try {
       const parsedUrl = new URL(normalizedFileName);
@@ -145,8 +143,8 @@ export const normalizeFileName = (fileName: string): string => {
 
   if (normalizedFileName.startsWith(ABOUT_REACT_PREFIX)) {
     const remainder = normalizedFileName.slice(ABOUT_REACT_PREFIX.length);
-    const slashIndex = remainder.indexOf('/');
-    const colonIndex = remainder.indexOf(':');
+    const slashIndex = remainder.indexOf("/");
+    const colonIndex = remainder.indexOf(":");
 
     if (slashIndex !== -1 && (colonIndex === -1 || slashIndex < colonIndex)) {
       normalizedFileName = remainder.slice(slashIndex + 1);
@@ -162,8 +160,8 @@ export const normalizeFileName = (fileName: string): string => {
       if (normalizedFileName.startsWith(prefix)) {
         normalizedFileName = normalizedFileName.slice(prefix.length);
 
-        if (prefix === 'file:///') {
-          normalizedFileName = `/${normalizedFileName.replace(/^\/+/, '')}`;
+        if (prefix === "file:///") {
+          normalizedFileName = `/${normalizedFileName.replace(/^\/+/, "")}`;
         }
 
         didStripPrefix = true;
@@ -179,18 +177,15 @@ export const normalizeFileName = (fileName: string): string => {
     }
   }
 
-  if (normalizedFileName.startsWith('//')) {
-    const firstPathSlashIndex = normalizedFileName.indexOf('/', 2);
+  if (normalizedFileName.startsWith("//")) {
+    const firstPathSlashIndex = normalizedFileName.indexOf("/", 2);
     normalizedFileName =
-      firstPathSlashIndex === -1
-        ? ''
-        : normalizedFileName.slice(firstPathSlashIndex);
+      firstPathSlashIndex === -1 ? "" : normalizedFileName.slice(firstPathSlashIndex);
   }
 
-  const queryParameterIndex = normalizedFileName.indexOf('?');
+  const queryParameterIndex = normalizedFileName.indexOf("?");
   if (queryParameterIndex !== -1) {
-    const potentialQueryParameters =
-      normalizedFileName.slice(queryParameterIndex);
+    const potentialQueryParameters = normalizedFileName.slice(queryParameterIndex);
     if (QUERY_PARAMETER_PATTERN_REGEX.test(potentialQueryParameters)) {
       normalizedFileName = normalizedFileName.slice(0, queryParameterIndex);
     }

@@ -1,13 +1,13 @@
-import * as React from "react"
-import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip"
+import * as React from "react";
+import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
-const TooltipProvider = TooltipPrimitive.Provider
+const TooltipProvider = TooltipPrimitive.Provider;
 
-const Tooltip = TooltipPrimitive.Root
+const Tooltip = TooltipPrimitive.Root;
 
-const TooltipTrigger = TooltipPrimitive.Trigger
+const TooltipTrigger = TooltipPrimitive.Trigger;
 
 const TooltipContent = ({
   className,
@@ -15,7 +15,7 @@ const TooltipContent = ({
   children,
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Popup> & {
-  sideOffset?: number
+  sideOffset?: number;
 }) => (
   <TooltipPrimitive.Portal>
     <TooltipPrimitive.Positioner sideOffset={sideOffset}>
@@ -29,12 +29,10 @@ const TooltipContent = ({
         {...props}
       >
         {children}
-        <TooltipPrimitive.Arrow
-          className="z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px] bg-foreground fill-foreground"
-        />
+        <TooltipPrimitive.Arrow className="z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px] bg-foreground fill-foreground" />
       </TooltipPrimitive.Popup>
     </TooltipPrimitive.Positioner>
   </TooltipPrimitive.Portal>
-)
+);
 
-export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider };

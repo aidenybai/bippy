@@ -1,1 +1,1 @@
-import 'bippy/install-hook-only';
+import "bippy/install-hook-only";

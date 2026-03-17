@@ -47,7 +47,9 @@ const processReadme = (content: string): string => {
   const firstHeadingIndex = lines.findIndex((line) => line.startsWith("## "));
   if (firstHeadingIndex === -1) return "";
 
-  const miscHeadingIndex = lines.findIndex((line, index) => index >= firstHeadingIndex && line.startsWith("## misc"));
+  const miscHeadingIndex = lines.findIndex(
+    (line, index) => index >= firstHeadingIndex && line.startsWith("## misc"),
+  );
   const endIndex = miscHeadingIndex === -1 ? lines.length : miscHeadingIndex;
 
   return lines.slice(firstHeadingIndex, endIndex).join("\n");
@@ -70,8 +72,14 @@ export const App = () => {
                 remarkPlugins={[remarkGfm]}
                 components={{
                   h2: ({ children, node, ...props }) => {
-                    const text = node?.children?.[0] && "value" in node.children[0] ? node.children[0].value : "";
-                    const id = text.toLowerCase().replace(/\s+/g, "-").replace(/[^\w-]/g, "");
+                    const text =
+                      node?.children?.[0] && "value" in node.children[0]
+                        ? node.children[0].value
+                        : "";
+                    const id = text
+                      .toLowerCase()
+                      .replace(/\s+/g, "-")
+                      .replace(/[^\w-]/g, "");
                     return (
                       <h2
                         className="mt-12 mb-3 scroll-mt-8 border-t border-border pt-8 text-base font-medium text-foreground first:mt-0 first:border-t-0 first:pt-0"
@@ -91,7 +99,9 @@ export const App = () => {
                     <p className="my-3 leading-relaxed text-muted-foreground">{children}</p>
                   ),
                   ul: ({ children }) => (
-                    <ul className="my-4 space-y-2 text-[13px] text-muted-foreground sm:text-sm [&_ul]:my-1 [&_ul]:ml-4 [&_ul]:space-y-1">{children}</ul>
+                    <ul className="my-4 space-y-2 text-[13px] text-muted-foreground sm:text-sm [&_ul]:my-1 [&_ul]:ml-4 [&_ul]:space-y-1">
+                      {children}
+                    </ul>
                   ),
                   li: ({ children }) => (
                     <li className="relative pl-4 text-muted-foreground [&_p]:inline">
@@ -116,17 +126,19 @@ export const App = () => {
                     const isInline = !className;
                     if (isInline) {
                       return (
-                        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground sm:text-[13px]" {...props}>
+                        <code
+                          className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground sm:text-[13px]"
+                          {...props}
+                        >
                           {children}
                         </code>
                       );
                     }
-                    const codeText = node?.children?.[0] && "value" in node.children[0] ? node.children[0].value : "";
-                    return (
-                      <CodeBlock className={className}>
-                        {codeText}
-                      </CodeBlock>
-                    );
+                    const codeText =
+                      node?.children?.[0] && "value" in node.children[0]
+                        ? node.children[0].value
+                        : "";
+                    return <CodeBlock className={className}>{codeText}</CodeBlock>;
                   },
                   pre: ({ children }) => <>{children}</>,
                   a: ({ href, children }) => (
@@ -148,13 +160,26 @@ export const App = () => {
 
           <footer className="mt-auto flex w-full max-w-lg flex-col gap-6 border-t border-border px-6 pt-8 pb-12">
             <div className="flex items-center gap-3.75 text-caption font-medium leading-5.75">
-              <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-none hover:text-foreground">
+              <a
+                href={GITHUB_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground transition-none hover:text-foreground"
+              >
                 GitHub
               </a>
-              <a href="https://www.npmjs.com/package/bippy" target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-none hover:text-foreground">
+              <a
+                href="https://www.npmjs.com/package/bippy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground transition-none hover:text-foreground"
+              >
                 npm
               </a>
-              <a href="/llms.txt" className="text-muted-foreground transition-none hover:text-foreground">
+              <a
+                href="/llms.txt"
+                className="text-muted-foreground transition-none hover:text-foreground"
+              >
                 llms.txt
               </a>
             </div>

@@ -2,9 +2,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-require-imports */
 
-import { expect, it, vi } from 'vitest';
+import { expect, it, vi } from "vitest";
 
-import { instrument } from '../index.js';
+import { instrument } from "../index.js";
 
 declare global {
   interface Window {
@@ -13,12 +13,12 @@ declare global {
   }
 }
 
-const runtime = require('react-refresh/runtime');
+const runtime = require("react-refresh/runtime");
 runtime.injectIntoGlobalHook(window);
 window.$RefreshReg$ = () => {};
 window.$RefreshSig$ = () => (type) => type;
 
-it('should be active', () => {
+it("should be active", () => {
   const onActive = vi.fn();
   instrument({
     onActive,

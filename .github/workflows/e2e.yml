@@ -14,7 +14,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: "pnpm"
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm build
       - name: Install Playwright browsers
@@ -42,7 +42,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: "pnpm"
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm build
       - name: Install applesimutils

@@ -16,34 +16,26 @@ import {
   ViewTransitionComponentTag,
   getDisplayName,
   traverseFiber,
-} from '../core.js';
-import { SERVER_FRAME_MARKER } from './constants.js';
+} from "../core.js";
+import { SERVER_FRAME_MARKER } from "./constants.js";
 
-import { parseStack, StackFrame } from './parse-stack.js';
-import { symbolicateStack } from './symbolication.js';
+import { parseStack, StackFrame } from "./parse-stack.js";
+import { symbolicateStack } from "./symbolication.js";
 
 export const hasDebugStack = (
   fiber: Fiber,
 ): fiber is Fiber & {
-  _debugStack: NonNullable<Fiber['_debugStack']>;
+  _debugStack: NonNullable<Fiber["_debugStack"]>;
 } => {
-  return (
-    fiber._debugStack instanceof Error &&
-    typeof fiber._debugStack?.stack === 'string'
-  );
+  return fiber._debugStack instanceof Error && typeof fiber._debugStack?.stack === "string";
 };
 
 const getCurrentDispatcher = (): null | React.RefObject<unknown> => {
   const rdtHook = getRDTHook();
-  for (const renderer of [
-    ...Array.from(_renderers),
-    ...Array.from(rdtHook.renderers.values()),
-  ]) {
+  for (const renderer of [...Array.from(_renderers), ...Array.from(rdtHook.renderers.values())]) {
     const currentDispatcherRef = renderer.currentDispatcherRef;
-    if (currentDispatcherRef && typeof currentDispatcherRef === 'object') {
-      return 'H' in currentDispatcherRef
-        ? currentDispatcherRef.H
-        : currentDispatcherRef.current;
+    if (currentDispatcherRef && typeof currentDispatcherRef === "object") {
+      return "H" in currentDispatcherRef ? currentDispatcherRef.H : currentDispatcherRef.current;
     }
   }
   return null;
@@ -52,8 +44,8 @@ const getCurrentDispatcher = (): null | React.RefObject<unknown> => {
 const setCurrentDispatcher = (value: null | React.RefObject<unknown>): void => {
   for (const renderer of _renderers) {
     const currentDispatcherRef = renderer.currentDispatcherRef;
-    if (currentDispatcherRef && typeof currentDispatcherRef === 'object') {
-      if ('H' in currentDispatcherRef) {
+    if (currentDispatcherRef && typeof currentDispatcherRef === "object") {
+      if ("H" in currentDispatcherRef) {
         currentDispatcherRef.H = value;
       } else {
         currentDispatcherRef.current = value;
@@ -82,7 +74,7 @@ const describeNativeComponentFrame = (
   construct: boolean,
 ): string => {
   if (!component || reEntry) {
-    return '';
+    return "";
   }
 
   const previousPrepareStackTrace = Error.prepareStackTrace;
@@ -118,14 +110,14 @@ const describeNativeComponentFrame = (
             const ThrowingConstructor = function () {
               throw Error();
             };
-            Object.defineProperty(ThrowingConstructor.prototype, 'props', {
+            Object.defineProperty(ThrowingConstructor.prototype, "props", {
               set: function () {
                 // We use a throwing setter instead of frozen or non-writable props
                 // because that won't throw in a non-strict mode function.
                 throw Error();
               },
             });
-            if (typeof Reflect === 'object' && Reflect.construct) {
+            if (typeof Reflect === "object" && Reflect.construct) {
               // We construct a different control for this case to include any extra
               // frames added by the construct call.
               try {
@@ -160,7 +152,7 @@ const describeNativeComponentFrame = (
             // silence the error.
             // TODO: Implement component stacks for async client components?
             // eslint-disable-next-line @typescript-eslint/no-misused-promises -- we literally check if this is a promise here
-            if (maybePromise && typeof maybePromise.catch === 'function') {
+            if (maybePromise && typeof maybePromise.catch === "function") {
               maybePromise.catch(() => {});
             }
           }
@@ -169,7 +161,7 @@ const describeNativeComponentFrame = (
           if (
             sample instanceof Error &&
             control instanceof Error &&
-            typeof sample.stack === 'string'
+            typeof sample.stack === "string"
           ) {
             return [sample.stack, control.stack];
           }
@@ -179,12 +171,11 @@ const describeNativeComponentFrame = (
     };
 
     // @ts-expect-error --- displayName is not a property of the function
-    RunInRootFrame.DetermineComponentFrameRoot.displayName =
-      'DetermineComponentFrameRoot';
+    RunInRootFrame.DetermineComponentFrameRoot.displayName = "DetermineComponentFrameRoot";
     const namePropDescriptor = Object.getOwnPropertyDescriptor(
       // eslint-disable-next-line @typescript-eslint/unbound-method
       RunInRootFrame.DetermineComponentFrameRoot,
-      'name',
+      "name",
     );
     // Before ES6, the `name` property was not configurable.
     if (namePropDescriptor?.configurable) {
@@ -194,39 +185,35 @@ const describeNativeComponentFrame = (
         RunInRootFrame.DetermineComponentFrameRoot,
         // Configurable properties can be updated even if its writable descriptor
         // is set to `false`.
-        'name',
-        { value: 'DetermineComponentFrameRoot' },
+        "name",
+        { value: "DetermineComponentFrameRoot" },
       );
     }
 
-    const [sampleStack, controlStack] =
-      RunInRootFrame.DetermineComponentFrameRoot();
+    const [sampleStack, controlStack] = RunInRootFrame.DetermineComponentFrameRoot();
     if (sampleStack && controlStack) {
       // This extracts the first frame from the sample that isn't also in the control.
       // Skipping one frame that we assume is the frame that calls the two.
-      const sampleLines = sampleStack.split('\n');
-      const controlLines = controlStack.split('\n');
+      const sampleLines = sampleStack.split("\n");
+      const controlLines = controlStack.split("\n");
       let sampleIndex = 0;
       let controlIndex = 0;
       while (
         sampleIndex < sampleLines.length &&
-        !sampleLines[sampleIndex].includes('DetermineComponentFrameRoot')
+        !sampleLines[sampleIndex].includes("DetermineComponentFrameRoot")
       ) {
         sampleIndex++;
       }
       while (
         controlIndex < controlLines.length &&
-        !controlLines[controlIndex].includes('DetermineComponentFrameRoot')
+        !controlLines[controlIndex].includes("DetermineComponentFrameRoot")
       ) {
         controlIndex++;
       }
       // We couldn't find our intentionally injected common root frame, attempt
       // to find another common root frame by search from the bottom of the
       // control stack...
-      if (
-        sampleIndex === sampleLines.length ||
-        controlIndex === controlLines.length
-      ) {
+      if (sampleIndex === sampleLines.length || controlIndex === controlLines.length) {
         sampleIndex = sampleLines.length - 1;
         controlIndex = controlLines.length - 1;
         while (
@@ -243,11 +230,7 @@ const describeNativeComponentFrame = (
           controlIndex--;
         }
       }
-      for (
-        ;
-        sampleIndex >= 1 && controlIndex >= 0;
-        sampleIndex--, controlIndex--
-      ) {
+      for (; sampleIndex >= 1 && controlIndex >= 0; sampleIndex--, controlIndex--) {
         // Next we find the first one that isn't the same which should be the
         // frame that called our sample function and the control.
         if (sampleLines[sampleIndex] !== controlLines[controlIndex]) {
@@ -262,22 +245,16 @@ const describeNativeComponentFrame = (
               controlIndex--;
               // We may still have similar intermediate frames from the construct call.
               // The next one that isn't the same should be our match though.
-              if (
-                controlIndex < 0 ||
-                sampleLines[sampleIndex] !== controlLines[controlIndex]
-              ) {
+              if (controlIndex < 0 || sampleLines[sampleIndex] !== controlLines[controlIndex]) {
                 // V8 adds a "new" prefix for native classes. Let's remove it to make it prettier.
-                let stackFrame = `\n${sampleLines[sampleIndex].replace(
-                  ' at new ',
-                  ' at ',
-                )}`;
+                let stackFrame = `\n${sampleLines[sampleIndex].replace(" at new ", " at ")}`;
 
                 const displayName = getDisplayName(component);
                 // If our component frame is labeled "<anonymous>"
                 // but we have a user-provided "displayName"
                 // splice it in to make the stack more readable.
-                if (displayName && stackFrame.includes('<anonymous>')) {
-                  stackFrame = stackFrame.replace('<anonymous>', displayName);
+                if (displayName && stackFrame.includes("<anonymous>")) {
+                  stackFrame = stackFrame.replace("<anonymous>", displayName);
                 }
                 // Return the line we found.
                 return stackFrame;
@@ -298,23 +275,18 @@ const describeNativeComponentFrame = (
     console.warn = previousConsoleWarn;
   }
 
-  const componentName = component ? getDisplayName(component) : '';
-  const syntheticFrame = componentName
-    ? describeBuiltInComponentFrame(componentName)
-    : '';
+  const componentName = component ? getDisplayName(component) : "";
+  const syntheticFrame = componentName ? describeBuiltInComponentFrame(componentName) : "";
   return syntheticFrame;
 };
 
 // https://github.com/facebook/react/blob/ac3e705a18696168acfcaed39dce0cfaa6be8836/packages/react-reconciler/src/ReactFiberComponentStack.js#L180
-export const describeFiber = (
-  fiber: Fiber,
-  childFiber: Fiber | null,
-): string => {
+export const describeFiber = (fiber: Fiber, childFiber: Fiber | null): string => {
   const tag = fiber.tag as number;
-  let stackFrame = '';
+  let stackFrame = "";
   switch (tag) {
     case ActivityComponentTag:
-      stackFrame = describeBuiltInComponentFrame('Activity');
+      stackFrame = describeBuiltInComponentFrame("Activity");
       break;
     case ClassComponentTag:
       stackFrame = describeNativeComponentFrame(fiber.type, true);
@@ -336,26 +308,26 @@ export const describeFiber = (
       break;
     case LazyComponentTag:
       // TODO: When we support Thenables as component types we should rename this.
-      stackFrame = describeBuiltInComponentFrame('Lazy');
+      stackFrame = describeBuiltInComponentFrame("Lazy");
       break;
     case SuspenseComponentTag:
       if (fiber.child !== childFiber && childFiber !== null) {
         // If we came from the second Fiber then we're in the Suspense Fallback.
-        stackFrame = describeBuiltInComponentFrame('Suspense Fallback');
+        stackFrame = describeBuiltInComponentFrame("Suspense Fallback");
       } else {
-        stackFrame = describeBuiltInComponentFrame('Suspense');
+        stackFrame = describeBuiltInComponentFrame("Suspense");
       }
       break;
     case SuspenseListComponentTag:
-      stackFrame = describeBuiltInComponentFrame('SuspenseList');
+      stackFrame = describeBuiltInComponentFrame("SuspenseList");
       break;
     case ViewTransitionComponentTag:
       // Note: enableViewTransition feature flag is not available in this codebase,
       // so we'll always include ViewTransition
-      stackFrame = describeBuiltInComponentFrame('ViewTransition');
+      stackFrame = describeBuiltInComponentFrame("ViewTransition");
       break;
     default:
-      return '';
+      return "";
   }
 
   return stackFrame;
@@ -368,7 +340,7 @@ export const describeFiber = (
  */
 export const getFallbackOwnerStack = (thisFiber: Fiber): string => {
   try {
-    let componentStack = '';
+    let componentStack = "";
     let currentFiber: Fiber | null = thisFiber;
     let previousFiber: Fiber | null = null;
     do {
@@ -380,11 +352,8 @@ export const getFallbackOwnerStack = (thisFiber: Fiber): string => {
       if (debugInfo && Array.isArray(debugInfo)) {
         for (let i = debugInfo.length - 1; i >= 0; i--) {
           const debugEntry = debugInfo[i];
-          if (typeof debugEntry.name === 'string') {
-            componentStack += describeDebugInfoFrame(
-              debugEntry.name,
-              debugEntry.env,
-            );
+          if (typeof debugEntry.name === "string") {
+            componentStack += describeDebugInfoFrame(debugEntry.name, debugEntry.env);
           }
         }
       }
@@ -397,7 +366,7 @@ export const getFallbackOwnerStack = (thisFiber: Fiber): string => {
     if (error instanceof Error) {
       return `\nError generating stack: ${error.message}\n${error.stack}`;
     }
-    return '';
+    return "";
   }
 };
 
@@ -425,26 +394,26 @@ export const formatOwnerStack = (stack: string): string => {
   (Error as { prepareStackTrace?: typeof Error.prepareStackTrace }).prepareStackTrace = undefined;
   let formattedStack = stack;
   if (!formattedStack) {
-    return '';
+    return "";
   }
   Error.prepareStackTrace = prevPrepareStackTrace;
 
-  if (formattedStack.startsWith('Error: react-stack-top-frame\n')) {
+  if (formattedStack.startsWith("Error: react-stack-top-frame\n")) {
     // V8's default formatting prefixes with the error message which we
     // don't want/need
     formattedStack = formattedStack.slice(29);
   }
-  let idx = formattedStack.indexOf('\n');
+  let idx = formattedStack.indexOf("\n");
   if (idx !== -1) {
     // pop the JSX frame
     formattedStack = formattedStack.slice(idx + 1);
   }
   idx = Math.max(
-    formattedStack.indexOf('react_stack_bottom_frame'),
-    formattedStack.indexOf('react-stack-bottom-frame'),
+    formattedStack.indexOf("react_stack_bottom_frame"),
+    formattedStack.indexOf("react-stack-bottom-frame"),
   );
   if (idx !== -1) {
-    idx = formattedStack.lastIndexOf('\n', idx);
+    idx = formattedStack.lastIndexOf("\n", idx);
   }
   if (idx !== -1) {
     // cut off everything after the bottom frame since it'll be internals.
@@ -453,7 +422,7 @@ export const formatOwnerStack = (stack: string): string => {
     // we didn't find any internal callsite out to user space.
     // This means that this was called outside an owner or the owner is fully internal.
     // to keep things light we exclude the entire trace in this case.
-    return '';
+    return "";
   }
   return formattedStack;
 };
@@ -464,12 +433,9 @@ interface OwnerStackEntry {
 }
 
 const isReactServerComponentFrame = (stackFrame: StackFrame): boolean =>
-  Boolean(stackFrame.fileName?.startsWith('rsc://') && stackFrame.functionName);
+  Boolean(stackFrame.fileName?.startsWith("rsc://") && stackFrame.functionName);
 
-const areStackFramesEqual = (
-  firstFrame: StackFrame,
-  secondFrame: StackFrame,
-): boolean =>
+const areStackFramesEqual = (firstFrame: StackFrame, secondFrame: StackFrame): boolean =>
   firstFrame.fileName === secondFrame.fileName &&
   firstFrame.lineNumber === secondFrame.lineNumber &&
   firstFrame.columnNumber === secondFrame.columnNumber;
@@ -508,17 +474,13 @@ const getEnrichedServerStackFrame = (
     return { ...serverFrame, isServer: true };
   }
 
-  const availableRscFrames = functionNameToRscFrames.get(
-    serverFrame.functionName,
-  );
+  const availableRscFrames = functionNameToRscFrames.get(serverFrame.functionName);
   if (!availableRscFrames || availableRscFrames.length === 0) {
     return { ...serverFrame, isServer: true };
   }
 
-  const currentUsageIndex =
-    functionNameToUsageIndex.get(serverFrame.functionName) ?? 0;
-  const resolvedRscFrame =
-    availableRscFrames[currentUsageIndex % availableRscFrames.length];
+  const currentUsageIndex = functionNameToUsageIndex.get(serverFrame.functionName) ?? 0;
+  const resolvedRscFrame = availableRscFrames[currentUsageIndex % availableRscFrames.length];
   functionNameToUsageIndex.set(serverFrame.functionName, currentUsageIndex + 1);
 
   return {
@@ -543,15 +505,13 @@ const getOwnerStackEntries = (rootFiber: Fiber): OwnerStackEntry[] => {
       if (!hasDebugStack(currentFiber)) return;
 
       const componentName =
-        typeof currentFiber.type !== 'string'
-          ? getDisplayName(currentFiber.type) || '<anonymous>'
+        typeof currentFiber.type !== "string"
+          ? getDisplayName(currentFiber.type) || "<anonymous>"
           : currentFiber.type;
 
       ownerStackEntries.push({
         componentName,
-        stackFrames: parseStack(
-          formatOwnerStack(currentFiber._debugStack?.stack),
-        ),
+        stackFrames: parseStack(formatOwnerStack(currentFiber._debugStack?.stack)),
       });
     },
     true,
@@ -567,34 +527,28 @@ export const getOwnerStack = async (
 ): Promise<StackFrame[]> => {
   const ownerStackEntries = getOwnerStackEntries(fiber);
   const fallbackStackFrames = parseStack(getFallbackOwnerStack(fiber));
-  const functionNameToRscFrames =
-    buildFunctionNameToRscFramesMap(ownerStackEntries);
+  const functionNameToRscFrames = buildFunctionNameToRscFramesMap(ownerStackEntries);
   const functionNameToUsageIndex = new Map<string, number>();
 
-  const enrichedStackFrames = fallbackStackFrames.map(
-    (stackFrame): StackFrame => {
-      const isServerFrame =
-        stackFrame.source?.includes(SERVER_FRAME_MARKER) ?? false;
+  const enrichedStackFrames = fallbackStackFrames.map((stackFrame): StackFrame => {
+    const isServerFrame = stackFrame.source?.includes(SERVER_FRAME_MARKER) ?? false;
 
-      if (isServerFrame) {
-        return getEnrichedServerStackFrame(
-          stackFrame,
-          functionNameToRscFrames,
-          functionNameToUsageIndex,
-        );
-      }
+    if (isServerFrame) {
+      return getEnrichedServerStackFrame(
+        stackFrame,
+        functionNameToRscFrames,
+        functionNameToUsageIndex,
+      );
+    }
 
-      return stackFrame;
-    },
-  );
+    return stackFrame;
+  });
 
-  const deduplicatedStackFrames = enrichedStackFrames.filter(
-    (stackFrame, index, frames) => {
-      if (index === 0) return true;
-      const previousFrame = frames[index - 1];
-      return stackFrame.functionName !== previousFrame.functionName;
-    },
-  );
+  const deduplicatedStackFrames = enrichedStackFrames.filter((stackFrame, index, frames) => {
+    if (index === 0) return true;
+    const previousFrame = frames[index - 1];
+    return stackFrame.functionName !== previousFrame.functionName;
+  });
 
   return symbolicateStack(deduplicatedStackFrames, shouldCache, fetchFunction);
 };

@@ -1,7 +1,7 @@
 {
   "name": "@bippy/website",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vp dev",
@@ -15,13 +15,13 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "lucide-react": "^0.576.0",
-    "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1",
-    "shiki": "^3.21.0",
     "motion": "^12.35.0",
     "radix-ui": "^1.4.3",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "shiki": "^3.21.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
     "zustand": "^5.0.11"

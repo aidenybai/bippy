@@ -1,10 +1,6 @@
-import {
-  decode,
-  SourceMapMappings,
-  type SourceMapSegment,
-} from '@jridgewell/sourcemap-codec';
+import { decode, SourceMapMappings, type SourceMapSegment } from "@jridgewell/sourcemap-codec";
 
-import { StackFrame } from './parse-stack.js';
+import { StackFrame } from "./parse-stack.js";
 
 export interface DecodedSourceMapSection {
   map: {
@@ -68,16 +64,10 @@ const INLINE_SOURCEMAP_REGEX = /^data:application\/json[^,]+base64,/;
 const SOURCEMAP_REGEX =
   /(?:\/\/[@#][ \t]+sourceMappingURL=([^\s'"]+?)[ \t]*$)|(?:\/\*[@#][ \t]+sourceMappingURL=([^*]+?)[ \t]*(?:\*\/)[ \t]*$)/;
 
-const supportsWeakRef = typeof WeakRef !== 'undefined';
+const supportsWeakRef = typeof WeakRef !== "undefined";
 
-export const sourceMapCache = new Map<
-  string,
-  null | SourceMap | WeakRef<SourceMap>
->();
-const _pendingSourceMapRequests = new Map<
-  string,
-  null | Promise<null | SourceMap>
->();
+export const sourceMapCache = new Map<string, null | SourceMap | WeakRef<SourceMap>>();
+const _pendingSourceMapRequests = new Map<string, null | Promise<null | SourceMap>>();
 
 const isWeakRefSourceMap = (
   cachedValue: SourceMap | WeakRef<SourceMap>,
@@ -115,11 +105,7 @@ const getSourceFromMappings = (
 
   const [, sourceIndex, sourceLine, sourceColumn] = closestLineSegment;
 
-  if (
-    sourceIndex === undefined ||
-    sourceLine === undefined ||
-    sourceColumn === undefined
-  ) {
+  if (sourceIndex === undefined || sourceLine === undefined || sourceColumn === undefined) {
     return null;
   }
 
@@ -161,9 +147,7 @@ export const getSourceFromSourceMap = (
 
     const relativeLine = line - targetSection.offset.line;
     const relativeColumn =
-      line === targetSection.offset.line
-        ? column - targetSection.offset.column
-        : column;
+      line === targetSection.offset.line ? column - targetSection.offset.column : column;
 
     return getSourceFromMappings(
       targetSection.map.mappings,
@@ -173,16 +157,11 @@ export const getSourceFromSourceMap = (
     );
   }
 
-  return getSourceFromMappings(
-    sourceMap.mappings,
-    sourceMap.sources,
-    line - 1,
-    column,
-  );
+  return getSourceFromMappings(sourceMap.mappings, sourceMap.sources, line - 1, column);
 };
 
 const getSourceMapUrl = (url: string, content: string): null | string => {
-  const lines = content.split('\n');
+  const lines = content.split("\n");
   let sourceMapUrl: string | undefined;
   for (let i = lines.length - 1; i >= 0 && !sourceMapUrl; i--) {
     const regexMatch = lines[i].match(SOURCEMAP_REGEX);
@@ -196,24 +175,16 @@ const getSourceMapUrl = (url: string, content: string): null | string => {
   }
 
   const hasScheme = SCHEME_REGEX.test(sourceMapUrl);
-  if (
-    !(
-      INLINE_SOURCEMAP_REGEX.test(sourceMapUrl) ||
-      hasScheme ||
-      sourceMapUrl.startsWith('/')
-    )
-  ) {
-    const urlSegments = url.split('/');
+  if (!(INLINE_SOURCEMAP_REGEX.test(sourceMapUrl) || hasScheme || sourceMapUrl.startsWith("/"))) {
+    const urlSegments = url.split("/");
     urlSegments[urlSegments.length - 1] = sourceMapUrl;
-    sourceMapUrl = urlSegments.join('/');
+    sourceMapUrl = urlSegments.join("/");
   }
 
   return sourceMapUrl;
 };
 
-const decodeStandardSourceMap = (
-  rawSourceMap: StandardSourceMap,
-): SourceMap => ({
+const decodeStandardSourceMap = (rawSourceMap: StandardSourceMap): SourceMap => ({
   file: rawSourceMap.file,
   mappings: decode(rawSourceMap.mappings),
   names: rawSourceMap.names,
@@ -272,7 +243,7 @@ const isFetchableUrl = (url: string): boolean => {
 
   const scheme = schemeMatch[0].toLowerCase();
 
-  return scheme === 'http:' || scheme === 'https:';
+  return scheme === "http:" || scheme === "https:";
 };
 
 export const getSourceMapImpl = async (
@@ -312,7 +283,7 @@ export const getSourceMapImpl = async (
     }
     const rawSourceMap = (await sourceMapResponse.json()) as RawSourceMap;
 
-    return 'sections' in rawSourceMap
+    return "sections" in rawSourceMap
       ? decodeIndexSourceMap(rawSourceMap)
       : decodeStandardSourceMap(rawSourceMap);
   } catch {
@@ -359,10 +330,7 @@ export const getSourceMap = async (
     if (sourceMap === null) {
       sourceMapCache.set(file, null);
     } else {
-      sourceMapCache.set(
-        file,
-        supportsWeakRef ? new WeakRef(sourceMap) : sourceMap,
-      );
+      sourceMapCache.set(file, supportsWeakRef ? new WeakRef(sourceMap) : sourceMap);
     }
   }
 
@@ -380,8 +348,8 @@ export const symbolicateStack = async (
       const sourceMap = await getSourceMap(stackFrame.fileName, cache, fetchFn);
       if (
         !sourceMap ||
-        typeof stackFrame.lineNumber !== 'number' ||
-        typeof stackFrame.columnNumber !== 'number'
+        typeof stackFrame.lineNumber !== "number" ||
+        typeof stackFrame.columnNumber !== "number"
       ) {
         return stackFrame;
       }
@@ -395,10 +363,7 @@ export const symbolicateStack = async (
         ...stackFrame,
         source:
           symbolicatedSource.fileName && stackFrame.source
-            ? stackFrame.source.replace(
-                stackFrame.fileName,
-                symbolicatedSource.fileName,
-              )
+            ? stackFrame.source.replace(stackFrame.fileName, symbolicatedSource.fileName)
             : stackFrame.source,
         fileName: symbolicatedSource.fileName,
         lineNumber: symbolicatedSource.lineNumber,

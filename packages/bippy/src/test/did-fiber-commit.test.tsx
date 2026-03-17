@@ -1,10 +1,10 @@
-import '../index.js'; // KEEP THIS LINE ON TOP
+import "../index.js"; // KEEP THIS LINE ON TOP
 
-import { expect, it } from 'vitest';
-import React from 'react';
+import { expect, it } from "vitest";
+import React from "react";
 
-import { didFiberCommit, Fiber, instrument } from '../index.js';
-import { render } from '@testing-library/react';
+import { didFiberCommit, Fiber, instrument } from "../index.js";
+import { render } from "@testing-library/react";
 
 const Example = () => {
   return <div>Hello</div>;
@@ -18,7 +18,7 @@ export const ExampleWithUnmount = () => {
   return shouldUnmount ? <div>Hello</div> : null;
 };
 
-it('should return true for a fiber that has committed', () => {
+it("should return true for a fiber that has committed", () => {
   let maybeRenderedFiber: Fiber | null = null;
   instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {

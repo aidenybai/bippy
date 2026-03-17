@@ -3,7 +3,7 @@
 // without this, we can't stub the React DevTools global hook, we don't have a way to instrument the application
 // make sure you import this file first before anything else (particularly React)
 
-import type { ReactDevToolsGlobalHook, ReactRenderer } from './types.js';
+import type { ReactDevToolsGlobalHook, ReactRenderer } from "./types.js";
 
 export const version = process.env.VERSION;
 export const BIPPY_INSTRUMENTATION_STRING = `bippy-${version}`;
@@ -19,13 +19,13 @@ const NO_OP = () => {
 const checkDCE = (fn: unknown): void => {
   try {
     const code = Function.prototype.toString.call(fn);
-    if (code.indexOf('^_^') > -1) {
+    if (code.indexOf("^_^") > -1) {
       setTimeout(() => {
         throw new Error(
-          'React is running in production mode, but dead code ' +
-            'elimination has not been applied. Read how to correctly ' +
-            'configure React for production: ' +
-            'https://reactjs.org/link/perf-use-production-build',
+          "React is running in production mode, but dead code " +
+            "elimination has not been applied. Read how to correctly " +
+            "configure React for production: " +
+            "https://reactjs.org/link/perf-use-production-build",
         );
       });
     }
@@ -35,7 +35,7 @@ const checkDCE = (fn: unknown): void => {
 export const isRealReactDevtools = (
   rdtHook: ReactDevToolsGlobalHook | undefined | null = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__,
 ): boolean => {
-  return Boolean(rdtHook && 'getFiberRoots' in rdtHook);
+  return Boolean(rdtHook && "getFiberRoots" in rdtHook);
 };
 
 let isReactRefreshOverride = false;
@@ -45,20 +45,18 @@ export const isReactRefresh = (
   rdtHook: ReactDevToolsGlobalHook | undefined | null = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__,
 ): boolean => {
   if (isReactRefreshOverride) return true;
-  if (rdtHook && typeof rdtHook.inject === 'function') {
+  if (rdtHook && typeof rdtHook.inject === "function") {
     injectFnStr = rdtHook.inject.toString();
   }
   // https://github.com/facebook/react/blob/8f8b336734d7c807f5aa11b0f31540e63302d789/packages/react-refresh/src/ReactFreshRuntime.js#L459
-  return Boolean(injectFnStr?.includes('(injected)'));
+  return Boolean(injectFnStr?.includes("(injected)"));
 };
 
 const onActiveListeners = new Set<() => unknown>();
 
 export const _renderers = new Set<ReactRenderer>();
 
-export const installRDTHook = (
-  onActive?: () => unknown,
-): ReactDevToolsGlobalHook => {
+export const installRDTHook = (onActive?: () => unknown): ReactDevToolsGlobalHook => {
   const renderers = new Map<number, ReactRenderer>();
   let i = 0;
   let rdtHook: ReactDevToolsGlobalHook = {
@@ -85,14 +83,14 @@ export const installRDTHook = (
     supportsFlight: true,
   };
   try {
-    objectDefineProperty(globalThis, '__REACT_DEVTOOLS_GLOBAL_HOOK__', {
+    objectDefineProperty(globalThis, "__REACT_DEVTOOLS_GLOBAL_HOOK__", {
       configurable: true,
       enumerable: true,
       get() {
         return rdtHook;
       },
       set(newHook) {
-        if (newHook && typeof newHook === 'object') {
+        if (newHook && typeof newHook === "object") {
           const ourRenderers = rdtHook.renderers;
           rdtHook = newHook;
           if (ourRenderers.size > 0) {
@@ -111,11 +109,11 @@ export const installRDTHook = (
     // eslint-disable-next-line @typescript-eslint/unbound-method
     const originalWindowHasOwnProperty = window.hasOwnProperty;
     let hasRanHack = false;
-    objectDefineProperty(window, 'hasOwnProperty', {
+    objectDefineProperty(window, "hasOwnProperty", {
       configurable: true,
       value: function (this: unknown, ...args: [PropertyKey]) {
         try {
-          if (!hasRanHack && args[0] === '__REACT_DEVTOOLS_GLOBAL_HOOK__') {
+          if (!hasRanHack && args[0] === "__REACT_DEVTOOLS_GLOBAL_HOOK__") {
             globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ = undefined;
             // special falsy value to know that we've already installed before
             hasRanHack = true;
@@ -194,18 +192,13 @@ export const patchRDTHook = (onActive?: () => unknown): void => {
 };
 
 export const hasRDTHook = (): boolean => {
-  return objectHasOwnProperty.call(
-    globalThis,
-    '__REACT_DEVTOOLS_GLOBAL_HOOK__',
-  );
+  return objectHasOwnProperty.call(globalThis, "__REACT_DEVTOOLS_GLOBAL_HOOK__");
 };
 
 /**
  * Returns the current React DevTools global hook.
  */
-export const getRDTHook = (
-  onActive?: () => unknown,
-): ReactDevToolsGlobalHook => {
+export const getRDTHook = (onActive?: () => unknown): ReactDevToolsGlobalHook => {
   if (!hasRDTHook()) {
     return installRDTHook(onActive);
   }
@@ -217,10 +210,9 @@ export const getRDTHook = (
 
 export const isClientEnvironment = (): boolean => {
   return Boolean(
-    typeof window !== 'undefined' &&
-      // eslint-disable-next-line @typescript-eslint/unbound-method
-      (window.document?.createElement ||
-        window.navigator?.product === 'ReactNative'),
+    typeof window !== "undefined" &&
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    (window.document?.createElement || window.navigator?.product === "ReactNative"),
   );
 };
 

@@ -1,3 +1,3 @@
-import './install-hook-only.js';
+import "./install-hook-only.js";
 
-export * from './core.js';
+export * from "./core.js";

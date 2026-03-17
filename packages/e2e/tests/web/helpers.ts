@@ -1,7 +1,7 @@
-import type { Page } from '@playwright/test';
+import type { Page } from "@playwright/test";
 
 export const waitForBippy = async (page: Page) => {
-  await page.waitForFunction(() => typeof window.__BIPPY__ !== 'undefined', undefined, {
+  await page.waitForFunction(() => typeof window.__BIPPY__ !== "undefined", undefined, {
     timeout: 10_000,
   });
 };
@@ -18,14 +18,14 @@ export const getHostFiber = async (page: Page, testId: string) => {
     if (!fiber) return null;
     return {
       tag: fiber.tag,
-      type: typeof fiber.type === 'string' ? fiber.type : null,
+      type: typeof fiber.type === "string" ? fiber.type : null,
     };
   }, testId);
 };
 
 export const findCompositeFiberByName = async (page: Page, componentName: string) => {
   return page.evaluate((name) => {
-    const rootElement = document.getElementById('root') ?? document.querySelector('#__next');
+    const rootElement = document.getElementById("root") ?? document.querySelector("#__next");
     if (!rootElement) return false;
     const rootFiber = window.__BIPPY__.getFiberFromHostInstance(rootElement);
     if (!rootFiber) return false;

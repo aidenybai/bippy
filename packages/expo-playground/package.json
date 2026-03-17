@@ -1,6 +1,7 @@
 {
   "name": "@bippy/expo-playground",
   "version": "1.0.0",
+  "private": true,
   "main": "src/index.ts",
   "scripts": {
     "dev": "expo start --dev-client",
@@ -23,6 +24,5 @@
   "devDependencies": {
     "@types/react": "~19.1.0",
     "typescript": "~5.9.2"
-  },
-  "private": true
+  }
 }

@@ -8,20 +8,17 @@ export const ProjectInfo = () => {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-1.5">
-        <img
-          src="/bippy.png"
-          alt="bippy"
-          width={24}
-          height={24}
-          className="rounded"
-        />
+        <img src="/bippy.png" alt="bippy" width={24} height={24} className="rounded" />
         <h1 className="text-base font-medium tracking-tight">bippy</h1>
       </div>
       <p className="text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
-        bippy is a toolkit to <span className="font-medium text-foreground">hack into React internals</span>
+        bippy is a toolkit to{" "}
+        <span className="font-medium text-foreground">hack into React internals</span>
       </p>
       <p className="text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
-        by default, you cannot access React internals. bippy bypasses this by &ldquo;pretending&rdquo; to be React DevTools, giving you access to the fiber tree and other internals.
+        by default, you cannot access React internals. bippy bypasses this by
+        &ldquo;pretending&rdquo; to be React DevTools, giving you access to the fiber tree and other
+        internals.
       </p>
       <ul className="list-disc space-y-0.5 pl-4 text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
         {BIPPY_FEATURES.map((feature) => (

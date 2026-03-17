@@ -31,7 +31,7 @@ import type {
   TransitionTracingCallbacks,
   TypeOfMode,
   WorkTag,
-} from 'react-reconciler';
+} from "react-reconciler";
 
 export type {
   BundleType,
@@ -98,16 +98,16 @@ export interface Family {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Fiber<T = any> = Omit<
   ReactFiber,
-  | 'alternate'
-  | 'child'
-  | 'dependencies'
-  | 'memoizedProps'
-  | 'memoizedState'
-  | 'pendingProps'
-  | 'return'
-  | 'sibling'
-  | 'stateNode'
-  | 'updateQueue'
+  | "alternate"
+  | "child"
+  | "dependencies"
+  | "memoizedProps"
+  | "memoizedState"
+  | "pendingProps"
+  | "return"
+  | "sibling"
+  | "stateNode"
+  | "updateQueue"
 > & {
   _debugInfo?: Array<{
     debugLocation?: unknown;
@@ -158,11 +158,7 @@ export interface ReactDevToolsGlobalHook {
   inject: (renderer: ReactRenderer) => number;
   // https://github.com/aidenybai/bippy/issues/43
   on: () => void;
-  onCommitFiberRoot: (
-    rendererID: number,
-    root: FiberRoot,
-    priority: number | void,
-  ) => void;
+  onCommitFiberRoot: (rendererID: number, root: FiberRoot, priority: number | void) => void;
   onCommitFiberUnmount: (rendererID: number, fiber: Fiber) => void;
   onPostCommitFiberRoot: (rendererID: number, root: FiberRoot) => void;
   renderers: Map<number, ReactRenderer>;
@@ -180,24 +176,10 @@ export interface ReactRenderer {
   findFiberByHostInstance?: (hostInstance: unknown) => Fiber | null;
   // react devtools
   getCurrentFiber?: (fiber: Fiber) => Fiber | null;
-  overrideContext?: (
-    fiber: Fiber,
-    contextType: unknown,
-    path: string[],
-    value: unknown,
-  ) => void;
+  overrideContext?: (fiber: Fiber, contextType: unknown, path: string[], value: unknown) => void;
 
-  overrideHookState?: (
-    fiber: Fiber,
-    id: string,
-    path: string[],
-    value: unknown,
-  ) => void;
-  overrideHookStateDeletePath?: (
-    fiber: Fiber,
-    id: number,
-    path: Array<number | string>,
-  ) => void;
+  overrideHookState?: (fiber: Fiber, id: string, path: string[], value: unknown) => void;
+  overrideHookStateDeletePath?: (fiber: Fiber, id: number, path: Array<number | string>) => void;
   overrideHookStateRenamePath?: (
     fiber: Fiber,
     id: number,
@@ -205,10 +187,7 @@ export interface ReactRenderer {
     newPath: Array<number | string>,
   ) => void;
   overrideProps?: (fiber: Fiber, path: string[], value: unknown) => void;
-  overridePropsDeletePath?: (
-    fiber: Fiber,
-    path: Array<number | string>,
-  ) => void;
+  overridePropsDeletePath?: (fiber: Fiber, path: Array<number | string>) => void;
   overridePropsRenamePath?: (
     fiber: Fiber,
     oldPath: Array<number | string>,
@@ -228,12 +207,8 @@ export interface ReactRenderer {
   scheduleUpdate?: (fiber: Fiber) => void;
 
   setErrorHandler?: (newShouldErrorImpl: (fiber: Fiber) => boolean) => void;
-  setRefreshHandler?: (
-    handler: ((fiber: Fiber) => Family | null) | null,
-  ) => void;
-  setSuspenseHandler?: (
-    newShouldSuspendImpl: (suspenseInstance: unknown) => void,
-  ) => void;
+  setRefreshHandler?: (handler: ((fiber: Fiber) => Family | null) | null) => void;
+  setSuspenseHandler?: (newShouldSuspendImpl: (suspenseInstance: unknown) => void) => void;
 
   version: string;
 }

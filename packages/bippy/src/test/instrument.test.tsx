@@ -1,15 +1,10 @@
-import '../index.js'; // KEEP THIS LINE ON TOP
+import "../index.js"; // KEEP THIS LINE ON TOP
 
-import { expect, it, vi } from 'vitest';
-import type { FiberRoot } from '../types.js';
-import {
-  getRDTHook,
-  instrument,
-  isInstrumentationActive,
-  secure,
-} from '../index.js';
-import React from 'react';
-import { render } from '@testing-library/react';
+import { expect, it, vi } from "vitest";
+import type { FiberRoot } from "../types.js";
+import { getRDTHook, instrument, isInstrumentationActive, secure } from "../index.js";
+import React from "react";
+import { render } from "@testing-library/react";
 
 export const Example = () => {
   return <div>Hello</div>;
@@ -20,17 +15,15 @@ export const ExampleWithEffect = () => {
   return <div>Hello</div>;
 };
 
-it('should not fail if __REACT_DEVTOOLS_GLOBAL_HOOK__ exists already', () => {
+it("should not fail if __REACT_DEVTOOLS_GLOBAL_HOOK__ exists already", () => {
   render(<Example />);
   const onCommitFiberRoot = vi.fn();
-  instrument(
-    secure({ onCommitFiberRoot }, { dangerouslyRunInProduction: true }),
-  );
+  instrument(secure({ onCommitFiberRoot }, { dangerouslyRunInProduction: true }));
   render(<Example />);
   expect(onCommitFiberRoot).toHaveBeenCalled();
 });
 
-it('onActive is called', () => {
+it("onActive is called", () => {
   const onActive = vi.fn();
   instrument({ onActive });
   render(<Example />);
@@ -38,7 +31,7 @@ it('onActive is called', () => {
   expect(isInstrumentationActive()).toBe(true);
 });
 
-it('onCommitFiberRoot is called', () => {
+it("onCommitFiberRoot is called", () => {
   // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   let currentFiberRoot: FiberRoot | null = null;
   const onCommitFiberRoot = vi.fn((_rendererID, fiberRoot) => {
@@ -51,7 +44,7 @@ it('onCommitFiberRoot is called', () => {
   expect(currentFiberRoot?.current.child.type).toBe(Example);
 });
 
-it('onPostCommitFiberRoot is called', () => {
+it("onPostCommitFiberRoot is called", () => {
   // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   let currentFiberRoot: FiberRoot | null = null;
   const onPostCommitFiberRoot = vi.fn((_rendererID, fiberRoot) => {
@@ -64,16 +57,16 @@ it('onPostCommitFiberRoot is called', () => {
   expect(currentFiberRoot?.current.child.type).toBe(ExampleWithEffect);
 });
 
-it('should safeguard if version <17 or in production', () => {
+it("should safeguard if version <17 or in production", () => {
   render(<Example />);
   const rdtHook = getRDTHook();
   const currentDispatcherRef = { current: null };
   rdtHook.renderers.set(1, {
     bundleType: 0,
     currentDispatcherRef,
-    reconcilerVersion: '16.0.0',
-    rendererPackageName: 'react-dom',
-    version: '16.0.0',
+    reconcilerVersion: "16.0.0",
+    rendererPackageName: "react-dom",
+    version: "16.0.0",
   });
   const onCommitFiberRoot1 = vi.fn();
   instrument(secure({ onCommitFiberRoot: onCommitFiberRoot1 }));
@@ -90,9 +83,9 @@ it('should safeguard if version <17 or in production', () => {
   rdtHook.renderers.set(1, {
     bundleType: 1,
     currentDispatcherRef,
-    reconcilerVersion: '17.0.0',
-    rendererPackageName: 'react-dom',
-    version: '17.0.0',
+    reconcilerVersion: "17.0.0",
+    rendererPackageName: "react-dom",
+    version: "17.0.0",
   });
   instrument(secure({ onCommitFiberRoot: onCommitFiberRoot2 }));
   render(<Example />);

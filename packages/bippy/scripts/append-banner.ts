@@ -1,6 +1,6 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -13,17 +13,17 @@ const banner = `/**
  * LICENSE file in the root directory of this source tree.
  */`;
 
-const distDir = path.join(__dirname, '..', 'dist');
+const distDir = path.join(__dirname, "..", "dist");
 
 const appendBannerToFile = (filePath: string) => {
-  const content = fs.readFileSync(filePath, 'utf8');
+  const content = fs.readFileSync(filePath, "utf8");
 
   if (content.startsWith(banner)) {
     return;
   }
 
   const newContent = `${banner}\n${content}`;
-  fs.writeFileSync(filePath, newContent, 'utf8');
+  fs.writeFileSync(filePath, newContent, "utf8");
 };
 
 const processDirectory = (dir: string) => {
@@ -36,7 +36,7 @@ const processDirectory = (dir: string) => {
     if (stat.isDirectory()) {
       processDirectory(filePath);
     } else if (stat.isFile()) {
-      if (file.endsWith('.js') || file.endsWith('.cjs')) {
+      if (file.endsWith(".js") || file.endsWith(".cjs")) {
         appendBannerToFile(filePath);
       }
     }

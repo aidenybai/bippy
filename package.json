@@ -1,5 +1,6 @@
 {
   "name": "@bippy/monorepo",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vp run bippy#dev",
@@ -15,19 +16,18 @@
     "version": "changeset version",
     "release": "changeset publish"
   },
-  "packageManager": "pnpm@10.12.1",
-  "private": true,
-  "pnpm": {
-    "overrides": {
-      "react": "^19.2.4",
-      "react-dom": "^19.2.4"
-    }
-  },
   "devDependencies": {
     "@antfu/ni": "^27.0.1",
     "@changesets/changelog-git": "^0.2.0",
     "@changesets/cli": "^2.27.11",
     "sherif": "^1.2.0",
     "vite-plus": "latest"
+  },
+  "packageManager": "pnpm@10.12.1",
+  "pnpm": {
+    "overrides": {
+      "react": "^19.2.4",
+      "react-dom": "^19.2.4"
+    }
   }
 }

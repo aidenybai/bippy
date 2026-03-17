@@ -20,28 +20,23 @@ const CHROME_IE_STACK_REGEXP = /^\s*at .*(\S+:\d+|\(native\))/m;
 const SAFARI_NATIVE_CODE_REGEXP = /^(eval@)?(\[native code\])?$/;
 
 const getNonStandardStacktrace = (error: unknown): string | null => {
-  if (error && typeof error === 'object') {
-    const stacktrace = (error as Record<string, unknown>)['stacktrace'];
-    return typeof stacktrace === 'string' ? stacktrace : null;
+  if (error && typeof error === "object") {
+    const stacktrace = (error as Record<string, unknown>)["stacktrace"];
+    return typeof stacktrace === "string" ? stacktrace : null;
   }
   return null;
 };
 
-export const parseStack = (
-  stackString: string,
-  options?: ParseOptions,
-): StackFrame[] => {
+export const parseStack = (stackString: string, options?: ParseOptions): StackFrame[] => {
   if (options?.includeInElement !== false) {
-    const lines = stackString.split('\n');
+    const lines = stackString.split("\n");
     const frames: StackFrame[] = [];
     for (const rawLine of lines) {
       if (/^\s*at\s+/.test(rawLine)) {
         const parsed = parseV8OrIeString(rawLine, undefined)[0];
         if (parsed) frames.push(parsed);
       } else if (/^\s*in\s+/.test(rawLine)) {
-        const elementName = rawLine
-          .replace(/^\s*in\s+/, '')
-          .replace(/\s*\(at .*\)$/, '');
+        const elementName = rawLine.replace(/^\s*in\s+/, "").replace(/\s*\(at .*\)$/, "");
         frames.push({ functionName: elementName, source: rawLine });
       } else if (rawLine.match(FIREFOX_SAFARI_STACK_REGEXP)) {
         const parsed = parseFFOrSafariString(rawLine, undefined)[0];
@@ -59,13 +54,12 @@ export const parseStack = (
 export const extractLocation = (
   urlLike: string,
 ): [string, string | undefined, string | undefined] => {
-  if (!urlLike.includes(':')) return [urlLike, undefined, undefined];
+  if (!urlLike.includes(":")) return [urlLike, undefined, undefined];
 
   // HACK: Chrome/V8 stack traces wrap location in parens: "(file.js:10:5)"
   // We need to strip these outer parens but preserve parens in paths (e.g., Next.js route groups like "(docs)")
   // Chrome format always ends with `:col)` where digit comes right before the closing paren
-  const isWrappedLocation =
-    urlLike.startsWith('(') && /:\d+\)$/.test(urlLike);
+  const isWrappedLocation = urlLike.startsWith("(") && /:\d+\)$/.test(urlLike);
   const sanitizedResult = isWrappedLocation ? urlLike.slice(1, -1) : urlLike;
 
   const regExp = /(.+?)(?::(\d+))?(?::(\d+))?$/;
@@ -76,26 +70,19 @@ export const extractLocation = (
 
 const applySlice = <T>(lines: T[], options?: ParseOptions): T[] => {
   if (options && options.slice != null) {
-    if (Array.isArray(options.slice))
-      return lines.slice(options.slice[0], options.slice[1]);
+    if (Array.isArray(options.slice)) return lines.slice(options.slice[0], options.slice[1]);
     return lines.slice(0, options.slice);
   }
   return lines;
 };
 
-export const parseV8OrIE = (
-  error: Error,
-  options?: ParseOptions,
-): StackFrame[] => {
+export const parseV8OrIE = (error: Error, options?: ParseOptions): StackFrame[] => {
   return parseV8OrIeString(error.stack!, options);
 };
 
-export const parseV8OrIeString = (
-  stack: string,
-  options?: ParseOptions,
-): StackFrame[] => {
+export const parseV8OrIeString = (stack: string, options?: ParseOptions): StackFrame[] => {
   const filteredLines = applySlice(
-    stack.split('\n').filter((line) => {
+    stack.split("\n").filter((line) => {
       return !!line.match(CHROME_IE_STACK_REGEXP);
     }),
     options,
@@ -103,27 +90,23 @@ export const parseV8OrIeString = (
 
   return filteredLines.map((line): StackFrame => {
     let currentLine = line;
-    if (currentLine.includes('(eval ')) {
+    if (currentLine.includes("(eval ")) {
       currentLine = currentLine
-        .replace(/eval code/g, 'eval')
-        .replace(/(\(eval at [^()]*)|(,.*$)/g, '');
+        .replace(/eval code/g, "eval")
+        .replace(/(\(eval at [^()]*)|(,.*$)/g, "");
     }
     let sanitizedLine = currentLine
-      .replace(/^\s+/, '')
-      .replace(/\(eval code/g, '(')
-      .replace(/^.*?\s+/, '');
+      .replace(/^\s+/, "")
+      .replace(/\(eval code/g, "(")
+      .replace(/^.*?\s+/, "");
 
     const locationMatch = sanitizedLine.match(/ (\(.+\)$)/);
 
-    sanitizedLine = locationMatch
-      ? sanitizedLine.replace(locationMatch[0], '')
-      : sanitizedLine;
+    sanitizedLine = locationMatch ? sanitizedLine.replace(locationMatch[0], "") : sanitizedLine;
 
-    const locationParts = extractLocation(
-      locationMatch ? locationMatch[1] : sanitizedLine,
-    );
+    const locationParts = extractLocation(locationMatch ? locationMatch[1] : sanitizedLine);
     const functionName = (locationMatch && sanitizedLine) || undefined;
-    const fileName = ['eval', '<anonymous>'].includes(locationParts[0])
+    const fileName = ["eval", "<anonymous>"].includes(locationParts[0])
       ? undefined
       : locationParts[0];
 
@@ -137,19 +120,13 @@ export const parseV8OrIeString = (
   });
 };
 
-export const parseFFOrSafari = (
-  error: Error,
-  options?: ParseOptions,
-): StackFrame[] => {
+export const parseFFOrSafari = (error: Error, options?: ParseOptions): StackFrame[] => {
   return parseFFOrSafariString(error.stack!, options);
 };
 
-export const parseFFOrSafariString = (
-  stack: string,
-  options?: ParseOptions,
-): StackFrame[] => {
+export const parseFFOrSafariString = (stack: string, options?: ParseOptions): StackFrame[] => {
   const filteredLines = applySlice(
-    stack.split('\n').filter((line) => {
+    stack.split("\n").filter((line) => {
       return !line.match(SAFARI_NATIVE_CODE_REGEXP);
     }),
     options,
@@ -157,13 +134,10 @@ export const parseFFOrSafariString = (
 
   return filteredLines.map((line): StackFrame => {
     let currentLine = line;
-    if (currentLine.includes(' > eval'))
-      currentLine = currentLine.replace(
-        / line (\d+)(?: > eval line \d+)* > eval:\d+:\d+/g,
-        ':$1',
-      );
+    if (currentLine.includes(" > eval"))
+      currentLine = currentLine.replace(/ line (\d+)(?: > eval line \d+)* > eval:\d+:\d+/g, ":$1");
 
-    if (!currentLine.includes('@') && !currentLine.includes(':')) {
+    if (!currentLine.includes("@") && !currentLine.includes(":")) {
       return {
         functionName: currentLine,
       };
@@ -172,9 +146,7 @@ export const parseFFOrSafariString = (
         /(([^\n\r"\u2028\u2029]*".[^\n\r"\u2028\u2029]*"[^\n\r@\u2028\u2029]*(?:@[^\n\r"\u2028\u2029]*"[^\n\r@\u2028\u2029]*)*(?:[\n\r\u2028\u2029][^@]*)?)?[^@]*)@/;
       const matches = currentLine.match(functionNameRegex);
       const functionName = matches && matches[1] ? matches[1] : undefined;
-      const locationParts = extractLocation(
-        currentLine.replace(functionNameRegex, ''),
-      );
+      const locationParts = extractLocation(currentLine.replace(functionNameRegex, ""));
 
       return {
         functionName,
@@ -187,16 +159,12 @@ export const parseFFOrSafariString = (
   });
 };
 
-export const parseOpera = (
-  error: Error,
-  options?: ParseOptions,
-): StackFrame[] => {
+export const parseOpera = (error: Error, options?: ParseOptions): StackFrame[] => {
   const nonStandardStacktrace = getNonStandardStacktrace(error);
   if (
     !nonStandardStacktrace ||
-    (error.message.includes('\n') &&
-      error.message.split('\n').length >
-        nonStandardStacktrace.split('\n').length)
+    (error.message.includes("\n") &&
+      error.message.split("\n").length > nonStandardStacktrace.split("\n").length)
   ) {
     return parseOpera9(error, options);
   }
@@ -204,12 +172,9 @@ export const parseOpera = (
   return parseOpera11(error, options);
 };
 
-export const parseOpera9 = (
-  error: Error,
-  options?: ParseOptions,
-): StackFrame[] => {
+export const parseOpera9 = (error: Error, options?: ParseOptions): StackFrame[] => {
   const lineRegex = /Line (\d+).*script (?:in )?(\S+)/i;
-  const messageLines = error.message.split('\n');
+  const messageLines = error.message.split("\n");
   const parsedFrames: StackFrame[] = [];
 
   for (let i = 2, len = messageLines.length; i < len; i += 2) {
@@ -226,14 +191,10 @@ export const parseOpera9 = (
   return applySlice(parsedFrames, options);
 };
 
-export const parseOpera10 = (
-  error: Error,
-  options?: ParseOptions,
-): StackFrame[] => {
-  const lineRegex =
-    /Line (\d+).*script (?:in )?(\S+)(?:: In function (\S+))?$/i;
+export const parseOpera10 = (error: Error, options?: ParseOptions): StackFrame[] => {
+  const lineRegex = /Line (\d+).*script (?:in )?(\S+)(?:: In function (\S+))?$/i;
   const nonStandardStacktrace = getNonStandardStacktrace(error);
-  const stacktraceLines = (nonStandardStacktrace || '').split('\n');
+  const stacktraceLines = (nonStandardStacktrace || "").split("\n");
   const parsedFrames: StackFrame[] = [];
 
   for (let i = 0, len = stacktraceLines.length; i < len; i += 2) {
@@ -251,37 +212,30 @@ export const parseOpera10 = (
   return applySlice(parsedFrames, options);
 };
 
-export const parseOpera11 = (
-  error: Error,
-  options?: ParseOptions,
-): StackFrame[] => {
+export const parseOpera11 = (error: Error, options?: ParseOptions): StackFrame[] => {
   const filteredLines = applySlice(
     // @ts-expect-error missing stack property
-    error.stack.split('\n').filter((line) => {
-      return (
-        !!line.match(FIREFOX_SAFARI_STACK_REGEXP) &&
-        !line.match(/^Error created at/)
-      );
+    error.stack.split("\n").filter((line) => {
+      return !!line.match(FIREFOX_SAFARI_STACK_REGEXP) && !line.match(/^Error created at/);
     }),
     options,
   );
 
   return filteredLines.map<StackFrame>((line) => {
-    const tokens = line.split('@');
+    const tokens = line.split("@");
     const locationParts = extractLocation(tokens.pop()!);
-    const functionCall = tokens.shift() || '';
+    const functionCall = tokens.shift() || "";
     const functionName =
-      functionCall
-        .replace(/<anonymous function(: (\w+))?>/, '$2')
-        .replace(/\([^)]*\)/g, '') || undefined;
+      functionCall.replace(/<anonymous function(: (\w+))?>/, "$2").replace(/\([^)]*\)/g, "") ||
+      undefined;
     let argsRaw: string | undefined;
     if (functionCall.match(/\(([^)]*)\)/))
-      argsRaw = functionCall.replace(/^[^(]+\(([^)]*)\)$/, '$1');
+      argsRaw = functionCall.replace(/^[^(]+\(([^)]*)\)$/, "$1");
 
     const args =
-      argsRaw === undefined || argsRaw === '[arguments not available]'
+      argsRaw === undefined || argsRaw === "[arguments not available]"
         ? undefined
-        : argsRaw.split(',');
+        : argsRaw.split(",");
 
     return {
       functionName,

@@ -1,8 +1,8 @@
 {
   "name": "@bippy/e2e-expo",
   "version": "1.0.0",
-  "main": "src/index.ts",
   "private": true,
+  "main": "src/index.ts",
   "scripts": {
     "start": "expo start",
     "ios": "expo start --ios",

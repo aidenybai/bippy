@@ -1,19 +1,15 @@
-import '../index.js'; // KEEP THIS LINE ON TOP
+import "../index.js"; // KEEP THIS LINE ON TOP
 
-import { render } from '@testing-library/react';
-import React from 'react';
-import { expect, it } from 'vitest';
-import { Fiber, getFiberStack, instrument } from '../index.js';
+import { render } from "@testing-library/react";
+import React from "react";
+import { expect, it } from "vitest";
+import { Fiber, getFiberStack, instrument } from "../index.js";
 
 export const Example = () => {
   return <div>Hello</div>;
 };
 
-export const ExampleWithChildrenProp = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
+export const ExampleWithChildrenProp = ({ children }: { children: React.ReactNode }) => {
   return <div>{children}</div>;
 };
 
@@ -34,7 +30,7 @@ export const ExampleWithUnmount = () => {
   return shouldUnmount ? <div>Hello</div> : null;
 };
 
-it('should return the fiber stack', () => {
+it("should return the fiber stack", () => {
   let maybeFiber: Fiber | null = null;
   let manualFiberStack: Fiber[] = [];
   instrument({

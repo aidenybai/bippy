@@ -1,3 +1,3 @@
 packages:
-  - 'packages/*'
-  - 'packages/e2e/fixtures/*'
+  - "packages/*"
+  - "packages/e2e/fixtures/*"

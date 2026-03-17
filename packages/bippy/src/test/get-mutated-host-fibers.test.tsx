@@ -1,10 +1,10 @@
-import '../index.js'; // KEEP THIS LINE ON TOP
+import "../index.js"; // KEEP THIS LINE ON TOP
 
-import { render } from '@testing-library/react';
-import React from 'react';
-import { expect, it } from 'vitest';
-import { getMutatedHostFibers, instrument } from '../index.js';
-import type { Fiber } from '../types.js';
+import { render } from "@testing-library/react";
+import React from "react";
+import { expect, it } from "vitest";
+import { getMutatedHostFibers, instrument } from "../index.js";
+import type { Fiber } from "../types.js";
 
 export const ExampleWithMutation = () => {
   const [element, setElement] = React.useState(<div>Hello</div>);
@@ -14,7 +14,7 @@ export const ExampleWithMutation = () => {
   return element;
 };
 
-it('should return all host fibers that have committed and rendered', () => {
+it("should return all host fibers that have committed and rendered", () => {
   let maybeFiber: Fiber | null = null;
   let mutatedHostFiber: Fiber<HTMLDivElement> | null = null;
   instrument({
@@ -24,9 +24,7 @@ it('should return all host fibers that have committed and rendered', () => {
     },
   });
   render(<ExampleWithMutation />);
-  const mutatedHostFibers = getMutatedHostFibers(
-    maybeFiber as unknown as Fiber,
-  );
+  const mutatedHostFibers = getMutatedHostFibers(maybeFiber as unknown as Fiber);
   expect(getMutatedHostFibers(maybeFiber as unknown as Fiber)).toHaveLength(1);
   expect(mutatedHostFiber).toBe(mutatedHostFibers[0]);
 });

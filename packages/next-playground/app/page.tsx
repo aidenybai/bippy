@@ -1,5 +1,5 @@
-import { Inspector } from '../components/inspector';
-import { TodoList } from '../components/todo-list';
+import { Inspector } from "../components/inspector";
+import { TodoList } from "../components/todo-list";
 
 export default function Home() {
   return (
