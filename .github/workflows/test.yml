@@ -8,16 +8,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - run: npm i -g --force corepack && corepack enable
       - uses: pnpm/action-setup@v4
-      - uses: oven-sh/setup-bun@v2
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 22
           cache: "pnpm"
-      - run: curl -fsSL https://vite.plus | bash
-      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm install --frozen-lockfile
       - run: pnpm lint
-        env:
-          NODE_OPTIONS: "--experimental-strip-types --disable-warning=ExperimentalWarning"
       - run: pnpm test
