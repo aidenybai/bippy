@@ -12,6 +12,9 @@
     "@bippy/next-playground",
     "@bippy/vite-playground",
     "@bippy/expo-playground",
-    "@bippy/e2e"
+    "@bippy/e2e",
+    "@bippy/e2e-expo",
+    "@bippy/e2e-next",
+    "@bippy/e2e-vite"
   ]
 }
