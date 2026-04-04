@@ -88,7 +88,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "NODE_ENV=production vp pack && bun scripts/append-banner.ts",
+    "build": "NODE_ENV=production vp pack && tsx scripts/append-banner.ts",
     "dev": "NODE_ENV=development vp pack --watch",
     "publint": "publint",
     "test": "vp test",
@@ -114,6 +114,7 @@
     "react-reconciler": "^0.31.0",
     "react-refresh": "^0.16.0",
     "terser": "^5.36.0",
+    "tsx": "^4.21.0",
     "vite-plus": "latest"
   },
   "peerDependencies": {
