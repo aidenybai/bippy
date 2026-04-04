@@ -1,5 +1,11 @@
 # bippy
 
+## 0.5.34
+
+### Patch Changes
+
+- fix: types
+
 ## 0.5.33
 
 ### Patch Changes
