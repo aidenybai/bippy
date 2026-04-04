@@ -95,9 +95,6 @@
     "coverage": "vp test --coverage",
     "prepublishOnly": "cp ../../README.md . && pnpm build"
   },
-  "dependencies": {
-    "@types/react-reconciler": "^0.28.9"
-  },
   "devDependencies": {
     "@jridgewell/sourcemap-codec": "^1.5.0",
     "@testing-library/dom": "^10.4.0",
@@ -105,13 +102,14 @@
     "@types/node": "^20",
     "@types/react": "^19.0.4",
     "@types/react-dom": "^19.0.2",
+    "@types/react-reconciler": "^0.33.0",
     "esbuild": "^0.27.0",
     "happy-dom": "^15.11.7",
     "publint": "^0.3.0",
     "react": "19.0.0",
     "react-devtools-inline": "^6.0.1",
     "react-dom": "19.0.0",
-    "react-reconciler": "^0.31.0",
+    "react-reconciler": "^0.33.0",
     "react-refresh": "^0.16.0",
     "terser": "^5.36.0",
     "tsx": "^4.21.0",

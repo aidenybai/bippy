@@ -29,10 +29,6 @@ importers:
         version: 0.1.15(@types/node@20.19.34)(esbuild@0.27.4)(happy-dom@15.11.7)(jiti@2.6.1)(publint@0.3.18)(terser@5.46.0)(tsx@4.21.0)(typescript@5.9.3)(vite@6.4.1(@types/node@20.19.34)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))(yaml@2.8.2)
 
   packages/bippy:
-    dependencies:
-      '@types/react-reconciler':
-        specifier: ^0.28.9
-        version: 0.28.9(@types/react@19.1.17)
     devDependencies:
       '@jridgewell/sourcemap-codec':
         specifier: ^1.5.0
@@ -52,6 +48,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.0.2
         version: 19.2.3(@types/react@19.1.17)
+      '@types/react-reconciler':
+        specifier: ^0.33.0
+        version: 0.33.0(@types/react@19.1.17)
       esbuild:
         specifier: ^0.27.0
         version: 0.27.4
@@ -71,8 +70,8 @@ importers:
         specifier: ^19.2.4
         version: 19.2.4(react@19.2.4)
       react-reconciler:
-        specifier: ^0.31.0
-        version: 0.31.0(react@19.2.4)
+        specifier: ^0.33.0
+        version: 0.33.0(react@19.2.4)
       react-refresh:
         specifier: ^0.16.0
         version: 0.16.0
@@ -3484,6 +3483,11 @@ packages:
 
   '@types/react-reconciler@0.28.9':
     resolution: {integrity: sha512-HHM3nxyUZ3zAylX8ZEyrDNd2XZOnQ0D5XfunJF5FLQnZbHHYq4UWvW1QfelQNXv1ICNkwYhfxjwfnqivYB6bFg==}
+    peerDependencies:
+      '@types/react': '*'
+
+  '@types/react-reconciler@0.33.0':
+    resolution: {integrity: sha512-HZOXsKT0tGI9LlUw2LuedXsVeB88wFa536vVL0M6vE8zN63nI+sSr1ByxmPToP5K5bukaVscyeCJcF9guVNJ1g==}
     peerDependencies:
       '@types/react': '*'
 
@@ -7252,8 +7256,8 @@ packages:
       '@types/react':
         optional: true
 
-  react-reconciler@0.31.0:
-    resolution: {integrity: sha512-7Ob7Z+URmesIsIVRjnLoDGwBEG/tVitidU0nMsqX/eeJaLY89RISO/10ERe0MqmzuKUUB1rmY+h1itMbUHg9BQ==}
+  react-reconciler@0.33.0:
+    resolution: {integrity: sha512-KetWRytFv1epdpJc3J4G75I4WrplZE5jOL7Yq0p34+OVOKF4Se7WrdIdVC45XsSSmUTlht2FM/fM1FZb1mfQeA==}
     engines: {node: '>=0.10.0'}
     peerDependencies:
       react: ^19.2.4
@@ -7502,9 +7506,6 @@ packages:
   sax@1.4.4:
     resolution: {integrity: sha512-1n3r/tGXO6b6VXMdFT54SHzT9ytu9yr7TaELowdYpMqY/Ao7EnlQGmAQ1+RatX7Tkkdm6hONI2owqNx2aZj5Sw==}
     engines: {node: '>=11.0.0'}
-
-  scheduler@0.25.0:
-    resolution: {integrity: sha512-xFVuu11jh+xcO7JOAGJNOXld8/TcEHK/4CituBUeUb5hqxJLj9YuemAEuvm9gQ/+pgXYfbQuqAkiYu+u7YEsNA==}
 
   scheduler@0.26.0:
     resolution: {integrity: sha512-NlHwttCI/l5gCPR3D1nNXtWABUmBwvZpEQiD4IXSbIDq8BzLIK/7Ir5gTFSGZDUu37K5cMNp0hFtzO38sC7gWA==}
@@ -11911,6 +11912,10 @@ snapshots:
       '@types/react': 19.1.17
 
   '@types/react-reconciler@0.28.9(@types/react@19.1.17)':
+    dependencies:
+      '@types/react': 19.1.17
+
+  '@types/react-reconciler@0.33.0(@types/react@19.1.17)':
     dependencies:
       '@types/react': 19.1.17
 
@@ -16693,10 +16698,10 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  react-reconciler@0.31.0(react@19.2.4):
+  react-reconciler@0.33.0(react@19.2.4):
     dependencies:
       react: 19.2.4
-      scheduler: 0.25.0
+      scheduler: 0.27.0
 
   react-refresh@0.14.2: {}
 
@@ -17007,8 +17012,6 @@ snapshots:
       truncate-utf8-bytes: 1.0.2
 
   sax@1.4.4: {}
-
-  scheduler@0.25.0: {}
 
   scheduler@0.26.0: {}
 
