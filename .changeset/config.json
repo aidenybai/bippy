@@ -11,6 +11,7 @@
     "@bippy/website",
     "@bippy/next-playground",
     "@bippy/vite-playground",
-    "@bippy/expo-playground"
+    "@bippy/expo-playground",
+    "@bippy/e2e"
   ]
 }
