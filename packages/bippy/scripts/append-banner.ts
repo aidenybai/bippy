@@ -26,21 +26,6 @@ const appendBannerToFile = (filePath: string) => {
   fs.writeFileSync(filePath, newContent, "utf8");
 };
 
-// vp pack's dts generator (tsdown/oxc) drops `import type` and emits bare
-// `import` for type-only imports, causing MISSING_EXPORT warnings in consumers'
-// bundlers. In .d.ts files all named imports are type-level, so we convert
-// every `import { ... } from "..."` to `import type { ... } from "..."`.
-const fixTypeImportsInDeclaration = (filePath: string) => {
-  const content = fs.readFileSync(filePath, "utf8");
-  const fixed = content.replace(
-    /^import\s+(\{[^}]*\}\s*from\s*"[^"]*")/gm,
-    "import type $1",
-  );
-  if (fixed !== content) {
-    fs.writeFileSync(filePath, fixed, "utf8");
-  }
-};
-
 const processDirectory = (dir: string) => {
   const files = fs.readdirSync(dir);
 
@@ -53,9 +38,6 @@ const processDirectory = (dir: string) => {
     } else if (stat.isFile()) {
       if (file.endsWith(".js") || file.endsWith(".cjs")) {
         appendBannerToFile(filePath);
-      }
-      if (file.endsWith(".d.ts") || file.endsWith(".d.cts")) {
-        fixTypeImportsInDeclaration(filePath);
       }
     }
   }
