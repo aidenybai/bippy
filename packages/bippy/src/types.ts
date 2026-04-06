@@ -10,9 +10,67 @@ export type Flags = number;
 export type Lanes = number;
 export type TypeOfMode = number;
 export type RootTag = 0 | 1 | 2;
-export type LanePriority = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17;
-export type WorkTag = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24;
-export type HookType = "useState" | "useReducer" | "useContext" | "useRef" | "useEffect" | "useLayoutEffect" | "useCallback" | "useMemo" | "useImperativeHandle" | "useDebugValue" | "useDeferredValue" | "useTransition" | "useMutableSource" | "useOpaqueIdentifier" | "useCacheRefresh";
+export type LanePriority =
+  | 0
+  | 1
+  | 2
+  | 3
+  | 4
+  | 5
+  | 6
+  | 7
+  | 8
+  | 9
+  | 10
+  | 11
+  | 12
+  | 13
+  | 14
+  | 15
+  | 16
+  | 17;
+export type WorkTag =
+  | 0
+  | 1
+  | 2
+  | 3
+  | 4
+  | 5
+  | 6
+  | 7
+  | 8
+  | 9
+  | 10
+  | 11
+  | 12
+  | 13
+  | 14
+  | 15
+  | 16
+  | 17
+  | 18
+  | 19
+  | 20
+  | 21
+  | 22
+  | 23
+  | 24;
+export type HookType =
+  | "useState"
+  | "useReducer"
+  | "useContext"
+  | "useRef"
+  | "useEffect"
+  | "useLayoutEffect"
+  | "useCallback"
+  | "useMemo"
+  | "useImperativeHandle"
+  | "useDebugValue"
+  | "useDeferredValue"
+  | "useTransition"
+  | "useMutableSource"
+  | "useOpaqueIdentifier"
+  | "useCacheRefresh";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type FiberRoot = any;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -27,10 +85,17 @@ export type React$AbstractComponent<_Config, _Instance = unknown> = any;
 export type HostConfig = Record<string, any>;
 
 // Structural interfaces
-export interface Source { fileName: string; lineNumber: number }
+export interface Source {
+  fileName: string;
+  lineNumber: number;
+}
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface RefObject { current: any }
-export interface Thenable<T> { then(resolve: () => T, reject?: () => T): T }
+export interface RefObject {
+  current: any;
+}
+export interface Thenable<T> {
+  then(resolve: () => T, reject?: () => T): T;
+}
 
 export interface ReactContext<T> {
   $$typeof: symbol | number;
@@ -47,21 +112,66 @@ export interface ReactContext<T> {
   displayName?: string;
 }
 
-export interface ReactProviderType<T> { $$typeof: symbol | number; _context: ReactContext<T> }
-export interface ReactProvider<T> { $$typeof: symbol | number; type: ReactProviderType<T>; key: null | string; ref: null; props: { value: T; children?: ReactNode } }
-export interface ReactConsumer<T> { $$typeof: symbol | number; type: ReactContext<T>; key: null | string; ref: null; props: { children: (value: T) => ReactNode; unstable_observedBits?: number } }
+export interface ReactProviderType<T> {
+  $$typeof: symbol | number;
+  _context: ReactContext<T>;
+}
+export interface ReactProvider<T> {
+  $$typeof: symbol | number;
+  type: ReactProviderType<T>;
+  key: null | string;
+  ref: null;
+  props: { value: T; children?: ReactNode };
+}
+export interface ReactConsumer<T> {
+  $$typeof: symbol | number;
+  type: ReactContext<T>;
+  key: null | string;
+  ref: null;
+  props: { children: (value: T) => ReactNode; unstable_observedBits?: number };
+}
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface ReactPortal { $$typeof: symbol | number; key: null | string; containerInfo: any; children: ReactNode; implementation: any }
+export interface ReactPortal {
+  $$typeof: symbol | number;
+  key: null | string;
+  containerInfo: any;
+  children: ReactNode;
+  implementation: any;
+}
 
-export interface ComponentSelector { $$typeof: symbol | number; value: React$AbstractComponent<never, unknown> }
-export interface HasPseudoClassSelector { $$typeof: symbol | number; value: Selector[] }
-export interface RoleSelector { $$typeof: symbol | number; value: string }
-export interface TextSelector { $$typeof: symbol | number; value: string }
-export interface TestNameSelector { $$typeof: symbol | number; value: string }
-export type Selector = ComponentSelector | HasPseudoClassSelector | RoleSelector | TextSelector | TestNameSelector;
+export interface ComponentSelector {
+  $$typeof: symbol | number;
+  value: React$AbstractComponent<never, unknown>;
+}
+export interface HasPseudoClassSelector {
+  $$typeof: symbol | number;
+  value: Selector[];
+}
+export interface RoleSelector {
+  $$typeof: symbol | number;
+  value: string;
+}
+export interface TextSelector {
+  $$typeof: symbol | number;
+  value: string;
+}
+export interface TestNameSelector {
+  $$typeof: symbol | number;
+  value: string;
+}
+export type Selector =
+  | ComponentSelector
+  | HasPseudoClassSelector
+  | RoleSelector
+  | TextSelector
+  | TestNameSelector;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface DevToolsConfig<Instance = any, TextInstance = any, RendererInspectionConfig = any> {
+export interface DevToolsConfig<
+  Instance = any,
+  TextInstance = any,
+  RendererInspectionConfig = any,
+> {
   bundleType: BundleType;
   version: string;
   rendererPackageName: string;
@@ -76,12 +186,37 @@ export interface SuspenseHydrationCallbacks<SuspenseInstance = unknown> {
 
 export interface TransitionTracingCallbacks {
   onTransitionStart?: (transitionName: string, startTime: number) => void;
-  onTransitionProgress?: (transitionName: string, startTime: number, currentTime: number, pending: Array<{ name: null | string }>) => void;
-  onTransitionIncomplete?: (transitionName: string, startTime: number, deletions: Array<{ type: string; name?: string; newName?: string; endTime: number }>) => void;
+  onTransitionProgress?: (
+    transitionName: string,
+    startTime: number,
+    currentTime: number,
+    pending: Array<{ name: null | string }>,
+  ) => void;
+  onTransitionIncomplete?: (
+    transitionName: string,
+    startTime: number,
+    deletions: Array<{ type: string; name?: string; newName?: string; endTime: number }>,
+  ) => void;
   onTransitionComplete?: (transitionName: string, startTime: number, endTime: number) => void;
-  onMarkerProgress?: (transitionName: string, marker: string, startTime: number, currentTime: number, pending: Array<{ name: null | string }>) => void;
-  onMarkerIncomplete?: (transitionName: string, marker: string, startTime: number, deletions: Array<{ type: string; name?: string; newName?: string; endTime: number }>) => void;
-  onMarkerComplete?: (transitionName: string, marker: string, startTime: number, endTime: number) => void;
+  onMarkerProgress?: (
+    transitionName: string,
+    marker: string,
+    startTime: number,
+    currentTime: number,
+    pending: Array<{ name: null | string }>,
+  ) => void;
+  onMarkerIncomplete?: (
+    transitionName: string,
+    marker: string,
+    startTime: number,
+    deletions: Array<{ type: string; name?: string; newName?: string; endTime: number }>,
+  ) => void;
+  onMarkerComplete?: (
+    transitionName: string,
+    marker: string,
+    startTime: number,
+    endTime: number,
+  ) => void;
 }
 
 // The base Fiber interface from react-reconciler, used to derive bippy's Fiber below
