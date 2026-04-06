@@ -1,5 +1,11 @@
 # bippy
 
+## 0.5.38
+
+### Patch Changes
+
+- add hooks parsing
+
 ## 0.5.37
 
 ### Patch Changes
