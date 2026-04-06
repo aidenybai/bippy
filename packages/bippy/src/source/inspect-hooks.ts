@@ -787,14 +787,6 @@ const requireDispatcherRef = (): DispatcherRefContainer => {
   return dispatcherRef;
 };
 
-export const inspectHooks = (
-  renderFunction: (props: Record<string, unknown>) => unknown,
-  props: Record<string, unknown>,
-): HooksTree => {
-  const dispatcherRef = requireDispatcherRef();
-  return performDispatcherInspection(dispatcherRef, () => renderFunction(props));
-};
-
 const resolveContextDependency = (fiber: Fiber): void => {
   if (Object.prototype.hasOwnProperty.call(fiber, "dependencies")) {
     const dependencies = fiber.dependencies;
@@ -819,7 +811,7 @@ const resolveContextDependency = (fiber: Fiber): void => {
   }
 };
 
-export const inspectHooksOfFiber = (fiber: Fiber): HooksTree => {
+export const getFiberHooks = (fiber: Fiber): HooksTree => {
   const dispatcherRef = requireDispatcherRef();
 
   if (

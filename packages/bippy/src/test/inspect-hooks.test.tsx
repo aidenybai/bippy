@@ -3,7 +3,7 @@ import "../index.js"; // KEEP THIS LINE ON TOP
 import { describe, expect, it } from "vitest";
 import type { Fiber } from "../types.js";
 import { instrument } from "../index.js";
-import { inspectHooks, inspectHooksOfFiber, type HooksNode } from "../source/inspect-hooks.js";
+import { getFiberHooks, type HooksNode } from "../source/inspect-hooks.js";
 import React from "react";
 import { render } from "@testing-library/react";
 
@@ -95,7 +95,7 @@ const collectAllHooks = (hooks: HooksNode[]): HooksNode[] => {
   return allHooks;
 };
 
-describe("inspectHooksOfFiber", () => {
+describe("getFiberHooks", () => {
   it("returns a non-empty hooks tree for a stateful component", () => {
     let fiber: Fiber | null = null;
     captureFiber((fiberNode) => {
@@ -103,7 +103,7 @@ describe("inspectHooksOfFiber", () => {
     });
     render(<StateComponent />);
 
-    const hooks = inspectHooksOfFiber(fiber!);
+    const hooks = getFiberHooks(fiber!);
     const allHooks = collectAllHooks(hooks);
     expect(allHooks.length).toBeGreaterThanOrEqual(2);
 
@@ -119,7 +119,7 @@ describe("inspectHooksOfFiber", () => {
     });
     render(<RefComponent />);
 
-    const hooks = inspectHooksOfFiber(fiber!);
+    const hooks = getFiberHooks(fiber!);
     const allHooks = collectAllHooks(hooks);
     expect(allHooks.length).toBeGreaterThanOrEqual(1);
   });
@@ -131,7 +131,7 @@ describe("inspectHooksOfFiber", () => {
     });
     render(<ReducerComponent />);
 
-    const hooks = inspectHooksOfFiber(fiber!);
+    const hooks = getFiberHooks(fiber!);
     const allHooks = collectAllHooks(hooks);
     const hookValues = allHooks.map((hook) => hook.value);
     expect(hookValues).toContain(10);
@@ -144,7 +144,7 @@ describe("inspectHooksOfFiber", () => {
     });
     render(<MultiHookComponent />);
 
-    const hooks = inspectHooksOfFiber(fiber!);
+    const hooks = getFiberHooks(fiber!);
     const allHooks = collectAllHooks(hooks);
     expect(allHooks.length).toBeGreaterThanOrEqual(4);
 
@@ -160,7 +160,7 @@ describe("inspectHooksOfFiber", () => {
     });
     render(<CustomHookComponent />);
 
-    const hooks = inspectHooksOfFiber(fiber!);
+    const hooks = getFiberHooks(fiber!);
     const allHooks = collectAllHooks(hooks);
     expect(allHooks.length).toBeGreaterThanOrEqual(1);
 
@@ -175,7 +175,7 @@ describe("inspectHooksOfFiber", () => {
     });
     render(<TransitionComponent />);
 
-    const hooks = inspectHooksOfFiber(fiber!);
+    const hooks = getFiberHooks(fiber!);
     const allHooks = collectAllHooks(hooks);
     const hookValues = allHooks.map((hook) => hook.value);
     expect(hookValues).toContain(false);
@@ -188,7 +188,7 @@ describe("inspectHooksOfFiber", () => {
     });
     render(<IdComponent />);
 
-    const hooks = inspectHooksOfFiber(fiber!);
+    const hooks = getFiberHooks(fiber!);
     const allHooks = collectAllHooks(hooks);
     const stringValues = allHooks.filter((hook) => typeof hook.value === "string");
     expect(stringValues.length).toBeGreaterThanOrEqual(1);
@@ -202,7 +202,7 @@ describe("inspectHooksOfFiber", () => {
     });
     render(<ForwardRefComponent label="test" />);
 
-    const hooks = inspectHooksOfFiber(fiber!);
+    const hooks = getFiberHooks(fiber!);
     const allHooks = collectAllHooks(hooks);
     const hookValues = allHooks.map((hook) => hook.value);
     expect(hookValues).toContain(0);
@@ -215,7 +215,7 @@ describe("inspectHooksOfFiber", () => {
     });
     render(<MemoComponent />);
 
-    const hooks = inspectHooksOfFiber(fiber!);
+    const hooks = getFiberHooks(fiber!);
     const allHooks = collectAllHooks(hooks);
     const hookValues = allHooks.map((hook) => hook.value);
     expect(hookValues).toContain("memoized");
@@ -228,7 +228,7 @@ describe("inspectHooksOfFiber", () => {
     });
     render(<StateComponent />);
 
-    expect(() => inspectHooksOfFiber(fiber!)).toThrow(
+    expect(() => getFiberHooks(fiber!)).toThrow(
       "Unknown Fiber. Needs to be a function component to inspect hooks.",
     );
   });
@@ -240,7 +240,7 @@ describe("inspectHooksOfFiber", () => {
     });
     render(<MultiHookComponent />);
 
-    const hooks = inspectHooksOfFiber(fiber!);
+    const hooks = getFiberHooks(fiber!);
     const allHooks = collectAllHooks(hooks);
     const idsWithValues = allHooks.filter((hook) => hook.id !== null).map((hook) => hook.id);
     for (let hookIndex = 0; hookIndex < idsWithValues.length; hookIndex++) {
@@ -255,7 +255,7 @@ describe("inspectHooksOfFiber", () => {
     });
     render(<StateComponent />);
 
-    const hooks = inspectHooksOfFiber(fiber!);
+    const hooks = getFiberHooks(fiber!);
     const allHooks = collectAllHooks(hooks);
     const editableHooks = allHooks.filter((hook) => hook.isStateEditable);
     expect(editableHooks.length).toBeGreaterThanOrEqual(1);
@@ -268,20 +268,10 @@ describe("inspectHooksOfFiber", () => {
     });
     render(<StateComponent />);
 
-    const hooks = inspectHooksOfFiber(fiber!);
+    const hooks = getFiberHooks(fiber!);
     const allHooks = collectAllHooks(hooks);
     for (const hook of allHooks) {
       expect(hook).toHaveProperty("hookSource");
     }
-  });
-});
-
-describe("inspectHooks (standalone)", () => {
-  it("inspects a render function without fiber context", () => {
-    render(<StateComponent />);
-
-    const hooks = inspectHooks(StateComponent, {});
-    const allHooks = collectAllHooks(hooks);
-    expect(allHooks.length).toBeGreaterThanOrEqual(2);
   });
 });
