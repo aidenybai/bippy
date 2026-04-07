@@ -3,8 +3,8 @@ export const SCHEME_REGEX = /^[a-zA-Z][a-zA-Z\d+\-.]*:/;
 export const INTERNAL_SCHEME_PREFIXES = [
   "rsc://",
   "file:///",
-  "webpack://",
   "webpack-internal://",
+  "webpack://",
   "node:",
   "turbopack://",
   "metro://",

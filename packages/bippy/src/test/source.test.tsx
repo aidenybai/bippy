@@ -214,6 +214,19 @@ it("normalizeFileName should strip webpack-internal:// with (app-pages-browser) 
   expect(result).toBe("./src/app/components/Button.tsx");
 });
 
+it("normalizeFileName should strip webpack-internal:// with (app-pages-browser) without ./ prefix", () => {
+  const input = "webpack-internal:///(app-pages-browser)/app/components/label/Label/Label.tsx";
+  const result = normalizeFileName(input);
+  expect(result).toBe("app/components/label/Label/Label.tsx");
+});
+
+it("normalizeFileName should not strip route group parens inside app directory", () => {
+  const input = "webpack-internal:///(app-pages-browser)/./app/(marketing)/about/page.tsx";
+  const result = normalizeFileName(input);
+  expect(result).toBe("./app/(marketing)/about/page.tsx");
+});
+
+
 it("normalizeFileName should strip http:// host prefix (Vite dev server)", () => {
   const input = "http://localhost:5173/src/features/my-component.tsx";
   const result = normalizeFileName(input);
