@@ -15,7 +15,7 @@ import {
 } from "../index.js";
 import React from "react";
 import { createPortal } from "react-dom";
-import { render } from "@testing-library/react";
+import { render, act, fireEvent } from "@testing-library/react";
 
 const PortalChild = () => {
   return <span>portal content</span>;
@@ -78,10 +78,7 @@ describe("traverseFiber with portals", () => {
     });
     render(<PortalExample container={portalContainer} />);
 
-    const portalChildFiber = traverseFiber(
-      rootFiber,
-      (fiber) => fiber.type === PortalChild,
-    );
+    const portalChildFiber = traverseFiber(rootFiber, (fiber) => fiber.type === PortalChild);
     expect(portalChildFiber).not.toBeNull();
     expect(portalChildFiber!.type).toBe(PortalChild);
 
@@ -100,10 +97,7 @@ describe("traverseFiber with portals", () => {
     });
     render(<PortalExample container={portalContainer} />);
 
-    const portalChildFiber = traverseFiber(
-      rootFiber,
-      (fiber) => fiber.type === PortalChild,
-    );
+    const portalChildFiber = traverseFiber(rootFiber, (fiber) => fiber.type === PortalChild);
     expect(portalChildFiber).not.toBeNull();
 
     const parentFiber = traverseFiber(
@@ -129,10 +123,7 @@ describe("traverseFiber with portals", () => {
     });
     render(<PortalExample container={portalContainer} />);
 
-    const portalChildFiber = traverseFiber(
-      rootFiber,
-      (fiber) => fiber.type === PortalChild,
-    );
+    const portalChildFiber = traverseFiber(rootFiber, (fiber) => fiber.type === PortalChild);
     expect(portalChildFiber).not.toBeNull();
 
     const hostFibers = getNearestHostFibers(portalChildFiber!);
@@ -154,10 +145,7 @@ describe("traverseFiber with portals", () => {
     });
     render(<PortalExample container={portalContainer} />);
 
-    const portalChildFiber = traverseFiber(
-      rootFiber,
-      (fiber) => fiber.type === PortalChild,
-    );
+    const portalChildFiber = traverseFiber(rootFiber, (fiber) => fiber.type === PortalChild);
     expect(portalChildFiber).not.toBeNull();
 
     const hostFiber = getNearestHostFiber(portalChildFiber!);
@@ -185,9 +173,7 @@ describe("traverseRenderedFibers with portals", () => {
     });
     render(<PortalExample container={portalContainer} />);
 
-    const portalChildRendered = renderedFibers.some(
-      (fiber) => fiber.type === PortalChild,
-    );
+    const portalChildRendered = renderedFibers.some((fiber) => fiber.type === PortalChild);
     expect(portalChildRendered).toBe(true);
 
     const hasCompositeFibersInPortal = renderedFibers.some(
@@ -227,8 +213,9 @@ describe("traverseRenderedFibers with portals", () => {
     expect(mountPhases.some((phase) => phase === "mount")).toBe(true);
 
     phases.length = 0;
-    const button = getByText("increment");
-    button.click();
+    act(() => {
+      fireEvent.click(getByText("increment"));
+    });
 
     expect(phases.some((phase) => phase === "update")).toBe(true);
 
