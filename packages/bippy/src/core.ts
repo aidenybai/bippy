@@ -24,6 +24,7 @@ import {
 export const FunctionComponentTag = 0;
 export const ClassComponentTag = 1;
 export const HostRootTag = 3;
+export const HostPortalTag = 4;
 export const HostComponentTag = 5;
 export const HostTextTag = 6;
 export const FragmentTag = 7;
@@ -105,6 +106,15 @@ export const isHostFiber = (fiber: Fiber): boolean => {
       return typeof fiber.type === "string";
   }
 };
+
+/**
+ * Returns `true` if fiber is a portal fiber created by `createPortal()`.
+ * Portal fibers render their children into a different DOM container
+ * while maintaining the same position in the React component tree.
+ *
+ * @see https://react.dev/reference/react-dom/createPortal
+ */
+export const isPortalFiber = (fiber: Fiber): boolean => fiber.tag === HostPortalTag;
 
 /**
  * Returns `true` if fiber is a composite fiber. Composite fibers are fibers that can render (like functional components, class components, etc.)
