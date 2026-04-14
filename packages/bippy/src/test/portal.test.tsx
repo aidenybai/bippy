@@ -4,18 +4,18 @@ import { describe, expect, it, vi } from "vitest";
 import type { Fiber } from "../types.js";
 import {
   HostPortalTag,
+  getFiberKind,
   getNearestHostFiber,
   getNearestHostFibers,
   instrument,
   isCompositeFiber,
   isHostFiber,
-  isPortalFiber,
   traverseFiber,
   traverseRenderedFibers,
 } from "../index.js";
 import React from "react";
 import { createPortal } from "react-dom";
-import { render, act, fireEvent } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
 
 const PortalChild = () => {
   return <span>portal content</span>;
@@ -30,8 +30,8 @@ const PortalExample = ({ container }: { container: HTMLElement }) => {
   );
 };
 
-describe("isPortalFiber", () => {
-  it("should identify a portal fiber", () => {
+describe("getFiberKind", () => {
+  it('should return "host-portal" for a portal fiber', () => {
     const portalContainer = document.createElement("div");
     document.body.appendChild(portalContainer);
 
@@ -45,12 +45,12 @@ describe("isPortalFiber", () => {
 
     const portalFiber = traverseFiber(rootFiber, (fiber) => fiber.tag === HostPortalTag);
     expect(portalFiber).not.toBeNull();
-    expect(isPortalFiber(portalFiber!)).toBe(true);
+    expect(getFiberKind(portalFiber!)).toBe("host-portal");
 
     document.body.removeChild(portalContainer);
   });
 
-  it("should return false for non-portal fibers", () => {
+  it('should return "host-component" for a host fiber', () => {
     let rootFiber: Fiber | null = null;
     instrument({
       onCommitFiberRoot: (_rendererID, fiberRoot) => {
@@ -61,7 +61,21 @@ describe("isPortalFiber", () => {
 
     const divFiber = traverseFiber(rootFiber, isHostFiber);
     expect(divFiber).not.toBeNull();
-    expect(isPortalFiber(divFiber!)).toBe(false);
+    expect(getFiberKind(divFiber!)).toBe("host-component");
+  });
+
+  it('should return "function-component" for a function component fiber', () => {
+    let rootFiber: Fiber | null = null;
+    instrument({
+      onCommitFiberRoot: (_rendererID, fiberRoot) => {
+        rootFiber = fiberRoot.current;
+      },
+    });
+    render(<PortalChild />);
+
+    const componentFiber = traverseFiber(rootFiber, (fiber) => fiber.type === PortalChild);
+    expect(componentFiber).not.toBeNull();
+    expect(getFiberKind(componentFiber!)).toBe("function-component");
   });
 });
 
@@ -236,7 +250,7 @@ describe("portal fiber properties", () => {
     });
     render(<PortalExample container={portalContainer} />);
 
-    const portalFiber = traverseFiber(rootFiber, isPortalFiber);
+    const portalFiber = traverseFiber(rootFiber, (fiber) => fiber.tag === HostPortalTag);
     expect(portalFiber).not.toBeNull();
     expect(portalFiber!.stateNode.containerInfo).toBe(portalContainer);
 
