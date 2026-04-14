@@ -226,7 +226,6 @@ it("normalizeFileName should not strip route group parens inside app directory",
   expect(result).toBe("./app/(marketing)/about/page.tsx");
 });
 
-
 it("normalizeFileName should strip http:// host prefix (Vite dev server)", () => {
   const input = "http://localhost:5173/src/features/my-component.tsx";
   const result = normalizeFileName(input);

@@ -24,6 +24,7 @@ import {
 export const FunctionComponentTag = 0;
 export const ClassComponentTag = 1;
 export const HostRootTag = 3;
+export const HostPortalTag = 4;
 export const HostComponentTag = 5;
 export const HostTextTag = 6;
 export const FragmentTag = 7;
