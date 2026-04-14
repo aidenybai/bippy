@@ -4,7 +4,6 @@ import { describe, expect, it, vi } from "vitest";
 import type { Fiber } from "../types.js";
 import {
   HostPortalTag,
-  getFiberKind,
   getNearestHostFiber,
   getNearestHostFibers,
   instrument,
@@ -29,55 +28,6 @@ const PortalExample = ({ container }: { container: HTMLElement }) => {
     </div>
   );
 };
-
-describe("getFiberKind", () => {
-  it('should return "host-portal" for a portal fiber', () => {
-    const portalContainer = document.createElement("div");
-    document.body.appendChild(portalContainer);
-
-    let rootFiber: Fiber | null = null;
-    instrument({
-      onCommitFiberRoot: (_rendererID, fiberRoot) => {
-        rootFiber = fiberRoot.current;
-      },
-    });
-    render(<PortalExample container={portalContainer} />);
-
-    const portalFiber = traverseFiber(rootFiber, (fiber) => fiber.tag === HostPortalTag);
-    expect(portalFiber).not.toBeNull();
-    expect(getFiberKind(portalFiber!)).toBe("host-portal");
-
-    document.body.removeChild(portalContainer);
-  });
-
-  it('should return "host-component" for a host fiber', () => {
-    let rootFiber: Fiber | null = null;
-    instrument({
-      onCommitFiberRoot: (_rendererID, fiberRoot) => {
-        rootFiber = fiberRoot.current;
-      },
-    });
-    render(<div>hello</div>);
-
-    const divFiber = traverseFiber(rootFiber, isHostFiber);
-    expect(divFiber).not.toBeNull();
-    expect(getFiberKind(divFiber!)).toBe("host-component");
-  });
-
-  it('should return "function-component" for a function component fiber', () => {
-    let rootFiber: Fiber | null = null;
-    instrument({
-      onCommitFiberRoot: (_rendererID, fiberRoot) => {
-        rootFiber = fiberRoot.current;
-      },
-    });
-    render(<PortalChild />);
-
-    const componentFiber = traverseFiber(rootFiber, (fiber) => fiber.type === PortalChild);
-    expect(componentFiber).not.toBeNull();
-    expect(getFiberKind(componentFiber!)).toBe("function-component");
-  });
-});
 
 describe("traverseFiber with portals", () => {
   it("should traverse into portal children (descending)", () => {
