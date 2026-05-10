@@ -1219,5 +1219,59 @@ export const secure = (
   return options;
 };
 
+const swapFiberAndSchedule = (
+  fiber: Fiber,
+  nextType: React.ComponentType<unknown>,
+  renderer: ReactRenderer,
+): void => {
+  fiber.type = nextType;
+  if (fiber.alternate) {
+    fiber.alternate.type = nextType;
+  }
+  // HACK: shallow-clone memoizedProps so React sees oldProps !== newProps
+  // and skips the bailout path (same trick as overrideHookState in ReactFiberReconciler)
+  fiber.memoizedProps = { ...fiber.memoizedProps };
+
+  if (renderer.scheduleUpdate) {
+    renderer.scheduleUpdate(fiber);
+  }
+};
+
+/**
+ * Replaces every fiber whose type matches `prevType` with `nextType` and
+ * triggers a synchronous re-render for each one.
+ * The new function must follow the same Rules of Hooks as the original.
+ * DEV-only — `renderer.scheduleUpdate` is not available in production builds.
+ */
+export const hotSwapFiberType = (
+  fiber: Fiber,
+  nextType: React.ComponentType<unknown>,
+): void => {
+  const rdtHook = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+  if (!rdtHook?.renderers) return;
+
+  const renderer = Array.from(rdtHook.renderers.values()).find(
+    (innerRenderer) => !!innerRenderer.scheduleUpdate,
+  );
+  if (!renderer) return;
+
+  const prevType = getType(fiber.type);
+  if (!prevType) {
+    swapFiberAndSchedule(fiber, nextType, renderer);
+    return;
+  }
+
+  let rootFiber: Fiber = fiber;
+  while (rootFiber.return) {
+    rootFiber = rootFiber.return;
+  }
+
+  traverseFiberSync(rootFiber, (innerFiber) => {
+    if (getType(innerFiber.type) === prevType) {
+      swapFiberAndSchedule(innerFiber, nextType, renderer);
+    }
+  });
+};
+
 export * from "./rdt-hook.js";
 export type * from "./types.js";
