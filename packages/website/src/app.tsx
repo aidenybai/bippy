@@ -9,6 +9,7 @@ import { CommandDisplay } from "@/components/command-display";
 import { ActionButtons } from "@/components/action-buttons";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
+import { TextLink } from "@/components/ui/text-link";
 import readmeRaw from "../../bippy/README.md?raw";
 
 const GITHUB_URL = "https://github.com/aidenybai/bippy";
@@ -28,7 +29,7 @@ const CodeBlock = ({ children, className }: CodeBlockProps) => {
   }, [code, language]);
 
   return (
-    <div className="group relative my-4 max-w-full overflow-hidden rounded-xs border bg-muted px-3 py-2.5 font-mono text-xs dark:bg-background sm:px-4 sm:py-3 sm:text-[13px] [&_pre]:bg-transparent! [&_pre]:p-0! [&_pre]:whitespace-pre-wrap [&_pre]:break-words [&_code]:bg-transparent!">
+    <div className="group relative my-4 max-w-full overflow-hidden rounded-lg border border-divider bg-button px-3 py-2.5 font-mono text-feature-label shadow-button sm:px-4 sm:py-3 [&_code]:bg-transparent! [&_pre]:bg-transparent! [&_pre]:p-0! [&_pre]:whitespace-pre-wrap [&_pre]:break-words">
       <CopyButton text={code} />
       {html ? (
         <div dangerouslySetInnerHTML={{ __html: html }} />
@@ -60,106 +61,123 @@ const readme = processReadme(readmeRaw);
 export const App = () => {
   return (
     <TooltipProvider delay={0} closeDelay={0}>
-      <div className="flex min-h-svh flex-col items-center">
-        <SiteProvider>
-          <main className="flex w-full max-w-lg flex-col items-start gap-10 px-6 py-16">
-            <ProjectInfo />
-            <CommandDisplay />
-            <ActionButtons />
+      <SiteProvider>
+        <div className="font-synthesis-none flex min-h-svh flex-col items-center overflow-x-clip bg-background antialiased">
+          <main className="flex w-full flex-col items-center">
+            <div className="relative w-full max-w-page min-w-0 px-4 sm:px-0">
+              <div className="mt-10 flex flex-col gap-6">
+                <ProjectInfo />
+                <CommandDisplay />
+                <ActionButtons />
+              </div>
+            </div>
 
-            <article className="w-full space-y-4 text-sm sm:text-[15px]">
-              <Markdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  h2: ({ children, node, ...props }) => {
-                    const text =
-                      node?.children?.[0] && "value" in node.children[0]
-                        ? node.children[0].value
-                        : "";
-                    const id = text
-                      .toLowerCase()
-                      .replace(/\s+/g, "-")
-                      .replace(/[^\w-]/g, "");
-                    return (
-                      <h2
-                        className="mt-12 mb-3 scroll-mt-8 border-t border-border pt-8 text-base font-medium text-foreground first:mt-0 first:border-t-0 first:pt-0"
-                        id={id}
-                        {...props}
-                      >
-                        {children}
-                      </h2>
-                    );
-                  },
-                  h3: ({ children, ...props }) => (
-                    <h3 className="mt-8 mb-2 text-[15px] font-medium text-foreground" {...props}>
-                      {children}
-                    </h3>
-                  ),
-                  p: ({ children }) => (
-                    <p className="my-3 leading-relaxed text-muted-foreground">{children}</p>
-                  ),
-                  ul: ({ children }) => (
-                    <ul className="my-4 space-y-2 text-[13px] text-muted-foreground sm:text-sm [&_ul]:my-1 [&_ul]:ml-4 [&_ul]:space-y-1">
-                      {children}
-                    </ul>
-                  ),
-                  li: ({ children }) => (
-                    <li className="relative pl-4 text-muted-foreground [&_p]:inline">
-                      <span className="absolute left-0 text-muted-foreground/50">&ndash;</span>
-                      {children}
-                    </li>
-                  ),
-                  blockquote: ({ children }) => (
-                    <blockquote className="my-4 border-l-2 border-border pl-4 text-[13px] text-muted-foreground [&_p]:my-1">
-                      {children}
-                    </blockquote>
-                  ),
-                  hr: () => <hr className="my-10 border-border" />,
-                  strong: ({ children }) => (
-                    <span className="font-medium text-foreground">{children}</span>
-                  ),
-                  em: ({ children }) => (
-                    <em className="not-italic text-muted-foreground">{children}</em>
-                  ),
-                  img: () => null,
-                  code: ({ children, className, node, ...props }) => {
-                    const isInline = !className;
-                    if (isInline) {
+            <article className="relative mt-14 w-full max-w-page min-w-0 px-4 pb-16 sm:px-0">
+              <div className="mb-faq-gap w-full max-w-faq font-openrunde-semibold text-faq-title font-semibold tracking-normal text-section-title">
+                docs
+              </div>
+              <div className="mb-faq-gap h-hairline w-full max-w-faq shrink-0 bg-border" />
+              <div className="w-full max-w-faq text-faq-answer">
+                <Markdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    h2: ({ children, node, ...props }) => {
+                      const text =
+                        node?.children?.[0] && "value" in node.children[0]
+                          ? node.children[0].value
+                          : "";
+                      const id = text
+                        .toLowerCase()
+                        .replace(/\s+/g, "-")
+                        .replace(/[^\w-]/g, "");
                       return (
-                        <code
-                          className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground sm:text-[13px]"
+                        <h2
+                          className="mt-12 mb-3 scroll-mt-8 font-openrunde-semibold text-faq-title font-semibold tracking-normal text-section-title first:mt-0"
+                          id={id}
                           {...props}
                         >
                           {children}
-                        </code>
+                        </h2>
                       );
-                    }
-                    const codeText =
-                      node?.children?.[0] && "value" in node.children[0]
-                        ? node.children[0].value
-                        : "";
-                    return <CodeBlock className={className}>{codeText}</CodeBlock>;
-                  },
-                  pre: ({ children }) => <>{children}</>,
-                  a: ({ href, children }) => (
-                    <a
-                      href={href}
-                      target={href?.startsWith("http") ? "_blank" : undefined}
-                      rel={href?.startsWith("http") ? "noopener noreferrer" : undefined}
-                      className="text-foreground underline decoration-border underline-offset-4 transition-none hover:decoration-foreground"
-                    >
-                      {children}
-                    </a>
-                  ),
-                }}
-              >
-                {readme}
-              </Markdown>
+                    },
+                    h3: ({ children, ...props }) => (
+                      <h3
+                        className="mt-8 mb-2 font-openrunde-semibold text-faq-title font-semibold tracking-normal text-faq-active"
+                        {...props}
+                      >
+                        {children}
+                      </h3>
+                    ),
+                    p: ({ children }) => (
+                      <p className="my-3 font-openrunde-medium text-faq-answer font-medium tracking-normal text-soft-foreground">
+                        {children}
+                      </p>
+                    ),
+                    ul: ({ children }) => (
+                      <ul className="my-4 space-y-2 font-openrunde-medium text-faq-answer font-medium text-soft-foreground [&_ul]:my-1 [&_ul]:ml-4 [&_ul]:space-y-1">
+                        {children}
+                      </ul>
+                    ),
+                    li: ({ children }) => (
+                      <li className="relative pl-4 font-openrunde-medium font-medium text-soft-foreground [&_p]:inline">
+                        <span className="absolute left-0 text-faq-icon">-</span>
+                        {children}
+                      </li>
+                    ),
+                    blockquote: ({ children }) => (
+                      <blockquote className="my-4 border-l-2 border-border pl-4 font-openrunde-medium text-faq-answer font-medium text-soft-foreground [&_p]:my-1">
+                        {children}
+                      </blockquote>
+                    ),
+                    hr: () => <hr className="my-10 border-border" />,
+                    strong: ({ children }) => (
+                      <span className="font-medium text-foreground">{children}</span>
+                    ),
+                    em: ({ children }) => (
+                      <em className="not-italic text-soft-foreground">{children}</em>
+                    ),
+                    img: () => null,
+                    code: ({ children, className, node, ...props }) => {
+                      const isInline = !className;
+                      if (isInline) {
+                        return (
+                          <code
+                            className="rounded bg-muted px-1.5 py-0.5 font-mono text-feature-label text-foreground"
+                            {...props}
+                          >
+                            {children}
+                          </code>
+                        );
+                      }
+                      const codeText =
+                        node?.children?.[0] && "value" in node.children[0]
+                          ? node.children[0].value
+                          : "";
+                      return <CodeBlock className={className}>{codeText}</CodeBlock>;
+                    },
+                    pre: ({ children }) => <>{children}</>,
+                    a: ({ href, children }) => {
+                      if (!href) return <span>{children}</span>;
+
+                      return (
+                        <TextLink
+                          href={href}
+                          target={href.startsWith("http") ? "_blank" : undefined}
+                        >
+                          {children}
+                        </TextLink>
+                      );
+                    },
+                  }}
+                >
+                  {readme}
+                </Markdown>
+              </div>
             </article>
           </main>
 
-          <footer className="mt-auto flex w-full max-w-lg flex-col gap-6 border-t border-border px-6 pt-8 pb-12">
-            <div className="flex items-center gap-3.75 text-caption font-medium leading-5.75">
+          <footer className="mt-auto flex w-full max-w-page flex-col gap-6 px-4 pt-8 pb-12 sm:px-0">
+            <div className="flex w-full max-w-faq items-center gap-3.75 border-t border-border pt-8 text-caption font-medium">
               <a
                 href={GITHUB_URL}
                 target="_blank"
@@ -184,8 +202,8 @@ export const App = () => {
               </a>
             </div>
           </footer>
-        </SiteProvider>
-      </div>
+        </div>
+      </SiteProvider>
       <Toaster />
     </TooltipProvider>
   );

@@ -12,15 +12,17 @@ export const CommandDisplay = () => {
   const commandText = activeTab === "command" ? BIPPY_COMMAND : BIPPY_AGENT_PROMPT;
 
   return (
-    <div className="flex w-full flex-col gap-3">
+    <section className="flex w-full max-w-faq flex-col gap-3">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList variant="line">
           <TabsTrigger value="command">Command line</TabsTrigger>
           <TabsTrigger value="agent">Agent prompt</TabsTrigger>
         </TabsList>
       </Tabs>
-      <div className="flex items-center justify-between pt-0.5 pb-2.25">
-        <code className="font-mono text-sm">{commandText}</code>
+      <div className="flex min-w-0 items-center justify-between gap-3 rounded-lg bg-button px-3 py-2 shadow-button">
+        <code className="min-w-0 break-words font-mono text-feature-label text-feature">
+          {commandText}
+        </code>
         <Tooltip>
           <TooltipTrigger
             render={
@@ -38,6 +40,6 @@ export const CommandDisplay = () => {
           <TooltipContent>{copied ? "Copied!" : "Copy to clipboard"}</TooltipContent>
         </Tooltip>
       </div>
-    </div>
+    </section>
   );
 };
