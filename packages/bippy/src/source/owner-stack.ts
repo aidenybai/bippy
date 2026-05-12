@@ -17,7 +17,7 @@ import {
   getDisplayName,
   traverseFiber,
 } from "../core.js";
-import { SERVER_FRAME_MARKER } from "./constants.js";
+import { SERVER_FRAME_MARKER, SERVER_ENV_PATTERN, ABOUT_REACT_PREFIX } from "./constants.js";
 
 import { parseStack, StackFrame } from "./parse-stack.js";
 import { symbolicateStack } from "./symbolication.js";
@@ -433,7 +433,12 @@ interface OwnerStackEntry {
 }
 
 const isReactServerComponentFrame = (stackFrame: StackFrame): boolean =>
-  Boolean(stackFrame.fileName?.startsWith("rsc://") && stackFrame.functionName);
+  Boolean(
+    stackFrame.functionName &&
+      stackFrame.fileName &&
+      (stackFrame.fileName.startsWith("rsc://") ||
+        stackFrame.fileName.startsWith(ABOUT_REACT_PREFIX)),
+  );
 
 const areStackFramesEqual = (firstFrame: StackFrame, secondFrame: StackFrame): boolean =>
   firstFrame.fileName === secondFrame.fileName &&
@@ -531,7 +536,9 @@ export const getOwnerStack = async (
   const functionNameToUsageIndex = new Map<string, number>();
 
   const enrichedStackFrames = fallbackStackFrames.map((stackFrame): StackFrame => {
-    const isServerFrame = stackFrame.source?.includes(SERVER_FRAME_MARKER) ?? false;
+    const isServerFrame =
+      stackFrame.source?.includes(SERVER_FRAME_MARKER) ||
+      (stackFrame.source != null && SERVER_ENV_PATTERN.test(stackFrame.source));
 
     if (isServerFrame) {
       return getEnrichedServerStackFrame(
