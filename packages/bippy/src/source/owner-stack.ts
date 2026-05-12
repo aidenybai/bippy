@@ -537,7 +537,7 @@ export const getOwnerStack = async (
 
   const enrichedStackFrames = fallbackStackFrames.map((stackFrame): StackFrame => {
     const isServerFrame =
-      stackFrame.source?.includes(SERVER_FRAME_MARKER) ||
+      (stackFrame.source?.includes(SERVER_FRAME_MARKER) ?? false) ||
       (stackFrame.source != null && SERVER_ENV_PATTERN.test(stackFrame.source));
 
     if (isServerFrame) {

@@ -25,4 +25,4 @@ export const QUERY_PARAMETER_PATTERN_REGEX = /^\?[\w~.-]+(?:=[^&#]*)?(?:&[\w~.-]
 
 export const SERVER_FRAME_MARKER = "(at Server)";
 
-export const SERVER_ENV_PATTERN = /\(at \w+\)$/;
+export const SERVER_ENV_PATTERN = /\(at [^)]+\)$/;
