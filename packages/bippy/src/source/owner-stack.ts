@@ -435,9 +435,9 @@ interface OwnerStackEntry {
 const isReactServerComponentFrame = (stackFrame: StackFrame): boolean =>
   Boolean(
     stackFrame.functionName &&
-      stackFrame.fileName &&
-      (stackFrame.fileName.startsWith("rsc://") ||
-        stackFrame.fileName.startsWith(ABOUT_REACT_PREFIX)),
+    stackFrame.fileName &&
+    (stackFrame.fileName.startsWith("rsc://") ||
+      stackFrame.fileName.startsWith(ABOUT_REACT_PREFIX)),
   );
 
 const areStackFramesEqual = (firstFrame: StackFrame, secondFrame: StackFrame): boolean =>

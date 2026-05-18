@@ -1243,10 +1243,7 @@ const swapFiberAndSchedule = (
  * The new function must follow the same Rules of Hooks as the original.
  * DEV-only — `renderer.scheduleUpdate` is not available in production builds.
  */
-export const hotSwapFiberType = (
-  fiber: Fiber,
-  nextType: React.ComponentType<unknown>,
-): void => {
+export const hotSwapFiberType = (fiber: Fiber, nextType: React.ComponentType<unknown>): void => {
   const rdtHook = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
   if (!rdtHook?.renderers) return;
 
