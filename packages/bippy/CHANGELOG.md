@@ -1,5 +1,11 @@
 # bippy
 
+## 0.5.41
+
+### Patch Changes
+
+- fix GC
+
 ## 0.5.40
 
 ### Patch Changes
