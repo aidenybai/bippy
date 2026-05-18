@@ -64,16 +64,8 @@ const INLINE_SOURCEMAP_REGEX = /^data:application\/json[^,]+base64,/;
 const SOURCEMAP_REGEX =
   /(?:\/\/[@#][ \t]+sourceMappingURL=([^\s'"]+?)[ \t]*$)|(?:\/\*[@#][ \t]+sourceMappingURL=([^*]+?)[ \t]*(?:\*\/)[ \t]*$)/;
 
-const supportsWeakRef = typeof WeakRef !== "undefined";
-
-export const sourceMapCache = new Map<string, null | SourceMap | WeakRef<SourceMap>>();
+export const sourceMapCache = new Map<string, null | SourceMap>();
 const _pendingSourceMapRequests = new Map<string, null | Promise<null | SourceMap>>();
-
-const isWeakRefSourceMap = (
-  cachedValue: SourceMap | WeakRef<SourceMap>,
-): cachedValue is WeakRef<SourceMap> => {
-  return supportsWeakRef && cachedValue instanceof WeakRef;
-};
 
 const getSourceFromMappings = (
   mappings: SourceMapMappings,
@@ -301,15 +293,7 @@ export const getSourceMap = async (
     if (cachedValue === null || cachedValue === undefined) {
       return null;
     }
-    if (isWeakRefSourceMap(cachedValue)) {
-      const sourceMap = cachedValue.deref();
-      if (sourceMap) {
-        return sourceMap;
-      }
-      sourceMapCache.delete(file);
-    } else {
-      return cachedValue;
-    }
+    return cachedValue;
   }
 
   if (useCache && _pendingSourceMapRequests.has(file)) {
@@ -330,7 +314,7 @@ export const getSourceMap = async (
     if (sourceMap === null) {
       sourceMapCache.set(file, null);
     } else {
-      sourceMapCache.set(file, supportsWeakRef ? new WeakRef(sourceMap) : sourceMap);
+      sourceMapCache.set(file, sourceMap);
     }
   }
 
