@@ -2,6 +2,9 @@ name: E2E Tests
 
 on: [push, pull_request]
 
+permissions:
+  contents: read
+
 jobs:
   e2e-web:
     runs-on: ubuntu-latest
