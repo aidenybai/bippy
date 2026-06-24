@@ -65,7 +65,12 @@ const SOURCEMAP_REGEX =
   /(?:\/\/[@#][ \t]+sourceMappingURL=([^\s'"]+?)[ \t]*$)|(?:\/\*[@#][ \t]+sourceMappingURL=([^*]+?)[ \t]*(?:\*\/)[ \t]*$)/;
 
 export const sourceMapCache = new Map<string, null | SourceMap>();
-const _pendingSourceMapRequests = new Map<string, null | Promise<null | SourceMap>>();
+interface SourceMapResult {
+  sourceMap: null | SourceMap;
+  isTransientFailure: boolean;
+}
+
+const _pendingSourceMapRequests = new Map<string, Promise<SourceMapResult>>();
 
 const getSourceFromMappings = (
   mappings: SourceMapMappings,
@@ -238,6 +243,11 @@ const isFetchableUrl = (url: string): boolean => {
   return scheme === "http:" || scheme === "https:";
 };
 
+// Resolves a bundle's source map, or null when the bundle definitively has
+// none. A thrown fetch (network error or aborted request) is left to propagate
+// so getSourceMap can treat it as transient and avoid caching it: a non-ok
+// response, a missing sourceMappingURL, or an undecodable map are definitive and
+// return null, but a dropped connection is not and must stay retryable.
 export const getSourceMapImpl = async (
   bundleUrl: string,
   fetchFn: (url: string) => Promise<Response> = fetch,
@@ -246,17 +256,11 @@ export const getSourceMapImpl = async (
     return null;
   }
 
-  let bundleContent: string | undefined;
-  try {
-    const bundleResponse = await fetchFn(bundleUrl);
-    if (!bundleResponse.ok) {
-      return null;
-    }
-    bundleContent = await bundleResponse.text();
-  } catch {
+  const bundleResponse = await fetchFn(bundleUrl);
+  if (!bundleResponse.ok) {
     return null;
   }
-
+  const bundleContent = await bundleResponse.text();
   if (!bundleContent) {
     return null;
   }
@@ -268,11 +272,12 @@ export const getSourceMapImpl = async (
     return null;
   }
 
+  const sourceMapResponse = await fetchFn(sourceMapUrl);
+  if (!sourceMapResponse.ok) {
+    return null;
+  }
+
   try {
-    const sourceMapResponse = await fetchFn(sourceMapUrl);
-    if (!sourceMapResponse.ok) {
-      return null;
-    }
     const rawSourceMap = (await sourceMapResponse.json()) as RawSourceMap;
 
     return "sections" in rawSourceMap
@@ -289,31 +294,30 @@ export const getSourceMap = async (
   fetchFn?: (url: string) => Promise<Response>,
 ): Promise<null | SourceMap> => {
   if (useCache && sourceMapCache.has(file)) {
-    const cachedValue = sourceMapCache.get(file);
-    if (cachedValue === null || cachedValue === undefined) {
-      return null;
-    }
-    return cachedValue;
+    return sourceMapCache.get(file) ?? null;
   }
 
-  if (useCache && _pendingSourceMapRequests.has(file)) {
-    return _pendingSourceMapRequests.get(file)!;
+  const pendingRequest = useCache ? _pendingSourceMapRequests.get(file) : undefined;
+  if (pendingRequest) {
+    return (await pendingRequest).sourceMap;
   }
 
-  const fetchPromise = getSourceMapImpl(file, fetchFn);
+  // A transient fetch failure (aborted request or network error) rejects; a
+  // definitive "no map" resolves to null. Only definitive results are cached:
+  // caching a transient null would pin the bundle to a degraded result for the
+  // rest of the page's lifetime, even after the network recovers.
+  const fetchPromise: Promise<SourceMapResult> = getSourceMapImpl(file, fetchFn).then(
+    (sourceMap) => ({ sourceMap, isTransientFailure: false }),
+    () => ({ sourceMap: null, isTransientFailure: true }),
+  );
   if (useCache) {
     _pendingSourceMapRequests.set(file, fetchPromise);
   }
 
-  const sourceMap = await fetchPromise;
+  const { sourceMap, isTransientFailure } = await fetchPromise;
   if (useCache) {
     _pendingSourceMapRequests.delete(file);
-  }
-
-  if (useCache) {
-    if (sourceMap === null) {
-      sourceMapCache.set(file, null);
-    } else {
+    if (!isTransientFailure) {
       sourceMapCache.set(file, sourceMap);
     }
   }
