@@ -9,7 +9,7 @@ jobs:
   e2e-web:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v4
       - uses: oven-sh/setup-bun@v2
       - uses: actions/setup-node@v4
@@ -35,7 +35,7 @@ jobs:
     runs-on: macos-latest
     if: github.event_name == 'workflow_dispatch'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v4
       - uses: oven-sh/setup-bun@v2
       - uses: actions/setup-node@v4
