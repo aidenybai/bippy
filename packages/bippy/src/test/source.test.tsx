@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import { expect, it } from "vitest";
 import type { Fiber } from "../types.js";
 import { instrument } from "../index.js";
-import { getSource, getOwnerStack } from "../source/index.js";
+import { getSource, getOwnerStack, getSourceMap, sourceMapCache } from "../source/index.js";
 import { normalizeFileName } from "../source/get-source.js";
 import { extractLocation } from "../source/parse-stack.js";
 
@@ -314,4 +314,62 @@ it("extractLocation should handle path starting with route group (no Chrome wrap
 it("extractLocation should handle file with parentheses in name", () => {
   const result = extractLocation("file(1).js:10:5");
   expect(result).toEqual(["file(1).js", "10", "5"]);
+});
+
+const SOURCE_MAP_BODY = JSON.stringify({
+  version: 3,
+  sources: ["app.tsx"],
+  sourcesContent: ["const value = 1;"],
+  names: [],
+  mappings: "",
+});
+
+const bundleResponse = (sourceMappingUrl: string): Response =>
+  new Response(`const value = 1;\n//# sourceMappingURL=${sourceMappingUrl}`, { status: 200 });
+
+const sourceMapResponse = (): Response =>
+  new Response(SOURCE_MAP_BODY, {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
+
+it("getSourceMap retries after a transient source-map fetch failure instead of caching null", async () => {
+  const file = "http://localhost/transient-bundle.js";
+  sourceMapCache.delete(file);
+  let sourceMapAttempts = 0;
+
+  const fetchFn = (url: string): Promise<Response> => {
+    if (url.endsWith(".map")) {
+      sourceMapAttempts++;
+      if (sourceMapAttempts === 1) {
+        return Promise.reject(new DOMException("Aborted", "AbortError"));
+      }
+      return Promise.resolve(sourceMapResponse());
+    }
+    return Promise.resolve(bundleResponse("transient-bundle.js.map"));
+  };
+
+  const firstResult = await getSourceMap(file, true, fetchFn);
+  expect(firstResult).toBeNull();
+  expect(sourceMapCache.has(file)).toBe(false);
+
+  const secondResult = await getSourceMap(file, true, fetchFn);
+  expect(secondResult).not.toBeNull();
+  expect(sourceMapAttempts).toBe(2);
+});
+
+it("getSourceMap caches a definitive missing source map and does not refetch", async () => {
+  const file = "http://localhost/no-map-bundle.js";
+  sourceMapCache.delete(file);
+  let bundleAttempts = 0;
+
+  const fetchFn = (_url: string): Promise<Response> => {
+    bundleAttempts++;
+    return Promise.resolve(new Response("const value = 1;", { status: 200 }));
+  };
+
+  expect(await getSourceMap(file, true, fetchFn)).toBeNull();
+  expect(await getSourceMap(file, true, fetchFn)).toBeNull();
+  expect(bundleAttempts).toBe(1);
+  expect(sourceMapCache.get(file)).toBeNull();
 });
