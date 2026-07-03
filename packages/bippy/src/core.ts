@@ -1084,6 +1084,17 @@ export const instrument = (options: InstrumentationOptions): ReactDevToolsGlobal
   return rdtHook;
 };
 
+// React stamps the fiber under an own key with a per-renderer random suffix
+// (`__reactFiber$<suffix>`). A `for-in` over a DOM element enumerates every
+// inherited accessor (~200 keys), so once a key is seen it is cached and every
+// later lookup is a single property read.
+const knownFiberPropertyKeys: string[] = [];
+
+const isFiberPropertyKey = (key: string): boolean =>
+  key.startsWith("__reactContainer$") ||
+  key.startsWith("__reactInternalInstance$") ||
+  key.startsWith("__reactFiber");
+
 export const getFiberFromHostInstance = <T>(hostInstance: T): Fiber | null => {
   const rdtHook = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
   if (rdtHook?.renderers) {
@@ -1101,13 +1112,16 @@ export const getFiberFromHostInstance = <T>(hostInstance: T): Fiber | null => {
       return (hostInstance._reactRootContainer as any)?._internalRoot?.current?.child;
     }
 
-    for (const key in hostInstance) {
-      if (
-        key.startsWith("__reactContainer$") ||
-        key.startsWith("__reactInternalInstance$") ||
-        key.startsWith("__reactFiber")
-      ) {
-        return (hostInstance[key] || null) as Fiber | null;
+    const hostInstanceRecord = hostInstance as Record<string, unknown>;
+    for (const knownKey of knownFiberPropertyKeys) {
+      const fiber = hostInstanceRecord[knownKey];
+      if (fiber) return fiber as Fiber;
+    }
+
+    for (const key of Object.keys(hostInstance)) {
+      if (isFiberPropertyKey(key)) {
+        knownFiberPropertyKeys.push(key);
+        return (hostInstanceRecord[key] || null) as Fiber | null;
       }
     }
   }
