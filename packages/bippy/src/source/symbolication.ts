@@ -87,12 +87,19 @@ const getSourceFromMappings = (
     return null;
   }
 
+  // Segments within a line are sorted by generated column, and a minified
+  // bundle can put tens of thousands of segments on one line, so binary search
+  // for the last segment at or before the column.
   let closestLineSegment: null | SourceMapSegment = null;
-  for (const lineSegment of lineMapping) {
-    if (lineSegment[0] <= column) {
-      closestLineSegment = lineSegment;
+  let lowIndex = 0;
+  let highIndex = lineMapping.length - 1;
+  while (lowIndex <= highIndex) {
+    const middleIndex = (lowIndex + highIndex) >> 1;
+    if (lineMapping[middleIndex][0] <= column) {
+      closestLineSegment = lineMapping[middleIndex];
+      lowIndex = middleIndex + 1;
     } else {
-      break;
+      highIndex = middleIndex - 1;
     }
   }
 
@@ -158,13 +165,17 @@ export const getSourceFromSourceMap = (
 };
 
 const getSourceMapUrl = (url: string, content: string): null | string => {
-  const lines = content.split("\n");
+  // Walk lines from the end without content.split("\n"), which allocates a
+  // string per line for the entire bundle just to find the trailer comment.
   let sourceMapUrl: string | undefined;
-  for (let i = lines.length - 1; i >= 0 && !sourceMapUrl; i--) {
-    const regexMatch = lines[i].match(SOURCEMAP_REGEX);
+  let searchEnd = content.length;
+  while (searchEnd > 0 && !sourceMapUrl) {
+    const lineStart = content.lastIndexOf("\n", searchEnd - 1) + 1;
+    const regexMatch = content.slice(lineStart, searchEnd).match(SOURCEMAP_REGEX);
     if (regexMatch) {
       sourceMapUrl = regexMatch[1] || regexMatch[2];
     }
+    searchEnd = lineStart - 1;
   }
 
   if (!sourceMapUrl) {

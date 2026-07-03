@@ -48,6 +48,8 @@ export const ELEMENT_TYPE_SYMBOL_STRING = "Symbol(react.element)";
 export const TRANSITIONAL_ELEMENT_TYPE_SYMBOL_STRING = "Symbol(react.transitional.element)";
 export const CONCURRENT_MODE_SYMBOL_STRING = "Symbol(react.concurrent_mode)";
 export const DEPRECATED_ASYNC_MODE_SYMBOL_STRING = "Symbol(react.async_mode)";
+export const CONCURRENT_MODE_SYMBOL_DESCRIPTION = "react.concurrent_mode";
+export const DEPRECATED_ASYNC_MODE_SYMBOL_DESCRIPTION = "react.async_mode";
 
 // https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactFiberFlags.js
 const PerformedWork = 0b1;
@@ -215,13 +217,12 @@ export const traverseProps = (
     const nextProps = fiber.memoizedProps;
     const prevProps = fiber.alternate?.memoizedProps || {};
 
-    const allKeys = new Set([...Object.keys(nextProps), ...Object.keys(prevProps)]);
-
-    for (const propName of allKeys) {
-      const prevValue = prevProps?.[propName];
-      const nextValue = nextProps?.[propName];
-
-      if (selector(propName, nextValue, prevValue) === true) return true;
+    for (const propName of Object.keys(nextProps)) {
+      if (selector(propName, nextProps[propName], prevProps?.[propName]) === true) return true;
+    }
+    for (const propName of Object.keys(prevProps)) {
+      if (propName in nextProps) continue;
+      if (selector(propName, nextProps?.[propName], prevProps[propName]) === true) return true;
     }
   } catch {}
   return false;
@@ -332,10 +333,17 @@ export const shouldFilterFiber = (fiber: Fiber): boolean => {
       const symbolOrNumber =
         typeof fiber.type === "object" && fiber.type !== null ? fiber.type.$$typeof : fiber.type;
 
-      const typeSymbol =
-        typeof symbolOrNumber === "symbol" ? symbolOrNumber.toString() : symbolOrNumber;
+      if (typeof symbolOrNumber === "symbol") {
+        // Compare the stored description instead of symbol.toString(), which
+        // allocates a fresh string on every filtered fiber.
+        const symbolDescription = symbolOrNumber.description;
+        return (
+          symbolDescription === CONCURRENT_MODE_SYMBOL_DESCRIPTION ||
+          symbolDescription === DEPRECATED_ASYNC_MODE_SYMBOL_DESCRIPTION
+        );
+      }
 
-      switch (typeSymbol) {
+      switch (symbolOrNumber) {
         case CONCURRENT_MODE_NUMBER:
         case CONCURRENT_MODE_SYMBOL_STRING:
         case DEPRECATED_ASYNC_MODE_SYMBOL_STRING:

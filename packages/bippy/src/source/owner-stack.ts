@@ -68,6 +68,11 @@ export const describeDebugInfoFrame = (name: string, env?: string): string => {
 
 let reEntry = false;
 
+// The frame for a component type is stable for the page's lifetime, and
+// computing it throws + parses two full error stacks, so cache per component
+// like React DevTools does.
+const componentFrameCache = new WeakMap<React.ComponentType<unknown>, string>();
+
 // https://github.com/facebook/react/blob/f739642745577a8e4dcb9753836ac3589b9c590a/packages/react-devtools-shared/src/backend/shared/DevToolsComponentStackFrame.js#L22
 const describeNativeComponentFrame = (
   component: React.ComponentType<unknown>,
@@ -75,6 +80,11 @@ const describeNativeComponentFrame = (
 ): string => {
   if (!component || reEntry) {
     return "";
+  }
+
+  const cachedFrame = componentFrameCache.get(component);
+  if (cachedFrame !== undefined) {
+    return cachedFrame;
   }
 
   const previousPrepareStackTrace = Error.prepareStackTrace;
@@ -257,6 +267,7 @@ const describeNativeComponentFrame = (
                   stackFrame = stackFrame.replace("<anonymous>", displayName);
                 }
                 // Return the line we found.
+                componentFrameCache.set(component, stackFrame);
                 return stackFrame;
               }
             } while (sampleIndex >= 1 && controlIndex >= 0);
@@ -277,6 +288,7 @@ const describeNativeComponentFrame = (
 
   const componentName = component ? getDisplayName(component) : "";
   const syntheticFrame = componentName ? describeBuiltInComponentFrame(componentName) : "";
+  componentFrameCache.set(component, syntheticFrame);
   return syntheticFrame;
 };
 
