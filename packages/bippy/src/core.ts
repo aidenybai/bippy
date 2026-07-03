@@ -48,6 +48,8 @@ export const ELEMENT_TYPE_SYMBOL_STRING = "Symbol(react.element)";
 export const TRANSITIONAL_ELEMENT_TYPE_SYMBOL_STRING = "Symbol(react.transitional.element)";
 export const CONCURRENT_MODE_SYMBOL_STRING = "Symbol(react.concurrent_mode)";
 export const DEPRECATED_ASYNC_MODE_SYMBOL_STRING = "Symbol(react.async_mode)";
+export const CONCURRENT_MODE_SYMBOL_DESCRIPTION = "react.concurrent_mode";
+export const DEPRECATED_ASYNC_MODE_SYMBOL_DESCRIPTION = "react.async_mode";
 
 // https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactFiberFlags.js
 const PerformedWork = 0b1;
@@ -215,13 +217,12 @@ export const traverseProps = (
     const nextProps = fiber.memoizedProps;
     const prevProps = fiber.alternate?.memoizedProps || {};
 
-    const allKeys = new Set([...Object.keys(nextProps), ...Object.keys(prevProps)]);
-
-    for (const propName of allKeys) {
-      const prevValue = prevProps?.[propName];
-      const nextValue = nextProps?.[propName];
-
-      if (selector(propName, nextValue, prevValue) === true) return true;
+    for (const propName of Object.keys(nextProps)) {
+      if (selector(propName, nextProps[propName], prevProps[propName]) === true) return true;
+    }
+    for (const propName of Object.keys(prevProps)) {
+      if (propName in nextProps) continue;
+      if (selector(propName, nextProps[propName], prevProps[propName]) === true) return true;
     }
   } catch {}
   return false;
@@ -332,10 +333,14 @@ export const shouldFilterFiber = (fiber: Fiber): boolean => {
       const symbolOrNumber =
         typeof fiber.type === "object" && fiber.type !== null ? fiber.type.$$typeof : fiber.type;
 
-      const typeSymbol =
-        typeof symbolOrNumber === "symbol" ? symbolOrNumber.toString() : symbolOrNumber;
+      if (typeof symbolOrNumber === "symbol") {
+        return (
+          symbolOrNumber.description === CONCURRENT_MODE_SYMBOL_DESCRIPTION ||
+          symbolOrNumber.description === DEPRECATED_ASYNC_MODE_SYMBOL_DESCRIPTION
+        );
+      }
 
-      switch (typeSymbol) {
+      switch (symbolOrNumber) {
         case CONCURRENT_MODE_NUMBER:
         case CONCURRENT_MODE_SYMBOL_STRING:
         case DEPRECATED_ASYNC_MODE_SYMBOL_STRING:
@@ -1084,6 +1089,16 @@ export const instrument = (options: InstrumentationOptions): ReactDevToolsGlobal
   return rdtHook;
 };
 
+// React stamps fibers under per-renderer random-suffix keys (`__reactFiber$<suffix>`);
+// caching discovered keys makes repeat lookups a single property read instead of a
+// scan over every own key of the element.
+const knownFiberPropertyKeys = new Set<string>();
+
+const isFiberPropertyKey = (key: string): boolean =>
+  key.startsWith("__reactContainer$") ||
+  key.startsWith("__reactInternalInstance$") ||
+  key.startsWith("__reactFiber");
+
 export const getFiberFromHostInstance = <T>(hostInstance: T): Fiber | null => {
   const rdtHook = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
   if (rdtHook?.renderers) {
@@ -1101,13 +1116,16 @@ export const getFiberFromHostInstance = <T>(hostInstance: T): Fiber | null => {
       return (hostInstance._reactRootContainer as any)?._internalRoot?.current?.child;
     }
 
-    for (const key in hostInstance) {
-      if (
-        key.startsWith("__reactContainer$") ||
-        key.startsWith("__reactInternalInstance$") ||
-        key.startsWith("__reactFiber")
-      ) {
-        return (hostInstance[key] || null) as Fiber | null;
+    const hostInstanceRecord = hostInstance as Record<string, unknown>;
+    for (const knownKey of knownFiberPropertyKeys) {
+      const fiber = hostInstanceRecord[knownKey];
+      if (fiber) return fiber as Fiber;
+    }
+
+    for (const key of Object.keys(hostInstanceRecord)) {
+      if (isFiberPropertyKey(key)) {
+        knownFiberPropertyKeys.add(key);
+        return (hostInstanceRecord[key] || null) as Fiber | null;
       }
     }
   }

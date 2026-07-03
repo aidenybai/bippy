@@ -2,3 +2,5 @@ node_modules
 test-results
 playwright-report
 blob-report
+.coverage-v8
+perf
