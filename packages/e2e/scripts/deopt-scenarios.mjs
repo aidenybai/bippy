@@ -21,8 +21,7 @@ export const runScenarios = async (page) => {
   await page.evaluate(
     ({ walkCount }) => {
       const element = document.querySelector('[data-testid="test-child"]');
-      const hostFiber = window.__BIPPY__.getFiberFromHostInstance(element);
-      let rootFiber = hostFiber;
+      let rootFiber = window.__BIPPY__.getFiberFromHostInstance(element);
       while (rootFiber.return) rootFiber = rootFiber.return;
       for (let walkIndex = 0; walkIndex < walkCount; walkIndex++) {
         window.__BIPPY__.traverseFiber(rootFiber, () => {});
@@ -68,7 +67,7 @@ export const runScenarios = async (page) => {
     async ({ commitCount }) => {
       const bippy = window.__BIPPY__;
       bippy.instrument({
-        onCommitFiberRoot: (rendererId, root) => {
+        onCommitFiberRoot: (_rendererId, root) => {
           bippy.traverseRenderedFibers(root, () => {});
         },
       });

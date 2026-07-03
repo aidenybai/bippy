@@ -87,9 +87,8 @@ const getSourceFromMappings = (
     return null;
   }
 
-  // Segments within a line are sorted by generated column, and a minified
-  // bundle can put tens of thousands of segments on one line, so binary search
-  // for the last segment at or before the column.
+  // Segments within a line are sorted by generated column, so binary search for
+  // the last segment at or before the column.
   let closestLineSegment: null | SourceMapSegment = null;
   let lowIndex = 0;
   let highIndex = lineMapping.length - 1;
@@ -165,8 +164,8 @@ export const getSourceFromSourceMap = (
 };
 
 const getSourceMapUrl = (url: string, content: string): null | string => {
-  // Walk lines from the end without content.split("\n"), which allocates a
-  // string per line for the entire bundle just to find the trailer comment.
+  // Walk lines backwards without content.split("\n"), which would allocate a
+  // string per line of the entire bundle.
   let sourceMapUrl: string | undefined;
   let searchEnd = content.length;
   while (searchEnd > 0 && !sourceMapUrl) {

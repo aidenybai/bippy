@@ -68,9 +68,8 @@ export const describeDebugInfoFrame = (name: string, env?: string): string => {
 
 let reEntry = false;
 
-// The frame for a component type is stable for the page's lifetime, and
-// computing it throws + parses two full error stacks, so cache per component
-// like React DevTools does.
+// Computing a frame throws and parses two full error stacks, so cache per
+// component type like React DevTools does.
 const componentFrameCache = new WeakMap<React.ComponentType<unknown>, string>();
 
 // https://github.com/facebook/react/blob/f739642745577a8e4dcb9753836ac3589b9c590a/packages/react-devtools-shared/src/backend/shared/DevToolsComponentStackFrame.js#L22

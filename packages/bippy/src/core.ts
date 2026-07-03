@@ -218,11 +218,11 @@ export const traverseProps = (
     const prevProps = fiber.alternate?.memoizedProps || {};
 
     for (const propName of Object.keys(nextProps)) {
-      if (selector(propName, nextProps[propName], prevProps?.[propName]) === true) return true;
+      if (selector(propName, nextProps[propName], prevProps[propName]) === true) return true;
     }
     for (const propName of Object.keys(prevProps)) {
       if (propName in nextProps) continue;
-      if (selector(propName, nextProps?.[propName], prevProps[propName]) === true) return true;
+      if (selector(propName, nextProps[propName], prevProps[propName]) === true) return true;
     }
   } catch {}
   return false;
@@ -334,12 +334,9 @@ export const shouldFilterFiber = (fiber: Fiber): boolean => {
         typeof fiber.type === "object" && fiber.type !== null ? fiber.type.$$typeof : fiber.type;
 
       if (typeof symbolOrNumber === "symbol") {
-        // Compare the stored description instead of symbol.toString(), which
-        // allocates a fresh string on every filtered fiber.
-        const symbolDescription = symbolOrNumber.description;
         return (
-          symbolDescription === CONCURRENT_MODE_SYMBOL_DESCRIPTION ||
-          symbolDescription === DEPRECATED_ASYNC_MODE_SYMBOL_DESCRIPTION
+          symbolOrNumber.description === CONCURRENT_MODE_SYMBOL_DESCRIPTION ||
+          symbolOrNumber.description === DEPRECATED_ASYNC_MODE_SYMBOL_DESCRIPTION
         );
       }
 
@@ -1092,11 +1089,10 @@ export const instrument = (options: InstrumentationOptions): ReactDevToolsGlobal
   return rdtHook;
 };
 
-// React stamps the fiber under an own key with a per-renderer random suffix
-// (`__reactFiber$<suffix>`). A `for-in` over a DOM element enumerates every
-// inherited accessor (~200 keys), so once a key is seen it is cached and every
-// later lookup is a single property read.
-const knownFiberPropertyKeys: string[] = [];
+// React stamps fibers under per-renderer random-suffix keys (`__reactFiber$<suffix>`);
+// caching discovered keys makes repeat lookups a single property read instead of a
+// scan over every own key of the element.
+const knownFiberPropertyKeys = new Set<string>();
 
 const isFiberPropertyKey = (key: string): boolean =>
   key.startsWith("__reactContainer$") ||
@@ -1126,9 +1122,9 @@ export const getFiberFromHostInstance = <T>(hostInstance: T): Fiber | null => {
       if (fiber) return fiber as Fiber;
     }
 
-    for (const key of Object.keys(hostInstance)) {
+    for (const key of Object.keys(hostInstanceRecord)) {
       if (isFiberPropertyKey(key)) {
-        knownFiberPropertyKeys.push(key);
+        knownFiberPropertyKeys.add(key);
         return (hostInstanceRecord[key] || null) as Fiber | null;
       }
     }
