@@ -1,5 +1,11 @@
 # bippy
 
+## 0.5.43
+
+### Patch Changes
+
+- fix
+
 ## 0.5.42
 
 ### Patch Changes
