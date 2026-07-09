@@ -293,6 +293,7 @@ const App = () => {
         "refresh-last-update": update.updatedComponents
           .map((componentType) => getDisplayName(componentType) ?? "unknown")
           .join(","),
+        "refresh-last-paths": update.filePaths.join(","),
       }));
     });
     setHmrResults((previousResults) => ({

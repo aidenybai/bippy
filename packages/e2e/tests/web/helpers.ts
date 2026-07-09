@@ -3,7 +3,11 @@ import type { Page } from "@playwright/test";
 declare global {
   interface Window {
     __BIPPY_HMR__?: {
-      refreshUpdates: { staleNames: (string | null)[]; updatedNames: (string | null)[] }[];
+      refreshUpdates: {
+        filePaths: string[];
+        staleNames: (string | null)[];
+        updatedNames: (string | null)[];
+      }[];
       hasRefreshListener: boolean;
     };
   }

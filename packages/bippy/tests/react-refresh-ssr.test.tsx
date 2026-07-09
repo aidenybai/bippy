@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import * as bippy from "../src/index.js";
+import { detectHmrTransport } from "../src/react-refresh/detect-hmr-transport.js";
 import { onReactRefresh } from "../src/react-refresh/index.js";
 
 describe("react-refresh under SSR (no window)", () => {
@@ -11,6 +12,10 @@ describe("react-refresh under SSR (no window)", () => {
 
   it("onReactRefresh returns null without throwing", () => {
     expect(onReactRefresh(() => {})).toBeNull();
+  });
+
+  it("detectHmrTransport resolves null without throwing", async () => {
+    await expect(detectHmrTransport(() => {})).resolves.toBeNull();
   });
 
   it("importing and installing bippy core is side-effect safe on the server", () => {

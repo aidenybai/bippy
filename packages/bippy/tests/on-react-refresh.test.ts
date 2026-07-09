@@ -1,4 +1,5 @@
 import { expect, it, vi } from "vitest";
+import { PENDING_HOT_UPDATE_MAX_AGE_MS } from "../src/react-refresh/constants.js";
 import { onReactRefresh } from "../src/react-refresh/index.js";
 import { getRDTHook } from "../src/rdt-hook.js";
 import type { FiberRoot, ReactRenderer, RendererRefreshUpdate } from "../src/types.js";
@@ -37,6 +38,7 @@ it("reports updated and stale component types after the original scheduleRefresh
 
   expect(originalScheduleRefresh).toHaveBeenCalledWith(fakeRoot, rendererUpdate);
   expect(onRefreshUpdate).toHaveBeenCalledWith({
+    filePaths: [],
     root: fakeRoot,
     staleComponents: [StaleComponent],
     updatedComponents: [UpdatedComponent],
@@ -110,4 +112,87 @@ it("returns null in non-client environments", () => {
   vi.stubGlobal("window", { navigator: { product: "Gecko" } });
   expect(onReactRefresh(vi.fn())).toBeNull();
   vi.unstubAllGlobals();
+});
+
+const flushMicrotasks = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+it("augments refresh updates with file paths from the detected hmr transport", async () => {
+  const originalHotUpdate = vi.fn();
+  window.webpackHotUpdate_N_E = originalHotUpdate;
+
+  const rdtHook = getRDTHook();
+  const fakeRenderer = createFakeRefreshRenderer();
+  rdtHook.inject(fakeRenderer);
+
+  const onRefreshUpdate = vi.fn();
+  const listener = onReactRefresh(onRefreshUpdate);
+  await flushMicrotasks();
+
+  window.webpackHotUpdate_N_E?.("chunk", { "(app-pages-browser)/./app/page.tsx": {} }, undefined);
+  fakeRenderer.scheduleRefresh?.(fakeRoot, createFakeRendererUpdate());
+
+  expect(onRefreshUpdate).toHaveBeenCalledWith(
+    expect.objectContaining({ filePaths: ["app/page.tsx"] }),
+  );
+  expect(originalHotUpdate).toHaveBeenCalledOnce();
+
+  listener?.dispose();
+  delete window.webpackHotUpdate_N_E;
+});
+
+it("shares pending file paths across roots in one refresh pass, then clears them", async () => {
+  window.webpackHotUpdate_N_E = vi.fn();
+
+  const rdtHook = getRDTHook();
+  const fakeRenderer = createFakeRefreshRenderer();
+  rdtHook.inject(fakeRenderer);
+
+  const onRefreshUpdate = vi.fn();
+  const listener = onReactRefresh(onRefreshUpdate);
+  await flushMicrotasks();
+
+  window.webpackHotUpdate_N_E?.("chunk", { "./app/card.tsx": {} }, undefined);
+  const firstRoot = {} as FiberRoot;
+  const secondRoot = {} as FiberRoot;
+  fakeRenderer.scheduleRefresh?.(firstRoot, createFakeRendererUpdate());
+  fakeRenderer.scheduleRefresh?.(secondRoot, createFakeRendererUpdate());
+
+  expect(onRefreshUpdate).toHaveBeenNthCalledWith(
+    1,
+    expect.objectContaining({ filePaths: ["app/card.tsx"], root: firstRoot }),
+  );
+  expect(onRefreshUpdate).toHaveBeenNthCalledWith(
+    2,
+    expect.objectContaining({ filePaths: ["app/card.tsx"], root: secondRoot }),
+  );
+
+  await flushMicrotasks();
+  fakeRenderer.scheduleRefresh?.(fakeRoot, createFakeRendererUpdate());
+  expect(onRefreshUpdate).toHaveBeenNthCalledWith(3, expect.objectContaining({ filePaths: [] }));
+
+  listener?.dispose();
+  delete window.webpackHotUpdate_N_E;
+});
+
+it("drops pending file paths older than the freshness window", async () => {
+  vi.useFakeTimers();
+  window.webpackHotUpdate_N_E = vi.fn();
+
+  const rdtHook = getRDTHook();
+  const fakeRenderer = createFakeRefreshRenderer();
+  rdtHook.inject(fakeRenderer);
+
+  const onRefreshUpdate = vi.fn();
+  const listener = onReactRefresh(onRefreshUpdate);
+  await vi.runOnlyPendingTimersAsync();
+
+  window.webpackHotUpdate_N_E?.("chunk", { "./app/stale.tsx": {} }, undefined);
+  vi.advanceTimersByTime(PENDING_HOT_UPDATE_MAX_AGE_MS + 1);
+  fakeRenderer.scheduleRefresh?.(fakeRoot, createFakeRendererUpdate());
+
+  expect(onRefreshUpdate).toHaveBeenCalledWith(expect.objectContaining({ filePaths: [] }));
+
+  listener?.dispose();
+  delete window.webpackHotUpdate_N_E;
+  vi.useRealTimers();
 });

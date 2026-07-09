@@ -2,6 +2,7 @@ import { getDisplayName } from "bippy";
 import { onReactRefresh } from "bippy/react-refresh";
 
 interface BippyRefreshUpdateRecord {
+  filePaths: string[];
   staleNames: (string | null)[];
   updatedNames: (string | null)[];
 }
@@ -23,6 +24,7 @@ export const installHmrHarness = () => {
   window.__BIPPY_HMR__ = harness;
   const refreshListener = onReactRefresh((update) => {
     harness.refreshUpdates.push({
+      filePaths: update.filePaths,
       staleNames: update.staleComponents.map((componentType) => getDisplayName(componentType)),
       updatedNames: update.updatedComponents.map((componentType) => getDisplayName(componentType)),
     });

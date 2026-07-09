@@ -110,6 +110,40 @@ test.describe("bippy/react-refresh", () => {
     }
   });
 
+  test("augments refresh updates with the hot-updated file paths", async ({ page }) => {
+    const targetFilePath = HMR_TARGET_FILE_BY_PROJECT[test.info().project.name];
+    const originalSource = readFileSync(targetFilePath, "utf8");
+    const currentMarker = readCurrentMarker(originalSource);
+    const uniqueMarker = buildUniqueMarker();
+
+    await page.waitForFunction(() => window.__BIPPY_HMR__?.hasRefreshListener === true, undefined, {
+      timeout: HMR_UPDATE_TIMEOUT_MS,
+    });
+
+    try {
+      await saveAndAwaitMarker(
+        page,
+        targetFilePath,
+        originalSource.replace(currentMarker, uniqueMarker),
+        uniqueMarker,
+      );
+
+      await page.waitForFunction(
+        () =>
+          window.__BIPPY_HMR__ !== undefined &&
+          window.__BIPPY_HMR__.refreshUpdates.some(
+            (refreshUpdate) =>
+              refreshUpdate.updatedNames.includes("HmrTarget") &&
+              refreshUpdate.filePaths.some((filePath) => filePath.includes("hmr-target")),
+          ),
+        undefined,
+        { timeout: HMR_UPDATE_TIMEOUT_MS },
+      );
+    } finally {
+      writeFileSync(targetFilePath, originalSource);
+    }
+  });
+
   test("reports each update in a sequence of consecutive saves", async ({ page }) => {
     const targetFilePath = HMR_TARGET_FILE_BY_PROJECT[test.info().project.name];
     const originalSource = readFileSync(targetFilePath, "utf8");
