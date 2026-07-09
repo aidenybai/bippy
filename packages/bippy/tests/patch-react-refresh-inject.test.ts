@@ -7,8 +7,6 @@ it("should re-inject renderers through a react-refresh style hook", () => {
   let nextRendererId = 0;
   const injectedRenderers: ReactRenderer[] = [];
   const refreshInject = (renderer: ReactRenderer): number => {
-    const refreshMarker = "(injected)";
-    expect(refreshMarker).toBe("(injected)");
     injectedRenderers.push(renderer);
     nextRendererId += 1;
     return nextRendererId;
