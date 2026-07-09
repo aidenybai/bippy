@@ -6,6 +6,23 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    outputs:
+      native: ${{ steps.filter.outputs.native }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            native:
+              - "packages/bippy/**"
+              - "packages/e2e/**"
+              - ".github/workflows/e2e.yml"
+              - "pnpm-lock.yaml"
+
   e2e-web:
     runs-on: ubuntu-latest
     steps:
@@ -33,7 +50,14 @@ jobs:
 
   e2e-native:
     runs-on: macos-latest
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    needs: changes
+    # macos runners bill at 10x linux rates, so skip unless native-relevant
+    # paths changed (or the run was requested manually)
+    if: >-
+      !cancelled() && (
+        github.event_name == 'workflow_dispatch' ||
+        (github.event_name == 'pull_request' && needs.changes.outputs.native == 'true')
+      )
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -54,13 +78,27 @@ jobs:
       - run: pnpm build
       - name: Install applesimutils
         run: brew tap wix/brew && brew trust wix/brew && brew install applesimutils
+      - name: Get Xcode version
+        id: xcode
+        run: echo "version=$(xcodebuild -version | tr -d '\n' | tr ' ' '-')" >> "$GITHUB_OUTPUT"
+      # the .app binary only changes when native deps or app config change;
+      # all fixture/bippy JS is served by Metro at runtime, so skipping the
+      # ~8 min prebuild + xcodebuild is safe for source-only changes
+      - name: Cache iOS app binary
+        id: app-cache
+        uses: actions/cache@v4
+        with:
+          path: packages/e2e/fixtures/expo-app/ios/build/Build/Products/Debug-iphonesimulator/bippye2eexpo.app
+          key: expo-app-${{ steps.xcode.outputs.version }}-${{ hashFiles('pnpm-lock.yaml', 'packages/e2e/fixtures/expo-app/app.json', 'packages/e2e/fixtures/expo-app/package.json') }}
       - name: Cache CocoaPods downloads
+        if: steps.app-cache.outputs.cache-hit != 'true'
         uses: actions/cache@v4
         with:
           path: ~/Library/Caches/CocoaPods
           key: cocoapods-${{ runner.os }}-${{ hashFiles('packages/e2e/fixtures/expo-app/package.json') }}
           restore-keys: cocoapods-${{ runner.os }}-
       - name: Prebuild and build iOS app
+        if: steps.app-cache.outputs.cache-hit != 'true'
         run: |
           cd packages/e2e/fixtures/expo-app
           npx expo prebuild --platform ios --clean
@@ -83,9 +121,6 @@ jobs:
           echo "Metro failed to start" >&2
           cat /tmp/metro.log >&2
           exit 1
-      - name: Get Xcode version
-        id: xcode
-        run: echo "version=$(xcodebuild -version | tr -d '\n' | tr ' ' '-')" >> "$GITHUB_OUTPUT"
       - name: Cache Detox framework
         id: detox-framework-cache
         uses: actions/cache@v4
