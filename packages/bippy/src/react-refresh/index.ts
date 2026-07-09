@@ -1,9 +1,18 @@
 import { getType, traverseFiber } from "../core.js";
 import { getRDTHook, isClientEnvironment } from "../rdt-hook.js";
+import { getSource } from "../source/get-source.js";
+import { FiberSource } from "../source/types.js";
 import type { Fiber, FiberRoot, ReactRenderer } from "../types.js";
 import { PENDING_HOT_UPDATE_MAX_AGE_MS } from "./constants.js";
 import { detectHmrTransport } from "./detect-hmr-transport.js";
 import { HmrTransport } from "./types.js";
+
+export interface ReactRefreshSources {
+  /** source locations of `staleFibers`, aligned by index */
+  staleSources: (FiberSource | null)[];
+  /** source locations of `updatedFibers`, aligned by index */
+  updatedSources: (FiberSource | null)[];
+}
 
 export interface ReactRefreshUpdate {
   /**
@@ -15,6 +24,14 @@ export interface ReactRefreshUpdate {
    */
   filePaths: string[];
   root: FiberRoot;
+  /**
+   * symbolicates the source locations (file, line, column) of
+   * `updatedFibers`/`staleFibers` through source maps on demand. Lazy
+   * because it fetches and decodes source maps; results are cached.
+   * Best-effort: entries are null for components the stack-sampling
+   * strategy cannot locate (e.g. hook-less components without props).
+   */
+  getSources: () => Promise<ReactRefreshSources>;
   /** new component types that were remounted, losing state */
   staleComponents: unknown[];
   /** mounted fibers whose component types were remounted */
@@ -32,6 +49,9 @@ export interface ReactRefreshHandler {
 export interface ReactRefreshListener {
   dispose: () => void;
 }
+
+const resolveFiberSources = (fibers: Fiber[]): Promise<(FiberSource | null)[]> =>
+  Promise.all(fibers.map((fiber) => getSource(fiber)));
 
 const collectFibersByComponentType = (root: FiberRoot, componentTypes: Set<unknown>): Fiber[] => {
   if (componentTypes.size === 0 || !root.current) return [];
@@ -64,11 +84,13 @@ const collectFibersByComponentType = (root: FiberRoot, componentTypes: Set<unkno
  *
  * @example
  * ```ts
- * const listener = onReactRefresh((update) => {
+ * const listener = onReactRefresh(async (update) => {
  *   for (const fiber of update.updatedFibers) {
  *     console.log("hot updated:", getDisplayName(fiber.type));
  *   }
  *   console.log("changed files:", update.filePaths);
+ *   const { updatedSources } = await update.getSources();
+ *   console.log("rendered at:", updatedSources[0]?.fileName);
  * });
  * listener?.dispose();
  * ```
@@ -123,13 +145,19 @@ export const onReactRefresh = (
       if (isDisposed) return;
       const staleComponents = Array.from(update.staleFamilies, (family) => family.current);
       const updatedComponents = Array.from(update.updatedFamilies, (family) => family.current);
+      const staleFibers = collectFibersByComponentType(root, new Set(staleComponents));
+      const updatedFibers = collectFibersByComponentType(root, new Set(updatedComponents));
       onRefreshUpdate({
         filePaths: takeFreshFilePaths(),
+        getSources: async () => ({
+          staleSources: await resolveFiberSources(staleFibers),
+          updatedSources: await resolveFiberSources(updatedFibers),
+        }),
         root,
         staleComponents,
-        staleFibers: collectFibersByComponentType(root, new Set(staleComponents)),
+        staleFibers,
         updatedComponents,
-        updatedFibers: collectFibersByComponentType(root, new Set(updatedComponents)),
+        updatedFibers,
       });
     };
     renderer.scheduleRefresh = wrappedScheduleRefresh;

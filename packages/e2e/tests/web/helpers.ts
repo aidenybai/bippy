@@ -9,6 +9,7 @@ declare global {
         staleNames: (string | null)[];
         updatedFiberNames: (string | null)[];
         updatedNames: (string | null)[];
+        updatedSourceFileNames: (string | null)[];
       }[];
       hasRefreshListener: boolean;
     };

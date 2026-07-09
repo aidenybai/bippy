@@ -39,6 +39,7 @@ it("reports updated and stale component types after the original scheduleRefresh
   expect(originalScheduleRefresh).toHaveBeenCalledWith(fakeRoot, rendererUpdate);
   expect(onRefreshUpdate).toHaveBeenCalledWith({
     filePaths: [],
+    getSources: expect.any(Function),
     root: fakeRoot,
     staleComponents: [StaleComponent],
     staleFibers: [],
@@ -117,6 +118,36 @@ it("returns null in non-client environments", () => {
 });
 
 const flushMicrotasks = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+it("resolves render call-site sources for the collected fibers", async () => {
+  const debugSource = { columnNumber: 5, fileName: "src/parent.tsx", lineNumber: 12 };
+  const updatedFiber = {
+    _debugSource: debugSource,
+    child: null,
+    return: null,
+    sibling: null,
+    type: UpdatedComponent,
+  };
+  const rootWithTree = {
+    current: { child: updatedFiber, return: null, sibling: null, type: null },
+  };
+
+  const rdtHook = getRDTHook();
+  const fakeRenderer = createFakeRefreshRenderer();
+  rdtHook.inject(fakeRenderer);
+
+  const onRefreshUpdate = vi.fn();
+  const listener = onReactRefresh(onRefreshUpdate);
+
+  fakeRenderer.scheduleRefresh?.(rootWithTree as unknown as FiberRoot, createFakeRendererUpdate());
+
+  const refreshUpdate = onRefreshUpdate.mock.calls[0][0];
+  await expect(refreshUpdate.getSources()).resolves.toEqual({
+    staleSources: [],
+    updatedSources: [debugSource],
+  });
+  listener?.dispose();
+});
 
 it("collects the mounted fibers whose component types were hot-swapped", () => {
   const updatedFiber = { child: null, return: null, sibling: null, type: UpdatedComponent };

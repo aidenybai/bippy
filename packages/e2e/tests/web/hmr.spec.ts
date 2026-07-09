@@ -144,6 +144,44 @@ test.describe("bippy/react-refresh", () => {
     }
   });
 
+  test("resolves source locations for the hot-swapped fibers", async ({ page }) => {
+    const targetFilePath = HMR_TARGET_FILE_BY_PROJECT[test.info().project.name];
+    const originalSource = readFileSync(targetFilePath, "utf8");
+    const currentMarker = readCurrentMarker(originalSource);
+    const uniqueMarker = buildUniqueMarker();
+
+    await page.waitForFunction(() => window.__BIPPY_HMR__?.hasRefreshListener === true, undefined, {
+      timeout: HMR_UPDATE_TIMEOUT_MS,
+    });
+
+    try {
+      await saveAndAwaitMarker(
+        page,
+        targetFilePath,
+        originalSource.replace(currentMarker, uniqueMarker),
+        uniqueMarker,
+      );
+
+      // getSources symbolicates asynchronously, so the harness backfills
+      // updatedSourceFileNames on the record after the refresh update lands
+      await page.waitForFunction(
+        () =>
+          window.__BIPPY_HMR__ !== undefined &&
+          window.__BIPPY_HMR__.refreshUpdates.some(
+            (refreshUpdate) =>
+              refreshUpdate.updatedFiberNames.includes("HmrTarget") &&
+              refreshUpdate.updatedSourceFileNames.some(
+                (sourceFileName) => sourceFileName !== null && /\.[jt]sx?/.test(sourceFileName),
+              ),
+          ),
+        undefined,
+        { timeout: HMR_UPDATE_TIMEOUT_MS },
+      );
+    } finally {
+      writeFileSync(targetFilePath, originalSource);
+    }
+  });
+
   test("augments refresh updates with the hot-updated file paths", async ({ page }) => {
     const targetFilePath = HMR_TARGET_FILE_BY_PROJECT[test.info().project.name];
     const originalSource = readFileSync(targetFilePath, "utf8");
