@@ -1,5 +1,6 @@
 import { getDisplayName, isFiber } from "bippy";
 import { onReactRefresh } from "bippy/react-refresh";
+import { getSource } from "bippy/source";
 
 interface BippyRefreshUpdateRecord {
   // fibers are cyclic and cannot cross the page.evaluate serialization
@@ -38,7 +39,7 @@ export const installHmrHarness = () => {
       updatedSourceFileNames: [],
     };
     harness.refreshUpdates.push(record);
-    const { updatedSources } = await update.getSources();
+    const updatedSources = await Promise.all(update.updatedFibers.map((fiber) => getSource(fiber)));
     record.updatedSourceFileNames = updatedSources.map((source) => source?.fileName ?? null);
   });
   harness.hasRefreshListener = refreshListener !== null;

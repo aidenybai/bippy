@@ -162,7 +162,7 @@ test.describe("bippy/react-refresh", () => {
         uniqueMarker,
       );
 
-      // getSources symbolicates asynchronously, so the harness backfills
+      // getSource symbolicates asynchronously, so the harness backfills
       // updatedSourceFileNames on the record after the refresh update lands
       await page.waitForFunction(
         () =>
