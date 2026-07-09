@@ -4,8 +4,10 @@ declare global {
   interface Window {
     __BIPPY_HMR__?: {
       refreshUpdates: {
+        areUpdatedFibersValid: boolean;
         filePaths: string[];
         staleNames: (string | null)[];
+        updatedFiberNames: (string | null)[];
         updatedNames: (string | null)[];
       }[];
       hasRefreshListener: boolean;

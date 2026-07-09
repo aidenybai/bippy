@@ -110,7 +110,7 @@ test.describe("bippy/react-refresh", () => {
     }
   });
 
-  test("augments refresh updates with the hot-updated file paths", async ({ page }) => {
+  test("collects the mounted fibers for hot-swapped component types", async ({ page }) => {
     const targetFilePath = HMR_TARGET_FILE_BY_PROJECT[test.info().project.name];
     const originalSource = readFileSync(targetFilePath, "utf8");
     const currentMarker = readCurrentMarker(originalSource);
@@ -133,12 +133,66 @@ test.describe("bippy/react-refresh", () => {
           window.__BIPPY_HMR__ !== undefined &&
           window.__BIPPY_HMR__.refreshUpdates.some(
             (refreshUpdate) =>
-              refreshUpdate.updatedNames.includes("HmrTarget") &&
-              refreshUpdate.filePaths.some((filePath) => filePath.includes("hmr-target")),
+              refreshUpdate.updatedFiberNames.includes("HmrTarget") &&
+              refreshUpdate.areUpdatedFibersValid,
           ),
         undefined,
         { timeout: HMR_UPDATE_TIMEOUT_MS },
       );
+    } finally {
+      writeFileSync(targetFilePath, originalSource);
+    }
+  });
+
+  test("augments refresh updates with the hot-updated file paths", async ({ page }) => {
+    const targetFilePath = HMR_TARGET_FILE_BY_PROJECT[test.info().project.name];
+    const originalSource = readFileSync(targetFilePath, "utf8");
+    const currentMarker = readCurrentMarker(originalSource);
+
+    await page.waitForFunction(() => window.__BIPPY_HMR__?.hasRefreshListener === true, undefined, {
+      timeout: HMR_UPDATE_TIMEOUT_MS,
+    });
+
+    const hasRefreshUpdateWithTargetFilePath = () =>
+      page.evaluate(
+        () =>
+          window.__BIPPY_HMR__?.refreshUpdates.some(
+            (refreshUpdate) =>
+              refreshUpdate.updatedNames.includes("HmrTarget") &&
+              refreshUpdate.filePaths.some((filePath) => filePath.includes("hmr-target")),
+          ) ?? false,
+      );
+
+    try {
+      // the transport websocket connects asynchronously after page load, so
+      // the first save can legitimately refresh with empty filePaths;
+      // re-save with fresh markers until a refresh carries the path
+      for (let attempt = 1; attempt <= SAVE_ATTEMPTS; attempt++) {
+        const uniqueMarker = buildUniqueMarker();
+        await saveAndAwaitMarker(
+          page,
+          targetFilePath,
+          originalSource.replace(currentMarker, uniqueMarker),
+          uniqueMarker,
+        );
+        try {
+          await page.waitForFunction(
+            () =>
+              window.__BIPPY_HMR__ !== undefined &&
+              window.__BIPPY_HMR__.refreshUpdates.some(
+                (refreshUpdate) =>
+                  refreshUpdate.updatedNames.includes("HmrTarget") &&
+                  refreshUpdate.filePaths.some((filePath) => filePath.includes("hmr-target")),
+              ),
+            undefined,
+            { timeout: SAVE_ATTEMPT_TIMEOUT_MS },
+          );
+          break;
+        } catch (waitError) {
+          if (attempt === SAVE_ATTEMPTS) throw waitError;
+        }
+      }
+      expect(await hasRefreshUpdateWithTargetFilePath()).toBe(true);
     } finally {
       writeFileSync(targetFilePath, originalSource);
     }

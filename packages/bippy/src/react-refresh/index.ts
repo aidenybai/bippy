@@ -1,5 +1,6 @@
+import { getType, traverseFiber } from "../core.js";
 import { getRDTHook, isClientEnvironment } from "../rdt-hook.js";
-import type { FiberRoot, ReactRenderer } from "../types.js";
+import type { Fiber, FiberRoot, ReactRenderer } from "../types.js";
 import { PENDING_HOT_UPDATE_MAX_AGE_MS } from "./constants.js";
 import { detectHmrTransport } from "./detect-hmr-transport.js";
 import { HmrTransport } from "./types.js";
@@ -16,8 +17,12 @@ export interface ReactRefreshUpdate {
   root: FiberRoot;
   /** new component types that were remounted, losing state */
   staleComponents: unknown[];
+  /** mounted fibers whose component types were remounted */
+  staleFibers: Fiber[];
   /** new component types that re-rendered preserving state */
   updatedComponents: unknown[];
+  /** mounted fibers whose component types re-rendered preserving state */
+  updatedFibers: Fiber[];
 }
 
 export interface ReactRefreshHandler {
@@ -27,6 +32,19 @@ export interface ReactRefreshHandler {
 export interface ReactRefreshListener {
   dispose: () => void;
 }
+
+const collectFibersByComponentType = (root: FiberRoot, componentTypes: Set<unknown>): Fiber[] => {
+  if (componentTypes.size === 0 || !root.current) return [];
+  const matchedFibers: Fiber[] = [];
+  traverseFiber(root.current, (fiber) => {
+    // memo/forwardRef fibers carry the wrapper as fiber.type, while the
+    // refresh families can register either the wrapper or the inner type
+    if (componentTypes.has(fiber.type) || componentTypes.has(getType(fiber.type))) {
+      matchedFibers.push(fiber);
+    }
+  });
+  return matchedFibers;
+};
 
 /**
  * Subscribes to react-refresh (fast refresh) updates by wrapping
@@ -40,13 +58,15 @@ export interface ReactRefreshListener {
  * augmented with the hot-updated source file paths it reported.
  *
  * The handler runs after React has re-rendered with the new component
- * types.
+ * types, so the refreshed root's fiber tree already carries them;
+ * `updatedFibers`/`staleFibers` are the mounted fibers matching the
+ * hot-swapped component types.
  *
  * @example
  * ```ts
  * const listener = onReactRefresh((update) => {
- *   for (const componentType of update.updatedComponents) {
- *     console.log("hot updated:", getDisplayName(componentType));
+ *   for (const fiber of update.updatedFibers) {
+ *     console.log("hot updated:", getDisplayName(fiber.type));
  *   }
  *   console.log("changed files:", update.filePaths);
  * });
@@ -101,11 +121,15 @@ export const onReactRefresh = (
     ) => {
       originalScheduleRefresh.call(renderer, root, update);
       if (isDisposed) return;
+      const staleComponents = Array.from(update.staleFamilies, (family) => family.current);
+      const updatedComponents = Array.from(update.updatedFamilies, (family) => family.current);
       onRefreshUpdate({
         filePaths: takeFreshFilePaths(),
         root,
-        staleComponents: Array.from(update.staleFamilies, (family) => family.current),
-        updatedComponents: Array.from(update.updatedFamilies, (family) => family.current),
+        staleComponents,
+        staleFibers: collectFibersByComponentType(root, new Set(staleComponents)),
+        updatedComponents,
+        updatedFibers: collectFibersByComponentType(root, new Set(updatedComponents)),
       });
     };
     renderer.scheduleRefresh = wrappedScheduleRefresh;

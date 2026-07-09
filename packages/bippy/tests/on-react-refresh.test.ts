@@ -41,7 +41,9 @@ it("reports updated and stale component types after the original scheduleRefresh
     filePaths: [],
     root: fakeRoot,
     staleComponents: [StaleComponent],
+    staleFibers: [],
     updatedComponents: [UpdatedComponent],
+    updatedFibers: [],
   });
   expect(callOrder).toEqual(["original", "handler"]);
   listener?.dispose();
@@ -115,6 +117,30 @@ it("returns null in non-client environments", () => {
 });
 
 const flushMicrotasks = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+it("collects the mounted fibers whose component types were hot-swapped", () => {
+  const updatedFiber = { child: null, return: null, sibling: null, type: UpdatedComponent };
+  const staleFiber = { child: null, return: null, sibling: updatedFiber, type: StaleComponent };
+  const hostFiber = { child: staleFiber, return: null, sibling: null, type: "div" };
+  const rootWithTree = { current: { child: hostFiber, return: null, sibling: null, type: null } };
+
+  const rdtHook = getRDTHook();
+  const fakeRenderer = createFakeRefreshRenderer();
+  rdtHook.inject(fakeRenderer);
+
+  const onRefreshUpdate = vi.fn();
+  const listener = onReactRefresh(onRefreshUpdate);
+
+  fakeRenderer.scheduleRefresh?.(rootWithTree as unknown as FiberRoot, createFakeRendererUpdate());
+
+  expect(onRefreshUpdate).toHaveBeenCalledWith(
+    expect.objectContaining({
+      staleFibers: [staleFiber],
+      updatedFibers: [updatedFiber],
+    }),
+  );
+  listener?.dispose();
+});
 
 it("augments refresh updates with file paths from the detected hmr transport", async () => {
   const originalHotUpdate = vi.fn();
