@@ -65,6 +65,9 @@ jobs:
           echo "Metro failed to start" >&2
           cat /tmp/metro.log >&2
           exit 1
+      - name: Build Detox framework cache
+        run: npx detox clean-framework-cache && npx detox build-framework-cache
+        working-directory: packages/e2e
       - name: Run Detox tests
         run: npx detox test --configuration ios.sim.debug --headless --record-logs failing
         working-directory: packages/e2e
