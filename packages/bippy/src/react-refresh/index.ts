@@ -3,6 +3,7 @@ export * from "./detect-hmr-transport.js";
 export * from "./metro-hmr-transport.js";
 export * from "./next-webpack-hmr-transport.js";
 export * from "./normalize-hmr-file-path.js";
+export * from "./on-react-refresh.js";
 export * from "./pick-hmr-source-path.js";
 export * from "./types.js";
 export * from "./vite-hmr-transport.js";

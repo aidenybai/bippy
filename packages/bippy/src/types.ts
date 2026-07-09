@@ -298,6 +298,11 @@ export interface Family {
   current: unknown;
 }
 
+export interface ReactRefreshUpdate {
+  staleFamilies: Set<Family>;
+  updatedFamilies: Set<Family>;
+}
+
 /**
  * Represents a react-internal Fiber node.
  */
@@ -402,13 +407,7 @@ export interface ReactRenderer {
   reconcilerVersion: string;
   rendererPackageName: string;
   // react refresh
-  scheduleRefresh?: (
-    root: FiberRoot,
-    update: {
-      staleFamilies: Set<Family>;
-      updatedFamilies: Set<Family>;
-    },
-  ) => void;
+  scheduleRefresh?: (root: FiberRoot, update: ReactRefreshUpdate) => void;
   scheduleRoot?: (root: FiberRoot, element: React.ReactNode) => void;
   scheduleUpdate?: (fiber: Fiber) => void;
 

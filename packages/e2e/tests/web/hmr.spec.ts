@@ -141,6 +141,40 @@ test.describe("bippy/react-refresh", () => {
     }
   });
 
+  test("onReactRefresh reports updated component families through the devtools hook", async ({
+    page,
+  }) => {
+    const targetFilePath = HMR_TARGET_FILE_BY_PROJECT[test.info().project.name];
+    const originalSource = readFileSync(targetFilePath, "utf8");
+    const currentMarker = readCurrentMarker(originalSource);
+    const uniqueMarker = buildUniqueMarker();
+
+    await page.waitForFunction(() => window.__BIPPY_HMR__?.hasRefreshListener === true, undefined, {
+      timeout: HMR_UPDATE_TIMEOUT_MS,
+    });
+
+    try {
+      await saveAndAwaitMarker(
+        page,
+        targetFilePath,
+        originalSource.replace(currentMarker, uniqueMarker),
+        uniqueMarker,
+      );
+
+      await page.waitForFunction(
+        () =>
+          window.__BIPPY_HMR__ !== undefined &&
+          window.__BIPPY_HMR__.refreshUpdates.some((refreshUpdate) =>
+            refreshUpdate.updatedNames.includes("HmrTarget"),
+          ),
+        undefined,
+        { timeout: HMR_UPDATE_TIMEOUT_MS },
+      );
+    } finally {
+      writeFileSync(targetFilePath, originalSource);
+    }
+  });
+
   test("css-only updates swap styles without reporting js update paths", async ({ page }) => {
     test.skip(
       test.info().project.name !== "vite",
