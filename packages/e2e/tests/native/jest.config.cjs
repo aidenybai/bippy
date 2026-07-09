@@ -2,7 +2,9 @@
 module.exports = {
   rootDir: "../..",
   testMatch: ["<rootDir>/tests/native/**/*.spec.ts"],
-  testTimeout: 120_000,
+  // first launch on a cold CI simulator takes ~100s of dyld work plus a
+  // ~15s initial Metro bundle; hooks share this budget
+  testTimeout: 300_000,
   maxWorkers: 1,
   globalSetup: "detox/runners/jest/globalSetup",
   globalTeardown: "detox/runners/jest/globalTeardown",

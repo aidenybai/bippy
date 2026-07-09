@@ -12,7 +12,7 @@ describe("bippy source functions on React Native (Metro)", () => {
     // source results (source map fetches) have all settled
     await waitFor(element(by.id("result-source-done")))
       .toExist()
-      .withTimeout(60_000);
+      .withTimeout(240_000);
   });
 
   describe("getSource", () => {

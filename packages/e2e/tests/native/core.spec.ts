@@ -12,7 +12,7 @@ describe("bippy core functions on React Native", () => {
     // results are computed, so every row below it is already stable
     await waitFor(element(by.id("result-core-done")))
       .toExist()
-      .withTimeout(30_000);
+      .withTimeout(240_000);
   });
 
   describe("environment", () => {

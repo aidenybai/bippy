@@ -42,6 +42,14 @@ jobs:
         with:
           node-version: 22
           cache: "pnpm"
+      - name: Pre-boot simulator
+        # boot early so the simulator warms up during dependency install and
+        # the xcode build instead of eating into detox's test time
+        run: |
+          device_name=$(xcrun simctl list devices available | grep -oE 'iPhone [A-Za-z0-9 ]+' | head -1 | xargs)
+          echo "Pre-booting simulator: $device_name"
+          echo "DETOX_DEVICE_NAME=$device_name" >> "$GITHUB_ENV"
+          xcrun simctl boot "$device_name" || true
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - name: Install applesimutils
@@ -66,6 +74,8 @@ jobs:
           for attempt in $(seq 1 60); do
             if curl -sf http://localhost:8081/status | grep -q "packager-status:running"; then
               echo "Metro is up"
+              echo "Warming initial bundle..."
+              curl -sf "http://localhost:8081/packages/e2e/fixtures/expo-app/src/index.ts.bundle?platform=ios&dev=true&lazy=true" -o /dev/null || true
               exit 0
             fi
             sleep 2
@@ -89,9 +99,8 @@ jobs:
       - name: Run Detox tests
         working-directory: packages/e2e
         run: |
-          device_name=$(xcrun simctl list devices available | grep -oE 'iPhone [A-Za-z0-9 ]+' | head -1 | xargs)
-          echo "Using simulator: $device_name"
-          npx detox test --configuration ios.sim.debug --device-name "$device_name" --headless --record-logs failing
+          echo "Using simulator: $DETOX_DEVICE_NAME"
+          npx detox test --configuration ios.sim.debug --device-name "$DETOX_DEVICE_NAME" --headless --record-logs failing
       - name: Upload Metro log
         uses: actions/upload-artifact@v4
         if: failure()

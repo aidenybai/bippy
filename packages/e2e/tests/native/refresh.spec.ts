@@ -38,7 +38,7 @@ describe("bippy/react-refresh on React Native", () => {
     await launchFixtureApp(false);
     await waitFor(element(by.id("results-container")))
       .toExist()
-      .withTimeout(15_000);
+      .withTimeout(240_000);
   });
 
   it("installs a refresh listener through the devtools hook", async () => {
