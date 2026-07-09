@@ -354,12 +354,19 @@ const App = () => {
   }, [runCoreTests]);
 
   useEffect(() => {
+    let refreshCount = 0;
     const refreshListener = onReactRefresh((update) => {
+      refreshCount++;
+      const updatedNames = update.updatedComponents
+        .map((componentType) => getDisplayName(componentType) ?? "unknown")
+        .join(",");
+      console.log(
+        `[bippy-hmr] refresh #${refreshCount} updated=[${updatedNames}] fibers=${update.updatedFibers.length} paths=[${update.filePaths.join(",")}]`,
+      );
       setHmrResults((previousResults) => ({
         ...previousResults,
-        "refresh-last-update": update.updatedComponents
-          .map((componentType) => getDisplayName(componentType) ?? "unknown")
-          .join(","),
+        "refresh-count": String(refreshCount),
+        "refresh-last-update": updatedNames,
         "refresh-last-fibers": update.updatedFibers
           .map((updatedFiber) => getDisplayName(updatedFiber.type) ?? "unknown")
           .join(","),
@@ -369,6 +376,16 @@ const App = () => {
         "refresh-last-paths": update.filePaths.join(","),
       }));
     });
+    const rdtHook = getRDTHook();
+    const rendererDiagnostics = Array.from(
+      rdtHook.renderers.entries(),
+      ([rendererId, renderer]) => {
+        return `${rendererId}:scheduleRefresh=${typeof renderer.scheduleRefresh}`;
+      },
+    ).join(" ");
+    console.log(
+      `[bippy-hmr] listener=${String(refreshListener !== null)} renderers={${rendererDiagnostics}}`,
+    );
     setHmrResults((previousResults) => ({
       ...previousResults,
       "refresh-listener": String(refreshListener !== null),

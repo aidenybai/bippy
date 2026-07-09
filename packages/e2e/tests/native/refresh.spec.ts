@@ -23,6 +23,14 @@ const readCurrentMarker = (source: string): string => {
 
 const POLL_INTERVAL_MS = 1_000;
 
+const readOptionalElementText = async (testId: string): Promise<string> => {
+  try {
+    return await readElementText(testId);
+  } catch {
+    return "<missing>";
+  }
+};
+
 const waitForElementTextToContain = async (testId: string, expectedSubstring: string) => {
   const deadlineMs = Date.now() + REFRESH_UPDATE_TIMEOUT_MS;
   let lastText = "";
@@ -33,7 +41,10 @@ const waitForElementTextToContain = async (testId: string, expectedSubstring: st
     } catch {}
     await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
   }
-  throw new Error(`expected ${testId} to contain "${expectedSubstring}", last saw "${lastText}"`);
+  const refreshCount = await readOptionalElementText("result-refresh-count");
+  throw new Error(
+    `expected ${testId} to contain "${expectedSubstring}", last saw "${lastText}" (refresh-count=${refreshCount})`,
+  );
 };
 
 describe("bippy/react-refresh on React Native", () => {
@@ -76,10 +87,11 @@ describe("bippy/react-refresh on React Native", () => {
       try {
         await saveAndAwaitMarker();
 
-        await waitFor(element(by.id("result-refresh-last-update")))
-          .toHaveText("HmrTarget")
-          .withTimeout(REFRESH_UPDATE_TIMEOUT_MS);
-        await expect(element(by.id("result-refresh-last-fibers"))).toHaveText("HmrTarget");
+        // a full reload (instead of an in-place fast refresh) also applies the
+        // marker but never fires scheduleRefresh; refresh-count distinguishes
+        // the two when the update rows below come up empty
+        await waitForElementTextToContain("result-refresh-last-update", "HmrTarget");
+        await waitForElementTextToContain("result-refresh-last-fibers", "HmrTarget");
         await expect(element(by.id("result-refresh-fibers-valid"))).toHaveText("true");
 
         // Metro reports extension-less paths (e.g. src/hmr-target); the exact
