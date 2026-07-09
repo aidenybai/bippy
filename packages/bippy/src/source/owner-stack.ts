@@ -414,21 +414,21 @@ export const formatOwnerStack = (stack: string): string => {
     // don't want/need
     formattedStack = formattedStack.slice(29);
   }
-  let idx = formattedStack.indexOf("\n");
-  if (idx !== -1) {
+  const firstNewlineIndex = formattedStack.indexOf("\n");
+  if (firstNewlineIndex !== -1) {
     // pop the JSX frame
-    formattedStack = formattedStack.slice(idx + 1);
+    formattedStack = formattedStack.slice(firstNewlineIndex + 1);
   }
-  idx = Math.max(
+  let bottomFrameIndex = Math.max(
     formattedStack.indexOf("react_stack_bottom_frame"),
     formattedStack.indexOf("react-stack-bottom-frame"),
   );
-  if (idx !== -1) {
-    idx = formattedStack.lastIndexOf("\n", idx);
+  if (bottomFrameIndex !== -1) {
+    bottomFrameIndex = formattedStack.lastIndexOf("\n", bottomFrameIndex);
   }
-  if (idx !== -1) {
+  if (bottomFrameIndex !== -1) {
     // cut off everything after the bottom frame since it'll be internals.
-    formattedStack = formattedStack.slice(0, idx);
+    formattedStack = formattedStack.slice(0, bottomFrameIndex);
   } else {
     // we didn't find any internal callsite out to user space.
     // This means that this was called outside an owner or the owner is fully internal.

@@ -1171,8 +1171,8 @@ export const secure = (
           isSecure = false;
         }
       }
-    } catch (err) {
-      secureOptions.onError?.(err);
+    } catch (error) {
+      secureOptions.onError?.(error);
     }
 
     if (!isSecure) {
@@ -1193,8 +1193,8 @@ export const secure = (
           }
           try {
             onCommitFiberRoot(rendererID, root, priority);
-          } catch (err) {
-            secureOptions.onError?.(err);
+          } catch (error) {
+            secureOptions.onError?.(error);
           }
         };
       }
@@ -1204,8 +1204,8 @@ export const secure = (
         options.onCommitFiberUnmount = (rendererID, root) => {
           try {
             onCommitFiberUnmount(rendererID, root);
-          } catch (err) {
-            secureOptions.onError?.(err);
+          } catch (error) {
+            secureOptions.onError?.(error);
           }
         };
       }
@@ -1215,13 +1215,13 @@ export const secure = (
         options.onPostCommitFiberRoot = (rendererID, root) => {
           try {
             onPostCommitFiberRoot(rendererID, root);
-          } catch (err) {
-            secureOptions.onError?.(err);
+          } catch (error) {
+            secureOptions.onError?.(error);
           }
         };
       }
-    } catch (err) {
-      secureOptions.onError?.(err);
+    } catch (error) {
+      secureOptions.onError?.(error);
     }
   };
 

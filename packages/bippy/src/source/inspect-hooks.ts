@@ -282,16 +282,16 @@ const dispatcherUseMemoCache = (size: number): unknown[] => {
   )?.memoCache;
   if (memoCache === null || memoCache === undefined) return [];
 
-  let data = memoCache.data[memoCache.index];
-  if (data === undefined) {
-    data = memoCache.data[memoCache.index] = Array.from(
+  let memoCacheSlots = memoCache.data[memoCache.index];
+  if (memoCacheSlots === undefined) {
+    memoCacheSlots = memoCache.data[memoCache.index] = Array.from(
       { length: size },
       () => REACT_MEMO_CACHE_SENTINEL,
     );
   }
 
   memoCache.index++;
-  return data;
+  return memoCacheSlots;
 };
 
 const dispatcherUseOptimistic = (passthrough: unknown): [unknown, () => void] => {
