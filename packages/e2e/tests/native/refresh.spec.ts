@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
@@ -19,6 +20,24 @@ const readCurrentMarker = (source: string): string => {
   const markerMatch = source.match(HMR_MARKER_REGEX);
   if (!markerMatch) throw new Error("hmr-target fixture is missing an hmr-marker");
   return markerMatch[0];
+};
+
+// FSEvents silently drops file events on GitHub's virtualized macOS runners,
+// which blinds every watcher backend built on it (node fs.watch AND
+// watchman): CI metro logs show zero activity for minutes after a save.
+// watchman debug-recrawl stat-scans the watched root and delivers the
+// changed files to subscribers without relying on FSEvents at all.
+const recrawlWatchmanRoots = () => {
+  if (!process.env.CI) return;
+  try {
+    const watchListOutput = execSync("watchman watch-list", { encoding: "utf8" });
+    const watchedRoots: string[] = JSON.parse(watchListOutput).roots ?? [];
+    for (const watchedRoot of watchedRoots) {
+      execSync(`watchman debug-recrawl ${JSON.stringify(watchedRoot)}`);
+    }
+  } catch (recrawlError) {
+    console.warn("watchman recrawl failed", recrawlError);
+  }
 };
 
 const POLL_INTERVAL_MS = 1_000;
@@ -72,6 +91,7 @@ describe("bippy/react-refresh on React Native", () => {
         for (let attempt = 0; attempt < SAVE_ATTEMPT_COUNT; attempt++) {
           const uniqueMarker = `hmr-marker-${Date.now()}-${attempt}`;
           writeFileSync(HMR_TARGET_FILE_PATH, originalSource.replace(currentMarker, uniqueMarker));
+          recrawlWatchmanRoots();
           try {
             await waitFor(element(by.id("hmr-target-text")))
               .toHaveText(uniqueMarker)
