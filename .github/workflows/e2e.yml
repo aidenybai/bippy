@@ -119,7 +119,7 @@ jobs:
         run: |
           watchman version
           watchman watch-project "$GITHUB_WORKSPACE"
-          nohup bash -c 'env CI=false DEBUG="Metro:Watcher,Metro:WatchmanWatcher,Metro:NativeWatcher" npx expo start --port 8081 2>&1 | while IFS= read -r line; do printf "%s %s\n" "$(date +%T)" "$line"; done' > /tmp/metro.log 2>&1 &
+          nohup bash -c 'env CI=false DEBUG="Metro:Watcher,Metro:WatchmanWatcher,Metro:NativeWatcher,Metro:HMR" npx expo start --port 8081 2>&1 | while IFS= read -r line; do printf "%s %s\n" "$(date +%T)" "$line"; done' > /tmp/metro.log 2>&1 &
           for attempt in $(seq 1 60); do
             if curl -sf http://localhost:8081/status | grep -q "packager-status:running"; then
               echo "Metro is up"
