@@ -1,4 +1,4 @@
-import { by, device, element, expect } from "detox";
+import { by, device, element, waitFor } from "detox";
 
 describe("bippy source functions on React Native (Metro)", () => {
   beforeAll(async () => {

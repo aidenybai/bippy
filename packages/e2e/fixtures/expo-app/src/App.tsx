@@ -38,6 +38,8 @@ import {
 } from "react";
 import { ScrollView, Text, View } from "react-native";
 
+import { HmrTarget } from "./hmr-target";
+
 const TestContext = createContext("default-context");
 
 const TestChild = ({ name, count }: { name: string; count: number }) => {
@@ -293,6 +295,12 @@ const App = () => {
         "refresh-last-update": update.updatedComponents
           .map((componentType) => getDisplayName(componentType) ?? "unknown")
           .join(","),
+        "refresh-last-fibers": update.updatedFibers
+          .map((updatedFiber) => getDisplayName(updatedFiber.type) ?? "unknown")
+          .join(","),
+        "refresh-fibers-valid": String(
+          update.updatedFibers.every((updatedFiber) => isFiber(updatedFiber)),
+        ),
         "refresh-last-paths": update.filePaths.join(","),
       }));
     });
@@ -306,6 +314,7 @@ const App = () => {
   return (
     <ScrollView testID="root-scroll">
       <TestParent />
+      <HmrTarget />
       <View testID="results-container">
         {Object.entries(coreResults).map(([key, value]) => (
           <ResultRow key={key} testID={`result-${key}`} value={value} />

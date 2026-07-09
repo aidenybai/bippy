@@ -1,4 +1,4 @@
-import { by, device, element, expect } from "detox";
+import { by, device, element, expect as detoxExpect, waitFor } from "detox";
 
 describe("bippy core functions on React Native", () => {
   beforeAll(async () => {
@@ -14,53 +14,53 @@ describe("bippy core functions on React Native", () => {
 
   describe("instrumentation", () => {
     it("isInstrumentationActive returns true", async () => {
-      await expect(element(by.id("result-instrument-active"))).toHaveText("true");
+      await detoxExpect(element(by.id("result-instrument-active"))).toHaveText("true");
     });
   });
 
   describe("type guards", () => {
     it("isFiber returns true for a valid fiber", async () => {
-      await expect(element(by.id("result-isFiber"))).toHaveText("true");
+      await detoxExpect(element(by.id("result-isFiber"))).toHaveText("true");
     });
 
     it("isFiber returns false for null", async () => {
-      await expect(element(by.id("result-isFiber-null"))).toHaveText("false");
+      await detoxExpect(element(by.id("result-isFiber-null"))).toHaveText("false");
     });
 
     it("isFiber returns false for plain object", async () => {
-      await expect(element(by.id("result-isFiber-object"))).toHaveText("false");
+      await detoxExpect(element(by.id("result-isFiber-object"))).toHaveText("false");
     });
 
     it("isValidFiber returns true for a live fiber", async () => {
-      await expect(element(by.id("result-isValidFiber"))).toHaveText("true");
+      await detoxExpect(element(by.id("result-isValidFiber"))).toHaveText("true");
     });
 
     it("isHostFiber returns true for host fiber", async () => {
-      await expect(element(by.id("result-isHostFiber-host"))).toHaveText("true");
+      await detoxExpect(element(by.id("result-isHostFiber-host"))).toHaveText("true");
     });
 
     it("isHostFiber returns false for composite fiber", async () => {
-      await expect(element(by.id("result-isHostFiber-composite"))).toHaveText("false");
+      await detoxExpect(element(by.id("result-isHostFiber-composite"))).toHaveText("false");
     });
 
     it("isCompositeFiber returns true for composite fiber", async () => {
-      await expect(element(by.id("result-isCompositeFiber"))).toHaveText("true");
+      await detoxExpect(element(by.id("result-isCompositeFiber"))).toHaveText("true");
     });
   });
 
   describe("display name", () => {
     it("getDisplayName returns TestChild for TestChild fiber", async () => {
-      await expect(element(by.id("result-displayName-TestChild"))).toHaveText("TestChild");
+      await detoxExpect(element(by.id("result-displayName-TestChild"))).toHaveText("TestChild");
     });
 
     it("getDisplayName returns TestParent for TestParent fiber", async () => {
-      await expect(element(by.id("result-displayName-TestParent"))).toHaveText("TestParent");
+      await detoxExpect(element(by.id("result-displayName-TestParent"))).toHaveText("TestParent");
     });
   });
 
   describe("render detection", () => {
     it("didFiberRender returns true for rendered fiber", async () => {
-      await expect(element(by.id("result-didFiberRender"))).toHaveText("true");
+      await detoxExpect(element(by.id("result-didFiberRender"))).toHaveText("true");
     });
   });
 
@@ -88,7 +88,7 @@ describe("bippy core functions on React Native", () => {
 
   describe("host fiber lookup", () => {
     it("getNearestHostFiber returns a non-null fiber", async () => {
-      await expect(element(by.id("result-nearestHostFiber"))).toHaveText("true");
+      await detoxExpect(element(by.id("result-nearestHostFiber"))).toHaveText("true");
     });
 
     it("getNearestHostFibers returns multiple host fibers", async () => {
@@ -100,11 +100,11 @@ describe("bippy core functions on React Native", () => {
 
   describe("fiber identity", () => {
     it("getLatestFiber returns a valid fiber", async () => {
-      await expect(element(by.id("result-getLatestFiber"))).toHaveText("true");
+      await detoxExpect(element(by.id("result-getLatestFiber"))).toHaveText("true");
     });
 
     it("getFiberId returns a number", async () => {
-      await expect(element(by.id("result-getFiberId"))).toHaveText("true");
+      await detoxExpect(element(by.id("result-getFiberId"))).toHaveText("true");
     });
   });
 
@@ -125,13 +125,13 @@ describe("bippy core functions on React Native", () => {
 
   describe("memo cache", () => {
     it("hasMemoCache returns false for normal components", async () => {
-      await expect(element(by.id("result-hasMemoCache"))).toHaveText("false");
+      await detoxExpect(element(by.id("result-hasMemoCache"))).toHaveText("false");
     });
   });
 
   describe("type unwrapping", () => {
     it("getType returns a non-null value for component fiber", async () => {
-      await expect(element(by.id("result-getType"))).toHaveText("true");
+      await detoxExpect(element(by.id("result-getType"))).toHaveText("true");
     });
   });
 });

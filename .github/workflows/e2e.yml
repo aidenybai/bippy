@@ -1,6 +1,6 @@
 name: E2E Tests
 
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
 
 permissions:
   contents: read
@@ -33,7 +33,7 @@ jobs:
 
   e2e-native:
     runs-on: macos-latest
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -51,6 +51,35 @@ jobs:
           cd packages/e2e/fixtures/expo-app
           npx expo prebuild --platform ios --clean
           xcodebuild -workspace ios/bippye2eexpo.xcworkspace -scheme bippye2eexpo -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build -quiet
+      - name: Start Metro
+        working-directory: packages/e2e/fixtures/expo-app
+        run: |
+          nohup npx expo start --port 8081 > /tmp/metro.log 2>&1 &
+          for attempt in $(seq 1 60); do
+            if curl -sf http://localhost:8081/status | grep -q "packager-status:running"; then
+              echo "Metro is up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Metro failed to start" >&2
+          cat /tmp/metro.log >&2
+          exit 1
       - name: Run Detox tests
-        run: npx detox test --configuration ios.sim.debug --headless
+        run: npx detox test --configuration ios.sim.debug --headless --record-logs failing
         working-directory: packages/e2e
+      - name: Upload Metro log
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: metro-log
+          path: /tmp/metro.log
+          retention-days: 14
+      - name: Upload Detox artifacts
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: detox-artifacts
+          path: packages/e2e/artifacts/
+          retention-days: 14
+          if-no-files-found: ignore
