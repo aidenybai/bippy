@@ -59,6 +59,15 @@ describe("getNearestHostFiber", () => {
   });
 });
 
+export const ExampleWithCompositeChildren = () => {
+  return (
+    <>
+      <Example />
+      <Example />
+    </>
+  );
+};
+
 describe("getNearestHostFibers", () => {
   it("should return all host fibers", () => {
     let maybeFiber: Fiber | null = null;
@@ -69,5 +78,56 @@ describe("getNearestHostFibers", () => {
     });
     render(<ExampleWithMultipleChildElements />);
     expect(getNearestHostFibers(maybeFiber as unknown as Fiber)).toHaveLength(2);
+  });
+
+  it("should return the fiber itself when it is a host fiber", () => {
+    let maybeHostFiber: Fiber | null = null;
+    instrument({
+      onCommitFiberRoot: (_rendererID, fiberRoot) => {
+        maybeHostFiber = fiberRoot.current.child.child;
+      },
+    });
+    render(<Example />);
+    const hostFibers = getNearestHostFibers(maybeHostFiber as unknown as Fiber);
+    expect(hostFibers).toHaveLength(1);
+    expect(hostFibers[0]).toBe(maybeHostFiber);
+  });
+
+  it("should traverse through composite children", () => {
+    let maybeFiber: Fiber | null = null;
+    instrument({
+      onCommitFiberRoot: (_rendererID, fiberRoot) => {
+        maybeFiber = fiberRoot.current.child;
+      },
+    });
+    render(<ExampleWithCompositeChildren />);
+    expect(getNearestHostFibers(maybeFiber as unknown as Fiber)).toHaveLength(2);
+  });
+
+  it("should return an empty array for a childless composite fiber", () => {
+    const childlessCompositeFiber = {
+      child: null,
+      sibling: null,
+      tag: 0,
+      type: () => null,
+    } as unknown as Fiber;
+    expect(getNearestHostFibers(childlessCompositeFiber)).toHaveLength(0);
+  });
+
+  it("should skip childless composite fibers while traversing", () => {
+    const hostFiber = { child: null, sibling: null, tag: 5, type: "div" } as unknown as Fiber;
+    const childlessCompositeFiber = {
+      child: null,
+      sibling: hostFiber,
+      tag: 0,
+      type: () => null,
+    } as unknown as Fiber;
+    const rootCompositeFiber = {
+      child: childlessCompositeFiber,
+      sibling: null,
+      tag: 0,
+      type: () => null,
+    } as unknown as Fiber;
+    expect(getNearestHostFibers(rootCompositeFiber)).toEqual([hostFiber]);
   });
 });

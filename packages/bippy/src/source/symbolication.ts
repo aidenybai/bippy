@@ -131,12 +131,14 @@ export const getSourceFromSourceMap = (
   column: number,
 ): StackFrame | null => {
   if (sourceMap.sections) {
+    // Section offsets are 0-based while stack trace lines are 1-based.
+    const lineIndex = line - 1;
     let targetSection: DecodedSourceMapSection | null = null;
 
     for (const section of sourceMap.sections) {
       if (
-        line > section.offset.line ||
-        (line === section.offset.line && column >= section.offset.column)
+        lineIndex > section.offset.line ||
+        (lineIndex === section.offset.line && column >= section.offset.column)
       ) {
         targetSection = section;
       } else {
@@ -148,9 +150,9 @@ export const getSourceFromSourceMap = (
       return null;
     }
 
-    const relativeLine = line - targetSection.offset.line;
+    const relativeLine = lineIndex - targetSection.offset.line;
     const relativeColumn =
-      line === targetSection.offset.line ? column - targetSection.offset.column : column;
+      lineIndex === targetSection.offset.line ? column - targetSection.offset.column : column;
 
     return getSourceFromMappings(
       targetSection.map.mappings,

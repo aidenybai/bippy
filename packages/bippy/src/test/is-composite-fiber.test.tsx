@@ -22,6 +22,21 @@ it("should return true for a composite fiber", () => {
   expect(isCompositeFiber(maybeCompositeFiber as unknown as Fiber)).toBe(true);
 });
 
+it("should return true for class and forwardRef fiber tags", () => {
+  const createMockFiber = (tag: number): Fiber =>
+    ({
+      child: null,
+      flags: 0,
+      return: null,
+      sibling: null,
+      stateNode: null,
+      tag,
+      type: () => null,
+    }) as unknown as Fiber;
+  expect(isCompositeFiber(createMockFiber(1))).toBe(true);
+  expect(isCompositeFiber(createMockFiber(11))).toBe(true);
+});
+
 it("should return false for a host fiber", () => {
   let maybeCompositeFiber: Fiber | null = null;
   instrument({

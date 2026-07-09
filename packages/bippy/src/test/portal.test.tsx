@@ -1,6 +1,6 @@
 import "../index.js"; // KEEP THIS LINE ON TOP
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { Fiber } from "../types.js";
 import {
   HostPortalTag,
@@ -8,7 +8,6 @@ import {
   getNearestHostFibers,
   instrument,
   isCompositeFiber,
-  isHostFiber,
   traverseFiber,
   traverseRenderedFibers,
 } from "../index.js";

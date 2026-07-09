@@ -7,7 +7,7 @@ import type { Fiber } from "../types.js";
 import { instrument } from "../index.js";
 import { getSource, getOwnerStack, getSourceMap, sourceMapCache } from "../source/index.js";
 import { normalizeFileName } from "../source/get-source.js";
-import { extractLocation } from "../source/parse-stack.js";
+import { extractLocation, parseStack, type StackFrame } from "../source/parse-stack.js";
 
 const mockFetch = (): Promise<Response> => {
   return Promise.resolve(
@@ -16,6 +16,27 @@ const mockFetch = (): Promise<Response> => {
       headers: { "Content-Type": "application/json" },
     }),
   );
+};
+
+// HACK: transforms (vite, coverage instrumentation) shift runtime line numbers,
+// so derive the expected call-site frame by throwing inside the component the
+// same way the owner-stack fallback does instead of hardcoding line numbers
+const getComponentThrowFrame = (component: unknown): StackFrame => {
+  const componentFunction = component as () => unknown;
+  const previousPrepareStackTrace = Error.prepareStackTrace;
+  (Error as { prepareStackTrace?: typeof Error.prepareStackTrace }).prepareStackTrace = undefined;
+  try {
+    componentFunction();
+  } catch (thrownError) {
+    const frames = parseStack((thrownError as Error).stack ?? "", { includeInElement: false });
+    const componentFrame = frames.find((frame) =>
+      frame.functionName?.includes(componentFunction.name),
+    );
+    if (componentFrame) return componentFrame;
+  } finally {
+    Error.prepareStackTrace = previousPrepareStackTrace;
+  }
+  throw new Error(`Could not capture a throw frame for ${componentFunction.name}`);
 };
 
 const SimpleComponent = () => {
@@ -62,11 +83,12 @@ it("getOwnerStack should return stack for component with props", async () => {
 
   const result = await getOwnerStack(capturedFiber as unknown as Fiber);
 
+  const expectedFrame = getComponentThrowFrame(ComponentWithProps);
   expect(result).toHaveLength(1);
   expect(result[0].functionName).toBe("ComponentWithProps");
   expect(result[0].fileName).toContain("source.test.tsx");
-  expect(result[0].lineNumber).toBe(34);
-  expect(result[0].columnNumber).toBe(31);
+  expect(result[0].lineNumber).toBe(expectedFrame.lineNumber);
+  expect(result[0].columnNumber).toBe(expectedFrame.columnNumber);
 });
 
 it("getOwnerStack should return stack for component with hooks", async () => {
@@ -80,11 +102,12 @@ it("getOwnerStack should return stack for component with hooks", async () => {
 
   const result = await getOwnerStack(capturedFiber as unknown as Fiber);
 
+  const expectedFrame = getComponentThrowFrame(ComponentWithHooks);
   expect(result).toHaveLength(1);
   expect(result[0].functionName).toBe("ComponentWithHooks");
   expect(result[0].fileName).toContain("source.test.tsx");
-  expect(result[0].lineNumber).toBe(45);
-  expect(result[0].columnNumber).toBe(52);
+  expect(result[0].lineNumber).toBe(expectedFrame.lineNumber);
+  expect(result[0].columnNumber).toBe(expectedFrame.columnNumber);
 });
 
 it("getOwnerStack should return stack for nested component with props", async () => {
@@ -102,16 +125,18 @@ it("getOwnerStack should return stack for nested component with props", async ()
 
   const result = await getOwnerStack(capturedFiber as unknown as Fiber);
 
+  const expectedPropsFrame = getComponentThrowFrame(ComponentWithProps);
+  const expectedChildFrame = getComponentThrowFrame(ExampleWithChild);
   expect(result).toHaveLength(3);
   expect(result[0].functionName).toBe("ComponentWithProps");
   expect(result[0].fileName).toContain("source.test.tsx");
-  expect(result[0].lineNumber).toBe(34);
-  expect(result[0].columnNumber).toBe(31);
+  expect(result[0].lineNumber).toBe(expectedPropsFrame.lineNumber);
+  expect(result[0].columnNumber).toBe(expectedPropsFrame.columnNumber);
   expect(result[1].functionName).toBe("div");
   expect(result[2].functionName).toBe("ExampleWithChild");
   expect(result[2].fileName).toContain("source.test.tsx");
-  expect(result[2].lineNumber).toBe(55);
-  expect(result[2].columnNumber).toBe(29);
+  expect(result[2].lineNumber).toBe(expectedChildFrame.lineNumber);
+  expect(result[2].columnNumber).toBe(expectedChildFrame.columnNumber);
 });
 
 it("getSource should return null for simple component without props/hooks", async () => {

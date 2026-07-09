@@ -473,6 +473,9 @@ const findSharedIndex = (
   rootStack: StackFrame[],
   rootIndex: number,
 ): number => {
+  // mostLikelyAncestorIndex is cached across inspections, so it can exceed the
+  // bounds of a later, shorter root stack (e.g. truncated Error.stackTraceLimit)
+  if (rootIndex >= rootStack.length) return -1;
   const source = rootStack[rootIndex].source;
   hookSearch: for (let hookIndex = 0; hookIndex < hookStack.length; hookIndex++) {
     if (hookStack[hookIndex].source === source) {

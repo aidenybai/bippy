@@ -5,6 +5,7 @@ import type { Fiber } from "../types.js";
 import { instrument } from "../index.js";
 import { getFiberHooks, type HooksNode } from "../source/inspect-hooks.js";
 import React from "react";
+import { useFormStatus } from "react-dom";
 import { render } from "@testing-library/react";
 
 const StateComponent = () => {
@@ -272,6 +273,313 @@ describe("getFiberHooks", () => {
     const allHooks = collectAllHooks(hooks);
     for (const hook of allHooks) {
       expect(hook).toHaveProperty("hookSource");
+    }
+  });
+});
+
+const ThemeContext = React.createContext("light");
+ThemeContext.displayName = "ThemeContext";
+
+const ContextComponent = () => {
+  const theme = React.useContext(ThemeContext);
+  return <div>{theme}</div>;
+};
+
+const externalStore = {
+  value: "store-value",
+  subscribe: () => () => {},
+  getSnapshot: () => externalStore.value,
+};
+
+const SyncExternalStoreComponent = () => {
+  const snapshot = React.useSyncExternalStore(externalStore.subscribe, externalStore.getSnapshot);
+  return <div>{snapshot}</div>;
+};
+
+const DeferredValueComponent = () => {
+  const deferredLabel = React.useDeferredValue("deferred-label");
+  return <div>{deferredLabel}</div>;
+};
+
+const OptimisticComponent = () => {
+  const [optimisticCount] = React.useOptimistic(7);
+  return <div>{optimisticCount}</div>;
+};
+
+const ActionStateComponent = () => {
+  const [formState] = React.useActionState((previous: string) => previous, "action-initial");
+  return <div>{formState}</div>;
+};
+
+const FormStatusComponent = () => {
+  const status = useFormStatus();
+  return <div>{String(status.pending)}</div>;
+};
+
+const ImperativeHandleComponent = React.forwardRef<{ focus: () => void }>((_props, ref) => {
+  React.useImperativeHandle(ref, () => ({ focus: () => {} }));
+  return <div />;
+});
+ImperativeHandleComponent.displayName = "ImperativeHandleComponent";
+
+const useStatusWithDebugValue = () => {
+  const [status] = React.useState("online");
+  React.useDebugValue(status);
+  return status;
+};
+
+const useStatusWithFormatter = () => {
+  const [status] = React.useState("online");
+  React.useDebugValue(status, (value) => `formatted:${value}`);
+  return status;
+};
+
+const useStatusWithManyDebugValues = () => {
+  const [status] = React.useState("online");
+  React.useDebugValue("first");
+  React.useDebugValue("second");
+  return status;
+};
+
+const DebugValueComponent = () => {
+  const status = useStatusWithDebugValue();
+  return <div>{status}</div>;
+};
+
+const FormattedDebugValueComponent = () => {
+  const status = useStatusWithFormatter();
+  return <div>{status}</div>;
+};
+
+const ManyDebugValuesComponent = () => {
+  const status = useStatusWithManyDebugValues();
+  return <div>{status}</div>;
+};
+
+const EffectFamilyComponent = () => {
+  React.useEffect(() => {}, []);
+  React.useLayoutEffect(() => {}, []);
+  React.useInsertionEffect(() => {}, []);
+  return <div />;
+};
+
+const unstable_useFancyValue = () => {
+  const [fancyValue] = React.useState("fancy");
+  return fancyValue;
+};
+
+const experimental_useShinyValue = () => {
+  const [shinyValue] = React.useState("shiny");
+  return shinyValue;
+};
+
+const use = () => {
+  const [bareValue] = React.useState("bare");
+  return bareValue;
+};
+
+const PrefixedHooksComponent = () => {
+  unstable_useFancyValue();
+  experimental_useShinyValue();
+  use();
+  return <div />;
+};
+
+let shouldThrowDuringInspection = false;
+const ConditionallyThrowingComponent = () => {
+  React.useState(0);
+  if (shouldThrowDuringInspection) {
+    throw new Error("inspection-only failure");
+  }
+  return <div />;
+};
+
+describe("getFiberHooks additional hook types", () => {
+  it("inspects useContext values from providers", () => {
+    let fiber: Fiber | null = null;
+    instrument({
+      onCommitFiberRoot: (_rendererID, fiberRoot) => {
+        fiber = fiberRoot.current.child?.child ?? null;
+      },
+    });
+    render(
+      <ThemeContext.Provider value="dark">
+        <ContextComponent />
+      </ThemeContext.Provider>,
+    );
+
+    const hooks = getFiberHooks(fiber!);
+    const allHooks = collectAllHooks(hooks);
+    const contextHook = allHooks.find((hook) => hook.value === "dark");
+    expect(contextHook).toBeDefined();
+    expect(contextHook?.id).toBeNull();
+  });
+
+  it("inspects useSyncExternalStore", () => {
+    let fiber: Fiber | null = null;
+    captureFiber((fiberNode) => {
+      fiber = fiberNode;
+    });
+    render(<SyncExternalStoreComponent />);
+
+    const hooks = getFiberHooks(fiber!);
+    const allHooks = collectAllHooks(hooks);
+    expect(allHooks.some((hook) => hook.name === "SyncExternalStore")).toBe(true);
+  });
+
+  it("inspects useDeferredValue", () => {
+    let fiber: Fiber | null = null;
+    captureFiber((fiberNode) => {
+      fiber = fiberNode;
+    });
+    render(<DeferredValueComponent />);
+
+    const hooks = getFiberHooks(fiber!);
+    const allHooks = collectAllHooks(hooks);
+    const hookValues = allHooks.map((hook) => hook.value);
+    expect(hookValues).toContain("deferred-label");
+  });
+
+  it("inspects useOptimistic", () => {
+    let fiber: Fiber | null = null;
+    captureFiber((fiberNode) => {
+      fiber = fiberNode;
+    });
+    render(<OptimisticComponent />);
+
+    const hooks = getFiberHooks(fiber!);
+    const allHooks = collectAllHooks(hooks);
+    const hookValues = allHooks.map((hook) => hook.value);
+    expect(hookValues).toContain(7);
+  });
+
+  it("inspects useActionState with a committed plain value", () => {
+    let fiber: Fiber | null = null;
+    captureFiber((fiberNode) => {
+      fiber = fiberNode;
+    });
+    render(<ActionStateComponent />);
+
+    const hooks = getFiberHooks(fiber!);
+    const allHooks = collectAllHooks(hooks);
+    const hookValues = allHooks.map((hook) => hook.value);
+    expect(hookValues).toContain("action-initial");
+  });
+
+  it("inspects useFormStatus", () => {
+    let fiber: Fiber | null = null;
+    captureFiber((fiberNode) => {
+      fiber = fiberNode;
+    });
+    render(<FormStatusComponent />);
+
+    const hooks = getFiberHooks(fiber!);
+    const allHooks = collectAllHooks(hooks);
+    expect(allHooks.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("inspects useImperativeHandle with a populated ref", () => {
+    let fiber: Fiber | null = null;
+    captureFiber((fiberNode) => {
+      fiber = fiberNode;
+    });
+    const handleRef = React.createRef<{ focus: () => void }>();
+    render(<ImperativeHandleComponent ref={handleRef} />);
+    expect(handleRef.current).not.toBeNull();
+
+    const hooks = getFiberHooks(fiber!);
+    const allHooks = collectAllHooks(hooks);
+    expect(allHooks.some((hook) => hook.name === "ImperativeHandle")).toBe(true);
+    expect(allHooks.some((hook) => hook.value === handleRef.current)).toBe(true);
+  });
+
+  it("names custom hooks that report debug values", () => {
+    let fiber: Fiber | null = null;
+    captureFiber((fiberNode) => {
+      fiber = fiberNode;
+    });
+    render(<DebugValueComponent />);
+
+    const hooks = getFiberHooks(fiber!);
+    const allHooks = collectAllHooks(hooks);
+    expect(allHooks.some((hook) => hook.name === "StatusWithDebugValue")).toBe(true);
+    expect(allHooks.some((hook) => hook.name === "DebugValue")).toBe(true);
+  });
+
+  it("applies debug value formatters", () => {
+    let fiber: Fiber | null = null;
+    captureFiber((fiberNode) => {
+      fiber = fiberNode;
+    });
+    render(<FormattedDebugValueComponent />);
+
+    const hooks = getFiberHooks(fiber!);
+    const allHooks = collectAllHooks(hooks);
+    expect(allHooks.some((hook) => hook.value === "formatted:online")).toBe(true);
+  });
+
+  it("captures each debug value in the tree", () => {
+    let fiber: Fiber | null = null;
+    captureFiber((fiberNode) => {
+      fiber = fiberNode;
+    });
+    render(<ManyDebugValuesComponent />);
+
+    const hooks = getFiberHooks(fiber!);
+    const allHooks = collectAllHooks(hooks);
+    const hookValues = allHooks.map((hook) => hook.value);
+    expect(hookValues).toContain("first");
+    expect(hookValues).toContain("second");
+  });
+
+  it("inspects the full effect hook family", () => {
+    let fiber: Fiber | null = null;
+    captureFiber((fiberNode) => {
+      fiber = fiberNode;
+    });
+    render(<EffectFamilyComponent />);
+
+    const hooks = getFiberHooks(fiber!);
+    const allHooks = collectAllHooks(hooks);
+    const hookNames = allHooks.map((hook) => hook.name);
+    expect(hookNames).toContain("Effect");
+    expect(hookNames).toContain("LayoutEffect");
+    expect(hookNames).toContain("InsertionEffect");
+  });
+
+  it("strips unstable_ and experimental_ prefixes from custom hook names", () => {
+    let fiber: Fiber | null = null;
+    captureFiber((fiberNode) => {
+      fiber = fiberNode;
+    });
+    render(<PrefixedHooksComponent />);
+
+    const hooks = getFiberHooks(fiber!);
+    const allHooks = collectAllHooks(hooks);
+    const hookNames = allHooks.map((hook) => hook.name);
+    expect(hookNames).toContain("FancyValue");
+    expect(hookNames).toContain("ShinyValue");
+    expect(hookNames).toContain("Use");
+  });
+
+  it("wraps errors thrown while re-rendering the component", () => {
+    let fiber: Fiber | null = null;
+    captureFiber((fiberNode) => {
+      fiber = fiberNode;
+    });
+    shouldThrowDuringInspection = false;
+    render(<ConditionallyThrowingComponent />);
+    shouldThrowDuringInspection = true;
+
+    try {
+      expect(() => getFiberHooks(fiber!)).toThrowError(
+        expect.objectContaining({
+          name: "ReactDebugToolsRenderError",
+          message: "Error rendering inspected component",
+        }),
+      );
+    } finally {
+      shouldThrowDuringInspection = false;
     }
   });
 });

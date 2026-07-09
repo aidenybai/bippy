@@ -14,6 +14,19 @@ export const ExampleWithMutation = () => {
   return element;
 };
 
+export const ExampleWithSiblingMutation = () => {
+  const [text, setText] = React.useState("first");
+  React.useEffect(() => {
+    setText("second");
+  }, []);
+  return (
+    <>
+      <div>{text}</div>
+      <div>{text}</div>
+    </>
+  );
+};
+
 it("should return all host fibers that have committed and rendered", () => {
   let maybeFiber: Fiber | null = null;
   let mutatedHostFiber: Fiber<HTMLDivElement> | null = null;
@@ -27,4 +40,15 @@ it("should return all host fibers that have committed and rendered", () => {
   const mutatedHostFibers = getMutatedHostFibers(maybeFiber as unknown as Fiber);
   expect(getMutatedHostFibers(maybeFiber as unknown as Fiber)).toHaveLength(1);
   expect(mutatedHostFiber).toBe(mutatedHostFibers[0]);
+});
+
+it("should traverse sibling host fibers", () => {
+  let maybeFiber: Fiber | null = null;
+  instrument({
+    onCommitFiberRoot: (_rendererID, fiberRoot) => {
+      maybeFiber = fiberRoot.current.child;
+    },
+  });
+  render(<ExampleWithSiblingMutation />);
+  expect(getMutatedHostFibers(maybeFiber as unknown as Fiber)).toHaveLength(2);
 });

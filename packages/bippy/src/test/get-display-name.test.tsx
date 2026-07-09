@@ -39,3 +39,21 @@ it("should return the displayName of the class component", () => {
 it("should return null for a non-fiber", () => {
   expect(getDisplayName({})).toBe(null);
 });
+
+it("should return the string itself for host component types", () => {
+  expect(getDisplayName("div")).toBe("div");
+});
+
+it("should return null for non-component values", () => {
+  expect(getDisplayName(42)).toBe(null);
+  expect(getDisplayName(null)).toBe(null);
+});
+
+it("should unwrap memo components without a displayName", () => {
+  const namedInner = () => null;
+  expect(getDisplayName(memo(namedInner))).toBe("namedInner");
+});
+
+it("should return null for memoized anonymous components", () => {
+  expect(getDisplayName(memo(() => null))).toBe(null);
+});

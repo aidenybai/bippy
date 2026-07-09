@@ -6,15 +6,6 @@ import { expect, test } from "@playwright/test";
 
 import { waitForTestChild } from "./helpers";
 
-declare global {
-  interface Window {
-    __BIPPY_HMR__?: {
-      updates: string[][];
-      hasTransport: boolean | null;
-    };
-  }
-}
-
 const SPEC_DIR = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES_DIR = path.resolve(SPEC_DIR, "../../fixtures");
 
@@ -66,6 +57,71 @@ test.describe("bippy/react-refresh", () => {
       });
     } finally {
       writeFileSync(targetFilePath, originalSource);
+    }
+  });
+
+  test("reports each update in a sequence of consecutive saves", async ({ page }) => {
+    const targetFilePath = HMR_TARGET_FILE_BY_PROJECT[test.info().project.name];
+    const originalSource = readFileSync(targetFilePath, "utf8");
+    const currentMarker = originalSource.includes("hmr-marker-a") ? "hmr-marker-a" : "hmr-marker-b";
+    const nextMarker = currentMarker === "hmr-marker-a" ? "hmr-marker-b" : "hmr-marker-a";
+
+    await page.waitForFunction(() => window.__BIPPY_HMR__?.hasTransport === true, undefined, {
+      timeout: HMR_UPDATE_TIMEOUT_MS,
+    });
+
+    const countTargetUpdates = () =>
+      page.evaluate(
+        () =>
+          window.__BIPPY_HMR__?.updates.flat().filter((filePath) => filePath.includes("hmr-target"))
+            .length ?? 0,
+      );
+    const initialUpdateCount = await countTargetUpdates();
+
+    try {
+      writeFileSync(targetFilePath, originalSource.replace(currentMarker, nextMarker));
+      await expect(page.getByTestId("hmr-target")).toHaveText(nextMarker, {
+        timeout: HMR_UPDATE_TIMEOUT_MS,
+      });
+      const updateCountAfterFirstSave = await countTargetUpdates();
+      expect(updateCountAfterFirstSave).toBeGreaterThan(initialUpdateCount);
+
+      writeFileSync(targetFilePath, originalSource);
+      await expect(page.getByTestId("hmr-target")).toHaveText(currentMarker, {
+        timeout: HMR_UPDATE_TIMEOUT_MS,
+      });
+      const updateCountAfterSecondSave = await countTargetUpdates();
+      expect(updateCountAfterSecondSave).toBeGreaterThan(updateCountAfterFirstSave);
+    } finally {
+      writeFileSync(targetFilePath, originalSource);
+    }
+  });
+
+  test("css-only updates swap styles without reporting js update paths", async ({ page }) => {
+    test.skip(
+      test.info().project.name !== "vite",
+      "the css hmr fixture only exists in the vite app",
+    );
+    const cssFilePath = path.join(FIXTURES_DIR, "vite-app/src/hmr-styles.css");
+    const originalCss = readFileSync(cssFilePath, "utf8");
+
+    await page.waitForFunction(() => window.__BIPPY_HMR__?.hasTransport === true, undefined, {
+      timeout: HMR_UPDATE_TIMEOUT_MS,
+    });
+    await expect(page.getByTestId("hmr-target")).toHaveCSS("color", "rgb(10, 20, 30)");
+
+    try {
+      writeFileSync(cssFilePath, originalCss.replace("rgb(10, 20, 30)", "rgb(200, 30, 40)"));
+      await expect(page.getByTestId("hmr-target")).toHaveCSS("color", "rgb(200, 30, 40)", {
+        timeout: HMR_UPDATE_TIMEOUT_MS,
+      });
+
+      const cssUpdatePaths = await page.evaluate(() =>
+        window.__BIPPY_HMR__!.updates.flat().filter((filePath) => filePath.includes("hmr-styles")),
+      );
+      expect(cssUpdatePaths).toEqual([]);
+    } finally {
+      writeFileSync(cssFilePath, originalCss);
     }
   });
 });

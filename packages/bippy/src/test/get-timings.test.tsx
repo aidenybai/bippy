@@ -11,6 +11,17 @@ const SlowComponent = () => {
   return <div>Hello</div>;
 };
 
+it("should return zero timings when there is no fiber", () => {
+  expect(getTimings(null)).toEqual({ selfTime: 0, totalTime: 0 });
+  expect(getTimings()).toEqual({ selfTime: 0, totalTime: 0 });
+});
+
+it("should treat children without actualDuration as zero cost", () => {
+  const childFiber = { actualDuration: undefined, sibling: null } as unknown as Fiber;
+  const fiber = { actualDuration: 5, child: childFiber } as unknown as Fiber;
+  expect(getTimings(fiber)).toEqual({ selfTime: 5, totalTime: 5 });
+});
+
 it("should return the timings of the fiber", () => {
   let maybeFiber: Fiber | null = null;
   instrument({

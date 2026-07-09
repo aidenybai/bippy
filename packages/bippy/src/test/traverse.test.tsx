@@ -6,11 +6,30 @@ import {
   instrument,
   traverseContexts,
   traverseFiber,
+  traverseFiberAsync,
+  traverseFiberSync,
   traverseProps,
   traverseState,
 } from "../index.js";
 import React from "react";
 import { render } from "@testing-library/react";
+
+const createMockFiber = (overrides: Record<string, unknown> = {}): Fiber =>
+  ({
+    alternate: null,
+    child: null,
+    dependencies: null,
+    flags: 0,
+    memoizedProps: {},
+    memoizedState: null,
+    pendingProps: {},
+    return: null,
+    sibling: null,
+    stateNode: null,
+    tag: 0,
+    type: null,
+    ...overrides,
+  }) as unknown as Fiber;
 
 export const Context1 = React.createContext(0);
 export const Context2 = React.createContext(0);
@@ -77,6 +96,33 @@ describe("traverseProps", () => {
     const selector = vi.fn(() => true);
     traverseProps(maybeFiber as unknown as Fiber, selector);
     expect(selector).toBeCalledTimes(1);
+  });
+
+  it("should visit props that only exist on the previous fiber", () => {
+    const fiber = createMockFiber({
+      alternate: createMockFiber({ memoizedProps: { removedProp: 2, sharedProp: 1 } }),
+      memoizedProps: { sharedProp: 1 },
+    });
+    const selector = vi.fn((propName: string) => propName === "removedProp");
+    expect(traverseProps(fiber, selector)).toBe(true);
+    expect(selector).toHaveBeenCalledWith("removedProp", undefined, 2);
+  });
+
+  it("should return false when no prop is selected", () => {
+    const fiber = createMockFiber({
+      alternate: createMockFiber({ memoizedProps: { removedProp: 2 } }),
+      memoizedProps: { sharedProp: 1 },
+    });
+    const selector = vi.fn(() => false);
+    expect(traverseProps(fiber, selector)).toBe(false);
+    expect(selector).toHaveBeenCalledTimes(2);
+  });
+
+  it("should default previous props when there is no alternate", () => {
+    const fiber = createMockFiber({ memoizedProps: { onlyProp: 1 } });
+    const selector = vi.fn();
+    expect(traverseProps(fiber, selector)).toBe(false);
+    expect(selector).toHaveBeenCalledWith("onlyProp", 1, undefined);
   });
 });
 
@@ -166,6 +212,38 @@ describe("traverseContexts", () => {
     const selector = vi.fn(() => true);
     traverseContexts(maybeFiber as unknown as Fiber, selector);
     expect(selector).toBeCalledTimes(1);
+  });
+
+  it("should return false when the fiber has no dependencies", () => {
+    const fiber = createMockFiber({
+      alternate: createMockFiber({ dependencies: { firstContext: null } }),
+      dependencies: null,
+    });
+    const selector = vi.fn();
+    expect(traverseContexts(fiber, selector)).toBe(false);
+    expect(selector).not.toHaveBeenCalled();
+  });
+
+  it("should return false when dependencies have no firstContext", () => {
+    const fiber = createMockFiber({
+      alternate: createMockFiber({ dependencies: {} }),
+      dependencies: {},
+    });
+    const selector = vi.fn();
+    expect(traverseContexts(fiber, selector)).toBe(false);
+    expect(selector).not.toHaveBeenCalled();
+  });
+
+  it("should keep traversing when only the previous fiber has contexts", () => {
+    const fiber = createMockFiber({
+      alternate: createMockFiber({
+        dependencies: { firstContext: { memoizedValue: 1, next: null } },
+      }),
+      dependencies: { firstContext: null },
+    });
+    const selector = vi.fn();
+    expect(traverseContexts(fiber, selector)).toBe(false);
+    expect(selector).toHaveBeenCalledWith(null, { memoizedValue: 1, next: null });
   });
 });
 
@@ -317,5 +395,67 @@ describe("traverseFiber", () => {
     const result = await traverseFiber(maybeFiber as unknown as Fiber, selector, true);
     expect(result).toBe(maybeFiber);
     expect(selector).toBeCalledTimes(1);
+  });
+
+  it("should return null when passed a null fiber", async () => {
+    expect(traverseFiber(null, () => true)).toBe(null);
+    expect(traverseFiberSync(null, () => true)).toBe(null);
+    expect(await traverseFiberAsync(null, async () => true)).toBe(null);
+  });
+
+  it("should return null when no node matches (async descending)", async () => {
+    let maybeFiber: Fiber | null = null;
+    instrument({
+      onCommitFiberRoot: (_rendererID, fiberRoot) => {
+        maybeFiber = fiberRoot.current.child;
+      },
+    });
+    render(<Example />);
+    const result = await traverseFiber(maybeFiber as unknown as Fiber, async () => false);
+    expect(result).toBe(null);
+  });
+
+  it("should return null when no node matches (async ascending)", async () => {
+    let maybeFiber: Fiber | null = null;
+    instrument({
+      onCommitFiberRoot: (_rendererID, fiberRoot) => {
+        maybeFiber = fiberRoot.current.child;
+      },
+    });
+    render(<Example />);
+    const result = await traverseFiber(maybeFiber as unknown as Fiber, async () => false, true);
+    expect(result).toBe(null);
+  });
+
+  it("should traverse siblings when the first async subtree does not match", async () => {
+    const targetSibling = createMockFiber();
+    const firstChild = createMockFiber({ sibling: targetSibling });
+    const rootFiber = createMockFiber({ child: firstChild });
+    const result = await traverseFiber(rootFiber, async (fiber) => fiber === targetSibling);
+    expect(result).toBe(targetSibling);
+  });
+
+  it("should return null when no node matches (sync descending)", () => {
+    const targetSibling = createMockFiber();
+    const firstChild = createMockFiber({ sibling: targetSibling });
+    const rootFiber = createMockFiber({ child: firstChild });
+    expect(traverseFiber(rootFiber, () => false)).toBe(null);
+  });
+
+  it("should traverse nested siblings in traverseFiberAsync (descending)", async () => {
+    const targetSibling = createMockFiber();
+    const firstGrandchild = createMockFiber({ sibling: targetSibling });
+    const childFiber = createMockFiber({ child: firstGrandchild });
+    const rootFiber = createMockFiber({ child: childFiber });
+    const result = await traverseFiberAsync(rootFiber, async (fiber) => fiber === targetSibling);
+    expect(result).toBe(targetSibling);
+  });
+
+  it("should return null in traverseFiberAsync when ascending finds no match", async () => {
+    const rootFiber = createMockFiber();
+    const parentFiber = createMockFiber({ return: rootFiber });
+    const childFiber = createMockFiber({ return: parentFiber });
+    const result = await traverseFiberAsync(childFiber, async () => false, true);
+    expect(result).toBe(null);
   });
 });
