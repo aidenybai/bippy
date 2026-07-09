@@ -26,17 +26,21 @@ const readCurrentMarker = (source: string): string => {
 // which blinds every watcher backend built on it (node fs.watch AND
 // watchman): CI metro logs show zero activity for minutes after a save.
 // watchman debug-recrawl stat-scans the watched root and delivers the
-// changed files to subscribers without relying on FSEvents at all.
+// changed files to subscribers without relying on FSEvents at all. The CI
+// workflow warms watchman up before Metro starts so Metro deterministically
+// subscribes through watchman (instead of silently falling back to its
+// FSEvents watcher, which this recovery cannot reach).
 const recrawlWatchmanRoots = () => {
   if (!process.env.CI) return;
   try {
     const watchListOutput = execSync("watchman watch-list", { encoding: "utf8" });
     const watchedRoots: string[] = JSON.parse(watchListOutput).roots ?? [];
+    console.log(`[refresh-spec] recrawling watchman roots: ${JSON.stringify(watchedRoots)}`);
     for (const watchedRoot of watchedRoots) {
       execSync(`watchman debug-recrawl ${JSON.stringify(watchedRoot)}`);
     }
   } catch (recrawlError) {
-    console.warn("watchman recrawl failed", recrawlError);
+    console.log(`[refresh-spec] watchman recrawl failed: ${String(recrawlError)}`);
   }
 };
 

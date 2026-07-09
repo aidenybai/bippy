@@ -109,8 +109,16 @@ jobs:
       - name: Start Metro
         working-directory: packages/e2e/fixtures/expo-app
         # CI=false: expo disables file watching (and therefore fast refresh)
-        # when it detects CI, but the refresh spec saves files at runtime
+        # when it detects CI, but the refresh spec saves files at runtime.
+        # watchman must be warmed up (daemon running, repo root watched)
+        # before Metro starts: if watchman's capability check is slow, Metro
+        # silently falls back to its FSEvents watcher, and FSEvents drops
+        # events on these virtualized runners. The refresh spec recovers
+        # dropped events with `watchman debug-recrawl`, which only works when
+        # Metro is subscribed through watchman.
         run: |
+          watchman version
+          watchman watch-project "$GITHUB_WORKSPACE"
           nohup bash -c 'env CI=false npx expo start --port 8081 2>&1 | while IFS= read -r line; do printf "%s %s\n" "$(date +%T)" "$line"; done' > /tmp/metro.log 2>&1 &
           for attempt in $(seq 1 60); do
             if curl -sf http://localhost:8081/status | grep -q "packager-status:running"; then
