@@ -53,8 +53,10 @@ jobs:
           xcodebuild -workspace ios/bippye2eexpo.xcworkspace -scheme bippye2eexpo -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build -quiet
       - name: Start Metro
         working-directory: packages/e2e/fixtures/expo-app
+        # CI=false: expo disables file watching (and therefore fast refresh)
+        # when it detects CI, but the refresh spec saves files at runtime
         run: |
-          nohup npx expo start --port 8081 > /tmp/metro.log 2>&1 &
+          nohup env CI=false npx expo start --port 8081 > /tmp/metro.log 2>&1 &
           for attempt in $(seq 1 60); do
             if curl -sf http://localhost:8081/status | grep -q "packager-status:running"; then
               echo "Metro is up"

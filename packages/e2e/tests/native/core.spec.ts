@@ -1,3 +1,6 @@
+// the detox jest environment injects its own global `expect` for element
+// assertions, so jest's must be imported explicitly for plain values
+import { expect } from "@jest/globals";
 import { by, device, element, expect as detoxExpect, waitFor } from "detox";
 
 describe("bippy core functions on React Native", () => {
