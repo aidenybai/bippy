@@ -23,8 +23,7 @@ import {
   traverseState,
 } from "bippy";
 import type { Fiber, FiberRoot } from "bippy";
-import { detectHmrTransport } from "bippy/react-refresh";
-import type { HmrTransport } from "bippy/react-refresh";
+import { onReactRefresh } from "bippy/react-refresh";
 import { getDisplayNameFromSource, getOwnerStack, getSource } from "bippy/source";
 import {
   Component,
@@ -288,20 +287,19 @@ const App = () => {
   }, [runCoreTests]);
 
   useEffect(() => {
-    let transport: HmrTransport | null = null;
-    void detectHmrTransport((filePaths) => {
+    const refreshListener = onReactRefresh((update) => {
       setHmrResults((previousResults) => ({
         ...previousResults,
-        "hmr-last-update": filePaths.join(","),
-      }));
-    }).then((detectedTransport) => {
-      transport = detectedTransport;
-      setHmrResults((previousResults) => ({
-        ...previousResults,
-        "hmr-transport": String(detectedTransport !== null),
+        "refresh-last-update": update.updatedComponents
+          .map((componentType) => getDisplayName(componentType) ?? "unknown")
+          .join(","),
       }));
     });
-    return () => transport?.dispose();
+    setHmrResults((previousResults) => ({
+      ...previousResults,
+      "refresh-listener": String(refreshListener !== null),
+    }));
+    return () => refreshListener?.dispose();
   }, []);
 
   return (

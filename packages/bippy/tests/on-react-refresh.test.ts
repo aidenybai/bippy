@@ -1,7 +1,7 @@
 import { expect, it, vi } from "vitest";
+import { onReactRefresh } from "../src/react-refresh/index.js";
 import { getRDTHook } from "../src/rdt-hook.js";
-import { onReactRefresh } from "../src/react-refresh/on-react-refresh.js";
-import type { FiberRoot, ReactRefreshUpdate, ReactRenderer } from "../src/types.js";
+import type { FiberRoot, ReactRenderer, RendererRefreshUpdate } from "../src/types.js";
 
 const createFakeRefreshRenderer = (scheduleRefresh = vi.fn()): ReactRenderer =>
   ({
@@ -11,14 +11,17 @@ const createFakeRefreshRenderer = (scheduleRefresh = vi.fn()): ReactRenderer =>
     version: "19.0.0",
   }) as unknown as ReactRenderer;
 
-const createFakeUpdate = (): ReactRefreshUpdate => ({
-  staleFamilies: new Set([{ current: () => null }]),
-  updatedFamilies: new Set([{ current: () => null }]),
+const UpdatedComponent = () => null;
+const StaleComponent = () => null;
+
+const createFakeRendererUpdate = (): RendererRefreshUpdate => ({
+  staleFamilies: new Set([{ current: StaleComponent }]),
+  updatedFamilies: new Set([{ current: UpdatedComponent }]),
 });
 
 const fakeRoot = {} as FiberRoot;
 
-it("invokes the handler after the original scheduleRefresh for already injected renderers", () => {
+it("reports updated and stale component types after the original scheduleRefresh runs", () => {
   const rdtHook = getRDTHook();
   const callOrder: string[] = [];
   const originalScheduleRefresh = vi.fn(() => callOrder.push("original"));
@@ -29,11 +32,15 @@ it("invokes the handler after the original scheduleRefresh for already injected 
   const listener = onReactRefresh(onRefreshUpdate);
   expect(listener).not.toBeNull();
 
-  const update = createFakeUpdate();
-  fakeRenderer.scheduleRefresh?.(fakeRoot, update);
+  const rendererUpdate = createFakeRendererUpdate();
+  fakeRenderer.scheduleRefresh?.(fakeRoot, rendererUpdate);
 
-  expect(originalScheduleRefresh).toHaveBeenCalledWith(fakeRoot, update);
-  expect(onRefreshUpdate).toHaveBeenCalledWith(update, fakeRoot);
+  expect(originalScheduleRefresh).toHaveBeenCalledWith(fakeRoot, rendererUpdate);
+  expect(onRefreshUpdate).toHaveBeenCalledWith({
+    root: fakeRoot,
+    staleComponents: [StaleComponent],
+    updatedComponents: [UpdatedComponent],
+  });
   expect(callOrder).toEqual(["original", "handler"]);
   listener?.dispose();
 });
@@ -46,10 +53,9 @@ it("patches renderers injected after the listener was created", () => {
   const fakeRenderer = createFakeRefreshRenderer();
   rdtHook.inject(fakeRenderer);
 
-  const update = createFakeUpdate();
-  fakeRenderer.scheduleRefresh?.(fakeRoot, update);
+  fakeRenderer.scheduleRefresh?.(fakeRoot, createFakeRendererUpdate());
 
-  expect(onRefreshUpdate).toHaveBeenCalledWith(update, fakeRoot);
+  expect(onRefreshUpdate).toHaveBeenCalledOnce();
   listener?.dispose();
 });
 
@@ -80,7 +86,7 @@ it("dispose restores the original scheduleRefresh and inject", () => {
   expect(fakeRenderer.scheduleRefresh).toBe(originalScheduleRefresh);
   expect(rdtHook.inject).toBe(injectBeforeListener);
 
-  fakeRenderer.scheduleRefresh?.(fakeRoot, createFakeUpdate());
+  fakeRenderer.scheduleRefresh?.(fakeRoot, createFakeRendererUpdate());
   expect(onRefreshUpdate).not.toHaveBeenCalled();
 });
 
@@ -96,7 +102,7 @@ it("stops invoking the handler after dispose even if the patch was layered over"
   fakeRenderer.scheduleRefresh = (root, update) => patchedScheduleRefresh?.(root, update);
 
   listener?.dispose();
-  fakeRenderer.scheduleRefresh(fakeRoot, createFakeUpdate());
+  fakeRenderer.scheduleRefresh(fakeRoot, createFakeRendererUpdate());
   expect(onRefreshUpdate).not.toHaveBeenCalled();
 });
 

@@ -298,7 +298,7 @@ export interface Family {
   current: unknown;
 }
 
-export interface ReactRefreshUpdate {
+export interface RendererRefreshUpdate {
   staleFamilies: Set<Family>;
   updatedFamilies: Set<Family>;
 }
@@ -407,7 +407,7 @@ export interface ReactRenderer {
   reconcilerVersion: string;
   rendererPackageName: string;
   // react refresh
-  scheduleRefresh?: (root: FiberRoot, update: ReactRefreshUpdate) => void;
+  scheduleRefresh?: (root: FiberRoot, update: RendererRefreshUpdate) => void;
   scheduleRoot?: (root: FiberRoot, element: React.ReactNode) => void;
   scheduleUpdate?: (fiber: Fiber) => void;
 

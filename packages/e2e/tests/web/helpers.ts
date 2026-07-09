@@ -3,14 +3,8 @@ import type { Page } from "@playwright/test";
 declare global {
   interface Window {
     __BIPPY_HMR__?: {
-      updates: string[][];
-      hasTransport: boolean | null;
-      hmr: {
-        parseViteUpdatePaths: (rawMessageData: string) => string[];
-        createMetroHmrTransport: (
-          onHmrUpdate: (filePaths: string[]) => void,
-        ) => { dispose: () => void } | null;
-      };
+      refreshUpdates: { staleNames: (string | null)[]; updatedNames: (string | null)[] }[];
+      hasRefreshListener: boolean;
     };
   }
 }
@@ -23,12 +17,6 @@ export const waitForBippy = async (page: Page) => {
 
 export const waitForTestChild = async (page: Page) => {
   await page.waitForSelector('[data-testid="test-child"]', { timeout: 10_000 });
-};
-
-export const waitForHmrHarness = async (page: Page) => {
-  await page.waitForFunction(() => window.__BIPPY_HMR__ !== undefined, undefined, {
-    timeout: 10_000,
-  });
 };
 
 export const getHostFiber = async (page: Page, testId: string) => {
