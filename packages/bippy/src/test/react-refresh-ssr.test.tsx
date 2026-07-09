@@ -2,7 +2,10 @@
 import { describe, expect, it } from "vitest";
 import * as bippy from "../index.js";
 import { detectHmrTransport } from "../react-refresh/detect-hmr-transport.js";
-import { createMetroHmrTransport, getMetroBundleUrl } from "../react-refresh/metro-hmr-transport.js";
+import {
+  createMetroHmrTransport,
+  getMetroBundleUrl,
+} from "../react-refresh/metro-hmr-transport.js";
 import { createNextWebpackHmrTransport } from "../react-refresh/next-webpack-hmr-transport.js";
 import { createViteHmrTransport } from "../react-refresh/vite-hmr-transport.js";
 
