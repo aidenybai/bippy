@@ -10,10 +10,10 @@ const HMR_TARGET_FILE_PATH = path.resolve(__dirname, "../../fixtures/expo-app/sr
 
 const HMR_MARKER_REGEX = /hmr-marker-[\w-]+/;
 const REFRESH_UPDATE_TIMEOUT_MS = 30_000;
-// metro's file watcher on loaded CI VMs can take >80s to surface a save
-// (measured from CI metro logs), so each attempt must outwait that latency
-const MARKER_APPLY_TIMEOUT_MS = 150_000;
-const SAVE_ATTEMPT_COUNT = 2;
+const MARKER_APPLY_TIMEOUT_MS = 240_000;
+// long enough for a watchman recrawl of the monorepo to complete between
+// rewrites, short enough for several rewrite attempts within the window
+const SAVE_RETRY_INTERVAL_MS = 20_000;
 const REFRESH_TEST_TIMEOUT_MS = 400_000;
 
 const readCurrentMarker = (source: string): string => {
@@ -88,24 +88,27 @@ describe("bippy/react-refresh on React Native", () => {
       const originalSource = readFileSync(HMR_TARGET_FILE_PATH, "utf8");
       const currentMarker = readCurrentMarker(originalSource);
 
-      // a save can rarely be lost entirely (missed watcher event), so one slow
-      // retry remains as a safety net
+      // watcher events can be dropped entirely on CI (FSEvents inside the
+      // macOS VM is lossy), so keep rewriting the file and recrawling
+      // watchman until the update lands instead of trusting a single save
       const saveAndAwaitMarker = async (): Promise<void> => {
-        let lastError: unknown = null;
-        for (let attempt = 0; attempt < SAVE_ATTEMPT_COUNT; attempt++) {
-          const uniqueMarker = `hmr-marker-${Date.now()}-${attempt}`;
-          writeFileSync(HMR_TARGET_FILE_PATH, originalSource.replace(currentMarker, uniqueMarker));
+        const uniqueMarker = `hmr-marker-${Date.now()}`;
+        const modifiedSource = originalSource.replace(currentMarker, uniqueMarker);
+        const deadlineMs = Date.now() + MARKER_APPLY_TIMEOUT_MS;
+        let lastText = "";
+        while (Date.now() < deadlineMs) {
+          writeFileSync(HMR_TARGET_FILE_PATH, modifiedSource);
           recrawlWatchmanRoots();
-          try {
-            await waitFor(element(by.id("hmr-target-text")))
-              .toHaveText(uniqueMarker)
-              .withTimeout(MARKER_APPLY_TIMEOUT_MS);
-            return;
-          } catch (error) {
-            lastError = error;
+          const retryAtMs = Math.min(Date.now() + SAVE_RETRY_INTERVAL_MS, deadlineMs);
+          while (Date.now() < retryAtMs) {
+            try {
+              lastText = await readElementText("hmr-target-text");
+              if (lastText === uniqueMarker) return;
+            } catch {}
+            await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
           }
         }
-        throw lastError;
+        throw new Error(`hmr marker never applied, last saw "${lastText}"`);
       };
 
       try {
