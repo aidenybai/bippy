@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 import { waitForTestChild } from "./helpers";
 
@@ -30,6 +30,31 @@ const readCurrentMarker = (source: string): string => {
 
 let uniqueMarkerCounter = 0;
 const buildUniqueMarker = (): string => `hmr-marker-${Date.now()}-${uniqueMarkerCounter++}`;
+
+const SAVE_ATTEMPTS = 3;
+const SAVE_ATTEMPT_TIMEOUT_MS = 5_000;
+
+// a save landing milliseconds after the previous hot update can be coalesced
+// away by the dev server's file watcher on slow CI machines, so re-save until
+// the update propagates, like an editor save would
+const saveAndAwaitMarker = async (
+  page: Page,
+  targetFilePath: string,
+  nextSource: string,
+  expectedMarker: string,
+) => {
+  for (let attempt = 1; attempt <= SAVE_ATTEMPTS; attempt++) {
+    writeFileSync(targetFilePath, nextSource);
+    try {
+      await expect(page.getByTestId("hmr-target")).toHaveText(expectedMarker, {
+        timeout: SAVE_ATTEMPT_TIMEOUT_MS,
+      });
+      return;
+    } catch (saveError) {
+      if (attempt === SAVE_ATTEMPTS) throw saveError;
+    }
+  }
+};
 
 test.describe.configure({ mode: "serial" });
 
@@ -94,17 +119,21 @@ test.describe("bippy/react-refresh", () => {
     const initialUpdateCount = await countTargetUpdates();
 
     try {
-      writeFileSync(targetFilePath, originalSource.replace(currentMarker, firstUniqueMarker));
-      await expect(page.getByTestId("hmr-target")).toHaveText(firstUniqueMarker, {
-        timeout: HMR_UPDATE_TIMEOUT_MS,
-      });
+      await saveAndAwaitMarker(
+        page,
+        targetFilePath,
+        originalSource.replace(currentMarker, firstUniqueMarker),
+        firstUniqueMarker,
+      );
       const updateCountAfterFirstSave = await countTargetUpdates();
       expect(updateCountAfterFirstSave).toBeGreaterThan(initialUpdateCount);
 
-      writeFileSync(targetFilePath, originalSource.replace(currentMarker, secondUniqueMarker));
-      await expect(page.getByTestId("hmr-target")).toHaveText(secondUniqueMarker, {
-        timeout: HMR_UPDATE_TIMEOUT_MS,
-      });
+      await saveAndAwaitMarker(
+        page,
+        targetFilePath,
+        originalSource.replace(currentMarker, secondUniqueMarker),
+        secondUniqueMarker,
+      );
       const updateCountAfterSecondSave = await countTargetUpdates();
       expect(updateCountAfterSecondSave).toBeGreaterThan(updateCountAfterFirstSave);
     } finally {
