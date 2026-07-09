@@ -55,7 +55,7 @@ export default defineConfig({
   test: {
     coverage: {
       include: ["src/**/*.ts"],
-      exclude: ["src/test/**", "src/types.ts"],
+      exclude: ["src/types.ts"],
       provider: "istanbul",
       reporter: ["text", "json", "json-summary", "html"],
     },

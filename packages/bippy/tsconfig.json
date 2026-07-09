@@ -12,6 +12,6 @@
       "vitest": ["../../node_modules/@voidzero-dev/vite-plus-test/dist/index.d.ts"]
     }
   },
-  "include": ["src", "vite.config.ts"],
+  "include": ["src", "tests", "vite.config.ts"],
   "exclude": ["**/node_modules/**", "**/dist/**"]
 }

@@ -27,7 +27,6 @@
   "files": [
     "dist",
     "src",
-    "!src/test/**",
     "bin",
     "package.json",
     "README.md",
