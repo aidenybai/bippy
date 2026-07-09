@@ -1,74 +1,29 @@
 import { readFileSync, writeFileSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
+import {
+  buildUniqueMarker,
+  countRefreshUpdatesMatching,
+  HMR_UPDATE_TIMEOUT_MS,
+  readCurrentMarker,
+  resolveFixtureFile,
+  SAVE_ATTEMPT_TIMEOUT_MS,
+  SAVE_ATTEMPTS,
+  saveAndAwaitText,
+  waitForRefreshListener,
+  waitForRefreshUpdateMatching,
+} from "./hmr-helpers";
 import { waitForTestChild } from "./helpers";
 
-const SPEC_DIR = path.dirname(fileURLToPath(import.meta.url));
-const FIXTURES_DIR = path.resolve(SPEC_DIR, "../../fixtures");
-
-const HMR_TARGET_FILE_BY_PROJECT: Record<string, string> = {
-  vite: path.join(FIXTURES_DIR, "vite-app/src/hmr-target.tsx"),
-  nextjs: path.join(FIXTURES_DIR, "next-app/app/hmr-target.tsx"),
-  tanstack: path.join(FIXTURES_DIR, "tanstack-app/src/hmr-target.tsx"),
-};
-
-const HMR_UPDATE_TIMEOUT_MS = 15_000;
-
-// each save writes a fresh unique marker (instead of toggling between two
-// fixed values) so an assertion can never be satisfied by stale DOM state
-// left over from a previous test's restore write still applying
-const HMR_MARKER_REGEX = /hmr-marker-[\w-]+/;
-
-const readCurrentMarker = (source: string): string => {
-  const markerMatch = source.match(HMR_MARKER_REGEX);
-  if (!markerMatch) throw new Error("hmr-target fixture is missing an hmr-marker");
-  return markerMatch[0];
-};
-
-let uniqueMarkerCounter = 0;
-const buildUniqueMarker = (): string => `hmr-marker-${Date.now()}-${uniqueMarkerCounter++}`;
-
-const SAVE_ATTEMPTS = 3;
-const SAVE_ATTEMPT_TIMEOUT_MS = 5_000;
-
-// a save landing milliseconds after the previous hot update can be coalesced
-// away by the dev server's file watcher on slow CI machines, so re-save until
-// the update propagates, like an editor save would
-const saveAndAwaitMarker = async (
-  page: Page,
-  targetFilePath: string,
-  nextSource: string,
-  expectedMarker: string,
-) => {
-  for (let attempt = 1; attempt <= SAVE_ATTEMPTS; attempt++) {
-    writeFileSync(targetFilePath, nextSource);
-    try {
-      await expect(page.getByTestId("hmr-target")).toHaveText(expectedMarker, {
-        timeout: SAVE_ATTEMPT_TIMEOUT_MS,
-      });
-      return;
-    } catch (saveError) {
-      if (attempt === SAVE_ATTEMPTS) throw saveError;
-    }
-  }
-};
-
-const countHmrTargetRefreshUpdates = (page: Page) =>
-  page.evaluate(
-    () =>
-      window.__BIPPY_HMR__?.refreshUpdates.filter((refreshUpdate) =>
-        refreshUpdate.updatedNames.includes("HmrTarget"),
-      ).length ?? 0,
-  );
+const HMR_MARKER_PREFIX = "hmr-marker";
 
 test.describe.configure({ mode: "serial" });
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
   await waitForTestChild(page);
+  await waitForRefreshListener(page);
 });
 
 test.describe("bippy/react-refresh", () => {
@@ -79,86 +34,68 @@ test.describe("bippy/react-refresh", () => {
   });
 
   test("reports the updated component when a source file is saved", async ({ page }) => {
-    const targetFilePath = HMR_TARGET_FILE_BY_PROJECT[test.info().project.name];
+    const targetFilePath = resolveFixtureFile(test.info().project.name, "hmr-target.tsx");
     const originalSource = readFileSync(targetFilePath, "utf8");
-    const currentMarker = readCurrentMarker(originalSource);
-    const uniqueMarker = buildUniqueMarker();
-
-    await page.waitForFunction(() => window.__BIPPY_HMR__?.hasRefreshListener === true, undefined, {
-      timeout: HMR_UPDATE_TIMEOUT_MS,
-    });
+    const currentMarker = readCurrentMarker(originalSource, HMR_MARKER_PREFIX);
+    const uniqueMarker = buildUniqueMarker(HMR_MARKER_PREFIX);
 
     try {
-      await saveAndAwaitMarker(
+      await saveAndAwaitText(
         page,
         targetFilePath,
         originalSource.replace(currentMarker, uniqueMarker),
+        "hmr-target",
         uniqueMarker,
       );
 
-      await page.waitForFunction(
-        () =>
-          window.__BIPPY_HMR__ !== undefined &&
-          window.__BIPPY_HMR__.refreshUpdates.some((refreshUpdate) =>
-            refreshUpdate.updatedNames.includes("HmrTarget"),
-          ),
-        undefined,
-        { timeout: HMR_UPDATE_TIMEOUT_MS },
-      );
+      await waitForRefreshUpdateMatching(page, { updatedName: "HmrTarget" });
     } finally {
       writeFileSync(targetFilePath, originalSource);
     }
   });
 
   test("collects the mounted fibers for hot-swapped component types", async ({ page }) => {
-    const targetFilePath = HMR_TARGET_FILE_BY_PROJECT[test.info().project.name];
+    const targetFilePath = resolveFixtureFile(test.info().project.name, "hmr-target.tsx");
     const originalSource = readFileSync(targetFilePath, "utf8");
-    const currentMarker = readCurrentMarker(originalSource);
-    const uniqueMarker = buildUniqueMarker();
-
-    await page.waitForFunction(() => window.__BIPPY_HMR__?.hasRefreshListener === true, undefined, {
-      timeout: HMR_UPDATE_TIMEOUT_MS,
-    });
+    const currentMarker = readCurrentMarker(originalSource, HMR_MARKER_PREFIX);
+    const uniqueMarker = buildUniqueMarker(HMR_MARKER_PREFIX);
 
     try {
-      await saveAndAwaitMarker(
+      await saveAndAwaitText(
         page,
         targetFilePath,
         originalSource.replace(currentMarker, uniqueMarker),
+        "hmr-target",
         uniqueMarker,
       );
 
-      await page.waitForFunction(
+      await waitForRefreshUpdateMatching(page, { updatedFiberName: "HmrTarget" });
+      const validUpdateCount = await page.evaluate(
         () =>
-          window.__BIPPY_HMR__ !== undefined &&
-          window.__BIPPY_HMR__.refreshUpdates.some(
+          window.__BIPPY_HMR__?.refreshUpdates.filter(
             (refreshUpdate) =>
               refreshUpdate.updatedFiberNames.includes("HmrTarget") &&
               refreshUpdate.areUpdatedFibersValid,
-          ),
-        undefined,
-        { timeout: HMR_UPDATE_TIMEOUT_MS },
+          ).length ?? 0,
       );
+      expect(validUpdateCount).toBeGreaterThan(0);
     } finally {
       writeFileSync(targetFilePath, originalSource);
     }
   });
 
   test("resolves source locations for the hot-swapped fibers", async ({ page }) => {
-    const targetFilePath = HMR_TARGET_FILE_BY_PROJECT[test.info().project.name];
+    const targetFilePath = resolveFixtureFile(test.info().project.name, "hmr-target.tsx");
     const originalSource = readFileSync(targetFilePath, "utf8");
-    const currentMarker = readCurrentMarker(originalSource);
-    const uniqueMarker = buildUniqueMarker();
-
-    await page.waitForFunction(() => window.__BIPPY_HMR__?.hasRefreshListener === true, undefined, {
-      timeout: HMR_UPDATE_TIMEOUT_MS,
-    });
+    const currentMarker = readCurrentMarker(originalSource, HMR_MARKER_PREFIX);
+    const uniqueMarker = buildUniqueMarker(HMR_MARKER_PREFIX);
 
     try {
-      await saveAndAwaitMarker(
+      await saveAndAwaitText(
         page,
         targetFilePath,
         originalSource.replace(currentMarker, uniqueMarker),
+        "hmr-target",
         uniqueMarker,
       );
 
@@ -183,89 +120,79 @@ test.describe("bippy/react-refresh", () => {
   });
 
   test("augments refresh updates with the hot-updated file paths", async ({ page }) => {
-    const targetFilePath = HMR_TARGET_FILE_BY_PROJECT[test.info().project.name];
+    const targetFilePath = resolveFixtureFile(test.info().project.name, "hmr-target.tsx");
     const originalSource = readFileSync(targetFilePath, "utf8");
-    const currentMarker = readCurrentMarker(originalSource);
-
-    await page.waitForFunction(() => window.__BIPPY_HMR__?.hasRefreshListener === true, undefined, {
-      timeout: HMR_UPDATE_TIMEOUT_MS,
-    });
-
-    const hasRefreshUpdateWithTargetFilePath = () =>
-      page.evaluate(
-        () =>
-          window.__BIPPY_HMR__?.refreshUpdates.some(
-            (refreshUpdate) =>
-              refreshUpdate.updatedNames.includes("HmrTarget") &&
-              refreshUpdate.filePaths.some((filePath) => filePath.includes("hmr-target")),
-          ) ?? false,
-      );
+    const currentMarker = readCurrentMarker(originalSource, HMR_MARKER_PREFIX);
 
     try {
       // the transport websocket connects asynchronously after page load, so
       // the first save can legitimately refresh with empty filePaths;
       // re-save with fresh markers until a refresh carries the path
       for (let attempt = 1; attempt <= SAVE_ATTEMPTS; attempt++) {
-        const uniqueMarker = buildUniqueMarker();
-        await saveAndAwaitMarker(
+        const uniqueMarker = buildUniqueMarker(HMR_MARKER_PREFIX);
+        await saveAndAwaitText(
           page,
           targetFilePath,
           originalSource.replace(currentMarker, uniqueMarker),
+          "hmr-target",
           uniqueMarker,
         );
         try {
-          await page.waitForFunction(
-            () =>
-              window.__BIPPY_HMR__ !== undefined &&
-              window.__BIPPY_HMR__.refreshUpdates.some(
-                (refreshUpdate) =>
-                  refreshUpdate.updatedNames.includes("HmrTarget") &&
-                  refreshUpdate.filePaths.some((filePath) => filePath.includes("hmr-target")),
-              ),
-            undefined,
-            { timeout: SAVE_ATTEMPT_TIMEOUT_MS },
+          await waitForRefreshUpdateMatching(
+            page,
+            { filePathIncludes: "hmr-target", updatedName: "HmrTarget" },
+            SAVE_ATTEMPT_TIMEOUT_MS,
           );
           break;
         } catch (waitError) {
           if (attempt === SAVE_ATTEMPTS) throw waitError;
         }
       }
-      expect(await hasRefreshUpdateWithTargetFilePath()).toBe(true);
+      expect(
+        await countRefreshUpdatesMatching(page, {
+          filePathIncludes: "hmr-target",
+          updatedName: "HmrTarget",
+        }),
+      ).toBeGreaterThan(0);
     } finally {
       writeFileSync(targetFilePath, originalSource);
     }
   });
 
   test("reports each update in a sequence of consecutive saves", async ({ page }) => {
-    const targetFilePath = HMR_TARGET_FILE_BY_PROJECT[test.info().project.name];
+    const targetFilePath = resolveFixtureFile(test.info().project.name, "hmr-target.tsx");
     const originalSource = readFileSync(targetFilePath, "utf8");
-    const currentMarker = readCurrentMarker(originalSource);
-    const firstUniqueMarker = buildUniqueMarker();
-    const secondUniqueMarker = buildUniqueMarker();
+    const currentMarker = readCurrentMarker(originalSource, HMR_MARKER_PREFIX);
+    const firstUniqueMarker = buildUniqueMarker(HMR_MARKER_PREFIX);
+    const secondUniqueMarker = buildUniqueMarker(HMR_MARKER_PREFIX);
 
-    await page.waitForFunction(() => window.__BIPPY_HMR__?.hasRefreshListener === true, undefined, {
-      timeout: HMR_UPDATE_TIMEOUT_MS,
+    const initialUpdateCount = await countRefreshUpdatesMatching(page, {
+      updatedName: "HmrTarget",
     });
 
-    const initialUpdateCount = await countHmrTargetRefreshUpdates(page);
-
     try {
-      await saveAndAwaitMarker(
+      await saveAndAwaitText(
         page,
         targetFilePath,
         originalSource.replace(currentMarker, firstUniqueMarker),
+        "hmr-target",
         firstUniqueMarker,
       );
-      const updateCountAfterFirstSave = await countHmrTargetRefreshUpdates(page);
+      const updateCountAfterFirstSave = await countRefreshUpdatesMatching(page, {
+        updatedName: "HmrTarget",
+      });
       expect(updateCountAfterFirstSave).toBeGreaterThan(initialUpdateCount);
 
-      await saveAndAwaitMarker(
+      await saveAndAwaitText(
         page,
         targetFilePath,
         originalSource.replace(currentMarker, secondUniqueMarker),
+        "hmr-target",
         secondUniqueMarker,
       );
-      const updateCountAfterSecondSave = await countHmrTargetRefreshUpdates(page);
+      const updateCountAfterSecondSave = await countRefreshUpdatesMatching(page, {
+        updatedName: "HmrTarget",
+      });
       expect(updateCountAfterSecondSave).toBeGreaterThan(updateCountAfterFirstSave);
     } finally {
       writeFileSync(targetFilePath, originalSource);

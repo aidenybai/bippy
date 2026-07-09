@@ -5,6 +5,7 @@ import * as bippySource from "bippy/source";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
+import { HmrEdgeTargets } from "./hmr-edge-mount";
 import { installHmrHarness } from "./hmr-harness";
 import { HmrTarget } from "./hmr-target";
 import { TestParent } from "./test-app";
@@ -23,6 +24,7 @@ createRoot(document.getElementById("root")!).render(
     <>
       <TestParent />
       <HmrTarget />
+      <HmrEdgeTargets />
     </>
   </StrictMode>,
 );

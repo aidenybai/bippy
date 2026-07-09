@@ -6,12 +6,16 @@ declare global {
       refreshUpdates: {
         areUpdatedFibersValid: boolean;
         filePaths: string[];
+        staleFiberNames: (string | null)[];
         staleNames: (string | null)[];
         updatedFiberNames: (string | null)[];
         updatedNames: (string | null)[];
         updatedSourceFileNames: (string | null)[];
       }[];
       hasRefreshListener: boolean;
+      secondListenerUpdatedNames: string[];
+      installSecondListener: () => boolean;
+      disposeSecondListener: () => void;
     };
   }
 }
