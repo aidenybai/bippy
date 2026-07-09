@@ -34,6 +34,7 @@ export default defineConfig({
         index: "./src/index.ts",
         core: "./src/core.ts",
         source: "./src/source/index.ts",
+        "react-refresh": "./src/react-refresh/index.ts",
         "install-hook-only": "./src/install-hook-only.ts",
       },
       format: ["esm", "cjs"],

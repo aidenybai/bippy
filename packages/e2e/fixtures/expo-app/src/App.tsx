@@ -23,6 +23,8 @@ import {
   traverseState,
 } from "bippy";
 import type { Fiber, FiberRoot } from "bippy";
+import { detectHmrTransport } from "bippy/react-refresh";
+import type { HmrTransport } from "bippy/react-refresh";
 import { getDisplayNameFromSource, getOwnerStack, getSource } from "bippy/source";
 import {
   Component,
@@ -111,6 +113,7 @@ const ResultRow = ({ testID, value }: ResultRowProps) => <Text testID={testID}>{
 const App = () => {
   const [coreResults, setCoreResults] = useState<Record<string, string>>({});
   const [sourceResults, setSourceResults] = useState<Record<string, string>>({});
+  const [hmrResults, setHmrResults] = useState<Record<string, string>>({});
   const didRunRef = useRef(false);
 
   const runCoreTests = useCallback((fiberRoot: FiberRoot) => {
@@ -284,6 +287,23 @@ const App = () => {
     });
   }, [runCoreTests]);
 
+  useEffect(() => {
+    let transport: HmrTransport | null = null;
+    void detectHmrTransport((filePaths) => {
+      setHmrResults((previousResults) => ({
+        ...previousResults,
+        "hmr-last-update": filePaths.join(","),
+      }));
+    }).then((detectedTransport) => {
+      transport = detectedTransport;
+      setHmrResults((previousResults) => ({
+        ...previousResults,
+        "hmr-transport": String(detectedTransport !== null),
+      }));
+    });
+    return () => transport?.dispose();
+  }, []);
+
   return (
     <ScrollView testID="root-scroll">
       <TestParent />
@@ -292,6 +312,9 @@ const App = () => {
           <ResultRow key={key} testID={`result-${key}`} value={value} />
         ))}
         {Object.entries(sourceResults).map(([key, value]) => (
+          <ResultRow key={key} testID={`result-${key}`} value={value} />
+        ))}
+        {Object.entries(hmrResults).map(([key, value]) => (
           <ResultRow key={key} testID={`result-${key}`} value={value} />
         ))}
       </View>

@@ -1,9 +1,7 @@
-"use client";
+import "bippy/install-hook-only";
 
 import * as bippy from "bippy";
 import * as bippySource from "bippy/source";
-
-import { installHmrHarness } from "./hmr-harness";
 import React, {
   Component,
   Fragment,
@@ -15,6 +13,8 @@ import React, {
   useEffect,
   useState,
 } from "react";
+
+import { installHmrHarness } from "./hmr-harness";
 
 declare global {
   interface Window {

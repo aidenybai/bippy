@@ -80,6 +80,16 @@
         "default": "./dist/source.cjs"
       }
     },
+    "./react-refresh": {
+      "import": {
+        "types": "./dist/react-refresh.d.ts",
+        "default": "./dist/react-refresh.js"
+      },
+      "require": {
+        "types": "./dist/react-refresh.d.cts",
+        "default": "./dist/react-refresh.cjs"
+      }
+    },
     "./dist/*": "./dist/*.js",
     "./dist/*.js": "./dist/*.js",
     "./dist/*.cjs": "./dist/*.cjs"
