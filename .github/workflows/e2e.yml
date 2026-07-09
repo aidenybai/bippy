@@ -1,9 +1,19 @@
 name: E2E Tests
 
-on: [push, pull_request, workflow_dispatch]
+# pull_request covers branches; running push builds too would double-bill
+# every PR commit (and macos runners bill at 10x linux rates)
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   changes:
@@ -74,7 +84,18 @@ jobs:
           echo "Pre-booting simulator: $device_name"
           echo "DETOX_DEVICE_NAME=$device_name" >> "$GITHUB_ENV"
           xcrun simctl boot "$device_name" || true
-      - run: pnpm install --frozen-lockfile
+      # linking ~55k files from the pnpm store takes ~6 minutes on the slow
+      # macos runner disk; restoring node_modules directly skips most of it
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+            packages/e2e/fixtures/*/node_modules
+            apps/*/node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - run: pnpm install --frozen-lockfile --prefer-offline
       - run: pnpm build
       - name: Install applesimutils and watchman
         # watchman: node fs.watch (FSEvents) delivers no events on the
