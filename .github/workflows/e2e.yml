@@ -69,8 +69,11 @@ jobs:
         run: npx detox clean-framework-cache && npx detox build-framework-cache
         working-directory: packages/e2e
       - name: Run Detox tests
-        run: npx detox test --configuration ios.sim.debug --headless --record-logs failing
         working-directory: packages/e2e
+        run: |
+          device_name=$(xcrun simctl list devices available | grep -oE 'iPhone [A-Za-z0-9 ]+' | head -1 | xargs)
+          echo "Using simulator: $device_name"
+          npx detox test --configuration ios.sim.debug --device-name "$device_name" --headless --record-logs failing
       - name: Upload Metro log
         uses: actions/upload-artifact@v4
         if: failure()
