@@ -1116,6 +1116,18 @@ export const getFiberFromHostInstance = <T>(hostInstance: T): Fiber | null => {
       return (hostInstance._reactRootContainer as any)?._internalRoot?.current?.child;
     }
 
+    // React Native Fabric public instances (ReactNativeElement /
+    // ReactFabricHostComponent) store their fiber as the "internal instance
+    // handle" instead of a __reactFiber$-prefixed key
+    const fabricInstanceHandle =
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (hostInstance as any).__internalInstanceHandle ??
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (hostInstance as any)._internalInstanceHandle;
+    if (isFiber(fabricInstanceHandle)) {
+      return fabricInstanceHandle;
+    }
+
     const hostInstanceRecord = hostInstance as Record<string, unknown>;
     for (const knownKey of knownFiberPropertyKeys) {
       const fiber = hostInstanceRecord[knownKey];

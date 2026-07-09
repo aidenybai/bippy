@@ -24,6 +24,19 @@ it("should return null when the fiber property holds a falsy value", () => {
   expect(getFiberFromHostInstance(hostInstanceWithEmptyFiber)).toBe(null);
 });
 
+it("should resolve React Native Fabric public instances via the internal instance handle", () => {
+  const mockFiber = { pendingProps: {}, stateNode: {}, tag: 5, type: "RCTView" };
+  const fabricPublicInstance = { __internalInstanceHandle: mockFiber, __nativeTag: 7 };
+  expect(getFiberFromHostInstance(fabricPublicInstance)).toBe(mockFiber);
+
+  const paperPublicInstance = { _internalInstanceHandle: mockFiber };
+  expect(getFiberFromHostInstance(paperPublicInstance)).toBe(mockFiber);
+});
+
+it("should ignore instance handles that are not fibers", () => {
+  expect(getFiberFromHostInstance({ __internalInstanceHandle: { notAFiber: true } })).toBe(null);
+});
+
 it("should resolve legacy roots through _reactRootContainer", () => {
   const mockFiber = { tag: 5, type: "div" };
   const legacyRootContainer = {

@@ -9,8 +9,11 @@ const HMR_TARGET_FILE_PATH = path.resolve(__dirname, "../../fixtures/expo-app/sr
 
 const HMR_MARKER_REGEX = /hmr-marker-[\w-]+/;
 const REFRESH_UPDATE_TIMEOUT_MS = 30_000;
-const SAVE_ATTEMPT_COUNT = 3;
-const REFRESH_TEST_TIMEOUT_MS = 300_000;
+// metro's file watcher on loaded CI VMs can take >80s to surface a save
+// (measured from CI metro logs), so each attempt must outwait that latency
+const MARKER_APPLY_TIMEOUT_MS = 150_000;
+const SAVE_ATTEMPT_COUNT = 2;
+const REFRESH_TEST_TIMEOUT_MS = 400_000;
 
 const readCurrentMarker = (source: string): string => {
   const markerMatch = source.match(HMR_MARKER_REGEX);
@@ -54,9 +57,8 @@ describe("bippy/react-refresh on React Native", () => {
       const originalSource = readFileSync(HMR_TARGET_FILE_PATH, "utf8");
       const currentMarker = readCurrentMarker(originalSource);
 
-      // a single save can be lost (missed watcher event) or take longer than a
-      // fixed wait (delta builds run >10s on loaded CI VMs), so retry with a
-      // fresh marker per attempt until one refresh lands
+      // a save can rarely be lost entirely (missed watcher event), so one slow
+      // retry remains as a safety net
       const saveAndAwaitMarker = async (): Promise<void> => {
         let lastError: unknown = null;
         for (let attempt = 0; attempt < SAVE_ATTEMPT_COUNT; attempt++) {
@@ -65,7 +67,7 @@ describe("bippy/react-refresh on React Native", () => {
           try {
             await waitFor(element(by.id("hmr-target-text")))
               .toHaveText(uniqueMarker)
-              .withTimeout(REFRESH_UPDATE_TIMEOUT_MS);
+              .withTimeout(MARKER_APPLY_TIMEOUT_MS);
             return;
           } catch (error) {
             lastError = error;
