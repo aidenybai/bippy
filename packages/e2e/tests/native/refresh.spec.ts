@@ -1,12 +1,16 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-import { by, device, element, expect, waitFor } from "detox";
+import { by, element, expect, waitFor } from "detox";
+
+import { launchFixtureApp, readElementText } from "./helpers";
 
 const HMR_TARGET_FILE_PATH = path.resolve(__dirname, "../../fixtures/expo-app/src/hmr-target.tsx");
 
 const HMR_MARKER_REGEX = /hmr-marker-[\w-]+/;
 const REFRESH_UPDATE_TIMEOUT_MS = 30_000;
+const SAVE_ATTEMPT_COUNT = 3;
+const REFRESH_TEST_TIMEOUT_MS = 300_000;
 
 const readCurrentMarker = (source: string): string => {
   const markerMatch = source.match(HMR_MARKER_REGEX);
@@ -15,11 +19,6 @@ const readCurrentMarker = (source: string): string => {
 };
 
 const POLL_INTERVAL_MS = 1_000;
-
-const readElementText = async (testId: string): Promise<string> => {
-  const attributes = await element(by.id(testId)).getAttributes();
-  return "text" in attributes && typeof attributes.text === "string" ? attributes.text : "";
-};
 
 const waitForElementTextToContain = async (testId: string, expectedSubstring: string) => {
   const deadlineMs = Date.now() + REFRESH_UPDATE_TIMEOUT_MS;
@@ -36,9 +35,9 @@ const waitForElementTextToContain = async (testId: string, expectedSubstring: st
 
 describe("bippy/react-refresh on React Native", () => {
   beforeAll(async () => {
-    await device.launchApp({ newInstance: true });
+    await launchFixtureApp(false);
     await waitFor(element(by.id("results-container")))
-      .toBeVisible()
+      .toExist()
       .withTimeout(15_000);
   });
 
@@ -49,29 +48,48 @@ describe("bippy/react-refresh on React Native", () => {
     await expect(element(by.id("result-refresh-listener"))).toHaveText("true");
   });
 
-  it("reports the updated component, its fibers, and the file path after a save", async () => {
-    const originalSource = readFileSync(HMR_TARGET_FILE_PATH, "utf8");
-    const currentMarker = readCurrentMarker(originalSource);
-    const uniqueMarker = `hmr-marker-${Date.now()}`;
+  it(
+    "reports the updated component, its fibers, and the file path after a save",
+    async () => {
+      const originalSource = readFileSync(HMR_TARGET_FILE_PATH, "utf8");
+      const currentMarker = readCurrentMarker(originalSource);
 
-    try {
-      writeFileSync(HMR_TARGET_FILE_PATH, originalSource.replace(currentMarker, uniqueMarker));
+      // a single save can be lost (missed watcher event) or take longer than a
+      // fixed wait (delta builds run >10s on loaded CI VMs), so retry with a
+      // fresh marker per attempt until one refresh lands
+      const saveAndAwaitMarker = async (): Promise<void> => {
+        let lastError: unknown = null;
+        for (let attempt = 0; attempt < SAVE_ATTEMPT_COUNT; attempt++) {
+          const uniqueMarker = `hmr-marker-${Date.now()}-${attempt}`;
+          writeFileSync(HMR_TARGET_FILE_PATH, originalSource.replace(currentMarker, uniqueMarker));
+          try {
+            await waitFor(element(by.id("hmr-target-text")))
+              .toHaveText(uniqueMarker)
+              .withTimeout(REFRESH_UPDATE_TIMEOUT_MS);
+            return;
+          } catch (error) {
+            lastError = error;
+          }
+        }
+        throw lastError;
+      };
 
-      await waitFor(element(by.id("hmr-target-text")))
-        .toHaveText(uniqueMarker)
-        .withTimeout(REFRESH_UPDATE_TIMEOUT_MS);
+      try {
+        await saveAndAwaitMarker();
 
-      await waitFor(element(by.id("result-refresh-last-update")))
-        .toHaveText("HmrTarget")
-        .withTimeout(REFRESH_UPDATE_TIMEOUT_MS);
-      await expect(element(by.id("result-refresh-last-fibers"))).toHaveText("HmrTarget");
-      await expect(element(by.id("result-refresh-fibers-valid"))).toHaveText("true");
+        await waitFor(element(by.id("result-refresh-last-update")))
+          .toHaveText("HmrTarget")
+          .withTimeout(REFRESH_UPDATE_TIMEOUT_MS);
+        await expect(element(by.id("result-refresh-last-fibers"))).toHaveText("HmrTarget");
+        await expect(element(by.id("result-refresh-fibers-valid"))).toHaveText("true");
 
-      // Metro reports extension-less paths (e.g. src/hmr-target); the exact
-      // prefix depends on the metro server root, so match the file stem
-      await waitForElementTextToContain("result-refresh-last-paths", "hmr-target");
-    } finally {
-      writeFileSync(HMR_TARGET_FILE_PATH, originalSource);
-    }
-  });
+        // Metro reports extension-less paths (e.g. src/hmr-target); the exact
+        // prefix depends on the metro server root, so match the file stem
+        await waitForElementTextToContain("result-refresh-last-paths", "hmr-target");
+      } finally {
+        writeFileSync(HMR_TARGET_FILE_PATH, originalSource);
+      }
+    },
+    REFRESH_TEST_TIMEOUT_MS,
+  );
 });

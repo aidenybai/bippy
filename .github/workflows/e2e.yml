@@ -46,6 +46,12 @@ jobs:
       - run: pnpm build
       - name: Install applesimutils
         run: brew tap wix/brew && brew trust wix/brew && brew install applesimutils
+      - name: Cache CocoaPods downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/CocoaPods
+          key: cocoapods-${{ runner.os }}-${{ hashFiles('packages/e2e/fixtures/expo-app/package.json') }}
+          restore-keys: cocoapods-${{ runner.os }}-
       - name: Prebuild and build iOS app
         run: |
           cd packages/e2e/fixtures/expo-app
@@ -56,7 +62,7 @@ jobs:
         # CI=false: expo disables file watching (and therefore fast refresh)
         # when it detects CI, but the refresh spec saves files at runtime
         run: |
-          nohup env CI=false npx expo start --port 8081 > /tmp/metro.log 2>&1 &
+          nohup bash -c 'env CI=false npx expo start --port 8081 2>&1 | while IFS= read -r line; do printf "%s %s\n" "$(date +%T)" "$line"; done' > /tmp/metro.log 2>&1 &
           for attempt in $(seq 1 60); do
             if curl -sf http://localhost:8081/status | grep -q "packager-status:running"; then
               echo "Metro is up"
@@ -67,7 +73,17 @@ jobs:
           echo "Metro failed to start" >&2
           cat /tmp/metro.log >&2
           exit 1
+      - name: Get Xcode version
+        id: xcode
+        run: echo "version=$(xcodebuild -version | tr -d '\n' | tr ' ' '-')" >> "$GITHUB_OUTPUT"
+      - name: Cache Detox framework
+        id: detox-framework-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Detox/ios
+          key: detox-framework-${{ steps.xcode.outputs.version }}-${{ hashFiles('pnpm-lock.yaml') }}
       - name: Build Detox framework cache
+        if: steps.detox-framework-cache.outputs.cache-hit != 'true'
         run: npx detox clean-framework-cache && npx detox build-framework-cache
         working-directory: packages/e2e
       - name: Run Detox tests

@@ -1,25 +1,35 @@
 import {
   areFiberEqual,
+  detectReactBuildType,
   didFiberCommit,
   didFiberRender,
   getDisplayName,
+  getFiberFromHostInstance,
   getFiberId,
   getFiberStack,
   getLatestFiber,
   getMutatedHostFibers,
   getNearestHostFiber,
   getNearestHostFibers,
+  getRDTHook,
   getTimings,
   getType,
   hasMemoCache,
+  hasRDTHook,
+  HostComponentTag,
   instrument,
+  isClientEnvironment,
   isCompositeFiber,
   isFiber,
   isHostFiber,
   isInstrumentationActive,
+  isValidElement,
   isValidFiber,
+  shouldFilterFiber,
+  traverseContexts,
   traverseFiber,
   traverseProps,
+  traverseRenderedFibers,
   traverseState,
 } from "bippy";
 import type { Fiber, FiberRoot } from "bippy";
@@ -100,6 +110,7 @@ const TestParent = () => {
         <TestContextConsumer />
         <TestClassComponent />
       </View>
+      <Text testID="parent-host-sibling">host-sibling</Text>
     </TestContext.Provider>
   );
 };
@@ -116,6 +127,7 @@ const App = () => {
   const [sourceResults, setSourceResults] = useState<Record<string, string>>({});
   const [hmrResults, setHmrResults] = useState<Record<string, string>>({});
   const didRunRef = useRef(false);
+  const hostProbeRef = useRef<View | null>(null);
 
   const runCoreTests = useCallback((fiberRoot: FiberRoot) => {
     if (didRunRef.current) return;
@@ -131,11 +143,13 @@ const App = () => {
     let testParentFiber: Fiber | null = null;
     let testChildFiber: Fiber | null = null;
     let testChildHostFiber: Fiber | null = null;
+    let testContextConsumerFiber: Fiber | null = null;
 
     traverseFiber(rootFiber, (fiber) => {
       const displayName = getDisplayName(fiber.type);
       if (displayName === "TestParent") testParentFiber = fiber;
       if (displayName === "TestChild") testChildFiber = fiber;
+      if (displayName === "TestContextConsumer") testContextConsumerFiber = fiber;
     });
 
     if (testChildFiber) {
@@ -221,6 +235,56 @@ const App = () => {
     const mutatedHostFibers = getMutatedHostFibers(rootFiber);
     results["mutatedHostFibers-count"] = String(mutatedHostFibers.length);
 
+    results["isClientEnvironment"] = String(isClientEnvironment());
+    results["hasRDTHook"] = String(hasRDTHook());
+
+    const rdtHook = getRDTHook();
+    results["rdtHook-renderers-count"] = String(rdtHook.renderers.size);
+    const firstRenderer = rdtHook.renderers.values().next().value;
+    results["detectReactBuildType"] = firstRenderer
+      ? detectReactBuildType(firstRenderer)
+      : "no-renderer";
+
+    results["isValidElement-element"] = String(
+      isValidElement(<TestChild name="probe" count={0} />),
+    );
+    results["isValidElement-object"] = String(isValidElement({}));
+
+    if (testChildHostFiber) {
+      results["shouldFilterFiber-host"] = String(shouldFilterFiber(testChildHostFiber));
+      results["shouldFilterFiber-tag-is-host"] = String(
+        testChildHostFiber.tag === HostComponentTag,
+      );
+    }
+    if (testChildFiber) {
+      results["shouldFilterFiber-composite"] = String(shouldFilterFiber(testChildFiber));
+    }
+
+    if (testContextConsumerFiber) {
+      let providedContextValue: string | null = null;
+      traverseContexts(testContextConsumerFiber, (context) => {
+        if (context && typeof context.memoizedValue === "string") {
+          providedContextValue = context.memoizedValue;
+          return true;
+        }
+      });
+      results["traverseContexts-value"] = providedContextValue ?? "null";
+    }
+
+    let renderedFiberCount = 0;
+    traverseRenderedFibers(rootFiber, () => {
+      renderedFiberCount++;
+    });
+    results["traverseRenderedFibers-count"] = String(renderedFiberCount);
+
+    const fiberFromHostInstance = hostProbeRef.current
+      ? getFiberFromHostInstance(hostProbeRef.current)
+      : null;
+    results["getFiberFromHostInstance"] = String(
+      fiberFromHostInstance !== null && isFiber(fiberFromHostInstance),
+    );
+
+    results["core-done"] = "true";
     setCoreResults(results);
 
     void runSourceTests(testChildFiber, testParentFiber);
@@ -277,6 +341,7 @@ const App = () => {
       }
     }
 
+    results["source-done"] = "true";
     setSourceResults(results);
   };
 
@@ -315,6 +380,7 @@ const App = () => {
     <ScrollView testID="root-scroll">
       <TestParent />
       <HmrTarget />
+      <View testID="host-probe" ref={hostProbeRef} />
       <View testID="results-container">
         {Object.entries(coreResults).map(([key, value]) => (
           <ResultRow key={key} testID={`result-${key}`} value={value} />

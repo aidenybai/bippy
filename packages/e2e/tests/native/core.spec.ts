@@ -1,23 +1,40 @@
 // the detox jest environment injects its own global `expect` for element
 // assertions, so jest's must be imported explicitly for plain values
 import { expect } from "@jest/globals";
-import { by, device, element, expect as detoxExpect, waitFor } from "detox";
+import { by, element, expect as detoxExpect, waitFor } from "detox";
+
+import { launchFixtureApp, readElementText } from "./helpers";
 
 describe("bippy core functions on React Native", () => {
   beforeAll(async () => {
-    await device.launchApp({ newInstance: true });
+    await launchFixtureApp(true);
+    // the fixture renders a result-core-done sentinel row after all core
+    // results are computed, so every row below it is already stable
+    await waitFor(element(by.id("result-core-done")))
+      .toExist()
+      .withTimeout(30_000);
   });
 
-  beforeEach(async () => {
-    await device.reloadReactNative();
-    await waitFor(element(by.id("results-container")))
-      .toBeVisible()
-      .withTimeout(15_000);
-  });
-
-  describe("instrumentation", () => {
+  describe("environment", () => {
     it("isInstrumentationActive returns true", async () => {
       await detoxExpect(element(by.id("result-instrument-active"))).toHaveText("true");
+    });
+
+    it("isClientEnvironment returns true", async () => {
+      await detoxExpect(element(by.id("result-isClientEnvironment"))).toHaveText("true");
+    });
+
+    it("hasRDTHook returns true", async () => {
+      await detoxExpect(element(by.id("result-hasRDTHook"))).toHaveText("true");
+    });
+
+    it("getRDTHook stores the injected renderer", async () => {
+      const rendererCount = parseInt(await readElementText("result-rdtHook-renderers-count"), 10);
+      expect(rendererCount).toBeGreaterThanOrEqual(1);
+    });
+
+    it("detectReactBuildType reports development for the dev bundle", async () => {
+      await detoxExpect(element(by.id("result-detectReactBuildType"))).toHaveText("development");
     });
   });
 
@@ -49,6 +66,14 @@ describe("bippy core functions on React Native", () => {
     it("isCompositeFiber returns true for composite fiber", async () => {
       await detoxExpect(element(by.id("result-isCompositeFiber"))).toHaveText("true");
     });
+
+    it("isValidElement returns true for a JSX element", async () => {
+      await detoxExpect(element(by.id("result-isValidElement-element"))).toHaveText("true");
+    });
+
+    it("isValidElement returns false for a plain object", async () => {
+      await detoxExpect(element(by.id("result-isValidElement-object"))).toHaveText("false");
+    });
   });
 
   describe("display name", () => {
@@ -69,22 +94,19 @@ describe("bippy core functions on React Native", () => {
 
   describe("timings", () => {
     it("selfTime is a non-negative number", async () => {
-      const attributes = await element(by.id("result-selfTime")).getAttributes();
-      const selfTime = parseFloat((attributes as any).text);
+      const selfTime = parseFloat(await readElementText("result-selfTime"));
       expect(selfTime).toBeGreaterThanOrEqual(0);
     });
 
     it("totalTime is a non-negative number", async () => {
-      const attributes = await element(by.id("result-totalTime")).getAttributes();
-      const totalTime = parseFloat((attributes as any).text);
+      const totalTime = parseFloat(await readElementText("result-totalTime"));
       expect(totalTime).toBeGreaterThanOrEqual(0);
     });
   });
 
   describe("fiber stack", () => {
     it("getFiberStack returns a non-empty stack", async () => {
-      const attributes = await element(by.id("result-fiberStack-length")).getAttributes();
-      const stackLength = parseInt((attributes as any).text, 10);
+      const stackLength = parseInt(await readElementText("result-fiberStack-length"), 10);
       expect(stackLength).toBeGreaterThan(1);
     });
   });
@@ -95,9 +117,12 @@ describe("bippy core functions on React Native", () => {
     });
 
     it("getNearestHostFibers returns multiple host fibers", async () => {
-      const attributes = await element(by.id("result-nearestHostFibers-count")).getAttributes();
-      const count = parseInt((attributes as any).text, 10);
-      expect(count).toBeGreaterThan(1);
+      const hostFiberCount = parseInt(await readElementText("result-nearestHostFibers-count"), 10);
+      expect(hostFiberCount).toBeGreaterThan(1);
+    });
+
+    it("getFiberFromHostInstance resolves a fiber from a native view ref", async () => {
+      await detoxExpect(element(by.id("result-getFiberFromHostInstance"))).toHaveText("true");
     });
   });
 
@@ -113,16 +138,39 @@ describe("bippy core functions on React Native", () => {
 
   describe("traversal", () => {
     it("traverseFiber visits multiple fibers", async () => {
-      const attributes = await element(by.id("result-traverseFiber-count")).getAttributes();
-      const count = parseInt((attributes as any).text, 10);
-      expect(count).toBeGreaterThan(5);
+      const visitedFiberCount = parseInt(await readElementText("result-traverseFiber-count"), 10);
+      expect(visitedFiberCount).toBeGreaterThan(5);
     });
 
     it("traverseProps finds expected prop keys", async () => {
-      const attributes = await element(by.id("result-traverseProps-keys")).getAttributes();
-      const keys = (attributes as any).text;
-      expect(keys).toContain("name");
-      expect(keys).toContain("count");
+      const propKeys = await readElementText("result-traverseProps-keys");
+      expect(propKeys).toContain("name");
+      expect(propKeys).toContain("count");
+    });
+
+    it("traverseContexts reads the provided context value", async () => {
+      await detoxExpect(element(by.id("result-traverseContexts-value"))).toHaveText(
+        "provided-value",
+      );
+    });
+
+    it("traverseRenderedFibers visits fibers from the last commit", async () => {
+      const renderedFiberCount = parseInt(
+        await readElementText("result-traverseRenderedFibers-count"),
+        10,
+      );
+      expect(renderedFiberCount).toBeGreaterThan(0);
+    });
+  });
+
+  describe("fiber filtering", () => {
+    it("shouldFilterFiber keeps host component fibers", async () => {
+      await detoxExpect(element(by.id("result-shouldFilterFiber-tag-is-host"))).toHaveText("true");
+      await detoxExpect(element(by.id("result-shouldFilterFiber-host"))).toHaveText("false");
+    });
+
+    it("shouldFilterFiber keeps composite fibers", async () => {
+      await detoxExpect(element(by.id("result-shouldFilterFiber-composite"))).toHaveText("false");
     });
   });
 
