@@ -89,12 +89,16 @@ export const createViteHmrTransport = async (
   const connect = (wsToken: string) => {
     if (isDisposed) return;
     const socketProtocol = location.protocol === "https:" ? "wss" : "ws";
-    socket = new WebSocket(`${socketProtocol}://${location.host}/?token=${wsToken}`, "vite-hmr");
-    socket.onmessage = (event) => {
+    const connectedSocket = new WebSocket(
+      `${socketProtocol}://${location.host}/?token=${wsToken}`,
+      "vite-hmr",
+    );
+    socket = connectedSocket;
+    connectedSocket.onmessage = (event) => {
       const filePaths = parseViteUpdatePaths(String(event.data));
       if (filePaths.length > 0) onHmrUpdate(filePaths);
     };
-    socket.onclose = scheduleReconnect;
+    connectedSocket.onclose = scheduleReconnect;
   };
 
   connect(initialWsToken);

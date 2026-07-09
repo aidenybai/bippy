@@ -159,15 +159,18 @@ export const createMetroHmrTransport = (
 
   const connect = () => {
     if (isDisposed) return;
-    socket = new WebSocket(hotSocketUrl);
-    socket.onopen = () => {
-      socket?.send(JSON.stringify({ type: "register-entrypoints", entryPoints: [bundleUrl] }));
+    const connectedSocket = new WebSocket(hotSocketUrl);
+    socket = connectedSocket;
+    connectedSocket.onopen = () => {
+      connectedSocket.send(
+        JSON.stringify({ type: "register-entrypoints", entryPoints: [bundleUrl] }),
+      );
     };
-    socket.onmessage = (event) => {
+    connectedSocket.onmessage = (event) => {
       const filePaths = parseMetroUpdatePaths(String(event.data));
       if (filePaths.length > 0) onHmrUpdate(filePaths);
     };
-    socket.onclose = scheduleReconnect;
+    connectedSocket.onclose = scheduleReconnect;
   };
 
   connect();
