@@ -38,10 +38,7 @@ const waitForElementTextToContain = async (testId: string, expectedSubstring: st
 
 describe("bippy/react-refresh on React Native", () => {
   beforeAll(async () => {
-    await launchFixtureApp(false);
-    await waitFor(element(by.id("results-container")))
-      .toExist()
-      .withTimeout(240_000);
+    await launchFixtureApp(false, "result-refresh-listener");
   });
 
   it("installs a refresh listener through the devtools hook", async () => {

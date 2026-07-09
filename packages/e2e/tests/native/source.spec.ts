@@ -1,18 +1,15 @@
 // the detox jest environment injects its own global `expect` for element
 // assertions, so jest's must be imported explicitly for plain values
 import { expect } from "@jest/globals";
-import { by, element, waitFor } from "detox";
+import { by, element } from "detox";
 
 import { launchFixtureApp, readElementText } from "./helpers";
 
 describe("bippy source functions on React Native (Metro)", () => {
   beforeAll(async () => {
-    await launchFixtureApp(false);
     // the fixture renders a result-source-done sentinel row once the async
     // source results (source map fetches) have all settled
-    await waitFor(element(by.id("result-source-done")))
-      .toExist()
-      .withTimeout(240_000);
+    await launchFixtureApp(false, "result-source-done");
   });
 
   describe("getSource", () => {
