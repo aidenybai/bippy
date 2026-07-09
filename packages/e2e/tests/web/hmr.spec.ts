@@ -17,6 +17,20 @@ const HMR_TARGET_FILE_BY_PROJECT: Record<string, string> = {
 
 const HMR_UPDATE_TIMEOUT_MS = 15_000;
 
+// each save writes a fresh unique marker (instead of toggling between two
+// fixed values) so an assertion can never be satisfied by stale DOM state
+// left over from a previous test's restore write still applying
+const HMR_MARKER_REGEX = /hmr-marker-[\w-]+/;
+
+const readCurrentMarker = (source: string): string => {
+  const markerMatch = source.match(HMR_MARKER_REGEX);
+  if (!markerMatch) throw new Error("hmr-target fixture is missing an hmr-marker");
+  return markerMatch[0];
+};
+
+let uniqueMarkerCounter = 0;
+const buildUniqueMarker = (): string => `hmr-marker-${Date.now()}-${uniqueMarkerCounter++}`;
+
 test.describe.configure({ mode: "serial" });
 
 test.beforeEach(async ({ page }) => {
@@ -34,15 +48,15 @@ test.describe("bippy/react-refresh", () => {
   test("receives updated file paths when a source file is saved", async ({ page }) => {
     const targetFilePath = HMR_TARGET_FILE_BY_PROJECT[test.info().project.name];
     const originalSource = readFileSync(targetFilePath, "utf8");
-    const currentMarker = originalSource.includes("hmr-marker-a") ? "hmr-marker-a" : "hmr-marker-b";
-    const nextMarker = currentMarker === "hmr-marker-a" ? "hmr-marker-b" : "hmr-marker-a";
+    const currentMarker = readCurrentMarker(originalSource);
+    const uniqueMarker = buildUniqueMarker();
 
     await page.waitForFunction(() => window.__BIPPY_HMR__?.hasTransport === true, undefined, {
       timeout: HMR_UPDATE_TIMEOUT_MS,
     });
 
     try {
-      writeFileSync(targetFilePath, originalSource.replace(currentMarker, nextMarker));
+      writeFileSync(targetFilePath, originalSource.replace(currentMarker, uniqueMarker));
 
       await page.waitForFunction(
         () =>
@@ -52,7 +66,7 @@ test.describe("bippy/react-refresh", () => {
         { timeout: HMR_UPDATE_TIMEOUT_MS },
       );
 
-      await expect(page.getByTestId("hmr-target")).toHaveText(nextMarker, {
+      await expect(page.getByTestId("hmr-target")).toHaveText(uniqueMarker, {
         timeout: HMR_UPDATE_TIMEOUT_MS,
       });
     } finally {
@@ -63,8 +77,9 @@ test.describe("bippy/react-refresh", () => {
   test("reports each update in a sequence of consecutive saves", async ({ page }) => {
     const targetFilePath = HMR_TARGET_FILE_BY_PROJECT[test.info().project.name];
     const originalSource = readFileSync(targetFilePath, "utf8");
-    const currentMarker = originalSource.includes("hmr-marker-a") ? "hmr-marker-a" : "hmr-marker-b";
-    const nextMarker = currentMarker === "hmr-marker-a" ? "hmr-marker-b" : "hmr-marker-a";
+    const currentMarker = readCurrentMarker(originalSource);
+    const firstUniqueMarker = buildUniqueMarker();
+    const secondUniqueMarker = buildUniqueMarker();
 
     await page.waitForFunction(() => window.__BIPPY_HMR__?.hasTransport === true, undefined, {
       timeout: HMR_UPDATE_TIMEOUT_MS,
@@ -79,15 +94,15 @@ test.describe("bippy/react-refresh", () => {
     const initialUpdateCount = await countTargetUpdates();
 
     try {
-      writeFileSync(targetFilePath, originalSource.replace(currentMarker, nextMarker));
-      await expect(page.getByTestId("hmr-target")).toHaveText(nextMarker, {
+      writeFileSync(targetFilePath, originalSource.replace(currentMarker, firstUniqueMarker));
+      await expect(page.getByTestId("hmr-target")).toHaveText(firstUniqueMarker, {
         timeout: HMR_UPDATE_TIMEOUT_MS,
       });
       const updateCountAfterFirstSave = await countTargetUpdates();
       expect(updateCountAfterFirstSave).toBeGreaterThan(initialUpdateCount);
 
-      writeFileSync(targetFilePath, originalSource);
-      await expect(page.getByTestId("hmr-target")).toHaveText(currentMarker, {
+      writeFileSync(targetFilePath, originalSource.replace(currentMarker, secondUniqueMarker));
+      await expect(page.getByTestId("hmr-target")).toHaveText(secondUniqueMarker, {
         timeout: HMR_UPDATE_TIMEOUT_MS,
       });
       const updateCountAfterSecondSave = await countTargetUpdates();

@@ -269,9 +269,12 @@ test.describe("getSourceFromSourceMap", () => {
           },
         ],
       };
+      // section offsets are 0-based generated positions while queried stack
+      // frame lines are 1-based, so line 2 lands on the first section's
+      // mappings[1] and line 11 lands on the second section's offset line
       return {
-        firstSection: window.__BIPPY__.getSourceFromSourceMap(sectionedMap, 1, 0),
-        secondSection: window.__BIPPY__.getSourceFromSourceMap(sectionedMap, 10, 5),
+        firstSection: window.__BIPPY__.getSourceFromSourceMap(sectionedMap, 2, 0),
+        secondSection: window.__BIPPY__.getSourceFromSourceMap(sectionedMap, 11, 5),
         beyondSectionMappings: window.__BIPPY__.getSourceFromSourceMap(sectionedMap, 20, 0),
       };
     });
