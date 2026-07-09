@@ -45,7 +45,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - name: Install applesimutils
-        run: brew tap wix/brew && brew install applesimutils
+        run: brew tap wix/brew && brew trust wix/brew && brew install applesimutils
       - name: Prebuild and build iOS app
         run: |
           cd packages/e2e/fixtures/expo-app
