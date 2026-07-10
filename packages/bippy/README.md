@@ -108,6 +108,8 @@ bippy works by monkey-patching `window.__REACT_DEVTOOLS_GLOBAL_HOOK__` with our 
 
 - `instrument` to safely patch `window.__REACT_DEVTOOLS_GLOBAL_HOOK__`
   - _(instead of directly mutating `onCommitFiberRoot`, ...)_
+- `secure` to wrap your handlers in a try/catch and determine if handlers are safe to run
+  - _(instead of rawdogging `window.__REACT_DEVTOOLS_GLOBAL_HOOK__` handlers, which may crash your app)_
 - `traverseRenderedFibers` to traverse the fiber tree and determine which fibers have actually rendered
   - _(instead of `child`, `sibling`, and `return` pointers)_
 - `traverseFiber` to traverse the fiber tree, regardless of whether it has rendered
@@ -170,21 +172,25 @@ the import order is critical: bippy must be imported before any react packages.
 
 patches `window.__REACT_DEVTOOLS_GLOBAL_HOOK__` with your handlers. must be imported before react, and must be initialized to properly run any other methods.
 
+> use with the `secure` function to prevent uncaught errors from crashing your app.
+
 ```typescript
-import { instrument } from "bippy"; // must be imported BEFORE react
+import { instrument, secure } from "bippy"; // must be imported BEFORE react
 import * as React from "react";
 
-instrument({
-  onCommitFiberRoot(rendererID, root) {
-    console.log("root ready to commit", root);
-  },
-  onPostCommitFiberRoot(rendererID, root) {
-    console.log("root with effects committed", root);
-  },
-  onCommitFiberUnmount(rendererID, fiber) {
-    console.log("fiber unmounted", fiber);
-  },
-});
+instrument(
+  secure({
+    onCommitFiberRoot(rendererID, root) {
+      console.log("root ready to commit", root);
+    },
+    onPostCommitFiberRoot(rendererID, root) {
+      console.log("root with effects committed", root);
+    },
+    onCommitFiberUnmount(rendererID, fiber) {
+      console.log("fiber unmounted", fiber);
+    },
+  }),
+);
 ```
 
 ### getRDTHook
@@ -203,16 +209,18 @@ console.log(hook);
 not every fiber in the fiber tree renders. `traverseRenderedFibers` allows you to traverse the fiber tree and determine which fibers have actually rendered.
 
 ```typescript
-import { instrument, traverseRenderedFibers } from "bippy"; // must be imported BEFORE react
+import { instrument, secure, traverseRenderedFibers } from "bippy"; // must be imported BEFORE react
 import * as React from "react";
 
-instrument({
-  onCommitFiberRoot(rendererID, root) {
-    traverseRenderedFibers(root, (fiber) => {
-      console.log("fiber rendered", fiber);
-    });
-  },
-});
+instrument(
+  secure({
+    onCommitFiberRoot(rendererID, root) {
+      traverseRenderedFibers(root, (fiber) => {
+        console.log("fiber rendered", fiber);
+      });
+    },
+  }),
+);
 ```
 
 ### traverseFiber
@@ -220,16 +228,18 @@ instrument({
 calls a callback on every fiber in the fiber tree.
 
 ```typescript
-import { instrument, traverseFiber } from "bippy"; // must be imported BEFORE react
+import { instrument, secure, traverseFiber } from "bippy"; // must be imported BEFORE react
 import * as React from "react";
 
-instrument({
-  onCommitFiberRoot(rendererID, root) {
-    traverseFiber(root.current, (fiber) => {
-      console.log(fiber);
-    });
-  },
-});
+instrument(
+  secure({
+    onCommitFiberRoot(rendererID, root) {
+      traverseFiber(root.current, (fiber) => {
+        console.log(fiber);
+      });
+    },
+  }),
+);
 ```
 
 ### traverseProps
@@ -549,7 +559,7 @@ const source = await getSource(compositeFiber);
 here's a mini toy version of [`react-scan`](https://github.com/aidenybai/react-scan) that highlights renders in your app.
 
 ```javascript
-import { instrument, getNearestHostFiber, traverseRenderedFibers } from "bippy"; // must be imported BEFORE react
+import { instrument, secure, getNearestHostFiber, traverseRenderedFibers } from "bippy"; // must be imported BEFORE react
 
 const highlightFiber = (fiber) => {
   if (!(fiber.stateNode instanceof HTMLElement)) return;
@@ -573,36 +583,46 @@ const highlightFiber = (fiber) => {
  * `instrument` is a function that installs the react DevTools global
  * hook and allows you to set up custom handlers for react fiber events.
  */
-instrument({
+instrument(
   /**
-   * `onCommitFiberRoot` is a handler that is called when react is
-   * ready to commit a fiber root. this means that react is has
-   * rendered your entire app and is ready to apply changes to
-   * the host tree (e.g. via DOM mutations).
+   * `secure` is a function that wraps your handlers in a try/catch
+   * and prevents it from crashing the app. it also prevents it from
+   * running on unsupported react versions and during production.
+   *
+   * this is not required but highly recommended to provide "safeguards"
+   * in case something breaks.
    */
-  onCommitFiberRoot(rendererID, root) {
+  secure({
     /**
-     * `traverseRenderedFibers` traverses the fiber tree and determines which
-     * fibers have actually rendered.
-     *
-     * A fiber tree contains many fibers that may have not rendered. this
-     * can be because it bailed out (e.g. `useMemo`) or because it wasn't
-     * actually rendered (if <Child> re-rendered, then <Parent> didn't
-     * actually render, but exists in the fiber tree).
+     * `onCommitFiberRoot` is a handler that is called when react is
+     * ready to commit a fiber root. this means that react is has
+     * rendered your entire app and is ready to apply changes to
+     * the host tree (e.g. via DOM mutations).
      */
-    traverseRenderedFibers(root, (fiber) => {
+    onCommitFiberRoot(rendererID, root) {
       /**
-       * `getNearestHostFiber` is a utility function that finds the
-       * nearest host fiber to a given fiber.
+       * `traverseRenderedFibers` traverses the fiber tree and determines which
+       * fibers have actually rendered.
        *
-       * a host fiber for `react-dom` is a fiber that has a DOM element
-       * as its `stateNode`.
+       * A fiber tree contains many fibers that may have not rendered. this
+       * can be because it bailed out (e.g. `useMemo`) or because it wasn't
+       * actually rendered (if <Child> re-rendered, then <Parent> didn't
+       * actually render, but exists in the fiber tree).
        */
-      const hostFiber = getNearestHostFiber(fiber);
-      highlightFiber(hostFiber);
-    });
-  },
-});
+      traverseRenderedFibers(root, (fiber) => {
+        /**
+         * `getNearestHostFiber` is a utility function that finds the
+         * nearest host fiber to a given fiber.
+         *
+         * a host fiber for `react-dom` is a fiber that has a DOM element
+         * as its `stateNode`.
+         */
+        const hostFiber = getNearestHostFiber(fiber);
+        highlightFiber(hostFiber);
+      });
+    },
+  }),
+);
 ```
 
 ## glossary
