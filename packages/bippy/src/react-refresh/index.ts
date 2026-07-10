@@ -1,6 +1,7 @@
 import { getType, traverseFiber } from "../core.js";
 import { getRDTHook, isClientEnvironment, onRendererInject } from "../rdt-hook.js";
 import type { Fiber, FiberRoot, ReactRenderer } from "../types.js";
+import { toUnsubscribe, type Unsubscribe } from "../unsubscribe.js";
 import { PENDING_HOT_UPDATE_MAX_AGE_MS } from "./constants.js";
 import { detectHmrTransport } from "./detect-hmr-transport.js";
 import { HmrTransport } from "./types.js";
@@ -124,7 +125,9 @@ const detectTransportForNewSubscriber = (): void => {
  * hot update, so this works with any bundler that uses react-refresh (Vite,
  * Next.js webpack, Next.js Turbopack, Metro) without bundler-specific code.
  * Returns an unsubscribe function (a no-op in non-client environments like
- * SSR, so callers never need an environment check).
+ * SSR, so callers never need an environment check). The returned function
+ * is also a `Disposable`, so it composes with other bippy subscriptions
+ * through `using`.
  *
  * The bundler's HMR transport is auto-detected and each refresh update is
  * augmented with the hot-updated source file paths it reported.
@@ -148,14 +151,14 @@ const detectTransportForNewSubscriber = (): void => {
  * Pair with `getSource(fiber)` from `bippy/source` to symbolicate the
  * source locations of `updatedFibers` when needed.
  */
-export const onReactRefresh = (onRefreshUpdate: ReactRefreshHandler): (() => void) => {
-  if (!isClientEnvironment()) return () => {};
+export const onReactRefresh = (onRefreshUpdate: ReactRefreshHandler): Unsubscribe => {
+  if (!isClientEnvironment()) return toUnsubscribe(() => {});
   ensureRefreshWired();
   if (refreshHandlers.size === 0) {
     detectTransportForNewSubscriber();
   }
   refreshHandlers.add(onRefreshUpdate);
-  return () => {
+  return toUnsubscribe(() => {
     refreshHandlers.delete(onRefreshUpdate);
-  };
+  });
 };

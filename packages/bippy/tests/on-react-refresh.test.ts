@@ -105,6 +105,19 @@ it("stops invoking the handler after unsubscribe even if the patch was layered o
   expect(onRefreshUpdate).not.toHaveBeenCalled();
 });
 
+it("the unsubscribe is a Disposable that removes the handler", () => {
+  const rdtHook = getRDTHook();
+  const fakeRenderer = createFakeRefreshRenderer();
+  rdtHook.inject(fakeRenderer);
+
+  const onRefreshUpdate = vi.fn();
+  const unsubscribe = onReactRefresh(onRefreshUpdate);
+  unsubscribe[Symbol.dispose]();
+
+  fakeRenderer.scheduleRefresh?.(fakeRoot, createFakeRendererUpdate());
+  expect(onRefreshUpdate).not.toHaveBeenCalled();
+});
+
 it("returns a no-op unsubscribe in non-client environments", () => {
   vi.stubGlobal("window", { navigator: { product: "Gecko" } });
   const unsubscribe = onReactRefresh(vi.fn());

@@ -4,6 +4,7 @@
 // make sure you import this file first before anything else (particularly React)
 
 import type { ReactDevToolsGlobalHook, ReactRenderer } from "./types.js";
+import { toUnsubscribe, type Unsubscribe } from "./unsubscribe.js";
 
 export const version = process.env.VERSION;
 export const BIPPY_INSTRUMENTATION_STRING = `bippy-${version}`;
@@ -85,12 +86,12 @@ const ensureInjectNotifiesListeners = (rdtHook: ReactDevToolsGlobalHook): void =
  * react-refresh, user code) observe renderers without stacking patches
  * whose restore order matters. Returns an unsubscribe function.
  */
-export const onRendererInject = (listener: (renderer: ReactRenderer) => void): (() => void) => {
+export const onRendererInject = (listener: (renderer: ReactRenderer) => void): Unsubscribe => {
   ensureInjectNotifiesListeners(getRDTHook());
   rendererInjectListeners.add(listener);
-  return () => {
+  return toUnsubscribe(() => {
     rendererInjectListeners.delete(listener);
-  };
+  });
 };
 
 export const installRDTHook = (onActive?: () => unknown): ReactDevToolsGlobalHook => {

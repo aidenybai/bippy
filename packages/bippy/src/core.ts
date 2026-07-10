@@ -21,6 +21,7 @@ import {
   isRealReactDevtools,
   onRendererInject,
 } from "./rdt-hook.js";
+import { toUnsubscribe, type Unsubscribe } from "./unsubscribe.js";
 
 // https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactWorkTags.js
 export const FunctionComponentTag = 0;
@@ -1142,6 +1143,8 @@ const ensureHookDispatchesToListeners = (rdtHook: ReactDevToolsGlobalHook): void
  * dispatches to a set of listeners, so multiple `instrument` calls compose
  * without stacking patches. Returns an unsubscribe function that removes
  * exactly the handlers this call registered.
+ * The returned function is also a `Disposable`, so it composes with other
+ * bippy subscriptions through `using`.
  * @example
  * const unsubscribe = instrument({
  *   onActive() {
@@ -1153,7 +1156,7 @@ const ensureHookDispatchesToListeners = (rdtHook: ReactDevToolsGlobalHook): void
  * });
  * unsubscribe();
  */
-export const instrument = (options: InstrumentationOptions): (() => void) => {
+export const instrument = (options: InstrumentationOptions): Unsubscribe => {
   const rdtHook = getRDTHook(options.onActive);
 
   rdtHook._instrumentationSource = options.name ?? BIPPY_INSTRUMENTATION_STRING;
@@ -1172,13 +1175,13 @@ export const instrument = (options: InstrumentationOptions): (() => void) => {
   if (onPostCommitFiberRoot) postCommitFiberRootListeners.add(onPostCommitFiberRoot);
   if (onScheduleFiberRoot) scheduleFiberRootListeners.add(onScheduleFiberRoot);
 
-  return () => {
+  return toUnsubscribe(() => {
     if (onActive) _onActiveListeners.delete(onActive);
     if (onCommitFiberRoot) commitFiberRootListeners.delete(onCommitFiberRoot);
     if (onCommitFiberUnmount) commitFiberUnmountListeners.delete(onCommitFiberUnmount);
     if (onPostCommitFiberRoot) postCommitFiberRootListeners.delete(onPostCommitFiberRoot);
     if (onScheduleFiberRoot) scheduleFiberRootListeners.delete(onScheduleFiberRoot);
-  };
+  });
 };
 
 // React stamps fibers under per-renderer random-suffix keys (`__reactFiber$<suffix>`);
@@ -1237,4 +1240,5 @@ export const getFiberFromHostInstance = <T>(hostInstance: T): Fiber | null => {
 };
 
 export * from "./rdt-hook.js";
+export * from "./unsubscribe.js";
 export type * from "./types.js";

@@ -78,6 +78,19 @@ it("onScheduleFiberRoot is called", () => {
   unsubscribe();
 });
 
+it("the unsubscribe is a Disposable usable with `using`", () => {
+  const onCommitFiberRoot = vi.fn();
+  {
+    using unsubscribe = instrument({ onCommitFiberRoot });
+    void unsubscribe;
+    render(<Example />);
+    expect(onCommitFiberRoot).toHaveBeenCalled();
+  }
+  onCommitFiberRoot.mockClear();
+  render(<Example />);
+  expect(onCommitFiberRoot).not.toHaveBeenCalled();
+});
+
 it("unsubscribe removes only this call's handlers", () => {
   const unsubscribedOnCommitFiberRoot = vi.fn();
   const activeOnCommitFiberRoot = vi.fn();
