@@ -15,7 +15,6 @@ import {
   getType,
   hasMemoCache,
   hasRDTHook,
-  HostComponentTag,
   instrument,
   isClientEnvironment,
   isCompositeFiber,
@@ -29,7 +28,6 @@ import {
   overrideContext,
   overrideHookState,
   overrideProps,
-  shouldFilterFiber,
   traverseContexts,
   traverseFiber,
   traverseProps,
@@ -307,16 +305,6 @@ const App = () => {
       isValidElement(<TestChild name="probe" count={0} />),
     );
     results["isValidElement-object"] = String(isValidElement({}));
-
-    if (testChildHostFiber) {
-      results["shouldFilterFiber-host"] = String(shouldFilterFiber(testChildHostFiber));
-      results["shouldFilterFiber-tag-is-host"] = String(
-        testChildHostFiber.tag === HostComponentTag,
-      );
-    }
-    if (testChildFiber) {
-      results["shouldFilterFiber-composite"] = String(shouldFilterFiber(testChildFiber));
-    }
 
     if (testContextConsumerFiber) {
       let providedContextValue: string | null = null;

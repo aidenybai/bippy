@@ -220,17 +220,6 @@ describe("bippy core functions on React Native", () => {
     });
   });
 
-  describe("fiber filtering", () => {
-    it("shouldFilterFiber keeps host component fibers", async () => {
-      await detoxExpect(element(by.id("result-shouldFilterFiber-tag-is-host"))).toHaveText("true");
-      await detoxExpect(element(by.id("result-shouldFilterFiber-host"))).toHaveText("false");
-    });
-
-    it("shouldFilterFiber keeps composite fibers", async () => {
-      await detoxExpect(element(by.id("result-shouldFilterFiber-composite"))).toHaveText("false");
-    });
-  });
-
   describe("memo cache", () => {
     it("hasMemoCache returns false for normal components", async () => {
       await detoxExpect(element(by.id("result-hasMemoCache"))).toHaveText("false");

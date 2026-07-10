@@ -302,7 +302,7 @@ export const getFiberStack = (fiber: Fiber): Fiber[] => {
 /**
  * Returns `true` if the {@link Fiber} should be filtered out during reconciliation.
  */
-export const shouldFilterFiber = (fiber: Fiber): boolean => {
+const shouldFilterFiber = (fiber: Fiber): boolean => {
   switch (fiber.tag) {
     case DehydratedSuspenseComponentTag:
       // TODO: ideally we would show dehydrated Suspense immediately.
