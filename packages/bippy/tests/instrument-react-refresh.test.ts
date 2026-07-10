@@ -30,7 +30,7 @@ it("reports updated and stale component types after the original scheduleRefresh
   rdtHook.inject(fakeRenderer);
 
   const onRefreshUpdate = vi.fn(() => callOrder.push("handler"));
-  const unsubscribe = instrumentReactRefresh(onRefreshUpdate);
+  const unsubscribe = instrumentReactRefresh({ onRefresh: onRefreshUpdate });
   expect(typeof unsubscribe).toBe("function");
 
   const rendererUpdate = createFakeRendererUpdate();
@@ -51,7 +51,7 @@ it("reports updated and stale component types after the original scheduleRefresh
 
 it("patches renderers injected after the listener was created", () => {
   const onRefreshUpdate = vi.fn();
-  const unsubscribe = instrumentReactRefresh(onRefreshUpdate);
+  const unsubscribe = instrumentReactRefresh({ onRefresh: onRefreshUpdate });
 
   const rdtHook = getRDTHook();
   const fakeRenderer = createFakeRefreshRenderer();
@@ -69,7 +69,7 @@ it("ignores renderers without scheduleRefresh", () => {
   rdtHook.inject(rendererWithoutRefresh);
 
   const onRefreshUpdate = vi.fn();
-  const unsubscribe = instrumentReactRefresh(onRefreshUpdate);
+  const unsubscribe = instrumentReactRefresh({ onRefresh: onRefreshUpdate });
   expect(rendererWithoutRefresh.scheduleRefresh).toBeUndefined();
   unsubscribe();
 });
@@ -81,7 +81,7 @@ it("unsubscribe stops the handler while the wrapper keeps forwarding to the orig
   rdtHook.inject(fakeRenderer);
 
   const onRefreshUpdate = vi.fn();
-  const unsubscribe = instrumentReactRefresh(onRefreshUpdate);
+  const unsubscribe = instrumentReactRefresh({ onRefresh: onRefreshUpdate });
   unsubscribe();
 
   fakeRenderer.scheduleRefresh?.(fakeRoot, createFakeRendererUpdate());
@@ -95,7 +95,7 @@ it("stops invoking the handler after unsubscribe even if the patch was layered o
   rdtHook.inject(fakeRenderer);
 
   const onRefreshUpdate = vi.fn();
-  const unsubscribe = instrumentReactRefresh(onRefreshUpdate);
+  const unsubscribe = instrumentReactRefresh({ onRefresh: onRefreshUpdate });
 
   const patchedScheduleRefresh = fakeRenderer.scheduleRefresh;
   fakeRenderer.scheduleRefresh = (root, update) => patchedScheduleRefresh?.(root, update);
@@ -111,7 +111,7 @@ it("the unsubscribe is a Disposable that removes the handler", () => {
   rdtHook.inject(fakeRenderer);
 
   const onRefreshUpdate = vi.fn();
-  const unsubscribe = instrumentReactRefresh(onRefreshUpdate);
+  const unsubscribe = instrumentReactRefresh({ onRefresh: onRefreshUpdate });
   unsubscribe[Symbol.dispose]();
 
   fakeRenderer.scheduleRefresh?.(fakeRoot, createFakeRendererUpdate());
@@ -120,7 +120,7 @@ it("the unsubscribe is a Disposable that removes the handler", () => {
 
 it("returns a no-op unsubscribe in non-client environments", () => {
   vi.stubGlobal("window", { navigator: { product: "Gecko" } });
-  const unsubscribe = instrumentReactRefresh(vi.fn());
+  const unsubscribe = instrumentReactRefresh({ onRefresh: vi.fn() });
   expect(typeof unsubscribe).toBe("function");
   expect(() => unsubscribe()).not.toThrow();
   vi.unstubAllGlobals();
@@ -139,7 +139,7 @@ it("collects the mounted fibers whose component types were hot-swapped", () => {
   rdtHook.inject(fakeRenderer);
 
   const onRefreshUpdate = vi.fn();
-  const unsubscribe = instrumentReactRefresh(onRefreshUpdate);
+  const unsubscribe = instrumentReactRefresh({ onRefresh: onRefreshUpdate });
 
   fakeRenderer.scheduleRefresh?.(rootWithTree as unknown as FiberRoot, createFakeRendererUpdate());
 
@@ -161,7 +161,7 @@ it("augments refresh updates with file paths from the detected hmr transport", a
   rdtHook.inject(fakeRenderer);
 
   const onRefreshUpdate = vi.fn();
-  const unsubscribe = instrumentReactRefresh(onRefreshUpdate);
+  const unsubscribe = instrumentReactRefresh({ onRefresh: onRefreshUpdate });
   await flushMicrotasks();
 
   window.webpackHotUpdate_N_E?.("chunk", { "(app-pages-browser)/./app/page.tsx": {} }, undefined);
@@ -184,7 +184,7 @@ it("shares pending file paths across roots in one refresh pass, then clears them
   rdtHook.inject(fakeRenderer);
 
   const onRefreshUpdate = vi.fn();
-  const unsubscribe = instrumentReactRefresh(onRefreshUpdate);
+  const unsubscribe = instrumentReactRefresh({ onRefresh: onRefreshUpdate });
   await flushMicrotasks();
 
   window.webpackHotUpdate_N_E?.("chunk", { "./app/card.tsx": {} }, undefined);
@@ -219,7 +219,7 @@ it("drops pending file paths older than the freshness window", async () => {
   rdtHook.inject(fakeRenderer);
 
   const onRefreshUpdate = vi.fn();
-  const unsubscribe = instrumentReactRefresh(onRefreshUpdate);
+  const unsubscribe = instrumentReactRefresh({ onRefresh: onRefreshUpdate });
   await vi.runOnlyPendingTimersAsync();
 
   window.webpackHotUpdate_N_E?.("chunk", { "./app/stale.tsx": {} }, undefined);

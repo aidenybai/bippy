@@ -453,26 +453,28 @@ const App = () => {
 
   useEffect(() => {
     let refreshCount = 0;
-    const unsubscribeRefresh = instrumentReactRefresh((update) => {
-      refreshCount++;
-      const updatedNames = update.updatedComponents
-        .map((componentType) => getDisplayName(componentType) ?? "unknown")
-        .join(",");
-      console.log(
-        `[bippy-hmr] refresh #${refreshCount} updated=[${updatedNames}] fibers=${update.updatedFibers.length} paths=[${update.filePaths.join(",")}]`,
-      );
-      setHmrResults((previousResults) => ({
-        ...previousResults,
-        "refresh-count": String(refreshCount),
-        "refresh-last-update": updatedNames,
-        "refresh-last-fibers": update.updatedFibers
-          .map((updatedFiber) => getDisplayName(updatedFiber.type) ?? "unknown")
-          .join(","),
-        "refresh-fibers-valid": String(
-          update.updatedFibers.every((updatedFiber) => isFiber(updatedFiber)),
-        ),
-        "refresh-last-paths": update.filePaths.join(","),
-      }));
+    const unsubscribeRefresh = instrumentReactRefresh({
+      onRefresh: (update) => {
+        refreshCount++;
+        const updatedNames = update.updatedComponents
+          .map((componentType) => getDisplayName(componentType) ?? "unknown")
+          .join(",");
+        console.log(
+          `[bippy-hmr] refresh #${refreshCount} updated=[${updatedNames}] fibers=${update.updatedFibers.length} paths=[${update.filePaths.join(",")}]`,
+        );
+        setHmrResults((previousResults) => ({
+          ...previousResults,
+          "refresh-count": String(refreshCount),
+          "refresh-last-update": updatedNames,
+          "refresh-last-fibers": update.updatedFibers
+            .map((updatedFiber) => getDisplayName(updatedFiber.type) ?? "unknown")
+            .join(","),
+          "refresh-fibers-valid": String(
+            update.updatedFibers.every((updatedFiber) => isFiber(updatedFiber)),
+          ),
+          "refresh-last-paths": update.filePaths.join(","),
+        }));
+      },
     });
     const rdtHook = getRDTHook();
     const rendererDiagnostics = Array.from(

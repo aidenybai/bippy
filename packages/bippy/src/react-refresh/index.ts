@@ -30,6 +30,10 @@ export interface ReactRefreshHandler {
   (update: ReactRefreshUpdate): void;
 }
 
+export interface ReactRefreshInstrumentationOptions {
+  onRefresh?: ReactRefreshHandler;
+}
+
 const collectFibersByComponentType = (root: FiberRoot, componentTypes: Set<unknown>): Fiber[] => {
   if (componentTypes.size === 0 || !root.current) return [];
   const matchedFibers: Fiber[] = [];
@@ -139,11 +143,13 @@ const detectTransportForNewSubscriber = (): void => {
  *
  * @example
  * ```ts
- * const unsubscribe = instrumentReactRefresh((update) => {
- *   for (const fiber of update.updatedFibers) {
- *     console.log("hot updated:", getDisplayName(fiber.type));
- *   }
- *   console.log("changed files:", update.filePaths);
+ * const unsubscribe = instrumentReactRefresh({
+ *   onRefresh(update) {
+ *     for (const fiber of update.updatedFibers) {
+ *       console.log("hot updated:", getDisplayName(fiber.type));
+ *     }
+ *     console.log("changed files:", update.filePaths);
+ *   },
  * });
  * unsubscribe();
  * ```
@@ -151,14 +157,17 @@ const detectTransportForNewSubscriber = (): void => {
  * Pair with `getSource(fiber)` from `bippy/source` to symbolicate the
  * source locations of `updatedFibers` when needed.
  */
-export const instrumentReactRefresh = (onRefreshUpdate: ReactRefreshHandler): Unsubscribe => {
-  if (!isClientEnvironment()) return toUnsubscribe(() => {});
+export const instrumentReactRefresh = (
+  options: ReactRefreshInstrumentationOptions,
+): Unsubscribe => {
+  const { onRefresh } = options;
+  if (!onRefresh || !isClientEnvironment()) return toUnsubscribe(() => {});
   ensureRefreshWired();
   if (refreshHandlers.size === 0) {
     detectTransportForNewSubscriber();
   }
-  refreshHandlers.add(onRefreshUpdate);
+  refreshHandlers.add(onRefresh);
   return toUnsubscribe(() => {
-    refreshHandlers.delete(onRefreshUpdate);
+    refreshHandlers.delete(onRefresh);
   });
 };

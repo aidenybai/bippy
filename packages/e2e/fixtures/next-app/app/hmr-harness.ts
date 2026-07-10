@@ -40,10 +40,12 @@ export const installHmrHarness = () => {
     hasRefreshListener: false,
     secondListenerUpdatedNames: [],
     installSecondListener: () => {
-      unsubscribeSecondListener ??= instrumentReactRefresh((update) => {
-        for (const componentType of update.updatedComponents) {
-          harness.secondListenerUpdatedNames.push(getDisplayName(componentType) ?? "unknown");
-        }
+      unsubscribeSecondListener ??= instrumentReactRefresh({
+        onRefresh: (update) => {
+          for (const componentType of update.updatedComponents) {
+            harness.secondListenerUpdatedNames.push(getDisplayName(componentType) ?? "unknown");
+          }
+        },
       });
       return true;
     },
@@ -54,19 +56,25 @@ export const installHmrHarness = () => {
   };
   window.__BIPPY_HMR__ = harness;
 
-  instrumentReactRefresh(async (update) => {
-    const record: BippyRefreshUpdateRecord = {
-      areUpdatedFibersValid: update.updatedFibers.every((fiber) => isFiber(fiber)),
-      filePaths: update.filePaths,
-      staleFiberNames: update.staleFibers.map((fiber) => getDisplayName(fiber.type)),
-      staleNames: update.staleComponents.map((componentType) => getDisplayName(componentType)),
-      updatedFiberNames: update.updatedFibers.map((fiber) => getDisplayName(fiber.type)),
-      updatedNames: update.updatedComponents.map((componentType) => getDisplayName(componentType)),
-      updatedSourceFileNames: [],
-    };
-    harness.refreshUpdates.push(record);
-    const updatedSources = await Promise.all(update.updatedFibers.map((fiber) => getSource(fiber)));
-    record.updatedSourceFileNames = updatedSources.map((source) => source?.fileName ?? null);
+  instrumentReactRefresh({
+    onRefresh: async (update) => {
+      const record: BippyRefreshUpdateRecord = {
+        areUpdatedFibersValid: update.updatedFibers.every((fiber) => isFiber(fiber)),
+        filePaths: update.filePaths,
+        staleFiberNames: update.staleFibers.map((fiber) => getDisplayName(fiber.type)),
+        staleNames: update.staleComponents.map((componentType) => getDisplayName(componentType)),
+        updatedFiberNames: update.updatedFibers.map((fiber) => getDisplayName(fiber.type)),
+        updatedNames: update.updatedComponents.map((componentType) =>
+          getDisplayName(componentType),
+        ),
+        updatedSourceFileNames: [],
+      };
+      harness.refreshUpdates.push(record);
+      const updatedSources = await Promise.all(
+        update.updatedFibers.map((fiber) => getSource(fiber)),
+      );
+      record.updatedSourceFileNames = updatedSources.map((source) => source?.fileName ?? null);
+    },
   });
   harness.hasRefreshListener = true;
 };

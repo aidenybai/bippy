@@ -11,7 +11,7 @@ describe("react-refresh under SSR (no window)", () => {
   });
 
   it("instrumentReactRefresh returns a no-op unsubscribe without throwing", () => {
-    const unsubscribe = instrumentReactRefresh(() => {});
+    const unsubscribe = instrumentReactRefresh({ onRefresh: () => {} });
     expect(typeof unsubscribe).toBe("function");
     expect(() => unsubscribe()).not.toThrow();
   });
