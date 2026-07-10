@@ -88,16 +88,17 @@ describe("bippy/react-refresh on React Native", () => {
       const originalSource = readFileSync(HMR_TARGET_FILE_PATH, "utf8");
       const currentMarker = readCurrentMarker(originalSource);
 
-      // watcher events can be dropped entirely on CI (FSEvents inside the
-      // macOS VM is lossy), so keep rewriting the file and recrawling
-      // watchman until the update lands instead of trusting a single save
+      // a single HMR push can be lost while the client is still initializing,
+      // and rewriting identical content is a no-op for Metro's incremental
+      // build (same hash, no new push) - so every retry must write a FRESH
+      // marker to force a new update, plus recrawl watchman since FSEvents
+      // inside the macOS VM can drop the file event entirely
       const saveAndAwaitMarker = async (): Promise<void> => {
-        const uniqueMarker = `hmr-marker-${Date.now()}`;
-        const modifiedSource = originalSource.replace(currentMarker, uniqueMarker);
         const deadlineMs = Date.now() + MARKER_APPLY_TIMEOUT_MS;
         let lastText = "";
         while (Date.now() < deadlineMs) {
-          writeFileSync(HMR_TARGET_FILE_PATH, modifiedSource);
+          const uniqueMarker = `hmr-marker-${Date.now()}`;
+          writeFileSync(HMR_TARGET_FILE_PATH, originalSource.replace(currentMarker, uniqueMarker));
           recrawlWatchmanRoots();
           const retryAtMs = Math.min(Date.now() + SAVE_RETRY_INTERVAL_MS, deadlineMs);
           while (Date.now() < retryAtMs) {
@@ -108,7 +109,10 @@ describe("bippy/react-refresh on React Native", () => {
             await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
           }
         }
-        throw new Error(`hmr marker never applied, last saw "${lastText}"`);
+        const refreshCount = await readOptionalElementText("result-refresh-count");
+        throw new Error(
+          `hmr marker never applied, last saw "${lastText}" (refresh-count=${refreshCount})`,
+        );
       };
 
       try {
