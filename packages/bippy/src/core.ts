@@ -855,81 +855,85 @@ export const traverseRenderedFibers = (root: FiberRoot, onRender: RenderHandler)
   rootInstance.prevFiber = fiber;
 };
 
-let _overrideProps: null | ReactRenderer["overrideProps"] = null;
-let _overrideHookState: null | ReactRenderer["overrideHookState"] = null;
-let _overrideContext: null | ReactRenderer["overrideContext"] = null;
+const overrideRenderers = new Set<ReactRenderer>();
+let areOverrideRenderersWired = false;
 
-const captureRendererOverrides = (renderer: ReactRenderer): void => {
-  try {
-    if (_overrideHookState) {
-      const prevOverrideHookState = _overrideHookState;
-      _overrideHookState = (fiber: Fiber, id: string, path: string[], value: unknown) => {
-        let current = fiber.memoizedState;
-        for (let i = 0; i < Number(id); i++) {
-          if (!current?.next) break;
-          current = current.next;
-        }
-
-        if (current?.queue) {
-          const queue = current.queue;
-          if (isPOJO(queue) && "dispatch" in queue) {
-            const dispatch = queue.dispatch as (value: unknown) => void;
-            dispatch(value);
-            return;
-          }
-        }
-
-        prevOverrideHookState(fiber, id, path, value);
-        renderer.overrideHookState?.(fiber, id, path, value);
-      };
-    } else if (renderer.overrideHookState) {
-      _overrideHookState = renderer.overrideHookState;
-    }
-
-    if (_overrideProps) {
-      const prevOverrideProps = _overrideProps;
-      _overrideProps = (fiber: Fiber, path: Array<string>, value: unknown) => {
-        prevOverrideProps(fiber, path, value);
-        renderer.overrideProps?.(fiber, path, value);
-      };
-    } else if (renderer.overrideProps) {
-      _overrideProps = renderer.overrideProps;
-    }
-
-    _overrideContext = (fiber: Fiber, contextType: unknown, path: string[], value: unknown) => {
-      let current: Fiber | null = fiber;
-      while (current) {
-        const type = current.type as { Provider?: unknown };
-        if (type === contextType || type?.Provider === contextType) {
-          if (_overrideProps) {
-            _overrideProps(current, ["value", ...path], value);
-            if (current.alternate) {
-              _overrideProps(current.alternate, ["value", ...path], value);
-            }
-          }
-          break;
-        }
-        current = current.return;
-      }
-    };
-  } catch {
-    /**/
-  }
-};
-
-let areOverrideMethodsWired = false;
-
-const injectOverrideMethods = (): void => {
-  if (areOverrideMethodsWired) return;
+const wireOverrideRenderers = (): void => {
+  if (areOverrideRenderersWired) return;
   if (!hasRDTHook()) return;
   const rdtHook = getRDTHook();
   if (!rdtHook?.renderers) return;
-  areOverrideMethodsWired = true;
+  areOverrideRenderersWired = true;
 
-  for (const [, renderer] of Array.from(rdtHook.renderers)) {
-    captureRendererOverrides(renderer);
+  ensureHookDispatchesToListeners(rdtHook);
+  for (const renderer of rdtHook.renderers.values()) {
+    overrideRenderers.add(renderer);
   }
-  onRendererInject(captureRendererOverrides);
+  onRendererInject((renderer) => {
+    overrideRenderers.add(renderer);
+  });
+};
+
+const getRootRenderer = (fiber: Fiber): ReactRenderer | null => {
+  if (!hasRDTHook()) return null;
+  let hostRootFiber = fiber;
+  while (hostRootFiber.return) {
+    hostRootFiber = hostRootFiber.return;
+  }
+  const rendererId = rootRendererIds.get(hostRootFiber.stateNode);
+  if (rendererId === undefined) return null;
+  return getRDTHook().renderers?.get(rendererId) ?? null;
+};
+
+// dispatch to the renderer that owns the fiber's root when known; renderers
+// that never committed through bippy's hook patch fall back to "try all",
+// which matches the pre-ownership behavior for single-renderer apps
+const resolveOverrideRenderers = (fiber: Fiber): ReactRenderer[] => {
+  wireOverrideRenderers();
+  const rootRenderer = getRootRenderer(fiber);
+  if (rootRenderer) return [rootRenderer];
+  return Array.from(overrideRenderers);
+};
+
+const applyPropsOverride = (
+  renderers: ReactRenderer[],
+  fiber: Fiber,
+  path: string[],
+  value: unknown,
+): void => {
+  for (const renderer of renderers) {
+    try {
+      renderer.overrideProps?.(fiber, path, value);
+    } catch {}
+  }
+};
+
+const getHookStateDispatch = (
+  fiber: Fiber,
+  hookIndex: number,
+): ((value: unknown) => void) | null => {
+  let hookState = fiber.memoizedState;
+  for (let i = 0; i < hookIndex; i++) {
+    if (!hookState?.next) return null;
+    hookState = hookState.next;
+  }
+  const queue = hookState?.queue;
+  if (isPOJO(queue) && typeof queue.dispatch === "function") {
+    return queue.dispatch as (value: unknown) => void;
+  }
+  return null;
+};
+
+const findContextProviderFiber = (fiber: Fiber, contextType: unknown): Fiber | null => {
+  let currentFiber: Fiber | null = fiber;
+  while (currentFiber) {
+    const fiberType = currentFiber.type;
+    if (fiberType === contextType || fiberType?.Provider === contextType) {
+      return currentFiber;
+    }
+    currentFiber = currentFiber.return;
+  }
+  return null;
 };
 
 const isPOJO = (maybePOJO: unknown): maybePOJO is Record<string, unknown> => {
@@ -964,53 +968,54 @@ const buildPathsFromValue = (
   return paths;
 };
 
+const buildValueWrites = (partialValue: unknown): Array<{ path: string[]; value: unknown }> =>
+  isPOJO(partialValue) ? buildPathsFromValue(partialValue) : [{ path: [], value: partialValue }];
+
 export const overrideProps = (fiber: Fiber, partialValue: Record<string, unknown>) => {
-  injectOverrideMethods();
-
-  const paths = buildPathsFromValue(partialValue);
-
-  for (const { path, value } of paths) {
-    try {
-      _overrideProps?.(fiber, path, value);
-    } catch {}
+  const renderers = resolveOverrideRenderers(fiber);
+  for (const { path, value } of buildValueWrites(partialValue)) {
+    applyPropsOverride(renderers, fiber, path, value);
   }
 };
 
 export const overrideHookState = (fiber: Fiber, id: number, partialValue: unknown) => {
-  injectOverrideMethods();
+  const renderers = resolveOverrideRenderers(fiber).filter((renderer) =>
+    Boolean(renderer.overrideHookState),
+  );
+  const writes = buildValueWrites(partialValue);
 
-  const hookId = String(id);
-
-  if (isPOJO(partialValue)) {
-    const paths = buildPathsFromValue(partialValue);
-
-    for (const { path, value } of paths) {
-      try {
-        _overrideHookState?.(fiber, hookId, path, value);
-      } catch {}
+  if (renderers.length > 0) {
+    const hookId = String(id);
+    for (const renderer of renderers) {
+      for (const { path, value } of writes) {
+        try {
+          renderer.overrideHookState?.(fiber, hookId, path, value);
+        } catch {}
+      }
     }
-  } else {
-    try {
-      _overrideHookState?.(fiber, hookId, [], partialValue);
-    } catch {}
+    return;
   }
+
+  // production renderers don't expose overrideHookState; dispatching through
+  // the hook's own queue still works there, but only for whole-value writes
+  // (a path write through dispatch would replace the entire hook state)
+  if (isPOJO(partialValue)) return;
+  const dispatch = getHookStateDispatch(fiber, id);
+  if (!dispatch) return;
+  try {
+    dispatch(partialValue);
+  } catch {}
 };
 
 export const overrideContext = (fiber: Fiber, contextType: unknown, partialValue: unknown) => {
-  injectOverrideMethods();
-
-  if (isPOJO(partialValue)) {
-    const paths = buildPathsFromValue(partialValue);
-
-    for (const { path, value } of paths) {
-      try {
-        _overrideContext?.(fiber, contextType, path, value);
-      } catch {}
+  const providerFiber = findContextProviderFiber(fiber, contextType);
+  if (!providerFiber) return;
+  const renderers = resolveOverrideRenderers(providerFiber);
+  for (const { path, value } of buildValueWrites(partialValue)) {
+    applyPropsOverride(renderers, providerFiber, ["value", ...path], value);
+    if (providerFiber.alternate) {
+      applyPropsOverride(renderers, providerFiber.alternate, ["value", ...path], value);
     }
-  } else {
-    try {
-      _overrideContext?.(fiber, contextType, [], partialValue);
-    } catch {}
   }
 };
 
@@ -1045,6 +1050,8 @@ interface HookDispatchers {
 
 const hookDispatchers = new WeakMap<ReactDevToolsGlobalHook, Partial<HookDispatchers>>();
 
+const rootRendererIds = new WeakMap<FiberRoot, number>();
+
 // each hook event is dispatched from a single re-installable wrapper. If
 // something overwrites the hook method (devtools, direct assignment), the
 // next instrument() call installs a fresh wrapper over it; a superseded
@@ -1067,6 +1074,7 @@ const ensureHookDispatchesToListeners = (rdtHook: ReactDevToolsGlobalHook): void
       prevOnCommitFiberRoot?.(rendererID, root, priority);
       if (hookDispatchers.get(rdtHook)?.onCommitFiberRoot !== dispatchCommitFiberRoot) return;
       _fiberRoots.add(root);
+      rootRendererIds.set(root, rendererID);
       for (const listener of commitFiberRootListeners) {
         listener(rendererID, root, priority);
       }

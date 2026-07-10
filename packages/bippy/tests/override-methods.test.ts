@@ -79,26 +79,22 @@ it("should treat non-plain-object props as a single value", () => {
   expect(firstOverrideProps).toHaveBeenCalledWith(fiber, [], exoticValue);
 });
 
-it("should dispatch through the hook queue when available", () => {
+it("should prefer renderer overrideHookState over the hook queue dispatch", () => {
   const dispatch = vi.fn();
   const fiber = createMockFiber({
     memoizedState: { next: { queue: { dispatch } } },
   });
   overrideHookState(fiber, 1, { value: 5 });
-  expect(dispatch).toHaveBeenCalledWith(5);
+  expect(dispatch).not.toHaveBeenCalled();
+  expect(firstOverrideHookState).toHaveBeenCalledWith(fiber, "1", ["value"], 5);
+  expect(secondOverrideHookState).toHaveBeenCalledWith(fiber, "1", ["value"], 5);
 });
 
-it("should fall back to renderer overrideHookState when there is no dispatch", () => {
+it("should apply path writes through every capable renderer", () => {
   const fiber = createMockFiber({ memoizedState: { queue: {} } });
   overrideHookState(fiber, 0, { value: 5 });
   expect(firstOverrideHookState).toHaveBeenCalledWith(fiber, "0", ["value"], 5);
   expect(secondOverrideHookState).toHaveBeenCalledWith(fiber, "0", ["value"], 5);
-});
-
-it("should stop walking hook states when the chain ends", () => {
-  const fiber = createMockFiber({ memoizedState: { next: null } });
-  overrideHookState(fiber, 3, { value: 5 });
-  expect(firstOverrideHookState).toHaveBeenCalledWith(fiber, "3", ["value"], 5);
 });
 
 it("should treat non-plain-object hook state as a single value", () => {
