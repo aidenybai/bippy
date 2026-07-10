@@ -1,11 +1,38 @@
 name: E2E Tests
 
-on: [push, pull_request]
+# pull_request covers branches; running push builds too would double-bill
+# every PR commit (and macos runners bill at 10x linux rates)
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    outputs:
+      native: ${{ steps.filter.outputs.native }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            native:
+              - "packages/bippy/**"
+              - "packages/e2e/**"
+              - ".github/workflows/e2e.yml"
+              - "pnpm-lock.yaml"
+
   e2e-web:
     runs-on: ubuntu-latest
     steps:
@@ -33,7 +60,14 @@ jobs:
 
   e2e-native:
     runs-on: macos-latest
-    if: github.event_name == 'workflow_dispatch'
+    needs: changes
+    # macos runners bill at 10x linux rates, so skip unless native-relevant
+    # paths changed (or the run was requested manually)
+    if: >-
+      !cancelled() && (
+        github.event_name == 'workflow_dispatch' ||
+        (github.event_name == 'pull_request' && needs.changes.outputs.native == 'true')
+      )
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -42,15 +76,108 @@ jobs:
         with:
           node-version: 22
           cache: "pnpm"
-      - run: pnpm install --frozen-lockfile
+      - name: Pre-boot simulator
+        # boot early so the simulator warms up during dependency install and
+        # the xcode build instead of eating into detox's test time
+        run: |
+          device_name=$(xcrun simctl list devices available | grep -oE 'iPhone [A-Za-z0-9 ]+' | head -1 | xargs)
+          echo "Pre-booting simulator: $device_name"
+          echo "DETOX_DEVICE_NAME=$device_name" >> "$GITHUB_ENV"
+          xcrun simctl boot "$device_name" || true
+      # linking ~55k files from the pnpm store takes ~6 minutes on the slow
+      # macos runner disk; restoring node_modules directly skips most of it
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+            packages/e2e/fixtures/*/node_modules
+            apps/*/node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - run: pnpm install --frozen-lockfile --prefer-offline
       - run: pnpm build
-      - name: Install applesimutils
-        run: brew tap wix/brew && brew install applesimutils
+      - name: Install applesimutils and watchman
+        # watchman: node fs.watch (FSEvents) delivers no events on the
+        # virtualized macOS runners, so Metro never sees file saves and fast
+        # refresh silently does nothing; Metro prefers watchman when installed
+        run: brew tap wix/brew && brew trust wix/brew && brew install applesimutils watchman
+      - name: Get Xcode version
+        id: xcode
+        run: echo "version=$(xcodebuild -version | tr -d '\n' | tr ' ' '-')" >> "$GITHUB_OUTPUT"
+      # the .app binary only changes when native deps or app config change;
+      # all fixture/bippy JS is served by Metro at runtime, so skipping the
+      # ~8 min prebuild + xcodebuild is safe for source-only changes
+      - name: Cache iOS app binary
+        id: app-cache
+        uses: actions/cache@v4
+        with:
+          path: packages/e2e/fixtures/expo-app/ios/build/Build/Products/Debug-iphonesimulator/bippye2eexpo.app
+          key: expo-app-${{ steps.xcode.outputs.version }}-${{ hashFiles('pnpm-lock.yaml', 'packages/e2e/fixtures/expo-app/app.json', 'packages/e2e/fixtures/expo-app/package.json') }}
+      - name: Cache CocoaPods downloads
+        if: steps.app-cache.outputs.cache-hit != 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/CocoaPods
+          key: cocoapods-${{ runner.os }}-${{ hashFiles('packages/e2e/fixtures/expo-app/package.json') }}
+          restore-keys: cocoapods-${{ runner.os }}-
       - name: Prebuild and build iOS app
+        if: steps.app-cache.outputs.cache-hit != 'true'
         run: |
           cd packages/e2e/fixtures/expo-app
           npx expo prebuild --platform ios --clean
           xcodebuild -workspace ios/bippye2eexpo.xcworkspace -scheme bippye2eexpo -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build -quiet
-      - name: Run Detox tests
-        run: npx detox test --configuration ios.sim.debug --headless
+      - name: Start Metro
+        working-directory: packages/e2e/fixtures/expo-app
+        # CI=false: expo disables file watching (and therefore fast refresh)
+        # when it detects CI, but the refresh spec saves files at runtime.
+        # watchman must be warmed up (daemon running, repo root watched)
+        # before Metro starts: if watchman's capability check is slow, Metro
+        # silently falls back to its FSEvents watcher, and FSEvents drops
+        # events on these virtualized runners. The refresh spec recovers
+        # dropped events with `watchman debug-recrawl`, which only works when
+        # Metro is subscribed through watchman.
+        run: |
+          watchman version
+          watchman watch-project "$GITHUB_WORKSPACE"
+          nohup bash -c 'env CI=false DEBUG="Metro:Watcher,Metro:WatchmanWatcher,Metro:NativeWatcher,Metro:HMR" npx expo start --port 8081 2>&1 | while IFS= read -r line; do printf "%s %s\n" "$(date +%T)" "$line"; done' > /tmp/metro.log 2>&1 &
+          for attempt in $(seq 1 60); do
+            if curl -sf http://localhost:8081/status | grep -q "packager-status:running"; then
+              echo "Metro is up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Metro failed to start" >&2
+          cat /tmp/metro.log >&2
+          exit 1
+      - name: Cache Detox framework
+        id: detox-framework-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Detox/ios
+          key: detox-framework-${{ steps.xcode.outputs.version }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Build Detox framework cache
+        if: steps.detox-framework-cache.outputs.cache-hit != 'true'
+        run: npx detox clean-framework-cache && npx detox build-framework-cache
         working-directory: packages/e2e
+      - name: Run Detox tests
+        working-directory: packages/e2e
+        run: |
+          echo "Using simulator: $DETOX_DEVICE_NAME"
+          npx detox test --configuration ios.sim.debug --device-name "$DETOX_DEVICE_NAME" --headless --record-logs failing
+      - name: Upload Metro log
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: metro-log
+          path: /tmp/metro.log
+          retention-days: 14
+      - name: Upload Detox artifacts
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: detox-artifacts
+          path: packages/e2e/artifacts/
+          retention-days: 14
+          if-no-files-found: ignore

@@ -1,0 +1,461 @@
+import "../src/index.js"; // KEEP THIS LINE ON TOP
+
+import { render } from "@testing-library/react";
+import React, { useState } from "react";
+import { expect, it } from "vitest";
+import type { Fiber } from "../src/types.js";
+import { instrument } from "../src/index.js";
+import { getSource, getOwnerStack, getParentStack, getSourceMap } from "../src/source/index.js";
+import { sourceMapCache } from "../src/source/symbolication.js";
+import { normalizeFileName } from "../src/source/get-source.js";
+import { extractLocation, parseStack, type StackFrame } from "../src/source/parse-stack.js";
+
+const mockFetch = (): Promise<Response> => {
+  return Promise.resolve(
+    new Response(JSON.stringify({}), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    }),
+  );
+};
+
+// HACK: transforms (vite, coverage instrumentation) shift runtime line numbers,
+// so derive the expected call-site frame by throwing inside the component the
+// same way the owner-stack fallback does instead of hardcoding line numbers
+const getComponentThrowFrame = (component: unknown): StackFrame => {
+  const componentFunction = component as () => unknown;
+  const previousPrepareStackTrace = Error.prepareStackTrace;
+  (Error as { prepareStackTrace?: typeof Error.prepareStackTrace }).prepareStackTrace = undefined;
+  try {
+    componentFunction();
+  } catch (thrownError) {
+    const frames = parseStack((thrownError as Error).stack ?? "", { includeInElement: false });
+    const componentFrame = frames.find((frame) =>
+      frame.functionName?.includes(componentFunction.name),
+    );
+    if (componentFrame) return componentFrame;
+  } finally {
+    Error.prepareStackTrace = previousPrepareStackTrace;
+  }
+  throw new Error(`Could not capture a throw frame for ${componentFunction.name}`);
+};
+
+const SimpleComponent = () => {
+  return <div>Hello</div>;
+};
+
+const ComponentWithProps = ({ message }: { message: string }) => {
+  return <div>{message}</div>;
+};
+
+const ComponentWithHooks = () => {
+  const [count] = useState(0);
+  return <div>{count}</div>;
+};
+
+const ExampleWithChild = ({ children }: { children: React.ReactNode }) => {
+  return <div>{children}</div>;
+};
+
+const OwnerParent = () => {
+  return <ComponentWithProps message="from-owner" />;
+};
+
+it("getOwnerStack should return stack for simple component", async () => {
+  let capturedFiber: Fiber | null = null;
+  instrument({
+    onCommitFiberRoot: (_rendererID, fiberRoot) => {
+      capturedFiber = fiberRoot.current.child;
+    },
+  });
+  render(<SimpleComponent />);
+
+  const result = await getOwnerStack(capturedFiber as unknown as Fiber);
+
+  expect(result).toHaveLength(1);
+  expect(result[0].functionName).toBe("SimpleComponent");
+  expect(result[0].source).toBe("    in SimpleComponent");
+});
+
+it("getOwnerStack should return stack for component with props", async () => {
+  let capturedFiber: Fiber | null = null;
+  instrument({
+    onCommitFiberRoot: (_rendererID, fiberRoot) => {
+      capturedFiber = fiberRoot.current.child;
+    },
+  });
+  render(<ComponentWithProps message="test" />);
+
+  const result = await getOwnerStack(capturedFiber as unknown as Fiber);
+
+  const expectedFrame = getComponentThrowFrame(ComponentWithProps);
+  expect(result).toHaveLength(1);
+  expect(result[0].functionName).toBe("ComponentWithProps");
+  expect(result[0].fileName).toContain("source.test.tsx");
+  expect(result[0].lineNumber).toBe(expectedFrame.lineNumber);
+  expect(result[0].columnNumber).toBe(expectedFrame.columnNumber);
+});
+
+it("getOwnerStack should return stack for component with hooks", async () => {
+  let capturedFiber: Fiber | null = null;
+  instrument({
+    onCommitFiberRoot: (_rendererID, fiberRoot) => {
+      capturedFiber = fiberRoot.current.child;
+    },
+  });
+  render(<ComponentWithHooks />);
+
+  const result = await getOwnerStack(capturedFiber as unknown as Fiber);
+
+  const expectedFrame = getComponentThrowFrame(ComponentWithHooks);
+  expect(result).toHaveLength(1);
+  expect(result[0].functionName).toBe("ComponentWithHooks");
+  expect(result[0].fileName).toContain("source.test.tsx");
+  expect(result[0].lineNumber).toBe(expectedFrame.lineNumber);
+  expect(result[0].columnNumber).toBe(expectedFrame.columnNumber);
+});
+
+it("getOwnerStack should return stack for nested component with props", async () => {
+  let capturedFiber: Fiber | null = null;
+  instrument({
+    onCommitFiberRoot: (_rendererID, fiberRoot) => {
+      capturedFiber = fiberRoot.current.child.child.child;
+    },
+  });
+  render(
+    <ExampleWithChild>
+      <ComponentWithProps message="test" />
+    </ExampleWithChild>,
+  );
+
+  const result = await getOwnerStack(capturedFiber as unknown as Fiber);
+
+  const expectedPropsFrame = getComponentThrowFrame(ComponentWithProps);
+  const expectedChildFrame = getComponentThrowFrame(ExampleWithChild);
+  expect(result).toHaveLength(3);
+  expect(result[0].functionName).toBe("ComponentWithProps");
+  expect(result[0].fileName).toContain("source.test.tsx");
+  expect(result[0].lineNumber).toBe(expectedPropsFrame.lineNumber);
+  expect(result[0].columnNumber).toBe(expectedPropsFrame.columnNumber);
+  expect(result[1].functionName).toBe("div");
+  expect(result[2].functionName).toBe("ExampleWithChild");
+  expect(result[2].fileName).toContain("source.test.tsx");
+  expect(result[2].lineNumber).toBe(expectedChildFrame.lineNumber);
+  expect(result[2].columnNumber).toBe(expectedChildFrame.columnNumber);
+});
+
+it("getOwnerStack should use debug stacks for fibers created during a render", async () => {
+  let capturedFiber: Fiber | null = null;
+  instrument({
+    onCommitFiberRoot: (_rendererID, fiberRoot) => {
+      capturedFiber = fiberRoot.current.child?.child ?? null;
+    },
+  });
+  render(<OwnerParent />);
+
+  const result = await getOwnerStack(capturedFiber as unknown as Fiber);
+
+  expect(result.length).toBeGreaterThanOrEqual(2);
+  expect(result[0].functionName).toBe("ComponentWithProps");
+  expect(result[1].fileName).toContain("source.test.tsx");
+  expect(result[1].functionName).toContain("OwnerParent");
+  expect(result[1].lineNumber).toBeGreaterThan(0);
+});
+
+it("getParentStack should include wrapper parents that do not own the fiber", async () => {
+  let capturedFiber: Fiber | null = null;
+  instrument({
+    onCommitFiberRoot: (_rendererID, fiberRoot) => {
+      capturedFiber = fiberRoot.current.child.child.child;
+    },
+  });
+  render(
+    <ExampleWithChild>
+      <ComponentWithProps message="test" />
+    </ExampleWithChild>,
+  );
+
+  const result = await getParentStack(capturedFiber as unknown as Fiber);
+
+  const functionNames = result.map((frame) => frame.functionName);
+  expect(functionNames).toContain("ComponentWithProps");
+  expect(functionNames).toContain("ExampleWithChild");
+});
+
+it("getSource should return the usage site from the fiber's own debug stack", async () => {
+  let capturedFiber: Fiber | null = null;
+  instrument({
+    onCommitFiberRoot: (_rendererID, fiberRoot) => {
+      capturedFiber = fiberRoot.current.child?.child ?? null;
+    },
+  });
+  render(<OwnerParent />);
+
+  const result = await getSource(capturedFiber as unknown as Fiber, false, mockFetch);
+
+  expect(result).not.toBeNull();
+  expect(result?.fileName).toContain("source.test.tsx");
+  expect(result?.lineNumber).toBeGreaterThan(0);
+});
+
+it("getSource should resolve a simple component without props/hooks via an owned child's debug stack", async () => {
+  let capturedFiber: Fiber | null = null;
+  instrument({
+    onCommitFiberRoot: (_rendererID, fiberRoot) => {
+      capturedFiber = fiberRoot.current.child;
+    },
+  });
+  render(<SimpleComponent />);
+
+  const result = await getSource(capturedFiber as unknown as Fiber, false, mockFetch);
+
+  expect(result).not.toBeNull();
+  expect(result?.fileName).toContain("source.test.tsx");
+  expect(result?.lineNumber).toBeGreaterThan(0);
+});
+
+it("getSource should work for component with props", async () => {
+  let capturedFiber: Fiber | null = null;
+  instrument({
+    onCommitFiberRoot: (_rendererID, fiberRoot) => {
+      capturedFiber = fiberRoot.current.child;
+    },
+  });
+  render(<ComponentWithProps message="test" />);
+
+  const result = await getSource(capturedFiber as unknown as Fiber, false, mockFetch);
+
+  expect(result?.fileName).toBeTruthy();
+  expect(typeof result?.fileName).toBe("string");
+});
+
+it("getSource should work for component with hooks", async () => {
+  let capturedFiber: Fiber | null = null;
+  instrument({
+    onCommitFiberRoot: (_rendererID, fiberRoot) => {
+      capturedFiber = fiberRoot.current.child;
+    },
+  });
+  render(<ComponentWithHooks />);
+
+  const result = await getSource(capturedFiber as unknown as Fiber, false, mockFetch);
+
+  expect(result?.fileName).toBeTruthy();
+  expect(typeof result?.fileName).toBe("string");
+});
+
+it("getSource should work for nested component with props", async () => {
+  let capturedFiber: Fiber | null = null;
+  instrument({
+    onCommitFiberRoot: (_rendererID, fiberRoot) => {
+      capturedFiber = fiberRoot.current.child.child.child;
+    },
+  });
+  render(
+    <ExampleWithChild>
+      <ComponentWithProps message="test" />
+    </ExampleWithChild>,
+  );
+
+  const result = await getSource(capturedFiber as unknown as Fiber, false, mockFetch);
+
+  expect(result?.fileName).toBeTruthy();
+  expect(typeof result?.fileName).toBe("string");
+});
+
+it("normalizeFileName should strip webpack-internal:// prefix", () => {
+  const input = "webpack-internal:///app-pages-browser/./src/components/providers.tsx";
+  const result = normalizeFileName(input);
+  expect(result).toBe("./src/components/providers.tsx");
+});
+
+it("normalizeFileName should strip webpack-internal:// with different app-pages-browser path", () => {
+  const input =
+    "webpack-internal:///app-pages-browser/./src/components/sections/hero/project-showcase.tsx";
+  const result = normalizeFileName(input);
+  expect(result).toBe("./src/components/sections/hero/project-showcase.tsx");
+});
+
+it("normalizeFileName should strip webpack:// prefix", () => {
+  const input = "webpack://./src/app.tsx";
+  const result = normalizeFileName(input);
+  expect(result).toBe("./src/app.tsx");
+});
+
+it("normalizeFileName should strip /app-pages-browser/ prefix", () => {
+  const input = "/app-pages-browser/./src/components/test.tsx";
+  const result = normalizeFileName(input);
+  expect(result).toBe("./src/components/test.tsx");
+});
+
+it("normalizeFileName should strip /(app-pages-browser)/ prefix (Next.js App Router)", () => {
+  const input = "/(app-pages-browser)/./src/components/test.tsx";
+  const result = normalizeFileName(input);
+  expect(result).toBe("./src/components/test.tsx");
+});
+
+it("normalizeFileName should strip webpack-internal:// with (app-pages-browser) parens", () => {
+  const input = "webpack-internal:///(app-pages-browser)/./src/app/components/Button.tsx";
+  const result = normalizeFileName(input);
+  expect(result).toBe("./src/app/components/Button.tsx");
+});
+
+it("normalizeFileName should strip webpack-internal:// with (app-pages-browser) without ./ prefix", () => {
+  const input = "webpack-internal:///(app-pages-browser)/app/components/label/Label/Label.tsx";
+  const result = normalizeFileName(input);
+  expect(result).toBe("app/components/label/Label/Label.tsx");
+});
+
+it("normalizeFileName should not strip route group parens inside app directory", () => {
+  const input = "webpack-internal:///(app-pages-browser)/./app/(marketing)/about/page.tsx";
+  const result = normalizeFileName(input);
+  expect(result).toBe("./app/(marketing)/about/page.tsx");
+});
+
+it("normalizeFileName should strip http:// host prefix (Vite dev server)", () => {
+  const input = "http://localhost:5173/src/features/my-component.tsx";
+  const result = normalizeFileName(input);
+  expect(result).toBe("/src/features/my-component.tsx");
+});
+
+it("normalizeFileName should strip single-segment base path", () => {
+  const input = "http://localhost:5173/dashboard/src/routes/orders/button.tsx";
+  const result = normalizeFileName(input);
+  expect(result).toBe("/src/routes/orders/button.tsx");
+});
+
+it("normalizeFileName should keep multi-segment base path", () => {
+  const input = "http://localhost:5173/dashboard/admin/src/routes/orders/button.tsx";
+  const result = normalizeFileName(input);
+  expect(result).toBe("/dashboard/admin/src/routes/orders/button.tsx");
+});
+
+it("normalizeFileName should keep same path when root has no base path", () => {
+  const input = "http://localhost:5173/src/app.tsx";
+  const result = normalizeFileName(input);
+  expect(result).toBe("/src/app.tsx");
+});
+
+it("normalizeFileName should keep same path when /src is the end", () => {
+  const input = "http://localhost:5173/src";
+  const result = normalizeFileName(input);
+  expect(result).toBe("/src");
+});
+
+it("normalizeFileName should keep single-segment base path for non-source file", () => {
+  const input = "http://localhost:5173/dashboard/assets/main.css";
+  const result = normalizeFileName(input);
+  expect(result).toBe("/dashboard/assets/main.css");
+});
+
+it("normalizeFileName should strip single-segment base path for long segment", () => {
+  const input = "http://localhost:5173/feature/src/page.tsx";
+  const result = normalizeFileName(input);
+  expect(result).toBe("/src/page.tsx");
+});
+
+it("normalizeFileName should keep single-segment base path for /@fs/", () => {
+  const input = "https://example.local:5173/@fs/Users/me/proj/src/app.tsx";
+  const result = normalizeFileName(input);
+  expect(result).toBe("/@fs/Users/me/proj/src/app.tsx");
+});
+
+it("normalizeFileName should strip http:// host prefix and query parameters", () => {
+  const input = "http://127.0.0.1:5173/src/main.tsx?t=123";
+  const result = normalizeFileName(input);
+  expect(result).toBe("/src/main.tsx");
+});
+
+it("extractLocation should strip outer parentheses from Chrome stack trace format", () => {
+  const result = extractLocation("(file.js:10:5)");
+  expect(result).toEqual(["file.js", "10", "5"]);
+});
+
+it("extractLocation should preserve parentheses in Next.js route group paths", () => {
+  const result = extractLocation(
+    "/_next/static/chunks/09f9e_(docs)_some-page__components.js:42:15",
+  );
+  expect(result).toEqual([
+    "/_next/static/chunks/09f9e_(docs)_some-page__components.js",
+    "42",
+    "15",
+  ]);
+});
+
+it("extractLocation should handle Chrome stack trace with route group path", () => {
+  const result = extractLocation("(/_next/static/chunks/(docs)/page.js:10:5)");
+  expect(result).toEqual(["/_next/static/chunks/(docs)/page.js", "10", "5"]);
+});
+
+it("extractLocation should handle path without any parentheses", () => {
+  const result = extractLocation("/src/components/button.tsx:25:10");
+  expect(result).toEqual(["/src/components/button.tsx", "25", "10"]);
+});
+
+it("extractLocation should handle path starting with route group (no Chrome wrap)", () => {
+  const result = extractLocation("(docs)/page.tsx:10:5");
+  expect(result).toEqual(["(docs)/page.tsx", "10", "5"]);
+});
+
+it("extractLocation should handle file with parentheses in name", () => {
+  const result = extractLocation("file(1).js:10:5");
+  expect(result).toEqual(["file(1).js", "10", "5"]);
+});
+
+const SOURCE_MAP_BODY = JSON.stringify({
+  version: 3,
+  sources: ["app.tsx"],
+  sourcesContent: ["const value = 1;"],
+  names: [],
+  mappings: "",
+});
+
+const bundleResponse = (sourceMappingUrl: string): Response =>
+  new Response(`const value = 1;\n//# sourceMappingURL=${sourceMappingUrl}`, { status: 200 });
+
+const sourceMapResponse = (): Response =>
+  new Response(SOURCE_MAP_BODY, {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
+
+it("getSourceMap retries after a transient source-map fetch failure instead of caching null", async () => {
+  const file = "http://localhost/transient-bundle.js";
+  sourceMapCache.delete(file);
+  let sourceMapAttempts = 0;
+
+  const fetchFn = (url: string): Promise<Response> => {
+    if (url.endsWith(".map")) {
+      sourceMapAttempts++;
+      if (sourceMapAttempts === 1) {
+        return Promise.reject(new DOMException("Aborted", "AbortError"));
+      }
+      return Promise.resolve(sourceMapResponse());
+    }
+    return Promise.resolve(bundleResponse("transient-bundle.js.map"));
+  };
+
+  const firstResult = await getSourceMap(file, true, fetchFn);
+  expect(firstResult).toBeNull();
+  expect(sourceMapCache.has(file)).toBe(false);
+
+  const secondResult = await getSourceMap(file, true, fetchFn);
+  expect(secondResult).not.toBeNull();
+  expect(sourceMapAttempts).toBe(2);
+});
+
+it("getSourceMap caches a definitive missing source map and does not refetch", async () => {
+  const file = "http://localhost/no-map-bundle.js";
+  sourceMapCache.delete(file);
+  let bundleAttempts = 0;
+
+  const fetchFn = (_url: string): Promise<Response> => {
+    bundleAttempts++;
+    return Promise.resolve(new Response("const value = 1;", { status: 200 }));
+  };
+
+  expect(await getSourceMap(file, true, fetchFn)).toBeNull();
+  expect(await getSourceMap(file, true, fetchFn)).toBeNull();
+  expect(bundleAttempts).toBe(1);
+  expect(sourceMapCache.get(file)).toBeNull();
+});

@@ -8,7 +8,9 @@
     "test": "nr test:web"
   },
   "devDependencies": {
+    "@jest/globals": "^30.4.1",
     "@playwright/test": "latest",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20",
     "detox": "latest",
     "jest": "latest",

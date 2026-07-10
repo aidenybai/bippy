@@ -15,6 +15,7 @@
     "@bippy/e2e",
     "@bippy/e2e-expo",
     "@bippy/e2e-next",
+    "@bippy/e2e-tanstack",
     "@bippy/e2e-vite"
   ]
 }

@@ -14,6 +14,8 @@ export const INTERNAL_SCHEME_PREFIXES = [
 
 export const ABOUT_REACT_PREFIX = "about://React/";
 
+export const SERVER_COMPONENT_URL_PREFIXES = ["rsc://", ABOUT_REACT_PREFIX] as const;
+
 export const ANONYMOUS_FILE_PATTERNS = ["<anonymous>", "eval", ""] as const;
 
 export const SOURCE_FILE_EXTENSION_REGEX = /\.(jsx|tsx|ts|js)$/;
@@ -26,3 +28,12 @@ export const QUERY_PARAMETER_PATTERN_REGEX = /^\?[\w~.-]+(?:=[^&#]*)?(?:&[\w~.-]
 export const SERVER_FRAME_MARKER = "(at Server)";
 
 export const SERVER_ENV_PATTERN = /\(at [^)]+\)$/;
+
+export const REACT_STACK_BOTTOM_FRAME_PATTERNS = [
+  "react_stack_bottom_frame",
+  "react-stack-bottom-frame",
+] as const;
+
+// the first frame of a _debugStack is the JSX factory itself (jsxDEV), never
+// user code, matching what react's own captureOwnerStack pops
+export const JSX_FACTORY_FRAME_COUNT = 1;

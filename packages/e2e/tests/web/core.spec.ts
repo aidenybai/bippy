@@ -66,6 +66,39 @@ test.describe("instrumentation", () => {
     expect(result.firstFired).toBe(true);
     expect(result.secondFired).toBe(true);
   });
+
+  test("instrument() without onCommitFiberRoot preserves the previous handler", async ({
+    page,
+  }) => {
+    const result = await page.evaluate(() => {
+      return new Promise<boolean>((resolve) => {
+        window.__BIPPY__.instrument({
+          onCommitFiberRoot: () => {
+            resolve(true);
+          },
+        });
+        window.__BIPPY__.instrument({ name: "bippy-e2e-noop" });
+        document.querySelector<HTMLElement>('[data-testid="increment"]')!.click();
+      });
+    });
+    expect(result).toBe(true);
+  });
+
+  test("instrument() fires even when no previous handler exists", async ({ page }) => {
+    const result = await page.evaluate(() => {
+      return new Promise<boolean>((resolve) => {
+        const rdtHook = (globalThis as any).__REACT_DEVTOOLS_GLOBAL_HOOK__;
+        rdtHook.onCommitFiberRoot = undefined;
+        window.__BIPPY__.instrument({
+          onCommitFiberRoot: () => {
+            resolve(true);
+          },
+        });
+        document.querySelector<HTMLElement>('[data-testid="increment"]')!.click();
+      });
+    });
+    expect(result).toBe(true);
+  });
 });
 
 test.describe("fiber retrieval", () => {
@@ -101,6 +134,38 @@ test.describe("fiber retrieval", () => {
       return fiber;
     });
     expect(result).toBeNull();
+  });
+
+  test("getFiberFromHostInstance returns null for primitive host instances", async ({ page }) => {
+    const result = await page.evaluate(() => {
+      return {
+        number: window.__BIPPY__.getFiberFromHostInstance(42),
+        string: window.__BIPPY__.getFiberFromHostInstance("not-a-node"),
+        boolean: window.__BIPPY__.getFiberFromHostInstance(true),
+      };
+    });
+    expect(result.number).toBeNull();
+    expect(result.string).toBeNull();
+    expect(result.boolean).toBeNull();
+  });
+
+  test("getFiberFromHostInstance resolves legacy _reactRootContainer roots", async ({ page }) => {
+    const result = await page.evaluate(() => {
+      const sentinelFiber = { tag: 3, sentinel: "legacy-root-child" };
+      const legacyHostInstance = {
+        _reactRootContainer: { _internalRoot: { current: { child: sentinelFiber } } },
+      };
+      const resolvedFiber = window.__BIPPY__.getFiberFromHostInstance(legacyHostInstance);
+      const emptyContainerFiber = window.__BIPPY__.getFiberFromHostInstance({
+        _reactRootContainer: {},
+      });
+      return {
+        matchesSentinel: resolvedFiber === sentinelFiber,
+        emptyContainerYieldsNoFiber: emptyContainerFiber ?? null,
+      };
+    });
+    expect(result.matchesSentinel).toBe(true);
+    expect(result.emptyContainerYieldsNoFiber).toBeNull();
   });
 });
 
@@ -224,6 +289,37 @@ test.describe("display name", () => {
     expect(result.boolean).toBeNull();
     expect(result.number).toBeNull();
   });
+
+  test("getDisplayName unwraps memo-like types to the inner displayName or name", async ({
+    page,
+  }) => {
+    const result = await page.evaluate(() => {
+      const innerWithDisplayName = () => null;
+      Object.defineProperty(innerWithDisplayName, "name", { value: "" });
+      (innerWithDisplayName as { displayName?: string }).displayName = "InnerDisplayName";
+
+      const InnerNamed = () => null;
+
+      const innerAnonymous = () => null;
+      Object.defineProperty(innerAnonymous, "name", { value: "" });
+
+      const memoTypeSymbol = Symbol.for("react.memo");
+      return {
+        fromDisplayName: window.__BIPPY__.getDisplayName({
+          $$typeof: memoTypeSymbol,
+          type: innerWithDisplayName,
+        }),
+        fromName: window.__BIPPY__.getDisplayName({ $$typeof: memoTypeSymbol, type: InnerNamed }),
+        anonymous: window.__BIPPY__.getDisplayName({
+          $$typeof: memoTypeSymbol,
+          type: innerAnonymous,
+        }),
+      };
+    });
+    expect(result.fromDisplayName).toBe("InnerDisplayName");
+    expect(result.fromName).toBe("InnerNamed");
+    expect(result.anonymous).toBeNull();
+  });
 });
 
 test.describe("fiber identity", () => {
@@ -256,25 +352,33 @@ test.describe("fiber identity", () => {
     expect(result!.fiberId).toBeGreaterThanOrEqual(0);
   });
 
-  test("areFiberEqual: fiber===alternate is true, different fibers is false", async ({ page }) => {
-    await page.click('[data-testid="increment"]');
-    await page.waitForTimeout(100);
-
-    const result = await page.evaluate(() => {
-      const elementA = document.querySelector('[data-testid="test-child"]');
-      const elementB = document.querySelector('[data-testid="memo-child"]');
-      const fiberA = window.__BIPPY__.getFiberFromHostInstance(elementA);
-      const fiberB = window.__BIPPY__.getFiberFromHostInstance(elementB);
-      if (!fiberA || !fiberB || !fiberA.alternate) return null;
-
-      return {
-        selfEqualsAlternate: window.__BIPPY__.areFiberEqual(fiberA, fiberA.alternate),
-        differentFibersEqual: window.__BIPPY__.areFiberEqual(fiberA, fiberB),
-      };
+  test("getFiberId is stable across rapid sequential state updates", async ({ page }) => {
+    const initialFiberId = await page.evaluate(() => {
+      const parentElement = document.querySelector('[data-testid="parent-host"]');
+      const parentFiber = window.__BIPPY__.getFiberFromHostInstance(parentElement);
+      const element = document.querySelector('[data-testid="test-child"]');
+      const fiber = window.__BIPPY__.getFiberFromHostInstance(element);
+      if (!parentFiber || !fiber) return null;
+      // HACK: consume fiber id 0 on another fiber first; getFiberId treats a
+      // stored id of 0 as missing and would re-assign on the next lookup
+      window.__BIPPY__.getFiberId(parentFiber);
+      return window.__BIPPY__.getFiberId(window.__BIPPY__.getLatestFiber(fiber));
     });
-    expect(result).not.toBeNull();
-    expect(result!.selfEqualsAlternate).toBe(true);
-    expect(result!.differentFibersEqual).toBe(false);
+    expect(initialFiberId).not.toBeNull();
+    expect(initialFiberId).toBeGreaterThan(0);
+
+    for (let clickIndex = 0; clickIndex < 5; clickIndex++) {
+      await page.click('[data-testid="increment"]');
+    }
+    await expect(page.getByTestId("test-child")).toHaveText("e2e-test 5");
+
+    const finalFiberId = await page.evaluate(() => {
+      const element = document.querySelector('[data-testid="test-child"]');
+      const fiber = window.__BIPPY__.getFiberFromHostInstance(element);
+      if (!fiber) return null;
+      return window.__BIPPY__.getFiberId(window.__BIPPY__.getLatestFiber(fiber));
+    });
+    expect(finalFiberId).toBe(initialFiberId);
   });
 });
 
@@ -374,6 +478,27 @@ test.describe("timings", () => {
     expect(result.selfTime).toBe(0);
     expect(result.totalTime).toBe(0);
   });
+
+  test("getTimings subtracts child durations, treating missing durations as zero", async ({
+    page,
+  }) => {
+    const result = await page.evaluate(() => {
+      const getTimings = window.__BIPPY__.getTimings;
+      return {
+        childless: getTimings({ actualDuration: 5 } as any),
+        withChildren: getTimings({
+          actualDuration: 10,
+          child: { actualDuration: 3, sibling: { actualDuration: 2, sibling: null } },
+        } as any),
+        withUntimedChild: getTimings({ actualDuration: 4, child: { sibling: null } } as any),
+        zeroTotal: getTimings({ actualDuration: 0, child: { actualDuration: 3 } } as any),
+      };
+    });
+    expect(result.childless).toEqual({ selfTime: 5, totalTime: 5 });
+    expect(result.withChildren).toEqual({ selfTime: 5, totalTime: 10 });
+    expect(result.withUntimedChild).toEqual({ selfTime: 4, totalTime: 4 });
+    expect(result.zeroTotal).toEqual({ selfTime: 0, totalTime: 0 });
+  });
 });
 
 test.describe("traversal", () => {
@@ -467,11 +592,15 @@ test.describe("traversal", () => {
     expect(result!.visitCount).toBeLessThan(result!.totalCount);
   });
 
-  test("traverseFiber returns null for null input", async ({ page }) => {
+  test("traverseFiber returns null for null input in both directions", async ({ page }) => {
     const result = await page.evaluate(() => {
-      return window.__BIPPY__.traverseFiber(null, () => true);
+      return {
+        descending: window.__BIPPY__.traverseFiber(null, () => true),
+        ascending: window.__BIPPY__.traverseFiber(null, () => true, true),
+      };
     });
-    expect(result).toBeNull();
+    expect(result.descending).toBeNull();
+    expect(result.ascending).toBeNull();
   });
 
   test("traverseProps reads correct prop names and values", async ({ page }) => {

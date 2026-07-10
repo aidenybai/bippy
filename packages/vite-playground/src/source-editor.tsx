@@ -4,10 +4,10 @@ import {
   getLatestFiber,
   getType,
   getDisplayName,
-  hotSwapFiberType,
   isCompositeFiber,
+  traverseFiber,
 } from "bippy";
-import type { Fiber } from "bippy";
+import type { Fiber, ReactRenderer } from "bippy";
 import * as React from "react";
 import { useState, useEffect, useRef, useCallback } from "react";
 
@@ -68,6 +68,55 @@ const walkToCompositeFiber = (fiber: Fiber): Fiber | null => {
     current = current.return;
   }
   return null;
+};
+
+const swapFiberAndSchedule = (
+  fiber: Fiber,
+  nextType: React.ComponentType<unknown>,
+  renderer: ReactRenderer,
+): void => {
+  fiber.type = nextType;
+  if (fiber.alternate) {
+    fiber.alternate.type = nextType;
+  }
+  // HACK: shallow-clone memoizedProps so React sees oldProps !== newProps
+  // and skips the bailout path (same trick as overrideHookState in ReactFiberReconciler)
+  fiber.memoizedProps = { ...fiber.memoizedProps };
+
+  if (renderer.scheduleUpdate) {
+    renderer.scheduleUpdate(fiber);
+  }
+};
+
+// replaces every fiber whose type matches the edited component with the
+// re-evaluated one and re-renders each; dev-only since scheduleUpdate does
+// not exist in production renderers
+const hotSwapFiberType = (fiber: Fiber, nextType: React.ComponentType<unknown>): void => {
+  const rdtHook = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+  if (!rdtHook?.renderers) return;
+
+  const renderer = Array.from(rdtHook.renderers.values()).find((innerRenderer) =>
+    Boolean(innerRenderer.scheduleUpdate),
+  );
+  if (!renderer) return;
+
+  const previousType = getType(fiber.type);
+  if (!previousType) {
+    swapFiberAndSchedule(fiber, nextType, renderer);
+    return;
+  }
+
+  let rootFiber: Fiber = fiber;
+  while (rootFiber.return) {
+    rootFiber = rootFiber.return;
+  }
+
+  traverseFiber(rootFiber, (innerFiber) => {
+    if (getType(innerFiber.type) === previousType) {
+      swapFiberAndSchedule(innerFiber, nextType, renderer);
+    }
+    return false;
+  });
 };
 
 interface EditorState {

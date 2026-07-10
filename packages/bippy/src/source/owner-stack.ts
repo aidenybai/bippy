@@ -17,8 +17,14 @@ import {
   getDisplayName,
   traverseFiber,
 } from "../core.js";
-import { SERVER_FRAME_MARKER, SERVER_ENV_PATTERN, ABOUT_REACT_PREFIX } from "./constants.js";
+import { ServerComponentInfo } from "../types.js";
+import {
+  SERVER_FRAME_MARKER,
+  SERVER_ENV_PATTERN,
+  SERVER_COMPONENT_URL_PREFIXES,
+} from "./constants.js";
 
+import { parseDebugStack } from "./parse-debug-stack.js";
 import { parseStack, StackFrame } from "./parse-stack.js";
 import { symbolicateStack } from "./symbolication.js";
 
@@ -28,6 +34,60 @@ export const hasDebugStack = (
   _debugStack: NonNullable<Fiber["_debugStack"]>;
 } => {
   return fiber._debugStack instanceof Error && typeof fiber._debugStack?.stack === "string";
+};
+
+const isFiberOwner = (owner: Fiber | ServerComponentInfo): owner is Fiber =>
+  typeof (owner as Fiber).tag === "number";
+
+// react's typings (and bippy's Fiber, which mirrors them) declare _debugOwner
+// as a Fiber, but react 19 flight sets a ReactComponentInfo object for server
+// component owners
+const getDebugOwner = (fiber: Fiber): Fiber | ServerComponentInfo | undefined =>
+  fiber._debugOwner as Fiber | ServerComponentInfo | undefined;
+
+/**
+ * Locates a frame inside the fiber's own function body without invoking it:
+ * any child fiber owned by this fiber was created by JSX inside its body, so
+ * the bottom user-space frame of that child's _debugStack sits in this
+ * component. The enclosing line/column (V8 CallSite API) points at the
+ * function definition start. Requires React 19 (_debugStack).
+ */
+export const getDefinitionFrameFromOwnedChild = (fiber: Fiber): StackFrame | null => {
+  let ownedChildDebugStack: Error | null = null;
+  traverseFiber(fiber, (childFiber) => {
+    if (childFiber === fiber) {
+      return false;
+    }
+    const childOwner = childFiber._debugOwner;
+    if (
+      (childOwner === fiber || (fiber.alternate !== null && childOwner === fiber.alternate)) &&
+      childFiber._debugStack instanceof Error
+    ) {
+      ownedChildDebugStack = childFiber._debugStack;
+      return true;
+    }
+    return false;
+  });
+  if (!ownedChildDebugStack) {
+    return null;
+  }
+
+  const { frames, isTrusted } = parseDebugStack(ownedChildDebugStack);
+  if (!isTrusted) {
+    return null;
+  }
+  for (let frameIndex = frames.length - 1; frameIndex >= 0; frameIndex--) {
+    const stackFrame = frames[frameIndex];
+    if (!stackFrame.fileName) {
+      continue;
+    }
+    return {
+      ...stackFrame,
+      lineNumber: stackFrame.enclosingLineNumber || stackFrame.lineNumber,
+      columnNumber: stackFrame.enclosingColumnNumber || stackFrame.columnNumber,
+    };
+  }
+  return null;
 };
 
 const getCurrentDispatcher = (): null | React.RefObject<unknown> => {
@@ -345,11 +405,11 @@ export const describeFiber = (fiber: Fiber, childFiber: Fiber | null): string =>
 };
 
 /**
- * react 19 introduces the _debugStack property, which we can use to grab the stack.
- * however, for versions that don't have this property, we need to construct
- * a "fake" version of the owner stack
+ * Builds a component-stack string by walking the fiber `return` chain, the
+ * pre-react-19 substitute for `_debugStack` (which is why the frame locations
+ * come from re-invocation in {@link describeFiber} rather than a real stack).
  */
-export const getFallbackOwnerStack = (thisFiber: Fiber): string => {
+export const getFallbackParentStack = (thisFiber: Fiber): string => {
   try {
     let componentStack = "";
     let currentFiber: Fiber | null = thisFiber;
@@ -414,21 +474,21 @@ export const formatOwnerStack = (stack: string): string => {
     // don't want/need
     formattedStack = formattedStack.slice(29);
   }
-  let idx = formattedStack.indexOf("\n");
-  if (idx !== -1) {
+  const firstNewlineIndex = formattedStack.indexOf("\n");
+  if (firstNewlineIndex !== -1) {
     // pop the JSX frame
-    formattedStack = formattedStack.slice(idx + 1);
+    formattedStack = formattedStack.slice(firstNewlineIndex + 1);
   }
-  idx = Math.max(
+  let bottomFrameIndex = Math.max(
     formattedStack.indexOf("react_stack_bottom_frame"),
     formattedStack.indexOf("react-stack-bottom-frame"),
   );
-  if (idx !== -1) {
-    idx = formattedStack.lastIndexOf("\n", idx);
+  if (bottomFrameIndex !== -1) {
+    bottomFrameIndex = formattedStack.lastIndexOf("\n", bottomFrameIndex);
   }
-  if (idx !== -1) {
+  if (bottomFrameIndex !== -1) {
     // cut off everything after the bottom frame since it'll be internals.
-    formattedStack = formattedStack.slice(0, idx);
+    formattedStack = formattedStack.slice(0, bottomFrameIndex);
   } else {
     // we didn't find any internal callsite out to user space.
     // This means that this was called outside an owner or the owner is fully internal.
@@ -438,17 +498,14 @@ export const formatOwnerStack = (stack: string): string => {
   return formattedStack;
 };
 
-interface OwnerStackEntry {
+interface DebugStackEntry {
   componentName: string;
   stackFrames: StackFrame[];
 }
 
 const isReactServerComponentFrame = (stackFrame: StackFrame): boolean =>
   Boolean(
-    stackFrame.functionName &&
-    stackFrame.fileName &&
-    (stackFrame.fileName.startsWith("rsc://") ||
-      stackFrame.fileName.startsWith(ABOUT_REACT_PREFIX)),
+    stackFrame.functionName && stackFrame.fileName && isServerComponentUrl(stackFrame.fileName),
   );
 
 const areStackFramesEqual = (firstFrame: StackFrame, secondFrame: StackFrame): boolean =>
@@ -457,12 +514,12 @@ const areStackFramesEqual = (firstFrame: StackFrame, secondFrame: StackFrame): b
   firstFrame.columnNumber === secondFrame.columnNumber;
 
 const buildFunctionNameToRscFramesMap = (
-  ownerStackEntries: OwnerStackEntry[],
+  debugStackEntries: DebugStackEntry[],
 ): Map<string, StackFrame[]> => {
   const functionNameToRscFrames = new Map<string, StackFrame[]>();
 
-  for (const ownerEntry of ownerStackEntries) {
-    for (const stackFrame of ownerEntry.stackFrames) {
+  for (const debugStackEntry of debugStackEntries) {
+    for (const stackFrame of debugStackEntry.stackFrames) {
       if (!isReactServerComponentFrame(stackFrame)) continue;
 
       const functionName = stackFrame.functionName!;
@@ -512,8 +569,55 @@ const getEnrichedServerStackFrame = (
   };
 };
 
-const getOwnerStackEntries = (rootFiber: Fiber): OwnerStackEntry[] => {
-  const ownerStackEntries: OwnerStackEntry[] = [];
+const isServerComponentUrl = (url: string): boolean =>
+  SERVER_COMPONENT_URL_PREFIXES.some((prefix) => url.startsWith(prefix));
+
+// flight installs fake server frames (rsc:// or about://React/ urls) into
+// client-side debug stacks, so server detection must be per-frame
+const markFlightServerFrame = (stackFrame: StackFrame): StackFrame =>
+  !stackFrame.isServer && stackFrame.fileName && isServerComponentUrl(stackFrame.fileName)
+    ? { ...stackFrame, isServer: true }
+    : stackFrame;
+
+/**
+ * Builds owner-chain stack frames from the _debugStack errors React 19
+ * attaches at JSX creation, walking `_debugOwner` across both client fibers
+ * and server components (ReactComponentInfo, which chains via `.owner` and
+ * carries `.debugStack`). This is exact - no re-invoking components, no
+ * name-matching heuristics - but requires React 19.
+ */
+const getOwnerStackFromDebugStacks = (fiber: Fiber): StackFrame[] => {
+  const ownerStackFrames: StackFrame[] = [];
+  let owner: Fiber | ServerComponentInfo | null | undefined = fiber;
+  while (owner) {
+    if (isFiberOwner(owner)) {
+      const ownerFiber: Fiber = owner;
+      owner = getDebugOwner(ownerFiber);
+      if (owner && hasDebugStack(ownerFiber)) {
+        const { frames, isTrusted } = parseDebugStack(ownerFiber._debugStack);
+        if (isTrusted) {
+          for (const stackFrame of frames) {
+            ownerStackFrames.push(markFlightServerFrame(stackFrame));
+          }
+        }
+      }
+    } else {
+      const serverOwner: ServerComponentInfo = owner;
+      owner = serverOwner.owner;
+      // server stacks are captured and pre-trimmed by flight, so they carry
+      // no bottom-frame sentinel and are trusted as-is
+      if (owner && serverOwner.debugStack instanceof Error) {
+        for (const serverFrame of parseDebugStack(serverOwner.debugStack).frames) {
+          ownerStackFrames.push({ ...serverFrame, isServer: true });
+        }
+      }
+    }
+  }
+  return ownerStackFrames;
+};
+
+const getDebugStackEntries = (rootFiber: Fiber): DebugStackEntry[] => {
+  const debugStackEntries: DebugStackEntry[] = [];
 
   traverseFiber(
     rootFiber,
@@ -525,7 +629,7 @@ const getOwnerStackEntries = (rootFiber: Fiber): OwnerStackEntry[] => {
           ? getDisplayName(currentFiber.type) || "<anonymous>"
           : currentFiber.type;
 
-      ownerStackEntries.push({
+      debugStackEntries.push({
         componentName,
         stackFrames: parseStack(formatOwnerStack(currentFiber._debugStack?.stack)),
       });
@@ -533,17 +637,24 @@ const getOwnerStackEntries = (rootFiber: Fiber): OwnerStackEntry[] => {
     true,
   );
 
-  return ownerStackEntries;
+  return debugStackEntries;
 };
 
-export const getOwnerStack = async (
+/**
+ * Returns a stack of ALL ancestor components in the render tree (the fiber's
+ * `return` chain), including wrappers that render `{children}` without having
+ * created this fiber's JSX. Locations come from re-invoking each component
+ * with a throwing dispatcher; server frames are enriched from debug stacks by
+ * name matching. Works on every React version.
+ */
+export const getParentStack = async (
   fiber: Fiber,
   shouldCache = true,
   fetchFunction?: (url: string) => Promise<Response>,
 ): Promise<StackFrame[]> => {
-  const ownerStackEntries = getOwnerStackEntries(fiber);
-  const fallbackStackFrames = parseStack(getFallbackOwnerStack(fiber));
-  const functionNameToRscFrames = buildFunctionNameToRscFramesMap(ownerStackEntries);
+  const debugStackEntries = getDebugStackEntries(fiber);
+  const fallbackStackFrames = parseStack(getFallbackParentStack(fiber));
+  const functionNameToRscFrames = buildFunctionNameToRscFramesMap(debugStackEntries);
   const functionNameToUsageIndex = new Map<string, number>();
 
   const enrichedStackFrames = fallbackStackFrames.map((stackFrame): StackFrame => {
@@ -569,4 +680,46 @@ export const getOwnerStack = async (
   });
 
   return symbolicateStack(deduplicatedStackFrames, shouldCache, fetchFunction);
+};
+
+// an owner frame is only actionable if it can point an editor somewhere:
+// it needs a file location and must not be ignore-listed bundler/framework code
+const isLocatableFrame = (stackFrame: StackFrame): boolean =>
+  Boolean(stackFrame.fileName) && !stackFrame.isIgnoreListed;
+
+/**
+ * Returns the stack of components that CREATED this fiber's JSX (the
+ * `_debugOwner` chain), with exact creation-site locations from React 19's
+ * `_debugStack` errors - including server component owners. Wrappers that
+ * merely render `{children}` do not appear; use {@link getParentStack} for
+ * the full render-tree ancestry. Falls back to {@link getParentStack} on
+ * React <19, when no trusted debug stacks exist, or when the owner chain
+ * yields no locatable frames (so callers always get the most useful stack
+ * available).
+ */
+export const getOwnerStack = async (
+  fiber: Fiber,
+  shouldCache = true,
+  fetchFunction?: (url: string) => Promise<Response>,
+): Promise<StackFrame[]> => {
+  const debugStackFrames = getOwnerStackFromDebugStacks(fiber);
+  if (debugStackFrames.length > 0) {
+    // the owner chain does not include the fiber itself, but bippy's stacks
+    // always start with the fiber's own frame
+    const selfFrame: StackFrame = getDefinitionFrameFromOwnedChild(fiber) ?? {};
+    selfFrame.functionName = getDisplayName(fiber.type) ?? selfFrame.functionName;
+    const symbolicatedFrames = await symbolicateStack(
+      [selfFrame, ...debugStackFrames],
+      shouldCache,
+      fetchFunction,
+    );
+    const hasLocatableOwnerFrame = symbolicatedFrames.some(
+      (stackFrame, frameIndex) => frameIndex > 0 && isLocatableFrame(stackFrame),
+    );
+    if (hasLocatableOwnerFrame) {
+      return symbolicatedFrames;
+    }
+  }
+
+  return getParentStack(fiber, shouldCache, fetchFunction);
 };

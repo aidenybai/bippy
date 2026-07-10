@@ -138,13 +138,6 @@ export const isFiber = (maybeFiber: unknown): maybeFiber is Fiber => {
 };
 
 /**
- * Returns `true` if the two {@link Fiber}s are the same reference
- */
-export const areFiberEqual = (fiberA: Fiber, fiberB: Fiber): boolean => {
-  return fiberA === fiberB || fiberA.alternate === fiberB || fiberB.alternate === fiberA;
-};
-
-/**
  * Traverses up or down a {@link Fiber}'s contexts, return `true` to stop and select the current and previous context value.
  */
 export const traverseContexts = (
@@ -309,7 +302,7 @@ export const getFiberStack = (fiber: Fiber): Fiber[] => {
 /**
  * Returns `true` if the {@link Fiber} should be filtered out during reconciliation.
  */
-export const shouldFilterFiber = (fiber: Fiber): boolean => {
+const shouldFilterFiber = (fiber: Fiber): boolean => {
   switch (fiber.tag) {
     case DehydratedSuspenseComponentTag:
       // TODO: ideally we would show dehydrated Suspense immediately.
@@ -444,7 +437,7 @@ export function traverseFiber(
   return null;
 }
 
-export const traverseFiberSync = (
+const traverseFiberSync = (
   fiber: Fiber | null,
   selector: (node: Fiber) => boolean | void,
   ascending = false,
@@ -462,7 +455,7 @@ export const traverseFiberSync = (
   return null;
 };
 
-export const traverseFiberAsync = async (
+const traverseFiberAsync = async (
   fiber: Fiber | null,
   selector: (node: Fiber) => Promise<boolean | void>,
   ascending = false,
@@ -573,6 +566,8 @@ export const isInstrumentationActive = (): boolean => {
   );
 };
 
+export const _fiberRoots = new Set<FiberRoot>();
+
 /**
  * Returns the latest fiber (since it may be double-buffered).
  */
@@ -596,7 +591,7 @@ export type RenderHandler = <S>(fiber: Fiber, phase: RenderPhase, state?: S) => 
 export type RenderPhase = "mount" | "unmount" | "update";
 
 let fiberId = 0;
-export const fiberIdMap = new WeakMap<Fiber, number>();
+const fiberIdMap = new WeakMap<Fiber, number>();
 
 export const setFiberId = (fiber: Fiber, id: number = fiberId++): void => {
   fiberIdMap.set(fiber, id);
@@ -617,7 +612,7 @@ export const getFiberId = (fiber: Fiber): number => {
   return id;
 };
 
-export const mountFiberRecursively = (
+const mountFiberRecursively = (
   onRender: RenderHandler,
   firstChild: Fiber,
   traverseSiblings: boolean,
@@ -666,7 +661,7 @@ export const mountFiberRecursively = (
   }
 };
 
-export const updateFiberRecursively = (
+const updateFiberRecursively = (
   onRender: RenderHandler,
   nextFiber: Fiber,
   prevFiber: Fiber,
@@ -766,7 +761,7 @@ export const updateFiberRecursively = (
   }
 };
 
-export const unmountFiber = (onRender: RenderHandler, fiber: Fiber): void => {
+const unmountFiber = (onRender: RenderHandler, fiber: Fiber): void => {
   const isRoot = fiber.tag === HostRootTag;
 
   if (isRoot || !shouldFilterFiber(fiber)) {
@@ -774,7 +769,7 @@ export const unmountFiber = (onRender: RenderHandler, fiber: Fiber): void => {
   }
 };
 
-export const unmountFiberChildrenRecursively = (onRender: RenderHandler, fiber: Fiber): void => {
+const unmountFiberChildrenRecursively = (onRender: RenderHandler, fiber: Fiber): void => {
   // We might meet a nested Suspense on our way.
   const isTimedOutSuspense = fiber.tag === SuspenseComponentTag && fiber.memoizedState !== null;
   let child = fiber.child;
@@ -861,7 +856,7 @@ let _overrideProps: null | ReactRenderer["overrideProps"] = null;
 let _overrideHookState: null | ReactRenderer["overrideHookState"] = null;
 let _overrideContext: null | ReactRenderer["overrideContext"] = null;
 
-export const injectOverrideMethods = () => {
+const injectOverrideMethods = () => {
   if (!hasRDTHook()) return null;
   const rdtHook = getRDTHook();
   if (!rdtHook?.renderers) return null;
@@ -977,11 +972,7 @@ export const overrideProps = (fiber: Fiber, partialValue: Record<string, unknown
   }
 };
 
-export const overrideHookState = (
-  fiber: Fiber,
-  id: number,
-  partialValue: Record<string, unknown>,
-) => {
+export const overrideHookState = (fiber: Fiber, id: number, partialValue: unknown) => {
   injectOverrideMethods();
 
   const hookId = String(id);
@@ -1001,11 +992,7 @@ export const overrideHookState = (
   }
 };
 
-export const overrideContext = (
-  fiber: Fiber,
-  contextType: unknown,
-  partialValue: Record<string, unknown>,
-) => {
+export const overrideContext = (fiber: Fiber, contextType: unknown, partialValue: unknown) => {
   injectOverrideMethods();
 
   if (isPOJO(partialValue)) {
@@ -1060,6 +1047,7 @@ export const instrument = (options: InstrumentationOptions): ReactDevToolsGlobal
       // TODO: validate whether the bottom version is more correct here
       // for preventing infinite loops
       // if (rdtHook.onCommitFiberRoot !== handler) return;
+      _fiberRoots.add(root);
       prevOnCommitFiberRoot?.(rendererID, root, priority);
       options.onCommitFiberRoot?.(rendererID, root, priority);
     };
@@ -1116,6 +1104,18 @@ export const getFiberFromHostInstance = <T>(hostInstance: T): Fiber | null => {
       return (hostInstance._reactRootContainer as any)?._internalRoot?.current?.child;
     }
 
+    // React Native Fabric public instances (ReactNativeElement /
+    // ReactFabricHostComponent) store their fiber as the "internal instance
+    // handle" instead of a __reactFiber$-prefixed key
+    const fabricInstanceHandle =
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (hostInstance as any).__internalInstanceHandle ??
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (hostInstance as any)._internalInstanceHandle;
+    if (isFiber(fabricInstanceHandle)) {
+      return fabricInstanceHandle;
+    }
+
     const hostInstanceRecord = hostInstance as Record<string, unknown>;
     for (const knownKey of knownFiberPropertyKeys) {
       const fiber = hostInstanceRecord[knownKey];
@@ -1130,162 +1130,6 @@ export const getFiberFromHostInstance = <T>(hostInstance: T): Fiber | null => {
     }
   }
   return null;
-};
-
-export const INSTALL_ERROR = new Error();
-
-export const _fiberRoots = new Set<FiberRoot>();
-
-export const secure = (
-  options: InstrumentationOptions,
-  secureOptions: {
-    dangerouslyRunInProduction?: boolean;
-    installCheckTimeout?: number;
-    isProduction?: boolean;
-    minReactMajorVersion?: number;
-    onError?: (error?: unknown) => unknown;
-  } = {},
-): InstrumentationOptions => {
-  const onActive = options.onActive;
-  const isRDTHookInstalled = hasRDTHook();
-  const isUsingRealReactDevtools = isRealReactDevtools();
-  const isUsingReactRefresh = isReactRefresh();
-  let timeout: number | undefined;
-  let isDevelopment = !secureOptions.isProduction;
-
-  options.onActive = () => {
-    clearTimeout(timeout);
-    let isSecure = true;
-    try {
-      const rdtHook = getRDTHook();
-
-      for (const renderer of rdtHook.renderers.values()) {
-        const [majorVersion] = renderer.version.split(".");
-        if (Number(majorVersion) < (secureOptions.minReactMajorVersion ?? 17)) {
-          isSecure = false;
-        }
-        const buildType = detectReactBuildType(renderer);
-        if (buildType === "development") {
-          isDevelopment = true;
-        } else if (!secureOptions.dangerouslyRunInProduction) {
-          isSecure = false;
-        }
-      }
-    } catch (err) {
-      secureOptions.onError?.(err);
-    }
-
-    if (!isSecure) {
-      options.onCommitFiberRoot = undefined;
-      options.onCommitFiberUnmount = undefined;
-      options.onPostCommitFiberRoot = undefined;
-      options.onActive = undefined;
-      return;
-    }
-    onActive?.();
-
-    try {
-      const onCommitFiberRoot = options.onCommitFiberRoot;
-      if (onCommitFiberRoot) {
-        options.onCommitFiberRoot = (rendererID, root, priority) => {
-          if (!_fiberRoots.has(root)) {
-            _fiberRoots.add(root);
-          }
-          try {
-            onCommitFiberRoot(rendererID, root, priority);
-          } catch (err) {
-            secureOptions.onError?.(err);
-          }
-        };
-      }
-
-      const onCommitFiberUnmount = options.onCommitFiberUnmount;
-      if (onCommitFiberUnmount) {
-        options.onCommitFiberUnmount = (rendererID, root) => {
-          try {
-            onCommitFiberUnmount(rendererID, root);
-          } catch (err) {
-            secureOptions.onError?.(err);
-          }
-        };
-      }
-
-      const onPostCommitFiberRoot = options.onPostCommitFiberRoot;
-      if (onPostCommitFiberRoot) {
-        options.onPostCommitFiberRoot = (rendererID, root) => {
-          try {
-            onPostCommitFiberRoot(rendererID, root);
-          } catch (err) {
-            secureOptions.onError?.(err);
-          }
-        };
-      }
-    } catch (err) {
-      secureOptions.onError?.(err);
-    }
-  };
-
-  if (!isRDTHookInstalled && !isUsingRealReactDevtools && !isUsingReactRefresh) {
-    timeout = setTimeout(() => {
-      if (isDevelopment) {
-        secureOptions.onError?.(INSTALL_ERROR);
-      }
-      stop();
-    }, secureOptions.installCheckTimeout ?? 100) as unknown as number;
-  }
-
-  return options;
-};
-
-const swapFiberAndSchedule = (
-  fiber: Fiber,
-  nextType: React.ComponentType<unknown>,
-  renderer: ReactRenderer,
-): void => {
-  fiber.type = nextType;
-  if (fiber.alternate) {
-    fiber.alternate.type = nextType;
-  }
-  // HACK: shallow-clone memoizedProps so React sees oldProps !== newProps
-  // and skips the bailout path (same trick as overrideHookState in ReactFiberReconciler)
-  fiber.memoizedProps = { ...fiber.memoizedProps };
-
-  if (renderer.scheduleUpdate) {
-    renderer.scheduleUpdate(fiber);
-  }
-};
-
-/**
- * Replaces every fiber whose type matches `prevType` with `nextType` and
- * triggers a synchronous re-render for each one.
- * The new function must follow the same Rules of Hooks as the original.
- * DEV-only — `renderer.scheduleUpdate` is not available in production builds.
- */
-export const hotSwapFiberType = (fiber: Fiber, nextType: React.ComponentType<unknown>): void => {
-  const rdtHook = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
-  if (!rdtHook?.renderers) return;
-
-  const renderer = Array.from(rdtHook.renderers.values()).find(
-    (innerRenderer) => !!innerRenderer.scheduleUpdate,
-  );
-  if (!renderer) return;
-
-  const prevType = getType(fiber.type);
-  if (!prevType) {
-    swapFiberAndSchedule(fiber, nextType, renderer);
-    return;
-  }
-
-  let rootFiber: Fiber = fiber;
-  while (rootFiber.return) {
-    rootFiber = rootFiber.return;
-  }
-
-  traverseFiberSync(rootFiber, (innerFiber) => {
-    if (getType(innerFiber.type) === prevType) {
-      swapFiberAndSchedule(innerFiber, nextType, renderer);
-    }
-  });
 };
 
 export * from "./rdt-hook.js";

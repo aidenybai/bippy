@@ -350,6 +350,50 @@ test.describe("normalizeFileName", () => {
     expect(result.https).toBe("/src/components/app.tsx");
   });
 
+  test("normalizeFileName strips a single short base path segment from http URLs", async ({
+    page,
+  }) => {
+    const result = await page.evaluate(() => {
+      return {
+        shortSegment: window.__BIPPY__.normalizeFileName("http://localhost:5180/base/src/app.tsx"),
+        fourCharSegment: window.__BIPPY__.normalizeFileName(
+          "http://localhost:5180/base/libs/app.tsx",
+        ),
+        fiveCharSegment: window.__BIPPY__.normalizeFileName(
+          "http://localhost:5180/base/share/app.tsx",
+        ),
+      };
+    });
+    expect(result.shortSegment).toBe("/src/app.tsx");
+    expect(result.fourCharSegment).toBe("/libs/app.tsx");
+    expect(result.fiveCharSegment).toBe("/base/share/app.tsx");
+  });
+
+  test("normalizeFileName keeps the base path for scoped or shallow remainders", async ({
+    page,
+  }) => {
+    const result = await page.evaluate(() => {
+      return {
+        scopedRemainder: window.__BIPPY__.normalizeFileName(
+          "http://localhost:5180/base/@scope/pkg.tsx",
+        ),
+        singleSegmentRemainder: window.__BIPPY__.normalizeFileName(
+          "http://localhost:5180/base/app.tsx",
+        ),
+        nonSourceRemainder: window.__BIPPY__.normalizeFileName(
+          "http://localhost:5180/base/src/app.css",
+        ),
+        rootFile: window.__BIPPY__.normalizeFileName("http://localhost:5180/app.tsx"),
+        nonHttpPath: window.__BIPPY__.normalizeFileName("/base/src/app.tsx"),
+      };
+    });
+    expect(result.scopedRemainder).toBe("/base/@scope/pkg.tsx");
+    expect(result.singleSegmentRemainder).toBe("/base/app.tsx");
+    expect(result.nonSourceRemainder).toBe("/base/src/app.css");
+    expect(result.rootFile).toBe("/app.tsx");
+    expect(result.nonHttpPath).toBe("/base/src/app.tsx");
+  });
+
   test("normalizeFileName returns empty for anonymous/eval/empty", async ({ page }) => {
     const result = await page.evaluate(() => {
       return {
@@ -449,6 +493,55 @@ test.describe("parseStack", () => {
       return window.__BIPPY__.parseStack("");
     });
     expect(result).toEqual([]);
+  });
+
+  test("parseStack parses Firefox-style frames and drops non-frame lines", async ({ page }) => {
+    const result = await page.evaluate(() => {
+      return window.__BIPPY__.parseStack(
+        "TestFn@http://localhost:5180/src/app.tsx:12:7\nnot a stack line at all",
+      );
+    });
+    expect(result).toHaveLength(1);
+    expect(result[0].functionName).toBe("TestFn");
+    expect(result[0].fileName).toBe("http://localhost:5180/src/app.tsx");
+    expect(result[0].lineNumber).toBe(12);
+    expect(result[0].columnNumber).toBe(7);
+  });
+
+  test("parseStack parses React element frames", async ({ page }) => {
+    const result = await page.evaluate(() => {
+      return window.__BIPPY__.parseStack("    in TestChild (at test-app.tsx:47)");
+    });
+    expect(result).toHaveLength(1);
+    expect(result[0].functionName).toBe("TestChild");
+  });
+
+  test("parseStack parses V8 eval frames", async ({ page }) => {
+    const result = await page.evaluate(() => {
+      return window.__BIPPY__.parseStack(
+        "    at foo (eval at bar (http://localhost:5180/src/a.js:1:2), <anonymous>:3:4)",
+      );
+    });
+    expect(result).toHaveLength(1);
+    expect(result[0].functionName).toBe("foo");
+    expect(result[0].fileName).toBe("http://localhost:5180/src/a.js");
+    expect(result[0].lineNumber).toBe(1);
+    expect(result[0].columnNumber).toBe(2);
+  });
+
+  test("parseStack handles frames without column numbers", async ({ page }) => {
+    const result = await page.evaluate(() => {
+      const frames = window.__BIPPY__.parseStack("    at foo (http://localhost:5180/src/a.js:7)");
+      return frames.map((frame) => ({
+        fileName: frame.fileName,
+        lineNumber: frame.lineNumber,
+        columnNumber: frame.columnNumber ?? null,
+      }));
+    });
+    expect(result).toHaveLength(1);
+    expect(result[0].fileName).toBe("http://localhost:5180/src/a.js");
+    expect(result[0].lineNumber).toBe(7);
+    expect(result[0].columnNumber).toBeNull();
   });
 });
 

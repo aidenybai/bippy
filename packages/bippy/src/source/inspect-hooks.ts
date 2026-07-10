@@ -282,16 +282,16 @@ const dispatcherUseMemoCache = (size: number): unknown[] => {
   )?.memoCache;
   if (memoCache === null || memoCache === undefined) return [];
 
-  let data = memoCache.data[memoCache.index];
-  if (data === undefined) {
-    data = memoCache.data[memoCache.index] = Array.from(
+  let memoCacheSlots = memoCache.data[memoCache.index];
+  if (memoCacheSlots === undefined) {
+    memoCacheSlots = memoCache.data[memoCache.index] = Array.from(
       { length: size },
       () => REACT_MEMO_CACHE_SENTINEL,
     );
   }
 
   memoCache.index++;
-  return data;
+  return memoCacheSlots;
 };
 
 const dispatcherUseOptimistic = (passthrough: unknown): [unknown, () => void] => {
@@ -473,6 +473,9 @@ const findSharedIndex = (
   rootStack: StackFrame[],
   rootIndex: number,
 ): number => {
+  // mostLikelyAncestorIndex is cached across inspections, so it can exceed the
+  // bounds of a later, shorter root stack (e.g. truncated Error.stackTraceLimit)
+  if (rootIndex >= rootStack.length) return -1;
   const source = rootStack[rootIndex].source;
   hookSearch: for (let hookIndex = 0; hookIndex < hookStack.length; hookIndex++) {
     if (hookStack[hookIndex].source === source) {

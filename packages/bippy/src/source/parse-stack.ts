@@ -2,11 +2,17 @@ export interface StackFrame {
   args?: unknown[];
   columnNumber?: number;
   lineNumber?: number;
+  // start of the enclosing function (the definition, not the call site);
+  // only available from V8's structured CallSite API
+  enclosingLineNumber?: number;
+  enclosingColumnNumber?: number;
   fileName?: string;
   functionName?: string;
   source?: string;
   isServer?: boolean;
   isSymbolicated?: boolean;
+  // the source map ignore-listed this frame's original source (x_google_ignoreList)
+  isIgnoreListed?: boolean;
 }
 
 export interface ParseOptions {
@@ -18,14 +24,6 @@ export interface ParseOptions {
 const FIREFOX_SAFARI_STACK_REGEXP = /(^|@)\S+:\d+/;
 const CHROME_IE_STACK_REGEXP = /^\s*at .*(\S+:\d+|\(native\))/m;
 const SAFARI_NATIVE_CODE_REGEXP = /^(eval@)?(\[native code\])?$/;
-
-const getNonStandardStacktrace = (error: unknown): string | null => {
-  if (error && typeof error === "object") {
-    const stacktrace = (error as Record<string, unknown>)["stacktrace"];
-    return typeof stacktrace === "string" ? stacktrace : null;
-  }
-  return null;
-};
 
 export const parseStack = (stackString: string, options?: ParseOptions): StackFrame[] => {
   if (options?.includeInElement !== false) {
@@ -76,10 +74,6 @@ const applySlice = <T>(lines: T[], options?: ParseOptions): T[] => {
   return lines;
 };
 
-export const parseV8OrIE = (error: Error, options?: ParseOptions): StackFrame[] => {
-  return parseV8OrIeString(error.stack!, options);
-};
-
 export const parseV8OrIeString = (stack: string, options?: ParseOptions): StackFrame[] => {
   const filteredLines = applySlice(
     stack.split("\n").filter((line) => {
@@ -120,10 +114,6 @@ export const parseV8OrIeString = (stack: string, options?: ParseOptions): StackF
   });
 };
 
-export const parseFFOrSafari = (error: Error, options?: ParseOptions): StackFrame[] => {
-  return parseFFOrSafariString(error.stack!, options);
-};
-
 export const parseFFOrSafariString = (stack: string, options?: ParseOptions): StackFrame[] => {
   const filteredLines = applySlice(
     stack.split("\n").filter((line) => {
@@ -156,94 +146,5 @@ export const parseFFOrSafariString = (stack: string, options?: ParseOptions): St
         source: currentLine,
       };
     }
-  });
-};
-
-export const parseOpera = (error: Error, options?: ParseOptions): StackFrame[] => {
-  const nonStandardStacktrace = getNonStandardStacktrace(error);
-  if (
-    !nonStandardStacktrace ||
-    (error.message.includes("\n") &&
-      error.message.split("\n").length > nonStandardStacktrace.split("\n").length)
-  ) {
-    return parseOpera9(error, options);
-  }
-  if (!error.stack) return parseOpera10(error, options);
-  return parseOpera11(error, options);
-};
-
-export const parseOpera9 = (error: Error, options?: ParseOptions): StackFrame[] => {
-  const lineRegex = /Line (\d+).*script (?:in )?(\S+)/i;
-  const messageLines = error.message.split("\n");
-  const parsedFrames: StackFrame[] = [];
-
-  for (let i = 2, len = messageLines.length; i < len; i += 2) {
-    const match = lineRegex.exec(messageLines[i]);
-    if (match) {
-      parsedFrames.push({
-        fileName: match[2],
-        lineNumber: +match[1],
-        source: messageLines[i],
-      });
-    }
-  }
-
-  return applySlice(parsedFrames, options);
-};
-
-export const parseOpera10 = (error: Error, options?: ParseOptions): StackFrame[] => {
-  const lineRegex = /Line (\d+).*script (?:in )?(\S+)(?:: In function (\S+))?$/i;
-  const nonStandardStacktrace = getNonStandardStacktrace(error);
-  const stacktraceLines = (nonStandardStacktrace || "").split("\n");
-  const parsedFrames: StackFrame[] = [];
-
-  for (let i = 0, len = stacktraceLines.length; i < len; i += 2) {
-    const match = lineRegex.exec(stacktraceLines[i]);
-    if (match) {
-      parsedFrames.push({
-        functionName: match[3] || undefined,
-        fileName: match[2],
-        lineNumber: match[1] ? +match[1] : undefined,
-        source: stacktraceLines[i],
-      });
-    }
-  }
-
-  return applySlice(parsedFrames, options);
-};
-
-export const parseOpera11 = (error: Error, options?: ParseOptions): StackFrame[] => {
-  const filteredLines = applySlice(
-    // @ts-expect-error missing stack property
-    error.stack.split("\n").filter((line) => {
-      return !!line.match(FIREFOX_SAFARI_STACK_REGEXP) && !line.match(/^Error created at/);
-    }),
-    options,
-  );
-
-  return filteredLines.map<StackFrame>((line) => {
-    const tokens = line.split("@");
-    const locationParts = extractLocation(tokens.pop()!);
-    const functionCall = tokens.shift() || "";
-    const functionName =
-      functionCall.replace(/<anonymous function(: (\w+))?>/, "$2").replace(/\([^)]*\)/g, "") ||
-      undefined;
-    let argsRaw: string | undefined;
-    if (functionCall.match(/\(([^)]*)\)/))
-      argsRaw = functionCall.replace(/^[^(]+\(([^)]*)\)$/, "$1");
-
-    const args =
-      argsRaw === undefined || argsRaw === "[arguments not available]"
-        ? undefined
-        : argsRaw.split(",");
-
-    return {
-      functionName,
-      args,
-      fileName: locationParts[0],
-      lineNumber: locationParts[1] ? +locationParts[1] : undefined,
-      columnNumber: locationParts[2] ? +locationParts[2] : undefined,
-      source: line,
-    };
   });
 };

@@ -16,10 +16,10 @@ const sharedPackOptions = {
     neverBundle: ["react", "react-dom", "react-reconciler"],
     alwaysBundle: ["error-stack-parser-es", "@jridgewell/sourcemap-codec"],
   },
-  minify: process.env.NODE_ENV === "production",
+  minify: process.env.NODE_ENV === "production" && !process.env.BIPPY_SOURCEMAP,
   outDir: "./dist",
   platform: "browser",
-  sourcemap: false,
+  sourcemap: Boolean(process.env.BIPPY_SOURCEMAP),
   target: "esnext",
   treeshake: true,
 };
@@ -34,6 +34,7 @@ export default defineConfig({
         index: "./src/index.ts",
         core: "./src/core.ts",
         source: "./src/source/index.ts",
+        "react-refresh": "./src/react-refresh/index.ts",
         "install-hook-only": "./src/install-hook-only.ts",
       },
       format: ["esm", "cjs"],
@@ -53,9 +54,10 @@ export default defineConfig({
   ],
   test: {
     coverage: {
-      include: ["src/*.ts"],
+      include: ["src/**/*.ts"],
+      exclude: ["src/types.ts"],
       provider: "istanbul",
-      reporter: ["text", "json", "html"],
+      reporter: ["text", "json", "json-summary", "html"],
     },
     environment: "happy-dom",
   },

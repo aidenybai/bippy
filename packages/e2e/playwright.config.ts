@@ -19,6 +19,10 @@ export default defineConfig({
       name: "nextjs",
       use: { ...devices["Desktop Chrome"], baseURL: "http://localhost:3100" },
     },
+    {
+      name: "tanstack",
+      use: { ...devices["Desktop Chrome"], baseURL: "http://localhost:3200" },
+    },
   ],
   webServer: [
     {
@@ -29,7 +33,15 @@ export default defineConfig({
     },
     {
       command: "pnpm --filter @bippy/e2e-next dev --port 3100",
-      port: 3100,
+      // Waiting on the URL (not just the port) lets webpack finish the slow
+      // first compile of the page before tests start hitting it in parallel.
+      url: "http://localhost:3100",
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+    {
+      command: "pnpm --filter @bippy/e2e-tanstack dev --port 3200",
+      port: 3200,
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
     },

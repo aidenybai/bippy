@@ -299,6 +299,22 @@ export interface Family {
 }
 
 /**
+ * React 19 flight metadata for a server component owner (ReactComponentInfo).
+ * Unlike client owners it has no `tag`; the owner chain continues via `owner`.
+ */
+export interface ServerComponentInfo {
+  name?: string;
+  env?: string;
+  owner?: Fiber | ServerComponentInfo | null;
+  debugStack?: Error | null;
+}
+
+export interface RendererRefreshUpdate {
+  staleFamilies: Set<Family>;
+  updatedFamilies: Set<Family>;
+}
+
+/**
  * Represents a react-internal Fiber node.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -402,13 +418,7 @@ export interface ReactRenderer {
   reconcilerVersion: string;
   rendererPackageName: string;
   // react refresh
-  scheduleRefresh?: (
-    root: FiberRoot,
-    update: {
-      staleFamilies: Set<Family>;
-      updatedFamilies: Set<Family>;
-    },
-  ) => void;
+  scheduleRefresh?: (root: FiberRoot, update: RendererRefreshUpdate) => void;
   scheduleRoot?: (root: FiberRoot, element: React.ReactNode) => void;
   scheduleUpdate?: (fiber: Fiber) => void;
 

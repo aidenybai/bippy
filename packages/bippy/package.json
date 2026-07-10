@@ -27,7 +27,6 @@
   "files": [
     "dist",
     "src",
-    "!src/test/**",
     "bin",
     "package.json",
     "README.md",
@@ -80,6 +79,16 @@
         "default": "./dist/source.cjs"
       }
     },
+    "./react-refresh": {
+      "import": {
+        "types": "./dist/react-refresh.d.ts",
+        "default": "./dist/react-refresh.js"
+      },
+      "require": {
+        "types": "./dist/react-refresh.d.cts",
+        "default": "./dist/react-refresh.cjs"
+      }
+    },
     "./dist/*": "./dist/*.js",
     "./dist/*.js": "./dist/*.js",
     "./dist/*.cjs": "./dist/*.cjs"
@@ -93,7 +102,8 @@
     "publint": "publint",
     "test": "vp test",
     "coverage": "vp test --coverage",
-    "prepublishOnly": "cp ../../README.md . && pnpm build"
+    "prepublishOnly": "cp ../../README.md . && pnpm build",
+    "build:coverage": "BIPPY_SOURCEMAP=true vp pack"
   },
   "devDependencies": {
     "@jridgewell/sourcemap-codec": "^1.5.0",
@@ -102,6 +112,7 @@
     "@types/node": "^20",
     "@types/react": "^19.0.4",
     "@types/react-dom": "^19.0.2",
+    "@vitest/coverage-istanbul": "^4.1.10",
     "esbuild": "^0.27.0",
     "happy-dom": "^15.11.7",
     "publint": "^0.3.0",
