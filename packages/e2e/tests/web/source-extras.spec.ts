@@ -75,7 +75,6 @@ test.describe("hook inspection", () => {
     expect(result as string[]).toContain("count");
     expect(result as string[]).toContain("showConditional");
   });
-
 });
 
 test.describe("debug metadata", () => {
