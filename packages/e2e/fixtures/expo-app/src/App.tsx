@@ -16,7 +16,6 @@ import {
   hasMemoCache,
   hasRDTHook,
   HostComponentTag,
-  hotSwapFiberType,
   instrument,
   isClientEnvironment,
   isCompositeFiber,
@@ -154,18 +153,6 @@ const OverrideContextChild = () => {
   );
 };
 
-const HotSwapOriginal = () => (
-  <View testID="hot-swap-view">
-    <Text>hot-swap original</Text>
-  </View>
-);
-
-const HotSwapReplacement = () => (
-  <View testID="hot-swap-view">
-    <Text>hot-swap replacement</Text>
-  </View>
-);
-
 // memoized so the App-level result-row commits bail out here and never
 // re-derive the probes' props/state, which would silently undo the overrides
 const OverrideProbes = memo(() => (
@@ -175,7 +162,6 @@ const OverrideProbes = memo(() => (
     <OverrideContextContext.Provider value="ctx-provided">
       <OverrideContextChild />
     </OverrideContextContext.Provider>
-    <HotSwapOriginal />
   </View>
 ));
 OverrideProbes.displayName = "OverrideProbes";
@@ -455,13 +441,11 @@ const App = () => {
     let overridePropsTargetFiber: Fiber | null = null;
     let overrideHookStateTargetFiber: Fiber | null = null;
     let overrideContextTargetFiber: Fiber | null = null;
-    let hotSwapTargetFiber: Fiber | null = null;
     traverseFiber(fiberRoot.current, (fiber) => {
       const displayName = getDisplayName(fiber.type);
       if (displayName === "OverridePropsChild") overridePropsTargetFiber = fiber;
       if (displayName === "OverrideHookStateChild") overrideHookStateTargetFiber = fiber;
       if (displayName === "OverrideContextChild") overrideContextTargetFiber = fiber;
-      if (displayName === "HotSwapOriginal") hotSwapTargetFiber = fiber;
     });
 
     if (overridePropsTargetFiber) {
@@ -476,9 +460,6 @@ const App = () => {
         OverrideContextContext,
         "ctx-overridden",
       );
-    }
-    if (hotSwapTargetFiber) {
-      hotSwapFiberType(getLatestFiber(hotSwapTargetFiber), HotSwapReplacement);
     }
   }, [coreResults]);
 

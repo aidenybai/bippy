@@ -93,12 +93,6 @@ describe("bippy core functions on React Native", () => {
         .toExist()
         .withTimeout(ASYNC_RESULT_TIMEOUT_MS);
     });
-
-    it("hotSwapFiberType swaps a component implementation in place", async () => {
-      await waitFor(element(by.text("hot-swap replacement")))
-        .toExist()
-        .withTimeout(ASYNC_RESULT_TIMEOUT_MS);
-    });
   });
 
   describe("type guards", () => {

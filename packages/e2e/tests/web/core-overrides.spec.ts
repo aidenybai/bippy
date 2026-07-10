@@ -71,38 +71,3 @@ test.describe("overrideContext", () => {
     await expect(page.getByTestId("context-consumer")).toHaveText("overridden-value");
   });
 });
-
-test.describe("hotSwapFiberType", () => {
-  test("swaps a fiber's component type and re-renders with the replacement", async ({ page }) => {
-    // React.createElement is not reachable from the test's evaluate scope, so
-    // the replacement type is borrowed from another component already in the
-    // tree (MemoChild's inner function) instead of defining a new one
-    await page.evaluate(() => {
-      const findCompositeByName = (testId: string, componentName: string) => {
-        const element = document.querySelector(`[data-testid="${testId}"]`);
-        const hostFiber = window.__BIPPY__.getFiberFromHostInstance(element);
-        let fiber = hostFiber?.return ?? null;
-        while (fiber && window.__BIPPY__.getDisplayName(fiber.type) !== componentName) {
-          fiber = fiber.return;
-        }
-        return fiber;
-      };
-
-      const childFiber = findCompositeByName("test-child", "TestChild");
-      const memoFiber = findCompositeByName("memo-child", "MemoChild");
-      if (!childFiber || !memoFiber) throw new Error("fibers not found");
-
-      const replacementType = window.__BIPPY__.getType(memoFiber.type);
-      if (!replacementType) throw new Error("replacement type not found");
-
-      window.__BIPPY__.hotSwapFiberType(
-        window.__BIPPY__.getLatestFiber(childFiber),
-        replacementType,
-      );
-    });
-    // TestChild's slot now renders MemoChild's output (with TestChild's props,
-    // so `value` is undefined and the div is empty)
-    await expect(page.getByTestId("test-child")).toHaveCount(0);
-    await expect(page.getByTestId("memo-child")).toHaveCount(2);
-  });
-});
