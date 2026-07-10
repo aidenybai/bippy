@@ -139,7 +139,7 @@ const detectTransportForNewSubscriber = (): void => {
  *
  * @example
  * ```ts
- * const unsubscribe = onReactRefresh((update) => {
+ * const unsubscribe = instrumentReactRefresh((update) => {
  *   for (const fiber of update.updatedFibers) {
  *     console.log("hot updated:", getDisplayName(fiber.type));
  *   }
@@ -151,7 +151,7 @@ const detectTransportForNewSubscriber = (): void => {
  * Pair with `getSource(fiber)` from `bippy/source` to symbolicate the
  * source locations of `updatedFibers` when needed.
  */
-export const onReactRefresh = (onRefreshUpdate: ReactRefreshHandler): Unsubscribe => {
+export const instrumentReactRefresh = (onRefreshUpdate: ReactRefreshHandler): Unsubscribe => {
   if (!isClientEnvironment()) return toUnsubscribe(() => {});
   ensureRefreshWired();
   if (refreshHandlers.size === 0) {

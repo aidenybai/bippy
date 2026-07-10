@@ -9,7 +9,7 @@ export interface Unsubscribe extends Disposable {
  * @example
  * ```ts
  * using instrumentation = instrument({ onCommitFiberRoot });
- * using refresh = onReactRefresh(handleRefresh);
+ * using refresh = instrumentReactRefresh(handleRefresh);
  * // both torn down automatically at scope exit
  * ```
  */

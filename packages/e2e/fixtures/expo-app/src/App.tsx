@@ -36,7 +36,7 @@ import {
   version,
 } from "bippy";
 import type { Fiber, FiberRoot } from "bippy";
-import { onReactRefresh } from "bippy/react-refresh";
+import { instrumentReactRefresh } from "bippy/react-refresh";
 import { getDisplayNameFromSource, getFiberHooks, getOwnerStack, getSource } from "bippy/source";
 import {
   Component,
@@ -453,7 +453,7 @@ const App = () => {
 
   useEffect(() => {
     let refreshCount = 0;
-    const unsubscribeRefresh = onReactRefresh((update) => {
+    const unsubscribeRefresh = instrumentReactRefresh((update) => {
       refreshCount++;
       const updatedNames = update.updatedComponents
         .map((componentType) => getDisplayName(componentType) ?? "unknown")

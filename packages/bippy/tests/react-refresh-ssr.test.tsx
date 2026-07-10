@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import * as bippy from "../src/index.js";
 import { detectHmrTransport } from "../src/react-refresh/detect-hmr-transport.js";
-import { onReactRefresh } from "../src/react-refresh/index.js";
+import { instrumentReactRefresh } from "../src/react-refresh/index.js";
 
 describe("react-refresh under SSR (no window)", () => {
   it("runs without a DOM", () => {
@@ -10,8 +10,8 @@ describe("react-refresh under SSR (no window)", () => {
     expect(typeof document).toBe("undefined");
   });
 
-  it("onReactRefresh returns a no-op unsubscribe without throwing", () => {
-    const unsubscribe = onReactRefresh(() => {});
+  it("instrumentReactRefresh returns a no-op unsubscribe without throwing", () => {
+    const unsubscribe = instrumentReactRefresh(() => {});
     expect(typeof unsubscribe).toBe("function");
     expect(() => unsubscribe()).not.toThrow();
   });

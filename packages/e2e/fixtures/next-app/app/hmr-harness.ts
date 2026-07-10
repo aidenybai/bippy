@@ -1,5 +1,5 @@
 import { getDisplayName, isFiber } from "bippy";
-import { onReactRefresh } from "bippy/react-refresh";
+import { instrumentReactRefresh } from "bippy/react-refresh";
 import { getSource } from "bippy/source";
 
 interface BippyRefreshUpdateRecord {
@@ -40,7 +40,7 @@ export const installHmrHarness = () => {
     hasRefreshListener: false,
     secondListenerUpdatedNames: [],
     installSecondListener: () => {
-      unsubscribeSecondListener ??= onReactRefresh((update) => {
+      unsubscribeSecondListener ??= instrumentReactRefresh((update) => {
         for (const componentType of update.updatedComponents) {
           harness.secondListenerUpdatedNames.push(getDisplayName(componentType) ?? "unknown");
         }
@@ -54,7 +54,7 @@ export const installHmrHarness = () => {
   };
   window.__BIPPY_HMR__ = harness;
 
-  onReactRefresh(async (update) => {
+  instrumentReactRefresh(async (update) => {
     const record: BippyRefreshUpdateRecord = {
       areUpdatedFibersValid: update.updatedFibers.every((fiber) => isFiber(fiber)),
       filePaths: update.filePaths,
