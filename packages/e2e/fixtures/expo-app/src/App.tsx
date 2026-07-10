@@ -453,7 +453,7 @@ const App = () => {
 
   useEffect(() => {
     let refreshCount = 0;
-    const refreshListener = onReactRefresh((update) => {
+    const unsubscribeRefresh = onReactRefresh((update) => {
       refreshCount++;
       const updatedNames = update.updatedComponents
         .map((componentType) => getDisplayName(componentType) ?? "unknown")
@@ -481,14 +481,12 @@ const App = () => {
         return `${rendererId}:scheduleRefresh=${typeof renderer.scheduleRefresh}`;
       },
     ).join(" ");
-    console.log(
-      `[bippy-hmr] listener=${String(refreshListener !== null)} renderers={${rendererDiagnostics}}`,
-    );
+    console.log(`[bippy-hmr] listener=true renderers={${rendererDiagnostics}}`);
     setHmrResults((previousResults) => ({
       ...previousResults,
-      "refresh-listener": String(refreshListener !== null),
+      "refresh-listener": "true",
     }));
-    return () => refreshListener?.dispose();
+    return unsubscribeRefresh;
   }, []);
 
   return (

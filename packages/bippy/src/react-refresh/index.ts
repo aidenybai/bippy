@@ -29,10 +29,6 @@ export interface ReactRefreshHandler {
   (update: ReactRefreshUpdate): void;
 }
 
-export interface ReactRefreshListener {
-  dispose: () => void;
-}
-
 const collectFibersByComponentType = (root: FiberRoot, componentTypes: Set<unknown>): Fiber[] => {
   if (componentTypes.size === 0 || !root.current) return [];
   const matchedFibers: Fiber[] = [];
@@ -52,7 +48,8 @@ const collectFibersByComponentType = (root: FiberRoot, componentTypes: Set<unkno
  * global hook. The react-refresh runtime calls `scheduleRefresh` after each
  * hot update, so this works with any bundler that uses react-refresh (Vite,
  * Next.js webpack, Next.js Turbopack, Metro) without bundler-specific code.
- * Returns `null` in non-client environments (e.g. SSR).
+ * Returns an unsubscribe function (a no-op in non-client environments like
+ * SSR, so callers never need an environment check).
  *
  * The bundler's HMR transport is auto-detected and each refresh update is
  * augmented with the hot-updated source file paths it reported.
@@ -64,22 +61,20 @@ const collectFibersByComponentType = (root: FiberRoot, componentTypes: Set<unkno
  *
  * @example
  * ```ts
- * const listener = onReactRefresh((update) => {
+ * const unsubscribe = onReactRefresh((update) => {
  *   for (const fiber of update.updatedFibers) {
  *     console.log("hot updated:", getDisplayName(fiber.type));
  *   }
  *   console.log("changed files:", update.filePaths);
  * });
- * listener?.dispose();
+ * unsubscribe();
  * ```
  *
  * Pair with `getSource(fiber)` from `bippy/source` to symbolicate the
  * source locations of `updatedFibers` when needed.
  */
-export const onReactRefresh = (
-  onRefreshUpdate: ReactRefreshHandler,
-): ReactRefreshListener | null => {
-  if (!isClientEnvironment()) return null;
+export const onReactRefresh = (onRefreshUpdate: ReactRefreshHandler): (() => void) => {
+  if (!isClientEnvironment()) return () => {};
 
   const restoreCallbacks: (() => void)[] = [];
   let isDisposed = false;
@@ -163,13 +158,11 @@ export const onReactRefresh = (
     }
   });
 
-  return {
-    dispose: () => {
-      isDisposed = true;
-      transport?.dispose();
-      for (const restoreCallback of restoreCallbacks) {
-        restoreCallback();
-      }
-    },
+  return () => {
+    isDisposed = true;
+    transport?.dispose();
+    for (const restoreCallback of restoreCallbacks) {
+      restoreCallback();
+    }
   };
 };

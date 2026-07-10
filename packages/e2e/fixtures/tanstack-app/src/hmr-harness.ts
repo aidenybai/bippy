@@ -1,5 +1,5 @@
 import { getDisplayName, isFiber } from "bippy";
-import { onReactRefresh, type ReactRefreshListener } from "bippy/react-refresh";
+import { onReactRefresh } from "bippy/react-refresh";
 import { getSource } from "bippy/source";
 
 interface BippyRefreshUpdateRecord {
@@ -34,27 +34,27 @@ declare global {
 export const installHmrHarness = () => {
   if (typeof window === "undefined" || window.__BIPPY_HMR__) return;
 
-  let secondListener: ReactRefreshListener | null = null;
+  let unsubscribeSecondListener: (() => void) | null = null;
   const harness: BippyHmrHarness = {
     refreshUpdates: [],
     hasRefreshListener: false,
     secondListenerUpdatedNames: [],
     installSecondListener: () => {
-      secondListener ??= onReactRefresh((update) => {
+      unsubscribeSecondListener ??= onReactRefresh((update) => {
         for (const componentType of update.updatedComponents) {
           harness.secondListenerUpdatedNames.push(getDisplayName(componentType) ?? "unknown");
         }
       });
-      return secondListener !== null;
+      return true;
     },
     disposeSecondListener: () => {
-      secondListener?.dispose();
-      secondListener = null;
+      unsubscribeSecondListener?.();
+      unsubscribeSecondListener = null;
     },
   };
   window.__BIPPY_HMR__ = harness;
 
-  const refreshListener = onReactRefresh(async (update) => {
+  onReactRefresh(async (update) => {
     const record: BippyRefreshUpdateRecord = {
       areUpdatedFibersValid: update.updatedFibers.every((fiber) => isFiber(fiber)),
       filePaths: update.filePaths,
@@ -68,5 +68,5 @@ export const installHmrHarness = () => {
     const updatedSources = await Promise.all(update.updatedFibers.map((fiber) => getSource(fiber)));
     record.updatedSourceFileNames = updatedSources.map((source) => source?.fileName ?? null);
   });
-  harness.hasRefreshListener = refreshListener !== null;
+  harness.hasRefreshListener = true;
 };

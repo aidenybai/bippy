@@ -30,8 +30,8 @@ it("reports updated and stale component types after the original scheduleRefresh
   rdtHook.inject(fakeRenderer);
 
   const onRefreshUpdate = vi.fn(() => callOrder.push("handler"));
-  const listener = onReactRefresh(onRefreshUpdate);
-  expect(listener).not.toBeNull();
+  const unsubscribe = onReactRefresh(onRefreshUpdate);
+  expect(typeof unsubscribe).toBe("function");
 
   const rendererUpdate = createFakeRendererUpdate();
   fakeRenderer.scheduleRefresh?.(fakeRoot, rendererUpdate);
@@ -46,12 +46,12 @@ it("reports updated and stale component types after the original scheduleRefresh
     updatedFibers: [],
   });
   expect(callOrder).toEqual(["original", "handler"]);
-  listener?.dispose();
+  unsubscribe();
 });
 
 it("patches renderers injected after the listener was created", () => {
   const onRefreshUpdate = vi.fn();
-  const listener = onReactRefresh(onRefreshUpdate);
+  const unsubscribe = onReactRefresh(onRefreshUpdate);
 
   const rdtHook = getRDTHook();
   const fakeRenderer = createFakeRefreshRenderer();
@@ -60,7 +60,7 @@ it("patches renderers injected after the listener was created", () => {
   fakeRenderer.scheduleRefresh?.(fakeRoot, createFakeRendererUpdate());
 
   expect(onRefreshUpdate).toHaveBeenCalledOnce();
-  listener?.dispose();
+  unsubscribe();
 });
 
 it("ignores renderers without scheduleRefresh", () => {
@@ -69,12 +69,12 @@ it("ignores renderers without scheduleRefresh", () => {
   rdtHook.inject(rendererWithoutRefresh);
 
   const onRefreshUpdate = vi.fn();
-  const listener = onReactRefresh(onRefreshUpdate);
+  const unsubscribe = onReactRefresh(onRefreshUpdate);
   expect(rendererWithoutRefresh.scheduleRefresh).toBeUndefined();
-  listener?.dispose();
+  unsubscribe();
 });
 
-it("dispose restores the original scheduleRefresh and inject", () => {
+it("unsubscribe restores the original scheduleRefresh and inject", () => {
   const rdtHook = getRDTHook();
   const originalScheduleRefresh = vi.fn();
   const fakeRenderer = createFakeRefreshRenderer(originalScheduleRefresh);
@@ -82,11 +82,11 @@ it("dispose restores the original scheduleRefresh and inject", () => {
   const injectBeforeListener = rdtHook.inject;
 
   const onRefreshUpdate = vi.fn();
-  const listener = onReactRefresh(onRefreshUpdate);
+  const unsubscribe = onReactRefresh(onRefreshUpdate);
   expect(fakeRenderer.scheduleRefresh).not.toBe(originalScheduleRefresh);
   expect(rdtHook.inject).not.toBe(injectBeforeListener);
 
-  listener?.dispose();
+  unsubscribe();
   expect(fakeRenderer.scheduleRefresh).toBe(originalScheduleRefresh);
   expect(rdtHook.inject).toBe(injectBeforeListener);
 
@@ -94,25 +94,27 @@ it("dispose restores the original scheduleRefresh and inject", () => {
   expect(onRefreshUpdate).not.toHaveBeenCalled();
 });
 
-it("stops invoking the handler after dispose even if the patch was layered over", () => {
+it("stops invoking the handler after unsubscribe even if the patch was layered over", () => {
   const rdtHook = getRDTHook();
   const fakeRenderer = createFakeRefreshRenderer();
   rdtHook.inject(fakeRenderer);
 
   const onRefreshUpdate = vi.fn();
-  const listener = onReactRefresh(onRefreshUpdate);
+  const unsubscribe = onReactRefresh(onRefreshUpdate);
 
   const patchedScheduleRefresh = fakeRenderer.scheduleRefresh;
   fakeRenderer.scheduleRefresh = (root, update) => patchedScheduleRefresh?.(root, update);
 
-  listener?.dispose();
+  unsubscribe();
   fakeRenderer.scheduleRefresh(fakeRoot, createFakeRendererUpdate());
   expect(onRefreshUpdate).not.toHaveBeenCalled();
 });
 
-it("returns null in non-client environments", () => {
+it("returns a no-op unsubscribe in non-client environments", () => {
   vi.stubGlobal("window", { navigator: { product: "Gecko" } });
-  expect(onReactRefresh(vi.fn())).toBeNull();
+  const unsubscribe = onReactRefresh(vi.fn());
+  expect(typeof unsubscribe).toBe("function");
+  expect(() => unsubscribe()).not.toThrow();
   vi.unstubAllGlobals();
 });
 
@@ -129,7 +131,7 @@ it("collects the mounted fibers whose component types were hot-swapped", () => {
   rdtHook.inject(fakeRenderer);
 
   const onRefreshUpdate = vi.fn();
-  const listener = onReactRefresh(onRefreshUpdate);
+  const unsubscribe = onReactRefresh(onRefreshUpdate);
 
   fakeRenderer.scheduleRefresh?.(rootWithTree as unknown as FiberRoot, createFakeRendererUpdate());
 
@@ -139,7 +141,7 @@ it("collects the mounted fibers whose component types were hot-swapped", () => {
       updatedFibers: [updatedFiber],
     }),
   );
-  listener?.dispose();
+  unsubscribe();
 });
 
 it("augments refresh updates with file paths from the detected hmr transport", async () => {
@@ -151,7 +153,7 @@ it("augments refresh updates with file paths from the detected hmr transport", a
   rdtHook.inject(fakeRenderer);
 
   const onRefreshUpdate = vi.fn();
-  const listener = onReactRefresh(onRefreshUpdate);
+  const unsubscribe = onReactRefresh(onRefreshUpdate);
   await flushMicrotasks();
 
   window.webpackHotUpdate_N_E?.("chunk", { "(app-pages-browser)/./app/page.tsx": {} }, undefined);
@@ -162,7 +164,7 @@ it("augments refresh updates with file paths from the detected hmr transport", a
   );
   expect(originalHotUpdate).toHaveBeenCalledOnce();
 
-  listener?.dispose();
+  unsubscribe();
   delete window.webpackHotUpdate_N_E;
 });
 
@@ -174,7 +176,7 @@ it("shares pending file paths across roots in one refresh pass, then clears them
   rdtHook.inject(fakeRenderer);
 
   const onRefreshUpdate = vi.fn();
-  const listener = onReactRefresh(onRefreshUpdate);
+  const unsubscribe = onReactRefresh(onRefreshUpdate);
   await flushMicrotasks();
 
   window.webpackHotUpdate_N_E?.("chunk", { "./app/card.tsx": {} }, undefined);
@@ -196,7 +198,7 @@ it("shares pending file paths across roots in one refresh pass, then clears them
   fakeRenderer.scheduleRefresh?.(fakeRoot, createFakeRendererUpdate());
   expect(onRefreshUpdate).toHaveBeenNthCalledWith(3, expect.objectContaining({ filePaths: [] }));
 
-  listener?.dispose();
+  unsubscribe();
   delete window.webpackHotUpdate_N_E;
 });
 
@@ -209,7 +211,7 @@ it("drops pending file paths older than the freshness window", async () => {
   rdtHook.inject(fakeRenderer);
 
   const onRefreshUpdate = vi.fn();
-  const listener = onReactRefresh(onRefreshUpdate);
+  const unsubscribe = onReactRefresh(onRefreshUpdate);
   await vi.runOnlyPendingTimersAsync();
 
   window.webpackHotUpdate_N_E?.("chunk", { "./app/stale.tsx": {} }, undefined);
@@ -218,7 +220,7 @@ it("drops pending file paths older than the freshness window", async () => {
 
   expect(onRefreshUpdate).toHaveBeenCalledWith(expect.objectContaining({ filePaths: [] }));
 
-  listener?.dispose();
+  unsubscribe();
   delete window.webpackHotUpdate_N_E;
   vi.useRealTimers();
 });

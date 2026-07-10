@@ -10,8 +10,10 @@ describe("react-refresh under SSR (no window)", () => {
     expect(typeof document).toBe("undefined");
   });
 
-  it("onReactRefresh returns null without throwing", () => {
-    expect(onReactRefresh(() => {})).toBeNull();
+  it("onReactRefresh returns a no-op unsubscribe without throwing", () => {
+    const unsubscribe = onReactRefresh(() => {});
+    expect(typeof unsubscribe).toBe("function");
+    expect(() => unsubscribe()).not.toThrow();
   });
 
   it("detectHmrTransport resolves null without throwing", async () => {
