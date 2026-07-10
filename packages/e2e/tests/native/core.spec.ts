@@ -36,8 +36,10 @@ describe("bippy core functions on React Native", () => {
       await detoxExpect(element(by.id("result-detectReactBuildType"))).toHaveText("development");
     });
 
-    it("isRealReactDevtools returns false for bippy's own hook", async () => {
-      await detoxExpect(element(by.id("result-isRealReactDevtools"))).toHaveText("false");
+    it("isRealReactDevtools recognizes the react-native devtools backend", async () => {
+      // react-native dev builds install the real react-devtools hook (it has
+      // getFiberRoots), unlike the browser fixtures where bippy's stub wins
+      await detoxExpect(element(by.id("result-isRealReactDevtools"))).toHaveText("true");
     });
 
     it("isReactRefresh resolves to a boolean on hermes", async () => {
@@ -62,6 +64,12 @@ describe("bippy core functions on React Native", () => {
   });
 
   describe("overrides", () => {
+    it("the react-native renderer exposes overrideProps to the hook", async () => {
+      await detoxExpect(element(by.id("result-renderer-supports-overrideProps"))).toHaveText(
+        "true",
+      );
+    });
+
     it("overrideProps rewrites a prop and the native view re-renders", async () => {
       await waitFor(element(by.text("e2e-test 123")))
         .toExist()

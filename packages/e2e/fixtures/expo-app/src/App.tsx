@@ -57,6 +57,8 @@ import { HmrTarget } from "./hmr-target";
 
 const TestContext = createContext("default-context");
 
+const OVERRIDE_PROPS_DELAY_MS = 500;
+
 const TestChild = ({ name, count }: { name: string; count: number }) => {
   return (
     <View testID="test-child">
@@ -242,6 +244,8 @@ const App = () => {
 
     results["isClientEnvironment"] = String(isClientEnvironment());
     results["hasRDTHook"] = String(hasRDTHook());
+    // react-native dev builds ship the real react-devtools backend, so the
+    // hook has getFiberRoots and isRealReactDevtools reports true here
     results["isRealReactDevtools"] = String(isRealReactDevtools());
     // hermes does not expose function source to toString, so react-refresh's
     // inject-string sniff can legitimately resolve either way on native
@@ -250,6 +254,11 @@ const App = () => {
 
     const rdtHook = getRDTHook();
     results["rdtHook-renderers-count"] = String(rdtHook.renderers.size);
+    results["renderer-supports-overrideProps"] = String(
+      Array.from(rdtHook.renderers.values()).some(
+        (renderer) => typeof renderer.overrideProps === "function",
+      ),
+    );
     const firstRenderer = rdtHook.renderers.values().next().value;
     results["detectReactBuildType"] = firstRenderer
       ? detectReactBuildType(firstRenderer)
@@ -309,11 +318,16 @@ const App = () => {
       }),
     );
 
-    if (testChildFiber) {
-      overrideProps(testChildFiber, { count: 123 });
-    }
-
-    void runSourceTests(testChildFiber, testParentFiber);
+    // the result-row commits from setCoreResults/setSourceResults re-render
+    // TestParent, which re-derives TestChild's props from JSX and would wipe
+    // an immediate override; defer it until the last results commit settles
+    const capturedTestChildFiber = testChildFiber;
+    void runSourceTests(testChildFiber, testParentFiber).then(() => {
+      if (!capturedTestChildFiber) return;
+      setTimeout(() => {
+        overrideProps(getLatestFiber(capturedTestChildFiber), { count: 123 });
+      }, OVERRIDE_PROPS_DELAY_MS);
+    });
   }, []);
 
   const runSourceTests = async (testChildFiber: Fiber | null, testParentFiber: Fiber | null) => {
