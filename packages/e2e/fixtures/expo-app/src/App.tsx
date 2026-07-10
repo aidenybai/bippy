@@ -23,14 +23,19 @@ import {
   isFiber,
   isHostFiber,
   isInstrumentationActive,
+  isRealReactDevtools,
+  isReactRefresh,
   isValidElement,
   isValidFiber,
+  overrideProps,
+  secure,
   shouldFilterFiber,
   traverseContexts,
   traverseFiber,
   traverseProps,
   traverseRenderedFibers,
   traverseState,
+  version,
 } from "bippy";
 import type { Fiber, FiberRoot } from "bippy";
 import { onReactRefresh } from "bippy/react-refresh";
@@ -237,6 +242,11 @@ const App = () => {
 
     results["isClientEnvironment"] = String(isClientEnvironment());
     results["hasRDTHook"] = String(hasRDTHook());
+    results["isRealReactDevtools"] = String(isRealReactDevtools());
+    // hermes does not expose function source to toString, so react-refresh's
+    // inject-string sniff can legitimately resolve either way on native
+    results["isReactRefresh"] = String(isReactRefresh());
+    results["version-is-string"] = String(typeof version === "string" && version.length > 0);
 
     const rdtHook = getRDTHook();
     results["rdtHook-renderers-count"] = String(rdtHook.renderers.size);
@@ -286,6 +296,22 @@ const App = () => {
 
     results["core-done"] = "true";
     setCoreResults(results);
+
+    instrument(
+      secure({
+        onCommitFiberRoot: () => {
+          setCoreResults((previousResults) =>
+            previousResults["secure-commit-fired"] === "true"
+              ? previousResults
+              : { ...previousResults, "secure-commit-fired": "true" },
+          );
+        },
+      }),
+    );
+
+    if (testChildFiber) {
+      overrideProps(testChildFiber, { count: 123 });
+    }
 
     void runSourceTests(testChildFiber, testParentFiber);
   }, []);

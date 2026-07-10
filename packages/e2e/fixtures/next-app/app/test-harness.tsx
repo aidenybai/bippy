@@ -27,6 +27,9 @@ const TestContext = createContext("default-context");
 export const TestParent = () => {
   const [count, setCount] = useState(0);
   const [showConditional, setShowConditional] = useState(true);
+  // a passive effect keyed on count makes React schedule post-commit work on
+  // every increment, which the onPostCommitFiberRoot spec depends on
+  useEffect(() => {}, [count]);
   return (
     <TestContext.Provider value="provided-value">
       <div data-testid="parent-host">

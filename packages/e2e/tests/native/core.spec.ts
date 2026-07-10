@@ -1,9 +1,11 @@
 // the detox jest environment injects its own global `expect` for element
 // assertions, so jest's must be imported explicitly for plain values
 import { expect } from "@jest/globals";
-import { by, element, expect as detoxExpect } from "detox";
+import { by, element, expect as detoxExpect, waitFor } from "detox";
 
 import { launchFixtureApp, readElementText } from "./helpers";
+
+const ASYNC_RESULT_TIMEOUT_MS = 30_000;
 
 describe("bippy core functions on React Native", () => {
   beforeAll(async () => {
@@ -32,6 +34,38 @@ describe("bippy core functions on React Native", () => {
 
     it("detectReactBuildType reports development for the dev bundle", async () => {
       await detoxExpect(element(by.id("result-detectReactBuildType"))).toHaveText("development");
+    });
+
+    it("isRealReactDevtools returns false for bippy's own hook", async () => {
+      await detoxExpect(element(by.id("result-isRealReactDevtools"))).toHaveText("false");
+    });
+
+    it("isReactRefresh resolves to a boolean on hermes", async () => {
+      const isReactRefreshResult = await readElementText("result-isReactRefresh");
+      expect(["true", "false"]).toContain(isReactRefreshResult);
+    });
+
+    it("version identifies the bippy build", async () => {
+      await detoxExpect(element(by.id("result-version-is-string"))).toHaveText("true");
+    });
+  });
+
+  describe("secure", () => {
+    it("secured handlers fire on the development renderer", async () => {
+      // the secure probe instruments during the core-tests commit, so its
+      // handler first fires on the follow-up commit that renders the results
+      await waitFor(element(by.id("result-secure-commit-fired")))
+        .toExist()
+        .withTimeout(ASYNC_RESULT_TIMEOUT_MS);
+      await detoxExpect(element(by.id("result-secure-commit-fired"))).toHaveText("true");
+    });
+  });
+
+  describe("overrides", () => {
+    it("overrideProps rewrites a prop and the native view re-renders", async () => {
+      await waitFor(element(by.text("e2e-test 123")))
+        .toExist()
+        .withTimeout(ASYNC_RESULT_TIMEOUT_MS);
     });
   });
 
