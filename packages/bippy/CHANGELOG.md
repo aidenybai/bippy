@@ -1,5 +1,17 @@
 # bippy
 
+## 0.6.0
+
+### Minor Changes
+
+- de0c6c6: feat!: `instrument` now returns an unsubscribe function instead of the DevTools hook (use `getRDTHook()` if you need the hook object). Each hook event is patched once and dispatches to a listener set, so multiple `instrument` calls compose instead of replacing earlier handlers, and unsubscribing removes exactly the handlers that call registered. The previously dead `onScheduleFiberRoot` option is now wired up, and `_fiberRoots` tracking no longer requires an `onCommitFiberRoot` handler. `overrideProps`/`overrideHookState`/`overrideContext` and `instrumentReactRefresh` now observe late-injected renderers through a shared single inject wrapper (new `onRendererInject` export) instead of stacking their own patches. Every subscription API (`instrument`, `instrumentReactRefresh`, `onRendererInject`) returns an `Unsubscribe` that is also a `Disposable`, so subscriptions compose through `using`. `overrideProps`/`overrideHookState`/`overrideContext` no longer chain per-renderer closures: writes dispatch to the renderer that owns the fiber's root when known (falling back to every captured renderer), the canonical renderer `overrideHookState` is preferred over the hook queue dispatch regardless of renderer count, and the dispatch fallback only applies to whole-value writes so partial path writes can no longer clobber an entire hook state.
+- 98203e3: feat: add `bippy/react-refresh` entry point exposing `instrumentReactRefresh({ onRefresh })`, which observes fast refresh updates bundler-agnostically by wrapping `scheduleRefresh` on renderers injected into the React DevTools global hook (works with Vite, Next.js webpack, Next.js Turbopack, and Metro); the handler receives the updated and stale component types after React re-renders, plus the hot-updated source file paths reported by the auto-detected bundler HMR transport (Vite, Next.js webpack, or Metro), and the API is SSR-safe (returns an unsubscribe function, a no-op outside a client environment)
+
+### Patch Changes
+
+- 5a767a4: perf: cache the React fiber property key in getFiberFromHostInstance so repeated lookups are a single property read instead of a for-in over every inherited DOM accessor
+- 5a767a4: perf: cache component stack frames per component type in describeNativeComponentFrame, binary-search source map line segments, walk bundle lines backwards when locating the sourceMappingURL trailer, avoid Set allocation in traverseProps, and compare symbol descriptions instead of stringifying symbols in shouldFilterFiber
+
 ## 0.5.41
 
 ### Patch Changes
