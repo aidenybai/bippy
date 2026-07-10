@@ -46,8 +46,8 @@ export const getDisplayNameFromSource = async (
   cache = true,
   fetchFn?: (url: string) => Promise<Response>,
 ): Promise<string | null> => {
-  const ownerStack = await getParentStack(fiber, cache, fetchFn);
-  const stackFrame = ownerStack.filter((stackFrame) => stackFrame.fileName)[0];
+  const parentStackFrames = await getParentStack(fiber, cache, fetchFn);
+  const stackFrame = parentStackFrames.filter((innerFrame) => innerFrame.fileName)[0];
 
   if (!stackFrame?.fileName) {
     return getDisplayName(fiber.type);

@@ -405,11 +405,11 @@ export const describeFiber = (fiber: Fiber, childFiber: Fiber | null): string =>
 };
 
 /**
- * react 19 introduces the _debugStack property, which we can use to grab the stack.
- * however, for versions that don't have this property, we need to construct
- * a "fake" version of the owner stack
+ * Builds a component-stack string by walking the fiber `return` chain, the
+ * pre-react-19 substitute for `_debugStack` (which is why the frame locations
+ * come from re-invocation in {@link describeFiber} rather than a real stack).
  */
-export const getFallbackOwnerStack = (thisFiber: Fiber): string => {
+export const getFallbackParentStack = (thisFiber: Fiber): string => {
   try {
     let componentStack = "";
     let currentFiber: Fiber | null = thisFiber;
@@ -498,7 +498,7 @@ export const formatOwnerStack = (stack: string): string => {
   return formattedStack;
 };
 
-interface OwnerStackEntry {
+interface DebugStackEntry {
   componentName: string;
   stackFrames: StackFrame[];
 }
@@ -514,12 +514,12 @@ const areStackFramesEqual = (firstFrame: StackFrame, secondFrame: StackFrame): b
   firstFrame.columnNumber === secondFrame.columnNumber;
 
 const buildFunctionNameToRscFramesMap = (
-  ownerStackEntries: OwnerStackEntry[],
+  debugStackEntries: DebugStackEntry[],
 ): Map<string, StackFrame[]> => {
   const functionNameToRscFrames = new Map<string, StackFrame[]>();
 
-  for (const ownerEntry of ownerStackEntries) {
-    for (const stackFrame of ownerEntry.stackFrames) {
+  for (const debugStackEntry of debugStackEntries) {
+    for (const stackFrame of debugStackEntry.stackFrames) {
       if (!isReactServerComponentFrame(stackFrame)) continue;
 
       const functionName = stackFrame.functionName!;
@@ -569,6 +569,16 @@ const getEnrichedServerStackFrame = (
   };
 };
 
+const isServerComponentUrl = (url: string): boolean =>
+  SERVER_COMPONENT_URL_PREFIXES.some((prefix) => url.startsWith(prefix));
+
+// flight installs fake server frames (rsc:// or about://React/ urls) into
+// client-side debug stacks, so server detection must be per-frame
+const markFlightServerFrame = (stackFrame: StackFrame): StackFrame =>
+  !stackFrame.isServer && stackFrame.fileName && isServerComponentUrl(stackFrame.fileName)
+    ? { ...stackFrame, isServer: true }
+    : stackFrame;
+
 /**
  * Builds owner-chain stack frames from the _debugStack errors React 19
  * attaches at JSX creation, walking `_debugOwner` across both client fibers
@@ -576,21 +586,6 @@ const getEnrichedServerStackFrame = (
  * carries `.debugStack`). This is exact - no re-invoking components, no
  * name-matching heuristics - but requires React 19.
  */
-const isServerComponentUrl = (url: string): boolean =>
-  SERVER_COMPONENT_URL_PREFIXES.some((prefix) => url.startsWith(prefix));
-
-const pushDebugStackFrames = (ownerStackFrames: StackFrame[], frames: StackFrame[]): void => {
-  for (const stackFrame of frames) {
-    // flight installs fake server frames (rsc:// or about://React/ urls) into
-    // client-side debug stacks, so server detection must be per-frame
-    if (!stackFrame.isServer && stackFrame.fileName && isServerComponentUrl(stackFrame.fileName)) {
-      ownerStackFrames.push({ ...stackFrame, isServer: true });
-    } else {
-      ownerStackFrames.push(stackFrame);
-    }
-  }
-};
-
 const getOwnerStackFromDebugStacks = (fiber: Fiber): StackFrame[] => {
   const ownerStackFrames: StackFrame[] = [];
   let owner: Fiber | ServerComponentInfo | null | undefined = fiber;
@@ -601,7 +596,9 @@ const getOwnerStackFromDebugStacks = (fiber: Fiber): StackFrame[] => {
       if (owner && hasDebugStack(ownerFiber)) {
         const { frames, isTrusted } = parseDebugStack(ownerFiber._debugStack);
         if (isTrusted) {
-          pushDebugStackFrames(ownerStackFrames, frames);
+          for (const stackFrame of frames) {
+            ownerStackFrames.push(markFlightServerFrame(stackFrame));
+          }
         }
       }
     } else {
@@ -619,8 +616,8 @@ const getOwnerStackFromDebugStacks = (fiber: Fiber): StackFrame[] => {
   return ownerStackFrames;
 };
 
-const getOwnerStackEntries = (rootFiber: Fiber): OwnerStackEntry[] => {
-  const ownerStackEntries: OwnerStackEntry[] = [];
+const getDebugStackEntries = (rootFiber: Fiber): DebugStackEntry[] => {
+  const debugStackEntries: DebugStackEntry[] = [];
 
   traverseFiber(
     rootFiber,
@@ -632,7 +629,7 @@ const getOwnerStackEntries = (rootFiber: Fiber): OwnerStackEntry[] => {
           ? getDisplayName(currentFiber.type) || "<anonymous>"
           : currentFiber.type;
 
-      ownerStackEntries.push({
+      debugStackEntries.push({
         componentName,
         stackFrames: parseStack(formatOwnerStack(currentFiber._debugStack?.stack)),
       });
@@ -640,7 +637,7 @@ const getOwnerStackEntries = (rootFiber: Fiber): OwnerStackEntry[] => {
     true,
   );
 
-  return ownerStackEntries;
+  return debugStackEntries;
 };
 
 /**
@@ -655,9 +652,9 @@ export const getParentStack = async (
   shouldCache = true,
   fetchFunction?: (url: string) => Promise<Response>,
 ): Promise<StackFrame[]> => {
-  const ownerStackEntries = getOwnerStackEntries(fiber);
-  const fallbackStackFrames = parseStack(getFallbackOwnerStack(fiber));
-  const functionNameToRscFrames = buildFunctionNameToRscFramesMap(ownerStackEntries);
+  const debugStackEntries = getDebugStackEntries(fiber);
+  const fallbackStackFrames = parseStack(getFallbackParentStack(fiber));
+  const functionNameToRscFrames = buildFunctionNameToRscFramesMap(debugStackEntries);
   const functionNameToUsageIndex = new Map<string, number>();
 
   const enrichedStackFrames = fallbackStackFrames.map((stackFrame): StackFrame => {
@@ -688,7 +685,7 @@ export const getParentStack = async (
 // an owner frame is only actionable if it can point an editor somewhere:
 // it needs a file location and must not be ignore-listed bundler/framework code
 const isLocatableFrame = (stackFrame: StackFrame): boolean =>
-  Boolean(stackFrame.fileName) && !stackFrame.ignored;
+  Boolean(stackFrame.fileName) && !stackFrame.isIgnoreListed;
 
 /**
  * Returns the stack of components that CREATED this fiber's JSX (the

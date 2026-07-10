@@ -127,7 +127,7 @@ const getSourceFromMappings = (
     columnNumber: sourceColumn,
     fileName,
     lineNumber: sourceLine + 1,
-    ignored: ignoredSourceIndices?.has(sourceIndex) ?? false,
+    isIgnoreListed: ignoredSourceIndices?.has(sourceIndex) ?? false,
   };
 };
 
@@ -390,7 +390,7 @@ export const symbolicateStack = async (
         fileName: symbolicatedSource.fileName,
         lineNumber: symbolicatedSource.lineNumber,
         columnNumber: symbolicatedSource.columnNumber,
-        ignored: symbolicatedSource.ignored,
+        isIgnoreListed: symbolicatedSource.isIgnoreListed,
         isSymbolicated: true,
       };
     }),

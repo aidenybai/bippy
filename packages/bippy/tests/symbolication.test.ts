@@ -32,7 +32,7 @@ describe("getSourceFromSourceMap", () => {
     expect(result).toEqual({
       columnNumber: 4,
       fileName: "src/app.tsx",
-      ignored: false,
+      isIgnoreListed: false,
       lineNumber: 2,
     });
   });

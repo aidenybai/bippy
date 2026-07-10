@@ -26,7 +26,7 @@ export interface ParsedDebugStack {
 
 const parsedDebugStackCache = new WeakMap<Error, ParsedDebugStack>();
 
-const isBottomFrameName = (functionName: string): boolean =>
+const isReactBottomFrameName = (functionName: string): boolean =>
   REACT_STACK_BOTTOM_FRAME_PATTERNS.some((pattern) => functionName.includes(pattern));
 
 const getCallSiteFunctionName = (callSite: V8CallSite): string => {
@@ -51,7 +51,7 @@ const collectStructuredFrames = (callSites: V8CallSite[]): ParsedDebugStack => {
   ) {
     const callSite = callSites[callSiteIndex];
     const functionName = getCallSiteFunctionName(callSite);
-    if (isBottomFrameName(functionName)) {
+    if (isReactBottomFrameName(functionName)) {
       return { frames, isTrusted: true };
     }
     if (callSite.isNative?.()) {
@@ -107,7 +107,7 @@ export const parseDebugStack = (debugStack: Error): ParsedDebugStack => {
   }
 
   let structuredResult: ParsedDebugStack | null = null;
-  const collectAndFormat = (error: Error, callSites: V8CallSite[]): string => {
+  const collectFramesAndFormatStack = (error: Error, callSites: V8CallSite[]): string => {
     structuredResult = collectStructuredFrames(callSites);
     // this return value becomes error.stack permanently, so emit the default
     // V8 format for any later reader of the same error
@@ -119,7 +119,7 @@ export const parseDebugStack = (debugStack: Error): ParsedDebugStack => {
   };
   const previousPrepareStackTrace = Error.prepareStackTrace;
   // node's CallSite typings disagree with browser-safe optional methods
-  Error.prepareStackTrace = collectAndFormat as typeof Error.prepareStackTrace;
+  Error.prepareStackTrace = collectFramesAndFormatStack as typeof Error.prepareStackTrace;
   let stackString: string;
   try {
     stackString = String(debugStack.stack);

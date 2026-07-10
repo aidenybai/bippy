@@ -212,19 +212,19 @@ test.describe("getSourceFromSourceMap", () => {
       fileName: "a.tsx",
       lineNumber: 1,
       columnNumber: 0,
-      ignored: false,
+      isIgnoreListed: false,
     });
     expect(result.beforeSecondSegment).toEqual({
       fileName: "a.tsx",
       lineNumber: 1,
       columnNumber: 0,
-      ignored: false,
+      isIgnoreListed: false,
     });
     expect(result.afterSecondSegment).toEqual({
       fileName: "b.tsx",
       lineNumber: 5,
       columnNumber: 2,
-      ignored: false,
+      isIgnoreListed: false,
     });
   });
 
@@ -289,13 +289,13 @@ test.describe("getSourceFromSourceMap", () => {
       fileName: "first.tsx",
       lineNumber: 1,
       columnNumber: 0,
-      ignored: false,
+      isIgnoreListed: false,
     });
     expect(result.secondSection).toEqual({
       fileName: "second.tsx",
       lineNumber: 3,
       columnNumber: 3,
-      ignored: false,
+      isIgnoreListed: false,
     });
     expect(result.beyondSectionMappings).toBeNull();
   });

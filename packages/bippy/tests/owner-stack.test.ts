@@ -16,7 +16,7 @@ import {
   describeDebugInfoFrame,
   describeFiber,
   formatOwnerStack,
-  getFallbackOwnerStack,
+  getFallbackParentStack,
   getOwnerStack,
   getParentStack,
   hasDebugStack,
@@ -315,13 +315,13 @@ describe("describeFiber native component frames", () => {
   });
 });
 
-describe("getFallbackOwnerStack", () => {
+describe("getFallbackParentStack", () => {
   it("walks the return chain and appends debug info frames in reverse", () => {
     const rootFiber = createFakeFiber({
       _debugInfo: [{ name: "ServerRoot", env: "Server" }, { name: 42 }, { name: "ServerLeaf" }],
     });
     const childFiber = createFakeFiber({ tag: HostComponentTag, type: "span", return: rootFiber });
-    const stack = getFallbackOwnerStack(childFiber);
+    const stack = getFallbackParentStack(childFiber);
     expect(stack).toBe("\n    in span\n    in ServerLeaf\n    in ServerRoot (at Server)");
   });
 
@@ -332,7 +332,7 @@ describe("getFallbackOwnerStack", () => {
         throw new Error("fiber walk exploded");
       },
     });
-    const stack = getFallbackOwnerStack(explodingFiber);
+    const stack = getFallbackParentStack(explodingFiber);
     expect(stack).toContain("Error generating stack: fiber walk exploded");
   });
 
@@ -343,7 +343,7 @@ describe("getFallbackOwnerStack", () => {
         throw "not an error";
       },
     });
-    expect(getFallbackOwnerStack(explodingFiber)).toBe("");
+    expect(getFallbackParentStack(explodingFiber)).toBe("");
   });
 });
 

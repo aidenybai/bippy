@@ -43,11 +43,11 @@ it("marks frames from ignoreList sources as ignored", async () => {
 
   const appFrame = getSourceFromSourceMap(sourceMap, 1, 0);
   expect(appFrame?.fileName).toBe("app.tsx");
-  expect(appFrame?.ignored).toBe(false);
+  expect(appFrame?.isIgnoreListed).toBe(false);
 
   const frameworkFrame = getSourceFromSourceMap(sourceMap, 2, 0);
   expect(frameworkFrame?.fileName).toBe("node_modules/framework/index.js");
-  expect(frameworkFrame?.ignored).toBe(true);
+  expect(frameworkFrame?.isIgnoreListed).toBe(true);
 });
 
 it("supports the legacy x_google_ignoreList field", async () => {
@@ -69,7 +69,7 @@ it("supports the legacy x_google_ignoreList field", async () => {
 
   const vendorFrame = getSourceFromSourceMap(sourceMap, 2, 0);
   expect(vendorFrame?.fileName).toBe("vendor.js");
-  expect(vendorFrame?.ignored).toBe(true);
+  expect(vendorFrame?.isIgnoreListed).toBe(true);
 });
 
 it("leaves ignored false when the map has no ignore list", async () => {
@@ -90,5 +90,5 @@ it("leaves ignored false when the map has no ignore list", async () => {
 
   const appFrame = getSourceFromSourceMap(sourceMap, 1, 0);
   expect(appFrame?.fileName).toBe("app.tsx");
-  expect(appFrame?.ignored).toBe(false);
+  expect(appFrame?.isIgnoreListed).toBe(false);
 });

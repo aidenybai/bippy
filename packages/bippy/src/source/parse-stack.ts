@@ -12,7 +12,7 @@ export interface StackFrame {
   isServer?: boolean;
   isSymbolicated?: boolean;
   // the source map ignore-listed this frame's original source (x_google_ignoreList)
-  ignored?: boolean;
+  isIgnoreListed?: boolean;
 }
 
 export interface ParseOptions {
