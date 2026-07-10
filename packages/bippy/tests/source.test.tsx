@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import { expect, it } from "vitest";
 import type { Fiber } from "../src/types.js";
 import { instrument } from "../src/index.js";
-import { getSource, getOwnerStack, getSourceMap } from "../src/source/index.js";
+import { getSource, getOwnerStack, getParentStack, getSourceMap } from "../src/source/index.js";
 import { sourceMapCache } from "../src/source/symbolication.js";
 import { normalizeFileName } from "../src/source/get-source.js";
 import { extractLocation, parseStack, type StackFrame } from "../src/source/parse-stack.js";
@@ -55,6 +55,10 @@ const ComponentWithHooks = () => {
 
 const ExampleWithChild = ({ children }: { children: React.ReactNode }) => {
   return <div>{children}</div>;
+};
+
+const OwnerParent = () => {
+  return <ComponentWithProps message="from-owner" />;
 };
 
 it("getOwnerStack should return stack for simple component", async () => {
@@ -140,7 +144,61 @@ it("getOwnerStack should return stack for nested component with props", async ()
   expect(result[2].columnNumber).toBe(expectedChildFrame.columnNumber);
 });
 
-it("getSource should return null for simple component without props/hooks", async () => {
+it("getOwnerStack should use debug stacks for fibers created during a render", async () => {
+  let capturedFiber: Fiber | null = null;
+  instrument({
+    onCommitFiberRoot: (_rendererID, fiberRoot) => {
+      capturedFiber = fiberRoot.current.child?.child ?? null;
+    },
+  });
+  render(<OwnerParent />);
+
+  const result = await getOwnerStack(capturedFiber as unknown as Fiber);
+
+  expect(result.length).toBeGreaterThanOrEqual(2);
+  expect(result[0].functionName).toBe("ComponentWithProps");
+  expect(result[1].fileName).toContain("source.test.tsx");
+  expect(result[1].functionName).toContain("OwnerParent");
+  expect(result[1].lineNumber).toBeGreaterThan(0);
+});
+
+it("getParentStack should include wrapper parents that do not own the fiber", async () => {
+  let capturedFiber: Fiber | null = null;
+  instrument({
+    onCommitFiberRoot: (_rendererID, fiberRoot) => {
+      capturedFiber = fiberRoot.current.child.child.child;
+    },
+  });
+  render(
+    <ExampleWithChild>
+      <ComponentWithProps message="test" />
+    </ExampleWithChild>,
+  );
+
+  const result = await getParentStack(capturedFiber as unknown as Fiber);
+
+  const functionNames = result.map((frame) => frame.functionName);
+  expect(functionNames).toContain("ComponentWithProps");
+  expect(functionNames).toContain("ExampleWithChild");
+});
+
+it("getSource should return the usage site from the fiber's own debug stack", async () => {
+  let capturedFiber: Fiber | null = null;
+  instrument({
+    onCommitFiberRoot: (_rendererID, fiberRoot) => {
+      capturedFiber = fiberRoot.current.child?.child ?? null;
+    },
+  });
+  render(<OwnerParent />);
+
+  const result = await getSource(capturedFiber as unknown as Fiber, false, mockFetch);
+
+  expect(result).not.toBeNull();
+  expect(result?.fileName).toContain("source.test.tsx");
+  expect(result?.lineNumber).toBeGreaterThan(0);
+});
+
+it("getSource should resolve a simple component without props/hooks via an owned child's debug stack", async () => {
   let capturedFiber: Fiber | null = null;
   instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {
@@ -151,7 +209,9 @@ it("getSource should return null for simple component without props/hooks", asyn
 
   const result = await getSource(capturedFiber as unknown as Fiber, false, mockFetch);
 
-  expect(result).toBeNull();
+  expect(result).not.toBeNull();
+  expect(result?.fileName).toContain("source.test.tsx");
+  expect(result?.lineNumber).toBeGreaterThan(0);
 });
 
 it("getSource should work for component with props", async () => {

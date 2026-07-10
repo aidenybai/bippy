@@ -29,7 +29,12 @@ const createStandardSourceMap = (overrides?: Partial<SourceMap>): SourceMap => (
 describe("getSourceFromSourceMap", () => {
   it("resolves the segment at an exact column", () => {
     const result = getSourceFromSourceMap(createStandardSourceMap(), 1, 10);
-    expect(result).toEqual({ columnNumber: 4, fileName: "src/app.tsx", lineNumber: 2 });
+    expect(result).toEqual({
+      columnNumber: 4,
+      fileName: "src/app.tsx",
+      ignored: false,
+      lineNumber: 2,
+    });
   });
 
   it("resolves the last segment at or before the column", () => {
@@ -280,6 +285,20 @@ describe("getSourceMapImpl", () => {
 
     await getSourceMapImpl("http://localhost/bundle.js", fetchFn);
     expect(requestedUrls[1]).toBe("/maps/bundle.js.map");
+  });
+
+  it("decodes inline data-url sourcemaps (vite dev style)", async () => {
+    const inlineMapUrl = `data:application/json;base64,${Buffer.from(STANDARD_RAW_MAP).toString("base64")}`;
+    const fetchFn = (url: string): Promise<Response> => {
+      if (url === "http://localhost/src/app.tsx") {
+        return Promise.resolve(
+          new Response(`const value = 1;\n//# sourceMappingURL=${inlineMapUrl}`, { status: 200 }),
+        );
+      }
+      return fetch(url);
+    };
+    const sourceMap = await getSourceMapImpl("http://localhost/src/app.tsx", fetchFn);
+    expect(sourceMap?.sources).toEqual(["src/app.tsx"]);
   });
 
   it("finds the sourceMappingURL in a block comment", async () => {

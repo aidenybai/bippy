@@ -208,16 +208,23 @@ test.describe("getSourceFromSourceMap", () => {
         afterSecondSegment: window.__BIPPY__.getSourceFromSourceMap(sourceMap, 1, 15),
       };
     });
-    expect(result.atStart).toEqual({ fileName: "a.tsx", lineNumber: 1, columnNumber: 0 });
+    expect(result.atStart).toEqual({
+      fileName: "a.tsx",
+      lineNumber: 1,
+      columnNumber: 0,
+      ignored: false,
+    });
     expect(result.beforeSecondSegment).toEqual({
       fileName: "a.tsx",
       lineNumber: 1,
       columnNumber: 0,
+      ignored: false,
     });
     expect(result.afterSecondSegment).toEqual({
       fileName: "b.tsx",
       lineNumber: 5,
       columnNumber: 2,
+      ignored: false,
     });
   });
 
@@ -278,11 +285,17 @@ test.describe("getSourceFromSourceMap", () => {
         beyondSectionMappings: window.__BIPPY__.getSourceFromSourceMap(sectionedMap, 20, 0),
       };
     });
-    expect(result.firstSection).toEqual({ fileName: "first.tsx", lineNumber: 1, columnNumber: 0 });
+    expect(result.firstSection).toEqual({
+      fileName: "first.tsx",
+      lineNumber: 1,
+      columnNumber: 0,
+      ignored: false,
+    });
     expect(result.secondSection).toEqual({
       fileName: "second.tsx",
       lineNumber: 3,
       columnNumber: 3,
+      ignored: false,
     });
     expect(result.beyondSectionMappings).toBeNull();
   });

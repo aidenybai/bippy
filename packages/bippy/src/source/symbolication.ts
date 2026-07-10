@@ -5,6 +5,7 @@ import { StackFrame } from "./parse-stack.js";
 export interface DecodedSourceMapSection {
   map: {
     file?: string;
+    ignoredSourceIndices?: Set<number>;
     mappings: SourceMapSegment[][];
     names?: string[];
     sourceRoot?: string;
@@ -35,6 +36,7 @@ export type RawSourceMap = IndexSourceMap | StandardSourceMap;
 
 export interface SourceMap {
   file?: string;
+  ignoredSourceIndices?: Set<number>;
   mappings: SourceMapSegment[][];
   names?: string[];
   sections?: DecodedSourceMapSection[];
@@ -47,12 +49,14 @@ export interface SourceMap {
 // https://developer.chrome.com/blog/sourcemaps#the_anatomy_of_a_source_map
 export interface StandardSourceMap {
   file?: string;
+  ignoreList?: number[];
   mappings: string;
   names?: string[];
   sourceRoot?: string;
   sources: string[];
   sourcesContent?: string[];
   version: 3;
+  x_google_ignoreList?: number[];
 }
 
 // has a scheme, e.g. http://, https://, file://, data:, etc.
@@ -77,6 +81,7 @@ const getSourceFromMappings = (
   sources: string[],
   lineIndexInMappings: number,
   column: number,
+  ignoredSourceIndices?: Set<number>,
 ): StackFrame | null => {
   if (lineIndexInMappings < 0 || lineIndexInMappings >= mappings.length) {
     return null;
@@ -122,6 +127,7 @@ const getSourceFromMappings = (
     columnNumber: sourceColumn,
     fileName,
     lineNumber: sourceLine + 1,
+    ignored: ignoredSourceIndices?.has(sourceIndex) ?? false,
   };
 };
 
@@ -159,10 +165,17 @@ export const getSourceFromSourceMap = (
       targetSection.map.sources,
       relativeLine,
       relativeColumn,
+      targetSection.map.ignoredSourceIndices,
     );
   }
 
-  return getSourceFromMappings(sourceMap.mappings, sourceMap.sources, line - 1, column);
+  return getSourceFromMappings(
+    sourceMap.mappings,
+    sourceMap.sources,
+    line - 1,
+    column,
+    sourceMap.ignoredSourceIndices,
+  );
 };
 
 const getSourceMapUrl = (url: string, content: string): null | string => {
@@ -193,8 +206,14 @@ const getSourceMapUrl = (url: string, content: string): null | string => {
   return sourceMapUrl;
 };
 
+const getIgnoredSourceIndices = (rawSourceMap: StandardSourceMap): Set<number> | undefined => {
+  const ignoreList = rawSourceMap.ignoreList ?? rawSourceMap.x_google_ignoreList;
+  return Array.isArray(ignoreList) && ignoreList.length > 0 ? new Set(ignoreList) : undefined;
+};
+
 const decodeStandardSourceMap = (rawSourceMap: StandardSourceMap): SourceMap => ({
   file: rawSourceMap.file,
+  ignoredSourceIndices: getIgnoredSourceIndices(rawSourceMap),
   mappings: decode(rawSourceMap.mappings),
   names: rawSourceMap.names,
   sourceRoot: rawSourceMap.sourceRoot,
@@ -208,6 +227,7 @@ const decodeIndexSourceMap = (rawSourceMap: IndexSourceMap): SourceMap => {
     ({ map, offset }) => ({
       map: {
         ...map,
+        ignoredSourceIndices: getIgnoredSourceIndices(map),
         mappings: decode(map.mappings),
       },
       offset,
@@ -280,7 +300,9 @@ export const getSourceMapImpl = async (
   const sourceMapUrl = getSourceMapUrl(bundleUrl, bundleContent);
 
   if (!sourceMapUrl) return null;
-  if (!isFetchableUrl(sourceMapUrl)) {
+  // inline data: maps (vite dev, babel inline sourcemaps) are decoded by
+  // fetch itself, so they bypass the network-url check
+  if (!isFetchableUrl(sourceMapUrl) && !INLINE_SOURCEMAP_REGEX.test(sourceMapUrl)) {
     return null;
   }
 
@@ -368,6 +390,7 @@ export const symbolicateStack = async (
         fileName: symbolicatedSource.fileName,
         lineNumber: symbolicatedSource.lineNumber,
         columnNumber: symbolicatedSource.columnNumber,
+        ignored: symbolicatedSource.ignored,
         isSymbolicated: true,
       };
     }),

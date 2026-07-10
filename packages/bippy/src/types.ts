@@ -298,6 +298,17 @@ export interface Family {
   current: unknown;
 }
 
+/**
+ * React 19 flight metadata for a server component owner (ReactComponentInfo).
+ * Unlike client owners it has no `tag`; the owner chain continues via `owner`.
+ */
+export interface ServerComponentInfo {
+  name?: string;
+  env?: string;
+  owner?: Fiber | ServerComponentInfo | null;
+  debugStack?: Error | null;
+}
+
 export interface RendererRefreshUpdate {
   staleFamilies: Set<Family>;
   updatedFamilies: Set<Family>;

@@ -18,6 +18,7 @@ import {
   formatOwnerStack,
   getFallbackOwnerStack,
   getOwnerStack,
+  getParentStack,
   hasDebugStack,
 } from "../src/source/owner-stack.js";
 
@@ -346,7 +347,112 @@ describe("getFallbackOwnerStack", () => {
   });
 });
 
-describe("getOwnerStack server frame enrichment", () => {
+describe("getOwnerStack owner-chain walk", () => {
+  it("walks _debugOwner chains and marks flight server frames per-frame", async () => {
+    const appFiber = createFakeFiber({
+      tag: FunctionComponentTag,
+      type: function App() {},
+    });
+    const fiber = createFakeFiber({
+      tag: HostComponentTag,
+      type: "p",
+      _debugOwner: appFiber,
+      _debugStack: createDebugStackError([
+        "Error: react-stack-top-frame",
+        "    at fakeJSXCallSite (http://localhost/chunk.js:1:1)",
+        "    at ServerCard (about://React/Server/file:///proj/.next/chunks/ssr/chunk.js?8:75:471)",
+        "    at react-stack-bottom-frame (http://localhost/chunk.js:2:2)",
+      ]),
+    });
+
+    const frames = await getOwnerStack(fiber, false, noopFetchFn);
+
+    const serverCardFrame = frames.find((frame) => frame.functionName === "ServerCard");
+    expect(serverCardFrame?.isServer).toBe(true);
+    expect(serverCardFrame?.fileName).toBe(
+      "about://React/Server/file:///proj/.next/chunks/ssr/chunk.js?8",
+    );
+  });
+
+  it("continues through server component owners via their debugStack", async () => {
+    const rootOwner = { name: "Root" };
+    const serverOwner = {
+      name: "ServerCard",
+      env: "Server",
+      owner: rootOwner,
+      debugStack: createDebugStackError([
+        "Error: react-stack-top-frame",
+        "    at fakeJSXCallSite (http://localhost/chunk.js:1:1)",
+        "    at Page (rsc://React/Server/file:///proj/page.js:12:7)",
+      ]),
+    };
+    const fiber = createFakeFiber({
+      tag: HostComponentTag,
+      type: "p",
+      _debugOwner: serverOwner,
+      _debugStack: createDebugStackError([
+        "Error: react-stack-top-frame",
+        "    at fakeJSXCallSite (http://localhost/chunk.js:1:1)",
+        "    at ServerCard (rsc://React/Server/file:///proj/server-card.js:5:3)",
+        "    at react-stack-bottom-frame (http://localhost/chunk.js:2:2)",
+      ]),
+    });
+
+    const frames = await getOwnerStack(fiber, false, noopFetchFn);
+
+    const functionNames = frames.map((frame) => frame.functionName);
+    expect(functionNames).toContain("ServerCard");
+    expect(functionNames).toContain("Page");
+    expect(frames.every((frame) => frame.functionName === "p" || frame.isServer)).toBe(true);
+  });
+
+  it("falls back to the parent walk when no owner frame has a locatable file", async () => {
+    const appFiber = createFakeFiber({
+      tag: FunctionComponentTag,
+      type: function App() {},
+    });
+    const fiber = createFakeFiber({
+      tag: HostComponentTag,
+      type: "span",
+      return: appFiber,
+      _debugOwner: appFiber,
+      _debugStack: createDebugStackError([
+        "Error: react-stack-top-frame",
+        "    at fakeJSXCallSite (http://localhost/chunk.js:1:1)",
+        "    at <anonymous>",
+        "    at react-stack-bottom-frame (http://localhost/chunk.js:2:2)",
+      ]),
+    });
+
+    const frames = await getOwnerStack(fiber, false, noopFetchFn);
+
+    expect(frames.map((frame) => frame.functionName)).toEqual(["span", "App"]);
+  });
+
+  it("ignores untrusted debug stacks and falls back to the parent walk", async () => {
+    const appFiber = createFakeFiber({
+      tag: FunctionComponentTag,
+      type: function App() {},
+    });
+    const fiber = createFakeFiber({
+      tag: HostComponentTag,
+      type: "span",
+      return: appFiber,
+      _debugOwner: appFiber,
+      _debugStack: createDebugStackError([
+        "Error: react-stack-top-frame",
+        "    at fakeJSXCallSite (http://localhost/chunk.js:1:1)",
+        "    at bootstrap (http://localhost/main.js:1:1)",
+      ]),
+    });
+
+    const frames = await getOwnerStack(fiber, false, noopFetchFn);
+
+    expect(frames.map((frame) => frame.functionName)).toEqual(["span", "App"]);
+  });
+});
+
+describe("getParentStack server frame enrichment", () => {
   it("enriches server frames with locations from rsc debug stacks", async () => {
     const debugStack = createDebugStackError([
       "Error: react-stack-top-frame",
@@ -359,7 +465,7 @@ describe("getOwnerStack server frame enrichment", () => {
       _debugInfo: [{ name: "TodoItem", env: "Server" }],
     });
 
-    const frames = await getOwnerStack(fiber, false, noopFetchFn);
+    const frames = await getParentStack(fiber, false, noopFetchFn);
 
     expect(frames).toHaveLength(1);
     expect(frames[0].functionName).toBe("TodoItem");
@@ -377,7 +483,7 @@ describe("getOwnerStack server frame enrichment", () => {
       _debugInfo: [{ name: "", env: "Server" }],
     });
 
-    const frames = await getOwnerStack(fiber, false, noopFetchFn);
+    const frames = await getParentStack(fiber, false, noopFetchFn);
 
     expect(frames).toHaveLength(1);
     expect(frames[0].isServer).toBe(true);
@@ -389,7 +495,7 @@ describe("getOwnerStack server frame enrichment", () => {
       _debugInfo: [{ name: "LonelyServerComponent", env: "Server" }],
     });
 
-    const frames = await getOwnerStack(fiber, false, noopFetchFn);
+    const frames = await getParentStack(fiber, false, noopFetchFn);
 
     expect(frames).toHaveLength(1);
     expect(frames[0].isServer).toBe(true);
@@ -401,7 +507,7 @@ describe("getOwnerStack server frame enrichment", () => {
       _debugInfo: [{ name: "EdgeComponent", env: "Edge" }],
     });
 
-    const frames = await getOwnerStack(fiber, false, noopFetchFn);
+    const frames = await getParentStack(fiber, false, noopFetchFn);
 
     expect(frames[0].isServer).toBe(true);
     expect(frames[0].functionName).toBe("EdgeComponent");
@@ -425,7 +531,7 @@ describe("getOwnerStack server frame enrichment", () => {
       ],
     });
 
-    const frames = await getOwnerStack(fiber, false, noopFetchFn);
+    const frames = await getParentStack(fiber, false, noopFetchFn);
 
     const itemFrames = frames.filter((frame) => frame.functionName === "Item");
     expect(itemFrames).toHaveLength(2);
@@ -445,7 +551,7 @@ describe("getOwnerStack server frame enrichment", () => {
       _debugInfo: [{ name: "HostThing", env: "Server" }],
     });
 
-    const frames = await getOwnerStack(fiber, false, noopFetchFn);
+    const frames = await getParentStack(fiber, false, noopFetchFn);
 
     expect(frames[0].fileName).toBe("rsc://React/Server/file:///proj/server-chunk.js");
   });
@@ -457,7 +563,7 @@ describe("getOwnerStack server frame enrichment", () => {
       type: "div",
       return: rootFiber,
     });
-    const frames = await getOwnerStack(childFiber, false, noopFetchFn);
+    const frames = await getParentStack(childFiber, false, noopFetchFn);
     expect(frames).toHaveLength(1);
     expect(frames[0].functionName).toBe("div");
   });

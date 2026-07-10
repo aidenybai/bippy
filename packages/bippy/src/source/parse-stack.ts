@@ -2,11 +2,17 @@ export interface StackFrame {
   args?: unknown[];
   columnNumber?: number;
   lineNumber?: number;
+  // start of the enclosing function (the definition, not the call site);
+  // only available from V8's structured CallSite API
+  enclosingLineNumber?: number;
+  enclosingColumnNumber?: number;
   fileName?: string;
   functionName?: string;
   source?: string;
   isServer?: boolean;
   isSymbolicated?: boolean;
+  // the source map ignore-listed this frame's original source (x_google_ignoreList)
+  ignored?: boolean;
 }
 
 export interface ParseOptions {

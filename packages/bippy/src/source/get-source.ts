@@ -10,7 +10,10 @@ import {
   BUNDLED_FILE_PATTERN_REGEX,
   QUERY_PARAMETER_PATTERN_REGEX,
 } from "./constants.js";
-import { getOwnerStack } from "./owner-stack.js";
+import { getDefinitionFrameFromOwnedChild, getParentStack, hasDebugStack } from "./owner-stack.js";
+import { parseDebugStack } from "./parse-debug-stack.js";
+import { StackFrame } from "./parse-stack.js";
+import { symbolicateStack } from "./symbolication.js";
 
 export const hasDebugSource = (
   fiber: Fiber,
@@ -31,8 +34,45 @@ export const hasDebugSource = (
   );
 };
 
+const toFiberSource = (stackFrame: StackFrame): FiberSource | null =>
+  stackFrame.fileName
+    ? {
+        fileName: stackFrame.fileName,
+        lineNumber: stackFrame.lineNumber,
+        columnNumber: stackFrame.columnNumber,
+        functionName: stackFrame.functionName,
+      }
+    : null;
+
+// the fiber's own _debugStack (react 19) is captured at its JSX creation
+// site, so its first user-space frame IS the usage site - no need to
+// re-invoke the component like the throwing trick does
+const getUsageFrameFromDebugStack = (fiber: Fiber): StackFrame | null => {
+  if (!hasDebugStack(fiber)) {
+    return null;
+  }
+  const { frames, isTrusted } = parseDebugStack(fiber._debugStack);
+  if (!isTrusted) {
+    return null;
+  }
+  for (const stackFrame of frames) {
+    if (stackFrame.fileName) {
+      return stackFrame;
+    }
+  }
+  return null;
+};
+
 /**
  * Returns the source of where the component is used. Available only in dev, for composite {@link Fiber}s.
+ *
+ * Resolution order:
+ * 1. `_debugSource` (react <19, requires the JSX source babel transform)
+ * 2. the fiber's own `_debugStack` (react 19) - the exact JSX creation site
+ * 3. an owned child's `_debugStack` bottom frame (react 19) - a location
+ *    inside the component's own body; works for components that the throwing
+ *    trick cannot locate (no hooks, no props access)
+ * 4. the legacy owner-stack path (throwing trick re-invocation)
  *
  * @example
  * ```ts
@@ -59,16 +99,20 @@ export const getSource = async (
     return debugSource || null;
   }
 
-  const componentStack = await getOwnerStack(fiber, cache, fetchFn);
+  const debugStackFrame =
+    getUsageFrameFromDebugStack(fiber) ?? getDefinitionFrameFromOwnedChild(fiber);
+  if (debugStackFrame) {
+    const [symbolicatedFrame] = await symbolicateStack([debugStackFrame], cache, fetchFn);
+    const debugStackSource = toFiberSource(symbolicatedFrame);
+    if (debugStackSource) {
+      return debugStackSource;
+    }
+  }
 
+  const componentStack = await getParentStack(fiber, cache, fetchFn);
   for (const stackFrame of componentStack) {
     if (stackFrame.fileName) {
-      return {
-        fileName: stackFrame.fileName,
-        lineNumber: stackFrame.lineNumber,
-        columnNumber: stackFrame.columnNumber,
-        functionName: stackFrame.functionName,
-      };
+      return toFiberSource(stackFrame);
     }
   }
   return null;
