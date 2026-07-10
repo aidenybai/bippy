@@ -1,14 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   extractLocation,
-  parseFFOrSafari,
   parseFFOrSafariString,
-  parseOpera,
-  parseOpera9,
-  parseOpera10,
-  parseOpera11,
   parseStack,
-  parseV8OrIE,
   parseV8OrIeString,
 } from "../src/source/parse-stack.js";
 
@@ -124,15 +118,6 @@ describe("parseV8OrIeString", () => {
   });
 });
 
-describe("parseV8OrIE", () => {
-  it("parses the stack of an Error object", () => {
-    const error = new Error("boom");
-    error.stack = CHROME_STACK;
-    const frames = parseV8OrIE(error);
-    expect(frames).toHaveLength(4);
-  });
-});
-
 describe("parseFFOrSafariString", () => {
   it("parses standard firefox frames", () => {
     const frames = parseFFOrSafariString(FIREFOX_STACK);
@@ -166,15 +151,6 @@ describe("parseFFOrSafariString", () => {
   });
 });
 
-describe("parseFFOrSafari", () => {
-  it("parses the stack of an Error object", () => {
-    const error = new Error("boom");
-    error.stack = FIREFOX_STACK;
-    const frames = parseFFOrSafari(error);
-    expect(frames.length).toBeGreaterThan(0);
-  });
-});
-
 describe("extractLocation", () => {
   it("returns the input untouched when there is no colon", () => {
     expect(extractLocation("native")).toEqual(["native", undefined, undefined]);
@@ -194,160 +170,5 @@ describe("parseStack malformed frames", () => {
     const frames = parseStack("    at mystery\n    at real (file.js:1:2)");
     expect(frames).toHaveLength(1);
     expect(frames[0].functionName).toBe("real");
-  });
-});
-
-const OPERA9_MESSAGE = [
-  "Statement on line 44: Type mismatch (usually non-object value supplied where object required)",
-  "Backtrace:",
-  "  Line 44 of linked script http://site.com/main.js",
-  "    discarded()",
-  "  Line 10 of inline#1 script in http://site.com/index.html",
-  "    call()",
-].join("\n");
-
-const OPERA10_STACKTRACE = [
-  "  Line 44 of linked script http://site.com/main.js: In function foo",
-  "    discarded()",
-  "  Line 10 of inline#1 script in http://site.com/index.html",
-  "    call()",
-].join("\n");
-
-const OPERA11_STACK = [
-  "Error thrown at line 42, column 12 in <anonymous function: createFault>(sig) in http://site.com/main.js:",
-  "createException(sig)@http://site.com/main.js:42:12",
-  "run([arguments not available])@http://site.com/main.js:52:8",
-  "@http://site.com/index.html:11:9",
-  "Error created at anonymous",
-].join("\n");
-
-interface OperaLikeError {
-  message: string;
-  stacktrace?: string;
-  stack?: string;
-}
-
-const createOperaError = (overrides: OperaLikeError): Error => {
-  const error = new Error(overrides.message);
-  error.message = overrides.message;
-  if ("stacktrace" in overrides) {
-    Object.defineProperty(error, "stacktrace", { value: overrides.stacktrace });
-  }
-  Object.defineProperty(error, "stack", { value: overrides.stack, configurable: true });
-  return error;
-};
-
-describe("parseOpera9", () => {
-  it("parses frames from the error message", () => {
-    const error = createOperaError({ message: OPERA9_MESSAGE });
-    const frames = parseOpera9(error);
-    expect(frames).toHaveLength(2);
-    expect(frames[0].fileName).toBe("http://site.com/main.js");
-    expect(frames[0].lineNumber).toBe(44);
-    expect(frames[1].fileName).toBe("http://site.com/index.html");
-  });
-
-  it("skips message lines that do not describe frames", () => {
-    const error = createOperaError({
-      message: `${OPERA9_MESSAGE}\n  unrelated trailing text\n  more text`,
-    });
-    expect(parseOpera9(error)).toHaveLength(2);
-  });
-});
-
-describe("parseOpera10", () => {
-  it("parses frames from the nonstandard stacktrace property", () => {
-    const error = createOperaError({ message: "boom", stacktrace: OPERA10_STACKTRACE });
-    const frames = parseOpera10(error);
-    expect(frames).toHaveLength(2);
-    expect(frames[0].functionName).toBe("foo");
-    expect(frames[0].fileName).toBe("http://site.com/main.js");
-    expect(frames[1].functionName).toBeUndefined();
-  });
-
-  it("returns no frames when stacktrace is missing", () => {
-    const error = createOperaError({ message: "boom" });
-    expect(parseOpera10(error)).toHaveLength(0);
-  });
-});
-
-describe("parseOpera11", () => {
-  it("parses frames with args and anonymous functions", () => {
-    const error = createOperaError({ message: "boom", stack: OPERA11_STACK });
-    const frames = parseOpera11(error);
-    expect(frames).toHaveLength(3);
-    expect(frames[0].functionName).toBe("createException");
-    expect(frames[0].args).toEqual(["sig"]);
-    expect(frames[1].functionName).toBe("run");
-    expect(frames[1].args).toBeUndefined();
-    expect(frames[2].functionName).toBeUndefined();
-    expect(frames[2].fileName).toBe("http://site.com/index.html");
-  });
-
-  it("parses frames without a column number", () => {
-    const error = createOperaError({
-      message: "boom",
-      stack: "shortFrame()@http://site.com/simple.js:42",
-    });
-    const frames = parseOpera11(error);
-    expect(frames[0].lineNumber).toBe(42);
-    expect(frames[0].columnNumber).toBeUndefined();
-  });
-
-  it("parses frames whose location token has no line number", () => {
-    const error = createOperaError({ message: "boom", stack: "inner:1@plainfile" });
-    const frames = parseOpera11(error);
-    expect(frames[0].fileName).toBe("plainfile");
-    expect(frames[0].lineNumber).toBeUndefined();
-    expect(frames[0].columnNumber).toBeUndefined();
-  });
-});
-
-describe("parseOpera", () => {
-  it("uses opera 9 parsing when there is no stacktrace property", () => {
-    const error = createOperaError({ message: OPERA9_MESSAGE });
-    const frames = parseOpera(error);
-    expect(frames).toHaveLength(2);
-  });
-
-  it("uses opera 9 parsing when the message has more lines than the stacktrace", () => {
-    const error = createOperaError({
-      message: OPERA9_MESSAGE,
-      stacktrace: "  Line 44 of linked script http://site.com/main.js",
-    });
-    const frames = parseOpera(error);
-    expect(frames[0].lineNumber).toBe(44);
-  });
-
-  it("uses opera 10 parsing when there is a stacktrace but no stack", () => {
-    const error = createOperaError({
-      message: "boom",
-      stacktrace: OPERA10_STACKTRACE,
-      stack: undefined,
-    });
-    const frames = parseOpera(error);
-    expect(frames[0].functionName).toBe("foo");
-  });
-
-  it("uses opera 11 parsing when both stacktrace and stack exist", () => {
-    const error = createOperaError({
-      message: "boom",
-      stacktrace: OPERA10_STACKTRACE,
-      stack: OPERA11_STACK,
-    });
-    const frames = parseOpera(error);
-    expect(frames[0].functionName).toBe("createException");
-  });
-
-  it("ignores non-string stacktrace properties", () => {
-    const error = createOperaError({ message: OPERA9_MESSAGE });
-    Object.defineProperty(error, "stacktrace", { value: 123 });
-    const frames = parseOpera(error);
-    expect(frames).toHaveLength(2);
-  });
-
-  it("treats non-object errors as having no stacktrace", () => {
-    const primitiveError = "boom" as unknown as Error;
-    expect(parseOpera10(primitiveError)).toHaveLength(0);
   });
 });

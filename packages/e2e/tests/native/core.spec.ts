@@ -52,14 +52,14 @@ describe("bippy core functions on React Native", () => {
     });
   });
 
-  describe("secure", () => {
-    it("secured handlers fire on the development renderer", async () => {
-      // the secure probe instruments during the core-tests commit, so its
-      // handler first fires on the follow-up commit that renders the results
-      await waitFor(element(by.id("result-secure-commit-fired")))
+  describe("instrument", () => {
+    it("handlers fire on the development renderer", async () => {
+      // the probe instruments during the core-tests commit, so its handler
+      // first fires on the follow-up commit that renders the results
+      await waitFor(element(by.id("result-instrument-commit-fired")))
         .toExist()
         .withTimeout(ASYNC_RESULT_TIMEOUT_MS);
-      await detoxExpect(element(by.id("result-secure-commit-fired"))).toHaveText("true");
+      await detoxExpect(element(by.id("result-instrument-commit-fired"))).toHaveText("true");
     });
   });
 
@@ -70,8 +70,32 @@ describe("bippy core functions on React Native", () => {
       );
     });
 
+    it("the react-native renderer exposes scheduleUpdate to the hook", async () => {
+      await detoxExpect(element(by.id("result-renderer-supports-scheduleUpdate"))).toHaveText(
+        "true",
+      );
+    });
+
     it("overrideProps rewrites a prop and the native view re-renders", async () => {
-      await waitFor(element(by.text("e2e-test 123")))
+      await waitFor(element(by.text("override-props 123")))
+        .toExist()
+        .withTimeout(ASYNC_RESULT_TIMEOUT_MS);
+    });
+
+    it("overrideHookState rewrites useState state", async () => {
+      await waitFor(element(by.text("override-hook 7")))
+        .toExist()
+        .withTimeout(ASYNC_RESULT_TIMEOUT_MS);
+    });
+
+    it("overrideContext rewrites the provider value for consumers", async () => {
+      await waitFor(element(by.text("override-context ctx-overridden")))
+        .toExist()
+        .withTimeout(ASYNC_RESULT_TIMEOUT_MS);
+    });
+
+    it("hotSwapFiberType swaps a component implementation in place", async () => {
+      await waitFor(element(by.text("hot-swap replacement")))
         .toExist()
         .withTimeout(ASYNC_RESULT_TIMEOUT_MS);
     });
@@ -216,6 +240,12 @@ describe("bippy core functions on React Native", () => {
   describe("memo cache", () => {
     it("hasMemoCache returns false for normal components", async () => {
       await detoxExpect(element(by.id("result-hasMemoCache"))).toHaveText("false");
+    });
+  });
+
+  describe("hook inspection", () => {
+    it("getFiberHooks returns a non-empty hooks tree for TestParent", async () => {
+      await detoxExpect(element(by.id("result-getFiberHooks-nonempty"))).toHaveText("true");
     });
   });
 

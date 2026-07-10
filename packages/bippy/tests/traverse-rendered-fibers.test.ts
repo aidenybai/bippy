@@ -3,13 +3,9 @@ import {
   FragmentTag,
   FunctionComponentTag,
   HostRootTag,
-  mountFiberRecursively,
   OffscreenComponentTag,
   SuspenseComponentTag,
   traverseRenderedFibers,
-  unmountFiber,
-  unmountFiberChildrenRecursively,
-  updateFiberRecursively,
 } from "../src/index.js";
 import type { Fiber, FiberRoot } from "../src/types.js";
 
@@ -45,13 +41,43 @@ const createMockFiber = (overrides: MockFiberOverrides = {}): Fiber =>
     ...overrides,
   }) as unknown as Fiber;
 
-describe("mountFiberRecursively", () => {
+// root wrappers use flags 0 so only the fibers under test show up in the spy
+const createMountedRootFiber = (child: Fiber | null, alternate: Fiber | null = null): Fiber =>
+  createMockFiber({
+    alternate,
+    child,
+    flags: 0,
+    memoizedState: { element: {}, isDehydrated: false },
+    tag: HostRootTag,
+  });
+
+const commitUpdate = (
+  nextFiber: Fiber,
+  prevFiber: Fiber,
+  onRender: (fiber: Fiber, phase: string) => void,
+): void => {
+  if (!nextFiber.alternate) {
+    nextFiber.alternate = prevFiber;
+  }
+  const prevRootFiber = createMountedRootFiber(prevFiber);
+  const nextRootFiber = createMountedRootFiber(nextFiber, prevRootFiber);
+  const root: FiberRoot = { current: prevRootFiber };
+  traverseRenderedFibers(root, () => {});
+  root.current = nextRootFiber;
+  const onRenderWithoutRootWrapper = (fiber: Fiber, phase: string) => {
+    if (fiber === nextRootFiber || fiber === prevRootFiber) return;
+    onRender(fiber, phase);
+  };
+  traverseRenderedFibers(root, onRenderWithoutRootWrapper as never);
+};
+
+describe("mount commits", () => {
   it("should mount children and siblings", () => {
     const childFiber = createMockFiber();
     const siblingFiber = createMockFiber();
     const firstFiber = createMockFiber({ child: childFiber, sibling: siblingFiber });
     const onRender = vi.fn();
-    mountFiberRecursively(onRender, firstFiber, true);
+    traverseRenderedFibers(firstFiber, onRender);
     expect(onRender).toHaveBeenCalledWith(firstFiber, "mount");
     expect(onRender).toHaveBeenCalledWith(childFiber, "mount");
     expect(onRender).toHaveBeenCalledWith(siblingFiber, "mount");
@@ -70,7 +96,7 @@ describe("mountFiberRecursively", () => {
       tag: SuspenseComponentTag,
     });
     const onRender = vi.fn();
-    mountFiberRecursively(onRender, suspenseFiber, false);
+    traverseRenderedFibers(suspenseFiber, onRender);
     expect(onRender).toHaveBeenCalledWith(suspenseFiber, "mount");
     expect(onRender).toHaveBeenCalledWith(fallbackChild, "mount");
   });
@@ -83,7 +109,7 @@ describe("mountFiberRecursively", () => {
       tag: SuspenseComponentTag,
     });
     const onRender = vi.fn();
-    mountFiberRecursively(onRender, suspenseFiber, false);
+    traverseRenderedFibers(suspenseFiber, onRender);
     expect(onRender).toHaveBeenCalledTimes(1);
   });
 
@@ -99,7 +125,7 @@ describe("mountFiberRecursively", () => {
       tag: SuspenseComponentTag,
     });
     const onRender = vi.fn();
-    mountFiberRecursively(onRender, suspenseFiber, false);
+    traverseRenderedFibers(suspenseFiber, onRender);
     expect(onRender).toHaveBeenCalledTimes(1);
   });
 
@@ -108,7 +134,7 @@ describe("mountFiberRecursively", () => {
     const offscreenFiber = createMockFiber({ child: primaryChild, tag: OffscreenComponentTag });
     const suspenseFiber = createMockFiber({ child: offscreenFiber, tag: SuspenseComponentTag });
     const onRender = vi.fn();
-    mountFiberRecursively(onRender, suspenseFiber, false);
+    traverseRenderedFibers(suspenseFiber, onRender);
     expect(onRender).toHaveBeenCalledWith(suspenseFiber, "mount");
     expect(onRender).toHaveBeenCalledWith(primaryChild, "mount");
   });
@@ -116,33 +142,26 @@ describe("mountFiberRecursively", () => {
   it("should handle a non-timed-out suspense fiber with no child", () => {
     const suspenseFiber = createMockFiber({ tag: SuspenseComponentTag });
     const onRender = vi.fn();
-    mountFiberRecursively(onRender, suspenseFiber, false);
+    traverseRenderedFibers(suspenseFiber, onRender);
     expect(onRender).toHaveBeenCalledTimes(1);
   });
 
   it("should handle a timed-out suspense fiber with no child at all", () => {
     const suspenseFiber = createMockFiber({ memoizedState: {}, tag: SuspenseComponentTag });
     const onRender = vi.fn();
-    mountFiberRecursively(onRender, suspenseFiber, false);
+    traverseRenderedFibers(suspenseFiber, onRender);
     expect(onRender).toHaveBeenCalledTimes(1);
   });
 
   it("should not report fibers that have not rendered", () => {
     const unrenderedFiber = createMockFiber({ flags: 0 });
     const onRender = vi.fn();
-    mountFiberRecursively(onRender, unrenderedFiber, false);
+    traverseRenderedFibers(unrenderedFiber, onRender);
     expect(onRender).not.toHaveBeenCalled();
   });
 });
 
-describe("updateFiberRecursively", () => {
-  it("should return early when there is no previous fiber", () => {
-    const nextFiber = createMockFiber();
-    const onRender = vi.fn();
-    updateFiberRecursively(onRender, nextFiber, null as unknown as Fiber, null);
-    expect(onRender).not.toHaveBeenCalled();
-  });
-
+describe("update commits", () => {
   it("should reconcile fallback sets when suspense stays timed out", () => {
     const nextFallbackSet = createMockFiber();
     const prevFallbackSet = createMockFiber();
@@ -158,7 +177,7 @@ describe("updateFiberRecursively", () => {
       tag: SuspenseComponentTag,
     });
     const onRender = vi.fn();
-    updateFiberRecursively(onRender, nextFiber, prevFiber, null);
+    commitUpdate(nextFiber, prevFiber, onRender);
     expect(onRender).toHaveBeenCalledWith(nextFiber, "update");
     expect(onRender).toHaveBeenCalledWith(nextFallbackSet, "update");
   });
@@ -175,7 +194,7 @@ describe("updateFiberRecursively", () => {
       tag: SuspenseComponentTag,
     });
     const onRender = vi.fn();
-    updateFiberRecursively(onRender, nextFiber, prevFiber, null);
+    commitUpdate(nextFiber, prevFiber, onRender);
     expect(onRender).toHaveBeenCalledWith(nextFiber, "update");
     expect(onRender).toHaveBeenCalledWith(nextPrimaryChild, "mount");
   });
@@ -184,7 +203,7 @@ describe("updateFiberRecursively", () => {
     const nextFragment = createMockFiber({ tag: FragmentTag });
     const prevFragment = createMockFiber({ tag: FragmentTag });
     const onRender = vi.fn();
-    updateFiberRecursively(onRender, nextFragment, prevFragment, null);
+    commitUpdate(nextFragment, prevFragment, onRender);
     expect(onRender).not.toHaveBeenCalled();
   });
 
@@ -192,7 +211,7 @@ describe("updateFiberRecursively", () => {
     const nextFiber = createMockFiber({ memoizedState: {}, tag: SuspenseComponentTag });
     const prevFiber = createMockFiber({ memoizedState: {}, tag: SuspenseComponentTag });
     const onRender = vi.fn();
-    updateFiberRecursively(onRender, nextFiber, prevFiber, null);
+    commitUpdate(nextFiber, prevFiber, onRender);
     expect(onRender).toHaveBeenCalledTimes(1);
   });
 
@@ -200,7 +219,7 @@ describe("updateFiberRecursively", () => {
     const nextFiber = createMockFiber({ tag: SuspenseComponentTag });
     const prevFiber = createMockFiber({ memoizedState: {}, tag: SuspenseComponentTag });
     const onRender = vi.fn();
-    updateFiberRecursively(onRender, nextFiber, prevFiber, null);
+    commitUpdate(nextFiber, prevFiber, onRender);
     expect(onRender).toHaveBeenCalledTimes(1);
   });
 
@@ -212,7 +231,7 @@ describe("updateFiberRecursively", () => {
     });
     const prevFiber = createMockFiber({ tag: SuspenseComponentTag });
     const onRender = vi.fn();
-    updateFiberRecursively(onRender, nextFiber, prevFiber, null);
+    commitUpdate(nextFiber, prevFiber, onRender);
     expect(onRender).toHaveBeenCalledTimes(1);
   });
 
@@ -222,7 +241,7 @@ describe("updateFiberRecursively", () => {
     const nextFragment = createMockFiber({ child: nextChild, tag: FragmentTag });
     const prevFragment = createMockFiber({ child: prevChild, tag: FragmentTag });
     const onRender = vi.fn();
-    updateFiberRecursively(onRender, nextFragment, prevFragment, null);
+    commitUpdate(nextFragment, prevFragment, onRender);
     expect(onRender).toHaveBeenCalledWith(nextChild, "update");
   });
 
@@ -240,64 +259,57 @@ describe("updateFiberRecursively", () => {
       tag: SuspenseComponentTag,
     });
     const onRender = vi.fn();
-    updateFiberRecursively(onRender, nextFiber, prevFiber, null);
+    commitUpdate(nextFiber, prevFiber, onRender);
     expect(onRender).toHaveBeenCalledWith(prevPrimaryChild, "unmount");
     expect(onRender).toHaveBeenCalledWith(nextFallbackSet, "mount");
   });
-});
 
-describe("unmountFiber", () => {
-  it("should report unmounts for root fibers", () => {
-    const rootFiber = createMockFiber({ tag: HostRootTag });
-    const onRender = vi.fn();
-    unmountFiber(onRender, rootFiber);
-    expect(onRender).toHaveBeenCalledWith(rootFiber, "unmount");
-  });
-
-  it("should skip filtered fibers", () => {
-    const fragmentFiber = createMockFiber({ tag: FragmentTag });
-    const onRender = vi.fn();
-    unmountFiber(onRender, fragmentFiber);
-    expect(onRender).not.toHaveBeenCalled();
-  });
-});
-
-describe("unmountFiberChildrenRecursively", () => {
-  it("should traverse the fallback tree of a timed-out suspense fiber", () => {
-    const suspenseFiber = createMockFiber({
+  it("should walk the fallback tree of a nested timed-out suspense when hiding the primary set", () => {
+    const prevFiber = createMockFiber({
+      memoizedState: null,
+      tag: SuspenseComponentTag,
+    });
+    const nestedSuspense = createMockFiber({
+      memoizedState: {},
+      return: prevFiber,
+      tag: SuspenseComponentTag,
+    });
+    const nestedFallbackChild = createMockFiber({ return: nestedSuspense });
+    const nestedFallbackFragment = createMockFiber({
+      child: nestedFallbackChild,
+      tag: FragmentTag,
+    });
+    const nestedPrimaryFragment = createMockFiber({
+      sibling: nestedFallbackFragment,
+      tag: OffscreenComponentTag,
+    });
+    nestedSuspense.child = nestedPrimaryFragment;
+    prevFiber.child = nestedSuspense;
+    const nextFiber = createMockFiber({
       memoizedState: {},
       tag: SuspenseComponentTag,
     });
-    const fallbackChild = createMockFiber({ return: suspenseFiber });
-    const fallbackFragment = createMockFiber({ child: fallbackChild, tag: FragmentTag });
-    const primaryFragment = createMockFiber({
-      sibling: fallbackFragment,
-      tag: OffscreenComponentTag,
-    });
-    suspenseFiber.child = primaryFragment;
     const onRender = vi.fn();
-    unmountFiberChildrenRecursively(onRender, suspenseFiber);
-    expect(onRender).toHaveBeenCalledWith(fallbackChild, "unmount");
+    commitUpdate(nextFiber, prevFiber, onRender);
+    expect(onRender).toHaveBeenCalledWith(nestedFallbackChild, "unmount");
   });
 
-  it("should skip children without a return pointer", () => {
+  it("should skip previous children without a return pointer when suspense times out", () => {
     const detachedChild = createMockFiber();
-    const parentFiber = createMockFiber({ child: detachedChild });
+    const prevFiber = createMockFiber({
+      child: detachedChild,
+      memoizedState: null,
+      tag: SuspenseComponentTag,
+    });
+    const nextFiber = createMockFiber({ memoizedState: {}, tag: SuspenseComponentTag });
     const onRender = vi.fn();
-    unmountFiberChildrenRecursively(onRender, parentFiber);
-    expect(onRender).not.toHaveBeenCalled();
-  });
-
-  it("should handle timed-out suspense fibers without children", () => {
-    const suspenseFiber = createMockFiber({ memoizedState: {}, tag: SuspenseComponentTag });
-    const onRender = vi.fn();
-    unmountFiberChildrenRecursively(onRender, suspenseFiber);
-    expect(onRender).not.toHaveBeenCalled();
+    commitUpdate(nextFiber, prevFiber, onRender);
+    expect(onRender).not.toHaveBeenCalledWith(detachedChild, "unmount");
   });
 });
 
 describe("traverseRenderedFibers", () => {
-  const createMountedRootFiber = (alternate: Fiber | null = null): Fiber =>
+  const createRootFiber = (alternate: Fiber | null = null): Fiber =>
     createMockFiber({
       alternate,
       memoizedState: { element: {}, isDehydrated: false },
@@ -305,7 +317,7 @@ describe("traverseRenderedFibers", () => {
     });
 
   it("should report a mount on the first commit", () => {
-    const rootFiber = createMountedRootFiber();
+    const rootFiber = createRootFiber();
     const root: FiberRoot = { current: rootFiber };
     const onRender = vi.fn();
     traverseRenderedFibers(root, onRender);
@@ -317,25 +329,25 @@ describe("traverseRenderedFibers", () => {
     const root: FiberRoot = { current: unmountedRootFiber };
     const onRender = vi.fn();
     traverseRenderedFibers(root, onRender);
-    const mountedRootFiber = createMountedRootFiber();
+    const mountedRootFiber = createRootFiber();
     root.current = mountedRootFiber;
     traverseRenderedFibers(root, onRender);
     expect(onRender).toHaveBeenCalledWith(mountedRootFiber, "mount");
   });
 
   it("should report an update when the root stays mounted", () => {
-    const prevRootFiber = createMountedRootFiber();
+    const prevRootFiber = createRootFiber();
     const root: FiberRoot = { current: prevRootFiber };
     const onRender = vi.fn();
     traverseRenderedFibers(root, onRender);
-    const nextRootFiber = createMountedRootFiber(prevRootFiber);
+    const nextRootFiber = createRootFiber(prevRootFiber);
     root.current = nextRootFiber;
     traverseRenderedFibers(root, onRender);
     expect(onRender).toHaveBeenCalledWith(nextRootFiber, "update");
   });
 
   it("should report an unmount when the root loses its element", () => {
-    const mountedRootFiber = createMountedRootFiber();
+    const mountedRootFiber = createRootFiber();
     const root: FiberRoot = { current: mountedRootFiber };
     const onRender = vi.fn();
     traverseRenderedFibers(root, onRender);

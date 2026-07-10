@@ -6,8 +6,6 @@ import {
   instrument,
   traverseContexts,
   traverseFiber,
-  traverseFiberAsync,
-  traverseFiberSync,
   traverseProps,
   traverseState,
 } from "../src/index.js";
@@ -399,8 +397,7 @@ describe("traverseFiber", () => {
 
   it("should return null when passed a null fiber", async () => {
     expect(traverseFiber(null, () => true)).toBe(null);
-    expect(traverseFiberSync(null, () => true)).toBe(null);
-    expect(await traverseFiberAsync(null, async () => true)).toBe(null);
+    expect(await traverseFiber(null, async () => true)).toBe(null);
   });
 
   it("should return null when no node matches (async descending)", async () => {
@@ -442,20 +439,20 @@ describe("traverseFiber", () => {
     expect(traverseFiber(rootFiber, () => false)).toBe(null);
   });
 
-  it("should traverse nested siblings in traverseFiberAsync (descending)", async () => {
+  it("should traverse nested siblings with an async selector (descending)", async () => {
     const targetSibling = createMockFiber();
     const firstGrandchild = createMockFiber({ sibling: targetSibling });
     const childFiber = createMockFiber({ child: firstGrandchild });
     const rootFiber = createMockFiber({ child: childFiber });
-    const result = await traverseFiberAsync(rootFiber, async (fiber) => fiber === targetSibling);
+    const result = await traverseFiber(rootFiber, async (fiber) => fiber === targetSibling);
     expect(result).toBe(targetSibling);
   });
 
-  it("should return null in traverseFiberAsync when ascending finds no match", async () => {
+  it("should return null with an async selector when ascending finds no match", async () => {
     const rootFiber = createMockFiber();
     const parentFiber = createMockFiber({ return: rootFiber });
     const childFiber = createMockFiber({ return: parentFiber });
-    const result = await traverseFiberAsync(childFiber, async () => false, true);
+    const result = await traverseFiber(childFiber, async () => false, true);
     expect(result).toBe(null);
   });
 });

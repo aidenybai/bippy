@@ -1,12 +1,7 @@
 import "../src/index.js"; // KEEP THIS LINE ON TOP
 
 import { expect, it, vi } from "vitest";
-import {
-  injectOverrideMethods,
-  overrideContext,
-  overrideHookState,
-  overrideProps,
-} from "../src/index.js";
+import { overrideContext, overrideHookState, overrideProps } from "../src/index.js";
 import type { Fiber, ReactDevToolsGlobalHook, ReactRenderer } from "../src/types.js";
 
 interface MockFiberOverrides {
@@ -45,16 +40,18 @@ const secondRenderer = {
   overrideProps: secondOverrideProps,
 } as unknown as ReactRenderer;
 
-it("should return null when no rdt hook exists", () => {
+it("should no-op when no rdt hook exists", () => {
   delete globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
-  expect(injectOverrideMethods()).toBe(null);
+  expect(() => overrideProps(createMockFiber(), { count: 1 })).not.toThrow();
+  expect(firstOverrideProps).not.toHaveBeenCalled();
 });
 
-it("should return null when the hook has no renderers", () => {
+it("should no-op when the hook has no renderers", () => {
   globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ = {
     _instrumentationSource: "test",
   } as unknown as ReactDevToolsGlobalHook;
-  expect(injectOverrideMethods()).toBe(null);
+  expect(() => overrideProps(createMockFiber(), { count: 1 })).not.toThrow();
+  expect(firstOverrideProps).not.toHaveBeenCalled();
 });
 
 it("should chain override methods from every renderer", () => {
@@ -73,13 +70,6 @@ it("should chain override methods from every renderer", () => {
   expect(firstOverrideProps).toHaveBeenCalledWith(fiber, ["count"], 1);
   expect(firstOverrideProps).toHaveBeenCalledWith(fiber, ["nested", "value"], 2);
   expect(secondOverrideProps).toHaveBeenCalledWith(fiber, ["count"], 1);
-});
-
-it("should return the cached override methods on subsequent calls", () => {
-  const overrideMethods = injectOverrideMethods();
-  expect(overrideMethods?.overrideProps).toBeTypeOf("function");
-  expect(overrideMethods?.overrideHookState).toBeTypeOf("function");
-  expect(overrideMethods?.overrideContext).toBeTypeOf("function");
 });
 
 it("should treat non-plain-object props as a single value", () => {

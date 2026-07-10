@@ -380,27 +380,6 @@ test.describe("fiber identity", () => {
     });
     expect(finalFiberId).toBe(initialFiberId);
   });
-
-  test("areFiberEqual: fiber===alternate is true, different fibers is false", async ({ page }) => {
-    await page.click('[data-testid="increment"]');
-    await page.waitForTimeout(100);
-
-    const result = await page.evaluate(() => {
-      const elementA = document.querySelector('[data-testid="test-child"]');
-      const elementB = document.querySelector('[data-testid="memo-child"]');
-      const fiberA = window.__BIPPY__.getFiberFromHostInstance(elementA);
-      const fiberB = window.__BIPPY__.getFiberFromHostInstance(elementB);
-      if (!fiberA || !fiberB || !fiberA.alternate) return null;
-
-      return {
-        selfEqualsAlternate: window.__BIPPY__.areFiberEqual(fiberA, fiberA.alternate),
-        differentFibersEqual: window.__BIPPY__.areFiberEqual(fiberA, fiberB),
-      };
-    });
-    expect(result).not.toBeNull();
-    expect(result!.selfEqualsAlternate).toBe(true);
-    expect(result!.differentFibersEqual).toBe(false);
-  });
 });
 
 test.describe("render and commit detection", () => {

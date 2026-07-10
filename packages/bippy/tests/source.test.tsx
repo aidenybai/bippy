@@ -5,7 +5,8 @@ import React, { useState } from "react";
 import { expect, it } from "vitest";
 import type { Fiber } from "../src/types.js";
 import { instrument } from "../src/index.js";
-import { getSource, getOwnerStack, getSourceMap, sourceMapCache } from "../src/source/index.js";
+import { getSource, getOwnerStack, getSourceMap } from "../src/source/index.js";
+import { sourceMapCache } from "../src/source/symbolication.js";
 import { normalizeFileName } from "../src/source/get-source.js";
 import { extractLocation, parseStack, type StackFrame } from "../src/source/parse-stack.js";
 
