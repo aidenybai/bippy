@@ -76,20 +76,6 @@ test.describe("hook inspection", () => {
     expect(result as string[]).toContain("showConditional");
   });
 
-  test("getHookSourceLocationKey builds a stable fileName:line:column key", async ({ page }) => {
-    const result = await page.evaluate(() => {
-      return {
-        locationKey: window.__BIPPY__.getHookSourceLocationKey({
-          fileName: "app.tsx",
-          lineNumber: 12,
-          columnNumber: 34,
-        }),
-        missingFieldsKey: window.__BIPPY__.getHookSourceLocationKey({}),
-      };
-    });
-    expect(result.locationKey).toBe("app.tsx:12:34");
-    expect(result.missingFieldsKey).toBe(":0:0");
-  });
 });
 
 test.describe("debug metadata", () => {

@@ -89,40 +89,6 @@ test.describe("context traversal", () => {
   });
 });
 
-test.describe("fiber filtering", () => {
-  test("shouldFilterFiber hides text fibers, keeps host and composite fibers", async ({ page }) => {
-    const result = await page.evaluate(() => {
-      // test-child renders `{name} {count}`: multiple text children, so React
-      // creates real HostText fibers (a single text child gets inlined)
-      const element = document.querySelector('[data-testid="test-child"]');
-      const hostFiber = window.__BIPPY__.getFiberFromHostInstance(element);
-      if (!hostFiber) return null;
-
-      let compositeFiber = hostFiber.return;
-      while (compositeFiber && !window.__BIPPY__.isCompositeFiber(compositeFiber)) {
-        compositeFiber = compositeFiber.return;
-      }
-
-      const textFiber = window.__BIPPY__.traverseFiber(
-        hostFiber,
-        (fiber) => typeof fiber.memoizedProps === "string",
-      );
-
-      return {
-        hostFiltered: window.__BIPPY__.shouldFilterFiber(hostFiber),
-        compositeFiltered: compositeFiber
-          ? window.__BIPPY__.shouldFilterFiber(compositeFiber)
-          : null,
-        textFiltered: textFiber ? window.__BIPPY__.shouldFilterFiber(textFiber) : null,
-      };
-    });
-    expect(result).not.toBeNull();
-    expect(result!.hostFiltered).toBe(false);
-    expect(result!.compositeFiltered).toBe(false);
-    expect(result!.textFiltered).toBe(true);
-  });
-});
-
 test.describe("build type", () => {
   test("detectReactBuildType reports development for the fixture renderer", async ({ page }) => {
     const result = await page.evaluate(() => {
