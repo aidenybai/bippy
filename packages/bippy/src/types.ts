@@ -383,6 +383,9 @@ export interface ReactDevToolsGlobalHook {
   onCommitFiberRoot: (rendererID: number, root: FiberRoot, priority: number | void) => void;
   onCommitFiberUnmount: (rendererID: number, fiber: Fiber) => void;
   onPostCommitFiberRoot: (rendererID: number, root: FiberRoot) => void;
+  // called by dev builds of react-reconciler on root schedule; absent from
+  // the hook react-refresh installs, so it stays optional
+  onScheduleFiberRoot?: (rendererID: number, root: FiberRoot, children: ReactNode) => void;
   renderers: Map<number, ReactRenderer>;
   supportsFiber: boolean;
 

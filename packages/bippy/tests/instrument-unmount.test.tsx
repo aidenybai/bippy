@@ -23,23 +23,40 @@ it("onCommitFiberUnmount is called when a component unmounts", () => {
   expect(onCommitFiberUnmount).toHaveBeenCalled();
 });
 
-it("stale onCommitFiberUnmount handlers are skipped after re-instrumenting", () => {
-  const staleOnCommitFiberUnmount = vi.fn();
+it("multiple onCommitFiberUnmount handlers compose", () => {
+  const firstOnCommitFiberUnmount = vi.fn();
+  const secondOnCommitFiberUnmount = vi.fn();
+  const unsubscribeFirst = instrument({ onCommitFiberUnmount: firstOnCommitFiberUnmount });
+  const unsubscribeSecond = instrument({ onCommitFiberUnmount: secondOnCommitFiberUnmount });
+  const { unmount } = render(<Example />);
+  unmount();
+  expect(firstOnCommitFiberUnmount).toHaveBeenCalled();
+  expect(secondOnCommitFiberUnmount).toHaveBeenCalled();
+  unsubscribeFirst();
+  unsubscribeSecond();
+});
+
+it("unsubscribed onCommitFiberUnmount handlers stop firing", () => {
+  const unsubscribedOnCommitFiberUnmount = vi.fn();
   const activeOnCommitFiberUnmount = vi.fn();
-  instrument({ onCommitFiberUnmount: staleOnCommitFiberUnmount });
-  instrument({ onCommitFiberUnmount: activeOnCommitFiberUnmount });
+  const unsubscribe = instrument({ onCommitFiberUnmount: unsubscribedOnCommitFiberUnmount });
+  const unsubscribeActive = instrument({ onCommitFiberUnmount: activeOnCommitFiberUnmount });
+  unsubscribe();
   const { unmount } = render(<Example />);
   unmount();
   expect(activeOnCommitFiberUnmount).toHaveBeenCalled();
-  expect(staleOnCommitFiberUnmount).not.toHaveBeenCalled();
+  expect(unsubscribedOnCommitFiberUnmount).not.toHaveBeenCalled();
+  unsubscribeActive();
 });
 
-it("stale onPostCommitFiberRoot handlers are skipped after re-instrumenting", () => {
-  const staleOnPostCommitFiberRoot = vi.fn();
+it("unsubscribed onPostCommitFiberRoot handlers stop firing", () => {
+  const unsubscribedOnPostCommitFiberRoot = vi.fn();
   const activeOnPostCommitFiberRoot = vi.fn();
-  instrument({ onPostCommitFiberRoot: staleOnPostCommitFiberRoot });
-  instrument({ onPostCommitFiberRoot: activeOnPostCommitFiberRoot });
+  const unsubscribe = instrument({ onPostCommitFiberRoot: unsubscribedOnPostCommitFiberRoot });
+  const unsubscribeActive = instrument({ onPostCommitFiberRoot: activeOnPostCommitFiberRoot });
+  unsubscribe();
   render(<ExampleWithEffect />);
   expect(activeOnPostCommitFiberRoot).toHaveBeenCalled();
-  expect(staleOnPostCommitFiberRoot).not.toHaveBeenCalled();
+  expect(unsubscribedOnPostCommitFiberRoot).not.toHaveBeenCalled();
+  unsubscribeActive();
 });

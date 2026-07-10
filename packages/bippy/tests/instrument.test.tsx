@@ -69,3 +69,23 @@ it("onPostCommitFiberRoot is called", () => {
   expect(onPostCommitFiberRoot).toHaveBeenCalled();
   expect(currentFiberRoot?.current.child.type).toBe(ExampleWithEffect);
 });
+
+it("onScheduleFiberRoot is called", () => {
+  const onScheduleFiberRoot = vi.fn();
+  const unsubscribe = instrument({ onScheduleFiberRoot });
+  render(<Example />);
+  expect(onScheduleFiberRoot).toHaveBeenCalled();
+  unsubscribe();
+});
+
+it("unsubscribe removes only this call's handlers", () => {
+  const unsubscribedOnCommitFiberRoot = vi.fn();
+  const activeOnCommitFiberRoot = vi.fn();
+  const unsubscribe = instrument({ onCommitFiberRoot: unsubscribedOnCommitFiberRoot });
+  const unsubscribeActive = instrument({ onCommitFiberRoot: activeOnCommitFiberRoot });
+  unsubscribe();
+  render(<Example />);
+  expect(unsubscribedOnCommitFiberRoot).not.toHaveBeenCalled();
+  expect(activeOnCommitFiberRoot).toHaveBeenCalled();
+  unsubscribeActive();
+});

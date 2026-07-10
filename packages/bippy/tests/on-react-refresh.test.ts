@@ -74,24 +74,19 @@ it("ignores renderers without scheduleRefresh", () => {
   unsubscribe();
 });
 
-it("unsubscribe restores the original scheduleRefresh and inject", () => {
+it("unsubscribe stops the handler while the wrapper keeps forwarding to the original", () => {
   const rdtHook = getRDTHook();
   const originalScheduleRefresh = vi.fn();
   const fakeRenderer = createFakeRefreshRenderer(originalScheduleRefresh);
   rdtHook.inject(fakeRenderer);
-  const injectBeforeListener = rdtHook.inject;
 
   const onRefreshUpdate = vi.fn();
   const unsubscribe = onReactRefresh(onRefreshUpdate);
-  expect(fakeRenderer.scheduleRefresh).not.toBe(originalScheduleRefresh);
-  expect(rdtHook.inject).not.toBe(injectBeforeListener);
-
   unsubscribe();
-  expect(fakeRenderer.scheduleRefresh).toBe(originalScheduleRefresh);
-  expect(rdtHook.inject).toBe(injectBeforeListener);
 
   fakeRenderer.scheduleRefresh?.(fakeRoot, createFakeRendererUpdate());
   expect(onRefreshUpdate).not.toHaveBeenCalled();
+  expect(originalScheduleRefresh).toHaveBeenCalledOnce();
 });
 
 it("stops invoking the handler after unsubscribe even if the patch was layered over", () => {

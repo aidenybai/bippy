@@ -52,11 +52,51 @@ export const isReactRefresh = (
   return Boolean(injectFnStr?.includes("(injected)"));
 };
 
-const onActiveListeners = new Set<() => unknown>();
+export const _onActiveListeners = new Set<() => unknown>();
 
 export const _renderers = new Set<ReactRenderer>();
 
+const rendererInjectListeners = new Set<(renderer: ReactRenderer) => void>();
+// re-wrapping inject (e.g. after the hook is replaced) leaves the old
+// wrapper in the call chain, so notifications are deduped per renderer
+const notifiedRenderers = new WeakSet<ReactRenderer>();
+let notifyingInject: ReactDevToolsGlobalHook["inject"] | null = null;
+
+const ensureInjectNotifiesListeners = (rdtHook: ReactDevToolsGlobalHook): void => {
+  if (rdtHook.inject === notifyingInject) return;
+  const prevInject = rdtHook.inject;
+  const nextInject = (renderer: ReactRenderer) => {
+    const rendererId = prevInject.call(rdtHook, renderer);
+    if (!notifiedRenderers.has(renderer)) {
+      notifiedRenderers.add(renderer);
+      for (const listener of rendererInjectListeners) {
+        listener(renderer);
+      }
+    }
+    return rendererId;
+  };
+  rdtHook.inject = nextInject;
+  notifyingInject = nextInject;
+};
+
+/**
+ * Subscribes to future renderer injections into the DevTools hook. The
+ * single shared inject wrapper lets multiple consumers (override methods,
+ * react-refresh, user code) observe renderers without stacking patches
+ * whose restore order matters. Returns an unsubscribe function.
+ */
+export const onRendererInject = (listener: (renderer: ReactRenderer) => void): (() => void) => {
+  ensureInjectNotifiesListeners(getRDTHook());
+  rendererInjectListeners.add(listener);
+  return () => {
+    rendererInjectListeners.delete(listener);
+  };
+};
+
 export const installRDTHook = (onActive?: () => unknown): ReactDevToolsGlobalHook => {
+  if (onActive) {
+    _onActiveListeners.add(onActive);
+  }
   const renderers = new Map<number, ReactRenderer>();
   let rendererIdCounter = 0;
   let rdtHook: ReactDevToolsGlobalHook = {
@@ -70,7 +110,7 @@ export const installRDTHook = (onActive?: () => unknown): ReactDevToolsGlobalHoo
       _renderers.add(renderer);
       if (!rdtHook._instrumentationIsActive) {
         rdtHook._instrumentationIsActive = true;
-        onActiveListeners.forEach((listener) => listener());
+        _onActiveListeners.forEach((listener) => listener());
       }
       return nextRendererId;
     },
@@ -132,7 +172,7 @@ export const installRDTHook = (onActive?: () => unknown): ReactDevToolsGlobalHoo
 
 export const patchRDTHook = (onActive?: () => unknown): void => {
   if (onActive) {
-    onActiveListeners.add(onActive);
+    _onActiveListeners.add(onActive);
   }
   try {
     const rdtHook = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
@@ -151,7 +191,7 @@ export const patchRDTHook = (onActive?: () => unknown): void => {
       }
       if (rdtHook.renderers.size) {
         rdtHook._instrumentationIsActive = true;
-        onActiveListeners.forEach((listener) => listener());
+        _onActiveListeners.forEach((listener) => listener());
         return;
       }
       const prevInject = rdtHook.inject;
@@ -176,7 +216,7 @@ export const patchRDTHook = (onActive?: () => unknown): void => {
           rdtHook.renderers.set(rendererId, renderer);
         }
         rdtHook._instrumentationIsActive = true;
-        onActiveListeners.forEach((listener) => listener());
+        _onActiveListeners.forEach((listener) => listener());
         return rendererId;
       };
     }

@@ -13,11 +13,13 @@ import type {
 } from "./types.js";
 
 import {
+  _onActiveListeners,
   BIPPY_INSTRUMENTATION_STRING,
   getRDTHook,
   hasRDTHook,
   isReactRefresh,
   isRealReactDevtools,
+  onRendererInject,
 } from "./rdt-hook.js";
 
 // https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactWorkTags.js
@@ -856,76 +858,77 @@ let _overrideProps: null | ReactRenderer["overrideProps"] = null;
 let _overrideHookState: null | ReactRenderer["overrideHookState"] = null;
 let _overrideContext: null | ReactRenderer["overrideContext"] = null;
 
-const injectOverrideMethods = () => {
-  if (!hasRDTHook()) return null;
-  const rdtHook = getRDTHook();
-  if (!rdtHook?.renderers) return null;
+const captureRendererOverrides = (renderer: ReactRenderer): void => {
+  try {
+    if (_overrideHookState) {
+      const prevOverrideHookState = _overrideHookState;
+      _overrideHookState = (fiber: Fiber, id: string, path: string[], value: unknown) => {
+        let current = fiber.memoizedState;
+        for (let i = 0; i < Number(id); i++) {
+          if (!current?.next) break;
+          current = current.next;
+        }
 
-  if (_overrideProps || _overrideHookState || _overrideContext) {
-    return {
-      overrideContext: _overrideContext,
-      overrideHookState: _overrideHookState,
-      overrideProps: _overrideProps,
+        if (current?.queue) {
+          const queue = current.queue;
+          if (isPOJO(queue) && "dispatch" in queue) {
+            const dispatch = queue.dispatch as (value: unknown) => void;
+            dispatch(value);
+            return;
+          }
+        }
+
+        prevOverrideHookState(fiber, id, path, value);
+        renderer.overrideHookState?.(fiber, id, path, value);
+      };
+    } else if (renderer.overrideHookState) {
+      _overrideHookState = renderer.overrideHookState;
+    }
+
+    if (_overrideProps) {
+      const prevOverrideProps = _overrideProps;
+      _overrideProps = (fiber: Fiber, path: Array<string>, value: unknown) => {
+        prevOverrideProps(fiber, path, value);
+        renderer.overrideProps?.(fiber, path, value);
+      };
+    } else if (renderer.overrideProps) {
+      _overrideProps = renderer.overrideProps;
+    }
+
+    _overrideContext = (fiber: Fiber, contextType: unknown, path: string[], value: unknown) => {
+      let current: Fiber | null = fiber;
+      while (current) {
+        const type = current.type as { Provider?: unknown };
+        if (type === contextType || type?.Provider === contextType) {
+          if (_overrideProps) {
+            _overrideProps(current, ["value", ...path], value);
+            if (current.alternate) {
+              _overrideProps(current.alternate, ["value", ...path], value);
+            }
+          }
+          break;
+        }
+        current = current.return;
+      }
     };
+  } catch {
+    /**/
   }
+};
+
+let areOverrideMethodsWired = false;
+
+const injectOverrideMethods = (): void => {
+  if (areOverrideMethodsWired) return;
+  if (!hasRDTHook()) return;
+  const rdtHook = getRDTHook();
+  if (!rdtHook?.renderers) return;
+  areOverrideMethodsWired = true;
 
   for (const [, renderer] of Array.from(rdtHook.renderers)) {
-    try {
-      if (_overrideHookState) {
-        const prevOverrideHookState = _overrideHookState;
-        _overrideHookState = (fiber: Fiber, id: string, path: string[], value: unknown) => {
-          let current = fiber.memoizedState;
-          for (let i = 0; i < Number(id); i++) {
-            if (!current?.next) break;
-            current = current.next;
-          }
-
-          if (current?.queue) {
-            const queue = current.queue;
-            if (isPOJO(queue) && "dispatch" in queue) {
-              const dispatch = queue.dispatch as (value: unknown) => void;
-              dispatch(value);
-              return;
-            }
-          }
-
-          prevOverrideHookState(fiber, id, path, value);
-          renderer.overrideHookState?.(fiber, id, path, value);
-        };
-      } else if (renderer.overrideHookState) {
-        _overrideHookState = renderer.overrideHookState;
-      }
-
-      if (_overrideProps) {
-        const prevOverrideProps = _overrideProps;
-        _overrideProps = (fiber: Fiber, path: Array<string>, value: unknown) => {
-          prevOverrideProps(fiber, path, value);
-          renderer.overrideProps?.(fiber, path, value);
-        };
-      } else if (renderer.overrideProps) {
-        _overrideProps = renderer.overrideProps;
-      }
-
-      _overrideContext = (fiber: Fiber, contextType: unknown, path: string[], value: unknown) => {
-        let current: Fiber | null = fiber;
-        while (current) {
-          const type = current.type as { Provider?: unknown };
-          if (type === contextType || type?.Provider === contextType) {
-            if (_overrideProps) {
-              _overrideProps(current, ["value", ...path], value);
-              if (current.alternate) {
-                _overrideProps(current.alternate, ["value", ...path], value);
-              }
-            }
-            break;
-          }
-          current = current.return;
-        }
-      };
-    } catch {
-      /**/
-    }
+    captureRendererOverrides(renderer);
   }
+  onRendererInject(captureRendererOverrides);
 };
 
 const isPOJO = (maybePOJO: unknown): maybePOJO is Record<string, unknown> => {
@@ -1019,10 +1022,128 @@ export interface InstrumentationOptions {
   onScheduleFiberRoot?: (rendererID: number, root: FiberRoot, children: React.ReactNode) => unknown;
 }
 
+const commitFiberRootListeners = new Set<
+  NonNullable<InstrumentationOptions["onCommitFiberRoot"]>
+>();
+const commitFiberUnmountListeners = new Set<
+  NonNullable<InstrumentationOptions["onCommitFiberUnmount"]>
+>();
+const postCommitFiberRootListeners = new Set<
+  NonNullable<InstrumentationOptions["onPostCommitFiberRoot"]>
+>();
+const scheduleFiberRootListeners = new Set<
+  NonNullable<InstrumentationOptions["onScheduleFiberRoot"]>
+>();
+
+interface HookDispatchers {
+  onCommitFiberRoot: ReactDevToolsGlobalHook["onCommitFiberRoot"];
+  onCommitFiberUnmount: ReactDevToolsGlobalHook["onCommitFiberUnmount"];
+  onPostCommitFiberRoot: ReactDevToolsGlobalHook["onPostCommitFiberRoot"];
+  onScheduleFiberRoot: NonNullable<ReactDevToolsGlobalHook["onScheduleFiberRoot"]>;
+}
+
+const hookDispatchers = new WeakMap<ReactDevToolsGlobalHook, Partial<HookDispatchers>>();
+
+// each hook event is dispatched from a single re-installable wrapper. If
+// something overwrites the hook method (devtools, direct assignment), the
+// next instrument() call installs a fresh wrapper over it; a superseded
+// wrapper still forwards the previous chain but skips the listeners so
+// they never fire twice.
+const ensureHookDispatchesToListeners = (rdtHook: ReactDevToolsGlobalHook): void => {
+  const dispatchers = hookDispatchers.get(rdtHook) ?? {};
+  hookDispatchers.set(rdtHook, dispatchers);
+
+  if (
+    !dispatchers.onCommitFiberRoot ||
+    rdtHook.onCommitFiberRoot !== dispatchers.onCommitFiberRoot
+  ) {
+    const prevOnCommitFiberRoot = rdtHook.onCommitFiberRoot;
+    const dispatchCommitFiberRoot: HookDispatchers["onCommitFiberRoot"] = (
+      rendererID,
+      root,
+      priority,
+    ) => {
+      prevOnCommitFiberRoot?.(rendererID, root, priority);
+      if (hookDispatchers.get(rdtHook)?.onCommitFiberRoot !== dispatchCommitFiberRoot) return;
+      _fiberRoots.add(root);
+      for (const listener of commitFiberRootListeners) {
+        listener(rendererID, root, priority);
+      }
+    };
+    dispatchers.onCommitFiberRoot = dispatchCommitFiberRoot;
+    rdtHook.onCommitFiberRoot = dispatchCommitFiberRoot;
+  }
+
+  if (
+    !dispatchers.onCommitFiberUnmount ||
+    rdtHook.onCommitFiberUnmount !== dispatchers.onCommitFiberUnmount
+  ) {
+    const prevOnCommitFiberUnmount = rdtHook.onCommitFiberUnmount;
+    const dispatchCommitFiberUnmount: HookDispatchers["onCommitFiberUnmount"] = (
+      rendererID,
+      fiber,
+    ) => {
+      prevOnCommitFiberUnmount?.(rendererID, fiber);
+      if (hookDispatchers.get(rdtHook)?.onCommitFiberUnmount !== dispatchCommitFiberUnmount) {
+        return;
+      }
+      for (const listener of commitFiberUnmountListeners) {
+        listener(rendererID, fiber);
+      }
+    };
+    dispatchers.onCommitFiberUnmount = dispatchCommitFiberUnmount;
+    rdtHook.onCommitFiberUnmount = dispatchCommitFiberUnmount;
+  }
+
+  if (
+    !dispatchers.onPostCommitFiberRoot ||
+    rdtHook.onPostCommitFiberRoot !== dispatchers.onPostCommitFiberRoot
+  ) {
+    const prevOnPostCommitFiberRoot = rdtHook.onPostCommitFiberRoot;
+    const dispatchPostCommitFiberRoot: HookDispatchers["onPostCommitFiberRoot"] = (
+      rendererID,
+      root,
+    ) => {
+      prevOnPostCommitFiberRoot?.(rendererID, root);
+      if (hookDispatchers.get(rdtHook)?.onPostCommitFiberRoot !== dispatchPostCommitFiberRoot) {
+        return;
+      }
+      for (const listener of postCommitFiberRootListeners) {
+        listener(rendererID, root);
+      }
+    };
+    dispatchers.onPostCommitFiberRoot = dispatchPostCommitFiberRoot;
+    rdtHook.onPostCommitFiberRoot = dispatchPostCommitFiberRoot;
+  }
+
+  if (
+    !dispatchers.onScheduleFiberRoot ||
+    rdtHook.onScheduleFiberRoot !== dispatchers.onScheduleFiberRoot
+  ) {
+    const prevOnScheduleFiberRoot = rdtHook.onScheduleFiberRoot;
+    const dispatchScheduleFiberRoot: HookDispatchers["onScheduleFiberRoot"] = (
+      rendererID,
+      root,
+      children,
+    ) => {
+      prevOnScheduleFiberRoot?.(rendererID, root, children);
+      if (hookDispatchers.get(rdtHook)?.onScheduleFiberRoot !== dispatchScheduleFiberRoot) return;
+      for (const listener of scheduleFiberRootListeners) {
+        listener(rendererID, root, children);
+      }
+    };
+    dispatchers.onScheduleFiberRoot = dispatchScheduleFiberRoot;
+    rdtHook.onScheduleFiberRoot = dispatchScheduleFiberRoot;
+  }
+};
+
 /**
- * Instruments the DevTools hook.
+ * Instruments the DevTools hook. Each hook event is patched once and
+ * dispatches to a set of listeners, so multiple `instrument` calls compose
+ * without stacking patches. Returns an unsubscribe function that removes
+ * exactly the handlers this call registered.
  * @example
- * const hook = instrument({
+ * const unsubscribe = instrument({
  *   onActive() {
  *     console.log('initialized');
  *   },
@@ -1030,51 +1151,34 @@ export interface InstrumentationOptions {
  *     console.log('fiberRoot', root.current)
  *   },
  * });
+ * unsubscribe();
  */
-export const instrument = (options: InstrumentationOptions): ReactDevToolsGlobalHook => {
+export const instrument = (options: InstrumentationOptions): (() => void) => {
   const rdtHook = getRDTHook(options.onActive);
 
   rdtHook._instrumentationSource = options.name ?? BIPPY_INSTRUMENTATION_STRING;
 
-  const prevOnCommitFiberRoot = rdtHook.onCommitFiberRoot;
-  if (options.onCommitFiberRoot) {
-    const nextOnCommitFiberRoot = (
-      rendererID: number,
-      root: FiberRoot,
-      priority: number | void,
-    ) => {
-      if (prevOnCommitFiberRoot === nextOnCommitFiberRoot) return;
-      // TODO: validate whether the bottom version is more correct here
-      // for preventing infinite loops
-      // if (rdtHook.onCommitFiberRoot !== handler) return;
-      _fiberRoots.add(root);
-      prevOnCommitFiberRoot?.(rendererID, root, priority);
-      options.onCommitFiberRoot?.(rendererID, root, priority);
-    };
-    rdtHook.onCommitFiberRoot = nextOnCommitFiberRoot;
-  }
+  ensureHookDispatchesToListeners(rdtHook);
 
-  const prevOnCommitFiberUnmount = rdtHook.onCommitFiberUnmount;
-  if (options.onCommitFiberUnmount) {
-    const handler = (rendererID: number, root: FiberRoot) => {
-      if (rdtHook.onCommitFiberUnmount !== handler) return;
-      prevOnCommitFiberUnmount?.(rendererID, root);
-      options.onCommitFiberUnmount?.(rendererID, root);
-    };
-    rdtHook.onCommitFiberUnmount = handler;
-  }
+  const {
+    onActive,
+    onCommitFiberRoot,
+    onCommitFiberUnmount,
+    onPostCommitFiberRoot,
+    onScheduleFiberRoot,
+  } = options;
+  if (onCommitFiberRoot) commitFiberRootListeners.add(onCommitFiberRoot);
+  if (onCommitFiberUnmount) commitFiberUnmountListeners.add(onCommitFiberUnmount);
+  if (onPostCommitFiberRoot) postCommitFiberRootListeners.add(onPostCommitFiberRoot);
+  if (onScheduleFiberRoot) scheduleFiberRootListeners.add(onScheduleFiberRoot);
 
-  const prevOnPostCommitFiberRoot = rdtHook.onPostCommitFiberRoot;
-  if (options.onPostCommitFiberRoot) {
-    const handler = (rendererID: number, root: FiberRoot) => {
-      if (rdtHook.onPostCommitFiberRoot !== handler) return;
-      prevOnPostCommitFiberRoot?.(rendererID, root);
-      options.onPostCommitFiberRoot?.(rendererID, root);
-    };
-    rdtHook.onPostCommitFiberRoot = handler;
-  }
-
-  return rdtHook;
+  return () => {
+    if (onActive) _onActiveListeners.delete(onActive);
+    if (onCommitFiberRoot) commitFiberRootListeners.delete(onCommitFiberRoot);
+    if (onCommitFiberUnmount) commitFiberUnmountListeners.delete(onCommitFiberUnmount);
+    if (onPostCommitFiberRoot) postCommitFiberRootListeners.delete(onPostCommitFiberRoot);
+    if (onScheduleFiberRoot) scheduleFiberRootListeners.delete(onScheduleFiberRoot);
+  };
 };
 
 // React stamps fibers under per-renderer random-suffix keys (`__reactFiber$<suffix>`);

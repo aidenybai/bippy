@@ -1,5 +1,5 @@
 import { getType, traverseFiber } from "../core.js";
-import { getRDTHook, isClientEnvironment } from "../rdt-hook.js";
+import { getRDTHook, isClientEnvironment, onRendererInject } from "../rdt-hook.js";
 import type { Fiber, FiberRoot, ReactRenderer } from "../types.js";
 import { PENDING_HOT_UPDATE_MAX_AGE_MS } from "./constants.js";
 import { detectHmrTransport } from "./detect-hmr-transport.js";
@@ -42,6 +42,81 @@ const collectFibersByComponentType = (root: FiberRoot, componentTypes: Set<unkno
   return matchedFibers;
 };
 
+const refreshHandlers = new Set<ReactRefreshHandler>();
+const refreshWrappedRenderers = new WeakSet<ReactRenderer>();
+
+let pendingFilePaths: string[] = [];
+let pendingFilePathsReceivedAtMs = 0;
+
+const bufferHotUpdateFilePaths = (filePaths: string[]): void => {
+  const nowMs = Date.now();
+  if (nowMs - pendingFilePathsReceivedAtMs > PENDING_HOT_UPDATE_MAX_AGE_MS) {
+    pendingFilePaths = [];
+  }
+  pendingFilePaths.push(...filePaths);
+  pendingFilePathsReceivedAtMs = nowMs;
+};
+
+const takeFreshFilePaths = (): string[] => {
+  if (Date.now() - pendingFilePathsReceivedAtMs > PENDING_HOT_UPDATE_MAX_AGE_MS) return [];
+  const freshFilePaths = [...pendingFilePaths];
+  // performReactRefresh calls scheduleRefresh synchronously once per
+  // mounted root, so clear the pending paths only after the whole
+  // refresh pass instead of on the first root
+  queueMicrotask(() => {
+    pendingFilePaths = [];
+  });
+  return freshFilePaths;
+};
+
+const wrapRendererScheduleRefresh = (renderer: ReactRenderer): void => {
+  if (refreshWrappedRenderers.has(renderer)) return;
+  const originalScheduleRefresh = renderer.scheduleRefresh;
+  if (typeof originalScheduleRefresh !== "function") return;
+  refreshWrappedRenderers.add(renderer);
+  renderer.scheduleRefresh = (root, update) => {
+    originalScheduleRefresh.call(renderer, root, update);
+    if (refreshHandlers.size === 0) return;
+    const staleComponents = Array.from(update.staleFamilies, (family) => family.current);
+    const updatedComponents = Array.from(update.updatedFamilies, (family) => family.current);
+    const refreshUpdate: ReactRefreshUpdate = {
+      filePaths: takeFreshFilePaths(),
+      root,
+      staleComponents,
+      staleFibers: collectFibersByComponentType(root, new Set(staleComponents)),
+      updatedComponents,
+      updatedFibers: collectFibersByComponentType(root, new Set(updatedComponents)),
+    };
+    for (const handler of refreshHandlers) {
+      handler(refreshUpdate);
+    }
+  };
+};
+
+let isRefreshWired = false;
+
+const ensureRefreshWired = (): void => {
+  if (isRefreshWired) return;
+  isRefreshWired = true;
+  const rdtHook = getRDTHook();
+  for (const renderer of rdtHook.renderers.values()) {
+    wrapRendererScheduleRefresh(renderer);
+  }
+  onRendererInject(wrapRendererScheduleRefresh);
+};
+
+let activeTransport: HmrTransport | null = null;
+
+// the bundler's HMR global may not exist yet when an early subscriber
+// arrives, so detection is retried whenever the first subscriber (re)appears
+const detectTransportForNewSubscriber = (): void => {
+  void detectHmrTransport(bufferHotUpdateFilePaths).then((detectedTransport) => {
+    if (!detectedTransport) return;
+    activeTransport?.dispose();
+    activeTransport = detectedTransport;
+  });
+};
+
 /**
  * Subscribes to react-refresh (fast refresh) updates by wrapping
  * `scheduleRefresh` on every renderer injected into the React DevTools
@@ -75,94 +150,12 @@ const collectFibersByComponentType = (root: FiberRoot, componentTypes: Set<unkno
  */
 export const onReactRefresh = (onRefreshUpdate: ReactRefreshHandler): (() => void) => {
   if (!isClientEnvironment()) return () => {};
-
-  const restoreCallbacks: (() => void)[] = [];
-  let isDisposed = false;
-
-  let pendingFilePaths: string[] = [];
-  let pendingFilePathsReceivedAtMs = 0;
-  let transport: HmrTransport | null = null;
-
-  void detectHmrTransport((filePaths) => {
-    const nowMs = Date.now();
-    if (nowMs - pendingFilePathsReceivedAtMs > PENDING_HOT_UPDATE_MAX_AGE_MS) {
-      pendingFilePaths = [];
-    }
-    pendingFilePaths.push(...filePaths);
-    pendingFilePathsReceivedAtMs = nowMs;
-  }).then((detectedTransport) => {
-    if (isDisposed) {
-      detectedTransport?.dispose();
-      return;
-    }
-    transport = detectedTransport;
-  });
-
-  const takeFreshFilePaths = (): string[] => {
-    if (Date.now() - pendingFilePathsReceivedAtMs > PENDING_HOT_UPDATE_MAX_AGE_MS) return [];
-    const freshFilePaths = [...pendingFilePaths];
-    // performReactRefresh calls scheduleRefresh synchronously once per
-    // mounted root, so clear the pending paths only after the whole
-    // refresh pass instead of on the first root
-    queueMicrotask(() => {
-      pendingFilePaths = [];
-    });
-    return freshFilePaths;
-  };
-
-  const patchRenderer = (renderer: ReactRenderer) => {
-    const originalScheduleRefresh = renderer.scheduleRefresh;
-    if (typeof originalScheduleRefresh !== "function") return;
-    const wrappedScheduleRefresh: NonNullable<ReactRenderer["scheduleRefresh"]> = (
-      root,
-      update,
-    ) => {
-      originalScheduleRefresh.call(renderer, root, update);
-      if (isDisposed) return;
-      const staleComponents = Array.from(update.staleFamilies, (family) => family.current);
-      const updatedComponents = Array.from(update.updatedFamilies, (family) => family.current);
-      const staleFibers = collectFibersByComponentType(root, new Set(staleComponents));
-      const updatedFibers = collectFibersByComponentType(root, new Set(updatedComponents));
-      onRefreshUpdate({
-        filePaths: takeFreshFilePaths(),
-        root,
-        staleComponents,
-        staleFibers,
-        updatedComponents,
-        updatedFibers,
-      });
-    };
-    renderer.scheduleRefresh = wrappedScheduleRefresh;
-    restoreCallbacks.push(() => {
-      if (renderer.scheduleRefresh === wrappedScheduleRefresh) {
-        renderer.scheduleRefresh = originalScheduleRefresh;
-      }
-    });
-  };
-
-  const rdtHook = getRDTHook();
-  for (const renderer of rdtHook.renderers.values()) {
-    patchRenderer(renderer);
+  ensureRefreshWired();
+  if (refreshHandlers.size === 0) {
+    detectTransportForNewSubscriber();
   }
-
-  const previousInject = rdtHook.inject;
-  const wrappedInject = (renderer: ReactRenderer) => {
-    const rendererId = previousInject.call(rdtHook, renderer);
-    patchRenderer(renderer);
-    return rendererId;
-  };
-  rdtHook.inject = wrappedInject;
-  restoreCallbacks.push(() => {
-    if (rdtHook.inject === wrappedInject) {
-      rdtHook.inject = previousInject;
-    }
-  });
-
+  refreshHandlers.add(onRefreshUpdate);
   return () => {
-    isDisposed = true;
-    transport?.dispose();
-    for (const restoreCallback of restoreCallbacks) {
-      restoreCallback();
-    }
+    refreshHandlers.delete(onRefreshUpdate);
   };
 };
