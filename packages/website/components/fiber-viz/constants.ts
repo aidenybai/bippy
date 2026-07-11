@@ -20,6 +20,9 @@ export const FIBER_CANVAS_HEIGHT_PX = 430;
 export const ALTERNATE_GHOST_OFFSET_PX = 9;
 export const TRAVERSAL_TICK_MS = 650;
 export const TRAVERSAL_PAUSE_TICKS = 2;
+export const LIVE_RENDER_STEP_MS = 420;
+export const LIVE_COMMIT_DURATION_MS = 1200;
+export const LIVE_RENDER_SEQUENCE: string[] = ["counter", "paragraph", "count-text"];
 
 export const FIBER_VIZ_NODES: FiberVizNode[] = [
   { id: "root", label: "HostRoot", tag: "createRoot()", x: 240, y: 36 },

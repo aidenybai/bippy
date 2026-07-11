@@ -84,7 +84,7 @@ export const FIBER_VIZ_STEPS: FiberVizStep[] = [
   {
     id: "rerender",
     title: "state updates re-render a subtree",
-    body: "click **+1**: `setCount` schedules work on `Counter`. react re-renders `Counter` and its children, but `App` and the root **bail out**: they're still in the tree, they just didn't render. knowing which fibers actually rendered is most of the battle.",
+    body: "click the **+1** button fiber in the visualization (it's really clickable): `setCount` schedules work on `Counter`. react re-renders `Counter` and its children, but `App` and the root **bail out**: they're still in the tree, they just didn't render. knowing which fibers actually rendered is most of the battle.",
     mode: "rerender",
     code: COUNTER_APP_CODE,
     codeLanguage: "jsx",

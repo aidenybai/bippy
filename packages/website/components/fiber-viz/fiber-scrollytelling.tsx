@@ -76,7 +76,8 @@ export const FiberScrollytelling = () => {
           <div className="mb-faq-gap h-hairline w-full max-w-faq shrink-0 bg-border" />
           <p className="mb-6 w-full max-w-faq font-openrunde-medium text-faq-answer font-medium tracking-normal text-soft-foreground">
             scroll through the lifecycle of a tiny counter app to see what react does under the
-            hood, and where bippy hooks in.
+            hood, and where bippy hooks in. hover any fiber to see its pointers, and click the +1
+            button to run a real update.
           </p>
         </div>
 

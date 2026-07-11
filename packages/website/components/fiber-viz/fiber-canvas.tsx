@@ -9,6 +9,9 @@ import {
   FIBER_NODE_WIDTH_PX,
   FIBER_VIZ_EDGES,
   FIBER_VIZ_NODES,
+  LIVE_COMMIT_DURATION_MS,
+  LIVE_RENDER_SEQUENCE,
+  LIVE_RENDER_STEP_MS,
   MUTATED_HOST_NODE_IDS,
   RERENDERED_NODE_IDS,
   RETURN_EDGE_PATHS,
@@ -74,20 +77,65 @@ const PHASE_LABELS: Record<FiberVizMode, string> = {
 const isEdgeVisible = (edge: FiberVizEdge, mode: FiberVizMode): boolean => {
   if (mode === "elements") return false;
   if (edge.kind === "child") return true;
-  if (edge.kind === "sibling") return mode === "pointers" || mode === "traversal";
   return mode === "pointers" || mode === "traversal";
 };
 
-const showsUpdatedCount = (mode: FiberVizMode): boolean =>
-  mode === "rerender" || mode === "commit" || mode === "instrument";
+type LiveCyclePhase = "idle" | "render" | "commit";
 
-interface FiberCanvasProps {
-  mode: FiberVizMode;
+interface LiveRenderCycle {
+  displayedCount: number;
+  phase: LiveCyclePhase;
+  renderingNodeId: string | null;
+  renderedNodeIds: string[];
+  triggerUpdate: () => void;
 }
 
-const useTraversalIndex = (mode: FiberVizMode): number => {
+const useLiveRenderCycle = (): LiveRenderCycle => {
+  const [displayedCount, setDisplayedCount] = useState(0);
+  const [phase, setPhase] = useState<LiveCyclePhase>("idle");
+  const [renderStepIndex, setRenderStepIndex] = useState(0);
+
+  useEffect(() => {
+    if (phase !== "render") return;
+    if (renderStepIndex >= LIVE_RENDER_SEQUENCE.length) {
+      setDisplayedCount((previousCount) => previousCount + 1);
+      setPhase("commit");
+      return;
+    }
+    const timeoutId = window.setTimeout(() => {
+      setRenderStepIndex((previousIndex) => previousIndex + 1);
+    }, LIVE_RENDER_STEP_MS);
+    return () => window.clearTimeout(timeoutId);
+  }, [phase, renderStepIndex]);
+
+  useEffect(() => {
+    if (phase !== "commit") return;
+    const timeoutId = window.setTimeout(() => setPhase("idle"), LIVE_COMMIT_DURATION_MS);
+    return () => window.clearTimeout(timeoutId);
+  }, [phase]);
+
+  const triggerUpdate = () => {
+    if (phase !== "idle") return;
+    setRenderStepIndex(0);
+    setPhase("render");
+  };
+
+  const renderingNodeId =
+    phase === "render" && renderStepIndex < LIVE_RENDER_SEQUENCE.length
+      ? LIVE_RENDER_SEQUENCE[renderStepIndex]
+      : null;
+  const renderedNodeIds =
+    phase === "render"
+      ? LIVE_RENDER_SEQUENCE.slice(0, renderStepIndex + 1)
+      : phase === "commit"
+        ? LIVE_RENDER_SEQUENCE
+        : [];
+
+  return { displayedCount, phase, renderingNodeId, renderedNodeIds, triggerUpdate };
+};
+
+const useTraversalIndex = (isTraversing: boolean): number => {
   const [traversalTick, setTraversalTick] = useState(0);
-  const isTraversing = mode === "traversal";
 
   useEffect(() => {
     if (!isTraversing) return;
@@ -105,70 +153,95 @@ const useTraversalIndex = (mode: FiberVizMode): number => {
 
 interface FiberNodeBoxProps {
   vizNode: FiberVizNode;
-  mode: FiberVizMode;
-  nodeIndex: number;
-  isTraversalTarget: boolean;
+  label: string;
+  tag: string;
+  isHighlighted: boolean;
+  isDimmed: boolean;
+  isClickable: boolean;
+  appearDelaySeconds: number;
+  onHoverChange: (nodeId: string | null) => void;
+  onNodeClick?: () => void;
 }
 
-const FiberNodeBox = ({ vizNode, mode, nodeIndex, isTraversalTarget }: FiberNodeBoxProps) => {
-  const isBailedOut = mode === "rerender" && BAILED_OUT_NODE_IDS.includes(vizNode.id);
-  const isRerendered =
-    (mode === "rerender" || mode === "instrument") && RERENDERED_NODE_IDS.includes(vizNode.id);
-  const isMutatedHost =
-    (mode === "commit" || mode === "instrument") && MUTATED_HOST_NODE_IDS.includes(vizNode.id);
-  const isHighlighted = isRerendered || isMutatedHost || isTraversalTarget;
-
-  const label = vizNode.id === "count-text" && showsUpdatedCount(mode) ? '"1"' : vizNode.label;
-  const tag = isBailedOut ? "bailout" : vizNode.tag;
-
-  return (
-    <motion.g
-      initial={{ opacity: 0, scale: 0.92 }}
-      animate={{ opacity: isBailedOut ? 0.35 : 1, scale: 1 }}
-      transition={{ duration: 0.35, delay: mode === "elements" ? nodeIndex * 0.07 : 0 }}
+const FiberNodeBox = ({
+  vizNode,
+  label,
+  tag,
+  isHighlighted,
+  isDimmed,
+  isClickable,
+  appearDelaySeconds,
+  onHoverChange,
+  onNodeClick,
+}: FiberNodeBoxProps) => (
+  <motion.g
+    initial={{ opacity: 0, scale: 0.92 }}
+    animate={{ opacity: isDimmed ? 0.35 : 1, scale: 1 }}
+    transition={{ duration: 0.35, delay: appearDelaySeconds }}
+    className={isClickable ? "cursor-pointer" : undefined}
+    onPointerEnter={() => onHoverChange(vizNode.id)}
+    onPointerLeave={() => onHoverChange(null)}
+    onClick={onNodeClick}
+  >
+    <rect
+      x={vizNode.x - FIBER_NODE_WIDTH_PX / 2}
+      y={vizNode.y - FIBER_NODE_HEIGHT_PX / 2}
+      width={FIBER_NODE_WIDTH_PX}
+      height={FIBER_NODE_HEIGHT_PX}
+      rx={10}
+      fill="var(--button)"
+      stroke={isHighlighted ? "var(--link)" : "var(--border)"}
+      strokeWidth={isHighlighted ? 1.5 : 1}
+    />
+    <text
+      x={vizNode.x}
+      y={vizNode.y - 2}
+      textAnchor="middle"
+      fontSize={13}
+      fontWeight={600}
+      fill="var(--foreground)"
+      fontFamily="var(--font-sans-value)"
+      style={{ pointerEvents: "none" }}
     >
-      <rect
-        x={vizNode.x - FIBER_NODE_WIDTH_PX / 2}
-        y={vizNode.y - FIBER_NODE_HEIGHT_PX / 2}
-        width={FIBER_NODE_WIDTH_PX}
-        height={FIBER_NODE_HEIGHT_PX}
-        rx={10}
-        fill="var(--button)"
-        stroke={isHighlighted ? "var(--link)" : "var(--border)"}
-        strokeWidth={isHighlighted ? 1.5 : 1}
-      />
-      <text
-        x={vizNode.x}
-        y={vizNode.y - 2}
-        textAnchor="middle"
-        fontSize={13}
-        fontWeight={600}
-        fill="var(--foreground)"
-        fontFamily="var(--font-sans-value)"
-      >
-        {label}
-      </text>
-      <text
-        x={vizNode.x}
-        y={vizNode.y + 13}
-        textAnchor="middle"
-        fontSize={8.5}
-        fill={isBailedOut ? "var(--faq-icon)" : "var(--soft-foreground)"}
-        fontFamily="var(--font-mono-value)"
-      >
-        {tag}
-      </text>
-    </motion.g>
-  );
-};
+      {label}
+    </text>
+    <text
+      x={vizNode.x}
+      y={vizNode.y + 13}
+      textAnchor="middle"
+      fontSize={8.5}
+      fill={tag === "bailout" ? "var(--faq-icon)" : "var(--soft-foreground)"}
+      fontFamily="var(--font-mono-value)"
+      style={{ pointerEvents: "none" }}
+    >
+      {tag}
+    </text>
+  </motion.g>
+);
+
+interface FiberCanvasProps {
+  mode: FiberVizMode;
+}
 
 export const FiberCanvas = ({ mode }: FiberCanvasProps) => {
-  const traversalTick = useTraversalIndex(mode);
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const liveCycle = useLiveRenderCycle();
+  const isLiveCycleActive = liveCycle.phase !== "idle";
+
+  const traversalTick = useTraversalIndex(mode === "traversal" && !isLiveCycleActive);
   const traversalNodeId =
-    mode === "traversal" && traversalTick < TRAVERSAL_ORDER.length
+    mode === "traversal" && !isLiveCycleActive && traversalTick < TRAVERSAL_ORDER.length
       ? TRAVERSAL_ORDER[traversalTick]
       : null;
-  const traversalNode = traversalNodeId ? getNode(traversalNodeId) : null;
+  const cursorNodeId = liveCycle.renderingNodeId ?? traversalNodeId;
+  const cursorNode = cursorNodeId ? getNode(cursorNodeId) : null;
+
+  const showsBanner = mode === "commit" || mode === "instrument" || liveCycle.phase === "commit";
+  const showsBailouts = mode === "rerender" || liveCycle.phase === "render";
+
+  const visibleEdges = FIBER_VIZ_EDGES.filter(
+    (edge) => isEdgeVisible(edge, mode) || edge.from === hoveredNodeId,
+  );
 
   return (
     <div className="flex flex-col gap-2">
@@ -176,7 +249,7 @@ export const FiberCanvas = ({ mode }: FiberCanvasProps) => {
         viewBox={`0 0 ${FIBER_CANVAS_WIDTH_PX} ${FIBER_CANVAS_HEIGHT_PX}`}
         className="h-auto w-full"
         role="img"
-        aria-label="animated visualization of a react fiber tree"
+        aria-label="interactive visualization of a react fiber tree"
       >
         <defs>
           <marker
@@ -227,36 +300,94 @@ export const FiberCanvas = ({ mode }: FiberCanvasProps) => {
         )}
 
         <AnimatePresence>
-          {FIBER_VIZ_EDGES.filter((edge) => isEdgeVisible(edge, mode)).map((edge) => (
-            <motion.path
-              key={edge.id}
-              d={buildEdgePath(edge)}
-              fill="none"
-              stroke={EDGE_KIND_COLORS[edge.kind]}
-              strokeWidth={edge.kind === "sibling" ? 1.4 : 1.2}
-              strokeDasharray={edge.kind === "return" ? "4 4" : undefined}
-              markerEnd={
-                edge.kind === "sibling" ? "url(#fiber-arrow-sibling)" : "url(#fiber-arrow-child)"
-              }
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: 1, opacity: edge.kind === "return" ? 0.8 : 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5 }}
-            />
-          ))}
+          {visibleEdges.map((edge) => {
+            const isFromHoveredNode = edge.from === hoveredNodeId;
+            const edgeOpacity = hoveredNodeId
+              ? isFromHoveredNode
+                ? 1
+                : 0.2
+              : edge.kind === "return"
+                ? 0.8
+                : 1;
+            return (
+              <motion.path
+                key={edge.id}
+                d={buildEdgePath(edge)}
+                fill="none"
+                stroke={isFromHoveredNode ? "var(--link)" : EDGE_KIND_COLORS[edge.kind]}
+                strokeWidth={isFromHoveredNode ? 1.8 : edge.kind === "sibling" ? 1.4 : 1.2}
+                strokeDasharray={edge.kind === "return" ? "4 4" : undefined}
+                markerEnd={
+                  edge.kind === "sibling" || isFromHoveredNode
+                    ? "url(#fiber-arrow-sibling)"
+                    : "url(#fiber-arrow-child)"
+                }
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: edgeOpacity }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4 }}
+              />
+            );
+          })}
         </AnimatePresence>
 
-        {FIBER_VIZ_NODES.map((vizNode, nodeIndex) => (
-          <FiberNodeBox
-            key={vizNode.id}
-            vizNode={vizNode}
-            mode={mode}
-            nodeIndex={nodeIndex}
-            isTraversalTarget={vizNode.id === traversalNodeId}
-          />
-        ))}
+        {hoveredNodeId &&
+          FIBER_VIZ_EDGES.filter((edge) => edge.from === hoveredNodeId).map((edge) => {
+            const toNode = getNode(edge.to);
+            const fromNode = getNode(edge.from);
+            const labelX = (fromNode.x + toNode.x) / 2;
+            const labelY = (fromNode.y + toNode.y) / 2 - 6;
+            return (
+              <text
+                key={`pointer-label-${edge.id}`}
+                x={labelX}
+                y={labelY}
+                textAnchor="middle"
+                fontSize={9}
+                fill="var(--link)"
+                fontFamily="var(--font-mono-value)"
+                style={{ pointerEvents: "none" }}
+              >
+                {edge.kind}
+              </text>
+            );
+          })}
 
-        {traversalNode && (
+        {FIBER_VIZ_NODES.map((vizNode, nodeIndex) => {
+          const isBailedOut = showsBailouts && BAILED_OUT_NODE_IDS.includes(vizNode.id);
+          const isModeHighlighted =
+            (mode === "rerender" || mode === "instrument") &&
+            RERENDERED_NODE_IDS.includes(vizNode.id);
+          const isModeMutated =
+            (mode === "commit" || mode === "instrument") &&
+            MUTATED_HOST_NODE_IDS.includes(vizNode.id);
+          const isLiveHighlighted = liveCycle.renderedNodeIds.includes(vizNode.id);
+          const label =
+            vizNode.id === "count-text" ? `"${liveCycle.displayedCount}"` : vizNode.label;
+
+          return (
+            <FiberNodeBox
+              key={vizNode.id}
+              vizNode={vizNode}
+              label={label}
+              tag={isBailedOut ? "bailout" : vizNode.tag}
+              isHighlighted={
+                isModeHighlighted ||
+                isModeMutated ||
+                isLiveHighlighted ||
+                vizNode.id === cursorNodeId ||
+                vizNode.id === hoveredNodeId
+              }
+              isDimmed={isBailedOut}
+              isClickable={vizNode.id === "button"}
+              appearDelaySeconds={mode === "elements" ? nodeIndex * 0.07 : 0}
+              onHoverChange={setHoveredNodeId}
+              onNodeClick={vizNode.id === "button" ? liveCycle.triggerUpdate : undefined}
+            />
+          );
+        })}
+
+        {cursorNode && (
           <motion.rect
             width={FIBER_NODE_WIDTH_PX + 10}
             height={FIBER_NODE_HEIGHT_PX + 10}
@@ -264,16 +395,17 @@ export const FiberCanvas = ({ mode }: FiberCanvasProps) => {
             fill="none"
             stroke="var(--link)"
             strokeWidth={1.5}
+            style={{ pointerEvents: "none" }}
             initial={false}
             animate={{
-              x: traversalNode.x - FIBER_NODE_WIDTH_PX / 2 - 5,
-              y: traversalNode.y - FIBER_NODE_HEIGHT_PX / 2 - 5,
+              x: cursorNode.x - FIBER_NODE_WIDTH_PX / 2 - 5,
+              y: cursorNode.y - FIBER_NODE_HEIGHT_PX / 2 - 5,
             }}
             transition={{ type: "spring", stiffness: 260, damping: 26 }}
           />
         )}
 
-        {(mode === "commit" || mode === "instrument") && (
+        {showsBanner && (
           <motion.g
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
@@ -314,8 +446,20 @@ export const FiberCanvas = ({ mode }: FiberCanvasProps) => {
       </svg>
 
       <div className="flex min-h-5 items-center justify-between gap-3">
-        <span className="font-mono text-[11px] text-soft-foreground">{PHASE_LABELS[mode]}</span>
-        {mode === "pointers" && (
+        <span className="font-mono text-[11px] text-soft-foreground">
+          {liveCycle.phase === "render"
+            ? "phase: render (update)"
+            : liveCycle.phase === "commit"
+              ? "phase: commit"
+              : PHASE_LABELS[mode]}
+        </span>
+        {liveCycle.phase === "render" ? (
+          <span className="font-mono text-[11px] text-link">
+            setCount({liveCycle.displayedCount + 1})
+          </span>
+        ) : liveCycle.phase === "commit" ? (
+          <span className="font-mono text-[11px] text-link">dom mutated</span>
+        ) : mode === "pointers" ? (
           <span className="flex items-center gap-3 font-mono text-[10px] text-soft-foreground">
             <span className="flex items-center gap-1">
               <span className="inline-block h-px w-4 bg-faq-icon" /> child
@@ -335,9 +479,12 @@ export const FiberCanvas = ({ mode }: FiberCanvasProps) => {
               return
             </span>
           </span>
-        )}
-        {mode === "traversal" && traversalNode && (
-          <span className="font-mono text-[11px] text-link">beginWork({traversalNode.label})</span>
+        ) : mode === "traversal" && cursorNode ? (
+          <span className="font-mono text-[11px] text-link">beginWork({cursorNode.label})</span>
+        ) : (
+          <span className="font-mono text-[10px] text-faq-icon">
+            hover a fiber · click the +1 button
+          </span>
         )}
       </div>
     </div>
