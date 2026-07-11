@@ -10,6 +10,7 @@ import { ActionButtons } from "@/components/action-buttons";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { TextLink } from "@/components/ui/text-link";
+import { FiberScrollytelling } from "@/components/fiber-viz/fiber-scrollytelling";
 import readmeRaw from "../../bippy/README.md?raw";
 
 const GITHUB_URL = "https://github.com/aidenybai/bippy";
@@ -71,6 +72,8 @@ export const App = () => {
                 <ActionButtons />
               </div>
             </div>
+
+            <FiberScrollytelling />
 
             <article className="relative mt-14 w-full max-w-page min-w-0 px-4 pb-16 sm:px-0">
               <div className="mb-faq-gap w-full max-w-faq font-openrunde-semibold text-faq-title font-semibold tracking-normal text-section-title">

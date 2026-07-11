@@ -299,4 +299,20 @@
   .hero-divider-bg {
     background: var(--hero-divider);
   }
+
+  .dark .shiki,
+  .dark .shiki span {
+    color: var(--shiki-dark) !important;
+  }
+
+  .fiber-viz-code .line-emphasized {
+    display: inline-block;
+    width: 100%;
+    background: color-mix(in oklab, var(--link) 9%, transparent);
+    border-radius: 3px;
+  }
+
+  .fiber-viz-code .line-dimmed {
+    opacity: 0.45;
+  }
 }
