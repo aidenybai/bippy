@@ -1,7 +1,7 @@
 > [!WARNING]
 > ⚠️⚠️⚠️ **this project may break production apps and cause unexpected behavior** ⚠️⚠️⚠️
 >
-> this project uses react internals, which can change at any time. it is not recommended to depend on internals unless you really, _really_ have to. by proceeding, you acknowledge the risk of breaking your own code or apps that use your code.
+> this project uses react internals, which can change at any time. we don't recommend depending on internals unless you really, _really_ have to. by proceeding, you acknowledge the risk of breaking your own code or apps that use your code.
 
 # <img src="https://github.com/aidenybai/bippy/blob/main/.github/public/bippy.png?raw=true" width="60" align="center" /> bippy
 
@@ -10,9 +10,9 @@
 
 bippy is a toolkit to **hack into react internals**
 
-by default, you cannot access react internals. bippy bypasses this by "pretending" to be react devtools, giving you access to the fiber tree and other internals.
+by default, you cannot access react internals. bippy bypasses this by “pretending” to be react devtools, giving you access to the fiber tree and other internals.
 
-- works outside of react – no react code modification needed
+- works outside of react: no react code modification needed
 - utility functions that work across modern react (v17-19)
 - no prior react source code knowledge required
 
@@ -33,7 +33,7 @@ instrument({
 
 bippy allows you to **access** and **use** react fibers **outside** of react components.
 
-a react fiber is a "unit of execution." this means react will do something based on the data in a fiber. each fiber either represents a composite (function/class component) or a host (dom element).
+a react fiber is a “unit of execution.” this means react will do something based on the data in a fiber. each fiber either represents a composite (function/class component) or a host (dom element).
 
 > here is a [live visualization](https://jser.pro/ddir/rie?reactVersion=18.3.1&snippetKey=hq8jm2ylzb9u8eh468) of what the fiber tree looks like, and here is a [deep dive article](https://jser.dev/2023-07-18-how-react-rerenders/).
 
@@ -74,14 +74,14 @@ here, the `child`, `sibling`, and `return` properties are pointers to other fibe
 
 additionally, `memoizedProps`, `memoizedState`, and `dependencies` are the fiber's props, state, and contexts.
 
-while all of the information is there, it's not super easy to work with, and changes frequently across different versions of react. bippy simplifies this by providing utility functions like:
+while all of the information is there, it's awkward to work with, and changes frequently across different versions of react. bippy simplifies this by providing utility functions like:
 
 - `traverseRenderedFibers` to detect renders and `traverseFiber` to traverse the overall fiber tree
   - _(instead of `child`, `sibling`, and `return` pointers)_
 - `traverseProps`, `traverseState`, and `traverseContexts` to traverse the fiber's props, state, and contexts
   - _(instead of `memoizedProps`, `memoizedState`, and `dependencies`)_
 
-however, fibers aren't directly accessible by the user. so, we have to hack our way around to accessing it.
+however, react doesn't expose fibers to you directly. so, we have to hack our way around to access them.
 
 luckily, react [reads from a property](https://github.com/facebook/react/blob/6a4b46cd70d2672bc4be59dcb5b8dede22ed0cef/packages/react-reconciler/src/ReactFiberDevToolsHook.js#L48) in the window object: `window.__REACT_DEVTOOLS_GLOBAL_HOOK__` and runs handlers on it when certain events happen. this property must exist before react's bundle is executed. this is intended for react devtools, but we can use it to our advantage.
 
@@ -107,7 +107,7 @@ interface __REACT_DEVTOOLS_GLOBAL_HOOK__ {
 bippy works by monkey-patching `window.__REACT_DEVTOOLS_GLOBAL_HOOK__` with our own custom handlers. bippy simplifies this by providing utility functions like:
 
 - `instrument` to safely patch `window.__REACT_DEVTOOLS_GLOBAL_HOOK__`
-  - _(instead of directly mutating `onCommitFiberRoot`, ...)_
+  - _(instead of directly mutating `onCommitFiberRoot`, …)_
 - `traverseRenderedFibers` to traverse the fiber tree and determine which fibers have actually rendered
   - _(instead of `child`, `sibling`, and `return` pointers)_
 - `traverseFiber` to traverse the fiber tree, regardless of whether it has rendered
@@ -119,13 +119,13 @@ bippy works by monkey-patching `window.__REACT_DEVTOOLS_GLOBAL_HOOK__` with our 
 
 we recommend installing via npm.
 
-this package should be imported before a React app runs. this will add a special object to the global which is used by React for providing its internals to the tool for analysis (React Devtools does the same). as soon as React library is loaded and attached to the tool, bippy starts collecting data about what is going on in React's internals.
+import this package before your react app runs. it adds a special object to the global scope that react reports its internals to (react devtools uses the same mechanism). as soon as react loads and attaches, bippy starts collecting data about what is going on in react's internals.
 
 ```shell
 npm install bippy
 ```
 
-since bippy needs to be imported before react, some bundlers require specific configuration to ensure the correct import order.
+since bippy must load before react, some bundlers need specific configuration to get the import order right.
 
 ### next.js
 
@@ -151,9 +151,9 @@ import { createRoot } from "react-dom/client";
 // ... rest of your code
 ```
 
-the import order is critical: bippy must be imported before any react packages.
+the import order is critical: import bippy before any react packages.
 
-> **note for library maintainers**: if you're building a library and want to define your own utility functions while minimizing bundle size, you can use `bippy/install-hook-only` (~90 bytes) instead of the main `bippy` export. this only installs the react devtools hook without importing any utility functions, allowing you to import only what you need from `bippy/core` or define your own fiber utilities. that said, the full `bippy` package is only ~4kb gzipped, so bundle size is rarely a concern.
+> **note for library maintainers**: if you're building a library and want to define your own utility functions while minimizing bundle size, you can use `bippy/install-hook-only` (~90 bytes) instead of the main `bippy` export. this only installs the react devtools hook without importing any utility functions, allowing you to import only what you need from `bippy/core` or define your own fiber utilities. that said, the full `bippy` package is only ~4 KB gzipped, so bundle size is rarely a concern.
 
 > ```typescript
 > import "bippy/install-hook-only"; // only installs the hook
@@ -168,9 +168,9 @@ the import order is critical: bippy must be imported before any react packages.
 
 ### instrument
 
-patches `window.__REACT_DEVTOOLS_GLOBAL_HOOK__` with your handlers. must be imported before react, and must be initialized to properly run any other methods.
+patches `window.__REACT_DEVTOOLS_GLOBAL_HOOK__` with your handlers. import bippy before react, and call `instrument` before any other methods.
 
-each hook event is patched once and dispatches to a set of listeners, so multiple `instrument` calls compose instead of replacing each other. it returns an unsubscribe function that removes exactly the handlers you registered (also a `Disposable`, so it works with `using`).
+bippy patches each hook event once and dispatches it to a set of listeners, so multiple `instrument` calls compose instead of replacing each other. `instrument` returns an unsubscribe function that removes exactly the handlers you registered (also a `Disposable`, so it works with `using`).
 
 ```typescript
 import { instrument } from "bippy"; // must be imported BEFORE react
@@ -346,7 +346,7 @@ console.log(getType(fiberForMemoizedComponent) === RealComponent);
 
 ### getNearestHostFiber / getNearestHostFibers
 
-getNearestHostFiber returns the closest host fiber above or below a given fiber. getNearestHostFibers(fiber) returns all host fibers associated with the provided fiber and its subtree.
+`getNearestHostFiber` returns the closest host fiber above or below a given fiber. `getNearestHostFibers` returns all host fibers associated with the provided fiber and its subtree.
 
 ```jsx
 import { getNearestHostFiber, getNearestHostFibers } from "bippy";
@@ -445,7 +445,7 @@ overrideProps(fiber, {
 });
 ```
 
-the function accepts a fiber and a partial object containing the props to override. nested objects are automatically flattened into property paths.
+the function accepts a fiber and a partial object containing the props to override. bippy automatically flattens nested objects into property paths.
 
 ### overrideHookState
 
@@ -466,7 +466,7 @@ overrideHookState(fiber, 1, {
 });
 ```
 
-the hook id parameter corresponds to the order of hooks in the component (0-indexed). the function can accept either a primitive value or an object for nested state updates.
+the hook id parameter corresponds to the order of hooks in the component (0-indexed). pass either a primitive value or an object for nested state updates.
 
 ### overrideContext
 
@@ -531,7 +531,7 @@ const source = await getSource(compositeFiber);
 
 returns a symbolicated stack of components above a fiber.
 
-`getOwnerStack` walks the chain of components that _created_ this fiber's JSX (react's `_debugOwner` chain), with exact creation-site locations on react 19 — including server component owners. wrappers that merely render `{children}` don't appear. it automatically falls back to `getParentStack` when no usable owner frames exist (e.g. react <19).
+`getOwnerStack` walks the chain of components that _created_ this fiber's JSX (react's `_debugOwner` chain), with exact creation-site locations on react 19, including server component owners. wrappers that merely render `{children}` don't appear. it automatically falls back to `getParentStack` when no usable owner frames exist (e.g. react <19).
 
 `getParentStack` walks _all_ ancestors in the render tree (the fiber's `return` chain), including `{children}` wrappers. works on every react version.
 
@@ -547,7 +547,7 @@ const parentFrames = await getParentStack(fiber);
 
 ### instrumentReactRefresh
 
-subscribes to fast refresh (HMR) updates from `bippy/react-refresh`. works with any bundler that uses react-refresh (vite, next.js webpack, next.js turbopack, metro) without bundler-specific code — the bundler's HMR transport is auto-detected, and each update is augmented with the hot-updated source file paths.
+subscribes to fast refresh (HMR) updates from `bippy/react-refresh`. works with any bundler that uses react-refresh (vite, next.js webpack, next.js turbopack, metro) without bundler-specific code: bippy auto-detects the bundler's HMR transport and augments each update with the hot-updated source file paths.
 
 the handler runs after react has re-rendered with the new component types, so `updatedFibers`/`staleFibers` are the mounted fibers matching the hot-swapped component types.
 
@@ -633,11 +633,11 @@ instrument({
 
 ## glossary
 
-- fiber: a "unit of execution" in react, representing a component or dom element
+- fiber: a “unit of execution” in react, representing a component or dom element
 - commit: the process of applying changes to the host tree (e.g. DOM mutations)
 - render: the process of building the fiber tree by executing component function/classes
 - host tree: the tree of UI elements that react mutates (e.g. DOM elements)
-- reconciler (or "renderer"): custom bindings for react, e.g. react-dom, react-native, react-three-fiber, etc to mutate the host tree
+- reconciler (or “renderer”): custom bindings for react, e.g. react-dom, react-native, react-three-fiber, etc to mutate the host tree
 - `rendererID`: the id of the reconciler, starting at 1 (can be from multiple reconciler instances)
 - `root`: a special `FiberRoot` type that contains the container fiber (the one you pass to `ReactDOM.createRoot`) in the `current` property
 - `onCommitFiberRoot`: called when react is ready to commit a fiber root
@@ -646,7 +646,7 @@ instrument({
 
 ## misc
 
-bippy was initially created for [react-scan](https://github.com/aidenybai/react-scan), which is deployed with proper safeguards to ensure it's only used in development or error-guarded in production.
+we initially created bippy for [react-scan](https://github.com/aidenybai/react-scan), which ships with safeguards so it only runs in development or error-guarded in production.
 
 if you're seeking more robust solutions, you might consider [its-fine](https://github.com/pmndrs/its-fine) for accessing fibers within react using hooks, or [react-devtools-inline](https://www.npmjs.com/package/react-devtools-inline) for a headful interface.
 
