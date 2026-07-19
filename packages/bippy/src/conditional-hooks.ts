@@ -29,7 +29,6 @@ interface ConditionalHookRuntime {
   dispatcherKey: "H" | "current";
   dispatcherRef: ConditionalHookDispatcherRef;
   getHookKey: ConditionalHookKeyResolver;
-  interceptReactHooks: boolean;
   originalDescriptor: PropertyDescriptor | undefined;
   proxyByDispatcher: WeakMap<object, ConditionalHookDispatcher>;
   renderer: ReactRenderer;
@@ -104,15 +103,15 @@ interface ConditionalEffectRegistration {
   kind: ConditionalEffectKind;
 }
 
-export interface ConditionalRef<Value> {
+interface ConditionalRef<Value> {
   current: Value;
 }
 
-export interface ConditionalStateSetter<State> {
+interface ConditionalStateSetter<State> {
   (action: State | ((previousState: State) => State)): void;
 }
 
-export interface ConditionalReducerDispatcher<Action> {
+interface ConditionalReducerDispatcher<Action> {
   (action: Action): void;
 }
 
@@ -122,7 +121,6 @@ export interface ConditionalHooksInstallation extends Unsubscribe {
 
 export interface ConditionalHooksOptions {
   getHookKey?: ConditionalHookKeyResolver;
-  interceptReactHooks?: boolean;
 }
 
 export interface ConditionalHookKeyResolver {
@@ -271,7 +269,7 @@ const getRuntimeDispatcher = (
   runtime: ConditionalHookRuntime,
 ): ConditionalHookDispatcher | null => {
   const dispatcher = runtime.currentDispatcher;
-  if (!runtime.interceptReactHooks || !dispatcher || isContextOnlyDispatcher(dispatcher)) {
+  if (!dispatcher || isContextOnlyDispatcher(dispatcher)) {
     return dispatcher;
   }
   const existingProxy = runtime.proxyByDispatcher.get(dispatcher);
@@ -360,7 +358,6 @@ const installRenderer = (renderer: ReactRenderer, options: ConditionalHooksOptio
     dispatcherKey,
     dispatcherRef,
     getHookKey: options.getHookKey ?? defaultHookKeyResolver,
-    interceptReactHooks: options.interceptReactHooks ?? false,
     originalDescriptor,
     proxyByDispatcher: new WeakMap(),
     renderer,
@@ -791,7 +788,7 @@ const ensureInstalled = (): void => {
   if (!installation) installConditionalHooks();
 };
 
-export const useConditionalState = <State>(
+const useConditionalState = <State>(
   key: PropertyKey,
   initialState: State | (() => State),
 ): [State, ConditionalStateSetter<State>] => {
@@ -829,7 +826,7 @@ export const useConditionalState = <State>(
   return [cell.value, cell.dispatch] as [State, ConditionalStateSetter<State>];
 };
 
-export const useConditionalReducer = <State, Action, InitialState>(
+const useConditionalReducer = <State, Action, InitialState>(
   key: PropertyKey,
   reducer: (state: State, action: Action) => State,
   initialState: InitialState,
@@ -882,10 +879,7 @@ export const useConditionalReducer = <State, Action, InitialState>(
   return [cell.value, cell.dispatch] as [State, ConditionalReducerDispatcher<Action>];
 };
 
-export const useConditionalRef = <Value>(
-  key: PropertyKey,
-  initialValue: Value,
-): ConditionalRef<Value> => {
+const useConditionalRef = <Value>(key: PropertyKey, initialValue: Value): ConditionalRef<Value> => {
   ensureInstalled();
   const { frame, scope } = getScope();
   registerHookKind(frame, scope, key, "ref");
@@ -901,7 +895,7 @@ export const useConditionalRef = <Value>(
   return cell.value as ConditionalRef<Value>;
 };
 
-export const useConditionalMemo = <Value>(
+const useConditionalMemo = <Value>(
   key: PropertyKey,
   create: () => Value,
   dependencies?: readonly unknown[],
@@ -929,12 +923,6 @@ export const useConditionalMemo = <Value>(
   return value;
 };
 
-export const useConditionalCallback = <Callback extends (...arguments_: never[]) => unknown>(
-  key: PropertyKey,
-  callback: Callback,
-  dependencies?: readonly unknown[],
-): Callback => useConditionalMemo(key, () => callback, dependencies);
-
 const registerEffect = (
   key: PropertyKey,
   kind: ConditionalEffectKind,
@@ -949,20 +937,4 @@ const registerEffect = (
     dependencies,
     kind,
   });
-};
-
-export const useConditionalEffect = (
-  key: PropertyKey,
-  create: () => (() => void) | void,
-  dependencies?: readonly unknown[],
-): void => {
-  registerEffect(key, "effect", create, dependencies);
-};
-
-export const useConditionalLayoutEffect = (
-  key: PropertyKey,
-  create: () => (() => void) | void,
-  dependencies?: readonly unknown[],
-): void => {
-  registerEffect(key, "layout-effect", create, dependencies);
 };

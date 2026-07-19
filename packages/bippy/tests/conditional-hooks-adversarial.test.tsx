@@ -1,11 +1,4 @@
-import {
-  installConditionalHooks,
-  type ConditionalHooksOptions,
-  useConditionalEffect,
-  useConditionalLayoutEffect,
-  useConditionalMemo,
-  useConditionalState,
-} from "../src/index.js";
+import { installConditionalHooks, type ConditionalHooksOptions } from "../src/index.js";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -71,7 +64,7 @@ describe("conditional hook adversarial cases", () => {
     install();
     const conditionalInitialize = vi.fn(() => 0);
     const ConditionalComponent = (): React.ReactNode => {
-      useConditionalState("state", conditionalInitialize);
+      React.useState(conditionalInitialize);
       return null;
     };
     render(
@@ -103,14 +96,10 @@ describe("conditional hook adversarial cases", () => {
     install();
     const conditionalEvents: string[] = [];
     const ConditionalComponent = (): React.ReactNode => {
-      useConditionalEffect(
-        "effect",
-        () => {
-          conditionalEvents.push("mount");
-          return () => conditionalEvents.push("cleanup");
-        },
-        [],
-      );
+      React.useEffect(() => {
+        conditionalEvents.push("mount");
+        return () => conditionalEvents.push("cleanup");
+      }, []);
       return null;
     };
     render(
@@ -127,7 +116,7 @@ describe("conditional hook adversarial cases", () => {
     const renders: number[] = [];
 
     const Component = (): React.ReactNode => {
-      const [count, setCount] = useConditionalState("count", 0);
+      const [count, setCount] = React.useState(0);
       renders.push(count);
       if (count < 3) setCount(count + 1);
       return <span>{count}</span>;
@@ -144,8 +133,8 @@ describe("conditional hook adversarial cases", () => {
     const events: string[] = [];
 
     const Component = ({ signal }: SignalProperties): React.ReactNode => {
-      const [counter, setCounter] = useConditionalState("counter", 0);
-      const [previousSignal, setPreviousSignal] = useConditionalState("signal", true);
+      const [counter, setCounter] = React.useState(0);
+      const [previousSignal, setPreviousSignal] = React.useState(true);
       if (previousSignal !== signal) {
         setCounter((value) => value + 1);
         setPreviousSignal(signal);
@@ -193,14 +182,10 @@ describe("conditional hook adversarial cases", () => {
     const deferred = createDeferred<void>();
 
     const Component = ({ shouldSuspend, value }: MemoRollbackProperties): React.ReactNode => {
-      const memoized = useConditionalMemo(
-        "memo",
-        () => {
-          computedValues.push(value);
-          return value;
-        },
-        [value],
-      );
+      const memoized = React.useMemo(() => {
+        computedValues.push(value);
+        return value;
+      }, [value]);
       if (shouldSuspend) throw deferred.promise;
       return <span>{memoized}</span>;
     };
@@ -233,14 +218,10 @@ describe("conditional hook adversarial cases", () => {
     let didResolve = false;
 
     const Child = (): React.ReactNode => {
-      useConditionalLayoutEffect(
-        "layout",
-        () => {
-          events.push("mount");
-          return () => events.push("cleanup");
-        },
-        [],
-      );
+      React.useLayoutEffect(() => {
+        events.push("mount");
+        return () => events.push("cleanup");
+      }, []);
       return <span>child</span>;
     };
     const SuspenseContent = ({ shouldSuspend }: SuspenseContentProperties): React.ReactNode => {
@@ -286,7 +267,7 @@ describe("conditional hook adversarial cases", () => {
     install();
 
     const Counter = React.memo((): React.ReactNode => {
-      const [count, setCount] = useConditionalState("count", 0);
+      const [count, setCount] = React.useState(0);
       return <button onClick={() => setCount((value) => value + 1)}>{count}</button>;
     });
 
@@ -296,7 +277,7 @@ describe("conditional hook adversarial cases", () => {
   });
 
   it("tracks provider updates through intercepted useContext", async () => {
-    install({ interceptReactHooks: true });
+    install();
     const ValueContext = React.createContext("first");
 
     const Child = React.memo((): React.ReactNode => {
@@ -323,14 +304,10 @@ describe("conditional hook adversarial cases", () => {
     const events: string[] = [];
 
     const Child = ({ name }: EffectChildProperties): React.ReactNode => {
-      useConditionalEffect(
-        "effect",
-        () => {
-          events.push(`mount:${name}`);
-          return () => events.push(`cleanup:${name}`);
-        },
-        [],
-      );
+      React.useEffect(() => {
+        events.push(`mount:${name}`);
+        return () => events.push(`cleanup:${name}`);
+      }, []);
       return <span>{name}</span>;
     };
 
@@ -347,11 +324,11 @@ describe("conditional hook adversarial cases", () => {
     expect(events).toEqual(["mount:first", "mount:second", "cleanup:first", "cleanup:second"]);
   });
 
-  it("isolates identical explicit keys across separate roots", async () => {
+  it("isolates identical automatic callsites across separate roots", async () => {
     install();
 
     const Counter = ({ name }: EffectChildProperties): React.ReactNode => {
-      const [count, setCount] = useConditionalState("count", 0);
+      const [count, setCount] = React.useState(0);
       return (
         <button onClick={() => setCount((value) => value + 1)}>
           {name}:{count}
@@ -372,8 +349,8 @@ describe("conditional hook adversarial cases", () => {
     install();
 
     const Component = (): React.ReactNode => {
-      const [count, setCount] = useConditionalState("count", 0);
-      useConditionalEffect("effect", () => setCount((value) => value + 1), []);
+      const [count, setCount] = React.useState(0);
+      React.useEffect(() => setCount((value) => value + 1), []);
       return <span>{count}</span>;
     };
 
@@ -382,7 +359,7 @@ describe("conditional hook adversarial cases", () => {
   });
 
   it("restores the native dispatcher when installation is disposed", async () => {
-    const installation = install({ interceptReactHooks: true });
+    const installation = install();
     installation();
 
     const Component = (): React.ReactNode => {

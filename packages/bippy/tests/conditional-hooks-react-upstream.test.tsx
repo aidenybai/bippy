@@ -1,14 +1,4 @@
-import {
-  installConditionalHooks,
-  type ConditionalHooksOptions,
-  type ConditionalReducerDispatcher,
-  useConditionalCallback,
-  useConditionalEffect,
-  useConditionalLayoutEffect,
-  useConditionalMemo,
-  useConditionalReducer,
-  useConditionalState,
-} from "../src/index.js";
+import { installConditionalHooks, type ConditionalHooksOptions } from "../src/index.js";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -58,19 +48,12 @@ afterEach(() => {
 });
 
 describe("ports from ReactHooksWithNoopRenderer-test.js", () => {
-  it("throws when called outside the render phase", () => {
-    install();
-    expect(() => useConditionalState("state", 0)).toThrowError(
-      "must be called while a component is rendering",
-    );
-  });
-
   it("updates multiple independent states", async () => {
     install();
 
     const Component = (): React.ReactNode => {
-      const [first, setFirst] = useConditionalState("first", 0);
-      const [second, setSecond] = useConditionalState("second", 10);
+      const [first, setFirst] = React.useState(0);
+      const [second, setSecond] = React.useState(10);
       return (
         <div>
           <button onClick={() => setFirst((value) => value + 1)}>first:{first}</button>
@@ -92,7 +75,7 @@ describe("ports from ReactHooksWithNoopRenderer-test.js", () => {
     install();
 
     const Component = (): React.ReactNode => {
-      const [count, setCount] = useConditionalState("count", 0);
+      const [count, setCount] = React.useState(0);
       const update = (): void => {
         setCount(1);
         setCount((value) => value + 2);
@@ -112,15 +95,11 @@ describe("ports from ReactHooksWithNoopRenderer-test.js", () => {
     const effects: number[] = [];
 
     const Component = (): React.ReactNode => {
-      const [count, setCount] = useConditionalState("count", 0);
+      const [count, setCount] = React.useState(0);
       renders.push(count);
-      useConditionalEffect(
-        "effect",
-        () => {
-          effects.push(count);
-        },
-        [count],
-      );
+      React.useEffect(() => {
+        effects.push(count);
+      }, [count]);
       if (count < 6) {
         setCount((value) => value + 1);
         setCount((value) => value + 1);
@@ -137,11 +116,10 @@ describe("ports from ReactHooksWithNoopRenderer-test.js", () => {
 
   it("uses a reducer supplied by the render that processes a queued action", async () => {
     install();
-    let dispatch: ConditionalReducerDispatcher<number> | undefined;
+    let dispatch: ((action: number) => void) | undefined;
 
     const Component = ({ factor }: ReducerProperties): React.ReactNode => {
-      const [count, currentDispatch] = useConditionalReducer(
-        "count",
+      const [count, currentDispatch] = React.useReducer(
         (state: number, amount: number) => state + amount * factor,
         0,
       );
@@ -159,11 +137,10 @@ describe("ports from ReactHooksWithNoopRenderer-test.js", () => {
 
   it("does not replay a previous no-op reducer action on a prop update", async () => {
     install();
-    let dispatch: ConditionalReducerDispatcher<number> | undefined;
+    let dispatch: ((action: number) => void) | undefined;
 
     const Component = ({ factor }: ReducerProperties): React.ReactNode => {
-      const [count, currentDispatch] = useConditionalReducer(
-        "count",
+      const [count, currentDispatch] = React.useReducer(
         (state: number, amount: number) => state + amount * factor,
         0,
       );
@@ -184,7 +161,7 @@ describe("ports from ReactHooksWithNoopRenderer-test.js", () => {
     const reducer = vi.fn((state: number, amount: number) => state + amount);
 
     const Component = (): React.ReactNode => {
-      const [count, dispatch] = useConditionalReducer("count", reducer, 0);
+      const [count, dispatch] = React.useReducer(reducer, 0);
       const update = (): void => {
         dispatch(1);
         dispatch(2);
@@ -204,14 +181,10 @@ describe("ports from ReactHooksWithNoopRenderer-test.js", () => {
     const events: string[] = [];
 
     const Component = ({ label }: EffectProperties): React.ReactNode => {
-      useConditionalEffect(
-        "effect",
-        () => {
-          events.push(`mount:${label}`);
-          return () => events.push(`cleanup:${label}`);
-        },
-        [label],
-      );
+      React.useEffect(() => {
+        events.push(`mount:${label}`);
+        return () => events.push(`cleanup:${label}`);
+      }, [label]);
       return <span>{label}</span>;
     };
 
@@ -227,22 +200,14 @@ describe("ports from ReactHooksWithNoopRenderer-test.js", () => {
     const events: string[] = [];
 
     const Component = ({ label }: EffectProperties): React.ReactNode => {
-      useConditionalEffect(
-        "first",
-        () => {
-          events.push(`mount:first:${label}`);
-          return () => events.push(`cleanup:first:${label}`);
-        },
-        [label],
-      );
-      useConditionalEffect(
-        "second",
-        () => {
-          events.push(`mount:second:${label}`);
-          return () => events.push(`cleanup:second:${label}`);
-        },
-        [label],
-      );
+      React.useEffect(() => {
+        events.push(`mount:first:${label}`);
+        return () => events.push(`cleanup:first:${label}`);
+      }, [label]);
+      React.useEffect(() => {
+        events.push(`mount:second:${label}`);
+        return () => events.push(`cleanup:second:${label}`);
+      }, [label]);
       return null;
     };
 
@@ -266,14 +231,10 @@ describe("ports from ReactHooksWithNoopRenderer-test.js", () => {
     const events: string[] = [];
 
     const Child = ({ label }: EffectProperties): React.ReactNode => {
-      useConditionalLayoutEffect(
-        "layout",
-        () => {
-          events.push(`mount:${label}`);
-          return () => events.push(`cleanup:${label}`);
-        },
-        [label],
-      );
+      React.useLayoutEffect(() => {
+        events.push(`mount:${label}`);
+        return () => events.push(`cleanup:${label}`);
+      }, [label]);
       return null;
     };
 
@@ -298,13 +259,9 @@ describe("ports from ReactHooksWithNoopRenderer-test.js", () => {
     const observedText: string[] = [];
 
     const Component = ({ label }: EffectProperties): React.ReactNode => {
-      useConditionalLayoutEffect(
-        "layout",
-        () => {
-          observedText.push(screen.getByTestId("host").textContent ?? "");
-        },
-        [label],
-      );
+      React.useLayoutEffect(() => {
+        observedText.push(screen.getByTestId("host").textContent ?? "");
+      }, [label]);
       return <span data-testid="host">{label}</span>;
     };
 
@@ -319,14 +276,10 @@ describe("ports from ReactHooksWithNoopRenderer-test.js", () => {
 
     const Component = ({ label }: EffectProperties): React.ReactNode => {
       if (label !== "skip") {
-        useConditionalEffect(
-          "effect",
-          () => {
-            events.push(`mount:${label}`);
-            return () => events.push(`cleanup:${label}`);
-          },
-          [],
-        );
+        React.useEffect(() => {
+          events.push(`mount:${label}`);
+          return () => events.push(`cleanup:${label}`);
+        }, []);
       }
       return <span>{label}</span>;
     };
@@ -344,7 +297,7 @@ describe("ports from ReactHooksWithNoopRenderer-test.js", () => {
     const callbacks: Array<() => string> = [];
 
     const Component = ({ label }: EffectProperties): React.ReactNode => {
-      callbacks.push(useConditionalCallback("callback", () => label, [label]));
+      callbacks.push(React.useCallback(() => label, [label]));
       return null;
     };
 
@@ -361,7 +314,7 @@ describe("ports from ReactHooksWithNoopRenderer-test.js", () => {
     const createMemo = vi.fn((label: string) => ({ label }));
 
     const Component = ({ label }: EffectProperties): React.ReactNode => {
-      const value = useConditionalMemo("memo", () => createMemo(label), [label]);
+      const value = React.useMemo(() => createMemo(label), [label]);
       return <span>{value.label}</span>;
     };
 
@@ -376,14 +329,10 @@ describe("ports from ReactHooksWithNoopRenderer-test.js", () => {
     const events: string[] = [];
 
     const Component = (): React.ReactNode => {
-      const [count, setCount] = useConditionalState("count", 0);
-      useConditionalEffect(
-        "effect",
-        () => {
-          events.push(`effect:${count}`);
-        },
-        [count],
-      );
+      const [count, setCount] = React.useState(0);
+      React.useEffect(() => {
+        events.push(`effect:${count}`);
+      }, [count]);
       if (count > 0) setCount(0);
       return <button onClick={() => setCount(2)}>{count}</button>;
     };
@@ -400,13 +349,9 @@ describe("ports from ReactHooksWithNoopRenderer-test.js", () => {
     const error = new Error("effect failed");
 
     const Component = (): React.ReactNode => {
-      useConditionalEffect(
-        "effect",
-        () => {
-          throw error;
-        },
-        [],
-      );
+      React.useEffect(() => {
+        throw error;
+      }, []);
       return null;
     };
 
@@ -418,20 +363,12 @@ describe("ports from ReactHooksWithNoopRenderer-test.js", () => {
     const events: string[] = [];
 
     const Component = ({ label }: EffectProperties): React.ReactNode => {
-      useConditionalEffect(
-        "passive",
-        () => {
-          events.push(`passive:${label}`);
-        },
-        [label],
-      );
-      useConditionalLayoutEffect(
-        "layout",
-        () => {
-          events.push(`layout:${label}`);
-        },
-        [label],
-      );
+      React.useEffect(() => {
+        events.push(`passive:${label}`);
+      }, [label]);
+      React.useLayoutEffect(() => {
+        events.push(`layout:${label}`);
+      }, [label]);
       return null;
     };
 
@@ -447,7 +384,7 @@ describe("ports from StrictEffectsMode-test.js", () => {
     let initializationCount = 0;
 
     const Component = (): React.ReactNode => {
-      const [value] = useConditionalState("state", () => ++initializationCount);
+      const [value] = React.useState(() => ++initializationCount);
       return <span>{value}</span>;
     };
 
@@ -465,7 +402,7 @@ describe("ports from StrictEffectsMode-test.js", () => {
     let factoryCallCount = 0;
 
     const Component = (): React.ReactNode => {
-      const value = useConditionalMemo("memo", () => ++factoryCallCount, []);
+      const value = React.useMemo(() => ++factoryCallCount, []);
       return <span>{value}</span>;
     };
 
@@ -483,7 +420,7 @@ describe("ports from StrictEffectsMode-test.js", () => {
     const updater = vi.fn((value: number) => value + 1);
 
     const Component = (): React.ReactNode => {
-      const [count, setCount] = useConditionalState("count", 0);
+      const [count, setCount] = React.useState(0);
       return <button onClick={() => setCount(updater)}>{count}</button>;
     };
 
@@ -502,22 +439,14 @@ describe("ports from StrictEffectsMode-test.js", () => {
     const events: string[] = [];
 
     const Component = (): React.ReactNode => {
-      useConditionalEffect(
-        "first",
-        () => {
-          events.push("mount:first");
-          return () => events.push("cleanup:first");
-        },
-        [],
-      );
-      useConditionalEffect(
-        "second",
-        () => {
-          events.push("mount:second");
-          return () => events.push("cleanup:second");
-        },
-        [],
-      );
+      React.useEffect(() => {
+        events.push("mount:first");
+        return () => events.push("cleanup:first");
+      }, []);
+      React.useEffect(() => {
+        events.push("mount:second");
+        return () => events.push("cleanup:second");
+      }, []);
       return null;
     };
 
@@ -543,22 +472,14 @@ describe("ports from StrictEffectsMode-test.js", () => {
     const events: string[] = [];
 
     const Component = (): React.ReactNode => {
-      useConditionalLayoutEffect(
-        "first",
-        () => {
-          events.push("mount:first");
-          return () => events.push("cleanup:first");
-        },
-        [],
-      );
-      useConditionalLayoutEffect(
-        "second",
-        () => {
-          events.push("mount:second");
-          return () => events.push("cleanup:second");
-        },
-        [],
-      );
+      React.useLayoutEffect(() => {
+        events.push("mount:first");
+        return () => events.push("cleanup:first");
+      }, []);
+      React.useLayoutEffect(() => {
+        events.push("mount:second");
+        return () => events.push("cleanup:second");
+      }, []);
       return null;
     };
 
@@ -584,14 +505,10 @@ describe("ports from StrictEffectsMode-test.js", () => {
     const events: string[] = [];
 
     const Child = (): React.ReactNode => {
-      useConditionalEffect(
-        "effect",
-        () => {
-          events.push("mount");
-          return () => events.push("cleanup");
-        },
-        [],
-      );
+      React.useEffect(() => {
+        events.push("mount");
+        return () => events.push("cleanup");
+      }, []);
       return null;
     };
     const Component = (): React.ReactNode => {
@@ -613,14 +530,10 @@ describe("ports from StrictEffectsMode-test.js", () => {
     const events: string[] = [];
 
     const Child = ({ label }: EffectProperties): React.ReactNode => {
-      useConditionalEffect(
-        "effect",
-        () => {
-          events.push(`mount:${label}`);
-          return () => events.push(`cleanup:${label}`);
-        },
-        [],
-      );
+      React.useEffect(() => {
+        events.push(`mount:${label}`);
+        return () => events.push(`cleanup:${label}`);
+      }, []);
       return null;
     };
 
@@ -647,22 +560,14 @@ describe("ports from StrictEffectsMode-test.js", () => {
     const events: string[] = [];
 
     const Component = (): React.ReactNode => {
-      useConditionalLayoutEffect(
-        "layout",
-        () => {
-          events.push("mount:layout");
-          return () => events.push("cleanup:layout");
-        },
-        [],
-      );
-      useConditionalEffect(
-        "passive",
-        () => {
-          events.push("mount:passive");
-          return () => events.push("cleanup:passive");
-        },
-        [],
-      );
+      React.useLayoutEffect(() => {
+        events.push("mount:layout");
+        return () => events.push("cleanup:layout");
+      }, []);
+      React.useEffect(() => {
+        events.push("mount:passive");
+        return () => events.push("cleanup:passive");
+      }, []);
       return null;
     };
 
@@ -688,14 +593,10 @@ describe("ports from StrictEffectsMode-test.js", () => {
     const events: string[] = [];
 
     const Child = ({ label }: EffectProperties): React.ReactNode => {
-      useConditionalEffect(
-        "effect",
-        () => {
-          events.push(`mount:${label}`);
-          return () => events.push(`cleanup:${label}`);
-        },
-        [],
-      );
+      React.useEffect(() => {
+        events.push(`mount:${label}`);
+        return () => events.push(`cleanup:${label}`);
+      }, []);
       return <span>{label}</span>;
     };
     const Component = (): React.ReactNode => {
@@ -730,7 +631,7 @@ describe("ports from ReactSuspenseEffectsSemantics tests", () => {
     let didResolve = false;
 
     const Component = (): React.ReactNode => {
-      useConditionalState("state", initialize);
+      React.useState(initialize);
       if (!didResolve) throw deferred.promise;
       return <span>ready</span>;
     };
@@ -757,14 +658,10 @@ describe("ports from ReactSuspenseEffectsSemantics tests", () => {
     let didResolve = false;
 
     const Child = React.memo((): React.ReactNode => {
-      useConditionalLayoutEffect(
-        "layout",
-        () => {
-          events.push("mount");
-          return () => events.push("cleanup");
-        },
-        [],
-      );
+      React.useLayoutEffect(() => {
+        events.push("mount");
+        return () => events.push("cleanup");
+      }, []);
       return <span>child</span>;
     });
     const Content = ({ shouldSuspend }: SuspenseProperties): React.ReactNode => {
@@ -798,7 +695,7 @@ describe("ports from ReactSuspenseEffectsSemantics tests", () => {
     const cleanupEffect = vi.fn();
 
     const Child = (): React.ReactNode => {
-      useConditionalLayoutEffect("layout", () => cleanupEffect, []);
+      React.useLayoutEffect(() => cleanupEffect, []);
       return null;
     };
     const Content = ({ shouldSuspend }: SuspenseProperties): React.ReactNode => {
@@ -834,14 +731,10 @@ describe("ports from ReactSuspenseEffectsSemantics tests", () => {
     const events: string[] = [];
 
     const Child = ({ label }: EffectProperties): React.ReactNode => {
-      useConditionalLayoutEffect(
-        "layout",
-        () => {
-          events.push(`mount:${label}`);
-          return () => events.push(`cleanup:${label}`);
-        },
-        [],
-      );
+      React.useLayoutEffect(() => {
+        events.push(`mount:${label}`);
+        return () => events.push(`cleanup:${label}`);
+      }, []);
       return <span>{label}</span>;
     };
     const InnerContent = ({ shouldSuspend }: SuspenseProperties): React.ReactNode => {
@@ -878,7 +771,7 @@ describe("ports from ReactSuspenseEffectsSemantics tests", () => {
     const cleanupEffect = vi.fn();
 
     const Child = (): React.ReactNode => {
-      useConditionalLayoutEffect("layout", () => cleanupEffect, []);
+      React.useLayoutEffect(() => cleanupEffect, []);
       return null;
     };
     const Suspender = ({ label }: EffectProperties): React.ReactNode => {
@@ -909,14 +802,10 @@ describe("ports from Activity-test.js", () => {
     const events: string[] = [];
 
     const Child = (): React.ReactNode => {
-      useConditionalLayoutEffect(
-        "layout",
-        () => {
-          events.push("mount");
-          return () => events.push("cleanup");
-        },
-        [],
-      );
+      React.useLayoutEffect(() => {
+        events.push("mount");
+        return () => events.push("cleanup");
+      }, []);
       return <span>child</span>;
     };
 
@@ -946,14 +835,10 @@ describe("ports from Activity-test.js", () => {
     const events: string[] = [];
 
     const Child = (): React.ReactNode => {
-      useConditionalEffect(
-        "effect",
-        () => {
-          events.push("mount");
-          return () => events.push("cleanup");
-        },
-        [],
-      );
+      React.useEffect(() => {
+        events.push("mount");
+        return () => events.push("cleanup");
+      }, []);
       return <span>child</span>;
     };
 
@@ -983,7 +868,7 @@ describe("ports from Activity-test.js", () => {
     const Activity: React.ComponentType<ActivityProperties> = Reflect.get(React, "Activity");
 
     const Counter = (): React.ReactNode => {
-      const [count, setCount] = useConditionalState("count", 0);
+      const [count, setCount] = React.useState(0);
       return <button onClick={() => setCount((value) => value + 1)}>{count}</button>;
     };
 

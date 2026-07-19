@@ -1,12 +1,4 @@
-import {
-  installConditionalHooks,
-  type ConditionalHooksOptions,
-  type ConditionalStateSetter,
-  useConditionalEffect,
-  useConditionalLayoutEffect,
-  useConditionalRef,
-  useConditionalState,
-} from "../src/index.js";
+import { installConditionalHooks, type ConditionalHooksOptions } from "../src/index.js";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -43,7 +35,7 @@ afterEach(() => {
 
 describe("conditional hook edge cases", () => {
   it("does not commit an effect from a suspended render", async () => {
-    install({ interceptReactHooks: true });
+    install();
     const deferred = createDeferred<void>();
     const events: string[] = [];
     let didResolve = false;
@@ -82,13 +74,9 @@ describe("conditional hook edge cases", () => {
     const events: string[] = [];
 
     const BrokenComponent = (): React.ReactNode => {
-      useConditionalEffect(
-        "aborted-effect",
-        () => {
-          events.push("mounted");
-        },
-        [],
-      );
+      React.useEffect(() => {
+        events.push("mounted");
+      }, []);
       throw new Error("render aborted");
     };
 
@@ -103,14 +91,10 @@ describe("conditional hook edge cases", () => {
 
     const Component = (): React.ReactNode => {
       const [version, setVersion] = React.useState(0);
-      useConditionalEffect(
-        "dependency-effect",
-        () => {
-          events.push(`start:${version}`);
-          return () => events.push(`stop:${version}`);
-        },
-        [version],
-      );
+      React.useEffect(() => {
+        events.push(`start:${version}`);
+        return () => events.push(`stop:${version}`);
+      }, [version]);
       return <button onClick={() => setVersion((value) => value + 1)}>{version}</button>;
     };
 
@@ -125,14 +109,10 @@ describe("conditional hook edge cases", () => {
     const events: string[] = [];
 
     const Component = (): React.ReactNode => {
-      useConditionalLayoutEffect(
-        "layout-effect",
-        () => {
-          events.push("mounted");
-          return () => events.push("cleaned");
-        },
-        [],
-      );
+      React.useLayoutEffect(() => {
+        events.push("mounted");
+        return () => events.push("cleaned");
+      }, []);
       return <span>content</span>;
     };
 
@@ -147,7 +127,7 @@ describe("conditional hook edge cases", () => {
     const effect = vi.fn();
 
     const Component = (): React.ReactNode => {
-      useConditionalEffect("queued-effect", effect, []);
+      React.useEffect(effect, []);
       return null;
     };
 
@@ -162,14 +142,10 @@ describe("conditional hook edge cases", () => {
     const events: string[] = [];
 
     const Component = (): React.ReactNode => {
-      useConditionalEffect(
-        "installed-effect",
-        () => {
-          events.push("mounted");
-          return () => events.push("cleaned");
-        },
-        [],
-      );
+      React.useEffect(() => {
+        events.push("mounted");
+        return () => events.push("cleaned");
+      }, []);
       return null;
     };
 
@@ -189,11 +165,11 @@ describe("conditional hook edge cases", () => {
     expect(secondInstallation.supportedRenderers).toBe(supportedRenderers);
   });
 
-  it("gives a remounted Fiber fresh keyed state", async () => {
+  it("gives a remounted Fiber fresh conditional state", async () => {
     install();
 
     const Counter = (): React.ReactNode => {
-      const [count, setCount] = useConditionalState("count", 0);
+      const [count, setCount] = React.useState(0);
       return <button onClick={() => setCount((value) => value + 1)}>count:{count}</button>;
     };
 
@@ -215,7 +191,7 @@ describe("conditional hook edge cases", () => {
   });
 
   it("retains same-callsite loop cells when the loop shrinks and grows", async () => {
-    install({ interceptReactHooks: true });
+    install();
 
     const Component = (): React.ReactNode => {
       const [itemCount, setItemCount] = React.useState(1);
@@ -251,7 +227,7 @@ describe("conditional hook edge cases", () => {
     install();
 
     const Component = (): React.ReactNode => {
-      const [count, setCount] = useConditionalState("count", 0);
+      const [count, setCount] = React.useState(0);
       const incrementTwice = (): void => {
         setCount((value) => value + 1);
         setCount((value) => value + 1);
@@ -270,7 +246,7 @@ describe("conditional hook edge cases", () => {
 
     const Component = (): React.ReactNode => {
       renderCount++;
-      const [count, setCount] = useConditionalState("count", 0);
+      const [count, setCount] = React.useState(0);
       return <button onClick={() => setCount(0)}>{count}</button>;
     };
 
@@ -283,10 +259,10 @@ describe("conditional hook edge cases", () => {
 
   it("ignores a captured setter after its Fiber unmounts", () => {
     install();
-    let capturedSetter: ConditionalStateSetter<number> | undefined;
+    let capturedSetter: React.Dispatch<React.SetStateAction<number>> | undefined;
 
     const Component = (): React.ReactNode => {
-      const [count, setCount] = useConditionalState("count", 0);
+      const [count, setCount] = React.useState(0);
       capturedSetter = setCount;
       return <span>{count}</span>;
     };
@@ -297,19 +273,5 @@ describe("conditional hook edge cases", () => {
     const update = vi.fn((value: number) => value + 1);
     expect(() => capturedSetter?.(update)).not.toThrow();
     expect(update).not.toHaveBeenCalled();
-  });
-
-  it("rejects one explicit key being reused for different hook kinds", () => {
-    install();
-
-    const BrokenComponent = (): React.ReactNode => {
-      useConditionalState("shared-key", 0);
-      useConditionalRef("shared-key", null);
-      return null;
-    };
-
-    expect(() => render(<BrokenComponent />)).toThrowError(
-      "Conditional hook key shared-key changed from state to ref",
-    );
   });
 });

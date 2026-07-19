@@ -1,15 +1,4 @@
-import {
-  installConditionalHooks,
-  type ConditionalHooksOptions,
-  type ConditionalReducerDispatcher,
-  type ConditionalStateSetter,
-  useConditionalCallback,
-  useConditionalEffect,
-  useConditionalMemo,
-  useConditionalReducer,
-  useConditionalRef,
-  useConditionalState,
-} from "../src/index.js";
+import { installConditionalHooks, type ConditionalHooksOptions } from "../src/index.js";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -60,7 +49,7 @@ describe("conditional hook stress cases", () => {
 
     const Component = (): React.ReactNode => {
       const [isVisible, setIsVisible] = React.useState(true);
-      const content = isVisible ? useConditionalState("value", initialize)[0] : "hidden";
+      const content = isVisible ? React.useState(initialize)[0] : "hidden";
       return <button onClick={() => setIsVisible((value) => !value)}>{content}</button>;
     };
 
@@ -78,7 +67,7 @@ describe("conditional hook stress cases", () => {
 
     const Component = (): React.ReactNode => {
       const [renderVersion, setRenderVersion] = React.useState(0);
-      const [count] = useConditionalReducer("count", (state: number) => state, 3, initialize);
+      const [count] = React.useReducer((state: number) => state, 3, initialize);
       return (
         <button onClick={() => setRenderVersion((value) => value + 1)}>
           {count}:{renderVersion}
@@ -94,19 +83,15 @@ describe("conditional hook stress cases", () => {
 
   it("keeps state setter, reducer dispatcher, and ref identities stable", async () => {
     install();
-    const stateSetters: Array<ConditionalStateSetter<number>> = [];
-    const reducerDispatchers: Array<ConditionalReducerDispatcher<number>> = [];
+    const stateSetters: Array<React.Dispatch<React.SetStateAction<number>>> = [];
+    const reducerDispatchers: Array<(action: number) => void> = [];
     const references: Array<{ current: number }> = [];
 
     const Component = (): React.ReactNode => {
       const [renderVersion, setRenderVersion] = React.useState(0);
-      const [, setCount] = useConditionalState("state", 0);
-      const [, dispatch] = useConditionalReducer(
-        "reducer",
-        (state: number, amount: number) => state + amount,
-        0,
-      );
-      const reference = useConditionalRef("ref", 0);
+      const [, setCount] = React.useState(0);
+      const [, dispatch] = React.useReducer((state: number, amount: number) => state + amount, 0);
+      const reference = React.useRef(0);
       stateSetters.push(setCount);
       reducerDispatchers.push(dispatch);
       references.push(reference);
@@ -127,8 +112,7 @@ describe("conditional hook stress cases", () => {
     install();
 
     const FactorCounter = ({ factor }: FactorCounterProperties): React.ReactNode => {
-      const [count, dispatch] = useConditionalReducer(
-        "count",
+      const [count, dispatch] = React.useReducer(
         (state: number, amount: number) => state + amount * factor,
         0,
       );
@@ -157,7 +141,7 @@ describe("conditional hook stress cases", () => {
 
     const Component = (): React.ReactNode => {
       renderCount++;
-      const [value, dispatch] = useConditionalReducer("value", (state: number) => state, 1);
+      const [value, dispatch] = React.useReducer((state: number) => state, 1);
       return <button onClick={() => dispatch(0)}>{value}</button>;
     };
 
@@ -170,10 +154,10 @@ describe("conditional hook stress cases", () => {
   it("ignores a captured reducer dispatcher after unmount", () => {
     install();
     const reduce = vi.fn((state: number, amount: number) => state + amount);
-    let capturedDispatch: ConditionalReducerDispatcher<number> | undefined;
+    let capturedDispatch: ((action: number) => void) | undefined;
 
     const Component = (): React.ReactNode => {
-      const [, dispatch] = useConditionalReducer("value", reduce, 0);
+      const [, dispatch] = React.useReducer(reduce, 0);
       capturedDispatch = dispatch;
       return null;
     };
@@ -188,7 +172,7 @@ describe("conditional hook stress cases", () => {
     install();
 
     const Component = (): React.ReactNode => {
-      const [getLabel, setGetLabel] = useConditionalState("callback", () => () => "first");
+      const [getLabel, setGetLabel] = React.useState(() => () => "first");
       return <button onClick={() => setGetLabel(() => () => "second")}>{getLabel()}</button>;
     };
 
@@ -203,7 +187,7 @@ describe("conditional hook stress cases", () => {
 
     const Component = (): React.ReactNode => {
       const [dependency, setDependency] = React.useState(Number.NaN);
-      const memoized = useConditionalMemo("memo", () => createMemo(dependency), [dependency]);
+      const memoized = React.useMemo(() => createMemo(dependency), [dependency]);
       return (
         <button
           onClick={() => setDependency((value) => (Number.isNaN(value) ? Number.NaN : value))}
@@ -224,7 +208,7 @@ describe("conditional hook stress cases", () => {
 
     const Component = (): React.ReactNode => {
       const [dependency, setDependency] = React.useState(0);
-      const memoized = useConditionalMemo("memo", () => createMemo(dependency), [dependency]);
+      const memoized = React.useMemo(() => createMemo(dependency), [dependency]);
       return <button onClick={() => setDependency(-0)}>{memoized}</button>;
     };
 
@@ -240,7 +224,7 @@ describe("conditional hook stress cases", () => {
 
     const Component = (): React.ReactNode => {
       const [renderVersion, setRenderVersion] = React.useState(0);
-      const memoized = useConditionalMemo("memo", createMemo);
+      const memoized = React.useMemo(createMemo);
       return (
         <button onClick={() => setRenderVersion((value) => value + 1)}>
           {memoized}:{renderVersion}
@@ -261,7 +245,7 @@ describe("conditional hook stress cases", () => {
     const Component = (): React.ReactNode => {
       const [dependency, setDependency] = React.useState(0);
       const [renderVersion, setRenderVersion] = React.useState(0);
-      const callback = useConditionalCallback("callback", () => dependency, [dependency]);
+      const callback = React.useCallback(() => dependency, [dependency]);
       callbacks.push(callback);
       return (
         <div>
@@ -291,7 +275,7 @@ describe("conditional hook stress cases", () => {
 
     const Component = (): React.ReactNode => {
       const [version, setVersion] = React.useState(0);
-      useConditionalEffect("effect", () => {
+      React.useEffect(() => {
         events.push(`start:${version}`);
         return () => events.push(`stop:${version}`);
       });
@@ -311,14 +295,10 @@ describe("conditional hook stress cases", () => {
     const Component = (): React.ReactNode => {
       const [isExpanded, setIsExpanded] = React.useState(false);
       const dependencies = isExpanded ? [1, 2] : [1];
-      useConditionalEffect(
-        "effect",
-        () => {
-          events.push(`start:${dependencies.length}`);
-          return () => events.push(`stop:${dependencies.length}`);
-        },
-        dependencies,
-      );
+      React.useEffect(() => {
+        events.push(`start:${dependencies.length}`);
+        return () => events.push(`stop:${dependencies.length}`);
+      }, dependencies);
       return <button onClick={() => setIsExpanded(true)}>{dependencies.length}</button>;
     };
 
@@ -334,7 +314,7 @@ describe("conditional hook stress cases", () => {
 
     const Component = (): React.ReactNode => {
       const [isVisible, setIsVisible] = React.useState(true);
-      if (isVisible) useConditionalEffect("effect", effect, []);
+      if (isVisible) React.useEffect(effect, []);
       return <button onClick={() => setIsVisible(false)}>hide</button>;
     };
 
@@ -349,13 +329,9 @@ describe("conditional hook stress cases", () => {
     const events: string[] = [];
 
     const VersionedEffect = ({ version }: VersionedEffectProperties): React.ReactNode => {
-      useConditionalEffect(
-        "effect",
-        () => {
-          events.push(`start:${version}`);
-        },
-        [version],
-      );
+      React.useEffect(() => {
+        events.push(`start:${version}`);
+      }, [version]);
       return <span>{version}</span>;
     };
 
@@ -369,8 +345,8 @@ describe("conditional hook stress cases", () => {
     const update = vi.fn((value: number) => value + 1);
 
     const Component = (): React.ReactNode => {
-      const [, setCount] = useConditionalState("count", 0);
-      useConditionalEffect("effect", () => () => setCount(update), []);
+      const [, setCount] = React.useState(0);
+      React.useEffect(() => () => setCount(update), []);
       return null;
     };
 
@@ -380,14 +356,13 @@ describe("conditional hook stress cases", () => {
     expect(update).not.toHaveBeenCalled();
   });
 
-  it("keeps numeric, string, and symbol keys distinct", async () => {
+  it("keeps adjacent automatic hook callsites distinct", async () => {
     install();
-    const symbolKey = Symbol("value");
 
     const Component = (): React.ReactNode => {
-      const [numericValue, setNumericValue] = useConditionalState(1, 0);
-      const [stringValue, setStringValue] = useConditionalState("1", 10);
-      const [symbolValue, setSymbolValue] = useConditionalState(symbolKey, 100);
+      const [numericValue, setNumericValue] = React.useState(0);
+      const [stringValue, setStringValue] = React.useState(10);
+      const [symbolValue, setSymbolValue] = React.useState(100);
       const incrementAll = (): void => {
         setNumericValue((value) => value + 1);
         setStringValue((value) => value + 1);
@@ -409,7 +384,7 @@ describe("conditional hook stress cases", () => {
     install();
 
     const KeyedCounter = ({ name }: KeyedCounterProperties): React.ReactNode => {
-      const [count, setCount] = useConditionalState("count", 0);
+      const [count, setCount] = React.useState(0);
       return (
         <button onClick={() => setCount((value) => value + 1)}>
           {name}:{count}
@@ -439,7 +414,7 @@ describe("conditional hook stress cases", () => {
   });
 
   it("separates repeated automatic keys by occurrence", async () => {
-    install({ getHookKey: () => "shared-callsite", interceptReactHooks: true });
+    install({ getHookKey: () => "shared-callsite" });
 
     const Component = (): React.ReactNode => {
       const [first, setFirst] = React.useState(0);
@@ -466,7 +441,6 @@ describe("conditional hook stress cases", () => {
       getHookKey: () => {
         throw new Error("resolver failed");
       },
-      interceptReactHooks: true,
     });
 
     const BrokenComponent = (): React.ReactNode => {
@@ -478,7 +452,7 @@ describe("conditional hook stress cases", () => {
   });
 
   it("forwards conditional useContext reads through the native dispatcher", () => {
-    install({ interceptReactHooks: true });
+    install();
     const LabelContext = React.createContext("default");
 
     const Component = (): React.ReactNode => {
@@ -499,7 +473,7 @@ describe("conditional hook stress cases", () => {
   });
 
   it("coexists with a native useId hook", async () => {
-    install({ interceptReactHooks: true });
+    install();
     const identifiers: string[] = [];
 
     const Component = (): React.ReactNode => {
@@ -523,20 +497,16 @@ describe("conditional hook stress cases", () => {
     install();
     const deferred = createDeferred<void>();
     const events: string[] = [];
-    let setVersion: ConditionalStateSetter<number> | undefined;
+    let setVersion: React.Dispatch<React.SetStateAction<number>> | undefined;
     let didResolve = false;
 
     const Component = (): React.ReactNode => {
-      const [version, updateVersion] = useConditionalState("version", 0);
+      const [version, updateVersion] = React.useState(0);
       setVersion = updateVersion;
-      useConditionalEffect(
-        "effect",
-        () => {
-          events.push(`start:${version}`);
-          return () => events.push(`stop:${version}`);
-        },
-        [version],
-      );
+      React.useEffect(() => {
+        events.push(`start:${version}`);
+        return () => events.push(`stop:${version}`);
+      }, [version]);
       if (version === 1 && !didResolve) throw deferred.promise;
       return <span>version:{version}</span>;
     };

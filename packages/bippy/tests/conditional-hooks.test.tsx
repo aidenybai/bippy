@@ -1,12 +1,4 @@
-import {
-  installConditionalHooks,
-  type ConditionalHooksOptions,
-  useConditionalEffect,
-  useConditionalMemo,
-  useConditionalReducer,
-  useConditionalRef,
-  useConditionalState,
-} from "../src/index.js";
+import { installConditionalHooks, type ConditionalHooksOptions } from "../src/index.js";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -30,7 +22,7 @@ afterEach(() => {
 
 describe("conditional hooks", () => {
   it("makes ordinary React hooks conditional through the dispatcher proxy", async () => {
-    install({ interceptReactHooks: true });
+    install();
     const events: string[] = [];
 
     const Component = (): React.ReactNode => {
@@ -66,7 +58,7 @@ describe("conditional hooks", () => {
   });
 
   it("reuses intercepted callsite keys across Strict Mode render replays", async () => {
-    install({ interceptReactHooks: true });
+    install();
     const initializeState = vi.fn(() => 0);
 
     const Component = (): React.ReactNode => {
@@ -84,7 +76,7 @@ describe("conditional hooks", () => {
     await waitFor(() => expect(screen.getByText("1")).toBeDefined());
   });
 
-  it("retains keyed state while its branch is disabled", async () => {
+  it("retains conditional state while its branch is disabled", async () => {
     install();
 
     const Component = (): React.ReactNode => {
@@ -92,7 +84,7 @@ describe("conditional hooks", () => {
       let conditionalContent: React.ReactNode = <span data-testid="value">disabled</span>;
 
       if (isEnabled) {
-        const [count, setCount] = useConditionalState("count", 0);
+        const [count, setCount] = React.useState(0);
         conditionalContent = (
           <button data-testid="value" onClick={() => setCount((value) => value + 1)}>
             {count}
@@ -119,11 +111,11 @@ describe("conditional hooks", () => {
     expect(screen.getByTestId("value").textContent).toBe("1");
   });
 
-  it("isolates identical keys between component instances", async () => {
+  it("isolates identical callsites between component instances", async () => {
     install();
 
     const Counter = ({ name }: CounterProperties): React.ReactNode => {
-      const [count, setCount] = useConditionalState("count", 0);
+      const [count, setCount] = React.useState(0);
       return (
         <button onClick={() => setCount((value) => value + 1)}>
           {name}:{count}
@@ -147,14 +139,13 @@ describe("conditional hooks", () => {
     const createMemo = vi.fn((value: number) => value * 2);
 
     const Component = (): React.ReactNode => {
-      const [count, dispatch] = useConditionalReducer(
-        "reducer",
+      const [count, dispatch] = React.useReducer(
         (state: number, amount: number) => state + amount,
         1,
       );
-      const renderCount = useConditionalRef("render-count", 0);
+      const renderCount = React.useRef(0);
       renderCount.current++;
-      const doubled = useConditionalMemo("memo", () => createMemo(count), [count]);
+      const doubled = React.useMemo(() => createMemo(count), [count]);
       return (
         <button onClick={() => dispatch(2)}>
           {count}:{doubled}:{renderCount.current}
@@ -176,14 +167,10 @@ describe("conditional hooks", () => {
     const Component = (): React.ReactNode => {
       const [isEnabled, setIsEnabled] = React.useState(false);
       if (isEnabled) {
-        useConditionalEffect(
-          "subscription",
-          () => {
-            events.push("start");
-            return () => events.push("stop");
-          },
-          [],
-        );
+        React.useEffect(() => {
+          events.push("start");
+          return () => events.push("stop");
+        }, []);
       }
       return <button onClick={() => setIsEnabled((value) => !value)}>toggle</button>;
     };
