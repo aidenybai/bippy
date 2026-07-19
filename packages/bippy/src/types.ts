@@ -400,7 +400,7 @@ export interface ReactRenderer {
   // dev only: https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactFiberReconciler.js#L842
   findFiberByHostInstance?: (hostInstance: unknown) => Fiber | null;
   // react devtools
-  getCurrentFiber?: (fiber: Fiber) => Fiber | null;
+  getCurrentFiber?: () => Fiber | null;
   overrideContext?: (fiber: Fiber, contextType: unknown, path: string[], value: unknown) => void;
 
   overrideHookState?: (fiber: Fiber, id: string, path: string[], value: unknown) => void;
