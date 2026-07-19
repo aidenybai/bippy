@@ -203,14 +203,14 @@ const createDispatcherProxy = (
     get: (target, property, receiver) => {
       if (property === "useState") {
         return (initialState: unknown) =>
-          useConditionalState(getAutomaticHookKey(runtime, "useState"), initialState);
+          readStateCell(getAutomaticHookKey(runtime, "useState"), initialState);
       }
       if (property === "useReducer") {
         return (reducer: unknown, initialState: unknown, initialize: unknown) => {
           if (typeof reducer !== "function") throw new TypeError("useReducer requires a reducer.");
           const initializer =
             typeof initialize === "function" ? (value: unknown) => initialize(value) : undefined;
-          return useConditionalReducer(
+          return readReducerCell(
             getAutomaticHookKey(runtime, "useReducer"),
             (state: unknown, action: unknown) => reducer(state, action),
             initialState,
@@ -220,12 +220,12 @@ const createDispatcherProxy = (
       }
       if (property === "useRef") {
         return (initialValue: unknown) =>
-          useConditionalRef(getAutomaticHookKey(runtime, "useRef"), initialValue);
+          readRefCell(getAutomaticHookKey(runtime, "useRef"), initialValue);
       }
       if (property === "useMemo") {
         return (create: unknown, dependencies: unknown) => {
           if (typeof create !== "function") throw new TypeError("useMemo requires a function.");
-          return useConditionalMemo(
+          return readMemoCell(
             getAutomaticHookKey(runtime, "useMemo"),
             () => create(),
             getDependencies(dependencies),
@@ -237,7 +237,7 @@ const createDispatcherProxy = (
           if (typeof callback !== "function") {
             throw new TypeError("useCallback requires a function.");
           }
-          return useConditionalMemo(
+          return readMemoCell(
             getAutomaticHookKey(runtime, "useCallback"),
             () => callback,
             getDependencies(dependencies),
@@ -788,7 +788,7 @@ const ensureInstalled = (): void => {
   if (!installation) installConditionalHooks();
 };
 
-const useConditionalState = <State>(
+const readStateCell = <State>(
   key: PropertyKey,
   initialState: State | (() => State),
 ): [State, ConditionalStateSetter<State>] => {
@@ -826,7 +826,7 @@ const useConditionalState = <State>(
   return [cell.value, cell.dispatch] as [State, ConditionalStateSetter<State>];
 };
 
-const useConditionalReducer = <State, Action, InitialState>(
+const readReducerCell = <State, Action, InitialState>(
   key: PropertyKey,
   reducer: (state: State, action: Action) => State,
   initialState: InitialState,
@@ -879,7 +879,7 @@ const useConditionalReducer = <State, Action, InitialState>(
   return [cell.value, cell.dispatch] as [State, ConditionalReducerDispatcher<Action>];
 };
 
-const useConditionalRef = <Value>(key: PropertyKey, initialValue: Value): ConditionalRef<Value> => {
+const readRefCell = <Value>(key: PropertyKey, initialValue: Value): ConditionalRef<Value> => {
   ensureInstalled();
   const { frame, scope } = getScope();
   registerHookKind(frame, scope, key, "ref");
@@ -895,7 +895,7 @@ const useConditionalRef = <Value>(key: PropertyKey, initialValue: Value): Condit
   return cell.value as ConditionalRef<Value>;
 };
 
-const useConditionalMemo = <Value>(
+const readMemoCell = <Value>(
   key: PropertyKey,
   create: () => Value,
   dependencies?: readonly unknown[],
