@@ -605,10 +605,10 @@ export const setFiberId = (fiber: Fiber, id: number = fiberId++): void => {
 // fiber === fiber.alternate.alternate
 export const getFiberId = (fiber: Fiber): number => {
   let id = fiberIdMap.get(fiber);
-  if (!id && fiber.alternate) {
+  if (id === undefined && fiber.alternate) {
     id = fiberIdMap.get(fiber.alternate);
   }
-  if (!id) {
+  if (id === undefined) {
     id = fiberId++;
     setFiberId(fiber, id);
   }

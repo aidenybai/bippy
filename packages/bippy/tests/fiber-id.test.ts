@@ -15,8 +15,6 @@ const createMockFiber = (alternate: Fiber | null = null): Fiber =>
   }) as unknown as Fiber;
 
 it("should assign a stable auto-incremented id", () => {
-  // HACK: consume id 0 first, since getFiberId treats a falsy id as unassigned
-  getFiberId(createMockFiber());
   const fiber = createMockFiber();
   setFiberId(fiber);
   const assignedId = getFiberId(fiber);
@@ -32,7 +30,7 @@ it("should honor an explicitly assigned id", () => {
 
 it("should reuse the id of the alternate fiber", () => {
   const currentFiber = createMockFiber();
-  const currentFiberId = getFiberId(currentFiber);
+  setFiberId(currentFiber, 0);
   const alternateFiber = createMockFiber(currentFiber);
-  expect(getFiberId(alternateFiber)).toBe(currentFiberId);
+  expect(getFiberId(alternateFiber)).toBe(0);
 });

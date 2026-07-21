@@ -6,10 +6,8 @@ import type { ReactDevToolsGlobalHook, ReactRenderer } from "../src/types.js";
 it("should re-inject renderers through a react-refresh style hook", () => {
   let nextRendererId = 0;
   const injectedRenderers: ReactRenderer[] = [];
-  const refreshInject = (renderer: ReactRenderer): number => {
-    // isReactRefresh detects refresh hooks by looking for "(injected)" in
-    // inject's source text, so this comment must stay in the function body
-    injectedRenderers.push(renderer);
+  const refreshInject = (injected: ReactRenderer): number => {
+    injectedRenderers.push(injected);
     nextRendererId += 1;
     return nextRendererId;
   };
