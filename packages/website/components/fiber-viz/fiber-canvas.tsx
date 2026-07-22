@@ -67,7 +67,7 @@ const PHASE_LABELS: Record<FiberVizMode, string> = {
   elements: "phase: idle (just descriptions)",
   tree: "phase: render (mount)",
   pointers: "phase: render (mount)",
-  traversal: "phase: render, one unit at a time",
+  traversal: "render phase",
   alternate: "current ⇄ workInProgress",
   rerender: "phase: render (update)",
   commit: "phase: commit",
@@ -445,8 +445,8 @@ export const FiberCanvas = ({ mode }: FiberCanvasProps) => {
         )}
       </svg>
 
-      <div className="flex min-h-5 items-center justify-between gap-3">
-        <span className="font-mono text-[11px] text-soft-foreground">
+      <div className="flex min-h-5 min-w-0 items-center justify-between gap-3 overflow-hidden">
+        <span className="shrink-0 whitespace-nowrap font-mono text-[10px] text-soft-foreground">
           {liveCycle.phase === "render"
             ? "phase: render (update)"
             : liveCycle.phase === "commit"
@@ -454,11 +454,11 @@ export const FiberCanvas = ({ mode }: FiberCanvasProps) => {
               : PHASE_LABELS[mode]}
         </span>
         {liveCycle.phase === "render" ? (
-          <span className="font-mono text-[11px] text-link">
+          <span className="truncate text-right font-mono text-[10px] text-link">
             setCount({liveCycle.displayedCount + 1})
           </span>
         ) : liveCycle.phase === "commit" ? (
-          <span className="font-mono text-[11px] text-link">dom mutated</span>
+          <span className="truncate text-right font-mono text-[10px] text-link">dom mutated</span>
         ) : mode === "pointers" ? (
           <span className="flex items-center gap-3 font-mono text-[10px] text-soft-foreground">
             <span className="flex items-center gap-1">
@@ -479,11 +479,13 @@ export const FiberCanvas = ({ mode }: FiberCanvasProps) => {
               return
             </span>
           </span>
-        ) : mode === "traversal" && cursorNode ? (
-          <span className="font-mono text-[11px] text-link">beginWork({cursorNode.label})</span>
+        ) : mode === "traversal" ? (
+          <span className="truncate text-right font-mono text-[10px] text-link">
+            {cursorNode ? `beginWork(${cursorNode.label})` : "yield"}
+          </span>
         ) : (
-          <span className="font-mono text-[10px] text-faq-icon">
-            hover a fiber · click the +1 button
+          <span className="truncate text-right font-mono text-[10px] text-faq-icon">
+            hover fibers · click +1
           </span>
         )}
       </div>
