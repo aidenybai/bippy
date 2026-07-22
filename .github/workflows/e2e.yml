@@ -86,8 +86,9 @@ jobs:
           xcrun simctl boot "$device_name" || true
       # linking ~55k files from the pnpm store takes ~6 minutes on the slow
       # macos runner disk; restoring node_modules directly skips most of it
-      - name: Cache node_modules
-        uses: actions/cache@v4
+      - name: Restore node_modules
+        id: node-modules-cache
+        uses: actions/cache/restore@v4
         with:
           path: |
             node_modules
@@ -96,6 +97,16 @@ jobs:
             apps/*/node_modules
           key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
       - run: pnpm install --frozen-lockfile --prefer-offline
+      - name: Save node_modules
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+            packages/e2e/fixtures/*/node_modules
+            apps/*/node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
       - run: pnpm build
       - name: Install applesimutils and watchman
         # watchman: node fs.watch (FSEvents) delivers no events on the
@@ -108,9 +119,9 @@ jobs:
       # the .app binary only changes when native deps or app config change;
       # all fixture/bippy JS is served by Metro at runtime, so skipping the
       # ~8 min prebuild + xcodebuild is safe for source-only changes
-      - name: Cache iOS app binary
+      - name: Restore iOS app binary
         id: app-cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: packages/e2e/fixtures/expo-app/ios/build/Build/Products/Debug-iphonesimulator/bippye2eexpo.app
           key: expo-app-${{ steps.xcode.outputs.version }}-${{ hashFiles('pnpm-lock.yaml', 'packages/e2e/fixtures/expo-app/app.json', 'packages/e2e/fixtures/expo-app/package.json') }}
@@ -127,6 +138,12 @@ jobs:
           cd packages/e2e/fixtures/expo-app
           npx expo prebuild --platform ios --clean
           xcodebuild -workspace ios/bippye2eexpo.xcworkspace -scheme bippye2eexpo -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build -quiet
+      - name: Save iOS app binary
+        if: steps.app-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: packages/e2e/fixtures/expo-app/ios/build/Build/Products/Debug-iphonesimulator/bippye2eexpo.app
+          key: expo-app-${{ steps.xcode.outputs.version }}-${{ hashFiles('pnpm-lock.yaml', 'packages/e2e/fixtures/expo-app/app.json', 'packages/e2e/fixtures/expo-app/package.json') }}
       - name: Start Metro
         working-directory: packages/e2e/fixtures/expo-app
         # CI=false: expo disables file watching (and therefore fast refresh)
