@@ -32,7 +32,7 @@ export const ActionButtons = () => {
       >
         <div className="flex items-center gap-1.25">
           <svg
-            className="size-3.75 shrink-0 overflow-clip align-middle"
+            className="size-[0.9375rem] shrink-0 overflow-clip align-middle"
             width="12"
             height="12"
             viewBox="0 0 12 12"

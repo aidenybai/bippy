@@ -10,10 +10,8 @@
   "dependencies": {
     "@bippy/next-playground": "workspace:*",
     "bippy": "workspace:*",
-    "clsx": "^2.1.1",
     "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "tailwind-merge": "^2.6.0"
+    "react-dom": "19.1.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "4.0.0-beta.8",

@@ -5,7 +5,7 @@ import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite-plus";
 
 const llmsTxtPlugin = (): Plugin => {
-  const readmePath = resolve(__dirname, "../bippy/README.md");
+  const readmePath = resolve(__dirname, "../../README.md");
   return {
     name: "llms-txt",
     configureServer(server) {

@@ -13,6 +13,16 @@ export interface FiberVizEdge {
   kind: "child" | "sibling" | "return";
 }
 
+export type FiberVizMode =
+  | "elements"
+  | "tree"
+  | "pointers"
+  | "traversal"
+  | "alternate"
+  | "rerender"
+  | "commit"
+  | "instrument";
+
 export const FIBER_NODE_WIDTH_PX = 118;
 export const FIBER_NODE_HEIGHT_PX = 44;
 export const FIBER_CANVAS_WIDTH_PX = 480;

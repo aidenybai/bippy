@@ -19,9 +19,9 @@ import {
   TRAVERSAL_PAUSE_TICKS,
   TRAVERSAL_TICK_MS,
   type FiberVizEdge,
+  type FiberVizMode,
   type FiberVizNode,
 } from "./constants";
-import type { FiberVizMode } from "./steps";
 
 const nodesById = new Map<string, FiberVizNode>(
   FIBER_VIZ_NODES.map((vizNode) => [vizNode.id, vizNode]),
