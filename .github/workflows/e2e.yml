@@ -99,13 +99,13 @@ jobs:
       # ~8 min prebuild + xcodebuild is safe for source-only changes
       - name: Restore iOS app binary
         id: app-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: packages/e2e/fixtures/expo-app/ios/build/Build/Products/Debug-iphonesimulator/bippye2eexpo.app
           key: expo-app-${{ steps.xcode.outputs.version }}-${{ hashFiles('pnpm-lock.yaml', 'packages/e2e/fixtures/expo-app/app.json', 'packages/e2e/fixtures/expo-app/package.json') }}
       - name: Cache CocoaPods downloads
         if: steps.app-cache.outputs.cache-hit != 'true'
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/Library/Caches/CocoaPods
           key: cocoapods-${{ runner.os }}-${{ hashFiles('packages/e2e/fixtures/expo-app/package.json') }}
@@ -118,7 +118,7 @@ jobs:
           xcodebuild -workspace ios/bippye2eexpo.xcworkspace -scheme bippye2eexpo -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build -quiet
       - name: Save iOS app binary
         if: steps.app-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: packages/e2e/fixtures/expo-app/ios/build/Build/Products/Debug-iphonesimulator/bippye2eexpo.app
           key: expo-app-${{ steps.xcode.outputs.version }}-${{ hashFiles('pnpm-lock.yaml', 'packages/e2e/fixtures/expo-app/app.json', 'packages/e2e/fixtures/expo-app/package.json') }}
@@ -148,7 +148,7 @@ jobs:
           exit 1
       - name: Cache Detox framework
         id: detox-framework-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/Library/Detox/ios
           key: detox-framework-${{ steps.xcode.outputs.version }}-${{ hashFiles('pnpm-lock.yaml') }}
