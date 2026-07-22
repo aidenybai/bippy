@@ -52,6 +52,7 @@ import {
 import { ScrollView, Text, View } from "react-native";
 
 import { HmrTarget } from "./hmr-target";
+import { SkiaProbe } from "./skia-probe";
 
 const TestContext = createContext("default-context");
 
@@ -125,6 +126,18 @@ interface ResultRowProps {
 
 const ResultRow = ({ testID, value }: ResultRowProps) => <Text testID={testID}>{value}</Text>;
 
+const findFibersByDisplayName = (rootFiber: Fiber, displayNames: string[]) => {
+  const fibersByDisplayName = new Map<string, Fiber>();
+  const targetDisplayNames = new Set(displayNames);
+  traverseFiber(rootFiber, (fiber) => {
+    const displayName = getDisplayName(fiber.type);
+    if (displayName && targetDisplayNames.has(displayName)) {
+      fibersByDisplayName.set(displayName, fiber);
+    }
+  });
+  return fibersByDisplayName;
+};
+
 const OverridePropsChild = ({ count }: { count: number }) => (
   <View testID="override-props-view">
     <Text>override-props {count}</Text>
@@ -168,38 +181,39 @@ const App = () => {
   const [coreResults, setCoreResults] = useState<Record<string, string>>({});
   const [sourceResults, setSourceResults] = useState<Record<string, string>>({});
   const [hmrResults, setHmrResults] = useState<Record<string, string>>({});
+  const [skiaResults, setSkiaResults] = useState<Record<string, string>>({});
+  const [skiaRevision, setSkiaRevision] = useState(0);
+  const [isSkiaTreeVisible, setIsSkiaTreeVisible] = useState(true);
   const didRunRef = useRef(false);
+  const didRunSkiaRef = useRef(false);
   const didRunOverridesRef = useRef(false);
   const fiberRootRef = useRef<FiberRoot | null>(null);
   const hostProbeRef = useRef<View | null>(null);
 
   const runCoreTests = useCallback((fiberRoot: FiberRoot) => {
     if (didRunRef.current) return;
-    didRunRef.current = true;
-    fiberRootRef.current = fiberRoot;
 
     const rootFiber = fiberRoot.current;
     if (!rootFiber?.child) return;
+
+    const fibersByDisplayName = findFibersByDisplayName(rootFiber, [
+      "TestParent",
+      "TestChild",
+      "TestContextConsumer",
+    ]);
+    const testParentFiber = fibersByDisplayName.get("TestParent") ?? null;
+    const testChildFiber = fibersByDisplayName.get("TestChild") ?? null;
+    const testContextConsumerFiber = fibersByDisplayName.get("TestContextConsumer") ?? null;
+
+    if (!testParentFiber || !testChildFiber) return;
+    didRunRef.current = true;
+    fiberRootRef.current = fiberRoot;
 
     const results: Record<string, string> = {};
 
     results["instrument-active"] = String(isInstrumentationActive());
 
-    let testParentFiber: Fiber | null = null;
-    let testChildFiber: Fiber | null = null;
-    let testChildHostFiber: Fiber | null = null;
-    let testContextConsumerFiber: Fiber | null = null;
-
-    traverseFiber(rootFiber, (fiber) => {
-      const displayName = getDisplayName(fiber.type);
-      if (displayName === "TestParent") testParentFiber = fiber;
-      if (displayName === "TestChild") testChildFiber = fiber;
-      if (displayName === "TestContextConsumer") testContextConsumerFiber = fiber;
-    });
-
-    if (testChildFiber) {
-      testChildHostFiber = getNearestHostFiber(testChildFiber) ?? null;
-    }
+    const testChildHostFiber = getNearestHostFiber(testChildFiber) ?? null;
 
     results["isFiber"] = String(isFiber(rootFiber));
     results["isFiber-null"] = String(isFiber(null));
@@ -354,6 +368,99 @@ const App = () => {
     void runSourceTests(testChildFiber, testParentFiber);
   }, []);
 
+  const runSkiaTests = useCallback((rendererID: number, fiberRoot: FiberRoot) => {
+    if (didRunSkiaRef.current) return;
+    const renderer = getRDTHook().renderers.get(rendererID);
+    if (renderer?.rendererPackageName !== "react-native-skia") return;
+
+    const rootFiber = fiberRoot.current;
+    const fibersByDisplayName = findFibersByDisplayName(rootFiber, [
+      "SkiaCompoundTree",
+      "SkiaMemoLeaf",
+    ]);
+    const compoundTreeFiber = fibersByDisplayName.get("SkiaCompoundTree") ?? null;
+    const memoLeafFiber = fibersByDisplayName.get("SkiaMemoLeaf") ?? null;
+    if (!compoundTreeFiber || !memoLeafFiber) return;
+    didRunSkiaRef.current = true;
+
+    const results: Record<string, string> = {};
+    const nearestHostFiber = getNearestHostFiber(memoLeafFiber);
+    const nearestHostFibers = getNearestHostFibers(compoundTreeFiber);
+    const timings = getTimings(memoLeafFiber);
+    const rendererCount = getRDTHook().renderers.size;
+
+    results["skia-renderer-package"] = renderer.rendererPackageName;
+    results["skia-renderer-version"] = renderer.version;
+    results["skia-renderer-count"] = String(rendererCount);
+    results["skia-build-type"] = detectReactBuildType(renderer);
+    results["skia-root-valid"] = String(isValidFiber(rootFiber));
+    results["skia-compound-valid"] = String(isValidFiber(compoundTreeFiber));
+    results["skia-memo-valid"] = String(isValidFiber(memoLeafFiber));
+    results["skia-compound-display-name"] = getDisplayName(compoundTreeFiber.type) ?? "null";
+    results["skia-memo-display-name"] = getDisplayName(memoLeafFiber.type) ?? "null";
+    results["skia-composite"] = String(isCompositeFiber(memoLeafFiber));
+    results["skia-composite-is-host"] = String(isHostFiber(memoLeafFiber));
+    results["skia-nearest-host"] = String(
+      nearestHostFiber !== null && isHostFiber(nearestHostFiber),
+    );
+    results["skia-nearest-host-count"] = String(nearestHostFibers.length);
+    results["skia-host-display-name"] = nearestHostFiber
+      ? (getDisplayName(nearestHostFiber.type) ?? "null")
+      : "null";
+    results["skia-did-render"] = String(didFiberRender(memoLeafFiber));
+    results["skia-did-commit"] = String(didFiberCommit(memoLeafFiber));
+    results["skia-self-time"] = String(timings.selfTime);
+    results["skia-total-time"] = String(timings.totalTime);
+    results["skia-stack-length"] = String(getFiberStack(memoLeafFiber).length);
+    results["skia-fiber-id"] = String(typeof getFiberId(memoLeafFiber) === "number");
+    results["skia-latest-fiber"] = String(isValidFiber(getLatestFiber(memoLeafFiber)));
+    results["skia-type"] = String(getType(memoLeafFiber.type) !== null);
+    results["skia-has-memo-cache"] = String(hasMemoCache(memoLeafFiber));
+
+    let traversedFiberCount = 0;
+    traverseFiber(rootFiber, () => {
+      traversedFiberCount++;
+    });
+    results["skia-traverse-count"] = String(traversedFiberCount);
+
+    let renderedFiberCount = 0;
+    traverseRenderedFibers(rootFiber, () => {
+      renderedFiberCount++;
+    });
+    results["skia-rendered-count"] = String(renderedFiberCount);
+    results["skia-mutated-host-count"] = String(getMutatedHostFibers(rootFiber).length);
+
+    const memoPropNames: string[] = [];
+    traverseProps(memoLeafFiber, (propName, nextValue, previousValue) => {
+      memoPropNames.push(propName);
+      if (propName === "revision") {
+        results["skia-next-revision"] = String(nextValue);
+        results["skia-previous-revision"] = String(previousValue);
+      }
+    });
+    results["skia-prop-names"] = memoPropNames.join(",");
+
+    const hostPropNames: string[] = [];
+    if (nearestHostFiber) {
+      traverseProps(nearestHostFiber, (propName) => {
+        hostPropNames.push(propName);
+      });
+    }
+    results["skia-host-prop-names"] = hostPropNames.join(",");
+
+    let contextValue: string | null = null;
+    traverseContexts(memoLeafFiber, (context) => {
+      if (context && typeof context.memoizedValue === "string") {
+        contextValue = context.memoizedValue;
+        return true;
+      }
+    });
+    results["skia-context-value"] = contextValue ?? "null";
+    results["skia-done"] = "true";
+    setSkiaResults(results);
+    setIsSkiaTreeVisible(false);
+  }, []);
+
   const runSourceTests = async (testChildFiber: Fiber | null, testParentFiber: Fiber | null) => {
     const results: Record<string, string> = {};
 
@@ -410,12 +517,28 @@ const App = () => {
   };
 
   useEffect(() => {
-    instrument({
-      onCommitFiberRoot: (_rendererID, fiberRoot) => {
+    const instrumentation = instrument({
+      onCommitFiberRoot: (rendererID, fiberRoot) => {
         runCoreTests(fiberRoot);
+        runSkiaTests(rendererID, fiberRoot);
+      },
+      onCommitFiberUnmount: (rendererID, fiber) => {
+        const renderer = getRDTHook().renderers.get(rendererID);
+        if (
+          renderer?.rendererPackageName !== "react-native-skia" ||
+          getDisplayName(fiber.type) !== "SkiaCompoundTree"
+        ) {
+          return;
+        }
+        setSkiaResults((previousResults) => ({
+          ...previousResults,
+          "skia-unmount-fired": "true",
+        }));
       },
     });
-  }, [runCoreTests]);
+    setSkiaRevision(1);
+    return instrumentation;
+  }, [runCoreTests, runSkiaTests]);
 
   // the probes live in a memoized subtree, so the result-row commits below
   // bail out before reaching them and cannot undo the overrides
@@ -496,6 +619,7 @@ const App = () => {
       <TestParent />
       <OverrideProbes />
       <HmrTarget />
+      <SkiaProbe isTreeVisible={isSkiaTreeVisible} revision={skiaRevision} />
       <View testID="host-probe" ref={hostProbeRef} />
       <View testID="results-container">
         {Object.entries(coreResults).map(([key, value]) => (
@@ -505,6 +629,9 @@ const App = () => {
           <ResultRow key={key} testID={`result-${key}`} value={value} />
         ))}
         {Object.entries(hmrResults).map(([key, value]) => (
+          <ResultRow key={key} testID={`result-${key}`} value={value} />
+        ))}
+        {Object.entries(skiaResults).map(([key, value]) => (
           <ResultRow key={key} testID={`result-${key}`} value={value} />
         ))}
       </View>

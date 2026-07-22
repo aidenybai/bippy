@@ -237,4 +237,77 @@ describe("bippy core functions on React Native", () => {
       await detoxExpect(element(by.id("result-getType"))).toHaveText("true");
     });
   });
+
+  describe("React Native Skia renderer", () => {
+    beforeAll(async () => {
+      await waitFor(element(by.id("result-skia-done")))
+        .toExist()
+        .withTimeout(ASYNC_RESULT_TIMEOUT_MS);
+    });
+
+    it("registers the Skia renderer alongside React Native", async () => {
+      await detoxExpect(element(by.id("result-skia-renderer-package"))).toHaveText(
+        "react-native-skia",
+      );
+      const rendererCount = parseInt(await readElementText("result-skia-renderer-count"), 10);
+      expect(rendererCount).toBeGreaterThanOrEqual(2);
+      await detoxExpect(element(by.id("result-skia-build-type"))).toHaveText("development");
+    });
+
+    it("recognizes the Skia root and compound component fibers", async () => {
+      await detoxExpect(element(by.id("result-skia-root-valid"))).toHaveText("true");
+      await detoxExpect(element(by.id("result-skia-compound-valid"))).toHaveText("true");
+      await detoxExpect(element(by.id("result-skia-memo-valid"))).toHaveText("true");
+      await detoxExpect(element(by.id("result-skia-compound-display-name"))).toHaveText(
+        "SkiaCompoundTree",
+      );
+      await detoxExpect(element(by.id("result-skia-memo-display-name"))).toHaveText("SkiaMemoLeaf");
+    });
+
+    it("distinguishes Skia composite and host fibers", async () => {
+      await detoxExpect(element(by.id("result-skia-composite"))).toHaveText("true");
+      await detoxExpect(element(by.id("result-skia-composite-is-host"))).toHaveText("false");
+      await detoxExpect(element(by.id("result-skia-nearest-host"))).toHaveText("true");
+      const hostFiberCount = parseInt(await readElementText("result-skia-nearest-host-count"), 10);
+      expect(hostFiberCount).toBeGreaterThanOrEqual(2);
+      expect(await readElementText("result-skia-host-display-name")).not.toBe("null");
+    });
+
+    it("tracks a Skia prop update across alternate fibers", async () => {
+      await detoxExpect(element(by.id("result-skia-previous-revision"))).toHaveText("0");
+      await detoxExpect(element(by.id("result-skia-next-revision"))).toHaveText("1");
+      await detoxExpect(element(by.id("result-skia-latest-fiber"))).toHaveText("true");
+      await detoxExpect(element(by.id("result-skia-fiber-id"))).toHaveText("true");
+      expect(await readElementText("result-skia-prop-names")).toContain("revision");
+    });
+
+    it("traverses the Skia render tree, props, and context", async () => {
+      const traversedFiberCount = parseInt(await readElementText("result-skia-traverse-count"), 10);
+      const renderedFiberCount = parseInt(await readElementText("result-skia-rendered-count"), 10);
+      expect(traversedFiberCount).toBeGreaterThan(5);
+      expect(renderedFiberCount).toBeGreaterThan(0);
+      expect(await readElementText("result-skia-host-prop-names")).toContain("color");
+      await detoxExpect(element(by.id("result-skia-context-value"))).toHaveText("skia-context-1");
+    });
+
+    it("reports render, commit, timing, and type metadata", async () => {
+      await detoxExpect(element(by.id("result-skia-did-render"))).toHaveText("true");
+      await detoxExpect(element(by.id("result-skia-did-commit"))).toHaveText("true");
+      await detoxExpect(element(by.id("result-skia-type"))).toHaveText("true");
+      await detoxExpect(element(by.id("result-skia-has-memo-cache"))).toHaveText("false");
+      expect(parseFloat(await readElementText("result-skia-self-time"))).toBeGreaterThanOrEqual(0);
+      expect(parseFloat(await readElementText("result-skia-total-time"))).toBeGreaterThanOrEqual(0);
+      expect(parseInt(await readElementText("result-skia-stack-length"), 10)).toBeGreaterThan(1);
+      expect(parseInt(await readElementText("result-skia-mutated-host-count"), 10)).toBeGreaterThan(
+        0,
+      );
+    });
+
+    it("fires instrumentation for Skia unmounts", async () => {
+      await waitFor(element(by.id("result-skia-unmount-fired")))
+        .toExist()
+        .withTimeout(ASYNC_RESULT_TIMEOUT_MS);
+      await detoxExpect(element(by.id("result-skia-unmount-fired"))).toHaveText("true");
+    });
+  });
 });
