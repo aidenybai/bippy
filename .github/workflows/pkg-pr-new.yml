@@ -1,8 +1,16 @@
 name: Publish Any Commit
-on: [push, pull_request]
+
+on:
+  push:
+    branches: [main]
+  pull_request:
 
 permissions:
   contents: read
+
+concurrency:
+  group: pkg-pr-new-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -13,7 +21,6 @@ jobs:
         uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
-      - uses: oven-sh/setup-bun@v2
       - uses: actions/setup-node@v4
         with:
           node-version: 22

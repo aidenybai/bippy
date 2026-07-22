@@ -12,6 +12,7 @@
     "detox:test:ios": "detox test --configuration ios.sim.debug"
   },
   "dependencies": {
+    "@shopify/react-native-skia": "^2.9.0",
     "bippy": "workspace:*",
     "expo": "~54.0.33",
     "react": "19.1.0",
