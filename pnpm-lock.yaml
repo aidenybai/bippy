@@ -60,9 +60,6 @@ importers:
       '@vitest/coverage-istanbul':
         specifier: ^4.1.10
         version: 4.1.10(vitest@4.1.10)
-      esbuild:
-        specifier: ^0.27.0
-        version: 0.27.4
       happy-dom:
         specifier: ^15.11.7
         version: 15.11.7
@@ -78,9 +75,6 @@ importers:
       react:
         specifier: ^19.2.4
         version: 19.2.4
-      react-devtools-core:
-        specifier: ^7.0.1
-        version: 7.0.1
       react-devtools-inline:
         specifier: ^6.0.1
         version: 6.1.5
@@ -96,9 +90,6 @@ importers:
       remotion:
         specifier: ^4.0.496
         version: 4.0.496(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      terser:
-        specifier: ^5.36.0
-        version: 5.46.0
       three:
         specifier: ^0.185.1
         version: 0.185.1
@@ -259,9 +250,6 @@ importers:
       bippy:
         specifier: workspace:*
         version: link:../bippy
-      clsx:
-        specifier: ^2.1.1
-        version: 2.1.1
       expo:
         specifier: ~54.0.33
         version: 54.0.33(@babel/core@7.29.0)(graphql@16.13.1)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.2.4))(react@19.2.4)
@@ -277,9 +265,6 @@ importers:
       react-native-web:
         specifier: ^0.21.2
         version: 0.21.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      tailwind-merge:
-        specifier: ^2.6.0
-        version: 2.6.1
     devDependencies:
       '@types/react':
         specifier: ~19.1.0
@@ -309,9 +294,6 @@ importers:
         specifier: ^2.6.0
         version: 2.6.1
     devDependencies:
-      '@eslint/eslintrc':
-        specifier: ^3
-        version: 3.3.5
       '@tailwindcss/postcss':
         specifier: ^4
         version: 4.2.1
@@ -324,12 +306,6 @@ importers:
       '@types/react-dom':
         specifier: ^19
         version: 19.2.3(@types/react@19.1.17)
-      eslint:
-        specifier: ^9
-        version: 9.39.4(jiti@2.7.0)
-      eslint-config-next:
-        specifier: 15.3.8
-        version: 15.3.8(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
       tailwindcss:
         specifier: ^4
         version: 4.2.1
@@ -345,18 +321,12 @@ importers:
       bippy:
         specifier: workspace:*
         version: link:../bippy
-      clsx:
-        specifier: ^2.1.1
-        version: 2.1.1
       react:
         specifier: ^19.2.4
         version: 19.2.4
       react-dom:
         specifier: ^19.2.4
         version: 19.2.4(react@19.2.4)
-      tailwind-merge:
-        specifier: ^2.6.0
-        version: 2.6.1
     devDependencies:
       '@tailwindcss/vite':
         specifier: 4.0.0-beta.8
@@ -391,18 +361,12 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      cmdk:
-        specifier: ^1.1.1
-        version: 1.1.1(@types/react-dom@19.2.3(@types/react@19.1.17))(@types/react@19.1.17)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       lucide-react:
         specifier: ^0.576.0
         version: 0.576.0(react@19.2.4)
       motion:
         specifier: ^12.35.0
         version: 12.35.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      radix-ui:
-        specifier: ^1.4.3
-        version: 1.4.3(@types/react-dom@19.2.3(@types/react@19.1.17))(@types/react@19.1.17)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       react:
         specifier: ^19.2.4
         version: 19.2.4
@@ -412,9 +376,6 @@ importers:
       tailwind-merge:
         specifier: ^3.5.0
         version: 3.5.0
-      zustand:
-        specifier: ^5.0.11
-        version: 5.0.11(@types/react@19.1.17)(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
     devDependencies:
       '@tailwindcss/vite':
         specifier: ^4
@@ -431,18 +392,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^4.7.0
         version: 4.7.0(vite@7.3.6(@types/node@20.19.34)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
-      react-grab:
-        specifier: ^0.1.25
-        version: 0.1.27(@types/react@19.1.17)(react@19.2.4)
-      shadcn:
-        specifier: ^3.8.5
-        version: 3.8.5(@types/node@20.19.34)(typescript@5.9.3)
       tailwindcss:
         specifier: ^4
         version: 4.2.1
-      tw-animate-css:
-        specifier: ^1.4.0
-        version: 1.4.0
       typescript:
         specifier: ^5
         version: 5.9.3
