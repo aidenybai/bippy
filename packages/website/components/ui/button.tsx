@@ -76,4 +76,4 @@ const Button = (props: ButtonProps | ButtonLinkProps) => {
   );
 };
 
-export { Button, buttonVariants };
+export { Button };

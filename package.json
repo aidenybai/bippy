@@ -14,7 +14,7 @@
     "sherif": "sherif --fix",
     "changeset": "nr build && changeset",
     "version": "changeset version",
-    "release": "nr build && changeset publish"
+    "release": "changeset publish"
   },
   "devDependencies": {
     "@antfu/ni": "^27.0.1",
