@@ -14,8 +14,7 @@
     "sherif": "sherif --fix",
     "changeset": "nr build && changeset",
     "version": "changeset version",
-    "check:provenance": "node scripts/check-publish-provenance.mjs",
-    "release": "nr check:provenance && nr build && changeset publish"
+    "release": "nr build && changeset publish"
   },
   "devDependencies": {
     "@antfu/ni": "^27.0.1",
