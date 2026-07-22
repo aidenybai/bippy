@@ -34,7 +34,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Create release PR or publish
-        id: changesets
         uses: changesets/action@v1
         with:
           publish: pnpm release
@@ -82,11 +81,6 @@ jobs:
           DEV_VERSION: ${{ steps.dev-version.outputs.version }}
         run: |
           node -e "const fs = require('node:fs'); const path = 'packages/bippy/package.json'; const manifest = JSON.parse(fs.readFileSync(path, 'utf8')); manifest.version = process.env.DEV_VERSION; fs.writeFileSync(path, JSON.stringify(manifest, null, 2) + '\n');"
-
-      - name: Build
-        env:
-          VERSION: ${{ steps.dev-version.outputs.version }}
-        run: pnpm build
 
       - name: Publish to npm under the dev tag
         env:
