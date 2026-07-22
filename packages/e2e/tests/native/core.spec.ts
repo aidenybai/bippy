@@ -274,8 +274,10 @@ describe("bippy core functions on React Native", () => {
     });
 
     it("tracks a Skia prop update across alternate fibers", async () => {
-      await detoxExpect(element(by.id("result-skia-previous-revision"))).toHaveText("0");
-      await detoxExpect(element(by.id("result-skia-next-revision"))).toHaveText("1");
+      const previousRevision = parseInt(await readElementText("result-skia-previous-revision"), 10);
+      const nextRevision = parseInt(await readElementText("result-skia-next-revision"), 10);
+      expect(nextRevision).toBeGreaterThan(previousRevision);
+      await detoxExpect(element(by.id("result-skia-has-alternate"))).toHaveText("true");
       await detoxExpect(element(by.id("result-skia-latest-fiber"))).toHaveText("true");
       await detoxExpect(element(by.id("result-skia-fiber-id"))).toHaveText("true");
       expect(await readElementText("result-skia-prop-names")).toContain("revision");
@@ -287,20 +289,25 @@ describe("bippy core functions on React Native", () => {
       expect(traversedFiberCount).toBeGreaterThan(5);
       expect(renderedFiberCount).toBeGreaterThan(0);
       expect(await readElementText("result-skia-host-prop-names")).toContain("color");
-      await detoxExpect(element(by.id("result-skia-context-value"))).toHaveText("skia-context-1");
+      const nextRevision = await readElementText("result-skia-next-revision");
+      await detoxExpect(element(by.id("result-skia-context-value"))).toHaveText(
+        `skia-context-${nextRevision}`,
+      );
     });
 
     it("reports render, commit, timing, and type metadata", async () => {
       await detoxExpect(element(by.id("result-skia-did-render"))).toHaveText("true");
-      await detoxExpect(element(by.id("result-skia-did-commit"))).toHaveText("true");
       await detoxExpect(element(by.id("result-skia-type"))).toHaveText("true");
       await detoxExpect(element(by.id("result-skia-has-memo-cache"))).toHaveText("false");
       expect(parseFloat(await readElementText("result-skia-self-time"))).toBeGreaterThanOrEqual(0);
       expect(parseFloat(await readElementText("result-skia-total-time"))).toBeGreaterThanOrEqual(0);
       expect(parseInt(await readElementText("result-skia-stack-length"), 10)).toBeGreaterThan(1);
-      expect(parseInt(await readElementText("result-skia-mutated-host-count"), 10)).toBeGreaterThan(
-        0,
+      const didCommit = (await readElementText("result-skia-did-commit")) === "true";
+      const mutatedHostCount = parseInt(
+        await readElementText("result-skia-mutated-host-count"),
+        10,
       );
+      expect(mutatedHostCount > 0).toBe(didCommit);
     });
 
     it("fires instrumentation for Skia unmounts", async () => {

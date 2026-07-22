@@ -186,6 +186,7 @@ const App = () => {
   const [isSkiaTreeVisible, setIsSkiaTreeVisible] = useState(true);
   const didRunRef = useRef(false);
   const didRunSkiaRef = useRef(false);
+  const didScheduleSkiaUpdateRef = useRef(false);
   const didRunOverridesRef = useRef(false);
   const fiberRootRef = useRef<FiberRoot | null>(null);
   const hostProbeRef = useRef<View | null>(null);
@@ -381,6 +382,14 @@ const App = () => {
     const compoundTreeFiber = fibersByDisplayName.get("SkiaCompoundTree") ?? null;
     const memoLeafFiber = fibersByDisplayName.get("SkiaMemoLeaf") ?? null;
     if (!compoundTreeFiber || !memoLeafFiber) return;
+
+    if (!memoLeafFiber.alternate) {
+      if (!didScheduleSkiaUpdateRef.current) {
+        didScheduleSkiaUpdateRef.current = true;
+        setSkiaRevision(2);
+      }
+      return;
+    }
     didRunSkiaRef.current = true;
 
     const results: Record<string, string> = {};
@@ -414,6 +423,7 @@ const App = () => {
     results["skia-stack-length"] = String(getFiberStack(memoLeafFiber).length);
     results["skia-fiber-id"] = String(typeof getFiberId(memoLeafFiber) === "number");
     results["skia-latest-fiber"] = String(isValidFiber(getLatestFiber(memoLeafFiber)));
+    results["skia-has-alternate"] = String(memoLeafFiber.alternate !== null);
     results["skia-type"] = String(getType(memoLeafFiber.type) !== null);
     results["skia-has-memo-cache"] = String(hasMemoCache(memoLeafFiber));
 
