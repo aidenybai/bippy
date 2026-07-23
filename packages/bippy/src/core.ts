@@ -1243,6 +1243,17 @@ export const getFiberFromHostInstance = <T>(hostInstance: T): Fiber | null => {
         return (hostInstanceRecord[key] || null) as Fiber | null;
       }
     }
+
+    for (const fiberRoot of _fiberRoots) {
+      const rendererId = rootRendererIds.get(fiberRoot);
+      const renderer = rendererId === undefined ? null : rdtHook?.renderers?.get(rendererId);
+      if (renderer?.findFiberByHostInstance) continue;
+      const fiber = traverseFiber(
+        fiberRoot.current,
+        (candidateFiber) => candidateFiber.stateNode === hostInstance,
+      );
+      if (fiber) return fiber;
+    }
   }
   return null;
 };
