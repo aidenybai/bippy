@@ -223,6 +223,5 @@ export const rendererAdapterFactories: RendererAdapterFactory[] = [
     create: createReactThreeFiberAdapter,
     name: "React Three Fiber",
     rendererPackageName: "@react-three/fiber",
-    usesTrackedHostInstances: true,
   },
 ];
