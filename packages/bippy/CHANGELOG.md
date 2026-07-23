@@ -1,5 +1,11 @@
 # bippy
 
+## 0.6.1
+
+### Patch Changes
+
+- 24b790b: Preserve Fiber identity when alternate Fibers reuse ID zero.
+
 ## 0.6.0
 
 ### Minor Changes
