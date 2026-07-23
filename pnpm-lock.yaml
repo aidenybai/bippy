@@ -100,6 +100,34 @@ importers:
         specifier: latest
         version: 0.1.15(@types/node@20.19.34)(esbuild@0.27.4)(happy-dom@15.11.7)(jiti@2.7.0)(publint@0.3.18)(terser@5.46.0)(tsx@4.21.0)(typescript@5.9.3)(vite@7.3.6(@types/node@20.19.34)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))(yaml@2.8.2)
 
+  packages/conditional-hooks-playground:
+    dependencies:
+      bippy:
+        specifier: workspace:*
+        version: link:../bippy
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.4
+        version: 19.1.17
+      '@types/react-dom':
+        specifier: ^19.0.2
+        version: 19.2.3(@types/react@19.1.17)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.4
+        version: 4.7.0(vite@7.3.6(@types/node@20.19.34)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vite-plus:
+        specifier: latest
+        version: 0.1.15(@types/node@20.19.34)(esbuild@0.27.4)(happy-dom@15.11.7)(jiti@2.7.0)(publint@0.3.18)(terser@5.46.0)(tsx@4.21.0)(typescript@5.9.3)(vite@7.3.6(@types/node@20.19.34)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))(yaml@2.8.2)
+
   packages/e2e:
     devDependencies:
       '@jest/globals':

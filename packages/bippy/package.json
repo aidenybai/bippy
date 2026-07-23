@@ -58,6 +58,16 @@
         "default": "./dist/core.cjs"
       }
     },
+    "./conditional-hooks": {
+      "import": {
+        "types": "./dist/conditional-hooks.d.ts",
+        "default": "./dist/conditional-hooks.js"
+      },
+      "require": {
+        "types": "./dist/conditional-hooks.d.cts",
+        "default": "./dist/conditional-hooks.cjs"
+      }
+    },
     "./install-hook-only": {
       "import": {
         "types": "./dist/install-hook-only.d.ts",
