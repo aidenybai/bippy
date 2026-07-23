@@ -3,8 +3,8 @@ import "../src/index.js"; // KEEP THIS LINE ON TOP
 import { render, screen } from "@testing-library/react";
 import React from "react";
 import { expect, it } from "vitest";
-import { _fiberRoots, getFiberFromHostInstance, getRDTHook } from "../src/index.js";
-import type { Fiber, FiberRoot, ReactRenderer } from "../src/types.js";
+import { getFiberFromHostInstance, getRDTHook } from "../src/index.js";
+import type { Fiber, ReactRenderer } from "../src/types.js";
 
 it("should return the fiber from the host instance", () => {
   render(<div>HostInstance</div>);
@@ -67,30 +67,5 @@ it("should ignore renderers whose findFiberByHostInstance throws", () => {
     expect(getFiberFromHostInstance({})).toBe(null);
   } finally {
     rdtHook.renderers.delete(999);
-  }
-});
-
-it("should resolve custom renderer host instances from tracked roots", () => {
-  const hostInstance = { object: {} };
-  const hostFiber = {
-    child: null,
-    return: null,
-    sibling: null,
-    stateNode: hostInstance,
-  } as unknown as Fiber;
-  const rootFiber = {
-    child: hostFiber,
-    return: null,
-    sibling: null,
-    stateNode: {},
-  } as unknown as Fiber;
-  hostFiber.return = rootFiber;
-  const fiberRoot = { current: rootFiber } as FiberRoot;
-  _fiberRoots.add(fiberRoot);
-
-  try {
-    expect(getFiberFromHostInstance(hostInstance)).toBe(hostFiber);
-  } finally {
-    _fiberRoots.delete(fiberRoot);
   }
 });

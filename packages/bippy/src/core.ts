@@ -1197,6 +1197,17 @@ export const instrument = (options: InstrumentationOptions): Unsubscribe => {
 // scan over every own key of the element.
 const knownFiberPropertyKeys = new Set<string>();
 
+interface TrackedHostFiberCacheEntry {
+  fiber: Fiber;
+  fiberRoot: FiberRoot;
+  rootCurrent: Fiber;
+}
+
+const trackedHostFiberCache = new WeakMap<object, TrackedHostFiberCacheEntry>();
+
+const findFiberByHostInstanceInRoot = (fiberRoot: FiberRoot, hostInstance: object): Fiber | null =>
+  traverseFiber(fiberRoot.current, (candidateFiber) => candidateFiber.stateNode === hostInstance);
+
 const isFiberPropertyKey = (key: string): boolean =>
   key.startsWith("__reactContainer$") ||
   key.startsWith("__reactInternalInstance$") ||
@@ -1244,15 +1255,31 @@ export const getFiberFromHostInstance = <T>(hostInstance: T): Fiber | null => {
       }
     }
 
+    const cachedHostFiber = trackedHostFiberCache.get(hostInstance);
+    if (cachedHostFiber) {
+      if (cachedHostFiber.fiberRoot.current === cachedHostFiber.rootCurrent) {
+        return cachedHostFiber.fiber;
+      }
+      const latestFiber = findFiberByHostInstanceInRoot(cachedHostFiber.fiberRoot, hostInstance);
+      if (latestFiber) {
+        cachedHostFiber.fiber = latestFiber;
+        cachedHostFiber.rootCurrent = cachedHostFiber.fiberRoot.current;
+        return latestFiber;
+      }
+      trackedHostFiberCache.delete(hostInstance);
+    }
+
     for (const fiberRoot of _fiberRoots) {
-      const rendererId = rootRendererIds.get(fiberRoot);
-      const renderer = rendererId === undefined ? null : rdtHook?.renderers?.get(rendererId);
-      if (renderer?.findFiberByHostInstance) continue;
-      const fiber = traverseFiber(
-        fiberRoot.current,
-        (candidateFiber) => candidateFiber.stateNode === hostInstance,
-      );
-      if (fiber) return fiber;
+      if (getRootRenderer(fiberRoot.current)?.findFiberByHostInstance) continue;
+      const fiber = findFiberByHostInstanceInRoot(fiberRoot, hostInstance);
+      if (fiber) {
+        trackedHostFiberCache.set(hostInstance, {
+          fiber,
+          fiberRoot,
+          rootCurrent: fiberRoot.current,
+        });
+        return fiber;
+      }
     }
   }
   return null;

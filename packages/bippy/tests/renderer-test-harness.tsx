@@ -4,6 +4,7 @@ import {
   didFiberCommit,
   didFiberRender,
   getDisplayName,
+  getFiberFromHostInstance,
   getFiberId,
   getFiberStack,
   getLatestFiber,
@@ -46,6 +47,7 @@ export interface RendererAdapterFactory {
   create: () => Promise<RendererAdapter>;
   name: string;
   rendererPackageName?: string;
+  usesTrackedHostInstances?: boolean;
 }
 
 interface CompoundTreeProps {
@@ -189,6 +191,10 @@ export const runRendererTestHarness = (factories: RendererAdapterFactory[]): voi
       if (!nearestMountedHostFiber) throw new Error(`${factory.name} did not render a host fiber`);
       expect(isHostFiber(nearestMountedHostFiber)).toBe(true);
       expect(getNearestHostFibers(mountedStatefulFiber).length).toBeGreaterThanOrEqual(1);
+      const mountedHostInstance = nearestMountedHostFiber.stateNode;
+      if (factory.usesTrackedHostInstances) {
+        expect(getFiberFromHostInstance(mountedHostInstance)).toBe(nearestMountedHostFiber);
+      }
 
       const mountedFiberId = getFiberId(mountedStatefulFiber);
       await controller.update(createTree(2), () => components.setStateValue(4));
@@ -206,6 +212,16 @@ export const runRendererTestHarness = (factories: RendererAdapterFactory[]): voi
       expect(getFiberId(updatedStatefulFiber)).toBe(mountedFiberId);
       expect(didFiberRender(updatedStatefulFiber)).toBe(true);
       expect(didFiberCommit(updatedRoot.current)).toBe(true);
+      const nearestUpdatedHostFiber = getNearestHostFiber(updatedStatefulFiber);
+      expect(nearestUpdatedHostFiber).not.toBeNull();
+      if (!nearestUpdatedHostFiber) {
+        throw new Error(`${factory.name} lost its host fiber during the update`);
+      }
+      if (factory.usesTrackedHostInstances) {
+        expect(getFiberFromHostInstance(nearestUpdatedHostFiber.stateNode)).toBe(
+          nearestUpdatedHostFiber,
+        );
+      }
 
       const propTransitions: Array<[string, unknown, unknown]> = [];
       traverseProps(updatedStatefulFiber, (propName, nextValue, previousValue) => {
@@ -246,6 +262,9 @@ export const runRendererTestHarness = (factories: RendererAdapterFactory[]): voi
         ),
       ).toBe(true);
       expect(unmountedFibers.some(isHostFiber)).toBe(true);
+      if (factory.usesTrackedHostInstances) {
+        expect(getFiberFromHostInstance(mountedHostInstance)).toBeNull();
+      }
 
       unsubscribe();
     });
