@@ -1,10 +1,11 @@
 import "../src/index.js"; // KEEP THIS LINE ON TOP
 
+import * as ReactThreeTestRenderer from "@react-three/test-renderer";
 import { render, screen } from "@testing-library/react";
 import React from "react";
 import { expect, it } from "vitest";
-import { getFiberFromHostInstance, getRDTHook } from "../src/index.js";
-import type { Fiber, ReactRenderer } from "../src/types.js";
+import { getFiberFromHostInstance, getRDTHook, instrument, traverseFiber } from "../src/index.js";
+import type { Fiber, FiberRoot, ReactRenderer } from "../src/types.js";
 
 it("should return the fiber from the host instance", () => {
   render(<div>HostInstance</div>);
@@ -67,5 +68,28 @@ it("should ignore renderers whose findFiberByHostInstance throws", () => {
     expect(getFiberFromHostInstance({})).toBe(null);
   } finally {
     rdtHook.renderers.delete(999);
+  }
+});
+
+it("should resolve React Three Fiber host instances from its tracked root", async () => {
+  let threeFiberRoot: FiberRoot | null = null;
+  using _unsubscribe = instrument({
+    onCommitFiberRoot: (rendererId, fiberRoot) => {
+      const renderer = getRDTHook().renderers.get(rendererId);
+      if (renderer?.rendererPackageName === "@react-three/fiber") {
+        threeFiberRoot = fiberRoot;
+      }
+    },
+  });
+  const renderer = await ReactThreeTestRenderer.create(<mesh name="tracked-mesh" />);
+
+  try {
+    const fiberRoot = threeFiberRoot;
+    if (!fiberRoot) throw new Error("React Three Fiber did not commit a root");
+    const meshFiber = traverseFiber(fiberRoot.current, (fiber) => fiber.type === "mesh");
+    if (!meshFiber) throw new Error("React Three Fiber did not create a mesh Fiber");
+    expect(getFiberFromHostInstance(meshFiber.stateNode)).toBe(meshFiber);
+  } finally {
+    await renderer.unmount();
   }
 });
