@@ -10,8 +10,6 @@ export const version = process.env.VERSION;
 export const BIPPY_INSTRUMENTATION_STRING = `bippy-${version}`;
 
 const objectDefineProperty = Object.defineProperty;
-// eslint-disable-next-line @typescript-eslint/unbound-method
-const objectHasOwnProperty = Object.prototype.hasOwnProperty;
 
 const NO_OP = () => {
   /**/
@@ -39,18 +37,26 @@ export const isRealReactDevtools = (
   return Boolean(rdtHook && "getFiberRoots" in rdtHook);
 };
 
-let isReactRefreshOverride = false;
-let injectFnStr: string | undefined = undefined;
+const reactRefreshHooks = new WeakSet<ReactDevToolsGlobalHook>();
 
 export const isReactRefresh = (
   rdtHook: ReactDevToolsGlobalHook | undefined | null = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__,
 ): boolean => {
-  if (isReactRefreshOverride) return true;
-  if (rdtHook && typeof rdtHook.inject === "function") {
-    injectFnStr = rdtHook.inject.toString();
-  }
+  if (!rdtHook) return false;
+  if (reactRefreshHooks.has(rdtHook)) return true;
+  if (typeof rdtHook.inject !== "function") return false;
   // https://github.com/facebook/react/blob/8f8b336734d7c807f5aa11b0f31540e63302d789/packages/react-refresh/src/ReactFreshRuntime.js#L459
-  return Boolean(injectFnStr?.includes("(injected)"));
+  try {
+    const isRefreshHook = Function.prototype.toString.call(rdtHook.inject).includes("(injected)");
+    if (isRefreshHook) reactRefreshHooks.add(rdtHook);
+    return isRefreshHook;
+  } catch {
+    return false;
+  }
+};
+
+const isRDTHook = (value: unknown): value is ReactDevToolsGlobalHook => {
+  return typeof value === "object" && value !== null;
 };
 
 export const _onActiveListeners = new Set<() => unknown>();
@@ -131,7 +137,7 @@ export const installRDTHook = (onActive?: () => unknown): ReactDevToolsGlobalHoo
         return rdtHook;
       },
       set(newHook) {
-        if (newHook && typeof newHook === "object") {
+        if (isRDTHook(newHook)) {
           const ourRenderers = rdtHook.renderers;
           rdtHook = newHook;
           if (ourRenderers.size > 0) {
@@ -176,8 +182,9 @@ export const patchRDTHook = (onActive?: () => unknown): void => {
     _onActiveListeners.add(onActive);
   }
   try {
-    const rdtHook = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
-    if (!rdtHook) return;
+    const rdtHookValue = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+    if (!isRDTHook(rdtHookValue)) return;
+    const rdtHook = rdtHookValue;
     if (!rdtHook._instrumentationSource) {
       rdtHook.checkDCE = checkDCE;
       rdtHook.supportsFiber = true;
@@ -198,7 +205,6 @@ export const patchRDTHook = (onActive?: () => unknown): void => {
       const prevInject = rdtHook.inject;
       const isRefresh = isReactRefresh(rdtHook);
       if (isRefresh && !isReactDevtools) {
-        isReactRefreshOverride = true;
         // but since the underlying implementation doens't care,
         // it's ok: https://github.com/facebook/react/blob/18eaf51bd51fed8dfed661d64c306759101d0bfd/packages/react-refresh/src/ReactFreshRuntime.js#L430
         const injectedRendererId = rdtHook.inject({
@@ -233,20 +239,25 @@ export const patchRDTHook = (onActive?: () => unknown): void => {
 };
 
 export const hasRDTHook = (): boolean => {
-  return objectHasOwnProperty.call(globalThis, "__REACT_DEVTOOLS_GLOBAL_HOOK__");
+  try {
+    return isRDTHook(globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__);
+  } catch {
+    return false;
+  }
 };
 
 /**
  * Returns the current React DevTools global hook.
  */
 export const getRDTHook = (onActive?: () => unknown): ReactDevToolsGlobalHook => {
-  if (!hasRDTHook()) {
+  const rdtHook = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+  if (!isRDTHook(rdtHook)) {
     return installRDTHook(onActive);
   }
 
   patchRDTHook(onActive);
-  // must exist at this point
-  return globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ as ReactDevToolsGlobalHook;
+  const currentRDTHook = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+  return isRDTHook(currentRDTHook) ? currentRDTHook : rdtHook;
 };
 
 export const isClientEnvironment = (): boolean => {

@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:web": "npx playwright test",
+    "test:web": "vp exec playwright test",
     "test:native": "detox test --configuration ios.sim.debug",
     "test": "nr test:web"
   },

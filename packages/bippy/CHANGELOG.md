@@ -2,75 +2,191 @@
 
 ## 0.6.1
 
-### Patch Changes
+### patch changes
 
-- 24b790b: Preserve Fiber identity when alternate Fibers reuse ID zero.
+- 24b790b: preserve fiber identity when alternate fibers reuse id zero
+- 8363ee2: resolve host instances from tracked roots when custom renderers do not expose `findFiberByHostInstance`, including react three fiber objects
 
 ## 0.6.0
 
-### Minor Changes
+### breaking changes
 
-- de0c6c6: feat!: `instrument` now returns an unsubscribe function instead of the DevTools hook (use `getRDTHook()` if you need the hook object). Each hook event is patched once and dispatches to a listener set, so multiple `instrument` calls compose instead of replacing earlier handlers, and unsubscribing removes exactly the handlers that call registered. The previously dead `onScheduleFiberRoot` option is now wired up, and `_fiberRoots` tracking no longer requires an `onCommitFiberRoot` handler. `overrideProps`/`overrideHookState`/`overrideContext` and `instrumentReactRefresh` now observe late-injected renderers through a shared single inject wrapper (new `onRendererInject` export) instead of stacking their own patches. Every subscription API (`instrument`, `instrumentReactRefresh`, `onRendererInject`) returns an `Unsubscribe` that is also a `Disposable`, so subscriptions compose through `using`. `overrideProps`/`overrideHookState`/`overrideContext` no longer chain per-renderer closures: writes dispatch to the renderer that owns the fiber's root when known (falling back to every captured renderer), the canonical renderer `overrideHookState` is preferred over the hook queue dispatch regardless of renderer count, and the dispatch fallback only applies to whole-value writes so partial path writes can no longer clobber an entire hook state.
-- 98203e3: feat: add `bippy/react-refresh` entry point exposing `instrumentReactRefresh({ onRefresh })`, which observes fast refresh updates bundler-agnostically by wrapping `scheduleRefresh` on renderers injected into the React DevTools global hook (works with Vite, Next.js webpack, Next.js Turbopack, and Metro); the handler receives the updated and stale component types after React re-renders, plus the hot-updated source file paths reported by the auto-detected bundler HMR transport (Vite, Next.js webpack, or Metro), and the API is SSR-safe (returns an unsubscribe function, a no-op outside a client environment)
+`0.6.0` intentionally narrowed bippy’s public application programming interface (api). it removed 13 exports from the policy layer and reconciliation internals:
 
-### Patch Changes
+| removed exports                                                        | migration                                                                 |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `secure`, `INSTALL_ERROR`                                              | compose the required safety policies around `instrument`, as shown below  |
+| `areFiberEqual`                                                        | compare the fibers and their `alternate` references                       |
+| `fiberIdMap`                                                           | use `getFiberId` and `setFiberId`                                         |
+| `hotSwapFiberType`                                                     | no supported replacement                                                  |
+| `injectOverrideMethods`                                                | call `overrideProps`, `overrideHookState`, or `overrideContext` directly  |
+| `traverseFiberAsync`, `traverseFiberSync`                              | use `traverseFiber`, which accepts synchronous and asynchronous selectors |
+| `mountFiberRecursively`, `shouldFilterFiber`, `updateFiberRecursively` | call `traverseRenderedFibers` from `onCommitFiberRoot`                    |
+| `unmountFiber`, `unmountFiberChildrenRecursively`                      | use the public `onCommitFiberUnmount` instrumentation callback            |
 
-- 5a767a4: perf: cache the React fiber property key in getFiberFromHostInstance so repeated lookups are a single property read instead of a for-in over every inherited DOM accessor
-- 5a767a4: perf: cache component stack frames per component type in describeNativeComponentFrame, binary-search source map line segments, walk bundle lines backwards when locating the sourceMappingURL trailer, avoid Set allocation in traverseProps, and compare symbol descriptions instead of stringifying symbols in shouldFilterFiber
+#### replace `secure` with the current public api
+
+`secure` combined four policies with instrumentation:
+
+- a production build gate
+- a minimum react version
+- an installation timeout
+- callback error isolation
+
+compose these policies around `instrument` when your integration needs them.
+
+first, define a renderer policy that accepts react 19 or newer development renderers:
+
+```typescript
+import {
+  detectReactBuildType,
+  getRDTHook,
+  instrument,
+  isInstrumentationActive,
+  traverseRenderedFibers,
+  type ReactRenderer,
+} from "bippy";
+
+let canProfile = false;
+
+const isSupportedRenderer = (renderer: ReactRenderer): boolean => {
+  const reactMajorVersion = Number.parseInt(renderer.version, 10);
+  const isDevelopment = detectReactBuildType(renderer) === "development";
+  return reactMajorVersion >= 19 && isDevelopment;
+};
+```
+
+next, guard each callback that needs error isolation:
+
+```typescript
+const guard =
+  <Arguments extends unknown[]>(handler: (...arguments_: Arguments) => void) =>
+  (...arguments_: Arguments): void => {
+    if (!canProfile) return;
+    try {
+      handler(...arguments_);
+    } catch (error) {
+      recordError(error);
+    }
+  };
+```
+
+then, apply the timeout and policies when bippy becomes active:
+
+```typescript
+let didInstallTimeout = false;
+const installTimeout = window.setTimeout(() => {
+  if (isInstrumentationActive()) return;
+  didInstallTimeout = true;
+  recordError(new Error("bippy did not attach within 5s"));
+  window.stop();
+}, 5_000);
+
+instrument({
+  name: "react-perf",
+  onActive() {
+    if (didInstallTimeout) return;
+    window.clearTimeout(installTimeout);
+    const renderers = getRDTHook().renderers.values();
+    canProfile = Array.from(renderers).every(isSupportedRenderer);
+  },
+  onCommitFiberRoot: guard((_rendererID, root) => {
+    traverseRenderedFibers(root, onRender);
+  }),
+});
+```
+
+run existing `onActive` work after `canProfile` becomes `true`. omit `window.stop()` if the timeout should report an error without stopping the page load.
+
+### minor changes
+
+- de0c6c6: make `instrument` composable and return an unsubscribe function instead of the devtools hook
+- de0c6c6: connect `onScheduleFiberRoot` and track roots without requiring an `onCommitFiberRoot` handler
+- 8b0f019: make subscription cleanup functions implement `Disposable` for use with `using`
+- de0c6c6: add `onRendererInject` for observing renderers loaded after instrumentation starts
+- 4de5bc6: dispatch prop, hook state, and context overrides through the renderer that owns the fiber root
+- 98203e3: add `bippy/react-refresh` with bundler-independent fast refresh subscriptions
+- 63ebc0c: rename `onReactRefresh` to `instrumentReactRefresh`
+- dc67463: accept an options object in `instrumentReactRefresh`
+- 92a8d7d: split owner and parent stack traversal into `getOwnerStack` and `getParentStack`
+
+### patch changes
+
+- 5a767a4: cache host fiber keys and component stack frames in repeated lookups
+- 5a767a4: binary search source map segments and scan bundles backward for source map trailers
+- 5a767a4: avoid set allocation in `traverseProps` and repeated symbol stringification in fiber filtering
+
+## 0.5.43
+
+### patch changes
+
+- republish `0.5.42` without runtime changes
+
+## 0.5.42
+
+### patch changes
+
+- 1ab537c: retry source map requests after transient network and abort failures while caching definitive missing results
 
 ## 0.5.41
 
-### Patch Changes
+### patch changes
 
-- fix GC
+- 735fa50: keep resolved source maps strongly cached so garbage collection cannot discard them between lookups
 
 ## 0.5.40
 
-### Patch Changes
+### minor changes
 
-- fix
+- 2a450f4: support react portal fibers in traversal and host lookup
+- c0e5741: add development-only `hotSwapFiberType`
+
+### patch changes
+
+- 094f0b7: recognize react server component frames from `rsc://` and `about://react` sources
+- 131800a: recognize multi-word and hyphenated server environment names
 
 ## 0.5.39
 
-### Patch Changes
+### patch changes
 
-- bug fixes
+- 5fda8cd: normalize `webpack-internal:///(app-pages-browser)` source paths without leaving the webpack layer prefix
 
 ## 0.5.38
 
-### Patch Changes
+### minor changes
 
-- add hooks parsing
+- a9e2caa: add hook tree inspection and source-based hook name parsing to `bippy/source`
 
 ## 0.5.37
 
-### Patch Changes
+### patch changes
 
-- fix
+- update release tooling for npm passkey authentication without runtime changes
 
 ## 0.5.36
 
-### Patch Changes
+### patch changes
 
-- fix
+- 3f256f2: preserve value re-exports in generated declarations
 
 ## 0.5.35
 
-### Patch Changes
+### patch changes
 
-- fix
+- a5d41ff: inline react reconciler types to prevent downstream missing export warnings
 
 ## 0.5.34
 
-### Patch Changes
+### patch changes
 
-- fix: types
+- 4530c64: preserve type-only imports in generated esm and commonjs declarations
 
 ## 0.5.33
 
-### Patch Changes
+### patch changes
 
-- fix type generation
+- 5b14026: preserve type-only imports in generated declarations and run the post-build transform with `tsx`
 
 ## 0.5.32
 

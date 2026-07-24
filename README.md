@@ -1,7 +1,7 @@
 > [!WARNING]
 > ⚠️⚠️⚠️ **this project may break production apps and cause unexpected behavior** ⚠️⚠️⚠️
 >
-> this project uses react internals, which can change at any time. we don't recommend depending on internals unless you really, _really_ have to. by proceeding, you acknowledge the risk of breaking your own code or apps that use your code.
+> this project uses react internals, which can change at any time. we don't recommend depending on internals unless your use case requires them. by proceeding, you acknowledge the risk of breaking your own code or apps that use your code.
 
 # <img src="https://github.com/aidenybai/bippy/blob/main/.github/public/bippy.png?raw=true" width="60" align="center" /> bippy
 
@@ -14,6 +14,7 @@ by default, you cannot access react internals. bippy bypasses this by “pretend
 
 - works outside of react: no react code modification needed
 - utility functions that work across modern react (v17-19)
+- tested with react dom, react native, react three fiber, ink, remotion, react nil, and react pdf
 - no prior react source code knowledge required
 
 ```jsx
@@ -153,6 +154,12 @@ import { createRoot } from "react-dom/client";
 
 the import order is critical: import bippy before any react packages.
 
+### renderer support
+
+bippy observes renderer commits through the react devtools hook, so its fiber traversal and instrumentation APIs work beyond react dom. the test suite covers react dom, react native, react native skia, react three fiber, ink, remotion, react nil, and react pdf.
+
+renderer capabilities differ. `getFiberFromHostInstance` uses the renderer's lookup method when available, then falls back to react host properties and roots observed by `instrument`. call `instrument` before the renderer's first commit when you need host instance lookup for a custom renderer.
+
 > **note for library maintainers**: if you're building a library and want to define your own utility functions while minimizing bundle size, you can use `bippy/install-hook-only` (~90 bytes) instead of the main `bippy` export. this only installs the react devtools hook without importing any utility functions, allowing you to import only what you need from `bippy/core` or define your own fiber utilities. that said, the full `bippy` package is only ~4 KB gzipped, so bundle size is rarely a concern.
 
 > ```typescript
@@ -171,6 +178,16 @@ the import order is critical: import bippy before any react packages.
 patches `window.__REACT_DEVTOOLS_GLOBAL_HOOK__` with your handlers. import bippy before react, and call `instrument` before any other methods.
 
 bippy patches each hook event once and dispatches it to a set of listeners, so multiple `instrument` calls compose instead of replacing each other. `instrument` returns an unsubscribe function that removes exactly the handlers you registered (also a `Disposable`, so it works with `using`).
+
+if you used `secure` in `0.5.x`, follow the [`secure` migration guide](https://github.com/aidenybai/bippy/blob/main/packages/bippy/CHANGELOG.md#replace-secure-with-the-current-public-api). the guide shows how to compose its policies with the current public api.
+
+`instrument` accepts handlers for these lifecycle events:
+
+- `onActive`
+- `onScheduleFiberRoot`
+- `onCommitFiberRoot`
+- `onPostCommitFiberRoot`
+- `onCommitFiberUnmount`
 
 ```typescript
 import { instrument } from "bippy"; // must be imported BEFORE react
@@ -201,6 +218,20 @@ import { getRDTHook } from "bippy";
 
 const hook = getRDTHook();
 console.log(hook);
+```
+
+### onRendererInject
+
+subscribes to renderer registrations, including renderers loaded after bippy starts. the callback receives the renderer internals exposed to react devtools. the returned unsubscribe function is also a `Disposable`.
+
+```typescript
+import { onRendererInject } from "bippy";
+
+const unsubscribe = onRendererInject((renderer) => {
+  console.log(renderer.rendererPackageName, renderer.version);
+});
+
+unsubscribe();
 ```
 
 ### traverseRenderedFibers
@@ -408,14 +439,21 @@ console.log(isValidFiber(fiber));
 
 ### getFiberFromHostInstance
 
-returns the fiber associated with a given host instance (e.g., a DOM element).
+returns the fiber associated with a host instance. this includes dom nodes, react native fabric public instances, and custom renderer objects such as three.js objects created by react three fiber.
+
+when a renderer does not implement `findFiberByHostInstance`, bippy searches roots observed by `instrument`. initialize instrumentation before the renderer's first commit so bippy can track those roots.
 
 ```typescript
-import { getFiberFromHostInstance } from "bippy";
+import { getFiberFromHostInstance, instrument } from "bippy";
 
-const fiber = getFiberFromHostInstance(document.querySelector("div"));
-console.log(fiber);
+instrument({ name: "three-inspector" });
+
+const inspectHostInstance = (hostInstance: object): void => {
+  console.log(getFiberFromHostInstance(hostInstance));
+};
 ```
+
+pass a dom node, fabric public instance, or three.js object from a ref to `inspectHostInstance`.
 
 ### getLatestFiber
 
@@ -545,9 +583,25 @@ const parentFrames = await getParentStack(fiber);
 // includes every wrapper between the fiber and the root
 ```
 
+### getFiberHooks / parseHookNames
+
+`getFiberHooks` returns the hook tree for a function component fiber. each node includes its hook type, value, editability, nested custom hooks, and source location when react exposes one.
+
+`parseHookNames` resolves source maps and maps hook source locations back to local variable names.
+
+```typescript
+import { getFiberHooks, parseHookNames } from "bippy/source";
+
+const hooks = getFiberHooks(fiber);
+const hookNames = await parseHookNames(hooks);
+
+console.log(hooks);
+console.log(hookNames);
+```
+
 ### instrumentReactRefresh
 
-subscribes to fast refresh (HMR) updates from `bippy/react-refresh`. works with any bundler that uses react-refresh (vite, next.js webpack, next.js turbopack, metro) without bundler-specific code: bippy auto-detects the bundler's HMR transport and augments each update with the hot-updated source file paths.
+subscribes to react fast refresh updates from `bippy/react-refresh`. it supports vite, next.js webpack, next.js turbopack, and metro without bundler-specific integration code. bippy detects the hot module replacement (hmr) transport and adds the changed source file paths to each update.
 
 the handler runs after react has re-rendered with the new component types, so `updatedFibers`/`staleFibers` are the mounted fibers matching the hot-swapped component types.
 
@@ -652,4 +706,4 @@ if you're seeking more robust solutions, you might consider [its-fine](https://g
 
 if you plan to use this project beyond experimentation, please review [react-scan's source code](https://github.com/aidenybai/react-scan) to understand our safeguarding practices.
 
-the original bippy character is owned and created by [@dairyfreerice](https://www.instagram.com/dairyfreerice). this project is not related to the bippy brand, i just think the character is cute.
+the original bippy character is owned and created by [@dairyfreerice](https://www.instagram.com/dairyfreerice). this project is not related to the bippy brand. the character is cute.

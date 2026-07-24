@@ -2,13 +2,13 @@
 
 import "bippy";
 import { getFiberFromHostInstance, getLatestFiber } from "bippy";
-import { getSource } from "bippy/dist/source";
+import { getSource } from "bippy/source";
 import { useEffect, useRef, useState } from "react";
 
 import { cn } from "./cn";
 
-export function Inspector() {
-  const [rect, setRect] = useState<DOMRect | null>(null);
+export const Inspector = () => {
+  const [highlightRect, setHighlightRect] = useState<DOMRect | null>(null);
   const [isEnabled, setIsEnabled] = useState(false);
   const isEnabledRef = useRef(isEnabled);
   isEnabledRef.current = isEnabled;
@@ -19,7 +19,7 @@ export function Inspector() {
       if (!isEnabled) return;
       const element = document.elementFromPoint(event.clientX, event.clientY);
       if (!element) return;
-      setRect(element.getBoundingClientRect());
+      setHighlightRect(element.getBoundingClientRect());
     };
     const handleClick = (event: MouseEvent) => {
       const isEnabled = isEnabledRef.current;
@@ -59,18 +59,18 @@ export function Inspector() {
       >
         {isEnabled ? "Disable" : "Enable"}
       </button>
-      {isEnabled && rect && (
+      {isEnabled && highlightRect && (
         <div
           className="border border-dashed border-red-600 pointer-events-none"
           style={{
-            height: rect?.height,
-            left: rect?.left,
+            height: highlightRect.height,
+            left: highlightRect.left,
             position: "fixed",
-            top: rect?.top,
-            width: rect?.width,
+            top: highlightRect.top,
+            width: highlightRect.width,
           }}
         ></div>
       )}
     </div>
   );
-}
+};

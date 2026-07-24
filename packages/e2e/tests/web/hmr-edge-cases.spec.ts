@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 
 import { expect, test, type Page } from "@playwright/test";
 
@@ -25,7 +25,7 @@ const STATEFUL_MARKER_PREFIX = "stateful-marker";
 const STATEFUL_CLICK_COUNT = 3;
 
 interface EdgeTargetsEdit {
-  restore: () => void;
+  restore: () => Promise<void>;
   uniqueMarker: string;
 }
 
@@ -46,7 +46,11 @@ const saveEdgeTargetsWithFreshMarker = async (
     syncTestId,
     uniqueMarker,
   );
-  return { restore: () => writeFileSync(targetFilePath, originalSource), uniqueMarker };
+  return {
+    restore: () =>
+      saveAndAwaitText(page, targetFilePath, originalSource, syncTestId, currentMarker),
+    uniqueMarker,
+  };
 };
 
 test.describe.configure({ mode: "serial" });
@@ -73,7 +77,7 @@ test.describe("bippy/react-refresh edge cases", () => {
         updatedName: "HmrMemoInner",
       });
     } finally {
-      edit.restore();
+      await edit.restore();
     }
   });
 
@@ -90,7 +94,7 @@ test.describe("bippy/react-refresh edge cases", () => {
         updatedFiberNameCount: 3,
       });
     } finally {
-      edit.restore();
+      await edit.restore();
     }
   });
 
@@ -109,7 +113,7 @@ test.describe("bippy/react-refresh edge cases", () => {
         withoutUpdatedFiberName: "HmrUnmountedTarget",
       });
     } finally {
-      edit.restore();
+      await edit.restore();
     }
   });
 
@@ -130,7 +134,7 @@ test.describe("bippy/react-refresh edge cases", () => {
       await expect(statefulTarget).toContainText(`${edit.uniqueMarker}:${STATEFUL_CLICK_COUNT}`);
       await waitForRefreshUpdateMatching(page, { updatedName: "HmrStatefulTarget" });
     } finally {
-      edit.restore();
+      await edit.restore();
     }
   });
 
@@ -165,7 +169,13 @@ test.describe("bippy/react-refresh edge cases", () => {
         staleName: "HmrStaleTarget",
       });
     } finally {
-      writeFileSync(targetFilePath, originalSource);
+      await saveAndAwaitText(
+        page,
+        targetFilePath,
+        originalSource,
+        "hmr-stale-target",
+        currentMarker,
+      );
     }
   });
 
@@ -193,7 +203,7 @@ test.describe("bippy/react-refresh edge cases", () => {
         )
         .toBeGreaterThan(0);
     } finally {
-      firstEdit.restore();
+      await firstEdit.restore();
     }
 
     await page.evaluate(() => window.__BIPPY_HMR__?.disposeSecondListener());
@@ -223,7 +233,7 @@ test.describe("bippy/react-refresh edge cases", () => {
       );
       expect(namesRecordedAfterDispose).toBe(namesRecordedBeforeDispose);
     } finally {
-      secondEdit.restore();
+      await secondEdit.restore();
     }
   });
 });

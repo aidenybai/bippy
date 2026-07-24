@@ -53,6 +53,7 @@ it("isReactRefresh should detect refresh when inject contains (injected)", () =>
   } as unknown as ReactDevToolsGlobalHook;
 
   expect(isReactRefresh(mockHookWithRefresh)).toBe(true);
+  expect(isReactRefresh(null)).toBe(false);
   expect(isReactRefresh(mockHookWithoutRefresh)).toBe(false);
 });
 

@@ -34,6 +34,10 @@ export interface ReactRefreshInstrumentationOptions {
   onRefresh?: ReactRefreshHandler;
 }
 
+interface ReactRefreshSubscription {
+  handler: ReactRefreshHandler;
+}
+
 const collectFibersByComponentType = (root: FiberRoot, componentTypes: Set<unknown>): Fiber[] => {
   if (componentTypes.size === 0 || !root.current) return [];
   const matchedFibers: Fiber[] = [];
@@ -47,7 +51,7 @@ const collectFibersByComponentType = (root: FiberRoot, componentTypes: Set<unkno
   return matchedFibers;
 };
 
-const refreshHandlers = new Set<ReactRefreshHandler>();
+const refreshSubscriptions = new Set<ReactRefreshSubscription>();
 const refreshWrappedRenderers = new WeakSet<ReactRenderer>();
 
 let pendingFilePaths: string[] = [];
@@ -81,7 +85,7 @@ const wrapRendererScheduleRefresh = (renderer: ReactRenderer): void => {
   refreshWrappedRenderers.add(renderer);
   renderer.scheduleRefresh = (root, update) => {
     originalScheduleRefresh.call(renderer, root, update);
-    if (refreshHandlers.size === 0) return;
+    if (refreshSubscriptions.size === 0) return;
     const staleComponents = Array.from(update.staleFamilies, (family) => family.current);
     const updatedComponents = Array.from(update.updatedFamilies, (family) => family.current);
     const refreshUpdate: ReactRefreshUpdate = {
@@ -92,8 +96,8 @@ const wrapRendererScheduleRefresh = (renderer: ReactRenderer): void => {
       updatedComponents,
       updatedFibers: collectFibersByComponentType(root, new Set(updatedComponents)),
     };
-    for (const handler of refreshHandlers) {
-      handler(refreshUpdate);
+    for (const subscription of refreshSubscriptions) {
+      subscription.handler(refreshUpdate);
     }
   };
 };
@@ -111,15 +115,34 @@ const ensureRefreshWired = (): void => {
 };
 
 let activeTransport: HmrTransport | null = null;
+let transportDetectionGeneration = 0;
 
 // the bundler's HMR global may not exist yet when an early subscriber
 // arrives, so detection is retried whenever the first subscriber (re)appears
-const detectTransportForNewSubscriber = (): void => {
-  void detectHmrTransport(bufferHotUpdateFilePaths).then((detectedTransport) => {
-    if (!detectedTransport) return;
-    activeTransport?.dispose();
-    activeTransport = detectedTransport;
-  });
+const detectTransportForNewSubscriber = async (): Promise<void> => {
+  const detectionGeneration = ++transportDetectionGeneration;
+  let detectedTransport: HmrTransport | null;
+  try {
+    detectedTransport = await detectHmrTransport(bufferHotUpdateFilePaths);
+  } catch {
+    return;
+  }
+  if (detectionGeneration !== transportDetectionGeneration || refreshSubscriptions.size === 0) {
+    detectedTransport?.dispose();
+    return;
+  }
+  if (!detectedTransport) return;
+  activeTransport?.dispose();
+  activeTransport = detectedTransport;
+};
+
+const disposeTransportWhenUnused = (): void => {
+  if (refreshSubscriptions.size > 0) return;
+  transportDetectionGeneration++;
+  activeTransport?.dispose();
+  activeTransport = null;
+  pendingFilePaths = [];
+  pendingFilePathsReceivedAtMs = 0;
 };
 
 /**
@@ -163,11 +186,13 @@ export const instrumentReactRefresh = (
   const { onRefresh } = options;
   if (!onRefresh || !isClientEnvironment()) return toUnsubscribe(() => {});
   ensureRefreshWired();
-  if (refreshHandlers.size === 0) {
-    detectTransportForNewSubscriber();
+  if (refreshSubscriptions.size === 0) {
+    void detectTransportForNewSubscriber();
   }
-  refreshHandlers.add(onRefresh);
+  const subscription: ReactRefreshSubscription = { handler: onRefresh };
+  refreshSubscriptions.add(subscription);
   return toUnsubscribe(() => {
-    refreshHandlers.delete(onRefresh);
+    refreshSubscriptions.delete(subscription);
+    disposeTransportWhenUnused();
   });
 };

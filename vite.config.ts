@@ -23,4 +23,8 @@ export default defineConfig({
     },
     ignorePatterns: ["node_modules", "dist", "coverage", "pnpm-lock.yaml"],
   },
+  test: {
+    environment: "happy-dom",
+    include: ["packages/bippy/tests/**/*.{test,spec}.{ts,tsx}"],
+  },
 });

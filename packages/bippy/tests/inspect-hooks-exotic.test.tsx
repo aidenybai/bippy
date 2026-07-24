@@ -356,7 +356,7 @@ describe("forwardRef and default props", () => {
 describe("dispatcher-only hooks", () => {
   it("serves useMemoCache data from the fiber update queue", () => {
     const existingCacheEntry = ["existing-entry"];
-    const memoCache = { data: [existingCacheEntry], index: 0 };
+    const memoCache = { data: [existingCacheEntry], index: 7 };
     let capturedCacheData: unknown[][] = [];
     const MemoCacheComponent = (): null => {
       const dispatcher = getActiveDispatcher();
@@ -373,9 +373,11 @@ describe("dispatcher-only hooks", () => {
 
     getFiberHooks(fiber);
 
-    expect(capturedCacheData[0]).toBe(existingCacheEntry);
+    expect(capturedCacheData[0]).toEqual(existingCacheEntry);
+    expect(capturedCacheData[0]).not.toBe(existingCacheEntry);
     expect(capturedCacheData[1]).toHaveLength(3);
-    expect(memoCache.index).toBe(2);
+    capturedCacheData[0][0] = "inspection-write";
+    expect(memoCache).toEqual({ data: [existingCacheEntry], index: 7 });
   });
 
   it("returns an empty cache when the update queue has none", () => {

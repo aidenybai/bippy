@@ -1,6 +1,12 @@
 // intentionally avoids importing ../index.js so this file controls hook installation
 import { expect, it, vi } from "vitest";
-import { getRDTHook, hasRDTHook, isClientEnvironment, patchRDTHook } from "../src/rdt-hook.js";
+import {
+  _onActiveListeners,
+  getRDTHook,
+  hasRDTHook,
+  isClientEnvironment,
+  patchRDTHook,
+} from "../src/rdt-hook.js";
 import type { ReactDevToolsGlobalHook, ReactRenderer } from "../src/types.js";
 
 const createFakeRenderer = (): ReactRenderer =>
@@ -9,7 +15,27 @@ const createFakeRenderer = (): ReactRenderer =>
     version: "19.0.0",
   }) as unknown as ReactRenderer;
 
+const createFakeHook = (
+  renderers: Map<number, ReactRenderer> = new Map<number, ReactRenderer>(),
+): ReactDevToolsGlobalHook => ({
+  checkDCE: () => {},
+  hasUnsupportedRendererAttached: false,
+  inject: () => 0,
+  on: () => {},
+  onCommitFiberRoot: () => {},
+  onCommitFiberUnmount: () => {},
+  onPostCommitFiberRoot: () => {},
+  renderers,
+  supportsFiber: true,
+  supportsFlight: true,
+});
+
 it("patchRDTHook should return early when no hook exists", () => {
+  Object.defineProperty(globalThis, "__REACT_DEVTOOLS_GLOBAL_HOOK__", {
+    configurable: true,
+    value: undefined,
+    writable: true,
+  });
   expect(hasRDTHook()).toBe(false);
   const onActive = vi.fn();
   patchRDTHook(onActive);
@@ -26,6 +52,12 @@ it("isClientEnvironment should detect react native environments", () => {
 });
 
 it("getRDTHook should install the hook when missing", () => {
+  Object.defineProperty(globalThis, "__REACT_DEVTOOLS_GLOBAL_HOOK__", {
+    configurable: true,
+    value: null,
+    writable: true,
+  });
+  expect(hasRDTHook()).toBe(false);
   const rdtHook = getRDTHook();
   expect(hasRDTHook()).toBe(true);
   expect(rdtHook.renderers.size).toBe(0);
@@ -72,21 +104,29 @@ it("assigning a new hook should merge existing renderers into it", () => {
   const onActive = vi.fn();
   getRDTHook(onActive);
   const callCountBeforeReplacement = onActive.mock.calls.length;
-  const replacementHook: ReactDevToolsGlobalHook = {
-    checkDCE: () => {},
-    hasUnsupportedRendererAttached: false,
-    inject: () => 0,
-    on: () => {},
-    onCommitFiberRoot: () => {},
-    onCommitFiberUnmount: () => {},
-    onPostCommitFiberRoot: () => {},
-    renderers: new Map<number, ReactRenderer>(),
-    supportsFiber: true,
-    supportsFlight: true,
-  };
+  const replacementHook = createFakeHook();
   globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ = replacementHook;
   expect(globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__).toBe(replacementHook);
   expect(replacementHook.renderers.size).toBe(2);
   expect(replacementHook._instrumentationIsActive).toBe(true);
   expect(onActive.mock.calls.length).toBeGreaterThan(callCountBeforeReplacement);
+});
+
+it("getRDTHook should return a hook replaced during patching", () => {
+  const initialHook = createFakeHook(new Map([[1, createFakeRenderer()]]));
+  const replacementHook = createFakeHook();
+  Object.defineProperty(globalThis, "__REACT_DEVTOOLS_GLOBAL_HOOK__", {
+    configurable: true,
+    value: initialHook,
+    writable: true,
+  });
+  const replaceHook = () => {
+    globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ = replacementHook;
+  };
+
+  try {
+    expect(getRDTHook(replaceHook)).toBe(replacementHook);
+  } finally {
+    _onActiveListeners.delete(replaceHook);
+  }
 });
