@@ -10,6 +10,11 @@ const createFakeRenderer = (): ReactRenderer =>
   }) as unknown as ReactRenderer;
 
 it("patchRDTHook should return early when no hook exists", () => {
+  Object.defineProperty(globalThis, "__REACT_DEVTOOLS_GLOBAL_HOOK__", {
+    configurable: true,
+    value: undefined,
+    writable: true,
+  });
   expect(hasRDTHook()).toBe(false);
   const onActive = vi.fn();
   patchRDTHook(onActive);
@@ -26,6 +31,12 @@ it("isClientEnvironment should detect react native environments", () => {
 });
 
 it("getRDTHook should install the hook when missing", () => {
+  Object.defineProperty(globalThis, "__REACT_DEVTOOLS_GLOBAL_HOOK__", {
+    configurable: true,
+    value: null,
+    writable: true,
+  });
+  expect(hasRDTHook()).toBe(false);
   const rdtHook = getRDTHook();
   expect(hasRDTHook()).toBe(true);
   expect(rdtHook.renderers.size).toBe(0);

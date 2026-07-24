@@ -176,6 +176,39 @@ it("augments refresh updates with file paths from the detected hmr transport", a
   delete window.webpackHotUpdate_N_E;
 });
 
+it("keeps the hmr transport until the last subscription is removed", async () => {
+  const originalHotUpdate = vi.fn();
+  window.webpackHotUpdate_N_E = originalHotUpdate;
+
+  const onRefreshUpdate = vi.fn();
+  const firstUnsubscribe = instrumentReactRefresh({ onRefresh: onRefreshUpdate });
+  const secondUnsubscribe = instrumentReactRefresh({ onRefresh: onRefreshUpdate });
+  await flushMicrotasks();
+
+  const wrappedHotUpdate = window.webpackHotUpdate_N_E;
+  expect(wrappedHotUpdate).not.toBe(originalHotUpdate);
+
+  firstUnsubscribe();
+  expect(window.webpackHotUpdate_N_E).toBe(wrappedHotUpdate);
+
+  secondUnsubscribe();
+  expect(window.webpackHotUpdate_N_E).toBe(originalHotUpdate);
+  delete window.webpackHotUpdate_N_E;
+});
+
+it("disposes a transport whose detection finishes after unsubscribe", async () => {
+  const originalHotUpdate = vi.fn();
+  window.webpackHotUpdate_N_E = originalHotUpdate;
+
+  const unsubscribe = instrumentReactRefresh({ onRefresh: vi.fn() });
+  expect(window.webpackHotUpdate_N_E).not.toBe(originalHotUpdate);
+  unsubscribe();
+  await flushMicrotasks();
+
+  expect(window.webpackHotUpdate_N_E).toBe(originalHotUpdate);
+  delete window.webpackHotUpdate_N_E;
+});
+
 it("shares pending file paths across roots in one refresh pass, then clears them", async () => {
   window.webpackHotUpdate_N_E = vi.fn();
 

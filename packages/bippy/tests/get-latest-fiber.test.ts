@@ -47,9 +47,11 @@ it("should return whichever of the pair started rendering last", () => {
 it("should find the fiber in a tracked fiber root when start times are missing", () => {
   const alternateFiber = createMockFiber();
   const fiber = createMockFiber({ alternate: alternateFiber });
+  alternateFiber.alternate = fiber;
   const rootFiber = createMockFiber({ child: fiber });
   _fiberRoots.add({ current: rootFiber });
   expect(getLatestFiber(fiber)).toBe(fiber);
+  expect(getLatestFiber(alternateFiber)).toBe(fiber);
 });
 
 it("should fall back to the given fiber when no root contains it", () => {

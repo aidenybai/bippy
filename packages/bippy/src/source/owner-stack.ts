@@ -90,26 +90,47 @@ export const getDefinitionFrameFromOwnedChild = (fiber: Fiber): StackFrame | nul
   return null;
 };
 
-const getCurrentDispatcher = (): null | React.RefObject<unknown> => {
+interface DispatcherRefContainer {
+  H?: unknown;
+  current?: unknown;
+}
+
+interface DispatcherSnapshot {
+  dispatcherRef: DispatcherRefContainer;
+  value: unknown;
+}
+
+const getDispatcherRefs = (): DispatcherRefContainer[] => {
   const rdtHook = getRDTHook();
+  const dispatcherRefs = new Set<DispatcherRefContainer>();
   for (const renderer of [...Array.from(_renderers), ...Array.from(rdtHook.renderers.values())]) {
     const currentDispatcherRef = renderer.currentDispatcherRef;
     if (currentDispatcherRef && typeof currentDispatcherRef === "object") {
-      return "H" in currentDispatcherRef ? currentDispatcherRef.H : currentDispatcherRef.current;
+      dispatcherRefs.add(currentDispatcherRef);
     }
   }
-  return null;
+  return Array.from(dispatcherRefs);
 };
 
-const setCurrentDispatcher = (value: null | React.RefObject<unknown>): void => {
-  for (const renderer of _renderers) {
-    const currentDispatcherRef = renderer.currentDispatcherRef;
-    if (currentDispatcherRef && typeof currentDispatcherRef === "object") {
-      if ("H" in currentDispatcherRef) {
-        currentDispatcherRef.H = value;
-      } else {
-        currentDispatcherRef.current = value;
-      }
+const clearCurrentDispatchers = (): DispatcherSnapshot[] => {
+  return getDispatcherRefs().map((dispatcherRef) => {
+    if ("H" in dispatcherRef) {
+      const value = dispatcherRef.H;
+      dispatcherRef.H = null;
+      return { dispatcherRef, value };
+    }
+    const value = dispatcherRef.current;
+    dispatcherRef.current = null;
+    return { dispatcherRef, value };
+  });
+};
+
+const restoreCurrentDispatchers = (dispatcherSnapshots: DispatcherSnapshot[]): void => {
+  for (const { dispatcherRef, value } of dispatcherSnapshots) {
+    if ("H" in dispatcherRef) {
+      dispatcherRef.H = value;
+    } else {
+      dispatcherRef.current = value;
     }
   }
 };
@@ -151,8 +172,7 @@ const describeNativeComponentFrame = (
   (Error as { prepareStackTrace?: typeof Error.prepareStackTrace }).prepareStackTrace = undefined;
   reEntry = true;
 
-  const previousDispatcher = getCurrentDispatcher();
-  setCurrentDispatcher(null);
+  const dispatcherSnapshots = clearCurrentDispatchers();
   const previousConsoleError = console.error;
   const previousConsoleWarn = console.warn;
   console.error = () => {};
@@ -340,7 +360,7 @@ const describeNativeComponentFrame = (
 
     Error.prepareStackTrace = previousPrepareStackTrace;
 
-    setCurrentDispatcher(previousDispatcher);
+    restoreCurrentDispatchers(dispatcherSnapshots);
     console.error = previousConsoleError;
     console.warn = previousConsoleWarn;
   }
@@ -460,14 +480,10 @@ export const getFallbackParentStack = (thisFiber: Fiber): string => {
  * @see https://github.com/facebook/react/blob/main/packages/react-devtools-shared/src/backend/shared/DevToolsOwnerStack.js#L12
  */
 export const formatOwnerStack = (stack: string): string => {
-  const prevPrepareStackTrace = Error.prepareStackTrace;
-  // HACK: V8 API allows undefined but bun-types declares it as non-optional
-  (Error as { prepareStackTrace?: typeof Error.prepareStackTrace }).prepareStackTrace = undefined;
   let formattedStack = stack;
   if (!formattedStack) {
     return "";
   }
-  Error.prepareStackTrace = prevPrepareStackTrace;
 
   if (formattedStack.startsWith("Error: react-stack-top-frame\n")) {
     // V8's default formatting prefixes with the error message which we

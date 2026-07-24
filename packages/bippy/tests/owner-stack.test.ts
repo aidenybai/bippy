@@ -21,6 +21,7 @@ import {
   getParentStack,
   hasDebugStack,
 } from "../src/source/owner-stack.js";
+import { getRDTHook } from "../src/rdt-hook.js";
 
 const createFakeFiber = (overrides: Record<string, unknown>): Fiber =>
   ({
@@ -72,6 +73,18 @@ describe("describeDebugInfoFrame", () => {
 describe("formatOwnerStack", () => {
   it("returns an empty string for an empty stack", () => {
     expect(formatOwnerStack("")).toBe("");
+  });
+
+  it("does not change the global stack formatter", () => {
+    const previousPrepareStackTrace = Error.prepareStackTrace;
+    const customPrepareStackTrace = () => "custom-stack";
+    Error.prepareStackTrace = customPrepareStackTrace;
+    try {
+      expect(formatOwnerStack("")).toBe("");
+      expect(Error.prepareStackTrace).toBe(customPrepareStackTrace);
+    } finally {
+      Error.prepareStackTrace = previousPrepareStackTrace;
+    }
   });
 
   it("strips the error prefix, the JSX frame, and internals below the bottom frame", () => {
@@ -142,6 +155,33 @@ describe("describeFiber built-in frames", () => {
 describe("describeFiber native component frames", () => {
   it("returns an empty string for a missing component", () => {
     expect(describeFiber(createFakeFiber({ tag: ClassComponentTag, type: null }), null)).toBe("");
+  });
+
+  it("clears and restores every renderer dispatcher independently", () => {
+    const firstDispatcher = {};
+    const secondDispatcher = {};
+    const firstDispatcherRef = { current: firstDispatcher };
+    const secondDispatcherRef = { H: secondDispatcher };
+    const firstRenderer = { currentDispatcherRef: firstDispatcherRef };
+    const secondRenderer = { currentDispatcherRef: secondDispatcherRef };
+    const rdtHook = getRDTHook();
+    _renderers.add(firstRenderer);
+    rdtHook.renderers.set(9_001, secondRenderer);
+    let dispatchersDuringRender: unknown[] = [];
+    const DispatcherProbe = (): null => {
+      dispatchersDuringRender = [firstDispatcherRef.current, secondDispatcherRef.H];
+      return null;
+    };
+
+    try {
+      describeFiber(createFakeFiber({ tag: FunctionComponentTag, type: DispatcherProbe }), null);
+      expect(dispatchersDuringRender).toEqual([null, null]);
+      expect(firstDispatcherRef.current).toBe(firstDispatcher);
+      expect(secondDispatcherRef.H).toBe(secondDispatcher);
+    } finally {
+      _renderers.delete(firstRenderer);
+      rdtHook.renderers.delete(9_001);
+    }
   });
 
   it("extracts the call site frame from a throwing function component", () => {

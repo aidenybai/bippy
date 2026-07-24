@@ -378,9 +378,10 @@ describe("traverseRenderedFibers", () => {
     expect(onRender.mock.calls.length).toBe(callCountAfterFirstCommit);
   });
 
-  it("currently throws when the root has no current fiber", () => {
+  it("should do nothing when the root has no current fiber", () => {
     const root: FiberRoot = { current: null };
     const onRender = vi.fn();
-    expect(() => traverseRenderedFibers(root, onRender)).toThrow(TypeError);
+    expect(() => traverseRenderedFibers(root, onRender)).not.toThrow();
+    expect(onRender).not.toHaveBeenCalled();
   });
 });

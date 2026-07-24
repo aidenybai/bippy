@@ -49,6 +49,7 @@ let currentFiber: Fiber | null = null;
 let currentHook: MemoizedState | null = null;
 let currentContextDependency: ContextDependency<unknown> | null = null;
 let currentThenableIndex = 0;
+let currentMemoCacheIndex = 0;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let currentThenableState: any[] | null = null;
 
@@ -282,16 +283,12 @@ const dispatcherUseMemoCache = (size: number): unknown[] => {
   )?.memoCache;
   if (memoCache === null || memoCache === undefined) return [];
 
-  let memoCacheSlots = memoCache.data[memoCache.index];
+  const memoCacheSlots = memoCache.data[currentMemoCacheIndex++];
   if (memoCacheSlots === undefined) {
-    memoCacheSlots = memoCache.data[memoCache.index] = Array.from(
-      { length: size },
-      () => REACT_MEMO_CACHE_SENTINEL,
-    );
+    return Array.from({ length: size }, () => REACT_MEMO_CACHE_SENTINEL);
   }
 
-  memoCache.index++;
-  return memoCacheSlots;
+  return memoCacheSlots.slice();
 };
 
 const dispatcherUseOptimistic = (passthrough: unknown): [unknown, () => void] => {
@@ -838,6 +835,7 @@ export const getFiberHooks = (fiber: Fiber): HooksTree => {
     : null;
   currentThenableState = Array.isArray(usedThenables) ? usedThenables : null;
   currentThenableIndex = 0;
+  currentMemoCacheIndex = 0;
 
   resolveContextDependency(fiber);
 
@@ -876,6 +874,7 @@ export const getFiberHooks = (fiber: Fiber): HooksTree => {
     currentContextDependency = null;
     currentThenableState = null;
     currentThenableIndex = 0;
+    currentMemoCacheIndex = 0;
     restoreContexts(contextMap);
     restoreConsole(originalConsoleMethods);
   }

@@ -13,21 +13,10 @@ export interface FiberVizEdge {
   kind: "child" | "sibling" | "return";
 }
 
-export type FiberVizMode =
-  | "elements"
-  | "tree"
-  | "pointers"
-  | "traversal"
-  | "alternate"
-  | "rerender"
-  | "commit"
-  | "instrument";
-
 export const FIBER_NODE_WIDTH_PX = 118;
 export const FIBER_NODE_HEIGHT_PX = 44;
 export const FIBER_CANVAS_WIDTH_PX = 480;
 export const FIBER_CANVAS_HEIGHT_PX = 430;
-export const ALTERNATE_GHOST_OFFSET_PX = 9;
 export const TRAVERSAL_TICK_MS = 650;
 export const TRAVERSAL_PAUSE_TICKS = 2;
 export const LIVE_RENDER_STEP_MS = 420;
@@ -65,9 +54,7 @@ export const TRAVERSAL_ORDER: string[] = [
   "button-text",
 ];
 
-export const RERENDERED_NODE_IDS: string[] = ["counter", "paragraph", "count-text"];
 export const BAILED_OUT_NODE_IDS: string[] = ["root", "app"];
-export const MUTATED_HOST_NODE_IDS: string[] = ["paragraph", "count-text"];
 
 export const RETURN_EDGE_PATHS: Record<string, string> = {
   "button-counter": "M 342 254 C 342 226, 332 196, 303 190",

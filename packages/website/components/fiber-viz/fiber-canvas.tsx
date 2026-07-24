@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import {
-  ALTERNATE_GHOST_OFFSET_PX,
   BAILED_OUT_NODE_IDS,
   FIBER_CANVAS_HEIGHT_PX,
   FIBER_CANVAS_WIDTH_PX,
@@ -12,14 +11,11 @@ import {
   LIVE_COMMIT_DURATION_MS,
   LIVE_RENDER_SEQUENCE,
   LIVE_RENDER_STEP_MS,
-  MUTATED_HOST_NODE_IDS,
-  RERENDERED_NODE_IDS,
   RETURN_EDGE_PATHS,
   TRAVERSAL_ORDER,
   TRAVERSAL_PAUSE_TICKS,
   TRAVERSAL_TICK_MS,
   type FiberVizEdge,
-  type FiberVizMode,
   type FiberVizNode,
 } from "./constants";
 
@@ -61,23 +57,6 @@ const EDGE_KIND_COLORS: Record<FiberVizEdge["kind"], string> = {
   child: "var(--faq-icon)",
   sibling: "var(--link)",
   return: "var(--faq-icon)",
-};
-
-const PHASE_LABELS: Record<FiberVizMode, string> = {
-  elements: "phase: idle (just descriptions)",
-  tree: "phase: render (mount)",
-  pointers: "phase: render (mount)",
-  traversal: "render phase",
-  alternate: "current ⇄ workInProgress",
-  rerender: "phase: render (update)",
-  commit: "phase: commit",
-  instrument: "phase: commit → bippy",
-};
-
-const isEdgeVisible = (edge: FiberVizEdge, mode: FiberVizMode): boolean => {
-  if (mode === "elements") return false;
-  if (edge.kind === "child") return true;
-  return mode === "pointers" || mode === "traversal";
 };
 
 type LiveCyclePhase = "idle" | "render" | "commit";
@@ -219,29 +198,21 @@ const FiberNodeBox = ({
   </motion.g>
 );
 
-interface FiberCanvasProps {
-  mode: FiberVizMode;
-}
-
-export const FiberCanvas = ({ mode }: FiberCanvasProps) => {
+export const FiberCanvas = () => {
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const liveCycle = useLiveRenderCycle();
   const isLiveCycleActive = liveCycle.phase !== "idle";
 
-  const traversalTick = useTraversalIndex(mode === "traversal" && !isLiveCycleActive);
+  const traversalTick = useTraversalIndex(!isLiveCycleActive);
   const traversalNodeId =
-    mode === "traversal" && !isLiveCycleActive && traversalTick < TRAVERSAL_ORDER.length
+    !isLiveCycleActive && traversalTick < TRAVERSAL_ORDER.length
       ? TRAVERSAL_ORDER[traversalTick]
       : null;
   const cursorNodeId = liveCycle.renderingNodeId ?? traversalNodeId;
   const cursorNode = cursorNodeId ? getNode(cursorNodeId) : null;
 
-  const showsBanner = mode === "commit" || mode === "instrument" || liveCycle.phase === "commit";
-  const showsBailouts = mode === "rerender" || liveCycle.phase === "render";
-
-  const visibleEdges = FIBER_VIZ_EDGES.filter(
-    (edge) => isEdgeVisible(edge, mode) || edge.from === hoveredNodeId,
-  );
+  const showsBanner = liveCycle.phase === "commit";
+  const showsBailouts = liveCycle.phase === "render";
 
   return (
     <div className="flex flex-col gap-2">
@@ -276,60 +247,34 @@ export const FiberCanvas = ({ mode }: FiberCanvasProps) => {
           </marker>
         </defs>
 
-        {mode === "alternate" && (
-          <motion.g
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4 }}
-          >
-            {FIBER_VIZ_NODES.map((vizNode) => (
-              <rect
-                key={`ghost-${vizNode.id}`}
-                x={vizNode.x - FIBER_NODE_WIDTH_PX / 2 + ALTERNATE_GHOST_OFFSET_PX}
-                y={vizNode.y - FIBER_NODE_HEIGHT_PX / 2 - ALTERNATE_GHOST_OFFSET_PX}
-                width={FIBER_NODE_WIDTH_PX}
-                height={FIBER_NODE_HEIGHT_PX}
-                rx={10}
-                fill="none"
-                stroke="var(--faq-icon)"
-                strokeDasharray="3 3"
-                strokeWidth={1}
-              />
-            ))}
-          </motion.g>
-        )}
-
-        <AnimatePresence>
-          {visibleEdges.map((edge) => {
-            const isFromHoveredNode = edge.from === hoveredNodeId;
-            const edgeOpacity = hoveredNodeId
-              ? isFromHoveredNode
-                ? 1
-                : 0.2
-              : edge.kind === "return"
-                ? 0.8
-                : 1;
-            return (
-              <motion.path
-                key={edge.id}
-                d={buildEdgePath(edge)}
-                fill="none"
-                stroke={isFromHoveredNode ? "var(--link)" : EDGE_KIND_COLORS[edge.kind]}
-                strokeWidth={isFromHoveredNode ? 1.8 : edge.kind === "sibling" ? 1.4 : 1.2}
-                strokeDasharray={edge.kind === "return" ? "4 4" : undefined}
-                markerEnd={
-                  edge.kind === "sibling" || isFromHoveredNode
-                    ? "url(#fiber-arrow-sibling)"
-                    : "url(#fiber-arrow-child)"
-                }
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: edgeOpacity }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.4 }}
-              />
-            );
-          })}
-        </AnimatePresence>
+        {FIBER_VIZ_EDGES.map((edge) => {
+          const isFromHoveredNode = edge.from === hoveredNodeId;
+          const edgeOpacity = hoveredNodeId
+            ? isFromHoveredNode
+              ? 1
+              : 0.2
+            : edge.kind === "return"
+              ? 0.8
+              : 1;
+          return (
+            <motion.path
+              key={edge.id}
+              d={buildEdgePath(edge)}
+              fill="none"
+              stroke={isFromHoveredNode ? "var(--link)" : EDGE_KIND_COLORS[edge.kind]}
+              strokeWidth={isFromHoveredNode ? 1.8 : edge.kind === "sibling" ? 1.4 : 1.2}
+              strokeDasharray={edge.kind === "return" ? "4 4" : undefined}
+              markerEnd={
+                edge.kind === "sibling" || isFromHoveredNode
+                  ? "url(#fiber-arrow-sibling)"
+                  : "url(#fiber-arrow-child)"
+              }
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: edgeOpacity }}
+              transition={{ duration: 0.4 }}
+            />
+          );
+        })}
 
         {hoveredNodeId &&
           FIBER_VIZ_EDGES.filter((edge) => edge.from === hoveredNodeId).map((edge) => {
@@ -353,14 +298,8 @@ export const FiberCanvas = ({ mode }: FiberCanvasProps) => {
             );
           })}
 
-        {FIBER_VIZ_NODES.map((vizNode, nodeIndex) => {
+        {FIBER_VIZ_NODES.map((vizNode) => {
           const isBailedOut = showsBailouts && BAILED_OUT_NODE_IDS.includes(vizNode.id);
-          const isModeHighlighted =
-            (mode === "rerender" || mode === "instrument") &&
-            RERENDERED_NODE_IDS.includes(vizNode.id);
-          const isModeMutated =
-            (mode === "commit" || mode === "instrument") &&
-            MUTATED_HOST_NODE_IDS.includes(vizNode.id);
           const isLiveHighlighted = liveCycle.renderedNodeIds.includes(vizNode.id);
           const label =
             vizNode.id === "count-text" ? `"${liveCycle.displayedCount}"` : vizNode.label;
@@ -372,15 +311,11 @@ export const FiberCanvas = ({ mode }: FiberCanvasProps) => {
               label={label}
               tag={isBailedOut ? "bailout" : vizNode.tag}
               isHighlighted={
-                isModeHighlighted ||
-                isModeMutated ||
-                isLiveHighlighted ||
-                vizNode.id === cursorNodeId ||
-                vizNode.id === hoveredNodeId
+                isLiveHighlighted || vizNode.id === cursorNodeId || vizNode.id === hoveredNodeId
               }
               isDimmed={isBailedOut}
               isClickable={vizNode.id === "button"}
-              appearDelaySeconds={mode === "elements" ? nodeIndex * 0.07 : 0}
+              appearDelaySeconds={0}
               onHoverChange={setHoveredNodeId}
               onNodeClick={vizNode.id === "button" ? liveCycle.triggerUpdate : undefined}
             />
@@ -414,32 +349,21 @@ export const FiberCanvas = ({ mode }: FiberCanvasProps) => {
             <rect
               x={10}
               y={FIBER_CANVAS_HEIGHT_PX - 34}
-              width={mode === "instrument" ? 300 : 268}
+              width={268}
               height={24}
               rx={7}
               fill="var(--button)"
               stroke="var(--link)"
               strokeWidth={1}
             />
-            {mode === "instrument" && (
-              <image
-                href="/bippy.png"
-                x={16}
-                y={FIBER_CANVAS_HEIGHT_PX - 31}
-                width={18}
-                height={18}
-              />
-            )}
             <text
-              x={mode === "instrument" ? 40 : 20}
+              x={20}
               y={FIBER_CANVAS_HEIGHT_PX - 18}
               fontSize={10}
               fill="var(--foreground)"
               fontFamily="var(--font-mono-value)"
             >
-              {mode === "instrument"
-                ? "bippy ← onCommitFiberRoot(rendererID, root)"
-                : "onCommitFiberRoot(rendererID, root)"}
+              onCommitFiberRoot(rendererID, root)
             </text>
           </motion.g>
         )}
@@ -451,7 +375,7 @@ export const FiberCanvas = ({ mode }: FiberCanvasProps) => {
             ? "phase: render (update)"
             : liveCycle.phase === "commit"
               ? "phase: commit"
-              : PHASE_LABELS[mode]}
+              : "render phase"}
         </span>
         {liveCycle.phase === "render" ? (
           <span className="truncate text-right font-mono text-[10px] text-link">
@@ -459,33 +383,9 @@ export const FiberCanvas = ({ mode }: FiberCanvasProps) => {
           </span>
         ) : liveCycle.phase === "commit" ? (
           <span className="truncate text-right font-mono text-[10px] text-link">dom mutated</span>
-        ) : mode === "pointers" ? (
-          <span className="flex items-center gap-3 font-mono text-[10px] text-soft-foreground">
-            <span className="flex items-center gap-1">
-              <span className="inline-block h-px w-4 bg-faq-icon" /> child
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="inline-block h-px w-4 bg-link" /> sibling
-            </span>
-            <span className="flex items-center gap-1">
-              <span
-                className="inline-block h-px w-4"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(to right, var(--faq-icon) 50%, transparent 50%)",
-                  backgroundSize: "6px 1px",
-                }}
-              />{" "}
-              return
-            </span>
-          </span>
-        ) : mode === "traversal" ? (
+        ) : (
           <span className="truncate text-right font-mono text-[10px] text-link">
             {cursorNode ? `beginWork(${cursorNode.label})` : "yield"}
-          </span>
-        ) : (
-          <span className="truncate text-right font-mono text-[10px] text-faq-icon">
-            hover fibers · click +1
           </span>
         )}
       </div>

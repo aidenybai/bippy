@@ -582,7 +582,7 @@ export const getLatestFiber = (fiber: Fiber): Fiber => {
   }
   for (const root of _fiberRoots) {
     const latestFiber = traverseFiber(root.current, (innerFiber) => {
-      if (innerFiber === fiber) return true;
+      if (innerFiber === fiber || innerFiber === alternate) return true;
     });
     if (latestFiber) return latestFiber;
   }
@@ -798,14 +798,11 @@ const unmountFiberChildrenRecursively = (onRender: RenderHandler, fiber: Fiber):
   }
 };
 
-let commitId = 0;
-const rootInstanceMap = new WeakMap<
-  FiberRoot,
-  {
-    id: number;
-    prevFiber: Fiber | null;
-  }
->();
+interface RootInstance {
+  prevFiber: Fiber | null;
+}
+
+const rootInstanceMap = new WeakMap<FiberRoot, RootInstance>();
 
 /**
  * Creates a fiber visitor function. Must pass a fiber root and a render handler.
@@ -820,14 +817,13 @@ export const traverseRenderedFibers = (root: FiberRoot, onRender: RenderHandler)
   let rootInstance = rootInstanceMap.get(root);
 
   if (!rootInstance) {
-    rootInstance = { id: commitId++, prevFiber: null };
+    rootInstance = { prevFiber: null };
     rootInstanceMap.set(root, rootInstance);
   }
 
   const { prevFiber } = rootInstance;
-  // if fiberRoot don't have current instance, means it's been unmounted
   if (!fiber) {
-    unmountFiber(onRender, fiber);
+    return;
   } else if (prevFiber !== null) {
     const wasMounted =
       prevFiber &&

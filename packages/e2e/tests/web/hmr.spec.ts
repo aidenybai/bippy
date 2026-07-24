@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 
 import { expect, test } from "@playwright/test";
 
@@ -50,7 +50,7 @@ test.describe("bippy/react-refresh", () => {
 
       await waitForRefreshUpdateMatching(page, { updatedName: "HmrTarget" });
     } finally {
-      writeFileSync(targetFilePath, originalSource);
+      await saveAndAwaitText(page, targetFilePath, originalSource, "hmr-target", currentMarker);
     }
   });
 
@@ -80,7 +80,7 @@ test.describe("bippy/react-refresh", () => {
       );
       expect(validUpdateCount).toBeGreaterThan(0);
     } finally {
-      writeFileSync(targetFilePath, originalSource);
+      await saveAndAwaitText(page, targetFilePath, originalSource, "hmr-target", currentMarker);
     }
   });
 
@@ -115,7 +115,7 @@ test.describe("bippy/react-refresh", () => {
         { timeout: HMR_UPDATE_TIMEOUT_MS },
       );
     } finally {
-      writeFileSync(targetFilePath, originalSource);
+      await saveAndAwaitText(page, targetFilePath, originalSource, "hmr-target", currentMarker);
     }
   });
 
@@ -155,7 +155,7 @@ test.describe("bippy/react-refresh", () => {
         }),
       ).toBeGreaterThan(0);
     } finally {
-      writeFileSync(targetFilePath, originalSource);
+      await saveAndAwaitText(page, targetFilePath, originalSource, "hmr-target", currentMarker);
     }
   });
 
@@ -195,7 +195,7 @@ test.describe("bippy/react-refresh", () => {
       });
       expect(updateCountAfterSecondSave).toBeGreaterThan(updateCountAfterFirstSave);
     } finally {
-      writeFileSync(targetFilePath, originalSource);
+      await saveAndAwaitText(page, targetFilePath, originalSource, "hmr-target", currentMarker);
     }
   });
 });
