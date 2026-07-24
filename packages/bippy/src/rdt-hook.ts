@@ -256,7 +256,8 @@ export const getRDTHook = (onActive?: () => unknown): ReactDevToolsGlobalHook =>
   }
 
   patchRDTHook(onActive);
-  return rdtHook;
+  const currentRDTHook = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+  return isRDTHook(currentRDTHook) ? currentRDTHook : rdtHook;
 };
 
 export const isClientEnvironment = (): boolean => {

@@ -5,13 +5,16 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const BIPPY_COMMAND = "npm install bippy";
-const BIPPY_AGENT_PROMPT = "npm install bippy, then fetch bippy.dev/llms.txt for more info";
+const BIPPY_AGENT_DISPLAY_PROMPT = "npm install bippy, then fetch bippy.dev/llms.txt for more info";
+const BIPPY_AGENT_CLIPBOARD_PROMPT =
+  "Install bippy (must be imported before React) and set up instrument() to hook into React DevTools internals. Use traverseRenderedFibers to detect re-renders, traverseFiber to walk the fiber tree, and traverseProps/traverseState/traverseContexts to inspect component data. See https://bippy.dev for the full API.";
 
 export const CommandDisplay = () => {
   const [activeTab, setActiveTab] = useState("command");
   const [copyStatus, setCopyStatus] = useState("idle");
   const resetCopyStatusTimeoutRef = useRef<number | null>(null);
-  const commandText = activeTab === "command" ? BIPPY_COMMAND : BIPPY_AGENT_PROMPT;
+  const commandText = activeTab === "command" ? BIPPY_COMMAND : BIPPY_AGENT_DISPLAY_PROMPT;
+  const clipboardText = activeTab === "command" ? BIPPY_COMMAND : BIPPY_AGENT_CLIPBOARD_PROMPT;
   const didCopy = copyStatus === "copied";
 
   useEffect(() => {
@@ -32,7 +35,7 @@ export const CommandDisplay = () => {
       window.clearTimeout(resetCopyStatusTimeoutRef.current);
     }
     try {
-      await navigator.clipboard.writeText(commandText);
+      await navigator.clipboard.writeText(clipboardText);
       setCopyStatus("copied");
     } catch {
       setCopyStatus("failed");
