@@ -1,13 +1,17 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const isCI = Boolean(process.env.CI);
+
 export default defineConfig({
   testDir: "./tests/web",
   fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  forbidOnly: isCI,
+  retries: isCI ? 2 : 1,
+  workers: isCI ? 4 : undefined,
   reporter: "html",
   use: {
+    // Use Chrome preinstalled on GitHub Actions runners.
+    channel: isCI ? "chrome" : undefined,
     trace: "on-first-retry",
   },
   projects: [
