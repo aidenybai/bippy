@@ -31,7 +31,7 @@ export type {
 } from "./generated/react-work-tags.js";
 
 // HACK: React does not export Fiber flags. Keep these values aligned with ReactFiberFlags.
-export const ReactFiberFlags = Object.freeze({
+export const ReactFiberFlags = {
   ChildDeletion: 0b10000,
   Cloned: 0b1000,
   ContentReset: 0b100000,
@@ -41,12 +41,12 @@ export const ReactFiberFlags = Object.freeze({
   Snapshot: 0b10000000000,
   Update: 0b100,
   Visibility: 0b10000000000000,
-});
+};
 
-export const ReactBuildType = Object.freeze({
+export const ReactBuildType = {
   Development: 1,
   Production: 0,
-});
+};
 
 export const MutationMask =
   ReactFiberFlags.Placement |
