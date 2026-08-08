@@ -249,6 +249,9 @@ jobs:
           profile: pixel_7
           avd-name: Pixel_7_API_34
           script: |
+            adb shell input keyevent KEYCODE_WAKEUP
+            adb shell wm dismiss-keyguard
+            adb shell input keyevent KEYCODE_HOME
             adb reverse tcp:8081 tcp:8081
             cd packages/e2e && npx detox test --configuration android.emu.debug --record-logs failing
       - name: Upload Android Metro log
