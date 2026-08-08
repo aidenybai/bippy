@@ -1,13 +1,9 @@
 import "../src/index.js"; // KEEP THIS LINE ON TOP
 
-import { expect, it, vi } from "vitest";
-import {
-  FunctionComponentTag,
-  overrideContext,
-  overrideHookState,
-  overrideProps,
-} from "../src/index.js";
+import { expect, it, vi } from "vite-plus/test";
+import { overrideContext, overrideHookState, overrideProps } from "../src/index.js";
 import type { Fiber, ReactDevToolsGlobalHook, ReactRenderer } from "../src/types.js";
+import { latestReactWorkTags } from "./react-work-tags.js";
 
 interface MockFiberOverrides {
   alternate?: Fiber | null;
@@ -27,7 +23,7 @@ const createMockFiber = (overrides: MockFiberOverrides = {}): Fiber =>
     return: null,
     sibling: null,
     stateNode: null,
-    tag: FunctionComponentTag,
+    tag: latestReactWorkTags.FunctionComponent,
     type: () => null,
     ...overrides,
   }) as unknown as Fiber;

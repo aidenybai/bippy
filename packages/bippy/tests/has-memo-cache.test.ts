@@ -1,6 +1,7 @@
-import { expect, it } from "vitest";
-import { FunctionComponentTag, hasMemoCache } from "../src/index.js";
+import { expect, it } from "vite-plus/test";
+import { hasMemoCache } from "../src/index.js";
 import type { Fiber } from "../src/types.js";
+import { latestReactWorkTags } from "./react-work-tags.js";
 
 const createMockFiber = (updateQueue: unknown): Fiber =>
   ({
@@ -13,7 +14,7 @@ const createMockFiber = (updateQueue: unknown): Fiber =>
     return: null,
     sibling: null,
     stateNode: null,
-    tag: FunctionComponentTag,
+    tag: latestReactWorkTags.FunctionComponent,
     type: null,
     updateQueue,
   }) as unknown as Fiber;

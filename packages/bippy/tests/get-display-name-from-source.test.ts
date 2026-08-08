@@ -1,9 +1,9 @@
 import { encode } from "@jridgewell/sourcemap-codec";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import type { Fiber } from "../src/types.js";
 import { getDisplayNameFromSource } from "../src/source/get-display-name-from-source.js";
+import { latestReactWorkTags } from "./react-work-tags.js";
 
-const FUNCTION_COMPONENT_TAG = 0;
 const UNKNOWN_TAG = 999;
 // HACK: mappings cover every plausible generated line so the real (instrumented)
 // stack line of the throwing component always resolves to the same source line
@@ -75,7 +75,7 @@ describe("getDisplayNameFromSource", () => {
 
   it("falls back when no source map can be fetched", async () => {
     const fiber = createFakeFiber(
-      FUNCTION_COMPONENT_TAG,
+      latestReactWorkTags.FunctionComponent,
       createThrowingComponent("NoMapComponent"),
     );
     const result = await getDisplayNameFromSource(fiber, false, failingFetchFn);
@@ -88,7 +88,7 @@ describe("getDisplayNameFromSource", () => {
       mappedLineCount: 1,
     });
     const fiber = createFakeFiber(
-      FUNCTION_COMPONENT_TAG,
+      latestReactWorkTags.FunctionComponent,
       createThrowingComponent("UnmappedComponent"),
     );
     const result = await getDisplayNameFromSource(fiber, false, createSourceMapFetchFn(rawMap));
@@ -98,7 +98,7 @@ describe("getDisplayNameFromSource", () => {
   it("falls back when the source map has no sources content", async () => {
     const rawMap = createFixedPointRawMap(1, {});
     const fiber = createFakeFiber(
-      FUNCTION_COMPONENT_TAG,
+      latestReactWorkTags.FunctionComponent,
       createThrowingComponent("NoContentComponent"),
     );
     const result = await getDisplayNameFromSource(fiber, false, createSourceMapFetchFn(rawMap));
@@ -108,7 +108,7 @@ describe("getDisplayNameFromSource", () => {
   it("falls back when the sources content entry is empty", async () => {
     const rawMap = createFixedPointRawMap(1, { sourcesContent: [""] });
     const fiber = createFakeFiber(
-      FUNCTION_COMPONENT_TAG,
+      latestReactWorkTags.FunctionComponent,
       createThrowingComponent("EmptyContentComponent"),
     );
     const result = await getDisplayNameFromSource(fiber, false, createSourceMapFetchFn(rawMap));
@@ -120,7 +120,7 @@ describe("getDisplayNameFromSource", () => {
       sourceLines: ["const short = 1;", "const file = 2;"],
     });
     const fiber = createFakeFiber(
-      FUNCTION_COMPONENT_TAG,
+      latestReactWorkTags.FunctionComponent,
       createThrowingComponent("OutOfBoundsComponent"),
     );
     const result = await getDisplayNameFromSource(fiber, false, createSourceMapFetchFn(rawMap));
@@ -137,7 +137,10 @@ describe("getDisplayNameFromSource", () => {
         "};",
       ],
     });
-    const fiber = createFakeFiber(FUNCTION_COMPONENT_TAG, createThrowingComponent("MinifiedArrow"));
+    const fiber = createFakeFiber(
+      latestReactWorkTags.FunctionComponent,
+      createThrowingComponent("MinifiedArrow"),
+    );
     const result = await getDisplayNameFromSource(fiber, false, createSourceMapFetchFn(rawMap));
     expect(result).toBe("FancyButton");
   });
@@ -147,7 +150,7 @@ describe("getDisplayNameFromSource", () => {
       sourceLines: ["function OrderList() {", "  return null;", "}"],
     });
     const fiber = createFakeFiber(
-      FUNCTION_COMPONENT_TAG,
+      latestReactWorkTags.FunctionComponent,
       createThrowingComponent("MinifiedFunction"),
     );
     const result = await getDisplayNameFromSource(fiber, false, createSourceMapFetchFn(rawMap));
@@ -158,7 +161,10 @@ describe("getDisplayNameFromSource", () => {
     const rawMap = createFixedPointRawMap(1, {
       sourceLines: ["export class ProfileCard {", "  render() { return null; }", "}"],
     });
-    const fiber = createFakeFiber(FUNCTION_COMPONENT_TAG, createThrowingComponent("MinifiedClass"));
+    const fiber = createFakeFiber(
+      latestReactWorkTags.FunctionComponent,
+      createThrowingComponent("MinifiedClass"),
+    );
     const result = await getDisplayNameFromSource(fiber, false, createSourceMapFetchFn(rawMap));
     expect(result).toBe("ProfileCard");
   });
@@ -168,7 +174,7 @@ describe("getDisplayNameFromSource", () => {
       sourceLines: ["// nothing declarative here", "42;"],
     });
     const fiber = createFakeFiber(
-      FUNCTION_COMPONENT_TAG,
+      latestReactWorkTags.FunctionComponent,
       createThrowingComponent("NoPatternComponent"),
     );
     const result = await getDisplayNameFromSource(fiber, false, createSourceMapFetchFn(rawMap));

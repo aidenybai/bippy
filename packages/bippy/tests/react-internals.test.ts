@@ -1,23 +1,85 @@
-import { expect, it } from "vitest";
+import { expect, expectTypeOf, it } from "vite-plus/test";
 import {
+  getReactWorkTagsForFiber,
+  getReactWorkTagsForRenderer,
   getReactWorkTags,
-  HostComponentTag,
-  HostHoistableTag,
-  HostSingletonTag,
-  HostTextTag,
-  ReactWorkTags,
+  setReactWorkTagsForFiber,
 } from "../src/react-internals.js";
+import type { Fiber, ReactRenderer } from "../src/types.js";
 
 it("selects React work tags by their version baseline", () => {
-  expect(getReactWorkTags("17.0.1")).toBe(ReactWorkTags["17.0.1"]);
-  expect(getReactWorkTags("17.0.2")).toBe(ReactWorkTags["17.0.2"]);
-  expect(getReactWorkTags("18.3.1")).toBe(ReactWorkTags["17.0.2"]);
-  expect(getReactWorkTags("19.2.0-canary")).toBe(ReactWorkTags["17.0.2"]);
+  const react16WorkTags = getReactWorkTags("16.0.0");
+  const react164WorkTags = getReactWorkTags("16.4.3-alpha");
+  const react166WorkTags = getReactWorkTags("16.6.0-beta.0");
+  const react17AlphaWorkTags = getReactWorkTags("17.0.0-alpha");
+  const latestWorkTags = getReactWorkTags("17.0.2");
+
+  expect(getReactWorkTags("16.4.2")).toBe(react16WorkTags);
+  expect(getReactWorkTags("16.6.0-alpha")).toBe(react164WorkTags);
+  expect(getReactWorkTags("16.6.0-beta.0")).toBe(react166WorkTags);
+  expect(getReactWorkTags("17.0.1")).toBe(react17AlphaWorkTags);
+  expect(getReactWorkTags("17.0.1+build.1")).toBe(react17AlphaWorkTags);
+  expect(getReactWorkTags("17.0.2-rc.0")).toBe(latestWorkTags);
+  expect(getReactWorkTags("18.3.1")).toBe(latestWorkTags);
+  expect(getReactWorkTags("19.2.0-canary")).toBe(latestWorkTags);
+  expect(getReactWorkTags("invalid")).toBe(latestWorkTags);
 });
 
-it("derives public host tags from the React 17.0.2 baseline", () => {
-  expect(HostComponentTag).toBe(ReactWorkTags["17.0.2"].HostComponent);
-  expect(HostTextTag).toBe(ReactWorkTags["17.0.2"].HostText);
-  expect(HostHoistableTag).toBe(ReactWorkTags["17.0.2"].HostHoistable);
-  expect(HostSingletonTag).toBe(ReactWorkTags["17.0.2"].HostSingleton);
+it("preserves AOT literal types for known React work-tag baselines", () => {
+  const dynamicVersion: string = "17.0.2";
+  expectTypeOf(getReactWorkTags("17.0.2").HostRoot).toEqualTypeOf<3>();
+  expectTypeOf(getReactWorkTags(dynamicVersion).HostRoot).toEqualTypeOf<number>();
+});
+
+it("prefers the renderer reconciler version", () => {
+  const rendererVersion: ReactRenderer = {
+    bundleType: 1,
+    rendererPackageName: "test-renderer",
+    version: "17.0.1",
+  };
+  const reconcilerVersion: ReactRenderer = {
+    bundleType: 1,
+    reconcilerVersion: "19.2.0",
+    rendererPackageName: "test-renderer",
+    version: "17.0.1",
+  };
+
+  expect(getReactWorkTagsForRenderer(rendererVersion)).toBe(getReactWorkTags("17.0.0-alpha"));
+  expect(getReactWorkTagsForRenderer(reconcilerVersion)).toBe(getReactWorkTags("17.0.2"));
+  expect(getReactWorkTagsForRenderer({ ...rendererVersion, reconcilerVersion: "not-semver" })).toBe(
+    getReactWorkTags("17.0.0-alpha"),
+  );
+});
+
+it("retains old renderer work tags after a Fiber is detached", () => {
+  const rootFiber: Fiber = {
+    alternate: null,
+    child: null,
+    deletions: null,
+    dependencies: null,
+    memoizedProps: {},
+    memoizedState: null,
+    pendingProps: {},
+    return: null,
+    sibling: null,
+    stateNode: null,
+    tag: getReactWorkTags("17.0.0-alpha").HostRoot,
+    updateQueue: null,
+  };
+  const childFiber: Fiber = {
+    ...rootFiber,
+    return: rootFiber,
+    tag: getReactWorkTags("17.0.0-alpha").FunctionComponent,
+  };
+  rootFiber.child = childFiber;
+  const renderer: ReactRenderer = {
+    bundleType: 1,
+    rendererPackageName: "react-17-renderer",
+    version: "17.0.1",
+  };
+
+  setReactWorkTagsForFiber(rootFiber, renderer);
+  expect(getReactWorkTagsForFiber(childFiber)).toBe(getReactWorkTags("17.0.0-alpha"));
+  childFiber.return = null;
+  expect(getReactWorkTagsForFiber(childFiber)).toBe(getReactWorkTags("17.0.0-alpha"));
 });

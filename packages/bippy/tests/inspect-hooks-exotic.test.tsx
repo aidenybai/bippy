@@ -1,16 +1,14 @@
 import "../src/index.js"; // KEEP THIS LINE ON TOP
 
-import { beforeAll, describe, expect, it } from "vitest";
+/* eslint-disable unicorn/no-thenable -- Thenables are the behavior under test. */
+
+import { beforeAll, describe, expect, it } from "vite-plus/test";
 import type { Fiber } from "../src/types.js";
 import { getRDTHook, _renderers } from "../src/index.js";
 import { getFiberHooks, type HooksNode } from "../src/source/inspect-hooks.js";
+import { latestReactWorkTags } from "./react-work-tags.js";
 import React from "react";
 import { render } from "@testing-library/react";
-
-const FUNCTION_COMPONENT_TAG = 0;
-const CONTEXT_PROVIDER_TAG = 10;
-const FORWARD_REF_TAG = 11;
-const HOST_COMPONENT_TAG = 5;
 
 interface ActiveDispatcher {
   [hookName: string]: (...args: unknown[]) => unknown;
@@ -45,7 +43,7 @@ const createInspectableFiber = (
   dependencyFields: Record<string, unknown> = { dependencies: null },
 ): Fiber => {
   const fiber: Record<string, unknown> = {
-    tag: shape.tag ?? FUNCTION_COMPONENT_TAG,
+    tag: shape.tag ?? latestReactWorkTags.FunctionComponent,
     type: shape.type,
     elementType: "elementType" in shape ? shape.elementType : shape.type,
     memoizedState: shape.memoizedState ?? null,
@@ -120,7 +118,7 @@ describe("use() inspection", () => {
     };
     const fiber = createInspectableFiber({ type: UseRejectedComponent });
     expect(() => getFiberHooks(fiber)).toThrowError(
-      expect.objectContaining({ name: "ReactDebugToolsRenderError" }),
+      expect.objectContaining({ name: "BippyHookRenderError" }),
     );
   });
 
@@ -148,7 +146,7 @@ describe("use() inspection", () => {
     };
     const fiber = createInspectableFiber({ type: UseNumberComponent });
     expect(() => getFiberHooks(fiber)).toThrowError(
-      expect.objectContaining({ name: "ReactDebugToolsRenderError" }),
+      expect.objectContaining({ name: "BippyHookRenderError" }),
     );
   });
 
@@ -162,7 +160,7 @@ describe("use() inspection", () => {
     };
     const fiber = createInspectableFiber({ type: UseContextLikeComponent });
     expect(() => getFiberHooks(fiber)).toThrowError(
-      expect.objectContaining({ name: "ReactDebugToolsRenderError" }),
+      expect.objectContaining({ name: "BippyHookRenderError" }),
     );
   });
 
@@ -238,7 +236,7 @@ describe("context dependency handling", () => {
     };
     const fiber = createInspectableFiber({ type: MismatchedContextComponent });
     expect(() => getFiberHooks(fiber)).toThrowError(
-      expect.objectContaining({ name: "ReactDebugToolsRenderError" }),
+      expect.objectContaining({ name: "BippyHookRenderError" }),
     );
   });
 
@@ -247,23 +245,23 @@ describe("context dependency handling", () => {
     const LegacyWrappedContext = React.createContext("default-b");
 
     const duplicateProviderFiber = createInspectableFiber({
-      tag: CONTEXT_PROVIDER_TAG,
+      tag: latestReactWorkTags.ContextProvider,
       type: ProvidedContext,
       memoizedProps: { value: "shadowed" },
     });
     const legacyProviderFiber = createInspectableFiber({
-      tag: CONTEXT_PROVIDER_TAG,
+      tag: latestReactWorkTags.ContextProvider,
       type: { _context: LegacyWrappedContext },
       memoizedProps: { value: "provided-b" },
       returnFiber: duplicateProviderFiber,
     });
     const hostFiber = createInspectableFiber({
-      tag: HOST_COMPONENT_TAG,
+      tag: latestReactWorkTags.HostComponent,
       type: "div",
       returnFiber: legacyProviderFiber,
     });
     const providerFiber = createInspectableFiber({
-      tag: CONTEXT_PROVIDER_TAG,
+      tag: latestReactWorkTags.ContextProvider,
       type: ProvidedContext,
       memoizedProps: { value: "provided-a" },
       returnFiber: hostFiber,
@@ -316,7 +314,7 @@ describe("useActionState inspection with committed thenables", () => {
       memoizedState: createHookChain([rejectedThenable, null, null]),
     });
     expect(() => getFiberHooks(fiber)).toThrowError(
-      expect.objectContaining({ name: "ReactDebugToolsRenderError" }),
+      expect.objectContaining({ name: "BippyHookRenderError" }),
     );
   });
 
@@ -341,7 +339,7 @@ describe("forwardRef and default props", () => {
       defaultProps: { greeting: "hello", explicit: "ignored" },
     };
     const fiber = createInspectableFiber({
-      tag: FORWARD_REF_TAG,
+      tag: latestReactWorkTags.ForwardRef,
       type: forwardRefType,
       elementType: null,
       memoizedProps: { explicit: "set" },

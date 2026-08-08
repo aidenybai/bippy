@@ -2,7 +2,7 @@ import "../src/index.js"; // KEEP THIS LINE ON TOP
 
 import { render } from "@testing-library/react";
 import React from "react";
-import { expect, it } from "vitest";
+import { expect, it } from "vite-plus/test";
 import { instrument, isCompositeFiber } from "../src/index.js";
 import type { Fiber } from "../src/types.js";
 

@@ -1,4 +1,5 @@
 import { JSX_FACTORY_FRAME_COUNT, REACT_STACK_BOTTOM_FRAME_PATTERNS } from "./constants.js";
+import { getPrepareStackTrace, setPrepareStackTrace } from "./error-stack.js";
 import { parseStack, StackFrame } from "./parse-stack.js";
 
 interface V8CallSite {
@@ -117,14 +118,13 @@ export const parseDebugStack = (debugStack: Error): ParsedDebugStack => {
     }
     return stackString;
   };
-  const previousPrepareStackTrace = Error.prepareStackTrace;
-  // node's CallSite typings disagree with browser-safe optional methods
-  Error.prepareStackTrace = collectFramesAndFormatStack as typeof Error.prepareStackTrace;
+  const previousPrepareStackTrace = getPrepareStackTrace();
+  setPrepareStackTrace(collectFramesAndFormatStack);
   let stackString: string;
   try {
     stackString = String(debugStack.stack);
   } finally {
-    Error.prepareStackTrace = previousPrepareStackTrace;
+    setPrepareStackTrace(previousPrepareStackTrace);
   }
 
   const result = structuredResult ?? parseMaterializedStack(stackString);

@@ -1,5 +1,6 @@
 import { decode, SourceMapMappings, type SourceMapSegment } from "@jridgewell/sourcemap-codec";
 
+import { BippySourceMapError } from "../errors.js";
 import { StackFrame } from "./parse-stack.js";
 
 export interface DecodedSourceMapSection {
@@ -10,7 +11,7 @@ export interface DecodedSourceMapSection {
     names?: string[];
     sourceRoot?: string;
     sources: string[];
-    sourcesContent?: string[];
+    sourcesContent?: Array<string | null>;
     version: 3;
   };
   offset: {
@@ -19,20 +20,29 @@ export interface DecodedSourceMapSection {
   };
 }
 
-// https://tc39.es/ecma426/#sec-index-source-map
 export interface IndexSourceMap {
   file?: string;
   sections: Array<{
-    map: StandardSourceMap;
+    map?: StandardSourceMap;
     offset: {
       column: number;
       line: number;
     };
+    url?: string;
   }>;
   version: 3;
 }
 
-export type RawSourceMap = IndexSourceMap | StandardSourceMap;
+export interface SourceFetch {
+  (url: string, init?: RequestInit): Promise<Response>;
+}
+
+export interface SourceMapRequestOptions {
+  maxBundleSizeBytes?: number;
+  maxSourceMapSizeBytes?: number;
+  signal?: AbortSignal;
+  timeoutMs?: number;
+}
 
 export interface SourceMap {
   file?: string;
@@ -42,11 +52,10 @@ export interface SourceMap {
   sections?: DecodedSourceMapSection[];
   sourceRoot?: string;
   sources: string[];
-  sourcesContent?: string[];
+  sourcesContent?: Array<string | null>;
   version: 3;
 }
 
-// https://developer.chrome.com/blog/sourcemaps#the_anatomy_of_a_source_map
 export interface StandardSourceMap {
   file?: string;
   ignoreList?: number[];
@@ -54,27 +63,30 @@ export interface StandardSourceMap {
   names?: string[];
   sourceRoot?: string;
   sources: string[];
-  sourcesContent?: string[];
+  sourcesContent?: Array<string | null>;
   version: 3;
   x_google_ignoreList?: number[];
 }
 
-// has a scheme, e.g. http://, https://, file://, data:, etc.
-// https://datatracker.ietf.org/doc/html/rfc3986#section-3.1
 const SCHEME_REGEX = /^[a-zA-Z][a-zA-Z\d+\-.]*:/;
-// inline sourcemap, e.g. data:application/json;base64,...
-const INLINE_SOURCEMAP_REGEX = /^data:application\/json[^,]+base64,/;
-// sourcemap url, e.g. //@ sourceMappingURL=... or /* @ sourceMappingURL=... */ at the end of the file
+const INLINE_SOURCEMAP_REGEX = /^data:application\/json(?:;[^,]*)?,/i;
 const SOURCEMAP_REGEX =
   /(?:\/\/[@#][ \t]+sourceMappingURL=([^\s'"]+?)[ \t]*$)|(?:\/\*[@#][ \t]+sourceMappingURL=([^*]+?)[ \t]*(?:\*\/)[ \t]*$)/;
 
 export const sourceMapCache = new Map<string, null | SourceMap>();
+const sourceMapCachesByFetch = new WeakMap<SourceFetch, Map<string, null | SourceMap>>();
 interface SourceMapResult {
   sourceMap: null | SourceMap;
   isTransientFailure: boolean;
 }
 
 const _pendingSourceMapRequests = new Map<string, Promise<SourceMapResult>>();
+const pendingSourceMapRequestsByFetch = new WeakMap<
+  SourceFetch,
+  Map<string, Promise<SourceMapResult>>
+>();
+const defaultMaxBundleSizeBytes = 25 * 1024 * 1024;
+const defaultMaxSourceMapSizeBytes = 100 * 1024 * 1024;
 
 const getSourceFromMappings = (
   mappings: SourceMapMappings,
@@ -92,8 +104,6 @@ const getSourceFromMappings = (
     return null;
   }
 
-  // Segments within a line are sorted by generated column, so binary search for
-  // the last segment at or before the column.
   let closestLineSegment: null | SourceMapSegment = null;
   let lowIndex = 0;
   let highIndex = lineMapping.length - 1;
@@ -137,7 +147,6 @@ export const getSourceFromSourceMap = (
   column: number,
 ): StackFrame | null => {
   if (sourceMap.sections) {
-    // Section offsets are 0-based while stack trace lines are 1-based.
     const lineIndex = line - 1;
     let targetSection: DecodedSourceMapSection | null = null;
 
@@ -178,9 +187,21 @@ export const getSourceFromSourceMap = (
   );
 };
 
+const resolveUrl = (reference: string, baseUrl: string): string | null => {
+  if (INLINE_SOURCEMAP_REGEX.test(reference)) return reference;
+  try {
+    return new URL(reference, baseUrl).toString();
+  } catch {
+    try {
+      const resolvedUrl = new URL(reference, new URL(baseUrl, "https://bippy.invalid/"));
+      return `${resolvedUrl.pathname}${resolvedUrl.search}${resolvedUrl.hash}`;
+    } catch {
+      return null;
+    }
+  }
+};
+
 const getSourceMapUrl = (url: string, content: string): null | string => {
-  // Walk lines backwards without content.split("\n"), which would allocate a
-  // string per line of the entire bundle.
   let sourceMapUrl: string | undefined;
   let searchEnd = content.length;
   while (searchEnd > 0 && !sourceMapUrl) {
@@ -196,14 +217,57 @@ const getSourceMapUrl = (url: string, content: string): null | string => {
     return null;
   }
 
-  const hasScheme = SCHEME_REGEX.test(sourceMapUrl);
-  if (!(INLINE_SOURCEMAP_REGEX.test(sourceMapUrl) || hasScheme || sourceMapUrl.startsWith("/"))) {
-    const urlSegments = url.split("/");
-    urlSegments[urlSegments.length - 1] = sourceMapUrl;
-    sourceMapUrl = urlSegments.join("/");
-  }
+  return resolveUrl(sourceMapUrl, url);
+};
 
-  return sourceMapUrl;
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const isStringArray = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.every((entry) => typeof entry === "string");
+
+const isSourcesContent = (value: unknown): value is Array<string | null> =>
+  Array.isArray(value) && value.every((entry) => typeof entry === "string" || entry === null);
+
+const isOptionalNumberArray = (value: unknown): value is number[] | undefined =>
+  value === undefined ||
+  (Array.isArray(value) && value.every((entry) => Number.isInteger(entry) && entry >= 0));
+
+const isStandardSourceMap = (value: unknown): value is StandardSourceMap => {
+  if (!isObjectRecord(value)) return false;
+  const hasValidShape =
+    value.version === 3 &&
+    typeof value.mappings === "string" &&
+    isStringArray(value.sources) &&
+    (value.file === undefined || typeof value.file === "string") &&
+    (value.names === undefined || isStringArray(value.names)) &&
+    (value.sourceRoot === undefined || typeof value.sourceRoot === "string") &&
+    (value.sourcesContent === undefined || isSourcesContent(value.sourcesContent)) &&
+    isOptionalNumberArray(value.ignoreList) &&
+    isOptionalNumberArray(value.x_google_ignoreList);
+  if (!hasValidShape) return false;
+  if (value.sourcesContent && value.sourcesContent.length !== value.sources.length) return false;
+  return [...(value.ignoreList ?? []), ...(value.x_google_ignoreList ?? [])].every(
+    (sourceIndex) => sourceIndex < value.sources.length,
+  );
+};
+
+const isIndexSourceMap = (value: unknown): value is IndexSourceMap => {
+  if (!isObjectRecord(value) || value.version !== 3 || !Array.isArray(value.sections)) {
+    return false;
+  }
+  return value.sections.every((section) => {
+    if (!isObjectRecord(section) || !isObjectRecord(section.offset)) return false;
+    const hasMap = isStandardSourceMap(section.map);
+    const hasUrl = typeof section.url === "string" && section.url.length > 0;
+    return (
+      hasMap !== hasUrl &&
+      Number.isInteger(section.offset.column) &&
+      section.offset.column >= 0 &&
+      Number.isInteger(section.offset.line) &&
+      section.offset.line >= 0
+    );
+  });
 };
 
 const getIgnoredSourceIndices = (rawSourceMap: StandardSourceMap): Set<number> | undefined => {
@@ -211,44 +275,97 @@ const getIgnoredSourceIndices = (rawSourceMap: StandardSourceMap): Set<number> |
   return Array.isArray(ignoreList) && ignoreList.length > 0 ? new Set(ignoreList) : undefined;
 };
 
-const resolveSourceRoot = (sourceRoot: string | undefined, source: string): string => {
+const resolveSourceRoot = (
+  sourceRoot: string | undefined,
+  source: string,
+  sourceMapUrl: string,
+): string => {
   if (!sourceRoot || SCHEME_REGEX.test(source) || source.startsWith("/")) return source;
   const normalizedSourceRoot = sourceRoot.endsWith("/") ? sourceRoot : `${sourceRoot}/`;
   const normalizedSource = source.replace(/^\.\//, "");
-  if (SCHEME_REGEX.test(normalizedSourceRoot)) {
-    try {
-      return new URL(normalizedSource, normalizedSourceRoot).toString();
-    } catch {}
+  try {
+    const baseUrl = SCHEME_REGEX.test(normalizedSourceRoot)
+      ? normalizedSourceRoot
+      : new URL(normalizedSourceRoot, sourceMapUrl).toString();
+    return new URL(normalizedSource, baseUrl).toString();
+  } catch {
+    const pathSegments = `${normalizedSourceRoot}${normalizedSource}`.split("/");
+    const normalizedPathSegments: string[] = [];
+    for (const pathSegment of pathSegments) {
+      if (pathSegment === "..") {
+        normalizedPathSegments.pop();
+      } else if (pathSegment !== ".") {
+        normalizedPathSegments.push(pathSegment);
+      }
+    }
+    return normalizedPathSegments.join("/");
   }
-  return `${normalizedSourceRoot}${normalizedSource}`;
 };
 
-const resolveSourceMapSources = (rawSourceMap: StandardSourceMap): string[] =>
-  rawSourceMap.sources.map((source) => resolveSourceRoot(rawSourceMap.sourceRoot, source));
-
-const decodeStandardSourceMap = (rawSourceMap: StandardSourceMap): SourceMap => ({
-  file: rawSourceMap.file,
-  ignoredSourceIndices: getIgnoredSourceIndices(rawSourceMap),
-  mappings: decode(rawSourceMap.mappings),
-  names: rawSourceMap.names,
-  sourceRoot: rawSourceMap.sourceRoot,
-  sources: resolveSourceMapSources(rawSourceMap),
-  sourcesContent: rawSourceMap.sourcesContent,
-  version: 3,
-});
-
-const decodeIndexSourceMap = (rawSourceMap: IndexSourceMap): SourceMap => {
-  const decodedSections: DecodedSourceMapSection[] = rawSourceMap.sections.map(
-    ({ map, offset }) => ({
-      map: {
-        ...map,
-        ignoredSourceIndices: getIgnoredSourceIndices(map),
-        mappings: decode(map.mappings),
-        sources: resolveSourceMapSources(map),
-      },
-      offset,
-    }),
+const resolveSourceMapSources = (rawSourceMap: StandardSourceMap, sourceMapUrl: string): string[] =>
+  rawSourceMap.sources.map((source) =>
+    resolveSourceRoot(rawSourceMap.sourceRoot, source, sourceMapUrl),
   );
+
+const decodeStandardSourceMap = (
+  rawSourceMap: StandardSourceMap,
+  sourceMapUrl: string,
+): SourceMap | null => {
+  try {
+    return {
+      file: rawSourceMap.file,
+      ignoredSourceIndices: getIgnoredSourceIndices(rawSourceMap),
+      mappings: decode(rawSourceMap.mappings),
+      names: rawSourceMap.names,
+      sourceRoot: rawSourceMap.sourceRoot,
+      sources: resolveSourceMapSources(rawSourceMap, sourceMapUrl),
+      sourcesContent: rawSourceMap.sourcesContent,
+      version: 3,
+    };
+  } catch {
+    return null;
+  }
+};
+
+interface LoadStandardSourceMap {
+  (url: string): Promise<StandardSourceMap | null>;
+}
+
+const decodeIndexSourceMap = async (
+  rawSourceMap: IndexSourceMap,
+  sourceMapUrl: string,
+  loadStandardSourceMap: LoadStandardSourceMap,
+): Promise<SourceMap | null> => {
+  const decodedSections: DecodedSourceMapSection[] = [];
+  let previousOffsetLine = -1;
+  let previousOffsetColumn = -1;
+  for (const section of rawSourceMap.sections) {
+    if (
+      section.offset.line < previousOffsetLine ||
+      (section.offset.line === previousOffsetLine && section.offset.column <= previousOffsetColumn)
+    ) {
+      return null;
+    }
+    previousOffsetLine = section.offset.line;
+    previousOffsetColumn = section.offset.column;
+    const sectionUrl = section.url ? resolveUrl(section.url, sourceMapUrl) : null;
+    const map = section.map ?? (sectionUrl ? await loadStandardSourceMap(sectionUrl) : null);
+    if (!map) return null;
+    const sectionSourceMapUrl = sectionUrl ?? sourceMapUrl;
+    try {
+      decodedSections.push({
+        map: {
+          ...map,
+          ignoredSourceIndices: getIgnoredSourceIndices(map),
+          mappings: decode(map.mappings),
+          sources: resolveSourceMapSources(map, sectionSourceMapUrl),
+        },
+        offset: section.offset,
+      });
+    } catch {
+      return null;
+    }
+  }
 
   const allSources = new Set<string>();
   for (const section of decodedSections) {
@@ -291,14 +408,120 @@ const isFetchableUrl = (url: string): boolean => {
   return scheme === "http:" || scheme === "https:";
 };
 
-// Resolves a bundle's source map, or null when the bundle definitively has
-// none. A thrown fetch (network error or aborted request) is left to propagate
-// so getSourceMap can treat it as transient and avoid caching it: a non-ok
-// response, a missing sourceMappingURL, or an undecodable map are definitive and
-// return null, but a dropped connection is not and must stay retryable.
-export const getSourceMapImpl = async (
+interface RequestSignal {
+  cleanup: () => void;
+  signal?: AbortSignal;
+}
+
+const createRequestSignal = (options: SourceMapRequestOptions): RequestSignal => {
+  if (!options.signal && options.timeoutMs === undefined) {
+    return { cleanup: () => {} };
+  }
+  const abortController = new AbortController();
+  const abortFromSource = (): void => abortController.abort(options.signal?.reason);
+  if (options.signal?.aborted) {
+    abortFromSource();
+  } else {
+    options.signal?.addEventListener("abort", abortFromSource, { once: true });
+  }
+  const timeoutHandle =
+    options.timeoutMs !== undefined && options.timeoutMs >= 0
+      ? setTimeout(
+          () => abortController.abort(new BippySourceMapError("Source map request timed out")),
+          options.timeoutMs,
+        )
+      : undefined;
+  return {
+    cleanup: () => {
+      if (timeoutHandle !== undefined) clearTimeout(timeoutHandle);
+      options.signal?.removeEventListener("abort", abortFromSource);
+    },
+    signal: abortController.signal,
+  };
+};
+
+const readResponseText = async (
+  response: Response,
+  maxSizeBytes: number,
+): Promise<string | null> => {
+  const contentLength = Number(response.headers.get("content-length"));
+  if (Number.isFinite(contentLength) && contentLength > maxSizeBytes) return null;
+  const content = await response.text();
+  return new TextEncoder().encode(content).byteLength <= maxSizeBytes ? content : null;
+};
+
+const decodeBase64 = (encodedContent: string): string | null => {
+  try {
+    if (typeof globalThis.atob === "function") {
+      return new TextDecoder().decode(
+        Uint8Array.from(globalThis.atob(encodedContent), (character) => character.charCodeAt(0)),
+      );
+    }
+  } catch {
+    return null;
+  }
+
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  const normalizedContent = encodedContent.replace(/\s/g, "").replace(/=+$/, "");
+  const bytes: number[] = [];
+  let bitBuffer = 0;
+  let bitCount = 0;
+  for (const character of normalizedContent) {
+    const value = alphabet.indexOf(character);
+    if (value === -1) return null;
+    bitBuffer = bitBuffer * 64 + value;
+    bitCount += 6;
+    if (bitCount >= 8) {
+      bitCount -= 8;
+      bytes.push(Math.floor(bitBuffer / 2 ** bitCount) & 255);
+      bitBuffer %= 2 ** bitCount;
+    }
+  }
+  return new TextDecoder().decode(Uint8Array.from(bytes));
+};
+
+const readInlineSourceMap = (sourceMapUrl: string, maxSizeBytes: number): unknown => {
+  const commaIndex = sourceMapUrl.indexOf(",");
+  if (commaIndex === -1) return null;
+  const metadata = sourceMapUrl.slice(0, commaIndex);
+  const encodedContent = sourceMapUrl.slice(commaIndex + 1);
+  if (encodedContent.length > maxSizeBytes * 2) return null;
+  try {
+    const content = metadata.toLowerCase().includes(";base64")
+      ? decodeBase64(encodedContent)
+      : decodeURIComponent(encodedContent);
+    if (content === null) return null;
+    if (new TextEncoder().encode(content).byteLength > maxSizeBytes) return null;
+    return JSON.parse(content);
+  } catch {
+    return null;
+  }
+};
+
+const readSourceMapDocument = async (
+  sourceMapUrl: string,
+  sourceFetch: SourceFetch,
+  signal: AbortSignal | undefined,
+  maxSizeBytes: number,
+): Promise<unknown> => {
+  if (INLINE_SOURCEMAP_REGEX.test(sourceMapUrl)) {
+    return readInlineSourceMap(sourceMapUrl, maxSizeBytes);
+  }
+  const sourceMapResponse = await sourceFetch(sourceMapUrl, { signal });
+  if (!sourceMapResponse.ok) return null;
+  const sourceMapContent = await readResponseText(sourceMapResponse, maxSizeBytes);
+  if (sourceMapContent === null) return null;
+  try {
+    return JSON.parse(sourceMapContent);
+  } catch {
+    return null;
+  }
+};
+
+export const getSourceMapUncached = async (
   bundleUrl: string,
-  fetchFn?: (url: string) => Promise<Response>,
+  fetchFn?: SourceFetch,
+  options: SourceMapRequestOptions = {},
 ): Promise<null | SourceMap> => {
   if (!isFetchableUrl(bundleUrl)) {
     return null;
@@ -308,72 +531,104 @@ export const getSourceMapImpl = async (
     fetchFn ??
     (typeof globalThis.fetch === "function" ? globalThis.fetch.bind(globalThis) : undefined);
   if (!sourceFetch) return null;
-
-  const bundleResponse = await sourceFetch(bundleUrl);
-  if (!bundleResponse.ok) {
-    return null;
-  }
-  const bundleContent = await bundleResponse.text();
-  if (!bundleContent) {
-    return null;
-  }
-
-  const sourceMapUrl = getSourceMapUrl(bundleUrl, bundleContent);
-
-  if (!sourceMapUrl) return null;
-  // inline data: maps (vite dev, babel inline sourcemaps) are decoded by
-  // fetch itself, so they bypass the network-url check
-  if (!isFetchableUrl(sourceMapUrl) && !INLINE_SOURCEMAP_REGEX.test(sourceMapUrl)) {
-    return null;
-  }
-
-  const sourceMapResponse = await sourceFetch(sourceMapUrl);
-  if (!sourceMapResponse.ok) {
-    return null;
-  }
-
+  const maxBundleSizeBytes = options.maxBundleSizeBytes ?? defaultMaxBundleSizeBytes;
+  const maxSourceMapSizeBytes = options.maxSourceMapSizeBytes ?? defaultMaxSourceMapSizeBytes;
+  if (maxBundleSizeBytes < 0 || maxSourceMapSizeBytes < 0) return null;
+  const requestSignal = createRequestSignal(options);
   try {
-    const rawSourceMap = (await sourceMapResponse.json()) as RawSourceMap;
+    const bundleResponse = await sourceFetch(bundleUrl, { signal: requestSignal.signal });
+    if (!bundleResponse.ok) return null;
+    const bundleContent = await readResponseText(bundleResponse, maxBundleSizeBytes);
+    if (!bundleContent) return null;
+    const sourceMapUrl = getSourceMapUrl(bundleUrl, bundleContent);
+    if (!sourceMapUrl) return null;
+    if (!isFetchableUrl(sourceMapUrl) && !INLINE_SOURCEMAP_REGEX.test(sourceMapUrl)) return null;
 
-    return "sections" in rawSourceMap
-      ? decodeIndexSourceMap(rawSourceMap)
-      : decodeStandardSourceMap(rawSourceMap);
-  } catch {
-    return null;
+    const rawSourceMap = await readSourceMapDocument(
+      sourceMapUrl,
+      sourceFetch,
+      requestSignal.signal,
+      maxSourceMapSizeBytes,
+    );
+    if (isStandardSourceMap(rawSourceMap)) {
+      return decodeStandardSourceMap(rawSourceMap, sourceMapUrl);
+    }
+    if (!isIndexSourceMap(rawSourceMap)) return null;
+    return decodeIndexSourceMap(rawSourceMap, sourceMapUrl, async (sectionUrl) => {
+      const sectionSourceMap = await readSourceMapDocument(
+        sectionUrl,
+        sourceFetch,
+        requestSignal.signal,
+        maxSourceMapSizeBytes,
+      );
+      return isStandardSourceMap(sectionSourceMap) ? sectionSourceMap : null;
+    });
+  } finally {
+    requestSignal.cleanup();
   }
 };
+
+const getSourceMapCache = (fetchFn: SourceFetch | undefined): Map<string, null | SourceMap> => {
+  if (!fetchFn) return sourceMapCache;
+  let cache = sourceMapCachesByFetch.get(fetchFn);
+  if (!cache) {
+    cache = new Map();
+    sourceMapCachesByFetch.set(fetchFn, cache);
+  }
+  return cache;
+};
+
+const getPendingSourceMapRequests = (
+  fetchFn: SourceFetch | undefined,
+): Map<string, Promise<SourceMapResult>> => {
+  if (!fetchFn) return _pendingSourceMapRequests;
+  let pendingRequests = pendingSourceMapRequestsByFetch.get(fetchFn);
+  if (!pendingRequests) {
+    pendingRequests = new Map();
+    pendingSourceMapRequestsByFetch.set(fetchFn, pendingRequests);
+  }
+  return pendingRequests;
+};
+
+const getSourceMapCacheKey = (file: string, options: SourceMapRequestOptions): string =>
+  options.maxBundleSizeBytes === undefined &&
+  options.maxSourceMapSizeBytes === undefined &&
+  options.timeoutMs === undefined
+    ? file
+    : `${file}\0${options.maxBundleSizeBytes ?? ""}\0${options.maxSourceMapSizeBytes ?? ""}\0${options.timeoutMs ?? ""}`;
 
 export const getSourceMap = async (
   file: string,
   useCache = true,
-  fetchFn?: (url: string) => Promise<Response>,
+  fetchFn?: SourceFetch,
+  options: SourceMapRequestOptions = {},
 ): Promise<null | SourceMap> => {
-  if (useCache && sourceMapCache.has(file)) {
-    return sourceMapCache.get(file) ?? null;
+  const shouldUseCache = useCache && options.signal === undefined;
+  const cache = getSourceMapCache(fetchFn);
+  const pendingRequests = getPendingSourceMapRequests(fetchFn);
+  const cacheKey = getSourceMapCacheKey(file, options);
+  if (shouldUseCache && cache.has(cacheKey)) {
+    return cache.get(cacheKey) ?? null;
   }
 
-  const pendingRequest = useCache ? _pendingSourceMapRequests.get(file) : undefined;
+  const pendingRequest = shouldUseCache ? pendingRequests.get(cacheKey) : undefined;
   if (pendingRequest) {
     return (await pendingRequest).sourceMap;
   }
 
-  // A transient fetch failure (aborted request or network error) rejects; a
-  // definitive "no map" resolves to null. Only definitive results are cached:
-  // caching a transient null would pin the bundle to a degraded result for the
-  // rest of the page's lifetime, even after the network recovers.
-  const fetchPromise: Promise<SourceMapResult> = getSourceMapImpl(file, fetchFn).then(
+  const fetchPromise: Promise<SourceMapResult> = getSourceMapUncached(file, fetchFn, options).then(
     (sourceMap) => ({ sourceMap, isTransientFailure: false }),
     () => ({ sourceMap: null, isTransientFailure: true }),
   );
-  if (useCache) {
-    _pendingSourceMapRequests.set(file, fetchPromise);
+  if (shouldUseCache) {
+    pendingRequests.set(cacheKey, fetchPromise);
   }
 
   const { sourceMap, isTransientFailure } = await fetchPromise;
-  if (useCache) {
-    _pendingSourceMapRequests.delete(file);
+  if (shouldUseCache) {
+    pendingRequests.delete(cacheKey);
     if (!isTransientFailure) {
-      sourceMapCache.set(file, sourceMap);
+      cache.set(cacheKey, sourceMap);
     }
   }
 
@@ -385,7 +640,7 @@ export const symbolicateStack = async (
   cache = true,
   fetchFn?: (url: string) => Promise<Response>,
 ): Promise<StackFrame[]> => {
-  return await Promise.all(
+  return Promise.all(
     stack.map(async (stackFrame) => {
       if (!stackFrame.fileName) return stackFrame;
       const sourceMap = await getSourceMap(stackFrame.fileName, cache, fetchFn);

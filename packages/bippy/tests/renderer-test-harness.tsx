@@ -1,5 +1,5 @@
 import React from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import {
   didFiberCommit,
   didFiberRender,
@@ -23,6 +23,7 @@ import {
   traverseProps,
   traverseState,
 } from "../src/index.js";
+import { getReactWorkTagsForFiber, getReactWorkTagsForRenderer } from "../src/react-internals.js";
 import { getFiberHooks, getOwnerStack, getSource } from "../src/source/index.js";
 import type { Fiber, FiberRoot } from "../src/types.js";
 
@@ -47,9 +48,11 @@ export interface RendererAdapterFactory {
   create: () => Promise<RendererAdapter>;
   name: string;
   rendererPackageName?: string;
-  supportLevel: "automatic" | "compatibility";
+  supportLevel: RendererSupportLevel;
   supportsHostInstanceLookup?: boolean;
 }
+
+export type RendererSupportLevel = "automatic" | "compatibility";
 
 interface CompoundTreeProps {
   revision: number;
@@ -173,6 +176,9 @@ export const runRendererTestHarness = (factories: RendererAdapterFactory[]): voi
       const mountedRoot = committedRoots.at(-1);
       expect(mountedRoot).toBeDefined();
       if (!mountedRoot) throw new Error(`${factory.name} did not commit a root`);
+      expect(getReactWorkTagsForFiber(mountedRoot.current)).toBe(
+        getReactWorkTagsForRenderer(renderer),
+      );
 
       const mountedStatefulFiber = findComponentFiber(mountedRoot, components.StatefulBranch);
       const mountedForwardFiber = findComponentFiber(mountedRoot, components.ForwardLeaf);

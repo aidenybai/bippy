@@ -3,16 +3,10 @@ import "../src/index.js"; // KEEP THIS LINE ON TOP
 import * as ReactThreeTestRenderer from "@react-three/test-renderer";
 import { render, screen } from "@testing-library/react";
 import React from "react";
-import { expect, it } from "vitest";
-import {
-  getFiberFromHostInstance,
-  getRDTHook,
-  HostComponentTag,
-  HostRootTag,
-  instrument,
-  traverseFiber,
-} from "../src/index.js";
+import { expect, it } from "vite-plus/test";
+import { getFiberFromHostInstance, getRDTHook, instrument, traverseFiber } from "../src/index.js";
 import type { Fiber, FiberRoot, ReactRenderer, WorkTag } from "../src/types.js";
+import { latestReactWorkTags } from "./react-work-tags.js";
 
 interface MockHostFiber {
   child: MockHostFiber | null;
@@ -33,7 +27,7 @@ const createMockHostFiber = (stateNode: unknown, type = "RCTView"): MockHostFibe
   return: null,
   sibling: null,
   stateNode,
-  tag: HostComponentTag,
+  tag: latestReactWorkTags.HostComponent,
   type,
 });
 
@@ -81,7 +75,7 @@ it("should resolve Fabric public instances from canonical host state", () => {
   const publicInstance = {};
   const hostFiber = createMockHostFiber({ canonical: { publicInstance } });
   const rootFiber = createMockHostFiber(null, "root");
-  rootFiber.tag = HostRootTag;
+  rootFiber.tag = latestReactWorkTags.HostRoot;
   rootFiber.child = hostFiber;
   rootFiber.memoizedState = { element: {} };
   hostFiber.return = rootFiber;
@@ -99,7 +93,7 @@ it("should resolve Paper native tags from host state", () => {
   using _unsubscribe = instrument({});
   const hostFiber = createMockHostFiber({ _nativeTag: 42 });
   const rootFiber = createMockHostFiber(null, "root");
-  rootFiber.tag = HostRootTag;
+  rootFiber.tag = latestReactWorkTags.HostRoot;
   rootFiber.child = hostFiber;
   rootFiber.memoizedState = { element: {} };
   hostFiber.return = rootFiber;
@@ -114,7 +108,7 @@ it("should resolve Paper native tags from host state", () => {
 });
 
 it("should prefer renderer.findFiberByHostInstance when available", () => {
-  const mockFiber = { tag: HostComponentTag, type: "span" } as unknown as Fiber;
+  const mockFiber = { tag: latestReactWorkTags.HostComponent, type: "span" } as unknown as Fiber;
   const rdtHook = getRDTHook();
   const findFiberByHostInstance = () => mockFiber;
   rdtHook.renderers.set(999, { findFiberByHostInstance } as unknown as ReactRenderer);

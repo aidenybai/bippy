@@ -8,6 +8,11 @@ overrides:
   react: ^19.2.4
   react-dom: ^19.2.4
 
+patchedDependencies:
+  react-devtools-core@7.0.1:
+    hash: f8fd44d3ac941842d1bc9fc91d203b8e8679f525727643d575fefa7affdc7482
+    path: patches/react-devtools-core@7.0.1.patch
+
 importers:
 
   .:
@@ -48,7 +53,7 @@ importers:
         version: 0.5.1(typescript@5.9.3)(web-tree-sitter@0.25.10)
       '@opentui/react':
         specifier: ^0.5.1
-        version: 0.5.1(react-devtools-core@7.0.1)(react@19.2.4)(typescript@5.9.3)(web-tree-sitter@0.25.10)(ws@8.21.1)
+        version: 0.5.1(react-devtools-core@7.0.1(patch_hash=f8fd44d3ac941842d1bc9fc91d203b8e8679f525727643d575fefa7affdc7482))(react@19.2.4)(typescript@5.9.3)(web-tree-sitter@0.25.10)(ws@8.21.1)
       '@pixi/react':
         specifier: ^8.0.5
         version: 8.0.5(@types/react@19.2.17)(pixi.js@8.19.0)(react@19.2.4)
@@ -84,7 +89,7 @@ importers:
         version: 15.11.7
       ink:
         specifier: ^7.1.1
-        version: 7.1.1(@types/react@19.2.17)(react-devtools-core@7.0.1)(react@19.2.4)
+        version: 7.1.1(@types/react@19.2.17)(react-devtools-core@7.0.1(patch_hash=f8fd44d3ac941842d1bc9fc91d203b8e8679f525727643d575fefa7affdc7482))(react@19.2.4)
       ink-testing-library:
         specifier: ^4.0.0
         version: 4.0.0(@types/react@19.2.17)
@@ -104,8 +109,8 @@ importers:
         specifier: ^4.0.2
         version: 4.0.2(@babylonjs/core@9.20.0)(@babylonjs/gui@9.20.0(@babylonjs/core@9.20.0))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       react-devtools-core:
-        specifier: ^7.0.1
-        version: 7.0.1
+        specifier: 7.0.1
+        version: 7.0.1(patch_hash=f8fd44d3ac941842d1bc9fc91d203b8e8679f525727643d575fefa7affdc7482)
       react-devtools-inline:
         specifier: ^6.0.1
         version: 6.1.5
@@ -127,9 +132,15 @@ importers:
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
       vite-plus:
         specifier: latest
         version: 0.2.8(@types/node@20.19.34)(@vitest/coverage-istanbul@4.1.10(vitest@4.1.10))(esbuild@0.27.4)(happy-dom@15.11.7)(jiti@2.7.0)(msw@2.12.10(@types/node@20.19.34)(typescript@5.9.3))(publint@0.3.18)(terser@5.46.0)(tsx@4.21.0)(typescript@5.9.3)(vite@7.3.6(@types/node@20.19.34)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))(yaml@2.8.2)
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
 
   packages/e2e:
     devDependencies:
@@ -9275,11 +9286,11 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@opentui/react@0.5.1(react-devtools-core@7.0.1)(react@19.2.4)(typescript@5.9.3)(web-tree-sitter@0.25.10)(ws@8.21.1)':
+  '@opentui/react@0.5.1(react-devtools-core@7.0.1(patch_hash=f8fd44d3ac941842d1bc9fc91d203b8e8679f525727643d575fefa7affdc7482))(react@19.2.4)(typescript@5.9.3)(web-tree-sitter@0.25.10)(ws@8.21.1)':
     dependencies:
       '@opentui/core': 0.5.1(typescript@5.9.3)(web-tree-sitter@0.25.10)
       react: 19.2.4
-      react-devtools-core: 7.0.1
+      react-devtools-core: 7.0.1(patch_hash=f8fd44d3ac941842d1bc9fc91d203b8e8679f525727643d575fefa7affdc7482)
       react-reconciler: 0.33.0(react@19.2.4)
       ws: 8.21.1
     transitivePeerDependencies:
@@ -12066,7 +12077,7 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.17
 
-  ink@7.1.1(@types/react@19.2.17)(react-devtools-core@7.0.1)(react@19.2.4):
+  ink@7.1.1(@types/react@19.2.17)(react-devtools-core@7.0.1(patch_hash=f8fd44d3ac941842d1bc9fc91d203b8e8679f525727643d575fefa7affdc7482))(react@19.2.4):
     dependencies:
       '@alcalzone/ansi-tokenize': 0.3.0
       ansi-escapes: 7.3.0
@@ -12096,7 +12107,7 @@ snapshots:
       yoga-layout: 3.2.1
     optionalDependencies:
       '@types/react': 19.2.17
-      react-devtools-core: 7.0.1
+      react-devtools-core: 7.0.1(patch_hash=f8fd44d3ac941842d1bc9fc91d203b8e8679f525727643d575fefa7affdc7482)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -13848,7 +13859,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  react-devtools-core@7.0.1:
+  react-devtools-core@7.0.1(patch_hash=f8fd44d3ac941842d1bc9fc91d203b8e8679f525727643d575fefa7affdc7482):
     dependencies:
       shell-quote: 1.8.3
       ws: 7.5.10

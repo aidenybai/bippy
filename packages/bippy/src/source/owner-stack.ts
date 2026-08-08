@@ -1,26 +1,13 @@
 import { getDisplayName, getType, traverseFiber } from "../core.js";
 import { _renderers, getRDTHook } from "../rdt-hook.js";
-import {
-  ActivityComponentTag,
-  ClassComponentTag,
-  ForwardRefTag,
-  FunctionComponentTag,
-  HostComponentTag,
-  HostHoistableTag,
-  HostSingletonTag,
-  LazyComponentTag,
-  SimpleMemoComponentTag,
-  SuspenseComponentTag,
-  SuspenseListComponentTag,
-  ViewTransitionComponentTag,
-} from "../react-internals.js";
+import { getReactWorkTagsForFiber } from "../react-internals.js";
 import type { Fiber, RendererDispatcherRef, ServerComponentInfo } from "../types.js";
 import {
   SERVER_FRAME_MARKER,
   SERVER_ENV_PATTERN,
   SERVER_COMPONENT_URL_PREFIXES,
 } from "./constants.js";
-
+import { getPrepareStackTrace, setPrepareStackTrace } from "./error-stack.js";
 import { parseDebugStack } from "./parse-debug-stack.js";
 import { parseStack, StackFrame } from "./parse-stack.js";
 import { symbolicateStack } from "./symbolication.js";
@@ -160,9 +147,8 @@ const describeNativeComponentFrame = (
     return cachedFrame;
   }
 
-  const previousPrepareStackTrace = Error.prepareStackTrace;
-  // HACK: V8 API allows undefined but bun-types declares it as non-optional
-  (Error as { prepareStackTrace?: typeof Error.prepareStackTrace }).prepareStackTrace = undefined;
+  const previousPrepareStackTrace = getPrepareStackTrace();
+  setPrepareStackTrace(undefined);
   reEntry = true;
 
   const dispatcherSnapshots = clearRendererDispatchers();
@@ -173,7 +159,7 @@ const describeNativeComponentFrame = (
   try {
     // HACK: Run the control and sample under the same property name so their stacks share a frame.
     const RunInRootFrame = {
-      DetermineComponentFrameRoot() {
+      DetermineComponentFrameRoot(this: void) {
         let control: unknown;
         try {
           if (construct) {
@@ -325,7 +311,7 @@ const describeNativeComponentFrame = (
   } finally {
     reEntry = false;
 
-    Error.prepareStackTrace = previousPrepareStackTrace;
+    setPrepareStackTrace(previousPrepareStackTrace);
 
     restoreRendererDispatchers(dispatcherSnapshots);
     console.error = previousConsoleError;
@@ -341,32 +327,33 @@ const describeNativeComponentFrame = (
 // https://github.com/facebook/react/blob/ac3e705a18696168acfcaed39dce0cfaa6be8836/packages/react-reconciler/src/ReactFiberComponentStack.js#L180
 export const describeFiber = (fiber: Fiber, childFiber: Fiber | null): string => {
   let stackFrame = "";
+  const workTags = getReactWorkTagsForFiber(fiber);
   switch (fiber.tag) {
-    case ActivityComponentTag:
+    case workTags.ActivityComponent:
       stackFrame = describeBuiltInComponentFrame("Activity");
       break;
-    case ClassComponentTag:
+    case workTags.ClassComponent:
       stackFrame = describeNativeComponentFrame(fiber.type, true);
       break;
-    case ForwardRefTag:
+    case workTags.ForwardRef:
       stackFrame = describeNativeComponentFrame(getType(fiber.type) ?? fiber.type, false);
       break;
-    case FunctionComponentTag:
-    case SimpleMemoComponentTag:
+    case workTags.FunctionComponent:
+    case workTags.SimpleMemoComponent:
       stackFrame = describeNativeComponentFrame(fiber.type, false);
       break;
-    case HostComponentTag:
-    case HostHoistableTag:
-    case HostSingletonTag:
+    case workTags.HostComponent:
+    case workTags.HostHoistable:
+    case workTags.HostSingleton:
       if (typeof fiber.type === "string") {
         stackFrame = describeBuiltInComponentFrame(fiber.type);
       }
       break;
-    case LazyComponentTag:
+    case workTags.LazyComponent:
       // TODO: When we support Thenables as component types we should rename this.
       stackFrame = describeBuiltInComponentFrame("Lazy");
       break;
-    case SuspenseComponentTag:
+    case workTags.SuspenseComponent:
       if (fiber.child !== childFiber && childFiber !== null) {
         // If we came from the second Fiber then we're in the Suspense Fallback.
         stackFrame = describeBuiltInComponentFrame("Suspense Fallback");
@@ -374,10 +361,10 @@ export const describeFiber = (fiber: Fiber, childFiber: Fiber | null): string =>
         stackFrame = describeBuiltInComponentFrame("Suspense");
       }
       break;
-    case SuspenseListComponentTag:
+    case workTags.SuspenseListComponent:
       stackFrame = describeBuiltInComponentFrame("SuspenseList");
       break;
-    case ViewTransitionComponentTag:
+    case workTags.ViewTransitionComponent:
       // Note: enableViewTransition feature flag is not available in this codebase,
       // so we'll always include ViewTransition
       stackFrame = describeBuiltInComponentFrame("ViewTransition");
@@ -406,8 +393,8 @@ export const getFallbackParentStack = (thisFiber: Fiber): string => {
       // Since we don't have __DEV__ in this codebase, we'll check for _debugInfo
       const debugInfo = currentFiber._debugInfo;
       if (debugInfo && Array.isArray(debugInfo)) {
-        for (let i = debugInfo.length - 1; i >= 0; i--) {
-          const debugEntry = debugInfo[i];
+        for (let debugInfoIndex = debugInfo.length - 1; debugInfoIndex >= 0; debugInfoIndex--) {
+          const debugEntry = debugInfo[debugInfoIndex];
           if (typeof debugEntry.name === "string") {
             componentStack += describeDebugInfoFrame(debugEntry.name, debugEntry.env);
           }
@@ -445,14 +432,10 @@ export const getFallbackParentStack = (thisFiber: Fiber): string => {
  * @see https://github.com/facebook/react/blob/main/packages/react-devtools-shared/src/backend/shared/DevToolsOwnerStack.js#L12
  */
 export const formatOwnerStack = (stack: string): string => {
-  const prevPrepareStackTrace = Error.prepareStackTrace;
-  // HACK: V8 API allows undefined but bun-types declares it as non-optional
-  (Error as { prepareStackTrace?: typeof Error.prepareStackTrace }).prepareStackTrace = undefined;
   let formattedStack = stack;
   if (!formattedStack) {
     return "";
   }
-  Error.prepareStackTrace = prevPrepareStackTrace;
 
   if (formattedStack.startsWith("Error: react-stack-top-frame\n")) {
     // V8's default formatting prefixes with the error message which we

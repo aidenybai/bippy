@@ -196,6 +196,8 @@ jobs:
           java-version: 17
       - uses: android-actions/setup-android@v4
       - uses: gradle/actions/setup-gradle@v6
+      - name: Install emulator runtime dependencies
+        run: sudo apt-get update && sudo apt-get install --yes libpulse0
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -249,6 +251,7 @@ jobs:
           profile: pixel_7
           avd-name: Pixel_7_API_34
           script: |
+            adb shell svc power stayon true
             adb shell input keyevent KEYCODE_WAKEUP
             adb shell wm dismiss-keyguard
             adb shell input keyevent KEYCODE_HOME

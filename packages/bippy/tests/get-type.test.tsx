@@ -1,6 +1,6 @@
 import "../src/index.js"; // KEEP THIS LINE ON TOP
 
-import { expect, it } from "vitest";
+import { expect, it } from "vite-plus/test";
 
 import { getType } from "../src/index.js";
 import React, { Component, forwardRef, memo } from "react";

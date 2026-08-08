@@ -2,15 +2,10 @@ import "../src/index.js"; // KEEP THIS LINE ON TOP
 
 import { render } from "@testing-library/react";
 import React from "react";
-import { describe, expect, it } from "vitest";
-import {
-  FunctionComponentTag,
-  getNearestHostFiber,
-  getNearestHostFibers,
-  HostComponentTag,
-  instrument,
-} from "../src/index.js";
+import { describe, expect, it } from "vite-plus/test";
+import { getNearestHostFiber, getNearestHostFibers, instrument } from "../src/index.js";
 import type { Fiber } from "../src/index.js";
+import { latestReactWorkTags } from "./react-work-tags.js";
 
 export const Example = () => {
   return <div>Hello</div>;
@@ -115,7 +110,7 @@ describe("getNearestHostFibers", () => {
     const childlessCompositeFiber = {
       child: null,
       sibling: null,
-      tag: FunctionComponentTag,
+      tag: latestReactWorkTags.FunctionComponent,
       type: () => null,
     } as unknown as Fiber;
     expect(getNearestHostFibers(childlessCompositeFiber)).toHaveLength(0);
@@ -125,19 +120,19 @@ describe("getNearestHostFibers", () => {
     const hostFiber = {
       child: null,
       sibling: null,
-      tag: HostComponentTag,
+      tag: latestReactWorkTags.HostComponent,
       type: "div",
     } as unknown as Fiber;
     const childlessCompositeFiber = {
       child: null,
       sibling: hostFiber,
-      tag: FunctionComponentTag,
+      tag: latestReactWorkTags.FunctionComponent,
       type: () => null,
     } as unknown as Fiber;
     const rootCompositeFiber = {
       child: childlessCompositeFiber,
       sibling: null,
-      tag: FunctionComponentTag,
+      tag: latestReactWorkTags.FunctionComponent,
       type: () => null,
     } as unknown as Fiber;
     expect(getNearestHostFibers(rootCompositeFiber)).toEqual([hostFiber]);

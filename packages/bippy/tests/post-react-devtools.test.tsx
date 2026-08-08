@@ -1,7 +1,7 @@
 // import bippy, then react devtools
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "vite-plus/test";
 const { instrument } = await import("../src/index.js");
 
 // @ts-expect-error - react-devtools-inline types not available

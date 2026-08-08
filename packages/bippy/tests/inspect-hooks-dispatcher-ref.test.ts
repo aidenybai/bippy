@@ -1,12 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import type { Fiber } from "../src/types.js";
-import { FunctionComponentTag } from "../src/react-internals.js";
 import { _renderers } from "../src/rdt-hook.js";
 import { getFiberHooks } from "../src/source/inspect-hooks.js";
+import { latestReactWorkTags } from "./react-work-tags.js";
 
 const createFakeFiber = (type: unknown): Fiber =>
   ({
-    tag: FunctionComponentTag,
+    tag: latestReactWorkTags.FunctionComponent,
     type,
     elementType: type,
     memoizedState: null,

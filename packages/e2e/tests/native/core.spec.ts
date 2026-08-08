@@ -19,10 +19,6 @@ describe("bippy core functions on React Native", () => {
       await detoxExpect(element(by.id("result-instrument-active"))).toHaveText("true");
     });
 
-    it("isClientEnvironment returns true", async () => {
-      await detoxExpect(element(by.id("result-isClientEnvironment"))).toHaveText("true");
-    });
-
     it("hasRDTHook returns true", async () => {
       await detoxExpect(element(by.id("result-hasRDTHook"))).toHaveText("true");
     });

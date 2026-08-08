@@ -1,6 +1,6 @@
 import "../src/index.js"; // KEEP THIS LINE ON TOP
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import type { Fiber } from "../src/types.js";
 import { instrument } from "../src/index.js";
 import { getFiberHooks, type HooksNode } from "../src/source/inspect-hooks.js";
@@ -574,7 +574,7 @@ describe("getFiberHooks additional hook types", () => {
     try {
       expect(() => getFiberHooks(fiber!)).toThrowError(
         expect.objectContaining({
-          name: "ReactDebugToolsRenderError",
+          name: "BippyHookRenderError",
           message: "Error rendering inspected component",
         }),
       );

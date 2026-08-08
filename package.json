@@ -28,6 +28,9 @@
     "overrides": {
       "react": "^19.2.4",
       "react-dom": "^19.2.4"
+    },
+    "patchedDependencies": {
+      "react-devtools-core@7.0.1": "patches/react-devtools-core@7.0.1.patch"
     }
   }
 }

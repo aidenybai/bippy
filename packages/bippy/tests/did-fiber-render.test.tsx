@@ -1,17 +1,12 @@
 import "../src/index.js"; // KEEP THIS LINE ON TOP
 
-import { expect, it } from "vitest";
+import { expect, it } from "vite-plus/test";
 import React from "react";
 
-import {
-  ClassComponentTag,
-  ContextConsumerTag,
-  didFiberRender,
-  ForwardRefTag,
-  instrument,
-} from "../src/index.js";
+import { didFiberRender, instrument } from "../src/index.js";
 import type { Fiber, WorkTag } from "../src/index.js";
 import { ReactFiberFlags } from "../src/react-internals.js";
+import { latestReactWorkTags } from "./react-work-tags.js";
 import { render } from "@testing-library/react";
 
 const Example = () => {
@@ -55,20 +50,30 @@ const createMockFiber = (tag: WorkTag, flags: number | undefined, effectTag?: nu
   }) as unknown as Fiber;
 
 it("should check the PerformedWork flag for every composite tag", () => {
-  expect(didFiberRender(createMockFiber(ClassComponentTag, ReactFiberFlags.PerformedWork))).toBe(
-    true,
-  );
-  expect(didFiberRender(createMockFiber(ContextConsumerTag, ReactFiberFlags.PerformedWork))).toBe(
-    true,
-  );
-  expect(didFiberRender(createMockFiber(ForwardRefTag, ReactFiberFlags.PerformedWork))).toBe(true);
+  expect(
+    didFiberRender(
+      createMockFiber(latestReactWorkTags.ClassComponent, ReactFiberFlags.PerformedWork),
+    ),
+  ).toBe(true);
+  expect(
+    didFiberRender(
+      createMockFiber(latestReactWorkTags.ContextConsumer, ReactFiberFlags.PerformedWork),
+    ),
+  ).toBe(true);
+  expect(
+    didFiberRender(createMockFiber(latestReactWorkTags.ForwardRef, ReactFiberFlags.PerformedWork)),
+  ).toBe(true);
 });
 
 it("should fall back to effectTag for legacy react versions", () => {
   expect(
-    didFiberRender(createMockFiber(ClassComponentTag, undefined, ReactFiberFlags.PerformedWork)),
+    didFiberRender(
+      createMockFiber(latestReactWorkTags.ClassComponent, undefined, ReactFiberFlags.PerformedWork),
+    ),
   ).toBe(true);
-  expect(didFiberRender(createMockFiber(ClassComponentTag, undefined))).toBe(false);
+  expect(didFiberRender(createMockFiber(latestReactWorkTags.ClassComponent, undefined))).toBe(
+    false,
+  );
 });
 
 it("should return false for a fiber that hasn't rendered", () => {

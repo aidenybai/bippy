@@ -1,17 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import type { Fiber } from "../src/types.js";
-import {
-  ActivityComponentTag,
-  ClassComponentTag,
-  ForwardRefTag,
-  FunctionComponentTag,
-  HostComponentTag,
-  LazyComponentTag,
-  SuspenseComponentTag,
-  SuspenseListComponentTag,
-  ViewTransitionComponentTag,
-  _renderers,
-} from "../src/core.js";
+import { _renderers } from "../src/core.js";
 import {
   describeDebugInfoFrame,
   describeFiber,
@@ -21,6 +10,7 @@ import {
   getParentStack,
   hasDebugStack,
 } from "../src/source/owner-stack.js";
+import { latestReactWorkTags } from "./react-work-tags.js";
 
 const createFakeFiber = (overrides: Record<string, unknown>): Fiber =>
   ({
@@ -110,25 +100,30 @@ describe("formatOwnerStack", () => {
 
 describe("describeFiber built-in frames", () => {
   it("describes built-in component tags", () => {
-    expect(describeFiber(createFakeFiber({ tag: ActivityComponentTag }), null)).toBe(
-      "\n    in Activity",
+    expect(
+      describeFiber(createFakeFiber({ tag: latestReactWorkTags.ActivityComponent }), null),
+    ).toBe("\n    in Activity");
+    expect(
+      describeFiber(createFakeFiber({ tag: latestReactWorkTags.HostComponent, type: "div" }), null),
+    ).toBe("\n    in div");
+    expect(describeFiber(createFakeFiber({ tag: latestReactWorkTags.LazyComponent }), null)).toBe(
+      "\n    in Lazy",
     );
-    expect(describeFiber(createFakeFiber({ tag: HostComponentTag, type: "div" }), null)).toBe(
-      "\n    in div",
-    );
-    expect(describeFiber(createFakeFiber({ tag: LazyComponentTag }), null)).toBe("\n    in Lazy");
-    expect(describeFiber(createFakeFiber({ tag: SuspenseListComponentTag }), null)).toBe(
-      "\n    in SuspenseList",
-    );
-    expect(describeFiber(createFakeFiber({ tag: ViewTransitionComponentTag }), null)).toBe(
-      "\n    in ViewTransition",
-    );
+    expect(
+      describeFiber(createFakeFiber({ tag: latestReactWorkTags.SuspenseListComponent }), null),
+    ).toBe("\n    in SuspenseList");
+    expect(
+      describeFiber(createFakeFiber({ tag: latestReactWorkTags.ViewTransitionComponent }), null),
+    ).toBe("\n    in ViewTransition");
   });
 
   it("describes suspense content and fallback frames", () => {
     const contentChild = createFakeFiber({});
     const fallbackChild = createFakeFiber({});
-    const suspenseFiber = createFakeFiber({ tag: SuspenseComponentTag, child: contentChild });
+    const suspenseFiber = createFakeFiber({
+      tag: latestReactWorkTags.SuspenseComponent,
+      child: contentChild,
+    });
     expect(describeFiber(suspenseFiber, contentChild)).toBe("\n    in Suspense");
     expect(describeFiber(suspenseFiber, null)).toBe("\n    in Suspense");
     expect(describeFiber(suspenseFiber, fallbackChild)).toBe("\n    in Suspense Fallback");
@@ -141,7 +136,9 @@ describe("describeFiber built-in frames", () => {
 
 describe("describeFiber native component frames", () => {
   it("returns an empty string for a missing component", () => {
-    expect(describeFiber(createFakeFiber({ tag: ClassComponentTag, type: null }), null)).toBe("");
+    expect(
+      describeFiber(createFakeFiber({ tag: latestReactWorkTags.ClassComponent, type: null }), null),
+    ).toBe("");
   });
 
   it("extracts the call site frame from a throwing function component", () => {
@@ -149,7 +146,10 @@ describe("describeFiber native component frames", () => {
       throw new Error("intentional");
     };
     const frame = describeFiber(
-      createFakeFiber({ tag: FunctionComponentTag, type: ThrowingFunctionComponent }),
+      createFakeFiber({
+        tag: latestReactWorkTags.FunctionComponent,
+        type: ThrowingFunctionComponent,
+      }),
       null,
     );
     expect(frame).toContain("ThrowingFunctionComponent");
@@ -160,7 +160,10 @@ describe("describeFiber native component frames", () => {
     const CachedThrowingComponent = (): null => {
       throw new Error("intentional");
     };
-    const fiber = createFakeFiber({ tag: FunctionComponentTag, type: CachedThrowingComponent });
+    const fiber = createFakeFiber({
+      tag: latestReactWorkTags.FunctionComponent,
+      type: CachedThrowingComponent,
+    });
     const firstFrame = describeFiber(fiber, null);
     const secondFrame = describeFiber(fiber, null);
     expect(secondFrame).toBe(firstFrame);
@@ -169,7 +172,7 @@ describe("describeFiber native component frames", () => {
   it("falls back to a synthetic frame for components that render without throwing", () => {
     const QuietComponent = (): null => null;
     const frame = describeFiber(
-      createFakeFiber({ tag: FunctionComponentTag, type: QuietComponent }),
+      createFakeFiber({ tag: latestReactWorkTags.FunctionComponent, type: QuietComponent }),
       null,
     );
     expect(frame).toBe("\n    in QuietComponent");
@@ -180,7 +183,10 @@ describe("describeFiber native component frames", () => {
       throw "string failure";
     };
     const frame = describeFiber(
-      createFakeFiber({ tag: FunctionComponentTag, type: StringThrowingComponent }),
+      createFakeFiber({
+        tag: latestReactWorkTags.FunctionComponent,
+        type: StringThrowingComponent,
+      }),
       null,
     );
     expect(frame).toBe("\n    in StringThrowingComponent");
@@ -189,7 +195,7 @@ describe("describeFiber native component frames", () => {
   it("returns an empty frame for anonymous components without display names", () => {
     const anonymousComponents: Array<() => null> = [() => null];
     const frame = describeFiber(
-      createFakeFiber({ tag: FunctionComponentTag, type: anonymousComponents[0] }),
+      createFakeFiber({ tag: latestReactWorkTags.FunctionComponent, type: anonymousComponents[0] }),
       null,
     );
     expect(frame).toBe("");
@@ -202,7 +208,7 @@ describe("describeFiber native component frames", () => {
       }
     }
     const frame = describeFiber(
-      createFakeFiber({ tag: FunctionComponentTag, type: ClassInvokedAsFunction }),
+      createFakeFiber({ tag: latestReactWorkTags.FunctionComponent, type: ClassInvokedAsFunction }),
       null,
     );
     expect(frame).toBe("\n    in ClassInvokedAsFunction");
@@ -210,11 +216,12 @@ describe("describeFiber native component frames", () => {
 
   it("splices display names into anonymous eval frames", () => {
     const AnonymousEvalComponent = Object.assign(
+      // eslint-disable-next-line @typescript-eslint/no-implied-eval -- This test requires an anonymous eval frame.
       new Function('throw new Error("anonymous component failure")'),
       { displayName: "NamedAnonymousComponent" },
     );
     const frame = describeFiber(
-      createFakeFiber({ tag: FunctionComponentTag, type: AnonymousEvalComponent }),
+      createFakeFiber({ tag: latestReactWorkTags.FunctionComponent, type: AnonymousEvalComponent }),
       null,
     );
     expect(frame).toContain("NamedAnonymousComponent");
@@ -223,7 +230,7 @@ describe("describeFiber native component frames", () => {
   it("falls back to a synthetic frame for async components", () => {
     const AsyncComponent = async (): Promise<null> => null;
     const frame = describeFiber(
-      createFakeFiber({ tag: FunctionComponentTag, type: AsyncComponent }),
+      createFakeFiber({ tag: latestReactWorkTags.FunctionComponent, type: AsyncComponent }),
       null,
     );
     expect(frame).toBe("\n    in AsyncComponent");
@@ -234,7 +241,7 @@ describe("describeFiber native component frames", () => {
       throw new Error("intentional");
     };
     const frame = describeFiber(
-      createFakeFiber({ tag: ForwardRefTag, type: { render: throwingRender } }),
+      createFakeFiber({ tag: latestReactWorkTags.ForwardRef, type: { render: throwingRender } }),
       null,
     );
     expect(frame).toContain("throwingRender");
@@ -248,7 +255,7 @@ describe("describeFiber native component frames", () => {
       }
     }
     const frame = describeFiber(
-      createFakeFiber({ tag: ClassComponentTag, type: ThrowingPropsClass }),
+      createFakeFiber({ tag: latestReactWorkTags.ClassComponent, type: ThrowingPropsClass }),
       null,
     );
     expect(frame).toContain("ThrowingPropsClass");
@@ -266,7 +273,7 @@ describe("describeFiber native component frames", () => {
         }
       }
       const frame = describeFiber(
-        createFakeFiber({ tag: ClassComponentTag, type: NoReflectClassComponent }),
+        createFakeFiber({ tag: latestReactWorkTags.ClassComponent, type: NoReflectClassComponent }),
         null,
       );
       expect(frame).toContain("NoReflectClassComponent");
@@ -283,7 +290,10 @@ describe("describeFiber native component frames", () => {
         throw new Error("intentional");
       };
       const frame = describeFiber(
-        createFakeFiber({ tag: FunctionComponentTag, type: TruncatedStackComponent }),
+        createFakeFiber({
+          tag: latestReactWorkTags.FunctionComponent,
+          type: TruncatedStackComponent,
+        }),
         null,
       );
       expect(frame).toBe("\n    in TruncatedStackComponent");
@@ -303,7 +313,10 @@ describe("describeFiber native component frames", () => {
         throw new Error("intentional");
       };
       const frame = describeFiber(
-        createFakeFiber({ tag: FunctionComponentTag, type: LegacyDispatcherComponent }),
+        createFakeFiber({
+          tag: latestReactWorkTags.FunctionComponent,
+          type: LegacyDispatcherComponent,
+        }),
         null,
       );
       expect(frame).toContain("LegacyDispatcherComponent");
@@ -332,7 +345,10 @@ describe("describeFiber native component frames", () => {
         throw new Error("intentional");
       };
       describeFiber(
-        createFakeFiber({ tag: FunctionComponentTag, type: MixedRendererComponent }),
+        createFakeFiber({
+          tag: latestReactWorkTags.FunctionComponent,
+          type: MixedRendererComponent,
+        }),
         null,
       );
       expect(observedLegacyDispatcher).toBeNull();
@@ -351,7 +367,11 @@ describe("getFallbackParentStack", () => {
     const rootFiber = createFakeFiber({
       _debugInfo: [{ name: "ServerRoot", env: "Server" }, { name: 42 }, { name: "ServerLeaf" }],
     });
-    const childFiber = createFakeFiber({ tag: HostComponentTag, type: "span", return: rootFiber });
+    const childFiber = createFakeFiber({
+      tag: latestReactWorkTags.HostComponent,
+      type: "span",
+      return: rootFiber,
+    });
     const stack = getFallbackParentStack(childFiber);
     expect(stack).toBe("\n    in span\n    in ServerLeaf\n    in ServerRoot (at Server)");
   });
@@ -381,11 +401,11 @@ describe("getFallbackParentStack", () => {
 describe("getOwnerStack owner-chain walk", () => {
   it("walks _debugOwner chains and marks flight server frames per-frame", async () => {
     const appFiber = createFakeFiber({
-      tag: FunctionComponentTag,
+      tag: latestReactWorkTags.FunctionComponent,
       type: function App() {},
     });
     const fiber = createFakeFiber({
-      tag: HostComponentTag,
+      tag: latestReactWorkTags.HostComponent,
       type: "p",
       _debugOwner: appFiber,
       _debugStack: createDebugStackError([
@@ -418,7 +438,7 @@ describe("getOwnerStack owner-chain walk", () => {
       ]),
     };
     const fiber = createFakeFiber({
-      tag: HostComponentTag,
+      tag: latestReactWorkTags.HostComponent,
       type: "p",
       _debugOwner: serverOwner,
       _debugStack: createDebugStackError([
@@ -439,11 +459,11 @@ describe("getOwnerStack owner-chain walk", () => {
 
   it("falls back to the parent walk when no owner frame has a locatable file", async () => {
     const appFiber = createFakeFiber({
-      tag: FunctionComponentTag,
+      tag: latestReactWorkTags.FunctionComponent,
       type: function App() {},
     });
     const fiber = createFakeFiber({
-      tag: HostComponentTag,
+      tag: latestReactWorkTags.HostComponent,
       type: "span",
       return: appFiber,
       _debugOwner: appFiber,
@@ -462,11 +482,11 @@ describe("getOwnerStack owner-chain walk", () => {
 
   it("ignores untrusted debug stacks and falls back to the parent walk", async () => {
     const appFiber = createFakeFiber({
-      tag: FunctionComponentTag,
+      tag: latestReactWorkTags.FunctionComponent,
       type: function App() {},
     });
     const fiber = createFakeFiber({
-      tag: HostComponentTag,
+      tag: latestReactWorkTags.HostComponent,
       type: "span",
       return: appFiber,
       _debugOwner: appFiber,
@@ -566,7 +586,17 @@ describe("getParentStack server frame enrichment", () => {
 
     const itemFrames = frames.filter((frame) => frame.functionName === "Item");
     expect(itemFrames).toHaveLength(2);
-    expect(itemFrames.map((frame) => frame.lineNumber).sort()).toEqual([10, 20]);
+    expect(
+      itemFrames
+        .map((frame) => frame.lineNumber)
+        .sort((firstLineNumber, secondLineNumber) =>
+          firstLineNumber === null
+            ? -1
+            : secondLineNumber === null
+              ? 1
+              : firstLineNumber - secondLineNumber,
+        ),
+    ).toEqual([10, 20]);
   });
 
   it("collects rsc frames from string-typed fibers in the return chain", async () => {
@@ -588,9 +618,9 @@ describe("getParentStack server frame enrichment", () => {
   });
 
   it("deduplicates consecutive frames with the same function name", async () => {
-    const rootFiber = createFakeFiber({ tag: HostComponentTag, type: "div" });
+    const rootFiber = createFakeFiber({ tag: latestReactWorkTags.HostComponent, type: "div" });
     const childFiber = createFakeFiber({
-      tag: HostComponentTag,
+      tag: latestReactWorkTags.HostComponent,
       type: "div",
       return: rootFiber,
     });
