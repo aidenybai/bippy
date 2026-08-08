@@ -16,9 +16,8 @@ export {
   LazyComponentTag,
   LegacyHiddenComponentTag,
   MemoComponentTag,
-  ModernReactWorkTags,
   OffscreenComponentTag,
-  React17WorkTags,
+  ReactWorkTags,
   SimpleMemoComponentTag,
   SuspenseComponentTag,
   SuspenseListComponentTag,
@@ -26,8 +25,9 @@ export {
 } from "./generated/react-work-tags.js";
 export type {
   HostWorkTag,
-  ModernReactWorkTag,
-  ReactWorkTags,
+  ReactWorkTag,
+  ReactWorkTagMap,
+  ReactWorkTagVersion,
 } from "./generated/react-work-tags.js";
 
 // HACK: React does not export Fiber flags. Keep these values aligned with ReactFiberFlags.

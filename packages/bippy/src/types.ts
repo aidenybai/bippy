@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type ReactReconciler from "react-reconciler";
-import type { HostWorkTag, ModernReactWorkTag } from "./react-internals.js";
+import type { HostWorkTag, ReactWorkTag } from "./react-internals.js";
 
 export type BundleType = ReactReconciler.BundleType;
 export type Flags = ReactReconciler.Flags;
@@ -16,7 +16,7 @@ export type React$AbstractComponent<
 > = ReactReconciler.React$AbstractComponent<Config, Instance>;
 export type RootTag = ReactReconciler.RootTag;
 export type TypeOfMode = ReactReconciler.TypeOfMode;
-export type WorkTag = ReactReconciler.WorkTag | ModernReactWorkTag;
+export type WorkTag = ReactReconciler.WorkTag | ReactWorkTag;
 
 export interface HostConfig<
   Type = unknown,

@@ -5,20 +5,19 @@ import {
   HostHoistableTag,
   HostSingletonTag,
   HostTextTag,
-  ModernReactWorkTags,
-  React17WorkTags,
+  ReactWorkTags,
 } from "../src/react-internals.js";
 
-it("selects React 17 work tags independently from modern React work tags", () => {
-  expect(getReactWorkTags("17.0.1")).toBe(React17WorkTags);
-  expect(getReactWorkTags("17.0.2")).toBe(ModernReactWorkTags);
-  expect(getReactWorkTags("18.3.1")).toBe(ModernReactWorkTags);
-  expect(getReactWorkTags("19.2.0-canary")).toBe(ModernReactWorkTags);
+it("selects React work tags by their version baseline", () => {
+  expect(getReactWorkTags("17.0.1")).toBe(ReactWorkTags["17.0.1"]);
+  expect(getReactWorkTags("17.0.2")).toBe(ReactWorkTags["17.0.2"]);
+  expect(getReactWorkTags("18.3.1")).toBe(ReactWorkTags["17.0.2"]);
+  expect(getReactWorkTags("19.2.0-canary")).toBe(ReactWorkTags["17.0.2"]);
 });
 
-it("derives public host tags from the modern work-tag table", () => {
-  expect(HostComponentTag).toBe(ModernReactWorkTags.HostComponent);
-  expect(HostTextTag).toBe(ModernReactWorkTags.HostText);
-  expect(HostHoistableTag).toBe(ModernReactWorkTags.HostHoistable);
-  expect(HostSingletonTag).toBe(ModernReactWorkTags.HostSingleton);
+it("derives public host tags from the React 17.0.2 baseline", () => {
+  expect(HostComponentTag).toBe(ReactWorkTags["17.0.2"].HostComponent);
+  expect(HostTextTag).toBe(ReactWorkTags["17.0.2"].HostText);
+  expect(HostHoistableTag).toBe(ReactWorkTags["17.0.2"].HostHoistable);
+  expect(HostSingletonTag).toBe(ReactWorkTags["17.0.2"].HostSingleton);
 });
