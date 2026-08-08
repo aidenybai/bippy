@@ -1,12 +1,5 @@
 {
   "buildCommand": "pnpm run build",
-  "outputDirectory": "dist",
-  "framework": null,
-  "redirects": [
-    {
-      "source": "/:path*",
-      "destination": "https://github.com/aidenybai/bippy",
-      "permanent": true
-    }
-  ]
+  "outputDirectory": ".next",
+  "framework": "nextjs"
 }
