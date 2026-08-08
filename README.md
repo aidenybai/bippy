@@ -337,9 +337,7 @@ import { memo } from "react";
 const RealComponent = () => {
   return <div>hello</div>;
 };
-const MemoizedComponent = memo(() => {
-  return <div>hello</div>;
-});
+const MemoizedComponent = memo(RealComponent);
 
 console.log(getType(fiberForMemoizedComponent) === RealComponent);
 ```

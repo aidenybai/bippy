@@ -382,10 +382,29 @@ importers:
         version: 0.2.8(@types/node@20.19.34)(@vitest/coverage-istanbul@4.1.10(vitest@4.1.10))(esbuild@0.27.4)(happy-dom@15.11.7)(jiti@2.7.0)(msw@2.12.10(@types/node@20.19.34)(typescript@5.9.3))(publint@0.3.18)(terser@5.46.0)(tsx@4.21.0)(typescript@5.9.3)(vite@7.3.6(@types/node@20.19.34)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))(yaml@2.8.2)
 
   packages/website:
+    dependencies:
+      next:
+        specifier: 15.3.8
+        version: 15.3.8(@playwright/test@1.62.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
     devDependencies:
-      vite-plus:
-        specifier: latest
-        version: 0.2.8(@types/node@20.19.34)(@vitest/coverage-istanbul@4.1.10(vitest@4.1.10))(esbuild@0.27.4)(happy-dom@15.11.7)(jiti@2.7.0)(msw@2.12.10(@types/node@20.19.34)(typescript@5.9.3))(publint@0.3.18)(terser@5.46.0)(tsx@4.21.0)(typescript@5.9.3)(vite@7.3.6(@types/node@20.19.34)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))(yaml@2.8.2)
+      '@types/node':
+        specifier: ^20
+        version: 20.19.34
+      '@types/react':
+        specifier: ^19
+        version: 19.1.17
+      '@types/react-dom':
+        specifier: ^19
+        version: 19.2.3(@types/react@19.1.17)
+      typescript:
+        specifier: ^5
+        version: 5.9.3
 
 packages:
 
@@ -8398,7 +8417,7 @@ snapshots:
       resolve: 1.22.11
       resolve-from: 5.0.0
       resolve.exports: 2.0.3
-      semver: 7.8.5
+      semver: 7.7.4
       send: 0.19.2
       slugify: 1.6.6
       source-map-support: 0.5.21
@@ -8408,7 +8427,7 @@ snapshots:
       terminal-link: 2.1.1
       undici: 6.23.0
       wrap-ansi: 7.0.0
-      ws: 8.21.1
+      ws: 8.19.0
     optionalDependencies:
       react-native: 0.81.5(@babel/core@7.29.0)(@types/react@19.2.17)(react@19.2.4)
     transitivePeerDependencies:
@@ -8573,7 +8592,7 @@ snapshots:
       glob: 13.0.6
       hermes-parser: 0.29.1
       jsc-safe-url: 0.2.4
-      lightningcss: 1.33.0
+      lightningcss: 1.31.1
       minimatch: 9.0.8
       postcss: 8.4.49
       resolve-from: 5.0.0
@@ -13969,7 +13988,7 @@ snapshots:
       react-refresh: 0.14.2
       regenerator-runtime: 0.13.11
       scheduler: 0.26.0
-      semver: 7.8.5
+      semver: 7.7.4
       stacktrace-parser: 0.1.11
       whatwg-fetch: 3.6.20
       ws: 6.2.3
