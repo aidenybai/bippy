@@ -3,6 +3,8 @@ import "../src/index.js"; // KEEP THIS LINE ON TOP
 import { describe, expect, it, vi } from "vitest";
 import type { ContextDependency, Fiber } from "../src/types.js";
 import {
+  FunctionComponentTag,
+  HostRootTag,
   instrument,
   traverseContexts,
   traverseFiber,
@@ -24,7 +26,7 @@ const createMockFiber = (overrides: Record<string, unknown> = {}): Fiber =>
     return: null,
     sibling: null,
     stateNode: null,
-    tag: 0,
+    tag: FunctionComponentTag,
     type: null,
     ...overrides,
   }) as unknown as Fiber;
@@ -287,7 +289,7 @@ describe("traverseFiber", () => {
       },
     });
     render(<Example />);
-    const selector = vi.fn((fiber) => fiber.tag === 3);
+    const selector = vi.fn((fiber) => fiber.tag === HostRootTag);
     const result = traverseFiber(maybeFiber as unknown as Fiber, selector, true);
     expect(result).toBeTruthy();
     const callCounts = new Map<Fiber, number>();
@@ -327,7 +329,7 @@ describe("traverseFiber", () => {
       },
     });
     render(<Example />);
-    const selector = vi.fn(async (fiber) => fiber.tag === 3);
+    const selector = vi.fn(async (fiber) => fiber.tag === HostRootTag);
     const result = await traverseFiber(maybeFiber as unknown as Fiber, selector, true);
     expect(result).toBeTruthy();
     const callCounts = new Map<Fiber, number>();

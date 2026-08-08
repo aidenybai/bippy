@@ -4,8 +4,38 @@ import * as ReactThreeTestRenderer from "@react-three/test-renderer";
 import { render, screen } from "@testing-library/react";
 import React from "react";
 import { expect, it } from "vitest";
-import { getFiberFromHostInstance, getRDTHook, instrument, traverseFiber } from "../src/index.js";
-import type { Fiber, FiberRoot, ReactRenderer } from "../src/types.js";
+import {
+  getFiberFromHostInstance,
+  getRDTHook,
+  HostComponentTag,
+  HostRootTag,
+  instrument,
+  traverseFiber,
+} from "../src/index.js";
+import type { Fiber, FiberRoot, ReactRenderer, WorkTag } from "../src/types.js";
+
+interface MockHostFiber {
+  child: MockHostFiber | null;
+  flags: number;
+  memoizedState?: Record<string, unknown>;
+  pendingProps: Record<string, unknown>;
+  return: MockHostFiber | null;
+  sibling: MockHostFiber | null;
+  stateNode: unknown;
+  tag: WorkTag;
+  type: string;
+}
+
+const createMockHostFiber = (stateNode: unknown, type = "RCTView"): MockHostFiber => ({
+  child: null,
+  flags: 0,
+  pendingProps: {},
+  return: null,
+  sibling: null,
+  stateNode,
+  tag: HostComponentTag,
+  type,
+});
 
 it("should return the fiber from the host instance", () => {
   render(<div>HostInstance</div>);
@@ -26,7 +56,7 @@ it("should return null when the fiber property holds a falsy value", () => {
 });
 
 it("should resolve React Native Fabric public instances via the internal instance handle", () => {
-  const mockFiber = { pendingProps: {}, stateNode: {}, tag: 5, type: "RCTView" };
+  const mockFiber = createMockHostFiber({});
   const fabricPublicInstance = { __internalInstanceHandle: mockFiber, __nativeTag: 7 };
   expect(getFiberFromHostInstance(fabricPublicInstance)).toBe(mockFiber);
 
@@ -39,15 +69,52 @@ it("should ignore instance handles that are not fibers", () => {
 });
 
 it("should resolve legacy roots through _reactRootContainer", () => {
-  const mockFiber = { tag: 5, type: "div" };
+  const mockFiber = createMockHostFiber({}, "div");
   const legacyRootContainer = {
     _reactRootContainer: { _internalRoot: { current: { child: mockFiber } } },
   };
   expect(getFiberFromHostInstance(legacyRootContainer)).toBe(mockFiber);
 });
 
+it("should resolve Fabric public instances from canonical host state", () => {
+  using _unsubscribe = instrument({});
+  const publicInstance = {};
+  const hostFiber = createMockHostFiber({ canonical: { publicInstance } });
+  const rootFiber = createMockHostFiber(null, "root");
+  rootFiber.tag = HostRootTag;
+  rootFiber.child = hostFiber;
+  rootFiber.memoizedState = { element: {} };
+  hostFiber.return = rootFiber;
+  const fiberRoot = { current: rootFiber };
+  getRDTHook().onCommitFiberRoot(999, fiberRoot as unknown as FiberRoot, undefined, false);
+  try {
+    expect(getFiberFromHostInstance(publicInstance)).toBe(hostFiber);
+  } finally {
+    rootFiber.memoizedState = { element: null };
+    getRDTHook().onCommitFiberRoot(999, fiberRoot as unknown as FiberRoot, undefined, false);
+  }
+});
+
+it("should resolve Paper native tags from host state", () => {
+  using _unsubscribe = instrument({});
+  const hostFiber = createMockHostFiber({ _nativeTag: 42 });
+  const rootFiber = createMockHostFiber(null, "root");
+  rootFiber.tag = HostRootTag;
+  rootFiber.child = hostFiber;
+  rootFiber.memoizedState = { element: {} };
+  hostFiber.return = rootFiber;
+  const fiberRoot = { current: rootFiber };
+  getRDTHook().onCommitFiberRoot(999, fiberRoot as unknown as FiberRoot, undefined, false);
+  try {
+    expect(getFiberFromHostInstance(42)).toBe(hostFiber);
+  } finally {
+    rootFiber.memoizedState = { element: null };
+    getRDTHook().onCommitFiberRoot(999, fiberRoot as unknown as FiberRoot, undefined, false);
+  }
+});
+
 it("should prefer renderer.findFiberByHostInstance when available", () => {
-  const mockFiber = { tag: 5, type: "span" } as unknown as Fiber;
+  const mockFiber = { tag: HostComponentTag, type: "span" } as unknown as Fiber;
   const rdtHook = getRDTHook();
   const findFiberByHostInstance = () => mockFiber;
   rdtHook.renderers.set(999, { findFiberByHostInstance } as unknown as ReactRenderer);

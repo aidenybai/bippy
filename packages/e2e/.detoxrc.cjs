@@ -20,6 +20,8 @@ module.exports = {
     "android.debug": {
       type: "android.apk",
       binaryPath: "fixtures/expo-app/android/app/build/outputs/apk/debug/app-debug.apk",
+      testBinaryPath:
+        "fixtures/expo-app/android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk",
       build:
         "cd fixtures/expo-app && npx expo prebuild --platform android --clean && cd android && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug -quiet",
     },

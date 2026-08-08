@@ -1,7 +1,9 @@
 import { readFileSync } from "node:fs";
 import { defineConfig } from "vite-plus";
+import { reactInternalsPlugin } from "./scripts/react-internals-plugin.js";
 
 const pkg = JSON.parse(readFileSync("package.json", "utf8"));
+const generateReactInternals = reactInternalsPlugin();
 
 const sharedPackOptions = {
   clean: false,
@@ -19,6 +21,7 @@ const sharedPackOptions = {
   minify: process.env.NODE_ENV === "production" && !process.env.BIPPY_SOURCEMAP,
   outDir: "./dist",
   platform: "browser",
+  plugins: [generateReactInternals],
   sourcemap: Boolean(process.env.BIPPY_SOURCEMAP),
   target: "esnext",
   treeshake: true,
@@ -34,7 +37,6 @@ export default defineConfig({
         index: "./src/index.ts",
         core: "./src/core.ts",
         source: "./src/source/index.ts",
-        "react-refresh": "./src/react-refresh/index.ts",
         "install-hook-only": "./src/install-hook-only.ts",
       },
       format: ["esm", "cjs"],

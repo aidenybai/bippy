@@ -22,7 +22,6 @@ import {
   isHostFiber,
   isInstrumentationActive,
   isRealReactDevtools,
-  isReactRefresh,
   isValidElement,
   isValidFiber,
   overrideContext,
@@ -36,7 +35,6 @@ import {
   version,
 } from "bippy";
 import type { Fiber, FiberRoot } from "bippy";
-import { instrumentReactRefresh } from "bippy/react-refresh";
 import { getDisplayNameFromSource, getFiberHooks, getOwnerStack, getSource } from "bippy/source";
 import {
   Component,
@@ -51,7 +49,6 @@ import {
 } from "react";
 import { ScrollView, Text, View } from "react-native";
 
-import { HmrTarget } from "./hmr-target";
 import { SkiaProbe } from "./skia-probe";
 
 const TestContext = createContext("default-context");
@@ -180,7 +177,6 @@ OverrideProbes.displayName = "OverrideProbes";
 const App = () => {
   const [coreResults, setCoreResults] = useState<Record<string, string>>({});
   const [sourceResults, setSourceResults] = useState<Record<string, string>>({});
-  const [hmrResults, setHmrResults] = useState<Record<string, string>>({});
   const [skiaResults, setSkiaResults] = useState<Record<string, string>>({});
   const [skiaRevision, setSkiaRevision] = useState(0);
   const [isSkiaTreeVisible, setIsSkiaTreeVisible] = useState(true);
@@ -294,9 +290,6 @@ const App = () => {
     // react-native dev builds ship the real react-devtools backend, so the
     // hook has getFiberRoots and isRealReactDevtools reports true here
     results["isRealReactDevtools"] = String(isRealReactDevtools());
-    // hermes does not expose function source to toString, so react-refresh's
-    // inject-string sniff can legitimately resolve either way on native
-    results["isReactRefresh"] = String(isReactRefresh());
     results["version-is-string"] = String(typeof version === "string" && version.length > 0);
 
     const rdtHook = getRDTHook();
@@ -584,51 +577,10 @@ const App = () => {
     }
   }, [coreResults]);
 
-  useEffect(() => {
-    let refreshCount = 0;
-    const unsubscribeRefresh = instrumentReactRefresh({
-      onRefresh: (update) => {
-        refreshCount++;
-        const updatedNames = update.updatedComponents
-          .map((componentType) => getDisplayName(componentType) ?? "unknown")
-          .join(",");
-        console.log(
-          `[bippy-hmr] refresh #${refreshCount} updated=[${updatedNames}] fibers=${update.updatedFibers.length} paths=[${update.filePaths.join(",")}]`,
-        );
-        setHmrResults((previousResults) => ({
-          ...previousResults,
-          "refresh-count": String(refreshCount),
-          "refresh-last-update": updatedNames,
-          "refresh-last-fibers": update.updatedFibers
-            .map((updatedFiber) => getDisplayName(updatedFiber.type) ?? "unknown")
-            .join(","),
-          "refresh-fibers-valid": String(
-            update.updatedFibers.every((updatedFiber) => isFiber(updatedFiber)),
-          ),
-          "refresh-last-paths": update.filePaths.join(","),
-        }));
-      },
-    });
-    const rdtHook = getRDTHook();
-    const rendererDiagnostics = Array.from(
-      rdtHook.renderers.entries(),
-      ([rendererId, renderer]) => {
-        return `${rendererId}:scheduleRefresh=${typeof renderer.scheduleRefresh}`;
-      },
-    ).join(" ");
-    console.log(`[bippy-hmr] listener=true renderers={${rendererDiagnostics}}`);
-    setHmrResults((previousResults) => ({
-      ...previousResults,
-      "refresh-listener": "true",
-    }));
-    return unsubscribeRefresh;
-  }, []);
-
   return (
     <ScrollView testID="root-scroll">
       <TestParent />
       <OverrideProbes />
-      <HmrTarget />
       <SkiaProbe isTreeVisible={isSkiaTreeVisible} revision={skiaRevision} />
       <View testID="host-probe" ref={hostProbeRef} />
       <View testID="results-container">
@@ -636,9 +588,6 @@ const App = () => {
           <ResultRow key={key} testID={`result-${key}`} value={value} />
         ))}
         {Object.entries(sourceResults).map(([key, value]) => (
-          <ResultRow key={key} testID={`result-${key}`} value={value} />
-        ))}
-        {Object.entries(hmrResults).map(([key, value]) => (
           <ResultRow key={key} testID={`result-${key}`} value={value} />
         ))}
         {Object.entries(skiaResults).map(([key, value]) => (

@@ -67,7 +67,7 @@ export const extractLocation = (
 };
 
 const applySlice = <T>(lines: T[], options?: ParseOptions): T[] => {
-  if (options && options.slice != null) {
+  if (options && options.slice !== null && options.slice !== undefined) {
     if (Array.isArray(options.slice)) return lines.slice(options.slice[0], options.slice[1]);
     return lines.slice(0, options.slice);
   }

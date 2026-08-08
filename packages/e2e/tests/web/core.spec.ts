@@ -151,7 +151,14 @@ test.describe("fiber retrieval", () => {
 
   test("getFiberFromHostInstance resolves legacy _reactRootContainer roots", async ({ page }) => {
     const result = await page.evaluate(() => {
-      const sentinelFiber = { tag: 3, sentinel: "legacy-root-child" };
+      const sentinelFiber = {
+        child: null,
+        flags: 0,
+        return: null,
+        sibling: null,
+        stateNode: null,
+        tag: 3,
+      };
       const legacyHostInstance = {
         _reactRootContainer: { _internalRoot: { current: { child: sentinelFiber } } },
       };

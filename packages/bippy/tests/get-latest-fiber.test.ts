@@ -1,5 +1,5 @@
 import { afterEach, expect, it } from "vitest";
-import { _fiberRoots, getLatestFiber } from "../src/index.js";
+import { _fiberRoots, FunctionComponentTag, getLatestFiber } from "../src/index.js";
 import type { Fiber } from "../src/types.js";
 
 interface MockFiberOverrides {
@@ -21,7 +21,7 @@ const createMockFiber = (overrides: MockFiberOverrides = {}): Fiber =>
     return: null,
     sibling: null,
     stateNode: null,
-    tag: 0,
+    tag: FunctionComponentTag,
     type: null,
     ...overrides,
   }) as unknown as Fiber;

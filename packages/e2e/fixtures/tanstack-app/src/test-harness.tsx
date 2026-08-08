@@ -14,8 +14,6 @@ import React, {
   useState,
 } from "react";
 
-import { installHmrHarness } from "./hmr-harness";
-
 declare global {
   interface Window {
     __BIPPY__: typeof bippy & typeof bippySource;
@@ -96,7 +94,6 @@ class TestClassComponent extends Component {
 export const TestHarness = () => {
   useEffect(() => {
     window.__BIPPY__ = { ...bippy, ...bippySource };
-    installHmrHarness();
   }, []);
 
   return <TestParent />;

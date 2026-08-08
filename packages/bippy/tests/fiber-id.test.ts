@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { getFiberId, setFiberId } from "../src/index.js";
+import { FunctionComponentTag, getFiberId, setFiberId } from "../src/index.js";
 import type { Fiber } from "../src/types.js";
 
 const createMockFiber = (alternate: Fiber | null = null): Fiber =>
@@ -10,7 +10,7 @@ const createMockFiber = (alternate: Fiber | null = null): Fiber =>
     return: null,
     sibling: null,
     stateNode: null,
-    tag: 0,
+    tag: FunctionComponentTag,
     type: null,
   }) as unknown as Fiber;
 

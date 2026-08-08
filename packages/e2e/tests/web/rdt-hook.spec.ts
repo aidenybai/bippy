@@ -61,32 +61,6 @@ test.describe("patchRDTHook", () => {
     expect(result.didFire).toBe(true);
     expect(result.isActive).toBe(true);
   });
-
-  test("re-patching with react-refresh and no renderers self-injects to activate", async ({
-    page,
-  }) => {
-    const result = await page.evaluate(() => {
-      const rdtHook = (globalThis as any).__REACT_DEVTOOLS_GLOBAL_HOOK__;
-      if (!window.__BIPPY__.isReactRefresh(rdtHook)) return { skipped: true };
-
-      const stashedRenderers = new Map(rdtHook.renderers);
-      rdtHook.renderers.clear();
-      rdtHook._instrumentationSource = undefined;
-      rdtHook._instrumentationIsActive = false;
-
-      window.__BIPPY__.patchRDTHook();
-      const rendererCountAfterPatch = rdtHook.renderers.size;
-      const isActiveAfterPatch = rdtHook._instrumentationIsActive === true;
-
-      for (const [rendererId, renderer] of stashedRenderers) {
-        rdtHook.renderers.set(rendererId, renderer);
-      }
-      return { skipped: false, rendererCountAfterPatch, isActiveAfterPatch };
-    });
-    if (result.skipped) return;
-    expect(result.rendererCountAfterPatch).toBeGreaterThanOrEqual(1);
-    expect(result.isActiveAfterPatch).toBe(true);
-  });
 });
 
 test.describe("hook environment", () => {
@@ -101,22 +75,6 @@ test.describe("hook environment", () => {
     });
     expect(result.hasHook).toBe(true);
     expect(result.isClient).toBe(true);
-  });
-
-  test("isReactRefresh rejects hooks without a react-refresh inject source", async ({ page }) => {
-    const result = await page.evaluate(() => {
-      return {
-        installedHook: window.__BIPPY__.isReactRefresh(window.__BIPPY__.getRDTHook()),
-        bareObject: window.__BIPPY__.isReactRefresh({ inject: () => 1 } as never),
-      };
-    });
-    // isReactRefresh latches true once any refresh hook was seen, so the
-    // installed hook's answer is environment-dependent; the bare object is
-    // only rejected while that latch is unset
-    expect(typeof result.installedHook).toBe("boolean");
-    if (!result.installedHook) {
-      expect(result.bareObject).toBe(false);
-    }
   });
 
   test("version and BIPPY_INSTRUMENTATION_STRING identify the build", async ({ page }) => {

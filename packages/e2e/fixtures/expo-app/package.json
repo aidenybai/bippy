@@ -5,11 +5,14 @@
   "main": "src/index.ts",
   "scripts": {
     "start": "expo start",
-    "ios": "expo start --ios",
-    "android": "expo start --android",
+    "ios": "expo run:ios",
+    "android": "expo run:android",
     "build:ios": "expo prebuild --platform ios && xcodebuild -workspace ios/bippye2eexpo.xcworkspace -scheme bippye2eexpo -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build",
+    "build:android": "expo prebuild --platform android && cd android && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug",
     "detox:build:ios": "detox build --configuration ios.sim.debug",
-    "detox:test:ios": "detox test --configuration ios.sim.debug"
+    "detox:test:ios": "detox test --configuration ios.sim.debug",
+    "detox:build:android": "detox build --configuration android.emu.debug",
+    "detox:test:android": "detox test --configuration android.emu.debug"
   },
   "dependencies": {
     "@shopify/react-native-skia": "^2.9.0",

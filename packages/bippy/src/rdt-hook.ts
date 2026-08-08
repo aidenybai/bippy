@@ -1,7 +1,4 @@
-// IMPORTANT:
-// this file is super important to load the __REACT_DEVTOOLS_GLOBAL_HOOK__ object
-// without this, we can't stub the React DevTools global hook, we don't have a way to instrument the application
-// make sure you import this file first before anything else (particularly React)
+// This module must load before React so renderers can inject into the hook.
 
 import type { ReactDevToolsGlobalHook, ReactRenderer } from "./types.js";
 import { toUnsubscribe, type Unsubscribe } from "./unsubscribe.js";
@@ -13,14 +10,12 @@ const objectDefineProperty = Object.defineProperty;
 // eslint-disable-next-line @typescript-eslint/unbound-method
 const objectHasOwnProperty = Object.prototype.hasOwnProperty;
 
-const NO_OP = () => {
-  /**/
-};
+const NO_OP = (): void => {};
 
 const checkDCE = (functionToCheck: unknown): void => {
   try {
     const code = Function.prototype.toString.call(functionToCheck);
-    if (code.indexOf("^_^") > -1) {
+    if (code.includes("^_^")) {
       setTimeout(() => {
         throw new Error(
           "React is running in production mode, but dead code " +
@@ -39,27 +34,12 @@ export const isRealReactDevtools = (
   return Boolean(rdtHook && "getFiberRoots" in rdtHook);
 };
 
-let isReactRefreshOverride = false;
-let injectFnStr: string | undefined = undefined;
-
-export const isReactRefresh = (
-  rdtHook: ReactDevToolsGlobalHook | undefined | null = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__,
-): boolean => {
-  if (isReactRefreshOverride) return true;
-  if (rdtHook && typeof rdtHook.inject === "function") {
-    injectFnStr = rdtHook.inject.toString();
-  }
-  // https://github.com/facebook/react/blob/8f8b336734d7c807f5aa11b0f31540e63302d789/packages/react-refresh/src/ReactFreshRuntime.js#L459
-  return Boolean(injectFnStr?.includes("(injected)"));
-};
-
 export const _onActiveListeners = new Set<() => unknown>();
 
 export const _renderers = new Set<ReactRenderer>();
 
 const rendererInjectListeners = new Set<(renderer: ReactRenderer) => void>();
-// re-wrapping inject (e.g. after the hook is replaced) leaves the old
-// wrapper in the call chain, so notifications are deduped per renderer
+// HACK: Hook replacement can leave an old inject wrapper in the call chain, so notifications must be deduplicated.
 const notifiedRenderers = new WeakSet<ReactRenderer>();
 let notifyingInject: ReactDevToolsGlobalHook["inject"] | null = null;
 
@@ -80,18 +60,20 @@ const ensureInjectNotifiesListeners = (rdtHook: ReactDevToolsGlobalHook): void =
   notifyingInject = nextInject;
 };
 
-/**
- * Subscribes to future renderer injections into the DevTools hook. The
- * single shared inject wrapper lets multiple consumers (override methods,
- * react-refresh, user code) observe renderers without stacking patches
- * whose restore order matters. Returns an unsubscribe function.
- */
+/** Subscribes to renderer injections without stacking competing hook patches. */
 export const onRendererInject = (listener: (renderer: ReactRenderer) => void): Unsubscribe => {
   ensureInjectNotifiesListeners(getRDTHook());
   rendererInjectListeners.add(listener);
   return toUnsubscribe(() => {
     rendererInjectListeners.delete(listener);
   });
+};
+
+const ensureRendererMap = (rdtHook: ReactDevToolsGlobalHook): Map<number, ReactRenderer> => {
+  if (!(rdtHook.renderers instanceof Map)) {
+    rdtHook.renderers = new Map();
+  }
+  return rdtHook.renderers;
 };
 
 export const installRDTHook = (onActive?: () => unknown): ReactDevToolsGlobalHook => {
@@ -134,19 +116,18 @@ export const installRDTHook = (onActive?: () => unknown): ReactDevToolsGlobalHoo
         if (newHook && typeof newHook === "object") {
           const ourRenderers = rdtHook.renderers;
           rdtHook = newHook;
+          const nextRenderers = ensureRendererMap(rdtHook);
           if (ourRenderers.size > 0) {
             ourRenderers.forEach((renderer, id) => {
               _renderers.add(renderer);
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-              newHook.renderers.set(id, renderer);
+              nextRenderers.set(id, renderer);
             });
             patchRDTHook(onActive);
           }
         }
       },
     });
-    // [!] this is a hack for chrome extensions - if we install before React DevTools, we could accidently prevent React DevTools from installing:
-    // https://github.com/facebook/react/blob/18eaf51bd51fed8dfed661d64c306759101d0bfd/packages/react-devtools-extensions/src/contentScripts/installHook.js#L30C6-L30C27
+    // HACK: The DevTools extension uses hasOwnProperty to decide whether it may replace an earlier hook.
     // eslint-disable-next-line @typescript-eslint/unbound-method
     const originalWindowHasOwnProperty = window.hasOwnProperty;
     let hasRanHack = false;
@@ -156,7 +137,6 @@ export const installRDTHook = (onActive?: () => unknown): ReactDevToolsGlobalHoo
         try {
           if (!hasRanHack && args[0] === "__REACT_DEVTOOLS_GLOBAL_HOOK__") {
             globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ = undefined;
-            // special falsy value to know that we've already installed before
             hasRanHack = true;
             return -0;
           }
@@ -175,9 +155,11 @@ export const patchRDTHook = (onActive?: () => unknown): void => {
   if (onActive) {
     _onActiveListeners.add(onActive);
   }
+  let didNotifyActiveListeners = false;
   try {
     const rdtHook = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
     if (!rdtHook) return;
+    const renderers = ensureRendererMap(rdtHook);
     if (!rdtHook._instrumentationSource) {
       rdtHook.checkDCE = checkDCE;
       rdtHook.supportsFiber = true;
@@ -185,48 +167,28 @@ export const patchRDTHook = (onActive?: () => unknown): void => {
       rdtHook.hasUnsupportedRendererAttached = false;
       rdtHook._instrumentationSource = BIPPY_INSTRUMENTATION_STRING;
       rdtHook._instrumentationIsActive = false;
-      // we need to be careful here (needs to be below _instrumentationSource) else it causes excessive recursion
+      // HACK: DevTools detection must happen after setting the source to avoid recursive patching.
       const isReactDevtools = isRealReactDevtools(rdtHook);
       if (!isReactDevtools) {
         rdtHook.on = NO_OP;
       }
-      if (rdtHook.renderers.size) {
+      if (renderers.size) {
+        renderers.forEach((renderer) => _renderers.add(renderer));
         rdtHook._instrumentationIsActive = true;
         _onActiveListeners.forEach((listener) => listener());
-        return;
+        didNotifyActiveListeners = true;
       }
       const prevInject = rdtHook.inject;
-      const isRefresh = isReactRefresh(rdtHook);
-      if (isRefresh && !isReactDevtools) {
-        isReactRefreshOverride = true;
-        // but since the underlying implementation doens't care,
-        // it's ok: https://github.com/facebook/react/blob/18eaf51bd51fed8dfed661d64c306759101d0bfd/packages/react-refresh/src/ReactFreshRuntime.js#L430
-        const injectedRendererId = rdtHook.inject({
-          scheduleRefresh() {},
-        } as unknown as ReactRenderer);
-        if (injectedRendererId) {
-          rdtHook._instrumentationIsActive = true;
-        }
-      }
       rdtHook.inject = (renderer) => {
         const rendererId = prevInject(renderer);
         _renderers.add(renderer);
-        if (isRefresh) {
-          // react refresh doesn't inject this properly
-          // https://github.com/facebook/react/blob/18eaf51bd51fed8dfed661d64c306759101d0bfd/packages/react-refresh/src/ReactFreshRuntime.js#L430
-          rdtHook.renderers.set(rendererId, renderer);
-        }
+        renderers.set(rendererId, renderer);
         rdtHook._instrumentationIsActive = true;
         _onActiveListeners.forEach((listener) => listener());
         return rendererId;
       };
     }
-    if (
-      rdtHook.renderers.size ||
-      rdtHook._instrumentationIsActive ||
-      // depending on this to inject is unsafe, since inject could occur before and we wouldn't know
-      isReactRefresh()
-    ) {
+    if (!didNotifyActiveListeners && (renderers.size || rdtHook._instrumentationIsActive)) {
       onActive?.();
     }
   } catch {}
@@ -245,8 +207,7 @@ export const getRDTHook = (onActive?: () => unknown): ReactDevToolsGlobalHook =>
   }
 
   patchRDTHook(onActive);
-  // must exist at this point
-  return globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ as ReactDevToolsGlobalHook;
+  return globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ ?? installRDTHook(onActive);
 };
 
 export const isClientEnvironment = (): boolean => {
@@ -257,12 +218,8 @@ export const isClientEnvironment = (): boolean => {
   );
 };
 
-/**
- * Usually used purely for side effect
- */
 export const safelyInstallRDTHook = () => {
   try {
-    // __REACT_DEVTOOLS_GLOBAL_HOOK__ must exist before React is ever executed
     if (isClientEnvironment()) {
       getRDTHook();
     }

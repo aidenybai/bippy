@@ -4,6 +4,7 @@ import {
   didFiberCommit,
   didFiberRender,
   getDisplayName,
+  getFiberFromHostInstance,
   getFiberId,
   getFiberStack,
   getLatestFiber,
@@ -22,7 +23,7 @@ import {
   traverseProps,
   traverseState,
 } from "../src/index.js";
-import { getFiberHooks } from "../src/source/index.js";
+import { getFiberHooks, getOwnerStack, getSource } from "../src/source/index.js";
 import type { Fiber, FiberRoot } from "../src/types.js";
 
 export interface RendererHostProps {
@@ -46,6 +47,8 @@ export interface RendererAdapterFactory {
   create: () => Promise<RendererAdapter>;
   name: string;
   rendererPackageName?: string;
+  supportLevel: "automatic" | "compatibility";
+  supportsHostInstanceLookup?: boolean;
 }
 
 interface CompoundTreeProps {
@@ -66,6 +69,9 @@ interface CompoundComponents {
 const RendererContext = React.createContext("default");
 RendererContext.displayName = "RendererContext";
 Reflect.set(globalThis, "IS_REACT_ACT_ENVIRONMENT", true);
+
+const sourceFetch = (): Promise<Response> =>
+  Promise.resolve(new Response("not found", { status: 404 }));
 
 const collectHookValues = (
   hooks: ReturnType<typeof getFiberHooks>,
@@ -123,7 +129,7 @@ const findComponentFiber = (
   );
 
 export const runRendererTestHarness = (factories: RendererAdapterFactory[]): void => {
-  describe.each(factories)("$name renderer", (factory) => {
+  describe.each(factories)("$name renderer ($supportLevel)", (factory) => {
     it("supports compound mount, inspection, update, and unmount instrumentation", async () => {
       const committedRoots: FiberRoot[] = [];
       const rendererIds: number[] = [];
@@ -184,11 +190,27 @@ export const runRendererTestHarness = (factories: RendererAdapterFactory[]): voi
       expect(didFiberRender(mountedStatefulFiber)).toBe(true);
       expect(getFiberStack(mountedForwardFiber)).toContain(mountedStatefulFiber);
 
+      const source = await getSource(mountedStatefulFiber, false, sourceFetch);
+      expect(source?.fileName).toContain("renderer-test-harness.tsx");
+      const ownerStack = await getOwnerStack(mountedForwardFiber, false, sourceFetch);
+      expect(
+        ownerStack.some((stackFrame) =>
+          ["RendererStatefulBranch", "RendererCompoundTree"].includes(
+            stackFrame.functionName ?? "",
+          ),
+        ),
+      ).toBe(true);
+
       const nearestMountedHostFiber = getNearestHostFiber(mountedStatefulFiber);
       expect(nearestMountedHostFiber).not.toBeNull();
       if (!nearestMountedHostFiber) throw new Error(`${factory.name} did not render a host fiber`);
       expect(isHostFiber(nearestMountedHostFiber)).toBe(true);
       expect(getNearestHostFibers(mountedStatefulFiber).length).toBeGreaterThanOrEqual(1);
+      if (factory.supportsHostInstanceLookup) {
+        expect(getFiberFromHostInstance(nearestMountedHostFiber.stateNode)).toBe(
+          nearestMountedHostFiber,
+        );
+      }
 
       const mountedFiberId = getFiberId(mountedStatefulFiber);
       await controller.update(createTree(2), () => components.setStateValue(4));

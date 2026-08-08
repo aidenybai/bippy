@@ -171,6 +171,7 @@ export const normalizeFileName = (fileName: string): string => {
   }
 
   let normalizedFileName = fileName;
+  const isWindowsDrivePath = /^[a-zA-Z]:[\\/]/.test(normalizedFileName);
 
   const isHttpUrl =
     normalizedFileName.startsWith("http://") || normalizedFileName.startsWith("https://");
@@ -214,7 +215,7 @@ export const normalizeFileName = (fileName: string): string => {
     }
   }
 
-  if (SCHEME_REGEX.test(normalizedFileName)) {
+  if (!isWindowsDrivePath && SCHEME_REGEX.test(normalizedFileName)) {
     const schemeMatch = normalizedFileName.match(SCHEME_REGEX);
     if (schemeMatch) {
       normalizedFileName = normalizedFileName.slice(schemeMatch[0].length);

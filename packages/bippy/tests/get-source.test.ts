@@ -106,6 +106,12 @@ describe("normalizeFileName", () => {
     expect(normalizeFileName("custom-scheme:src/app.tsx")).toBe("src/app.tsx");
   });
 
+  it("preserves Windows drive paths", () => {
+    expect(normalizeFileName("C:\\projects\\app\\src\\app.tsx")).toBe(
+      "C:\\projects\\app\\src\\app.tsx",
+    );
+  });
+
   it("strips a protocol-relative host prefix", () => {
     expect(normalizeFileName("webpack:////host/src/app.tsx")).toBe("/src/app.tsx");
   });
@@ -141,6 +147,9 @@ describe("isSourceFile", () => {
   it("returns true for plain source files", () => {
     expect(isSourceFile("/src/components/button.tsx")).toBe(true);
     expect(isSourceFile("/src/app.ts")).toBe(true);
+    expect(isSourceFile("/src/content.mdx")).toBe(true);
+    expect(isSourceFile("/src/server.mts")).toBe(true);
+    expect(isSourceFile("/src/config.cjs")).toBe(true);
   });
 });
 

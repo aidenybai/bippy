@@ -42,11 +42,6 @@ describe("bippy core functions on React Native", () => {
       await detoxExpect(element(by.id("result-isRealReactDevtools"))).toHaveText("true");
     });
 
-    it("isReactRefresh resolves to a boolean on hermes", async () => {
-      const isReactRefreshResult = await readElementText("result-isReactRefresh");
-      expect(["true", "false"]).toContain(isReactRefreshResult);
-    });
-
     it("version identifies the bippy build", async () => {
       await detoxExpect(element(by.id("result-version-is-string"))).toHaveText("true");
     });

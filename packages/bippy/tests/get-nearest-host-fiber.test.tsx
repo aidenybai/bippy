@@ -3,7 +3,14 @@ import "../src/index.js"; // KEEP THIS LINE ON TOP
 import { render } from "@testing-library/react";
 import React from "react";
 import { describe, expect, it } from "vitest";
-import { Fiber, getNearestHostFiber, getNearestHostFibers, instrument } from "../src/index.js";
+import {
+  FunctionComponentTag,
+  getNearestHostFiber,
+  getNearestHostFibers,
+  HostComponentTag,
+  instrument,
+} from "../src/index.js";
+import type { Fiber } from "../src/index.js";
 
 export const Example = () => {
   return <div>Hello</div>;
@@ -108,24 +115,29 @@ describe("getNearestHostFibers", () => {
     const childlessCompositeFiber = {
       child: null,
       sibling: null,
-      tag: 0,
+      tag: FunctionComponentTag,
       type: () => null,
     } as unknown as Fiber;
     expect(getNearestHostFibers(childlessCompositeFiber)).toHaveLength(0);
   });
 
   it("should skip childless composite fibers while traversing", () => {
-    const hostFiber = { child: null, sibling: null, tag: 5, type: "div" } as unknown as Fiber;
+    const hostFiber = {
+      child: null,
+      sibling: null,
+      tag: HostComponentTag,
+      type: "div",
+    } as unknown as Fiber;
     const childlessCompositeFiber = {
       child: null,
       sibling: hostFiber,
-      tag: 0,
+      tag: FunctionComponentTag,
       type: () => null,
     } as unknown as Fiber;
     const rootCompositeFiber = {
       child: childlessCompositeFiber,
       sibling: null,
-      tag: 0,
+      tag: FunctionComponentTag,
       type: () => null,
     } as unknown as Fiber;
     expect(getNearestHostFibers(rootCompositeFiber)).toEqual([hostFiber]);

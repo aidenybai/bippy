@@ -9,8 +9,8 @@ export interface Unsubscribe extends Disposable {
  * @example
  * ```ts
  * using instrumentation = instrument({ onCommitFiberRoot });
- * using refresh = instrumentReactRefresh({ onRefresh: handleRefresh });
- * // both torn down automatically at scope exit
+ * using rendererSubscription = onRendererInject(handleRenderer);
+ * // both are torn down automatically at scope exit
  * ```
  */
 export const toUnsubscribe = (dispose: () => void): Unsubscribe =>

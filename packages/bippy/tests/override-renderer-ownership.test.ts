@@ -1,7 +1,7 @@
 import "../src/index.js"; // KEEP THIS LINE ON TOP
 
 import { expect, it, vi } from "vitest";
-import { overrideHookState, overrideProps } from "../src/index.js";
+import { FunctionComponentTag, overrideHookState, overrideProps } from "../src/index.js";
 import type { Fiber, FiberRoot, ReactDevToolsGlobalHook, ReactRenderer } from "../src/types.js";
 
 interface MockFiberOverrides {
@@ -21,7 +21,7 @@ const createMockFiber = (overrides: MockFiberOverrides = {}): Fiber =>
     return: null,
     sibling: null,
     stateNode: null,
-    tag: 0,
+    tag: FunctionComponentTag,
     type: () => null,
     ...overrides,
   }) as unknown as Fiber;
@@ -48,8 +48,9 @@ it("should fan out to every renderer when the fiber's root owner is unknown", ()
 });
 
 it("should route to only the renderer that committed the fiber's root", () => {
-  const fiberRoot = { current: null } as unknown as FiberRoot;
-  const hostRootFiber = createMockFiber({ stateNode: fiberRoot });
+  const hostRootFiber = createMockFiber({ memoizedState: { element: {} } });
+  const fiberRoot: FiberRoot = { current: hostRootFiber };
+  hostRootFiber.stateNode = fiberRoot;
   const childFiber = createMockFiber({ return: hostRootFiber });
 
   rdtHook.onCommitFiberRoot(2, fiberRoot, undefined);

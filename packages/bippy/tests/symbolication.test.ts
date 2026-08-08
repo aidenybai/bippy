@@ -202,6 +202,16 @@ describe("getSourceMapImpl", () => {
     expect(await getSourceMapImpl("data:application/json;base64,abc")).toBeNull();
   });
 
+  it("returns null when the runtime does not provide fetch", async () => {
+    const originalFetch = globalThis.fetch;
+    Reflect.deleteProperty(globalThis, "fetch");
+    try {
+      expect(await getSourceMapImpl("http://localhost/bundle.js")).toBeNull();
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it("returns null when the bundle fetch is not ok", async () => {
     const fetchFn = createFetchFn({});
     expect(await getSourceMapImpl("http://localhost/bundle.js", fetchFn)).toBeNull();
@@ -336,6 +346,26 @@ describe("getSourceMapImpl", () => {
     const sourceMap = await getSourceMapImpl("http://localhost/bundle.js", fetchFn);
     expect(sourceMap?.mappings).toEqual([[[0, 0, 0, 0]]]);
     expect(sourceMap?.sections).toBeUndefined();
+  });
+
+  it("resolves sourceRoot for framework source maps", async () => {
+    const sourceMapWithRoot = JSON.stringify({
+      version: 3,
+      sourceRoot: "webpack://application/",
+      sources: ["src/app.tsx"],
+      names: [],
+      mappings: encode([[[0, 0, 0, 0]]]),
+    });
+    const fetchFn = createFetchFn({
+      "http://localhost/bundle.js": new Response(
+        "const value = 1;\n//# sourceMappingURL=http://localhost/bundle.js.map",
+        { status: 200 },
+      ),
+      "http://localhost/bundle.js.map": new Response(sourceMapWithRoot, { status: 200 }),
+    });
+
+    const sourceMap = await getSourceMapImpl("http://localhost/bundle.js", fetchFn);
+    expect(sourceMap?.sources).toEqual(["webpack://application/src/app.tsx"]);
   });
 
   it("decodes index source maps and deduplicates sources", async () => {

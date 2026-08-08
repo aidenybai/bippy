@@ -492,26 +492,13 @@ the function traverses up the fiber tree to find the context provider matching t
 
 ### getSource
 
-gets the source code location of a composite fiber.
+gets the source code location of any fiber with development source metadata. resolution is based on fiber debug data and source maps, so it is independent of the renderer's host instances and works with DOM, native, terminal, canvas, PDF, and custom reconcilers.
 
 ```typescript
 import { getSource } from "bippy/source";
 
-// random fiber on the DOM
-const hostFiber = getFiberFromHostInstance(document.querySelector("div"));
-
-// get nearest composite fiber up the tree
-const compositeFiber = traverseFiber(
-  hostFiber,
-  (fiber) => {
-    if (isCompositeFiber(fiber)) {
-      return fiber;
-    }
-  },
-  true,
-);
-
-const source = await getSource(compositeFiber);
+const fiber = getFiberFromHostInstance(hostInstance);
+const source = await getSource(fiber);
 // {
 //   columnNumber: 12,
 //   fileName: 'path/to/file.tsx',
@@ -522,10 +509,11 @@ const source = await getSource(compositeFiber);
 > **caveats:**
 >
 > - only available in dev mode
-> - only works for composite fibers (function/class components)
-> - captures the location where the component is _used_, not where it's _defined_
-> - in react 18, resolves `_debugSource` directly (see [react#31981](https://github.com/facebook/react/issues/31981))
-> - in react >18, `_debugSource` is not available for host fibers
+> - source availability is controlled by react and the renderer; production builds normally remove debug metadata
+> - captures the location where the element is _used_; definition locations are recovered when react exposes an owned child debug stack
+> - react 18 requires `_debugSource` from the JSX source transform (see [react#31981](https://github.com/facebook/react/issues/31981))
+> - react 19 uses `_debugStack` and works for both composite and host fibers
+> - source-map fetching is optional; runtimes without `fetch` still receive the unsymbolicated source location
 
 ### getOwnerStack / getParentStack
 
@@ -543,31 +531,6 @@ const ownerFrames = await getOwnerStack(fiber);
 
 const parentFrames = await getParentStack(fiber);
 // includes every wrapper between the fiber and the root
-```
-
-### instrumentReactRefresh
-
-subscribes to fast refresh (HMR) updates from `bippy/react-refresh`. works with any bundler that uses react-refresh (vite, next.js webpack, next.js turbopack, metro) without bundler-specific code: bippy auto-detects the bundler's HMR transport and augments each update with the hot-updated source file paths.
-
-the handler runs after react has re-rendered with the new component types, so `updatedFibers`/`staleFibers` are the mounted fibers matching the hot-swapped component types.
-
-returns an unsubscribe function (a no-op during SSR, so no environment checks needed). the returned function is also a `Disposable`, so it works with `using`.
-
-```typescript
-import { instrumentReactRefresh } from "bippy/react-refresh";
-import { getDisplayName } from "bippy";
-
-const unsubscribe = instrumentReactRefresh({
-  onRefresh(update) {
-    for (const fiber of update.updatedFibers) {
-      console.log("hot updated:", getDisplayName(fiber.type));
-    }
-    console.log("changed files:", update.filePaths);
-  },
-});
-
-// later
-unsubscribe();
 ```
 
 ## example
@@ -630,6 +593,23 @@ instrument({
   },
 });
 ```
+
+## renderer support
+
+bippy observes renderers through the React DevTools global hook. a renderer is automatically supported when it injects its reconciler and forwards commits to that hook.
+
+| level         | renderers                                        | coverage                                                                                                                |
+| ------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| automatic     | React DOM, Remotion                              | unit matrix and browser e2e                                                                                             |
+| automatic     | React Native Fabric, React Native Skia           | iOS and Android Detox e2e                                                                                               |
+| automatic     | React Three Fiber, Ink, react-nil                | unit matrix                                                                                                             |
+| automatic     | `@opentui/react`, `@pixi/react`, React BabylonJS | unit matrix with non-DOM host instances                                                                                 |
+| compatibility | `@react-pdf/renderer`                            | its real reconciler root is forwarded through a synthetic DevTools hook bridge because react-pdf does not inject itself |
+| compatibility | React Konva                                      | its exported reconciler is injected by a test bridge because upstream automatic injection is disabled                   |
+
+compatibility entries are not zero-config support claims. the bridge implementations in [`packages/bippy/tests/renderer-adapters.tsx`](packages/bippy/tests/renderer-adapters.tsx) verify bippy's fiber APIs against the real host trees while keeping the missing upstream DevTools integration explicit. React Native Windows, macOS, and NativeScript are not currently asserted.
+
+`@testing-library/react` is a React DOM testing utility, not a renderer. bippy uses it throughout the test suite, so those tests exercise `react-dom` support.
 
 ## glossary
 

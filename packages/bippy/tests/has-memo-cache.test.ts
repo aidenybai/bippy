@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { hasMemoCache } from "../src/index.js";
+import { FunctionComponentTag, hasMemoCache } from "../src/index.js";
 import type { Fiber } from "../src/types.js";
 
 const createMockFiber = (updateQueue: unknown): Fiber =>
@@ -13,7 +13,7 @@ const createMockFiber = (updateQueue: unknown): Fiber =>
     return: null,
     sibling: null,
     stateNode: null,
-    tag: 0,
+    tag: FunctionComponentTag,
     type: null,
     updateQueue,
   }) as unknown as Fiber;

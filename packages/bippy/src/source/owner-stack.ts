@@ -1,11 +1,10 @@
+import { getDisplayName, getType, traverseFiber } from "../core.js";
+import { _renderers, getRDTHook } from "../rdt-hook.js";
 import {
-  _renderers,
   ActivityComponentTag,
   ClassComponentTag,
-  Fiber,
   ForwardRefTag,
   FunctionComponentTag,
-  getRDTHook,
   HostComponentTag,
   HostHoistableTag,
   HostSingletonTag,
@@ -14,10 +13,8 @@ import {
   SuspenseComponentTag,
   SuspenseListComponentTag,
   ViewTransitionComponentTag,
-  getDisplayName,
-  traverseFiber,
-} from "../core.js";
-import { ServerComponentInfo } from "../types.js";
+} from "../react-internals.js";
+import type { Fiber, RendererDispatcherRef, ServerComponentInfo } from "../types.js";
 import {
   SERVER_FRAME_MARKER,
   SERVER_ENV_PATTERN,
@@ -28,6 +25,11 @@ import { parseDebugStack } from "./parse-debug-stack.js";
 import { parseStack, StackFrame } from "./parse-stack.js";
 import { symbolicateStack } from "./symbolication.js";
 
+interface RendererDispatcherSnapshot {
+  currentDispatcherRef: RendererDispatcherRef;
+  value: unknown;
+}
+
 export const hasDebugStack = (
   fiber: Fiber,
 ): fiber is Fiber & {
@@ -37,13 +39,10 @@ export const hasDebugStack = (
 };
 
 const isFiberOwner = (owner: Fiber | ServerComponentInfo): owner is Fiber =>
-  typeof (owner as Fiber).tag === "number";
+  "tag" in owner && typeof owner.tag === "number";
 
-// react's typings (and bippy's Fiber, which mirrors them) declare _debugOwner
-// as a Fiber, but react 19 flight sets a ReactComponentInfo object for server
-// component owners
 const getDebugOwner = (fiber: Fiber): Fiber | ServerComponentInfo | undefined =>
-  fiber._debugOwner as Fiber | ServerComponentInfo | undefined;
+  fiber._debugOwner ?? undefined;
 
 /**
  * Locates a frame inside the fiber's own function body without invoking it:
@@ -90,26 +89,41 @@ export const getDefinitionFrameFromOwnedChild = (fiber: Fiber): StackFrame | nul
   return null;
 };
 
-const getCurrentDispatcher = (): null | React.RefObject<unknown> => {
+const getRendererDispatcherRefs = (): RendererDispatcherRef[] => {
   const rdtHook = getRDTHook();
-  for (const renderer of [...Array.from(_renderers), ...Array.from(rdtHook.renderers.values())]) {
+  const renderers = new Set([..._renderers, ...rdtHook.renderers.values()]);
+  const currentDispatcherRefs: RendererDispatcherRef[] = [];
+  const seenCurrentDispatcherRefs = new Set<object>();
+  for (const renderer of renderers) {
     const currentDispatcherRef = renderer.currentDispatcherRef;
-    if (currentDispatcherRef && typeof currentDispatcherRef === "object") {
-      return "H" in currentDispatcherRef ? currentDispatcherRef.H : currentDispatcherRef.current;
-    }
+    if (!currentDispatcherRef || seenCurrentDispatcherRefs.has(currentDispatcherRef)) continue;
+    seenCurrentDispatcherRefs.add(currentDispatcherRef);
+    currentDispatcherRefs.push(currentDispatcherRef);
   }
-  return null;
+  return currentDispatcherRefs;
 };
 
-const setCurrentDispatcher = (value: null | React.RefObject<unknown>): void => {
-  for (const renderer of _renderers) {
-    const currentDispatcherRef = renderer.currentDispatcherRef;
-    if (currentDispatcherRef && typeof currentDispatcherRef === "object") {
-      if ("H" in currentDispatcherRef) {
-        currentDispatcherRef.H = value;
-      } else {
-        currentDispatcherRef.current = value;
-      }
+const clearRendererDispatchers = (): RendererDispatcherSnapshot[] => {
+  const dispatcherSnapshots: RendererDispatcherSnapshot[] = [];
+  for (const currentDispatcherRef of getRendererDispatcherRefs()) {
+    const value =
+      "H" in currentDispatcherRef ? currentDispatcherRef.H : currentDispatcherRef.current;
+    dispatcherSnapshots.push({ currentDispatcherRef, value });
+    if ("H" in currentDispatcherRef) {
+      currentDispatcherRef.H = null;
+    } else {
+      currentDispatcherRef.current = null;
+    }
+  }
+  return dispatcherSnapshots;
+};
+
+const restoreRendererDispatchers = (dispatcherSnapshots: RendererDispatcherSnapshot[]): void => {
+  for (const { currentDispatcherRef, value } of dispatcherSnapshots) {
+    if ("H" in currentDispatcherRef) {
+      currentDispatcherRef.H = value;
+    } else {
+      currentDispatcherRef.current = value;
     }
   }
 };
@@ -151,44 +165,27 @@ const describeNativeComponentFrame = (
   (Error as { prepareStackTrace?: typeof Error.prepareStackTrace }).prepareStackTrace = undefined;
   reEntry = true;
 
-  const previousDispatcher = getCurrentDispatcher();
-  setCurrentDispatcher(null);
+  const dispatcherSnapshots = clearRendererDispatchers();
   const previousConsoleError = console.error;
   const previousConsoleWarn = console.warn;
   console.error = () => {};
   console.warn = () => {};
   try {
-    /**
-     * Finding a common stack frame between sample and control errors can be
-     * tricky given the different types and levels of stack trace truncation from
-     * different JS VMs. So instead we'll attempt to control what that common
-     * frame should be through this object method:
-     * Having both the sample and control errors be in the function under the
-     * `DescribeNativeComponentFrameRoot` property, + setting the `name` and
-     * `displayName` properties of the function ensures that a stack
-     * frame exists that has the method name `DescribeNativeComponentFrameRoot` in
-     * it for both control and sample stacks.
-     */
+    // HACK: Run the control and sample under the same property name so their stacks share a frame.
     const RunInRootFrame = {
       DetermineComponentFrameRoot() {
         let control: unknown;
         try {
-          // This should throw.
           if (construct) {
-            // Something should be setting the props in the constructor.
             const ThrowingConstructor = function () {
               throw Error();
             };
             Object.defineProperty(ThrowingConstructor.prototype, "props", {
               set: function () {
-                // We use a throwing setter instead of frozen or non-writable props
-                // because that won't throw in a non-strict mode function.
                 throw Error();
               },
             });
             if (typeof Reflect === "object" && Reflect.construct) {
-              // We construct a different control for this case to include any extra
-              // frames added by the construct call.
               try {
                 Reflect.construct(ThrowingConstructor, []);
               } catch (caughtError) {
@@ -197,13 +194,11 @@ const describeNativeComponentFrame = (
               Reflect.construct(component, [], ThrowingConstructor);
             } else {
               try {
-                // @ts-expect-error -- ThrowingConstructor is a constructor function
-                ThrowingConstructor.call();
+                Function.prototype.apply.call(ThrowingConstructor, undefined, []);
               } catch (caughtError) {
                 control = caughtError;
               }
-              // @ts-expect-error -- ThrowingConstructor is a constructor function
-              component.call(ThrowingConstructor.prototype);
+              Function.prototype.apply.call(component, ThrowingConstructor.prototype, []);
             }
           } else {
             try {
@@ -211,22 +206,17 @@ const describeNativeComponentFrame = (
             } catch (caughtError) {
               control = caughtError;
             }
-            // TODO(luna): This will currently only throw if the function component
-            // tries to access React/ReactDOM/props. We should probably make this throw
-            // in simple components too
-            const maybePromise = (component as () => Promise<unknown>)();
-
-            // If the function component returns a promise, it's likely an async
-            // component, which we don't yet support. Attach a noop catch handler to
-            // silence the error.
-            // TODO: Implement component stacks for async client components?
-            // eslint-disable-next-line @typescript-eslint/no-misused-promises -- we literally check if this is a promise here
-            if (maybePromise && typeof maybePromise.catch === "function") {
-              maybePromise.catch(() => {});
+            const maybePromise = Function.prototype.apply.call(component, undefined, []);
+            if (
+              typeof maybePromise === "object" &&
+              maybePromise !== null &&
+              "catch" in maybePromise &&
+              typeof maybePromise.catch === "function"
+            ) {
+              maybePromise.catch(() => undefined);
             }
           }
         } catch (sample: unknown) {
-          // This is inlined manually because closure doesn't do it for us.
           if (
             sample instanceof Error &&
             control instanceof Error &&
@@ -239,21 +229,18 @@ const describeNativeComponentFrame = (
       },
     };
 
-    // @ts-expect-error --- displayName is not a property of the function
-    RunInRootFrame.DetermineComponentFrameRoot.displayName = "DetermineComponentFrameRoot";
+    Object.defineProperty(RunInRootFrame.DetermineComponentFrameRoot, "displayName", {
+      value: "DetermineComponentFrameRoot",
+    });
     const namePropDescriptor = Object.getOwnPropertyDescriptor(
       // eslint-disable-next-line @typescript-eslint/unbound-method
       RunInRootFrame.DetermineComponentFrameRoot,
       "name",
     );
-    // Before ES6, the `name` property was not configurable.
     if (namePropDescriptor?.configurable) {
-      // V8 utilizes a function's `name` property when generating a stack trace.
       Object.defineProperty(
         // eslint-disable-next-line @typescript-eslint/unbound-method
         RunInRootFrame.DetermineComponentFrameRoot,
-        // Configurable properties can be updated even if its writable descriptor
-        // is set to `false`.
         "name",
         { value: "DetermineComponentFrameRoot" },
       );
@@ -340,7 +327,7 @@ const describeNativeComponentFrame = (
 
     Error.prepareStackTrace = previousPrepareStackTrace;
 
-    setCurrentDispatcher(previousDispatcher);
+    restoreRendererDispatchers(dispatcherSnapshots);
     console.error = previousConsoleError;
     console.warn = previousConsoleWarn;
   }
@@ -353,9 +340,8 @@ const describeNativeComponentFrame = (
 
 // https://github.com/facebook/react/blob/ac3e705a18696168acfcaed39dce0cfaa6be8836/packages/react-reconciler/src/ReactFiberComponentStack.js#L180
 export const describeFiber = (fiber: Fiber, childFiber: Fiber | null): string => {
-  const tag = fiber.tag as number;
   let stackFrame = "";
-  switch (tag) {
+  switch (fiber.tag) {
     case ActivityComponentTag:
       stackFrame = describeBuiltInComponentFrame("Activity");
       break;
@@ -363,10 +349,7 @@ export const describeFiber = (fiber: Fiber, childFiber: Fiber | null): string =>
       stackFrame = describeNativeComponentFrame(fiber.type, true);
       break;
     case ForwardRefTag:
-      stackFrame = describeNativeComponentFrame(
-        (fiber.type as { render: React.ComponentType<unknown> }).render,
-        false,
-      );
+      stackFrame = describeNativeComponentFrame(getType(fiber.type) ?? fiber.type, false);
       break;
     case FunctionComponentTag:
     case SimpleMemoComponentTag:
@@ -375,7 +358,9 @@ export const describeFiber = (fiber: Fiber, childFiber: Fiber | null): string =>
     case HostComponentTag:
     case HostHoistableTag:
     case HostSingletonTag:
-      stackFrame = describeBuiltInComponentFrame(fiber.type as string);
+      if (typeof fiber.type === "string") {
+        stackFrame = describeBuiltInComponentFrame(fiber.type);
+      }
       break;
     case LazyComponentTag:
       // TODO: When we support Thenables as component types we should rename this.
@@ -660,7 +645,9 @@ export const getParentStack = async (
   const enrichedStackFrames = fallbackStackFrames.map((stackFrame): StackFrame => {
     const isServerFrame =
       (stackFrame.source?.includes(SERVER_FRAME_MARKER) ?? false) ||
-      (stackFrame.source != null && SERVER_ENV_PATTERN.test(stackFrame.source));
+      (stackFrame.source !== null &&
+        stackFrame.source !== undefined &&
+        SERVER_ENV_PATTERN.test(stackFrame.source));
 
     if (isServerFrame) {
       return getEnrichedServerStackFrame(
