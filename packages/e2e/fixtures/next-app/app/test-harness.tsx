@@ -3,7 +3,6 @@
 import * as bippy from "bippy";
 import * as bippySource from "bippy/source";
 
-import { installHmrHarness } from "./hmr-harness";
 import React, {
   Component,
   Fragment,
@@ -96,7 +95,6 @@ class TestClassComponent extends Component {
 export const TestHarness = () => {
   useEffect(() => {
     window.__BIPPY__ = { ...bippy, ...bippySource };
-    installHmrHarness();
   }, []);
 
   return <TestParent />;

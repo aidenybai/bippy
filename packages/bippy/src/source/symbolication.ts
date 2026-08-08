@@ -211,13 +211,28 @@ const getIgnoredSourceIndices = (rawSourceMap: StandardSourceMap): Set<number> |
   return Array.isArray(ignoreList) && ignoreList.length > 0 ? new Set(ignoreList) : undefined;
 };
 
+const resolveSourceRoot = (sourceRoot: string | undefined, source: string): string => {
+  if (!sourceRoot || SCHEME_REGEX.test(source) || source.startsWith("/")) return source;
+  const normalizedSourceRoot = sourceRoot.endsWith("/") ? sourceRoot : `${sourceRoot}/`;
+  const normalizedSource = source.replace(/^\.\//, "");
+  if (SCHEME_REGEX.test(normalizedSourceRoot)) {
+    try {
+      return new URL(normalizedSource, normalizedSourceRoot).toString();
+    } catch {}
+  }
+  return `${normalizedSourceRoot}${normalizedSource}`;
+};
+
+const resolveSourceMapSources = (rawSourceMap: StandardSourceMap): string[] =>
+  rawSourceMap.sources.map((source) => resolveSourceRoot(rawSourceMap.sourceRoot, source));
+
 const decodeStandardSourceMap = (rawSourceMap: StandardSourceMap): SourceMap => ({
   file: rawSourceMap.file,
   ignoredSourceIndices: getIgnoredSourceIndices(rawSourceMap),
   mappings: decode(rawSourceMap.mappings),
   names: rawSourceMap.names,
   sourceRoot: rawSourceMap.sourceRoot,
-  sources: rawSourceMap.sources,
+  sources: resolveSourceMapSources(rawSourceMap),
   sourcesContent: rawSourceMap.sourcesContent,
   version: 3,
 });
@@ -229,6 +244,7 @@ const decodeIndexSourceMap = (rawSourceMap: IndexSourceMap): SourceMap => {
         ...map,
         ignoredSourceIndices: getIgnoredSourceIndices(map),
         mappings: decode(map.mappings),
+        sources: resolveSourceMapSources(map),
       },
       offset,
     }),
@@ -282,13 +298,18 @@ const isFetchableUrl = (url: string): boolean => {
 // return null, but a dropped connection is not and must stay retryable.
 export const getSourceMapImpl = async (
   bundleUrl: string,
-  fetchFn: (url: string) => Promise<Response> = fetch,
+  fetchFn?: (url: string) => Promise<Response>,
 ): Promise<null | SourceMap> => {
   if (!isFetchableUrl(bundleUrl)) {
     return null;
   }
 
-  const bundleResponse = await fetchFn(bundleUrl);
+  const sourceFetch =
+    fetchFn ??
+    (typeof globalThis.fetch === "function" ? globalThis.fetch.bind(globalThis) : undefined);
+  if (!sourceFetch) return null;
+
+  const bundleResponse = await sourceFetch(bundleUrl);
   if (!bundleResponse.ok) {
     return null;
   }
@@ -306,7 +327,7 @@ export const getSourceMapImpl = async (
     return null;
   }
 
-  const sourceMapResponse = await fetchFn(sourceMapUrl);
+  const sourceMapResponse = await sourceFetch(sourceMapUrl);
   if (!sourceMapResponse.ok) {
     return null;
   }

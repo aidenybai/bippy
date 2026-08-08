@@ -1,5 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const vitePort = Number(process.env.BIPPY_E2E_VITE_PORT ?? 5180);
+const nextPort = Number(process.env.BIPPY_E2E_NEXT_PORT ?? 3100);
+const tanstackPort = Number(process.env.BIPPY_E2E_TANSTACK_PORT ?? 3200);
+
 export default defineConfig({
   testDir: "./tests/web",
   fullyParallel: true,
@@ -13,35 +17,35 @@ export default defineConfig({
   projects: [
     {
       name: "vite",
-      use: { ...devices["Desktop Chrome"], baseURL: "http://localhost:5180" },
+      use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${vitePort}` },
     },
     {
       name: "nextjs",
-      use: { ...devices["Desktop Chrome"], baseURL: "http://localhost:3100" },
+      use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${nextPort}` },
     },
     {
       name: "tanstack",
-      use: { ...devices["Desktop Chrome"], baseURL: "http://localhost:3200" },
+      use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${tanstackPort}` },
     },
   ],
   webServer: [
     {
-      command: "pnpm --filter @bippy/e2e-vite dev --port 5180",
-      port: 5180,
+      command: `pnpm --filter @bippy/e2e-vite dev --port ${vitePort}`,
+      port: vitePort,
       reuseExistingServer: !process.env.CI,
       timeout: 30_000,
     },
     {
-      command: "pnpm --filter @bippy/e2e-next dev --port 3100",
+      command: `pnpm --filter @bippy/e2e-next dev --port ${nextPort}`,
       // Waiting on the URL (not just the port) lets webpack finish the slow
       // first compile of the page before tests start hitting it in parallel.
-      url: "http://localhost:3100",
+      url: `http://localhost:${nextPort}`,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
     },
     {
-      command: "pnpm --filter @bippy/e2e-tanstack dev --port 3200",
-      port: 3200,
+      command: `pnpm --filter @bippy/e2e-tanstack dev --port ${tanstackPort}`,
+      port: tanstackPort,
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
     },

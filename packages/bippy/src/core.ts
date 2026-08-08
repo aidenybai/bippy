@@ -1,5 +1,4 @@
-// [!!!] IMPORTANT: do not import React in this file
-// since it will be executed before the react devtools hook is created
+// React must remain a type-only import because this module loads immediately after the DevTools hook.
 
 import type * as React from "react";
 
@@ -7,6 +6,7 @@ import type {
   ContextDependency,
   Fiber,
   FiberRoot,
+  HostFiber,
   MemoizedState,
   ReactDevToolsGlobalHook,
   ReactRenderer,
@@ -17,55 +17,101 @@ import {
   BIPPY_INSTRUMENTATION_STRING,
   getRDTHook,
   hasRDTHook,
-  isReactRefresh,
   isRealReactDevtools,
   onRendererInject,
 } from "./rdt-hook.js";
+import {
+  ClassComponentTag,
+  CONCURRENT_MODE_NUMBER,
+  CONCURRENT_MODE_SYMBOL_DESCRIPTION,
+  CONCURRENT_MODE_SYMBOL_STRING,
+  ContextConsumerTag,
+  DEPRECATED_ASYNC_MODE_SYMBOL_DESCRIPTION,
+  DEPRECATED_ASYNC_MODE_SYMBOL_STRING,
+  DehydratedSuspenseComponentTag,
+  ELEMENT_TYPE_SYMBOL_STRING,
+  ForwardRefTag,
+  FragmentTag,
+  FunctionComponentTag,
+  HostComponentTag,
+  HostHoistableTag,
+  HostRootTag,
+  HostSingletonTag,
+  HostTextTag,
+  LegacyHiddenComponentTag,
+  MemoComponentTag,
+  MutationMask,
+  OffscreenComponentTag,
+  ReactBuildType,
+  ReactFiberFlags,
+  SimpleMemoComponentTag,
+  SuspenseComponentTag,
+  TRANSITIONAL_ELEMENT_TYPE_SYMBOL_STRING,
+} from "./react-internals.js";
 import { toUnsubscribe, type Unsubscribe } from "./unsubscribe.js";
 
-// https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactWorkTags.js
-export const FunctionComponentTag = 0;
-export const ClassComponentTag = 1;
-export const HostRootTag = 3;
-export const HostPortalTag = 4;
-export const HostComponentTag = 5;
-export const HostTextTag = 6;
-export const FragmentTag = 7;
-export const ContextConsumerTag = 9;
-export const ForwardRefTag = 11;
-export const SuspenseComponentTag = 13;
-export const MemoComponentTag = 14;
-export const SimpleMemoComponentTag = 15;
-export const LazyComponentTag = 16;
-export const DehydratedSuspenseComponentTag = 18;
-export const SuspenseListComponentTag = 19;
-export const OffscreenComponentTag = 22;
-export const LegacyHiddenComponentTag = 23;
-export const HostHoistableTag = 26;
-export const HostSingletonTag = 27;
-export const ActivityComponentTag = 28;
-export const ViewTransitionComponentTag = 30;
+export {
+  ActivityComponentTag,
+  ClassComponentTag,
+  CONCURRENT_MODE_NUMBER,
+  CONCURRENT_MODE_SYMBOL_DESCRIPTION,
+  CONCURRENT_MODE_SYMBOL_STRING,
+  ContextConsumerTag,
+  DEPRECATED_ASYNC_MODE_SYMBOL_DESCRIPTION,
+  DEPRECATED_ASYNC_MODE_SYMBOL_STRING,
+  DehydratedSuspenseComponentTag,
+  ELEMENT_TYPE_SYMBOL_STRING,
+  ForwardRefTag,
+  FragmentTag,
+  FunctionComponentTag,
+  HostComponentTag,
+  HostHoistableTag,
+  HostPortalTag,
+  HostRootTag,
+  HostSingletonTag,
+  HostTextTag,
+  LazyComponentTag,
+  LegacyHiddenComponentTag,
+  MemoComponentTag,
+  OffscreenComponentTag,
+  SimpleMemoComponentTag,
+  SuspenseComponentTag,
+  SuspenseListComponentTag,
+  TRANSITIONAL_ELEMENT_TYPE_SYMBOL_STRING,
+  ViewTransitionComponentTag,
+} from "./react-internals.js";
 
-export const CONCURRENT_MODE_NUMBER = 0xeacf;
-export const ELEMENT_TYPE_SYMBOL_STRING = "Symbol(react.element)";
-export const TRANSITIONAL_ELEMENT_TYPE_SYMBOL_STRING = "Symbol(react.transitional.element)";
-export const CONCURRENT_MODE_SYMBOL_STRING = "Symbol(react.concurrent_mode)";
-export const DEPRECATED_ASYNC_MODE_SYMBOL_STRING = "Symbol(react.async_mode)";
-export const CONCURRENT_MODE_SYMBOL_DESCRIPTION = "react.concurrent_mode";
-export const DEPRECATED_ASYNC_MODE_SYMBOL_DESCRIPTION = "react.async_mode";
+const { Cloned, PerformedWork } = ReactFiberFlags;
 
-// https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactFiberFlags.js
-const PerformedWork = 0b1;
-const Placement = 0b10;
-const Hydrating = 0b1000000000000;
-const Update = 0b100;
-const Cloned = 0b1000;
-const ChildDeletion = 0b10000;
-const ContentReset = 0b100000;
-const Snapshot = 0b10000000000;
-const Visibility = 0b10000000000000;
-const MutationMask =
-  Placement | Update | ChildDeletion | ContentReset | Hydrating | Visibility | Snapshot;
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const isComponentType = (value: unknown): value is React.ComponentType<unknown> =>
+  typeof value === "function";
+
+const getPropertyValue = (value: object, key: PropertyKey): unknown => {
+  let currentValue: object | null = value;
+  while (currentValue) {
+    const descriptor = Object.getOwnPropertyDescriptor(currentValue, key);
+    if (descriptor) {
+      if ("value" in descriptor) return descriptor.value;
+      return descriptor.get?.call(value);
+    }
+    currentValue = Object.getPrototypeOf(currentValue);
+  }
+  return undefined;
+};
+
+const getTypeName = (value: object): string | null => {
+  const displayName = getPropertyValue(value, "displayName");
+  if (typeof displayName === "string" && displayName) return displayName;
+  const name = getPropertyValue(value, "name");
+  return typeof name === "string" && name ? name : null;
+};
+
+interface FiberSelector {
+  (node: Fiber): boolean | Promise<boolean | void> | void;
+}
 
 /**
  * Returns `true` if object is a React Element.
@@ -74,9 +120,8 @@ const MutationMask =
  */
 export const isValidElement = (element: unknown): element is React.ReactElement =>
   typeof element === "object" &&
-  element != null &&
+  element !== null &&
   "$$typeof" in element &&
-  // react 18 uses Symbol.for('react.element'), react 19 uses Symbol.for('react.transitional.element')
   [ELEMENT_TYPE_SYMBOL_STRING, TRANSITIONAL_ELEMENT_TYPE_SYMBOL_STRING].includes(
     String(element.$$typeof),
   );
@@ -86,7 +131,7 @@ export const isValidElement = (element: unknown): element is React.ReactElement 
  */
 export const isValidFiber = (fiber: unknown): fiber is Fiber =>
   typeof fiber === "object" &&
-  fiber != null &&
+  fiber !== null &&
   "tag" in fiber &&
   "stateNode" in fiber &&
   "return" in fiber &&
@@ -99,16 +144,15 @@ export const isValidFiber = (fiber: unknown): fiber is Fiber =>
  *
  * @see https://reactnative.dev/architecture/glossary#host-view-tree-and-host-view
  */
-export const isHostFiber = (fiber: Fiber): boolean => {
+export const isHostFiber = (fiber: Fiber): fiber is HostFiber => {
   switch (fiber.tag) {
     case HostComponentTag:
-    // @ts-expect-error: it exists
+    case HostTextTag:
     case HostHoistableTag:
-    // @ts-expect-error: it exists
     case HostSingletonTag:
       return true;
     default:
-      return typeof fiber.type === "string";
+      return false;
   }
 };
 
@@ -230,7 +274,7 @@ export const traverseProps = (
 export const didFiberRender = (fiber: Fiber): boolean => {
   const nextProps = fiber.memoizedProps;
   const prevProps = fiber.alternate?.memoizedProps || {};
-  const flags = fiber.flags ?? (fiber as unknown as { effectTag: number }).effectTag ?? 0;
+  const flags = fiber.flags ?? fiber.effectTag ?? 0;
 
   switch (fiber.tag) {
     case ClassComponentTag:
@@ -297,7 +341,8 @@ export const getFiberStack = (fiber: Fiber): Fiber[] => {
   let currentFiber = fiber;
   while (currentFiber.return) {
     stack.push(currentFiber);
-    currentFiber = currentFiber.return as Fiber;
+    const parentFiber = currentFiber.return;
+    currentFiber = parentFiber;
   }
   return stack;
 };
@@ -405,7 +450,7 @@ export function traverseFiber(
 ): Promise<Fiber | null>;
 export function traverseFiber(
   fiber: Fiber | null,
-  selector: (node: Fiber) => boolean | Promise<boolean | void> | void,
+  selector: FiberSelector,
   ascending = false,
 ): Fiber | null | Promise<Fiber | null> {
   if (!fiber) return null;
@@ -417,11 +462,7 @@ export function traverseFiber(
 
       let child = ascending ? fiber.return : fiber.child;
       while (child) {
-        const match = await traverseFiberAsync(
-          child,
-          selector as (node: Fiber) => Promise<boolean | void>,
-          ascending,
-        );
+        const match = await traverseFiberAsync(child, selector, ascending);
         if (match) return match;
         child = ascending ? null : child.sibling;
       }
@@ -433,7 +474,7 @@ export function traverseFiber(
 
   let child = ascending ? fiber.return : fiber.child;
   while (child) {
-    const match = traverseFiberSync(child, selector as (node: Fiber) => boolean | void, ascending);
+    const match = traverseFiberSync(child, selector, ascending);
     if (match) return match;
     child = ascending ? null : child.sibling;
   }
@@ -442,11 +483,13 @@ export function traverseFiber(
 
 const traverseFiberSync = (
   fiber: Fiber | null,
-  selector: (node: Fiber) => boolean | void,
+  selector: FiberSelector,
   ascending = false,
 ): Fiber | null => {
   if (!fiber) return null;
-  if (selector(fiber) === true) return fiber;
+  const selection = selector(fiber);
+  if (selection instanceof Promise) return null;
+  if (selection === true) return fiber;
 
   let child = ascending ? fiber.return : fiber.child;
   while (child) {
@@ -460,7 +503,7 @@ const traverseFiberSync = (
 
 const traverseFiberAsync = async (
   fiber: Fiber | null,
-  selector: (node: Fiber) => Promise<boolean | void>,
+  selector: FiberSelector,
   ascending = false,
 ): Promise<Fiber | null> => {
   if (!fiber) return null;
@@ -490,7 +533,7 @@ export const getTimings = (fiber?: Fiber | null): { selfTime: number; totalTime:
   let selfTime = totalTime;
   // TODO: calculate a DOM time, which is just host component summed up
   let child = fiber?.child ?? null;
-  while (totalTime > 0 && child != null) {
+  while (totalTime > 0 && child !== null) {
     selfTime -= child.actualDuration ?? 0;
     child = child.sibling;
   }
@@ -501,48 +544,29 @@ export const getTimings = (fiber?: Fiber | null): { selfTime: number; totalTime:
  * Returns `true` if the {@link Fiber} uses React Compiler's memo cache.
  */
 export const hasMemoCache = (fiber: Fiber): boolean => {
-  return Boolean((fiber.updateQueue as unknown as { memoCache: unknown })?.memoCache);
+  return Boolean(fiber.updateQueue?.memoCache);
 };
-
-type FiberType =
-  | React.ComponentType<unknown>
-  | React.ForwardRefExoticComponent<unknown>
-  | React.MemoExoticComponent<React.ComponentType<unknown>>;
 
 /**
  * Returns the type (e.g. component definition) of the {@link Fiber}
  */
 export const getType = (type: unknown): null | React.ComponentType<unknown> => {
-  const currentType = type as FiberType;
-  if (typeof currentType === "function") {
-    return currentType;
-  }
-  if (typeof currentType === "object" && currentType) {
-    // memo / forwardRef case
-    return getType(
-      (currentType as React.MemoExoticComponent<React.ComponentType<unknown>>).type ||
-        (currentType as { render: React.ComponentType<unknown> }).render,
-    );
-  }
-  return null;
+  if (isComponentType(type)) return type;
+  if (!isObjectRecord(type)) return null;
+  return getType(type.type ?? type.render);
 };
 
 /**
  * Returns the display name of the {@link Fiber} type.
  */
 export const getDisplayName = (type: unknown): null | string => {
-  const currentType = type as FiberType;
-  if (typeof currentType === "string") {
-    return currentType;
-  }
-  if (typeof currentType !== "function" && !(typeof currentType === "object" && currentType)) {
-    return null;
-  }
-  const name = currentType.displayName || currentType.name || null;
+  if (typeof type === "string") return type;
+  if ((typeof type !== "function" && typeof type !== "object") || type === null) return null;
+  const name = getTypeName(type);
   if (name) return name;
-  const unwrappedType = getType(currentType);
+  const unwrappedType = getType(type);
   if (!unwrappedType) return null;
-  return unwrappedType.displayName || unwrappedType.name || null;
+  return getTypeName(unwrappedType);
 };
 
 /**
@@ -550,7 +574,10 @@ export const getDisplayName = (type: unknown): null | string => {
  */
 export const detectReactBuildType = (renderer: ReactRenderer): "development" | "production" => {
   try {
-    if (typeof renderer.version === "string" && renderer.bundleType > 0) {
+    if (
+      typeof renderer.version === "string" &&
+      renderer.bundleType === ReactBuildType.Development
+    ) {
       return "development";
     }
   } catch {}
@@ -562,11 +589,7 @@ export const detectReactBuildType = (renderer: ReactRenderer): "development" | "
  */
 export const isInstrumentationActive = (): boolean => {
   const rdtHook = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
-  return (
-    Boolean(rdtHook?._instrumentationIsActive) ||
-    isRealReactDevtools(rdtHook) ||
-    isReactRefresh(rdtHook)
-  );
+  return Boolean(rdtHook?._instrumentationIsActive) || isRealReactDevtools(rdtHook);
 };
 
 export const _fiberRoots = new Set<FiberRoot>();
@@ -600,9 +623,7 @@ export const setFiberId = (fiber: Fiber, id: number = fiberId++): void => {
   fiberIdMap.set(fiber, id);
 };
 
-// react fibers are double buffered, so the alternate fiber may
-// be switched to the current fiber and vice versa.
-// fiber === fiber.alternate.alternate
+// Fiber alternates share an identity across double-buffered commits.
 export const getFiberId = (fiber: Fiber): number => {
   let id = fiberIdMap.get(fiber);
   if (id === undefined && fiber.alternate) {
@@ -622,7 +643,7 @@ const mountFiberRecursively = (
 ): void => {
   let fiber: Fiber | null = firstChild;
 
-  while (fiber != null) {
+  while (fiber !== null) {
     if (!fiberIdMap.has(fiber)) {
       getFiberId(fiber);
     }
@@ -646,18 +667,12 @@ const mountFiberRecursively = (
           }
         }
       } else {
-        let primaryChild: Fiber | null = null;
-        const areSuspenseChildrenConditionallyWrapped = (OffscreenComponentTag as number) === -1;
-        if (areSuspenseChildrenConditionallyWrapped) {
-          primaryChild = fiber.child;
-        } else if (fiber.child !== null) {
-          primaryChild = fiber.child.child;
-        }
+        const primaryChild = fiber.child?.child ?? null;
         if (primaryChild !== null) {
           mountFiberRecursively(onRender, primaryChild, false);
         }
       }
-    } else if (fiber.child != null) {
+    } else if (fiber.child !== null) {
       mountFiberRecursively(onRender, fiber.child, true);
     }
     fiber = traverseSiblings ? fiber.sibling : null;
@@ -831,13 +846,15 @@ export const traverseRenderedFibers = (root: FiberRoot, onRender: RenderHandler)
   } else if (prevFiber !== null) {
     const wasMounted =
       prevFiber &&
-      prevFiber.memoizedState != null &&
-      prevFiber.memoizedState.element != null &&
+      prevFiber.memoizedState !== null &&
+      prevFiber.memoizedState.element !== null &&
+      prevFiber.memoizedState.element !== undefined &&
       // A dehydrated root is not considered mounted
       prevFiber.memoizedState.isDehydrated !== true;
     const isMounted =
-      fiber.memoizedState != null &&
-      fiber.memoizedState.element != null &&
+      fiber.memoizedState !== null &&
+      fiber.memoizedState.element !== null &&
+      fiber.memoizedState.element !== undefined &&
       // A dehydrated root is not considered mounted
       fiber.memoizedState.isDehydrated !== true;
 
@@ -859,16 +876,16 @@ const overrideRenderers = new Set<ReactRenderer>();
 let areOverrideRenderersWired = false;
 
 const wireOverrideRenderers = (): void => {
-  if (areOverrideRenderersWired) return;
   if (!hasRDTHook()) return;
   const rdtHook = getRDTHook();
   if (!rdtHook?.renderers) return;
-  areOverrideRenderersWired = true;
 
   ensureHookDispatchesToListeners(rdtHook);
   for (const renderer of rdtHook.renderers.values()) {
     overrideRenderers.add(renderer);
   }
+  if (areOverrideRenderersWired) return;
+  areOverrideRenderersWired = true;
   onRendererInject((renderer) => {
     overrideRenderers.add(renderer);
   });
@@ -918,10 +935,9 @@ const getHookStateDispatch = (
     hookState = hookState.next;
   }
   const queue = hookState?.queue;
-  if (isPOJO(queue) && typeof queue.dispatch === "function") {
-    return queue.dispatch as (value: unknown) => void;
-  }
-  return null;
+  if (!isPOJO(queue)) return null;
+  const dispatch = queue.dispatch;
+  return typeof dispatch === "function" ? (value) => dispatch(value) : null;
 };
 
 const findContextProviderFiber = (fiber: Fiber, contextType: unknown): Fiber | null => {
@@ -985,11 +1001,10 @@ export const overrideHookState = (fiber: Fiber, id: number, partialValue: unknow
   const writes = buildValueWrites(partialValue);
 
   if (renderers.length > 0) {
-    const hookId = String(id);
     for (const renderer of renderers) {
       for (const { path, value } of writes) {
         try {
-          renderer.overrideHookState?.(fiber, hookId, path, value);
+          renderer.overrideHookState?.(fiber, id, path, value);
         } catch {}
       }
     }
@@ -1022,7 +1037,12 @@ export const overrideContext = (fiber: Fiber, contextType: unknown, partialValue
 export interface InstrumentationOptions {
   name?: string;
   onActive?: () => unknown;
-  onCommitFiberRoot?: (rendererID: number, root: FiberRoot, priority: number | void) => unknown;
+  onCommitFiberRoot?: (
+    rendererID: number,
+    root: FiberRoot,
+    priority: number | void,
+    didError?: boolean,
+  ) => unknown;
   onCommitFiberUnmount?: (rendererID: number, fiber: Fiber) => unknown;
   onPostCommitFiberRoot?: (rendererID: number, root: FiberRoot) => unknown;
   onScheduleFiberRoot?: (rendererID: number, root: FiberRoot, children: React.ReactNode) => unknown;
@@ -1070,13 +1090,24 @@ const ensureHookDispatchesToListeners = (rdtHook: ReactDevToolsGlobalHook): void
       rendererID,
       root,
       priority,
+      didError,
     ) => {
-      prevOnCommitFiberRoot?.(rendererID, root, priority);
+      prevOnCommitFiberRoot?.(rendererID, root, priority, didError);
       if (hookDispatchers.get(rdtHook)?.onCommitFiberRoot !== dispatchCommitFiberRoot) return;
-      _fiberRoots.add(root);
-      rootRendererIds.set(root, rendererID);
+      const rootMemoizedState = root.current.memoizedState;
+      const isUnmounting =
+        rootMemoizedState === null ||
+        rootMemoizedState.element === null ||
+        rootMemoizedState.element === undefined;
+      if (isUnmounting) {
+        _fiberRoots.delete(root);
+        rootRendererIds.delete(root);
+      } else {
+        _fiberRoots.add(root);
+        rootRendererIds.set(root, rendererID);
+      }
       for (const listener of commitFiberRootListeners) {
-        listener(rendererID, root, priority);
+        listener(rendererID, root, priority, didError);
       }
     };
     dispatchers.onCommitFiberRoot = dispatchCommitFiberRoot;
@@ -1192,15 +1223,39 @@ export const instrument = (options: InstrumentationOptions): Unsubscribe => {
   });
 };
 
-// React stamps fibers under per-renderer random-suffix keys (`__reactFiber$<suffix>`);
-// caching discovered keys makes repeat lookups a single property read instead of a
-// scan over every own key of the element.
+// React uses per-renderer suffixes for host-instance Fiber keys, so discovered keys are cached.
 const knownFiberPropertyKeys = new Set<string>();
 
 const isFiberPropertyKey = (key: string): boolean =>
   key.startsWith("__reactContainer$") ||
   key.startsWith("__reactInternalInstance$") ||
   key.startsWith("__reactFiber");
+
+const getLegacyRootFiber = (hostInstance: Record<string, unknown>): Fiber | null => {
+  const reactRootContainer = hostInstance._reactRootContainer;
+  if (!isObjectRecord(reactRootContainer)) return null;
+  const internalRoot = reactRootContainer._internalRoot;
+  if (!isObjectRecord(internalRoot)) return null;
+  const current = internalRoot.current;
+  if (!isObjectRecord(current)) return null;
+  const child = current.child;
+  return isValidFiber(child) ? child : null;
+};
+
+const getInternalInstanceHandle = (hostInstance: Record<string, unknown>): Fiber | null => {
+  const internalInstanceHandle =
+    hostInstance.__internalInstanceHandle ?? hostInstance._internalInstanceHandle;
+  return isValidFiber(internalInstanceHandle) ? internalInstanceHandle : null;
+};
+
+const getPublicHostInstance = (stateNode: unknown): unknown => {
+  if (!isObjectRecord(stateNode)) return stateNode;
+  const canonical = stateNode.canonical;
+  if (isObjectRecord(canonical) && isObjectRecord(canonical.publicInstance)) {
+    return canonical.publicInstance;
+  }
+  return typeof stateNode._nativeTag === "number" ? stateNode._nativeTag : stateNode;
+};
 
 export const getFiberFromHostInstance = <T>(hostInstance: T): Fiber | null => {
   const rdtHook = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
@@ -1213,42 +1268,38 @@ export const getFiberFromHostInstance = <T>(hostInstance: T): Fiber | null => {
     }
   }
 
-  if (typeof hostInstance === "object" && hostInstance != null) {
-    if ("_reactRootContainer" in hostInstance) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (hostInstance._reactRootContainer as any)?._internalRoot?.current?.child;
-    }
+  if (isObjectRecord(hostInstance)) {
+    const legacyRootFiber = getLegacyRootFiber(hostInstance);
+    if (legacyRootFiber) return legacyRootFiber;
 
-    // React Native Fabric public instances (ReactNativeElement /
-    // ReactFabricHostComponent) store their fiber as the "internal instance
-    // handle" instead of a __reactFiber$-prefixed key
-    const fabricInstanceHandle =
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (hostInstance as any).__internalInstanceHandle ??
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (hostInstance as any)._internalInstanceHandle;
-    if (isFiber(fabricInstanceHandle)) {
-      return fabricInstanceHandle;
-    }
+    const internalInstanceHandle = getInternalInstanceHandle(hostInstance);
+    if (internalInstanceHandle) return internalInstanceHandle;
 
-    const hostInstanceRecord = hostInstance as Record<string, unknown>;
     for (const knownKey of knownFiberPropertyKeys) {
-      const fiber = hostInstanceRecord[knownKey];
-      if (fiber) return fiber as Fiber;
+      const fiber = hostInstance[knownKey];
+      if (isValidFiber(fiber)) return fiber;
     }
 
-    for (const key of Object.keys(hostInstanceRecord)) {
+    for (const key of Object.keys(hostInstance)) {
       if (isFiberPropertyKey(key)) {
         knownFiberPropertyKeys.add(key);
-        return (hostInstanceRecord[key] || null) as Fiber | null;
+        const fiber = hostInstance[key];
+        if (isValidFiber(fiber)) return fiber;
       }
     }
+  }
 
+  if (
+    hostInstance !== null &&
+    hostInstance !== undefined &&
+    (typeof hostInstance === "object" || typeof hostInstance === "number")
+  ) {
     for (const fiberRoot of _fiberRoots) {
-      if (getRootRenderer(fiberRoot.current)?.findFiberByHostInstance) continue;
       const fiber = traverseFiber(
         fiberRoot.current,
-        (candidateFiber) => candidateFiber.stateNode === hostInstance,
+        (candidateFiber) =>
+          isHostFiber(candidateFiber) &&
+          getPublicHostInstance(candidateFiber.stateNode) === hostInstance,
       );
       if (fiber) return fiber;
     }

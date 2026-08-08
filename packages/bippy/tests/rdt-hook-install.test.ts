@@ -1,11 +1,12 @@
 // intentionally avoids importing ../index.js so this file controls hook installation
 import { expect, it, vi } from "vitest";
+import { ReactBuildType } from "../src/react-internals.js";
 import { getRDTHook, hasRDTHook, isClientEnvironment, patchRDTHook } from "../src/rdt-hook.js";
 import type { ReactDevToolsGlobalHook, ReactRenderer } from "../src/types.js";
 
 const createFakeRenderer = (): ReactRenderer =>
   ({
-    bundleType: 1,
+    bundleType: ReactBuildType.Development,
     version: "19.0.0",
   }) as unknown as ReactRenderer;
 

@@ -7,7 +7,7 @@ const SENTINEL_TIMEOUT_MS = 180_000;
 // ever requests its JS bundle from Metro (observed across runs: the retry
 // launch always recovers), so treat launch + readiness as one retryable unit.
 // synchronization is disabled after launch because a dev-mode RN app never
-// fully idles (Metro HMR socket, dev timers), which inflates every synced
+// fully idles (development sockets and timers), which inflates every synced
 // assertion to multiple seconds
 export const launchFixtureApp = async (newInstance: boolean, sentinelTestId: string) => {
   let lastError: unknown = null;

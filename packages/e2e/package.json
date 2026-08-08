@@ -5,6 +5,7 @@
   "scripts": {
     "test:web": "playwright test",
     "test:native": "detox test --configuration ios.sim.debug",
+    "test:native:android": "detox test --configuration android.emu.debug",
     "test": "nr test:web"
   },
   "devDependencies": {

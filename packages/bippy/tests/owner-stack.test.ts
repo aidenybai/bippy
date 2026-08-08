@@ -313,6 +313,37 @@ describe("describeFiber native component frames", () => {
       _renderers.delete(legacyRenderer as unknown as never);
     }
   });
+
+  it("clears and restores each renderer dispatcher independently", () => {
+    const legacyValue = { renderer: "legacy" };
+    const modernValue = { renderer: "modern" };
+    const legacyDispatcherRef = { current: legacyValue };
+    const modernDispatcherRef = { H: modernValue };
+    const legacyRenderer = { currentDispatcherRef: legacyDispatcherRef };
+    const modernRenderer = { currentDispatcherRef: modernDispatcherRef };
+    let observedLegacyDispatcher: unknown;
+    let observedModernDispatcher: unknown;
+    _renderers.add(legacyRenderer as unknown as never);
+    _renderers.add(modernRenderer as unknown as never);
+    try {
+      const MixedRendererComponent = (): null => {
+        observedLegacyDispatcher = legacyDispatcherRef.current;
+        observedModernDispatcher = modernDispatcherRef.H;
+        throw new Error("intentional");
+      };
+      describeFiber(
+        createFakeFiber({ tag: FunctionComponentTag, type: MixedRendererComponent }),
+        null,
+      );
+      expect(observedLegacyDispatcher).toBeNull();
+      expect(observedModernDispatcher).toBeNull();
+      expect(legacyDispatcherRef.current).toBe(legacyValue);
+      expect(modernDispatcherRef.H).toBe(modernValue);
+    } finally {
+      _renderers.delete(legacyRenderer as unknown as never);
+      _renderers.delete(modernRenderer as unknown as never);
+    }
+  });
 });
 
 describe("getFallbackParentStack", () => {

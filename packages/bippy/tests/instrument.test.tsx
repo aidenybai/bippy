@@ -57,6 +57,26 @@ it("tracks committed fiber roots in _fiberRoots", () => {
   expect(_fiberRoots.has(currentFiberRoot)).toBe(true);
 });
 
+it("removes unmounted fiber roots from _fiberRoots", () => {
+  let currentFiberRoot: FiberRoot | null = null;
+  instrument({
+    onCommitFiberRoot: (_rendererID, fiberRoot) => {
+      currentFiberRoot = fiberRoot;
+    },
+  });
+  const rendered = render(<Example />);
+  expect(_fiberRoots.has(currentFiberRoot)).toBe(true);
+  rendered.unmount();
+  expect(_fiberRoots.has(currentFiberRoot)).toBe(false);
+});
+
+it("forwards the commit error state", () => {
+  const onCommitFiberRoot = vi.fn();
+  instrument({ onCommitFiberRoot });
+  render(<Example />);
+  expect(onCommitFiberRoot.mock.lastCall?.[3]).toBe(false);
+});
+
 it("onPostCommitFiberRoot is called", () => {
   // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   let currentFiberRoot: FiberRoot | null = null;

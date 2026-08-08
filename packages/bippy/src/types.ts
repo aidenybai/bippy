@@ -1,288 +1,96 @@
 import type { ReactNode } from "react";
+import type ReactReconciler from "react-reconciler";
+import type { HostWorkTag, ReactWorkTag } from "./react-internals.js";
 
-// @types/react-reconciler uses `export = ReactReconciler` (CJS namespace),
-// which downstream bundlers can't resolve as ESM exports. These types are
-// inlined from @types/react-reconciler@0.28 to avoid the dependency.
+export type BundleType = ReactReconciler.BundleType;
+export type Flags = ReactReconciler.Flags;
+export type HookType = ReactReconciler.HookType;
+export type LanePriority = ReactReconciler.LanePriority;
+export type Lanes = ReactReconciler.Lanes;
+export type MutableSource = ReactReconciler.MutableSource;
+export type OpaqueHandle = ReactReconciler.OpaqueHandle;
+export type OpaqueRoot = ReactReconciler.OpaqueRoot;
+export type React$AbstractComponent<
+  Config,
+  Instance = unknown,
+> = ReactReconciler.React$AbstractComponent<Config, Instance>;
+export type RootTag = ReactReconciler.RootTag;
+export type TypeOfMode = ReactReconciler.TypeOfMode;
+export type WorkTag = ReactReconciler.WorkTag | ReactWorkTag;
 
-// Simple type aliases — most are opaque in the original
-export type BundleType = 0 | 1;
-export type Flags = number;
-export type Lanes = number;
-export type TypeOfMode = number;
-export type RootTag = 0 | 1 | 2;
-export type LanePriority =
-  | 0
-  | 1
-  | 2
-  | 3
-  | 4
-  | 5
-  | 6
-  | 7
-  | 8
-  | 9
-  | 10
-  | 11
-  | 12
-  | 13
-  | 14
-  | 15
-  | 16
-  | 17;
-export type WorkTag =
-  | 0
-  | 1
-  | 2
-  | 3
-  | 4
-  | 5
-  | 6
-  | 7
-  | 8
-  | 9
-  | 10
-  | 11
-  | 12
-  | 13
-  | 14
-  | 15
-  | 16
-  | 17
-  | 18
-  | 19
-  | 20
-  | 21
-  | 22
-  | 23
-  | 24
-  | 25
-  | 26
-  | 27
-  | 28
-  | 29
-  | 30
-  | 31;
-export type HookType =
-  | "useState"
-  | "useReducer"
-  | "useContext"
-  | "useRef"
-  | "useEffect"
-  | "useLayoutEffect"
-  | "useCallback"
-  | "useMemo"
-  | "useImperativeHandle"
-  | "useDebugValue"
-  | "useDeferredValue"
-  | "useTransition"
-  | "useMutableSource"
-  | "useOpaqueIdentifier"
-  | "useCacheRefresh";
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type FiberRoot = any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type MutableSource = any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type OpaqueHandle = any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type OpaqueRoot = any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type React$AbstractComponent<_Config, _Instance = unknown> = any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type HostConfig = Record<string, any>;
+export interface HostConfig<
+  Type = unknown,
+  HostProps = unknown,
+  Container = unknown,
+  Instance = unknown,
+  TextInstance = unknown,
+  SuspenseInstance = unknown,
+  HydratableInstance = unknown,
+  FormInstance = unknown,
+  PublicInstance = unknown,
+  HostContext = unknown,
+  ChildSet = unknown,
+  TimeoutHandle = unknown,
+  NoTimeout = unknown,
+  TransitionStatus = unknown,
+> extends ReactReconciler.HostConfig<
+  Type,
+  HostProps,
+  Container,
+  Instance,
+  TextInstance,
+  SuspenseInstance,
+  HydratableInstance,
+  FormInstance,
+  PublicInstance,
+  HostContext,
+  ChildSet,
+  TimeoutHandle,
+  NoTimeout,
+  TransitionStatus
+> {}
 
-// Structural interfaces
-export interface Source {
-  fileName: string;
-  lineNumber: number;
-}
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface RefObject {
-  current: any;
-}
-export interface Thenable<T> {
-  then(resolve: () => T, reject?: () => T): T;
-}
+export interface Source extends ReactReconciler.Source {}
+export interface RefObject extends ReactReconciler.RefObject {}
+export interface Thenable<T> extends ReactReconciler.Thenable<T> {}
 
-export interface ReactContext<T> {
-  $$typeof: symbol | number;
-  Consumer: ReactContext<T>;
-  Provider: ReactProviderType<T>;
-  _calculateChangedBits: ((a: T, b: T) => number) | null;
-  _currentValue: T;
-  _currentValue2: T;
-  _threadCount: number;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  _currentRenderer?: Record<string, any> | null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  _currentRenderer2?: Record<string, any> | null;
-  displayName?: string;
-}
+export interface ReactContext<T> extends ReactReconciler.ReactContext<T> {}
 
-export interface ReactProviderType<T> {
-  $$typeof: symbol | number;
-  _context: ReactContext<T>;
-}
-export interface ReactProvider<T> {
-  $$typeof: symbol | number;
-  type: ReactProviderType<T>;
-  key: null | string;
-  ref: null;
-  props: { value: T; children?: ReactNode };
-}
-export interface ReactConsumer<T> {
-  $$typeof: symbol | number;
-  type: ReactContext<T>;
-  key: null | string;
-  ref: null;
-  props: { children: (value: T) => ReactNode; unstable_observedBits?: number };
-}
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface ReactPortal {
-  $$typeof: symbol | number;
-  key: null | string;
-  containerInfo: any;
-  children: ReactNode;
-  implementation: any;
-}
+export interface ReactProviderType<T> extends ReactReconciler.ReactProviderType<T> {}
+export interface ReactProvider<T> extends ReactReconciler.ReactProvider<T> {}
+export interface ReactConsumer<T> extends ReactReconciler.ReactConsumer<T> {}
+export interface ReactPortal extends ReactReconciler.ReactPortal {}
 
-export interface ComponentSelector {
-  $$typeof: symbol | number;
-  value: React$AbstractComponent<never, unknown>;
-}
-export interface HasPseudoClassSelector {
-  $$typeof: symbol | number;
-  value: Selector[];
-}
-export interface RoleSelector {
-  $$typeof: symbol | number;
-  value: string;
-}
-export interface TextSelector {
-  $$typeof: symbol | number;
-  value: string;
-}
-export interface TestNameSelector {
-  $$typeof: symbol | number;
-  value: string;
-}
-export type Selector =
-  | ComponentSelector
-  | HasPseudoClassSelector
-  | RoleSelector
-  | TextSelector
-  | TestNameSelector;
+export interface ComponentSelector extends ReactReconciler.ComponentSelector {}
+export interface HasPseudoClassSelector extends ReactReconciler.HasPseudoClassSelector {}
+export interface RoleSelector extends ReactReconciler.RoleSelector {}
+export interface TextSelector extends ReactReconciler.TextSelector {}
+export interface TestNameSelector extends ReactReconciler.TestNameSelector {}
+export type Selector = ReactReconciler.Selector;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface DevToolsConfig<
-  Instance = any,
-  TextInstance = any,
-  RendererInspectionConfig = any,
+  Instance = unknown,
+  TextInstance = unknown,
+  RendererInspectionConfig = unknown,
+> extends ReactReconciler.DevToolsConfig<Instance, TextInstance, RendererInspectionConfig> {}
+
+export interface SuspenseHydrationCallbacks<
+  SuspenseInstance = unknown,
+> extends ReactReconciler.SuspenseHydrationCallbacks<SuspenseInstance> {}
+
+export interface TransitionTracingCallbacks extends ReactReconciler.TransitionTracingCallbacks {}
+
+// HACK: React 17 exposes observedBits while React 18+ exposes memoizedValue on context dependencies.
+export interface ContextDependency<T> extends Omit<
+  ReactReconciler.ContextDependency<T>,
+  "observedBits"
 > {
-  bundleType: BundleType;
-  version: string;
-  rendererPackageName: string;
-  findFiberByHostInstance?: (instance: Instance | TextInstance) => ReactFiber | null;
-  rendererConfig?: RendererInspectionConfig;
+  memoizedValue?: T;
+  observedBits?: number;
 }
 
-export interface SuspenseHydrationCallbacks<SuspenseInstance = unknown> {
-  onHydrated?: (suspenseInstance: SuspenseInstance) => void;
-  onDeleted?: (suspenseInstance: SuspenseInstance) => void;
-}
-
-export interface TransitionTracingCallbacks {
-  onTransitionStart?: (transitionName: string, startTime: number) => void;
-  onTransitionProgress?: (
-    transitionName: string,
-    startTime: number,
-    currentTime: number,
-    pending: Array<{ name: null | string }>,
-  ) => void;
-  onTransitionIncomplete?: (
-    transitionName: string,
-    startTime: number,
-    deletions: Array<{ type: string; name?: string; newName?: string; endTime: number }>,
-  ) => void;
-  onTransitionComplete?: (transitionName: string, startTime: number, endTime: number) => void;
-  onMarkerProgress?: (
-    transitionName: string,
-    marker: string,
-    startTime: number,
-    currentTime: number,
-    pending: Array<{ name: null | string }>,
-  ) => void;
-  onMarkerIncomplete?: (
-    transitionName: string,
-    marker: string,
-    startTime: number,
-    deletions: Array<{ type: string; name?: string; newName?: string; endTime: number }>,
-  ) => void;
-  onMarkerComplete?: (
-    transitionName: string,
-    marker: string,
-    startTime: number,
-    endTime: number,
-  ) => void;
-}
-
-// The base Fiber interface from react-reconciler, used to derive bippy's Fiber below
-interface ReactFiber {
-  tag: WorkTag;
-  key: null | string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  elementType: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  type: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  stateNode: any;
-  return: ReactFiber | null;
-  child: ReactFiber | null;
-  sibling: ReactFiber | null;
-  index: number;
-  ref: null | (((handle: unknown) => void) & { _stringRef?: string | null }) | RefObject;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  pendingProps: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  memoizedProps: any;
-  updateQueue: unknown;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  memoizedState: any;
-  dependencies: Dependencies | null;
-  mode: TypeOfMode;
-  flags: Flags;
-  subtreeFlags: Flags;
-  deletions: ReactFiber[] | null;
-  nextEffect: ReactFiber | null;
-  firstEffect: ReactFiber | null;
-  lastEffect: ReactFiber | null;
-  lanes: Lanes;
-  childLanes: Lanes;
-  alternate: ReactFiber | null;
-  actualDuration?: number;
-  actualStartTime?: number;
-  selfBaseDuration?: number;
-  treeBaseDuration?: number;
-  _debugID?: number;
-  _debugSource?: Source | null;
-  _debugOwner?: ReactFiber | null;
-  _debugIsCurrentlyTiming?: boolean;
-  _debugNeedsRemount?: boolean;
-  _debugHookTypes?: HookType[] | null;
-}
-
-// ── bippy types (not from react-reconciler) ──
-
-export interface ContextDependency<T> {
-  context: ReactContext<T>;
-  memoizedValue: T;
-  next: ContextDependency<unknown> | null;
-  observedBits: number;
-}
-
-export interface Dependencies {
+export interface Dependencies extends Omit<ReactReconciler.Dependencies, "firstContext"> {
   firstContext: ContextDependency<unknown> | null;
-  lanes: Lanes;
 }
 
 export interface Effect {
@@ -294,14 +102,6 @@ export interface Effect {
   tag: number;
 }
 
-export interface Family {
-  current: unknown;
-}
-
-/**
- * React 19 flight metadata for a server component owner (ReactComponentInfo).
- * Unlike client owners it has no `tag`; the owner chain continues via `owner`.
- */
 export interface ServerComponentInfo {
   name?: string;
   env?: string;
@@ -309,19 +109,31 @@ export interface ServerComponentInfo {
   debugStack?: Error | null;
 }
 
-export interface RendererRefreshUpdate {
-  staleFamilies: Set<Family>;
-  updatedFamilies: Set<Family>;
+export interface ReactDebugInfo {
+  debugLocation?: unknown;
+  env?: string;
+  name?: string;
 }
 
-/**
- * Represents a react-internal Fiber node.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type Fiber<T = any> = Omit<
-  ReactFiber,
+export interface FiberDebugSource extends Source {
+  columnNumber?: number;
+}
+
+export interface FiberUpdateQueue {
+  [key: string]: unknown;
+  dispatch?: unknown;
+  lastEffect: Effect | null;
+  memoCache?: unknown;
+}
+
+// HACK: @types/react-reconciler does not yet include React 19 debug fields or recursive server owners.
+export interface Fiber<T = unknown> extends Omit<
+  ReactReconciler.Fiber,
   | "alternate"
+  | "_debugOwner"
+  | "_debugSource"
   | "child"
+  | "deletions"
   | "dependencies"
   | "memoizedProps"
   | "memoizedState"
@@ -329,38 +141,35 @@ export type Fiber<T = any> = Omit<
   | "return"
   | "sibling"
   | "stateNode"
+  | "tag"
   | "updateQueue"
-> & {
-  _debugInfo?: Array<{
-    debugLocation?: unknown;
-    env?: string;
-    name?: string;
-  }>;
-  _debugOwner?: Fiber;
-  // react <19
-  _debugSource?: {
-    columnNumber?: number;
-    fileName: string;
-    lineNumber: number;
-  };
-  // react 19+
-  // https://github.com/facebook/react/issues/29092?utm_source=chatgpt.com
+> {
+  _debugInfo?: ReactDebugInfo[];
+  _debugOwner?: Fiber | ServerComponentInfo | null;
+  _debugSource?: FiberDebugSource | null;
   _debugStack?: Error & { stack: string };
   alternate: Fiber | null;
   child: Fiber | null;
+  deletions: Fiber[] | null;
   dependencies: Dependencies | null;
+  effectTag?: number;
   memoizedProps: Props;
-  memoizedState: MemoizedState;
+  memoizedState: MemoizedState | null;
   pendingProps: Props;
-
   return: Fiber | null;
   sibling: Fiber | null;
   stateNode: T;
-  updateQueue: {
-    [key: string]: unknown;
-    lastEffect: Effect | null;
-  };
-};
+  tag: WorkTag;
+  updateQueue: FiberUpdateQueue;
+}
+
+export interface HostFiber<T = unknown> extends Fiber<T> {
+  tag: HostWorkTag;
+}
+
+export interface FiberRoot {
+  current: Fiber;
+}
 
 export interface MemoizedState {
   [key: string]: unknown;
@@ -372,38 +181,55 @@ export interface Props {
   [key: string]: unknown;
 }
 
+export interface ReactDevToolsEventHandler {
+  (data: unknown): void;
+}
+
 export interface ReactDevToolsGlobalHook {
   _instrumentationIsActive?: boolean;
   _instrumentationSource?: string;
   checkDCE: (fn: unknown) => void;
+  emit?: (event: string, data?: unknown) => void;
+  getFiberRoots?: (rendererID: number) => Set<FiberRoot>;
   hasUnsupportedRendererAttached: boolean;
   inject: (renderer: ReactRenderer) => number;
-  // https://github.com/aidenybai/bippy/issues/43
-  on: () => void;
-  onCommitFiberRoot: (rendererID: number, root: FiberRoot, priority: number | void) => void;
+  off?: (event: string, handler: ReactDevToolsEventHandler) => void;
+  on: (event: string, handler: ReactDevToolsEventHandler) => void;
+  onCommitFiberRoot: (
+    rendererID: number,
+    root: FiberRoot,
+    priority: number | void,
+    didError?: boolean,
+  ) => void;
   onCommitFiberUnmount: (rendererID: number, fiber: Fiber) => void;
   onPostCommitFiberRoot: (rendererID: number, root: FiberRoot) => void;
-  // called by dev builds of react-reconciler on root schedule; absent from
-  // the hook react-refresh installs, so it stays optional
   onScheduleFiberRoot?: (rendererID: number, root: FiberRoot, children: ReactNode) => void;
   renderers: Map<number, ReactRenderer>;
+  sub?: (event: string, handler: ReactDevToolsEventHandler) => () => void;
   supportsFiber: boolean;
-
   supportsFlight: boolean;
 }
 
-// https://github.com/facebook/react/blob/6a4b46cd70d2672bc4be59dcb5b8dede22ed0cef/packages/react-devtools-shared/src/backend/types.js
-export interface ReactRenderer {
-  bundleType: 0 /* PROD */ | 1 /* DEV */;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  currentDispatcherRef: any;
-  // dev only: https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactFiberReconciler.js#L842
+export interface LegacyDispatcherRef {
+  current: unknown;
+}
+
+export interface CurrentDispatcherRef {
+  H: unknown;
+}
+
+export type RendererDispatcherRef = CurrentDispatcherRef | LegacyDispatcherRef;
+
+export interface ReactRenderer extends Omit<
+  ReactReconciler.DevToolsConfig<unknown, unknown, unknown>,
+  "findFiberByHostInstance"
+> {
+  currentDispatcherRef?: RendererDispatcherRef | null;
   findFiberByHostInstance?: (hostInstance: unknown) => Fiber | null;
-  // react devtools
-  getCurrentFiber?: (fiber: Fiber) => Fiber | null;
+  getCurrentFiber?: () => Fiber | null;
   overrideContext?: (fiber: Fiber, contextType: unknown, path: string[], value: unknown) => void;
 
-  overrideHookState?: (fiber: Fiber, id: string, path: string[], value: unknown) => void;
+  overrideHookState?: (fiber: Fiber, id: number, path: string[], value: unknown) => void;
   overrideHookStateDeletePath?: (fiber: Fiber, id: number, path: Array<number | string>) => void;
   overrideHookStateRenamePath?: (
     fiber: Fiber,
@@ -418,18 +244,13 @@ export interface ReactRenderer {
     oldPath: Array<number | string>,
     newPath: Array<number | string>,
   ) => void;
-  reconcilerVersion: string;
-  rendererPackageName: string;
-  // react refresh
-  scheduleRefresh?: (root: FiberRoot, update: RendererRefreshUpdate) => void;
+  reconcilerVersion?: string;
+  scheduleRetry?: (fiber: Fiber) => void;
   scheduleRoot?: (root: FiberRoot, element: React.ReactNode) => void;
   scheduleUpdate?: (fiber: Fiber) => void;
 
-  setErrorHandler?: (newShouldErrorImpl: (fiber: Fiber) => boolean) => void;
-  setRefreshHandler?: (handler: ((fiber: Fiber) => Family | null) | null) => void;
-  setSuspenseHandler?: (newShouldSuspendImpl: (suspenseInstance: unknown) => void) => void;
-
-  version: string;
+  setErrorHandler?: (newShouldErrorImpl: (fiber: Fiber) => boolean | null) => void;
+  setSuspenseHandler?: (newShouldSuspendImpl: (fiber: Fiber) => boolean) => void;
 }
 
 declare global {

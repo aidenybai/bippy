@@ -1,5 +1,6 @@
 // intentionally avoids importing ../index.js so this file controls hook installation
 import { expect, it, vi } from "vitest";
+import { ReactBuildType } from "../src/react-internals.js";
 import { installRDTHook } from "../src/rdt-hook.js";
 import type { ReactDevToolsGlobalHook, ReactRenderer } from "../src/types.js";
 
@@ -29,11 +30,14 @@ it("should fall back to patching when the hook property cannot be redefined", ()
   expect(existingHook.inject).not.toBe(existingInject);
   expect(onActive).not.toHaveBeenCalled();
 
-  const fakeRenderer = { bundleType: 1, version: "19.0.0" } as unknown as ReactRenderer;
+  const fakeRenderer = {
+    bundleType: ReactBuildType.Development,
+    version: "19.0.0",
+  } as unknown as ReactRenderer;
   const rendererId = existingHook.inject(fakeRenderer);
   expect(rendererId).toBe(42);
   expect(existingInject).toHaveBeenCalledWith(fakeRenderer);
-  expect(existingHook.renderers.size).toBe(0);
+  expect(existingHook.renderers.get(42)).toBe(fakeRenderer);
   expect(existingHook._instrumentationIsActive).toBe(true);
   expect(onActive).toHaveBeenCalledTimes(1);
 });

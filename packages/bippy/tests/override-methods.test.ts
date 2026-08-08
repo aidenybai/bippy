@@ -1,7 +1,12 @@
 import "../src/index.js"; // KEEP THIS LINE ON TOP
 
 import { expect, it, vi } from "vitest";
-import { overrideContext, overrideHookState, overrideProps } from "../src/index.js";
+import {
+  FunctionComponentTag,
+  overrideContext,
+  overrideHookState,
+  overrideProps,
+} from "../src/index.js";
 import type { Fiber, ReactDevToolsGlobalHook, ReactRenderer } from "../src/types.js";
 
 interface MockFiberOverrides {
@@ -22,7 +27,7 @@ const createMockFiber = (overrides: MockFiberOverrides = {}): Fiber =>
     return: null,
     sibling: null,
     stateNode: null,
-    tag: 0,
+    tag: FunctionComponentTag,
     type: () => null,
     ...overrides,
   }) as unknown as Fiber;
@@ -86,22 +91,22 @@ it("should prefer renderer overrideHookState over the hook queue dispatch", () =
   });
   overrideHookState(fiber, 1, { value: 5 });
   expect(dispatch).not.toHaveBeenCalled();
-  expect(firstOverrideHookState).toHaveBeenCalledWith(fiber, "1", ["value"], 5);
-  expect(secondOverrideHookState).toHaveBeenCalledWith(fiber, "1", ["value"], 5);
+  expect(firstOverrideHookState).toHaveBeenCalledWith(fiber, 1, ["value"], 5);
+  expect(secondOverrideHookState).toHaveBeenCalledWith(fiber, 1, ["value"], 5);
 });
 
 it("should apply path writes through every capable renderer", () => {
   const fiber = createMockFiber({ memoizedState: { queue: {} } });
   overrideHookState(fiber, 0, { value: 5 });
-  expect(firstOverrideHookState).toHaveBeenCalledWith(fiber, "0", ["value"], 5);
-  expect(secondOverrideHookState).toHaveBeenCalledWith(fiber, "0", ["value"], 5);
+  expect(firstOverrideHookState).toHaveBeenCalledWith(fiber, 0, ["value"], 5);
+  expect(secondOverrideHookState).toHaveBeenCalledWith(fiber, 0, ["value"], 5);
 });
 
 it("should treat non-plain-object hook state as a single value", () => {
   const fiber = createMockFiber();
   const exoticValue = Object.create(Object.create(null));
   overrideHookState(fiber, 0, exoticValue);
-  expect(firstOverrideHookState).toHaveBeenCalledWith(fiber, "0", [], exoticValue);
+  expect(firstOverrideHookState).toHaveBeenCalledWith(fiber, 0, [], exoticValue);
 });
 
 it("should override context values on the matching provider fiber", () => {
