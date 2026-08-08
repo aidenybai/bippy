@@ -1,5 +1,12 @@
 {
   "buildCommand": "pnpm run build",
   "outputDirectory": "dist",
-  "framework": null
+  "framework": null,
+  "redirects": [
+    {
+      "source": "/:path*",
+      "destination": "https://github.com/aidenybai/bippy",
+      "permanent": true
+    }
+  ]
 }
