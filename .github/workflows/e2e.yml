@@ -250,8 +250,7 @@ jobs:
           avd-name: Pixel_7_API_34
           script: |
             adb reverse tcp:8081 tcp:8081
-            cd packages/e2e
-            npx detox test --configuration android.emu.debug --record-logs failing
+            cd packages/e2e && npx detox test --configuration android.emu.debug --record-logs failing
       - name: Upload Android Metro log
         uses: actions/upload-artifact@v4
         if: failure()
