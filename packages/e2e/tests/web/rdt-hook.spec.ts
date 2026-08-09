@@ -64,17 +64,9 @@ test.describe("patchRDTHook", () => {
 });
 
 test.describe("hook environment", () => {
-  test("hasRDTHook and isClientEnvironment are true in a browser with the hook installed", async ({
-    page,
-  }) => {
-    const result = await page.evaluate(() => {
-      return {
-        hasHook: window.__BIPPY__.hasRDTHook(),
-        isClient: window.__BIPPY__.isClientEnvironment(),
-      };
-    });
-    expect(result.hasHook).toBe(true);
-    expect(result.isClient).toBe(true);
+  test("hasRDTHook is true with the hook installed", async ({ page }) => {
+    const hasHook = await page.evaluate(() => window.__BIPPY__.hasRDTHook());
+    expect(hasHook).toBe(true);
   });
 
   test("version and BIPPY_INSTRUMENTATION_STRING identify the build", async ({ page }) => {
@@ -138,7 +130,7 @@ test.describe("installRDTHook", () => {
     expect(result.originalRestored).toBe(true);
   });
 
-  test("safelyInstallRDTHook never throws and leaves an installed hook in place", async ({
+  test("safelyInstallRDTHook is idempotent and leaves an installed hook in place", async ({
     page,
   }) => {
     const result = await page.evaluate(() => {

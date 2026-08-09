@@ -3,7 +3,7 @@ import { defineConfig } from "vite-plus";
 import { reactInternalsPlugin } from "./scripts/react-internals-plugin.js";
 
 const pkg = JSON.parse(readFileSync("package.json", "utf8"));
-const generateReactInternals = reactInternalsPlugin();
+const isContinuousIntegration = Boolean(process.env.CI && process.env.CI !== "false");
 
 const sharedPackOptions = {
   clean: false,
@@ -21,7 +21,7 @@ const sharedPackOptions = {
   minify: process.env.NODE_ENV === "production" && !process.env.BIPPY_SOURCEMAP,
   outDir: "./dist",
   platform: "browser",
-  plugins: [generateReactInternals],
+  plugins: [reactInternalsPlugin({ mode: isContinuousIntegration ? "check" : "generate" })],
   sourcemap: Boolean(process.env.BIPPY_SOURCEMAP),
   target: "esnext",
   treeshake: true,
@@ -56,7 +56,7 @@ export default defineConfig({
   ],
   test: {
     coverage: {
-      include: ["src/**/*.ts"],
+      include: ["src/**/*.ts", "scripts/react-internals-plugin.ts"],
       exclude: ["src/types.ts"],
       provider: "istanbul",
       reporter: ["text", "json", "json-summary", "html"],

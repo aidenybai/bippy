@@ -1,14 +1,21 @@
-import type { Fiber, ContextDependency, MemoizedState, ReactContext } from "../types.js";
+import type {
+  Fiber,
+  ContextDependency,
+  MemoizedState,
+  ReactContext,
+  RendererDispatcherRef,
+} from "../types.js";
+import {
+  BippyHookInspectionError,
+  BippyHookRenderError,
+  BippyUnsupportedHookError,
+} from "../errors.js";
+import { getReactWorkTagsForFiber } from "../react-internals.js";
 import { parseStack, type StackFrame } from "./parse-stack.js";
 import { getRDTHook, _renderers } from "../rdt-hook.js";
 
 const REACT_CONTEXT_TYPE = Symbol.for("react.context");
 const REACT_MEMO_CACHE_SENTINEL = Symbol.for("react.memo_cache_sentinel");
-
-const FUNCTION_COMPONENT_TAG = 0;
-const CONTEXT_PROVIDER_TAG = 10;
-const FORWARD_REF_TAG = 11;
-const SIMPLE_MEMO_COMPONENT_TAG = 15;
 
 export interface HookSource {
   lineNumber: number | null;
@@ -26,8 +33,7 @@ export interface HooksNode {
   hookSource: HookSource | null;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface HooksTree extends Array<HooksNode> {}
+export type HooksTree = HooksNode[];
 
 interface HookLogEntry {
   displayName: string | null;
@@ -37,10 +43,29 @@ interface HookLogEntry {
   dispatcherHookName: string;
 }
 
-interface DispatcherRefContainer {
-  H?: unknown;
-  current?: unknown;
-  [key: string]: unknown;
+interface InspectableReactContext {
+  _currentValue: unknown;
+  displayName?: string;
+}
+
+interface InspectableRef {
+  current: unknown;
+}
+
+interface InspectableThenable {
+  reason?: unknown;
+  status?: unknown;
+  then: (...arguments_: unknown[]) => unknown;
+  value?: unknown;
+}
+
+interface ForwardRefRenderType {
+  render: (props: Record<string, unknown>, ref: unknown) => unknown;
+}
+
+interface InspectedActionState {
+  error: unknown;
+  value: unknown;
 }
 
 let hookLog: HookLogEntry[] = [];
@@ -49,8 +74,7 @@ let currentFiber: Fiber | null = null;
 let currentHook: MemoizedState | null = null;
 let currentContextDependency: ContextDependency<unknown> | null = null;
 let currentThenableIndex = 0;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let currentThenableState: any[] | null = null;
+let currentThenableState: unknown[] | null = null;
 
 const SuspenseException: unknown = new Error(
   "Suspense Exception: This is not a real error! It's an implementation detail of `use` to interrupt the current render.",
@@ -65,33 +89,51 @@ const nextHook = (): MemoizedState | null => {
   return hook;
 };
 
-const readContext = <T>(context: ReactContext<T>): T => {
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const isInspectableThenable = (value: unknown): value is InspectableThenable =>
+  isObjectRecord(value) && typeof value.then === "function";
+
+const isInspectableRef = (value: unknown): value is InspectableRef =>
+  isObjectRecord(value) && "current" in value;
+
+const isReactContext = (value: unknown): value is ReactContext<unknown> =>
+  isObjectRecord(value) && "_currentValue" in value;
+
+const isContextDependency = (value: unknown): value is ContextDependency<unknown> =>
+  isObjectRecord(value) && "context" in value && "next" in value;
+
+const isForwardRefRenderType = (value: unknown): value is ForwardRefRenderType =>
+  isObjectRecord(value) && typeof value.render === "function";
+
+const readContext = (context: InspectableReactContext): unknown => {
   if (currentFiber === null) return context._currentValue;
   if (currentContextDependency === null) {
-    throw new Error("Context reads do not line up with context dependencies.");
+    throw new BippyHookInspectionError("Context reads do not line up with context dependencies.");
   }
-  if (Object.prototype.hasOwnProperty.call(currentContextDependency, "memoizedValue")) {
-    const value = currentContextDependency.memoizedValue as T;
+  if (Object.hasOwn(currentContextDependency, "memoizedValue")) {
+    const value = currentContextDependency.memoizedValue;
     currentContextDependency = currentContextDependency.next;
     return value;
   }
   return context._currentValue;
 };
 
-const getDispatcherRef = (): DispatcherRefContainer | null => {
+const getDispatcherRef = (): RendererDispatcherRef | null => {
   const rdtHook = getRDTHook();
   const allRenderers = [..._renderers, ...rdtHook.renderers.values()];
   for (const renderer of allRenderers) {
     const ref = renderer.currentDispatcherRef;
-    if (ref && typeof ref === "object") return ref as DispatcherRefContainer;
+    if (ref) return ref;
   }
   return null;
 };
 
-const getDispatcherFromRef = (ref: DispatcherRefContainer): unknown =>
+const getDispatcherFromRef = (ref: RendererDispatcherRef): unknown =>
   "H" in ref ? ref.H : ref.current;
 
-const setDispatcherOnRef = (ref: DispatcherRefContainer, dispatcher: unknown): void => {
+const setDispatcherOnRef = (ref: RendererDispatcherRef, dispatcher: unknown): void => {
   if ("H" in ref) {
     ref.H = dispatcher;
   } else {
@@ -115,14 +157,13 @@ const pushHookLogEntry = (
 };
 
 const dispatcherUse = (usable: unknown): unknown => {
-  if (usable !== null && typeof usable === "object") {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const asThenable = usable as any;
-    if (typeof asThenable.then === "function") {
-      const thenable =
+  if (isObjectRecord(usable)) {
+    if (isInspectableThenable(usable)) {
+      const cachedThenable =
         currentThenableState !== null && currentThenableIndex < currentThenableState.length
           ? currentThenableState[currentThenableIndex++]
-          : asThenable;
+          : usable;
+      const thenable = isInspectableThenable(cachedThenable) ? cachedThenable : usable;
 
       switch (thenable.status) {
         case "fulfilled": {
@@ -135,19 +176,22 @@ const dispatcherUse = (usable: unknown): unknown => {
       pushHookLogEntry("Unresolved", thenable, "Use");
       throw SuspenseException;
     }
-    if (asThenable.$$typeof === REACT_CONTEXT_TYPE && "_currentValue" in asThenable) {
-      const context: ReactContext<unknown> = asThenable;
+    if (usable.$$typeof === REACT_CONTEXT_TYPE && "_currentValue" in usable) {
+      const context: InspectableReactContext = {
+        _currentValue: usable._currentValue,
+        displayName: typeof usable.displayName === "string" ? usable.displayName : undefined,
+      };
       const value = readContext(context);
-      pushHookLogEntry("Context (use)", value, "Use", context.displayName || "Context");
+      pushHookLogEntry("Context (use)", value, "Use", context.displayName ?? "Context");
       return value;
     }
   }
-  throw new Error("An unsupported type was passed to use(): " + String(usable));
+  throw new BippyHookInspectionError("An unsupported type was passed to use(): " + String(usable));
 };
 
-const dispatcherUseContext = (context: ReactContext<unknown>): unknown => {
+const dispatcherUseContext = (context: InspectableReactContext): unknown => {
   const value = readContext(context);
-  pushHookLogEntry("Context", value, "Context", context.displayName || null);
+  pushHookLogEntry("Context", value, "Context", context.displayName ?? null);
   return value;
 };
 
@@ -157,7 +201,7 @@ const dispatcherUseState = (initialState: unknown): [unknown, () => void] => {
     hook !== null
       ? hook.memoizedState
       : typeof initialState === "function"
-        ? (initialState as () => unknown)()
+        ? initialState()
         : initialState;
   pushHookLogEntry("State", state, "State");
   return [state, () => {}];
@@ -175,11 +219,13 @@ const dispatcherUseReducer = (
   return [state, () => {}];
 };
 
-const dispatcherUseRef = (initialValue: unknown): { current: unknown } => {
+const dispatcherUseRef = (initialValue: unknown): InspectableRef => {
   const hook = nextHook();
-  const ref = hook !== null ? hook.memoizedState : { current: initialValue };
-  pushHookLogEntry("Ref", (ref as { current: unknown }).current, "Ref");
-  return ref as { current: unknown };
+  const ref = isInspectableRef(hook?.memoizedState)
+    ? hook.memoizedState
+    : { current: initialValue };
+  pushHookLogEntry("Ref", ref.current, "Ref");
+  return ref;
 };
 
 const dispatcherUseCacheRefresh = (): (() => void) => {
@@ -227,7 +273,7 @@ const dispatcherUseCallback = (callback: unknown): unknown => {
   const hook = nextHook();
   pushHookLogEntry(
     "Callback",
-    hook !== null ? (hook.memoizedState as unknown[])[0] : callback,
+    Array.isArray(hook?.memoizedState) ? hook.memoizedState[0] : callback,
     "Callback",
   );
   return callback;
@@ -235,7 +281,7 @@ const dispatcherUseCallback = (callback: unknown): unknown => {
 
 const dispatcherUseMemo = (nextCreate: () => unknown): unknown => {
   const hook = nextHook();
-  const value = hook !== null ? (hook.memoizedState as unknown[])[0] : nextCreate();
+  const value = Array.isArray(hook?.memoizedState) ? hook.memoizedState[0] : nextCreate();
   pushHookLogEntry("Memo", value, "Memo");
   return value;
 };
@@ -254,7 +300,7 @@ const dispatcherUseSyncExternalStore = (
 const dispatcherUseTransition = (): [boolean, () => void] => {
   const stateHook = nextHook();
   nextHook();
-  const isPending = stateHook !== null ? (stateHook.memoizedState as boolean) : false;
+  const isPending = stateHook?.memoizedState === true;
   pushHookLogEntry("Transition", isPending, "Transition");
   return [isPending, () => {}];
 };
@@ -268,7 +314,7 @@ const dispatcherUseDeferredValue = (value: unknown): unknown => {
 
 const dispatcherUseId = (): string => {
   const hook = nextHook();
-  const identifier = hook !== null ? (hook.memoizedState as string) : "";
+  const identifier = typeof hook?.memoizedState === "string" ? hook.memoizedState : "";
   pushHookLogEntry("Id", identifier, "Id");
   return identifier;
 };
@@ -277,9 +323,7 @@ const dispatcherUseMemoCache = (size: number): unknown[] => {
   const fiber = currentFiber;
   if (fiber === null || fiber === undefined) return [];
 
-  const memoCache = (
-    fiber.updateQueue as { memoCache?: { data: unknown[][]; index: number } } | null
-  )?.memoCache;
+  const memoCache = fiber.updateQueue?.memoCache;
   if (memoCache === null || memoCache === undefined) return [];
 
   let memoCacheSlots = memoCache.data[memoCache.index];
@@ -304,28 +348,22 @@ const dispatcherUseOptimistic = (passthrough: unknown): [unknown, () => void] =>
 const inspectActionStateHook = (
   hook: MemoizedState | null,
   initialState: unknown,
-): { value: unknown; error: unknown } => {
+): InspectedActionState => {
   let value: unknown;
   let error: unknown = null;
   if (hook !== null) {
     const actionResult = hook.memoizedState;
-    if (
-      typeof actionResult === "object" &&
-      actionResult !== null &&
-      "then" in actionResult &&
-      typeof actionResult.then === "function"
-    ) {
-      const thenable = actionResult as { status?: string; value?: unknown; reason?: unknown };
-      switch (thenable.status) {
+    if (isInspectableThenable(actionResult)) {
+      switch (actionResult.status) {
         case "fulfilled":
-          value = thenable.value;
+          value = actionResult.value;
           break;
         case "rejected":
-          error = thenable.reason;
+          error = actionResult.reason;
           break;
         default:
           error = SuspenseException;
-          value = thenable;
+          value = actionResult;
       }
     } else {
       value = actionResult;
@@ -360,7 +398,7 @@ const dispatcherUseFormState = createActionStateDispatcher("FormState");
 
 const dispatcherUseHostTransitionStatus = (): unknown => {
   // HACK: creating a minimal fake context because useHostTransitionStatus reads from an internal context not available outside React
-  const status = readContext({ _currentValue: null } as unknown as ReactContext<unknown>);
+  const status = readContext({ _currentValue: null });
   pushHookLogEntry("HostTransitionStatus", status, "HostTransitionStatus");
   return status;
 };
@@ -371,8 +409,7 @@ const dispatcherUseEffectEvent = (callback: (...args: unknown[]) => unknown): ty
   return callback;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const Dispatcher: Record<string, (...args: any[]) => any> = {
+const dispatcher = {
   readContext,
   use: dispatcherUse,
   useCallback: dispatcherUseCallback,
@@ -399,15 +436,13 @@ const Dispatcher: Record<string, (...args: any[]) => any> = {
   useEffectEvent: dispatcherUseEffectEvent,
 };
 
-const DispatcherProxy =
+const dispatcherProxy =
   typeof Proxy === "undefined"
-    ? Dispatcher
-    : new Proxy(Dispatcher, {
-        get(target, prop: string) {
-          if (Object.prototype.hasOwnProperty.call(target, prop)) return target[prop];
-          const error = new Error("Missing method in Dispatcher: " + prop);
-          error.name = "ReactDebugToolsUnsupportedHookError";
-          throw error;
+    ? dispatcher
+    : new Proxy(dispatcher, {
+        get(target, propertyName: string) {
+          if (Object.hasOwn(target, propertyName)) return Reflect.get(target, propertyName);
+          throw new BippyUnsupportedHookError("Missing method in Dispatcher: " + propertyName);
         },
       });
 
@@ -418,41 +453,42 @@ const getPrimitiveStackCache = (): Map<string, StackFrame[]> => {
   let capturedHookLog: HookLogEntry[];
 
   try {
-    Dispatcher.useContext({ _currentValue: null });
-    Dispatcher.useState(null);
-    Dispatcher.useReducer((state: unknown) => state, null);
-    Dispatcher.useRef(null);
-    if (typeof Dispatcher.useCacheRefresh === "function") Dispatcher.useCacheRefresh();
-    Dispatcher.useLayoutEffect(() => {});
-    Dispatcher.useInsertionEffect(() => {});
-    Dispatcher.useEffect(() => {});
-    Dispatcher.useImperativeHandle(undefined, () => null);
-    Dispatcher.useDebugValue(null);
-    Dispatcher.useCallback(() => {});
-    Dispatcher.useTransition();
-    Dispatcher.useSyncExternalStore(
+    dispatcher.useContext({ _currentValue: null });
+    dispatcher.useState(null);
+    dispatcher.useReducer((state: unknown) => state, null);
+    dispatcher.useRef(null);
+    if (typeof dispatcher.useCacheRefresh === "function") dispatcher.useCacheRefresh();
+    dispatcher.useLayoutEffect(() => {});
+    dispatcher.useInsertionEffect(() => {});
+    dispatcher.useEffect(() => {});
+    dispatcher.useImperativeHandle(undefined, () => null);
+    dispatcher.useDebugValue(null);
+    dispatcher.useCallback(() => {});
+    dispatcher.useTransition();
+    dispatcher.useSyncExternalStore(
       () => () => {},
       () => null,
       () => null,
     );
-    Dispatcher.useDeferredValue(null);
-    Dispatcher.useMemo(() => null);
-    Dispatcher.useOptimistic(null, (state: unknown) => state);
-    Dispatcher.useFormState((state: unknown) => state, null);
-    Dispatcher.useActionState((state: unknown) => state, null);
-    Dispatcher.useHostTransitionStatus();
-    if (typeof Dispatcher.useMemoCache === "function") Dispatcher.useMemoCache(0);
-    if (typeof Dispatcher.use === "function") {
-      Dispatcher.use({ $$typeof: REACT_CONTEXT_TYPE, _currentValue: null });
-      Dispatcher.use({ then() {}, status: "fulfilled", value: null });
+    dispatcher.useDeferredValue(null);
+    dispatcher.useMemo(() => null);
+    dispatcher.useOptimistic(null, (state: unknown) => state);
+    dispatcher.useFormState((state: unknown) => state, null);
+    dispatcher.useActionState((state: unknown) => state, null);
+    dispatcher.useHostTransitionStatus();
+    if (typeof dispatcher.useMemoCache === "function") dispatcher.useMemoCache(0);
+    if (typeof dispatcher.use === "function") {
+      dispatcher.use({ $$typeof: REACT_CONTEXT_TYPE, _currentValue: null });
+      const fulfilledPromise = Promise.resolve(null);
+      Reflect.set(fulfilledPromise, "status", "fulfilled");
+      Reflect.set(fulfilledPromise, "value", null);
+      dispatcher.use(fulfilledPromise);
       try {
-        Dispatcher.use({ then() {} });
-      } catch {
-        /* noop */
-      }
+        dispatcher.use(new Promise<never>(() => {}));
+      } catch {}
     }
-    Dispatcher.useId();
-    if (typeof Dispatcher.useEffectEvent === "function") Dispatcher.useEffectEvent(() => {});
+    dispatcher.useId();
+    if (typeof dispatcher.useEffectEvent === "function") dispatcher.useEffectEvent(() => {});
   } finally {
     capturedHookLog = hookLog;
     hookLog = [];
@@ -681,14 +717,17 @@ const processDebugValues = (hooksTree: HooksTree, parentHooksNode: HooksNode | n
 const setupContexts = (contextMap: Map<ReactContext<unknown>, unknown>, fiber: Fiber): void => {
   let current: Fiber | null = fiber;
   while (current) {
-    if (current.tag === CONTEXT_PROVIDER_TAG) {
-      let context = current.type as ReactContext<unknown>;
-      if ("_context" in context && context._context !== undefined) {
-        context = context._context as ReactContext<unknown>;
-      }
-      if (!contextMap.has(context)) {
+    if (current.tag === getReactWorkTagsForFiber(current).ContextProvider) {
+      const providerType = current.type;
+      const nestedContext = isObjectRecord(providerType) ? providerType._context : undefined;
+      const context = isReactContext(nestedContext)
+        ? nestedContext
+        : isReactContext(providerType)
+          ? providerType
+          : null;
+      if (context && !contextMap.has(context)) {
         contextMap.set(context, context._currentValue);
-        context._currentValue = (current.memoizedProps as { value: unknown }).value;
+        context._currentValue = current.memoizedProps.value;
       }
     }
     current = current.return;
@@ -703,25 +742,22 @@ const restoreContexts = (contextMap: Map<ReactContext<unknown>, unknown>): void 
 
 const handleRenderFunctionError = (error: unknown): void => {
   if (error === SuspenseException) return;
-  if (error instanceof Error && error.name === "ReactDebugToolsUnsupportedHookError") throw error;
-  const wrapperError = new Error("Error rendering inspected component", { cause: error });
-  wrapperError.name = "ReactDebugToolsRenderError";
-  (wrapperError as { cause: unknown }).cause = error;
-  throw wrapperError;
+  if (error instanceof BippyUnsupportedHookError) throw error;
+  throw new BippyHookRenderError("Error rendering inspected component", error);
 };
 
 const resolveDefaultProps = (
-  Component: unknown,
+  component: unknown,
   baseProps: Record<string, unknown>,
 ): Record<string, unknown> => {
   if (
-    Component &&
-    typeof Component === "object" &&
-    "defaultProps" in Component &&
-    Component.defaultProps
+    component &&
+    typeof component === "object" &&
+    "defaultProps" in component &&
+    isObjectRecord(component.defaultProps)
   ) {
     const props = { ...baseProps };
-    const defaultProps = Component.defaultProps as Record<string, unknown>;
+    const defaultProps = component.defaultProps;
     for (const propName in defaultProps) {
       if (props[propName] === undefined) {
         props[propName] = defaultProps[propName];
@@ -736,11 +772,9 @@ const suppressConsole = (): Record<string, unknown> => {
   const originalMethods: Record<string, unknown> = {};
   for (const method in console) {
     try {
-      originalMethods[method] = (console as Record<string, unknown>)[method];
-      (console as Record<string, unknown>)[method] = () => {};
-    } catch {
-      /* noop */
-    }
+      originalMethods[method] = Reflect.get(console, method);
+      Reflect.set(console, method, () => {});
+    } catch {}
   }
   return originalMethods;
 };
@@ -748,19 +782,17 @@ const suppressConsole = (): Record<string, unknown> => {
 const restoreConsole = (originalMethods: Record<string, unknown>): void => {
   for (const method in originalMethods) {
     try {
-      (console as Record<string, unknown>)[method] = originalMethods[method];
-    } catch {
-      /* noop */
-    }
+      Reflect.set(console, method, originalMethods[method]);
+    } catch {}
   }
 };
 
 const performDispatcherInspection = (
-  dispatcherRef: DispatcherRefContainer,
+  dispatcherRef: RendererDispatcherRef,
   renderFn: () => void,
 ): HooksTree => {
   const previousDispatcher = getDispatcherFromRef(dispatcherRef);
-  setDispatcherOnRef(dispatcherRef, DispatcherProxy);
+  setDispatcherOnRef(dispatcherRef, dispatcherProxy);
 
   let capturedHookLog: HookLogEntry[] = [];
   let ancestorStackError: Error | undefined;
@@ -780,10 +812,10 @@ const performDispatcherInspection = (
   return buildTree(rootStack, capturedHookLog);
 };
 
-const requireDispatcherRef = (): DispatcherRefContainer => {
+const requireDispatcherRef = (): RendererDispatcherRef => {
   const dispatcherRef = getDispatcherRef();
   if (!dispatcherRef) {
-    throw new Error(
+    throw new BippyHookInspectionError(
       "No React renderer found. Make sure React is loaded and bippy's hook is installed.",
     );
   }
@@ -791,38 +823,38 @@ const requireDispatcherRef = (): DispatcherRefContainer => {
 };
 
 const resolveContextDependency = (fiber: Fiber): void => {
-  if (Object.prototype.hasOwnProperty.call(fiber, "dependencies")) {
+  if (Object.hasOwn(fiber, "dependencies")) {
     const dependencies = fiber.dependencies;
     currentContextDependency = dependencies !== null ? dependencies.firstContext : null;
-  } else if (Object.prototype.hasOwnProperty.call(fiber, "dependencies_old")) {
-    const dependencies = (fiber as unknown as { dependencies_old: typeof fiber.dependencies })
-      .dependencies_old;
-    currentContextDependency = dependencies !== null ? dependencies!.firstContext : null;
-  } else if (Object.prototype.hasOwnProperty.call(fiber, "dependencies_new")) {
-    const dependencies = (fiber as unknown as { dependencies_new: typeof fiber.dependencies })
-      .dependencies_new;
-    currentContextDependency = dependencies !== null ? dependencies!.firstContext : null;
-  } else if (Object.prototype.hasOwnProperty.call(fiber, "contextDependencies")) {
-    const contextDependencies = (
-      fiber as unknown as {
-        contextDependencies: { first: ContextDependency<unknown> | null } | null;
-      }
-    ).contextDependencies;
-    currentContextDependency = contextDependencies !== null ? contextDependencies.first : null;
+  } else if (Object.hasOwn(fiber, "dependencies_old")) {
+    const dependencies: unknown = Reflect.get(fiber, "dependencies_old");
+    const firstContext = isObjectRecord(dependencies) ? dependencies.firstContext : null;
+    currentContextDependency = isContextDependency(firstContext) ? firstContext : null;
+  } else if (Object.hasOwn(fiber, "dependencies_new")) {
+    const dependencies: unknown = Reflect.get(fiber, "dependencies_new");
+    const firstContext = isObjectRecord(dependencies) ? dependencies.firstContext : null;
+    currentContextDependency = isContextDependency(firstContext) ? firstContext : null;
+  } else if (Object.hasOwn(fiber, "contextDependencies")) {
+    const contextDependencies: unknown = Reflect.get(fiber, "contextDependencies");
+    const firstContext = isObjectRecord(contextDependencies) ? contextDependencies.first : null;
+    currentContextDependency = isContextDependency(firstContext) ? firstContext : null;
   } else {
-    throw new Error("Unsupported React version.");
+    throw new BippyHookInspectionError("Unsupported React version.");
   }
 };
 
 export const getFiberHooks = (fiber: Fiber): HooksTree => {
   const dispatcherRef = requireDispatcherRef();
+  const workTags = getReactWorkTagsForFiber(fiber);
 
   if (
-    fiber.tag !== FUNCTION_COMPONENT_TAG &&
-    fiber.tag !== SIMPLE_MEMO_COMPONENT_TAG &&
-    fiber.tag !== FORWARD_REF_TAG
+    fiber.tag !== workTags.FunctionComponent &&
+    fiber.tag !== workTags.SimpleMemoComponent &&
+    fiber.tag !== workTags.ForwardRef
   ) {
-    throw new Error("Unknown Fiber. Needs to be a function component to inspect hooks.");
+    throw new BippyHookInspectionError(
+      "Unknown Fiber. Needs to be a function component to inspect hooks.",
+    );
   }
 
   getPrimitiveStackCache();
@@ -830,19 +862,17 @@ export const getFiberHooks = (fiber: Fiber): HooksTree => {
   currentHook = fiber.memoizedState;
   currentFiber = fiber;
 
-  const debugThenableState =
-    fiber.dependencies &&
-    (fiber.dependencies as { _debugThenableState?: { thenables?: unknown[] } })._debugThenableState;
-  const usedThenables = debugThenableState
-    ? debugThenableState.thenables || debugThenableState
-    : null;
+  const debugThenableState = fiber.dependencies?._debugThenableState;
+  const usedThenables = Array.isArray(debugThenableState)
+    ? debugThenableState
+    : debugThenableState?.thenables;
   currentThenableState = Array.isArray(usedThenables) ? usedThenables : null;
   currentThenableIndex = 0;
 
   resolveContextDependency(fiber);
 
   const type = fiber.type;
-  let props = fiber.memoizedProps as Record<string, unknown>;
+  let props = fiber.memoizedProps;
   if (type !== fiber.elementType) {
     props = resolveDefaultProps(type, props);
   }
@@ -853,22 +883,27 @@ export const getFiberHooks = (fiber: Fiber): HooksTree => {
   try {
     if (
       currentContextDependency !== null &&
-      !Object.prototype.hasOwnProperty.call(currentContextDependency, "memoizedValue")
+      !Object.hasOwn(currentContextDependency, "memoizedValue")
     ) {
       setupContexts(contextMap, fiber);
     }
 
-    if (fiber.tag === FORWARD_REF_TAG) {
+    if (fiber.tag === workTags.ForwardRef) {
+      if (!isForwardRefRenderType(type)) {
+        throw new BippyHookInspectionError("ForwardRef fiber is missing its render function.");
+      }
       return performDispatcherInspection(dispatcherRef, () => {
-        (type as { render: (props: Record<string, unknown>, ref: unknown) => unknown }).render(
-          props,
-          fiber.ref,
-        );
+        type.render(props, fiber.ref);
       });
     }
 
+    if (typeof type !== "function") {
+      throw new BippyHookInspectionError(
+        "Function component fiber is missing its component function.",
+      );
+    }
     return performDispatcherInspection(dispatcherRef, () => {
-      (type as (props: Record<string, unknown>) => unknown)(props);
+      type(props);
     });
   } finally {
     currentFiber = null;

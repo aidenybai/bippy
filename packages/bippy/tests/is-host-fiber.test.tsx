@@ -2,15 +2,10 @@ import "../src/index.js"; // KEEP THIS LINE ON TOP
 
 import { render } from "@testing-library/react";
 import React from "react";
-import { expect, it } from "vitest";
-import {
-  getFiberFromHostInstance,
-  HostTextTag,
-  instrument,
-  isHostFiber,
-  traverseFiber,
-} from "../src/index.js";
+import { expect, it } from "vite-plus/test";
+import { getFiberFromHostInstance, instrument, isHostFiber, traverseFiber } from "../src/index.js";
 import type { Fiber } from "../src/types.js";
+import { latestReactWorkTags } from "./react-work-tags.js";
 
 export const Example = () => {
   return <div>Hello</div>;
@@ -29,7 +24,10 @@ it("should return true for a host text fiber", () => {
   let hostTextFiber: Fiber | null = null;
   using _unsubscribe = instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {
-      hostTextFiber = traverseFiber(fiberRoot.current, (fiber) => fiber.tag === HostTextTag);
+      hostTextFiber = traverseFiber(
+        fiberRoot.current,
+        (fiber) => fiber.tag === latestReactWorkTags.HostText,
+      );
     },
   });
   render(
@@ -38,7 +36,7 @@ it("should return true for a host text fiber", () => {
     </div>,
   );
   if (!hostTextFiber) throw new Error("React DOM did not render a host text fiber");
-  expect(hostTextFiber.tag).toBe(HostTextTag);
+  expect(hostTextFiber.tag).toBe(latestReactWorkTags.HostText);
   expect(isHostFiber(hostTextFiber)).toBe(true);
 });
 

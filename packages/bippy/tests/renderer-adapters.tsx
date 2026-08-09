@@ -2,7 +2,7 @@ import React, { act } from "react";
 import { getRDTHook, traverseFiber } from "../src/index.js";
 import { ReactBuildType } from "../src/react-internals.js";
 import type { BaseRenderable, BaseRenderableOptions, RenderContext } from "@opentui/core";
-import type { Fiber } from "../src/types.js";
+import type { Fiber, FiberRoot, RendererDispatcherRef } from "../src/types.js";
 import type { RendererAdapter, RendererAdapterFactory } from "./renderer-test-harness.js";
 
 interface ReactPdfContainer {
@@ -10,10 +10,30 @@ interface ReactPdfContainer {
   type: "ROOT";
 }
 
+interface ReactPdfRenderer {
+  createContainer: (container: ReactPdfContainer) => FiberRoot;
+  updateContainer: (
+    element: React.ReactElement | null,
+    root: FiberRoot,
+    parentComponent: null,
+    callback: () => void,
+  ) => void;
+}
+
+interface ReactPdfRendererFactory {
+  (options: { onChange: () => void }): ReactPdfRenderer;
+}
+
 interface OpenTuiTestRenderableOptions extends BaseRenderableOptions {
   label?: string;
   value?: number;
 }
+
+const isReactPdfRendererFactory = (value: unknown): value is ReactPdfRendererFactory =>
+  typeof value === "function";
+
+const isRendererDispatcherRef = (value: unknown): value is RendererDispatcherRef =>
+  typeof value === "object" && value !== null && ("H" in value || "current" in value);
 
 const createReactNilAdapter = async (): Promise<RendererAdapter> => {
   const { render } = await import("react-nil");
@@ -50,21 +70,30 @@ const createReactNilAdapter = async (): Promise<RendererAdapter> => {
 
 const createInkAdapter = async (): Promise<RendererAdapter> => {
   const previousDevValue = process.env.DEV;
+  const restoreDevValue = (): void => {
+    if (previousDevValue === undefined) {
+      delete process.env.DEV;
+    } else {
+      process.env.DEV = previousDevValue;
+    }
+  };
   process.env.DEV = "true";
-  const [{ Text }, { render }] = await Promise.all([import("ink"), import("ink-testing-library")]);
+  const [{ Text }, { render }] = await Promise.all([
+    import("ink"),
+    import("ink-testing-library"),
+  ]).finally(restoreDevValue);
 
   return {
     createHostElement: ({ label, value }) => <Text color="green">{`${label}:${value}`}</Text>,
     render: async (element) => {
       process.env.DEV = "true";
       let instance: ReturnType<typeof render> | undefined;
-      await act(async () => {
-        instance = render(element);
-      });
-      if (previousDevValue === undefined) {
-        delete process.env.DEV;
-      } else {
-        process.env.DEV = previousDevValue;
+      try {
+        await act(async () => {
+          instance = render(element);
+        });
+      } finally {
+        restoreDevValue();
       }
       if (!instance) throw new Error("Ink did not create a renderer instance");
       return {
@@ -135,17 +164,17 @@ const createOpenTuiAdapter = async (): Promise<RendererAdapter> => {
       return this.children.length;
     }
 
-    getRenderable(id: string): BaseRenderable | undefined {
-      if (this.id === id) return this;
-      return this.findDescendantById(id);
+    getRenderable(renderableId: string): BaseRenderable | undefined {
+      if (this.id === renderableId) return this;
+      return this.findDescendantById(renderableId);
     }
 
     requestRender(): void {}
 
-    findDescendantById(id: string): BaseRenderable | undefined {
+    findDescendantById(renderableId: string): BaseRenderable | undefined {
       for (const child of this.children) {
-        if (child.id === id) return child;
-        const descendant = child.findDescendantById(id);
+        if (child.id === renderableId) return child;
+        const descendant = child.findDescendantById(renderableId);
         if (descendant) return descendant;
       }
       return undefined;
@@ -158,7 +187,7 @@ const createOpenTuiAdapter = async (): Promise<RendererAdapter> => {
     createHostElement: ({ label, value }) => React.createElement("bippy-test", { label, value }),
     render: async (element) => {
       // HACK: Exercise OpenTUI's real reconciler without attaching native terminal output during Node tests.
-      const renderContext = Object.create(null);
+      const renderContext: RenderContext = Object.create(null);
       const rootContainer = new OpenTuiTestRenderable(renderContext, { id: "root" });
       const openTuiRenderer = {
         dropLive: () => {},
@@ -315,7 +344,8 @@ const createReactKonvaCompatibilityAdapter = async (): Promise<RendererAdapter> 
       React.createElement("Group", { name: `${label}-${value}` }),
     render: async (element) => {
       const container = new Group();
-      const root = Reflect.apply(KonvaRenderer.createContainer, KonvaRenderer, [
+      const createContainer = KonvaRenderer.createContainer.bind(KonvaRenderer);
+      const root = Reflect.apply(createContainer, undefined, [
         container,
         1,
         null,
@@ -385,18 +415,25 @@ const createRemotionAdapter = async (): Promise<RendererAdapter> => {
 
 const createReactPdfAdapter = async (): Promise<RendererAdapter> => {
   const reactPdfModule = await import("@react-pdf/renderer");
-  const createRenderer = Reflect.get(reactPdfModule, "createRenderer");
+  const createRenderer: unknown = Reflect.get(reactPdfModule, "createRenderer");
+  if (!isReactPdfRendererFactory(createRenderer)) {
+    throw new Error("@react-pdf/renderer does not expose createRenderer");
+  }
   const renderer = createRenderer({ onChange: () => {} });
   const rdtHook = getRDTHook();
+  const reactDispatcherRef: unknown = Reflect.get(
+    React,
+    "__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE",
+  );
   // HACK: react-pdf does not register its reconciler with DevTools, so forward its real root through the hook.
   const rendererId = rdtHook.inject({
     bundleType: ReactBuildType.Development,
-    currentDispatcherRef: Reflect.get(
-      React,
-      "__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE",
-    ),
-    reconcilerVersion: reactPdfModule.version,
+    currentDispatcherRef: isRendererDispatcherRef(reactDispatcherRef)
+      ? reactDispatcherRef
+      : undefined,
+    reconcilerVersion: React.version,
     rendererPackageName: "@react-pdf/renderer",
+    version: React.version,
   });
 
   return {

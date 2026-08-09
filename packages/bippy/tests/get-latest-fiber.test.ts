@@ -1,6 +1,7 @@
-import { afterEach, expect, it } from "vitest";
-import { _fiberRoots, FunctionComponentTag, getLatestFiber } from "../src/index.js";
+import { afterEach, expect, it } from "vite-plus/test";
+import { _fiberRoots, getLatestFiber } from "../src/index.js";
 import type { Fiber } from "../src/types.js";
+import { latestReactWorkTags } from "./react-work-tags.js";
 
 interface MockFiberOverrides {
   actualStartTime?: number;
@@ -21,7 +22,7 @@ const createMockFiber = (overrides: MockFiberOverrides = {}): Fiber =>
     return: null,
     sibling: null,
     stateNode: null,
-    tag: FunctionComponentTag,
+    tag: latestReactWorkTags.FunctionComponent,
     type: null,
     ...overrides,
   }) as unknown as Fiber;

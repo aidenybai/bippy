@@ -89,7 +89,12 @@ export interface ContextDependency<T> extends Omit<
   observedBits?: number;
 }
 
+export interface DebugThenableState {
+  thenables?: unknown[];
+}
+
 export interface Dependencies extends Omit<ReactReconciler.Dependencies, "firstContext"> {
+  _debugThenableState?: DebugThenableState | unknown[];
   firstContext: ContextDependency<unknown> | null;
 }
 
@@ -115,6 +120,11 @@ export interface ReactDebugInfo {
   name?: string;
 }
 
+export interface ReactMemoCache {
+  data: unknown[][];
+  index: number;
+}
+
 export interface FiberDebugSource extends Source {
   columnNumber?: number;
 }
@@ -123,7 +133,7 @@ export interface FiberUpdateQueue {
   [key: string]: unknown;
   dispatch?: unknown;
   lastEffect: Effect | null;
-  memoCache?: unknown;
+  memoCache?: ReactMemoCache;
 }
 
 // HACK: @types/react-reconciler does not yet include React 19 debug fields or recursive server owners.
@@ -160,7 +170,7 @@ export interface Fiber<T = unknown> extends Omit<
   sibling: Fiber | null;
   stateNode: T;
   tag: WorkTag;
-  updateQueue: FiberUpdateQueue;
+  updateQueue: FiberUpdateQueue | null;
 }
 
 export interface HostFiber<T = unknown> extends Fiber<T> {

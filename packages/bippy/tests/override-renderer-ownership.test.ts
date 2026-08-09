@@ -1,8 +1,9 @@
 import "../src/index.js"; // KEEP THIS LINE ON TOP
 
-import { expect, it, vi } from "vitest";
-import { FunctionComponentTag, overrideHookState, overrideProps } from "../src/index.js";
+import { expect, it, vi } from "vite-plus/test";
+import { overrideHookState, overrideProps } from "../src/index.js";
 import type { Fiber, FiberRoot, ReactDevToolsGlobalHook, ReactRenderer } from "../src/types.js";
+import { latestReactWorkTags } from "./react-work-tags.js";
 
 interface MockFiberOverrides {
   memoizedState?: unknown;
@@ -21,7 +22,7 @@ const createMockFiber = (overrides: MockFiberOverrides = {}): Fiber =>
     return: null,
     sibling: null,
     stateNode: null,
-    tag: FunctionComponentTag,
+    tag: latestReactWorkTags.FunctionComponent,
     type: () => null,
     ...overrides,
   }) as unknown as Fiber;

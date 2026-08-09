@@ -16,7 +16,6 @@ import {
   hasMemoCache,
   hasRDTHook,
   instrument,
-  isClientEnvironment,
   isCompositeFiber,
   isFiber,
   isHostFiber,
@@ -285,7 +284,6 @@ const App = () => {
     const mutatedHostFibers = getMutatedHostFibers(rootFiber);
     results["mutatedHostFibers-count"] = String(mutatedHostFibers.length);
 
-    results["isClientEnvironment"] = String(isClientEnvironment());
     results["hasRDTHook"] = String(hasRDTHook());
     // react-native dev builds ship the real react-devtools backend, so the
     // hook has getFiberRoots and isRealReactDevtools reports true here

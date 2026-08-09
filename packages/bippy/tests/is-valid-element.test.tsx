@@ -1,7 +1,7 @@
 import "../src/index.js"; // KEEP THIS LINE ON TOP
 
 import React from "react";
-import { expect, it } from "vitest";
+import { expect, it } from "vite-plus/test";
 import { isValidElement } from "../src/index.js";
 
 it("should return true for a jsx element", () => {

@@ -1,9 +1,8 @@
 import "../src/index.js"; // KEEP THIS LINE ON TOP
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import type { Fiber } from "../src/types.js";
 import {
-  HostPortalTag,
   getNearestHostFiber,
   getNearestHostFibers,
   instrument,
@@ -11,6 +10,7 @@ import {
   traverseFiber,
   traverseRenderedFibers,
 } from "../src/index.js";
+import { latestReactWorkTags } from "./react-work-tags.js";
 import React from "react";
 import { createPortal } from "react-dom";
 import { act, fireEvent, render } from "@testing-library/react";
@@ -199,14 +199,17 @@ describe("portal fiber properties", () => {
     });
     render(<PortalExample container={portalContainer} />);
 
-    const portalFiber = traverseFiber(rootFiber, (fiber) => fiber.tag === HostPortalTag);
+    const portalFiber = traverseFiber(
+      rootFiber,
+      (fiber) => fiber.tag === latestReactWorkTags.HostPortal,
+    );
     expect(portalFiber).not.toBeNull();
     expect(portalFiber!.stateNode.containerInfo).toBe(portalContainer);
 
     document.body.removeChild(portalContainer);
   });
 
-  it("HostPortalTag should equal 4", () => {
-    expect(HostPortalTag).toBe(4);
+  it("uses the expected host portal work tag", () => {
+    expect(latestReactWorkTags.HostPortal).toBe(4);
   });
 });

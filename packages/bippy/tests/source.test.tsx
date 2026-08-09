@@ -2,7 +2,7 @@ import "../src/index.js"; // KEEP THIS LINE ON TOP
 
 import { render } from "@testing-library/react";
 import React, { useState } from "react";
-import { expect, it } from "vitest";
+import { expect, it } from "vite-plus/test";
 import type { Fiber } from "../src/types.js";
 import { instrument } from "../src/index.js";
 import { getSource, getOwnerStack, getParentStack, getSourceMap } from "../src/source/index.js";
@@ -22,20 +22,20 @@ const mockFetch = (): Promise<Response> => {
 // HACK: transforms (vite, coverage instrumentation) shift runtime line numbers,
 // so derive the expected call-site frame by throwing inside the component the
 // same way the owner-stack fallback does instead of hardcoding line numbers
-const getComponentThrowFrame = (component: unknown): StackFrame => {
-  const componentFunction = component as () => unknown;
-  const previousPrepareStackTrace = Error.prepareStackTrace;
-  (Error as { prepareStackTrace?: typeof Error.prepareStackTrace }).prepareStackTrace = undefined;
+const getComponentThrowFrame = (componentFunction: () => unknown): StackFrame => {
+  const previousPrepareStackTrace = Reflect.get(Error, "prepareStackTrace");
+  Reflect.set(Error, "prepareStackTrace", undefined);
   try {
     componentFunction();
   } catch (thrownError) {
-    const frames = parseStack((thrownError as Error).stack ?? "", { includeInElement: false });
+    const stack = thrownError instanceof Error ? (thrownError.stack ?? "") : "";
+    const frames = parseStack(stack, { includeInElement: false });
     const componentFrame = frames.find((frame) =>
       frame.functionName?.includes(componentFunction.name),
     );
     if (componentFrame) return componentFrame;
   } finally {
-    Error.prepareStackTrace = previousPrepareStackTrace;
+    Reflect.set(Error, "prepareStackTrace", previousPrepareStackTrace);
   }
   throw new Error(`Could not capture a throw frame for ${componentFunction.name}`);
 };
@@ -457,5 +457,4 @@ it("getSourceMap caches a definitive missing source map and does not refetch", a
   expect(await getSourceMap(file, true, fetchFn)).toBeNull();
   expect(await getSourceMap(file, true, fetchFn)).toBeNull();
   expect(bundleAttempts).toBe(1);
-  expect(sourceMapCache.get(file)).toBeNull();
 });

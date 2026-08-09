@@ -1,6 +1,6 @@
 import "../src/index.js"; // KEEP THIS LINE ON TOP
 
-import { expect, it } from "vitest";
+import { expect, it } from "vite-plus/test";
 import React, { forwardRef, memo, Component } from "react";
 
 import { getDisplayName } from "../src/index.js";

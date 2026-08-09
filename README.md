@@ -192,6 +192,8 @@ const unsubscribe = instrument({
 unsubscribe();
 ```
 
+instrumentation, React DevTools, and hook-listener failures propagate synchronously as `BippyInstrumentationError`, `BippyReactDevToolsError`, or `BippyHookListenerError`. each error preserves the original failure in `cause`, and callback dispatch stops at the failure so the caller controls error handling. existing Bippy errors propagate without redundant wrapping. React DevTools hook installation, React build, hook-inspection, and source-map failures use the other exported `BippyError` subclasses.
+
 ### getRDTHook
 
 returns the `window.__REACT_DEVTOOLS_GLOBAL_HOOK__` object. great for advanced use cases, such as accessing or modifying the `renderers` property.
@@ -513,6 +515,8 @@ const source = await getSource(fiber);
 > - react 19 uses `_debugStack` and works for both composite and host fibers
 > - source-map fetching is optional; runtimes without `fetch` still receive the unsymbolicated source location
 
+`getSourceMap` accepts an optional fetch implementation plus request limits, an abort signal, and a timeout. its cache is scoped to the fetch implementation so credentials or virtual file systems cannot leak results into each other.
+
 ### getOwnerStack / getParentStack
 
 returns a symbolicated stack of components above a fiber.
@@ -607,7 +611,9 @@ bippy observes renderers through the React DevTools global hook. a renderer is a
 
 compatibility entries are not zero-config support claims. the bridge implementations in [`packages/bippy/tests/renderer-adapters.tsx`](packages/bippy/tests/renderer-adapters.tsx) verify bippy's fiber APIs against the real host trees while keeping the missing upstream DevTools integration explicit. React Native Windows, macOS, and NativeScript are not currently asserted.
 
-`@testing-library/react` is a React DOM testing utility, not a renderer. bippy uses it throughout the test suite, so those tests exercise `react-dom` support.
+terminal renderers must load bippy before their reconciler initializes. importing `bippy` first works in Node and Bun; `bippy/install-hook-only` is also available as a minimal prelude when application import order is controlled elsewhere. the test suite verifies OpenTUI in clean Node and Bun processes and verifies that Ink can replace the hook with full React DevTools without losing either renderer.
+
+`@testing-library/react` is a React DOM testing utility, not a renderer. bippy uses it throughout the test suite, including hydration, event-driven updates, portals, unmounts, and error-boundary recovery.
 
 ## glossary
 

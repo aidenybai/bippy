@@ -1,8 +1,15 @@
 import "../src/index.js"; // KEEP THIS LINE ON TOP
 
-import { expect, it, vi } from "vitest";
-import type { FiberRoot } from "../src/types.js";
-import { _fiberRoots, instrument, isInstrumentationActive } from "../src/index.js";
+import { expect, it, vi } from "vite-plus/test";
+import type { FiberRoot, ReactDevToolsGlobalHook } from "../src/types.js";
+import {
+  _fiberRoots,
+  BippyInstrumentationError,
+  BippyReactDevToolsError,
+  getRDTHook,
+  instrument,
+  isInstrumentationActive,
+} from "../src/index.js";
 import React from "react";
 import { render } from "@testing-library/react";
 
@@ -121,4 +128,100 @@ it("unsubscribe removes only this call's handlers", () => {
   expect(unsubscribedOnCommitFiberRoot).not.toHaveBeenCalled();
   expect(activeOnCommitFiberRoot).toHaveBeenCalled();
   unsubscribeActive();
+});
+
+it("propagates React DevTools callback failures", () => {
+  let committedRoot: FiberRoot | null = null;
+  const unsubscribeCapture = instrument({
+    onCommitFiberRoot: (_rendererId, root) => {
+      committedRoot = root;
+    },
+  });
+  render(<Example />);
+  unsubscribeCapture();
+  if (!committedRoot) throw new Error("React DOM did not commit a root");
+  const rdtHook = getRDTHook();
+  const rendererId = rdtHook.renderers.keys().next().value;
+  if (rendererId === undefined) throw new Error("React DOM did not inject its renderer");
+  const previousOnCommitFiberRoot = rdtHook.onCommitFiberRoot;
+  const laterListener = vi.fn();
+  rdtHook.onCommitFiberRoot = () => {
+    throw new Error("DevTools failure");
+  };
+  const unsubscribe = instrument({ onCommitFiberRoot: laterListener });
+
+  try {
+    expect(() => rdtHook.onCommitFiberRoot(rendererId, committedRoot, undefined, false)).toThrow(
+      BippyReactDevToolsError,
+    );
+    expect(laterListener).not.toHaveBeenCalled();
+  } finally {
+    unsubscribe();
+    rdtHook.onCommitFiberRoot = previousOnCommitFiberRoot;
+  }
+});
+
+it("propagates instrumentation callback failures and stops dispatch", () => {
+  let committedRoot: FiberRoot | null = null;
+  const unsubscribeCapture = instrument({
+    onCommitFiberRoot: (_rendererId, root) => {
+      committedRoot = root;
+    },
+  });
+  render(<Example />);
+  unsubscribeCapture();
+  if (!committedRoot) throw new Error("React DOM did not commit a root");
+  const rdtHook = getRDTHook();
+  const rendererId = rdtHook.renderers.keys().next().value;
+  if (rendererId === undefined) throw new Error("React DOM did not inject its renderer");
+  const laterListener = vi.fn();
+  const unsubscribeThrowingListener = instrument({
+    name: "throwing-instrumentation",
+    onCommitFiberRoot: () => {
+      throw new Error("instrumentation failure");
+    },
+  });
+  const unsubscribeLaterListener = instrument({ onCommitFiberRoot: laterListener });
+
+  try {
+    expect(() => rdtHook.onCommitFiberRoot(rendererId, committedRoot, undefined, false)).toThrow(
+      BippyInstrumentationError,
+    );
+    expect(laterListener).not.toHaveBeenCalled();
+  } finally {
+    unsubscribeThrowingListener();
+    unsubscribeLaterListener();
+  }
+});
+
+it("keeps existing instrumentation attached when DevTools replaces the hook", () => {
+  let committedRoot: FiberRoot | null = null;
+  const onCommitFiberRoot = vi.fn((_rendererId, root: FiberRoot) => {
+    committedRoot = root;
+  });
+  const unsubscribe = instrument({ onCommitFiberRoot });
+  render(<Example />);
+  if (!committedRoot) throw new Error("React DOM did not commit a root");
+
+  const previousHook = getRDTHook();
+  const rendererId = previousHook.renderers.keys().next().value;
+  if (rendererId === undefined) throw new Error("React DOM did not inject its renderer");
+  const replacementHook: ReactDevToolsGlobalHook = {
+    ...previousHook,
+    inject: (renderer) => {
+      const nextRendererId = previousHook.inject(renderer);
+      replacementHook.renderers.set(nextRendererId, renderer);
+      return nextRendererId;
+    },
+    onCommitFiberRoot: () => {},
+    onCommitFiberUnmount: () => {},
+    onPostCommitFiberRoot: () => {},
+    renderers: new Map(previousHook.renderers),
+  };
+  globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ = replacementHook;
+  onCommitFiberRoot.mockClear();
+  replacementHook.onCommitFiberRoot(rendererId, committedRoot, undefined, false);
+
+  expect(onCommitFiberRoot).toHaveBeenCalledOnce();
+  unsubscribe();
 });

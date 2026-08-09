@@ -2,14 +2,14 @@ import "../src/index.js"; // KEEP THIS LINE ON TOP
 
 import { render } from "@testing-library/react";
 import React from "react";
-import { expect, it } from "vitest";
+import { expect, it } from "vite-plus/test";
 import {
   getFiberFromHostInstance,
-  HostComponentTag,
   isInstrumentationActive,
   isRealReactDevtools,
 } from "../src/index.js";
 import type { ReactDevToolsGlobalHook } from "../src/types.js";
+import { latestReactWorkTags } from "./react-work-tags.js";
 
 const Example = () => {
   return <div>Hello</div>;
@@ -46,7 +46,7 @@ it("getFiberFromHostInstance should fallback to __reactFiber property", () => {
     return: null,
     sibling: null,
     stateNode: {},
-    tag: HostComponentTag,
+    tag: latestReactWorkTags.HostComponent,
     type: "div",
   };
   const element = document.createElement("div");
@@ -64,7 +64,7 @@ it("getFiberFromHostInstance should fallback to __reactInternalInstance property
     return: null,
     sibling: null,
     stateNode: {},
-    tag: HostComponentTag,
+    tag: latestReactWorkTags.HostComponent,
     type: "span",
   };
   const element = document.createElement("span");
