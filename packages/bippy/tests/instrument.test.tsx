@@ -1,7 +1,7 @@
 import "../src/index.js"; // KEEP THIS LINE ON TOP
 
 import { expect, it, vi } from "vite-plus/test";
-import type { FiberRoot, ReactDevToolsGlobalHook } from "../src/types.js";
+import type { FiberRoot, ReactDevToolsGlobalHook } from "../src/react-internals/index.js";
 import {
   _fiberRoots,
   BippyInstrumentationError,
@@ -12,6 +12,10 @@ import {
 } from "../src/index.js";
 import React from "react";
 import { render } from "@testing-library/react";
+
+interface FiberRootRef {
+  current: FiberRoot | null;
+}
 
 export const Example = () => {
   return <div>Hello</div>;
@@ -39,39 +43,42 @@ it("onActive is called", () => {
 });
 
 it("onCommitFiberRoot is called", () => {
-  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-  let currentFiberRoot: FiberRoot | null = null;
-  const onCommitFiberRoot = vi.fn((_rendererID, fiberRoot) => {
-    currentFiberRoot = fiberRoot;
+  const fiberRootRef: FiberRootRef = { current: null };
+  const onCommitFiberRoot = vi.fn((_rendererID: number, fiberRoot: FiberRoot) => {
+    fiberRootRef.current = fiberRoot;
   });
   instrument({ onCommitFiberRoot });
   expect(onCommitFiberRoot).not.toHaveBeenCalled();
   render(<Example />);
   expect(onCommitFiberRoot).toHaveBeenCalled();
-  expect(currentFiberRoot?.current.child.type).toBe(Example);
+  const currentFiberRoot = fiberRootRef.current;
+  if (!currentFiberRoot) throw new Error("React DOM did not commit a root");
+  expect(currentFiberRoot.current.child?.type).toBe(Example);
 });
 
 it("tracks committed fiber roots in _fiberRoots", () => {
-  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-  let currentFiberRoot: FiberRoot | null = null;
+  const fiberRootRef: FiberRootRef = { current: null };
   instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {
-      currentFiberRoot = fiberRoot;
+      fiberRootRef.current = fiberRoot;
     },
   });
   render(<Example />);
-  expect(currentFiberRoot).not.toBe(null);
+  const currentFiberRoot = fiberRootRef.current;
+  if (!currentFiberRoot) throw new Error("React DOM did not commit a root");
   expect(_fiberRoots.has(currentFiberRoot)).toBe(true);
 });
 
 it("removes unmounted fiber roots from _fiberRoots", () => {
-  let currentFiberRoot: FiberRoot | null = null;
+  const fiberRootRef: FiberRootRef = { current: null };
   instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {
-      currentFiberRoot = fiberRoot;
+      fiberRootRef.current = fiberRoot;
     },
   });
   const rendered = render(<Example />);
+  const currentFiberRoot = fiberRootRef.current;
+  if (!currentFiberRoot) throw new Error("React DOM did not commit a root");
   expect(_fiberRoots.has(currentFiberRoot)).toBe(true);
   rendered.unmount();
   expect(_fiberRoots.has(currentFiberRoot)).toBe(false);
@@ -85,16 +92,17 @@ it("forwards the commit error state", () => {
 });
 
 it("onPostCommitFiberRoot is called", () => {
-  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-  let currentFiberRoot: FiberRoot | null = null;
-  const onPostCommitFiberRoot = vi.fn((_rendererID, fiberRoot) => {
-    currentFiberRoot = fiberRoot;
+  const fiberRootRef: FiberRootRef = { current: null };
+  const onPostCommitFiberRoot = vi.fn((_rendererID: number, fiberRoot: FiberRoot) => {
+    fiberRootRef.current = fiberRoot;
   });
   instrument({ onPostCommitFiberRoot });
   expect(onPostCommitFiberRoot).not.toHaveBeenCalled();
   render(<ExampleWithEffect />);
   expect(onPostCommitFiberRoot).toHaveBeenCalled();
-  expect(currentFiberRoot?.current.child.type).toBe(ExampleWithEffect);
+  const currentFiberRoot = fiberRootRef.current;
+  if (!currentFiberRoot) throw new Error("React DOM did not commit a root");
+  expect(currentFiberRoot.current.child?.type).toBe(ExampleWithEffect);
 });
 
 it("onScheduleFiberRoot is called", () => {
@@ -105,11 +113,10 @@ it("onScheduleFiberRoot is called", () => {
   unsubscribe();
 });
 
-it("the unsubscribe is a Disposable usable with `using`", () => {
+it("the unsubscribe is usable with `using`", () => {
   const onCommitFiberRoot = vi.fn();
   {
-    using unsubscribe = instrument({ onCommitFiberRoot });
-    void unsubscribe;
+    using _unsubscribe = instrument({ onCommitFiberRoot });
     render(<Example />);
     expect(onCommitFiberRoot).toHaveBeenCalled();
   }
@@ -131,14 +138,15 @@ it("unsubscribe removes only this call's handlers", () => {
 });
 
 it("propagates React DevTools callback failures", () => {
-  let committedRoot: FiberRoot | null = null;
+  const committedRootRef: FiberRootRef = { current: null };
   const unsubscribeCapture = instrument({
     onCommitFiberRoot: (_rendererId, root) => {
-      committedRoot = root;
+      committedRootRef.current = root;
     },
   });
   render(<Example />);
   unsubscribeCapture();
+  const committedRoot = committedRootRef.current;
   if (!committedRoot) throw new Error("React DOM did not commit a root");
   const rdtHook = getRDTHook();
   const rendererId = rdtHook.renderers.keys().next().value;
@@ -162,14 +170,15 @@ it("propagates React DevTools callback failures", () => {
 });
 
 it("propagates instrumentation callback failures and stops dispatch", () => {
-  let committedRoot: FiberRoot | null = null;
+  const committedRootRef: FiberRootRef = { current: null };
   const unsubscribeCapture = instrument({
     onCommitFiberRoot: (_rendererId, root) => {
-      committedRoot = root;
+      committedRootRef.current = root;
     },
   });
   render(<Example />);
   unsubscribeCapture();
+  const committedRoot = committedRootRef.current;
   if (!committedRoot) throw new Error("React DOM did not commit a root");
   const rdtHook = getRDTHook();
   const rendererId = rdtHook.renderers.keys().next().value;
@@ -224,4 +233,49 @@ it("keeps existing instrumentation attached when DevTools replaces the hook", ()
 
   expect(onCommitFiberRoot).toHaveBeenCalledOnce();
   unsubscribe();
+});
+
+it("preserves the DevTools hook receiver for existing callbacks", () => {
+  const fiberRootRef: FiberRootRef = { current: null };
+  const unsubscribeCapture = instrument({
+    onCommitFiberRoot: (_rendererId, root) => {
+      fiberRootRef.current = root;
+    },
+  });
+  render(<Example />);
+  unsubscribeCapture();
+  const fiberRoot = fiberRootRef.current;
+  if (!fiberRoot) throw new Error("React DOM did not commit a root");
+
+  const rdtHook = getRDTHook();
+  const rendererId = rdtHook.renderers.keys().next().value;
+  if (rendererId === undefined) throw new Error("React DOM did not inject its renderer");
+  const callbackReceivers: ReactDevToolsGlobalHook[] = [];
+  const existingCallbacks = {
+    onCommitFiberRoot(this: ReactDevToolsGlobalHook) {
+      callbackReceivers.push(this);
+    },
+    onCommitFiberUnmount(this: ReactDevToolsGlobalHook) {
+      callbackReceivers.push(this);
+    },
+    onPostCommitFiberRoot(this: ReactDevToolsGlobalHook) {
+      callbackReceivers.push(this);
+    },
+    onScheduleFiberRoot(this: ReactDevToolsGlobalHook) {
+      callbackReceivers.push(this);
+    },
+  };
+  rdtHook.onCommitFiberRoot = existingCallbacks.onCommitFiberRoot;
+  rdtHook.onCommitFiberUnmount = existingCallbacks.onCommitFiberUnmount;
+  rdtHook.onPostCommitFiberRoot = existingCallbacks.onPostCommitFiberRoot;
+  rdtHook.onScheduleFiberRoot = existingCallbacks.onScheduleFiberRoot;
+
+  const unsubscribe = instrument({});
+  rdtHook.onCommitFiberRoot(rendererId, fiberRoot, undefined, false);
+  rdtHook.onCommitFiberUnmount(rendererId, fiberRoot.current);
+  rdtHook.onPostCommitFiberRoot(rendererId, fiberRoot);
+  rdtHook.onScheduleFiberRoot?.(rendererId, fiberRoot, null);
+  unsubscribe();
+
+  expect(callbackReceivers).toEqual([rdtHook, rdtHook, rdtHook, rdtHook]);
 });

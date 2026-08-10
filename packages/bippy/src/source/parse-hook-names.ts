@@ -35,7 +35,7 @@ const flattenHooksTree = (hooksTree: HooksTree): HooksNode[] => {
 
 const findSourceContentByFileName = (
   sources: string[],
-  sourcesContent: string[] | undefined,
+  sourcesContent: Array<string | null> | undefined,
   fileName: string,
 ): string | null => {
   if (!sourcesContent) return null;

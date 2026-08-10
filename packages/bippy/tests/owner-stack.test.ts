@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import type { Fiber } from "../src/types.js";
+import type { Fiber } from "../src/react-internals/index.js";
 import { _renderers } from "../src/core.js";
 import {
   describeDebugInfoFrame,
@@ -590,9 +590,9 @@ describe("getParentStack server frame enrichment", () => {
       itemFrames
         .map((frame) => frame.lineNumber)
         .sort((firstLineNumber, secondLineNumber) =>
-          firstLineNumber === null
+          firstLineNumber === null || firstLineNumber === undefined
             ? -1
-            : secondLineNumber === null
+            : secondLineNumber === null || secondLineNumber === undefined
               ? 1
               : firstLineNumber - secondLineNumber,
         ),

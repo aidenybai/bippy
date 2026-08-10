@@ -38,8 +38,10 @@ describe("getNearestHostFiber", () => {
     let maybeHostFiber: Fiber | null = null;
     instrument({
       onCommitFiberRoot: (_rendererID, fiberRoot) => {
-        maybeFiber = fiberRoot.current.child;
-        maybeHostFiber = fiberRoot.current.child.child;
+        const componentFiber = fiberRoot.current.child;
+        if (!componentFiber) throw new Error("React DOM did not render the component fiber");
+        maybeFiber = componentFiber;
+        maybeHostFiber = componentFiber.child;
       },
     });
     render(<Example />);
@@ -86,7 +88,9 @@ describe("getNearestHostFibers", () => {
     let maybeHostFiber: Fiber | null = null;
     instrument({
       onCommitFiberRoot: (_rendererID, fiberRoot) => {
-        maybeHostFiber = fiberRoot.current.child.child;
+        const componentFiber = fiberRoot.current.child;
+        if (!componentFiber) throw new Error("React DOM did not render the component fiber");
+        maybeHostFiber = componentFiber.child;
       },
     });
     render(<Example />);

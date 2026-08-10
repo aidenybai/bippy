@@ -1,6 +1,6 @@
-import { Fiber } from "../types.js";
+import type { Fiber } from "../react-internals/index.js";
 
-import { FiberSource } from "./types.js";
+import type { FiberSource } from "./types.js";
 import {
   SCHEME_REGEX,
   INTERNAL_SCHEME_PREFIXES,

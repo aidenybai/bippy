@@ -86,7 +86,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "NODE_ENV=production vp pack && tsx scripts/append-banner.ts",
+    "build": "NODE_ENV=production vp pack",
     "check:react-internals": "tsx scripts/generate-react-internals.ts --check",
     "coverage": "vp test --coverage",
     "dev": "NODE_ENV=development vp pack --watch",

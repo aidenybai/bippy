@@ -35,10 +35,15 @@ it("should return the fiber stack", () => {
   let manualFiberStack: Fiber[] = [];
   instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {
+      const parentFiber = fiberRoot.current.child;
+      const childFiber = parentFiber?.child;
+      if (!parentFiber || !childFiber) {
+        throw new Error("React DOM did not render the expected fiber stack");
+      }
       manualFiberStack = [];
-      maybeFiber = fiberRoot.current.child.child;
-      manualFiberStack.push(fiberRoot.current.child.child);
-      manualFiberStack.push(fiberRoot.current.child);
+      maybeFiber = childFiber;
+      manualFiberStack.push(childFiber);
+      manualFiberStack.push(parentFiber);
     },
   });
   render(
@@ -46,6 +51,7 @@ it("should return the fiber stack", () => {
       <ExampleWithUnmount />
     </ExampleWithChildrenProp>,
   );
-  const fiberStack = getFiberStack(maybeFiber as unknown as Fiber);
+  if (!maybeFiber) throw new Error("React DOM did not commit the expected child fiber");
+  const fiberStack = getFiberStack(maybeFiber);
   expect(fiberStack).toEqual(manualFiberStack);
 });

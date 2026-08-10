@@ -13,6 +13,7 @@
     "@playwright/test": "latest",
     "@types/jest": "^30.0.0",
     "@types/node": "^20",
+    "bippy": "workspace:*",
     "detox": "latest",
     "jest": "latest",
     "ts-jest": "latest",

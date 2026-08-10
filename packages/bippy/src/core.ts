@@ -10,19 +10,21 @@ import type {
   MemoizedState,
   ReactDevToolsGlobalHook,
   ReactRenderer,
-} from "./types.js";
+} from "./react-internals/index.js";
 
 import { BippyInstrumentationError, BippyReactDevToolsError, runWithBippyError } from "./errors.js";
 
 import {
   _onActiveListeners,
   BIPPY_INSTRUMENTATION_STRING,
+  createUnsubscribe,
   getRDTHook,
   hasRDTHook,
   isRealReactDevtools,
   onRDTHookReplace,
   onRendererInject,
 } from "./rdt-hook.js";
+import type { Unsubscribe } from "./rdt-hook.js";
 import {
   getReactWorkTagsForFiber,
   MutationMask,
@@ -30,11 +32,10 @@ import {
   ReactFiberFlags,
   ReactSymbols,
   setReactWorkTagsForFiber,
-} from "./react-internals.js";
-import { toUnsubscribe, type Unsubscribe } from "./unsubscribe.js";
+} from "./react-internals/index.js";
 
-export { getReactWorkTags, ReactSymbols } from "./react-internals.js";
-export type { ReactWorkTagMap, ReactWorkTagVersion } from "./react-internals.js";
+export { getReactWorkTags, ReactSymbols } from "./react-internals/index.js";
+export type { ReactWorkTagMap, ReactWorkTagVersion } from "./react-internals/index.js";
 export {
   BippyError,
   BippyHookInstallationError,
@@ -101,9 +102,8 @@ export const isValidElement = (element: unknown): element is React.ReactElement 
   typeof element === "object" &&
   element !== null &&
   "$$typeof" in element &&
-  [ReactSymbols.LEGACY_ELEMENT_SYMBOL_STRING, ReactSymbols.ELEMENT_SYMBOL_STRING].includes(
-    String(element.$$typeof),
-  );
+  (String(element.$$typeof) === ReactSymbols.LEGACY_ELEMENT_SYMBOL_STRING ||
+    String(element.$$typeof) === ReactSymbols.ELEMENT_SYMBOL_STRING);
 
 /**
  * Returns `true` if object is a React Fiber.
@@ -117,6 +117,9 @@ export const isValidFiber = (fiber: unknown): fiber is Fiber =>
   "child" in fiber &&
   "sibling" in fiber &&
   "flags" in fiber;
+
+const isFiberRoot = (fiberRoot: unknown): fiberRoot is FiberRoot =>
+  isObjectRecord(fiberRoot) && isValidFiber(fiberRoot.current);
 
 /**
  * Returns `true` if fiber is a host fiber. Host fibers are DOM nodes in react-dom, `View` in react-native, etc.
@@ -434,72 +437,64 @@ export function traverseFiber(
 export function traverseFiber(
   fiber: Fiber | null,
   selector: FiberSelector,
+  ascending?: boolean,
+): Fiber | null | Promise<Fiber | null>;
+export function traverseFiber(
+  fiber: Fiber | null,
+  selector: FiberSelector,
   ascending = false,
 ): Fiber | null | Promise<Fiber | null> {
-  if (!fiber) return null;
-
-  const firstResult = selector(fiber);
-  if (firstResult instanceof Promise) {
-    return (async () => {
-      if ((await firstResult) === true) return fiber;
-
-      let child = ascending ? fiber.return : fiber.child;
-      while (child) {
-        const match = await traverseFiberAsync(child, selector, ascending);
-        if (match) return match;
-        child = ascending ? null : child.sibling;
-      }
-      return null;
-    })();
-  }
-
-  if (firstResult === true) return fiber;
-
-  let child = ascending ? fiber.return : fiber.child;
-  while (child) {
-    const match = traverseFiberSync(child, selector, ascending);
-    if (match) return match;
-    child = ascending ? null : child.sibling;
-  }
-  return null;
+  return traverseFiberInternal(fiber, selector, ascending);
 }
 
-const traverseFiberSync = (
-  fiber: Fiber | null,
+const isPromiseLike = <Result>(value: unknown): value is PromiseLike<Result> =>
+  (typeof value === "object" || typeof value === "function") &&
+  value !== null &&
+  "then" in value &&
+  typeof value.then === "function";
+
+const traverseFiberChildren = (
+  fiber: Fiber,
   selector: FiberSelector,
-  ascending = false,
-): Fiber | null => {
-  if (!fiber) return null;
-  const selection = selector(fiber);
-  if (selection instanceof Promise) return null;
-  if (selection === true) return fiber;
-
-  let child = ascending ? fiber.return : fiber.child;
-  while (child) {
-    const match = traverseFiberSync(child, selector, ascending);
-    if (match) return match;
-
-    child = ascending ? null : child.sibling;
-  }
-  return null;
+  ascending: boolean,
+): Fiber | null | Promise<Fiber | null> => {
+  const firstChild = ascending ? fiber.return : fiber.child;
+  return traverseFiberSiblings(firstChild, selector, ascending);
 };
 
-const traverseFiberAsync = async (
+const traverseFiberSiblings = (
   fiber: Fiber | null,
   selector: FiberSelector,
-  ascending = false,
-): Promise<Fiber | null> => {
+  ascending: boolean,
+): Fiber | null | Promise<Fiber | null> => {
   if (!fiber) return null;
-  if ((await selector(fiber)) === true) return fiber;
 
-  let child = ascending ? fiber.return : fiber.child;
-  while (child) {
-    const match = await traverseFiberAsync(child, selector, ascending);
-    if (match) return match;
-
-    child = ascending ? null : child.sibling;
+  const nextSibling = ascending ? null : fiber.sibling;
+  const match = traverseFiberInternal(fiber, selector, ascending);
+  if (isPromiseLike<Fiber | null>(match)) {
+    return Promise.resolve(match).then(
+      (resolvedMatch) => resolvedMatch ?? traverseFiberSiblings(nextSibling, selector, ascending),
+    );
   }
-  return null;
+  return match ?? traverseFiberSiblings(nextSibling, selector, ascending);
+};
+
+const traverseFiberInternal = (
+  fiber: Fiber | null,
+  selector: FiberSelector,
+  ascending: boolean,
+): Fiber | null | Promise<Fiber | null> => {
+  if (!fiber) return null;
+
+  const selection = selector(fiber);
+  if (isPromiseLike<boolean | void>(selection)) {
+    return Promise.resolve(selection).then((didSelectFiber) =>
+      didSelectFiber === true ? fiber : traverseFiberChildren(fiber, selector, ascending),
+    );
+  }
+  if (selection === true) return fiber;
+
+  return traverseFiberChildren(fiber, selector, ascending);
 };
 
 /**
@@ -588,7 +583,7 @@ export const getLatestFiber = (fiber: Fiber): Fiber => {
   }
   for (const root of _fiberRoots) {
     const latestFiber = traverseFiber(root.current, (innerFiber) => {
-      if (innerFiber === fiber) return true;
+      if (innerFiber === fiber || innerFiber === alternate) return true;
     });
     if (latestFiber) return latestFiber;
   }
@@ -602,6 +597,9 @@ const fiberIdMap = new WeakMap<Fiber, number>();
 
 export const setFiberId = (fiber: Fiber, fiberId: number = nextFiberId++): void => {
   fiberIdMap.set(fiber, fiberId);
+  if (Number.isSafeInteger(fiberId) && fiberId >= nextFiberId) {
+    nextFiberId = fiberId + 1;
+  }
 };
 
 export const getFiberId = (fiber: Fiber): number => {
@@ -662,7 +660,7 @@ const mountFiberRecursively = (
 const updateFiberRecursively = (
   onRender: RenderHandler,
   nextFiber: Fiber,
-  prevFiber: Fiber,
+  prevFiber: Fiber | null,
   parentFiber: Fiber | null,
 ): void => {
   if (!fiberIdMap.has(nextFiber)) {
@@ -796,7 +794,7 @@ const unmountFiberChildrenRecursively = (onRender: RenderHandler, fiber: Fiber):
 
 let commitId = 0;
 const rootInstanceMap = new WeakMap<
-  FiberRoot,
+  Fiber | FiberRoot,
   {
     id: number;
     prevFiber: Fiber | null;
@@ -810,7 +808,7 @@ const rootInstanceMap = new WeakMap<
  *   console.log(phase)
  * })
  */
-export const traverseRenderedFibers = (root: FiberRoot, onRender: RenderHandler): void => {
+export const traverseRenderedFibers = (root: Fiber | FiberRoot, onRender: RenderHandler): void => {
   const fiber = "current" in root ? root.current : root;
 
   let rootInstance = rootInstanceMap.get(root);
@@ -877,7 +875,9 @@ const getRootRenderer = (fiber: Fiber): ReactRenderer | null => {
   while (hostRootFiber.return) {
     hostRootFiber = hostRootFiber.return;
   }
-  const rendererId = rootRendererIds.get(hostRootFiber.stateNode);
+  const fiberRoot = hostRootFiber.stateNode;
+  if (!isFiberRoot(fiberRoot)) return null;
+  const rendererId = rootRendererIds.get(fiberRoot);
   if (rendererId === undefined) return null;
   return getRDTHook().renderers.get(rendererId) ?? null;
 };
@@ -940,24 +940,29 @@ const isPOJO = (maybePOJO: unknown): maybePOJO is Record<string, unknown> => {
 const buildPathsFromValue = (
   maybePOJO: Record<string, unknown>,
   basePath: string[] = [],
+  ancestors = new WeakSet<object>(),
 ): ValueWrite[] => {
   if (!isPOJO(maybePOJO)) {
     return [{ path: basePath, value: maybePOJO }];
   }
+  if (ancestors.has(maybePOJO)) {
+    return [{ path: basePath, value: maybePOJO }];
+  }
 
+  ancestors.add(maybePOJO);
   const paths: ValueWrite[] = [];
 
-  for (const key in maybePOJO) {
-    const value = maybePOJO[key];
+  for (const [key, value] of Object.entries(maybePOJO)) {
     const path = basePath.concat(key);
 
     if (isPOJO(value)) {
-      paths.push(...buildPathsFromValue(value, path));
+      paths.push(...buildPathsFromValue(value, path, ancestors));
     } else {
       paths.push({ path, value });
     }
   }
 
+  ancestors.delete(maybePOJO);
   return paths;
 };
 
@@ -1035,14 +1040,16 @@ const runInstrumentationCallback = (
   instrumentationName: string,
   callbackName: string,
   callback: () => unknown,
-): void =>
+): void => {
   runWithBippyError(
     callback,
     (cause) => new BippyInstrumentationError(instrumentationName, callbackName, cause),
   );
+};
 
-const runReactDevToolsCallback = (callbackName: string, callback: () => unknown): void =>
+const runReactDevToolsCallback = (callbackName: string, callback: () => unknown): void => {
   runWithBippyError(callback, (cause) => new BippyReactDevToolsError(callbackName, cause));
+};
 
 interface HookDispatchers {
   onCommitFiberRoot: ReactDevToolsGlobalHook["onCommitFiberRoot"];
@@ -1078,7 +1085,7 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
     ) => {
       if (prevOnCommitFiberRoot) {
         runReactDevToolsCallback("onCommitFiberRoot", () =>
-          prevOnCommitFiberRoot(rendererID, root, priority, didError),
+          prevOnCommitFiberRoot.call(rdtHook, rendererID, root, priority, didError),
         );
       }
       if (hookDispatchers.get(rdtHook)?.onCommitFiberRoot !== dispatchCommitFiberRoot) return;
@@ -1121,7 +1128,7 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
       setReactWorkTagsForFiber(fiber, rdtHook.renderers.get(rendererID));
       if (prevOnCommitFiberUnmount) {
         runReactDevToolsCallback("onCommitFiberUnmount", () =>
-          prevOnCommitFiberUnmount(rendererID, fiber),
+          prevOnCommitFiberUnmount.call(rdtHook, rendererID, fiber),
         );
       }
       if (hookDispatchers.get(rdtHook)?.onCommitFiberUnmount !== dispatchCommitFiberUnmount) {
@@ -1152,7 +1159,7 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
     ) => {
       if (prevOnPostCommitFiberRoot) {
         runReactDevToolsCallback("onPostCommitFiberRoot", () =>
-          prevOnPostCommitFiberRoot(rendererID, root),
+          prevOnPostCommitFiberRoot.call(rdtHook, rendererID, root),
         );
       }
       if (hookDispatchers.get(rdtHook)?.onPostCommitFiberRoot !== dispatchPostCommitFiberRoot) {
@@ -1184,7 +1191,7 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
     ) => {
       if (prevOnScheduleFiberRoot) {
         runReactDevToolsCallback("onScheduleFiberRoot", () =>
-          prevOnScheduleFiberRoot(rendererID, root, children),
+          prevOnScheduleFiberRoot.call(rdtHook, rendererID, root, children),
         );
       }
       if (hookDispatchers.get(rdtHook)?.onScheduleFiberRoot !== dispatchScheduleFiberRoot) return;
@@ -1208,8 +1215,7 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
  * dispatches to a set of listeners, so multiple `instrument` calls compose
  * without stacking patches. Returns an unsubscribe function that removes
  * exactly the handlers this call registered.
- * The returned function is also a `Disposable`, so it composes with other
- * bippy subscriptions through `using`.
+ * The unsubscribe function can also be disposed through `using`.
  * @example
  * const unsubscribe = instrument({
  *   onActive() {
@@ -1244,7 +1250,7 @@ export const instrument = (options: InstrumentationOptions): Unsubscribe => {
   const subscription: InstrumentationSubscription = { options };
   instrumentationSubscriptions.add(subscription);
 
-  return toUnsubscribe(() => {
+  return createUnsubscribe(() => {
     if (onActive) _onActiveListeners.delete(onActive);
     instrumentationSubscriptions.delete(subscription);
   });
@@ -1347,5 +1353,5 @@ export {
   safelyInstallRDTHook,
   version,
 } from "./rdt-hook.js";
-export * from "./unsubscribe.js";
-export type * from "./types.js";
+export type { Unsubscribe } from "./rdt-hook.js";
+export type * from "./react-internals/index.js";

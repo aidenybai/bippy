@@ -3,6 +3,7 @@ import type { ReactWorkTagMap } from "./generated/react-work-tags.js";
 import { compareSemver } from "./semver.js";
 import type { Fiber, ReactRenderer } from "./types.js";
 
+export { compareSemver } from "./semver.js";
 export {
   getReactWorkTags,
   ReactBuildType,
@@ -15,6 +16,7 @@ export type {
   ReactWorkTagMap,
   ReactWorkTagVersion,
 } from "./generated/react-work-tags.js";
+export * from "./types.js";
 
 const defaultReactWorkTags = getReactWorkTags("");
 const fiberReactWorkTags = new WeakMap<Fiber, Readonly<ReactWorkTagMap>>();

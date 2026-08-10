@@ -1,8 +1,8 @@
 import React, { act } from "react";
 import { getRDTHook, traverseFiber } from "../src/index.js";
-import { ReactBuildType } from "../src/react-internals.js";
+import { ReactBuildType } from "../src/react-internals/index.js";
 import type { BaseRenderable, BaseRenderableOptions, RenderContext } from "@opentui/core";
-import type { Fiber, FiberRoot, RendererDispatcherRef } from "../src/types.js";
+import type { Fiber, FiberRoot, RendererDispatcherRef } from "../src/react-internals/index.js";
 import type { RendererAdapter, RendererAdapterFactory } from "./renderer-test-harness.js";
 
 interface ReactPdfContainer {
@@ -24,6 +24,20 @@ interface ReactPdfRendererFactory {
   (options: { onChange: () => void }): ReactPdfRenderer;
 }
 
+interface ReactBabylonJsReconciler {
+  render: (
+    element: React.ReactElement | null,
+    container: object,
+    callback: () => void,
+    parentComponent: null,
+  ) => unknown;
+  unmount: (container: object) => void;
+}
+
+interface ReactBabylonJsReconcilerFactory {
+  (options: object): ReactBabylonJsReconciler;
+}
+
 interface OpenTuiTestRenderableOptions extends BaseRenderableOptions {
   label?: string;
   value?: number;
@@ -31,6 +45,10 @@ interface OpenTuiTestRenderableOptions extends BaseRenderableOptions {
 
 const isReactPdfRendererFactory = (value: unknown): value is ReactPdfRendererFactory =>
   typeof value === "function";
+
+const isReactBabylonJsReconcilerFactory = (
+  value: unknown,
+): value is ReactBabylonJsReconcilerFactory => typeof value === "function";
 
 const isRendererDispatcherRef = (value: unknown): value is RendererDispatcherRef =>
   typeof value === "object" && value !== null && ("H" in value || "current" in value);
@@ -46,10 +64,13 @@ const createReactNilAdapter = async (): Promise<RendererAdapter> => {
         React.createElement("nil-text", null, `${label}:${value}`),
       ),
     render: async (element) => {
-      let container: ReturnType<typeof render> | undefined;
+      const renderState: { container: ReturnType<typeof render> | undefined } = {
+        container: undefined,
+      };
       await act(async () => {
-        container = render(element);
+        renderState.container = render(element);
       });
+      const container = renderState.container;
       if (!container) throw new Error("react-nil did not create a container");
       return {
         getOutput: () => container.head,
@@ -87,14 +108,17 @@ const createInkAdapter = async (): Promise<RendererAdapter> => {
     createHostElement: ({ label, value }) => <Text color="green">{`${label}:${value}`}</Text>,
     render: async (element) => {
       process.env.DEV = "true";
-      let instance: ReturnType<typeof render> | undefined;
+      const renderState: { instance: ReturnType<typeof render> | undefined } = {
+        instance: undefined,
+      };
       try {
         await act(async () => {
-          instance = render(element);
+          renderState.instance = render(element);
         });
       } finally {
         restoreDevValue();
       }
+      const instance = renderState.instance;
       if (!instance) throw new Error("Ink did not create a renderer instance");
       return {
         getOutput: instance.lastFrame,
@@ -274,11 +298,15 @@ const createPixiAdapter = async (): Promise<RendererAdapter> => {
 };
 
 const createReactBabylonJsAdapter = async (): Promise<RendererAdapter> => {
-  const [{ NullEngine }, { Scene }, { createReconciler }] = await Promise.all([
+  const [{ NullEngine }, { Scene }, reactBabylonJsModule] = await Promise.all([
     import("@babylonjs/core/Engines/nullEngine.js"),
     import("@babylonjs/core/scene.js"),
     import("react-babylonjs"),
   ]);
+  const createReconciler: unknown = Reflect.get(reactBabylonJsModule, "createReconciler");
+  if (!isReactBabylonJsReconcilerFactory(createReconciler)) {
+    throw new Error("react-babylonjs does not expose createReconciler");
+  }
   const engine = new NullEngine();
   const scene = new Scene(engine);
   const container = {
@@ -331,13 +359,14 @@ const createReactKonvaCompatibilityAdapter = async (): Promise<RendererAdapter> 
     import("react-konva/lib/ReactKonvaCore.js"),
     import("konva/lib/Group.js"),
   ]);
-  KonvaRenderer.injectIntoDevTools({
+  const devToolsConfig = {
     bundleType: ReactBuildType.Development,
     findFiberByHostInstance: () => null,
     reconcilerVersion: React.version,
     rendererPackageName: "react-konva",
     version: React.version,
-  });
+  };
+  KonvaRenderer.injectIntoDevTools(devToolsConfig);
 
   return {
     createHostElement: ({ label, value }) =>

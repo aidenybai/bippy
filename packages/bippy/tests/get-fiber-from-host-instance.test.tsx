@@ -5,7 +5,7 @@ import { render, screen } from "@testing-library/react";
 import React from "react";
 import { expect, it } from "vite-plus/test";
 import { getFiberFromHostInstance, getRDTHook, instrument, traverseFiber } from "../src/index.js";
-import type { Fiber, FiberRoot, ReactRenderer, WorkTag } from "../src/types.js";
+import type { Fiber, FiberRoot, ReactRenderer, WorkTag } from "../src/react-internals/index.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
 
 interface MockHostFiber {
@@ -71,7 +71,7 @@ it("should resolve legacy roots through _reactRootContainer", () => {
 });
 
 it("should resolve Fabric public instances from canonical host state", () => {
-  using _unsubscribe = instrument({});
+  const unsubscribe = instrument({});
   const publicInstance = {};
   const hostFiber = createMockHostFiber({ canonical: { publicInstance } });
   const rootFiber = createMockHostFiber(null, "root");
@@ -86,11 +86,12 @@ it("should resolve Fabric public instances from canonical host state", () => {
   } finally {
     rootFiber.memoizedState = { element: null };
     getRDTHook().onCommitFiberRoot(999, fiberRoot as unknown as FiberRoot, undefined, false);
+    unsubscribe();
   }
 });
 
 it("should resolve Paper native tags from host state", () => {
-  using _unsubscribe = instrument({});
+  const unsubscribe = instrument({});
   const hostFiber = createMockHostFiber({ _nativeTag: 42 });
   const rootFiber = createMockHostFiber(null, "root");
   rootFiber.tag = latestReactWorkTags.HostRoot;
@@ -104,6 +105,7 @@ it("should resolve Paper native tags from host state", () => {
   } finally {
     rootFiber.memoizedState = { element: null };
     getRDTHook().onCommitFiberRoot(999, fiberRoot as unknown as FiberRoot, undefined, false);
+    unsubscribe();
   }
 });
 
@@ -133,24 +135,27 @@ it("should ignore renderers whose findFiberByHostInstance throws", () => {
 });
 
 it("should resolve React Three Fiber host instances from its tracked root", async () => {
-  let threeFiberRoot: FiberRoot | null = null;
-  using _unsubscribe = instrument({
+  const threeFiberRootRef: { current: FiberRoot | null } = { current: null };
+  const unsubscribe = instrument({
     onCommitFiberRoot: (rendererId, fiberRoot) => {
       const renderer = getRDTHook().renderers.get(rendererId);
       if (renderer?.rendererPackageName === "@react-three/fiber") {
-        threeFiberRoot = fiberRoot;
+        threeFiberRootRef.current = fiberRoot;
       }
     },
   });
-  const renderer = await ReactThreeTestRenderer.create(<mesh name="tracked-mesh" />);
+  const renderer = await ReactThreeTestRenderer.create(
+    React.createElement("mesh", { name: "tracked-mesh" }),
+  );
 
   try {
-    const fiberRoot = threeFiberRoot;
+    const fiberRoot = threeFiberRootRef.current;
     if (!fiberRoot) throw new Error("React Three Fiber did not commit a root");
     const meshFiber = traverseFiber(fiberRoot.current, (fiber) => fiber.type === "mesh");
     if (!meshFiber) throw new Error("React Three Fiber did not create a mesh Fiber");
     expect(getFiberFromHostInstance(meshFiber.stateNode)).toBe(meshFiber);
   } finally {
     await renderer.unmount();
+    unsubscribe();
   }
 });

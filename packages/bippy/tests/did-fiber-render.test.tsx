@@ -5,7 +5,7 @@ import React from "react";
 
 import { didFiberRender, instrument } from "../src/index.js";
 import type { Fiber, WorkTag } from "../src/index.js";
-import { ReactFiberFlags } from "../src/react-internals.js";
+import { ReactFiberFlags } from "../src/react-internals/index.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
 import { render } from "@testing-library/react";
 
@@ -23,7 +23,7 @@ export const ExampleWithUnmount = () => {
 
 it("should return true for a fiber that has rendered", () => {
   let maybeRenderedFiber: Fiber | null = null;
-  using _unsubscribe = instrument({
+  const unsubscribe = instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {
       maybeRenderedFiber = fiberRoot.current.child;
     },
@@ -31,6 +31,7 @@ it("should return true for a fiber that has rendered", () => {
   render(<Example />);
   if (!maybeRenderedFiber) throw new Error("React DOM did not render the example fiber");
   expect(didFiberRender(maybeRenderedFiber)).toBe(true);
+  unsubscribe();
 });
 
 const createMockFiber = (tag: WorkTag, flags: number | undefined, effectTag?: number): Fiber =>
@@ -78,7 +79,7 @@ it("should fall back to effectTag for legacy react versions", () => {
 
 it("should return false for a fiber that hasn't rendered", () => {
   let maybeRenderedFiber: Fiber | null = null;
-  using _unsubscribe = instrument({
+  const unsubscribe = instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {
       maybeRenderedFiber = fiberRoot.current.child;
     },
@@ -90,4 +91,5 @@ it("should return false for a fiber that hasn't rendered", () => {
   );
   if (!maybeRenderedFiber) throw new Error("React DOM did not render the unmounted fiber");
   expect(didFiberRender(maybeRenderedFiber)).toBe(false);
+  unsubscribe();
 });

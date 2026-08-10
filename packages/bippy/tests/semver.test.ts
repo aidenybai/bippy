@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { compareSemver } from "../src/semver.js";
+import { compareSemver } from "../src/react-internals/semver.js";
 
 describe("compareSemver", () => {
   it("orders the SemVer precedence example", () => {

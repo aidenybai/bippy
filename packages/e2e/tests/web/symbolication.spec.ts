@@ -1,4 +1,5 @@
 import type { Page } from "@playwright/test";
+import type { SourceMap } from "bippy/source";
 
 import { expect, test } from "./coverage-test";
 import { waitForBippy, waitForTestChild } from "./helpers";
@@ -192,7 +193,7 @@ test.describe("getSourceMap", () => {
 test.describe("getSourceFromSourceMap", () => {
   test("resolves the last segment at or before the column", async ({ page }) => {
     const result = await page.evaluate(() => {
-      const sourceMap = {
+      const sourceMap: SourceMap = {
         version: 3,
         sources: ["a.tsx", "b.tsx"],
         mappings: [
@@ -231,7 +232,7 @@ test.describe("getSourceFromSourceMap", () => {
   test("returns null for unmappable positions", async ({ page }) => {
     const result = await page.evaluate(() => {
       const getSourceFromSourceMap = window.__BIPPY__.getSourceFromSourceMap;
-      const baseMap = { version: 3, sources: ["a.tsx"] };
+      const baseMap: SourceMap = { version: 3, sources: ["a.tsx"], mappings: [] };
       return {
         lineOutOfRange: getSourceFromSourceMap({ ...baseMap, mappings: [[[0, 0, 0, 0]]] }, 2, 0),
         emptyLineMapping: getSourceFromSourceMap({ ...baseMap, mappings: [[]] }, 1, 0),
@@ -253,7 +254,7 @@ test.describe("getSourceFromSourceMap", () => {
 
   test("resolves positions through index map sections with offsets", async ({ page }) => {
     const result = await page.evaluate(() => {
-      const sectionedMap = {
+      const sectionedMap: SourceMap = {
         version: 3,
         sources: ["first.tsx", "second.tsx"],
         mappings: [],

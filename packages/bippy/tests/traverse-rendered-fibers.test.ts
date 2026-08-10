@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 import { traverseRenderedFibers } from "../src/index.js";
-import type { Fiber, FiberRoot } from "../src/types.js";
+import type { Fiber, FiberRoot } from "../src/react-internals/index.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
 
 const PERFORMED_WORK_FLAG = 0b1;
@@ -406,8 +406,10 @@ describe("traverseRenderedFibers", () => {
   });
 
   it("currently throws when the root has no current fiber", () => {
-    const root: FiberRoot = { current: null };
+    const root = { current: null };
     const onRender = vi.fn();
-    expect(() => traverseRenderedFibers(root, onRender)).toThrow(TypeError);
+    expect(() => Reflect.apply(traverseRenderedFibers, undefined, [root, onRender])).toThrow(
+      TypeError,
+    );
   });
 });

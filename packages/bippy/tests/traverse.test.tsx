@@ -1,7 +1,7 @@
 import "../src/index.js"; // KEEP THIS LINE ON TOP
 
 import { describe, expect, it, vi } from "vite-plus/test";
-import type { ContextDependency, Fiber } from "../src/types.js";
+import type { ContextDependency, Fiber } from "../src/react-internals/index.js";
 import {
   instrument,
   traverseContexts,
@@ -180,7 +180,9 @@ describe("traverseContexts", () => {
     let maybeFiber: Fiber | null = null;
     instrument({
       onCommitFiberRoot: (_rendererID, fiberRoot) => {
-        maybeFiber = fiberRoot.current.child.child;
+        const componentFiber = fiberRoot.current.child;
+        if (!componentFiber) throw new Error("React DOM did not render the provider child");
+        maybeFiber = componentFiber.child;
       },
     });
     render(
@@ -284,7 +286,7 @@ describe("traverseFiber", () => {
     let maybeFiber: Fiber | null = null;
     instrument({
       onCommitFiberRoot: (_rendererID, fiberRoot) => {
-        maybeFiber = fiberRoot.current.child?.child;
+        maybeFiber = fiberRoot.current.child?.child ?? null;
       },
     });
     render(<Example />);
@@ -324,7 +326,7 @@ describe("traverseFiber", () => {
     let maybeFiber: Fiber | null = null;
     instrument({
       onCommitFiberRoot: (_rendererID, fiberRoot) => {
-        maybeFiber = fiberRoot.current.child?.child;
+        maybeFiber = fiberRoot.current.child?.child ?? null;
       },
     });
     render(<Example />);
@@ -431,6 +433,15 @@ describe("traverseFiber", () => {
     const rootFiber = createMockFiber({ child: firstChild });
     const result = await traverseFiber(rootFiber, async (fiber) => fiber === targetSibling);
     expect(result).toBe(targetSibling);
+  });
+
+  it("should await promises returned after synchronous selector results", async () => {
+    const targetFiber = createMockFiber();
+    const rootFiber = createMockFiber({ child: targetFiber });
+    const result = traverseFiber(rootFiber, (fiber) =>
+      fiber === rootFiber ? false : Promise.resolve(fiber === targetFiber),
+    );
+    expect(await result).toBe(targetFiber);
   });
 
   it("should return null when no node matches (sync descending)", () => {

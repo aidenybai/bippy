@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import type { Fiber } from "../src/types.js";
+import type { Fiber } from "../src/react-internals/index.js";
 import {
   getSource,
   hasDebugSource,

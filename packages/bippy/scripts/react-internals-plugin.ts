@@ -15,7 +15,7 @@ import { format } from "vite-plus/fmt";
 import type { Plugin } from "vite-plus";
 import ts from "typescript";
 import { z } from "zod";
-import { compareSemver } from "../src/semver.js";
+import { compareSemver } from "../src/react-internals/semver.js";
 
 interface ReactInternalsPluginOptions {
   mode: "check" | "generate";
@@ -24,16 +24,6 @@ interface ReactInternalsPluginOptions {
 interface ReactInternalsGenerationOptions extends ReactInternalsPluginOptions {
   generatedModulePath?: string;
   reactDevToolsCore?: unknown;
-}
-
-interface GeneratedReactInternals {
-  declarationModule: string;
-  runtimeModule: string;
-}
-
-interface GeneratedReactInternalsPaths {
-  declarationModulePath: string;
-  runtimeModulePath: string;
 }
 
 const semanticVersionSchema = z
@@ -429,34 +419,16 @@ const renderGeneratedModule = (
 };
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
-const defaultGeneratedModulePath = resolve(scriptDirectory, "../src/generated/react-work-tags.ts");
-
-const removeEmptyExportDeclaration = (declarationModule: string): string => {
-  const sourceFile = ts.createSourceFile(
-    "react-work-tags.d.ts",
-    declarationModule,
-    ts.ScriptTarget.Latest,
-    true,
-    ts.ScriptKind.TS,
-  );
-  const statements = sourceFile.statements.filter(
-    (statement) =>
-      !(
-        ts.isExportDeclaration(statement) &&
-        statement.moduleSpecifier === undefined &&
-        statement.exportClause !== undefined &&
-        ts.isNamedExports(statement.exportClause) &&
-        statement.exportClause.elements.length === 0
-      ),
-  );
-  return ts.createPrinter().printFile(ts.factory.updateSourceFile(sourceFile, statements));
-};
+const defaultGeneratedModulePath = resolve(
+  scriptDirectory,
+  "../src/react-internals/generated/react-work-tags.ts",
+);
 
 let nextTemporaryFileId = 0;
 
 export const createGeneratedReactInternals = async (
   reactDevToolsCoreValue: unknown,
-): Promise<GeneratedReactInternals> => {
+): Promise<string> => {
   const { baselines, reactDevToolsCore, workTagNames } =
     readValidatedReactInternals(reactDevToolsCoreValue);
   const typescriptModule = renderGeneratedModule(
@@ -467,20 +439,13 @@ export const createGeneratedReactInternals = async (
     reactDevToolsCore.ReactSymbols,
   );
   const compilerOptions: ts.CompilerOptions = {
-    declaration: true,
-    emitDeclarationOnly: false,
     module: ts.ModuleKind.ESNext,
     moduleResolution: ts.ModuleResolutionKind.Bundler,
-    noEmitOnError: true,
+    noEmit: true,
     skipLibCheck: true,
     strict: true,
     target: ts.ScriptTarget.ESNext,
   };
-  const generatedModuleBasePath = defaultGeneratedModulePath.slice(0, -3);
-  const generatedDeclarationModulePath = `${generatedModuleBasePath}.d.ts`;
-  const generatedRuntimeModulePath = `${generatedModuleBasePath}.js`;
-  let declarationModule: string | undefined;
-  let runtimeModule: string | undefined;
   const defaultCompilerHost = ts.createCompilerHost(compilerOptions);
   const compilerHost: ts.CompilerHost = {
     ...defaultCompilerHost,
@@ -499,17 +464,11 @@ export const createGeneratedReactInternals = async (
       resolve(fileName) === defaultGeneratedModulePath
         ? typescriptModule
         : defaultCompilerHost.readFile(fileName),
-    writeFile: (fileName, content) => {
-      if (resolve(fileName) === generatedDeclarationModulePath) declarationModule = content;
-      if (resolve(fileName) === generatedRuntimeModulePath) runtimeModule = content;
-    },
   };
   const program = ts.createProgram([defaultGeneratedModulePath], compilerOptions, compilerHost);
-  const emitResult = program.emit();
-  const diagnostics = [...ts.getPreEmitDiagnostics(program), ...emitResult.diagnostics];
-  const errors = diagnostics.filter(
-    (diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error,
-  );
+  const errors = ts
+    .getPreEmitDiagnostics(program)
+    .filter((diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error);
   if (errors.length > 0) {
     throw new Error(
       ts.formatDiagnostics(errors, {
@@ -519,36 +478,14 @@ export const createGeneratedReactInternals = async (
       }),
     );
   }
-  if (declarationModule === undefined || runtimeModule === undefined) {
-    throw new Error("TypeScript did not emit the generated React internals artifacts");
+  const formattingResult = await format(defaultGeneratedModulePath, typescriptModule, {
+    semi: true,
+    singleQuote: false,
+  });
+  if (formattingResult.errors.length > 0) {
+    throw new Error(formattingResult.errors.map((error) => error.message).join("\n"));
   }
-  const [declarationResult, runtimeResult] = await Promise.all([
-    format(generatedDeclarationModulePath, removeEmptyExportDeclaration(declarationModule), {
-      semi: true,
-      singleQuote: false,
-    }),
-    format(generatedRuntimeModulePath, runtimeModule, { semi: true, singleQuote: false }),
-  ]);
-  const formattingErrors = [...declarationResult.errors, ...runtimeResult.errors];
-  if (formattingErrors.length > 0) {
-    throw new Error(formattingErrors.map((error) => error.message).join("\n"));
-  }
-  return {
-    declarationModule: declarationResult.code,
-    runtimeModule: runtimeResult.code,
-  };
-};
-
-const getGeneratedReactInternalsPaths = (
-  generatedModulePath: string,
-): GeneratedReactInternalsPaths => {
-  const moduleBasePath = generatedModulePath.endsWith(".ts")
-    ? generatedModulePath.slice(0, -3)
-    : generatedModulePath;
-  return {
-    declarationModulePath: `${moduleBasePath}.d.ts`,
-    runtimeModulePath: `${moduleBasePath}.js`,
-  };
+  return formattingResult.code;
 };
 
 const writeGeneratedModule = (generatedModulePath: string, generatedModule: string): void => {
@@ -571,29 +508,29 @@ export const generateReactInternals = async ({
   mode,
   reactDevToolsCore = ReactDevToolsCore,
 }: ReactInternalsGenerationOptions): Promise<void> => {
-  const generatedModules = await createGeneratedReactInternals(reactDevToolsCore);
-  const { declarationModulePath, runtimeModulePath } =
-    getGeneratedReactInternalsPaths(generatedModulePath);
-  const existingDeclarationModule = existsSync(declarationModulePath)
-    ? readFileSync(declarationModulePath, "utf8")
-    : undefined;
-  const existingRuntimeModule = existsSync(runtimeModulePath)
-    ? readFileSync(runtimeModulePath, "utf8")
+  const generatedModule = await createGeneratedReactInternals(reactDevToolsCore);
+  const generatedModuleBasePath = generatedModulePath.endsWith(".ts")
+    ? generatedModulePath.slice(0, -3)
+    : generatedModulePath;
+  const legacyDeclarationModulePath = `${generatedModuleBasePath}.d.ts`;
+  const legacyRuntimeModulePath = `${generatedModuleBasePath}.js`;
+  const existingGeneratedModule = existsSync(generatedModulePath)
+    ? readFileSync(generatedModulePath, "utf8")
     : undefined;
 
   if (
-    existingDeclarationModule === generatedModules.declarationModule &&
-    existingRuntimeModule === generatedModules.runtimeModule &&
-    !existsSync(generatedModulePath)
+    existingGeneratedModule === generatedModule &&
+    !existsSync(legacyDeclarationModulePath) &&
+    !existsSync(legacyRuntimeModulePath)
   ) {
     return;
   }
   if (mode === "check") {
     throw new Error("Generated React internals are stale; run nr build and commit the result");
   }
-  writeGeneratedModule(declarationModulePath, generatedModules.declarationModule);
-  writeGeneratedModule(runtimeModulePath, generatedModules.runtimeModule);
-  rmSync(generatedModulePath, { force: true });
+  writeGeneratedModule(generatedModulePath, generatedModule);
+  rmSync(legacyDeclarationModulePath, { force: true });
+  rmSync(legacyRuntimeModulePath, { force: true });
 };
 
 export const reactInternalsPlugin = (options: ReactInternalsPluginOptions): Plugin => ({
