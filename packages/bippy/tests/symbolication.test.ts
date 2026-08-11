@@ -1,5 +1,5 @@
 import { encode } from "@jridgewell/sourcemap-codec";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it, vi } from "vite-plus/test";
 import type { StackFrame } from "../src/source/parse-stack.js";
 import {
   getSourceFromSourceMap,
@@ -484,6 +484,78 @@ describe("getSourceMapUncached", () => {
     ).toBeNull();
   });
 
+  it("stops reading a response after its configured size limit", async () => {
+    let didCancelResponseBody = false;
+    const responseBody = new ReadableStream<Uint8Array>({
+      cancel: () => {
+        didCancelResponseBody = true;
+      },
+      start: (controller) => {
+        controller.enqueue(new TextEncoder().encode("1234"));
+        controller.enqueue(new TextEncoder().encode("5678"));
+        controller.enqueue(new TextEncoder().encode("9012"));
+        controller.close();
+      },
+    });
+    const fetchFn = (): Promise<Response> => Promise.resolve(new Response(responseBody));
+    expect(
+      await getSourceMapUncached("http://localhost/large.js", fetchFn, {
+        maxBundleSizeBytes: 6,
+      }),
+    ).toBeNull();
+    expect(didCancelResponseBody).toBe(true);
+  });
+
+  it("disables source-map network requests in server runtimes by default", async () => {
+    const fetchFn = vi.fn(() => Promise.resolve(new Response("")));
+    vi.stubGlobal("fetch", fetchFn);
+    vi.stubGlobal("window", undefined);
+    try {
+      expect(await getSourceMapUncached("http://169.254.169.254/bundle.js")).toBeNull();
+      expect(fetchFn).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("rejects redirects and cross-origin index sections in server runtimes", async () => {
+    const requestedUrls: string[] = [];
+    const requestRedirects: Array<RequestRedirect | undefined> = [];
+    const indexMap = JSON.stringify({
+      version: 3,
+      sections: [
+        {
+          offset: { line: 0, column: 0 },
+          url: "http://169.254.169.254/latest/meta-data",
+        },
+      ],
+    });
+    const fetchFn = (url: string, init?: RequestInit): Promise<Response> => {
+      requestedUrls.push(url);
+      requestRedirects.push(init?.redirect);
+      return Promise.resolve(
+        url.endsWith(".map")
+          ? new Response(indexMap)
+          : new Response("const value = 1;\n//# sourceMappingURL=bundle.js.map"),
+      );
+    };
+    vi.stubGlobal("window", undefined);
+    try {
+      expect(
+        await getSourceMapUncached("http://example.com/bundle.js", fetchFn, {
+          allowUnsafeServerFetch: true,
+        }),
+      ).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+    expect(requestedUrls).toEqual([
+      "http://example.com/bundle.js",
+      "http://example.com/bundle.js.map",
+    ]);
+    expect(requestRedirects).toEqual(["error", "error"]);
+  });
+
   it("supports abortable source-map requests with a timeout", async () => {
     const fetchFn = (_url: string, init?: RequestInit): Promise<Response> =>
       new Promise((_resolve, reject) => {
@@ -496,6 +568,44 @@ describe("getSourceMapUncached", () => {
 });
 
 describe("getSourceMap caching", () => {
+  it.each([429, 500, 503])("does not cache transient bundle response %i", async (status) => {
+    const file = `http://localhost/transient-${status}.js`;
+    let bundleRequestCount = 0;
+    const fetchFn = (url: string): Promise<Response> => {
+      if (url.endsWith(".map")) return Promise.resolve(new Response(STANDARD_RAW_MAP));
+      bundleRequestCount++;
+      return Promise.resolve(
+        bundleRequestCount === 1
+          ? new Response("", { status })
+          : new Response(`const value = 1;\n//# sourceMappingURL=transient-${status}.js.map`),
+      );
+    };
+    expect(await getSourceMap(file, true, fetchFn)).toBeNull();
+    expect(await getSourceMap(file, true, fetchFn)).not.toBeNull();
+    expect(bundleRequestCount).toBe(2);
+  });
+
+  it("does not cache transient source-map responses", async () => {
+    const file = "http://localhost/transient-source-map.js";
+    let sourceMapRequestCount = 0;
+    const fetchFn = (url: string): Promise<Response> => {
+      if (!url.endsWith(".map")) {
+        return Promise.resolve(
+          new Response("const value = 1;\n//# sourceMappingURL=transient-source-map.js.map"),
+        );
+      }
+      sourceMapRequestCount++;
+      return Promise.resolve(
+        sourceMapRequestCount === 1
+          ? new Response("", { status: 503 })
+          : new Response(STANDARD_RAW_MAP),
+      );
+    };
+    expect(await getSourceMap(file, true, fetchFn)).toBeNull();
+    expect(await getSourceMap(file, true, fetchFn)).not.toBeNull();
+    expect(sourceMapRequestCount).toBe(2);
+  });
+
   it("bypasses the cache when useCache is false", async () => {
     const file = "http://localhost/uncached-bundle.js";
     sourceMapCache.delete(file);

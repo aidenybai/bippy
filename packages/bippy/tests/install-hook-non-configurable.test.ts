@@ -1,8 +1,8 @@
 // intentionally avoids importing ../index.js so this file controls hook installation
 import { expect, it, vi } from "vite-plus/test";
-import { ReactBuildType } from "../src/react-internals.js";
+import { ReactBuildType } from "../src/react-internals/index.js";
 import { installRDTHook } from "../src/rdt-hook.js";
-import type { ReactDevToolsGlobalHook, ReactRenderer } from "../src/types.js";
+import type { ReactDevToolsGlobalHook, ReactRenderer } from "../src/react-internals/index.js";
 
 it("should fall back to patching when the hook property cannot be redefined", () => {
   const existingInject = vi.fn(() => 42);

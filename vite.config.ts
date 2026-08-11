@@ -5,6 +5,7 @@ export default defineConfig({
     "*.{js,ts,tsx}": "vp check --fix",
   },
   fmt: {
+    ignorePatterns: ["**/routeTree.gen.ts", "packages/bippy/src/react-internals/generated/**"],
     semi: true,
     singleQuote: false,
   },

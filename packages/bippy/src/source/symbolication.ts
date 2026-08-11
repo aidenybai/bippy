@@ -38,6 +38,7 @@ export interface SourceFetch {
 }
 
 export interface SourceMapRequestOptions {
+  allowUnsafeServerFetch?: boolean;
   maxBundleSizeBytes?: number;
   maxSourceMapSizeBytes?: number;
   signal?: AbortSignal;
@@ -79,6 +80,8 @@ interface SourceMapResult {
   sourceMap: null | SourceMap;
   isTransientFailure: boolean;
 }
+
+class TransientSourceMapError extends Error {}
 
 const _pendingSourceMapRequests = new Map<string, Promise<SourceMapResult>>();
 const pendingSourceMapRequestsByFetch = new WeakMap<
@@ -235,20 +238,23 @@ const isOptionalNumberArray = (value: unknown): value is number[] | undefined =>
 
 const isStandardSourceMap = (value: unknown): value is StandardSourceMap => {
   if (!isObjectRecord(value)) return false;
-  const hasValidShape =
-    value.version === 3 &&
-    typeof value.mappings === "string" &&
-    isStringArray(value.sources) &&
-    (value.file === undefined || typeof value.file === "string") &&
-    (value.names === undefined || isStringArray(value.names)) &&
-    (value.sourceRoot === undefined || typeof value.sourceRoot === "string") &&
-    (value.sourcesContent === undefined || isSourcesContent(value.sourcesContent)) &&
-    isOptionalNumberArray(value.ignoreList) &&
-    isOptionalNumberArray(value.x_google_ignoreList);
-  if (!hasValidShape) return false;
+  if (
+    value.version !== 3 ||
+    typeof value.mappings !== "string" ||
+    (value.file !== undefined && typeof value.file !== "string") ||
+    (value.names !== undefined && !isStringArray(value.names)) ||
+    (value.sourceRoot !== undefined && typeof value.sourceRoot !== "string") ||
+    (value.sourcesContent !== undefined && !isSourcesContent(value.sourcesContent)) ||
+    !isOptionalNumberArray(value.ignoreList) ||
+    !isOptionalNumberArray(value.x_google_ignoreList)
+  ) {
+    return false;
+  }
+  if (!isStringArray(value.sources)) return false;
   if (value.sourcesContent && value.sourcesContent.length !== value.sources.length) return false;
+  const sourceCount = value.sources.length;
   return [...(value.ignoreList ?? []), ...(value.x_google_ignoreList ?? [])].every(
-    (sourceIndex) => sourceIndex < value.sources.length,
+    (sourceIndex) => sourceIndex < sourceCount,
   );
 };
 
@@ -262,8 +268,10 @@ const isIndexSourceMap = (value: unknown): value is IndexSourceMap => {
     const hasUrl = typeof section.url === "string" && section.url.length > 0;
     return (
       hasMap !== hasUrl &&
+      typeof section.offset.column === "number" &&
       Number.isInteger(section.offset.column) &&
       section.offset.column >= 0 &&
+      typeof section.offset.line === "number" &&
       Number.isInteger(section.offset.line) &&
       section.offset.line >= 0
     );
@@ -408,6 +416,43 @@ const isFetchableUrl = (url: string): boolean => {
   return scheme === "http:" || scheme === "https:";
 };
 
+const isServerRuntime = (): boolean =>
+  typeof window === "undefined" &&
+  typeof process !== "undefined" &&
+  typeof process.versions?.node === "string";
+
+const isAbsoluteHttpUrl = (url: string): boolean => {
+  try {
+    const parsedUrl = new URL(url);
+    return (
+      (parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:") &&
+      !parsedUrl.username &&
+      !parsedUrl.password
+    );
+  } catch {
+    return false;
+  }
+};
+
+const isSameOrigin = (firstUrl: string, secondUrl: string): boolean => {
+  try {
+    return new URL(firstUrl).origin === new URL(secondUrl).origin;
+  } catch {
+    return false;
+  }
+};
+
+const isTransientHttpStatus = (status: number): boolean =>
+  status === 408 || status === 425 || status === 429 || status >= 500;
+
+const assertResponseIsCacheable = (response: Response): boolean => {
+  if (response.ok) return true;
+  if (isTransientHttpStatus(response.status)) {
+    throw new TransientSourceMapError();
+  }
+  return false;
+};
+
 interface RequestSignal {
   cleanup: () => void;
   signal?: AbortSignal;
@@ -446,8 +491,29 @@ const readResponseText = async (
 ): Promise<string | null> => {
   const contentLength = Number(response.headers.get("content-length"));
   if (Number.isFinite(contentLength) && contentLength > maxSizeBytes) return null;
-  const content = await response.text();
-  return new TextEncoder().encode(content).byteLength <= maxSizeBytes ? content : null;
+  if (!response.body) return "";
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  const decodedChunks: string[] = [];
+  let totalSizeBytes = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalSizeBytes += value.byteLength;
+      if (totalSizeBytes > maxSizeBytes) {
+        await reader.cancel();
+        return null;
+      }
+      decodedChunks.push(decoder.decode(value, { stream: true }));
+    }
+    decodedChunks.push(decoder.decode());
+    return decodedChunks.join("");
+  } finally {
+    reader.releaseLock();
+  }
 };
 
 const decodeBase64 = (encodedContent: string): string | null => {
@@ -503,12 +569,16 @@ const readSourceMapDocument = async (
   sourceFetch: SourceFetch,
   signal: AbortSignal | undefined,
   maxSizeBytes: number,
+  shouldRejectRedirects: boolean,
 ): Promise<unknown> => {
   if (INLINE_SOURCEMAP_REGEX.test(sourceMapUrl)) {
     return readInlineSourceMap(sourceMapUrl, maxSizeBytes);
   }
-  const sourceMapResponse = await sourceFetch(sourceMapUrl, { signal });
-  if (!sourceMapResponse.ok) return null;
+  const sourceMapResponse = await sourceFetch(sourceMapUrl, {
+    redirect: shouldRejectRedirects ? "error" : "follow",
+    signal,
+  });
+  if (!assertResponseIsCacheable(sourceMapResponse)) return null;
   const sourceMapContent = await readResponseText(sourceMapResponse, maxSizeBytes);
   if (sourceMapContent === null) return null;
   try {
@@ -518,13 +588,18 @@ const readSourceMapDocument = async (
   }
 };
 
-export const getSourceMapUncached = async (
+const getSourceMapUncachedInternal = async (
   bundleUrl: string,
   fetchFn?: SourceFetch,
   options: SourceMapRequestOptions = {},
 ): Promise<null | SourceMap> => {
   if (!isFetchableUrl(bundleUrl)) {
     return null;
+  }
+
+  const shouldRejectRedirects = isServerRuntime();
+  if (shouldRejectRedirects) {
+    if ((!fetchFn && !options.allowUnsafeServerFetch) || !isAbsoluteHttpUrl(bundleUrl)) return null;
   }
 
   const sourceFetch =
@@ -536,35 +611,67 @@ export const getSourceMapUncached = async (
   if (maxBundleSizeBytes < 0 || maxSourceMapSizeBytes < 0) return null;
   const requestSignal = createRequestSignal(options);
   try {
-    const bundleResponse = await sourceFetch(bundleUrl, { signal: requestSignal.signal });
-    if (!bundleResponse.ok) return null;
+    const bundleResponse = await sourceFetch(bundleUrl, {
+      redirect: shouldRejectRedirects ? "error" : "follow",
+      signal: requestSignal.signal,
+    });
+    if (!assertResponseIsCacheable(bundleResponse)) return null;
     const bundleContent = await readResponseText(bundleResponse, maxBundleSizeBytes);
     if (!bundleContent) return null;
     const sourceMapUrl = getSourceMapUrl(bundleUrl, bundleContent);
     if (!sourceMapUrl) return null;
     if (!isFetchableUrl(sourceMapUrl) && !INLINE_SOURCEMAP_REGEX.test(sourceMapUrl)) return null;
+    if (
+      shouldRejectRedirects &&
+      !INLINE_SOURCEMAP_REGEX.test(sourceMapUrl) &&
+      !isSameOrigin(bundleUrl, sourceMapUrl)
+    ) {
+      return null;
+    }
 
     const rawSourceMap = await readSourceMapDocument(
       sourceMapUrl,
       sourceFetch,
       requestSignal.signal,
       maxSourceMapSizeBytes,
+      shouldRejectRedirects,
     );
     if (isStandardSourceMap(rawSourceMap)) {
       return decodeStandardSourceMap(rawSourceMap, sourceMapUrl);
     }
     if (!isIndexSourceMap(rawSourceMap)) return null;
     return decodeIndexSourceMap(rawSourceMap, sourceMapUrl, async (sectionUrl) => {
+      if (
+        shouldRejectRedirects &&
+        !INLINE_SOURCEMAP_REGEX.test(sectionUrl) &&
+        !isSameOrigin(bundleUrl, sectionUrl)
+      ) {
+        return null;
+      }
       const sectionSourceMap = await readSourceMapDocument(
         sectionUrl,
         sourceFetch,
         requestSignal.signal,
         maxSourceMapSizeBytes,
+        shouldRejectRedirects,
       );
       return isStandardSourceMap(sectionSourceMap) ? sectionSourceMap : null;
     });
   } finally {
     requestSignal.cleanup();
+  }
+};
+
+export const getSourceMapUncached = async (
+  bundleUrl: string,
+  fetchFn?: SourceFetch,
+  options: SourceMapRequestOptions = {},
+): Promise<null | SourceMap> => {
+  try {
+    return await getSourceMapUncachedInternal(bundleUrl, fetchFn, options);
+  } catch (error) {
+    if (error instanceof TransientSourceMapError) return null;
+    throw error;
   }
 };
 
@@ -591,11 +698,12 @@ const getPendingSourceMapRequests = (
 };
 
 const getSourceMapCacheKey = (file: string, options: SourceMapRequestOptions): string =>
+  options.allowUnsafeServerFetch === undefined &&
   options.maxBundleSizeBytes === undefined &&
   options.maxSourceMapSizeBytes === undefined &&
   options.timeoutMs === undefined
     ? file
-    : `${file}\0${options.maxBundleSizeBytes ?? ""}\0${options.maxSourceMapSizeBytes ?? ""}\0${options.timeoutMs ?? ""}`;
+    : `${file}\0${options.allowUnsafeServerFetch ?? ""}\0${options.maxBundleSizeBytes ?? ""}\0${options.maxSourceMapSizeBytes ?? ""}\0${options.timeoutMs ?? ""}`;
 
 export const getSourceMap = async (
   file: string,
@@ -616,7 +724,11 @@ export const getSourceMap = async (
     return (await pendingRequest).sourceMap;
   }
 
-  const fetchPromise: Promise<SourceMapResult> = getSourceMapUncached(file, fetchFn, options).then(
+  const fetchPromise: Promise<SourceMapResult> = getSourceMapUncachedInternal(
+    file,
+    fetchFn,
+    options,
+  ).then(
     (sourceMap) => ({ sourceMap, isTransientFailure: false }),
     () => ({ sourceMap: null, isTransientFailure: true }),
   );

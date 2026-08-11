@@ -2,7 +2,12 @@ import "../src/index.js"; // KEEP THIS LINE ON TOP
 
 import { expect, it, vi } from "vite-plus/test";
 import { overrideHookState, overrideProps } from "../src/index.js";
-import type { Fiber, FiberRoot, ReactDevToolsGlobalHook, ReactRenderer } from "../src/types.js";
+import type {
+  Fiber,
+  FiberRoot,
+  ReactDevToolsGlobalHook,
+  ReactRenderer,
+} from "../src/react-internals/index.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
 
 interface MockFiberOverrides {

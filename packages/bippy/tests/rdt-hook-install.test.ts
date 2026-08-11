@@ -1,7 +1,7 @@
 // intentionally avoids importing ../index.js so this file controls hook installation
 import { expect, it, vi } from "vite-plus/test";
 import { BippyHookListenerError } from "../src/errors.js";
-import { ReactBuildType } from "../src/react-internals.js";
+import { ReactBuildType } from "../src/react-internals/index.js";
 import {
   _onActiveListeners,
   getRDTHook,
@@ -9,7 +9,7 @@ import {
   onRendererInject,
   patchRDTHook,
 } from "../src/rdt-hook.js";
-import type { ReactDevToolsGlobalHook, ReactRenderer } from "../src/types.js";
+import type { ReactDevToolsGlobalHook, ReactRenderer } from "../src/react-internals/index.js";
 
 const createFakeRenderer = (): ReactRenderer =>
   ({

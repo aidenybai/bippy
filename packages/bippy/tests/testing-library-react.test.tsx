@@ -4,7 +4,7 @@ import { fireEvent, render } from "@testing-library/react";
 import React from "react";
 import { expect, it, vi } from "vite-plus/test";
 import { instrument, traverseFiber } from "../src/index.js";
-import type { FiberRoot } from "../src/types.js";
+import type { FiberRoot } from "../src/react-internals/index.js";
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -42,10 +42,9 @@ const ThrowingChild = ({ shouldThrow }: ThrowingChildProps) => {
 
 it("tracks Testing Library hydration and event-driven updates", () => {
   const committedRoots: FiberRoot[] = [];
-  using unsubscribe = instrument({
+  const unsubscribe = instrument({
     onCommitFiberRoot: (_rendererId, root) => committedRoots.push(root),
   });
-  void unsubscribe;
   const container = document.createElement("div");
   container.innerHTML = "<button>count:0</button>";
   const instance = render(<HydratedCounter />, { container, hydrate: true });
@@ -59,13 +58,13 @@ it("tracks Testing Library hydration and event-driven updates", () => {
       (fiber) => fiber.type === HydratedCounter,
     ),
   ).not.toBeNull();
+  unsubscribe();
 });
 
 it("tracks error-boundary recovery commits", () => {
   const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
   const onCommitFiberRoot = vi.fn();
-  using unsubscribe = instrument({ onCommitFiberRoot });
-  void unsubscribe;
+  const unsubscribe = instrument({ onCommitFiberRoot });
   try {
     const instance = render(
       <ErrorBoundary>
@@ -80,6 +79,7 @@ it("tracks error-boundary recovery commits", () => {
     expect(instance.getByText("recovered")).toBeDefined();
     expect(onCommitFiberRoot).toHaveBeenCalled();
   } finally {
+    unsubscribe();
     consoleError.mockRestore();
   }
 });

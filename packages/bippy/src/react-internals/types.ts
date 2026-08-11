@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type ReactReconciler from "react-reconciler";
-import type { HostWorkTag, ReactWorkTag } from "./react-internals.js";
+import type { HostWorkTag, ReactWorkTag } from "./generated/react-work-tags.js";
 
 export type BundleType = ReactReconciler.BundleType;
 export type Flags = ReactReconciler.Flags;

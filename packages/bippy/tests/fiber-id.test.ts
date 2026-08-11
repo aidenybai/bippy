@@ -1,6 +1,6 @@
 import { expect, it } from "vite-plus/test";
 import { getFiberId, setFiberId } from "../src/index.js";
-import type { Fiber } from "../src/types.js";
+import type { Fiber } from "../src/react-internals/index.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
 
 const createMockFiber = (alternate: Fiber | null = null): Fiber =>
@@ -27,6 +27,14 @@ it("should honor an explicitly assigned id", () => {
   const fiber = createMockFiber();
   setFiberId(fiber, 12_345);
   expect(getFiberId(fiber)).toBe(12_345);
+});
+
+it("should advance generated ids past explicitly assigned ids", () => {
+  const explicitFiber = createMockFiber();
+  const generatedFiber = createMockFiber();
+  setFiberId(explicitFiber, 1_000_000_000);
+  setFiberId(generatedFiber);
+  expect(getFiberId(generatedFiber)).toBeGreaterThan(1_000_000_000);
 });
 
 it("should reuse the id of the alternate fiber", () => {

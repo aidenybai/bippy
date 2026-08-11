@@ -23,9 +23,12 @@ import {
   traverseProps,
   traverseState,
 } from "../src/index.js";
-import { getReactWorkTagsForFiber, getReactWorkTagsForRenderer } from "../src/react-internals.js";
+import {
+  getReactWorkTagsForFiber,
+  getReactWorkTagsForRenderer,
+} from "../src/react-internals/index.js";
 import { getFiberHooks, getOwnerStack, getSource } from "../src/source/index.js";
-import type { Fiber, FiberRoot } from "../src/types.js";
+import type { Fiber, FiberRoot } from "../src/react-internals/index.js";
 
 export interface RendererHostProps {
   label: string;
@@ -122,9 +125,9 @@ const createCompoundComponents = (adapter: RendererAdapter): CompoundComponents 
   };
 };
 
-const findComponentFiber = (
+const findComponentFiber = <ComponentProps,>(
   root: FiberRoot,
-  component: React.ComponentType<unknown>,
+  component: React.ComponentType<ComponentProps>,
 ): Fiber | null =>
   traverseFiber(
     root.current,

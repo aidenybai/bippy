@@ -412,7 +412,7 @@ test.describe("normalizeFileName", () => {
       const error = new Error("test");
       const stack = error.stack ?? "";
       const urlMatch = stack.match(/(https?:\/\/[^\s):]+)/);
-      if (!urlMatch) return { skipped: true };
+      if (!urlMatch) return { skipped: true, rawUrl: "", normalized: "" };
 
       const rawUrl = urlMatch[1];
       const normalized = window.__BIPPY__.normalizeFileName(rawUrl);

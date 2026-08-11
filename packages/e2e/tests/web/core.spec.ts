@@ -756,7 +756,10 @@ test.describe("host fiber lookup", () => {
       if (!nearestHostAscending) return null;
       return {
         isHost: window.__BIPPY__.isHostFiber(nearestHostAscending),
-        testId: nearestHostAscending.stateNode?.getAttribute?.("data-testid"),
+        testId:
+          nearestHostAscending.stateNode instanceof Element
+            ? nearestHostAscending.stateNode.getAttribute("data-testid")
+            : null,
       };
     });
     expect(result).not.toBeNull();
@@ -834,7 +837,9 @@ test.describe("mutated host fibers", () => {
               mutatedCount: mutated.length,
               allAreHost: mutated.every((fiber) => window.__BIPPY__.isHostFiber(fiber)),
               containsTestChildDiv: mutated.some(
-                (fiber) => fiber.stateNode?.getAttribute?.("data-testid") === "test-child",
+                (fiber) =>
+                  fiber.stateNode instanceof Element &&
+                  fiber.stateNode.getAttribute("data-testid") === "test-child",
               ),
             });
           },

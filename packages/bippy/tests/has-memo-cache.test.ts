@@ -1,6 +1,6 @@
 import { expect, it } from "vite-plus/test";
 import { hasMemoCache } from "../src/index.js";
-import type { Fiber } from "../src/types.js";
+import type { Fiber } from "../src/react-internals/index.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
 
 const createMockFiber = (updateQueue: unknown): Fiber =>

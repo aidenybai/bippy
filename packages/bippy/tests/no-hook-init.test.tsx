@@ -8,7 +8,7 @@ import {
   isInstrumentationActive,
   isRealReactDevtools,
 } from "../src/index.js";
-import type { ReactDevToolsGlobalHook } from "../src/types.js";
+import type { ReactDevToolsGlobalHook } from "../src/react-internals/index.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
 
 const Example = () => {

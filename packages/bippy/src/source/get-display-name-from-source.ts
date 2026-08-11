@@ -1,4 +1,4 @@
-import { Fiber } from "../types.js";
+import { Fiber } from "../react-internals/index.js";
 import { getDisplayName } from "../core.js";
 import { getParentStack } from "./owner-stack.js";
 import { getSourceFromSourceMap, getSourceMap } from "./symbolication.js";

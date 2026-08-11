@@ -6,8 +6,11 @@ import {
   BippyReactBuildError,
   runWithBippyError,
 } from "./errors.js";
-import type { ReactDevToolsGlobalHook, ReactRenderer } from "./types.js";
-import { toUnsubscribe, type Unsubscribe } from "./unsubscribe.js";
+import type { ReactDevToolsGlobalHook, ReactRenderer } from "./react-internals/index.js";
+
+export interface Unsubscribe extends Disposable {
+  (): void;
+}
 
 interface ActiveListener {
   (): unknown;
@@ -28,8 +31,12 @@ const objectDefineProperty = Object.defineProperty;
 
 const noOp = (): void => {};
 
-const runHookListener = (listenerName: string, callback: () => unknown): void =>
+export const createUnsubscribe = (unsubscribe: () => void): Unsubscribe =>
+  Object.assign(unsubscribe, { [Symbol.dispose]: unsubscribe });
+
+const runHookListener = (listenerName: string, callback: () => unknown): void => {
   runWithBippyError(callback, (cause) => new BippyHookListenerError(listenerName, cause));
+};
 
 const checkDCE = (functionToCheck: unknown): void => {
   try {
@@ -103,14 +110,14 @@ const setRendererInjectDispatcher = (rdtHook: ReactDevToolsGlobalHook): void => 
 export const onRendererInject = (listener: RendererInjectListener): Unsubscribe => {
   setRendererInjectDispatcher(getRDTHook());
   rendererInjectListeners.add(listener);
-  return toUnsubscribe(() => {
+  return createUnsubscribe(() => {
     rendererInjectListeners.delete(listener);
   });
 };
 
 export const onRDTHookReplace = (listener: RDTHookReplaceListener): Unsubscribe => {
   rdtHookReplaceListeners.add(listener);
-  return toUnsubscribe(() => {
+  return createUnsubscribe(() => {
     rdtHookReplaceListeners.delete(listener);
   });
 };

@@ -4,7 +4,7 @@ import { render } from "@testing-library/react";
 import React from "react";
 import { expect, it } from "vite-plus/test";
 import { getMutatedHostFibers, instrument } from "../src/index.js";
-import type { Fiber } from "../src/types.js";
+import type { Fiber } from "../src/react-internals/index.js";
 
 export const ExampleWithMutation = () => {
   const [element, setElement] = React.useState(<div>Hello</div>);
@@ -29,11 +29,13 @@ export const ExampleWithSiblingMutation = () => {
 
 it("should return all host fibers that have committed and rendered", () => {
   let maybeFiber: Fiber | null = null;
-  let mutatedHostFiber: Fiber<HTMLDivElement> | null = null;
+  let mutatedHostFiber: Fiber | null = null;
   instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {
-      maybeFiber = fiberRoot.current.child;
-      mutatedHostFiber = fiberRoot.current.child.child;
+      const componentFiber = fiberRoot.current.child;
+      if (!componentFiber) throw new Error("React DOM did not render the component fiber");
+      maybeFiber = componentFiber;
+      mutatedHostFiber = componentFiber.child;
     },
   });
   render(<ExampleWithMutation />);

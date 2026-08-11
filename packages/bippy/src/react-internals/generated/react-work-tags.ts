@@ -1,8 +1,10 @@
 import { compareSemver } from "../semver.js";
+
 export const ReactBuildType = {
   Development: 1,
   Production: 0,
-};
+} as const;
+
 export const ReactFiberFlags = {
   ChildDeletion: 16,
   Cloned: 8,
@@ -13,7 +15,8 @@ export const ReactFiberFlags = {
   Snapshot: 1024,
   Update: 4,
   Visibility: 8192,
-};
+} as const;
+
 export const ReactSymbols = {
   CONCURRENT_MODE_NUMBER: 60111,
   CONCURRENT_MODE_SYMBOL_DESCRIPTION: "react.concurrent_mode",
@@ -22,8 +25,49 @@ export const ReactSymbols = {
   DEPRECATED_ASYNC_MODE_SYMBOL_STRING: "Symbol(react.async_mode)",
   ELEMENT_SYMBOL_STRING: "Symbol(react.transitional.element)",
   LEGACY_ELEMENT_SYMBOL_STRING: "Symbol(react.element)",
-};
-const defineReactWorkTags = (workTags) => workTags;
+} as const;
+
+export interface ReactWorkTagMap {
+  ActivityComponent: number;
+  CacheComponent: number;
+  ClassComponent: number;
+  ContextConsumer: number;
+  ContextProvider: number;
+  CoroutineComponent: number;
+  CoroutineHandlerPhase: number;
+  DehydratedSuspenseComponent: number;
+  ForwardRef: number;
+  Fragment: number;
+  FunctionComponent: number;
+  HostComponent: number;
+  HostHoistable: number;
+  HostPortal: number;
+  HostRoot: number;
+  HostSingleton: number;
+  HostText: number;
+  IncompleteClassComponent: number;
+  IncompleteFunctionComponent: number;
+  IndeterminateComponent: number;
+  LazyComponent: number;
+  LegacyHiddenComponent: number;
+  MemoComponent: number;
+  Mode: number;
+  OffscreenComponent: number;
+  Profiler: number;
+  ScopeComponent: number;
+  SimpleMemoComponent: number;
+  SuspenseComponent: number;
+  SuspenseListComponent: number;
+  Throw: number;
+  TracingMarkerComponent: number;
+  ViewTransitionComponent: number;
+  YieldComponent: number;
+}
+
+const defineReactWorkTags = <const VersionedWorkTags extends Record<string, ReactWorkTagMap>>(
+  workTags: VersionedWorkTags,
+): VersionedWorkTags => workTags;
+
 const reactWorkTagsByVersion = defineReactWorkTags({
   "16.0.0": {
     ActivityComponent: -1,
@@ -206,7 +250,36 @@ const reactWorkTagsByVersion = defineReactWorkTags({
     YieldComponent: -1,
   },
 });
-const reactWorkTagRanges = [
+
+export type ReactWorkTagVersion = keyof typeof reactWorkTagsByVersion;
+
+export interface GetReactWorkTags {
+  <Version extends ReactWorkTagVersion>(
+    reactVersion: Version,
+  ): Readonly<(typeof reactWorkTagsByVersion)[Version]>;
+  (reactVersion: string): Readonly<ReactWorkTagMap>;
+}
+
+export type ReactWorkTag = Exclude<
+  (typeof reactWorkTagsByVersion)[ReactWorkTagVersion][keyof ReactWorkTagMap],
+  -1
+>;
+
+export type HostWorkTag = Exclude<
+  | (typeof reactWorkTagsByVersion)[ReactWorkTagVersion]["HostComponent"]
+  | (typeof reactWorkTagsByVersion)[ReactWorkTagVersion]["HostHoistable"]
+  | (typeof reactWorkTagsByVersion)[ReactWorkTagVersion]["HostSingleton"]
+  | (typeof reactWorkTagsByVersion)[ReactWorkTagVersion]["HostText"],
+  -1
+>;
+
+interface ReactWorkTagRange {
+  isMinimumExcluded: boolean;
+  minimumVersion: string;
+  workTags: Readonly<ReactWorkTagMap>;
+}
+
+const reactWorkTagRanges: ReactWorkTagRange[] = [
   {
     isMinimumExcluded: true,
     minimumVersion: "17.0.1",
@@ -228,7 +301,8 @@ const reactWorkTagRanges = [
     workTags: reactWorkTagsByVersion["16.4.3-alpha"],
   },
 ];
-export const getReactWorkTags = (reactVersion) => {
+
+export const getReactWorkTags: GetReactWorkTags = (reactVersion: string) => {
   for (const range of reactWorkTagRanges) {
     const comparison = compareSemver(reactVersion, range.minimumVersion);
     if (comparison === null) return reactWorkTagsByVersion["17.0.2"];

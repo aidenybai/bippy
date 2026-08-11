@@ -1,7 +1,7 @@
 import "../src/index.js"; // KEEP THIS LINE ON TOP
 
 import { describe, expect, it } from "vite-plus/test";
-import type { Fiber } from "../src/types.js";
+import type { Fiber } from "../src/react-internals/index.js";
 import { instrument } from "../src/index.js";
 import { getFiberHooks, type HooksNode } from "../src/source/inspect-hooks.js";
 import React from "react";
@@ -79,7 +79,9 @@ MemoComponent.displayName = "MemoComponent";
 const captureFiber = (callback: (fiber: Fiber) => void) => {
   instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {
-      callback(fiberRoot.current.child);
+      const fiber = fiberRoot.current.child;
+      if (!fiber) throw new Error("React DOM did not render a component fiber");
+      callback(fiber);
     },
   });
 };

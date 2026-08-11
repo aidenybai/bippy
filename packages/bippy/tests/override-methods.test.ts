@@ -2,7 +2,11 @@ import "../src/index.js"; // KEEP THIS LINE ON TOP
 
 import { expect, it, vi } from "vite-plus/test";
 import { overrideContext, overrideHookState, overrideProps } from "../src/index.js";
-import type { Fiber, ReactDevToolsGlobalHook, ReactRenderer } from "../src/types.js";
+import type {
+  Fiber,
+  ReactDevToolsGlobalHook,
+  ReactRenderer,
+} from "../src/react-internals/index.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
 
 interface MockFiberOverrides {
@@ -71,6 +75,15 @@ it("should chain override methods from every renderer", () => {
   expect(firstOverrideProps).toHaveBeenCalledWith(fiber, ["count"], 1);
   expect(firstOverrideProps).toHaveBeenCalledWith(fiber, ["nested", "value"], 2);
   expect(secondOverrideProps).toHaveBeenCalledWith(fiber, ["count"], 1);
+});
+
+it("should stop descending when override values contain cycles", () => {
+  const fiber = createMockFiber();
+  const cyclicValue: Record<string, unknown> = { count: 1 };
+  cyclicValue.self = cyclicValue;
+  overrideProps(fiber, cyclicValue);
+  expect(firstOverrideProps).toHaveBeenCalledWith(fiber, ["count"], 1);
+  expect(firstOverrideProps).toHaveBeenCalledWith(fiber, ["self"], cyclicValue);
 });
 
 it("should treat non-plain-object props as a single value", () => {

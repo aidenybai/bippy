@@ -1,7 +1,7 @@
 import "../src/index.js"; // KEEP THIS LINE ON TOP
 
 import { describe, expect, it } from "vite-plus/test";
-import type { Fiber } from "../src/types.js";
+import type { Fiber } from "../src/react-internals/index.js";
 import {
   getNearestHostFiber,
   getNearestHostFibers,
@@ -204,7 +204,16 @@ describe("portal fiber properties", () => {
       (fiber) => fiber.tag === latestReactWorkTags.HostPortal,
     );
     expect(portalFiber).not.toBeNull();
-    expect(portalFiber!.stateNode.containerInfo).toBe(portalContainer);
+    if (!portalFiber) throw new Error("React DOM did not render a portal fiber");
+    const portalStateNode = portalFiber.stateNode;
+    if (
+      typeof portalStateNode !== "object" ||
+      portalStateNode === null ||
+      !("containerInfo" in portalStateNode)
+    ) {
+      throw new Error("React DOM portal fiber did not contain container info");
+    }
+    expect(portalStateNode.containerInfo).toBe(portalContainer);
 
     document.body.removeChild(portalContainer);
   });

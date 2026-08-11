@@ -19,13 +19,13 @@ const createReactDevToolsCore = (
 });
 
 describe("React internals generation", () => {
-  it("accepts the patched React DevTools exports and emits both modules", async () => {
+  it("accepts the patched React DevTools exports and emits TypeScript", async () => {
     const generatedModule = await createGeneratedReactInternals(ReactDevToolsCore);
-    expect(generatedModule.runtimeModule).toContain("export const ReactSymbols = {");
-    expect(generatedModule.runtimeModule).not.toContain("ActivityComponentTag");
-    expect(generatedModule.runtimeModule).not.toContain("ELEMENT_TYPE_SYMBOL_STRING");
-    expect(generatedModule.declarationModule).toContain("readonly HostRoot: 3;");
-    expect(generatedModule.declarationModule).not.toContain("export {};");
+    expect(generatedModule).toContain("export const ReactSymbols = {");
+    expect(generatedModule).toContain("HostRoot: 3,");
+    expect(generatedModule).toContain("} as const;");
+    expect(generatedModule).not.toContain("ActivityComponentTag");
+    expect(generatedModule).not.toContain("ELEMENT_TYPE_SYMBOL_STRING");
   });
 
   it("rejects invalid and unordered version ranges", async () => {
@@ -122,22 +122,23 @@ describe("React internals generation", () => {
       const declarationModulePath = resolve(temporaryDirectory, "react-work-tags.d.ts");
       const runtimeModulePath = resolve(temporaryDirectory, "react-work-tags.js");
       try {
-        writeFileSync(generatedModulePath, "legacy");
+        writeFileSync(declarationModulePath, "legacy");
+        writeFileSync(runtimeModulePath, "legacy");
         await generateReactInternals({
           generatedModulePath,
           mode: "generate",
           reactDevToolsCore: ReactDevToolsCore,
         });
-        expect(existsSync(generatedModulePath)).toBe(false);
-        const declarationModule = readFileSync(declarationModulePath, "utf8");
-        const runtimeModule = readFileSync(runtimeModulePath, "utf8");
+        expect(existsSync(declarationModulePath)).toBe(false);
+        expect(existsSync(runtimeModulePath)).toBe(false);
+        const generatedModule = readFileSync(generatedModulePath, "utf8");
         await generateReactInternals({
           generatedModulePath,
           mode: "check",
           reactDevToolsCore: ReactDevToolsCore,
         });
 
-        writeFileSync(runtimeModulePath, "stale");
+        writeFileSync(generatedModulePath, "stale");
         await expect(
           generateReactInternals({
             generatedModulePath,
@@ -145,13 +146,10 @@ describe("React internals generation", () => {
             reactDevToolsCore: ReactDevToolsCore,
           }),
         ).rejects.toThrow(/stale/);
-        expect(readFileSync(runtimeModulePath, "utf8")).toBe("stale");
+        expect(readFileSync(generatedModulePath, "utf8")).toBe("stale");
 
-        writeFileSync(runtimeModulePath, runtimeModule);
-        expect(readFileSync(declarationModulePath, "utf8")).toBe(declarationModule);
-        expect(readFileSync(runtimeModulePath, "utf8")).toBe(runtimeModule);
-
-        writeFileSync(declarationModulePath, "stale");
+        writeFileSync(generatedModulePath, generatedModule);
+        writeFileSync(runtimeModulePath, "legacy");
         await expect(
           generateReactInternals({
             generatedModulePath,
@@ -159,8 +157,8 @@ describe("React internals generation", () => {
             reactDevToolsCore: ReactDevToolsCore,
           }),
         ).rejects.toThrow(/stale/);
-        expect(readFileSync(declarationModulePath, "utf8")).toBe("stale");
-        expect(readFileSync(runtimeModulePath, "utf8")).toBe(runtimeModule);
+        expect(readFileSync(generatedModulePath, "utf8")).toBe(generatedModule);
+        expect(readFileSync(runtimeModulePath, "utf8")).toBe("legacy");
       } finally {
         rmSync(temporaryDirectory, { force: true, recursive: true });
       }

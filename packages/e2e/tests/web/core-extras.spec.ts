@@ -164,7 +164,10 @@ test.describe("rendered fiber traversal", () => {
             commitCount++;
             window.__BIPPY__.traverseRenderedFibers(fiberRoot, (fiber, phase) => {
               if (commitCount === 1 || phase !== "mount") return;
-              const testId = fiber.stateNode?.getAttribute?.("data-testid");
+              const testId =
+                fiber.stateNode instanceof Element
+                  ? fiber.stateNode.getAttribute("data-testid")
+                  : null;
               if (testId) mountedTestIds.push(testId);
             });
             if (commitCount < 3) {
@@ -187,7 +190,10 @@ test.describe("unmount and post-commit instrumentation", () => {
       return new Promise<{ sawUnmount: boolean; rendererIdIsNumber: boolean }>((resolve) => {
         window.__BIPPY__.instrument({
           onCommitFiberUnmount: (rendererID, fiber) => {
-            const testId = fiber.stateNode?.getAttribute?.("data-testid");
+            const testId =
+              fiber.stateNode instanceof Element
+                ? fiber.stateNode.getAttribute("data-testid")
+                : null;
             if (testId === "conditional-child") {
               resolve({ sawUnmount: true, rendererIdIsNumber: typeof rendererID === "number" });
             }

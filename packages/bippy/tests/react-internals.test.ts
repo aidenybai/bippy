@@ -4,8 +4,8 @@ import {
   getReactWorkTagsForRenderer,
   getReactWorkTags,
   setReactWorkTagsForFiber,
-} from "../src/react-internals.js";
-import type { Fiber, ReactRenderer } from "../src/types.js";
+} from "../src/react-internals/index.js";
+import type { Fiber, ReactRenderer } from "../src/react-internals/index.js";
 
 it("selects React work tags by their version baseline", () => {
   const react16WorkTags = getReactWorkTags("16.0.0");
@@ -55,15 +55,28 @@ it("retains old renderer work tags after a Fiber is detached", () => {
   const rootFiber: Fiber = {
     alternate: null,
     child: null,
+    childLanes: 0,
     deletions: null,
     dependencies: null,
+    elementType: null,
+    firstEffect: null,
+    flags: 0,
+    index: 0,
+    key: null,
+    lanes: 0,
+    lastEffect: null,
     memoizedProps: {},
     memoizedState: null,
+    mode: 0,
+    nextEffect: null,
     pendingProps: {},
+    ref: null,
     return: null,
     sibling: null,
     stateNode: null,
+    subtreeFlags: 0,
     tag: getReactWorkTags("17.0.0-alpha").HostRoot,
+    type: null,
     updateQueue: null,
   };
   const childFiber: Fiber = {

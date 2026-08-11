@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import type { Fiber } from "../src/types.js";
+import type { Fiber } from "../src/react-internals/index.js";
 import { _renderers } from "../src/rdt-hook.js";
 import { getFiberHooks } from "../src/source/inspect-hooks.js";
 import { latestReactWorkTags } from "./react-work-tags.js";

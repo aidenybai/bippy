@@ -1,6 +1,6 @@
 import { afterEach, expect, it } from "vite-plus/test";
 import { _fiberRoots, getLatestFiber } from "../src/index.js";
-import type { Fiber } from "../src/types.js";
+import type { Fiber } from "../src/react-internals/index.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
 
 interface MockFiberOverrides {
@@ -51,6 +51,15 @@ it("should find the fiber in a tracked fiber root when start times are missing",
   const rootFiber = createMockFiber({ child: fiber });
   _fiberRoots.add({ current: rootFiber });
   expect(getLatestFiber(fiber)).toBe(fiber);
+});
+
+it("should find the alternate in a tracked fiber root when the given fiber is stale", () => {
+  const staleFiber = createMockFiber();
+  const currentFiber = createMockFiber({ alternate: staleFiber });
+  staleFiber.alternate = currentFiber;
+  const rootFiber = createMockFiber({ child: currentFiber });
+  _fiberRoots.add({ current: rootFiber });
+  expect(getLatestFiber(staleFiber)).toBe(currentFiber);
 });
 
 it("should fall back to the given fiber when no root contains it", () => {

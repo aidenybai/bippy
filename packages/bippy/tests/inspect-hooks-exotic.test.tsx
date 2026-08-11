@@ -3,7 +3,7 @@ import "../src/index.js"; // KEEP THIS LINE ON TOP
 /* eslint-disable unicorn/no-thenable -- Thenables are the behavior under test. */
 
 import { beforeAll, describe, expect, it } from "vite-plus/test";
-import type { Fiber } from "../src/types.js";
+import type { Fiber } from "../src/react-internals/index.js";
 import { getRDTHook, _renderers } from "../src/index.js";
 import { getFiberHooks, type HooksNode } from "../src/source/inspect-hooks.js";
 import { latestReactWorkTags } from "./react-work-tags.js";

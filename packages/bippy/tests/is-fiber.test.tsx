@@ -4,7 +4,7 @@ import { render } from "@testing-library/react";
 import React from "react";
 import { expect, it } from "vite-plus/test";
 import { isHostFiber, getFiberFromHostInstance, isFiber } from "../src/index.js";
-import type { Fiber } from "../src/types.js";
+import type { Fiber } from "../src/react-internals/index.js";
 
 export const Example = () => {
   return <div>Hello</div>;

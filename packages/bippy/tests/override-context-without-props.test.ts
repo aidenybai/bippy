@@ -2,7 +2,11 @@ import "../src/index.js"; // KEEP THIS LINE ON TOP
 
 import { expect, it } from "vite-plus/test";
 import { overrideContext } from "../src/index.js";
-import type { Fiber, ReactDevToolsGlobalHook, ReactRenderer } from "../src/types.js";
+import type {
+  Fiber,
+  ReactDevToolsGlobalHook,
+  ReactRenderer,
+} from "../src/react-internals/index.js";
 
 it("should do nothing when no renderer exposes overrideProps", () => {
   globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ = {

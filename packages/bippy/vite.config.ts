@@ -1,11 +1,21 @@
 import { readFileSync } from "node:fs";
 import { defineConfig } from "vite-plus";
+import type { PackUserConfig } from "vite-plus/pack";
 import { reactInternalsPlugin } from "./scripts/react-internals-plugin.js";
 
 const pkg = JSON.parse(readFileSync("package.json", "utf8"));
 const isContinuousIntegration = Boolean(process.env.CI && process.env.CI !== "false");
+const licenseBanner = `/**
+ * @license bippy
+ *
+ * Copyright (c) Aiden Bai
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */`;
 
 const sharedPackOptions = {
+  banner: licenseBanner,
   clean: false,
   hash: false,
   env: {
@@ -25,7 +35,7 @@ const sharedPackOptions = {
   sourcemap: Boolean(process.env.BIPPY_SOURCEMAP),
   target: "esnext",
   treeshake: true,
-};
+} satisfies PackUserConfig;
 
 export default defineConfig({
   pack: [
@@ -57,7 +67,7 @@ export default defineConfig({
   test: {
     coverage: {
       include: ["src/**/*.ts", "scripts/react-internals-plugin.ts"],
-      exclude: ["src/types.ts"],
+      exclude: ["src/react-internals/types.ts"],
       provider: "istanbul",
       reporter: ["text", "json", "json-summary", "html"],
     },

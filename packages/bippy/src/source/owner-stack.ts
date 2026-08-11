@@ -1,7 +1,11 @@
 import { getDisplayName, getType, traverseFiber } from "../core.js";
 import { _renderers, getRDTHook } from "../rdt-hook.js";
-import { getReactWorkTagsForFiber } from "../react-internals.js";
-import type { Fiber, RendererDispatcherRef, ServerComponentInfo } from "../types.js";
+import { getReactWorkTagsForFiber } from "../react-internals/index.js";
+import type {
+  Fiber,
+  RendererDispatcherRef,
+  ServerComponentInfo,
+} from "../react-internals/index.js";
 import {
   SERVER_FRAME_MARKER,
   SERVER_ENV_PATTERN,

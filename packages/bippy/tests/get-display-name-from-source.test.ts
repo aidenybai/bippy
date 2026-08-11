@@ -1,6 +1,6 @@
 import { encode } from "@jridgewell/sourcemap-codec";
 import { describe, expect, it } from "vite-plus/test";
-import type { Fiber } from "../src/types.js";
+import type { Fiber } from "../src/react-internals/index.js";
 import { getDisplayNameFromSource } from "../src/source/get-display-name-from-source.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
 

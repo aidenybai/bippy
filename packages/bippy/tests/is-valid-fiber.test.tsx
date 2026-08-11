@@ -3,7 +3,7 @@ import "../src/index.js"; // KEEP THIS LINE ON TOP
 import React from "react";
 import { expect, it } from "vite-plus/test";
 import { instrument, isValidFiber } from "../src/index.js";
-import type { Fiber } from "../src/types.js";
+import type { Fiber } from "../src/react-internals/index.js";
 import { render } from "@testing-library/react";
 
 export const Example = () => {

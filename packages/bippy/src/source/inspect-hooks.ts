@@ -4,13 +4,13 @@ import type {
   MemoizedState,
   ReactContext,
   RendererDispatcherRef,
-} from "../types.js";
+} from "../react-internals/index.js";
 import {
   BippyHookInspectionError,
   BippyHookRenderError,
   BippyUnsupportedHookError,
 } from "../errors.js";
-import { getReactWorkTagsForFiber } from "../react-internals.js";
+import { getReactWorkTagsForFiber } from "../react-internals/index.js";
 import { parseStack, type StackFrame } from "./parse-stack.js";
 import { getRDTHook, _renderers } from "../rdt-hook.js";
 
@@ -461,18 +461,17 @@ const getPrimitiveStackCache = (): Map<string, StackFrame[]> => {
     dispatcher.useLayoutEffect(() => {});
     dispatcher.useInsertionEffect(() => {});
     dispatcher.useEffect(() => {});
-    dispatcher.useImperativeHandle(undefined, () => null);
+    dispatcher.useImperativeHandle(undefined);
     dispatcher.useDebugValue(null);
     dispatcher.useCallback(() => {});
     dispatcher.useTransition();
     dispatcher.useSyncExternalStore(
       () => () => {},
       () => null,
-      () => null,
     );
     dispatcher.useDeferredValue(null);
     dispatcher.useMemo(() => null);
-    dispatcher.useOptimistic(null, (state: unknown) => state);
+    dispatcher.useOptimistic(null);
     dispatcher.useFormState((state: unknown) => state, null);
     dispatcher.useActionState((state: unknown) => state, null);
     dispatcher.useHostTransitionStatus();
