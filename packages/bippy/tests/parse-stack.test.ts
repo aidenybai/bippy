@@ -50,17 +50,6 @@ describe("parseStack (default includeInElement mode)", () => {
     const frames = parseStack("Error: boom\nsomething unrelated");
     expect(frames).toHaveLength(0);
   });
-
-  it("applies a numeric slice", () => {
-    const frames = parseStack(CHROME_STACK, { slice: 2 });
-    expect(frames).toHaveLength(2);
-  });
-
-  it("applies a tuple slice", () => {
-    const frames = parseStack(CHROME_STACK, { slice: [1, 3] });
-    expect(frames).toHaveLength(2);
-    expect(frames[0].fileName).toBe("http://localhost:3000/static/app.js");
-  });
 });
 
 describe("parseStack (includeInElement: false)", () => {

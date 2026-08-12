@@ -13,7 +13,7 @@ import {
 import { getDefinitionFrameFromOwnedChild, getParentStack, hasDebugStack } from "./owner-stack.js";
 import { parseDebugStack } from "./parse-debug-stack.js";
 import { StackFrame } from "./parse-stack.js";
-import { symbolicateStack } from "./symbolication.js";
+import { symbolicateStack, type SourceFetch } from "./symbolication.js";
 
 export const hasDebugSource = (
   fiber: Fiber,
@@ -26,10 +26,7 @@ export const hasDebugSource = (
   }
   return (
     typeof debugSource === "object" &&
-    debugSource !== null &&
-    "fileName" in debugSource &&
     typeof debugSource.fileName === "string" &&
-    "lineNumber" in debugSource &&
     typeof debugSource.lineNumber === "number"
   );
 };
@@ -92,7 +89,7 @@ const getUsageFrameFromDebugStack = (fiber: Fiber): StackFrame | null => {
 export const getSource = async (
   fiber: Fiber,
   cache = true,
-  fetchFn?: (url: string) => Promise<Response>,
+  fetchFn?: SourceFetch,
 ): Promise<FiberSource | null> => {
   if (hasDebugSource(fiber)) {
     return fiber._debugSource;
@@ -119,11 +116,6 @@ export const getSource = async (
 
 const getPathSegmentCount = (path: string): number => path.split("/").filter(Boolean).length;
 
-const getFirstPathSegment = (path: string): string | null => {
-  const segments = path.split("/").filter(Boolean);
-  return segments[0] ?? null;
-};
-
 const stripSingleBasePathPrefix = (path: string): string => {
   const firstSlashIndex = path.indexOf("/", 1);
   if (firstSlashIndex === -1) {
@@ -140,15 +132,12 @@ const stripSingleBasePathPrefix = (path: string): string => {
     return path;
   }
 
-  if (getPathSegmentCount(remainderPath) < 2) {
+  const remainderSegments = remainderPath.split("/").filter(Boolean);
+  if (remainderSegments.length < 2) {
     return path;
   }
 
-  const firstRemainderSegment = getFirstPathSegment(remainderPath);
-  if (!firstRemainderSegment) {
-    return path;
-  }
-
+  const firstRemainderSegment = remainderSegments[0];
   if (firstRemainderSegment.startsWith("@")) {
     return path;
   }
@@ -179,9 +168,6 @@ export const normalizeFileName = (fileName: string): string => {
       const parsedUrl = new URL(normalizedFileName);
       normalizedFileName = parsedUrl.pathname;
     } catch {}
-  }
-
-  if (isHttpUrl) {
     normalizedFileName = stripSingleBasePathPrefix(normalizedFileName);
   }
 
@@ -214,7 +200,7 @@ export const normalizeFileName = (fileName: string): string => {
     }
   }
 
-  if (!isWindowsDrivePath && SCHEME_REGEX.test(normalizedFileName)) {
+  if (!isWindowsDrivePath) {
     const schemeMatch = normalizedFileName.match(SCHEME_REGEX);
     if (schemeMatch) {
       normalizedFileName = normalizedFileName.slice(schemeMatch[0].length);

@@ -11,6 +11,7 @@ import {
   hasDebugStack,
 } from "../src/source/owner-stack.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
+import { sourceFetch as noopFetchFn } from "./source-fetch.js";
 
 const createFakeFiber = (overrides: Record<string, unknown>): Fiber =>
   ({
@@ -27,9 +28,6 @@ const createDebugStackError = (stackLines: string[]): Error => {
   error.stack = stackLines.join("\n");
   return error;
 };
-
-const noopFetchFn = (): Promise<Response> =>
-  Promise.resolve(new Response("not found", { status: 404 }));
 
 describe("hasDebugStack", () => {
   it("returns true for fibers with an Error debug stack", () => {

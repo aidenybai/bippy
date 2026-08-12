@@ -1,6 +1,7 @@
 import "../src/index.js";
 
 import React from "react";
+import { sourceFetch } from "./source-fetch.js";
 import { createRoot } from "react-dom/client";
 import { describe, expect, it } from "vite-plus/test";
 import {
@@ -105,9 +106,6 @@ const createDeferred = <Value,>(): Deferred<Value> => {
   const { promise, resolve } = Promise.withResolvers<Value>();
   return { promise, resolve };
 };
-
-const sourceFetch = (): Promise<Response> =>
-  Promise.resolve(new Response("not found", { status: 404 }));
 
 const requireRoot = (root: FiberRoot | null, scenario: string): FiberRoot => {
   if (!root) throw new Error(`${scenario} did not commit a root`);

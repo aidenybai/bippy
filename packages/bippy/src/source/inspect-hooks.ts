@@ -12,7 +12,11 @@ import {
 } from "../errors.js";
 import { getReactWorkTagsForFiber } from "../react-internals/index.js";
 import { parseStack, type StackFrame } from "./parse-stack.js";
-import { getRDTHook, _renderers } from "../rdt-hook.js";
+import {
+  getRendererDispatcherRefs,
+  readDispatcher,
+  writeDispatcher,
+} from "./renderer-dispatchers.js";
 
 const REACT_CONTEXT_TYPE = Symbol.for("react.context");
 const REACT_MEMO_CACHE_SENTINEL = Symbol.for("react.memo_cache_sentinel");
@@ -121,27 +125,6 @@ const readContext = (context: InspectableReactContext): unknown => {
     return value;
   }
   return context._currentValue;
-};
-
-const getDispatcherRef = (): RendererDispatcherRef | null => {
-  const rdtHook = getRDTHook();
-  const allRenderers = [..._renderers, ...rdtHook.renderers.values()];
-  for (const renderer of allRenderers) {
-    const ref = renderer.currentDispatcherRef;
-    if (ref) return ref;
-  }
-  return null;
-};
-
-const getDispatcherFromRef = (ref: RendererDispatcherRef): unknown =>
-  "H" in ref ? ref.H : ref.current;
-
-const setDispatcherOnRef = (ref: RendererDispatcherRef, dispatcher: unknown): void => {
-  if ("H" in ref) {
-    ref.H = dispatcher;
-  } else {
-    ref.current = dispatcher;
-  }
 };
 
 const pushHookLogEntry = (
@@ -254,10 +237,7 @@ const dispatcherUseEffect = (create: () => void): void => {
 
 const dispatcherUseImperativeHandle = (ref: unknown): void => {
   nextHook();
-  let instance: unknown;
-  if (ref !== null && typeof ref === "object" && "current" in ref) {
-    instance = ref.current;
-  }
+  const instance = isInspectableRef(ref) ? ref.current : undefined;
   pushHookLogEntry("ImperativeHandle", instance, "ImperativeHandle");
 };
 
@@ -784,8 +764,8 @@ const performDispatcherInspection = (
   dispatcherRef: RendererDispatcherRef,
   renderFn: () => void,
 ): HooksTree => {
-  const previousDispatcher = getDispatcherFromRef(dispatcherRef);
-  setDispatcherOnRef(dispatcherRef, dispatcherProxy);
+  const previousDispatcher = readDispatcher(dispatcherRef);
+  writeDispatcher(dispatcherRef, dispatcherProxy);
 
   let capturedHookLog: HookLogEntry[] = [];
   let ancestorStackError: Error | undefined;
@@ -798,7 +778,7 @@ const performDispatcherInspection = (
   } finally {
     capturedHookLog = hookLog;
     hookLog = [];
-    setDispatcherOnRef(dispatcherRef, previousDispatcher);
+    writeDispatcher(dispatcherRef, previousDispatcher);
   }
 
   const rootStack = ancestorStackError !== undefined ? parseErrorStack(ancestorStackError) : [];
@@ -806,7 +786,7 @@ const performDispatcherInspection = (
 };
 
 const requireDispatcherRef = (): RendererDispatcherRef => {
-  const dispatcherRef = getDispatcherRef();
+  const dispatcherRef = getRendererDispatcherRefs()[0];
   if (!dispatcherRef) {
     throw new BippyHookInspectionError(
       "Bippy couldn’t find a React renderer. Load React and install Bippy’s hook.",

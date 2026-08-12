@@ -3,6 +3,7 @@ import { describe, expect, it } from "vite-plus/test";
 import type { Fiber } from "../src/react-internals/index.js";
 import { getDisplayNameFromSource } from "../src/source/get-display-name-from-source.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
+import { sourceFetch as failingFetchFn } from "./source-fetch.js";
 
 const UNKNOWN_TAG = 999;
 // HACK: mappings cover every plausible generated line so the real (instrumented)
@@ -56,9 +57,6 @@ const createSourceMapFetchFn = (rawMap: string): ((url: string) => Promise<Respo
           }),
     );
 };
-
-const failingFetchFn = (): Promise<Response> =>
-  Promise.resolve(new Response("not found", { status: 404 }));
 
 describe("getDisplayNameFromSource", () => {
   it("falls back to the fiber display name when no frame has a file name", async () => {
