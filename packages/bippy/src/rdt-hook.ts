@@ -45,9 +45,8 @@ const checkDCE = (functionToCheck: unknown): void => {
       // HACK: React DevTools reports failed dead-code elimination asynchronously.
       setTimeout(() => {
         throw new BippyReactBuildError(
-          "React is running in production mode, but dead code " +
-            "elimination has not been applied. Read how to correctly " +
-            "configure React for production: " +
+          "React is running in production mode without dead-code elimination. " +
+            "Configure a production build: " +
             "https://reactjs.org/link/perf-use-production-build",
         );
       });

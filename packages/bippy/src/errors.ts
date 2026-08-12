@@ -11,7 +11,7 @@ export class BippyInstrumentationError extends BippyError {
 
   constructor(instrumentationName: string, callbackName: string, cause: unknown) {
     super(
-      `Bippy instrumentation "${instrumentationName}" callback "${callbackName}" failed`,
+      `Bippy instrumentation “${instrumentationName}” callback “${callbackName}” failed`,
       cause,
     );
     this.name = "BippyInstrumentationError";
@@ -24,7 +24,7 @@ export class BippyReactDevToolsError extends BippyError {
   readonly callbackName: string;
 
   constructor(callbackName: string, cause: unknown) {
-    super(`React DevTools callback "${callbackName}" failed`, cause);
+    super(`React DevTools callback “${callbackName}” failed`, cause);
     this.name = "BippyReactDevToolsError";
     this.callbackName = callbackName;
   }
@@ -34,7 +34,7 @@ export class BippyHookListenerError extends BippyError {
   readonly listenerName: string;
 
   constructor(listenerName: string, cause: unknown) {
-    super(`Bippy hook listener "${listenerName}" failed`, cause);
+    super(`Bippy hook listener “${listenerName}” failed`, cause);
     this.name = "BippyHookListenerError";
     this.listenerName = listenerName;
   }
@@ -42,7 +42,7 @@ export class BippyHookListenerError extends BippyError {
 
 export class BippyHookInstallationError extends BippyError {
   constructor(cause: unknown) {
-    super("Bippy could not install the React DevTools hook", cause);
+    super("Bippy couldn’t install the React DevTools hook", cause);
     this.name = "BippyHookInstallationError";
   }
 }

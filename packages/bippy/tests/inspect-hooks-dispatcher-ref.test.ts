@@ -23,7 +23,7 @@ describe("getFiberHooks dispatcher discovery", () => {
   it("throws when no react renderer is registered", () => {
     const fiber = createFakeFiber(() => null);
     expect(() => getFiberHooks(fiber)).toThrowError(
-      "No React renderer found. Make sure React is loaded and bippy's hook is installed.",
+      "Bippy couldn’t find a React renderer. Load React and install Bippy’s hook.",
     );
   });
 

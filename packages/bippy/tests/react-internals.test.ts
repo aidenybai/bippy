@@ -23,6 +23,7 @@ it("selects React work tags by their version baseline", () => {
   expect(getReactWorkTags("18.3.1")).toBe(latestWorkTags);
   expect(getReactWorkTags("19.2.0-canary")).toBe(latestWorkTags);
   expect(getReactWorkTags("invalid")).toBe(latestWorkTags);
+  expect(getReactWorkTags()).toBe(latestWorkTags);
 });
 
 it("preserves AOT literal types for known React work-tag baselines", () => {
@@ -49,6 +50,7 @@ it("prefers the renderer reconciler version", () => {
   expect(getReactWorkTagsForRenderer({ ...rendererVersion, reconcilerVersion: "not-semver" })).toBe(
     getReactWorkTags("17.0.0-alpha"),
   );
+  expect(getReactWorkTagsForRenderer()).toBe(getReactWorkTags());
 });
 
 it("retains old renderer work tags after a Fiber is detached", () => {

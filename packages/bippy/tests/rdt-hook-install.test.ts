@@ -51,7 +51,7 @@ it("checkDCE should schedule an error for badly built react", () => {
   vi.useFakeTimers();
   const productionMarkedFunction = () => "^_^";
   rdtHook.checkDCE(productionMarkedFunction);
-  expect(() => vi.runAllTimers()).toThrow(/dead code/);
+  expect(() => vi.runAllTimers()).toThrow(/dead-code/);
   rdtHook.checkDCE(() => "fine");
   expect(() => vi.runAllTimers()).not.toThrow();
   rdtHook.checkDCE(null);

@@ -77,7 +77,7 @@ let currentThenableIndex = 0;
 let currentThenableState: unknown[] | null = null;
 
 const SuspenseException: unknown = new Error(
-  "Suspense Exception: This is not a real error! It's an implementation detail of `use` to interrupt the current render.",
+  "Suspense interrupted this render. This error is an internal implementation detail of `use`.",
 );
 
 const parseErrorStack = (error: Error): StackFrame[] =>
@@ -110,7 +110,7 @@ const isForwardRefRenderType = (value: unknown): value is ForwardRefRenderType =
 const readContext = (context: InspectableReactContext): unknown => {
   if (currentFiber === null) return context._currentValue;
   if (currentContextDependency === null) {
-    throw new BippyHookInspectionError("Context reads do not line up with context dependencies.");
+    throw new BippyHookInspectionError("Context reads don’t match context dependencies.");
   }
   if (Object.hasOwn(currentContextDependency, "memoizedValue")) {
     const value = currentContextDependency.memoizedValue;
@@ -186,7 +186,7 @@ const dispatcherUse = (usable: unknown): unknown => {
       return value;
     }
   }
-  throw new BippyHookInspectionError("An unsupported type was passed to use(): " + String(usable));
+  throw new BippyHookInspectionError("use() received an unsupported value: " + String(usable));
 };
 
 const dispatcherUseContext = (context: InspectableReactContext): unknown => {
@@ -442,7 +442,9 @@ const dispatcherProxy =
     : new Proxy(dispatcher, {
         get(target, propertyName: string) {
           if (Object.hasOwn(target, propertyName)) return Reflect.get(target, propertyName);
-          throw new BippyUnsupportedHookError("Missing method in Dispatcher: " + propertyName);
+          throw new BippyUnsupportedHookError(
+            "The React dispatcher is missing method " + propertyName,
+          );
         },
       });
 
@@ -742,7 +744,7 @@ const restoreContexts = (contextMap: Map<ReactContext<unknown>, unknown>): void 
 const handleRenderFunctionError = (error: unknown): void => {
   if (error === SuspenseException) return;
   if (error instanceof BippyUnsupportedHookError) throw error;
-  throw new BippyHookRenderError("Error rendering inspected component", error);
+  throw new BippyHookRenderError("Bippy couldn’t render the inspected component", error);
 };
 
 const resolveDefaultProps = (
@@ -815,7 +817,7 @@ const requireDispatcherRef = (): RendererDispatcherRef => {
   const dispatcherRef = getDispatcherRef();
   if (!dispatcherRef) {
     throw new BippyHookInspectionError(
-      "No React renderer found. Make sure React is loaded and bippy's hook is installed.",
+      "Bippy couldn’t find a React renderer. Load React and install Bippy’s hook.",
     );
   }
   return dispatcherRef;
@@ -838,7 +840,7 @@ const resolveContextDependency = (fiber: Fiber): void => {
     const firstContext = isObjectRecord(contextDependencies) ? contextDependencies.first : null;
     currentContextDependency = isContextDependency(firstContext) ? firstContext : null;
   } else {
-    throw new BippyHookInspectionError("Unsupported React version.");
+    throw new BippyHookInspectionError("Bippy doesn’t support this React version.");
   }
 };
 
@@ -851,9 +853,7 @@ export const getFiberHooks = (fiber: Fiber): HooksTree => {
     fiber.tag !== workTags.SimpleMemoComponent &&
     fiber.tag !== workTags.ForwardRef
   ) {
-    throw new BippyHookInspectionError(
-      "Unknown Fiber. Needs to be a function component to inspect hooks.",
-    );
+    throw new BippyHookInspectionError("Hook inspection requires a function component Fiber.");
   }
 
   getPrimitiveStackCache();

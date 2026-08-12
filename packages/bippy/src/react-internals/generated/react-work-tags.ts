@@ -254,6 +254,7 @@ const reactWorkTagsByVersion = defineReactWorkTags({
 export type ReactWorkTagVersion = keyof typeof reactWorkTagsByVersion;
 
 export interface GetReactWorkTags {
+  (): Readonly<ReactWorkTagMap>;
   <Version extends ReactWorkTagVersion>(
     reactVersion: Version,
   ): Readonly<(typeof reactWorkTagsByVersion)[Version]>;
@@ -302,10 +303,13 @@ const reactWorkTagRanges: ReactWorkTagRange[] = [
   },
 ];
 
-export const getReactWorkTags: GetReactWorkTags = (reactVersion: string) => {
+const defaultReactWorkTags = reactWorkTagsByVersion["17.0.2"];
+
+export const getReactWorkTags: GetReactWorkTags = (reactVersion?: string) => {
+  if (reactVersion === undefined) return defaultReactWorkTags;
   for (const range of reactWorkTagRanges) {
     const comparison = compareSemver(reactVersion, range.minimumVersion);
-    if (comparison === null) return reactWorkTagsByVersion["17.0.2"];
+    if (comparison === null) return defaultReactWorkTags;
     if (comparison === 1 || (comparison === 0 && !range.isMinimumExcluded)) {
       return range.workTags;
     }

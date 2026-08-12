@@ -18,7 +18,7 @@ export type {
 } from "./generated/react-work-tags.js";
 export * from "./types.js";
 
-const defaultReactWorkTags = getReactWorkTags("");
+const defaultReactWorkTags = getReactWorkTags();
 const fiberReactWorkTags = new WeakMap<Fiber, Readonly<ReactWorkTagMap>>();
 
 export const getReactWorkTagsForRenderer = (
@@ -28,7 +28,7 @@ export const getReactWorkTagsForRenderer = (
   if (reconcilerVersion && compareSemver(reconcilerVersion, reconcilerVersion) === 0) {
     return getReactWorkTags(reconcilerVersion);
   }
-  return getReactWorkTags(renderer?.version ?? "");
+  return renderer?.version ? getReactWorkTags(renderer.version) : defaultReactWorkTags;
 };
 
 export const setReactWorkTagsForFiber = (fiber: Fiber, renderer?: ReactRenderer): void => {
