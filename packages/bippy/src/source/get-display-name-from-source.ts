@@ -4,6 +4,25 @@ import { getRawParentStack } from "./owner-stack.js";
 import { getSourceFromSourceMap, getSourceMap } from "./symbolication.js";
 import { StackFrame } from "./parse-stack.js";
 
+const COMPONENT_DECLARATION_PATTERNS = [
+  /(?:^|export\s+)(?:const|let|var)\s+(\w+)\s*=/,
+  /(?:^|export\s+)function\s+(\w+)/,
+  /(?:^|export\s+)class\s+(\w+)/,
+];
+
+const findComponentDeclarationOnLine = (line: string): string | null => {
+  for (const pattern of COMPONENT_DECLARATION_PATTERNS) {
+    const match = line.match(pattern);
+    if (match?.[1]) return match[1];
+  }
+  return null;
+};
+
+const MAX_DECLARATION_LINE_DISTANCE = 5;
+
+// the frame points inside the component, so the nearest declaration wins;
+// searching by pattern over the whole window instead would let an adjacent
+// component's declaration shadow the right one
 const extractComponentNameFromSource = (
   sourceContent: string,
   lineNumber: number,
@@ -15,27 +34,16 @@ const extractComponentNameFromSource = (
     return null;
   }
 
-  const startLine = Math.max(0, targetLineIndex - 5);
-  const endLine = Math.min(lines.length, targetLineIndex + 5);
-  const contextLines = lines.slice(startLine, endLine).join("\n");
-
-  const arrowFunctionPattern = /(?:^|export\s+)(?:const|let|var)\s+(\w+)\s*=/m;
-  const functionPattern = /(?:^|export\s+)function\s+(\w+)/m;
-  const classPattern = /(?:^|export\s+)class\s+(\w+)/m;
-
-  const arrowMatch = contextLines.match(arrowFunctionPattern);
-  if (arrowMatch?.[1]) {
-    return arrowMatch[1];
-  }
-
-  const functionMatch = contextLines.match(functionPattern);
-  if (functionMatch?.[1]) {
-    return functionMatch[1];
-  }
-
-  const classMatch = contextLines.match(classPattern);
-  if (classMatch?.[1]) {
-    return classMatch[1];
+  for (let lineDistance = 0; lineDistance <= MAX_DECLARATION_LINE_DISTANCE; lineDistance++) {
+    const lineIndexes =
+      lineDistance === 0
+        ? [targetLineIndex]
+        : [targetLineIndex - lineDistance, targetLineIndex + lineDistance];
+    for (const lineIndex of lineIndexes) {
+      if (lineIndex < 0 || lineIndex >= lines.length) continue;
+      const declarationName = findComponentDeclarationOnLine(lines[lineIndex]);
+      if (declarationName) return declarationName;
+    }
   }
 
   return null;
