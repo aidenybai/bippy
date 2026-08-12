@@ -411,7 +411,7 @@ export const getFallbackParentStack = (thisFiber: Fiber): string => {
     return componentStack;
   } catch (error) {
     if (error instanceof Error) {
-      return `\nError generating stack: ${error.message}\n${error.stack}`;
+      return `\nBippy couldn’t generate the stack: ${error.message}\n${error.stack}`;
     }
     return "";
   }

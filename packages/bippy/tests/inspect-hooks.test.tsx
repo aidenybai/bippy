@@ -232,7 +232,7 @@ describe("getFiberHooks", () => {
     render(<StateComponent />);
 
     expect(() => getFiberHooks(fiber!)).toThrow(
-      "Unknown Fiber. Needs to be a function component to inspect hooks.",
+      "Hook inspection requires a function component Fiber.",
     );
   });
 
@@ -577,7 +577,7 @@ describe("getFiberHooks additional hook types", () => {
       expect(() => getFiberHooks(fiber!)).toThrowError(
         expect.objectContaining({
           name: "BippyHookRenderError",
-          message: "Error rendering inspected component",
+          message: "Bippy couldn’t render the inspected component",
         }),
       );
     } finally {

@@ -426,7 +426,9 @@ describe("dispatcher-only hooks", () => {
       return null;
     };
     const fiber = createInspectableFiber({ type: BogusHookComponent });
-    expect(() => getFiberHooks(fiber)).toThrowError("Missing method in Dispatcher: useBogusHook");
+    expect(() => getFiberHooks(fiber)).toThrowError(
+      "The React dispatcher is missing method useBogusHook",
+    );
   });
 });
 
@@ -634,6 +636,6 @@ describe("resolveContextDependency version support", () => {
 
   it("throws for unsupported react versions", () => {
     const fiber = createInspectableFiber({ type: NoopComponent }, {});
-    expect(() => getFiberHooks(fiber)).toThrowError("Unsupported React version.");
+    expect(() => getFiberHooks(fiber)).toThrowError("Bippy doesn’t support this React version.");
   });
 });

@@ -223,57 +223,69 @@ const getSourceMapUrl = (url: string, content: string): null | string => {
   return resolveUrl(sourceMapUrl, url);
 };
 
-const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
-
-const isStringArray = (value: unknown): value is string[] =>
-  Array.isArray(value) && value.every((entry) => typeof entry === "string");
-
-const isSourcesContent = (value: unknown): value is Array<string | null> =>
-  Array.isArray(value) && value.every((entry) => typeof entry === "string" || entry === null);
-
-const isOptionalNumberArray = (value: unknown): value is number[] | undefined =>
-  value === undefined ||
-  (Array.isArray(value) && value.every((entry) => Number.isInteger(entry) && entry >= 0));
-
 const isStandardSourceMap = (value: unknown): value is StandardSourceMap => {
-  if (!isObjectRecord(value)) return false;
+  if (typeof value !== "object" || value === null) return false;
+  const version = Reflect.get(value, "version");
+  const mappings = Reflect.get(value, "mappings");
+  const file = Reflect.get(value, "file");
+  const names = Reflect.get(value, "names");
+  const sourceRoot = Reflect.get(value, "sourceRoot");
+  const sources = Reflect.get(value, "sources");
+  const sourcesContent = Reflect.get(value, "sourcesContent");
+  const ignoreList = Reflect.get(value, "ignoreList");
+  const googleIgnoreList = Reflect.get(value, "x_google_ignoreList");
   if (
-    value.version !== 3 ||
-    typeof value.mappings !== "string" ||
-    (value.file !== undefined && typeof value.file !== "string") ||
-    (value.names !== undefined && !isStringArray(value.names)) ||
-    (value.sourceRoot !== undefined && typeof value.sourceRoot !== "string") ||
-    (value.sourcesContent !== undefined && !isSourcesContent(value.sourcesContent)) ||
-    !isOptionalNumberArray(value.ignoreList) ||
-    !isOptionalNumberArray(value.x_google_ignoreList)
+    version !== 3 ||
+    typeof mappings !== "string" ||
+    (file !== undefined && typeof file !== "string") ||
+    (names !== undefined &&
+      (!Array.isArray(names) || names.some((entry) => typeof entry !== "string"))) ||
+    (sourceRoot !== undefined && typeof sourceRoot !== "string") ||
+    (sourcesContent !== undefined &&
+      (!Array.isArray(sourcesContent) ||
+        sourcesContent.some((entry) => typeof entry !== "string" && entry !== null))) ||
+    (ignoreList !== undefined &&
+      (!Array.isArray(ignoreList) ||
+        ignoreList.some((entry) => !Number.isInteger(entry) || entry < 0))) ||
+    (googleIgnoreList !== undefined &&
+      (!Array.isArray(googleIgnoreList) ||
+        googleIgnoreList.some((entry) => !Number.isInteger(entry) || entry < 0)))
   ) {
     return false;
   }
-  if (!isStringArray(value.sources)) return false;
-  if (value.sourcesContent && value.sourcesContent.length !== value.sources.length) return false;
-  const sourceCount = value.sources.length;
-  return [...(value.ignoreList ?? []), ...(value.x_google_ignoreList ?? [])].every(
+  if (!Array.isArray(sources) || sources.some((entry) => typeof entry !== "string")) return false;
+  if (sourcesContent && sourcesContent.length !== sources.length) return false;
+  const sourceCount = sources.length;
+  return [...(ignoreList ?? []), ...(googleIgnoreList ?? [])].every(
     (sourceIndex) => sourceIndex < sourceCount,
   );
 };
 
 const isIndexSourceMap = (value: unknown): value is IndexSourceMap => {
-  if (!isObjectRecord(value) || value.version !== 3 || !Array.isArray(value.sections)) {
+  if (typeof value !== "object" || value === null) return false;
+  const version = Reflect.get(value, "version");
+  const sections = Reflect.get(value, "sections");
+  if (version !== 3 || !Array.isArray(sections)) {
     return false;
   }
-  return value.sections.every((section) => {
-    if (!isObjectRecord(section) || !isObjectRecord(section.offset)) return false;
-    const hasMap = isStandardSourceMap(section.map);
-    const hasUrl = typeof section.url === "string" && section.url.length > 0;
+  return sections.every((section: unknown) => {
+    if (typeof section !== "object" || section === null) return false;
+    const map = Reflect.get(section, "map");
+    const url = Reflect.get(section, "url");
+    const offset = Reflect.get(section, "offset");
+    if (typeof offset !== "object" || offset === null) return false;
+    const offsetColumn = Reflect.get(offset, "column");
+    const offsetLine = Reflect.get(offset, "line");
+    const hasMap = isStandardSourceMap(map);
+    const hasUrl = typeof url === "string" && url.length > 0;
     return (
       hasMap !== hasUrl &&
-      typeof section.offset.column === "number" &&
-      Number.isInteger(section.offset.column) &&
-      section.offset.column >= 0 &&
-      typeof section.offset.line === "number" &&
-      Number.isInteger(section.offset.line) &&
-      section.offset.line >= 0
+      typeof offsetColumn === "number" &&
+      Number.isInteger(offsetColumn) &&
+      offsetColumn >= 0 &&
+      typeof offsetLine === "number" &&
+      Number.isInteger(offsetLine) &&
+      offsetLine >= 0
     );
   });
 };

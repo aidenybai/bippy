@@ -177,7 +177,9 @@ const validateReactWorkTagVersionRanges = (versionRanges: ReactWorkTagVersionRan
     } else {
       const minimumVersion = versionRange.minimumVersion;
       if (!minimumVersion) {
-        throw new Error(`React work-tag range ${versionRange.version} is missing its minimum`);
+        throw new Error(
+          `React work-tag range ${versionRange.version} is missing its minimum version`,
+        );
       }
       const previousRange = versionRanges[rangeIndex - 1];
       const previousMinimumVersion = previousRange?.minimumVersion;
@@ -203,7 +205,7 @@ const validateReactWorkTagVersionRanges = (versionRanges: ReactWorkTagVersionRan
         (nextBoundaryComparison === 0 && nextRange.isMinimumExcluded !== true)
       ) {
         throw new Error(
-          `React work-tag version ${versionRange.version} overlaps the following range`,
+          `React work-tag version ${versionRange.version} overlaps the range starting at React ${nextRange.minimumVersion}`,
         );
       }
     }
@@ -251,7 +253,7 @@ const validateWorkTags = (
     )
   ) {
     throw new Error(
-      `react-devtools-core added a work-tag range after React ${latestBaseline.version}; add its version boundary before regenerating React internals`,
+      `react-devtools-core added a work-tag range after React ${latestBaseline.version}. Add its version boundary before regenerating React internals.`,
     );
   }
   return workTagNames;
@@ -334,7 +336,7 @@ const renderGeneratedModule = (
   const firstBaseline = baselines[0];
   const latestBaseline = baselines[baselines.length - 1];
   if (!firstBaseline || !latestBaseline) {
-    throw new Error("Cannot render React internals without work-tag tables");
+    throw new Error("React internals generation requires work-tag tables");
   }
   const workTagRanges = baselines
     .filter((baseline) => baseline.minimumVersion !== undefined)
@@ -375,6 +377,7 @@ const renderGeneratedModule = (
     "export type ReactWorkTagVersion = keyof typeof reactWorkTagsByVersion;",
     "",
     "export interface GetReactWorkTags {",
+    "  (): Readonly<ReactWorkTagMap>;",
     "  <Version extends ReactWorkTagVersion>(",
     "    reactVersion: Version,",
     "  ): Readonly<(typeof reactWorkTagsByVersion)[Version]>;",
@@ -404,10 +407,13 @@ const renderGeneratedModule = (
     ...workTagRanges,
     "];",
     "",
-    "export const getReactWorkTags: GetReactWorkTags = (reactVersion: string) => {",
+    `const defaultReactWorkTags = reactWorkTagsByVersion[${JSON.stringify(latestBaseline.version)}];`,
+    "",
+    "export const getReactWorkTags: GetReactWorkTags = (reactVersion?: string) => {",
+    "  if (reactVersion === undefined) return defaultReactWorkTags;",
     "  for (const range of reactWorkTagRanges) {",
     "    const comparison = compareSemver(reactVersion, range.minimumVersion);",
-    `    if (comparison === null) return reactWorkTagsByVersion[${JSON.stringify(latestBaseline.version)}];`,
+    "    if (comparison === null) return defaultReactWorkTags;",
     "    if (comparison === 1 || (comparison === 0 && !range.isMinimumExcluded)) {",
     "      return range.workTags;",
     "    }",

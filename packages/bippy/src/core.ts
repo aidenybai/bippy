@@ -12,8 +12,6 @@ import type {
   ReactRenderer,
 } from "./react-internals/index.js";
 
-import { BippyInstrumentationError, BippyReactDevToolsError, runWithBippyError } from "./errors.js";
-
 import {
   _onActiveListeners,
   BIPPY_INSTRUMENTATION_STRING,
@@ -38,19 +36,11 @@ export { getReactWorkTags, ReactSymbols } from "./react-internals/index.js";
 export type { ReactWorkTagMap, ReactWorkTagVersion } from "./react-internals/index.js";
 export {
   BippyError,
-  BippyHookInstallationError,
   BippyHookInspectionError,
-  BippyHookListenerError,
   BippyHookRenderError,
-  BippyInstrumentationError,
-  BippyReactBuildError,
-  BippyReactDevToolsError,
   BippySourceMapError,
   BippyUnsupportedHookError,
 } from "./errors.js";
-
-const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
 
 const isComponentType = (value: unknown): value is React.ComponentType<unknown> =>
   typeof value === "function";
@@ -119,7 +109,10 @@ export const isValidFiber = (fiber: unknown): fiber is Fiber =>
   "flags" in fiber;
 
 const isFiberRoot = (fiberRoot: unknown): fiberRoot is FiberRoot =>
-  isObjectRecord(fiberRoot) && isValidFiber(fiberRoot.current);
+  typeof fiberRoot === "object" &&
+  fiberRoot !== null &&
+  "current" in fiberRoot &&
+  isValidFiber(fiberRoot.current);
 
 /**
  * Returns `true` if fiber is a host fiber. Host fibers are DOM nodes in react-dom, `View` in react-native, etc.
@@ -530,8 +523,8 @@ export const hasMemoCache = (fiber: Fiber): boolean => {
  */
 export const getType = (type: unknown): null | React.ComponentType<unknown> => {
   if (isComponentType(type)) return type;
-  if (!isObjectRecord(type)) return null;
-  return getType(type.type ?? type.render);
+  if (typeof type !== "object" || type === null) return null;
+  return getType(Reflect.get(type, "type") ?? Reflect.get(type, "render"));
 };
 
 /**
@@ -1036,21 +1029,6 @@ interface InstrumentationSubscription {
 
 const instrumentationSubscriptions = new Set<InstrumentationSubscription>();
 
-const runInstrumentationCallback = (
-  instrumentationName: string,
-  callbackName: string,
-  callback: () => unknown,
-): void => {
-  runWithBippyError(
-    callback,
-    (cause) => new BippyInstrumentationError(instrumentationName, callbackName, cause),
-  );
-};
-
-const runReactDevToolsCallback = (callbackName: string, callback: () => unknown): void => {
-  runWithBippyError(callback, (cause) => new BippyReactDevToolsError(callbackName, cause));
-};
-
 interface HookDispatchers {
   onCommitFiberRoot: ReactDevToolsGlobalHook["onCommitFiberRoot"];
   onCommitFiberUnmount: ReactDevToolsGlobalHook["onCommitFiberUnmount"];
@@ -1084,9 +1062,7 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
       didError,
     ) => {
       if (prevOnCommitFiberRoot) {
-        runReactDevToolsCallback("onCommitFiberRoot", () =>
-          prevOnCommitFiberRoot.call(rdtHook, rendererID, root, priority, didError),
-        );
+        prevOnCommitFiberRoot.call(rdtHook, rendererID, root, priority, didError);
       }
       if (hookDispatchers.get(rdtHook)?.onCommitFiberRoot !== dispatchCommitFiberRoot) return;
       setReactWorkTagsForFiber(root.current, rdtHook.renderers.get(rendererID));
@@ -1104,11 +1080,7 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
       }
       for (const { options } of instrumentationSubscriptions) {
         if (options.onCommitFiberRoot) {
-          runInstrumentationCallback(
-            options.name ?? BIPPY_INSTRUMENTATION_STRING,
-            "onCommitFiberRoot",
-            () => options.onCommitFiberRoot?.(rendererID, root, priority, didError),
-          );
+          options.onCommitFiberRoot(rendererID, root, priority, didError);
         }
       }
     };
@@ -1127,20 +1099,14 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
     ) => {
       setReactWorkTagsForFiber(fiber, rdtHook.renderers.get(rendererID));
       if (prevOnCommitFiberUnmount) {
-        runReactDevToolsCallback("onCommitFiberUnmount", () =>
-          prevOnCommitFiberUnmount.call(rdtHook, rendererID, fiber),
-        );
+        prevOnCommitFiberUnmount.call(rdtHook, rendererID, fiber);
       }
       if (hookDispatchers.get(rdtHook)?.onCommitFiberUnmount !== dispatchCommitFiberUnmount) {
         return;
       }
       for (const { options } of instrumentationSubscriptions) {
         if (options.onCommitFiberUnmount) {
-          runInstrumentationCallback(
-            options.name ?? BIPPY_INSTRUMENTATION_STRING,
-            "onCommitFiberUnmount",
-            () => options.onCommitFiberUnmount?.(rendererID, fiber),
-          );
+          options.onCommitFiberUnmount(rendererID, fiber);
         }
       }
     };
@@ -1158,20 +1124,14 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
       root,
     ) => {
       if (prevOnPostCommitFiberRoot) {
-        runReactDevToolsCallback("onPostCommitFiberRoot", () =>
-          prevOnPostCommitFiberRoot.call(rdtHook, rendererID, root),
-        );
+        prevOnPostCommitFiberRoot.call(rdtHook, rendererID, root);
       }
       if (hookDispatchers.get(rdtHook)?.onPostCommitFiberRoot !== dispatchPostCommitFiberRoot) {
         return;
       }
       for (const { options } of instrumentationSubscriptions) {
         if (options.onPostCommitFiberRoot) {
-          runInstrumentationCallback(
-            options.name ?? BIPPY_INSTRUMENTATION_STRING,
-            "onPostCommitFiberRoot",
-            () => options.onPostCommitFiberRoot?.(rendererID, root),
-          );
+          options.onPostCommitFiberRoot(rendererID, root);
         }
       }
     };
@@ -1190,18 +1150,12 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
       children,
     ) => {
       if (prevOnScheduleFiberRoot) {
-        runReactDevToolsCallback("onScheduleFiberRoot", () =>
-          prevOnScheduleFiberRoot.call(rdtHook, rendererID, root, children),
-        );
+        prevOnScheduleFiberRoot.call(rdtHook, rendererID, root, children);
       }
       if (hookDispatchers.get(rdtHook)?.onScheduleFiberRoot !== dispatchScheduleFiberRoot) return;
       for (const { options } of instrumentationSubscriptions) {
         if (options.onScheduleFiberRoot) {
-          runInstrumentationCallback(
-            options.name ?? BIPPY_INSTRUMENTATION_STRING,
-            "onScheduleFiberRoot",
-            () => options.onScheduleFiberRoot?.(rendererID, root, children),
-          );
+          options.onScheduleFiberRoot(rendererID, root, children);
         }
       }
     };
@@ -1228,16 +1182,7 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
  * unsubscribe();
  */
 export const instrument = (options: InstrumentationOptions): Unsubscribe => {
-  const onActiveListener = options.onActive;
-  const onActive = onActiveListener
-    ? () =>
-        runInstrumentationCallback(
-          options.name ?? BIPPY_INSTRUMENTATION_STRING,
-          "onActive",
-          onActiveListener,
-        )
-    : undefined;
-  const rdtHook = getRDTHook(onActive);
+  const rdtHook = getRDTHook(options.onActive);
 
   if (!didSubscribeToHookReplacements) {
     onRDTHookReplace(setHookEventDispatchers);
@@ -1251,7 +1196,7 @@ export const instrument = (options: InstrumentationOptions): Unsubscribe => {
   instrumentationSubscriptions.add(subscription);
 
   return createUnsubscribe(() => {
-    if (onActive) _onActiveListeners.delete(onActive);
+    if (options.onActive) _onActiveListeners.delete(options.onActive);
     instrumentationSubscriptions.delete(subscription);
   });
 };
@@ -1264,30 +1209,35 @@ const isFiberPropertyKey = (key: string): boolean =>
   key.startsWith("__reactInternalInstance$") ||
   key.startsWith("__reactFiber");
 
-const getLegacyRootFiber = (hostInstance: Record<string, unknown>): Fiber | null => {
-  const reactRootContainer = hostInstance._reactRootContainer;
-  if (!isObjectRecord(reactRootContainer)) return null;
-  const internalRoot = reactRootContainer._internalRoot;
-  if (!isObjectRecord(internalRoot)) return null;
-  const current = internalRoot.current;
-  if (!isObjectRecord(current)) return null;
-  const child = current.child;
+const getLegacyRootFiber = (hostInstance: object): Fiber | null => {
+  const reactRootContainer = Reflect.get(hostInstance, "_reactRootContainer");
+  if (typeof reactRootContainer !== "object" || reactRootContainer === null) return null;
+  const internalRoot = Reflect.get(reactRootContainer, "_internalRoot");
+  if (typeof internalRoot !== "object" || internalRoot === null) return null;
+  const current = Reflect.get(internalRoot, "current");
+  if (typeof current !== "object" || current === null) return null;
+  const child = Reflect.get(current, "child");
   return isValidFiber(child) ? child : null;
 };
 
-const getInternalInstanceHandle = (hostInstance: Record<string, unknown>): Fiber | null => {
+const getInternalInstanceHandle = (hostInstance: object): Fiber | null => {
   const internalInstanceHandle =
-    hostInstance.__internalInstanceHandle ?? hostInstance._internalInstanceHandle;
+    Reflect.get(hostInstance, "__internalInstanceHandle") ??
+    Reflect.get(hostInstance, "_internalInstanceHandle");
   return isValidFiber(internalInstanceHandle) ? internalInstanceHandle : null;
 };
 
 const getPublicHostInstance = (stateNode: unknown): unknown => {
-  if (!isObjectRecord(stateNode)) return stateNode;
-  const canonical = stateNode.canonical;
-  if (isObjectRecord(canonical) && isObjectRecord(canonical.publicInstance)) {
-    return canonical.publicInstance;
+  if (typeof stateNode !== "object" || stateNode === null) return stateNode;
+  const canonical = Reflect.get(stateNode, "canonical");
+  if (typeof canonical === "object" && canonical !== null) {
+    const publicInstance = Reflect.get(canonical, "publicInstance");
+    if (typeof publicInstance === "object" && publicInstance !== null) {
+      return publicInstance;
+    }
   }
-  return typeof stateNode._nativeTag === "number" ? stateNode._nativeTag : stateNode;
+  const nativeTag = Reflect.get(stateNode, "_nativeTag");
+  return typeof nativeTag === "number" ? nativeTag : stateNode;
 };
 
 export const getFiberFromHostInstance = <T>(hostInstance: T): Fiber | null => {
@@ -1301,7 +1251,7 @@ export const getFiberFromHostInstance = <T>(hostInstance: T): Fiber | null => {
     }
   }
 
-  if (isObjectRecord(hostInstance)) {
+  if (typeof hostInstance === "object" && hostInstance !== null) {
     const legacyRootFiber = getLegacyRootFiber(hostInstance);
     if (legacyRootFiber) return legacyRootFiber;
 
@@ -1309,14 +1259,14 @@ export const getFiberFromHostInstance = <T>(hostInstance: T): Fiber | null => {
     if (internalInstanceHandle) return internalInstanceHandle;
 
     for (const knownKey of knownFiberPropertyKeys) {
-      const fiber = hostInstance[knownKey];
+      const fiber = Reflect.get(hostInstance, knownKey);
       if (isValidFiber(fiber)) return fiber;
     }
 
     for (const key of Object.keys(hostInstance)) {
       if (isFiberPropertyKey(key)) {
         knownFiberPropertyKeys.add(key);
-        const fiber = hostInstance[key];
+        const fiber = Reflect.get(hostInstance, key);
         if (isValidFiber(fiber)) return fiber;
       }
     }
@@ -1350,7 +1300,6 @@ export {
   isRealReactDevtools,
   onRendererInject,
   patchRDTHook,
-  safelyInstallRDTHook,
   version,
 } from "./rdt-hook.js";
 export type { Unsubscribe } from "./rdt-hook.js";

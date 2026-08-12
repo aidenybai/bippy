@@ -192,7 +192,7 @@ const unsubscribe = instrument({
 unsubscribe();
 ```
 
-instrumentation, React DevTools, and hook-listener failures propagate synchronously as `BippyInstrumentationError`, `BippyReactDevToolsError`, or `BippyHookListenerError`. each error preserves the original failure in `cause`, and callback dispatch stops at the failure so the caller controls error handling. existing Bippy errors propagate without redundant wrapping. React DevTools hook installation, React build, hook-inspection, and source-map failures use the other exported `BippyError` subclasses.
+instrumentation, React DevTools, and hook-listener failures propagate unchanged. callback dispatch stops at the failure so the caller controls error handling. failures created by bippy, such as unsupported hooks and source-map timeouts, use the exported `BippyError` subclasses.
 
 ### getRDTHook
 

@@ -1,6 +1,5 @@
 // intentionally avoids importing ../index.js so this file controls hook installation
 import { expect, it, vi } from "vite-plus/test";
-import { BippyHookListenerError } from "../src/errors.js";
 import { ReactBuildType } from "../src/react-internals/index.js";
 import {
   _onActiveListeners,
@@ -91,19 +90,21 @@ it("assigning a new hook should merge existing renderers into it", () => {
 });
 
 it("propagates active and renderer-injection listener failures", () => {
+  const activeListenerError = new Error("active listener failure");
   const throwingActiveListener = () => {
-    throw new Error("active listener failure");
+    throw activeListenerError;
   };
-  expect(() => getRDTHook(throwingActiveListener)).toThrow(BippyHookListenerError);
+  expect(() => getRDTHook(throwingActiveListener)).toThrow(activeListenerError);
   _onActiveListeners.delete(throwingActiveListener);
 
   const laterListener = vi.fn();
+  const rendererListenerError = new Error("renderer listener failure");
   const unsubscribeThrowingListener = onRendererInject(() => {
-    throw new Error("renderer listener failure");
+    throw rendererListenerError;
   });
   const unsubscribeLaterListener = onRendererInject(laterListener);
   const renderer = createFakeRenderer();
-  expect(() => getRDTHook().inject(renderer)).toThrow(BippyHookListenerError);
+  expect(() => getRDTHook().inject(renderer)).toThrow(rendererListenerError);
   expect(laterListener).not.toHaveBeenCalled();
   unsubscribeThrowingListener();
   unsubscribeLaterListener();

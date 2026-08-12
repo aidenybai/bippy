@@ -35,7 +35,7 @@ export function Inspector() {
           try {
             console.log(await getSource(latestFiber));
           } catch (error) {
-            console.error("Error symbolicating stack:", error);
+            console.error("Bippy couldn’t symbolicate the stack:", error);
           }
         })();
       }

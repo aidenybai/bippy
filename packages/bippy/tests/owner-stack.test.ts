@@ -384,7 +384,7 @@ describe("getFallbackParentStack", () => {
       },
     });
     const stack = getFallbackParentStack(explodingFiber);
-    expect(stack).toContain("Error generating stack: fiber walk exploded");
+    expect(stack).toContain("Bippy couldn’t generate the stack: fiber walk exploded");
   });
 
   it("returns an empty string for non-error throws while walking", () => {
