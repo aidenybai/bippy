@@ -45,23 +45,10 @@ export {
 const isComponentType = (value: unknown): value is React.ComponentType<unknown> =>
   typeof value === "function";
 
-const getPropertyValue = (value: object, key: PropertyKey): unknown => {
-  let currentValue: object | null = value;
-  while (currentValue) {
-    const descriptor = Object.getOwnPropertyDescriptor(currentValue, key);
-    if (descriptor) {
-      if ("value" in descriptor) return descriptor.value;
-      return descriptor.get?.call(value);
-    }
-    currentValue = Object.getPrototypeOf(currentValue);
-  }
-  return undefined;
-};
-
 const getTypeName = (value: object): string | null => {
-  const displayName = getPropertyValue(value, "displayName");
+  const displayName = "displayName" in value ? value.displayName : null;
   if (typeof displayName === "string" && displayName) return displayName;
-  const name = getPropertyValue(value, "name");
+  const name = "name" in value ? value.name : null;
   return typeof name === "string" && name ? name : null;
 };
 
@@ -75,7 +62,7 @@ export interface FiberTimings {
 }
 
 export interface RenderHandler {
-  <State>(fiber: Fiber, phase: RenderPhase, state?: State): unknown;
+  (fiber: Fiber, phase: RenderPhase): unknown;
 }
 
 interface ValueWrite {
@@ -654,7 +641,6 @@ const updateFiberRecursively = (
   onRender: RenderHandler,
   nextFiber: Fiber,
   prevFiber: Fiber | null,
-  parentFiber: Fiber | null,
 ): void => {
   if (!fiberIdMap.has(nextFiber)) {
     getFiberId(nextFiber);
@@ -693,7 +679,7 @@ const updateFiberRecursively = (
     const prevFallbackChildSet = prevFiber.child?.sibling ?? null;
 
     if (nextFallbackChildSet !== null && prevFallbackChildSet !== null) {
-      updateFiberRecursively(onRender, nextFallbackChildSet, prevFallbackChildSet, nextFiber);
+      updateFiberRecursively(onRender, nextFallbackChildSet, prevFallbackChildSet);
     }
   } else if (prevDidTimeout && !nextDidTimeOut) {
     // Fallback -> Primary:
@@ -732,14 +718,7 @@ const updateFiberRecursively = (
       // Schedule updates and mounts depending on whether alternates exist.
       // We don't track deletions here because they are reported separately.
       if (nextChild.alternate) {
-        const prevChild = nextChild.alternate;
-
-        updateFiberRecursively(
-          onRender,
-          nextChild,
-          prevChild,
-          shouldIncludeInTree ? nextFiber : parentFiber,
-        );
+        updateFiberRecursively(onRender, nextChild, nextChild.alternate);
       } else {
         mountFiberRecursively(onRender, nextChild, false);
       }
@@ -833,7 +812,7 @@ export const traverseRenderedFibers = (root: Fiber | FiberRoot, onRender: Render
     if (!wasMounted && isMounted) {
       mountFiberRecursively(onRender, fiber, false);
     } else if (wasMounted && isMounted) {
-      updateFiberRecursively(onRender, fiber, fiber.alternate, null);
+      updateFiberRecursively(onRender, fiber, fiber.alternate);
     } else if (wasMounted && !isMounted) {
       unmountFiber(onRender, fiber);
     }
@@ -935,9 +914,6 @@ const buildPathsFromValue = (
   basePath: string[] = [],
   ancestors = new WeakSet<object>(),
 ): ValueWrite[] => {
-  if (!isPOJO(maybePOJO)) {
-    return [{ path: basePath, value: maybePOJO }];
-  }
   if (ancestors.has(maybePOJO)) {
     return [{ path: basePath, value: maybePOJO }];
   }

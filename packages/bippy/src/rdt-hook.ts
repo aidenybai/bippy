@@ -118,6 +118,20 @@ const getRendererMap = (rdtHook: ReactDevToolsGlobalHook): Map<number, ReactRend
   return rdtHook.renderers;
 };
 
+const trackInjectedRenderer = (
+  rdtHook: ReactDevToolsGlobalHook,
+  renderers: Map<number, ReactRenderer>,
+  rendererId: number,
+  renderer: ReactRenderer,
+): void => {
+  renderers.set(rendererId, renderer);
+  _renderers.add(renderer);
+  if (!rdtHook._instrumentationIsActive) {
+    rdtHook._instrumentationIsActive = true;
+    notifyActiveListeners();
+  }
+};
+
 export const installRDTHook = (onActive?: ActiveListener): ReactDevToolsGlobalHook => {
   if (onActive) {
     _onActiveListeners.add(onActive);
@@ -131,12 +145,7 @@ export const installRDTHook = (onActive?: ActiveListener): ReactDevToolsGlobalHo
     hasUnsupportedRendererAttached: false,
     inject: (renderer) => {
       const nextRendererId = ++rendererIdCounter;
-      renderers.set(nextRendererId, renderer);
-      _renderers.add(renderer);
-      if (!rdtHook._instrumentationIsActive) {
-        rdtHook._instrumentationIsActive = true;
-        notifyActiveListeners();
-      }
+      trackInjectedRenderer(rdtHook, renderers, nextRendererId, renderer);
       return nextRendererId;
     },
     on: noOp,
@@ -159,12 +168,10 @@ export const installRDTHook = (onActive?: ActiveListener): ReactDevToolsGlobalHo
           const ourRenderers = rdtHook.renderers;
           rdtHook = newHook;
           const nextRenderers = getRendererMap(rdtHook);
-          if (ourRenderers.size > 0) {
-            ourRenderers.forEach((renderer, rendererId) => {
-              _renderers.add(renderer);
-              nextRenderers.set(rendererId, renderer);
-            });
-          }
+          ourRenderers.forEach((renderer, rendererId) => {
+            _renderers.add(renderer);
+            nextRenderers.set(rendererId, renderer);
+          });
           if (ourRenderers.size > 0 || rdtHookReplaceListeners.size > 0) {
             patchRDTHook(onActive);
           }
@@ -189,14 +196,14 @@ export const installRDTHook = (onActive?: ActiveListener): ReactDevToolsGlobalHo
       };
       objectDefineProperty(window, "hasOwnProperty", {
         configurable: true,
-        value: (...propertyKeys: [PropertyKey]) => {
-          if (!didRunHasOwnPropertyHack && propertyKeys[0] === "__REACT_DEVTOOLS_GLOBAL_HOOK__") {
+        value: (propertyKey: PropertyKey) => {
+          if (!didRunHasOwnPropertyHack && propertyKey === "__REACT_DEVTOOLS_GLOBAL_HOOK__") {
             didRunHasOwnPropertyHack = true;
             restoreWindowHasOwnProperty();
             globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ = undefined;
             return false;
           }
-          return originalWindowHasOwnProperty(...propertyKeys);
+          return originalWindowHasOwnProperty(propertyKey);
         },
         writable: true,
       });
@@ -236,12 +243,7 @@ export const patchRDTHook = (onActive?: ActiveListener): void => {
     const previousInject = rdtHook.inject;
     rdtHook.inject = (renderer) => {
       const rendererId = previousInject.call(rdtHook, renderer);
-      _renderers.add(renderer);
-      renderers.set(rendererId, renderer);
-      if (!rdtHook._instrumentationIsActive) {
-        rdtHook._instrumentationIsActive = true;
-        notifyActiveListeners();
-      }
+      trackInjectedRenderer(rdtHook, renderers, rendererId, renderer);
       return rendererId;
     };
   }

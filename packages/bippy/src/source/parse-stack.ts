@@ -1,5 +1,4 @@
 export interface StackFrame {
-  args?: unknown[];
   columnNumber?: number;
   lineNumber?: number;
   // start of the enclosing function (the definition, not the call site);
@@ -17,7 +16,6 @@ export interface StackFrame {
 
 export interface ParseOptions {
   slice?: number | [number, number];
-  allowEmpty?: boolean;
   includeInElement?: boolean;
 }
 

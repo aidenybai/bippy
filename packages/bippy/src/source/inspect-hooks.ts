@@ -383,15 +383,8 @@ const createActionStateDispatcher =
     const hook = nextHook();
     nextHook();
     nextHook();
-    const stackError = new Error();
     const { value, error } = inspectActionStateHook(hook, initialState);
-    hookLog.push({
-      displayName: null,
-      primitive,
-      stackError,
-      value,
-      dispatcherHookName: primitive,
-    });
+    pushHookLogEntry(primitive, value, primitive);
     if (error !== null) throw error;
     return [value, () => {}, false];
   };
@@ -439,17 +432,12 @@ const dispatcher = {
   useEffectEvent: dispatcherUseEffectEvent,
 };
 
-const dispatcherProxy =
-  typeof Proxy === "undefined"
-    ? dispatcher
-    : new Proxy(dispatcher, {
-        get(target, propertyName: string) {
-          if (Object.hasOwn(target, propertyName)) return Reflect.get(target, propertyName);
-          throw new BippyUnsupportedHookError(
-            "The React dispatcher is missing method " + propertyName,
-          );
-        },
-      });
+const dispatcherProxy = new Proxy(dispatcher, {
+  get(target, propertyName: string) {
+    if (Object.hasOwn(target, propertyName)) return Reflect.get(target, propertyName);
+    throw new BippyUnsupportedHookError("The React dispatcher is missing method " + propertyName);
+  },
+});
 
 const getPrimitiveStackCache = (): Map<string, StackFrame[]> => {
   if (primitiveStackCache !== null) return primitiveStackCache;
@@ -462,7 +450,7 @@ const getPrimitiveStackCache = (): Map<string, StackFrame[]> => {
     dispatcher.useState(null);
     dispatcher.useReducer((state: unknown) => state, null);
     dispatcher.useRef(null);
-    if (typeof dispatcher.useCacheRefresh === "function") dispatcher.useCacheRefresh();
+    dispatcher.useCacheRefresh();
     dispatcher.useLayoutEffect(() => {});
     dispatcher.useInsertionEffect(() => {});
     dispatcher.useEffect(() => {});
@@ -480,19 +468,16 @@ const getPrimitiveStackCache = (): Map<string, StackFrame[]> => {
     dispatcher.useFormState((state: unknown) => state, null);
     dispatcher.useActionState((state: unknown) => state, null);
     dispatcher.useHostTransitionStatus();
-    if (typeof dispatcher.useMemoCache === "function") dispatcher.useMemoCache(0);
-    if (typeof dispatcher.use === "function") {
-      dispatcher.use({ $$typeof: REACT_CONTEXT_TYPE, _currentValue: null });
-      const fulfilledPromise = Promise.resolve(null);
-      Reflect.set(fulfilledPromise, "status", "fulfilled");
-      Reflect.set(fulfilledPromise, "value", null);
-      dispatcher.use(fulfilledPromise);
-      try {
-        dispatcher.use(new Promise<never>(() => {}));
-      } catch {}
-    }
+    dispatcher.use({ $$typeof: REACT_CONTEXT_TYPE, _currentValue: null });
+    const fulfilledPromise = Promise.resolve(null);
+    Reflect.set(fulfilledPromise, "status", "fulfilled");
+    Reflect.set(fulfilledPromise, "value", null);
+    dispatcher.use(fulfilledPromise);
+    try {
+      dispatcher.use(new Promise<never>(() => {}));
+    } catch {}
     dispatcher.useId();
-    if (typeof dispatcher.useEffectEvent === "function") dispatcher.useEffectEvent(() => {});
+    dispatcher.useEffectEvent(() => {});
   } finally {
     capturedHookLog = hookLog;
     hookLog = [];
@@ -831,18 +816,14 @@ const requireDispatcherRef = (): RendererDispatcherRef => {
 };
 
 const resolveContextDependency = (fiber: Fiber): void => {
+  const legacyDependenciesKey = ["dependencies_old", "dependencies_new"].find((key) =>
+    Object.hasOwn(fiber, key),
+  );
   if (Object.hasOwn(fiber, "dependencies")) {
     const dependencies = fiber.dependencies;
     currentContextDependency = dependencies !== null ? dependencies.firstContext : null;
-  } else if (Object.hasOwn(fiber, "dependencies_old")) {
-    const dependencies: unknown = Reflect.get(fiber, "dependencies_old");
-    const firstContext =
-      typeof dependencies === "object" && dependencies !== null && "firstContext" in dependencies
-        ? dependencies.firstContext
-        : null;
-    currentContextDependency = isContextDependency(firstContext) ? firstContext : null;
-  } else if (Object.hasOwn(fiber, "dependencies_new")) {
-    const dependencies: unknown = Reflect.get(fiber, "dependencies_new");
+  } else if (legacyDependenciesKey) {
+    const dependencies: unknown = Reflect.get(fiber, legacyDependenciesKey);
     const firstContext =
       typeof dependencies === "object" && dependencies !== null && "firstContext" in dependencies
         ? dependencies.firstContext

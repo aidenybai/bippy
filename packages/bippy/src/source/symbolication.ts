@@ -1,6 +1,7 @@
 import { decode, SourceMapMappings, type SourceMapSegment } from "@jridgewell/sourcemap-codec";
 
 import { BippySourceMapError } from "../errors.js";
+import { SCHEME_REGEX } from "./constants.js";
 import { StackFrame } from "./parse-stack.js";
 
 export interface DecodedSourceMapSection {
@@ -69,7 +70,6 @@ export interface StandardSourceMap {
   x_google_ignoreList?: number[];
 }
 
-const SCHEME_REGEX = /^[a-zA-Z][a-zA-Z\d+\-.]*:/;
 const INLINE_SOURCEMAP_REGEX = /^data:application\/json(?:;[^,]*)?,/i;
 const SOURCEMAP_REGEX =
   /(?:\/\/[@#][ \t]+sourceMappingURL=([^\s'"]+?)[ \t]*$)|(?:\/\*[@#][ \t]+sourceMappingURL=([^*]+?)[ \t]*(?:\*\/)[ \t]*$)/;
@@ -83,7 +83,7 @@ interface SourceMapResult {
 
 class TransientSourceMapError extends Error {}
 
-const _pendingSourceMapRequests = new Map<string, Promise<SourceMapResult>>();
+const pendingSourceMapRequests = new Map<string, Promise<SourceMapResult>>();
 const pendingSourceMapRequestsByFetch = new WeakMap<
   SourceFetch,
   Map<string, Promise<SourceMapResult>>
@@ -687,27 +687,27 @@ export const getSourceMapUncached = async (
   }
 };
 
-const getSourceMapCache = (fetchFn: SourceFetch | undefined): Map<string, null | SourceMap> => {
-  if (!fetchFn) return sourceMapCache;
-  let cache = sourceMapCachesByFetch.get(fetchFn);
-  if (!cache) {
-    cache = new Map();
-    sourceMapCachesByFetch.set(fetchFn, cache);
+const getPerFetchMap = <Value>(
+  mapsByFetch: WeakMap<SourceFetch, Map<string, Value>>,
+  globalMap: Map<string, Value>,
+  fetchFn: SourceFetch | undefined,
+): Map<string, Value> => {
+  if (!fetchFn) return globalMap;
+  let map = mapsByFetch.get(fetchFn);
+  if (!map) {
+    map = new Map();
+    mapsByFetch.set(fetchFn, map);
   }
-  return cache;
+  return map;
 };
+
+const getSourceMapCache = (fetchFn: SourceFetch | undefined): Map<string, null | SourceMap> =>
+  getPerFetchMap(sourceMapCachesByFetch, sourceMapCache, fetchFn);
 
 const getPendingSourceMapRequests = (
   fetchFn: SourceFetch | undefined,
-): Map<string, Promise<SourceMapResult>> => {
-  if (!fetchFn) return _pendingSourceMapRequests;
-  let pendingRequests = pendingSourceMapRequestsByFetch.get(fetchFn);
-  if (!pendingRequests) {
-    pendingRequests = new Map();
-    pendingSourceMapRequestsByFetch.set(fetchFn, pendingRequests);
-  }
-  return pendingRequests;
-};
+): Map<string, Promise<SourceMapResult>> =>
+  getPerFetchMap(pendingSourceMapRequestsByFetch, pendingSourceMapRequests, fetchFn);
 
 const getSourceMapCacheKey = (file: string, options: SourceMapRequestOptions): string =>
   options.allowUnsafeServerFetch === undefined &&

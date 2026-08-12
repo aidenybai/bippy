@@ -9,6 +9,8 @@ const SEMVER_PATTERN =
   /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 const NUMERIC_IDENTIFIER_PATTERN = /^\d+$/;
 
+export const isSemver = (version: string): boolean => parseSemver(version) !== null;
+
 const parseSemver = (version: string): SemanticVersion | null => {
   const match = SEMVER_PATTERN.exec(version);
   if (!match) return null;

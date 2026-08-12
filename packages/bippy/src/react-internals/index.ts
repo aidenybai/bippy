@@ -1,6 +1,6 @@
 import { getReactWorkTags, ReactFiberFlags } from "./generated/react-work-tags.js";
 import type { ReactWorkTagMap } from "./generated/react-work-tags.js";
-import { compareSemver } from "./semver.js";
+import { isSemver } from "./semver.js";
 import type { Fiber, ReactRenderer } from "./types.js";
 
 export { compareSemver } from "./semver.js";
@@ -25,7 +25,7 @@ export const getReactWorkTagsForRenderer = (
   renderer?: ReactRenderer | null,
 ): Readonly<ReactWorkTagMap> => {
   const reconcilerVersion = renderer?.reconcilerVersion;
-  if (reconcilerVersion && compareSemver(reconcilerVersion, reconcilerVersion) === 0) {
+  if (reconcilerVersion && isSemver(reconcilerVersion)) {
     return getReactWorkTags(reconcilerVersion);
   }
   return renderer?.version ? getReactWorkTags(renderer.version) : defaultReactWorkTags;

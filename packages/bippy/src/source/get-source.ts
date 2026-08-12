@@ -95,8 +95,7 @@ export const getSource = async (
   fetchFn?: (url: string) => Promise<Response>,
 ): Promise<FiberSource | null> => {
   if (hasDebugSource(fiber)) {
-    const debugSource = fiber._debugSource;
-    return debugSource || null;
+    return fiber._debugSource;
   }
 
   const debugStackFrame =
