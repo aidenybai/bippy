@@ -1,5 +1,5 @@
 ---
-"bippy": patch
+"bippy": minor
 ---
 
-Clarify React internals defaults and runtime error messages.
+Clarify React internals defaults and propagate callback failures without wrapping them.

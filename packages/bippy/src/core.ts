@@ -12,8 +12,6 @@ import type {
   ReactRenderer,
 } from "./react-internals/index.js";
 
-import { BippyInstrumentationError, BippyReactDevToolsError, runWithBippyError } from "./errors.js";
-
 import {
   _onActiveListeners,
   BIPPY_INSTRUMENTATION_STRING,
@@ -38,13 +36,9 @@ export { getReactWorkTags, ReactSymbols } from "./react-internals/index.js";
 export type { ReactWorkTagMap, ReactWorkTagVersion } from "./react-internals/index.js";
 export {
   BippyError,
-  BippyHookInstallationError,
   BippyHookInspectionError,
-  BippyHookListenerError,
   BippyHookRenderError,
-  BippyInstrumentationError,
   BippyReactBuildError,
-  BippyReactDevToolsError,
   BippySourceMapError,
   BippyUnsupportedHookError,
 } from "./errors.js";
@@ -1036,21 +1030,6 @@ interface InstrumentationSubscription {
 
 const instrumentationSubscriptions = new Set<InstrumentationSubscription>();
 
-const runInstrumentationCallback = (
-  instrumentationName: string,
-  callbackName: string,
-  callback: () => unknown,
-): void => {
-  runWithBippyError(
-    callback,
-    (cause) => new BippyInstrumentationError(instrumentationName, callbackName, cause),
-  );
-};
-
-const runReactDevToolsCallback = (callbackName: string, callback: () => unknown): void => {
-  runWithBippyError(callback, (cause) => new BippyReactDevToolsError(callbackName, cause));
-};
-
 interface HookDispatchers {
   onCommitFiberRoot: ReactDevToolsGlobalHook["onCommitFiberRoot"];
   onCommitFiberUnmount: ReactDevToolsGlobalHook["onCommitFiberUnmount"];
@@ -1084,9 +1063,7 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
       didError,
     ) => {
       if (prevOnCommitFiberRoot) {
-        runReactDevToolsCallback("onCommitFiberRoot", () =>
-          prevOnCommitFiberRoot.call(rdtHook, rendererID, root, priority, didError),
-        );
+        prevOnCommitFiberRoot.call(rdtHook, rendererID, root, priority, didError);
       }
       if (hookDispatchers.get(rdtHook)?.onCommitFiberRoot !== dispatchCommitFiberRoot) return;
       setReactWorkTagsForFiber(root.current, rdtHook.renderers.get(rendererID));
@@ -1104,11 +1081,7 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
       }
       for (const { options } of instrumentationSubscriptions) {
         if (options.onCommitFiberRoot) {
-          runInstrumentationCallback(
-            options.name ?? BIPPY_INSTRUMENTATION_STRING,
-            "onCommitFiberRoot",
-            () => options.onCommitFiberRoot?.(rendererID, root, priority, didError),
-          );
+          options.onCommitFiberRoot(rendererID, root, priority, didError);
         }
       }
     };
@@ -1127,20 +1100,14 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
     ) => {
       setReactWorkTagsForFiber(fiber, rdtHook.renderers.get(rendererID));
       if (prevOnCommitFiberUnmount) {
-        runReactDevToolsCallback("onCommitFiberUnmount", () =>
-          prevOnCommitFiberUnmount.call(rdtHook, rendererID, fiber),
-        );
+        prevOnCommitFiberUnmount.call(rdtHook, rendererID, fiber);
       }
       if (hookDispatchers.get(rdtHook)?.onCommitFiberUnmount !== dispatchCommitFiberUnmount) {
         return;
       }
       for (const { options } of instrumentationSubscriptions) {
         if (options.onCommitFiberUnmount) {
-          runInstrumentationCallback(
-            options.name ?? BIPPY_INSTRUMENTATION_STRING,
-            "onCommitFiberUnmount",
-            () => options.onCommitFiberUnmount?.(rendererID, fiber),
-          );
+          options.onCommitFiberUnmount(rendererID, fiber);
         }
       }
     };
@@ -1158,20 +1125,14 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
       root,
     ) => {
       if (prevOnPostCommitFiberRoot) {
-        runReactDevToolsCallback("onPostCommitFiberRoot", () =>
-          prevOnPostCommitFiberRoot.call(rdtHook, rendererID, root),
-        );
+        prevOnPostCommitFiberRoot.call(rdtHook, rendererID, root);
       }
       if (hookDispatchers.get(rdtHook)?.onPostCommitFiberRoot !== dispatchPostCommitFiberRoot) {
         return;
       }
       for (const { options } of instrumentationSubscriptions) {
         if (options.onPostCommitFiberRoot) {
-          runInstrumentationCallback(
-            options.name ?? BIPPY_INSTRUMENTATION_STRING,
-            "onPostCommitFiberRoot",
-            () => options.onPostCommitFiberRoot?.(rendererID, root),
-          );
+          options.onPostCommitFiberRoot(rendererID, root);
         }
       }
     };
@@ -1190,18 +1151,12 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
       children,
     ) => {
       if (prevOnScheduleFiberRoot) {
-        runReactDevToolsCallback("onScheduleFiberRoot", () =>
-          prevOnScheduleFiberRoot.call(rdtHook, rendererID, root, children),
-        );
+        prevOnScheduleFiberRoot.call(rdtHook, rendererID, root, children);
       }
       if (hookDispatchers.get(rdtHook)?.onScheduleFiberRoot !== dispatchScheduleFiberRoot) return;
       for (const { options } of instrumentationSubscriptions) {
         if (options.onScheduleFiberRoot) {
-          runInstrumentationCallback(
-            options.name ?? BIPPY_INSTRUMENTATION_STRING,
-            "onScheduleFiberRoot",
-            () => options.onScheduleFiberRoot?.(rendererID, root, children),
-          );
+          options.onScheduleFiberRoot(rendererID, root, children);
         }
       }
     };
@@ -1228,16 +1183,7 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
  * unsubscribe();
  */
 export const instrument = (options: InstrumentationOptions): Unsubscribe => {
-  const onActiveListener = options.onActive;
-  const onActive = onActiveListener
-    ? () =>
-        runInstrumentationCallback(
-          options.name ?? BIPPY_INSTRUMENTATION_STRING,
-          "onActive",
-          onActiveListener,
-        )
-    : undefined;
-  const rdtHook = getRDTHook(onActive);
+  const rdtHook = getRDTHook(options.onActive);
 
   if (!didSubscribeToHookReplacements) {
     onRDTHookReplace(setHookEventDispatchers);
@@ -1251,7 +1197,7 @@ export const instrument = (options: InstrumentationOptions): Unsubscribe => {
   instrumentationSubscriptions.add(subscription);
 
   return createUnsubscribe(() => {
-    if (onActive) _onActiveListeners.delete(onActive);
+    if (options.onActive) _onActiveListeners.delete(options.onActive);
     instrumentationSubscriptions.delete(subscription);
   });
 };
@@ -1355,7 +1301,6 @@ export {
   isRealReactDevtools,
   onRendererInject,
   patchRDTHook,
-  safelyInstallRDTHook,
   version,
 } from "./rdt-hook.js";
 export type { Unsubscribe } from "./rdt-hook.js";

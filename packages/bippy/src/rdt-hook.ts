@@ -1,11 +1,6 @@
 // This module must load before React so renderers can inject into the hook.
 
-import {
-  BippyHookInstallationError,
-  BippyHookListenerError,
-  BippyReactBuildError,
-  runWithBippyError,
-} from "./errors.js";
+import { BippyReactBuildError } from "./errors.js";
 import type { ReactDevToolsGlobalHook, ReactRenderer } from "./react-internals/index.js";
 
 export interface Unsubscribe extends Disposable {
@@ -33,10 +28,6 @@ const noOp = (): void => {};
 
 export const createUnsubscribe = (unsubscribe: () => void): Unsubscribe =>
   Object.assign(unsubscribe, { [Symbol.dispose]: unsubscribe });
-
-const runHookListener = (listenerName: string, callback: () => unknown): void => {
-  runWithBippyError(callback, (cause) => new BippyHookListenerError(listenerName, cause));
-};
 
 const checkDCE = (functionToCheck: unknown): void => {
   try {
@@ -75,19 +66,19 @@ const notifyingInjectByHook = new WeakMap<
 
 const notifyActiveListeners = (): void => {
   for (const listener of _onActiveListeners) {
-    runHookListener("onActive", listener);
+    listener();
   }
 };
 
 const notifyRendererInjectListeners = (renderer: ReactRenderer): void => {
   for (const listener of rendererInjectListeners) {
-    runHookListener("onRendererInject", () => listener(renderer));
+    listener(renderer);
   }
 };
 
 const notifyRDTHookReplaceListeners = (rdtHook: ReactDevToolsGlobalHook): void => {
   for (const listener of rdtHookReplaceListeners) {
-    runHookListener("onRDTHookReplace", () => listener(rdtHook));
+    listener(rdtHook);
   }
 };
 
@@ -256,7 +247,7 @@ export const patchRDTHook = (onActive?: ActiveListener): void => {
     };
   }
   if (!didNotifyActiveListeners && (renderers.size || rdtHook._instrumentationIsActive)) {
-    if (onActive) runHookListener("onActive", onActive);
+    onActive?.();
   }
 };
 
@@ -274,8 +265,4 @@ export const getRDTHook = (onActive?: ActiveListener): ReactDevToolsGlobalHook =
 
   patchRDTHook(onActive);
   return globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ ?? installRDTHook(onActive);
-};
-
-export const safelyInstallRDTHook = (): void => {
-  runWithBippyError(getRDTHook, (cause) => new BippyHookInstallationError(cause));
 };

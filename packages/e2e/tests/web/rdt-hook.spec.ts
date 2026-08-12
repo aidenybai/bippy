@@ -130,14 +130,12 @@ test.describe("installRDTHook", () => {
     expect(result.originalRestored).toBe(true);
   });
 
-  test("safelyInstallRDTHook is idempotent and leaves an installed hook in place", async ({
-    page,
-  }) => {
+  test("getRDTHook is idempotent", async ({ page }) => {
     const result = await page.evaluate(() => {
       const hookBefore = window.__BIPPY__.getRDTHook();
-      window.__BIPPY__.safelyInstallRDTHook();
+      const hookAfter = window.__BIPPY__.getRDTHook();
       return {
-        hookUnchanged: window.__BIPPY__.getRDTHook() === hookBefore,
+        hookUnchanged: hookAfter === hookBefore,
         stillActive: window.__BIPPY__.isInstrumentationActive(),
       };
     });

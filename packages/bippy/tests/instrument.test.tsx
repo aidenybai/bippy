@@ -2,14 +2,7 @@ import "../src/index.js"; // KEEP THIS LINE ON TOP
 
 import { expect, it, vi } from "vite-plus/test";
 import type { FiberRoot, ReactDevToolsGlobalHook } from "../src/react-internals/index.js";
-import {
-  _fiberRoots,
-  BippyInstrumentationError,
-  BippyReactDevToolsError,
-  getRDTHook,
-  instrument,
-  isInstrumentationActive,
-} from "../src/index.js";
+import { _fiberRoots, getRDTHook, instrument, isInstrumentationActive } from "../src/index.js";
 import React from "react";
 import { render } from "@testing-library/react";
 
@@ -153,14 +146,15 @@ it("propagates React DevTools callback failures", () => {
   if (rendererId === undefined) throw new Error("React DOM did not inject its renderer");
   const previousOnCommitFiberRoot = rdtHook.onCommitFiberRoot;
   const laterListener = vi.fn();
+  const devToolsError = new Error("DevTools failure");
   rdtHook.onCommitFiberRoot = () => {
-    throw new Error("DevTools failure");
+    throw devToolsError;
   };
   const unsubscribe = instrument({ onCommitFiberRoot: laterListener });
 
   try {
     expect(() => rdtHook.onCommitFiberRoot(rendererId, committedRoot, undefined, false)).toThrow(
-      BippyReactDevToolsError,
+      devToolsError,
     );
     expect(laterListener).not.toHaveBeenCalled();
   } finally {
@@ -184,17 +178,18 @@ it("propagates instrumentation callback failures and stops dispatch", () => {
   const rendererId = rdtHook.renderers.keys().next().value;
   if (rendererId === undefined) throw new Error("React DOM did not inject its renderer");
   const laterListener = vi.fn();
+  const instrumentationError = new Error("instrumentation failure");
   const unsubscribeThrowingListener = instrument({
     name: "throwing-instrumentation",
     onCommitFiberRoot: () => {
-      throw new Error("instrumentation failure");
+      throw instrumentationError;
     },
   });
   const unsubscribeLaterListener = instrument({ onCommitFiberRoot: laterListener });
 
   try {
     expect(() => rdtHook.onCommitFiberRoot(rendererId, committedRoot, undefined, false)).toThrow(
-      BippyInstrumentationError,
+      instrumentationError,
     );
     expect(laterListener).not.toHaveBeenCalled();
   } finally {
