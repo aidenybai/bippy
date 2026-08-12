@@ -2,83 +2,11 @@ import type { ReactNode } from "react";
 import type ReactReconciler from "react-reconciler";
 import type { HostWorkTag, ReactWorkTag } from "./generated/react-work-tags.js";
 
-export type BundleType = ReactReconciler.BundleType;
-export type Flags = ReactReconciler.Flags;
-export type HookType = ReactReconciler.HookType;
-export type LanePriority = ReactReconciler.LanePriority;
-export type Lanes = ReactReconciler.Lanes;
-export type MutableSource = ReactReconciler.MutableSource;
-export type OpaqueHandle = ReactReconciler.OpaqueHandle;
-export type OpaqueRoot = ReactReconciler.OpaqueRoot;
-export type React$AbstractComponent<
-  Config,
-  Instance = unknown,
-> = ReactReconciler.React$AbstractComponent<Config, Instance>;
-export type RootTag = ReactReconciler.RootTag;
-export type TypeOfMode = ReactReconciler.TypeOfMode;
 export type WorkTag = ReactReconciler.WorkTag | ReactWorkTag;
 
-export interface HostConfig<
-  Type = unknown,
-  HostProps = unknown,
-  Container = unknown,
-  Instance = unknown,
-  TextInstance = unknown,
-  SuspenseInstance = unknown,
-  HydratableInstance = unknown,
-  FormInstance = unknown,
-  PublicInstance = unknown,
-  HostContext = unknown,
-  ChildSet = unknown,
-  TimeoutHandle = unknown,
-  NoTimeout = unknown,
-  TransitionStatus = unknown,
-> extends ReactReconciler.HostConfig<
-  Type,
-  HostProps,
-  Container,
-  Instance,
-  TextInstance,
-  SuspenseInstance,
-  HydratableInstance,
-  FormInstance,
-  PublicInstance,
-  HostContext,
-  ChildSet,
-  TimeoutHandle,
-  NoTimeout,
-  TransitionStatus
-> {}
-
 export interface Source extends ReactReconciler.Source {}
-export interface RefObject extends ReactReconciler.RefObject {}
-export interface Thenable<T> extends ReactReconciler.Thenable<T> {}
 
 export interface ReactContext<T> extends ReactReconciler.ReactContext<T> {}
-
-export interface ReactProviderType<T> extends ReactReconciler.ReactProviderType<T> {}
-export interface ReactProvider<T> extends ReactReconciler.ReactProvider<T> {}
-export interface ReactConsumer<T> extends ReactReconciler.ReactConsumer<T> {}
-export interface ReactPortal extends ReactReconciler.ReactPortal {}
-
-export interface ComponentSelector extends ReactReconciler.ComponentSelector {}
-export interface HasPseudoClassSelector extends ReactReconciler.HasPseudoClassSelector {}
-export interface RoleSelector extends ReactReconciler.RoleSelector {}
-export interface TextSelector extends ReactReconciler.TextSelector {}
-export interface TestNameSelector extends ReactReconciler.TestNameSelector {}
-export type Selector = ReactReconciler.Selector;
-
-export interface DevToolsConfig<
-  Instance = unknown,
-  TextInstance = unknown,
-  RendererInspectionConfig = unknown,
-> extends ReactReconciler.DevToolsConfig<Instance, TextInstance, RendererInspectionConfig> {}
-
-export interface SuspenseHydrationCallbacks<
-  SuspenseInstance = unknown,
-> extends ReactReconciler.SuspenseHydrationCallbacks<SuspenseInstance> {}
-
-export interface TransitionTracingCallbacks extends ReactReconciler.TransitionTracingCallbacks {}
 
 // HACK: React 17 exposes observedBits while React 18+ exposes memoizedValue on context dependencies.
 export interface ContextDependency<T> extends Omit<

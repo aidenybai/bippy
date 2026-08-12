@@ -1,6 +1,6 @@
 import { Fiber } from "../react-internals/index.js";
 import { getDisplayName } from "../core.js";
-import { getParentStack } from "./owner-stack.js";
+import { getRawParentStack } from "./owner-stack.js";
 import { getSourceFromSourceMap, getSourceMap } from "./symbolication.js";
 import { StackFrame } from "./parse-stack.js";
 
@@ -46,8 +46,7 @@ export const getDisplayNameFromSource = async (
   cache = true,
   fetchFn?: (url: string) => Promise<Response>,
 ): Promise<string | null> => {
-  const parentStackFrames = await getParentStack(fiber, cache, fetchFn);
-  const stackFrame = parentStackFrames.filter((innerFrame) => innerFrame.fileName)[0];
+  const stackFrame = getRawParentStack(fiber).find((innerFrame) => innerFrame.fileName);
 
   if (!stackFrame?.fileName) {
     return getDisplayName(fiber.type);

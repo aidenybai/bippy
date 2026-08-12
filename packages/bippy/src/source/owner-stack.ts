@@ -7,6 +7,7 @@ import type {
   ServerComponentInfo,
 } from "../react-internals/index.js";
 import {
+  REACT_STACK_BOTTOM_FRAME_PATTERNS,
   SERVER_FRAME_MARKER,
   SERVER_ENV_PATTERN,
   SERVER_COMPONENT_URL_PREFIXES,
@@ -31,9 +32,6 @@ export const hasDebugStack = (
 
 const isFiberOwner = (owner: Fiber | ServerComponentInfo): owner is Fiber =>
   "tag" in owner && typeof owner.tag === "number";
-
-const getDebugOwner = (fiber: Fiber): Fiber | ServerComponentInfo | undefined =>
-  fiber._debugOwner ?? undefined;
 
 /**
  * Locates a frame inside the fiber's own function body without invoking it:
@@ -322,7 +320,7 @@ const describeNativeComponentFrame = (
     console.warn = previousConsoleWarn;
   }
 
-  const componentName = component ? getDisplayName(component) : "";
+  const componentName = getDisplayName(component);
   const syntheticFrame = componentName ? describeBuiltInComponentFrame(componentName) : "";
   componentFrameCache.set(component, syntheticFrame);
   return syntheticFrame;
@@ -452,8 +450,7 @@ export const formatOwnerStack = (stack: string): string => {
     formattedStack = formattedStack.slice(firstNewlineIndex + 1);
   }
   let bottomFrameIndex = Math.max(
-    formattedStack.indexOf("react_stack_bottom_frame"),
-    formattedStack.indexOf("react-stack-bottom-frame"),
+    ...REACT_STACK_BOTTOM_FRAME_PATTERNS.map((pattern) => formattedStack.indexOf(pattern)),
   );
   if (bottomFrameIndex !== -1) {
     bottomFrameIndex = formattedStack.lastIndexOf("\n", bottomFrameIndex);
@@ -470,11 +467,6 @@ export const formatOwnerStack = (stack: string): string => {
   return formattedStack;
 };
 
-interface DebugStackEntry {
-  componentName: string;
-  stackFrames: StackFrame[];
-}
-
 const isReactServerComponentFrame = (stackFrame: StackFrame): boolean =>
   Boolean(
     stackFrame.functionName && stackFrame.fileName && isServerComponentUrl(stackFrame.fileName),
@@ -486,24 +478,22 @@ const areStackFramesEqual = (firstFrame: StackFrame, secondFrame: StackFrame): b
   firstFrame.columnNumber === secondFrame.columnNumber;
 
 const buildFunctionNameToRscFramesMap = (
-  debugStackEntries: DebugStackEntry[],
+  debugStackFrames: StackFrame[],
 ): Map<string, StackFrame[]> => {
   const functionNameToRscFrames = new Map<string, StackFrame[]>();
 
-  for (const debugStackEntry of debugStackEntries) {
-    for (const stackFrame of debugStackEntry.stackFrames) {
-      if (!isReactServerComponentFrame(stackFrame)) continue;
+  for (const stackFrame of debugStackFrames) {
+    if (!isReactServerComponentFrame(stackFrame)) continue;
 
-      const functionName = stackFrame.functionName!;
-      const framesForFunction = functionNameToRscFrames.get(functionName) ?? [];
-      const isDuplicateFrame = framesForFunction.some((existingFrame) =>
-        areStackFramesEqual(existingFrame, stackFrame),
-      );
+    const functionName = stackFrame.functionName!;
+    const framesForFunction = functionNameToRscFrames.get(functionName) ?? [];
+    const isDuplicateFrame = framesForFunction.some((existingFrame) =>
+      areStackFramesEqual(existingFrame, stackFrame),
+    );
 
-      if (!isDuplicateFrame) {
-        framesForFunction.push(stackFrame);
-        functionNameToRscFrames.set(functionName, framesForFunction);
-      }
+    if (!isDuplicateFrame) {
+      framesForFunction.push(stackFrame);
+      functionNameToRscFrames.set(functionName, framesForFunction);
     }
   }
 
@@ -564,7 +554,7 @@ const getOwnerStackFromDebugStacks = (fiber: Fiber): StackFrame[] => {
   while (owner) {
     if (isFiberOwner(owner)) {
       const ownerFiber: Fiber = owner;
-      owner = getDebugOwner(ownerFiber);
+      owner = ownerFiber._debugOwner;
       if (owner && hasDebugStack(ownerFiber)) {
         const { frames, isTrusted } = parseDebugStack(ownerFiber._debugStack);
         if (isTrusted) {
@@ -588,28 +578,56 @@ const getOwnerStackFromDebugStacks = (fiber: Fiber): StackFrame[] => {
   return ownerStackFrames;
 };
 
-const getDebugStackEntries = (rootFiber: Fiber): DebugStackEntry[] => {
-  const debugStackEntries: DebugStackEntry[] = [];
+const getDebugStackFrames = (rootFiber: Fiber): StackFrame[] => {
+  const debugStackFrames: StackFrame[] = [];
 
   traverseFiber(
     rootFiber,
     (currentFiber) => {
       if (!hasDebugStack(currentFiber)) return;
 
-      const componentName =
-        typeof currentFiber.type !== "string"
-          ? getDisplayName(currentFiber.type) || "<anonymous>"
-          : currentFiber.type;
-
-      debugStackEntries.push({
-        componentName,
-        stackFrames: parseStack(formatOwnerStack(currentFiber._debugStack?.stack)),
-      });
+      const { frames, isTrusted } = parseDebugStack(currentFiber._debugStack);
+      if (isTrusted) {
+        debugStackFrames.push(...frames);
+      }
     },
     true,
   );
 
-  return debugStackEntries;
+  return debugStackFrames;
+};
+
+/**
+ * The unsymbolicated frames behind {@link getParentStack}: bundle-space
+ * locations from re-invoking each component with a throwing dispatcher,
+ * with server frames enriched from debug stacks by name matching.
+ */
+export const getRawParentStack = (fiber: Fiber): StackFrame[] => {
+  const debugStackFrames = getDebugStackFrames(fiber);
+  const fallbackStackFrames = parseStack(getFallbackParentStack(fiber));
+  const functionNameToRscFrames = buildFunctionNameToRscFramesMap(debugStackFrames);
+  const functionNameToUsageIndex = new Map<string, number>();
+
+  const enrichedStackFrames = fallbackStackFrames.map((stackFrame): StackFrame => {
+    const isServerFrame =
+      stackFrame.source !== undefined && SERVER_ENV_PATTERN.test(stackFrame.source);
+
+    if (isServerFrame) {
+      return getEnrichedServerStackFrame(
+        stackFrame,
+        functionNameToRscFrames,
+        functionNameToUsageIndex,
+      );
+    }
+
+    return stackFrame;
+  });
+
+  return enrichedStackFrames.filter((stackFrame, index, frames) => {
+    if (index === 0) return true;
+    const previousFrame = frames[index - 1];
+    return stackFrame.functionName !== previousFrame.functionName;
+  });
 };
 
 /**
@@ -623,38 +641,7 @@ export const getParentStack = async (
   fiber: Fiber,
   shouldCache = true,
   fetchFunction?: (url: string) => Promise<Response>,
-): Promise<StackFrame[]> => {
-  const debugStackEntries = getDebugStackEntries(fiber);
-  const fallbackStackFrames = parseStack(getFallbackParentStack(fiber));
-  const functionNameToRscFrames = buildFunctionNameToRscFramesMap(debugStackEntries);
-  const functionNameToUsageIndex = new Map<string, number>();
-
-  const enrichedStackFrames = fallbackStackFrames.map((stackFrame): StackFrame => {
-    const isServerFrame =
-      (stackFrame.source?.includes(SERVER_FRAME_MARKER) ?? false) ||
-      (stackFrame.source !== null &&
-        stackFrame.source !== undefined &&
-        SERVER_ENV_PATTERN.test(stackFrame.source));
-
-    if (isServerFrame) {
-      return getEnrichedServerStackFrame(
-        stackFrame,
-        functionNameToRscFrames,
-        functionNameToUsageIndex,
-      );
-    }
-
-    return stackFrame;
-  });
-
-  const deduplicatedStackFrames = enrichedStackFrames.filter((stackFrame, index, frames) => {
-    if (index === 0) return true;
-    const previousFrame = frames[index - 1];
-    return stackFrame.functionName !== previousFrame.functionName;
-  });
-
-  return symbolicateStack(deduplicatedStackFrames, shouldCache, fetchFunction);
-};
+): Promise<StackFrame[]> => symbolicateStack(getRawParentStack(fiber), shouldCache, fetchFunction);
 
 // an owner frame is only actionable if it can point an editor somewhere:
 // it needs a file location and must not be ignore-listed bundler/framework code

@@ -13,9 +13,8 @@ import type {
 } from "react-devtools-core";
 import { format } from "vite-plus/fmt";
 import type { Plugin } from "vite-plus";
-import ts from "typescript";
 import { z } from "zod";
-import { compareSemver } from "../src/react-internals/semver.js";
+import { compareSemver, isSemver } from "../src/react-internals/semver.js";
 
 interface ReactInternalsPluginOptions {
   mode: "check" | "generate";
@@ -26,9 +25,7 @@ interface ReactInternalsGenerationOptions extends ReactInternalsPluginOptions {
   reactDevToolsCore?: unknown;
 }
 
-const semanticVersionSchema = z
-  .string()
-  .refine((version) => compareSemver(version, version) === 0, "Expected a valid semantic version");
+const semanticVersionSchema = z.string().refine(isSemver, "Expected a valid semantic version");
 
 const reactBuildTypeSchema: z.ZodType<ReactBuildTypeMap> = z
   .object({
@@ -110,8 +107,10 @@ const requiredReactWorkTags = [
   "Fragment",
   "FunctionComponent",
   "HostComponent",
+  "HostHoistable",
   "HostPortal",
   "HostRoot",
+  "HostSingleton",
   "HostText",
   "LazyComponent",
   "MemoComponent",
@@ -444,46 +443,6 @@ export const createGeneratedReactInternals = async (
     reactDevToolsCore.ReactTypeOfSideEffect,
     reactDevToolsCore.ReactSymbols,
   );
-  const compilerOptions: ts.CompilerOptions = {
-    module: ts.ModuleKind.ESNext,
-    moduleResolution: ts.ModuleResolutionKind.Bundler,
-    noEmit: true,
-    skipLibCheck: true,
-    strict: true,
-    target: ts.ScriptTarget.ESNext,
-  };
-  const defaultCompilerHost = ts.createCompilerHost(compilerOptions);
-  const compilerHost: ts.CompilerHost = {
-    ...defaultCompilerHost,
-    fileExists: (fileName) =>
-      resolve(fileName) === defaultGeneratedModulePath || defaultCompilerHost.fileExists(fileName),
-    getSourceFile: (fileName, languageVersion, onError, shouldCreateNewSourceFile) =>
-      resolve(fileName) === defaultGeneratedModulePath
-        ? ts.createSourceFile(fileName, typescriptModule, languageVersion, true)
-        : defaultCompilerHost.getSourceFile(
-            fileName,
-            languageVersion,
-            onError,
-            shouldCreateNewSourceFile,
-          ),
-    readFile: (fileName) =>
-      resolve(fileName) === defaultGeneratedModulePath
-        ? typescriptModule
-        : defaultCompilerHost.readFile(fileName),
-  };
-  const program = ts.createProgram([defaultGeneratedModulePath], compilerOptions, compilerHost);
-  const errors = ts
-    .getPreEmitDiagnostics(program)
-    .filter((diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error);
-  if (errors.length > 0) {
-    throw new Error(
-      ts.formatDiagnostics(errors, {
-        getCanonicalFileName: (fileName) => fileName,
-        getCurrentDirectory: () => process.cwd(),
-        getNewLine: () => "\n",
-      }),
-    );
-  }
   const formattingResult = await format(defaultGeneratedModulePath, typescriptModule, {
     semi: true,
     singleQuote: false,
