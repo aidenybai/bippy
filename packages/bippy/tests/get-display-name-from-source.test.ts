@@ -178,4 +178,38 @@ describe("getDisplayNameFromSource", () => {
     const result = await getDisplayNameFromSource(fiber, false, createSourceMapFetchFn(rawMap));
     expect(result).toBe("NoPatternComponent");
   });
+
+  it("extracts the declaration closest to the mapped line when several are in range", async () => {
+    const rawMap = createFixedPointRawMap(4, {
+      sourceLines: [
+        "const NeighborComponent = () => null;",
+        "",
+        "export class TargetComponent {",
+        "  render() { return null; }",
+        "}",
+      ],
+    });
+    const fiber = createFakeFiber(
+      latestReactWorkTags.FunctionComponent,
+      createThrowingComponent("MinifiedNested"),
+    );
+    const result = await getDisplayNameFromSource(fiber, false, createSourceMapFetchFn(rawMap));
+    expect(result).toBe("TargetComponent");
+  });
+
+  it("prefers a declaration above the mapped line over one equally far below", async () => {
+    const rawMap = createFixedPointRawMap(2, {
+      sourceLines: [
+        "export function EnclosingComponent() {",
+        "  return null;",
+        "const FollowingComponent = () => null;",
+      ],
+    });
+    const fiber = createFakeFiber(
+      latestReactWorkTags.FunctionComponent,
+      createThrowingComponent("MinifiedEnclosed"),
+    );
+    const result = await getDisplayNameFromSource(fiber, false, createSourceMapFetchFn(rawMap));
+    expect(result).toBe("EnclosingComponent");
+  });
 });
