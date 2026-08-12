@@ -38,7 +38,6 @@ export {
   BippyError,
   BippyHookInspectionError,
   BippyHookRenderError,
-  BippyReactBuildError,
   BippySourceMapError,
   BippyUnsupportedHookError,
 } from "./errors.js";

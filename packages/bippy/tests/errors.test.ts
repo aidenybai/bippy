@@ -3,7 +3,6 @@ import {
   BippyError,
   BippyHookInspectionError,
   BippyHookRenderError,
-  BippyReactBuildError,
   BippySourceMapError,
   BippyUnsupportedHookError,
 } from "../src/errors.js";
@@ -15,7 +14,6 @@ it("creates stable named Bippy errors", () => {
   expect(hookRenderError).toBeInstanceOf(BippyError);
   expect(hookRenderError.name).toBe("BippyHookRenderError");
   expect(hookRenderError.cause).toBe(cause);
-  expect(new BippyReactBuildError("build failure").name).toBe("BippyReactBuildError");
   expect(new BippyHookInspectionError("inspection failure").name).toBe("BippyHookInspectionError");
   expect(new BippyUnsupportedHookError("unsupported hook").name).toBe("BippyUnsupportedHookError");
   expect(new BippySourceMapError("source-map failure").name).toBe("BippySourceMapError");

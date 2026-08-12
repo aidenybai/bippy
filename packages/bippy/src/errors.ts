@@ -5,13 +5,6 @@ export class BippyError extends Error {
   }
 }
 
-export class BippyReactBuildError extends BippyError {
-  constructor(message: string, cause?: unknown) {
-    super(message, cause);
-    this.name = "BippyReactBuildError";
-  }
-}
-
 export class BippyHookInspectionError extends BippyError {
   constructor(message: string, cause?: unknown) {
     super(message, cause);

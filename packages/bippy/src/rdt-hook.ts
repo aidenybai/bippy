@@ -1,6 +1,5 @@
 // This module must load before React so renderers can inject into the hook.
 
-import { BippyReactBuildError } from "./errors.js";
 import type { ReactDevToolsGlobalHook, ReactRenderer } from "./react-internals/index.js";
 
 export interface Unsubscribe extends Disposable {
@@ -32,13 +31,13 @@ export const createUnsubscribe = (unsubscribe: () => void): Unsubscribe =>
 const checkDCE = (functionToCheck: unknown): void => {
   try {
     const code = Function.prototype.toString.call(functionToCheck);
-    if (code.includes("^_^")) {
-      // HACK: React DevTools reports failed dead-code elimination asynchronously.
+    if (code.indexOf("^_^") > -1) {
       setTimeout(() => {
-        throw new BippyReactBuildError(
-          "React is running in production mode without dead-code elimination. " +
-            "Configure a production build: " +
-            "https://reactjs.org/link/perf-use-production-build",
+        throw new Error(
+          "React is running in production mode, but dead code " +
+            "elimination has not been applied. Read how to correctly " +
+            "configure React for production: " +
+            "https://react.dev/link/perf-use-production-build",
         );
       });
     }
