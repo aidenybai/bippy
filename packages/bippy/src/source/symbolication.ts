@@ -223,16 +223,6 @@ const getSourceMapUrl = (url: string, content: string): null | string => {
   return resolveUrl(sourceMapUrl, url);
 };
 
-const isStringArray = (value: unknown): value is string[] =>
-  Array.isArray(value) && value.every((entry) => typeof entry === "string");
-
-const isSourcesContent = (value: unknown): value is Array<string | null> =>
-  Array.isArray(value) && value.every((entry) => typeof entry === "string" || entry === null);
-
-const isOptionalNumberArray = (value: unknown): value is number[] | undefined =>
-  value === undefined ||
-  (Array.isArray(value) && value.every((entry) => Number.isInteger(entry) && entry >= 0));
-
 const isStandardSourceMap = (value: unknown): value is StandardSourceMap => {
   if (typeof value !== "object" || value === null) return false;
   const version = Reflect.get(value, "version");
@@ -248,15 +238,22 @@ const isStandardSourceMap = (value: unknown): value is StandardSourceMap => {
     version !== 3 ||
     typeof mappings !== "string" ||
     (file !== undefined && typeof file !== "string") ||
-    (names !== undefined && !isStringArray(names)) ||
+    (names !== undefined &&
+      (!Array.isArray(names) || names.some((entry) => typeof entry !== "string"))) ||
     (sourceRoot !== undefined && typeof sourceRoot !== "string") ||
-    (sourcesContent !== undefined && !isSourcesContent(sourcesContent)) ||
-    !isOptionalNumberArray(ignoreList) ||
-    !isOptionalNumberArray(googleIgnoreList)
+    (sourcesContent !== undefined &&
+      (!Array.isArray(sourcesContent) ||
+        sourcesContent.some((entry) => typeof entry !== "string" && entry !== null))) ||
+    (ignoreList !== undefined &&
+      (!Array.isArray(ignoreList) ||
+        ignoreList.some((entry) => !Number.isInteger(entry) || entry < 0))) ||
+    (googleIgnoreList !== undefined &&
+      (!Array.isArray(googleIgnoreList) ||
+        googleIgnoreList.some((entry) => !Number.isInteger(entry) || entry < 0)))
   ) {
     return false;
   }
-  if (!isStringArray(sources)) return false;
+  if (!Array.isArray(sources) || sources.some((entry) => typeof entry !== "string")) return false;
   if (sourcesContent && sourcesContent.length !== sources.length) return false;
   const sourceCount = sources.length;
   return [...(ignoreList ?? []), ...(googleIgnoreList ?? [])].every(
