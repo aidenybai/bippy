@@ -34,7 +34,6 @@
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
-  "browser": "dist/index.iife.js",
   "types": "dist/index.d.ts",
   "exports": {
     "./package.json": "./package.json",
@@ -86,7 +85,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "NODE_ENV=production vp pack",
+    "build": "NODE_ENV=production vp pack && tsx scripts/check-react-entry.ts",
     "check:react-internals": "tsx scripts/generate-react-internals.ts --check",
     "coverage": "vp test --coverage",
     "dev": "NODE_ENV=development vp pack --watch",
@@ -122,10 +121,14 @@
     "pixi.js": "^8.19.0",
     "publint": "^0.3.0",
     "react": "19.0.0",
+    "react-17": "npm:react@17.0.2",
+    "react-18": "npm:react@18.3.1",
     "react-babylonjs": "^4.0.2",
     "react-devtools-core": "7.0.1",
     "react-devtools-inline": "^6.0.1",
     "react-dom": "19.0.0",
+    "react-dom-17": "npm:react-dom@17.0.2",
+    "react-dom-18": "npm:react-dom@18.3.1",
     "react-konva": "^19.2.5",
     "react-nil": "^2.0.0",
     "remotion": "^4.0.496",

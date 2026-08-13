@@ -3,8 +3,6 @@ import "../src/index.js"; // KEEP THIS LINE ON TOP
 import { describe, expect, it } from "vite-plus/test";
 import type { Fiber } from "../src/react-internals/index.js";
 import {
-  getNearestHostFiber,
-  getNearestHostFibers,
   instrument,
   isCompositeFiber,
   traverseFiber,
@@ -70,50 +68,6 @@ describe("traverseFiber with portals", () => {
     );
     expect(parentFiber).not.toBeNull();
     expect(parentFiber!.type).toBe(PortalExample);
-
-    document.body.removeChild(portalContainer);
-  });
-
-  it("should find host fibers inside a portal via getNearestHostFibers", () => {
-    const portalContainer = document.createElement("div");
-    document.body.appendChild(portalContainer);
-
-    let rootFiber: Fiber | null = null;
-    instrument({
-      onCommitFiberRoot: (_rendererID, fiberRoot) => {
-        rootFiber = fiberRoot.current;
-      },
-    });
-    render(<PortalExample container={portalContainer} />);
-
-    const portalChildFiber = traverseFiber(rootFiber, (fiber) => fiber.type === PortalChild);
-    expect(portalChildFiber).not.toBeNull();
-
-    const hostFibers = getNearestHostFibers(portalChildFiber!);
-    expect(hostFibers.length).toBeGreaterThan(0);
-    expect(hostFibers[0].type).toBe("span");
-
-    document.body.removeChild(portalContainer);
-  });
-
-  it("should find a host fiber from a portal child via getNearestHostFiber", () => {
-    const portalContainer = document.createElement("div");
-    document.body.appendChild(portalContainer);
-
-    let rootFiber: Fiber | null = null;
-    instrument({
-      onCommitFiberRoot: (_rendererID, fiberRoot) => {
-        rootFiber = fiberRoot.current;
-      },
-    });
-    render(<PortalExample container={portalContainer} />);
-
-    const portalChildFiber = traverseFiber(rootFiber, (fiber) => fiber.type === PortalChild);
-    expect(portalChildFiber).not.toBeNull();
-
-    const hostFiber = getNearestHostFiber(portalChildFiber!);
-    expect(hostFiber).not.toBeNull();
-    expect(hostFiber!.type).toBe("span");
 
     document.body.removeChild(portalContainer);
   });

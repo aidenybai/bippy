@@ -96,3 +96,48 @@ describe("DOM-less renderer injection", () => {
     expect(result.stdout).toContain('"ink"');
   });
 });
+
+describe("providerless useFiber", () => {
+  it("captures the calling fiber with production React", () => {
+    const script = `
+      const { Window } = await import("happy-dom");
+      const browserWindow = new Window();
+      globalThis.window = browserWindow;
+      globalThis.document = browserWindow.document;
+      globalThis.Node = browserWindow.Node;
+      globalThis.HTMLElement = browserWindow.HTMLElement;
+      const Bippy = await import(${JSON.stringify(bippyEntryUrl)});
+      globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__.checkDCE = () => {};
+      const React = await import("react");
+      const { createRoot } = await import("react-dom/client");
+      const { flushSync } = await import("react-dom");
+      let observedFiber;
+      let initialFiber;
+      let stateInitializerCalls = 0;
+      const originalBind = Function.prototype.bind;
+      const Probe = ({ revision }) => {
+        observedFiber = Bippy.useFiber();
+        React.useState(() => ++stateInitializerCalls);
+        return React.createElement("div", null, revision);
+      };
+      const root = createRoot(document.createElement("div"));
+      flushSync(() => root.render(React.createElement(Probe, { revision: 1 })));
+      initialFiber = observedFiber;
+      flushSync(() => root.render(React.createElement(Probe, { revision: 2 })));
+      console.log(JSON.stringify({
+        captured: observedFiber?.type === Probe,
+        latest: observedFiber !== initialFiber && Bippy.getLatestFiber(initialFiber) === observedFiber,
+        stateInitializerCalls,
+        restored: Function.prototype.bind === originalBind,
+      }));
+      root.unmount();
+      process.exit(0);
+    `;
+    const result = runNode(script, { NODE_ENV: "production" });
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain('"captured":true');
+    expect(result.stdout).toContain('"latest":true');
+    expect(result.stdout).toContain('"stateInitializerCalls":1');
+    expect(result.stdout).toContain('"restored":true');
+  });
+});

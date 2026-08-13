@@ -8,6 +8,10 @@ import { launchFixtureApp, readElementText } from "./helpers";
 const ASYNC_RESULT_TIMEOUT_MS = 30_000;
 
 describe("bippy core functions on React Native", () => {
+  it("useFiber returns the calling React Native fiber", async () => {
+    await detoxExpect(element(by.id("result-useFiber"))).toHaveText("true");
+  });
+
   beforeAll(async () => {
     // the fixture renders a result-core-done sentinel row after all core
     // results are computed, so every row below it is already stable
@@ -55,6 +59,10 @@ describe("bippy core functions on React Native", () => {
   });
 
   describe("overrides", () => {
+    it("getRenderer returns the react-native renderer", async () => {
+      await detoxExpect(element(by.id("result-getRenderer"))).toHaveText("true");
+    });
+
     it("the react-native renderer exposes overrideProps to the hook", async () => {
       await detoxExpect(element(by.id("result-renderer-supports-overrideProps"))).toHaveText(
         "true",
@@ -140,35 +148,7 @@ describe("bippy core functions on React Native", () => {
     });
   });
 
-  describe("timings", () => {
-    it("selfTime is a non-negative number", async () => {
-      const selfTime = parseFloat(await readElementText("result-selfTime"));
-      expect(selfTime).toBeGreaterThanOrEqual(0);
-    });
-
-    it("totalTime is a non-negative number", async () => {
-      const totalTime = parseFloat(await readElementText("result-totalTime"));
-      expect(totalTime).toBeGreaterThanOrEqual(0);
-    });
-  });
-
-  describe("fiber stack", () => {
-    it("getFiberStack returns a non-empty stack", async () => {
-      const stackLength = parseInt(await readElementText("result-fiberStack-length"), 10);
-      expect(stackLength).toBeGreaterThan(1);
-    });
-  });
-
   describe("host fiber lookup", () => {
-    it("getNearestHostFiber returns a non-null fiber", async () => {
-      await detoxExpect(element(by.id("result-nearestHostFiber"))).toHaveText("true");
-    });
-
-    it("getNearestHostFibers returns multiple host fibers", async () => {
-      const hostFiberCount = parseInt(await readElementText("result-nearestHostFibers-count"), 10);
-      expect(hostFiberCount).toBeGreaterThan(1);
-    });
-
     it("getFiberFromHostInstance resolves a fiber from a native view ref", async () => {
       await detoxExpect(element(by.id("result-getFiberFromHostInstance"))).toHaveText("true");
     });
@@ -188,18 +168,6 @@ describe("bippy core functions on React Native", () => {
     it("traverseFiber visits multiple fibers", async () => {
       const visitedFiberCount = parseInt(await readElementText("result-traverseFiber-count"), 10);
       expect(visitedFiberCount).toBeGreaterThan(5);
-    });
-
-    it("traverseProps finds expected prop keys", async () => {
-      const propKeys = await readElementText("result-traverseProps-keys");
-      expect(propKeys).toContain("name");
-      expect(propKeys).toContain("count");
-    });
-
-    it("traverseContexts reads the provided context value", async () => {
-      await detoxExpect(element(by.id("result-traverseContexts-value"))).toHaveText(
-        "provided-value",
-      );
     });
 
     it("traverseRenderedFibers visits fibers from the last commit", async () => {
@@ -230,6 +198,10 @@ describe("bippy core functions on React Native", () => {
   });
 
   describe("React Native Skia renderer", () => {
+    it("useFiber returns the calling Skia fiber", async () => {
+      await detoxExpect(element(by.id("result-skia-useFiber"))).toHaveText("true");
+    });
+
     beforeAll(async () => {
       await waitFor(element(by.id("result-skia-done")))
         .toExist()
@@ -268,9 +240,7 @@ describe("bippy core functions on React Native", () => {
     it("distinguishes Skia composite and host fibers", async () => {
       await detoxExpect(element(by.id("result-skia-composite"))).toHaveText("true");
       await detoxExpect(element(by.id("result-skia-composite-is-host"))).toHaveText("false");
-      await detoxExpect(element(by.id("result-skia-nearest-host"))).toHaveText("true");
-      const hostFiberCount = parseInt(await readElementText("result-skia-nearest-host-count"), 10);
-      expect(hostFiberCount).toBeGreaterThanOrEqual(2);
+      await detoxExpect(element(by.id("result-skia-host-found"))).toHaveText("true");
       expect(await readElementText("result-skia-host-display-name")).not.toBe("null");
     });
 
@@ -281,34 +251,19 @@ describe("bippy core functions on React Native", () => {
       await detoxExpect(element(by.id("result-skia-has-alternate"))).toHaveText("true");
       await detoxExpect(element(by.id("result-skia-latest-fiber"))).toHaveText("true");
       await detoxExpect(element(by.id("result-skia-fiber-id"))).toHaveText("true");
-      expect(await readElementText("result-skia-prop-names")).toContain("revision");
     });
 
-    it("traverses the Skia render tree, props, and context", async () => {
+    it("traverses the Skia render tree", async () => {
       const traversedFiberCount = parseInt(await readElementText("result-skia-traverse-count"), 10);
       const renderedFiberCount = parseInt(await readElementText("result-skia-rendered-count"), 10);
       expect(traversedFiberCount).toBeGreaterThan(5);
       expect(renderedFiberCount).toBeGreaterThan(0);
-      expect(await readElementText("result-skia-host-prop-names")).toContain("color");
-      const nextRevision = await readElementText("result-skia-next-revision");
-      await detoxExpect(element(by.id("result-skia-context-value"))).toHaveText(
-        `skia-context-${nextRevision}`,
-      );
     });
 
-    it("reports render, commit, timing, and type metadata", async () => {
+    it("reports render, commit, and type metadata", async () => {
       await detoxExpect(element(by.id("result-skia-did-render"))).toHaveText("true");
       await detoxExpect(element(by.id("result-skia-type"))).toHaveText("true");
       await detoxExpect(element(by.id("result-skia-has-memo-cache"))).toHaveText("false");
-      expect(parseFloat(await readElementText("result-skia-self-time"))).toBeGreaterThanOrEqual(0);
-      expect(parseFloat(await readElementText("result-skia-total-time"))).toBeGreaterThanOrEqual(0);
-      expect(parseInt(await readElementText("result-skia-stack-length"), 10)).toBeGreaterThan(1);
-      const didCommit = (await readElementText("result-skia-did-commit")) === "true";
-      const mutatedHostCount = parseInt(
-        await readElementText("result-skia-mutated-host-count"),
-        10,
-      );
-      expect(mutatedHostCount > 0).toBe(didCommit);
     });
 
     it("fires instrumentation for Skia unmounts", async () => {
