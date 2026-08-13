@@ -5,7 +5,7 @@
 
 bippy hacks into React internals.
 
-It gives you access to Fiber trees, renderers, and lifecycle events from inside and outside React components.
+Go beyond React's component abstraction and tap into the [React Fiber](https://youtu.be/ZCuYPiUIONs) tree. Build abstractions that inspect or extend React behavior without taking reconciliation into your own hands.
 
 > [!WARNING]
 > ⚠️⚠️⚠️ **This project may break production apps and cause unexpected behavior.** ⚠️⚠️⚠️
