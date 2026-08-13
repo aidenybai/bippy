@@ -14,7 +14,6 @@ bippy lets you inspect React Fiber trees from outside React components. It insta
 - [Install bippy](#install-bippy)
   - [Next.js](#nextjs)
   - [Vite](#vite)
-  - [Library setup](#library-setup)
 - [React integration](#react-integration)
   - [`useFiber`](#usefiber)
 - [Instrumentation](#instrumentation)
@@ -73,16 +72,6 @@ Import bippy at the top of your Vite entry point, before any React imports:
 import "bippy";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-```
-
-### Library setup
-
-Libraries that only need to install the hook can use `bippy/install-hook-only`. Import utilities from `bippy/core` to keep that entry point explicit:
-
-```typescript
-import "bippy/install-hook-only";
-import { getRDTHook, traverseFiber } from "bippy/core";
-import * as React from "react";
 ```
 
 ## React integration
