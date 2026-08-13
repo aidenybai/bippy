@@ -255,6 +255,16 @@ describe("bippy core functions on React Native", () => {
       await detoxExpect(element(by.id("result-skia-memo-display-name"))).toHaveText("SkiaMemoLeaf");
     });
 
+    it("resolves source through the real Skia renderer fiber", async () => {
+      expect(await readElementText("result-skia-source-fileName")).toContain("skia-probe.tsx");
+      expect(parseInt(await readElementText("result-skia-source-lineNumber"), 10)).toBeGreaterThan(
+        0,
+      );
+      await detoxExpect(element(by.id("result-skia-source-displayName"))).toHaveText(
+        "SkiaMemoLeaf",
+      );
+    });
+
     it("distinguishes Skia composite and host fibers", async () => {
       await detoxExpect(element(by.id("result-skia-composite"))).toHaveText("true");
       await detoxExpect(element(by.id("result-skia-composite-is-host"))).toHaveText("false");

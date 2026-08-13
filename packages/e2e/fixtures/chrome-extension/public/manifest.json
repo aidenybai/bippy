@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Bippy source E2E",
+  "version": "1.0.0",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Bippy source E2E"
+  }
+}

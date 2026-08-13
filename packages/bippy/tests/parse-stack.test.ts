@@ -103,6 +103,7 @@ describe("parseV8OrIeString", () => {
   it("handles native frames without line numbers", () => {
     const frames = parseV8OrIeString("    at Array.forEach (native)");
     expect(frames).toHaveLength(1);
+    expect(frames[0].fileName).toBeUndefined();
     expect(frames[0].lineNumber).toBeUndefined();
   });
 });

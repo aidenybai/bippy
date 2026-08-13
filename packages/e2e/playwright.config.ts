@@ -3,6 +3,7 @@ import { defineConfig, devices } from "@playwright/test";
 const vitePort = Number(process.env.BIPPY_E2E_VITE_PORT ?? 5180);
 const nextPort = Number(process.env.BIPPY_E2E_NEXT_PORT ?? 3100);
 const tanstackPort = Number(process.env.BIPPY_E2E_TANSTACK_PORT ?? 3200);
+const chromeExtensionTestMatch = /chrome-extension\.spec\.ts/;
 
 export default defineConfig({
   testDir: "./tests/web",
@@ -17,15 +18,23 @@ export default defineConfig({
   projects: [
     {
       name: "vite",
+      testIgnore: chromeExtensionTestMatch,
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${vitePort}` },
     },
     {
       name: "nextjs",
+      testIgnore: chromeExtensionTestMatch,
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${nextPort}` },
     },
     {
       name: "tanstack",
+      testIgnore: chromeExtensionTestMatch,
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${tanstackPort}` },
+    },
+    {
+      name: "chrome-extension",
+      testMatch: chromeExtensionTestMatch,
+      use: { ...devices["Desktop Chrome"] },
     },
   ],
   webServer: [

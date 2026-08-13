@@ -1,4 +1,5 @@
 import type { Fiber } from "../react-internals/index.js";
+import { getDisplayName } from "../core.js";
 
 import type { FiberSource } from "./types.js";
 import {
@@ -12,8 +13,13 @@ import {
 } from "./constants.js";
 import { getDefinitionFrameFromOwnedChild, getParentStack, hasDebugStack } from "./owner-stack.js";
 import { parseDebugStack } from "./parse-debug-stack.js";
-import { StackFrame } from "./parse-stack.js";
-import { symbolicateStack, type SourceFetch } from "./symbolication.js";
+import { parseStack, type StackFrame } from "./parse-stack.js";
+import {
+  getSourceFromSourceMapByFunctionName,
+  getSourceMap,
+  symbolicateStack,
+  type SourceFetch,
+} from "./symbolication.js";
 
 export const hasDebugSource = (
   fiber: Fiber,
@@ -27,6 +33,7 @@ export const hasDebugSource = (
   return (
     typeof debugSource === "object" &&
     typeof debugSource.fileName === "string" &&
+    debugSource.fileName !== "(native)" &&
     typeof debugSource.lineNumber === "number"
   );
 };
@@ -56,6 +63,30 @@ const getUsageFrameFromDebugStack = (fiber: Fiber): StackFrame | null => {
     if (stackFrame.fileName) {
       return stackFrame;
     }
+  }
+  return null;
+};
+
+const getSourceByComponentName = async (
+  fiber: Fiber,
+  cache: boolean,
+  fetchFn: SourceFetch | undefined,
+): Promise<FiberSource | null> => {
+  const functionName = getDisplayName(fiber.type);
+  if (!functionName) return null;
+
+  const runtimeStackFrames = parseStack(new Error().stack ?? "");
+  const visitedFileNames = new Set<string>();
+  for (const stackFrame of runtimeStackFrames) {
+    const fileName = stackFrame.fileName;
+    if (!fileName || visitedFileNames.has(fileName)) {
+      continue;
+    }
+    visitedFileNames.add(fileName);
+    const sourceMap = await getSourceMap(fileName, cache, fetchFn);
+    if (!sourceMap) continue;
+    const source = getSourceFromSourceMapByFunctionName(sourceMap, functionName);
+    if (source && !source.isIgnoreListed) return toFiberSource(source);
   }
   return null;
 };
@@ -111,7 +142,7 @@ export const getSource = async (
       return toFiberSource(stackFrame);
     }
   }
-  return null;
+  return getSourceByComponentName(fiber, cache, fetchFn);
 };
 
 const getPathSegmentCount = (path: string): number => path.split("/").filter(Boolean).length;

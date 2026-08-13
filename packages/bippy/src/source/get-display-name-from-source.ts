@@ -1,13 +1,13 @@
-import { Fiber } from "../react-internals/index.js";
+import type { Fiber } from "../react-internals/index.js";
 import { getDisplayName } from "../core.js";
-import { getRawParentStack } from "./owner-stack.js";
+import { getDefinitionFrameFromOwnedChild, getRawParentStack } from "./owner-stack.js";
 import {
   getSourceContentFromSourceMap,
   getSourceFromSourceMap,
   getSourceMap,
   type SourceFetch,
 } from "./symbolication.js";
-import { StackFrame } from "./parse-stack.js";
+import type { StackFrame } from "./parse-stack.js";
 
 const COMPONENT_DECLARATION_PATTERNS = [
   /(?:^|export\s+)(?:const|let|var)\s+(\w+)\s*=/,
@@ -25,9 +25,6 @@ const findComponentDeclarationOnLine = (line: string): string | null => {
 
 const MAX_DECLARATION_LINE_DISTANCE = 5;
 
-// the frame points inside the component, so the nearest declaration wins;
-// searching by pattern over the whole window instead would let an adjacent
-// component's declaration shadow the right one
 const extractComponentNameFromSource = (
   sourceContent: string,
   lineNumber: number,
@@ -59,7 +56,9 @@ export const getDisplayNameFromSource = async (
   cache = true,
   fetchFn?: SourceFetch,
 ): Promise<string | null> => {
-  const stackFrame = getRawParentStack(fiber).find((innerFrame) => innerFrame.fileName);
+  const stackFrame =
+    getDefinitionFrameFromOwnedChild(fiber) ??
+    getRawParentStack(fiber).find((innerFrame) => innerFrame.fileName);
 
   if (!stackFrame?.fileName) {
     return getDisplayName(fiber.type);
@@ -86,11 +85,13 @@ export const getDisplayNameFromSource = async (
   }
 
   const sourceContent = getSourceContentFromSourceMap(bundleSourceMap, source.fileName);
-  if (!sourceContent) {
-    return getDisplayName(fiber.type);
+  const extractedName = sourceContent
+    ? extractComponentNameFromSource(sourceContent, source.lineNumber)
+    : null;
+
+  if (extractedName) {
+    return extractedName;
   }
 
-  return (
-    extractComponentNameFromSource(sourceContent, source.lineNumber) ?? getDisplayName(fiber.type)
-  );
+  return source.functionName ?? getDisplayName(fiber.type);
 };

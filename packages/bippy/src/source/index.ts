@@ -1,7 +1,9 @@
 export { formatOwnerStack, getOwnerStack, getParentStack, hasDebugStack } from "./owner-stack.js";
 export { getSource, isSourceFile, normalizeFileName } from "./get-source.js";
 export {
+  getSourceContentFromSourceMap,
   getSourceFromSourceMap,
+  getSourceFromSourceMapByFunctionName,
   getSourceMap,
   symbolicateStack,
   type DecodedSourceMapSection,
