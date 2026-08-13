@@ -34,8 +34,7 @@ bippy lets you inspect React Fiber trees in React 17 through 19.
   - [`getSource`](#getsource)
   - [`getOwnerStack` and `getParentStack`](#getownerstack-and-getparentstack)
 - [Build a render highlighter](#build-a-render-highlighter)
-- [Glossary](#glossary)
-- [About bippy](#about-bippy)
+- [Acknowledgements](#acknowledgements)
 
 ## Install bippy
 
@@ -370,18 +369,6 @@ instrument({
 
 [`react-scan`](https://github.com/aidenybai/react-scan) applies the same idea with production safeguards, batching, and a complete overlay system.
 
-## Glossary
+## Acknowledgements
 
-Use these terms when working with React internals:
-
-- **Fiber**: a unit in React’s internal tree that represents a component, host instance, or rendering task
-- **Commit**: the phase that applies completed work to the host tree
-- **Render**: the phase that builds or updates the Fiber tree
-- **Host tree**: the platform-specific output that React mutates, such as DOM elements or native views
-- **Renderer**: a reconciler integration such as React DOM, React Native, or React Three Fiber
-
-## About bippy
-
-[`react-scan`](https://github.com/aidenybai/react-scan) originally motivated bippy. Use [`react-devtools-inline`](https://www.npmjs.com/package/react-devtools-inline) when you need a complete DevTools interface.
-
-[@dairyfreerice](https://www.instagram.com/dairyfreerice) created the original bippy character. This project has no affiliation with the Bippy brand.
+[@dairyfreerice](https://www.instagram.com/dairyfreerice) created the original bippy character.
