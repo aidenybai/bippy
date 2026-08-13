@@ -85,7 +85,6 @@ const createReactNilAdapter = async (): Promise<RendererAdapter> => {
         },
       };
     },
-    wrap: (element) => <>{element}</>,
   };
 };
 
@@ -134,7 +133,6 @@ const createInkAdapter = async (): Promise<RendererAdapter> => {
         },
       };
     },
-    wrap: (element) => <>{element}</>,
   };
 };
 
@@ -249,7 +247,6 @@ const createOpenTuiAdapter = async (): Promise<RendererAdapter> => {
         },
       };
     },
-    wrap: (element) => <>{element}</>,
   };
 };
 
@@ -293,7 +290,6 @@ const createPixiAdapter = async (): Promise<RendererAdapter> => {
         },
       };
     },
-    wrap: (element) => <>{element}</>,
   };
 };
 
@@ -350,7 +346,6 @@ const createReactBabylonJsAdapter = async (): Promise<RendererAdapter> => {
         },
       };
     },
-    wrap: (element) => <>{element}</>,
   };
 };
 
@@ -407,7 +402,6 @@ const createReactKonvaCompatibilityAdapter = async (): Promise<RendererAdapter> 
         },
       };
     },
-    wrap: (element) => <>{element}</>,
   };
 };
 
@@ -438,7 +432,6 @@ const createRemotionAdapter = async (): Promise<RendererAdapter> => {
         },
       };
     },
-    wrap: (element) => <>{element}</>,
   };
 };
 
@@ -535,7 +528,6 @@ const createReactThreeFiberAdapter = async (): Promise<RendererAdapter> => {
         },
       };
     },
-    wrap: (element) => <>{element}</>,
   };
 };
 

@@ -1,5 +1,4 @@
 import { getDisplayName, getType, traverseFiber } from "../core.js";
-import { _renderers, getRDTHook } from "../rdt-hook.js";
 import { getReactWorkTagsForFiber } from "../react-internals/index.js";
 import type {
   Fiber,
@@ -15,6 +14,11 @@ import {
 import { getPrepareStackTrace, setPrepareStackTrace } from "./error-stack.js";
 import { parseDebugStack } from "./parse-debug-stack.js";
 import { parseStack, StackFrame } from "./parse-stack.js";
+import {
+  getRendererDispatcherRefs,
+  readDispatcher,
+  writeDispatcher,
+} from "./renderer-dispatchers.js";
 import { symbolicateStack, type SourceFetch } from "./symbolication.js";
 
 interface RendererDispatcherSnapshot {
@@ -78,42 +82,18 @@ export const getDefinitionFrameFromOwnedChild = (fiber: Fiber): StackFrame | nul
   return null;
 };
 
-const getRendererDispatcherRefs = (): RendererDispatcherRef[] => {
-  const rdtHook = getRDTHook();
-  const renderers = new Set([..._renderers, ...rdtHook.renderers.values()]);
-  const currentDispatcherRefs: RendererDispatcherRef[] = [];
-  const seenCurrentDispatcherRefs = new Set<object>();
-  for (const renderer of renderers) {
-    const currentDispatcherRef = renderer.currentDispatcherRef;
-    if (!currentDispatcherRef || seenCurrentDispatcherRefs.has(currentDispatcherRef)) continue;
-    seenCurrentDispatcherRefs.add(currentDispatcherRef);
-    currentDispatcherRefs.push(currentDispatcherRef);
-  }
-  return currentDispatcherRefs;
-};
-
 const clearRendererDispatchers = (): RendererDispatcherSnapshot[] => {
   const dispatcherSnapshots: RendererDispatcherSnapshot[] = [];
   for (const currentDispatcherRef of getRendererDispatcherRefs()) {
-    const value =
-      "H" in currentDispatcherRef ? currentDispatcherRef.H : currentDispatcherRef.current;
-    dispatcherSnapshots.push({ currentDispatcherRef, value });
-    if ("H" in currentDispatcherRef) {
-      currentDispatcherRef.H = null;
-    } else {
-      currentDispatcherRef.current = null;
-    }
+    dispatcherSnapshots.push({ currentDispatcherRef, value: readDispatcher(currentDispatcherRef) });
+    writeDispatcher(currentDispatcherRef, null);
   }
   return dispatcherSnapshots;
 };
 
 const restoreRendererDispatchers = (dispatcherSnapshots: RendererDispatcherSnapshot[]): void => {
   for (const { currentDispatcherRef, value } of dispatcherSnapshots) {
-    if ("H" in currentDispatcherRef) {
-      currentDispatcherRef.H = value;
-    } else {
-      currentDispatcherRef.current = value;
-    }
+    writeDispatcher(currentDispatcherRef, value);
   }
 };
 

@@ -1,10 +1,9 @@
 import type { HooksNode, HooksTree, HookSource } from "./inspect-hooks.js";
 import {
   getSourceContentFromSourceMap,
-  getSourceMap,
   getSourceFromSourceMap,
+  getSourceMap,
   type SourceFetch,
-  type SourceMap,
 } from "./symbolication.js";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -81,7 +80,6 @@ interface ResolvedSource {
 }
 
 interface SourceResolutionContext {
-  sourceMapsByFile: Map<string, SourceMap | null>;
   sourceContentCache: Map<string, string | null>;
   fetchFn?: SourceFetch;
 }
@@ -92,25 +90,17 @@ const resolveOriginalSource = async (
   runtimeColumn: number,
   context: SourceResolutionContext,
 ): Promise<ResolvedSource | null> => {
-  const { sourceMapsByFile, sourceContentCache, fetchFn } = context;
+  const { sourceContentCache, fetchFn } = context;
 
-  if (!sourceMapsByFile.has(runtimeFileName)) {
-    sourceMapsByFile.set(runtimeFileName, await getSourceMap(runtimeFileName, true, fetchFn));
-  }
-
-  const sourceMap = sourceMapsByFile.get(runtimeFileName) ?? null;
+  const sourceMap = await getSourceMap(runtimeFileName, true, fetchFn);
 
   if (sourceMap) {
     const originalLocation = getSourceFromSourceMap(sourceMap, runtimeLine, runtimeColumn);
     if (originalLocation?.fileName && originalLocation.lineNumber !== undefined) {
-      const cacheKey = `sourcemap:${runtimeFileName}:${originalLocation.fileName}`;
-      if (!sourceContentCache.has(cacheKey)) {
-        sourceContentCache.set(
-          cacheKey,
-          getSourceContentFromSourceMap(sourceMap, originalLocation.fileName),
-        );
-      }
-      const originalSourceCode = sourceContentCache.get(cacheKey) ?? null;
+      const originalSourceCode = getSourceContentFromSourceMap(
+        sourceMap,
+        originalLocation.fileName,
+      );
       if (originalSourceCode) {
         return {
           sourceCode: originalSourceCode,
@@ -153,7 +143,6 @@ export const parseHookNames = async (
   if (hooksList.length === 0) return hookNames;
 
   const resolutionContext: SourceResolutionContext = {
-    sourceMapsByFile: new Map(),
     sourceContentCache: new Map(),
     fetchFn,
   };

@@ -26,15 +26,6 @@ export interface Dependencies extends Omit<ReactReconciler.Dependencies, "firstC
   firstContext: ContextDependency<unknown> | null;
 }
 
-export interface Effect {
-  [key: string]: unknown;
-  create: (...args: unknown[]) => unknown;
-  deps: null | unknown[];
-  destroy: ((...args: unknown[]) => unknown) | null;
-  next: Effect | null;
-  tag: number;
-}
-
 export interface ServerComponentInfo {
   name?: string;
   env?: string;
@@ -59,8 +50,6 @@ export interface FiberDebugSource extends Source {
 
 export interface FiberUpdateQueue {
   [key: string]: unknown;
-  dispatch?: unknown;
-  lastEffect: Effect | null;
   memoCache?: ReactMemoCache;
 }
 

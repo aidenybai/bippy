@@ -359,7 +359,7 @@ const isIndexSourceMap = (value: unknown): value is IndexSourceMap => {
 
 const getIgnoredSourceIndices = (rawSourceMap: StandardSourceMap): Set<number> | undefined => {
   const ignoreList = rawSourceMap.ignoreList ?? rawSourceMap.x_google_ignoreList;
-  return Array.isArray(ignoreList) && ignoreList.length > 0 ? new Set(ignoreList) : undefined;
+  return ignoreList?.length ? new Set(ignoreList) : undefined;
 };
 
 const resolveSourceRoot = (
@@ -584,8 +584,8 @@ interface RequestSignal {
 }
 
 const createRequestSignal = (options: SourceMapRequestOptions): RequestSignal => {
-  if (!options.signal && options.timeoutMs === undefined) {
-    return { cleanup: () => {} };
+  if (options.timeoutMs === undefined || options.timeoutMs < 0) {
+    return { cleanup: () => {}, signal: options.signal };
   }
   const abortController = new AbortController();
   const abortFromSource = (): void => abortController.abort(options.signal?.reason);
@@ -594,16 +594,13 @@ const createRequestSignal = (options: SourceMapRequestOptions): RequestSignal =>
   } else {
     options.signal?.addEventListener("abort", abortFromSource, { once: true });
   }
-  const timeoutHandle =
-    options.timeoutMs !== undefined && options.timeoutMs >= 0
-      ? setTimeout(
-          () => abortController.abort(new BippySourceMapError("Source map request timed out")),
-          options.timeoutMs,
-        )
-      : undefined;
+  const timeoutHandle = setTimeout(
+    () => abortController.abort(new BippySourceMapError("Source map request timed out")),
+    options.timeoutMs,
+  );
   return {
     cleanup: () => {
-      if (timeoutHandle !== undefined) clearTimeout(timeoutHandle);
+      clearTimeout(timeoutHandle);
       options.signal?.removeEventListener("abort", abortFromSource);
     },
     signal: abortController.signal,
