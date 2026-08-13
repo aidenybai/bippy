@@ -3,7 +3,7 @@
 [![version](https://img.shields.io/npm/v/bippy?style=flat&colorA=000000&colorB=000000)](https://npmjs.com/package/bippy)
 [![downloads](https://img.shields.io/npm/dt/bippy.svg?style=flat&colorA=000000&colorB=000000)](https://npmjs.com/package/bippy)
 
-A collection of utilities for inspecting React internals.
+bippy hacks into React internals.
 
 > [!WARNING]
 > bippy relies on unstable React internals. A React update can break your app or any package that depends on bippy.
