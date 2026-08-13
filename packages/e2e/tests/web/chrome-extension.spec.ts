@@ -6,11 +6,7 @@ import { resolve } from "node:path";
 const isStringArray = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every((innerValue) => typeof innerValue === "string");
 
-test("symbolicates a minified component inside a Chrome extension", async ({
-  browserName,
-}, testInfo) => {
-  test.skip(testInfo.project.name !== "vite" || browserName !== "chromium");
-
+test("symbolicates a minified component inside a Chrome extension", async () => {
   const extensionPath = resolve(import.meta.dirname, "../../fixtures/chrome-extension/dist");
   const extensionAssets = await readdir(resolve(extensionPath, "assets"));
   expect(extensionAssets.some((assetName) => assetName.endsWith(".js.map"))).toBe(true);

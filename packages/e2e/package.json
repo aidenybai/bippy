@@ -5,7 +5,7 @@
   "scripts": {
     "build:extension": "nr --filter bippy build && nr --filter @bippy/e2e-chrome-extension build",
     "build:metro-artifact": "nr --filter bippy build && nr --filter @bippy/e2e-expo build:source-artifact",
-    "test:extension": "nr build:extension && playwright test tests/web/chrome-extension.spec.ts --project=vite",
+    "test:extension": "nr build:extension && playwright test --project=chrome-extension",
     "test:metro-artifact": "nr build:metro-artifact && node --test tests/artifacts/metro-source-map.test.mjs",
     "test:web": "nr build:extension && playwright test",
     "test:native": "detox test --configuration ios.sim.debug",
