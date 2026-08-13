@@ -18,7 +18,7 @@ export interface ParseOptions {
   includeInElement?: boolean;
 }
 
-export const isUsableFileName = (fileName: string | null): boolean =>
+export const isUsableFileName = (fileName: string | null | undefined): fileName is string =>
   Boolean(fileName && fileName !== "(native)");
 
 const FIREFOX_SAFARI_STACK_REGEXP = /(^|@)\S+:\d+/;
