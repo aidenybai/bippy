@@ -5,8 +5,12 @@
 
 bippy hacks into React internals.
 
+It gives you access to Fiber trees, renderers, and lifecycle events from inside and outside React components.
+
 > [!WARNING]
-> bippy relies on unstable React internals. A React update can break your app or any package that depends on bippy.
+> ⚠️⚠️⚠️ **This project may break production apps and cause unexpected behavior.** ⚠️⚠️⚠️
+>
+> This project uses React internals, which can change at any time. We don't recommend depending on internals unless you really, _really_ have to. By proceeding, you acknowledge the risk of breaking your own code or apps that use your code.
 
 ## Table of contents
 
