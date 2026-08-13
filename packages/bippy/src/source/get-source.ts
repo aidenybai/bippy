@@ -12,7 +12,7 @@ import {
 } from "./constants.js";
 import { getDefinitionFrameFromOwnedChild, getParentStack, hasDebugStack } from "./owner-stack.js";
 import { parseDebugStack } from "./parse-debug-stack.js";
-import { hasUsableFileName, StackFrame } from "./parse-stack.js";
+import { isUsableFileName, StackFrame } from "./parse-stack.js";
 import { symbolicateStack, type SourceFetch } from "./symbolication.js";
 
 export const hasDebugSource = (
@@ -27,7 +27,8 @@ export const hasDebugSource = (
   return (
     typeof debugSource === "object" &&
     typeof debugSource.fileName === "string" &&
-    typeof debugSource.lineNumber === "number"
+    typeof debugSource.lineNumber === "number" &&
+    isUsableFileName(debugSource.fileName)
   );
 };
 
@@ -53,7 +54,7 @@ const getUsageFrameFromDebugStack = (fiber: Fiber): StackFrame | null => {
     return null;
   }
   for (const stackFrame of frames) {
-    if (hasUsableFileName(stackFrame)) {
+    if (isUsableFileName(stackFrame.fileName)) {
       return stackFrame;
     }
   }

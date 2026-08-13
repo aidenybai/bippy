@@ -69,6 +69,31 @@ describe("getSource with _debugSource", () => {
 });
 
 describe("getSource with native debug frames", () => {
+  it("skips a native debug source in favor of a source stack frame", async () => {
+    const fiber = createDebugStackFiber([
+      "Error: react-stack-top-frame",
+      "    at jsxDEV (native)",
+      "    at renderLeaf (http://localhost/src/skia-probe.tsx:12:4)",
+      "    at react-stack-bottom-frame (http://localhost/react.js:1:1)",
+    ]);
+    fiber._debugSource = {
+      fileName: "(native)",
+      lineNumber: 1,
+      columnNumber: 1,
+    };
+
+    const source = await getSource(fiber, false, () =>
+      Promise.resolve(new Response("not found", { status: 404 })),
+    );
+
+    expect(source).toEqual({
+      columnNumber: 4,
+      fileName: "http://localhost/src/skia-probe.tsx",
+      functionName: "renderLeaf",
+      lineNumber: 12,
+    });
+  });
+
   it("skips native pseudo-frames in favor of a source frame", async () => {
     const fiber = createDebugStackFiber([
       "Error: react-stack-top-frame",

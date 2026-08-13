@@ -18,8 +18,8 @@ export interface ParseOptions {
   includeInElement?: boolean;
 }
 
-export const hasUsableFileName = (stackFrame: StackFrame): boolean =>
-  Boolean(stackFrame.fileName && stackFrame.fileName !== "(native)");
+export const isUsableFileName = (fileName: string | null): boolean =>
+  Boolean(fileName && fileName !== "(native)");
 
 const FIREFOX_SAFARI_STACK_REGEXP = /(^|@)\S+:\d+/;
 const CHROME_IE_STACK_REGEXP = /^\s*at .*(\S+:\d+|\(native\))/m;
