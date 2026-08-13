@@ -245,6 +245,21 @@ describe("describeFiber native component frames", () => {
     expect(frame).toContain("throwingRender");
   });
 
+  it("extracts frames from memo wrappers retained by custom renderers", () => {
+    const ThrowingMemoComponent = (): null => {
+      throw new Error("intentional");
+    };
+    const frame = describeFiber(
+      createFakeFiber({
+        tag: latestReactWorkTags.SimpleMemoComponent,
+        type: { type: ThrowingMemoComponent },
+      }),
+      null,
+    );
+    expect(frame).toContain("ThrowingMemoComponent");
+    expect(frame).toContain("owner-stack.test.ts");
+  });
+
   it("extracts frames from class components via construction", () => {
     class ThrowingPropsClass {
       props: Record<string, unknown>;

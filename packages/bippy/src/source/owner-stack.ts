@@ -322,7 +322,7 @@ export const describeFiber = (fiber: Fiber, childFiber: Fiber | null): string =>
       break;
     case workTags.FunctionComponent:
     case workTags.SimpleMemoComponent:
-      stackFrame = describeNativeComponentFrame(fiber.type, false);
+      stackFrame = describeNativeComponentFrame(getType(fiber.type) ?? fiber.type, false);
       break;
     case workTags.HostComponent:
     case workTags.HostHoistable:
