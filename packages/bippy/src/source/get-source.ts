@@ -108,7 +108,7 @@ export const getSource = async (
 
   const parentStackFrames = await getParentStack(fiber, cache, fetchFn);
   for (const stackFrame of parentStackFrames) {
-    if (stackFrame.fileName) {
+    if (isUsableFileName(stackFrame.fileName)) {
       return toFiberSource(stackFrame);
     }
   }

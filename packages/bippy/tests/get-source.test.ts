@@ -51,6 +51,12 @@ describe("hasDebugSource", () => {
     );
   });
 
+  it("returns false for a native pseudo-file", () => {
+    expect(
+      hasDebugSource(createFiberWithDebugSource({ fileName: "(native)", lineNumber: 10 })),
+    ).toBe(false);
+  });
+
   it("returns false when lineNumber is missing or not a number", () => {
     expect(hasDebugSource(createFiberWithDebugSource({ fileName: "App.tsx" }))).toBe(false);
     expect(
