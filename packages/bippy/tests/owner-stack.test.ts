@@ -10,18 +10,13 @@ import {
   getParentStack,
   hasDebugStack,
 } from "../src/source/owner-stack.js";
+import { createFiber } from "./create-fiber.js";
+import { createReactRenderer } from "./create-react-renderer.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
 import { sourceFetch as noopFetchFn } from "./source-fetch.js";
 
 const createFakeFiber = (overrides: Record<string, unknown>): Fiber =>
-  ({
-    tag: 999,
-    type: null,
-    child: null,
-    sibling: null,
-    return: null,
-    ...overrides,
-  }) as unknown as Fiber;
+  createFiber({ tag: 999, ...overrides });
 
 const createDebugStackError = (stackLines: string[]): Error => {
   const error = new Error("react-stack-top-frame");
@@ -302,10 +297,10 @@ describe("describeFiber native component frames", () => {
 
   it("uses a dispatcher ref with a current property when available", () => {
     const legacyDispatcherRef = { current: { placeholder: true } };
-    const rendererWithoutRef = { currentDispatcherRef: null };
-    const legacyRenderer = { currentDispatcherRef: legacyDispatcherRef };
-    _renderers.add(rendererWithoutRef as unknown as never);
-    _renderers.add(legacyRenderer as unknown as never);
+    const rendererWithoutRef = createReactRenderer({ currentDispatcherRef: null });
+    const legacyRenderer = createReactRenderer({ currentDispatcherRef: legacyDispatcherRef });
+    _renderers.add(rendererWithoutRef);
+    _renderers.add(legacyRenderer);
     try {
       const LegacyDispatcherComponent = (): null => {
         throw new Error("intentional");
@@ -320,8 +315,8 @@ describe("describeFiber native component frames", () => {
       expect(frame).toContain("LegacyDispatcherComponent");
       expect(legacyDispatcherRef.current).toEqual({ placeholder: true });
     } finally {
-      _renderers.delete(rendererWithoutRef as unknown as never);
-      _renderers.delete(legacyRenderer as unknown as never);
+      _renderers.delete(rendererWithoutRef);
+      _renderers.delete(legacyRenderer);
     }
   });
 
@@ -330,12 +325,12 @@ describe("describeFiber native component frames", () => {
     const modernValue = { renderer: "modern" };
     const legacyDispatcherRef = { current: legacyValue };
     const modernDispatcherRef = { H: modernValue };
-    const legacyRenderer = { currentDispatcherRef: legacyDispatcherRef };
-    const modernRenderer = { currentDispatcherRef: modernDispatcherRef };
+    const legacyRenderer = createReactRenderer({ currentDispatcherRef: legacyDispatcherRef });
+    const modernRenderer = createReactRenderer({ currentDispatcherRef: modernDispatcherRef });
     let observedLegacyDispatcher: unknown;
     let observedModernDispatcher: unknown;
-    _renderers.add(legacyRenderer as unknown as never);
-    _renderers.add(modernRenderer as unknown as never);
+    _renderers.add(legacyRenderer);
+    _renderers.add(modernRenderer);
     try {
       const MixedRendererComponent = (): null => {
         observedLegacyDispatcher = legacyDispatcherRef.current;
@@ -354,8 +349,8 @@ describe("describeFiber native component frames", () => {
       expect(legacyDispatcherRef.current).toBe(legacyValue);
       expect(modernDispatcherRef.H).toBe(modernValue);
     } finally {
-      _renderers.delete(legacyRenderer as unknown as never);
-      _renderers.delete(modernRenderer as unknown as never);
+      _renderers.delete(legacyRenderer);
+      _renderers.delete(modernRenderer);
     }
   });
 });

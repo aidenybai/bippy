@@ -5,9 +5,9 @@ import { getFiberFromHostInstance, getLatestFiber } from "bippy";
 import { getSource } from "bippy/dist/source";
 import { useEffect, useRef, useState } from "react";
 
-import { cn } from "./cn";
+import { classNames } from "./class-names";
 
-export function Inspector() {
+export const Inspector = () => {
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [isEnabled, setIsEnabled] = useState(false);
   const isEnabledRef = useRef(isEnabled);
@@ -51,7 +51,7 @@ export function Inspector() {
   return (
     <div>
       <button
-        className={cn(
+        className={classNames(
           "transition-colors text-black px-2 py-1 rounded-md",
           isEnabled ? "bg-red-600 text-white hover:bg-red-700" : "bg-white hover:bg-neutral-200",
         )}
@@ -73,4 +73,4 @@ export function Inspector() {
       )}
     </div>
   );
-}
+};

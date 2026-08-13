@@ -1,4 +1,4 @@
-import "../src/index.js"; // KEEP THIS LINE ON TOP
+import "../src/index.js"; // HACK: Bippy must initialize before imports that load React.
 
 import { describe, expect, it } from "vite-plus/test";
 import type { Fiber } from "../src/react-internals/index.js";
@@ -19,7 +19,11 @@ const PortalChild = () => {
   return <span>portal content</span>;
 };
 
-const PortalExample = ({ container }: { container: HTMLElement }) => {
+interface PortalExampleProps {
+  container: HTMLElement;
+}
+
+const PortalExample = ({ container }: PortalExampleProps) => {
   return (
     <div>
       <p>main tree</p>

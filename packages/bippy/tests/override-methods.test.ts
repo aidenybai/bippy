@@ -1,13 +1,11 @@
-import "../src/index.js"; // KEEP THIS LINE ON TOP
+import "../src/index.js"; // HACK: Bippy must initialize before imports that load React.
 
 import { expect, it, vi } from "vite-plus/test";
 import { overrideContext, overrideHookState, overrideProps } from "../src/index.js";
-import type {
-  Fiber,
-  ReactDevToolsGlobalHook,
-  ReactRenderer,
-} from "../src/react-internals/index.js";
-import { latestReactWorkTags } from "./react-work-tags.js";
+import type { Fiber } from "../src/react-internals/index.js";
+import { createFiber } from "./create-fiber.js";
+import { createRDTHook } from "./create-rdt-hook.js";
+import { createReactRenderer } from "./create-react-renderer.js";
 
 interface MockFiberOverrides {
   alternate?: Fiber | null;
@@ -17,33 +15,20 @@ interface MockFiberOverrides {
 }
 
 const createMockFiber = (overrides: MockFiberOverrides = {}): Fiber =>
-  ({
-    alternate: null,
-    child: null,
-    flags: 0,
-    memoizedProps: {},
-    memoizedState: null,
-    pendingProps: {},
-    return: null,
-    sibling: null,
-    stateNode: null,
-    tag: latestReactWorkTags.FunctionComponent,
-    type: () => null,
-    ...overrides,
-  }) as unknown as Fiber;
+  createFiber({ type: () => null, ...overrides });
 
 const firstOverrideProps = vi.fn();
 const firstOverrideHookState = vi.fn();
 const secondOverrideProps = vi.fn();
 const secondOverrideHookState = vi.fn();
-const firstRenderer = {
+const firstRenderer = createReactRenderer({
   overrideHookState: firstOverrideHookState,
   overrideProps: firstOverrideProps,
-} as unknown as ReactRenderer;
-const secondRenderer = {
+});
+const secondRenderer = createReactRenderer({
   overrideHookState: secondOverrideHookState,
   overrideProps: secondOverrideProps,
-} as unknown as ReactRenderer;
+});
 
 it("should no-op when no rdt hook exists", () => {
   delete globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
@@ -52,23 +37,23 @@ it("should no-op when no rdt hook exists", () => {
 });
 
 it("should no-op when the hook has no renderers", () => {
-  globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ = {
+  globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ = createRDTHook({
     _instrumentationSource: "test",
-  } as unknown as ReactDevToolsGlobalHook;
+  });
   expect(() => overrideProps(createMockFiber(), { count: 1 })).not.toThrow();
   expect(firstOverrideProps).not.toHaveBeenCalled();
 });
 
 it("should chain override methods from every renderer", () => {
-  const rendererWithoutOverrides = {} as unknown as ReactRenderer;
-  globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ = {
+  const rendererWithoutOverrides = createReactRenderer();
+  globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ = createRDTHook({
     _instrumentationSource: "test",
     renderers: new Map([
       [1, rendererWithoutOverrides],
       [2, firstRenderer],
       [3, secondRenderer],
     ]),
-  } as unknown as ReactDevToolsGlobalHook;
+  });
 
   const fiber = createMockFiber();
   overrideProps(fiber, { count: 1, nested: { value: 2 } });

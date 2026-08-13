@@ -1,4 +1,4 @@
-// import react devtools, then bippy
+// HACK: Import React DevTools before Bippy to exercise hook patching.
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 
 // @ts-expect-error - react-devtools-inline types not available

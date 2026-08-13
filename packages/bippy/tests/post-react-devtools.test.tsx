@@ -1,4 +1,4 @@
-// import bippy, then react devtools
+// HACK: Import Bippy before React DevTools to exercise hook replacement.
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 
 import { expect, it, vi } from "vite-plus/test";

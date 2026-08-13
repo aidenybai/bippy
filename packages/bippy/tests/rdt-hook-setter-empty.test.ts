@@ -1,4 +1,4 @@
-// intentionally avoids importing ../index.js so this file controls hook installation
+// HACK: Avoid importing index so this test controls hook installation.
 import { expect, it } from "vite-plus/test";
 import { getRDTHook } from "../src/rdt-hook.js";
 import type { ReactDevToolsGlobalHook, ReactRenderer } from "../src/react-internals/index.js";

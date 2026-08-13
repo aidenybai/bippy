@@ -1,10 +1,11 @@
-import "../src/index.js"; // KEEP THIS LINE ON TOP
+import "../src/index.js"; // HACK: Bippy must initialize before imports that load React.
 
 import { expect, it } from "vite-plus/test";
 import React from "react";
 
-import { didFiberCommit, Fiber, instrument } from "../src/index.js";
+import { didFiberCommit, instrument, type Fiber } from "../src/index.js";
 import { render } from "@testing-library/react";
+import { requireFiber } from "./require-fiber.js";
 
 const Example = () => {
   return <div>Hello</div>;
@@ -27,7 +28,9 @@ it("should return true for a fiber that has committed", () => {
   });
   render(<ExampleWithUnmount />);
   expect(maybeRenderedFiber).not.toBeNull();
-  expect(didFiberCommit(maybeRenderedFiber as unknown as Fiber)).toBe(true);
+  expect(didFiberCommit(requireFiber(maybeRenderedFiber, "React DOM did not render a Fiber"))).toBe(
+    true,
+  );
 });
 
 it("should return false for a fiber that hasn't committed", () => {
@@ -39,5 +42,7 @@ it("should return false for a fiber that hasn't committed", () => {
   });
   render(<Example />);
   expect(maybeRenderedFiber).not.toBeNull();
-  expect(didFiberCommit(maybeRenderedFiber as unknown as Fiber)).toBe(false);
+  expect(didFiberCommit(requireFiber(maybeRenderedFiber, "React DOM did not render a Fiber"))).toBe(
+    false,
+  );
 });

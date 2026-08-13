@@ -1,4 +1,4 @@
-// intentionally avoids importing ../index.js so no rdt hook is installed
+// HACK: Avoid importing index so the missing-hook path remains observable.
 import { expect, it } from "vite-plus/test";
 import { getFiberFromHostInstance } from "../src/core.js";
 

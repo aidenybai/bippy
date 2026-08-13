@@ -1,10 +1,11 @@
-import "../src/index.js"; // KEEP THIS LINE ON TOP
+import "../src/index.js"; // HACK: Bippy must initialize before imports that load React.
 
 import { render } from "@testing-library/react";
 import React from "react";
 import { expect, it } from "vite-plus/test";
 import { getMutatedHostFibers, instrument } from "../src/index.js";
 import type { Fiber } from "../src/react-internals/index.js";
+import { requireFiber } from "./require-fiber.js";
 
 export const ExampleWithMutation = () => {
   const [element, setElement] = React.useState(<div>Hello</div>);
@@ -39,8 +40,12 @@ it("should return all host fibers that have committed and rendered", () => {
     },
   });
   render(<ExampleWithMutation />);
-  const mutatedHostFibers = getMutatedHostFibers(maybeFiber as unknown as Fiber);
-  expect(getMutatedHostFibers(maybeFiber as unknown as Fiber)).toHaveLength(1);
+  const mutatedHostFibers = getMutatedHostFibers(
+    requireFiber(maybeFiber, "React DOM did not render a Fiber"),
+  );
+  expect(
+    getMutatedHostFibers(requireFiber(maybeFiber, "React DOM did not render a Fiber")),
+  ).toHaveLength(1);
   expect(mutatedHostFiber).toBe(mutatedHostFibers[0]);
 });
 
@@ -52,5 +57,7 @@ it("should traverse sibling host fibers", () => {
     },
   });
   render(<ExampleWithSiblingMutation />);
-  expect(getMutatedHostFibers(maybeFiber as unknown as Fiber)).toHaveLength(2);
+  expect(
+    getMutatedHostFibers(requireFiber(maybeFiber, "React DOM did not render a Fiber")),
+  ).toHaveLength(2);
 });

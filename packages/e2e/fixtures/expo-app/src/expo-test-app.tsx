@@ -52,7 +52,20 @@ import { SkiaProbe } from "./skia-probe";
 
 const TestContext = createContext("default-context");
 
-const TestChild = ({ name, count }: { name: string; count: number }) => {
+interface TestChildProps {
+  count: number;
+  name: string;
+}
+
+interface TestMemoChildProps {
+  value: string;
+}
+
+interface OverridePropsChildProps {
+  count: number;
+}
+
+const TestChild = ({ name, count }: TestChildProps) => {
   return (
     <View testID="test-child">
       <Text>
@@ -62,7 +75,7 @@ const TestChild = ({ name, count }: { name: string; count: number }) => {
   );
 };
 
-const TestMemoChild = memo(({ value }: { value: string }) => {
+const TestMemoChild = memo(({ value }: TestMemoChildProps) => {
   return (
     <View testID="memo-child">
       <Text>{value}</Text>
@@ -134,7 +147,7 @@ const findFibersByDisplayName = (rootFiber: Fiber, displayNames: string[]) => {
   return fibersByDisplayName;
 };
 
-const OverridePropsChild = ({ count }: { count: number }) => (
+const OverridePropsChild = ({ count }: OverridePropsChildProps) => (
   <View testID="override-props-view">
     <Text>override-props {count}</Text>
   </View>
@@ -160,8 +173,7 @@ const OverrideContextChild = () => {
   );
 };
 
-// memoized so the App-level result-row commits bail out here and never
-// re-derive the probes' props/state, which would silently undo the overrides
+// HACK: Memoization prevents result-row commits from undoing the probe overrides.
 const OverrideProbes = memo(() => (
   <View testID="override-probes">
     <OverridePropsChild count={0} />
@@ -173,7 +185,7 @@ const OverrideProbes = memo(() => (
 ));
 OverrideProbes.displayName = "OverrideProbes";
 
-const App = () => {
+const ExpoTestApp = () => {
   const [coreResults, setCoreResults] = useState<Record<string, string>>({});
   const [sourceResults, setSourceResults] = useState<Record<string, string>>({});
   const [skiaResults, setSkiaResults] = useState<Record<string, string>>({});
@@ -596,4 +608,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default ExpoTestApp;

@@ -23,6 +23,15 @@ declare global {
 
 const TestContext = createContext("default-context");
 
+interface TestChildProps {
+  count: number;
+  name: string;
+}
+
+interface MemoChildProps {
+  value: string;
+}
+
 export const TestParent = () => {
   const [count, setCount] = useState(0);
   const [showConditional, setShowConditional] = useState(true);
@@ -59,7 +68,7 @@ export const TestParent = () => {
   );
 };
 
-export const TestChild = ({ name, count }: { name: string; count: number }) => {
+export const TestChild = ({ name, count }: TestChildProps) => {
   return (
     <div data-testid="test-child">
       {name} {count}
@@ -67,18 +76,18 @@ export const TestChild = ({ name, count }: { name: string; count: number }) => {
   );
 };
 
-export function MemoChild({ value }: { value: string }) {
+export const MemoChild = ({ value }: MemoChildProps) => {
   return <div data-testid="memo-child">{value}</div>;
-}
+};
 const TestMemoChild = memo(MemoChild);
 
-function ForwardRefChild(_: object, ref: React.ForwardedRef<HTMLDivElement>) {
+const ForwardRefChild = (_props: object, ref: React.ForwardedRef<HTMLDivElement>) => {
   return (
     <div data-testid="forward-ref-child" ref={ref}>
       forward-ref
     </div>
   );
-}
+};
 const TestForwardRefChild = forwardRef<HTMLDivElement>(ForwardRefChild);
 
 const TestContextConsumer = () => {

@@ -1,35 +1,17 @@
-import "../src/index.js"; // KEEP THIS LINE ON TOP
+import "../src/index.js"; // HACK: Bippy must initialize before imports that load React.
 
 import * as ReactThreeTestRenderer from "@react-three/test-renderer";
 import { render, screen } from "@testing-library/react";
 import React from "react";
 import { expect, it } from "vite-plus/test";
 import { getFiberFromHostInstance, getRDTHook, instrument, traverseFiber } from "../src/index.js";
-import type { Fiber, FiberRoot, ReactRenderer, WorkTag } from "../src/react-internals/index.js";
+import type { Fiber, FiberRoot } from "../src/react-internals/index.js";
+import { createFiber } from "./create-fiber.js";
+import { createReactRenderer } from "./create-react-renderer.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
 
-interface MockHostFiber {
-  child: MockHostFiber | null;
-  flags: number;
-  memoizedState?: Record<string, unknown>;
-  pendingProps: Record<string, unknown>;
-  return: MockHostFiber | null;
-  sibling: MockHostFiber | null;
-  stateNode: unknown;
-  tag: WorkTag;
-  type: string;
-}
-
-const createMockHostFiber = (stateNode: unknown, type = "RCTView"): MockHostFiber => ({
-  child: null,
-  flags: 0,
-  pendingProps: {},
-  return: null,
-  sibling: null,
-  stateNode,
-  tag: latestReactWorkTags.HostComponent,
-  type,
-});
+const createMockHostFiber = (stateNode: unknown, type = "RCTView"): Fiber =>
+  createFiber({ stateNode, tag: latestReactWorkTags.HostComponent, type });
 
 it("should return the fiber from the host instance", () => {
   render(<div>HostInstance</div>);
@@ -77,15 +59,15 @@ it("should resolve Fabric public instances from canonical host state", () => {
   const rootFiber = createMockHostFiber(null, "root");
   rootFiber.tag = latestReactWorkTags.HostRoot;
   rootFiber.child = hostFiber;
-  rootFiber.memoizedState = { element: {} };
+  rootFiber.memoizedState = { element: {}, memoizedState: null, next: null };
   hostFiber.return = rootFiber;
   const fiberRoot = { current: rootFiber };
-  getRDTHook().onCommitFiberRoot(999, fiberRoot as unknown as FiberRoot, undefined, false);
+  getRDTHook().onCommitFiberRoot(999, fiberRoot, undefined, false);
   try {
     expect(getFiberFromHostInstance(publicInstance)).toBe(hostFiber);
   } finally {
-    rootFiber.memoizedState = { element: null };
-    getRDTHook().onCommitFiberRoot(999, fiberRoot as unknown as FiberRoot, undefined, false);
+    rootFiber.memoizedState = { element: null, memoizedState: null, next: null };
+    getRDTHook().onCommitFiberRoot(999, fiberRoot, undefined, false);
     unsubscribe();
   }
 });
@@ -96,24 +78,24 @@ it("should resolve Paper native tags from host state", () => {
   const rootFiber = createMockHostFiber(null, "root");
   rootFiber.tag = latestReactWorkTags.HostRoot;
   rootFiber.child = hostFiber;
-  rootFiber.memoizedState = { element: {} };
+  rootFiber.memoizedState = { element: {}, memoizedState: null, next: null };
   hostFiber.return = rootFiber;
   const fiberRoot = { current: rootFiber };
-  getRDTHook().onCommitFiberRoot(999, fiberRoot as unknown as FiberRoot, undefined, false);
+  getRDTHook().onCommitFiberRoot(999, fiberRoot, undefined, false);
   try {
     expect(getFiberFromHostInstance(42)).toBe(hostFiber);
   } finally {
-    rootFiber.memoizedState = { element: null };
-    getRDTHook().onCommitFiberRoot(999, fiberRoot as unknown as FiberRoot, undefined, false);
+    rootFiber.memoizedState = { element: null, memoizedState: null, next: null };
+    getRDTHook().onCommitFiberRoot(999, fiberRoot, undefined, false);
     unsubscribe();
   }
 });
 
 it("should prefer renderer.findFiberByHostInstance when available", () => {
-  const mockFiber = { tag: latestReactWorkTags.HostComponent, type: "span" } as unknown as Fiber;
+  const mockFiber = createFiber({ tag: latestReactWorkTags.HostComponent, type: "span" });
   const rdtHook = getRDTHook();
   const findFiberByHostInstance = () => mockFiber;
-  rdtHook.renderers.set(999, { findFiberByHostInstance } as unknown as ReactRenderer);
+  rdtHook.renderers.set(999, createReactRenderer({ findFiberByHostInstance }));
   try {
     expect(getFiberFromHostInstance({})).toBe(mockFiber);
   } finally {
@@ -126,7 +108,7 @@ it("should ignore renderers whose findFiberByHostInstance throws", () => {
   const findFiberByHostInstance = () => {
     throw new Error("no fiber");
   };
-  rdtHook.renderers.set(999, { findFiberByHostInstance } as unknown as ReactRenderer);
+  rdtHook.renderers.set(999, createReactRenderer({ findFiberByHostInstance }));
   try {
     expect(getFiberFromHostInstance({})).toBe(null);
   } finally {

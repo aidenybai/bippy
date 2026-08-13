@@ -2,7 +2,11 @@ export const metadata = {
   title: "Bippy E2E - Next.js",
 };
 
-const RootLayout = ({ children }: { children: React.ReactNode }) => {
+interface RootLayoutProps {
+  children: React.ReactNode;
+}
+
+const RootLayout = ({ children }: RootLayoutProps) => {
   return (
     <html lang="en">
       <body>{children}</body>

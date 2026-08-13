@@ -1,4 +1,4 @@
-import "../src/index.js"; // KEEP THIS LINE ON TOP
+import "../src/index.js"; // HACK: Bippy must initialize before imports that load React.
 
 import { expect, it } from "vite-plus/test";
 

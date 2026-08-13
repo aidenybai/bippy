@@ -1,21 +1,14 @@
 import { describe, expect, it } from "vite-plus/test";
-import type { Fiber } from "../src/react-internals/index.js";
 import {
   getSource,
   hasDebugSource,
   isSourceFile,
   normalizeFileName,
 } from "../src/source/get-source.js";
+import { createFiber } from "./create-fiber.js";
 
-const createFiberWithDebugSource = (debugSource: unknown): Fiber =>
-  ({
-    tag: 999,
-    type: null,
-    return: null,
-    child: null,
-    sibling: null,
-    _debugSource: debugSource,
-  }) as unknown as Fiber;
+const createFiberWithDebugSource = (debugSource: unknown) =>
+  createFiber({ _debugSource: debugSource, tag: 999 });
 
 describe("hasDebugSource", () => {
   it("returns true for a well-formed debug source", () => {
