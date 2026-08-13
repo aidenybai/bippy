@@ -252,8 +252,17 @@ const resolveUrl = (reference: string, baseUrl: string): string | null => {
 const getMetroSourceMapUrl = (bundleUrl: string): string | null => {
   try {
     const parsedBundleUrl = new URL(bundleUrl);
-    if (!parsedBundleUrl.pathname.endsWith(".bundle")) return null;
-    parsedBundleUrl.pathname = `${parsedBundleUrl.pathname.slice(0, -".bundle".length)}.map`;
+    const bundleExtensionIndex = parsedBundleUrl.pathname.lastIndexOf(".bundle");
+    if (bundleExtensionIndex === -1) return null;
+    const embeddedSearch = parsedBundleUrl.pathname.slice(bundleExtensionIndex + ".bundle".length);
+    if (embeddedSearch && !embeddedSearch.startsWith("//&")) return null;
+    parsedBundleUrl.pathname = `${parsedBundleUrl.pathname.slice(0, bundleExtensionIndex)}.map`;
+    if (embeddedSearch) {
+      const embeddedSearchParameters = new URLSearchParams(embeddedSearch.slice("//&".length));
+      for (const [parameterName, parameterValue] of embeddedSearchParameters) {
+        parsedBundleUrl.searchParams.set(parameterName, parameterValue);
+      }
+    }
     parsedBundleUrl.hash = "";
     return parsedBundleUrl.toString();
   } catch {
@@ -613,7 +622,10 @@ const readResponseText = async (
 ): Promise<string | null> => {
   const contentLength = Number(response.headers.get("content-length"));
   if (Number.isFinite(contentLength) && contentLength > maxSizeBytes) return null;
-  if (!response.body) return "";
+  if (!response.body) {
+    const responseText = await response.text();
+    return new TextEncoder().encode(responseText).byteLength > maxSizeBytes ? null : responseText;
+  }
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();

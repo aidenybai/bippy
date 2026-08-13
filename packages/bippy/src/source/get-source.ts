@@ -12,7 +12,7 @@ import {
 } from "./constants.js";
 import { getDefinitionFrameFromOwnedChild, getParentStack, hasDebugStack } from "./owner-stack.js";
 import { parseDebugStack } from "./parse-debug-stack.js";
-import { StackFrame } from "./parse-stack.js";
+import { hasUsableFileName, StackFrame } from "./parse-stack.js";
 import { symbolicateStack, type SourceFetch } from "./symbolication.js";
 
 export const hasDebugSource = (
@@ -53,7 +53,7 @@ const getUsageFrameFromDebugStack = (fiber: Fiber): StackFrame | null => {
     return null;
   }
   for (const stackFrame of frames) {
-    if (stackFrame.fileName) {
+    if (hasUsableFileName(stackFrame)) {
       return stackFrame;
     }
   }

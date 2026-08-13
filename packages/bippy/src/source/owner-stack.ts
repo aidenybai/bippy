@@ -13,7 +13,7 @@ import {
 } from "./constants.js";
 import { getPrepareStackTrace, setPrepareStackTrace } from "./error-stack.js";
 import { parseDebugStack } from "./parse-debug-stack.js";
-import { parseStack, StackFrame } from "./parse-stack.js";
+import { hasUsableFileName, parseStack, StackFrame } from "./parse-stack.js";
 import {
   getRendererDispatcherRefs,
   readDispatcher,
@@ -70,7 +70,7 @@ export const getDefinitionFrameFromOwnedChild = (fiber: Fiber): StackFrame | nul
   }
   for (let frameIndex = frames.length - 1; frameIndex >= 0; frameIndex--) {
     const stackFrame = frames[frameIndex];
-    if (!stackFrame.fileName) {
+    if (!hasUsableFileName(stackFrame)) {
       continue;
     }
     return {

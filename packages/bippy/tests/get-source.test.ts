@@ -17,6 +17,22 @@ const createFiberWithDebugSource = (debugSource: unknown): Fiber =>
     _debugSource: debugSource,
   }) as unknown as Fiber;
 
+const createDebugStackError = (stackLines: string[]): Error => {
+  const error = new Error("react-stack-top-frame");
+  error.stack = stackLines.join("\n");
+  return error;
+};
+
+const createDebugStackFiber = (stackLines: string[]): Fiber =>
+  ({
+    tag: 999,
+    type: null,
+    return: null,
+    child: null,
+    sibling: null,
+    _debugStack: createDebugStackError(stackLines),
+  }) as unknown as Fiber;
+
 describe("hasDebugSource", () => {
   it("returns true for a well-formed debug source", () => {
     const fiber = createFiberWithDebugSource({ fileName: "App.tsx", lineNumber: 10 });
@@ -49,6 +65,59 @@ describe("getSource with _debugSource", () => {
     const fiber = createFiberWithDebugSource(debugSource);
     const result = await getSource(fiber);
     expect(result).toBe(debugSource);
+  });
+});
+
+describe("getSource with native debug frames", () => {
+  it("skips native pseudo-frames in favor of a source frame", async () => {
+    const fiber = createDebugStackFiber([
+      "Error: react-stack-top-frame",
+      "    at jsxDEV (native)",
+      "    at SkiaLeaf (native)",
+      "    at renderLeaf (http://localhost/src/skia-probe.tsx:12:4)",
+      "    at react-stack-bottom-frame (http://localhost/react.js:1:1)",
+    ]);
+
+    const source = await getSource(fiber, false, () =>
+      Promise.resolve(new Response("not found", { status: 404 })),
+    );
+
+    expect(source).toEqual({
+      columnNumber: 4,
+      fileName: "http://localhost/src/skia-probe.tsx",
+      functionName: "renderLeaf",
+      lineNumber: 12,
+    });
+  });
+
+  it("uses an owned child's source frame when the fiber stack is native-only", async () => {
+    const parentFiber = createDebugStackFiber([
+      "Error: react-stack-top-frame",
+      "    at jsxDEV (native)",
+      "    at SkiaLeaf (native)",
+      "    at react-stack-bottom-frame (http://localhost/react.js:1:1)",
+    ]);
+    const childFiber = createDebugStackFiber([
+      "Error: react-stack-top-frame",
+      "    at jsxDEV (native)",
+      "    at SkiaHost (native)",
+      "    at SkiaLeaf (http://localhost/src/skia-probe.tsx:20:6)",
+      "    at react-stack-bottom-frame (http://localhost/react.js:1:1)",
+    ]);
+    parentFiber.child = childFiber;
+    childFiber.return = parentFiber;
+    childFiber._debugOwner = parentFiber;
+
+    const source = await getSource(parentFiber, false, () =>
+      Promise.resolve(new Response("not found", { status: 404 })),
+    );
+
+    expect(source).toEqual({
+      columnNumber: 6,
+      fileName: "http://localhost/src/skia-probe.tsx",
+      functionName: "SkiaLeaf",
+      lineNumber: 20,
+    });
   });
 });
 

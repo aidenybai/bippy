@@ -32,6 +32,12 @@ const createResponseWithUrl = (content: string, url: string): Response => {
   return response;
 };
 
+const createResponseWithoutStream = (content: string): Response => {
+  const response = new Response(content, { status: 200 });
+  Object.defineProperty(response, "body", { value: null });
+  return response;
+};
+
 describe("getSourceFromSourceMap", () => {
   it("resolves the segment at an exact column", () => {
     const result = getSourceFromSourceMap(createStandardSourceMap(), 1, 10);
@@ -243,6 +249,38 @@ describe("getSourceMapUncached", () => {
       "http://localhost/bundle.js": new Response("const value = 1;", { status: 200 }),
     });
     expect(await getSourceMapUncached("http://localhost/bundle.js", fetchFn)).toBeNull();
+  });
+
+  it("reads React Native responses without streaming bodies", async () => {
+    const bundleUrl = "http://localhost/index.bundle";
+    const sourceMapUrl = "http://localhost/index.map";
+    const requestedUrls: string[] = [];
+    const fetchFn = (url: string): Promise<Response> => {
+      requestedUrls.push(url);
+      return Promise.resolve(
+        createResponseWithoutStream(url === sourceMapUrl ? STANDARD_RAW_MAP : "const value = 1;"),
+      );
+    };
+
+    const sourceMap = await getSourceMapUncached(bundleUrl, fetchFn);
+
+    expect(requestedUrls).toEqual([bundleUrl, sourceMapUrl]);
+    expect(sourceMap?.sources).toEqual(["src/app.tsx"]);
+  });
+
+  it("normalizes Metro bundle parameters embedded in Hermes stack urls", async () => {
+    const bundleUrl = "http://localhost/index.bundle//&platform=android&dev=true";
+    const sourceMapUrl = "http://localhost/index.map?platform=android&dev=true";
+    const requestedUrls: string[] = [];
+    const fetchFn = (url: string): Promise<Response> => {
+      requestedUrls.push(url);
+      return Promise.resolve(new Response(url === sourceMapUrl ? STANDARD_RAW_MAP : "bundle"));
+    };
+
+    const sourceMap = await getSourceMapUncached(bundleUrl, fetchFn);
+
+    expect(requestedUrls).toEqual([bundleUrl, sourceMapUrl]);
+    expect(sourceMap?.sources).toEqual(["src/app.tsx"]);
   });
 
   it("returns null for non-fetchable sourcemap urls", async () => {
