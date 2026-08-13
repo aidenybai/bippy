@@ -22,6 +22,7 @@ const createThrowingComponent = (componentName: string): (() => null) => {
 const createFakeFiber = (tag: number, type: unknown): Fiber => createFiber({ tag, type });
 
 interface FixedPointMapOptions {
+  mappedName?: string;
   sourceLines?: string[];
   sourcesContent?: string[];
   mappedLineCount?: number;
@@ -32,14 +33,34 @@ const createFixedPointRawMap = (targetLine: number, options: FixedPointMapOption
   const sourcesContent = options.sourceLines
     ? [options.sourceLines.join("\n")]
     : options.sourcesContent;
+  const mapping = options.mappedName ? [0, 0, targetLine - 1, 0, 0] : [0, 0, targetLine - 1, 0];
   return JSON.stringify({
     version: 3,
     sources: ["src/app.tsx"],
     ...(sourcesContent ? { sourcesContent } : {}),
-    names: [],
-    mappings: encode(Array.from({ length: mappedLineCount }, () => [[0, 0, targetLine - 1, 0]])),
+    names: options.mappedName ? [options.mappedName] : [],
+    mappings: encode(Array.from({ length: mappedLineCount }, () => [mapping])),
   });
 };
+
+const createIndexedFixedPointRawMap = (targetLine: number, sourceContent: string): string =>
+  JSON.stringify({
+    version: 3,
+    sections: [
+      {
+        offset: { line: 0, column: 0 },
+        map: {
+          version: 3,
+          sources: ["src/indexed-app.tsx"],
+          sourcesContent: [sourceContent],
+          names: [],
+          mappings: encode(
+            Array.from({ length: TOTAL_MAPPED_LINES }, () => [[0, 0, targetLine - 1, 0]]),
+          ),
+        },
+      },
+    ],
+  });
 
 const createSourceMapFetchFn = (rawMap: string): ((url: string) => Promise<Response>) => {
   return (url: string) =>
@@ -95,6 +116,18 @@ describe("getDisplayNameFromSource", () => {
     );
     const result = await getDisplayNameFromSource(fiber, false, createSourceMapFetchFn(rawMap));
     expect(result).toBe("NoContentComponent");
+  });
+
+  it("uses original source-map names when source content is unavailable", async () => {
+    const rawMap = createFixedPointRawMap(1, { mappedName: "BookmarkSaveAction" });
+    const fiber = createFakeFiber(
+      latestReactWorkTags.FunctionComponent,
+      createThrowingComponent("Ag"),
+    );
+
+    const result = await getDisplayNameFromSource(fiber, false, createSourceMapFetchFn(rawMap));
+
+    expect(result).toBe("BookmarkSaveAction");
   });
 
   it("falls back when the sources content entry is empty", async () => {
@@ -159,6 +192,21 @@ describe("getDisplayNameFromSource", () => {
     );
     const result = await getDisplayNameFromSource(fiber, false, createSourceMapFetchFn(rawMap));
     expect(result).toBe("ProfileCard");
+  });
+
+  it("extracts component names from indexed source-map section content", async () => {
+    const rawMap = createIndexedFixedPointRawMap(
+      1,
+      "export const IndexedProfileCard = () => null;",
+    );
+    const fiber = createFakeFiber(
+      latestReactWorkTags.FunctionComponent,
+      createThrowingComponent("IndexedMinified"),
+    );
+
+    const result = await getDisplayNameFromSource(fiber, false, createSourceMapFetchFn(rawMap));
+
+    expect(result).toBe("IndexedProfileCard");
   });
 
   it("falls back when no declaration pattern matches the source content", async () => {

@@ -86,7 +86,7 @@ export const parseV8OrIeString = (stack: string): StackFrame[] => {
 
     const locationParts = extractLocation(locationMatch ? locationMatch[1] : sanitizedLine);
     const functionName = (locationMatch && sanitizedLine) || undefined;
-    const fileName = ["eval", "<anonymous>"].includes(locationParts[0])
+    const fileName = ["eval", "<anonymous>", "(native)"].includes(locationParts[0])
       ? undefined
       : locationParts[0];
 

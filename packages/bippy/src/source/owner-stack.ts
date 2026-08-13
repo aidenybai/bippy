@@ -13,7 +13,7 @@ import {
 } from "./constants.js";
 import { getPrepareStackTrace, setPrepareStackTrace } from "./error-stack.js";
 import { parseDebugStack } from "./parse-debug-stack.js";
-import { parseStack, StackFrame } from "./parse-stack.js";
+import { parseStack, type StackFrame } from "./parse-stack.js";
 import {
   getRendererDispatcherRefs,
   readDispatcher,
@@ -272,6 +272,10 @@ const describeNativeComponentFrame = (
               if (controlIndex < 0 || sampleLines[sampleIndex] !== controlLines[controlIndex]) {
                 // V8 adds a "new" prefix for native classes. Let's remove it to make it prettier.
                 let stackFrame = `\n${sampleLines[sampleIndex].replace(" at new ", " at ")}`;
+                const [parsedStackFrame] = parseStack(stackFrame);
+                if (!parsedStackFrame?.fileName) {
+                  continue;
+                }
 
                 const displayName = getDisplayName(component);
                 // If our component frame is labeled "<anonymous>"
@@ -322,7 +326,7 @@ export const describeFiber = (fiber: Fiber, childFiber: Fiber | null): string =>
       break;
     case workTags.FunctionComponent:
     case workTags.SimpleMemoComponent:
-      stackFrame = describeNativeComponentFrame(fiber.type, false);
+      stackFrame = describeNativeComponentFrame(getType(fiber.type) ?? fiber.type, false);
       break;
     case workTags.HostComponent:
     case workTags.HostHoistable:

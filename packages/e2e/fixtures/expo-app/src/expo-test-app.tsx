@@ -34,7 +34,14 @@ import {
   version,
 } from "bippy";
 import type { Fiber, FiberRoot } from "bippy";
-import { getDisplayNameFromSource, getFiberHooks, getOwnerStack, getSource } from "bippy/source";
+import {
+  getDisplayNameFromSource,
+  getFiberHooks,
+  getOwnerStack,
+  getSource,
+  getSourceMap,
+  type SourceFetch,
+} from "bippy/source";
 import {
   Component,
   createContext,
@@ -46,11 +53,28 @@ import {
   useRef,
   useState,
 } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { NativeModules, ScrollView, Text, View } from "react-native";
 
 import { SkiaProbe } from "./skia-probe";
 
 const TestContext = createContext("default-context");
+const requestedSourceUrls: string[] = [];
+const sourceFetch: SourceFetch = (url, init) => {
+  requestedSourceUrls.push(url);
+  return fetch(url, init);
+};
+const getRuntimeBundleUrl = (): string | null => {
+  const sourceCodeModule: unknown = Reflect.get(NativeModules, "SourceCode");
+  if (typeof sourceCodeModule !== "object" || sourceCodeModule === null) return null;
+  const getConstants: unknown = Reflect.get(sourceCodeModule, "getConstants");
+  const sourceCodeConstants =
+    typeof getConstants === "function"
+      ? Reflect.apply(getConstants, sourceCodeModule, [])
+      : sourceCodeModule;
+  if (typeof sourceCodeConstants !== "object" || sourceCodeConstants === null) return null;
+  const scriptUrl: unknown = Reflect.get(sourceCodeConstants, "scriptURL");
+  return typeof scriptUrl === "string" ? scriptUrl : null;
+};
 
 interface TestChildProps {
   count: number;
@@ -372,7 +396,7 @@ const ExpoTestApp = () => {
     void runSourceTests(testChildFiber, testParentFiber);
   }, []);
 
-  const runSkiaTests = useCallback((rendererID: number, fiberRoot: FiberRoot) => {
+  const runSkiaTests = useCallback(async (rendererID: number, fiberRoot: FiberRoot) => {
     if (didRunSkiaRef.current) return;
     const renderer = getRDTHook().renderers.get(rendererID);
     if (renderer?.rendererPackageName !== "react-native-skia") return;
@@ -469,6 +493,23 @@ const ExpoTestApp = () => {
       }
     });
     results["skia-context-value"] = contextValue ?? "null";
+
+    try {
+      const source = await getSource(memoLeafFiber, true, sourceFetch);
+      results["skia-source-fileName"] = source?.fileName ?? "null";
+      results["skia-source-lineNumber"] = String(source?.lineNumber ?? "null");
+    } catch {
+      results["skia-source-fileName"] = "error";
+      results["skia-source-lineNumber"] = "error";
+    }
+
+    try {
+      const displayName = await getDisplayNameFromSource(memoLeafFiber, true, sourceFetch);
+      results["skia-source-displayName"] = displayName ?? "null";
+    } catch {
+      results["skia-source-displayName"] = "error";
+    }
+
     results["skia-done"] = "true";
     setSkiaResults(results);
     setIsSkiaTreeVisible(false);
@@ -476,10 +517,23 @@ const ExpoTestApp = () => {
 
   const runSourceTests = async (testChildFiber: Fiber | null, testParentFiber: Fiber | null) => {
     const results: Record<string, string> = {};
+    const runtimeBundleUrl = getRuntimeBundleUrl();
+    results["runtime-bundle-url"] = runtimeBundleUrl ?? "null";
+
+    if (runtimeBundleUrl) {
+      try {
+        const runtimeSourceMap = await getSourceMap(runtimeBundleUrl, false, sourceFetch);
+        results["runtime-source-map-source"] =
+          runtimeSourceMap?.sources.find((sourceFileName) => sourceFileName.includes("App.tsx")) ??
+          "null";
+      } catch {
+        results["runtime-source-map-source"] = "error";
+      }
+    }
 
     if (testChildFiber) {
       try {
-        const source = await getSource(testChildFiber);
+        const source = await getSource(testChildFiber, true, sourceFetch);
         results["source-fileName"] = source?.fileName ?? "null";
         results["source-lineNumber"] = String(source?.lineNumber ?? "null");
         results["source-columnNumber"] = String(source?.columnNumber ?? "null");
@@ -490,7 +544,7 @@ const ExpoTestApp = () => {
       }
 
       try {
-        const ownerStack = await getOwnerStack(testChildFiber);
+        const ownerStack = await getOwnerStack(testChildFiber, true, sourceFetch);
         results["ownerStack-length"] = String(ownerStack.length);
         results["ownerStack-names"] = ownerStack
           .map((frame) => frame.functionName)
@@ -502,7 +556,11 @@ const ExpoTestApp = () => {
       }
 
       try {
-        const displayNameFromSource = await getDisplayNameFromSource(testChildFiber);
+        const displayNameFromSource = await getDisplayNameFromSource(
+          testChildFiber,
+          true,
+          sourceFetch,
+        );
         results["displayNameFromSource"] = displayNameFromSource ?? "null";
       } catch {
         results["displayNameFromSource"] = "error";
@@ -511,20 +569,21 @@ const ExpoTestApp = () => {
 
     if (testParentFiber) {
       try {
-        const parentSource = await getSource(testParentFiber);
+        const parentSource = await getSource(testParentFiber, true, sourceFetch);
         results["parentSource-fileName"] = parentSource?.fileName ?? "null";
       } catch {
         results["parentSource-fileName"] = "error";
       }
 
       try {
-        const parentOwnerStack = await getOwnerStack(testParentFiber);
+        const parentOwnerStack = await getOwnerStack(testParentFiber, true, sourceFetch);
         results["parentOwnerStack-length"] = String(parentOwnerStack.length);
       } catch {
         results["parentOwnerStack-length"] = "error";
       }
     }
 
+    results["source-fetch-urls"] = Array.from(new Set(requestedSourceUrls)).join(",");
     results["source-done"] = "true";
     setSourceResults(results);
   };
@@ -533,7 +592,7 @@ const ExpoTestApp = () => {
     const instrumentation = instrument({
       onCommitFiberRoot: (rendererID, fiberRoot) => {
         runCoreTests(fiberRoot);
-        runSkiaTests(rendererID, fiberRoot);
+        void runSkiaTests(rendererID, fiberRoot);
       },
       onCommitFiberUnmount: (rendererID, fiber) => {
         const renderer = getRDTHook().renderers.get(rendererID);
