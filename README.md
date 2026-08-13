@@ -3,14 +3,13 @@
 [![version](https://img.shields.io/npm/v/bippy?style=flat&colorA=000000&colorB=000000)](https://npmjs.com/package/bippy)
 [![downloads](https://img.shields.io/npm/dt/bippy.svg?style=flat&colorA=000000&colorB=000000)](https://npmjs.com/package/bippy)
 
-bippy lets you inspect React Fiber trees from outside React components. It installs a DevTools-compatible hook and normalizes common Fiber operations across React 17 through 19.
+bippy lets you inspect React Fiber trees in React 17 through 19.
 
 > [!WARNING]
 > bippy relies on unstable React internals. A React update can break your app or any package that depends on bippy.
 
 ## Table of contents
 
-- [How bippy works](#how-bippy-works)
 - [Install bippy](#install-bippy)
   - [Next.js](#nextjs)
   - [Vite](#vite)
@@ -38,23 +37,15 @@ bippy lets you inspect React Fiber trees from outside React components. It insta
 - [Glossary](#glossary)
 - [About bippy](#about-bippy)
 
-## How bippy works
-
-React renderers report lifecycle events to React DevTools through `globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__`. bippy installs a compatible hook before React loads, then exposes those events and their Fiber trees through a stable API.
-
-A Fiber is a unit in React’s internal tree. Each Fiber represents a component, host instance, or other piece of rendering work. Its `child`, `sibling`, and `return` fields connect it to the rest of the tree.
-
-Use the [React Fiber tree visualization](https://jser.pro/ddir/rie?reactVersion=18.3.1&snippetKey=hq8jm2ylzb9u8eh468) to explore the structure. The [React re-rendering deep dive](https://jser.dev/2023-07-18-how-react-rerenders/) explains how React uses it during rendering.
-
 ## Install bippy
 
-Install bippy and load it before React or any React renderer.
+Install bippy:
 
 ```shell
 npm install bippy
 ```
 
-The import order matters because React reads the DevTools hook when its bundle initializes.
+Import bippy before React or any React renderer.
 
 ### Next.js
 
@@ -76,8 +67,6 @@ import { createRoot } from "react-dom/client";
 
 ## React integration
 
-The main `bippy` entry point installs the DevTools hook before resolving your project’s React version. React remains an external peer dependency and is not bundled with bippy.
-
 ### `useFiber`
 
 Returns the calling component’s Fiber. During server rendering it returns `undefined` because there is no client Fiber for the component.
@@ -94,11 +83,11 @@ const Component = () => {
 
 ## Instrumentation
 
-Instrumentation subscribes to renderer lifecycle events without replacing other bippy subscribers or React DevTools.
+Listen for React lifecycle events with `instrument`.
 
 ### `instrument`
 
-Registers handlers on the React DevTools hook and returns an unsubscribe function. Call `instrument` after importing bippy and before using data from a renderer.
+Registers lifecycle handlers and returns an unsubscribe function.
 
 Available handlers include:
 
@@ -121,7 +110,7 @@ const unsubscribe = instrument({
 unsubscribe();
 ```
 
-Multiple calls compose. Each unsubscribe function removes only the handlers registered by its matching call. Errors from instrumentation, React DevTools, and listeners propagate to the caller.
+Call the returned function to unsubscribe those handlers.
 
 ### `getRDTHook`
 
@@ -173,7 +162,7 @@ The selector can also return a promise. In that case, `traverseFiber` returns a 
 
 ### `didFiberRender` and `didFiberCommit`
 
-These predicates inspect one Fiber’s flags and alternate. They report whether the Fiber has rendered or committed in the past, not whether it changed in the current commit. Use `traverseRenderedFibers` when you need commit-scoped results and render phases.
+Return whether a Fiber has rendered or committed. Use `traverseRenderedFibers` to inspect changes from a specific commit.
 
 ```typescript
 import { didFiberCommit, didFiberRender } from "bippy";
@@ -188,7 +177,7 @@ Inspection helpers identify Fibers and read their component, host instance, and 
 
 ### `setFiberId` and `getFiberId`
 
-Assign and read a stable numeric identity shared by a Fiber and its alternate. `getFiberId` creates an identity when one does not exist.
+Assign and read a stable numeric identity across Fiber updates. `getFiberId` creates an identity when one does not exist.
 
 ```typescript
 import { getFiberId, setFiberId } from "bippy";
@@ -243,7 +232,7 @@ const fiber = getFiber(element);
 
 ### `getLatestFiber`
 
-Returns the current side of a Fiber’s double-buffered pair. Pair it with `getFiber` when the host instance may reference an older alternate.
+Returns the latest version of a Fiber. Use it when you retain a Fiber across renders.
 
 ```typescript
 import { getFiber, getLatestFiber } from "bippy";
@@ -254,7 +243,7 @@ const latestFiber = fiber ? getLatestFiber(fiber) : null;
 
 ### `getRenderer`
 
-Returns the React renderer that owns a Fiber. The result is `null` until bippy observes the Fiber’s root through a commit.
+Returns the React renderer that owns a Fiber, or `null` when the renderer is unavailable.
 
 ```typescript
 import { getRenderer } from "bippy";
@@ -297,7 +286,7 @@ Source utilities resolve component locations, source maps, and component stacks.
 
 ### `getSource`
 
-Returns the source location where React created a Fiber. It uses React debug metadata and source maps across DOM, native, terminal, canvas, PDF, and custom renderers.
+Returns the source location for a Fiber across DOM, native, terminal, canvas, PDF, and custom renderers.
 
 ```typescript
 import { getSource } from "bippy/source";
@@ -306,15 +295,9 @@ const source = await getSource(fiber);
 console.log(source);
 ```
 
-Source inspection has these constraints:
+Production builds may omit source information. Runtimes without `fetch` receive unsymbolicated locations.
 
-- React controls whether debug metadata exists
-- Production builds normally remove source metadata
-- React 18 requires `_debugSource` from the JSX source transform
-- React 19 uses `_debugStack` for composite and host Fibers
-- Runtimes without `fetch` receive unsymbolicated locations
-
-Pass a `SourceFetch` implementation for packaged bundles, virtual filesystems, or renderer-specific URLs:
+Pass a custom `SourceFetch` for packaged bundles, virtual filesystems, or renderer-specific URLs:
 
 ```typescript
 import { getSource, type SourceFetch } from "bippy/source";
@@ -331,8 +314,6 @@ const sourceFetch: SourceFetch = async (url, init) => {
 const source = await getSource(fiber, true, sourceFetch);
 ```
 
-bippy discovers maps from `SourceMap` headers, source map annotations, and Metro’s `.bundle` to `.map` convention. It preserves Metro query parameters when requesting a map.
-
 ### `getOwnerStack` and `getParentStack`
 
 Both functions return symbolicated component stacks above a Fiber. `getOwnerStack` follows the components that created the Fiber’s JSX. `getParentStack` follows every ancestor in the Fiber return chain.
@@ -343,8 +324,6 @@ import { getOwnerStack, getParentStack } from "bippy/source";
 const ownerFrames = await getOwnerStack(fiber);
 const parentFrames = await getParentStack(fiber);
 ```
-
-`getOwnerStack` falls back to `getParentStack` when React does not expose usable owner frames.
 
 ## Build a render highlighter
 
@@ -400,16 +379,9 @@ Use these terms when working with React internals:
 - **Render**: the phase that builds or updates the Fiber tree
 - **Host tree**: the platform-specific output that React mutates, such as DOM elements or native views
 - **Renderer**: a reconciler integration such as React DOM, React Native, or React Three Fiber
-- `rendererID`: the hook identifier for one renderer instance
-- `root`: a `FiberRoot` whose `current` field points to the root Fiber
-- `onCommitFiberRoot`: runs when React commits a Fiber root
-- `onPostCommitFiberRoot`: runs after commit effects
-- `onCommitFiberUnmount`: runs when React unmounts a Fiber
 
 ## About bippy
 
-[`react-scan`](https://github.com/aidenybai/react-scan) originally motivated bippy and adds safeguards around production instrumentation. Review its source before adapting bippy for production use.
-
-Use [`its-fine`](https://github.com/pmndrs/its-fine) when you need Fiber access through hooks inside React. Use [`react-devtools-inline`](https://www.npmjs.com/package/react-devtools-inline) when you need a complete DevTools interface.
+[`react-scan`](https://github.com/aidenybai/react-scan) originally motivated bippy. Use [`react-devtools-inline`](https://www.npmjs.com/package/react-devtools-inline) when you need a complete DevTools interface.
 
 [@dairyfreerice](https://www.instagram.com/dairyfreerice) created the original bippy character. This project has no affiliation with the Bippy brand.
