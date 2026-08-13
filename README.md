@@ -371,4 +371,4 @@ instrument({
 
 ## Acknowledgements
 
-[@dairyfreerice](https://www.instagram.com/dairyfreerice) created the original bippy character.
+the original bippy character is owned and created by [@dairyfreerice](https://www.instagram.com/dairyfreerice). this project is not related to the bippy brand, i just think the character is cute.
