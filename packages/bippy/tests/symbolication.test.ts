@@ -203,6 +203,28 @@ describe("getSourceFromSourceMapByFunctionName", () => {
       getSourceFromSourceMapByFunctionName(createStandardSourceMap(), "MissingComponent"),
     ).toBeNull();
   });
+
+  it("prefers application sources over ignore-listed dependencies", () => {
+    const sourceMap = createStandardSourceMap({
+      ignoredSourceIndices: new Set([0]),
+      mappings: [
+        [
+          [0, 0, 0, 0, 0],
+          [10, 1, 5, 2, 0],
+        ],
+      ],
+      names: ["Button"],
+      sources: ["node_modules/ui/button.tsx", "src/button.tsx"],
+    });
+
+    expect(getSourceFromSourceMapByFunctionName(sourceMap, "Button")).toEqual({
+      columnNumber: 2,
+      fileName: "src/button.tsx",
+      functionName: "Button",
+      isIgnoreListed: false,
+      lineNumber: 6,
+    });
+  });
 });
 
 const STANDARD_RAW_MAP = JSON.stringify({
@@ -451,6 +473,17 @@ describe("getSourceMapUncached", () => {
 
     expect(await getSourceMapUncached("http://localhost/bundle.js", fetchFn)).not.toBeNull();
     expect(requestedUrls).toEqual(["http://localhost/bundle.js", "http://localhost/header.js.map"]);
+  });
+
+  it("uses the SourceMap response header for an empty bundle", async () => {
+    const fetchFn = (url: string): Promise<Response> =>
+      Promise.resolve(
+        url.endsWith(".map")
+          ? new Response(STANDARD_RAW_MAP)
+          : new Response("", { headers: { SourceMap: "bundle.js.map" } }),
+      );
+
+    expect(await getSourceMapUncached("http://localhost/bundle.js", fetchFn)).not.toBeNull();
   });
 
   it("supports the deprecated X-SourceMap response header", async () => {

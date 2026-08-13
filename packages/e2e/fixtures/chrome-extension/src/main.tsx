@@ -3,10 +3,9 @@ import type { Fiber, FiberRoot } from "bippy";
 import { getDisplayNameFromSource, getSource, type SourceFetch } from "bippy/source";
 import { createRoot } from "react-dom/client";
 
-interface ExtensionSourceResult {
+export interface ExtensionSourceResult {
   displayName: string | null;
   fileName: string | null;
-  protocol: string | null;
   sourceRequests: string[];
 }
 
@@ -41,7 +40,6 @@ const resolveSource = async (root: FiberRoot): Promise<void> => {
   const result: ExtensionSourceResult = {
     displayName,
     fileName: source?.fileName ?? null,
-    protocol: source ? new URL(location.href).protocol : null,
     sourceRequests: requestedSourceUrls,
   };
   const resultElement = document.getElementById("result");

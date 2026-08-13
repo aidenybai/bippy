@@ -2,9 +2,7 @@ import { chromium, expect, test } from "@playwright/test";
 import { mkdtemp, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
-
-const isStringArray = (value: unknown): value is string[] =>
-  Array.isArray(value) && value.every((innerValue) => typeof innerValue === "string");
+import type { ExtensionSourceResult } from "../../fixtures/chrome-extension/src/main.js";
 
 test("symbolicates a minified component inside a Chrome extension", async () => {
   const extensionPath = resolve(import.meta.dirname, "../../fixtures/chrome-extension/dist");
@@ -26,19 +24,10 @@ test("symbolicates a minified component inside a Chrome extension", async () => 
 
     const resultElement = extensionPage.locator("#result");
     await expect(resultElement).not.toHaveText("pending", { timeout: 15_000 });
-    const result: unknown = JSON.parse(await resultElement.innerText());
-    expect(result).not.toBeNull();
-    if (typeof result !== "object" || result === null) {
-      throw new Error("Extension source result was not an object");
-    }
-
-    expect(Reflect.get(result, "protocol")).toBe("chrome-extension:");
-    expect(Reflect.get(result, "fileName")).toContain("src/main.tsx");
-    expect(Reflect.get(result, "displayName")).toBe("BookmarkSaveAction");
-    const sourceRequests = Reflect.get(result, "sourceRequests");
-    if (!isStringArray(sourceRequests)) {
-      throw new Error("Extension source requests were not strings");
-    }
+    const result: ExtensionSourceResult = JSON.parse(await resultElement.innerText());
+    expect(result.fileName).toContain("src/main.tsx");
+    expect(result.displayName).toBe("BookmarkSaveAction");
+    const sourceRequests = result.sourceRequests;
     expect(sourceRequests).toHaveLength(2);
     expect(sourceRequests[0]).toMatch(/^chrome-extension:\/\/[^/]+\/assets\/main-.+\.js$/);
     expect(sourceRequests[1]).toBe(`${sourceRequests[0]}.map`);

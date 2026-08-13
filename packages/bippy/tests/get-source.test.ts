@@ -23,15 +23,11 @@ const createDebugStackError = (stackLines: string[]): Error => {
   return error;
 };
 
-const createDebugStackFiber = (stackLines: string[]): Fiber =>
-  ({
-    tag: 999,
-    type: null,
-    return: null,
-    child: null,
-    sibling: null,
-    _debugStack: createDebugStackError(stackLines),
-  }) as unknown as Fiber;
+const createDebugStackFiber = (stackLines: string[]): Fiber => {
+  const fiber = createFiberWithDebugSource(undefined);
+  fiber._debugStack = createDebugStackError(stackLines);
+  return fiber;
+};
 
 describe("hasDebugSource", () => {
   it("returns true for a well-formed debug source", () => {

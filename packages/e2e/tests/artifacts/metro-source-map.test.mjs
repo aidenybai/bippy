@@ -29,10 +29,13 @@ test("symbolicates a real minified Metro production artifact", async () => {
   const requestedUrls = [];
   const sourceFetch = async (url) => {
     requestedUrls.push(url);
-    const artifactPath =
-      url === bundleUrl
-        ? resolve(fixtureDirectory, "index.bundle")
-        : resolve(fixtureDirectory, "index.map");
+    if (url !== bundleUrl && url !== sourceMapUrl) {
+      throw new Error(`Unexpected source request: ${url}`);
+    }
+    const artifactPath = resolve(
+      fixtureDirectory,
+      url === bundleUrl ? "index.bundle" : "index.map",
+    );
     return new Response(await readFile(artifactPath, "utf8"));
   };
   const [bundleContent, sourceMap] = await Promise.all([
@@ -45,7 +48,8 @@ test("symbolicates a real minified Metro production artifact", async () => {
 
   const appPosition = getGeneratedPosition(bundleContent, "test-child");
   const appSource = getSourceFromSourceMap(sourceMap, appPosition.line, appPosition.column);
-  assert.match(appSource?.fileName ?? "", /\/src\/App\.tsx$/);
+  assert.ok(appSource);
+  assert.match(appSource.fileName ?? "", /\/src\/App\.tsx$/);
   assert.match(
     getSourceContentFromSourceMap(sourceMap, appSource.fileName) ?? "",
     /const TestChild/,
@@ -53,7 +57,8 @@ test("symbolicates a real minified Metro production artifact", async () => {
 
   const skiaPosition = getGeneratedPosition(bundleContent, "skia-context-default");
   const skiaSource = getSourceFromSourceMap(sourceMap, skiaPosition.line, skiaPosition.column);
-  assert.match(skiaSource?.fileName ?? "", /\/src\/skia-probe\.tsx$/);
+  assert.ok(skiaSource);
+  assert.match(skiaSource.fileName ?? "", /\/src\/skia-probe\.tsx$/);
   assert.match(
     getSourceContentFromSourceMap(sourceMap, skiaSource.fileName) ?? "",
     /const SkiaMemoLeaf/,

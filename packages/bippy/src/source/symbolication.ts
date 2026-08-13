@@ -1,8 +1,8 @@
-import { decode, SourceMapMappings, type SourceMapSegment } from "@jridgewell/sourcemap-codec";
+import { decode, type SourceMapMappings, type SourceMapSegment } from "@jridgewell/sourcemap-codec";
 
 import { BippySourceMapError } from "../errors.js";
 import { SCHEME_REGEX } from "./constants.js";
-import { StackFrame } from "./parse-stack.js";
+import type { StackFrame } from "./parse-stack.js";
 
 export interface DecodedSourceMapSection {
   map: {
@@ -97,6 +97,29 @@ const extensionProtocols = new Set([
 ]);
 const defaultFetchableProtocols = new Set(["http:", "https:", ...extensionProtocols]);
 
+const getSourceFromSegment = (
+  segment: SourceMapSegment,
+  sources: string[],
+  ignoredSourceIndices?: Set<number>,
+  names?: string[],
+): StackFrame | null => {
+  const [, sourceIndex, sourceLine, sourceColumn, nameIndex] = segment;
+  if (sourceIndex === undefined || sourceLine === undefined || sourceColumn === undefined) {
+    return null;
+  }
+
+  const fileName = sources[sourceIndex];
+  if (!fileName) return null;
+
+  return {
+    columnNumber: sourceColumn,
+    fileName,
+    functionName: nameIndex === undefined ? undefined : names?.[nameIndex],
+    isIgnoreListed: ignoredSourceIndices?.has(sourceIndex) ?? false,
+    lineNumber: sourceLine + 1,
+  };
+};
+
 const getSourceFromMappings = (
   mappings: SourceMapMappings,
   sources: string[],
@@ -131,27 +154,7 @@ const getSourceFromMappings = (
     return null;
   }
 
-  const [, sourceIndex, sourceLine, sourceColumn, nameIndex] = closestLineSegment;
-
-  if (sourceIndex === undefined || sourceLine === undefined || sourceColumn === undefined) {
-    return null;
-  }
-
-  const fileName = sources[sourceIndex];
-
-  if (!fileName) {
-    return null;
-  }
-
-  const functionName = nameIndex === undefined ? undefined : names?.[nameIndex];
-
-  return {
-    columnNumber: sourceColumn,
-    fileName,
-    ...(functionName ? { functionName } : {}),
-    lineNumber: sourceLine + 1,
-    isIgnoreListed: ignoredSourceIndices?.has(sourceIndex) ?? false,
-  };
+  return getSourceFromSegment(closestLineSegment, sources, ignoredSourceIndices, names);
 };
 
 export const getSourceFromSourceMap = (
@@ -213,29 +216,17 @@ const getSourceFromMappingsByFunctionName = (
   const functionNameIndex = names.indexOf(functionName);
   if (functionNameIndex === -1) return null;
 
+  let ignoredSource: StackFrame | null = null;
   for (const lineMapping of mappings) {
     for (const segment of lineMapping) {
-      const [, sourceIndex, sourceLine, sourceColumn, nameIndex] = segment;
-      if (
-        nameIndex !== functionNameIndex ||
-        sourceIndex === undefined ||
-        sourceLine === undefined ||
-        sourceColumn === undefined
-      ) {
-        continue;
-      }
-      const fileName = sources[sourceIndex];
-      if (!fileName) continue;
-      return {
-        columnNumber: sourceColumn,
-        fileName,
-        functionName,
-        isIgnoreListed: ignoredSourceIndices?.has(sourceIndex) ?? false,
-        lineNumber: sourceLine + 1,
-      };
+      if (segment[4] !== functionNameIndex) continue;
+      const source = getSourceFromSegment(segment, sources, ignoredSourceIndices, names);
+      if (!source) continue;
+      if (!source.isIgnoreListed) return source;
+      ignoredSource ??= source;
     }
   }
-  return null;
+  return ignoredSource;
 };
 
 export const getSourceFromSourceMapByFunctionName = (
@@ -243,6 +234,7 @@ export const getSourceFromSourceMapByFunctionName = (
   functionName: string,
 ): StackFrame | null => {
   if (sourceMap.sections) {
+    let ignoredSource: StackFrame | null = null;
     for (const section of sourceMap.sections) {
       const source = getSourceFromMappingsByFunctionName(
         section.map.mappings,
@@ -251,9 +243,11 @@ export const getSourceFromSourceMapByFunctionName = (
         functionName,
         section.map.ignoredSourceIndices,
       );
-      if (source) return source;
+      if (!source) continue;
+      if (!source.isIgnoreListed) return source;
+      ignoredSource ??= source;
     }
-    return null;
+    return ignoredSource;
   }
 
   return getSourceFromMappingsByFunctionName(
@@ -818,7 +812,7 @@ const getSourceMapUncachedInternal = async (
     if (!assertResponseIsCacheable(bundleResponse)) return null;
     if (!isResponseUrlAllowed(bundleUrl, bundleResponse, shouldRejectRedirects)) return null;
     const bundleContent = await readResponseText(bundleResponse, maxBundleSizeBytes);
-    if (!bundleContent) return null;
+    if (bundleContent === null) return null;
     const sourceMapUrl = getSourceMapUrl(bundleUrl, bundleContent, bundleResponse);
     if (!sourceMapUrl) return null;
     if (
