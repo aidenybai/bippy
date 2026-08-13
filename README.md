@@ -515,7 +515,26 @@ const source = await getSource(fiber);
 > - react 19 uses `_debugStack` and works for both composite and host fibers
 > - source-map fetching is optional; runtimes without `fetch` still receive the unsymbolicated source location
 
-`getSourceMap` accepts an optional fetch implementation plus request limits, an abort signal, and a timeout. its cache is scoped to the fetch implementation so credentials or virtual file systems cannot leak results into each other.
+source maps are discovered from `SourceMap` headers, source map annotations, or Metro's `.bundle` to `.map` convention. HTTP, Chrome, Firefox, and Safari WebExtension URLs work without adapters. Metro bundle options such as `platform=ios` or `platform=android` are preserved when requesting the map.
+
+`getSource`, `getOwnerStack`, `getParentStack`, `getDisplayNameFromSource`, `parseHookNames`, and `getSourceMap` accept an optional `SourceFetch`. use it for packaged React Native bundles, desktop runtimes, virtual filesystems, or renderer-specific URLs that the runtime's global `fetch` cannot load. a virtual bundle response can provide a `SourceMap` header when the map is stored separately:
+
+```typescript
+import { getSource, type SourceFetch } from "bippy/source";
+
+const sourceFetch: SourceFetch = async (url, init) => {
+  const resource = nativeSourceArtifacts.get(url);
+  if (!resource) return fetch(url, init);
+
+  return new Response(resource.content, {
+    headers: resource.sourceMapUrl ? { SourceMap: resource.sourceMapUrl } : undefined,
+  });
+};
+
+const source = await getSource(fiber, true, sourceFetch);
+```
+
+custom loaders are isolated in their own source-map cache and may resolve schemes such as `file:`. bippy never reads those schemes through the global fetch implementation. `getSourceMap` also accepts request limits, an abort signal, and a timeout.
 
 ### getOwnerStack / getParentStack
 

@@ -90,6 +90,12 @@ const pendingSourceMapRequestsByFetch = new WeakMap<
 >();
 const defaultMaxBundleSizeBytes = 25 * 1024 * 1024;
 const defaultMaxSourceMapSizeBytes = 100 * 1024 * 1024;
+const extensionProtocols = new Set([
+  "chrome-extension:",
+  "moz-extension:",
+  "safari-web-extension:",
+]);
+const defaultFetchableProtocols = new Set(["http:", "https:", ...extensionProtocols]);
 
 const getSourceFromMappings = (
   mappings: SourceMapMappings,
@@ -97,6 +103,7 @@ const getSourceFromMappings = (
   lineIndexInMappings: number,
   column: number,
   ignoredSourceIndices?: Set<number>,
+  names?: string[],
 ): StackFrame | null => {
   if (lineIndexInMappings < 0 || lineIndexInMappings >= mappings.length) {
     return null;
@@ -124,7 +131,7 @@ const getSourceFromMappings = (
     return null;
   }
 
-  const [, sourceIndex, sourceLine, sourceColumn] = closestLineSegment;
+  const [, sourceIndex, sourceLine, sourceColumn, nameIndex] = closestLineSegment;
 
   if (sourceIndex === undefined || sourceLine === undefined || sourceColumn === undefined) {
     return null;
@@ -136,9 +143,12 @@ const getSourceFromMappings = (
     return null;
   }
 
+  const functionName = nameIndex === undefined ? undefined : names?.[nameIndex];
+
   return {
     columnNumber: sourceColumn,
     fileName,
+    ...(functionName ? { functionName } : {}),
     lineNumber: sourceLine + 1,
     isIgnoreListed: ignoredSourceIndices?.has(sourceIndex) ?? false,
   };
@@ -178,6 +188,7 @@ export const getSourceFromSourceMap = (
       relativeLine,
       relativeColumn,
       targetSection.map.ignoredSourceIndices,
+      targetSection.map.names,
     );
   }
 
@@ -187,7 +198,41 @@ export const getSourceFromSourceMap = (
     line - 1,
     column,
     sourceMap.ignoredSourceIndices,
+    sourceMap.names,
   );
+};
+
+const findSourceContentByFileName = (
+  sources: string[],
+  sourcesContent: Array<string | null> | undefined,
+  fileName: string,
+): string | null => {
+  if (!sourcesContent) return null;
+  const sourceIndex = sources.indexOf(fileName);
+  return sourceIndex === -1 ? null : (sourcesContent[sourceIndex] ?? null);
+};
+
+export const getSourceContentFromSourceMap = (
+  sourceMap: SourceMap,
+  originalFileName: string,
+): string | null => {
+  const sourceContent = findSourceContentByFileName(
+    sourceMap.sources,
+    sourceMap.sourcesContent,
+    originalFileName,
+  );
+  if (sourceContent !== null) return sourceContent;
+
+  if (!sourceMap.sections) return null;
+  for (const section of sourceMap.sections) {
+    const sectionSourceContent = findSourceContentByFileName(
+      section.map.sources,
+      section.map.sourcesContent,
+      originalFileName,
+    );
+    if (sectionSourceContent !== null) return sectionSourceContent;
+  }
+  return null;
 };
 
 const resolveUrl = (reference: string, baseUrl: string): string | null => {
@@ -204,12 +249,34 @@ const resolveUrl = (reference: string, baseUrl: string): string | null => {
   }
 };
 
-const getSourceMapUrl = (url: string, content: string): null | string => {
+const getMetroSourceMapUrl = (bundleUrl: string): string | null => {
+  try {
+    const parsedBundleUrl = new URL(bundleUrl);
+    if (!parsedBundleUrl.pathname.endsWith(".bundle")) return null;
+    parsedBundleUrl.pathname = `${parsedBundleUrl.pathname.slice(0, -".bundle".length)}.map`;
+    parsedBundleUrl.hash = "";
+    return parsedBundleUrl.toString();
+  } catch {
+    return null;
+  }
+};
+
+const getSourceMapUrl = (
+  bundleUrl: string,
+  bundleContent: string,
+  bundleResponse: Response,
+): null | string => {
+  const sourceMapHeader =
+    bundleResponse.headers.get("sourcemap") ?? bundleResponse.headers.get("x-sourcemap");
+  if (sourceMapHeader) {
+    return resolveUrl(sourceMapHeader.trim(), bundleUrl);
+  }
+
   let sourceMapUrl: string | undefined;
-  let searchEnd = content.length;
+  let searchEnd = bundleContent.length;
   while (searchEnd > 0 && !sourceMapUrl) {
-    const lineStart = content.lastIndexOf("\n", searchEnd - 1) + 1;
-    const regexMatch = content.slice(lineStart, searchEnd).match(SOURCEMAP_REGEX);
+    const lineStart = bundleContent.lastIndexOf("\n", searchEnd - 1) + 1;
+    const regexMatch = bundleContent.slice(lineStart, searchEnd).match(SOURCEMAP_REGEX);
     if (regexMatch) {
       sourceMapUrl = regexMatch[1] || regexMatch[2];
     }
@@ -217,10 +284,10 @@ const getSourceMapUrl = (url: string, content: string): null | string => {
   }
 
   if (!sourceMapUrl) {
-    return null;
+    return getMetroSourceMapUrl(bundleUrl);
   }
 
-  return resolveUrl(sourceMapUrl, url);
+  return resolveUrl(sourceMapUrl, bundleUrl);
 };
 
 const isStandardSourceMap = (value: unknown): value is StandardSourceMap => {
@@ -406,7 +473,7 @@ const decodeIndexSourceMap = async (
   };
 };
 
-const isFetchableUrl = (url: string): boolean => {
+const isFetchableUrl = (url: string, shouldAllowCustomProtocol = false): boolean => {
   if (!url) {
     return false;
   }
@@ -425,7 +492,7 @@ const isFetchableUrl = (url: string): boolean => {
 
   const scheme = schemeMatch[0].toLowerCase();
 
-  return scheme === "http:" || scheme === "https:";
+  return shouldAllowCustomProtocol || defaultFetchableProtocols.has(scheme);
 };
 
 const isServerRuntime = (): boolean =>
@@ -446,12 +513,51 @@ const isAbsoluteHttpUrl = (url: string): boolean => {
   }
 };
 
+const getUrlProtocol = (url: string): string | null => {
+  try {
+    return new URL(url).protocol;
+  } catch {
+    return null;
+  }
+};
+
+const isExtensionUrl = (url: string): boolean => {
+  const protocol = getUrlProtocol(url);
+  return protocol !== null && extensionProtocols.has(protocol);
+};
+
 const isSameOrigin = (firstUrl: string, secondUrl: string): boolean => {
   try {
-    return new URL(firstUrl).origin === new URL(secondUrl).origin;
+    const firstParsedUrl = new URL(firstUrl);
+    const secondParsedUrl = new URL(secondUrl);
+    return (
+      firstParsedUrl.protocol === secondParsedUrl.protocol &&
+      firstParsedUrl.host === secondParsedUrl.host
+    );
   } catch {
     return false;
   }
+};
+
+const isAllowedSourceMapUrl = (
+  bundleUrl: string,
+  sourceMapUrl: string,
+  shouldRejectCrossOrigin: boolean,
+  shouldAllowCustomProtocol: boolean,
+): boolean => {
+  if (INLINE_SOURCEMAP_REGEX.test(sourceMapUrl)) return true;
+  if (!isFetchableUrl(sourceMapUrl, shouldAllowCustomProtocol)) return false;
+  const bundleProtocol = getUrlProtocol(bundleUrl);
+  const sourceMapProtocol = getUrlProtocol(sourceMapUrl);
+  const hasCustomProtocol =
+    (bundleProtocol !== null && !defaultFetchableProtocols.has(bundleProtocol)) ||
+    (sourceMapProtocol !== null && !defaultFetchableProtocols.has(sourceMapProtocol));
+  const shouldRequireSameOrigin =
+    shouldRejectCrossOrigin ||
+    hasCustomProtocol ||
+    isExtensionUrl(bundleUrl) ||
+    isExtensionUrl(sourceMapUrl);
+  return !shouldRequireSameOrigin || isSameOrigin(bundleUrl, sourceMapUrl);
 };
 
 const isTransientHttpStatus = (status: number): boolean =>
@@ -464,6 +570,13 @@ const assertResponseIsCacheable = (response: Response): boolean => {
   }
   return false;
 };
+
+const isResponseUrlAllowed = (
+  requestedUrl: string,
+  response: Response,
+  shouldRejectCrossOrigin: boolean,
+): boolean =>
+  !shouldRejectCrossOrigin || response.url.length === 0 || isSameOrigin(requestedUrl, response.url);
 
 interface RequestSignal {
   cleanup: () => void;
@@ -591,6 +704,7 @@ const readSourceMapDocument = async (
     signal,
   });
   if (!assertResponseIsCacheable(sourceMapResponse)) return null;
+  if (!isResponseUrlAllowed(sourceMapUrl, sourceMapResponse, shouldRejectRedirects)) return null;
   const sourceMapContent = await readResponseText(sourceMapResponse, maxSizeBytes);
   if (sourceMapContent === null) return null;
   try {
@@ -605,13 +719,15 @@ const getSourceMapUncachedInternal = async (
   fetchFn?: SourceFetch,
   options: SourceMapRequestOptions = {},
 ): Promise<null | SourceMap> => {
-  if (!isFetchableUrl(bundleUrl)) {
+  const shouldAllowCustomProtocol = fetchFn !== undefined;
+  if (!isFetchableUrl(bundleUrl, shouldAllowCustomProtocol)) {
     return null;
   }
 
-  const shouldRejectRedirects = isServerRuntime();
-  if (shouldRejectRedirects) {
-    if ((!fetchFn && !options.allowUnsafeServerFetch) || !isAbsoluteHttpUrl(bundleUrl)) return null;
+  const isServer = isServerRuntime();
+  const shouldRejectRedirects = isServer || isExtensionUrl(bundleUrl);
+  if (isServer && !fetchFn) {
+    if (!options.allowUnsafeServerFetch || !isAbsoluteHttpUrl(bundleUrl)) return null;
   }
 
   const sourceFetch =
@@ -628,15 +744,18 @@ const getSourceMapUncachedInternal = async (
       signal: requestSignal.signal,
     });
     if (!assertResponseIsCacheable(bundleResponse)) return null;
+    if (!isResponseUrlAllowed(bundleUrl, bundleResponse, shouldRejectRedirects)) return null;
     const bundleContent = await readResponseText(bundleResponse, maxBundleSizeBytes);
     if (!bundleContent) return null;
-    const sourceMapUrl = getSourceMapUrl(bundleUrl, bundleContent);
+    const sourceMapUrl = getSourceMapUrl(bundleUrl, bundleContent, bundleResponse);
     if (!sourceMapUrl) return null;
-    if (!isFetchableUrl(sourceMapUrl) && !INLINE_SOURCEMAP_REGEX.test(sourceMapUrl)) return null;
     if (
-      shouldRejectRedirects &&
-      !INLINE_SOURCEMAP_REGEX.test(sourceMapUrl) &&
-      !isSameOrigin(bundleUrl, sourceMapUrl)
+      !isAllowedSourceMapUrl(
+        bundleUrl,
+        sourceMapUrl,
+        shouldRejectRedirects,
+        shouldAllowCustomProtocol,
+      )
     ) {
       return null;
     }
@@ -654,9 +773,12 @@ const getSourceMapUncachedInternal = async (
     if (!isIndexSourceMap(rawSourceMap)) return null;
     return decodeIndexSourceMap(rawSourceMap, sourceMapUrl, async (sectionUrl) => {
       if (
-        shouldRejectRedirects &&
-        !INLINE_SOURCEMAP_REGEX.test(sectionUrl) &&
-        !isSameOrigin(bundleUrl, sectionUrl)
+        !isAllowedSourceMapUrl(
+          bundleUrl,
+          sectionUrl,
+          shouldRejectRedirects,
+          shouldAllowCustomProtocol,
+        )
       ) {
         return null;
       }
@@ -762,7 +884,7 @@ export const getSourceMap = async (
 export const symbolicateStack = async (
   stack: StackFrame[],
   cache = true,
-  fetchFn?: (url: string) => Promise<Response>,
+  fetchFn?: SourceFetch,
 ): Promise<StackFrame[]> => {
   return Promise.all(
     stack.map(async (stackFrame) => {
@@ -788,6 +910,7 @@ export const symbolicateStack = async (
             ? stackFrame.source.replace(stackFrame.fileName, symbolicatedSource.fileName)
             : stackFrame.source,
         fileName: symbolicatedSource.fileName,
+        functionName: symbolicatedSource.functionName ?? stackFrame.functionName,
         lineNumber: symbolicatedSource.lineNumber,
         columnNumber: symbolicatedSource.columnNumber,
         isIgnoreListed: symbolicatedSource.isIgnoreListed,

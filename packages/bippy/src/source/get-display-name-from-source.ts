@@ -1,7 +1,12 @@
 import { Fiber } from "../react-internals/index.js";
 import { getDisplayName } from "../core.js";
-import { getRawParentStack } from "./owner-stack.js";
-import { getSourceFromSourceMap, getSourceMap } from "./symbolication.js";
+import { getDefinitionFrameFromOwnedChild, getRawParentStack } from "./owner-stack.js";
+import {
+  getSourceContentFromSourceMap,
+  getSourceFromSourceMap,
+  getSourceMap,
+  type SourceFetch,
+} from "./symbolication.js";
 import { StackFrame } from "./parse-stack.js";
 
 const COMPONENT_DECLARATION_PATTERNS = [
@@ -20,9 +25,6 @@ const findComponentDeclarationOnLine = (line: string): string | null => {
 
 const MAX_DECLARATION_LINE_DISTANCE = 5;
 
-// the frame points inside the component, so the nearest declaration wins;
-// searching by pattern over the whole window instead would let an adjacent
-// component's declaration shadow the right one
 const extractComponentNameFromSource = (
   sourceContent: string,
   lineNumber: number,
@@ -52,9 +54,11 @@ const extractComponentNameFromSource = (
 export const getDisplayNameFromSource = async (
   fiber: Fiber,
   cache = true,
-  fetchFn?: (url: string) => Promise<Response>,
+  fetchFn?: SourceFetch,
 ): Promise<string | null> => {
-  const stackFrame = getRawParentStack(fiber).find((innerFrame) => innerFrame.fileName);
+  const stackFrame =
+    getDefinitionFrameFromOwnedChild(fiber) ??
+    getRawParentStack(fiber).find((innerFrame) => innerFrame.fileName);
 
   if (!stackFrame?.fileName) {
     return getDisplayName(fiber.type);
@@ -80,21 +84,14 @@ export const getDisplayNameFromSource = async (
     return getDisplayName(fiber.type);
   }
 
-  if (!bundleSourceMap.sourcesContent) {
-    return getDisplayName(fiber.type);
-  }
-
-  const sourceIndex = bundleSourceMap.sources.indexOf(source.fileName);
-  if (sourceIndex === -1 || !bundleSourceMap.sourcesContent[sourceIndex]) {
-    return getDisplayName(fiber.type);
-  }
-
-  const sourceContent = bundleSourceMap.sourcesContent[sourceIndex];
-  const extractedName = extractComponentNameFromSource(sourceContent, source.lineNumber);
+  const sourceContent = getSourceContentFromSourceMap(bundleSourceMap, source.fileName);
+  const extractedName = sourceContent
+    ? extractComponentNameFromSource(sourceContent, source.lineNumber)
+    : null;
 
   if (extractedName) {
     return extractedName;
   }
 
-  return getDisplayName(fiber.type);
+  return source.functionName ?? getDisplayName(fiber.type);
 };

@@ -13,7 +13,7 @@ import {
 import { getDefinitionFrameFromOwnedChild, getParentStack, hasDebugStack } from "./owner-stack.js";
 import { parseDebugStack } from "./parse-debug-stack.js";
 import { StackFrame } from "./parse-stack.js";
-import { symbolicateStack } from "./symbolication.js";
+import { symbolicateStack, type SourceFetch } from "./symbolication.js";
 
 export const hasDebugSource = (
   fiber: Fiber,
@@ -92,7 +92,7 @@ const getUsageFrameFromDebugStack = (fiber: Fiber): StackFrame | null => {
 export const getSource = async (
   fiber: Fiber,
   cache = true,
-  fetchFn?: (url: string) => Promise<Response>,
+  fetchFn?: SourceFetch,
 ): Promise<FiberSource | null> => {
   if (hasDebugSource(fiber)) {
     return fiber._debugSource;

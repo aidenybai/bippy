@@ -44,11 +44,14 @@ jobs:
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+      - name: Run Metro artifact source-map test
+        run: pnpm exec nr test:metro-artifact
+        working-directory: packages/e2e
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
         working-directory: packages/e2e
       - name: Run Playwright tests
-        run: npx playwright test
+        run: pnpm exec nr test:web
         working-directory: packages/e2e
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}

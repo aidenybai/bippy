@@ -15,7 +15,7 @@ import {
 import { getPrepareStackTrace, setPrepareStackTrace } from "./error-stack.js";
 import { parseDebugStack } from "./parse-debug-stack.js";
 import { parseStack, StackFrame } from "./parse-stack.js";
-import { symbolicateStack } from "./symbolication.js";
+import { symbolicateStack, type SourceFetch } from "./symbolication.js";
 
 interface RendererDispatcherSnapshot {
   currentDispatcherRef: RendererDispatcherRef;
@@ -640,7 +640,7 @@ export const getRawParentStack = (fiber: Fiber): StackFrame[] => {
 export const getParentStack = async (
   fiber: Fiber,
   shouldCache = true,
-  fetchFunction?: (url: string) => Promise<Response>,
+  fetchFunction?: SourceFetch,
 ): Promise<StackFrame[]> => symbolicateStack(getRawParentStack(fiber), shouldCache, fetchFunction);
 
 // an owner frame is only actionable if it can point an editor somewhere:
@@ -661,7 +661,7 @@ const isLocatableFrame = (stackFrame: StackFrame): boolean =>
 export const getOwnerStack = async (
   fiber: Fiber,
   shouldCache = true,
-  fetchFunction?: (url: string) => Promise<Response>,
+  fetchFunction?: SourceFetch,
 ): Promise<StackFrame[]> => {
   const debugStackFrames = getOwnerStackFromDebugStacks(fiber);
   if (debugStackFrames.length > 0) {

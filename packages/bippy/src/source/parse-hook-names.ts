@@ -1,5 +1,11 @@
 import type { HooksNode, HooksTree, HookSource } from "./inspect-hooks.js";
-import { getSourceMap, getSourceFromSourceMap, type SourceMap } from "./symbolication.js";
+import {
+  getSourceContentFromSourceMap,
+  getSourceMap,
+  getSourceFromSourceMap,
+  type SourceFetch,
+  type SourceMap,
+} from "./symbolication.js";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface HookNames extends Map<string, string> {}
@@ -31,40 +37,6 @@ const flattenHooksTree = (hooksTree: HooksTree): HooksNode[] => {
   };
   collectNamedHooks(hooksTree);
   return hooksList;
-};
-
-const findSourceContentByFileName = (
-  sources: string[],
-  sourcesContent: Array<string | null> | undefined,
-  fileName: string,
-): string | null => {
-  if (!sourcesContent) return null;
-  const sourceIndex = sources.indexOf(fileName);
-  return sourceIndex !== -1 ? (sourcesContent[sourceIndex] ?? null) : null;
-};
-
-const getSourceContentFromSourceMap = (
-  sourceMap: SourceMap,
-  originalFileName: string,
-): string | null => {
-  const directResult = findSourceContentByFileName(
-    sourceMap.sources,
-    sourceMap.sourcesContent,
-    originalFileName,
-  );
-  if (directResult) return directResult;
-
-  if (sourceMap.sections) {
-    for (const section of sourceMap.sections) {
-      const sectionResult = findSourceContentByFileName(
-        section.map.sources,
-        section.map.sourcesContent,
-        originalFileName,
-      );
-      if (sectionResult) return sectionResult;
-    }
-  }
-  return null;
 };
 
 const extractVariableNameFromBinding = (binding: string): string | null => {
@@ -111,7 +83,7 @@ interface ResolvedSource {
 interface SourceResolutionContext {
   sourceMapsByFile: Map<string, SourceMap | null>;
   sourceContentCache: Map<string, string | null>;
-  fetchFn?: (url: string) => Promise<Response>;
+  fetchFn?: SourceFetch;
 }
 
 const resolveOriginalSource = async (
@@ -173,7 +145,7 @@ const resolveOriginalSource = async (
 
 export const parseHookNames = async (
   hooksTree: HooksTree,
-  fetchFn?: (url: string) => Promise<Response>,
+  fetchFn?: SourceFetch,
 ): Promise<HookNames> => {
   const hookNames: HookNames = new Map();
   const hooksList = flattenHooksTree(hooksTree);
