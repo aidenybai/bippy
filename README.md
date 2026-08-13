@@ -80,7 +80,7 @@ The main `bippy` entry point installs the DevTools hook before resolving your pr
 
 ### `useFiber`
 
-Returns the calling component’s Fiber without requiring a provider. During server rendering it returns `undefined` because there is no client Fiber for the component.
+Returns the calling component’s Fiber. During server rendering it returns `undefined` because there is no client Fiber for the component.
 
 ```tsx
 import { useFiber } from "bippy";
