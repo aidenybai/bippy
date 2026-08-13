@@ -190,6 +190,22 @@ describe("describeFiber native component frames", () => {
     expect(frame).toBe("\n    in StringThrowingComponent");
   });
 
+  it("does not return native bridge frames from component stack comparison", () => {
+    const NativeBridgeComponent = (): null => {
+      const nativeError = new Error("native bridge");
+      nativeError.stack = "Error: native bridge\n    at apply (native)";
+      throw nativeError;
+    };
+    const frame = describeFiber(
+      createFakeFiber({
+        tag: latestReactWorkTags.FunctionComponent,
+        type: NativeBridgeComponent,
+      }),
+      null,
+    );
+    expect(frame).toBe("\n    in NativeBridgeComponent");
+  });
+
   it("returns an empty frame for anonymous components without display names", () => {
     const anonymousComponents: Array<() => null> = [() => null];
     const frame = describeFiber(

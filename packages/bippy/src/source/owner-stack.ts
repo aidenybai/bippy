@@ -272,6 +272,10 @@ const describeNativeComponentFrame = (
               if (controlIndex < 0 || sampleLines[sampleIndex] !== controlLines[controlIndex]) {
                 // V8 adds a "new" prefix for native classes. Let's remove it to make it prettier.
                 let stackFrame = `\n${sampleLines[sampleIndex].replace(" at new ", " at ")}`;
+                const [parsedStackFrame] = parseStack(stackFrame);
+                if (!parsedStackFrame || !isUsableFileName(parsedStackFrame.fileName)) {
+                  continue;
+                }
 
                 const displayName = getDisplayName(component);
                 // If our component frame is labeled "<anonymous>"
