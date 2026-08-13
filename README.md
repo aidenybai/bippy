@@ -33,7 +33,6 @@ bippy lets you inspect React Fiber trees in React 17 through 19.
 - [Source inspection](#source-inspection)
   - [`getSource`](#getsource)
   - [`getOwnerStack` and `getParentStack`](#getownerstack-and-getparentstack)
-- [Build a render highlighter](#build-a-render-highlighter)
 - [Acknowledgements](#acknowledgements)
 
 ## Install bippy
@@ -323,51 +322,6 @@ import { getOwnerStack, getParentStack } from "bippy/source";
 const ownerFrames = await getOwnerStack(fiber);
 const parentFrames = await getParentStack(fiber);
 ```
-
-## Build a render highlighter
-
-This example combines instrumentation and traversal to outline host elements when their Fibers render.
-
-First, create a helper that finds and outlines the first host Fiber below a rendered Fiber:
-
-```typescript
-import { isHostFiber, traverseFiber, type Fiber } from "bippy";
-
-const highlightFiber = (fiber: Fiber): void => {
-  const hostFiber = traverseFiber(fiber, isHostFiber);
-  if (!(hostFiber?.stateNode instanceof HTMLElement)) return;
-
-  const bounds = hostFiber.stateNode.getBoundingClientRect();
-  const outline = document.createElement("div");
-  outline.style.cssText = `
-    position: fixed;
-    inset: ${bounds.top}px auto auto ${bounds.left}px;
-    width: ${bounds.width}px;
-    height: ${bounds.height}px;
-    border: 1px solid red;
-    pointer-events: none;
-  `;
-  document.documentElement.appendChild(outline);
-  const animation = outline.animate([{ opacity: 1 }, { opacity: 0 }], 100);
-  void animation.finished.then(() => outline.remove());
-};
-```
-
-Then call the helper for each Fiber reported by `traverseRenderedFibers`:
-
-```typescript
-import { instrument, traverseRenderedFibers } from "bippy";
-
-instrument({
-  onCommitFiberRoot(_rendererID, root) {
-    traverseRenderedFibers(root, (fiber) => {
-      highlightFiber(fiber);
-    });
-  },
-});
-```
-
-[`react-scan`](https://github.com/aidenybai/react-scan) applies the same idea with production safeguards, batching, and a complete overlay system.
 
 ## Acknowledgements
 
