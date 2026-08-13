@@ -18,9 +18,6 @@ export interface ParseOptions {
   includeInElement?: boolean;
 }
 
-export const isUsableFileName = (fileName: string | null | undefined): fileName is string =>
-  Boolean(fileName && fileName !== "(native)");
-
 const FIREFOX_SAFARI_STACK_REGEXP = /(^|@)\S+:\d+/;
 const CHROME_IE_STACK_REGEXP = /^\s*at .*(\S+:\d+|\(native\))/m;
 const SAFARI_NATIVE_CODE_REGEXP = /^(eval@)?(\[native code\])?$/;
@@ -89,7 +86,7 @@ export const parseV8OrIeString = (stack: string): StackFrame[] => {
 
     const locationParts = extractLocation(locationMatch ? locationMatch[1] : sanitizedLine);
     const functionName = (locationMatch && sanitizedLine) || undefined;
-    const fileName = ["eval", "<anonymous>"].includes(locationParts[0])
+    const fileName = ["eval", "<anonymous>", "(native)"].includes(locationParts[0])
       ? undefined
       : locationParts[0];
 

@@ -13,7 +13,7 @@ import {
 } from "./constants.js";
 import { getDefinitionFrameFromOwnedChild, getParentStack, hasDebugStack } from "./owner-stack.js";
 import { parseDebugStack } from "./parse-debug-stack.js";
-import { isUsableFileName, parseStack, StackFrame } from "./parse-stack.js";
+import { parseStack, type StackFrame } from "./parse-stack.js";
 import {
   getSourceFromSourceMapByFunctionName,
   getSourceMap,
@@ -33,8 +33,8 @@ export const hasDebugSource = (
   return (
     typeof debugSource === "object" &&
     typeof debugSource.fileName === "string" &&
-    typeof debugSource.lineNumber === "number" &&
-    isUsableFileName(debugSource.fileName)
+    debugSource.fileName !== "(native)" &&
+    typeof debugSource.lineNumber === "number"
   );
 };
 
@@ -60,7 +60,7 @@ const getUsageFrameFromDebugStack = (fiber: Fiber): StackFrame | null => {
     return null;
   }
   for (const stackFrame of frames) {
-    if (isUsableFileName(stackFrame.fileName)) {
+    if (stackFrame.fileName) {
       return stackFrame;
     }
   }
@@ -78,11 +78,12 @@ const getSourceByComponentName = async (
   const runtimeStackFrames = parseStack(new Error().stack ?? "");
   const visitedFileNames = new Set<string>();
   for (const stackFrame of runtimeStackFrames) {
-    if (!isUsableFileName(stackFrame.fileName) || visitedFileNames.has(stackFrame.fileName)) {
+    const fileName = stackFrame.fileName;
+    if (!fileName || visitedFileNames.has(fileName)) {
       continue;
     }
-    visitedFileNames.add(stackFrame.fileName);
-    const sourceMap = await getSourceMap(stackFrame.fileName, cache, fetchFn);
+    visitedFileNames.add(fileName);
+    const sourceMap = await getSourceMap(fileName, cache, fetchFn);
     if (!sourceMap) continue;
     const source = getSourceFromSourceMapByFunctionName(sourceMap, functionName);
     if (source && !source.isIgnoreListed) return toFiberSource(source);
@@ -137,7 +138,7 @@ export const getSource = async (
 
   const parentStackFrames = await getParentStack(fiber, cache, fetchFn);
   for (const stackFrame of parentStackFrames) {
-    if (isUsableFileName(stackFrame.fileName)) {
+    if (stackFrame.fileName) {
       return toFiberSource(stackFrame);
     }
   }

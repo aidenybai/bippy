@@ -13,7 +13,7 @@ import {
 } from "./constants.js";
 import { getPrepareStackTrace, setPrepareStackTrace } from "./error-stack.js";
 import { parseDebugStack } from "./parse-debug-stack.js";
-import { isUsableFileName, parseStack, StackFrame } from "./parse-stack.js";
+import { parseStack, type StackFrame } from "./parse-stack.js";
 import {
   getRendererDispatcherRefs,
   readDispatcher,
@@ -70,7 +70,7 @@ export const getDefinitionFrameFromOwnedChild = (fiber: Fiber): StackFrame | nul
   }
   for (let frameIndex = frames.length - 1; frameIndex >= 0; frameIndex--) {
     const stackFrame = frames[frameIndex];
-    if (!isUsableFileName(stackFrame.fileName)) {
+    if (!stackFrame.fileName) {
       continue;
     }
     return {
@@ -273,7 +273,7 @@ const describeNativeComponentFrame = (
                 // V8 adds a "new" prefix for native classes. Let's remove it to make it prettier.
                 let stackFrame = `\n${sampleLines[sampleIndex].replace(" at new ", " at ")}`;
                 const [parsedStackFrame] = parseStack(stackFrame);
-                if (!parsedStackFrame || !isUsableFileName(parsedStackFrame.fileName)) {
+                if (!parsedStackFrame?.fileName) {
                   continue;
                 }
 
