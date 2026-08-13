@@ -1,12 +1,13 @@
+import { Inspector } from "@bippy/next-playground/components/inspector";
 import { TodoList } from "@bippy/next-playground/components/todo-list";
 
-import { SourceEditor } from "./source-editor";
-
-export default function App() {
+const ExpoPlaygroundApp = () => {
   return (
     <div className="p-12 flex flex-col gap-4">
-      <SourceEditor />
+      <Inspector />
       <TodoList />
     </div>
   );
-}
+};
+
+export default ExpoPlaygroundApp;

@@ -1,14 +1,11 @@
-import "../src/index.js"; // KEEP THIS LINE ON TOP
+import "../src/index.js"; // HACK: Bippy must initialize before imports that load React.
 
 import { expect, it, vi } from "vite-plus/test";
 import { overrideHookState, overrideProps } from "../src/index.js";
-import type {
-  Fiber,
-  FiberRoot,
-  ReactDevToolsGlobalHook,
-  ReactRenderer,
-} from "../src/react-internals/index.js";
-import { latestReactWorkTags } from "./react-work-tags.js";
+import type { Fiber, FiberRoot } from "../src/react-internals/index.js";
+import { createFiber } from "./create-fiber.js";
+import { createRDTHook } from "./create-rdt-hook.js";
+import { createReactRenderer } from "./create-react-renderer.js";
 
 interface MockFiberOverrides {
   memoizedState?: unknown;
@@ -17,33 +14,20 @@ interface MockFiberOverrides {
 }
 
 const createMockFiber = (overrides: MockFiberOverrides = {}): Fiber =>
-  ({
-    alternate: null,
-    child: null,
-    flags: 0,
-    memoizedProps: {},
-    memoizedState: null,
-    pendingProps: {},
-    return: null,
-    sibling: null,
-    stateNode: null,
-    tag: latestReactWorkTags.FunctionComponent,
-    type: () => null,
-    ...overrides,
-  }) as unknown as Fiber;
+  createFiber({ type: () => null, ...overrides });
 
 const firstOverrideProps = vi.fn();
 const secondOverrideProps = vi.fn();
-const firstRenderer = { overrideProps: firstOverrideProps } as unknown as ReactRenderer;
-const secondRenderer = { overrideProps: secondOverrideProps } as unknown as ReactRenderer;
+const firstRenderer = createReactRenderer({ overrideProps: firstOverrideProps });
+const secondRenderer = createReactRenderer({ overrideProps: secondOverrideProps });
 
-const rdtHook = {
+const rdtHook = createRDTHook({
   _instrumentationSource: "test",
   renderers: new Map([
     [1, firstRenderer],
     [2, secondRenderer],
   ]),
-} as unknown as ReactDevToolsGlobalHook;
+});
 globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ = rdtHook;
 
 it("should fan out to every renderer when the fiber's root owner is unknown", () => {

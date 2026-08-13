@@ -1,4 +1,4 @@
-import "../src/index.js"; // KEEP THIS LINE ON TOP
+import "../src/index.js"; // HACK: Bippy must initialize before imports that load React.
 
 /* eslint-disable unicorn/no-thenable -- Thenables are the behavior under test. */
 
@@ -6,6 +6,7 @@ import { beforeAll, describe, expect, it } from "vite-plus/test";
 import type { Fiber } from "../src/react-internals/index.js";
 import { getRDTHook, _renderers } from "../src/index.js";
 import { getFiberHooks, type HooksNode } from "../src/source/inspect-hooks.js";
+import { createFiber } from "./create-fiber.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
 import React from "react";
 import { render } from "@testing-library/react";
@@ -42,7 +43,7 @@ const createInspectableFiber = (
   shape: FakeFiberShape,
   dependencyFields: Record<string, unknown> = { dependencies: null },
 ): Fiber => {
-  const fiber: Record<string, unknown> = {
+  const fiber = createFiber({
     tag: shape.tag ?? latestReactWorkTags.FunctionComponent,
     type: shape.type,
     elementType: "elementType" in shape ? shape.elementType : shape.type,
@@ -53,9 +54,10 @@ const createInspectableFiber = (
     child: null,
     sibling: null,
     return: shape.returnFiber ?? null,
-  };
-  Object.assign(fiber, dependencyFields);
-  return fiber as unknown as Fiber;
+    ...dependencyFields,
+  });
+  if (!("dependencies" in dependencyFields)) Reflect.deleteProperty(fiber, "dependencies");
+  return fiber;
 };
 
 interface HookChainNode {
@@ -79,6 +81,11 @@ const collectValues = (hooksTree: HooksNode[]): unknown[] => {
   };
   walk(hooksTree);
   return hookValues;
+};
+
+const requireArray = (value: unknown): unknown[] => {
+  if (!Array.isArray(value)) throw new Error("Dispatcher did not return an array");
+  return value;
 };
 
 beforeAll(() => {
@@ -151,8 +158,7 @@ describe("use() inspection", () => {
   });
 
   it("rejects context-tagged objects without a current value", () => {
-    const contextTypeSymbol = (React.createContext("real") as unknown as { $$typeof: symbol })
-      .$$typeof;
+    const contextTypeSymbol = Reflect.get(React.createContext("real"), "$$typeof");
     const contextLikeObject = { $$typeof: contextTypeSymbol };
     const UseContextLikeComponent = (): null => {
       React.use(contextLikeObject as unknown as Promise<string>);
@@ -359,8 +365,8 @@ describe("dispatcher-only hooks", () => {
     const MemoCacheComponent = (): null => {
       const dispatcher = getActiveDispatcher();
       capturedCacheData = [
-        dispatcher.useMemoCache(2) as unknown[],
-        dispatcher.useMemoCache(3) as unknown[],
+        requireArray(dispatcher.useMemoCache(2)),
+        requireArray(dispatcher.useMemoCache(3)),
       ];
       return null;
     };
@@ -379,7 +385,7 @@ describe("dispatcher-only hooks", () => {
   it("returns an empty cache when the update queue has none", () => {
     let capturedCacheData: unknown[] | null = null;
     const NoCacheComponent = (): null => {
-      capturedCacheData = getActiveDispatcher().useMemoCache(4) as unknown[];
+      capturedCacheData = requireArray(getActiveDispatcher().useMemoCache(4));
       return null;
     };
     const fiber = createInspectableFiber({ type: NoCacheComponent });

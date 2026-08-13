@@ -14,7 +14,10 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import * as JsxDevRuntime from "react/jsx-dev-runtime";
 import * as JsxRuntime from "react/jsx-runtime";
 
-const jsxDevFunction = (JsxDevRuntime as Record<string, unknown>).jsxDEV;
+const jsxDevFunction = Reflect.get(JsxDevRuntime, "jsxDEV");
+
+const isComponentType = (value: unknown): value is React.ComponentType<unknown> =>
+  typeof value === "function";
 
 const REACT_SCOPE: Record<string, unknown> = {
   React,
@@ -58,7 +61,9 @@ const evalComponentSource = (
 
   // eslint-disable-next-line @typescript-eslint/no-implied-eval
   const factory = new Function(...paramNames, `return (${source})`);
-  return factory(...paramValues) as React.ComponentType<unknown>;
+  const component: unknown = factory(...paramValues);
+  if (!isComponentType(component)) throw new Error("Edited source must evaluate to a component");
+  return component;
 };
 
 const walkToCompositeFiber = (fiber: Fiber): Fiber | null => {
@@ -126,7 +131,7 @@ interface EditorState {
   componentName: string;
 }
 
-export function SourceEditor() {
+export const SourceEditor = () => {
   const [isEnabled, setIsEnabled] = useState(false);
   const [editorState, setEditorState] = useState<EditorState | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -409,4 +414,4 @@ export function SourceEditor() {
       )}
     </>
   );
-}
+};

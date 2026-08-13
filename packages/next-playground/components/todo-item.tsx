@@ -3,10 +3,14 @@ interface Todo {
   title: string;
 }
 
-export function TodoItem({ todo }: { todo: Todo }) {
+interface TodoItemProps {
+  todo: Todo;
+}
+
+export const TodoItem = ({ todo }: TodoItemProps) => {
   return (
     <li>
       <span>{todo.title}</span>
     </li>
   );
-}
+};

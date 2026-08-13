@@ -12,7 +12,7 @@ test.describe("getRDTHook", () => {
     const result = await page.evaluate(() => {
       const rdtHook = window.__BIPPY__.getRDTHook();
       return {
-        isGlobalHook: rdtHook === (globalThis as any).__REACT_DEVTOOLS_GLOBAL_HOOK__,
+        isGlobalHook: rdtHook === globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__,
         isActive: rdtHook._instrumentationIsActive === true,
         isActiveApi: window.__BIPPY__.isInstrumentationActive(),
       };
@@ -46,7 +46,7 @@ test.describe("patchRDTHook", () => {
     page,
   }) => {
     const result = await page.evaluate(() => {
-      const rdtHook = (globalThis as any).__REACT_DEVTOOLS_GLOBAL_HOOK__;
+      const rdtHook = window.__BIPPY__.getRDTHook();
       rdtHook._instrumentationSource = undefined;
       rdtHook._instrumentationIsActive = false;
       let didFire = false;
@@ -55,7 +55,7 @@ test.describe("patchRDTHook", () => {
       });
       return {
         didFire,
-        isActive: rdtHook._instrumentationIsActive === true,
+        isActive: Boolean(rdtHook._instrumentationIsActive),
       };
     });
     expect(result.didFire).toBe(true);
@@ -103,8 +103,12 @@ test.describe("installRDTHook", () => {
         rendererCount: installedHook.renderers.size,
       };
 
-      const fakeRenderer = { version: "19.0.0-e2e" };
-      const injectedRendererId = installedHook.inject(fakeRenderer as never);
+      const fakeRenderer: Parameters<typeof installedHook.inject>[0] = {
+        bundleType: 1,
+        rendererPackageName: "e2e-renderer",
+        version: "19.0.0-e2e",
+      };
+      const injectedRendererId = installedHook.inject(fakeRenderer);
       const activeAfterInject = installedHook._instrumentationIsActive === true;
 
       // the global property is now bippy's accessor: assigning through its

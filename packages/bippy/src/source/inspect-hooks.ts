@@ -643,7 +643,7 @@ const buildTree = (rootStack: StackFrame[], capturedHookLog: HookLogEntry[]): Ho
     }
 
     const { primitive } = hook;
-    const id = NON_ID_HOOK_PRIMITIVES.has(primitive) ? null : nativeHookID++;
+    const hookId = NON_ID_HOOK_PRIMITIVES.has(primitive) ? null : nativeHookID++;
     const isStateEditable = primitive === "Reducer" || primitive === "State";
     const name = displayName || primitive;
 
@@ -655,7 +655,14 @@ const buildTree = (rootStack: StackFrame[], capturedHookLog: HookLogEntry[]): Ho
       fileName: firstStackFrame?.fileName ?? null,
     };
 
-    levelChildren.push({ id, isStateEditable, name, value: hook.value, subHooks: [], hookSource });
+    levelChildren.push({
+      id: hookId,
+      isStateEditable,
+      name,
+      value: hook.value,
+      subHooks: [],
+      hookSource,
+    });
   }
 
   processDebugValues(rootChildren, null);

@@ -1,4 +1,4 @@
-import "../src/index.js"; // KEEP THIS LINE ON TOP
+import "../src/index.js"; // HACK: Bippy must initialize before imports that load React.
 
 import { render } from "@testing-library/react";
 import React from "react";
@@ -8,7 +8,7 @@ import {
   isInstrumentationActive,
   isRealReactDevtools,
 } from "../src/index.js";
-import type { ReactDevToolsGlobalHook } from "../src/react-internals/index.js";
+import { createRDTHook } from "./create-rdt-hook.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
 
 const Example = () => {
@@ -20,14 +20,11 @@ it("isRealReactDevtools should return false when passed null", () => {
 });
 
 it("isRealReactDevtools should detect devtools when hook has getFiberRoots", () => {
-  const mockHookWithDevtools = {
+  const mockHookWithDevtools = createRDTHook({
     getFiberRoots: () => new Set(),
-    renderers: new Map(),
-  } as unknown as ReactDevToolsGlobalHook;
+  });
 
-  const mockHookWithoutDevtools = {
-    renderers: new Map(),
-  } as unknown as ReactDevToolsGlobalHook;
+  const mockHookWithoutDevtools = createRDTHook();
 
   expect(isRealReactDevtools(mockHookWithDevtools)).toBe(true);
   expect(isRealReactDevtools(mockHookWithoutDevtools)).toBe(false);

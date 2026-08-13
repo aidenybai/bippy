@@ -1,8 +1,9 @@
-// intentionally avoids importing ../index.js so this file controls hook installation
+// HACK: Avoid importing index so this test controls hook installation.
 import { expect, it, vi } from "vite-plus/test";
 import { ReactBuildType } from "../src/react-internals/index.js";
 import { installRDTHook } from "../src/rdt-hook.js";
 import type { ReactDevToolsGlobalHook, ReactRenderer } from "../src/react-internals/index.js";
+import { createReactRenderer } from "./create-react-renderer.js";
 
 it("should fall back to patching when the hook property cannot be redefined", () => {
   const existingInject = vi.fn(() => 42);
@@ -30,10 +31,9 @@ it("should fall back to patching when the hook property cannot be redefined", ()
   expect(existingHook.inject).not.toBe(existingInject);
   expect(onActive).not.toHaveBeenCalled();
 
-  const fakeRenderer = {
+  const fakeRenderer = createReactRenderer({
     bundleType: ReactBuildType.Development,
-    version: "19.0.0",
-  } as unknown as ReactRenderer;
+  });
   const rendererId = existingHook.inject(fakeRenderer);
   expect(rendererId).toBe(42);
   expect(existingInject).toHaveBeenCalledWith(fakeRenderer);

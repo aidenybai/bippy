@@ -2,6 +2,7 @@ import { encode } from "@jridgewell/sourcemap-codec";
 import { describe, expect, it } from "vite-plus/test";
 import type { Fiber } from "../src/react-internals/index.js";
 import { getDisplayNameFromSource } from "../src/source/get-display-name-from-source.js";
+import { createFiber } from "./create-fiber.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
 import { sourceFetch as failingFetchFn } from "./source-fetch.js";
 
@@ -18,14 +19,7 @@ const createThrowingComponent = (componentName: string): (() => null) => {
   return component;
 };
 
-const createFakeFiber = (tag: number, type: unknown): Fiber =>
-  ({
-    tag,
-    type,
-    return: null,
-    child: null,
-    sibling: null,
-  }) as unknown as Fiber;
+const createFakeFiber = (tag: number, type: unknown): Fiber => createFiber({ tag, type });
 
 interface FixedPointMapOptions {
   mappedName?: string;

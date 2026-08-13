@@ -1,4 +1,4 @@
-import "../src/index.js"; // KEEP THIS LINE ON TOP
+import "../src/index.js"; // HACK: Bippy must initialize before imports that load React.
 
 import { describe, expect, it, vi } from "vite-plus/test";
 import type { ContextDependency, Fiber } from "../src/react-internals/index.js";
@@ -10,25 +10,10 @@ import {
   traverseState,
 } from "../src/index.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
+import { createFiber } from "./create-fiber.js";
+import { requireFiber } from "./require-fiber.js";
 import React from "react";
 import { render } from "@testing-library/react";
-
-const createMockFiber = (overrides: Record<string, unknown> = {}): Fiber =>
-  ({
-    alternate: null,
-    child: null,
-    dependencies: null,
-    flags: 0,
-    memoizedProps: {},
-    memoizedState: null,
-    pendingProps: {},
-    return: null,
-    sibling: null,
-    stateNode: null,
-    tag: latestReactWorkTags.FunctionComponent,
-    type: null,
-    ...overrides,
-  }) as unknown as Fiber;
 
 export const Context1 = React.createContext(0);
 export const Context2 = React.createContext(0);
@@ -37,12 +22,12 @@ export const Example = () => {
   return <div>Hello</div>;
 };
 
-export const ComplexComponent = ({
-  countProp = 0,
-}: {
+interface ComplexComponentProps {
   countProp?: number;
   extraProp?: unknown;
-}) => {
+}
+
+export const ComplexComponent = ({ countProp = 0 }: ComplexComponentProps) => {
   const countContextValue = React.useContext(Context1);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _extraContextValue = React.useContext(Context2);
@@ -67,7 +52,7 @@ describe("traverseProps", () => {
     });
     render(<ComplexComponent countProp={0} />);
     const selector = vi.fn();
-    traverseProps(maybeFiber as unknown as Fiber, selector);
+    traverseProps(requireFiber(maybeFiber, "React DOM did not render a Fiber"), selector);
     expect(selector).toHaveBeenCalledWith("countProp", 0, 0);
   });
 
@@ -80,7 +65,7 @@ describe("traverseProps", () => {
     });
     render(<ComplexComponent countProp={1} extraProp={null} />);
     const selector = vi.fn();
-    traverseProps(maybeFiber as unknown as Fiber, selector);
+    traverseProps(requireFiber(maybeFiber, "React DOM did not render a Fiber"), selector);
     expect(selector).toBeCalledTimes(2);
   });
 
@@ -93,13 +78,13 @@ describe("traverseProps", () => {
     });
     render(<ComplexComponent countProp={1} extraProp={null} />);
     const selector = vi.fn(() => true);
-    traverseProps(maybeFiber as unknown as Fiber, selector);
+    traverseProps(requireFiber(maybeFiber, "React DOM did not render a Fiber"), selector);
     expect(selector).toBeCalledTimes(1);
   });
 
   it("should visit props that only exist on the previous fiber", () => {
-    const fiber = createMockFiber({
-      alternate: createMockFiber({ memoizedProps: { removedProp: 2, sharedProp: 1 } }),
+    const fiber = createFiber({
+      alternate: createFiber({ memoizedProps: { removedProp: 2, sharedProp: 1 } }),
       memoizedProps: { sharedProp: 1 },
     });
     const selector = vi.fn((propName: string) => propName === "removedProp");
@@ -108,8 +93,8 @@ describe("traverseProps", () => {
   });
 
   it("should return false when no prop is selected", () => {
-    const fiber = createMockFiber({
-      alternate: createMockFiber({ memoizedProps: { removedProp: 2 } }),
+    const fiber = createFiber({
+      alternate: createFiber({ memoizedProps: { removedProp: 2 } }),
       memoizedProps: { sharedProp: 1 },
     });
     const selector = vi.fn(() => false);
@@ -118,7 +103,7 @@ describe("traverseProps", () => {
   });
 
   it("should default previous props when there is no alternate", () => {
-    const fiber = createMockFiber({ memoizedProps: { onlyProp: 1 } });
+    const fiber = createFiber({ memoizedProps: { onlyProp: 1 } });
     const selector = vi.fn();
     expect(traverseProps(fiber, selector)).toBe(false);
     expect(selector).toHaveBeenCalledWith("onlyProp", 1, undefined);
@@ -141,7 +126,7 @@ describe("traverseState", () => {
         prev: prevState.memoizedState,
       });
     });
-    traverseState(maybeFiber as unknown as Fiber, selector);
+    traverseState(requireFiber(maybeFiber, "React DOM did not render a Fiber"), selector);
     expect(states[0].next).toEqual(1);
     expect(states[0].prev).toEqual(0);
     expect(states[1].next).toEqual(0);
@@ -157,7 +142,7 @@ describe("traverseState", () => {
     });
     render(<ComplexComponent countProp={1} />);
     const selector = vi.fn();
-    traverseState(maybeFiber as unknown as Fiber, selector);
+    traverseState(requireFiber(maybeFiber, "React DOM did not render a Fiber"), selector);
     expect(selector).toBeCalledTimes(3);
   });
 
@@ -170,7 +155,7 @@ describe("traverseState", () => {
     });
     render(<ComplexComponent countProp={1} />);
     const selector = vi.fn(() => true);
-    traverseState(maybeFiber as unknown as Fiber, selector);
+    traverseState(requireFiber(maybeFiber, "React DOM did not render a Fiber"), selector);
     expect(selector).toBeCalledTimes(1);
   });
 });
@@ -194,7 +179,7 @@ describe("traverseContexts", () => {
     const selector = vi.fn((context) => {
       contexts.push(context);
     });
-    traverseContexts(maybeFiber as unknown as Fiber, selector);
+    traverseContexts(requireFiber(maybeFiber, "React DOM did not render a Fiber"), selector);
     expect(contexts).toHaveLength(2);
     expect(contexts[0].context).toBe(Context1);
     expect(contexts[0].memoizedValue).toBe(1);
@@ -211,13 +196,13 @@ describe("traverseContexts", () => {
     });
     render(<ComplexComponent countProp={1} />);
     const selector = vi.fn(() => true);
-    traverseContexts(maybeFiber as unknown as Fiber, selector);
+    traverseContexts(requireFiber(maybeFiber, "React DOM did not render a Fiber"), selector);
     expect(selector).toBeCalledTimes(1);
   });
 
   it("should return false when the fiber has no dependencies", () => {
-    const fiber = createMockFiber({
-      alternate: createMockFiber({ dependencies: { firstContext: null } }),
+    const fiber = createFiber({
+      alternate: createFiber({ dependencies: { firstContext: null } }),
       dependencies: null,
     });
     const selector = vi.fn();
@@ -226,8 +211,8 @@ describe("traverseContexts", () => {
   });
 
   it("should return false when dependencies have no firstContext", () => {
-    const fiber = createMockFiber({
-      alternate: createMockFiber({ dependencies: {} }),
+    const fiber = createFiber({
+      alternate: createFiber({ dependencies: {} }),
       dependencies: {},
     });
     const selector = vi.fn();
@@ -236,8 +221,8 @@ describe("traverseContexts", () => {
   });
 
   it("should keep traversing when only the previous fiber has contexts", () => {
-    const fiber = createMockFiber({
-      alternate: createMockFiber({
+    const fiber = createFiber({
+      alternate: createFiber({
         dependencies: { firstContext: { memoizedValue: 1, next: null } },
       }),
       dependencies: { firstContext: null },
@@ -257,9 +242,12 @@ describe("traverseFiber", () => {
       },
     });
     render(<Example />);
-    expect(traverseFiber(maybeFiber as unknown as Fiber, (fiber) => fiber.type === "div")).toBe(
-      (maybeFiber as unknown as Fiber)?.child,
-    );
+    expect(
+      traverseFiber(
+        requireFiber(maybeFiber, "React DOM did not render a Fiber"),
+        (fiber) => fiber.type === "div",
+      ),
+    ).toBe(requireFiber(maybeFiber, "React DOM did not render a Fiber")?.child);
   });
 
   it("should call selector only once per node (descending)", () => {
@@ -271,7 +259,10 @@ describe("traverseFiber", () => {
     });
     render(<Example />);
     const selector = vi.fn((fiber) => fiber.type === "div");
-    const result = traverseFiber(maybeFiber as unknown as Fiber, selector);
+    const result = traverseFiber(
+      requireFiber(maybeFiber, "React DOM did not render a Fiber"),
+      selector,
+    );
     expect(result).toBeTruthy();
     const callCounts = new Map<Fiber, number>();
     selector.mock.calls.forEach(([fiber]) => {
@@ -291,7 +282,11 @@ describe("traverseFiber", () => {
     });
     render(<Example />);
     const selector = vi.fn((fiber) => fiber.tag === latestReactWorkTags.HostRoot);
-    const result = traverseFiber(maybeFiber as unknown as Fiber, selector, true);
+    const result = traverseFiber(
+      requireFiber(maybeFiber, "React DOM did not render a Fiber"),
+      selector,
+      true,
+    );
     expect(result).toBeTruthy();
     const callCounts = new Map<Fiber, number>();
     selector.mock.calls.forEach(([fiber]) => {
@@ -311,7 +306,10 @@ describe("traverseFiber", () => {
     });
     render(<Example />);
     const selector = vi.fn(async (fiber) => fiber.type === "div");
-    const result = await traverseFiber(maybeFiber as unknown as Fiber, selector);
+    const result = await traverseFiber(
+      requireFiber(maybeFiber, "React DOM did not render a Fiber"),
+      selector,
+    );
     expect(result).toBeTruthy();
     const callCounts = new Map<Fiber, number>();
     selector.mock.calls.forEach(([fiber]) => {
@@ -331,7 +329,11 @@ describe("traverseFiber", () => {
     });
     render(<Example />);
     const selector = vi.fn(async (fiber) => fiber.tag === latestReactWorkTags.HostRoot);
-    const result = await traverseFiber(maybeFiber as unknown as Fiber, selector, true);
+    const result = await traverseFiber(
+      requireFiber(maybeFiber, "React DOM did not render a Fiber"),
+      selector,
+      true,
+    );
     expect(result).toBeTruthy();
     const callCounts = new Map<Fiber, number>();
     selector.mock.calls.forEach(([fiber]) => {
@@ -351,7 +353,10 @@ describe("traverseFiber", () => {
     });
     render(<Example />);
     const selector = vi.fn((fiber) => fiber === maybeFiber);
-    const result = traverseFiber(maybeFiber as unknown as Fiber, selector);
+    const result = traverseFiber(
+      requireFiber(maybeFiber, "React DOM did not render a Fiber"),
+      selector,
+    );
     expect(result).toBe(maybeFiber);
     expect(selector).toBeCalledTimes(1);
   });
@@ -365,7 +370,11 @@ describe("traverseFiber", () => {
     });
     render(<Example />);
     const selector = vi.fn((fiber) => fiber === maybeFiber);
-    const result = traverseFiber(maybeFiber as unknown as Fiber, selector, true);
+    const result = traverseFiber(
+      requireFiber(maybeFiber, "React DOM did not render a Fiber"),
+      selector,
+      true,
+    );
     expect(result).toBe(maybeFiber);
     expect(selector).toBeCalledTimes(1);
   });
@@ -379,7 +388,10 @@ describe("traverseFiber", () => {
     });
     render(<Example />);
     const selector = vi.fn(async (fiber) => fiber === maybeFiber);
-    const result = await traverseFiber(maybeFiber as unknown as Fiber, selector);
+    const result = await traverseFiber(
+      requireFiber(maybeFiber, "React DOM did not render a Fiber"),
+      selector,
+    );
     expect(result).toBe(maybeFiber);
     expect(selector).toBeCalledTimes(1);
   });
@@ -393,7 +405,11 @@ describe("traverseFiber", () => {
     });
     render(<Example />);
     const selector = vi.fn(async (fiber) => fiber === maybeFiber);
-    const result = await traverseFiber(maybeFiber as unknown as Fiber, selector, true);
+    const result = await traverseFiber(
+      requireFiber(maybeFiber, "React DOM did not render a Fiber"),
+      selector,
+      true,
+    );
     expect(result).toBe(maybeFiber);
     expect(selector).toBeCalledTimes(1);
   });
@@ -411,7 +427,10 @@ describe("traverseFiber", () => {
       },
     });
     render(<Example />);
-    const result = await traverseFiber(maybeFiber as unknown as Fiber, async () => false);
+    const result = await traverseFiber(
+      requireFiber(maybeFiber, "React DOM did not render a Fiber"),
+      async () => false,
+    );
     expect(result).toBe(null);
   });
 
@@ -423,21 +442,25 @@ describe("traverseFiber", () => {
       },
     });
     render(<Example />);
-    const result = await traverseFiber(maybeFiber as unknown as Fiber, async () => false, true);
+    const result = await traverseFiber(
+      requireFiber(maybeFiber, "React DOM did not render a Fiber"),
+      async () => false,
+      true,
+    );
     expect(result).toBe(null);
   });
 
   it("should traverse siblings when the first async subtree does not match", async () => {
-    const targetSibling = createMockFiber();
-    const firstChild = createMockFiber({ sibling: targetSibling });
-    const rootFiber = createMockFiber({ child: firstChild });
+    const targetSibling = createFiber();
+    const firstChild = createFiber({ sibling: targetSibling });
+    const rootFiber = createFiber({ child: firstChild });
     const result = await traverseFiber(rootFiber, async (fiber) => fiber === targetSibling);
     expect(result).toBe(targetSibling);
   });
 
   it("should await promises returned after synchronous selector results", async () => {
-    const targetFiber = createMockFiber();
-    const rootFiber = createMockFiber({ child: targetFiber });
+    const targetFiber = createFiber();
+    const rootFiber = createFiber({ child: targetFiber });
     const result = traverseFiber(rootFiber, (fiber) =>
       fiber === rootFiber ? false : Promise.resolve(fiber === targetFiber),
     );
@@ -445,25 +468,25 @@ describe("traverseFiber", () => {
   });
 
   it("should return null when no node matches (sync descending)", () => {
-    const targetSibling = createMockFiber();
-    const firstChild = createMockFiber({ sibling: targetSibling });
-    const rootFiber = createMockFiber({ child: firstChild });
+    const targetSibling = createFiber();
+    const firstChild = createFiber({ sibling: targetSibling });
+    const rootFiber = createFiber({ child: firstChild });
     expect(traverseFiber(rootFiber, () => false)).toBe(null);
   });
 
   it("should traverse nested siblings with an async selector (descending)", async () => {
-    const targetSibling = createMockFiber();
-    const firstGrandchild = createMockFiber({ sibling: targetSibling });
-    const childFiber = createMockFiber({ child: firstGrandchild });
-    const rootFiber = createMockFiber({ child: childFiber });
+    const targetSibling = createFiber();
+    const firstGrandchild = createFiber({ sibling: targetSibling });
+    const childFiber = createFiber({ child: firstGrandchild });
+    const rootFiber = createFiber({ child: childFiber });
     const result = await traverseFiber(rootFiber, async (fiber) => fiber === targetSibling);
     expect(result).toBe(targetSibling);
   });
 
   it("should return null with an async selector when ascending finds no match", async () => {
-    const rootFiber = createMockFiber();
-    const parentFiber = createMockFiber({ return: rootFiber });
-    const childFiber = createMockFiber({ return: parentFiber });
+    const rootFiber = createFiber();
+    const parentFiber = createFiber({ return: rootFiber });
+    const childFiber = createFiber({ return: parentFiber });
     const result = await traverseFiber(childFiber, async () => false, true);
     expect(result).toBe(null);
   });

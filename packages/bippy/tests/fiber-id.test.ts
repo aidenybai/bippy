@@ -1,22 +1,13 @@
 import { expect, it } from "vite-plus/test";
 import { getFiberId, setFiberId } from "../src/index.js";
 import type { Fiber } from "../src/react-internals/index.js";
-import { latestReactWorkTags } from "./react-work-tags.js";
+import { createFiber } from "./create-fiber.js";
 
-const createMockFiber = (alternate: Fiber | null = null): Fiber =>
-  ({
-    alternate,
-    child: null,
-    flags: 0,
-    return: null,
-    sibling: null,
-    stateNode: null,
-    tag: latestReactWorkTags.FunctionComponent,
-    type: null,
-  }) as unknown as Fiber;
+const createFiberWithAlternate = (alternate: Fiber | null = null): Fiber =>
+  createFiber({ alternate });
 
 it("should assign a stable auto-incremented id", () => {
-  const fiber = createMockFiber();
+  const fiber = createFiberWithAlternate();
   setFiberId(fiber);
   const assignedId = getFiberId(fiber);
   expect(assignedId).toBeTypeOf("number");
@@ -24,22 +15,22 @@ it("should assign a stable auto-incremented id", () => {
 });
 
 it("should honor an explicitly assigned id", () => {
-  const fiber = createMockFiber();
+  const fiber = createFiberWithAlternate();
   setFiberId(fiber, 12_345);
   expect(getFiberId(fiber)).toBe(12_345);
 });
 
 it("should advance generated ids past explicitly assigned ids", () => {
-  const explicitFiber = createMockFiber();
-  const generatedFiber = createMockFiber();
+  const explicitFiber = createFiberWithAlternate();
+  const generatedFiber = createFiberWithAlternate();
   setFiberId(explicitFiber, 1_000_000_000);
   setFiberId(generatedFiber);
   expect(getFiberId(generatedFiber)).toBeGreaterThan(1_000_000_000);
 });
 
 it("should reuse the id of the alternate fiber", () => {
-  const currentFiber = createMockFiber();
+  const currentFiber = createFiberWithAlternate();
   setFiberId(currentFiber, 0);
-  const alternateFiber = createMockFiber(currentFiber);
+  const alternateFiber = createFiberWithAlternate(currentFiber);
   expect(getFiberId(alternateFiber)).toBe(0);
 });

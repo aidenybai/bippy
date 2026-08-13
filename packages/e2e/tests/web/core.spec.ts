@@ -87,8 +87,8 @@ test.describe("instrumentation", () => {
   test("instrument() fires even when no previous handler exists", async ({ page }) => {
     const result = await page.evaluate(() => {
       return new Promise<boolean>((resolve) => {
-        const rdtHook = (globalThis as any).__REACT_DEVTOOLS_GLOBAL_HOOK__;
-        rdtHook.onCommitFiberRoot = undefined;
+        const rdtHook = window.__BIPPY__.getRDTHook();
+        Reflect.set(rdtHook, "onCommitFiberRoot", undefined);
         window.__BIPPY__.instrument({
           onCommitFiberRoot: () => {
             resolve(true);
@@ -188,8 +188,8 @@ test.describe("type guards", () => {
         object: window.__BIPPY__.isFiber({}),
         null_: window.__BIPPY__.isFiber(null),
         undefined_: window.__BIPPY__.isFiber(undefined),
-        number: window.__BIPPY__.isFiber(42 as any),
-        string: window.__BIPPY__.isFiber("hello" as any),
+        number: window.__BIPPY__.isFiber(42),
+        string: window.__BIPPY__.isFiber("hello"),
       };
     });
     expect(result.fiber).toBe(true);
@@ -286,7 +286,7 @@ test.describe("display name", () => {
         null_: window.__BIPPY__.getDisplayName(null),
         undefined_: window.__BIPPY__.getDisplayName(undefined),
         boolean: window.__BIPPY__.getDisplayName(true),
-        number: window.__BIPPY__.getDisplayName(42 as any),
+        number: window.__BIPPY__.getDisplayName(42),
       };
     });
     expect(result.div).toBe("div");
@@ -479,7 +479,7 @@ test.describe("timings", () => {
 
   test("getTimings with null returns zeros", async ({ page }) => {
     const result = await page.evaluate(() => {
-      const timings = window.__BIPPY__.getTimings(null as any);
+      const timings = window.__BIPPY__.getTimings(null);
       return timings;
     });
     expect(result.selfTime).toBe(0);
@@ -492,13 +492,13 @@ test.describe("timings", () => {
     const result = await page.evaluate(() => {
       const getTimings = window.__BIPPY__.getTimings;
       return {
-        childless: getTimings({ actualDuration: 5 } as any),
+        childless: getTimings({ actualDuration: 5 }),
         withChildren: getTimings({
           actualDuration: 10,
           child: { actualDuration: 3, sibling: { actualDuration: 2, sibling: null } },
-        } as any),
-        withUntimedChild: getTimings({ actualDuration: 4, child: { sibling: null } } as any),
-        zeroTotal: getTimings({ actualDuration: 0, child: { actualDuration: 3 } } as any),
+        }),
+        withUntimedChild: getTimings({ actualDuration: 4, child: { sibling: null } }),
+        zeroTotal: getTimings({ actualDuration: 0, child: { actualDuration: 3 } }),
       };
     });
     expect(result.childless).toEqual({ selfTime: 5, totalTime: 5 });

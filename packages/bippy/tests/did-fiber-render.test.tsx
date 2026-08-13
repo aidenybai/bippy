@@ -1,4 +1,4 @@
-import "../src/index.js"; // KEEP THIS LINE ON TOP
+import "../src/index.js"; // HACK: Bippy must initialize before imports that load React.
 
 import { expect, it } from "vite-plus/test";
 import React from "react";
@@ -6,6 +6,7 @@ import React from "react";
 import { didFiberRender, instrument } from "../src/index.js";
 import type { Fiber, WorkTag } from "../src/index.js";
 import { ReactFiberFlags } from "../src/react-internals/index.js";
+import { createFiber } from "./create-fiber.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
 import { render } from "@testing-library/react";
 
@@ -35,20 +36,7 @@ it("should return true for a fiber that has rendered", () => {
 });
 
 const createMockFiber = (tag: WorkTag, flags: number | undefined, effectTag?: number): Fiber =>
-  ({
-    alternate: null,
-    child: null,
-    effectTag,
-    flags,
-    memoizedProps: {},
-    memoizedState: null,
-    pendingProps: {},
-    return: null,
-    sibling: null,
-    stateNode: null,
-    tag,
-    type: () => null,
-  }) as unknown as Fiber;
+  createFiber({ effectTag, flags, tag, type: () => null });
 
 it("should check the PerformedWork flag for every composite tag", () => {
   expect(

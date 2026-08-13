@@ -49,7 +49,7 @@ test("symbolicates a real minified Metro production artifact", async () => {
   const appPosition = getGeneratedPosition(bundleContent, "test-child");
   const appSource = getSourceFromSourceMap(sourceMap, appPosition.line, appPosition.column);
   assert.ok(appSource);
-  assert.match(appSource.fileName ?? "", /\/src\/App\.tsx$/);
+  assert.match(appSource.fileName ?? "", /\/src\/expo-test-app\.tsx$/);
   assert.match(
     getSourceContentFromSourceMap(sourceMap, appSource.fileName) ?? "",
     /const TestChild/,

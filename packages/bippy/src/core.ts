@@ -1,4 +1,4 @@
-// React must remain a type-only import because this module loads immediately after the DevTools hook.
+// HACK: A runtime React import would load before the DevTools hook can observe the renderer.
 
 import type * as React from "react";
 
@@ -56,9 +56,33 @@ interface FiberSelector {
   (node: Fiber): boolean | Promise<boolean | void> | void;
 }
 
+interface TraverseFiber {
+  (
+    fiber: Fiber | null,
+    selector: (node: Fiber) => boolean | void,
+    ascending?: boolean,
+  ): Fiber | null;
+  (
+    fiber: Fiber | null,
+    selector: (node: Fiber) => Promise<boolean | void>,
+    ascending?: boolean,
+  ): Promise<Fiber | null>;
+  (
+    fiber: Fiber | null,
+    selector: FiberSelector,
+    ascending?: boolean,
+  ): Fiber | null | Promise<Fiber | null>;
+}
+
 export interface FiberTimings {
   selfTime: number;
   totalTime: number;
+}
+
+export interface FiberTimingNode {
+  actualDuration?: number;
+  child?: FiberTimingNode | null;
+  sibling?: FiberTimingNode | null;
 }
 
 export interface RenderHandler {
@@ -68,6 +92,14 @@ export interface RenderHandler {
 interface ValueWrite {
   path: string[];
   value: unknown;
+}
+
+interface RenderedRootState {
+  previousFiber: Fiber | null;
+}
+
+export interface RenderedFiberRoot {
+  current: Fiber | null;
 }
 
 /**
@@ -143,8 +175,6 @@ export const isCompositeFiber = (fiber: Fiber): boolean => {
  */
 export const isFiber = (maybeFiber: unknown): maybeFiber is Fiber => {
   if (!maybeFiber || typeof maybeFiber !== "object") return false;
-  // this is a fast check. pendingProps will ALWAYS exist in fiber
-  // `containerInfo` is in FiberRootNode, not FiberNode
   return "pendingProps" in maybeFiber && !("containerInfo" in maybeFiber);
 };
 
@@ -251,7 +281,6 @@ export const didFiberRender = (fiber: Fiber): boolean => {
       return (flags & ReactFiberFlags.PerformedWork) === ReactFiberFlags.PerformedWork;
     }
     default:
-      // Host nodes (DOM, root, etc.)
       if (!fiber.alternate) return true;
       return (
         prevProps !== nextProps ||
@@ -318,11 +347,7 @@ const shouldFilterFiber = (fiber: Fiber): boolean => {
   const workTags = getReactWorkTagsForFiber(fiber);
   switch (fiber.tag) {
     case workTags.DehydratedSuspenseComponent:
-      // TODO: ideally we would show dehydrated Suspense immediately.
-      // However, it has some special behavior (like disconnecting
-      // an alternate and turning into real Suspense) which breaks DevTools.
-      // For now, ignore it, and only show it once it gets hydrated.
-      // https://github.com/bvaughn/react-devtools-experimental/issues/197
+      // HACK: Showing dehydrated Suspense before it becomes a real Suspense Fiber breaks DevTools.
       return true;
 
     case workTags.Fragment:
@@ -332,7 +357,6 @@ const shouldFilterFiber = (fiber: Fiber): boolean => {
       return true;
 
     case workTags.HostRoot:
-      // It is never valid to filter the root element.
       return false;
 
     default: {
@@ -403,26 +427,11 @@ export const getNearestHostFibers = (fiber: Fiber): Fiber[] => {
 /**
  * Traverses up or down a {@link Fiber}, return `true` to stop and select a node.
  */
-export function traverseFiber(
-  fiber: Fiber | null,
-  selector: (node: Fiber) => boolean | void,
-  ascending?: boolean,
-): Fiber | null;
-export function traverseFiber(
-  fiber: Fiber | null,
-  selector: (node: Fiber) => Promise<boolean | void>,
-  ascending?: boolean,
-): Promise<Fiber | null>;
-export function traverseFiber(
-  fiber: Fiber | null,
-  selector: FiberSelector,
-  ascending?: boolean,
-): Fiber | null | Promise<Fiber | null>;
-export function traverseFiber(
+const traverseFiberImplementation = (
   fiber: Fiber | null,
   selector: FiberSelector,
   ascending = false,
-): Fiber | null | Promise<Fiber | null> {
+): Fiber | null | Promise<Fiber | null> => {
   if (!fiber) return null;
 
   const selection = selector(fiber);
@@ -434,7 +443,9 @@ export function traverseFiber(
   if (selection === true) return fiber;
 
   return traverseFiberChildren(fiber, selector, ascending);
-}
+};
+
+export const traverseFiber = traverseFiberImplementation as TraverseFiber;
 
 const isPromiseLike = <Result>(value: unknown): value is PromiseLike<Result> =>
   (typeof value === "object" || typeof value === "function") &&
@@ -477,14 +488,13 @@ const traverseFiberSiblings = (
  * console.log(selfTime, totalTime);
  * ```
  */
-export const getTimings = (fiber?: Fiber | null): FiberTimings => {
+export const getTimings = (fiber?: FiberTimingNode | null): FiberTimings => {
   const totalTime = fiber?.actualDuration ?? 0;
   let selfTime = totalTime;
-  // TODO: calculate a DOM time, which is just host component summed up
   let child = fiber?.child ?? null;
   while (totalTime > 0 && child !== null) {
     selfTime -= child.actualDuration ?? 0;
-    child = child.sibling;
+    child = child.sibling ?? null;
   }
   return { selfTime, totalTime };
 };
@@ -599,119 +609,85 @@ const mountFiberRecursively = (
       onRender(fiber, "mount");
     }
 
-    if (fiber.tag === getReactWorkTagsForFiber(fiber).SuspenseComponent) {
-      const isTimedOut = fiber.memoizedState !== null;
-      if (isTimedOut) {
-        // Special case: if Suspense mounts in a timed-out state,
-        // get the fallback child from the inner fragment and mount
-        // it as if it was our own child. Updates handle this too.
-        const primaryChildFragment = fiber.child;
-        const fallbackChildFragment = primaryChildFragment ? primaryChildFragment.sibling : null;
-        if (fallbackChildFragment) {
-          const fallbackChild = fallbackChildFragment.child;
-          if (fallbackChild !== null) {
-            mountFiberRecursively(onRender, fallbackChild, false);
-          }
-        }
-      } else {
-        const primaryChild = fiber.child?.child ?? null;
-        if (primaryChild !== null) {
-          mountFiberRecursively(onRender, primaryChild, false);
-        }
-      }
-    } else if (fiber.child !== null) {
+    const isSuspense = fiber.tag === getReactWorkTagsForFiber(fiber).SuspenseComponent;
+    if (!isSuspense && fiber.child !== null) {
       mountFiberRecursively(onRender, fiber.child, true);
+    } else if (isSuspense) {
+      const isTimedOut = fiber.memoizedState !== null;
+      const primaryChild = isTimedOut ? null : (fiber.child?.child ?? null);
+      const fallbackChild = isTimedOut ? (fiber.child?.sibling?.child ?? null) : null;
+      const visibleChild = primaryChild ?? fallbackChild;
+      if (visibleChild !== null) mountFiberRecursively(onRender, visibleChild, false);
     }
     fiber = traverseSiblings ? fiber.sibling : null;
   }
 };
 
+const updateFiberChildren = (
+  onRender: RenderHandler,
+  nextFiber: Fiber,
+  previousFiber: Fiber,
+): void => {
+  if (nextFiber.child === previousFiber.child) return;
+
+  let nextChild = nextFiber.child;
+  while (nextChild) {
+    if (nextChild.alternate) {
+      updateFiberRecursively(onRender, nextChild, nextChild.alternate);
+    } else {
+      mountFiberRecursively(onRender, nextChild, false);
+    }
+    nextChild = nextChild.sibling;
+  }
+};
+
+const updateSuspenseChildren = (
+  onRender: RenderHandler,
+  nextFiber: Fiber,
+  previousFiber: Fiber,
+): void => {
+  const previousDidTimeOut = previousFiber.memoizedState !== null;
+  const nextDidTimeOut = nextFiber.memoizedState !== null;
+
+  if (previousDidTimeOut && nextDidTimeOut) {
+    const nextFallbackChildSet = nextFiber.child?.sibling ?? null;
+    const previousFallbackChildSet = previousFiber.child?.sibling ?? null;
+    if (nextFallbackChildSet && previousFallbackChildSet) {
+      updateFiberRecursively(onRender, nextFallbackChildSet, previousFallbackChildSet);
+    }
+    return;
+  }
+
+  if (previousDidTimeOut) {
+    if (nextFiber.child) mountFiberRecursively(onRender, nextFiber.child, true);
+    return;
+  }
+
+  unmountFiberChildrenRecursively(onRender, previousFiber);
+  const nextFallbackChildSet = nextFiber.child?.sibling ?? null;
+  if (nextFallbackChildSet) mountFiberRecursively(onRender, nextFallbackChildSet, true);
+};
+
 const updateFiberRecursively = (
   onRender: RenderHandler,
   nextFiber: Fiber,
-  prevFiber: Fiber | null,
+  previousFiber: Fiber | null,
 ): void => {
   getFiberId(nextFiber);
-  if (!prevFiber) return;
-  getFiberId(prevFiber);
-
-  const isSuspense = nextFiber.tag === getReactWorkTagsForFiber(nextFiber).SuspenseComponent;
+  if (!previousFiber) return;
+  getFiberId(previousFiber);
 
   const shouldIncludeInTree = !shouldFilterFiber(nextFiber);
   if (shouldIncludeInTree && didFiberRender(nextFiber)) {
     onRender(nextFiber, "update");
   }
 
-  // The behavior of timed-out Suspense trees is unique.
-  // Rather than unmount the timed out content (and possibly lose important state),
-  // React re-parents this content within a hidden Fragment while the fallback is showing.
-  // This behavior doesn't need to be observable in the DevTools though.
-  // It might even result in a bad user experience for e.g. node selection in the Elements panel.
-  // The easiest fix is to strip out the intermediate Fragment fibers,
-  // so the Elements panel and Profiler don't need to special case them.
-  // Suspense components only have a non-null memoizedState if they're timed-out.
-  const prevDidTimeout = isSuspense && prevFiber.memoizedState !== null;
-  const nextDidTimeOut = isSuspense && nextFiber.memoizedState !== null;
+  const isSuspense = nextFiber.tag === getReactWorkTagsForFiber(nextFiber).SuspenseComponent;
+  const stayedOnPrimaryTree =
+    !isSuspense || (previousFiber.memoizedState === null && nextFiber.memoizedState === null);
+  if (stayedOnPrimaryTree) return updateFiberChildren(onRender, nextFiber, previousFiber);
 
-  // The logic below is inspired by the code paths in updateSuspenseComponent()
-  // inside ReactFiberBeginWork in the React source code.
-  if (prevDidTimeout && nextDidTimeOut) {
-    // Fallback -> Fallback:
-    // 1. Reconcile fallback set.
-    const nextFallbackChildSet = nextFiber.child?.sibling ?? null;
-    // Note: We can't use nextFiber.child.sibling.alternate
-    // because the set is special and alternate may not exist.
-    const prevFallbackChildSet = prevFiber.child?.sibling ?? null;
-
-    if (nextFallbackChildSet !== null && prevFallbackChildSet !== null) {
-      updateFiberRecursively(onRender, nextFallbackChildSet, prevFallbackChildSet);
-    }
-  } else if (prevDidTimeout && !nextDidTimeOut) {
-    // Fallback -> Primary:
-    // 1. Unmount fallback set
-    // Note: don't emulate fallback unmount because React actually did it.
-    // 2. Mount primary set
-    const nextPrimaryChildSet = nextFiber.child;
-
-    if (nextPrimaryChildSet !== null) {
-      mountFiberRecursively(onRender, nextPrimaryChildSet, true);
-    }
-  } else if (!prevDidTimeout && nextDidTimeOut) {
-    // Primary -> Fallback:
-    // 1. Hide primary set
-    // This is not a real unmount, so it won't get reported by React.
-    // We need to manually walk the previous tree and record unmounts.
-    unmountFiberChildrenRecursively(onRender, prevFiber);
-
-    // 2. Mount fallback set
-    const nextFallbackChildSet = nextFiber.child?.sibling ?? null;
-
-    if (nextFallbackChildSet !== null) {
-      mountFiberRecursively(onRender, nextFallbackChildSet, true);
-    }
-  } else if (nextFiber.child !== prevFiber.child) {
-    // Common case: Primary -> Primary.
-    // This is the same code path as for non-Suspense fibers.
-
-    // If the first child is different, we need to traverse them.
-    // Each next child will be either a new child (mount) or an alternate (update).
-    let nextChild = nextFiber.child;
-
-    while (nextChild) {
-      // We already know children will be referentially different because
-      // they are either new mounts or alternates of previous children.
-      // Schedule updates and mounts depending on whether alternates exist.
-      // We don't track deletions here because they are reported separately.
-      if (nextChild.alternate) {
-        updateFiberRecursively(onRender, nextChild, nextChild.alternate);
-      } else {
-        mountFiberRecursively(onRender, nextChild, false);
-      }
-
-      // Try the next child.
-      nextChild = nextChild.sibling;
-    }
-  }
+  updateSuspenseChildren(onRender, nextFiber, previousFiber);
 };
 
 const unmountFiber = (onRender: RenderHandler, fiber: Fiber): void => {
@@ -723,23 +699,15 @@ const unmountFiber = (onRender: RenderHandler, fiber: Fiber): void => {
 };
 
 const unmountFiberChildrenRecursively = (onRender: RenderHandler, fiber: Fiber): void => {
-  // We might meet a nested Suspense on our way.
   const isTimedOutSuspense =
     fiber.tag === getReactWorkTagsForFiber(fiber).SuspenseComponent && fiber.memoizedState !== null;
   let child = fiber.child;
 
   if (isTimedOutSuspense) {
-    // If it's showing fallback tree, let's traverse it instead.
-    const primaryChildFragment = fiber.child;
-    const fallbackChildFragment = primaryChildFragment?.sibling ?? null;
-
-    // Skip over to the real Fiber child.
-    child = fallbackChildFragment?.child ?? null;
+    child = fiber.child?.sibling?.child ?? null;
   }
 
   while (child !== null) {
-    // Record simulated unmounts children-first.
-    // We skip nodes without return because those are real unmounts.
     if (child.return !== null) {
       unmountFiber(onRender, child);
       unmountFiberChildrenRecursively(onRender, child);
@@ -749,12 +717,45 @@ const unmountFiberChildrenRecursively = (onRender: RenderHandler, fiber: Fiber):
   }
 };
 
-const rootInstanceMap = new WeakMap<
-  Fiber | FiberRoot,
-  {
-    prevFiber: Fiber | null;
+const rootStateMap = new WeakMap<Fiber | RenderedFiberRoot, RenderedRootState>();
+
+const getRenderedRootState = (root: Fiber | RenderedFiberRoot): RenderedRootState => {
+  const existingState = rootStateMap.get(root);
+  if (existingState) return existingState;
+  const newState: RenderedRootState = { previousFiber: null };
+  rootStateMap.set(root, newState);
+  return newState;
+};
+
+const isMountedRootFiber = (fiber: Fiber): boolean =>
+  fiber.memoizedState !== null &&
+  fiber.memoizedState.element !== null &&
+  fiber.memoizedState.element !== undefined &&
+  fiber.memoizedState.isDehydrated !== true;
+
+const traverseRootTransition = (
+  currentFiber: Fiber | null,
+  previousFiber: Fiber | null,
+  onRender: RenderHandler,
+): void => {
+  if (!currentFiber) {
+    if (previousFiber) unmountFiber(onRender, previousFiber);
+    return;
   }
->();
+  if (!previousFiber) return mountFiberRecursively(onRender, currentFiber, true);
+
+  const wasMounted = isMountedRootFiber(previousFiber);
+  const isMounted = isMountedRootFiber(currentFiber);
+  if (wasMounted && isMounted) {
+    updateFiberRecursively(onRender, currentFiber, currentFiber.alternate);
+    return;
+  }
+  if (isMounted) {
+    mountFiberRecursively(onRender, currentFiber, false);
+    return;
+  }
+  if (wasMounted) unmountFiber(onRender, currentFiber);
+};
 
 /**
  * Creates a fiber visitor function. Must pass a fiber root and a render handler.
@@ -763,47 +764,14 @@ const rootInstanceMap = new WeakMap<
  *   console.log(phase)
  * })
  */
-export const traverseRenderedFibers = (root: Fiber | FiberRoot, onRender: RenderHandler): void => {
-  const fiber = "current" in root ? root.current : root;
-
-  let rootInstance = rootInstanceMap.get(root);
-
-  if (!rootInstance) {
-    rootInstance = { prevFiber: null };
-    rootInstanceMap.set(root, rootInstance);
-  }
-
-  const { prevFiber } = rootInstance;
-  if (!fiber) {
-    if (prevFiber) {
-      unmountFiber(onRender, prevFiber);
-    }
-  } else if (prevFiber !== null) {
-    const wasMounted =
-      prevFiber.memoizedState !== null &&
-      prevFiber.memoizedState.element !== null &&
-      prevFiber.memoizedState.element !== undefined &&
-      // A dehydrated root is not considered mounted
-      prevFiber.memoizedState.isDehydrated !== true;
-    const isMounted =
-      fiber.memoizedState !== null &&
-      fiber.memoizedState.element !== null &&
-      fiber.memoizedState.element !== undefined &&
-      // A dehydrated root is not considered mounted
-      fiber.memoizedState.isDehydrated !== true;
-
-    if (!wasMounted && isMounted) {
-      mountFiberRecursively(onRender, fiber, false);
-    } else if (wasMounted && isMounted) {
-      updateFiberRecursively(onRender, fiber, fiber.alternate);
-    } else if (wasMounted && !isMounted) {
-      unmountFiber(onRender, fiber);
-    }
-  } else {
-    mountFiberRecursively(onRender, fiber, true);
-  }
-
-  rootInstance.prevFiber = fiber;
+export const traverseRenderedFibers = (
+  root: Fiber | RenderedFiberRoot,
+  onRender: RenderHandler,
+): void => {
+  const currentFiber = "current" in root ? root.current : root;
+  const rootState = getRenderedRootState(root);
+  traverseRootTransition(currentFiber, rootState.previousFiber, onRender);
+  rootState.previousFiber = currentFiber;
 };
 
 const overrideRenderers = new Set<ReactRenderer>();
@@ -945,9 +913,7 @@ export const overrideHookState = (fiber: Fiber, id: number, partialValue: unknow
     return;
   }
 
-  // production renderers don't expose overrideHookState; dispatching through
-  // the hook's own queue still works there, but only for whole-value writes
-  // (a path write through dispatch would replace the entire hook state)
+  // HACK: Production renderers only support whole-state writes through the hook queue.
   if (isPOJO(partialValue)) return;
   const dispatch = getHookStateDispatch(fiber, id);
   if (!dispatch) return;
@@ -1000,11 +966,7 @@ let didSubscribeToHookReplacements = false;
 
 const rootRendererIds = new WeakMap<FiberRoot, number>();
 
-// each hook event is dispatched from a single re-installable wrapper. If
-// something overwrites the hook method (devtools, direct assignment), the
-// next instrument() call installs a fresh wrapper over it; a superseded
-// wrapper still forwards the previous chain but skips the listeners so
-// they never fire twice.
+// HACK: Reinstallable wrappers preserve overwritten DevTools handlers without firing listeners twice.
 const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
   const dispatchers = hookDispatchers.get(rdtHook) ?? {};
   hookDispatchers.set(rdtHook, dispatchers);
@@ -1160,7 +1122,6 @@ export const instrument = (options: InstrumentationOptions): Unsubscribe => {
   });
 };
 
-// React uses per-renderer suffixes for host-instance Fiber keys, so discovered keys are cached.
 const knownFiberPropertyKeys = new Set<string>();
 
 const isFiberPropertyKey = (key: string): boolean =>

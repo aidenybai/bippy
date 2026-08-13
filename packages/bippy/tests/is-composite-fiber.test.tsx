@@ -1,10 +1,12 @@
-import "../src/index.js"; // KEEP THIS LINE ON TOP
+import "../src/index.js"; // HACK: Bippy must initialize before imports that load React.
 
 import { render } from "@testing-library/react";
 import React from "react";
 import { expect, it } from "vite-plus/test";
 import { instrument, isCompositeFiber } from "../src/index.js";
 import type { Fiber } from "../src/react-internals/index.js";
+import { createFiber } from "./create-fiber.js";
+import { requireFiber } from "./require-fiber.js";
 
 export const Example = () => {
   return <div>Hello</div>;
@@ -19,22 +21,14 @@ it("should return true for a composite fiber", () => {
   });
   render(<Example />);
   expect(maybeCompositeFiber).not.toBeNull();
-  expect(isCompositeFiber(maybeCompositeFiber as unknown as Fiber)).toBe(true);
+  expect(
+    isCompositeFiber(requireFiber(maybeCompositeFiber, "React DOM did not render a Fiber")),
+  ).toBe(true);
 });
 
 it("should return true for class and forwardRef fiber tags", () => {
-  const createMockFiber = (tag: number): Fiber =>
-    ({
-      child: null,
-      flags: 0,
-      return: null,
-      sibling: null,
-      stateNode: null,
-      tag,
-      type: () => null,
-    }) as unknown as Fiber;
-  expect(isCompositeFiber(createMockFiber(1))).toBe(true);
-  expect(isCompositeFiber(createMockFiber(11))).toBe(true);
+  expect(isCompositeFiber(createFiber({ tag: 1, type: () => null }))).toBe(true);
+  expect(isCompositeFiber(createFiber({ tag: 11, type: () => null }))).toBe(true);
 });
 
 it("should return false for a host fiber", () => {
@@ -46,5 +40,7 @@ it("should return false for a host fiber", () => {
   });
   render(<div>Hello</div>);
   expect(maybeCompositeFiber).not.toBeNull();
-  expect(isCompositeFiber(maybeCompositeFiber as unknown as Fiber)).toBe(false);
+  expect(
+    isCompositeFiber(requireFiber(maybeCompositeFiber, "React DOM did not render a Fiber")),
+  ).toBe(false);
 });

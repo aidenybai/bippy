@@ -1,4 +1,4 @@
-import "../src/index.js"; // KEEP THIS LINE ON TOP
+import "../src/index.js"; // HACK: Bippy must initialize before imports that load React.
 
 import { render } from "@testing-library/react";
 import React, { useState } from "react";
@@ -9,6 +9,7 @@ import { getSource, getOwnerStack, getParentStack, getSourceMap } from "../src/s
 import { sourceMapCache } from "../src/source/symbolication.js";
 import { normalizeFileName } from "../src/source/get-source.js";
 import { extractLocation, parseStack, type StackFrame } from "../src/source/parse-stack.js";
+import { requireFiber } from "./require-fiber.js";
 
 const mockFetch = (): Promise<Response> => {
   return Promise.resolve(
@@ -46,7 +47,15 @@ const SimpleComponent = () => {
   return <div>Hello</div>;
 };
 
-const ComponentWithProps = ({ message }: { message: string }) => {
+interface ComponentWithPropsProps {
+  message: string;
+}
+
+interface ExampleWithChildProps {
+  children: React.ReactNode;
+}
+
+const ComponentWithProps = ({ message }: ComponentWithPropsProps) => {
   return <div>{message}</div>;
 };
 
@@ -55,7 +64,7 @@ const ComponentWithHooks = () => {
   return <div>{count}</div>;
 };
 
-const ExampleWithChild = ({ children }: { children: React.ReactNode }) => {
+const ExampleWithChild = ({ children }: ExampleWithChildProps) => {
   return <div>{children}</div>;
 };
 
@@ -72,7 +81,9 @@ it("getOwnerStack should return stack for simple component", async () => {
   });
   render(<SimpleComponent />);
 
-  const result = await getOwnerStack(capturedFiber as unknown as Fiber);
+  const result = await getOwnerStack(
+    requireFiber(capturedFiber, "React DOM did not render a Fiber"),
+  );
 
   expect(result).toHaveLength(1);
   expect(result[0].functionName).toBe("SimpleComponent");
@@ -88,7 +99,9 @@ it("getOwnerStack should return stack for component with props", async () => {
   });
   render(<ComponentWithProps message="test" />);
 
-  const result = await getOwnerStack(capturedFiber as unknown as Fiber);
+  const result = await getOwnerStack(
+    requireFiber(capturedFiber, "React DOM did not render a Fiber"),
+  );
 
   const expectedFrame = getComponentThrowFrame(ComponentWithProps);
   expect(result).toHaveLength(1);
@@ -107,7 +120,9 @@ it("getOwnerStack should return stack for component with hooks", async () => {
   });
   render(<ComponentWithHooks />);
 
-  const result = await getOwnerStack(capturedFiber as unknown as Fiber);
+  const result = await getOwnerStack(
+    requireFiber(capturedFiber, "React DOM did not render a Fiber"),
+  );
 
   const expectedFrame = getComponentThrowFrame(ComponentWithHooks);
   expect(result).toHaveLength(1);
@@ -157,7 +172,9 @@ it("getOwnerStack should use debug stacks for fibers created during a render", a
   });
   render(<OwnerParent />);
 
-  const result = await getOwnerStack(capturedFiber as unknown as Fiber);
+  const result = await getOwnerStack(
+    requireFiber(capturedFiber, "React DOM did not render a Fiber"),
+  );
 
   expect(result.length).toBeGreaterThanOrEqual(2);
   expect(result[0].functionName).toBe("ComponentWithProps");
@@ -197,7 +214,11 @@ it("getSource should return the usage site from the fiber's own debug stack", as
   });
   render(<OwnerParent />);
 
-  const result = await getSource(capturedFiber as unknown as Fiber, false, mockFetch);
+  const result = await getSource(
+    requireFiber(capturedFiber, "React DOM did not render a Fiber"),
+    false,
+    mockFetch,
+  );
 
   expect(result).not.toBeNull();
   expect(result?.fileName).toContain("source.test.tsx");
@@ -213,7 +234,11 @@ it("getSource should resolve a simple component without props/hooks via an owned
   });
   render(<SimpleComponent />);
 
-  const result = await getSource(capturedFiber as unknown as Fiber, false, mockFetch);
+  const result = await getSource(
+    requireFiber(capturedFiber, "React DOM did not render a Fiber"),
+    false,
+    mockFetch,
+  );
 
   expect(result).not.toBeNull();
   expect(result?.fileName).toContain("source.test.tsx");
@@ -229,7 +254,11 @@ it("getSource should work for component with props", async () => {
   });
   render(<ComponentWithProps message="test" />);
 
-  const result = await getSource(capturedFiber as unknown as Fiber, false, mockFetch);
+  const result = await getSource(
+    requireFiber(capturedFiber, "React DOM did not render a Fiber"),
+    false,
+    mockFetch,
+  );
 
   expect(result?.fileName).toBeTruthy();
   expect(typeof result?.fileName).toBe("string");
@@ -244,7 +273,11 @@ it("getSource should work for component with hooks", async () => {
   });
   render(<ComponentWithHooks />);
 
-  const result = await getSource(capturedFiber as unknown as Fiber, false, mockFetch);
+  const result = await getSource(
+    requireFiber(capturedFiber, "React DOM did not render a Fiber"),
+    false,
+    mockFetch,
+  );
 
   expect(result?.fileName).toBeTruthy();
   expect(typeof result?.fileName).toBe("string");

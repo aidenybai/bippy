@@ -72,8 +72,9 @@ test.describe("hook inspection", () => {
       expect(Array.isArray(result)).toBe(true);
       return;
     }
-    expect(result as string[]).toContain("count");
-    expect(result as string[]).toContain("showConditional");
+    if (!Array.isArray(result)) throw new Error("Hook names did not resolve to an array");
+    expect(result).toContain("count");
+    expect(result).toContain("showConditional");
   });
 });
 

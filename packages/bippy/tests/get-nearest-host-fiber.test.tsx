@@ -1,17 +1,23 @@
-import "../src/index.js"; // KEEP THIS LINE ON TOP
+import "../src/index.js"; // HACK: Bippy must initialize before imports that load React.
 
 import { render } from "@testing-library/react";
 import React from "react";
 import { describe, expect, it } from "vite-plus/test";
 import { getNearestHostFiber, getNearestHostFibers, instrument } from "../src/index.js";
 import type { Fiber } from "../src/index.js";
+import { createFiber } from "./create-fiber.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
+import { requireFiber } from "./require-fiber.js";
 
 export const Example = () => {
   return <div>Hello</div>;
 };
 
-export const ExampleWithChildrenProp = ({ children }: { children: React.ReactNode }) => {
+interface ExampleWithChildrenPropProps {
+  children: React.ReactNode;
+}
+
+export const ExampleWithChildrenProp = ({ children }: ExampleWithChildrenPropProps) => {
   return <div>{children}</div>;
 };
 
@@ -45,10 +51,12 @@ describe("getNearestHostFiber", () => {
       },
     });
     render(<Example />);
-    expect(getNearestHostFiber(maybeFiber as unknown as Fiber)).toBe(
-      (maybeFiber as unknown as Fiber).child,
+    expect(getNearestHostFiber(requireFiber(maybeFiber, "React DOM did not render a Fiber"))).toBe(
+      requireFiber(maybeFiber, "React DOM did not render a Fiber").child,
     );
-    expect(maybeHostFiber).toBe(getNearestHostFiber(maybeFiber as unknown as Fiber));
+    expect(maybeHostFiber).toBe(
+      getNearestHostFiber(requireFiber(maybeFiber, "React DOM did not render a Fiber")),
+    );
   });
 
   it("should return null for unmounted fiber", () => {
@@ -59,7 +67,9 @@ describe("getNearestHostFiber", () => {
       },
     });
     render(<ExampleWithUnmount />);
-    expect(getNearestHostFiber(maybeFiber as unknown as Fiber)).toBe(null);
+    expect(getNearestHostFiber(requireFiber(maybeFiber, "React DOM did not render a Fiber"))).toBe(
+      null,
+    );
   });
 });
 
@@ -81,7 +91,9 @@ describe("getNearestHostFibers", () => {
       },
     });
     render(<ExampleWithMultipleChildElements />);
-    expect(getNearestHostFibers(maybeFiber as unknown as Fiber)).toHaveLength(2);
+    expect(
+      getNearestHostFibers(requireFiber(maybeFiber, "React DOM did not render a Fiber")),
+    ).toHaveLength(2);
   });
 
   it("should return the fiber itself when it is a host fiber", () => {
@@ -94,7 +106,9 @@ describe("getNearestHostFibers", () => {
       },
     });
     render(<Example />);
-    const hostFibers = getNearestHostFibers(maybeHostFiber as unknown as Fiber);
+    const hostFibers = getNearestHostFibers(
+      requireFiber(maybeHostFiber, "React DOM did not render a host Fiber"),
+    );
     expect(hostFibers).toHaveLength(1);
     expect(hostFibers[0]).toBe(maybeHostFiber);
   });
@@ -107,38 +121,40 @@ describe("getNearestHostFibers", () => {
       },
     });
     render(<ExampleWithCompositeChildren />);
-    expect(getNearestHostFibers(maybeFiber as unknown as Fiber)).toHaveLength(2);
+    expect(
+      getNearestHostFibers(requireFiber(maybeFiber, "React DOM did not render a Fiber")),
+    ).toHaveLength(2);
   });
 
   it("should return an empty array for a childless composite fiber", () => {
-    const childlessCompositeFiber = {
+    const childlessCompositeFiber = createFiber({
       child: null,
       sibling: null,
       tag: latestReactWorkTags.FunctionComponent,
       type: () => null,
-    } as unknown as Fiber;
+    });
     expect(getNearestHostFibers(childlessCompositeFiber)).toHaveLength(0);
   });
 
   it("should skip childless composite fibers while traversing", () => {
-    const hostFiber = {
+    const hostFiber = createFiber({
       child: null,
       sibling: null,
       tag: latestReactWorkTags.HostComponent,
       type: "div",
-    } as unknown as Fiber;
-    const childlessCompositeFiber = {
+    });
+    const childlessCompositeFiber = createFiber({
       child: null,
       sibling: hostFiber,
       tag: latestReactWorkTags.FunctionComponent,
       type: () => null,
-    } as unknown as Fiber;
-    const rootCompositeFiber = {
+    });
+    const rootCompositeFiber = createFiber({
       child: childlessCompositeFiber,
       sibling: null,
       tag: latestReactWorkTags.FunctionComponent,
       type: () => null,
-    } as unknown as Fiber;
+    });
     expect(getNearestHostFibers(rootCompositeFiber)).toEqual([hostFiber]);
   });
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vite-plus/test";
-import { traverseRenderedFibers } from "../src/index.js";
+import { traverseRenderedFibers, type RenderPhase } from "../src/index.js";
 import type { Fiber, FiberRoot } from "../src/react-internals/index.js";
+import { createFiber } from "./create-fiber.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
 
 const PERFORMED_WORK_FLAG = 0b1;
@@ -17,23 +18,11 @@ interface MockFiberOverrides {
 }
 
 const createMockFiber = (overrides: MockFiberOverrides = {}): Fiber =>
-  ({
-    alternate: null,
-    child: null,
-    dependencies: null,
+  createFiber({
     flags: PERFORMED_WORK_FLAG,
-    memoizedProps: {},
-    memoizedState: null,
-    pendingProps: {},
-    ref: null,
-    return: null,
-    sibling: null,
-    stateNode: null,
-    subtreeFlags: 0,
-    tag: latestReactWorkTags.FunctionComponent,
     type: () => null,
     ...overrides,
-  }) as unknown as Fiber;
+  });
 
 // root wrappers use flags 0 so only the fibers under test show up in the spy
 const createMountedRootFiber = (child: Fiber | null, alternate: Fiber | null = null): Fiber =>
@@ -48,7 +37,7 @@ const createMountedRootFiber = (child: Fiber | null, alternate: Fiber | null = n
 const commitUpdate = (
   nextFiber: Fiber,
   prevFiber: Fiber,
-  onRender: (fiber: Fiber, phase: string) => void,
+  onRender: (fiber: Fiber, phase: RenderPhase) => void,
 ): void => {
   if (!nextFiber.alternate) {
     nextFiber.alternate = prevFiber;
@@ -58,11 +47,11 @@ const commitUpdate = (
   const root: FiberRoot = { current: prevRootFiber };
   traverseRenderedFibers(root, () => {});
   root.current = nextRootFiber;
-  const onRenderWithoutRootWrapper = (fiber: Fiber, phase: string) => {
+  const onRenderWithoutRootWrapper = (fiber: Fiber, phase: RenderPhase) => {
     if (fiber === nextRootFiber || fiber === prevRootFiber) return;
     onRender(fiber, phase);
   };
-  traverseRenderedFibers(root, onRenderWithoutRootWrapper as never);
+  traverseRenderedFibers(root, onRenderWithoutRootWrapper);
 };
 
 describe("mount commits", () => {

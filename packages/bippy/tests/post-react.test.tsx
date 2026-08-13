@@ -1,4 +1,4 @@
-// import bippy, then react
+// HACK: Import Bippy before React to exercise early hook installation.
 
 import { instrument } from "../src/index.js";
 import { expect, it, vi } from "vite-plus/test";

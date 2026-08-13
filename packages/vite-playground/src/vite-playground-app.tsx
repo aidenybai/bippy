@@ -1,13 +1,14 @@
-import { Inspector } from "@bippy/next-playground/components/inspector";
 import { TodoList } from "@bippy/next-playground/components/todo-list";
 
-const App = () => {
+import { SourceEditor } from "./source-editor";
+
+const VitePlaygroundApp = () => {
   return (
     <div className="p-12 flex flex-col gap-4">
-      <Inspector />
+      <SourceEditor />
       <TodoList />
     </div>
   );
 };
 
-export default App;
+export default VitePlaygroundApp;

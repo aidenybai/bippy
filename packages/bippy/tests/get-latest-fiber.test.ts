@@ -1,7 +1,7 @@
 import { afterEach, expect, it } from "vite-plus/test";
 import { _fiberRoots, getLatestFiber } from "../src/index.js";
 import type { Fiber } from "../src/react-internals/index.js";
-import { latestReactWorkTags } from "./react-work-tags.js";
+import { createFiber } from "./create-fiber.js";
 
 interface MockFiberOverrides {
   actualStartTime?: number;
@@ -11,21 +11,7 @@ interface MockFiberOverrides {
 }
 
 const createMockFiber = (overrides: MockFiberOverrides = {}): Fiber =>
-  ({
-    actualStartTime: 0,
-    alternate: null,
-    child: null,
-    flags: 0,
-    memoizedProps: {},
-    memoizedState: null,
-    pendingProps: {},
-    return: null,
-    sibling: null,
-    stateNode: null,
-    tag: latestReactWorkTags.FunctionComponent,
-    type: null,
-    ...overrides,
-  }) as unknown as Fiber;
+  createFiber({ actualStartTime: 0, ...overrides });
 
 afterEach(() => {
   _fiberRoots.clear();

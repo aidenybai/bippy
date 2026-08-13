@@ -1,6 +1,6 @@
 import "bippy/install-hook-only";
 import { registerRootComponent } from "expo";
 
-import App from "./App";
+import ExpoPlaygroundApp from "./expo-playground-app";
 
-registerRootComponent(App);
+registerRootComponent(ExpoPlaygroundApp);

@@ -1,6 +1,6 @@
 import { TodoItem } from "./todo-item";
 
-export function TodoList() {
+export const TodoList = () => {
   const todos = [
     { id: 1, title: "Buy groceries" },
     { id: 2, title: "Buy groceries" },
@@ -23,4 +23,4 @@ export function TodoList() {
       </ul>
     </div>
   );
-}
+};

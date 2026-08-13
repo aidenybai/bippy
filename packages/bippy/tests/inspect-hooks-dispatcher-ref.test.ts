@@ -2,22 +2,14 @@ import { describe, expect, it } from "vite-plus/test";
 import type { Fiber } from "../src/react-internals/index.js";
 import { _renderers } from "../src/rdt-hook.js";
 import { getFiberHooks } from "../src/source/inspect-hooks.js";
-import { latestReactWorkTags } from "./react-work-tags.js";
+import { createFiber } from "./create-fiber.js";
+import { createReactRenderer } from "./create-react-renderer.js";
 
 const createFakeFiber = (type: unknown): Fiber =>
-  ({
-    tag: latestReactWorkTags.FunctionComponent,
+  createFiber({
     type,
     elementType: type,
-    memoizedState: null,
-    memoizedProps: {},
-    updateQueue: null,
-    dependencies: null,
-    ref: null,
-    child: null,
-    sibling: null,
-    return: null,
-  }) as unknown as Fiber;
+  });
 
 describe("getFiberHooks dispatcher discovery", () => {
   it("throws when no react renderer is registered", () => {
@@ -29,10 +21,10 @@ describe("getFiberHooks dispatcher discovery", () => {
 
   it("supports renderers exposing a dispatcher ref with a current property", () => {
     const legacyDispatcherRef: { current: unknown } = { current: null };
-    const rendererWithoutRef = { currentDispatcherRef: null };
-    const legacyRenderer = { currentDispatcherRef: legacyDispatcherRef };
-    _renderers.add(rendererWithoutRef as unknown as never);
-    _renderers.add(legacyRenderer as unknown as never);
+    const rendererWithoutRef = createReactRenderer({ currentDispatcherRef: null });
+    const legacyRenderer = createReactRenderer({ currentDispatcherRef: legacyDispatcherRef });
+    _renderers.add(rendererWithoutRef);
+    _renderers.add(legacyRenderer);
 
     try {
       let capturedState: unknown = null;
@@ -51,8 +43,8 @@ describe("getFiberHooks dispatcher discovery", () => {
       expect(legacyDispatcherRef.current).toBeNull();
       expect(hooksTree.length).toBeGreaterThanOrEqual(1);
     } finally {
-      _renderers.delete(rendererWithoutRef as unknown as never);
-      _renderers.delete(legacyRenderer as unknown as never);
+      _renderers.delete(rendererWithoutRef);
+      _renderers.delete(legacyRenderer);
     }
   });
 });

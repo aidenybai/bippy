@@ -1,15 +1,19 @@
-import "../src/index.js"; // KEEP THIS LINE ON TOP
+import "../src/index.js"; // HACK: Bippy must initialize before imports that load React.
 
 import { render } from "@testing-library/react";
 import React from "react";
 import { expect, it } from "vite-plus/test";
-import { Fiber, getFiberStack, instrument } from "../src/index.js";
+import { getFiberStack, instrument, type Fiber } from "../src/index.js";
+
+interface ExampleWithChildrenPropProps {
+  children: React.ReactNode;
+}
 
 export const Example = () => {
   return <div>Hello</div>;
 };
 
-export const ExampleWithChildrenProp = ({ children }: { children: React.ReactNode }) => {
+export const ExampleWithChildrenProp = ({ children }: ExampleWithChildrenPropProps) => {
   return <div>{children}</div>;
 };
 
