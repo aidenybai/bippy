@@ -405,11 +405,20 @@ describe("traverseRenderedFibers", () => {
     expect(onRender.mock.calls.length).toBe(callCountAfterFirstCommit);
   });
 
-  it("currently throws when the root has no current fiber", () => {
+  it("should report an unmount of the last committed fiber when the root loses its current fiber", () => {
+    const mountedRootFiber = createRootFiber();
+    const root: FiberRoot = { current: mountedRootFiber };
+    const onRender = vi.fn();
+    traverseRenderedFibers(root, onRender);
+    Reflect.set(root, "current", null);
+    traverseRenderedFibers(root, onRender);
+    expect(onRender).toHaveBeenCalledWith(mountedRootFiber, "unmount");
+  });
+
+  it("should do nothing when a never-committed root has no current fiber", () => {
     const root = { current: null };
     const onRender = vi.fn();
-    expect(() => Reflect.apply(traverseRenderedFibers, undefined, [root, onRender])).toThrow(
-      TypeError,
-    );
+    expect(() => Reflect.apply(traverseRenderedFibers, undefined, [root, onRender])).not.toThrow();
+    expect(onRender).not.toHaveBeenCalled();
   });
 });

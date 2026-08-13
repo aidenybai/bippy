@@ -15,7 +15,6 @@ export interface StackFrame {
 }
 
 export interface ParseOptions {
-  slice?: number | [number, number];
   includeInElement?: boolean;
 }
 
@@ -29,22 +28,22 @@ export const parseStack = (stackString: string, options?: ParseOptions): StackFr
     const frames: StackFrame[] = [];
     for (const rawLine of lines) {
       if (/^\s*at\s+/.test(rawLine)) {
-        const parsed = parseV8OrIeString(rawLine, undefined)[0];
+        const parsed = parseV8OrIeString(rawLine)[0];
         if (parsed) frames.push(parsed);
       } else if (/^\s*in\s+/.test(rawLine)) {
         const elementName = rawLine.replace(/^\s*in\s+/, "").replace(/\s*\(at .*\)$/, "");
         frames.push({ functionName: elementName, source: rawLine });
       } else if (rawLine.match(FIREFOX_SAFARI_STACK_REGEXP)) {
-        const parsed = parseFFOrSafariString(rawLine, undefined)[0];
+        const parsed = parseFFOrSafariString(rawLine)[0];
         if (parsed) frames.push(parsed);
       }
     }
-    return applySlice(frames, options);
+    return frames;
   }
   if (stackString.match(CHROME_IE_STACK_REGEXP)) {
-    return parseV8OrIeString(stackString, options);
+    return parseV8OrIeString(stackString);
   }
-  return parseFFOrSafariString(stackString, options);
+  return parseFFOrSafariString(stackString);
 };
 
 export const extractLocation = (
@@ -64,21 +63,10 @@ export const extractLocation = (
   return [parts[1], parts[2] || undefined, parts[3] || undefined] as const;
 };
 
-const applySlice = <T>(lines: T[], options?: ParseOptions): T[] => {
-  if (options && options.slice !== null && options.slice !== undefined) {
-    if (Array.isArray(options.slice)) return lines.slice(options.slice[0], options.slice[1]);
-    return lines.slice(0, options.slice);
-  }
-  return lines;
-};
-
-export const parseV8OrIeString = (stack: string, options?: ParseOptions): StackFrame[] => {
-  const filteredLines = applySlice(
-    stack.split("\n").filter((line) => {
-      return !!line.match(CHROME_IE_STACK_REGEXP);
-    }),
-    options,
-  );
+export const parseV8OrIeString = (stack: string): StackFrame[] => {
+  const filteredLines = stack.split("\n").filter((line) => {
+    return !!line.match(CHROME_IE_STACK_REGEXP);
+  });
 
   return filteredLines.map((line): StackFrame => {
     let currentLine = line;
@@ -112,13 +100,10 @@ export const parseV8OrIeString = (stack: string, options?: ParseOptions): StackF
   });
 };
 
-export const parseFFOrSafariString = (stack: string, options?: ParseOptions): StackFrame[] => {
-  const filteredLines = applySlice(
-    stack.split("\n").filter((line) => {
-      return !line.match(SAFARI_NATIVE_CODE_REGEXP);
-    }),
-    options,
-  );
+export const parseFFOrSafariString = (stack: string): StackFrame[] => {
+  const filteredLines = stack.split("\n").filter((line) => {
+    return !line.match(SAFARI_NATIVE_CODE_REGEXP);
+  });
 
   return filteredLines.map((line): StackFrame => {
     let currentLine = line;

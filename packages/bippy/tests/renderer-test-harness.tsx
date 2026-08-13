@@ -1,5 +1,6 @@
 import React from "react";
 import { describe, expect, it } from "vite-plus/test";
+import { sourceFetch } from "./source-fetch.js";
 import {
   didFiberCommit,
   didFiberRender,
@@ -44,7 +45,7 @@ export interface RendererController {
 export interface RendererAdapter {
   createHostElement: (props: RendererHostProps) => React.ReactElement;
   render: (element: React.ReactElement) => Promise<RendererController>;
-  wrap: (element: React.ReactElement) => React.ReactElement;
+  wrap?: (element: React.ReactElement) => React.ReactElement;
 }
 
 export interface RendererAdapterFactory {
@@ -75,9 +76,6 @@ interface CompoundComponents {
 const RendererContext = React.createContext("default");
 RendererContext.displayName = "RendererContext";
 Reflect.set(globalThis, "IS_REACT_ACT_ENVIRONMENT", true);
-
-const sourceFetch = (): Promise<Response> =>
-  Promise.resolve(new Response("not found", { status: 404 }));
 
 const collectHookValues = (
   hooks: ReturnType<typeof getFiberHooks>,
@@ -156,8 +154,10 @@ export const runRendererTestHarness = (factories: RendererAdapterFactory[]): voi
 
       const adapter = await factory.create();
       const components = createCompoundComponents(adapter);
-      const createTree = (revision: number) =>
-        adapter.wrap(<components.CompoundTree revision={revision} />);
+      const createTree = (revision: number) => {
+        const tree = <components.CompoundTree revision={revision} />;
+        return adapter.wrap ? adapter.wrap(tree) : tree;
+      };
       const controller = await adapter.render(createTree(1));
 
       expect(controller.getOutput()).toBeTruthy();

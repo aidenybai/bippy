@@ -190,6 +190,40 @@ export const getSourceFromSourceMap = (
   );
 };
 
+const findSourceContentByFileName = (
+  sources: string[],
+  sourcesContent: Array<string | null> | undefined,
+  fileName: string,
+): string | null => {
+  if (!sourcesContent) return null;
+  const sourceIndex = sources.indexOf(fileName);
+  return sourceIndex !== -1 ? (sourcesContent[sourceIndex] ?? null) : null;
+};
+
+export const getSourceContentFromSourceMap = (
+  sourceMap: SourceMap,
+  originalFileName: string,
+): string | null => {
+  const directResult = findSourceContentByFileName(
+    sourceMap.sources,
+    sourceMap.sourcesContent,
+    originalFileName,
+  );
+  if (directResult) return directResult;
+
+  if (sourceMap.sections) {
+    for (const section of sourceMap.sections) {
+      const sectionResult = findSourceContentByFileName(
+        section.map.sources,
+        section.map.sourcesContent,
+        originalFileName,
+      );
+      if (sectionResult) return sectionResult;
+    }
+  }
+  return null;
+};
+
 const resolveUrl = (reference: string, baseUrl: string): string | null => {
   if (INLINE_SOURCEMAP_REGEX.test(reference)) return reference;
   try {
@@ -292,7 +326,7 @@ const isIndexSourceMap = (value: unknown): value is IndexSourceMap => {
 
 const getIgnoredSourceIndices = (rawSourceMap: StandardSourceMap): Set<number> | undefined => {
   const ignoreList = rawSourceMap.ignoreList ?? rawSourceMap.x_google_ignoreList;
-  return Array.isArray(ignoreList) && ignoreList.length > 0 ? new Set(ignoreList) : undefined;
+  return ignoreList?.length ? new Set(ignoreList) : undefined;
 };
 
 const resolveSourceRoot = (
@@ -471,8 +505,8 @@ interface RequestSignal {
 }
 
 const createRequestSignal = (options: SourceMapRequestOptions): RequestSignal => {
-  if (!options.signal && options.timeoutMs === undefined) {
-    return { cleanup: () => {} };
+  if (options.timeoutMs === undefined || options.timeoutMs < 0) {
+    return { cleanup: () => {}, signal: options.signal };
   }
   const abortController = new AbortController();
   const abortFromSource = (): void => abortController.abort(options.signal?.reason);
@@ -481,16 +515,13 @@ const createRequestSignal = (options: SourceMapRequestOptions): RequestSignal =>
   } else {
     options.signal?.addEventListener("abort", abortFromSource, { once: true });
   }
-  const timeoutHandle =
-    options.timeoutMs !== undefined && options.timeoutMs >= 0
-      ? setTimeout(
-          () => abortController.abort(new BippySourceMapError("Source map request timed out")),
-          options.timeoutMs,
-        )
-      : undefined;
+  const timeoutHandle = setTimeout(
+    () => abortController.abort(new BippySourceMapError("Source map request timed out")),
+    options.timeoutMs,
+  );
   return {
     cleanup: () => {
-      if (timeoutHandle !== undefined) clearTimeout(timeoutHandle);
+      clearTimeout(timeoutHandle);
       options.signal?.removeEventListener("abort", abortFromSource);
     },
     signal: abortController.signal,
@@ -613,6 +644,8 @@ const getSourceMapUncachedInternal = async (
   if (shouldRejectRedirects) {
     if ((!fetchFn && !options.allowUnsafeServerFetch) || !isAbsoluteHttpUrl(bundleUrl)) return null;
   }
+  const isBlockedCrossOriginUrl = (url: string): boolean =>
+    shouldRejectRedirects && !INLINE_SOURCEMAP_REGEX.test(url) && !isSameOrigin(bundleUrl, url);
 
   const sourceFetch =
     fetchFn ??
@@ -633,11 +666,7 @@ const getSourceMapUncachedInternal = async (
     const sourceMapUrl = getSourceMapUrl(bundleUrl, bundleContent);
     if (!sourceMapUrl) return null;
     if (!isFetchableUrl(sourceMapUrl) && !INLINE_SOURCEMAP_REGEX.test(sourceMapUrl)) return null;
-    if (
-      shouldRejectRedirects &&
-      !INLINE_SOURCEMAP_REGEX.test(sourceMapUrl) &&
-      !isSameOrigin(bundleUrl, sourceMapUrl)
-    ) {
+    if (isBlockedCrossOriginUrl(sourceMapUrl)) {
       return null;
     }
 
@@ -653,11 +682,7 @@ const getSourceMapUncachedInternal = async (
     }
     if (!isIndexSourceMap(rawSourceMap)) return null;
     return decodeIndexSourceMap(rawSourceMap, sourceMapUrl, async (sectionUrl) => {
-      if (
-        shouldRejectRedirects &&
-        !INLINE_SOURCEMAP_REGEX.test(sectionUrl) &&
-        !isSameOrigin(bundleUrl, sectionUrl)
-      ) {
+      if (isBlockedCrossOriginUrl(sectionUrl)) {
         return null;
       }
       const sectionSourceMap = await readSourceMapDocument(
@@ -762,7 +787,7 @@ export const getSourceMap = async (
 export const symbolicateStack = async (
   stack: StackFrame[],
   cache = true,
-  fetchFn?: (url: string) => Promise<Response>,
+  fetchFn?: SourceFetch,
 ): Promise<StackFrame[]> => {
   return Promise.all(
     stack.map(async (stackFrame) => {

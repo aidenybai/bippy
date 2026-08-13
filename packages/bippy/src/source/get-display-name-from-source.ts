@@ -1,7 +1,12 @@
 import { Fiber } from "../react-internals/index.js";
 import { getDisplayName } from "../core.js";
 import { getRawParentStack } from "./owner-stack.js";
-import { getSourceFromSourceMap, getSourceMap } from "./symbolication.js";
+import {
+  getSourceContentFromSourceMap,
+  getSourceFromSourceMap,
+  getSourceMap,
+  type SourceFetch,
+} from "./symbolication.js";
 import { StackFrame } from "./parse-stack.js";
 
 const COMPONENT_DECLARATION_PATTERNS = [
@@ -52,7 +57,7 @@ const extractComponentNameFromSource = (
 export const getDisplayNameFromSource = async (
   fiber: Fiber,
   cache = true,
-  fetchFn?: (url: string) => Promise<Response>,
+  fetchFn?: SourceFetch,
 ): Promise<string | null> => {
   const stackFrame = getRawParentStack(fiber).find((innerFrame) => innerFrame.fileName);
 
@@ -80,21 +85,12 @@ export const getDisplayNameFromSource = async (
     return getDisplayName(fiber.type);
   }
 
-  if (!bundleSourceMap.sourcesContent) {
+  const sourceContent = getSourceContentFromSourceMap(bundleSourceMap, source.fileName);
+  if (!sourceContent) {
     return getDisplayName(fiber.type);
   }
 
-  const sourceIndex = bundleSourceMap.sources.indexOf(source.fileName);
-  if (sourceIndex === -1 || !bundleSourceMap.sourcesContent[sourceIndex]) {
-    return getDisplayName(fiber.type);
-  }
-
-  const sourceContent = bundleSourceMap.sourcesContent[sourceIndex];
-  const extractedName = extractComponentNameFromSource(sourceContent, source.lineNumber);
-
-  if (extractedName) {
-    return extractedName;
-  }
-
-  return getDisplayName(fiber.type);
+  return (
+    extractComponentNameFromSource(sourceContent, source.lineNumber) ?? getDisplayName(fiber.type)
+  );
 };

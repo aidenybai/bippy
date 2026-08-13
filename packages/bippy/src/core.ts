@@ -306,8 +306,7 @@ export const getFiberStack = (fiber: Fiber): Fiber[] => {
   let currentFiber = fiber;
   while (currentFiber.return) {
     stack.push(currentFiber);
-    const parentFiber = currentFiber.return;
-    currentFiber = parentFiber;
+    currentFiber = currentFiber.return;
   }
   return stack;
 };
@@ -424,7 +423,17 @@ export function traverseFiber(
   selector: FiberSelector,
   ascending = false,
 ): Fiber | null | Promise<Fiber | null> {
-  return traverseFiberInternal(fiber, selector, ascending);
+  if (!fiber) return null;
+
+  const selection = selector(fiber);
+  if (isPromiseLike<boolean | void>(selection)) {
+    return Promise.resolve(selection).then((didSelectFiber) =>
+      didSelectFiber === true ? fiber : traverseFiberChildren(fiber, selector, ascending),
+    );
+  }
+  if (selection === true) return fiber;
+
+  return traverseFiberChildren(fiber, selector, ascending);
 }
 
 const isPromiseLike = <Result>(value: unknown): value is PromiseLike<Result> =>
@@ -450,31 +459,13 @@ const traverseFiberSiblings = (
   if (!fiber) return null;
 
   const nextSibling = ascending ? null : fiber.sibling;
-  const match = traverseFiberInternal(fiber, selector, ascending);
+  const match = traverseFiber(fiber, selector, ascending);
   if (isPromiseLike<Fiber | null>(match)) {
     return Promise.resolve(match).then(
       (resolvedMatch) => resolvedMatch ?? traverseFiberSiblings(nextSibling, selector, ascending),
     );
   }
   return match ?? traverseFiberSiblings(nextSibling, selector, ascending);
-};
-
-const traverseFiberInternal = (
-  fiber: Fiber | null,
-  selector: FiberSelector,
-  ascending: boolean,
-): Fiber | null | Promise<Fiber | null> => {
-  if (!fiber) return null;
-
-  const selection = selector(fiber);
-  if (isPromiseLike<boolean | void>(selection)) {
-    return Promise.resolve(selection).then((didSelectFiber) =>
-      didSelectFiber === true ? fiber : traverseFiberChildren(fiber, selector, ascending),
-    );
-  }
-  if (selection === true) return fiber;
-
-  return traverseFiberChildren(fiber, selector, ascending);
 };
 
 /**
@@ -602,9 +593,7 @@ const mountFiberRecursively = (
   let fiber: Fiber | null = firstChild;
 
   while (fiber !== null) {
-    if (!fiberIdMap.has(fiber)) {
-      getFiberId(fiber);
-    }
+    getFiberId(fiber);
     const shouldIncludeInTree = !shouldFilterFiber(fiber);
     if (shouldIncludeInTree && didFiberRender(fiber)) {
       onRender(fiber, "mount");
@@ -642,13 +631,9 @@ const updateFiberRecursively = (
   nextFiber: Fiber,
   prevFiber: Fiber | null,
 ): void => {
-  if (!fiberIdMap.has(nextFiber)) {
-    getFiberId(nextFiber);
-  }
+  getFiberId(nextFiber);
   if (!prevFiber) return;
-  if (!fiberIdMap.has(prevFiber)) {
-    getFiberId(prevFiber);
-  }
+  getFiberId(prevFiber);
 
   const isSuspense = nextFiber.tag === getReactWorkTagsForFiber(nextFiber).SuspenseComponent;
 
@@ -764,11 +749,9 @@ const unmountFiberChildrenRecursively = (onRender: RenderHandler, fiber: Fiber):
   }
 };
 
-let commitId = 0;
 const rootInstanceMap = new WeakMap<
   Fiber | FiberRoot,
   {
-    id: number;
     prevFiber: Fiber | null;
   }
 >();
@@ -786,17 +769,17 @@ export const traverseRenderedFibers = (root: Fiber | FiberRoot, onRender: Render
   let rootInstance = rootInstanceMap.get(root);
 
   if (!rootInstance) {
-    rootInstance = { id: commitId++, prevFiber: null };
+    rootInstance = { prevFiber: null };
     rootInstanceMap.set(root, rootInstance);
   }
 
   const { prevFiber } = rootInstance;
-  // if fiberRoot don't have current instance, means it's been unmounted
   if (!fiber) {
-    unmountFiber(onRender, fiber);
+    if (prevFiber) {
+      unmountFiber(onRender, prevFiber);
+    }
   } else if (prevFiber !== null) {
     const wasMounted =
-      prevFiber &&
       prevFiber.memoizedState !== null &&
       prevFiber.memoizedState.element !== null &&
       prevFiber.memoizedState.element !== undefined &&
@@ -949,9 +932,9 @@ export const overrideHookState = (fiber: Fiber, id: number, partialValue: unknow
   const renderers = resolveOverrideRenderers(fiber).filter((renderer) =>
     Boolean(renderer.overrideHookState),
   );
-  const writes = buildValueWrites(partialValue);
 
   if (renderers.length > 0) {
+    const writes = buildValueWrites(partialValue);
     for (const renderer of renderers) {
       for (const { path, value } of writes) {
         try {
