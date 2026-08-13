@@ -5,7 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "start": "expo start",
-    "build:source-artifact": "expo export:embed --platform ios --dev false --entry-file packages/e2e-expo/src/index.ts --bundle-output index.bundle --sourcemap-output index.map --assets-dest .metro-assets --config packages/e2e-expo/metro.config.js",
+    "build:source-artifact": "expo export:embed --platform ios --dev false --entry-file packages/e2e/fixtures/expo-app/src/index.ts --bundle-output index.bundle --sourcemap-output index.map --assets-dest .metro-assets --config packages/e2e/fixtures/expo-app/metro.config.js",
     "ios": "expo run:ios",
     "android": "expo run:android",
     "build:ios": "expo prebuild --platform ios && xcodebuild -workspace ios/bippye2eexpo.xcworkspace -scheme bippye2eexpo -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build",

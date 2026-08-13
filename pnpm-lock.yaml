@@ -194,14 +194,14 @@ importers:
         specifier: ^6
         version: 6.4.1(@types/node@20.19.34)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
 
-  packages/e2e-expo:
+  packages/e2e/fixtures/expo-app:
     dependencies:
       '@shopify/react-native-skia':
         specifier: ^2.9.0
         version: 2.9.0(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.2.4))(react@19.2.4)
       bippy:
         specifier: workspace:*
-        version: link:../bippy
+        version: link:../../../bippy
       expo:
         specifier: ~54.0.33
         version: 54.0.33(@babel/core@7.29.0)(graphql@16.13.1)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.2.4))(react@19.2.4)
