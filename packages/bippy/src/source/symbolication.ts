@@ -114,7 +114,7 @@ const getSourceFromSegment = (
   return {
     columnNumber: sourceColumn,
     fileName,
-    functionName: nameIndex === undefined ? undefined : names?.[nameIndex],
+    functionName: nameIndex === undefined ? undefined : names?.[nameIndex] || undefined,
     isIgnoreListed: ignoredSourceIndices?.has(sourceIndex) ?? false,
     lineNumber: sourceLine + 1,
   };

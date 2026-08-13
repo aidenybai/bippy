@@ -69,6 +69,15 @@ describe("getSourceFromSourceMap", () => {
     expect(getSourceFromSourceMap(sourceMap, 1, 0)?.functionName).toBe("BookmarkSaveAction");
   });
 
+  it("ignores empty source-map names", () => {
+    const sourceMap = createStandardSourceMap({
+      mappings: [[[0, 0, 0, 0, 0]]],
+      names: [""],
+    });
+
+    expect(getSourceFromSourceMap(sourceMap, 1, 0)?.functionName).toBeUndefined();
+  });
+
   it("returns null when the column is before all segments after the first", () => {
     const sourceMap = createStandardSourceMap({ mappings: [[[5, 0, 0, 0]]] });
     expect(getSourceFromSourceMap(sourceMap, 1, 2)).toBeNull();
