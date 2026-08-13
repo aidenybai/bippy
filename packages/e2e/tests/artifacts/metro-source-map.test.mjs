@@ -3,7 +3,12 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import test from "node:test";
 
-import { getSourceContentFromSourceMap, getSourceFromSourceMap, getSourceMap } from "bippy/source";
+import {
+  getSourceContentFromSourceMap,
+  getSourceFromSourceMap,
+  getSourceFromSourceMapByFunctionName,
+  getSourceMap,
+} from "bippy/source";
 
 const fixtureDirectory = resolve(import.meta.dirname, "../../fixtures/expo-app");
 const bundleUrl = "app://react-native/index.bundle";
@@ -53,4 +58,8 @@ test("symbolicates a real minified Metro production artifact", async () => {
     getSourceContentFromSourceMap(sourceMap, skiaSource.fileName) ?? "",
     /const SkiaMemoLeaf/,
   );
+
+  const skiaComponentSource = getSourceFromSourceMapByFunctionName(sourceMap, "SkiaMemoLeaf");
+  assert.match(skiaComponentSource?.fileName ?? "", /\/src\/skia-probe\.tsx$/);
+  assert.ok(skiaComponentSource?.lineNumber > 0);
 });

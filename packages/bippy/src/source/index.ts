@@ -3,6 +3,7 @@ export { getSource, isSourceFile, normalizeFileName } from "./get-source.js";
 export {
   getSourceContentFromSourceMap,
   getSourceFromSourceMap,
+  getSourceFromSourceMapByFunctionName,
   getSourceMap,
   symbolicateStack,
   type DecodedSourceMapSection,

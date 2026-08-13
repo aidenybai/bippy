@@ -202,6 +202,69 @@ export const getSourceFromSourceMap = (
   );
 };
 
+const getSourceFromMappingsByFunctionName = (
+  mappings: SourceMapMappings,
+  sources: string[],
+  names: string[] | undefined,
+  functionName: string,
+  ignoredSourceIndices?: Set<number>,
+): StackFrame | null => {
+  if (!names) return null;
+  const functionNameIndex = names.indexOf(functionName);
+  if (functionNameIndex === -1) return null;
+
+  for (const lineMapping of mappings) {
+    for (const segment of lineMapping) {
+      const [, sourceIndex, sourceLine, sourceColumn, nameIndex] = segment;
+      if (
+        nameIndex !== functionNameIndex ||
+        sourceIndex === undefined ||
+        sourceLine === undefined ||
+        sourceColumn === undefined
+      ) {
+        continue;
+      }
+      const fileName = sources[sourceIndex];
+      if (!fileName) continue;
+      return {
+        columnNumber: sourceColumn,
+        fileName,
+        functionName,
+        isIgnoreListed: ignoredSourceIndices?.has(sourceIndex) ?? false,
+        lineNumber: sourceLine + 1,
+      };
+    }
+  }
+  return null;
+};
+
+export const getSourceFromSourceMapByFunctionName = (
+  sourceMap: SourceMap,
+  functionName: string,
+): StackFrame | null => {
+  if (sourceMap.sections) {
+    for (const section of sourceMap.sections) {
+      const source = getSourceFromMappingsByFunctionName(
+        section.map.mappings,
+        section.map.sources,
+        section.map.names,
+        functionName,
+        section.map.ignoredSourceIndices,
+      );
+      if (source) return source;
+    }
+    return null;
+  }
+
+  return getSourceFromMappingsByFunctionName(
+    sourceMap.mappings,
+    sourceMap.sources,
+    sourceMap.names,
+    functionName,
+    sourceMap.ignoredSourceIndices,
+  );
+};
+
 const findSourceContentByFileName = (
   sources: string[],
   sourcesContent: Array<string | null> | undefined,

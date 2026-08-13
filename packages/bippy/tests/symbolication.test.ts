@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vite-plus/test";
 import type { StackFrame } from "../src/source/parse-stack.js";
 import {
   getSourceFromSourceMap,
+  getSourceFromSourceMapByFunctionName,
   getSourceMap,
   getSourceMapUncached,
   sourceMapCache,
@@ -177,6 +178,30 @@ describe("getSourceFromSourceMap", () => {
     });
 
     expect(getSourceFromSourceMap(sourceMap, 10, 0)).toBeNull();
+  });
+});
+
+describe("getSourceFromSourceMapByFunctionName", () => {
+  it("resolves a component definition from a named mapping", () => {
+    const sourceMap = createStandardSourceMap({
+      mappings: [[[0, 0, 10, 6, 0]]],
+      names: ["SkiaMemoLeaf"],
+      sources: ["src/skia-probe.tsx"],
+    });
+
+    expect(getSourceFromSourceMapByFunctionName(sourceMap, "SkiaMemoLeaf")).toEqual({
+      columnNumber: 6,
+      fileName: "src/skia-probe.tsx",
+      functionName: "SkiaMemoLeaf",
+      isIgnoreListed: false,
+      lineNumber: 11,
+    });
+  });
+
+  it("returns null when the component is absent", () => {
+    expect(
+      getSourceFromSourceMapByFunctionName(createStandardSourceMap(), "MissingComponent"),
+    ).toBeNull();
   });
 });
 
