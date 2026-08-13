@@ -30,6 +30,7 @@ jobs:
             native:
               - "packages/bippy/**"
               - "packages/e2e/**"
+              - "packages/e2e-expo/**"
               - ".github/workflows/e2e.yml"
               - "pnpm-lock.yaml"
 
@@ -102,29 +103,29 @@ jobs:
         id: app-cache
         uses: actions/cache/restore@v4
         with:
-          path: packages/e2e/fixtures/expo-app/ios/build/Build/Products/Debug-iphonesimulator/bippye2eexpo.app
-          key: expo-app-${{ steps.xcode.outputs.version }}-${{ hashFiles('pnpm-lock.yaml', 'packages/e2e/fixtures/expo-app/app.json', 'packages/e2e/fixtures/expo-app/package.json') }}
+          path: packages/e2e-expo/ios/build/Build/Products/Debug-iphonesimulator/bippye2eexpo.app
+          key: expo-app-${{ steps.xcode.outputs.version }}-${{ hashFiles('pnpm-lock.yaml', 'packages/e2e-expo/app.json', 'packages/e2e-expo/package.json') }}
       - name: Cache CocoaPods downloads
         if: steps.app-cache.outputs.cache-hit != 'true'
         uses: actions/cache@v4
         with:
           path: ~/Library/Caches/CocoaPods
-          key: cocoapods-${{ runner.os }}-${{ hashFiles('packages/e2e/fixtures/expo-app/package.json') }}
+          key: cocoapods-${{ runner.os }}-${{ hashFiles('packages/e2e-expo/package.json') }}
           restore-keys: cocoapods-${{ runner.os }}-
       - name: Prebuild and build iOS app
         if: steps.app-cache.outputs.cache-hit != 'true'
         run: |
-          cd packages/e2e/fixtures/expo-app
+          cd packages/e2e-expo
           npx expo prebuild --platform ios --clean
           xcodebuild -workspace ios/bippye2eexpo.xcworkspace -scheme bippye2eexpo -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build -quiet
       - name: Save iOS app binary
         if: steps.app-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
-          path: packages/e2e/fixtures/expo-app/ios/build/Build/Products/Debug-iphonesimulator/bippye2eexpo.app
-          key: expo-app-${{ steps.xcode.outputs.version }}-${{ hashFiles('pnpm-lock.yaml', 'packages/e2e/fixtures/expo-app/app.json', 'packages/e2e/fixtures/expo-app/package.json') }}
+          path: packages/e2e-expo/ios/build/Build/Products/Debug-iphonesimulator/bippye2eexpo.app
+          key: expo-app-${{ steps.xcode.outputs.version }}-${{ hashFiles('pnpm-lock.yaml', 'packages/e2e-expo/app.json', 'packages/e2e-expo/package.json') }}
       - name: Start Metro
-        working-directory: packages/e2e/fixtures/expo-app
+        working-directory: packages/e2e-expo
         # CI=false: expo disables file watching (and therefore fast refresh)
         # when it detects CI, but the refresh spec saves files at runtime.
         # watchman must be warmed up (daemon running, repo root watched)
@@ -214,13 +215,13 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            packages/e2e/fixtures/expo-app/android/app/build/outputs/apk/debug/app-debug.apk
-            packages/e2e/fixtures/expo-app/android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
-          key: expo-app-android-${{ hashFiles('pnpm-lock.yaml', 'packages/e2e/fixtures/expo-app/app.json', 'packages/e2e/fixtures/expo-app/package.json', 'packages/e2e/fixtures/expo-app/plugins/**') }}
+            packages/e2e-expo/android/app/build/outputs/apk/debug/app-debug.apk
+            packages/e2e-expo/android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+          key: expo-app-android-${{ hashFiles('pnpm-lock.yaml', 'packages/e2e-expo/app.json', 'packages/e2e-expo/package.json', 'packages/e2e-expo/plugins/**') }}
       - name: Prebuild and build Android app
         if: steps.android-app-cache.outputs.cache-hit != 'true'
         run: |
-          cd packages/e2e/fixtures/expo-app
+          cd packages/e2e-expo
           npx expo prebuild --platform android --clean
           cd android
           ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug --no-daemon
@@ -229,11 +230,11 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: |
-            packages/e2e/fixtures/expo-app/android/app/build/outputs/apk/debug/app-debug.apk
-            packages/e2e/fixtures/expo-app/android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
-          key: expo-app-android-${{ hashFiles('pnpm-lock.yaml', 'packages/e2e/fixtures/expo-app/app.json', 'packages/e2e/fixtures/expo-app/package.json', 'packages/e2e/fixtures/expo-app/plugins/**') }}
+            packages/e2e-expo/android/app/build/outputs/apk/debug/app-debug.apk
+            packages/e2e-expo/android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+          key: expo-app-android-${{ hashFiles('pnpm-lock.yaml', 'packages/e2e-expo/app.json', 'packages/e2e-expo/package.json', 'packages/e2e-expo/plugins/**') }}
       - name: Start Metro
-        working-directory: packages/e2e/fixtures/expo-app
+        working-directory: packages/e2e-expo
         run: |
           nohup env CI=false npx expo start --port 8081 > /tmp/metro-android.log 2>&1 &
           for attempt in $(seq 1 60); do

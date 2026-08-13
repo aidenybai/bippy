@@ -10,7 +10,7 @@ import {
   getSourceMap,
 } from "bippy/source";
 
-const fixtureDirectory = resolve(import.meta.dirname, "../../fixtures/expo-app");
+const fixtureDirectory = resolve(import.meta.dirname, "../../../e2e-expo");
 const bundleUrl = "app://react-native/index.bundle";
 const sourceMapUrl = "app://react-native/index.map";
 
