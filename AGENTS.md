@@ -1,12 +1,13 @@
-- MUST: We use @antfu/ni. Use `ni` to install, `nr SCRIPT_NAME` to run script, `nun` to uninstall package
+- NEVER comment unless absolutely necessary.
+  - If it's hacky (e.g. a setTimeout or potentially confusing code), prefix with // HACK: reason for hack
+- MUST: Keep code clean, elegant, simple. YAGNI
 - MUST: Use TypeScript interfaces over types
 - MUST: Use arrow functions over function declarations
-- NEVER comment unless absolutely necessary.
-  - If it is a hack, such as a setTimeout or potentially confusing code, it should be prefixed with // HACK: reason for hack
 - MUST: Use kebab-case for files
-- MUST: Use descriptive names for variables (avoid shorthands, or 1-2 character names).
+- MUST: Use descriptive names for variables (avoid shorthands, or 1-2 character names)
   - Example: for .map(), you can use `innerX` instead of `x`
-  - Example: instead of `moved` use `didPositionChange`
+  - Example: instead of `moved` use `isMoved`
+  - Example: use get/set/use prefixes
 - MUST: Do not type cast ("as") unless absolutely necessary
-- MUST: Keep interfaces or types on the global scope.
-- MUST: Remove unused code and don't repeat yourself.
+- MUST: Keep interfaces or types on the global scope
+- MUST: Remove unused code and don't repeat yourself
