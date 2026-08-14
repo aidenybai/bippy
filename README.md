@@ -8,39 +8,12 @@
 
 bippy hacks into React internals.
 
-React normally keeps its Fiber tree out of reach. bippy gets you in, so you can inspect components, track renders, and access the renderer directly.
+React normally keeps its [Fiber](https://youtu.be/ZCuYPiUIONs) tree out of reach. bippy lets you inspect components, track renders, and access the renderer directly.
 
 > [!WARNING]
 > ⚠️⚠️⚠️ **This project may break production apps and cause unexpected behavior.** ⚠️⚠️⚠️
 >
-> This project uses React internals, which can change at any time. We don't recommend depending on internals unless you really, _really_ have to. By proceeding, you acknowledge the risk of breaking your own code or apps that use your code.
-
-## Table of contents
-
-- [Install bippy](#install-bippy)
-  - [Next.js](#nextjs)
-  - [Vite](#vite)
-- [React integration](#react-integration)
-  - [`useFiber`](#usefiber)
-- [Instrumentation](#instrumentation)
-  - [`instrument`](#instrument)
-  - [`getRDTHook`](#getrdthook)
-- [Fiber traversal](#fiber-traversal)
-  - [`traverseRenderedFibers`](#traverserenderedfibers)
-  - [`traverseFiber`](#traversefiber)
-  - [`didFiberRender` and `didFiberCommit`](#didfiberrender-and-didfibercommit)
-- [Fiber inspection](#fiber-inspection)
-  - [`setFiberId` and `getFiberId`](#setfiberid-and-getfiberid)
-  - [Classification helpers](#classification-helpers)
-  - [`getDisplayName` and `getType`](#getdisplayname-and-gettype)
-  - [`getFiber`](#getfiber)
-  - [`getLatestFiber`](#getlatestfiber)
-  - [`getRenderer`](#getrenderer)
-  - [React internals](#react-internals)
-- [Source inspection](#source-inspection)
-  - [`getSource`](#getsource)
-  - [`getOwnerStack` and `getParentStack`](#getownerstack-and-getparentstack)
-- [Acknowledgements](#acknowledgements)
+> This project uses React internals, which can change at any time. We don’t recommend depending on them unless you have to. By proceeding, you acknowledge the risk of breaking your own code or apps that use your code.
 
 ## Install bippy
 
@@ -70,9 +43,20 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 ```
 
-## React integration
+## `getFiber`
 
-### `useFiber`
+Returns the Fiber associated with a renderer host instance, such as an element from the Document Object Model (DOM). The result is `null` when no registered renderer recognizes the instance.
+
+```typescript
+import { getFiber } from "bippy";
+
+const element = document.querySelector("button");
+const fiber = getFiber(element);
+```
+
+`getFiberFromHostInstance` is an alias for `getFiber`.
+
+## `useFiber`
 
 Returns the calling component’s Fiber. During server rendering it returns `undefined` because there is no client Fiber for the component.
 
@@ -104,11 +88,10 @@ Available handlers include:
 
 ```typescript
 import { instrument } from "bippy";
-import * as React from "react";
 
 const unsubscribe = instrument({
-  onCommitFiberRoot(rendererID, root) {
-    console.log(rendererID, root.current);
+  onCommitFiberUnmount(rendererID, fiber) {
+    console.log(rendererID, fiber);
   },
 });
 
@@ -119,7 +102,7 @@ Call the returned function to unsubscribe those handlers.
 
 ### `getRDTHook`
 
-Returns `globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__`. Use it when an integration needs the complete renderer registry or another low-level hook capability.
+Returns the React DevTools global hook at `globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__`. Use it to access registered renderers and Fiber roots directly.
 
 ```typescript
 import { getRDTHook } from "bippy";
@@ -138,7 +121,6 @@ Visits Fibers that mounted, updated, or unmounted in a commit. The callback rece
 
 ```typescript
 import { instrument, traverseRenderedFibers } from "bippy";
-import * as React from "react";
 
 instrument({
   onCommitFiberRoot(rendererID, root) {
@@ -158,8 +140,8 @@ Walks down from a Fiber and calls a selector for each node. Return `true` to sto
 ```typescript
 import { isHostFiber, traverseFiber } from "bippy";
 
-const buttonFiber = traverseFiber(root.current, (fiber) => {
-  return isHostFiber(fiber) && fiber.type === "button";
+const buttonFiber = traverseFiber(fiber, (candidateFiber) => {
+  return isHostFiber(candidateFiber) && candidateFiber.type === "button";
 });
 ```
 
@@ -222,19 +204,6 @@ console.log(getDisplayName(fiber.type));
 console.log(getType(fiber.type));
 ```
 
-### `getFiber`
-
-Returns the Fiber associated with a renderer host instance, such as a DOM element. The result is `null` when no registered renderer recognizes the instance.
-
-```typescript
-import { getFiber } from "bippy";
-
-const element = document.querySelector("button");
-const fiber = getFiber(element);
-```
-
-`getFiberFromHostInstance` remains available as an alias.
-
 ### `getLatestFiber`
 
 Returns the latest version of a Fiber. Use it when you retain a Fiber across renders.
@@ -262,7 +231,7 @@ Renderer capabilities are optional and vary by renderer version.
 
 ### React internals
 
-The main `bippy` entry point exports the complete internals model used by its APIs. This includes Fiber, root, renderer, dispatcher, work-tag, flag, symbol, and build-type definitions.
+The main `bippy` entry point exports the React internals used by its APIs.
 
 ```typescript
 import {
@@ -291,7 +260,14 @@ Source utilities resolve component locations, source maps, and component stacks.
 
 ### `getSource`
 
-Returns the source location for a Fiber across DOM, native, terminal, canvas, PDF, and custom renderers.
+Returns the source location for a Fiber from these renderers:
+
+- DOM
+- Native
+- Terminal
+- Canvas
+- PDF
+- Custom
 
 ```typescript
 import { getSource } from "bippy/source";
@@ -311,9 +287,9 @@ const sourceFetch: SourceFetch = async (url, init) => {
   const artifact = sourceArtifacts.get(url);
   if (!artifact) return fetch(url, init);
 
-  return new Response(artifact.content, {
-    headers: artifact.sourceMapUrl ? { SourceMap: artifact.sourceMapUrl } : undefined,
-  });
+  const sourceMapUrl = artifact.sourceMapUrl;
+  const headers = sourceMapUrl ? { SourceMap: sourceMapUrl } : undefined;
+  return new Response(artifact.content, { headers });
 };
 
 const source = await getSource(fiber, true, sourceFetch);
@@ -332,4 +308,4 @@ const parentFrames = await getParentStack(fiber);
 
 ## Acknowledgements
 
-the original bippy character is owned and created by [@dairyfreerice](https://www.instagram.com/dairyfreerice). this project is not related to the bippy brand, i just think the character is cute.
+[@dairyfreerice](https://www.instagram.com/dairyfreerice) created and owns the original bippy character. this project has nothing to do with the bippy brand, i think the character is cute.
