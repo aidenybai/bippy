@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { parseDebugStack } from "../src/source/parse-debug-stack.js";
 
 // stands in for jsxDEV: the top frame of a _debugStack, dropped by the parser

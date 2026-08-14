@@ -1,0 +1,318 @@
+import { compareSemver } from "../semver.js";
+
+export const ReactBuildType = {
+  Development: 1,
+  Production: 0,
+} as const;
+
+export const ReactFiberFlags = {
+  ChildDeletion: 16,
+  Cloned: 8,
+  ContentReset: 32,
+  Hydrating: 4096,
+  PerformedWork: 1,
+  Placement: 2,
+  Snapshot: 1024,
+  Update: 4,
+  Visibility: 8192,
+} as const;
+
+export const ReactSymbols = {
+  CONCURRENT_MODE_NUMBER: 60111,
+  CONCURRENT_MODE_SYMBOL_DESCRIPTION: "react.concurrent_mode",
+  CONCURRENT_MODE_SYMBOL_STRING: "Symbol(react.concurrent_mode)",
+  DEPRECATED_ASYNC_MODE_SYMBOL_DESCRIPTION: "react.async_mode",
+  DEPRECATED_ASYNC_MODE_SYMBOL_STRING: "Symbol(react.async_mode)",
+  ELEMENT_SYMBOL_STRING: "Symbol(react.transitional.element)",
+  LEGACY_ELEMENT_SYMBOL_STRING: "Symbol(react.element)",
+} as const;
+
+export interface ReactWorkTagMap {
+  ActivityComponent: number;
+  CacheComponent: number;
+  ClassComponent: number;
+  ContextConsumer: number;
+  ContextProvider: number;
+  CoroutineComponent: number;
+  CoroutineHandlerPhase: number;
+  DehydratedSuspenseComponent: number;
+  ForwardRef: number;
+  Fragment: number;
+  FunctionComponent: number;
+  HostComponent: number;
+  HostHoistable: number;
+  HostPortal: number;
+  HostRoot: number;
+  HostSingleton: number;
+  HostText: number;
+  IncompleteClassComponent: number;
+  IncompleteFunctionComponent: number;
+  IndeterminateComponent: number;
+  LazyComponent: number;
+  LegacyHiddenComponent: number;
+  MemoComponent: number;
+  Mode: number;
+  OffscreenComponent: number;
+  Profiler: number;
+  ScopeComponent: number;
+  SimpleMemoComponent: number;
+  SuspenseComponent: number;
+  SuspenseListComponent: number;
+  Throw: number;
+  TracingMarkerComponent: number;
+  ViewTransitionComponent: number;
+  YieldComponent: number;
+}
+
+const defineReactWorkTags = <const VersionedWorkTags extends Record<string, ReactWorkTagMap>>(
+  workTags: VersionedWorkTags,
+): VersionedWorkTags => workTags;
+
+const reactWorkTagsByVersion = defineReactWorkTags({
+  "16.0.0": {
+    ActivityComponent: -1,
+    CacheComponent: -1,
+    ClassComponent: 2,
+    ContextConsumer: 12,
+    ContextProvider: 13,
+    CoroutineComponent: 7,
+    CoroutineHandlerPhase: 8,
+    DehydratedSuspenseComponent: -1,
+    ForwardRef: 14,
+    Fragment: 10,
+    FunctionComponent: 1,
+    HostComponent: 5,
+    HostHoistable: -1,
+    HostPortal: 4,
+    HostRoot: 3,
+    HostSingleton: -1,
+    HostText: 6,
+    IncompleteClassComponent: -1,
+    IncompleteFunctionComponent: -1,
+    IndeterminateComponent: 0,
+    LazyComponent: -1,
+    LegacyHiddenComponent: -1,
+    MemoComponent: -1,
+    Mode: 11,
+    OffscreenComponent: -1,
+    Profiler: 15,
+    ScopeComponent: -1,
+    SimpleMemoComponent: -1,
+    SuspenseComponent: 16,
+    SuspenseListComponent: -1,
+    Throw: -1,
+    TracingMarkerComponent: -1,
+    ViewTransitionComponent: -1,
+    YieldComponent: 9,
+  },
+  "16.4.3-alpha": {
+    ActivityComponent: -1,
+    CacheComponent: -1,
+    ClassComponent: 2,
+    ContextConsumer: 11,
+    ContextProvider: 12,
+    CoroutineComponent: -1,
+    CoroutineHandlerPhase: -1,
+    DehydratedSuspenseComponent: -1,
+    ForwardRef: 13,
+    Fragment: 9,
+    FunctionComponent: 0,
+    HostComponent: 7,
+    HostHoistable: -1,
+    HostPortal: 6,
+    HostRoot: 5,
+    HostSingleton: -1,
+    HostText: 8,
+    IncompleteClassComponent: -1,
+    IncompleteFunctionComponent: -1,
+    IndeterminateComponent: 4,
+    LazyComponent: -1,
+    LegacyHiddenComponent: -1,
+    MemoComponent: -1,
+    Mode: 10,
+    OffscreenComponent: -1,
+    Profiler: 15,
+    ScopeComponent: -1,
+    SimpleMemoComponent: -1,
+    SuspenseComponent: 16,
+    SuspenseListComponent: -1,
+    Throw: -1,
+    TracingMarkerComponent: -1,
+    ViewTransitionComponent: -1,
+    YieldComponent: -1,
+  },
+  "16.6.0-beta.0": {
+    ActivityComponent: -1,
+    CacheComponent: -1,
+    ClassComponent: 1,
+    ContextConsumer: 9,
+    ContextProvider: 10,
+    CoroutineComponent: -1,
+    CoroutineHandlerPhase: -1,
+    DehydratedSuspenseComponent: 18,
+    ForwardRef: 11,
+    Fragment: 7,
+    FunctionComponent: 0,
+    HostComponent: 5,
+    HostHoistable: -1,
+    HostPortal: 4,
+    HostRoot: 3,
+    HostSingleton: -1,
+    HostText: 6,
+    IncompleteClassComponent: 17,
+    IncompleteFunctionComponent: -1,
+    IndeterminateComponent: 2,
+    LazyComponent: 16,
+    LegacyHiddenComponent: -1,
+    MemoComponent: 14,
+    Mode: 8,
+    OffscreenComponent: -1,
+    Profiler: 12,
+    ScopeComponent: -1,
+    SimpleMemoComponent: 15,
+    SuspenseComponent: 13,
+    SuspenseListComponent: 19,
+    Throw: -1,
+    TracingMarkerComponent: -1,
+    ViewTransitionComponent: -1,
+    YieldComponent: -1,
+  },
+  "17.0.0-alpha": {
+    ActivityComponent: -1,
+    CacheComponent: -1,
+    ClassComponent: 1,
+    ContextConsumer: 9,
+    ContextProvider: 10,
+    CoroutineComponent: -1,
+    CoroutineHandlerPhase: -1,
+    DehydratedSuspenseComponent: 18,
+    ForwardRef: 11,
+    Fragment: 7,
+    FunctionComponent: 0,
+    HostComponent: 5,
+    HostHoistable: -1,
+    HostPortal: 4,
+    HostRoot: 3,
+    HostSingleton: -1,
+    HostText: 6,
+    IncompleteClassComponent: 17,
+    IncompleteFunctionComponent: -1,
+    IndeterminateComponent: 2,
+    LazyComponent: 16,
+    LegacyHiddenComponent: 24,
+    MemoComponent: 14,
+    Mode: 8,
+    OffscreenComponent: 23,
+    Profiler: 12,
+    ScopeComponent: 21,
+    SimpleMemoComponent: 15,
+    SuspenseComponent: 13,
+    SuspenseListComponent: 19,
+    Throw: -1,
+    TracingMarkerComponent: -1,
+    ViewTransitionComponent: -1,
+    YieldComponent: -1,
+  },
+  "17.0.2": {
+    ActivityComponent: 31,
+    CacheComponent: 24,
+    ClassComponent: 1,
+    ContextConsumer: 9,
+    ContextProvider: 10,
+    CoroutineComponent: -1,
+    CoroutineHandlerPhase: -1,
+    DehydratedSuspenseComponent: 18,
+    ForwardRef: 11,
+    Fragment: 7,
+    FunctionComponent: 0,
+    HostComponent: 5,
+    HostHoistable: 26,
+    HostPortal: 4,
+    HostRoot: 3,
+    HostSingleton: 27,
+    HostText: 6,
+    IncompleteClassComponent: 17,
+    IncompleteFunctionComponent: 28,
+    IndeterminateComponent: 2,
+    LazyComponent: 16,
+    LegacyHiddenComponent: 23,
+    MemoComponent: 14,
+    Mode: 8,
+    OffscreenComponent: 22,
+    Profiler: 12,
+    ScopeComponent: 21,
+    SimpleMemoComponent: 15,
+    SuspenseComponent: 13,
+    SuspenseListComponent: 19,
+    Throw: 29,
+    TracingMarkerComponent: 25,
+    ViewTransitionComponent: 30,
+    YieldComponent: -1,
+  },
+});
+
+export type ReactWorkTagVersion = keyof typeof reactWorkTagsByVersion;
+
+export interface GetReactWorkTags {
+  (): Readonly<ReactWorkTagMap>;
+  <Version extends ReactWorkTagVersion>(
+    reactVersion: Version,
+  ): Readonly<(typeof reactWorkTagsByVersion)[Version]>;
+  (reactVersion: string): Readonly<ReactWorkTagMap>;
+}
+
+export type ReactWorkTag = Exclude<
+  (typeof reactWorkTagsByVersion)[ReactWorkTagVersion][keyof ReactWorkTagMap],
+  -1
+>;
+
+export type HostWorkTag = Exclude<
+  | (typeof reactWorkTagsByVersion)[ReactWorkTagVersion]["HostComponent"]
+  | (typeof reactWorkTagsByVersion)[ReactWorkTagVersion]["HostHoistable"]
+  | (typeof reactWorkTagsByVersion)[ReactWorkTagVersion]["HostSingleton"]
+  | (typeof reactWorkTagsByVersion)[ReactWorkTagVersion]["HostText"],
+  -1
+>;
+
+interface ReactWorkTagRange {
+  isMinimumExcluded: boolean;
+  minimumVersion: string;
+  workTags: Readonly<ReactWorkTagMap>;
+}
+
+const reactWorkTagRanges: ReactWorkTagRange[] = [
+  {
+    isMinimumExcluded: true,
+    minimumVersion: "17.0.1",
+    workTags: reactWorkTagsByVersion["17.0.2"],
+  },
+  {
+    isMinimumExcluded: false,
+    minimumVersion: "17.0.0-alpha",
+    workTags: reactWorkTagsByVersion["17.0.0-alpha"],
+  },
+  {
+    isMinimumExcluded: false,
+    minimumVersion: "16.6.0-beta.0",
+    workTags: reactWorkTagsByVersion["16.6.0-beta.0"],
+  },
+  {
+    isMinimumExcluded: false,
+    minimumVersion: "16.4.3-alpha",
+    workTags: reactWorkTagsByVersion["16.4.3-alpha"],
+  },
+];
+
+const defaultReactWorkTags = reactWorkTagsByVersion["17.0.2"];
+
+export const getReactWorkTags: GetReactWorkTags = (reactVersion?: string) => {
+  if (reactVersion === undefined) return defaultReactWorkTags;
+  for (const range of reactWorkTagRanges) {
+    const comparison = compareSemver(reactVersion, range.minimumVersion);
+    if (comparison === null) return defaultReactWorkTags;
+    if (comparison === 1 || (comparison === 0 && !range.isMinimumExcluded)) {
+      return range.workTags;
+    }
+  }
+  return reactWorkTagsByVersion["16.0.0"];
+};

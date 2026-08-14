@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import {
   extractLocation,
   parseFFOrSafariString,
@@ -49,17 +49,6 @@ describe("parseStack (default includeInElement mode)", () => {
   it("skips lines that match no known format", () => {
     const frames = parseStack("Error: boom\nsomething unrelated");
     expect(frames).toHaveLength(0);
-  });
-
-  it("applies a numeric slice", () => {
-    const frames = parseStack(CHROME_STACK, { slice: 2 });
-    expect(frames).toHaveLength(2);
-  });
-
-  it("applies a tuple slice", () => {
-    const frames = parseStack(CHROME_STACK, { slice: [1, 3] });
-    expect(frames).toHaveLength(2);
-    expect(frames[0].fileName).toBe("http://localhost:3000/static/app.js");
   });
 });
 
@@ -114,6 +103,7 @@ describe("parseV8OrIeString", () => {
   it("handles native frames without line numbers", () => {
     const frames = parseV8OrIeString("    at Array.forEach (native)");
     expect(frames).toHaveLength(1);
+    expect(frames[0].fileName).toBeUndefined();
     expect(frames[0].lineNumber).toBeUndefined();
   });
 });

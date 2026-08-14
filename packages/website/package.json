@@ -4,29 +4,19 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vp dev",
-    "build": "vp build",
-    "preview": "vp preview",
-    "lint": "vp lint"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
   },
   "dependencies": {
-    "@base-ui/react": "^1.2.0",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "lucide-react": "^0.576.0",
-    "motion": "^12.35.0",
+    "next": "15.3.8",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "tailwind-merge": "^3.5.0"
+    "react-dom": "^19.2.4"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@vitejs/plugin-react": "^4.7.0",
-    "tailwindcss": "^4",
-    "typescript": "^5",
-    "vite-plus": "latest"
+    "typescript": "^5"
   }
 }

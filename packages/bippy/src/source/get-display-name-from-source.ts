@@ -1,8 +1,29 @@
-import { Fiber } from "../types.js";
+import type { Fiber } from "../react-internals/index.js";
 import { getDisplayName } from "../core.js";
-import { getParentStack } from "./owner-stack.js";
-import { getSourceFromSourceMap, getSourceMap } from "./symbolication.js";
-import { StackFrame } from "./parse-stack.js";
+import { getDefinitionFrameFromOwnedChild, getRawParentStack } from "./owner-stack.js";
+import {
+  getSourceContentFromSourceMap,
+  getSourceFromSourceMap,
+  getSourceMap,
+  type SourceFetch,
+} from "./symbolication.js";
+import type { StackFrame } from "./parse-stack.js";
+
+const COMPONENT_DECLARATION_PATTERNS = [
+  /(?:^|export\s+)(?:const|let|var)\s+(\w+)\s*=/,
+  /(?:^|export\s+)function\s+(\w+)/,
+  /(?:^|export\s+)class\s+(\w+)/,
+];
+
+const findComponentDeclarationOnLine = (line: string): string | null => {
+  for (const pattern of COMPONENT_DECLARATION_PATTERNS) {
+    const match = line.match(pattern);
+    if (match?.[1]) return match[1];
+  }
+  return null;
+};
+
+const MAX_DECLARATION_LINE_DISTANCE = 5;
 
 const extractComponentNameFromSource = (
   sourceContent: string,
@@ -15,27 +36,16 @@ const extractComponentNameFromSource = (
     return null;
   }
 
-  const startLine = Math.max(0, targetLineIndex - 5);
-  const endLine = Math.min(lines.length, targetLineIndex + 5);
-  const contextLines = lines.slice(startLine, endLine).join("\n");
-
-  const arrowFunctionPattern = /(?:^|export\s+)(?:const|let|var)\s+(\w+)\s*=/m;
-  const functionPattern = /(?:^|export\s+)function\s+(\w+)/m;
-  const classPattern = /(?:^|export\s+)class\s+(\w+)/m;
-
-  const arrowMatch = contextLines.match(arrowFunctionPattern);
-  if (arrowMatch?.[1]) {
-    return arrowMatch[1];
-  }
-
-  const functionMatch = contextLines.match(functionPattern);
-  if (functionMatch?.[1]) {
-    return functionMatch[1];
-  }
-
-  const classMatch = contextLines.match(classPattern);
-  if (classMatch?.[1]) {
-    return classMatch[1];
+  for (let lineDistance = 0; lineDistance <= MAX_DECLARATION_LINE_DISTANCE; lineDistance++) {
+    const lineIndexes =
+      lineDistance === 0
+        ? [targetLineIndex]
+        : [targetLineIndex - lineDistance, targetLineIndex + lineDistance];
+    for (const lineIndex of lineIndexes) {
+      if (lineIndex < 0 || lineIndex >= lines.length) continue;
+      const declarationName = findComponentDeclarationOnLine(lines[lineIndex]);
+      if (declarationName) return declarationName;
+    }
   }
 
   return null;
@@ -44,10 +54,11 @@ const extractComponentNameFromSource = (
 export const getDisplayNameFromSource = async (
   fiber: Fiber,
   cache = true,
-  fetchFn?: (url: string) => Promise<Response>,
+  fetchFn?: SourceFetch,
 ): Promise<string | null> => {
-  const parentStackFrames = await getParentStack(fiber, cache, fetchFn);
-  const stackFrame = parentStackFrames.filter((innerFrame) => innerFrame.fileName)[0];
+  const stackFrame =
+    getDefinitionFrameFromOwnedChild(fiber) ??
+    getRawParentStack(fiber).find((innerFrame) => innerFrame.fileName);
 
   if (!stackFrame?.fileName) {
     return getDisplayName(fiber.type);
@@ -73,21 +84,14 @@ export const getDisplayNameFromSource = async (
     return getDisplayName(fiber.type);
   }
 
-  if (!bundleSourceMap.sourcesContent) {
-    return getDisplayName(fiber.type);
-  }
-
-  const sourceIndex = bundleSourceMap.sources.indexOf(source.fileName);
-  if (sourceIndex === -1 || !bundleSourceMap.sourcesContent[sourceIndex]) {
-    return getDisplayName(fiber.type);
-  }
-
-  const sourceContent = bundleSourceMap.sourcesContent[sourceIndex];
-  const extractedName = extractComponentNameFromSource(sourceContent, source.lineNumber);
+  const sourceContent = getSourceContentFromSourceMap(bundleSourceMap, source.fileName);
+  const extractedName = sourceContent
+    ? extractComponentNameFromSource(sourceContent, source.lineNumber)
+    : null;
 
   if (extractedName) {
     return extractedName;
   }
 
-  return getDisplayName(fiber.type);
+  return source.functionName ?? getDisplayName(fiber.type);
 };

@@ -16,7 +16,7 @@ describe("bippy source functions on React Native (Metro)", () => {
       const fileName = await readElementText("result-source-fileName");
       expect(fileName).not.toBe("null");
       expect(fileName).not.toBe("error");
-      expect(fileName.length).toBeGreaterThan(0);
+      expect(fileName).toContain("App.tsx");
     });
 
     it("returns a positive lineNumber for TestChild fiber", async () => {
@@ -30,6 +30,25 @@ describe("bippy source functions on React Native (Metro)", () => {
       const columnNumber = await readElementText("result-source-columnNumber");
       expect(columnNumber).not.toBe("null");
       expect(columnNumber).not.toBe("error");
+    });
+  });
+
+  describe("Metro runtime artifacts", () => {
+    it("discovers the running platform bundle from React Native", async () => {
+      const runtimeBundleUrl = await readElementText("result-runtime-bundle-url");
+      expect(runtimeBundleUrl).toContain(".bundle");
+      expect(runtimeBundleUrl).toMatch(/platform=(ios|android)/);
+    });
+
+    it("loads Metro's generated source map and finds the fixture source", async () => {
+      const sourceMapSource = await readElementText("result-runtime-source-map-source");
+      expect(sourceMapSource).toContain("App.tsx");
+    });
+
+    it("requests the real bundle and map through the injected SourceFetch", async () => {
+      const sourceFetchUrls = await readElementText("result-source-fetch-urls");
+      expect(sourceFetchUrls).toMatch(/\.bundle\?[^,]*platform=(ios|android)/);
+      expect(sourceFetchUrls).toMatch(/\.map\?[^,]*platform=(ios|android)/);
     });
   });
 
@@ -56,9 +75,7 @@ describe("bippy source functions on React Native (Metro)", () => {
   describe("getDisplayNameFromSource", () => {
     it("returns a non-null display name", async () => {
       const displayName = await readElementText("result-displayNameFromSource");
-      expect(displayName).not.toBe("null");
-      expect(displayName).not.toBe("error");
-      expect(displayName.length).toBeGreaterThan(0);
+      expect(displayName).toBe("TestChild");
     });
   });
 

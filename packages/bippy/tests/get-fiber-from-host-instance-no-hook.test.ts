@@ -1,5 +1,5 @@
 // intentionally avoids importing ../index.js so no rdt hook is installed
-import { expect, it } from "vitest";
+import { expect, it } from "vite-plus/test";
 import { getFiberFromHostInstance } from "../src/core.js";
 
 it("should return null when no rdt hook is installed", () => {

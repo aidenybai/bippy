@@ -1,16 +1,14 @@
 import "../src/index.js"; // KEEP THIS LINE ON TOP
 
-import { describe, expect, it } from "vitest";
-import type { Fiber } from "../src/types.js";
+import { describe, expect, it } from "vite-plus/test";
+import type { Fiber } from "../src/react-internals/index.js";
 import {
-  HostPortalTag,
-  getNearestHostFiber,
-  getNearestHostFibers,
   instrument,
   isCompositeFiber,
   traverseFiber,
   traverseRenderedFibers,
 } from "../src/index.js";
+import { latestReactWorkTags } from "./react-work-tags.js";
 import React from "react";
 import { createPortal } from "react-dom";
 import { act, fireEvent, render } from "@testing-library/react";
@@ -70,50 +68,6 @@ describe("traverseFiber with portals", () => {
     );
     expect(parentFiber).not.toBeNull();
     expect(parentFiber!.type).toBe(PortalExample);
-
-    document.body.removeChild(portalContainer);
-  });
-
-  it("should find host fibers inside a portal via getNearestHostFibers", () => {
-    const portalContainer = document.createElement("div");
-    document.body.appendChild(portalContainer);
-
-    let rootFiber: Fiber | null = null;
-    instrument({
-      onCommitFiberRoot: (_rendererID, fiberRoot) => {
-        rootFiber = fiberRoot.current;
-      },
-    });
-    render(<PortalExample container={portalContainer} />);
-
-    const portalChildFiber = traverseFiber(rootFiber, (fiber) => fiber.type === PortalChild);
-    expect(portalChildFiber).not.toBeNull();
-
-    const hostFibers = getNearestHostFibers(portalChildFiber!);
-    expect(hostFibers.length).toBeGreaterThan(0);
-    expect(hostFibers[0].type).toBe("span");
-
-    document.body.removeChild(portalContainer);
-  });
-
-  it("should find a host fiber from a portal child via getNearestHostFiber", () => {
-    const portalContainer = document.createElement("div");
-    document.body.appendChild(portalContainer);
-
-    let rootFiber: Fiber | null = null;
-    instrument({
-      onCommitFiberRoot: (_rendererID, fiberRoot) => {
-        rootFiber = fiberRoot.current;
-      },
-    });
-    render(<PortalExample container={portalContainer} />);
-
-    const portalChildFiber = traverseFiber(rootFiber, (fiber) => fiber.type === PortalChild);
-    expect(portalChildFiber).not.toBeNull();
-
-    const hostFiber = getNearestHostFiber(portalChildFiber!);
-    expect(hostFiber).not.toBeNull();
-    expect(hostFiber!.type).toBe("span");
 
     document.body.removeChild(portalContainer);
   });
@@ -199,14 +153,26 @@ describe("portal fiber properties", () => {
     });
     render(<PortalExample container={portalContainer} />);
 
-    const portalFiber = traverseFiber(rootFiber, (fiber) => fiber.tag === HostPortalTag);
+    const portalFiber = traverseFiber(
+      rootFiber,
+      (fiber) => fiber.tag === latestReactWorkTags.HostPortal,
+    );
     expect(portalFiber).not.toBeNull();
-    expect(portalFiber!.stateNode.containerInfo).toBe(portalContainer);
+    if (!portalFiber) throw new Error("React DOM did not render a portal fiber");
+    const portalStateNode = portalFiber.stateNode;
+    if (
+      typeof portalStateNode !== "object" ||
+      portalStateNode === null ||
+      !("containerInfo" in portalStateNode)
+    ) {
+      throw new Error("React DOM portal fiber did not contain container info");
+    }
+    expect(portalStateNode.containerInfo).toBe(portalContainer);
 
     document.body.removeChild(portalContainer);
   });
 
-  it("HostPortalTag should equal 4", () => {
-    expect(HostPortalTag).toBe(4);
+  it("uses the expected host portal work tag", () => {
+    expect(latestReactWorkTags.HostPortal).toBe(4);
   });
 });

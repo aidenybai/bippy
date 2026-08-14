@@ -1,3 +1,3 @@
-import { safelyInstallRDTHook } from "./rdt-hook.js";
+import { getRDTHook } from "./rdt-hook.js";
 
-safelyInstallRDTHook();
+getRDTHook();

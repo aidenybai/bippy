@@ -1,7 +1,7 @@
 // import bippy, then react
 
 import { instrument } from "../src/index.js";
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from "vite-plus/test";
 
 import React from "react";
 import { render } from "@testing-library/react";

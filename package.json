@@ -6,7 +6,7 @@
     "dev": "vp run bippy#dev",
     "build": "vp run bippy#build",
     "test": "vp run bippy#test",
-    "test:e2e": "pnpm --filter @bippy/e2e test:web",
+    "test:e2e": "vp run @bippy/e2e#test",
     "publint": "vp run bippy#publint",
     "fmt": "vp fmt",
     "lint": "vp lint",
@@ -28,6 +28,9 @@
     "overrides": {
       "react": "^19.2.4",
       "react-dom": "^19.2.4"
+    },
+    "patchedDependencies": {
+      "react-devtools-core@7.0.1": "patches/react-devtools-core@7.0.1.patch"
     }
   }
 }

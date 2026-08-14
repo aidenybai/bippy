@@ -1,5 +1,6 @@
 {
   "buildCommand": "pnpm run build",
-  "outputDirectory": "dist",
-  "framework": null
+  "framework": "nextjs",
+  "installCommand": "corepack pnpm install --frozen-lockfile",
+  "outputDirectory": ".next"
 }

@@ -1,11 +1,18 @@
 // intentionally avoids importing ../index.js so this file controls hook installation
-import { expect, it, vi } from "vitest";
-import { getRDTHook, hasRDTHook, isClientEnvironment, patchRDTHook } from "../src/rdt-hook.js";
-import type { ReactDevToolsGlobalHook, ReactRenderer } from "../src/types.js";
+import { expect, it, vi } from "vite-plus/test";
+import { ReactBuildType } from "../src/react-internals/index.js";
+import {
+  _onActiveListeners,
+  getRDTHook,
+  hasRDTHook,
+  onRendererInject,
+  patchRDTHook,
+} from "../src/rdt-hook.js";
+import type { ReactDevToolsGlobalHook, ReactRenderer } from "../src/react-internals/index.js";
 
 const createFakeRenderer = (): ReactRenderer =>
   ({
-    bundleType: 1,
+    bundleType: ReactBuildType.Development,
     version: "19.0.0",
   }) as unknown as ReactRenderer;
 
@@ -14,15 +21,6 @@ it("patchRDTHook should return early when no hook exists", () => {
   const onActive = vi.fn();
   patchRDTHook(onActive);
   expect(onActive).not.toHaveBeenCalled();
-});
-
-it("isClientEnvironment should detect react native environments", () => {
-  expect(isClientEnvironment()).toBe(true);
-  vi.stubGlobal("window", { navigator: { product: "ReactNative" } });
-  expect(isClientEnvironment()).toBe(true);
-  vi.stubGlobal("window", { navigator: { product: "Gecko" } });
-  expect(isClientEnvironment()).toBe(false);
-  vi.unstubAllGlobals();
 });
 
 it("getRDTHook should install the hook when missing", () => {
@@ -62,9 +60,9 @@ it("checkDCE should schedule an error for badly built react", () => {
 it("window.hasOwnProperty hack should hide the hook exactly once", () => {
   expect(window.hasOwnProperty("someUnrelatedKey")).toBe(false);
   const firstResult = window.hasOwnProperty("__REACT_DEVTOOLS_GLOBAL_HOOK__");
-  expect(Object.is(firstResult, -0)).toBe(true);
+  expect(firstResult).toBe(false);
   const secondResult = window.hasOwnProperty("__REACT_DEVTOOLS_GLOBAL_HOOK__");
-  expect(Object.is(secondResult, -0)).toBe(false);
+  expect(secondResult).toBe(true);
   expect(globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__).toBeDefined();
 });
 
@@ -89,4 +87,25 @@ it("assigning a new hook should merge existing renderers into it", () => {
   expect(replacementHook.renderers.size).toBe(2);
   expect(replacementHook._instrumentationIsActive).toBe(true);
   expect(onActive.mock.calls.length).toBeGreaterThan(callCountBeforeReplacement);
+});
+
+it("propagates active and renderer-injection listener failures", () => {
+  const activeListenerError = new Error("active listener failure");
+  const throwingActiveListener = () => {
+    throw activeListenerError;
+  };
+  expect(() => getRDTHook(throwingActiveListener)).toThrow(activeListenerError);
+  _onActiveListeners.delete(throwingActiveListener);
+
+  const laterListener = vi.fn();
+  const rendererListenerError = new Error("renderer listener failure");
+  const unsubscribeThrowingListener = onRendererInject(() => {
+    throw rendererListenerError;
+  });
+  const unsubscribeLaterListener = onRendererInject(laterListener);
+  const renderer = createFakeRenderer();
+  expect(() => getRDTHook().inject(renderer)).toThrow(rendererListenerError);
+  expect(laterListener).not.toHaveBeenCalled();
+  unsubscribeThrowingListener();
+  unsubscribeLaterListener();
 });

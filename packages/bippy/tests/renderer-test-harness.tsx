@@ -1,29 +1,28 @@
 import React from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
+import { sourceFetch } from "./source-fetch.js";
 import {
   didFiberCommit,
   didFiberRender,
   getDisplayName,
+  getFiberFromHostInstance,
   getFiberId,
-  getFiberStack,
   getLatestFiber,
-  getMutatedHostFibers,
-  getNearestHostFiber,
-  getNearestHostFibers,
   getRDTHook,
-  getTimings,
   instrument,
   isCompositeFiber,
   isHostFiber,
   isInstrumentationActive,
   isValidFiber,
-  traverseContexts,
   traverseFiber,
-  traverseProps,
-  traverseState,
+  useFiber,
 } from "../src/index.js";
-import { getFiberHooks } from "../src/source/index.js";
-import type { Fiber, FiberRoot } from "../src/types.js";
+import {
+  getReactWorkTagsForFiber,
+  getReactWorkTagsForRenderer,
+} from "../src/react-internals/index.js";
+import { getFiberHooks, getOwnerStack, getSource } from "../src/source/index.js";
+import type { Fiber, FiberRoot } from "../src/react-internals/index.js";
 
 export interface RendererHostProps {
   label: string;
@@ -39,14 +38,18 @@ export interface RendererController {
 export interface RendererAdapter {
   createHostElement: (props: RendererHostProps) => React.ReactElement;
   render: (element: React.ReactElement) => Promise<RendererController>;
-  wrap: (element: React.ReactElement) => React.ReactElement;
+  wrap?: (element: React.ReactElement) => React.ReactElement;
 }
 
 export interface RendererAdapterFactory {
   create: () => Promise<RendererAdapter>;
   name: string;
   rendererPackageName?: string;
+  supportLevel: RendererSupportLevel;
+  supportsHostInstanceLookup?: boolean;
 }
+
+export type RendererSupportLevel = "automatic" | "compatibility";
 
 interface CompoundTreeProps {
   revision: number;
@@ -60,6 +63,7 @@ interface CompoundComponents {
   CompoundTree: React.ComponentType<CompoundTreeProps>;
   ForwardLeaf: React.ComponentType<RendererHostProps>;
   StatefulBranch: React.ComponentType<StatefulBranchProps>;
+  getObservedFiber: () => Fiber | undefined;
   setStateValue: (value: number) => void;
 }
 
@@ -80,6 +84,7 @@ const collectHookValues = (
 
 const createCompoundComponents = (adapter: RendererAdapter): CompoundComponents => {
   let updateStateValue = (_value: number) => {};
+  let observedFiber: Fiber | undefined;
 
   const ForwardLeaf = React.forwardRef<unknown, RendererHostProps>((props, _ref) =>
     adapter.createHostElement(props),
@@ -87,6 +92,7 @@ const createCompoundComponents = (adapter: RendererAdapter): CompoundComponents 
   ForwardLeaf.displayName = "RendererForwardLeaf";
 
   const StatefulBranch = React.memo(({ revision }: StatefulBranchProps) => {
+    observedFiber = useFiber();
     const contextValue = React.useContext(RendererContext);
     const [stateValue, setStateValue] = React.useState(1);
     const computedLabel = React.useMemo(
@@ -109,13 +115,14 @@ const createCompoundComponents = (adapter: RendererAdapter): CompoundComponents 
     CompoundTree,
     ForwardLeaf,
     StatefulBranch,
+    getObservedFiber: () => observedFiber,
     setStateValue: (value) => updateStateValue(value),
   };
 };
 
-const findComponentFiber = (
+const findComponentFiber = <ComponentProps,>(
   root: FiberRoot,
-  component: React.ComponentType<unknown>,
+  component: React.ComponentType<ComponentProps>,
 ): Fiber | null =>
   traverseFiber(
     root.current,
@@ -123,7 +130,7 @@ const findComponentFiber = (
   );
 
 export const runRendererTestHarness = (factories: RendererAdapterFactory[]): void => {
-  describe.each(factories)("$name renderer", (factory) => {
+  describe.each(factories)("$name renderer ($supportLevel)", (factory) => {
     it("supports compound mount, inspection, update, and unmount instrumentation", async () => {
       const committedRoots: FiberRoot[] = [];
       const rendererIds: number[] = [];
@@ -144,8 +151,10 @@ export const runRendererTestHarness = (factories: RendererAdapterFactory[]): voi
 
       const adapter = await factory.create();
       const components = createCompoundComponents(adapter);
-      const createTree = (revision: number) =>
-        adapter.wrap(<components.CompoundTree revision={revision} />);
+      const createTree = (revision: number) => {
+        const tree = <components.CompoundTree revision={revision} />;
+        return adapter.wrap ? adapter.wrap(tree) : tree;
+      };
       const controller = await adapter.render(createTree(1));
 
       expect(controller.getOutput()).toBeTruthy();
@@ -167,6 +176,9 @@ export const runRendererTestHarness = (factories: RendererAdapterFactory[]): voi
       const mountedRoot = committedRoots.at(-1);
       expect(mountedRoot).toBeDefined();
       if (!mountedRoot) throw new Error(`${factory.name} did not commit a root`);
+      expect(getReactWorkTagsForFiber(mountedRoot.current)).toBe(
+        getReactWorkTagsForRenderer(renderer),
+      );
 
       const mountedStatefulFiber = findComponentFiber(mountedRoot, components.StatefulBranch);
       const mountedForwardFiber = findComponentFiber(mountedRoot, components.ForwardLeaf);
@@ -175,6 +187,7 @@ export const runRendererTestHarness = (factories: RendererAdapterFactory[]): voi
       if (!mountedStatefulFiber || !mountedForwardFiber) {
         throw new Error(`${factory.name} did not render the compound component tree`);
       }
+      expect(components.getObservedFiber()).toBe(mountedStatefulFiber);
 
       expect(isValidFiber(mountedStatefulFiber)).toBe(true);
       expect(isCompositeFiber(mountedStatefulFiber)).toBe(true);
@@ -182,13 +195,23 @@ export const runRendererTestHarness = (factories: RendererAdapterFactory[]): voi
       expect(getDisplayName(mountedStatefulFiber.type)).toBe("RendererStatefulBranch");
       expect(getDisplayName(mountedForwardFiber.type)).toBe("RendererForwardLeaf");
       expect(didFiberRender(mountedStatefulFiber)).toBe(true);
-      expect(getFiberStack(mountedForwardFiber)).toContain(mountedStatefulFiber);
+      const source = await getSource(mountedStatefulFiber, false, sourceFetch);
+      expect(source?.fileName).toContain("renderer-test-harness.tsx");
+      const ownerStack = await getOwnerStack(mountedForwardFiber, false, sourceFetch);
+      expect(
+        ownerStack.some((stackFrame) =>
+          ["RendererStatefulBranch", "RendererCompoundTree"].includes(
+            stackFrame.functionName ?? "",
+          ),
+        ),
+      ).toBe(true);
 
-      const nearestMountedHostFiber = getNearestHostFiber(mountedStatefulFiber);
-      expect(nearestMountedHostFiber).not.toBeNull();
-      if (!nearestMountedHostFiber) throw new Error(`${factory.name} did not render a host fiber`);
-      expect(isHostFiber(nearestMountedHostFiber)).toBe(true);
-      expect(getNearestHostFibers(mountedStatefulFiber).length).toBeGreaterThanOrEqual(1);
+      const mountedHostFiber = traverseFiber(mountedStatefulFiber, isHostFiber);
+      expect(mountedHostFiber).not.toBeNull();
+      if (!mountedHostFiber) throw new Error(`${factory.name} did not render a host fiber`);
+      if (factory.supportsHostInstanceLookup) {
+        expect(getFiberFromHostInstance(mountedHostFiber.stateNode)).toBe(mountedHostFiber);
+      }
 
       const mountedFiberId = getFiberId(mountedStatefulFiber);
       await controller.update(createTree(2), () => components.setStateValue(4));
@@ -200,6 +223,7 @@ export const runRendererTestHarness = (factories: RendererAdapterFactory[]): voi
       const updatedStatefulFiber = findComponentFiber(updatedRoot, components.StatefulBranch);
       expect(updatedStatefulFiber).not.toBeNull();
       if (!updatedStatefulFiber) throw new Error(`${factory.name} lost the stateful fiber`);
+      expect(components.getObservedFiber()).toBe(updatedStatefulFiber);
 
       expect(updatedStatefulFiber.alternate).not.toBeNull();
       expect(getLatestFiber(mountedStatefulFiber)).toBe(updatedStatefulFiber);
@@ -207,35 +231,12 @@ export const runRendererTestHarness = (factories: RendererAdapterFactory[]): voi
       expect(didFiberRender(updatedStatefulFiber)).toBe(true);
       expect(didFiberCommit(updatedRoot.current)).toBe(true);
 
-      const propTransitions: Array<[string, unknown, unknown]> = [];
-      traverseProps(updatedStatefulFiber, (propName, nextValue, previousValue) => {
-        propTransitions.push([propName, nextValue, previousValue]);
-      });
-      expect(propTransitions).toContainEqual(["revision", 2, 1]);
-
-      const stateTransitions: Array<[unknown, unknown]> = [];
-      traverseState(updatedStatefulFiber, (nextState, previousState) => {
-        stateTransitions.push([nextState?.memoizedState, previousState?.memoizedState]);
-      });
-      expect(stateTransitions).toContainEqual([4, 1]);
+      expect(updatedStatefulFiber.memoizedProps.revision).toBe(2);
+      expect(updatedStatefulFiber.alternate.memoizedProps.revision).toBe(1);
 
       const hookValues = collectHookValues(getFiberHooks(updatedStatefulFiber));
       expect(hookValues).toContain("compound");
       expect(hookValues).toContain(4);
-
-      const contextValues: unknown[] = [];
-      traverseContexts(updatedStatefulFiber, (nextContext) => {
-        contextValues.push(nextContext?.memoizedValue);
-      });
-      expect(contextValues).toContain("compound");
-
-      const mutatedHostFibers = getMutatedHostFibers(updatedRoot.current);
-      expect(mutatedHostFibers.length).toBeGreaterThanOrEqual(1);
-      expect(mutatedHostFibers.every(isHostFiber)).toBe(true);
-
-      const timings = getTimings(updatedStatefulFiber);
-      expect(timings.selfTime).toBeTypeOf("number");
-      expect(timings.totalTime).toBeTypeOf("number");
 
       await controller.unmount();
       expect(

@@ -61,62 +61,12 @@ test.describe("patchRDTHook", () => {
     expect(result.didFire).toBe(true);
     expect(result.isActive).toBe(true);
   });
-
-  test("re-patching with react-refresh and no renderers self-injects to activate", async ({
-    page,
-  }) => {
-    const result = await page.evaluate(() => {
-      const rdtHook = (globalThis as any).__REACT_DEVTOOLS_GLOBAL_HOOK__;
-      if (!window.__BIPPY__.isReactRefresh(rdtHook)) return { skipped: true };
-
-      const stashedRenderers = new Map(rdtHook.renderers);
-      rdtHook.renderers.clear();
-      rdtHook._instrumentationSource = undefined;
-      rdtHook._instrumentationIsActive = false;
-
-      window.__BIPPY__.patchRDTHook();
-      const rendererCountAfterPatch = rdtHook.renderers.size;
-      const isActiveAfterPatch = rdtHook._instrumentationIsActive === true;
-
-      for (const [rendererId, renderer] of stashedRenderers) {
-        rdtHook.renderers.set(rendererId, renderer);
-      }
-      return { skipped: false, rendererCountAfterPatch, isActiveAfterPatch };
-    });
-    if (result.skipped) return;
-    expect(result.rendererCountAfterPatch).toBeGreaterThanOrEqual(1);
-    expect(result.isActiveAfterPatch).toBe(true);
-  });
 });
 
 test.describe("hook environment", () => {
-  test("hasRDTHook and isClientEnvironment are true in a browser with the hook installed", async ({
-    page,
-  }) => {
-    const result = await page.evaluate(() => {
-      return {
-        hasHook: window.__BIPPY__.hasRDTHook(),
-        isClient: window.__BIPPY__.isClientEnvironment(),
-      };
-    });
-    expect(result.hasHook).toBe(true);
-    expect(result.isClient).toBe(true);
-  });
-
-  test("isReactRefresh rejects hooks without a react-refresh inject source", async ({ page }) => {
-    const result = await page.evaluate(() => {
-      return {
-        installedHook: window.__BIPPY__.isReactRefresh(window.__BIPPY__.getRDTHook()),
-        bareObject: window.__BIPPY__.isReactRefresh({ inject: () => 1 } as never),
-      };
-    });
-    // isReactRefresh latches true once any refresh hook was seen, so the
-    // installed hook's answer is environment-dependent; the bare object is
-    // only rejected while that latch is unset
-    expect(typeof result.installedHook).toBe("boolean");
-    if (!result.installedHook) {
-      expect(result.bareObject).toBe(false);
-    }
+  test("hasRDTHook is true with the hook installed", async ({ page }) => {
+    const hasHook = await page.evaluate(() => window.__BIPPY__.hasRDTHook());
+    expect(hasHook).toBe(true);
   });
 
   test("version and BIPPY_INSTRUMENTATION_STRING identify the build", async ({ page }) => {
@@ -180,14 +130,12 @@ test.describe("installRDTHook", () => {
     expect(result.originalRestored).toBe(true);
   });
 
-  test("safelyInstallRDTHook never throws and leaves an installed hook in place", async ({
-    page,
-  }) => {
+  test("getRDTHook is idempotent", async ({ page }) => {
     const result = await page.evaluate(() => {
       const hookBefore = window.__BIPPY__.getRDTHook();
-      window.__BIPPY__.safelyInstallRDTHook();
+      const hookAfter = window.__BIPPY__.getRDTHook();
       return {
-        hookUnchanged: window.__BIPPY__.getRDTHook() === hookBefore,
+        hookUnchanged: hookAfter === hookBefore,
         stillActive: window.__BIPPY__.isInstrumentationActive(),
       };
     });

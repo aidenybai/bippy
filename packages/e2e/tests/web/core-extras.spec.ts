@@ -32,63 +32,6 @@ test.describe("element validation", () => {
   });
 });
 
-test.describe("context traversal", () => {
-  // traverseContexts compares current and alternate dependencies, so the
-  // consumer needs at least one re-render before an alternate fiber exists
-  test.beforeEach(async ({ page }) => {
-    await page.click('[data-testid="increment"]');
-    await expect(page.getByTestId("test-child")).toHaveText("e2e-test 1");
-  });
-
-  test("traverseContexts reads the provided context value on a consumer fiber", async ({
-    page,
-  }) => {
-    const result = await page.evaluate(() => {
-      const element = document.querySelector('[data-testid="context-consumer"]');
-      const hostFiber = window.__BIPPY__.getFiberFromHostInstance(element);
-      if (!hostFiber) return null;
-
-      let consumerFiber = hostFiber.return;
-      while (consumerFiber && !window.__BIPPY__.isCompositeFiber(consumerFiber)) {
-        consumerFiber = consumerFiber.return;
-      }
-      if (!consumerFiber) return null;
-
-      const contextValues: unknown[] = [];
-      const didSelect = window.__BIPPY__.traverseContexts(consumerFiber, (nextContext) => {
-        contextValues.push(nextContext?.memoizedValue);
-      });
-      return { contextValues, didSelect };
-    });
-    expect(result).not.toBeNull();
-    // the selector never returns true, so traverseContexts reports no selection
-    expect(result!.didSelect).toBe(false);
-    expect(result!.contextValues).toContain("provided-value");
-  });
-
-  test("traverseContexts stops early when the selector returns true", async ({ page }) => {
-    const result = await page.evaluate(() => {
-      const element = document.querySelector('[data-testid="context-consumer"]');
-      const hostFiber = window.__BIPPY__.getFiberFromHostInstance(element);
-      if (!hostFiber) return null;
-
-      let consumerFiber = hostFiber.return;
-      while (consumerFiber && !window.__BIPPY__.isCompositeFiber(consumerFiber)) {
-        consumerFiber = consumerFiber.return;
-      }
-      if (!consumerFiber) return null;
-
-      let visitCount = 0;
-      window.__BIPPY__.traverseContexts(consumerFiber, () => {
-        visitCount++;
-        return true;
-      });
-      return visitCount;
-    });
-    expect(result).toBe(1);
-  });
-});
-
 test.describe("build type", () => {
   test("detectReactBuildType reports development for the fixture renderer", async ({ page }) => {
     const result = await page.evaluate(() => {
@@ -164,7 +107,10 @@ test.describe("rendered fiber traversal", () => {
             commitCount++;
             window.__BIPPY__.traverseRenderedFibers(fiberRoot, (fiber, phase) => {
               if (commitCount === 1 || phase !== "mount") return;
-              const testId = fiber.stateNode?.getAttribute?.("data-testid");
+              const testId =
+                fiber.stateNode instanceof Element
+                  ? fiber.stateNode.getAttribute("data-testid")
+                  : null;
               if (testId) mountedTestIds.push(testId);
             });
             if (commitCount < 3) {
@@ -187,7 +133,10 @@ test.describe("unmount and post-commit instrumentation", () => {
       return new Promise<{ sawUnmount: boolean; rendererIdIsNumber: boolean }>((resolve) => {
         window.__BIPPY__.instrument({
           onCommitFiberUnmount: (rendererID, fiber) => {
-            const testId = fiber.stateNode?.getAttribute?.("data-testid");
+            const testId =
+              fiber.stateNode instanceof Element
+                ? fiber.stateNode.getAttribute("data-testid")
+                : null;
             if (testId === "conditional-child") {
               resolve({ sawUnmount: true, rendererIdIsNumber: typeof rendererID === "number" });
             }

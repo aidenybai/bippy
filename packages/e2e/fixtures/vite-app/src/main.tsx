@@ -2,29 +2,24 @@ import "bippy/install-hook-only";
 
 import * as bippy from "bippy";
 import * as bippySource from "bippy/source";
+import type { Fiber } from "bippy";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
-import { HmrEdgeTargets } from "./hmr-edge-mount";
-import { installHmrHarness } from "./hmr-harness";
-import { HmrTarget } from "./hmr-target";
-import { TestParent } from "./test-app";
+import { TestParent, UseFiberProbe } from "./test-app";
 
 declare global {
   interface Window {
     __BIPPY__: typeof bippy & typeof bippySource;
+    __USE_FIBER__: Fiber | undefined;
   }
 }
 
 window.__BIPPY__ = { ...bippy, ...bippySource };
-installHmrHarness();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <>
-      <TestParent />
-      <HmrTarget />
-      <HmrEdgeTargets />
-    </>
+    <UseFiberProbe />
+    <TestParent />
   </StrictMode>,
 );

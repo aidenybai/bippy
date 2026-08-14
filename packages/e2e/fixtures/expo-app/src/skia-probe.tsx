@@ -1,14 +1,20 @@
 import { Canvas, Circle, Group, Rect } from "@shopify/react-native-skia";
+import { useFiber } from "bippy";
+import type { Fiber } from "bippy";
 import { createContext, memo, useContext, useState } from "react";
 import { View } from "react-native";
 
 const SkiaTestContext = createContext("skia-context-default");
+let observedSkiaMemoLeafFiber: Fiber | undefined;
+
+export const getObservedSkiaMemoLeafFiber = (): Fiber | undefined => observedSkiaMemoLeafFiber;
 
 interface SkiaMemoLeafProps {
   revision: number;
 }
 
 const SkiaMemoLeaf = memo(({ revision }: SkiaMemoLeafProps) => {
+  observedSkiaMemoLeafFiber = useFiber();
   const color = useContext(SkiaTestContext);
   const [radius] = useState(12);
   return <Circle color={color} cx={24 + revision} cy={24} r={radius} />;

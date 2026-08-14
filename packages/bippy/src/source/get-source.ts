@@ -1,6 +1,7 @@
-import { Fiber } from "../types.js";
+import type { Fiber } from "../react-internals/index.js";
+import { getDisplayName } from "../core.js";
 
-import { FiberSource } from "./types.js";
+import type { FiberSource } from "./types.js";
 import {
   SCHEME_REGEX,
   INTERNAL_SCHEME_PREFIXES,
@@ -12,8 +13,13 @@ import {
 } from "./constants.js";
 import { getDefinitionFrameFromOwnedChild, getParentStack, hasDebugStack } from "./owner-stack.js";
 import { parseDebugStack } from "./parse-debug-stack.js";
-import { StackFrame } from "./parse-stack.js";
-import { symbolicateStack } from "./symbolication.js";
+import { parseStack, type StackFrame } from "./parse-stack.js";
+import {
+  getSourceFromSourceMapByFunctionName,
+  getSourceMap,
+  symbolicateStack,
+  type SourceFetch,
+} from "./symbolication.js";
 
 export const hasDebugSource = (
   fiber: Fiber,
@@ -26,10 +32,8 @@ export const hasDebugSource = (
   }
   return (
     typeof debugSource === "object" &&
-    debugSource !== null &&
-    "fileName" in debugSource &&
     typeof debugSource.fileName === "string" &&
-    "lineNumber" in debugSource &&
+    debugSource.fileName !== "(native)" &&
     typeof debugSource.lineNumber === "number"
   );
 };
@@ -63,6 +67,30 @@ const getUsageFrameFromDebugStack = (fiber: Fiber): StackFrame | null => {
   return null;
 };
 
+const getSourceByComponentName = async (
+  fiber: Fiber,
+  cache: boolean,
+  fetchFn: SourceFetch | undefined,
+): Promise<FiberSource | null> => {
+  const functionName = getDisplayName(fiber.type);
+  if (!functionName) return null;
+
+  const runtimeStackFrames = parseStack(new Error().stack ?? "");
+  const visitedFileNames = new Set<string>();
+  for (const stackFrame of runtimeStackFrames) {
+    const fileName = stackFrame.fileName;
+    if (!fileName || visitedFileNames.has(fileName)) {
+      continue;
+    }
+    visitedFileNames.add(fileName);
+    const sourceMap = await getSourceMap(fileName, cache, fetchFn);
+    if (!sourceMap) continue;
+    const source = getSourceFromSourceMapByFunctionName(sourceMap, functionName);
+    if (source && !source.isIgnoreListed) return toFiberSource(source);
+  }
+  return null;
+};
+
 /**
  * Returns the source of where the component is used. Available only in dev, for composite {@link Fiber}s.
  *
@@ -92,11 +120,10 @@ const getUsageFrameFromDebugStack = (fiber: Fiber): StackFrame | null => {
 export const getSource = async (
   fiber: Fiber,
   cache = true,
-  fetchFn?: (url: string) => Promise<Response>,
+  fetchFn?: SourceFetch,
 ): Promise<FiberSource | null> => {
   if (hasDebugSource(fiber)) {
-    const debugSource = fiber._debugSource;
-    return debugSource || null;
+    return fiber._debugSource;
   }
 
   const debugStackFrame =
@@ -115,15 +142,10 @@ export const getSource = async (
       return toFiberSource(stackFrame);
     }
   }
-  return null;
+  return getSourceByComponentName(fiber, cache, fetchFn);
 };
 
 const getPathSegmentCount = (path: string): number => path.split("/").filter(Boolean).length;
-
-const getFirstPathSegment = (path: string): string | null => {
-  const segments = path.split("/").filter(Boolean);
-  return segments[0] ?? null;
-};
 
 const stripSingleBasePathPrefix = (path: string): string => {
   const firstSlashIndex = path.indexOf("/", 1);
@@ -141,15 +163,12 @@ const stripSingleBasePathPrefix = (path: string): string => {
     return path;
   }
 
-  if (getPathSegmentCount(remainderPath) < 2) {
+  const remainderSegments = remainderPath.split("/").filter(Boolean);
+  if (remainderSegments.length < 2) {
     return path;
   }
 
-  const firstRemainderSegment = getFirstPathSegment(remainderPath);
-  if (!firstRemainderSegment) {
-    return path;
-  }
-
+  const firstRemainderSegment = remainderSegments[0];
   if (firstRemainderSegment.startsWith("@")) {
     return path;
   }
@@ -171,6 +190,7 @@ export const normalizeFileName = (fileName: string): string => {
   }
 
   let normalizedFileName = fileName;
+  const isWindowsDrivePath = /^[a-zA-Z]:[\\/]/.test(normalizedFileName);
 
   const isHttpUrl =
     normalizedFileName.startsWith("http://") || normalizedFileName.startsWith("https://");
@@ -179,9 +199,6 @@ export const normalizeFileName = (fileName: string): string => {
       const parsedUrl = new URL(normalizedFileName);
       normalizedFileName = parsedUrl.pathname;
     } catch {}
-  }
-
-  if (isHttpUrl) {
     normalizedFileName = stripSingleBasePathPrefix(normalizedFileName);
   }
 
@@ -214,7 +231,7 @@ export const normalizeFileName = (fileName: string): string => {
     }
   }
 
-  if (SCHEME_REGEX.test(normalizedFileName)) {
+  if (!isWindowsDrivePath) {
     const schemeMatch = normalizedFileName.match(SCHEME_REGEX);
     if (schemeMatch) {
       normalizedFileName = normalizedFileName.slice(schemeMatch[0].length);

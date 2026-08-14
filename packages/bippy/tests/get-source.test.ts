@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import type { Fiber } from "../src/types.js";
+import { describe, expect, it } from "vite-plus/test";
+import type { Fiber } from "../src/react-internals/index.js";
 import {
   getSource,
   hasDebugSource,
@@ -16,6 +16,18 @@ const createFiberWithDebugSource = (debugSource: unknown): Fiber =>
     sibling: null,
     _debugSource: debugSource,
   }) as unknown as Fiber;
+
+const createDebugStackError = (stackLines: string[]): Error => {
+  const error = new Error("react-stack-top-frame");
+  error.stack = stackLines.join("\n");
+  return error;
+};
+
+const createDebugStackFiber = (stackLines: string[]): Fiber => {
+  const fiber = createFiberWithDebugSource(undefined);
+  fiber._debugStack = createDebugStackError(stackLines);
+  return fiber;
+};
 
 describe("hasDebugSource", () => {
   it("returns true for a well-formed debug source", () => {
@@ -35,6 +47,12 @@ describe("hasDebugSource", () => {
     );
   });
 
+  it("returns false for a native pseudo-file", () => {
+    expect(
+      hasDebugSource(createFiberWithDebugSource({ fileName: "(native)", lineNumber: 10 })),
+    ).toBe(false);
+  });
+
   it("returns false when lineNumber is missing or not a number", () => {
     expect(hasDebugSource(createFiberWithDebugSource({ fileName: "App.tsx" }))).toBe(false);
     expect(
@@ -49,6 +67,84 @@ describe("getSource with _debugSource", () => {
     const fiber = createFiberWithDebugSource(debugSource);
     const result = await getSource(fiber);
     expect(result).toBe(debugSource);
+  });
+});
+
+describe("getSource with native debug frames", () => {
+  it("skips a native debug source in favor of a source stack frame", async () => {
+    const fiber = createDebugStackFiber([
+      "Error: react-stack-top-frame",
+      "    at jsxDEV (native)",
+      "    at renderLeaf (http://localhost/src/skia-probe.tsx:12:4)",
+      "    at react-stack-bottom-frame (http://localhost/react.js:1:1)",
+    ]);
+    fiber._debugSource = {
+      fileName: "(native)",
+      lineNumber: 1,
+      columnNumber: 1,
+    };
+
+    const source = await getSource(fiber, false, () =>
+      Promise.resolve(new Response("not found", { status: 404 })),
+    );
+
+    expect(source).toEqual({
+      columnNumber: 4,
+      fileName: "http://localhost/src/skia-probe.tsx",
+      functionName: "renderLeaf",
+      lineNumber: 12,
+    });
+  });
+
+  it("skips native pseudo-frames in favor of a source frame", async () => {
+    const fiber = createDebugStackFiber([
+      "Error: react-stack-top-frame",
+      "    at jsxDEV (native)",
+      "    at SkiaLeaf (native)",
+      "    at renderLeaf (http://localhost/src/skia-probe.tsx:12:4)",
+      "    at react-stack-bottom-frame (http://localhost/react.js:1:1)",
+    ]);
+
+    const source = await getSource(fiber, false, () =>
+      Promise.resolve(new Response("not found", { status: 404 })),
+    );
+
+    expect(source).toEqual({
+      columnNumber: 4,
+      fileName: "http://localhost/src/skia-probe.tsx",
+      functionName: "renderLeaf",
+      lineNumber: 12,
+    });
+  });
+
+  it("uses an owned child's source frame when the fiber stack is native-only", async () => {
+    const parentFiber = createDebugStackFiber([
+      "Error: react-stack-top-frame",
+      "    at jsxDEV (native)",
+      "    at SkiaLeaf (native)",
+      "    at react-stack-bottom-frame (http://localhost/react.js:1:1)",
+    ]);
+    const childFiber = createDebugStackFiber([
+      "Error: react-stack-top-frame",
+      "    at jsxDEV (native)",
+      "    at SkiaHost (native)",
+      "    at SkiaLeaf (http://localhost/src/skia-probe.tsx:20:6)",
+      "    at react-stack-bottom-frame (http://localhost/react.js:1:1)",
+    ]);
+    parentFiber.child = childFiber;
+    childFiber.return = parentFiber;
+    childFiber._debugOwner = parentFiber;
+
+    const source = await getSource(parentFiber, false, () =>
+      Promise.resolve(new Response("not found", { status: 404 })),
+    );
+
+    expect(source).toEqual({
+      columnNumber: 6,
+      fileName: "http://localhost/src/skia-probe.tsx",
+      functionName: "SkiaLeaf",
+      lineNumber: 20,
+    });
   });
 });
 
@@ -106,6 +202,12 @@ describe("normalizeFileName", () => {
     expect(normalizeFileName("custom-scheme:src/app.tsx")).toBe("src/app.tsx");
   });
 
+  it("preserves Windows drive paths", () => {
+    expect(normalizeFileName("C:\\projects\\app\\src\\app.tsx")).toBe(
+      "C:\\projects\\app\\src\\app.tsx",
+    );
+  });
+
   it("strips a protocol-relative host prefix", () => {
     expect(normalizeFileName("webpack:////host/src/app.tsx")).toBe("/src/app.tsx");
   });
@@ -141,6 +243,9 @@ describe("isSourceFile", () => {
   it("returns true for plain source files", () => {
     expect(isSourceFile("/src/components/button.tsx")).toBe(true);
     expect(isSourceFile("/src/app.ts")).toBe(true);
+    expect(isSourceFile("/src/content.mdx")).toBe(true);
+    expect(isSourceFile("/src/server.mts")).toBe(true);
+    expect(isSourceFile("/src/config.cjs")).toBe(true);
   });
 });
 

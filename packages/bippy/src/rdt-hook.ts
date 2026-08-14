@@ -1,21 +1,32 @@
-// IMPORTANT:
-// this file is super important to load the __REACT_DEVTOOLS_GLOBAL_HOOK__ object
-// without this, we can't stub the React DevTools global hook, we don't have a way to instrument the application
-// make sure you import this file first before anything else (particularly React)
+// This module must load before React so renderers can inject into the hook.
 
-import type { ReactDevToolsGlobalHook, ReactRenderer } from "./types.js";
-import { toUnsubscribe, type Unsubscribe } from "./unsubscribe.js";
+import type { ReactDevToolsGlobalHook, ReactRenderer } from "./react-internals/index.js";
+
+export interface Unsubscribe extends Disposable {
+  (): void;
+}
+
+interface ActiveListener {
+  (): unknown;
+}
+
+interface RendererInjectListener {
+  (renderer: ReactRenderer): void;
+}
+
+interface RDTHookReplaceListener {
+  (rdtHook: ReactDevToolsGlobalHook): void;
+}
 
 export const version = process.env.VERSION;
 export const BIPPY_INSTRUMENTATION_STRING = `bippy-${version}`;
 
 const objectDefineProperty = Object.defineProperty;
-// eslint-disable-next-line @typescript-eslint/unbound-method
-const objectHasOwnProperty = Object.prototype.hasOwnProperty;
 
-const NO_OP = () => {
-  /**/
-};
+const noOp = (): void => {};
+
+export const createUnsubscribe = (unsubscribe: () => void): Unsubscribe =>
+  Object.assign(unsubscribe, { [Symbol.dispose]: unsubscribe });
 
 const checkDCE = (functionToCheck: unknown): void => {
   try {
@@ -26,7 +37,7 @@ const checkDCE = (functionToCheck: unknown): void => {
           "React is running in production mode, but dead code " +
             "elimination has not been applied. Read how to correctly " +
             "configure React for production: " +
-            "https://reactjs.org/link/perf-use-production-build",
+            "https://react.dev/link/perf-use-production-build",
         );
       });
     }
@@ -39,62 +50,89 @@ export const isRealReactDevtools = (
   return Boolean(rdtHook && "getFiberRoots" in rdtHook);
 };
 
-let isReactRefreshOverride = false;
-let injectFnStr: string | undefined = undefined;
-
-export const isReactRefresh = (
-  rdtHook: ReactDevToolsGlobalHook | undefined | null = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__,
-): boolean => {
-  if (isReactRefreshOverride) return true;
-  if (rdtHook && typeof rdtHook.inject === "function") {
-    injectFnStr = rdtHook.inject.toString();
-  }
-  // https://github.com/facebook/react/blob/8f8b336734d7c807f5aa11b0f31540e63302d789/packages/react-refresh/src/ReactFreshRuntime.js#L459
-  return Boolean(injectFnStr?.includes("(injected)"));
-};
-
-export const _onActiveListeners = new Set<() => unknown>();
+export const _onActiveListeners = new Set<ActiveListener>();
 
 export const _renderers = new Set<ReactRenderer>();
 
-const rendererInjectListeners = new Set<(renderer: ReactRenderer) => void>();
-// re-wrapping inject (e.g. after the hook is replaced) leaves the old
-// wrapper in the call chain, so notifications are deduped per renderer
+const rendererInjectListeners = new Set<RendererInjectListener>();
+const rdtHookReplaceListeners = new Set<RDTHookReplaceListener>();
+// HACK: Hook replacement can leave an old inject wrapper in the call chain, so notifications must be deduplicated.
 const notifiedRenderers = new WeakSet<ReactRenderer>();
-let notifyingInject: ReactDevToolsGlobalHook["inject"] | null = null;
+const notifyingInjectByHook = new WeakMap<
+  ReactDevToolsGlobalHook,
+  ReactDevToolsGlobalHook["inject"]
+>();
 
-const ensureInjectNotifiesListeners = (rdtHook: ReactDevToolsGlobalHook): void => {
-  if (rdtHook.inject === notifyingInject) return;
-  const prevInject = rdtHook.inject;
+const notifyActiveListeners = (): void => {
+  for (const listener of _onActiveListeners) {
+    listener();
+  }
+};
+
+const notifyRendererInjectListeners = (renderer: ReactRenderer): void => {
+  for (const listener of rendererInjectListeners) {
+    listener(renderer);
+  }
+};
+
+const notifyRDTHookReplaceListeners = (rdtHook: ReactDevToolsGlobalHook): void => {
+  for (const listener of rdtHookReplaceListeners) {
+    listener(rdtHook);
+  }
+};
+
+const setRendererInjectDispatcher = (rdtHook: ReactDevToolsGlobalHook): void => {
+  if (rdtHook.inject === notifyingInjectByHook.get(rdtHook)) return;
+  const previousInject = rdtHook.inject;
   const nextInject = (renderer: ReactRenderer) => {
-    const rendererId = prevInject.call(rdtHook, renderer);
+    const rendererId = previousInject.call(rdtHook, renderer);
     if (!notifiedRenderers.has(renderer)) {
       notifiedRenderers.add(renderer);
-      for (const listener of rendererInjectListeners) {
-        listener(renderer);
-      }
+      notifyRendererInjectListeners(renderer);
     }
     return rendererId;
   };
   rdtHook.inject = nextInject;
-  notifyingInject = nextInject;
+  notifyingInjectByHook.set(rdtHook, nextInject);
 };
 
-/**
- * Subscribes to future renderer injections into the DevTools hook. The
- * single shared inject wrapper lets multiple consumers (override methods,
- * react-refresh, user code) observe renderers without stacking patches
- * whose restore order matters. Returns an unsubscribe function.
- */
-export const onRendererInject = (listener: (renderer: ReactRenderer) => void): Unsubscribe => {
-  ensureInjectNotifiesListeners(getRDTHook());
+export const onRendererInject = (listener: RendererInjectListener): Unsubscribe => {
+  setRendererInjectDispatcher(getRDTHook());
   rendererInjectListeners.add(listener);
-  return toUnsubscribe(() => {
+  return createUnsubscribe(() => {
     rendererInjectListeners.delete(listener);
   });
 };
 
-export const installRDTHook = (onActive?: () => unknown): ReactDevToolsGlobalHook => {
+export const onRDTHookReplace = (listener: RDTHookReplaceListener): Unsubscribe => {
+  rdtHookReplaceListeners.add(listener);
+  return createUnsubscribe(() => {
+    rdtHookReplaceListeners.delete(listener);
+  });
+};
+
+const getRendererMap = (rdtHook: ReactDevToolsGlobalHook): Map<number, ReactRenderer> => {
+  if (!(rdtHook.renderers instanceof Map)) {
+    rdtHook.renderers = new Map();
+  }
+  return rdtHook.renderers;
+};
+
+const trackInjectedRenderer = (
+  rdtHook: ReactDevToolsGlobalHook,
+  renderers: Map<number, ReactRenderer>,
+  rendererId: number,
+  renderer: ReactRenderer,
+): void => {
+  renderers.set(rendererId, renderer);
+  _renderers.add(renderer);
+  if (!rdtHook._instrumentationIsActive) {
+    rdtHook._instrumentationIsActive = true;
+    notifyActiveListeners();
+  }
+};
+
+export const installRDTHook = (onActive?: ActiveListener): ReactDevToolsGlobalHook => {
   if (onActive) {
     _onActiveListeners.add(onActive);
   }
@@ -105,20 +143,15 @@ export const installRDTHook = (onActive?: () => unknown): ReactDevToolsGlobalHoo
     _instrumentationSource: BIPPY_INSTRUMENTATION_STRING,
     checkDCE,
     hasUnsupportedRendererAttached: false,
-    inject(renderer) {
+    inject: (renderer) => {
       const nextRendererId = ++rendererIdCounter;
-      renderers.set(nextRendererId, renderer);
-      _renderers.add(renderer);
-      if (!rdtHook._instrumentationIsActive) {
-        rdtHook._instrumentationIsActive = true;
-        _onActiveListeners.forEach((listener) => listener());
-      }
+      trackInjectedRenderer(rdtHook, renderers, nextRendererId, renderer);
       return nextRendererId;
     },
-    on: NO_OP,
-    onCommitFiberRoot: NO_OP,
-    onCommitFiberUnmount: NO_OP,
-    onPostCommitFiberRoot: NO_OP,
+    on: noOp,
+    onCommitFiberRoot: noOp,
+    onCommitFiberUnmount: noOp,
+    onPostCommitFiberRoot: noOp,
     renderers,
     supportsFiber: true,
     supportsFlight: true,
@@ -134,137 +167,103 @@ export const installRDTHook = (onActive?: () => unknown): ReactDevToolsGlobalHoo
         if (newHook && typeof newHook === "object") {
           const ourRenderers = rdtHook.renderers;
           rdtHook = newHook;
-          if (ourRenderers.size > 0) {
-            ourRenderers.forEach((renderer, id) => {
-              _renderers.add(renderer);
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-              newHook.renderers.set(id, renderer);
-            });
+          const nextRenderers = getRendererMap(rdtHook);
+          ourRenderers.forEach((renderer, rendererId) => {
+            _renderers.add(renderer);
+            nextRenderers.set(rendererId, renderer);
+          });
+          if (ourRenderers.size > 0 || rdtHookReplaceListeners.size > 0) {
             patchRDTHook(onActive);
           }
+          notifyRDTHookReplaceListeners(rdtHook);
         }
       },
     });
-    // [!] this is a hack for chrome extensions - if we install before React DevTools, we could accidently prevent React DevTools from installing:
-    // https://github.com/facebook/react/blob/18eaf51bd51fed8dfed661d64c306759101d0bfd/packages/react-devtools-extensions/src/contentScripts/installHook.js#L30C6-L30C27
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    const originalWindowHasOwnProperty = window.hasOwnProperty;
-    let hasRanHack = false;
-    objectDefineProperty(window, "hasOwnProperty", {
-      configurable: true,
-      value: function (this: unknown, ...args: [PropertyKey]) {
-        try {
-          if (!hasRanHack && args[0] === "__REACT_DEVTOOLS_GLOBAL_HOOK__") {
+    if (typeof window !== "undefined") {
+      // HACK: The DevTools extension uses hasOwnProperty to decide whether it may replace an earlier hook.
+      const originalWindowHasOwnProperty = window.hasOwnProperty.bind(window);
+      const originalHasOwnPropertyDescriptor = Object.getOwnPropertyDescriptor(
+        window,
+        "hasOwnProperty",
+      );
+      let didRunHasOwnPropertyHack = false;
+      const restoreWindowHasOwnProperty = (): void => {
+        if (originalHasOwnPropertyDescriptor) {
+          objectDefineProperty(window, "hasOwnProperty", originalHasOwnPropertyDescriptor);
+        } else {
+          Reflect.deleteProperty(window, "hasOwnProperty");
+        }
+      };
+      objectDefineProperty(window, "hasOwnProperty", {
+        configurable: true,
+        value: (propertyKey: PropertyKey) => {
+          if (!didRunHasOwnPropertyHack && propertyKey === "__REACT_DEVTOOLS_GLOBAL_HOOK__") {
+            didRunHasOwnPropertyHack = true;
+            restoreWindowHasOwnProperty();
             globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ = undefined;
-            // special falsy value to know that we've already installed before
-            hasRanHack = true;
-            return -0;
+            return false;
           }
-        } catch {}
-        return originalWindowHasOwnProperty.apply(this, args);
-      },
-      writable: true,
-    });
+          return originalWindowHasOwnProperty(propertyKey);
+        },
+        writable: true,
+      });
+    }
   } catch {
     patchRDTHook(onActive);
   }
   return rdtHook;
 };
 
-export const patchRDTHook = (onActive?: () => unknown): void => {
+export const patchRDTHook = (onActive?: ActiveListener): void => {
   if (onActive) {
     _onActiveListeners.add(onActive);
   }
-  try {
-    const rdtHook = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
-    if (!rdtHook) return;
-    if (!rdtHook._instrumentationSource) {
-      rdtHook.checkDCE = checkDCE;
-      rdtHook.supportsFiber = true;
-      rdtHook.supportsFlight = true;
-      rdtHook.hasUnsupportedRendererAttached = false;
-      rdtHook._instrumentationSource = BIPPY_INSTRUMENTATION_STRING;
-      rdtHook._instrumentationIsActive = false;
-      // we need to be careful here (needs to be below _instrumentationSource) else it causes excessive recursion
-      const isReactDevtools = isRealReactDevtools(rdtHook);
-      if (!isReactDevtools) {
-        rdtHook.on = NO_OP;
-      }
-      if (rdtHook.renderers.size) {
-        rdtHook._instrumentationIsActive = true;
-        _onActiveListeners.forEach((listener) => listener());
-        return;
-      }
-      const prevInject = rdtHook.inject;
-      const isRefresh = isReactRefresh(rdtHook);
-      if (isRefresh && !isReactDevtools) {
-        isReactRefreshOverride = true;
-        // but since the underlying implementation doens't care,
-        // it's ok: https://github.com/facebook/react/blob/18eaf51bd51fed8dfed661d64c306759101d0bfd/packages/react-refresh/src/ReactFreshRuntime.js#L430
-        const injectedRendererId = rdtHook.inject({
-          scheduleRefresh() {},
-        } as unknown as ReactRenderer);
-        if (injectedRendererId) {
-          rdtHook._instrumentationIsActive = true;
-        }
-      }
-      rdtHook.inject = (renderer) => {
-        const rendererId = prevInject(renderer);
-        _renderers.add(renderer);
-        if (isRefresh) {
-          // react refresh doesn't inject this properly
-          // https://github.com/facebook/react/blob/18eaf51bd51fed8dfed661d64c306759101d0bfd/packages/react-refresh/src/ReactFreshRuntime.js#L430
-          rdtHook.renderers.set(rendererId, renderer);
-        }
-        rdtHook._instrumentationIsActive = true;
-        _onActiveListeners.forEach((listener) => listener());
-        return rendererId;
-      };
+  let didNotifyActiveListeners = false;
+  const rdtHook = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+  if (!rdtHook) return;
+  const renderers = getRendererMap(rdtHook);
+  if (!rdtHook._instrumentationSource) {
+    rdtHook.checkDCE = checkDCE;
+    rdtHook.supportsFiber = true;
+    rdtHook.supportsFlight = true;
+    rdtHook.hasUnsupportedRendererAttached = false;
+    rdtHook._instrumentationSource = BIPPY_INSTRUMENTATION_STRING;
+    rdtHook._instrumentationIsActive = false;
+    // HACK: DevTools detection must happen after setting the source to avoid recursive patching.
+    const isReactDevtools = isRealReactDevtools(rdtHook);
+    if (!isReactDevtools) {
+      rdtHook.on = noOp;
     }
-    if (
-      rdtHook.renderers.size ||
-      rdtHook._instrumentationIsActive ||
-      // depending on this to inject is unsafe, since inject could occur before and we wouldn't know
-      isReactRefresh()
-    ) {
-      onActive?.();
+    if (renderers.size) {
+      renderers.forEach((renderer) => _renderers.add(renderer));
+      rdtHook._instrumentationIsActive = true;
+      notifyActiveListeners();
+      didNotifyActiveListeners = true;
     }
-  } catch {}
+    const previousInject = rdtHook.inject;
+    rdtHook.inject = (renderer) => {
+      const rendererId = previousInject.call(rdtHook, renderer);
+      trackInjectedRenderer(rdtHook, renderers, rendererId, renderer);
+      return rendererId;
+    };
+  }
+  if (!didNotifyActiveListeners && (renderers.size || rdtHook._instrumentationIsActive)) {
+    onActive?.();
+  }
 };
 
 export const hasRDTHook = (): boolean => {
-  return objectHasOwnProperty.call(globalThis, "__REACT_DEVTOOLS_GLOBAL_HOOK__");
+  return Object.hasOwn(globalThis, "__REACT_DEVTOOLS_GLOBAL_HOOK__");
 };
 
 /**
  * Returns the current React DevTools global hook.
  */
-export const getRDTHook = (onActive?: () => unknown): ReactDevToolsGlobalHook => {
+export const getRDTHook = (onActive?: ActiveListener): ReactDevToolsGlobalHook => {
   if (!hasRDTHook()) {
     return installRDTHook(onActive);
   }
 
   patchRDTHook(onActive);
-  // must exist at this point
-  return globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ as ReactDevToolsGlobalHook;
-};
-
-export const isClientEnvironment = (): boolean => {
-  return Boolean(
-    typeof window !== "undefined" &&
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    (window.document?.createElement || window.navigator?.product === "ReactNative"),
-  );
-};
-
-/**
- * Usually used purely for side effect
- */
-export const safelyInstallRDTHook = () => {
-  try {
-    // __REACT_DEVTOOLS_GLOBAL_HOOK__ must exist before React is ever executed
-    if (isClientEnvironment()) {
-      getRDTHook();
-    }
-  } catch {}
+  return globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__ ?? installRDTHook(onActive);
 };

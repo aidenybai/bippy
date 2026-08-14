@@ -1,0 +1,165 @@
+diff --git a/dist/backend.js b/dist/backend.js
+index 270a9fa..a75456e 100644
+--- a/dist/backend.js
++++ b/dist/backend.js
+@@ -10 +10 @@
+-})(self, () => {
++})(typeof self === 'undefined' ? globalThis : self, () => {
+@@ -2404,4 +2404,9 @@
+ __webpack_require__.d(__webpack_exports__, {
++  "ReactBuildType": () => (/* binding */ ReactBuildType),
++  "ReactSymbols": () => (/* binding */ ReactSymbols),
++  "ReactTypeOfSideEffect": () => (/* binding */ ReactTypeOfSideEffect),
++  "ReactWorkTagVersionRanges": () => (/* binding */ ReactWorkTagVersionRanges),
+   "connectToDevTools": () => (/* binding */ connectToDevTools),
++  "getInternalReactConstants": () => (/* binding */ getInternalReactConstants),
+   "connectWithCustomMessagingProtocol": () => (/* binding */ connectWithCustomMessagingProtocol),
+   "initialize": () => (/* binding */ backend_initialize)
+@@ -6984,2 +6990,11 @@
+ var SUSPENSE_LIST_NUMBER = 0xead8;
+ var SUSPENSE_LIST_SYMBOL_STRING = 'Symbol(react.suspense_list)';
++var ReactSymbols = {
++  CONCURRENT_MODE_NUMBER: CONCURRENT_MODE_NUMBER,
++  CONCURRENT_MODE_SYMBOL_DESCRIPTION: 'react.concurrent_mode',
++  CONCURRENT_MODE_SYMBOL_STRING: CONCURRENT_MODE_SYMBOL_STRING,
++  DEPRECATED_ASYNC_MODE_SYMBOL_DESCRIPTION: 'react.async_mode',
++  DEPRECATED_ASYNC_MODE_SYMBOL_STRING: DEPRECATED_ASYNC_MODE_SYMBOL_STRING,
++  ELEMENT_SYMBOL_STRING: ELEMENT_SYMBOL_STRING,
++  LEGACY_ELEMENT_SYMBOL_STRING: LEGACY_ELEMENT_SYMBOL_STRING
++};
+@@ -8407,3 +8421,44 @@
+ function getFiberFlags(fiber) {
+   return fiber.flags !== undefined ? fiber.flags : fiber.effectTag;
+ }
++var ReactBuildType = {
++  Production: 0,
++  Development: 1
++};
++var ReactTypeOfSideEffect = {
++  ChildDeletion: 16,
++  Cloned: 8,
++  ContentReset: 32,
++  Hydrating: 4096,
++  PerformedWork: 1,
++  Placement: 2,
++  Snapshot: 1024,
++  Update: 4,
++  Visibility: 8192
++};
++var ReactWorkTagVersionRanges = [{
++  version: '16.0.0'
++}, {
++  minimumVersion: '16.4.3-alpha',
++  version: '16.4.3-alpha'
++}, {
++  minimumVersion: '16.6.0-beta.0',
++  version: '16.6.0-beta.0'
++}, {
++  minimumVersion: '17.0.0-alpha',
++  version: '17.0.0-alpha'
++}, {
++  isMinimumExcluded: true,
++  minimumVersion: '17.0.1',
++  version: '17.0.2'
++}];
++function getReactWorkTagVersion(version) {
++  for (var rangeIndex = ReactWorkTagVersionRanges.length - 1; rangeIndex > 0; rangeIndex--) {
++    var range = ReactWorkTagVersionRanges[rangeIndex];
++    var matchesMinimum = range.isMinimumExcluded ? gt(version, range.minimumVersion) : gte(version, range.minimumVersion);
++    if (matchesMinimum) {
++      return range.version;
++    }
++  }
++  return ReactWorkTagVersionRanges[0].version;
++}
+@@ -8444 +8499,2 @@ function getInternalReactConstants(version) {
+-  if (gt(version, '17.0.1')) {
++  var reactWorkTagVersion = getReactWorkTagVersion(version);
++  if (reactWorkTagVersion === ReactWorkTagVersionRanges[4].version) {
+@@ -8481 +8537 @@ function getInternalReactConstants(version) {
+-  } else if (gte(version, '17.0.0-alpha')) {
++  } else if (reactWorkTagVersion === ReactWorkTagVersionRanges[3].version) {
+@@ -8518 +8574 @@ function getInternalReactConstants(version) {
+-  } else if (gte(version, '16.6.0-beta.0')) {
++  } else if (reactWorkTagVersion === ReactWorkTagVersionRanges[2].version) {
+@@ -8555 +8611 @@ function getInternalReactConstants(version) {
+-  } else if (gte(version, '16.4.3-alpha')) {
++  } else if (reactWorkTagVersion === ReactWorkTagVersionRanges[1].version) {
+@@ -9563 +9619 @@ function renderer_attach(hook, rendererID, renderer, global, shouldStartProfilin
+-        var PerformedWork = 1;
++        var PerformedWork = ReactTypeOfSideEffect.PerformedWork;
+diff --git a/dist/backend.d.ts b/dist/backend.d.ts
+new file mode 100644
+index 0000000..3091ce1
+--- /dev/null
++++ b/dist/backend.d.ts
+@@ -0,0 +1,63 @@
++export interface ReactBuildTypeMap {
++  Development: 1;
++  Production: 0;
++}
++
++export interface ReactSymbolsMap {
++  CONCURRENT_MODE_NUMBER: number;
++  CONCURRENT_MODE_SYMBOL_DESCRIPTION: string;
++  CONCURRENT_MODE_SYMBOL_STRING: string;
++  DEPRECATED_ASYNC_MODE_SYMBOL_DESCRIPTION: string;
++  DEPRECATED_ASYNC_MODE_SYMBOL_STRING: string;
++  ELEMENT_SYMBOL_STRING: string;
++  LEGACY_ELEMENT_SYMBOL_STRING: string;
++}
++
++export interface ReactTypeOfSideEffectMap {
++  ChildDeletion: number;
++  Cloned: number;
++  ContentReset: number;
++  Hydrating: number;
++  PerformedWork: number;
++  Placement: number;
++  Snapshot: number;
++  Update: number;
++  Visibility: number;
++}
++
++export interface ReactWorkTagMap {
++  [name: string]: number;
++}
++
++export interface ReactWorkTagVersionRange {
++  isMinimumExcluded?: boolean;
++  minimumVersion?: string;
++  version: string;
++}
++
++export interface InternalReactConstants {
++  ReactTypeOfWork: ReactWorkTagMap;
++}
++
++export interface ReactDevToolsCore {
++  ReactBuildType: ReactBuildTypeMap;
++  ReactSymbols: ReactSymbolsMap;
++  ReactTypeOfSideEffect: ReactTypeOfSideEffectMap;
++  ReactWorkTagVersionRanges: ReactWorkTagVersionRange[];
++  getInternalReactConstants: (reactVersion: string) => InternalReactConstants;
++}
++
++export declare const ReactBuildType: ReactBuildTypeMap;
++export declare const ReactSymbols: ReactSymbolsMap;
++export declare const ReactTypeOfSideEffect: ReactTypeOfSideEffectMap;
++export declare const ReactWorkTagVersionRanges: ReactWorkTagVersionRange[];
++export declare const getInternalReactConstants: (
++  reactVersion: string,
++) => InternalReactConstants;
++
++export declare const connectToDevTools: (...arguments_: unknown[]) => unknown;
++export declare const connectWithCustomMessagingProtocol: (...arguments_: unknown[]) => unknown;
++export declare const initialize: (...arguments_: unknown[]) => unknown;
++
++declare const ReactDevToolsCore: ReactDevToolsCore;
++export default ReactDevToolsCore;
+diff --git a/package.json b/package.json
+index 54b89e7..273c4da 100644
+--- a/package.json
++++ b/package.json
+@@ -6,0 +7 @@
++  "types": "./dist/backend.d.ts",

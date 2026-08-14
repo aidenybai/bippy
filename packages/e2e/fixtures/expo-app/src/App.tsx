@@ -5,39 +5,34 @@ import {
   getDisplayName,
   getFiberFromHostInstance,
   getFiberId,
-  getFiberStack,
   getLatestFiber,
-  getMutatedHostFibers,
-  getNearestHostFiber,
-  getNearestHostFibers,
   getRDTHook,
-  getTimings,
+  getRenderer,
   getType,
   hasMemoCache,
   hasRDTHook,
   instrument,
-  isClientEnvironment,
   isCompositeFiber,
   isFiber,
   isHostFiber,
   isInstrumentationActive,
   isRealReactDevtools,
-  isReactRefresh,
   isValidElement,
   isValidFiber,
-  overrideContext,
-  overrideHookState,
-  overrideProps,
-  traverseContexts,
   traverseFiber,
-  traverseProps,
   traverseRenderedFibers,
-  traverseState,
+  useFiber,
   version,
 } from "bippy";
 import type { Fiber, FiberRoot } from "bippy";
-import { instrumentReactRefresh } from "bippy/react-refresh";
-import { getDisplayNameFromSource, getFiberHooks, getOwnerStack, getSource } from "bippy/source";
+import {
+  getDisplayNameFromSource,
+  getFiberHooks,
+  getOwnerStack,
+  getSource,
+  getSourceMap,
+  type SourceFetch,
+} from "bippy/source";
 import {
   Component,
   createContext,
@@ -49,12 +44,29 @@ import {
   useRef,
   useState,
 } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { NativeModules, ScrollView, Text, View } from "react-native";
 
-import { HmrTarget } from "./hmr-target";
-import { SkiaProbe } from "./skia-probe";
+import { getObservedSkiaMemoLeafFiber, SkiaProbe } from "./skia-probe";
 
 const TestContext = createContext("default-context");
+let observedTestParentFiber: Fiber | undefined;
+const requestedSourceUrls: string[] = [];
+const sourceFetch: SourceFetch = (url, init) => {
+  requestedSourceUrls.push(url);
+  return fetch(url, init);
+};
+const getRuntimeBundleUrl = (): string | null => {
+  const sourceCodeModule: unknown = Reflect.get(NativeModules, "SourceCode");
+  if (typeof sourceCodeModule !== "object" || sourceCodeModule === null) return null;
+  const getConstants: unknown = Reflect.get(sourceCodeModule, "getConstants");
+  const sourceCodeConstants =
+    typeof getConstants === "function"
+      ? Reflect.apply(getConstants, sourceCodeModule, [])
+      : sourceCodeModule;
+  if (typeof sourceCodeConstants !== "object" || sourceCodeConstants === null) return null;
+  const scriptUrl: unknown = Reflect.get(sourceCodeConstants, "scriptURL");
+  return typeof scriptUrl === "string" ? scriptUrl : null;
+};
 
 const TestChild = ({ name, count }: { name: string; count: number }) => {
   return (
@@ -104,6 +116,7 @@ class TestClassComponent extends Component {
 }
 
 const TestParent = () => {
+  observedTestParentFiber = useFiber();
   const [count, _setCount] = useState(0);
   return (
     <TestContext.Provider value="provided-value">
@@ -180,7 +193,6 @@ OverrideProbes.displayName = "OverrideProbes";
 const App = () => {
   const [coreResults, setCoreResults] = useState<Record<string, string>>({});
   const [sourceResults, setSourceResults] = useState<Record<string, string>>({});
-  const [hmrResults, setHmrResults] = useState<Record<string, string>>({});
   const [skiaResults, setSkiaResults] = useState<Record<string, string>>({});
   const [skiaRevision, setSkiaRevision] = useState(0);
   const [isSkiaTreeVisible, setIsSkiaTreeVisible] = useState(true);
@@ -197,14 +209,9 @@ const App = () => {
     const rootFiber = fiberRoot.current;
     if (!rootFiber?.child) return;
 
-    const fibersByDisplayName = findFibersByDisplayName(rootFiber, [
-      "TestParent",
-      "TestChild",
-      "TestContextConsumer",
-    ]);
+    const fibersByDisplayName = findFibersByDisplayName(rootFiber, ["TestParent", "TestChild"]);
     const testParentFiber = fibersByDisplayName.get("TestParent") ?? null;
     const testChildFiber = fibersByDisplayName.get("TestChild") ?? null;
-    const testContextConsumerFiber = fibersByDisplayName.get("TestContextConsumer") ?? null;
 
     if (!testParentFiber || !testChildFiber) return;
     didRunRef.current = true;
@@ -213,8 +220,9 @@ const App = () => {
     const results: Record<string, string> = {};
 
     results["instrument-active"] = String(isInstrumentationActive());
+    results["useFiber"] = String(observedTestParentFiber === testParentFiber);
 
-    const testChildHostFiber = getNearestHostFiber(testChildFiber) ?? null;
+    const testChildHostFiber = traverseFiber(testChildFiber, isHostFiber);
 
     results["isFiber"] = String(isFiber(rootFiber));
     results["isFiber-null"] = String(isFiber(null));
@@ -237,21 +245,6 @@ const App = () => {
       results["didFiberRender"] = String(didFiberRender(testChildFiber));
       results["didFiberCommit"] = String(didFiberCommit(testChildFiber));
 
-      const timings = getTimings(testChildFiber);
-      results["selfTime"] = String(timings.selfTime);
-      results["totalTime"] = String(timings.totalTime);
-
-      const fiberStack = getFiberStack(testChildFiber);
-      results["fiberStack-length"] = String(fiberStack.length);
-
-      const nearestHost = getNearestHostFiber(testChildFiber);
-      results["nearestHostFiber"] = String(nearestHost !== null);
-
-      if (testParentFiber) {
-        const hostFibers = getNearestHostFibers(testParentFiber);
-        results["nearestHostFibers-count"] = String(hostFibers.length);
-      }
-
       const latestFiber = getLatestFiber(testChildFiber);
       results["getLatestFiber"] = String(isFiber(latestFiber));
 
@@ -268,69 +261,30 @@ const App = () => {
         traverseCount++;
       });
       results["traverseFiber-count"] = String(traverseCount);
-
-      const propValues: string[] = [];
-      traverseProps(testChildFiber, (propName) => {
-        propValues.push(propName);
-      });
-      results["traverseProps-keys"] = propValues.join(",");
     }
 
-    if (testParentFiber) {
-      const stateValues: string[] = [];
-      traverseState(testParentFiber, (nextState) => {
-        if (nextState && "memoizedState" in nextState) {
-          stateValues.push(String(nextState.memoizedState));
-        }
-      });
-      results["traverseState-values"] = stateValues.join(",");
-    }
-
-    const mutatedHostFibers = getMutatedHostFibers(rootFiber);
-    results["mutatedHostFibers-count"] = String(mutatedHostFibers.length);
-
-    results["isClientEnvironment"] = String(isClientEnvironment());
     results["hasRDTHook"] = String(hasRDTHook());
     // react-native dev builds ship the real react-devtools backend, so the
     // hook has getFiberRoots and isRealReactDevtools reports true here
     results["isRealReactDevtools"] = String(isRealReactDevtools());
-    // hermes does not expose function source to toString, so react-refresh's
-    // inject-string sniff can legitimately resolve either way on native
-    results["isReactRefresh"] = String(isReactRefresh());
     results["version-is-string"] = String(typeof version === "string" && version.length > 0);
 
     const rdtHook = getRDTHook();
+    const renderer = getRenderer(testChildFiber);
     results["rdtHook-renderers-count"] = String(rdtHook.renderers.size);
+    results["getRenderer"] = String(renderer !== null);
     results["renderer-supports-overrideProps"] = String(
-      Array.from(rdtHook.renderers.values()).some(
-        (renderer) => typeof renderer.overrideProps === "function",
-      ),
+      typeof renderer?.overrideProps === "function",
     );
     results["renderer-supports-scheduleUpdate"] = String(
-      Array.from(rdtHook.renderers.values()).some(
-        (renderer) => typeof renderer.scheduleUpdate === "function",
-      ),
+      typeof renderer?.scheduleUpdate === "function",
     );
-    const firstRenderer = rdtHook.renderers.values().next().value;
-    results["detectReactBuildType"] = firstRenderer
-      ? detectReactBuildType(firstRenderer)
-      : "no-renderer";
+    results["detectReactBuildType"] = renderer ? detectReactBuildType(renderer) : "no-renderer";
 
     results["isValidElement-element"] = String(
       isValidElement(<TestChild name="probe" count={0} />),
     );
     results["isValidElement-object"] = String(isValidElement({}));
-
-    if (testContextConsumerFiber) {
-      let providedContextValue: string | null = null;
-      traverseContexts(testContextConsumerFiber, (context) => {
-        if (context && typeof context.memoizedValue === "string") {
-          providedContextValue = context.memoizedValue;
-          return true;
-        }
-      });
-      results["traverseContexts-value"] = providedContextValue ?? "null";
-    }
 
     if (testParentFiber) {
       try {
@@ -369,7 +323,7 @@ const App = () => {
     void runSourceTests(testChildFiber, testParentFiber);
   }, []);
 
-  const runSkiaTests = useCallback((rendererID: number, fiberRoot: FiberRoot) => {
+  const runSkiaTests = useCallback(async (rendererID: number, fiberRoot: FiberRoot) => {
     if (didRunSkiaRef.current) return;
     const renderer = getRDTHook().renderers.get(rendererID);
     if (renderer?.rendererPackageName !== "react-native-skia") return;
@@ -393,9 +347,7 @@ const App = () => {
     didRunSkiaRef.current = true;
 
     const results: Record<string, string> = {};
-    const nearestHostFiber = getNearestHostFiber(memoLeafFiber);
-    const nearestHostFibers = getNearestHostFibers(compoundTreeFiber);
-    const timings = getTimings(memoLeafFiber);
+    const hostFiber = traverseFiber(memoLeafFiber, isHostFiber);
     const rendererCount = getRDTHook().renderers.size;
 
     results["skia-renderer-package"] = renderer.rendererPackageName;
@@ -405,22 +357,17 @@ const App = () => {
     results["skia-root-valid"] = String(isValidFiber(rootFiber));
     results["skia-compound-valid"] = String(isValidFiber(compoundTreeFiber));
     results["skia-memo-valid"] = String(isValidFiber(memoLeafFiber));
+    results["skia-useFiber"] = String(getObservedSkiaMemoLeafFiber() === memoLeafFiber);
     results["skia-compound-display-name"] = getDisplayName(compoundTreeFiber.type) ?? "null";
     results["skia-memo-display-name"] = getDisplayName(memoLeafFiber.type) ?? "null";
     results["skia-composite"] = String(isCompositeFiber(memoLeafFiber));
     results["skia-composite-is-host"] = String(isHostFiber(memoLeafFiber));
-    results["skia-nearest-host"] = String(
-      nearestHostFiber !== null && isHostFiber(nearestHostFiber),
-    );
-    results["skia-nearest-host-count"] = String(nearestHostFibers.length);
-    results["skia-host-display-name"] = nearestHostFiber
-      ? (getDisplayName(nearestHostFiber.type) ?? "null")
+    results["skia-host-found"] = String(hostFiber !== null);
+    results["skia-host-display-name"] = hostFiber
+      ? (getDisplayName(hostFiber.type) ?? "null")
       : "null";
     results["skia-did-render"] = String(didFiberRender(memoLeafFiber));
     results["skia-did-commit"] = String(didFiberCommit(memoLeafFiber));
-    results["skia-self-time"] = String(timings.selfTime);
-    results["skia-total-time"] = String(timings.totalTime);
-    results["skia-stack-length"] = String(getFiberStack(memoLeafFiber).length);
     results["skia-fiber-id"] = String(typeof getFiberId(memoLeafFiber) === "number");
     results["skia-latest-fiber"] = String(isValidFiber(getLatestFiber(memoLeafFiber)));
     results["skia-has-alternate"] = String(memoLeafFiber.alternate !== null);
@@ -438,34 +385,25 @@ const App = () => {
       renderedFiberCount++;
     });
     results["skia-rendered-count"] = String(renderedFiberCount);
-    results["skia-mutated-host-count"] = String(getMutatedHostFibers(rootFiber).length);
+    results["skia-next-revision"] = String(memoLeafFiber.memoizedProps.revision);
+    results["skia-previous-revision"] = String(memoLeafFiber.alternate.memoizedProps.revision);
 
-    const memoPropNames: string[] = [];
-    traverseProps(memoLeafFiber, (propName, nextValue, previousValue) => {
-      memoPropNames.push(propName);
-      if (propName === "revision") {
-        results["skia-next-revision"] = String(nextValue);
-        results["skia-previous-revision"] = String(previousValue);
-      }
-    });
-    results["skia-prop-names"] = memoPropNames.join(",");
-
-    const hostPropNames: string[] = [];
-    if (nearestHostFiber) {
-      traverseProps(nearestHostFiber, (propName) => {
-        hostPropNames.push(propName);
-      });
+    try {
+      const source = await getSource(memoLeafFiber, true, sourceFetch);
+      results["skia-source-fileName"] = source?.fileName ?? "null";
+      results["skia-source-lineNumber"] = String(source?.lineNumber ?? "null");
+    } catch {
+      results["skia-source-fileName"] = "error";
+      results["skia-source-lineNumber"] = "error";
     }
-    results["skia-host-prop-names"] = hostPropNames.join(",");
 
-    let contextValue: string | null = null;
-    traverseContexts(memoLeafFiber, (context) => {
-      if (context && typeof context.memoizedValue === "string") {
-        contextValue = context.memoizedValue;
-        return true;
-      }
-    });
-    results["skia-context-value"] = contextValue ?? "null";
+    try {
+      const displayName = await getDisplayNameFromSource(memoLeafFiber, true, sourceFetch);
+      results["skia-source-displayName"] = displayName ?? "null";
+    } catch {
+      results["skia-source-displayName"] = "error";
+    }
+
     results["skia-done"] = "true";
     setSkiaResults(results);
     setIsSkiaTreeVisible(false);
@@ -473,10 +411,23 @@ const App = () => {
 
   const runSourceTests = async (testChildFiber: Fiber | null, testParentFiber: Fiber | null) => {
     const results: Record<string, string> = {};
+    const runtimeBundleUrl = getRuntimeBundleUrl();
+    results["runtime-bundle-url"] = runtimeBundleUrl ?? "null";
+
+    if (runtimeBundleUrl) {
+      try {
+        const runtimeSourceMap = await getSourceMap(runtimeBundleUrl, false, sourceFetch);
+        results["runtime-source-map-source"] =
+          runtimeSourceMap?.sources.find((sourceFileName) => sourceFileName.includes("App.tsx")) ??
+          "null";
+      } catch {
+        results["runtime-source-map-source"] = "error";
+      }
+    }
 
     if (testChildFiber) {
       try {
-        const source = await getSource(testChildFiber);
+        const source = await getSource(testChildFiber, true, sourceFetch);
         results["source-fileName"] = source?.fileName ?? "null";
         results["source-lineNumber"] = String(source?.lineNumber ?? "null");
         results["source-columnNumber"] = String(source?.columnNumber ?? "null");
@@ -487,7 +438,7 @@ const App = () => {
       }
 
       try {
-        const ownerStack = await getOwnerStack(testChildFiber);
+        const ownerStack = await getOwnerStack(testChildFiber, true, sourceFetch);
         results["ownerStack-length"] = String(ownerStack.length);
         results["ownerStack-names"] = ownerStack
           .map((frame) => frame.functionName)
@@ -499,7 +450,11 @@ const App = () => {
       }
 
       try {
-        const displayNameFromSource = await getDisplayNameFromSource(testChildFiber);
+        const displayNameFromSource = await getDisplayNameFromSource(
+          testChildFiber,
+          true,
+          sourceFetch,
+        );
         results["displayNameFromSource"] = displayNameFromSource ?? "null";
       } catch {
         results["displayNameFromSource"] = "error";
@@ -508,20 +463,21 @@ const App = () => {
 
     if (testParentFiber) {
       try {
-        const parentSource = await getSource(testParentFiber);
+        const parentSource = await getSource(testParentFiber, true, sourceFetch);
         results["parentSource-fileName"] = parentSource?.fileName ?? "null";
       } catch {
         results["parentSource-fileName"] = "error";
       }
 
       try {
-        const parentOwnerStack = await getOwnerStack(testParentFiber);
+        const parentOwnerStack = await getOwnerStack(testParentFiber, true, sourceFetch);
         results["parentOwnerStack-length"] = String(parentOwnerStack.length);
       } catch {
         results["parentOwnerStack-length"] = "error";
       }
     }
 
+    results["source-fetch-urls"] = Array.from(new Set(requestedSourceUrls)).join(",");
     results["source-done"] = "true";
     setSourceResults(results);
   };
@@ -530,7 +486,7 @@ const App = () => {
     const instrumentation = instrument({
       onCommitFiberRoot: (rendererID, fiberRoot) => {
         runCoreTests(fiberRoot);
-        runSkiaTests(rendererID, fiberRoot);
+        void runSkiaTests(rendererID, fiberRoot);
       },
       onCommitFiberUnmount: (rendererID, fiber) => {
         const renderer = getRDTHook().renderers.get(rendererID);
@@ -570,65 +526,36 @@ const App = () => {
     });
 
     if (overridePropsTargetFiber) {
-      overrideProps(getLatestFiber(overridePropsTargetFiber), { count: 123 });
+      const latestFiber = getLatestFiber(overridePropsTargetFiber);
+      getRenderer(latestFiber)?.overrideProps?.(latestFiber, ["count"], 123);
     }
     if (overrideHookStateTargetFiber) {
-      overrideHookState(getLatestFiber(overrideHookStateTargetFiber), 0, 7);
+      const latestFiber = getLatestFiber(overrideHookStateTargetFiber);
+      getRenderer(latestFiber)?.overrideHookState?.(latestFiber, 0, [], 7);
     }
     if (overrideContextTargetFiber) {
-      overrideContext(
-        getLatestFiber(overrideContextTargetFiber),
-        OverrideContextContext,
-        "ctx-overridden",
-      );
+      let providerFiber = getLatestFiber(overrideContextTargetFiber).return;
+      while (
+        providerFiber &&
+        providerFiber.type !== OverrideContextContext &&
+        providerFiber.type?.Provider !== OverrideContextContext
+      ) {
+        providerFiber = providerFiber.return;
+      }
+      if (providerFiber) {
+        const renderer = getRenderer(providerFiber);
+        renderer?.overrideProps?.(providerFiber, ["value"], "ctx-overridden");
+        if (providerFiber.alternate) {
+          renderer?.overrideProps?.(providerFiber.alternate, ["value"], "ctx-overridden");
+        }
+      }
     }
   }, [coreResults]);
-
-  useEffect(() => {
-    let refreshCount = 0;
-    const unsubscribeRefresh = instrumentReactRefresh({
-      onRefresh: (update) => {
-        refreshCount++;
-        const updatedNames = update.updatedComponents
-          .map((componentType) => getDisplayName(componentType) ?? "unknown")
-          .join(",");
-        console.log(
-          `[bippy-hmr] refresh #${refreshCount} updated=[${updatedNames}] fibers=${update.updatedFibers.length} paths=[${update.filePaths.join(",")}]`,
-        );
-        setHmrResults((previousResults) => ({
-          ...previousResults,
-          "refresh-count": String(refreshCount),
-          "refresh-last-update": updatedNames,
-          "refresh-last-fibers": update.updatedFibers
-            .map((updatedFiber) => getDisplayName(updatedFiber.type) ?? "unknown")
-            .join(","),
-          "refresh-fibers-valid": String(
-            update.updatedFibers.every((updatedFiber) => isFiber(updatedFiber)),
-          ),
-          "refresh-last-paths": update.filePaths.join(","),
-        }));
-      },
-    });
-    const rdtHook = getRDTHook();
-    const rendererDiagnostics = Array.from(
-      rdtHook.renderers.entries(),
-      ([rendererId, renderer]) => {
-        return `${rendererId}:scheduleRefresh=${typeof renderer.scheduleRefresh}`;
-      },
-    ).join(" ");
-    console.log(`[bippy-hmr] listener=true renderers={${rendererDiagnostics}}`);
-    setHmrResults((previousResults) => ({
-      ...previousResults,
-      "refresh-listener": "true",
-    }));
-    return unsubscribeRefresh;
-  }, []);
 
   return (
     <ScrollView testID="root-scroll">
       <TestParent />
       <OverrideProbes />
-      <HmrTarget />
       <SkiaProbe isTreeVisible={isSkiaTreeVisible} revision={skiaRevision} />
       <View testID="host-probe" ref={hostProbeRef} />
       <View testID="results-container">
@@ -636,9 +563,6 @@ const App = () => {
           <ResultRow key={key} testID={`result-${key}`} value={value} />
         ))}
         {Object.entries(sourceResults).map(([key, value]) => (
-          <ResultRow key={key} testID={`result-${key}`} value={value} />
-        ))}
-        {Object.entries(hmrResults).map(([key, value]) => (
           <ResultRow key={key} testID={`result-${key}`} value={value} />
         ))}
         {Object.entries(skiaResults).map(([key, value]) => (

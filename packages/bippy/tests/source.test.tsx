@@ -2,8 +2,8 @@ import "../src/index.js"; // KEEP THIS LINE ON TOP
 
 import { render } from "@testing-library/react";
 import React, { useState } from "react";
-import { expect, it } from "vitest";
-import type { Fiber } from "../src/types.js";
+import { expect, it } from "vite-plus/test";
+import type { Fiber } from "../src/react-internals/index.js";
 import { instrument } from "../src/index.js";
 import { getSource, getOwnerStack, getParentStack, getSourceMap } from "../src/source/index.js";
 import { sourceMapCache } from "../src/source/symbolication.js";
@@ -22,20 +22,22 @@ const mockFetch = (): Promise<Response> => {
 // HACK: transforms (vite, coverage instrumentation) shift runtime line numbers,
 // so derive the expected call-site frame by throwing inside the component the
 // same way the owner-stack fallback does instead of hardcoding line numbers
-const getComponentThrowFrame = (component: unknown): StackFrame => {
-  const componentFunction = component as () => unknown;
-  const previousPrepareStackTrace = Error.prepareStackTrace;
-  (Error as { prepareStackTrace?: typeof Error.prepareStackTrace }).prepareStackTrace = undefined;
+const getComponentThrowFrame = <ComponentArguments extends unknown[]>(
+  componentFunction: (...componentArguments: ComponentArguments) => unknown,
+): StackFrame => {
+  const previousPrepareStackTrace = Reflect.get(Error, "prepareStackTrace");
+  Reflect.set(Error, "prepareStackTrace", undefined);
   try {
-    componentFunction();
+    Reflect.apply(componentFunction, undefined, []);
   } catch (thrownError) {
-    const frames = parseStack((thrownError as Error).stack ?? "", { includeInElement: false });
+    const stack = thrownError instanceof Error ? (thrownError.stack ?? "") : "";
+    const frames = parseStack(stack, { includeInElement: false });
     const componentFrame = frames.find((frame) =>
       frame.functionName?.includes(componentFunction.name),
     );
     if (componentFrame) return componentFrame;
   } finally {
-    Error.prepareStackTrace = previousPrepareStackTrace;
+    Reflect.set(Error, "prepareStackTrace", previousPrepareStackTrace);
   }
   throw new Error(`Could not capture a throw frame for ${componentFunction.name}`);
 };
@@ -116,10 +118,10 @@ it("getOwnerStack should return stack for component with hooks", async () => {
 });
 
 it("getOwnerStack should return stack for nested component with props", async () => {
-  let capturedFiber: Fiber | null = null;
+  const capturedFiberRef: { current: Fiber | null } = { current: null };
   instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {
-      capturedFiber = fiberRoot.current.child.child.child;
+      capturedFiberRef.current = fiberRoot.current.child?.child?.child ?? null;
     },
   });
   render(
@@ -128,7 +130,9 @@ it("getOwnerStack should return stack for nested component with props", async ()
     </ExampleWithChild>,
   );
 
-  const result = await getOwnerStack(capturedFiber as unknown as Fiber);
+  const capturedFiber = capturedFiberRef.current;
+  if (!capturedFiber) throw new Error("React DOM did not render the nested component fiber");
+  const result = await getOwnerStack(capturedFiber);
 
   const expectedPropsFrame = getComponentThrowFrame(ComponentWithProps);
   const expectedChildFrame = getComponentThrowFrame(ExampleWithChild);
@@ -163,10 +167,10 @@ it("getOwnerStack should use debug stacks for fibers created during a render", a
 });
 
 it("getParentStack should include wrapper parents that do not own the fiber", async () => {
-  let capturedFiber: Fiber | null = null;
+  const capturedFiberRef: { current: Fiber | null } = { current: null };
   instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {
-      capturedFiber = fiberRoot.current.child.child.child;
+      capturedFiberRef.current = fiberRoot.current.child?.child?.child ?? null;
     },
   });
   render(
@@ -175,7 +179,9 @@ it("getParentStack should include wrapper parents that do not own the fiber", as
     </ExampleWithChild>,
   );
 
-  const result = await getParentStack(capturedFiber as unknown as Fiber);
+  const capturedFiber = capturedFiberRef.current;
+  if (!capturedFiber) throw new Error("React DOM did not render the nested component fiber");
+  const result = await getParentStack(capturedFiber);
 
   const functionNames = result.map((frame) => frame.functionName);
   expect(functionNames).toContain("ComponentWithProps");
@@ -245,10 +251,10 @@ it("getSource should work for component with hooks", async () => {
 });
 
 it("getSource should work for nested component with props", async () => {
-  let capturedFiber: Fiber | null = null;
+  const capturedFiberRef: { current: Fiber | null } = { current: null };
   instrument({
     onCommitFiberRoot: (_rendererID, fiberRoot) => {
-      capturedFiber = fiberRoot.current.child.child.child;
+      capturedFiberRef.current = fiberRoot.current.child?.child?.child ?? null;
     },
   });
   render(
@@ -257,7 +263,9 @@ it("getSource should work for nested component with props", async () => {
     </ExampleWithChild>,
   );
 
-  const result = await getSource(capturedFiber as unknown as Fiber, false, mockFetch);
+  const capturedFiber = capturedFiberRef.current;
+  if (!capturedFiber) throw new Error("React DOM did not render the nested component fiber");
+  const result = await getSource(capturedFiber, false, mockFetch);
 
   expect(result?.fileName).toBeTruthy();
   expect(typeof result?.fileName).toBe("string");
@@ -457,5 +465,4 @@ it("getSourceMap caches a definitive missing source map and does not refetch", a
   expect(await getSourceMap(file, true, fetchFn)).toBeNull();
   expect(await getSourceMap(file, true, fetchFn)).toBeNull();
   expect(bundleAttempts).toBe(1);
-  expect(sourceMapCache.get(file)).toBeNull();
 });

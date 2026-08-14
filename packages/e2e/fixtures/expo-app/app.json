@@ -11,9 +11,11 @@
       "bundleIdentifier": "dev.bippy.e2e-expo"
     },
     "android": {
+      "package": "dev.bippy.e2eexpo",
       "adaptiveIcon": {
         "backgroundColor": "#ffffff"
       }
-    }
+    },
+    "plugins": ["./plugins/with-detox-android.cjs"]
   }
 }

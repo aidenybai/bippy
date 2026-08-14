@@ -2,6 +2,7 @@ import "bippy/install-hook-only";
 
 import * as bippy from "bippy";
 import * as bippySource from "bippy/source";
+import type { Fiber } from "bippy";
 import React, {
   Component,
   Fragment,
@@ -14,15 +15,26 @@ import React, {
   useState,
 } from "react";
 
-import { installHmrHarness } from "./hmr-harness";
-
 declare global {
   interface Window {
     __BIPPY__: typeof bippy & typeof bippySource;
+    __USE_FIBER__: Fiber | undefined;
   }
 }
 
 const TestContext = createContext("default-context");
+
+export const UseFiberProbe = () => {
+  const fiber = bippy.useFiber();
+  const [revision, setRevision] = useState(0);
+  if (typeof window !== "undefined") window.__USE_FIBER__ = fiber;
+
+  return (
+    <button data-testid="use-fiber-update" onClick={() => setRevision((previous) => previous + 1)}>
+      {revision}
+    </button>
+  );
+};
 
 export const TestParent = () => {
   const [count, setCount] = useState(0);
@@ -96,8 +108,12 @@ class TestClassComponent extends Component {
 export const TestHarness = () => {
   useEffect(() => {
     window.__BIPPY__ = { ...bippy, ...bippySource };
-    installHmrHarness();
   }, []);
 
-  return <TestParent />;
+  return (
+    <>
+      <UseFiberProbe />
+      <TestParent />
+    </>
+  );
 };

@@ -1,11 +1,12 @@
-import { describe, expect, it } from "vitest";
-import type { Fiber } from "../src/types.js";
+import { describe, expect, it } from "vite-plus/test";
+import type { Fiber } from "../src/react-internals/index.js";
 import { _renderers } from "../src/rdt-hook.js";
 import { getFiberHooks } from "../src/source/inspect-hooks.js";
+import { latestReactWorkTags } from "./react-work-tags.js";
 
 const createFakeFiber = (type: unknown): Fiber =>
   ({
-    tag: 0,
+    tag: latestReactWorkTags.FunctionComponent,
     type,
     elementType: type,
     memoizedState: null,
@@ -22,7 +23,7 @@ describe("getFiberHooks dispatcher discovery", () => {
   it("throws when no react renderer is registered", () => {
     const fiber = createFakeFiber(() => null);
     expect(() => getFiberHooks(fiber)).toThrowError(
-      "No React renderer found. Make sure React is loaded and bippy's hook is installed.",
+      "Bippy couldn’t find a React renderer. Load React and install Bippy’s hook.",
     );
   });
 

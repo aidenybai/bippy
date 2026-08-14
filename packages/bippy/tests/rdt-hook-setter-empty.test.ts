@@ -1,7 +1,7 @@
 // intentionally avoids importing ../index.js so this file controls hook installation
-import { expect, it } from "vitest";
+import { expect, it } from "vite-plus/test";
 import { getRDTHook } from "../src/rdt-hook.js";
-import type { ReactDevToolsGlobalHook, ReactRenderer } from "../src/types.js";
+import type { ReactDevToolsGlobalHook, ReactRenderer } from "../src/react-internals/index.js";
 
 it("should not merge renderers into a new hook when none were injected", () => {
   const installedHook = getRDTHook();

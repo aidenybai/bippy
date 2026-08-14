@@ -18,7 +18,7 @@ export const SERVER_COMPONENT_URL_PREFIXES = ["rsc://", ABOUT_REACT_PREFIX] as c
 
 export const ANONYMOUS_FILE_PATTERNS = ["<anonymous>", "eval", ""] as const;
 
-export const SOURCE_FILE_EXTENSION_REGEX = /\.(jsx|tsx|ts|js)$/;
+export const SOURCE_FILE_EXTENSION_REGEX = /\.(cjs|cts|js|jsx|mdx|mjs|mts|ts|tsx)$/;
 
 export const BUNDLED_FILE_PATTERN_REGEX =
   /(\.min|bundle|chunk|vendor|vendors|runtime|polyfill|polyfills)\.(js|mjs|cjs)$|(chunk|bundle|vendor|vendors|runtime|polyfill|polyfills|framework|app|main|index)[-_.][A-Za-z0-9_-]{4,}\.(js|mjs|cjs)$|[\da-f]{8,}\.(js|mjs|cjs)$|[-_.][\da-f]{20,}\.(js|mjs|cjs)$|\/dist\/|\/build\/|\/.next\/|\/out\/|\/node_modules\/|\.webpack\.|\.vite\.|\.turbopack\./i;

@@ -3,15 +3,22 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:web": "npx playwright test",
+    "build:extension": "nr --filter bippy build && nr --filter @bippy/e2e-chrome-extension build",
+    "build:metro-artifact": "nr --filter bippy build && nr --filter @bippy/e2e-expo build:source-artifact",
+    "test:extension": "nr build:extension && playwright test --project=chrome-extension",
+    "test:metro-artifact": "nr build:metro-artifact && node --test tests/artifacts/metro-source-map.test.mjs",
+    "test:web": "nr build:extension && playwright test",
+    "test:web:production": "nr --filter bippy build && playwright test --config playwright.production.config.ts",
     "test:native": "detox test --configuration ios.sim.debug",
-    "test": "nr test:web"
+    "test:native:android": "detox test --configuration android.emu.debug",
+    "test": "nr test:metro-artifact && nr test:web"
   },
   "devDependencies": {
     "@jest/globals": "^30.4.1",
     "@playwright/test": "latest",
     "@types/jest": "^30.0.0",
     "@types/node": "^20",
+    "bippy": "workspace:*",
     "detox": "latest",
     "jest": "latest",
     "ts-jest": "latest",

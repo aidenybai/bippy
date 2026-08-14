@@ -1,0 +1,5 @@
+---
+"bippy": minor
+---
+
+Report an unmount of the last committed fiber when a root loses its current instance (previously this path always threw a TypeError). Second-pass cleanup: shared renderer-dispatcher helpers, shared `getSourceContentFromSourceMap` (adds index-map support to `getDisplayNameFromSource`), and removal of dead options, types, and policy-heavy helpers (`ParseOptions.slice`, `Effect`, `FiberUpdateQueue.lastEffect`/`dispatch`, `getTimings`, `getFiberStack`, `getMutatedHostFibers`, `getNearestHostFiber`, `getNearestHostFibers`, `traverseProps`, `traverseState`, `traverseContexts`, `overrideProps`, `overrideHookState`, and `overrideContext`). Add `getRenderer` for direct access to a fiber's renderer capabilities. Add a providerless `useFiber` hook to the main `bippy` entry point. Add `getFiber` as the concise alias for `getFiberFromHostInstance`. Export React’s internal Fiber, root, renderer, dispatcher, work-tag, flag, symbol, and build-type definitions from the main entry point.
