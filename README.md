@@ -1,4 +1,7 @@
-<h1><img src="./.github/public/bippy.png" width="48" alt="" align="middle" /> bippy</h1>
+<h1>
+  <img src="./.github/public/bippy.png" width="48" alt="" valign="middle" />
+  bippy
+</h1>
 
 [![version](https://img.shields.io/npm/v/bippy?style=flat&colorA=000000&colorB=000000)](https://npmjs.com/package/bippy)
 [![downloads](https://img.shields.io/npm/dt/bippy.svg?style=flat&colorA=000000&colorB=000000)](https://npmjs.com/package/bippy)
