@@ -70,7 +70,7 @@ export const isValidElement = (element: unknown): element is React.ReactElement 
 /**
  * Returns `true` if object is a React Fiber.
  */
-export const isValidFiber = (fiber: unknown): fiber is Fiber =>
+export const isFiber = (fiber: unknown): fiber is Fiber =>
   typeof fiber === "object" &&
   fiber !== null &&
   "tag" in fiber &&
@@ -84,7 +84,7 @@ const isFiberRoot = (fiberRoot: unknown): fiberRoot is FiberRoot =>
   typeof fiberRoot === "object" &&
   fiberRoot !== null &&
   "current" in fiberRoot &&
-  isValidFiber(fiberRoot.current);
+  isFiber(fiberRoot.current);
 
 /**
  * Returns `true` if fiber is a host fiber. Host fibers are DOM nodes in react-dom, `View` in react-native, etc.
@@ -121,16 +121,6 @@ export const isCompositeFiber = (fiber: Fiber): boolean => {
     default:
       return false;
   }
-};
-
-/**
- * Returns `true` if the object is a {@link Fiber}
- */
-export const isFiber = (maybeFiber: unknown): maybeFiber is Fiber => {
-  if (!maybeFiber || typeof maybeFiber !== "object") return false;
-  // this is a fast check. pendingProps will ALWAYS exist in fiber
-  // `containerInfo` is in FiberRootNode, not FiberNode
-  return "pendingProps" in maybeFiber && !("containerInfo" in maybeFiber);
 };
 
 /**
@@ -837,14 +827,14 @@ const getLegacyRootFiber = (hostInstance: object): Fiber | null => {
   const current = Reflect.get(internalRoot, "current");
   if (typeof current !== "object" || current === null) return null;
   const child = Reflect.get(current, "child");
-  return isValidFiber(child) ? child : null;
+  return isFiber(child) ? child : null;
 };
 
 const getInternalInstanceHandle = (hostInstance: object): Fiber | null => {
   const internalInstanceHandle =
     Reflect.get(hostInstance, "__internalInstanceHandle") ??
     Reflect.get(hostInstance, "_internalInstanceHandle");
-  return isValidFiber(internalInstanceHandle) ? internalInstanceHandle : null;
+  return isFiber(internalInstanceHandle) ? internalInstanceHandle : null;
 };
 
 const getPublicHostInstance = (stateNode: unknown): unknown => {
@@ -880,14 +870,14 @@ export const getFiber = <T>(hostInstance: T): Fiber | null => {
 
     for (const knownKey of knownFiberPropertyKeys) {
       const fiber = Reflect.get(hostInstance, knownKey);
-      if (isValidFiber(fiber)) return fiber;
+      if (isFiber(fiber)) return fiber;
     }
 
     for (const key of Object.keys(hostInstance)) {
       if (isFiberPropertyKey(key)) {
         knownFiberPropertyKeys.add(key);
         const fiber = Reflect.get(hostInstance, key);
-        if (isValidFiber(fiber)) return fiber;
+        if (isFiber(fiber)) return fiber;
       }
     }
   }

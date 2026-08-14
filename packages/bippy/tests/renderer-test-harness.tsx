@@ -11,9 +11,9 @@ import {
   getRDTHook,
   instrument,
   isCompositeFiber,
+  isFiber,
   isHostFiber,
   isInstrumentationActive,
-  isValidFiber,
   traverseFiber,
   useFiber,
 } from "../src/index.js";
@@ -189,7 +189,7 @@ export const runRendererTestHarness = (factories: RendererAdapterFactory[]): voi
       }
       expect(components.getObservedFiber()).toBe(mountedStatefulFiber);
 
-      expect(isValidFiber(mountedStatefulFiber)).toBe(true);
+      expect(isFiber(mountedStatefulFiber)).toBe(true);
       expect(isCompositeFiber(mountedStatefulFiber)).toBe(true);
       expect(isCompositeFiber(mountedForwardFiber)).toBe(true);
       expect(getDisplayName(mountedStatefulFiber.type)).toBe("RendererStatefulBranch");

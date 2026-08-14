@@ -186,33 +186,20 @@ test.describe("type guards", () => {
       return {
         fiber: window.__BIPPY__.isFiber(fiber),
         object: window.__BIPPY__.isFiber({}),
+        weakMatch: window.__BIPPY__.isFiber({ pendingProps: null }),
         null_: window.__BIPPY__.isFiber(null),
         undefined_: window.__BIPPY__.isFiber(undefined),
-        number: window.__BIPPY__.isFiber(42 as any),
-        string: window.__BIPPY__.isFiber("hello" as any),
+        number: window.__BIPPY__.isFiber(42),
+        string: window.__BIPPY__.isFiber("hello"),
       };
     });
     expect(result.fiber).toBe(true);
     expect(result.object).toBe(false);
+    expect(result.weakMatch).toBe(false);
     expect(result.null_).toBe(false);
     expect(result.undefined_).toBe(false);
     expect(result.number).toBe(false);
     expect(result.string).toBe(false);
-  });
-
-  test("isValidFiber returns true for live fiber, false for object", async ({ page }) => {
-    const result = await page.evaluate(() => {
-      const element = document.querySelector('[data-testid="test-child"]');
-      const fiber = window.__BIPPY__.getFiberFromHostInstance(element);
-      return {
-        liveFiber: window.__BIPPY__.isValidFiber(fiber),
-        emptyObject: window.__BIPPY__.isValidFiber({}),
-        null_: window.__BIPPY__.isValidFiber(null),
-      };
-    });
-    expect(result.liveFiber).toBe(true);
-    expect(result.emptyObject).toBe(false);
-    expect(result.null_).toBe(false);
   });
 
   test("isHostFiber/isCompositeFiber are mutually exclusive on the same fiber", async ({

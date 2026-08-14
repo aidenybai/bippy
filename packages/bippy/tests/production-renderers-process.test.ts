@@ -320,7 +320,7 @@ const createProductionScript = (rendererScript: string): string => `
     return createHostElement(revision);
   };
   const verifyMountedFiber = () => {
-    assert.ok(Bippy.isValidFiber(observedFiber));
+    assert.ok(Bippy.isFiber(observedFiber));
     assert.equal(observedFiber.type, Probe);
     assert.equal(observedSecondFiber, observedFiber);
     assert.equal(observedFiber.memoizedProps.revision, 1);
@@ -328,7 +328,7 @@ const createProductionScript = (rendererScript: string): string => `
     return observedFiber;
   };
   const verifyUpdatedFiber = (mountedFiber) => {
-    assert.ok(Bippy.isValidFiber(observedFiber));
+    assert.ok(Bippy.isFiber(observedFiber));
     assert.equal(observedFiber.type, Probe);
     assert.equal(observedSecondFiber, observedFiber);
     assert.notEqual(observedFiber, mountedFiber);

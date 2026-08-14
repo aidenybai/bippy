@@ -171,7 +171,7 @@ const runRuntime = (
     };
 
     const assertFiber = (fiber, component) => {
-      assert.ok(Bippy.isValidFiber(fiber));
+      assert.ok(Bippy.isFiber(fiber));
       assert.ok(fiber.type === component || fiber.elementType === component);
     };
 

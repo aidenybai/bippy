@@ -107,10 +107,6 @@ describe("bippy core functions on React Native", () => {
       await detoxExpect(element(by.id("result-isFiber-object"))).toHaveText("false");
     });
 
-    it("isValidFiber returns true for a live fiber", async () => {
-      await detoxExpect(element(by.id("result-isValidFiber"))).toHaveText("true");
-    });
-
     it("isHostFiber returns true for host fiber", async () => {
       await detoxExpect(element(by.id("result-isHostFiber-host"))).toHaveText("true");
     });

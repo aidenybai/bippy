@@ -1,6 +1,6 @@
 import "./install-hook-only.js";
 import * as React from "react";
-import { isValidFiber } from "./core.js";
+import { isFiber } from "./core.js";
 import type { Fiber } from "./react-internals/index.js";
 
 export type { Fiber } from "./react-internals/index.js";
@@ -18,7 +18,7 @@ const captureFiberFromHook = (useCaptureHook: () => void): Fiber | null => {
   const bindProxy = new Proxy(originalBind, {
     apply: (bind, functionToBind, boundArguments) => {
       const fiber = boundArguments[1];
-      if (!capturedFiber && isValidFiber(fiber)) {
+      if (!capturedFiber && isFiber(fiber)) {
         capturedFiber = fiber;
       }
       return Reflect.apply(bind, functionToBind, boundArguments);

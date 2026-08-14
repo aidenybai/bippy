@@ -18,7 +18,6 @@ import {
   isInstrumentationActive,
   isRealReactDevtools,
   isValidElement,
-  isValidFiber,
   traverseFiber,
   traverseRenderedFibers,
   useFiber,
@@ -227,7 +226,6 @@ const App = () => {
     results["isFiber"] = String(isFiber(rootFiber));
     results["isFiber-null"] = String(isFiber(null));
     results["isFiber-object"] = String(isFiber({}));
-    results["isValidFiber"] = String(isValidFiber(rootFiber));
 
     if (testChildHostFiber) {
       results["isHostFiber-host"] = String(isHostFiber(testChildHostFiber));
@@ -354,9 +352,9 @@ const App = () => {
     results["skia-renderer-version"] = renderer.version;
     results["skia-renderer-count"] = String(rendererCount);
     results["skia-build-type"] = detectReactBuildType(renderer);
-    results["skia-root-valid"] = String(isValidFiber(rootFiber));
-    results["skia-compound-valid"] = String(isValidFiber(compoundTreeFiber));
-    results["skia-memo-valid"] = String(isValidFiber(memoLeafFiber));
+    results["skia-root-valid"] = String(isFiber(rootFiber));
+    results["skia-compound-valid"] = String(isFiber(compoundTreeFiber));
+    results["skia-memo-valid"] = String(isFiber(memoLeafFiber));
     results["skia-useFiber"] = String(getObservedSkiaMemoLeafFiber() === memoLeafFiber);
     results["skia-compound-display-name"] = getDisplayName(compoundTreeFiber.type) ?? "null";
     results["skia-memo-display-name"] = getDisplayName(memoLeafFiber.type) ?? "null";
@@ -369,7 +367,7 @@ const App = () => {
     results["skia-did-render"] = String(didFiberRender(memoLeafFiber));
     results["skia-did-commit"] = String(didFiberCommit(memoLeafFiber));
     results["skia-fiber-id"] = String(typeof getFiberId(memoLeafFiber) === "number");
-    results["skia-latest-fiber"] = String(isValidFiber(getLatestFiber(memoLeafFiber)));
+    results["skia-latest-fiber"] = String(isFiber(getLatestFiber(memoLeafFiber)));
     results["skia-has-alternate"] = String(memoLeafFiber.alternate !== null);
     results["skia-type"] = String(getType(memoLeafFiber.type) !== null);
     results["skia-has-memo-cache"] = String(hasMemoCache(memoLeafFiber));

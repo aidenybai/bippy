@@ -8,7 +8,7 @@
 
 bippy hacks into React internals.
 
-React normally keeps its [Fiber](https://youtu.be/ZCuYPiUIONs) tree out of reach. bippy lets you inspect components, track renders, and access the renderer directly.
+React keeps its internals out of reach. bippy opens them up for metaprogramming, letting you inspect the [Fiber](https://youtu.be/ZCuYPiUIONs) tree, track renders, and access the renderer directly.
 
 > [!WARNING]
 > ⚠️⚠️⚠️ **This project may break production apps and cause unexpected behavior.** ⚠️⚠️⚠️
@@ -70,11 +70,7 @@ const Component = () => {
 };
 ```
 
-## Instrumentation
-
-Listen for React lifecycle events with `instrument`.
-
-### `instrument`
+## `instrument`
 
 Registers lifecycle handlers and returns an unsubscribe function.
 
@@ -100,7 +96,7 @@ unsubscribe();
 
 Call the returned function to unsubscribe those handlers.
 
-### `getRDTHook`
+## `getRDTHook`
 
 Returns the React DevTools global hook at `globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__`. Use it to access registered renderers and Fiber roots directly.
 
@@ -111,11 +107,7 @@ const hook = getRDTHook();
 console.log(hook.renderers);
 ```
 
-## Fiber traversal
-
-Traversal helpers walk a complete Fiber tree or select the Fibers involved in a commit.
-
-### `traverseRenderedFibers`
+## `traverseRenderedFibers`
 
 Visits Fibers that mounted, updated, or unmounted in a commit. The callback receives the Fiber and its `mount`, `update`, or `unmount` phase.
 
@@ -133,7 +125,7 @@ instrument({
 
 Call it with the same root across commits so bippy can compare the current and previous trees.
 
-### `traverseFiber`
+## `traverseFiber`
 
 Walks down from a Fiber and calls a selector for each node. Return `true` to stop and return the selected Fiber. Pass `true` as the third argument to walk toward the root instead.
 
@@ -147,43 +139,61 @@ const buttonFiber = traverseFiber(fiber, (candidateFiber) => {
 
 The selector can also return a promise. In that case, `traverseFiber` returns a promise for the selected Fiber.
 
-### `didFiberRender` and `didFiberCommit`
+## `didFiberRender`
 
-Return whether a Fiber has rendered or committed. Use `traverseRenderedFibers` to inspect changes from a specific commit.
+Returns whether a Fiber has rendered. It does not identify whether the render happened during a specific commit.
 
 ```typescript
-import { didFiberCommit, didFiberRender } from "bippy";
+import { didFiberRender } from "bippy";
 
 console.log(didFiberRender(fiber));
+```
+
+Use `traverseRenderedFibers` to inspect renders from a specific commit.
+
+## `didFiberCommit`
+
+Returns whether a Fiber or its subtree has committed work. It does not identify a specific commit.
+
+```typescript
+import { didFiberCommit } from "bippy";
+
 console.log(didFiberCommit(fiber));
 ```
 
-## Fiber inspection
+## `setFiberId`
 
-Inspection helpers identify Fibers and read their component, host instance, and renderer metadata.
-
-### `setFiberId` and `getFiberId`
-
-Assign and read a stable numeric identity across Fiber updates. `getFiberId` creates an identity when one does not exist.
+Assigns a numeric ID to a Fiber.
 
 ```typescript
-import { getFiberId, setFiberId } from "bippy";
+import { setFiberId } from "bippy";
 
 setFiberId(fiber, 123);
-console.log(getFiberId(fiber));
 ```
 
-### Classification helpers
+## `getFiberId`
 
-Use these predicates to narrow an unknown value or Fiber before reading renderer-specific fields:
+Returns a stable numeric ID across Fiber updates. It creates an ID when none has been assigned.
 
-| Helper             | Result                                                  |
-| ------------------ | ------------------------------------------------------- |
-| `isFiber`          | Performs a fast check for a Fiber-like object           |
-| `isValidFiber`     | Checks the core fields required by a Fiber              |
-| `isHostFiber`      | Narrows a Fiber to a host Fiber                         |
-| `isCompositeFiber` | Finds function, class, memo, and other composite Fibers |
-| `hasMemoCache`     | Detects React Compiler memo cache data                  |
+```typescript
+import { getFiberId } from "bippy";
+
+const fiberId = getFiberId(fiber);
+```
+
+## `isFiber`
+
+Returns whether a value contains the core fields required by a Fiber.
+
+```typescript
+import { isFiber } from "bippy";
+
+console.log(isFiber(value));
+```
+
+## `isHostFiber`
+
+Returns whether a Fiber represents a renderer host instance, such as a DOM element or React Native view.
 
 ```typescript
 import { isHostFiber } from "bippy";
@@ -193,18 +203,47 @@ if (isHostFiber(fiber)) {
 }
 ```
 
-### `getDisplayName` and `getType`
+## `isCompositeFiber`
 
-`getDisplayName` reads a component name from a Fiber type. `getType` unwraps memo and forward-ref wrappers to return the underlying component definition.
+Returns whether a Fiber represents a function, class, memo, or forward-ref component.
 
 ```typescript
-import { getDisplayName, getType } from "bippy";
+import { isCompositeFiber } from "bippy";
+
+console.log(isCompositeFiber(fiber));
+```
+
+## `hasMemoCache`
+
+Returns whether a Fiber uses a React Compiler memo cache.
+
+```typescript
+import { hasMemoCache } from "bippy";
+
+console.log(hasMemoCache(fiber));
+```
+
+## `getDisplayName`
+
+Returns the display name of a Fiber type.
+
+```typescript
+import { getDisplayName } from "bippy";
 
 console.log(getDisplayName(fiber.type));
+```
+
+## `getType`
+
+Unwraps memo and forward-ref wrappers and returns the underlying component definition.
+
+```typescript
+import { getType } from "bippy";
+
 console.log(getType(fiber.type));
 ```
 
-### `getLatestFiber`
+## `getLatestFiber`
 
 Returns the latest version of a Fiber. Use it when you retain a Fiber across renders.
 
@@ -215,7 +254,7 @@ const fiber = getFiber(document.body);
 const latestFiber = fiber ? getLatestFiber(fiber) : null;
 ```
 
-### `getRenderer`
+## `getRenderer`
 
 Returns the React renderer that owns a Fiber, or `null` when the renderer is unavailable.
 
@@ -229,7 +268,7 @@ renderer?.scheduleUpdate?.(fiber);
 
 Renderer capabilities are optional and vary by renderer version.
 
-### React internals
+## React internals
 
 The main `bippy` entry point exports the React internals used by its APIs.
 
@@ -254,11 +293,7 @@ import type {
 
 These definitions follow React’s private implementation and may change between React versions.
 
-## Source inspection
-
-Source utilities resolve component locations, source maps, and component stacks. Import them from `bippy/source`.
-
-### `getSource`
+## `getSource`
 
 Returns the source location for a Fiber from these renderers:
 
@@ -295,14 +330,23 @@ const sourceFetch: SourceFetch = async (url, init) => {
 const source = await getSource(fiber, true, sourceFetch);
 ```
 
-### `getOwnerStack` and `getParentStack`
+## `getOwnerStack`
 
-Both functions return symbolicated component stacks above a Fiber. `getOwnerStack` follows the components that created the Fiber’s JSX. `getParentStack` follows every ancestor in the Fiber return chain.
+Returns the symbolicated stack of components that created a Fiber’s JSX. It falls back to the parent stack when owner information is unavailable.
 
 ```typescript
-import { getOwnerStack, getParentStack } from "bippy/source";
+import { getOwnerStack } from "bippy/source";
 
 const ownerFrames = await getOwnerStack(fiber);
+```
+
+## `getParentStack`
+
+Returns the symbolicated stack of every ancestor in a Fiber’s return chain.
+
+```typescript
+import { getParentStack } from "bippy/source";
+
 const parentFrames = await getParentStack(fiber);
 ```
 

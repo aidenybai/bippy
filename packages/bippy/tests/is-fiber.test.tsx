@@ -3,17 +3,16 @@ import "../src/index.js"; // KEEP THIS LINE ON TOP
 import { render } from "@testing-library/react";
 import React from "react";
 import { expect, it } from "vite-plus/test";
-import { isHostFiber, getFiberFromHostInstance, isFiber } from "../src/index.js";
-import type { Fiber } from "../src/react-internals/index.js";
+import { getFiberFromHostInstance, isFiber, isHostFiber } from "../src/index.js";
 
 export const Example = () => {
   return <div>Hello</div>;
 };
 
-it("should return true for a a fiber", () => {
+it("returns true for a Fiber", () => {
   const { container } = render(<div>Hello</div>);
   const hostFiber = getFiberFromHostInstance(container.firstChild);
-  expect(isFiber(hostFiber as unknown as Fiber)).toBe(true);
+  expect(isFiber(hostFiber)).toBe(true);
 });
 
 it("should return true for a composite fiber", () => {
@@ -33,4 +32,5 @@ it("should return false for non-object types", () => {
   expect(isFiber(true)).toBe(false);
   expect(isFiber(false)).toBe(false);
   expect(isFiber(Symbol("test"))).toBe(false);
+  expect(isFiber({ pendingProps: null })).toBe(false);
 });
