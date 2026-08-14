@@ -1,5 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const isCI = Boolean(process.env.CI);
 const vitePort = Number(process.env.BIPPY_E2E_VITE_PORT ?? 5180);
 const nextPort = Number(process.env.BIPPY_E2E_NEXT_PORT ?? 3100);
 const tanstackPort = Number(process.env.BIPPY_E2E_TANSTACK_PORT ?? 3200);
@@ -8,11 +9,12 @@ const chromeExtensionTestMatch = /chrome-extension\.spec\.ts/;
 export default defineConfig({
   testDir: "./tests/web",
   fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  forbidOnly: isCI,
+  retries: isCI ? 2 : 1,
+  workers: isCI ? 4 : undefined,
   reporter: "html",
   use: {
+    channel: isCI ? "chrome" : undefined,
     trace: "on-first-retry",
   },
   projects: [
@@ -41,7 +43,7 @@ export default defineConfig({
     {
       command: `pnpm --filter @bippy/e2e-vite dev --port ${vitePort}`,
       port: vitePort,
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: !isCI,
       timeout: 30_000,
     },
     {
@@ -49,13 +51,13 @@ export default defineConfig({
       // Waiting on the URL (not just the port) lets webpack finish the slow
       // first compile of the page before tests start hitting it in parallel.
       url: `http://localhost:${nextPort}`,
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: !isCI,
       timeout: 120_000,
     },
     {
       command: `pnpm --filter @bippy/e2e-tanstack dev --port ${tanstackPort}`,
       port: tanstackPort,
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: !isCI,
       timeout: 60_000,
     },
   ],
