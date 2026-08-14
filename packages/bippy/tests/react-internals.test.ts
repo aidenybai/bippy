@@ -1,11 +1,33 @@
 import { expect, expectTypeOf, it } from "vite-plus/test";
 import {
+  compareSemver,
   getReactWorkTagsForFiber,
   getReactWorkTagsForRenderer,
   getReactWorkTags,
+  MutationMask,
+  ReactBuildType,
+  ReactFiberFlags,
+  ReactSymbols,
   setReactWorkTagsForFiber,
-} from "../src/react-internals/index.js";
-import type { Fiber, ReactRenderer } from "../src/react-internals/index.js";
+} from "../src/index.js";
+import type {
+  Fiber,
+  FiberRoot,
+  ReactDevToolsGlobalHook,
+  ReactRenderer,
+  RendererDispatcherRef,
+} from "../src/index.js";
+
+it("exports React internals from the main entry point", () => {
+  expect(compareSemver("18.0.0", "19.0.0")).toBe(-1);
+  expect(ReactBuildType.Production).toBe(0);
+  expect(ReactFiberFlags.Placement).toBe(2);
+  expect(ReactSymbols.LEGACY_ELEMENT_SYMBOL_STRING).toBe("Symbol(react.element)");
+  expect(MutationMask & ReactFiberFlags.Update).toBe(ReactFiberFlags.Update);
+  expectTypeOf<FiberRoot>().toHaveProperty("current");
+  expectTypeOf<ReactDevToolsGlobalHook>().toHaveProperty("renderers");
+  expectTypeOf<RendererDispatcherRef>().toBeObject();
+});
 
 it("selects React work tags by their version baseline", () => {
   const react16WorkTags = getReactWorkTags("16.0.0");

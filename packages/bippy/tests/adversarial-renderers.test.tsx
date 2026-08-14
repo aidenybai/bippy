@@ -9,9 +9,7 @@ import {
   getDisplayName,
   getFiberId,
   getLatestFiber,
-  getMutatedHostFibers,
   instrument,
-  isHostFiber,
   traverseFiber,
   traverseRenderedFibers,
 } from "../src/index.js";
@@ -270,8 +268,6 @@ describe("adversarial renderer behavior", () => {
       expect(didFiberRender(updatedContextFiber)).toBe(true);
       expect(getLatestFiber(mountedStaticFiber)).toBe(updatedStaticFiber);
       expect(getLatestFiber(mountedContextFiber)).toBe(updatedContextFiber);
-      expect(getMutatedHostFibers(updatedRoot.current).every(isHostFiber)).toBe(true);
-
       const staticSource = await getSource(updatedStaticFiber, false, sourceFetch);
       const contextSource = await getSource(updatedContextFiber, false, sourceFetch);
       expect(staticSource?.fileName).toContain("adversarial-renderers.test.tsx");
@@ -433,8 +429,6 @@ describe("adversarial renderer behavior", () => {
         mountedItemIds.get("b"),
       );
       expect(unmountedItemNames).toContain("b");
-      expect(getMutatedHostFibers(updatedRoot.current).every(isHostFiber)).toBe(true);
-
       const updatedItem = updatedItems.get("c");
       if (!updatedItem) throw new Error("React Three Fiber lost its source target");
       expect((await getSource(updatedItem, false, sourceFetch))?.fileName).toContain(

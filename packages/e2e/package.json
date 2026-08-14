@@ -8,6 +8,7 @@
     "test:extension": "nr build:extension && playwright test --project=chrome-extension",
     "test:metro-artifact": "nr build:metro-artifact && node --test tests/artifacts/metro-source-map.test.mjs",
     "test:web": "nr build:extension && playwright test",
+    "test:web:production": "nr --filter bippy build && playwright test --config playwright.production.config.ts",
     "test:native": "detox test --configuration ios.sim.debug",
     "test:native:android": "detox test --configuration android.emu.debug",
     "test": "nr test:metro-artifact && nr test:web"

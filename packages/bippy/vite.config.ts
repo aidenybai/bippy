@@ -38,32 +38,18 @@ const sharedPackOptions = {
 } satisfies PackUserConfig;
 
 export default defineConfig({
-  pack: [
-    {
-      ...sharedPackOptions,
-      clean: true,
-      dts: true,
-      entry: {
-        index: "./src/index.ts",
-        core: "./src/core.ts",
-        source: "./src/source/index.ts",
-        "install-hook-only": "./src/install-hook-only.ts",
-      },
-      format: ["esm", "cjs"],
+  pack: {
+    ...sharedPackOptions,
+    clean: true,
+    dts: true,
+    entry: {
+      index: "./src/index.ts",
+      core: "./src/core.ts",
+      source: "./src/source/index.ts",
+      "install-hook-only": "./src/install-hook-only.ts",
     },
-    {
-      ...sharedPackOptions,
-      entry: ["./src/index.ts"],
-      format: ["iife"],
-      globalName: "Bippy",
-    },
-    {
-      ...sharedPackOptions,
-      entry: ["./src/install-hook-only.ts"],
-      format: ["iife"],
-      globalName: "Bippy",
-    },
-  ],
+    format: ["esm", "cjs"],
+  },
   test: {
     coverage: {
       include: ["src/**/*.ts", "scripts/react-internals-plugin.ts"],

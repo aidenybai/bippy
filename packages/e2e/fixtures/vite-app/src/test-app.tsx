@@ -1,3 +1,4 @@
+import { useFiber } from "bippy";
 import React, {
   Component,
   Fragment,
@@ -11,6 +12,18 @@ import React, {
 } from "react";
 
 const TestContext = createContext("default-context");
+
+export const UseFiberProbe = () => {
+  const fiber = useFiber();
+  const [revision, setRevision] = useState(0);
+  window.__USE_FIBER__ = fiber;
+
+  return (
+    <button data-testid="use-fiber-update" onClick={() => setRevision((previous) => previous + 1)}>
+      {revision}
+    </button>
+  );
+};
 
 export const TestParent = () => {
   const [count, setCount] = useState(0);

@@ -3,11 +3,9 @@
 import type * as React from "react";
 
 import type {
-  ContextDependency,
   Fiber,
   FiberRoot,
   HostFiber,
-  MemoizedState,
   ReactDevToolsGlobalHook,
   ReactRenderer,
 } from "./react-internals/index.js";
@@ -20,7 +18,6 @@ import {
   hasRDTHook,
   isRealReactDevtools,
   onRDTHookReplace,
-  onRendererInject,
 } from "./rdt-hook.js";
 import type { Unsubscribe } from "./rdt-hook.js";
 import {
@@ -32,8 +29,6 @@ import {
   setReactWorkTagsForFiber,
 } from "./react-internals/index.js";
 
-export { getReactWorkTags, ReactSymbols } from "./react-internals/index.js";
-export type { ReactWorkTagMap, ReactWorkTagVersion } from "./react-internals/index.js";
 export {
   BippyError,
   BippyHookInspectionError,
@@ -56,18 +51,8 @@ interface FiberSelector {
   (node: Fiber): boolean | Promise<boolean | void> | void;
 }
 
-export interface FiberTimings {
-  selfTime: number;
-  totalTime: number;
-}
-
 export interface RenderHandler {
   (fiber: Fiber, phase: RenderPhase): unknown;
-}
-
-interface ValueWrite {
-  path: string[];
-  value: unknown;
 }
 
 /**
@@ -149,90 +134,6 @@ export const isFiber = (maybeFiber: unknown): maybeFiber is Fiber => {
 };
 
 /**
- * Traverses up or down a {@link Fiber}'s contexts, return `true` to stop and select the current and previous context value.
- */
-export const traverseContexts = (
-  fiber: Fiber,
-  selector: (
-    nextValue: ContextDependency<unknown> | null | undefined,
-    prevValue: ContextDependency<unknown> | null | undefined,
-  ) => boolean | void,
-): boolean => {
-  try {
-    const nextDependencies = fiber.dependencies;
-    const prevDependencies = fiber.alternate?.dependencies;
-
-    if (!nextDependencies || !prevDependencies) return false;
-    if (
-      typeof nextDependencies !== "object" ||
-      !("firstContext" in nextDependencies) ||
-      typeof prevDependencies !== "object" ||
-      !("firstContext" in prevDependencies)
-    ) {
-      return false;
-    }
-    let nextContext: ContextDependency<unknown> | null | undefined = nextDependencies.firstContext;
-    let prevContext: ContextDependency<unknown> | null | undefined = prevDependencies.firstContext;
-    while (
-      (nextContext && typeof nextContext === "object" && "memoizedValue" in nextContext) ||
-      (prevContext && typeof prevContext === "object" && "memoizedValue" in prevContext)
-    ) {
-      if (selector(nextContext, prevContext) === true) return true;
-
-      nextContext = nextContext?.next;
-      prevContext = prevContext?.next;
-    }
-  } catch {}
-  return false;
-};
-
-/**
- * Traverses up or down a {@link Fiber}'s states, return `true` to stop and select the current and previous state value. This stores both state values and effects.
- */
-export const traverseState = (
-  fiber: Fiber,
-  selector: (
-    nextValue: MemoizedState | null | undefined,
-    prevValue: MemoizedState | null | undefined,
-  ) => boolean | void,
-): boolean => {
-  try {
-    let nextState: MemoizedState | null | undefined = fiber.memoizedState;
-    let prevState: MemoizedState | null | undefined = fiber.alternate?.memoizedState;
-
-    while (nextState || prevState) {
-      if (selector(nextState, prevState) === true) return true;
-
-      nextState = nextState?.next;
-      prevState = prevState?.next;
-    }
-  } catch {}
-  return false;
-};
-
-/**
- * Traverses up or down a {@link Fiber}'s props, return `true` to stop and select the current and previous props value.
- */
-export const traverseProps = (
-  fiber: Fiber,
-  selector: (propName: string, nextValue: unknown, prevValue: unknown) => boolean | void,
-): boolean => {
-  try {
-    const nextProps = fiber.memoizedProps;
-    const prevProps = fiber.alternate?.memoizedProps || {};
-
-    for (const propName of Object.keys(nextProps)) {
-      if (selector(propName, nextProps[propName], prevProps[propName]) === true) return true;
-    }
-    for (const propName of Object.keys(prevProps)) {
-      if (propName in nextProps) continue;
-      if (selector(propName, nextProps[propName], prevProps[propName]) === true) return true;
-    }
-  } catch {}
-  return false;
-};
-
-/**
  * Returns `true` if the {@link Fiber} has rendered. Note that this does not mean the fiber has rendered in the current commit, just that it has rendered in the past.
  */
 export const didFiberRender = (fiber: Fiber): boolean => {
@@ -269,46 +170,6 @@ export const didFiberCommit = (fiber: Fiber): boolean => {
     (fiber.flags & (MutationMask | ReactFiberFlags.Cloned)) !== 0 ||
     (fiber.subtreeFlags & (MutationMask | ReactFiberFlags.Cloned)) !== 0,
   );
-};
-
-/**
- * Returns all host {@link Fiber}s that have committed and rendered.
- */
-export const getMutatedHostFibers = (fiber: Fiber): Fiber[] => {
-  const mutations: Fiber[] = [];
-  const stack: Fiber[] = [fiber];
-
-  while (stack.length) {
-    const node = stack.pop();
-    if (!node) continue;
-
-    if (isHostFiber(node) && didFiberCommit(node) && didFiberRender(node)) {
-      mutations.push(node);
-    }
-
-    if (node.child) stack.push(node.child);
-    if (node.sibling) stack.push(node.sibling);
-  }
-
-  return mutations;
-};
-
-/**
- * Returns the stack of {@link Fiber}s from the current fiber to the root fiber.
- *
- * @example
- * ```ts
- * [fiber, fiber.return, fiber.return.return, ...]
- * ```
- */
-export const getFiberStack = (fiber: Fiber): Fiber[] => {
-  const stack: Fiber[] = [];
-  let currentFiber = fiber;
-  while (currentFiber.return) {
-    stack.push(currentFiber);
-    currentFiber = currentFiber.return;
-  }
-  return stack;
 };
 
 /**
@@ -357,47 +218,6 @@ const shouldFilterFiber = (fiber: Fiber): boolean => {
       }
     }
   }
-};
-
-/**
- * Returns the nearest host {@link Fiber} to the current {@link Fiber}.
- */
-export const getNearestHostFiber = (fiber: Fiber, ascending = false): Fiber | null => {
-  let hostFiber = traverseFiber(fiber, isHostFiber, ascending);
-  if (!hostFiber) {
-    hostFiber = traverseFiber(fiber, isHostFiber, !ascending);
-  }
-  return hostFiber;
-};
-
-/**
- * Returns all host {@link Fiber}s in the tree that are associated with the current {@link Fiber}.
- */
-export const getNearestHostFibers = (fiber: Fiber): Fiber[] => {
-  const hostFibers: Fiber[] = [];
-  const stack: Fiber[] = [];
-
-  if (isHostFiber(fiber)) {
-    hostFibers.push(fiber);
-  } else if (fiber.child) {
-    stack.push(fiber.child);
-  }
-
-  while (stack.length) {
-    const currentNode = stack.pop();
-    if (!currentNode) break;
-    if (isHostFiber(currentNode)) {
-      hostFibers.push(currentNode);
-    } else if (currentNode.child) {
-      stack.push(currentNode.child);
-    }
-
-    if (currentNode.sibling) {
-      stack.push(currentNode.sibling);
-    }
-  }
-
-  return hostFibers;
 };
 
 /**
@@ -469,27 +289,6 @@ const traverseFiberSiblings = (
 };
 
 /**
- * Returns the timings of the {@link Fiber}.
- *
- * @example
- * ```ts
- * const { selfTime, totalTime } = getTimings(fiber);
- * console.log(selfTime, totalTime);
- * ```
- */
-export const getTimings = (fiber?: Fiber | null): FiberTimings => {
-  const totalTime = fiber?.actualDuration ?? 0;
-  let selfTime = totalTime;
-  // TODO: calculate a DOM time, which is just host component summed up
-  let child = fiber?.child ?? null;
-  while (totalTime > 0 && child !== null) {
-    selfTime -= child.actualDuration ?? 0;
-    child = child.sibling;
-  }
-  return { selfTime, totalTime };
-};
-
-/**
  * Returns `true` if the {@link Fiber} uses React Compiler's memo cache.
  */
 export const hasMemoCache = (fiber: Fiber): boolean => {
@@ -542,6 +341,7 @@ export const isInstrumentationActive = (): boolean => {
 };
 
 export const _fiberRoots = new Set<FiberRoot>();
+const rootRendererIds = new WeakMap<FiberRoot, number>();
 
 /**
  * Returns the latest fiber (since it may be double-buffered).
@@ -559,6 +359,25 @@ export const getLatestFiber = (fiber: Fiber): Fiber => {
     if (latestFiber) return latestFiber;
   }
   return fiber;
+};
+
+/**
+ * Returns the renderer that owns the {@link Fiber}.
+ */
+export const getRenderer = (fiber: Fiber): ReactRenderer | null => {
+  if (!hasRDTHook()) return null;
+
+  let rootFiber = fiber;
+  while (rootFiber.return) {
+    rootFiber = rootFiber.return;
+  }
+
+  const fiberRoot = rootFiber.stateNode;
+  if (!isFiberRoot(fiberRoot)) return null;
+
+  const rendererID = rootRendererIds.get(fiberRoot);
+  if (rendererID === undefined) return null;
+  return getRDTHook().renderers.get(rendererID) ?? null;
 };
 
 export type RenderPhase = "mount" | "unmount" | "update";
@@ -806,168 +625,6 @@ export const traverseRenderedFibers = (root: Fiber | FiberRoot, onRender: Render
   rootInstance.prevFiber = fiber;
 };
 
-const overrideRenderers = new Set<ReactRenderer>();
-let areOverrideRenderersWired = false;
-
-const wireOverrideRenderers = (): void => {
-  if (!hasRDTHook()) return;
-  const rdtHook = getRDTHook();
-
-  setHookEventDispatchers(rdtHook);
-  for (const renderer of rdtHook.renderers.values()) {
-    overrideRenderers.add(renderer);
-  }
-  if (areOverrideRenderersWired) return;
-  areOverrideRenderersWired = true;
-  onRendererInject((renderer) => {
-    overrideRenderers.add(renderer);
-  });
-};
-
-const getRootRenderer = (fiber: Fiber): ReactRenderer | null => {
-  if (!hasRDTHook()) return null;
-  let hostRootFiber = fiber;
-  while (hostRootFiber.return) {
-    hostRootFiber = hostRootFiber.return;
-  }
-  const fiberRoot = hostRootFiber.stateNode;
-  if (!isFiberRoot(fiberRoot)) return null;
-  const rendererId = rootRendererIds.get(fiberRoot);
-  if (rendererId === undefined) return null;
-  return getRDTHook().renderers.get(rendererId) ?? null;
-};
-
-const resolveOverrideRenderers = (fiber: Fiber): ReactRenderer[] => {
-  wireOverrideRenderers();
-  const rootRenderer = getRootRenderer(fiber);
-  if (rootRenderer) return [rootRenderer];
-  return Array.from(overrideRenderers);
-};
-
-const applyPropsOverride = (
-  renderers: ReactRenderer[],
-  fiber: Fiber,
-  path: string[],
-  value: unknown,
-): void => {
-  for (const renderer of renderers) {
-    try {
-      renderer.overrideProps?.(fiber, path, value);
-    } catch {}
-  }
-};
-
-const getHookStateDispatch = (
-  fiber: Fiber,
-  hookIndex: number,
-): ((value: unknown) => void) | null => {
-  let hookState = fiber.memoizedState;
-  for (let currentHookIndex = 0; currentHookIndex < hookIndex; currentHookIndex++) {
-    if (!hookState?.next) return null;
-    hookState = hookState.next;
-  }
-  const queue = hookState?.queue;
-  if (!isPOJO(queue)) return null;
-  const dispatch = queue.dispatch;
-  return typeof dispatch === "function" ? (value) => dispatch(value) : null;
-};
-
-const findContextProviderFiber = (fiber: Fiber, contextType: unknown): Fiber | null => {
-  let currentFiber: Fiber | null = fiber;
-  while (currentFiber) {
-    const fiberType = currentFiber.type;
-    if (fiberType === contextType || fiberType?.Provider === contextType) {
-      return currentFiber;
-    }
-    currentFiber = currentFiber.return;
-  }
-  return null;
-};
-
-const isPOJO = (maybePOJO: unknown): maybePOJO is Record<string, unknown> => {
-  return (
-    Object.prototype.toString.call(maybePOJO) === "[object Object]" &&
-    (Object.getPrototypeOf(maybePOJO) === Object.prototype ||
-      Object.getPrototypeOf(maybePOJO) === null)
-  );
-};
-
-const buildPathsFromValue = (
-  maybePOJO: Record<string, unknown>,
-  basePath: string[] = [],
-  ancestors = new WeakSet<object>(),
-): ValueWrite[] => {
-  if (ancestors.has(maybePOJO)) {
-    return [{ path: basePath, value: maybePOJO }];
-  }
-
-  ancestors.add(maybePOJO);
-  const paths: ValueWrite[] = [];
-
-  for (const [key, value] of Object.entries(maybePOJO)) {
-    const path = basePath.concat(key);
-
-    if (isPOJO(value)) {
-      paths.push(...buildPathsFromValue(value, path, ancestors));
-    } else {
-      paths.push({ path, value });
-    }
-  }
-
-  ancestors.delete(maybePOJO);
-  return paths;
-};
-
-const buildValueWrites = (partialValue: unknown): ValueWrite[] =>
-  isPOJO(partialValue) ? buildPathsFromValue(partialValue) : [{ path: [], value: partialValue }];
-
-export const overrideProps = (fiber: Fiber, partialValue: Record<string, unknown>) => {
-  const renderers = resolveOverrideRenderers(fiber);
-  for (const { path, value } of buildValueWrites(partialValue)) {
-    applyPropsOverride(renderers, fiber, path, value);
-  }
-};
-
-export const overrideHookState = (fiber: Fiber, id: number, partialValue: unknown) => {
-  const renderers = resolveOverrideRenderers(fiber).filter((renderer) =>
-    Boolean(renderer.overrideHookState),
-  );
-
-  if (renderers.length > 0) {
-    const writes = buildValueWrites(partialValue);
-    for (const renderer of renderers) {
-      for (const { path, value } of writes) {
-        try {
-          renderer.overrideHookState?.(fiber, id, path, value);
-        } catch {}
-      }
-    }
-    return;
-  }
-
-  // production renderers don't expose overrideHookState; dispatching through
-  // the hook's own queue still works there, but only for whole-value writes
-  // (a path write through dispatch would replace the entire hook state)
-  if (isPOJO(partialValue)) return;
-  const dispatch = getHookStateDispatch(fiber, id);
-  if (!dispatch) return;
-  try {
-    dispatch(partialValue);
-  } catch {}
-};
-
-export const overrideContext = (fiber: Fiber, contextType: unknown, partialValue: unknown) => {
-  const providerFiber = findContextProviderFiber(fiber, contextType);
-  if (!providerFiber) return;
-  const renderers = resolveOverrideRenderers(providerFiber);
-  for (const { path, value } of buildValueWrites(partialValue)) {
-    applyPropsOverride(renderers, providerFiber, ["value", ...path], value);
-    if (providerFiber.alternate) {
-      applyPropsOverride(renderers, providerFiber.alternate, ["value", ...path], value);
-    }
-  }
-};
-
 export interface InstrumentationOptions {
   name?: string;
   onActive?: () => unknown;
@@ -997,8 +654,6 @@ interface HookDispatchers {
 
 const hookDispatchers = new WeakMap<ReactDevToolsGlobalHook, Partial<HookDispatchers>>();
 let didSubscribeToHookReplacements = false;
-
-const rootRendererIds = new WeakMap<FiberRoot, number>();
 
 // each hook event is dispatched from a single re-installable wrapper. If
 // something overwrites the hook method (devtools, direct assignment), the
@@ -1123,6 +778,18 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
   }
 };
 
+const wireHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
+  if (!didSubscribeToHookReplacements) {
+    onRDTHookReplace(setHookEventDispatchers);
+    didSubscribeToHookReplacements = true;
+  }
+  setHookEventDispatchers(rdtHook);
+};
+
+if (hasRDTHook()) {
+  wireHookEventDispatchers(getRDTHook());
+}
+
 /**
  * Instruments the DevTools hook. Each hook event is patched once and
  * dispatches to a set of listeners, so multiple `instrument` calls compose
@@ -1142,15 +809,9 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
  */
 export const instrument = (options: InstrumentationOptions): Unsubscribe => {
   const rdtHook = getRDTHook(options.onActive);
-
-  if (!didSubscribeToHookReplacements) {
-    onRDTHookReplace(setHookEventDispatchers);
-    didSubscribeToHookReplacements = true;
-  }
-
   rdtHook._instrumentationSource = options.name ?? BIPPY_INSTRUMENTATION_STRING;
 
-  setHookEventDispatchers(rdtHook);
+  wireHookEventDispatchers(rdtHook);
   const subscription: InstrumentationSubscription = { options };
   instrumentationSubscriptions.add(subscription);
 
@@ -1199,7 +860,7 @@ const getPublicHostInstance = (stateNode: unknown): unknown => {
   return typeof nativeTag === "number" ? nativeTag : stateNode;
 };
 
-export const getFiberFromHostInstance = <T>(hostInstance: T): Fiber | null => {
+export const getFiber = <T>(hostInstance: T): Fiber | null => {
   const rdtHook = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
   if (rdtHook?.renderers) {
     for (const renderer of rdtHook.renderers.values()) {
@@ -1249,6 +910,8 @@ export const getFiberFromHostInstance = <T>(hostInstance: T): Fiber | null => {
   return null;
 };
 
+export const getFiberFromHostInstance = getFiber;
+
 export {
   BIPPY_INSTRUMENTATION_STRING,
   _onActiveListeners,
@@ -1262,4 +925,4 @@ export {
   version,
 } from "./rdt-hook.js";
 export type { Unsubscribe } from "./rdt-hook.js";
-export type * from "./react-internals/index.js";
+export * from "./react-internals/index.js";

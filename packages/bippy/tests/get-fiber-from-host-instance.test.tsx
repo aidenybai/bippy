@@ -4,7 +4,13 @@ import * as ReactThreeTestRenderer from "@react-three/test-renderer";
 import { render, screen } from "@testing-library/react";
 import React from "react";
 import { expect, it } from "vite-plus/test";
-import { getFiberFromHostInstance, getRDTHook, instrument, traverseFiber } from "../src/index.js";
+import {
+  getFiber,
+  getFiberFromHostInstance,
+  getRDTHook,
+  instrument,
+  traverseFiber,
+} from "../src/index.js";
 import type { Fiber, FiberRoot, ReactRenderer, WorkTag } from "../src/react-internals/index.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
 
@@ -33,9 +39,13 @@ const createMockHostFiber = (stateNode: unknown, type = "RCTView"): MockHostFibe
 
 it("should return the fiber from the host instance", () => {
   render(<div>HostInstance</div>);
-  const fiber = getFiberFromHostInstance(screen.getByText("HostInstance"));
+  const fiber = getFiber(screen.getByText("HostInstance"));
   expect(fiber).not.toBeNull();
   expect(fiber?.type).toBe("div");
+});
+
+it("should preserve getFiberFromHostInstance as an alias", () => {
+  expect(getFiberFromHostInstance).toBe(getFiber);
 });
 
 it("should return null for objects without any fiber reference", () => {

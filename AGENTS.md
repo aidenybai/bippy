@@ -1,6 +1,7 @@
 - NEVER comment unless absolutely necessary.
   - If it's hacky (e.g. a setTimeout or potentially confusing code), prefix with // HACK: reason for hack
 - MUST: Keep code clean, elegant, simple. YAGNI
+- MUST: When implementing anything in this project, clone `facebook/react` locally and search its source to deeply understand the relevant React internals. Do not rely on memory or assumptions.
 - MUST: Use TypeScript interfaces over types
 - MUST: Use arrow functions over function declarations
 - MUST: Use kebab-case for files
