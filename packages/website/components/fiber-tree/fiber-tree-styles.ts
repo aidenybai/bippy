@@ -3,6 +3,8 @@ import { chromeDark } from "react-inspector";
 import { cn } from "@/lib/utils";
 
 const devtoolsMonoFont = "font-[SFMono-Regular,Consolas,'Liberation_Mono',Menlo,Courier,monospace]";
+const devtoolsScrollArea =
+  "[scrollbar-color:#60646c_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:size-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#60646c] hover:[&::-webkit-scrollbar-thumb]:bg-[#777d88]";
 
 Object.assign(chromeDark, {
   ARROW_COLOR: "#8f949d",
@@ -52,13 +54,15 @@ export const fiberTreeClassNames = {
   inspectedElementView: cn(
     "min-h-0 flex-[1_1_0] overflow-x-hidden overflow-y-auto text-[13px] leading-[22px]",
     devtoolsMonoFont,
+    devtoolsScrollArea,
   ),
   inspectedElementWrapper:
-    "min-h-0 min-w-0 flex-[1_1_35%] overflow-x-hidden overflow-y-auto border-l border-[#30343c] @max-[599px]:flex-[1_1_50%] @max-[599px]:border-l-0",
+    "min-h-0 min-w-0 flex-[1_1_35%] overflow-hidden border-l border-[#30343c] @max-[599px]:flex-[1_1_50%] @max-[599px]:border-l-0",
   leftVRule: "mr-1 ml-2 h-5 w-px bg-[#30343c]",
   list: cn(
-    "relative h-full overflow-auto text-[13px] leading-[22px] select-none",
+    "relative h-full overflow-x-hidden overflow-y-auto text-[13px] leading-[22px] select-none",
     devtoolsMonoFont,
+    devtoolsScrollArea,
   ),
   resizeBarWrapper: "relative flex-[0_0_0]",
   searchInput: "flex flex-[1_1_auto] items-center",
