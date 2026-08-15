@@ -1,6 +1,6 @@
 "use client";
 
-import { getFiber, getFiberId, getLatestFiber, type Fiber } from "bippy/core";
+import { getFiber, getFiberId, getLatestFiber, type Fiber } from "bippy";
 import {
   createContext,
   type ReactNode,

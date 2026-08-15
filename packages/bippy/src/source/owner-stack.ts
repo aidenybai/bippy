@@ -1,4 +1,4 @@
-import { getDisplayName, getType, traverseFiber } from "../core-implementation.js";
+import { getDisplayName, getType, traverseFiber } from "../core.js";
 import { getReactWorkTagsForFiber } from "../react-internals/index.js";
 import type {
   Fiber,

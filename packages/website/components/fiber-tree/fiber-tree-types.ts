@@ -1,4 +1,4 @@
-import type { Fiber } from "bippy/core";
+import type { Fiber } from "bippy";
 
 export interface FiberTreeNode {
   depth: number;

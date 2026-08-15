@@ -47,16 +47,6 @@
         "default": "./dist/index.cjs"
       }
     },
-    "./core": {
-      "import": {
-        "types": "./dist/core.d.ts",
-        "default": "./dist/core.js"
-      },
-      "require": {
-        "types": "./dist/core.d.cts",
-        "default": "./dist/core.cjs"
-      }
-    },
     "./install-hook-only": {
       "import": {
         "types": "./dist/install-hook-only.d.ts",

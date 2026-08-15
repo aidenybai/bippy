@@ -1,10 +1,4 @@
-import {
-  getDisplayName,
-  getFiberId,
-  getLatestFiber,
-  isCompositeFiber,
-  type Fiber,
-} from "bippy/core";
+import { getDisplayName, getFiberId, getLatestFiber, isCompositeFiber, type Fiber } from "bippy";
 import type { CSSProperties } from "react";
 
 import type {
