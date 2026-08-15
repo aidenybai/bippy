@@ -24,7 +24,7 @@ const FiberTreeResizeHandle = () => <div className={fiberTreeClassNames.resizeBa
 setFiberTreeDisplayName(FiberTreePanel, "FiberTreePanel");
 setFiberTreeDisplayName(FiberTreeResizeHandle, "FiberTreeResizeHandle");
 
-export const FiberTree = Object.assign(FiberTreeRoot, {
+const FiberTree = Object.assign(FiberTreeRoot, {
   Inspector: FiberTreeInspector,
   List: FiberTreeList,
   Panel: FiberTreePanel,

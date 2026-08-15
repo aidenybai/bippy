@@ -162,6 +162,7 @@ export const getSearchMatch = (name: string, searchText: string): SearchMatch | 
 
   if (searchText.startsWith("/") && searchText.endsWith("/") && searchText.length > 2) {
     try {
+      // react-doctor-disable-next-line react-doctor/no-unescaped-dynamic-string-in-regexp -- /regex/ search syntax is intentional
       const match = name.match(new RegExp(searchText.slice(1, -1), "i"));
       if (match?.index !== undefined && match[0].length > 0) {
         return { start: match.index, end: match.index + match[0].length };

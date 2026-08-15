@@ -24,4 +24,4 @@ const Link = ({ className, variant = "default", ...props }: LinkProps) => (
   <a data-slot="link" className={cn(linkVariants({ variant, className }))} {...props} />
 );
 
-export { Link, linkVariants };
+export { Link };

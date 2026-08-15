@@ -1,56 +1,51 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
 import { useFiberTree } from "./fiber-tree-context";
 import { getSearchMatch } from "./fiber-tree-model";
 import { fiberTreeClassNames, setFiberTreeDisplayName } from "./fiber-tree-styles";
-import type { FiberTreeNode } from "./fiber-tree-types";
 
-interface FiberTreeRowProps extends FiberTreeNode {
+interface FiberTreeRowProps {
+  collapseState: "collapsed" | "expanded" | "leaf";
   currentSearchText: string;
+  depth: number;
   indentationSize: number;
-  isCollapsed: boolean;
-  isCurrentSearchResult: boolean;
-  isSearchResult: boolean;
   isSelected: boolean;
+  name: string;
   onSelect: () => void;
   onToggle: () => void;
+  searchMatchState: "current" | "match" | null;
 }
 
 interface FiberDisplayNameProps {
-  isCurrentSearchResult: boolean;
-  isSearchResult: boolean;
+  matchState: "current" | "match" | null;
   name: string;
   searchText: string;
 }
 
 interface ExpandCollapseToggleProps {
-  isCollapsed: boolean;
+  collapseState: "collapsed" | "expanded" | "leaf";
   isSelected: boolean;
-  isVisible: boolean;
   onToggle: () => void;
 }
 
 const maximumIndentationSize = 12;
 const minimumIndentationSize = 4;
 
-const FiberDisplayName = ({
-  isCurrentSearchResult,
-  isSearchResult,
-  name,
-  searchText,
-}: FiberDisplayNameProps) => {
-  const match = isSearchResult ? getSearchMatch(name, searchText) : null;
+const FiberDisplayName = ({ matchState, name, searchText }: FiberDisplayNameProps) => {
+  const match = matchState ? getSearchMatch(name, searchText) : null;
   if (!match) return name;
 
   return (
     <>
       {name.slice(0, match.start)}
       <span
-        className={isCurrentSearchResult ? fiberTreeClassNames.currentHighlight : "bg-yellow-300"}
+        className={
+          matchState === "current" ? fiberTreeClassNames.currentHighlight : "bg-yellow-300"
+        }
       >
         {name.slice(match.start, match.end)}
       </span>
@@ -60,12 +55,11 @@ const FiberDisplayName = ({
 };
 
 const ExpandCollapseToggle = ({
-  isCollapsed,
+  collapseState,
   isSelected,
-  isVisible,
   onToggle,
 }: ExpandCollapseToggleProps) => {
-  if (!isVisible) {
+  if (collapseState === "leaf") {
     return <span className={fiberTreeClassNames.expandCollapseToggle} aria-hidden="true" />;
   }
 
@@ -73,7 +67,7 @@ const ExpandCollapseToggle = ({
     <button
       type="button"
       className={cn(fiberTreeClassNames.expandCollapseToggle, isSelected && "text-white")}
-      aria-label={isCollapsed ? "Expand subtree" : "Collapse subtree"}
+      aria-label={collapseState === "collapsed" ? "Expand subtree" : "Collapse subtree"}
       onClick={(event) => {
         event.stopPropagation();
         onToggle();
@@ -81,30 +75,31 @@ const ExpandCollapseToggle = ({
     >
       <svg className={fiberTreeClassNames.buttonIcon} width="24" height="24" viewBox="0 0 24 24">
         <path d="M0 0h24v24H0z" fill="none" />
-        <path d={isCollapsed ? "M10 17l5-5-5-5v10z" : "M7 10l5 5 5-5z"} fill="currentColor" />
+        <path
+          d={collapseState === "collapsed" ? "M10 17l5-5-5-5v10z" : "M7 10l5 5 5-5z"}
+          fill="currentColor"
+        />
       </svg>
     </button>
   );
 };
 
 const FiberTreeRow = ({
+  collapseState,
   currentSearchText,
   depth,
-  hasChildren,
   indentationSize,
-  isCollapsed,
-  isCurrentSearchResult,
-  isSearchResult,
   isSelected,
   name,
   onSelect,
   onToggle,
+  searchMatchState,
 }: FiberTreeRowProps) => (
   <div
     className={cn(fiberTreeClassNames.element, isSelected && fiberTreeClassNames.selectedElement)}
     data-fiber-depth={depth}
     role="treeitem"
-    aria-expanded={hasChildren ? !isCollapsed : undefined}
+    aria-expanded={collapseState === "leaf" ? undefined : collapseState === "expanded"}
     aria-selected={isSelected}
     tabIndex={0}
     onClick={onSelect}
@@ -120,17 +115,11 @@ const FiberTreeRow = ({
       style={{ transform: `translateX(${depth * indentationSize}px)` }}
     >
       <ExpandCollapseToggle
-        isCollapsed={isCollapsed}
+        collapseState={collapseState}
         isSelected={isSelected}
-        isVisible={hasChildren}
         onToggle={onToggle}
       />
-      <FiberDisplayName
-        isCurrentSearchResult={isCurrentSearchResult}
-        isSearchResult={isSearchResult}
-        name={name}
-        searchText={currentSearchText}
-      />
+      <FiberDisplayName matchState={searchMatchState} name={name} searchText={currentSearchText} />
     </div>
   </div>
 );
@@ -182,6 +171,10 @@ export const FiberTreeList = () => {
   const indentationSizeValue = useRef(maximumIndentationSize);
   const listElement = useRef<HTMLDivElement>(null);
   const previousListWidth = useRef(0);
+  const searchResultFiberIdSet = useMemo(
+    () => new Set(searchResultFiberIds),
+    [searchResultFiberIds],
+  );
 
   useLayoutEffect(() => {
     const currentListElement = listElement.current;
@@ -226,7 +219,7 @@ export const FiberTreeList = () => {
   }, [effectiveSelectedFiberId, selectionRequestCount]);
 
   return (
-    <div className={fiberTreeClassNames.autoSizerWrapper} tabIndex={0}>
+    <div className={fiberTreeClassNames.autoSizerWrapper}>
       <div
         ref={listElement}
         className={fiberTreeClassNames.list}
@@ -235,20 +228,34 @@ export const FiberTreeList = () => {
         data-fiber-inspection-boundary
       >
         {visibleFiberNodes.length > 0 ? (
-          visibleFiberNodes.map((fiberTreeNode) => (
-            <FiberTreeRow
-              key={fiberTreeNode.fiberId}
-              {...fiberTreeNode}
-              currentSearchText={searchText}
-              indentationSize={indentationSize}
-              isCollapsed={collapsedFiberIds.has(fiberTreeNode.fiberId)}
-              isCurrentSearchResult={fiberTreeNode.fiberId === currentSearchResultFiberId}
-              isSearchResult={searchResultFiberIds.includes(fiberTreeNode.fiberId)}
-              isSelected={fiberTreeNode.fiberId === effectiveSelectedFiberId}
-              onSelect={() => selectFiber(fiberTreeNode.fiberId)}
-              onToggle={() => toggleFiber(fiberTreeNode.fiberId)}
-            />
-          ))
+          visibleFiberNodes.map((fiberTreeNode) => {
+            const collapseState = !fiberTreeNode.hasChildren
+              ? "leaf"
+              : collapsedFiberIds.has(fiberTreeNode.fiberId)
+                ? "collapsed"
+                : "expanded";
+            const searchMatchState =
+              fiberTreeNode.fiberId === currentSearchResultFiberId
+                ? "current"
+                : searchResultFiberIdSet.has(fiberTreeNode.fiberId)
+                  ? "match"
+                  : null;
+
+            return (
+              <FiberTreeRow
+                key={fiberTreeNode.fiberId}
+                collapseState={collapseState}
+                currentSearchText={searchText}
+                depth={fiberTreeNode.depth}
+                indentationSize={indentationSize}
+                isSelected={fiberTreeNode.fiberId === effectiveSelectedFiberId}
+                name={fiberTreeNode.name}
+                onSelect={() => selectFiber(fiberTreeNode.fiberId)}
+                onToggle={() => toggleFiber(fiberTreeNode.fiberId)}
+                searchMatchState={searchMatchState}
+              />
+            );
+          })
         ) : (
           <FiberTreeSkeleton />
         )}

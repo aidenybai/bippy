@@ -50,4 +50,4 @@ const Button = ({ className, variant = "default", size = "default", ...props }: 
   />
 );
 
-export { Button, buttonVariants };
+export { Button };

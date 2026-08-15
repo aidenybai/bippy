@@ -32,18 +32,14 @@ const Page = () => (
       <Button
         size="lg"
         nativeButton={false}
-        render={<a href="https://github.com/aidenybai/bippy#install-bippy" />}
-      >
-        Get started
-      </Button>
+        render={<a href="https://github.com/aidenybai/bippy#install-bippy">Get started</a>}
+      />
       <Button
         variant="secondary"
         size="lg"
         nativeButton={false}
-        render={<a href="https://npmjs.com/package/bippy" />}
-      >
-        npm install bippy
-      </Button>
+        render={<a href="https://npmjs.com/package/bippy">npm install bippy</a>}
+      />
     </div>
   </main>
 );

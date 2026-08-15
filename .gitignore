@@ -5,4 +5,5 @@ dist
 **/*.tgz
 coverage
 .next
+next-env.d.ts
 *.tsbuildinfo

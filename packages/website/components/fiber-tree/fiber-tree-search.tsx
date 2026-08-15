@@ -87,10 +87,11 @@ export const FiberTreeSearch = ({ children }: FiberTreeSearchProps) => {
                 size={1}
                 value={searchResultFiberIds.length > 0 ? searchResultIndex + 1 : 0}
                 onChange={(event) => {
-                  const nextResultIndex = Number(event.currentTarget.value) - 1;
-                  if (Number.isInteger(nextResultIndex)) {
-                    setCurrentSearchResult(nextResultIndex);
-                  }
+                  const resultNumberText = event.currentTarget.value;
+                  if (!resultNumberText) return;
+                  const resultNumber = Number(resultNumberText);
+                  if (!Number.isInteger(resultNumber)) return;
+                  setCurrentSearchResult(resultNumber - 1);
                 }}
               />
               {` | ${searchResultFiberIds.length}`}
