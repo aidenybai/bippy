@@ -794,25 +794,66 @@ const FiberResizeHandle = () => (
 );
 
 const FiberTreeSkeleton = () => (
-  <div className="space-y-2 px-3 py-2 motion-safe:animate-pulse" role="status">
+  <div className="motion-safe:[&_span]:animate-pulse" role="status">
     <span className="sr-only">Reading Fiber tree…</span>
-    <div className="h-3 w-1/3 rounded-sm bg-neutral-800" />
-    <div className="ml-3 h-3 w-2/5 rounded-sm bg-neutral-800" />
-    <div className="ml-6 h-3 w-1/2 rounded-sm bg-neutral-800" />
-    <div className="ml-9 h-3 w-1/3 rounded-sm bg-neutral-800" />
-    <div className="ml-6 h-3 w-3/5 rounded-sm bg-neutral-800" />
-    <div className="ml-9 h-3 w-2/5 rounded-sm bg-neutral-800" />
+    <div className="flex h-[22px] items-center bg-[#178fb9] px-1">
+      <span className="mx-1 size-2 rounded-[2px] bg-[rgba(255,255,255,0.4)]" />
+      <span className="h-2.5 w-32 rounded-[2px] bg-[rgba(255,255,255,0.4)]" />
+    </div>
+    <div className="flex h-[22px] items-center px-1 pl-2">
+      <span className="mx-1 size-2 rounded-[2px] bg-[rgba(143,148,157,0.4)]" />
+      <span className="h-2.5 w-8 rounded-[2px] bg-[rgba(97,218,251,0.28)]" />
+    </div>
+    <div className="flex h-[22px] items-center px-1 pl-3">
+      <span className="mx-1 size-2 rounded-[2px] bg-[rgba(143,148,157,0.4)]" />
+      <span className="h-2.5 w-20 rounded-[2px] bg-[rgba(97,218,251,0.28)]" />
+    </div>
+    <div className="flex h-[22px] items-center px-1 pl-4">
+      <span className="mx-1 size-2 rounded-[2px] bg-[rgba(143,148,157,0.4)]" />
+      <span className="h-2.5 w-16 rounded-[2px] bg-[rgba(97,218,251,0.28)]" />
+    </div>
+    <div className="flex h-[22px] items-center px-1 pl-5">
+      <span className="mx-1 size-2 rounded-[2px] bg-[rgba(143,148,157,0.4)]" />
+      <span className="h-2.5 w-24 rounded-[2px] bg-[rgba(97,218,251,0.28)]" />
+    </div>
+    <div className="flex h-[22px] items-center px-1 pl-6">
+      <span className="mx-1 size-2 rounded-[2px] bg-[rgba(143,148,157,0.4)]" />
+      <span className="h-2.5 w-36 rounded-[2px] bg-[rgba(97,218,251,0.28)]" />
+    </div>
   </div>
 );
 
 const FiberInspectorSkeleton = () => (
-  <div className="space-y-3 motion-safe:animate-pulse" role="status">
+  <div className="motion-safe:[&_span]:animate-pulse" role="status">
     <span className="sr-only">Reading Fiber details…</span>
-    <div className="h-3 w-1/3 rounded-sm bg-neutral-800" />
-    <div className="ml-3 h-3 w-3/4 rounded-sm bg-neutral-800" />
-    <div className="ml-3 h-3 w-1/2 rounded-sm bg-neutral-800" />
-    <div className="h-3 w-2/5 rounded-sm bg-neutral-800" />
-    <div className="ml-3 h-3 w-2/3 rounded-sm bg-neutral-800" />
+    <section className="border-b border-[#30343c] p-1">
+      <div className="flex h-[22px] items-center">
+        <span className="h-2.5 w-10 rounded-[2px] bg-[rgba(255,255,255,0.28)]" />
+      </div>
+      <div className="flex h-[22px] items-center gap-2 pl-2">
+        <span className="h-2.5 w-12 rounded-[2px] bg-[rgba(237,237,237,0.24)]" />
+        <span className="h-2.5 w-16 rounded-[2px] bg-[rgba(206,218,224,0.2)]" />
+      </div>
+      <div className="flex h-[22px] items-center gap-2 pl-2">
+        <span className="h-2.5 w-16 rounded-[2px] bg-[rgba(237,237,237,0.24)]" />
+        <span className="h-2.5 w-20 rounded-[2px] bg-[rgba(206,218,224,0.2)]" />
+      </div>
+    </section>
+    <section className="border-b border-[#30343c] p-1">
+      <div className="flex h-[22px] items-center">
+        <span className="h-2.5 w-10 rounded-[2px] bg-[rgba(255,255,255,0.28)]" />
+      </div>
+      <div className="flex h-[22px] items-center gap-2">
+        <span className="h-5 w-[22px] rounded-[2px] bg-[rgba(0,0,0,0.25)]" />
+        <span className="h-2.5 w-12 rounded-[2px] bg-[rgba(97,218,251,0.28)]" />
+        <span className="h-2.5 w-14 rounded-[2px] bg-[rgba(206,218,224,0.2)]" />
+      </div>
+    </section>
+    <div className="flex h-[30px] items-center gap-2 p-1">
+      <span className="size-2 rounded-[2px] bg-[rgba(143,148,157,0.4)]" />
+      <span className="h-2.5 w-10 rounded-[2px] bg-[rgba(237,237,237,0.24)]" />
+      <span className="h-2.5 w-24 rounded-[2px] bg-[rgba(119,125,136,0.28)]" />
+    </div>
   </div>
 );
 
