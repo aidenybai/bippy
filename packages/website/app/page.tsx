@@ -21,10 +21,9 @@ const Page = () => (
     <h1>bippy hacks into React internals.</h1>
 
     <p>
-      React normally keeps its{" "}
-      <Link href="https://youtu.be/ZCuYPiUIONs">Fiber tree</Link> out of reach.
-      bippy gives you escape hatches to inspect components, track renders, and
-      access the renderer directly.
+      React normally keeps its <Link href="https://youtu.be/ZCuYPiUIONs">Fiber tree</Link> out of
+      reach. bippy gives you escape hatches to inspect components, track renders, and access the
+      renderer directly.
     </p>
 
     <FiberTree />

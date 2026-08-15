@@ -133,14 +133,12 @@ interface InspectorValueProps {
 
 const maximumIndentationSize = 12;
 const minimumIndentationSize = 4;
-const devtoolsMonoFont =
-  "font-[SFMono-Regular,Consolas,'Liberation_Mono',Menlo,Courier,monospace]";
+const devtoolsMonoFont = "font-[SFMono-Regular,Consolas,'Liberation_Mono',Menlo,Courier,monospace]";
 Object.assign(chromeDark, {
   ARROW_COLOR: "#8f949d",
   BASE_BACKGROUND_COLOR: "transparent",
   BASE_COLOR: "#ffffff",
-  BASE_FONT_FAMILY:
-    '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace',
+  BASE_FONT_FAMILY: '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace',
   BASE_FONT_SIZE: "13px",
   OBJECT_NAME_COLOR: "#ededed",
   OBJECT_VALUE_BOOLEAN_COLOR: "#cedae0",
@@ -151,21 +149,19 @@ Object.assign(chromeDark, {
   OBJECT_VALUE_STRING_COLOR: "#cedae0",
   OBJECT_VALUE_SYMBOL_COLOR: "#cedae0",
   OBJECT_VALUE_UNDEFINED_COLOR: "#777d88",
-  TREENODE_FONT_FAMILY:
-    '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace',
+  TREENODE_FONT_FAMILY: '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace',
   TREENODE_FONT_SIZE: "13px",
   TREENODE_LINE_HEIGHT: 1.69,
 });
 const fiberTreeClassNames = {
-  autoSizerWrapper:
-    "min-h-0 w-full flex-[1_1_0] overflow-hidden focus:outline-none",
+  autoSizerWrapper: "min-h-0 w-full flex-[1_1_0] overflow-hidden focus:outline-none",
   button:
     "m-0 flex-[0_0_auto] cursor-pointer rounded border-0 bg-[#1b1d23] p-0 text-[#afb3b9] hover:bg-[rgba(255,255,255,0.2)] hover:text-[#ededed] active:text-[#61dafb] focus:outline-none disabled:cursor-default disabled:bg-[#1b1d23] disabled:text-[#4f5766] [&:focus>span]:bg-[#30343c]",
   buttonContent: "inline-flex items-center rounded p-1 focus:outline-none",
   buttonIcon: "size-4 fill-current",
   componentName: cn(
     "max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-[13px] text-[#61dafb]",
-    devtoolsMonoFont
+    devtoolsMonoFont,
   ),
   components:
     "relative flex h-80 w-full flex-row overflow-hidden border border-[#30343c] bg-[#1b1d23] font-sans leading-normal text-white [-webkit-font-smoothing:auto] [&_*]:box-border [&_*]:[-webkit-font-smoothing:auto] @max-[599px]:h-[420px] @max-[599px]:flex-col",
@@ -184,27 +180,23 @@ const fiberTreeClassNames = {
   inspectedElement: "flex h-full min-h-0 w-full flex-col",
   inspectedElementView: cn(
     "min-h-0 flex-[1_1_0] overflow-x-hidden overflow-y-auto text-[13px] leading-[22px]",
-    devtoolsMonoFont
+    devtoolsMonoFont,
   ),
   inspectedElementWrapper:
     "min-h-0 min-w-0 flex-[1_1_35%] overflow-x-hidden overflow-y-auto border-l border-[#30343c] @max-[599px]:flex-[1_1_50%] @max-[599px]:border-l-0",
   leftVRule: "mr-1 ml-2 h-5 w-px bg-[#30343c]",
   list: cn(
     "relative h-full overflow-auto text-[13px] leading-[22px] select-none",
-    devtoolsMonoFont
+    devtoolsMonoFont,
   ),
   resizeBarWrapper: "relative flex-[0_0_0]",
   searchInput: "flex flex-[1_1_auto] items-center",
-  selectedComponentName:
-    "flex h-full flex-[1_1_auto] items-end overflow-hidden py-1",
+  selectedComponentName: "flex h-full flex-[1_1_auto] items-end overflow-hidden py-1",
   selectedElement: "bg-[#178fb9] text-white hover:bg-[#178fb9]",
-  titleRow:
-    "flex flex-[0_0_42px] items-center border-b border-[#30343c] p-2 text-[17px]",
+  titleRow: "flex flex-[0_0_42px] items-center border-b border-[#30343c] p-2 text-[17px]",
   tree: "relative flex h-full min-h-0 w-full flex-col",
-  treeSearchInput:
-    "flex flex-[0_0_42px] items-center border-b border-[#30343c] p-2",
-  treeWrapper:
-    "min-h-0 min-w-0 flex-[0_0_65%] overflow-hidden @max-[599px]:flex-[0_0_50%]",
+  treeSearchInput: "flex flex-[0_0_42px] items-center border-b border-[#30343c] p-2",
+  treeWrapper: "min-h-0 min-w-0 flex-[0_0_65%] overflow-hidden @max-[599px]:flex-[0_0_50%]",
   wrapper:
     "relative inline-flex h-[22px] cursor-default items-center px-1 leading-[22px] whitespace-pre select-none",
 };
@@ -213,8 +205,7 @@ const setDisplayName = (component: object, displayName: string): void => {
   Reflect.set(component, "displayName", displayName);
 };
 
-const getFiberName = (fiber: Fiber): string | null =>
-  getDisplayName(fiber.type);
+const getFiberName = (fiber: Fiber): string | null => getDisplayName(fiber.type);
 
 const getIsRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -245,8 +236,7 @@ const getStateEntries = (fiber: Fiber): InspectorEntry[] => {
     hook = hook.next;
   }
 
-  if (stateEntries.length > 0 || fiber.memoizedState === null)
-    return stateEntries;
+  if (stateEntries.length > 0 || fiber.memoizedState === null) return stateEntries;
   return [{ label: "State", value: fiber.memoizedState }];
 };
 
@@ -263,8 +253,7 @@ const getInspectableFiber = (fiber: Fiber): Fiber => {
   let currentFiber: Fiber | null = latestFiber;
 
   while (currentFiber) {
-    if (isCompositeFiber(currentFiber) && getFiberName(currentFiber))
-      return currentFiber;
+    if (isCompositeFiber(currentFiber) && getFiberName(currentFiber)) return currentFiber;
     currentFiber = currentFiber.return;
   }
 
@@ -288,8 +277,7 @@ const getEventElement = (event: Event): Element | null => {
   return target instanceof Element ? target : null;
 };
 
-const getStyleNumber = (value: string): number =>
-  Number.parseInt(value, 10) || 0;
+const getStyleNumber = (value: string): number => Number.parseInt(value, 10) || 0;
 
 const getElementBoxDimensions = (element: Element): ElementBoxDimensions => {
   const style = window.getComputedStyle(element);
@@ -313,7 +301,7 @@ const getBorderWidths = (
   top: number,
   right: number,
   bottom: number,
-  left: number
+  left: number,
 ): CSSProperties => ({
   borderBottomWidth: bottom,
   borderLeftWidth: left,
@@ -324,13 +312,12 @@ const getBorderWidths = (
 const getOverlayTipPosition = (
   overlayBox: ElementOverlayBox,
   tipWidth: number,
-  tipHeight: number
+  tipHeight: number,
 ): OverlayTipPosition => {
   const { dimensions, rect } = overlayBox;
   const outerTop = rect.top - dimensions.marginTop;
   const outerLeft = rect.left - dimensions.marginLeft;
-  const outerHeight =
-    rect.height + dimensions.marginTop + dimensions.marginBottom;
+  const outerHeight = rect.height + dimensions.marginTop + dimensions.marginBottom;
   const minimumTipHeight = Math.max(tipHeight, 20);
   const minimumTipWidth = Math.max(tipWidth, 60);
   const margin = 5;
@@ -343,7 +330,7 @@ const getOverlayTipPosition = (
   return {
     left: Math.min(
       Math.max(margin, outerLeft + margin),
-      window.innerWidth - minimumTipWidth - margin
+      window.innerWidth - minimumTipWidth - margin,
     ),
     top,
   };
@@ -352,19 +339,12 @@ const getOverlayTipPosition = (
 const getIsInspectionBoundary = (fiber: Fiber): boolean =>
   typeof fiber.memoizedProps === "object" &&
   fiber.memoizedProps !== null &&
-  Object.prototype.hasOwnProperty.call(
-    fiber.memoizedProps,
-    "data-fiber-inspection-boundary"
-  );
+  Object.prototype.hasOwnProperty.call(fiber.memoizedProps, "data-fiber-inspection-boundary");
 
 const getFiberTreeNodes = (rootFiber: Fiber): FiberTreeNode[] => {
   const fiberTreeNodes: FiberTreeNode[] = [];
 
-  const addFiber = (
-    fiber: Fiber,
-    depth: number,
-    parentFiberId: string | null
-  ): void => {
+  const addFiber = (fiber: Fiber, depth: number, parentFiberId: string | null): void => {
     const name = getFiberName(fiber);
     const fiberId = name ? String(getFiberId(fiber)) : parentFiberId;
     const nodeIndex = name ? fiberTreeNodes.length : -1;
@@ -392,8 +372,7 @@ const getFiberTreeNodes = (rootFiber: Fiber): FiberTreeNode[] => {
     }
 
     if (nodeIndex >= 0) {
-      fiberTreeNodes[nodeIndex].hasChildren =
-        fiberTreeNodes.length > childStartIndex;
+      fiberTreeNodes[nodeIndex].hasChildren = fiberTreeNodes.length > childStartIndex;
     }
   };
 
@@ -403,22 +382,19 @@ const getFiberTreeNodes = (rootFiber: Fiber): FiberTreeNode[] => {
 
 const getFiberNode = (
   fiberTreeNodes: FiberTreeNode[],
-  fiberId: string
-): FiberTreeNode | undefined =>
-  fiberTreeNodes.find((fiberNode) => fiberNode.fiberId === fiberId);
+  fiberId: string,
+): FiberTreeNode | undefined => fiberTreeNodes.find((fiberNode) => fiberNode.fiberId === fiberId);
 
 const getIsDescendant = (
   fiberTreeNodes: FiberTreeNode[],
   fiberId: string,
-  ancestorFiberId: string
+  ancestorFiberId: string,
 ): boolean => {
-  let parentFiberId =
-    getFiberNode(fiberTreeNodes, fiberId)?.parentFiberId ?? null;
+  let parentFiberId = getFiberNode(fiberTreeNodes, fiberId)?.parentFiberId ?? null;
 
   while (parentFiberId) {
     if (parentFiberId === ancestorFiberId) return true;
-    parentFiberId =
-      getFiberNode(fiberTreeNodes, parentFiberId)?.parentFiberId ?? null;
+    parentFiberId = getFiberNode(fiberTreeNodes, parentFiberId)?.parentFiberId ?? null;
   }
 
   return false;
@@ -426,31 +402,23 @@ const getIsDescendant = (
 
 const getVisibleFiberNodes = (
   fiberTreeNodes: FiberTreeNode[],
-  collapsedFiberIds: Set<string>
+  collapsedFiberIds: Set<string>,
 ): FiberTreeNode[] =>
   fiberTreeNodes.filter((fiberNode) => {
     let parentFiberId = fiberNode.parentFiberId;
 
     while (parentFiberId) {
       if (collapsedFiberIds.has(parentFiberId)) return false;
-      parentFiberId =
-        getFiberNode(fiberTreeNodes, parentFiberId)?.parentFiberId ?? null;
+      parentFiberId = getFiberNode(fiberTreeNodes, parentFiberId)?.parentFiberId ?? null;
     }
 
     return true;
   });
 
-const getSearchMatch = (
-  name: string,
-  searchText: string
-): SearchMatch | null => {
+const getSearchMatch = (name: string, searchText: string): SearchMatch | null => {
   if (!searchText) return null;
 
-  if (
-    searchText.startsWith("/") &&
-    searchText.endsWith("/") &&
-    searchText.length > 2
-  ) {
+  if (searchText.startsWith("/") && searchText.endsWith("/") && searchText.length > 2) {
     try {
       const match = name.match(new RegExp(searchText.slice(1, -1), "i"));
       if (match?.index !== undefined && match[0].length > 0) {
@@ -482,10 +450,7 @@ const SearchIcon = () => (
   </svg>
 );
 
-const ElementPickerToggle = ({
-  isInspecting,
-  onChange,
-}: ElementPickerToggleProps) => (
+const ElementPickerToggle = ({ isInspecting, onChange }: ElementPickerToggleProps) => (
   <button
     className={cn(fiberTreeClassNames.button, isInspecting && "text-[#61dafb]")}
     type="button"
@@ -514,18 +479,9 @@ const ElementPickerToggle = ({
 );
 
 const SearchButton = ({ icon, label, onClick }: SearchButtonProps) => (
-  <button
-    className={fiberTreeClassNames.button}
-    type="button"
-    aria-label={label}
-    onClick={onClick}
-  >
+  <button className={fiberTreeClassNames.button} type="button" aria-label={label} onClick={onClick}>
     <span className={fiberTreeClassNames.buttonContent}>
-      <svg
-        className={fiberTreeClassNames.icon}
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
+      <svg className={fiberTreeClassNames.icon} viewBox="0 0 24 24" aria-hidden="true">
         <path d={searchButtonPaths[icon]} />
       </svg>
     </span>
@@ -545,11 +501,7 @@ const FiberDisplayName = ({
     <>
       {name.slice(0, match.start)}
       <span
-        className={
-          isCurrentSearchResult
-            ? fiberTreeClassNames.currentHighlight
-            : "bg-yellow-300"
-        }
+        className={isCurrentSearchResult ? fiberTreeClassNames.currentHighlight : "bg-yellow-300"}
       >
         {name.slice(match.start, match.end)}
       </span>
@@ -565,38 +517,22 @@ const ExpandCollapseToggle = ({
   onToggle,
 }: ExpandCollapseToggleProps) => {
   if (!isVisible) {
-    return (
-      <span
-        className={fiberTreeClassNames.expandCollapseToggle}
-        aria-hidden="true"
-      />
-    );
+    return <span className={fiberTreeClassNames.expandCollapseToggle} aria-hidden="true" />;
   }
 
   return (
     <button
       type="button"
-      className={cn(
-        fiberTreeClassNames.expandCollapseToggle,
-        isSelected && "text-white"
-      )}
+      className={cn(fiberTreeClassNames.expandCollapseToggle, isSelected && "text-white")}
       aria-label={isCollapsed ? "Expand subtree" : "Collapse subtree"}
       onClick={(event) => {
         event.stopPropagation();
         onToggle();
       }}
     >
-      <svg
-        className={fiberTreeClassNames.buttonIcon}
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-      >
+      <svg className={fiberTreeClassNames.buttonIcon} width="24" height="24" viewBox="0 0 24 24">
         <path d="M0 0h24v24H0z" fill="none" />
-        <path
-          d={isCollapsed ? "M10 17l5-5-5-5v10z" : "M7 10l5 5 5-5z"}
-          fill="currentColor"
-        />
+        <path d={isCollapsed ? "M10 17l5-5-5-5v10z" : "M7 10l5 5 5-5z"} fill="currentColor" />
       </svg>
     </button>
   );
@@ -616,10 +552,7 @@ const FiberTreeRow = ({
   onToggle,
 }: FiberTreeRowProps) => (
   <div
-    className={cn(
-      fiberTreeClassNames.element,
-      isSelected && fiberTreeClassNames.selectedElement
-    )}
+    className={cn(fiberTreeClassNames.element, isSelected && fiberTreeClassNames.selectedElement)}
     data-fiber-depth={depth}
     role="treeitem"
     aria-expanded={hasChildren ? !isCollapsed : undefined}
@@ -694,15 +627,10 @@ const InspectorValue = ({ value }: InspectorValueProps) => {
     return <span className="text-[#cedae0]">{String(value)}</span>;
   }
   if (typeof value === "function") {
-    return (
-      <span className="text-[#cedae0]">{`ƒ ${
-        value.name || "anonymous"
-      }()`}</span>
-    );
+    return <span className="text-[#cedae0]">{`ƒ ${value.name || "anonymous"}()`}</span>;
   }
   if (value === null) return <span className="text-[#777d88]">null</span>;
-  if (value === undefined)
-    return <span className="text-[#777d88]">undefined</span>;
+  if (value === undefined) return <span className="text-[#777d88]">undefined</span>;
   if (Array.isArray(value)) {
     return <span className="text-[#cedae0]">{`Array(${value.length})`}</span>;
   }
@@ -710,11 +638,7 @@ const InspectorValue = ({ value }: InspectorValueProps) => {
   return <span className="text-[#cedae0]">{getObjectName(value)}</span>;
 };
 
-const InspectorSection = ({
-  entries,
-  showIndices = false,
-  title,
-}: InspectorSectionProps) => {
+const InspectorSection = ({ entries, showIndices = false, title }: InspectorSectionProps) => {
   if (entries.length === 0) return null;
 
   return (
@@ -722,19 +646,14 @@ const InspectorSection = ({
       <h2 className="font-sans text-[13px] font-medium text-white">{title}</h2>
       <div>
         {entries.map((entry, entryIndex) => (
-          <div
-            key={`${entry.label}-${entryIndex}`}
-            className="flex min-w-0 items-baseline"
-          >
+          <div key={`${entry.label}-${entryIndex}`} className="flex min-w-0 items-baseline">
             {showIndices ? (
               <span className="mr-1 inline-flex min-w-[22px] items-center justify-center rounded-[2px] bg-[rgba(0,0,0,0.25)] px-1 py-0.5 text-[11px] leading-4 text-[rgba(255,255,255,0.7)]">
                 {entryIndex + 1}
               </span>
             ) : null}
             <div className="min-w-0 truncate pl-2">
-              <span
-                className={showIndices ? "text-[#61dafb]" : "text-[#ededed]"}
-              >
+              <span className={showIndices ? "text-[#61dafb]" : "text-[#ededed]"}>
                 {entry.label}
               </span>
               <span className="mr-2 text-white">: </span>
@@ -752,21 +671,13 @@ const FiberInspector = ({ fiberTreeNode }: FiberInspectorProps) => (
     <div className={fiberTreeClassNames.inspectedElement}>
       <header className={fiberTreeClassNames.titleRow}>
         <div className={fiberTreeClassNames.selectedComponentName}>
-          <div className={fiberTreeClassNames.componentName}>
-            {fiberTreeNode?.name ?? "Fiber"}
-          </div>
+          <div className={fiberTreeClassNames.componentName}>{fiberTreeNode?.name ?? "Fiber"}</div>
         </div>
       </header>
-      <div
-        className={fiberTreeClassNames.inspectedElementView}
-        data-fiber-inspection-boundary
-      >
+      <div className={fiberTreeClassNames.inspectedElementView} data-fiber-inspection-boundary>
         {fiberTreeNode ? (
           <div>
-            <InspectorSection
-              title="props"
-              entries={getPropsEntries(fiberTreeNode.fiber)}
-            />
+            <InspectorSection title="props" entries={getPropsEntries(fiberTreeNode.fiber)} />
             <InspectorSection
               title="state"
               entries={getStateEntries(fiberTreeNode.fiber)}
@@ -789,9 +700,7 @@ const FiberInspector = ({ fiberTreeNode }: FiberInspectorProps) => (
   </aside>
 );
 
-const FiberResizeHandle = () => (
-  <div className={fiberTreeClassNames.resizeBarWrapper} />
-);
+const FiberResizeHandle = () => <div className={fiberTreeClassNames.resizeBarWrapper} />;
 
 const FiberTreeSkeleton = () => (
   <div className="motion-safe:[&_span]:animate-pulse" role="status">
@@ -857,10 +766,7 @@ const FiberInspectorSkeleton = () => (
   </div>
 );
 
-const ElementPickerOverlay = ({
-  element,
-  fiberName,
-}: ElementPickerOverlayProps) => {
+const ElementPickerOverlay = ({ element, fiberName }: ElementPickerOverlayProps) => {
   const [overlayBox, setOverlayBox] = useState<ElementOverlayBox | null>(null);
   const [tipPosition, setTipPosition] = useState<OverlayTipPosition>({
     left: 5,
@@ -906,9 +812,7 @@ const ElementPickerOverlay = ({
   useLayoutEffect(() => {
     if (!overlayBox || !tipElement.current) return;
     const tipRect = tipElement.current.getBoundingClientRect();
-    setTipPosition(
-      getOverlayTipPosition(overlayBox, tipRect.width, tipRect.height)
-    );
+    setTipPosition(getOverlayTipPosition(overlayBox, tipRect.width, tipRect.height));
   }, [fiberName, overlayBox]);
 
   if (!element || !overlayBox) return null;
@@ -916,10 +820,8 @@ const ElementPickerOverlay = ({
   const { dimensions, rect } = overlayBox;
   const elementName = element.tagName.toLowerCase();
   const label = fiberName ? `${elementName} (in ${fiberName})` : elementName;
-  const outerWidth =
-    rect.width + dimensions.marginLeft + dimensions.marginRight;
-  const outerHeight =
-    rect.height + dimensions.marginTop + dimensions.marginBottom;
+  const outerWidth = rect.width + dimensions.marginLeft + dimensions.marginRight;
+  const outerHeight = rect.height + dimensions.marginTop + dimensions.marginBottom;
 
   return createPortal(
     <div aria-hidden="true" data-fiber-element-picker-overlay>
@@ -932,7 +834,7 @@ const ElementPickerOverlay = ({
             dimensions.marginTop,
             dimensions.marginRight,
             dimensions.marginBottom,
-            dimensions.marginLeft
+            dimensions.marginLeft,
           ),
         }}
       >
@@ -942,7 +844,7 @@ const ElementPickerOverlay = ({
             dimensions.borderTop,
             dimensions.borderRight,
             dimensions.borderBottom,
-            dimensions.borderLeft
+            dimensions.borderLeft,
           )}
         >
           <div
@@ -951,7 +853,7 @@ const ElementPickerOverlay = ({
               dimensions.paddingTop,
               dimensions.paddingRight,
               dimensions.paddingBottom,
-              dimensions.paddingLeft
+              dimensions.paddingLeft,
             )}
           >
             <div
@@ -963,7 +865,7 @@ const ElementPickerOverlay = ({
                     dimensions.borderTop -
                     dimensions.borderBottom -
                     dimensions.paddingTop -
-                    dimensions.paddingBottom
+                    dimensions.paddingBottom,
                 ),
                 width: Math.max(
                   0,
@@ -971,7 +873,7 @@ const ElementPickerOverlay = ({
                     dimensions.borderLeft -
                     dimensions.borderRight -
                     dimensions.paddingLeft -
-                    dimensions.paddingRight
+                    dimensions.paddingRight,
                 ),
               }}
             />
@@ -983,29 +885,21 @@ const ElementPickerOverlay = ({
         className="pointer-events-none fixed z-[10000000] flex flex-row flex-nowrap rounded-[2px] bg-[#333740] px-[5px] py-[3px] font-[SFMono-Regular,Consolas,'Liberation_Mono',Menlo,Courier,monospace] text-xs font-bold whitespace-nowrap"
         style={tipPosition}
       >
-        <span className="mr-2 border-r border-[#aaa] pr-2 text-[#ee78e6]">
-          {label}
-        </span>
+        <span className="mr-2 border-r border-[#aaa] pr-2 text-[#ee78e6]">{label}</span>
         <span className="text-[#d7d7d7]">{`${Math.round(
-          outerWidth
+          outerWidth,
         )}px × ${Math.round(outerHeight)}px`}</span>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 };
 
 export const FiberTree = () => {
-  const [collapsedFiberIds, setCollapsedFiberIds] = useState(
-    () => new Set<string>()
-  );
+  const [collapsedFiberIds, setCollapsedFiberIds] = useState(() => new Set<string>());
   const [doesPreferReducedMotion, setDoesPreferReducedMotion] = useState(false);
-  const [indentationSize, setIndentationSize] = useState(
-    maximumIndentationSize
-  );
-  const [inspectedPageFiber, setInspectedPageFiber] = useState<Fiber | null>(
-    null
-  );
+  const [indentationSize, setIndentationSize] = useState(maximumIndentationSize);
+  const [inspectedPageFiber, setInspectedPageFiber] = useState<Fiber | null>(null);
   const [isInspectingPage, setIsInspectingPage] = useState(false);
   const [listWidth, setListWidth] = useState(0);
   const [observedFiber, setObservedFiber] = useState<Fiber | null>(null);
@@ -1023,22 +917,22 @@ export const FiberTree = () => {
   const committedFiber = observedFiber ? getLatestFiber(observedFiber) : null;
   const fiberTreeNodes = useMemo(
     () => (committedFiber ? getFiberTreeNodes(committedFiber) : []),
-    [committedFiber, renderCount]
+    [committedFiber, renderCount],
   );
   const visibleFiberNodes = useMemo(
     () => getVisibleFiberNodes(fiberTreeNodes, collapsedFiberIds),
-    [collapsedFiberIds, fiberTreeNodes]
+    [collapsedFiberIds, fiberTreeNodes],
   );
   const isSelectedFiberVisible = visibleFiberNodes.some(
-    (fiberNode) => fiberNode.fiberId === selectedFiberId
+    (fiberNode) => fiberNode.fiberId === selectedFiberId,
   );
   const effectiveSelectedFiberId = inspectedPageFiber
     ? null
     : isSelectedFiberVisible
-    ? selectedFiberId
-    : visibleFiberNodes[0]?.fiberId ?? null;
+      ? selectedFiberId
+      : (visibleFiberNodes[0]?.fiberId ?? null);
   const selectedFiberNode = visibleFiberNodes.find(
-    (fiberNode) => fiberNode.fiberId === effectiveSelectedFiberId
+    (fiberNode) => fiberNode.fiberId === effectiveSelectedFiberId,
   );
   const inspectedPageFiberNode = inspectedPageFiber
     ? getStandaloneFiberTreeNode(inspectedPageFiber)
@@ -1077,10 +971,7 @@ export const FiberTree = () => {
       if (depth <= 0 || !(rowContent instanceof HTMLElement)) continue;
 
       const remainingWidth = Math.max(0, listWidth - rowContent.clientWidth);
-      nextIndentationSize = Math.min(
-        nextIndentationSize,
-        remainingWidth / depth
-      );
+      nextIndentationSize = Math.min(nextIndentationSize, remainingWidth / depth);
     }
 
     nextIndentationSize = Math.max(nextIndentationSize, minimumIndentationSize);
@@ -1119,13 +1010,9 @@ export const FiberTree = () => {
       event.preventDefault();
       event.stopPropagation();
       const hostFiber = getFiber(element);
-      const inspectableFiber = hostFiber
-        ? getInspectableFiber(hostFiber)
-        : null;
+      const inspectableFiber = hostFiber ? getInspectableFiber(hostFiber) : null;
       setPickerElement(element);
-      setPickerFiberName(
-        inspectableFiber ? getFiberName(inspectableFiber) : null
-      );
+      setPickerFiberName(inspectableFiber ? getFiberName(inspectableFiber) : null);
     };
 
     const selectPickerTarget = (event: PointerEvent) => {
@@ -1143,7 +1030,7 @@ export const FiberTree = () => {
         (fiberNode) =>
           fiberNode.fiberId === inspectableFiberId ||
           fiberNode.fiber === inspectableFiber ||
-          fiberNode.fiber.alternate === inspectableFiber
+          fiberNode.fiber.alternate === inspectableFiber,
       );
 
       if (!matchingFiberNode) {
@@ -1157,8 +1044,7 @@ export const FiberTree = () => {
         let parentFiberId = matchingFiberNode.parentFiberId;
         while (parentFiberId) {
           nextFiberIds.delete(parentFiberId);
-          parentFiberId =
-            getFiberNode(fiberTreeNodes, parentFiberId)?.parentFiberId ?? null;
+          parentFiberId = getFiberNode(fiberTreeNodes, parentFiberId)?.parentFiberId ?? null;
         }
         return nextFiberIds;
       });
@@ -1202,16 +1088,12 @@ export const FiberTree = () => {
   }, [fiberTreeNodes, isInspectingPage]);
 
   useEffect(() => {
-    const motionPreference = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    );
-    const updateMotionPreference = () =>
-      setDoesPreferReducedMotion(motionPreference.matches);
+    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updateMotionPreference = () => setDoesPreferReducedMotion(motionPreference.matches);
 
     updateMotionPreference();
     motionPreference.addEventListener("change", updateMotionPreference);
-    return () =>
-      motionPreference.removeEventListener("change", updateMotionPreference);
+    return () => motionPreference.removeEventListener("change", updateMotionPreference);
   }, []);
 
   useEffect(() => {
@@ -1225,9 +1107,7 @@ export const FiberTree = () => {
   }, [doesPreferReducedMotion]);
 
   useEffect(() => {
-    const selectedElement = listElement.current?.querySelector(
-      '[aria-selected="true"]'
-    );
+    const selectedElement = listElement.current?.querySelector('[aria-selected="true"]');
     selectedElement?.scrollIntoView({ block: "nearest" });
   }, [effectiveSelectedFiberId, selectionRequestCount]);
 
@@ -1261,8 +1141,7 @@ export const FiberTree = () => {
   const setCurrentSearchResult = (nextResultIndex: number) => {
     if (searchResultFiberIds.length === 0) return;
     const normalizedResultIndex =
-      (nextResultIndex + searchResultFiberIds.length) %
-      searchResultFiberIds.length;
+      (nextResultIndex + searchResultFiberIds.length) % searchResultFiberIds.length;
     setSearchResultIndex(normalizedResultIndex);
     selectFiber(searchResultFiberIds[normalizedResultIndex]);
   };
@@ -1272,7 +1151,7 @@ export const FiberTree = () => {
     setSearchResultIndex(0);
 
     const firstResult = visibleFiberNodes.find(
-      (fiberNode) => getSearchMatch(fiberNode.name, nextSearchText) !== null
+      (fiberNode) => getSearchMatch(fiberNode.name, nextSearchText) !== null,
     );
     if (firstResult) selectFiber(firstResult.fiberId);
   };
@@ -1289,9 +1168,7 @@ export const FiberTree = () => {
           <FiberSearch>
             <ElementPickerToggle
               isInspecting={isInspectingPage}
-              onChange={() =>
-                setIsInspectingPage((currentValue) => !currentValue)
-              }
+              onChange={() => setIsInspectingPage((currentValue) => !currentValue)}
             />
             <div className={fiberTreeClassNames.leftVRule} />
             <SearchIcon />
@@ -1303,9 +1180,7 @@ export const FiberTree = () => {
               onChange={(event) => updateSearchText(event.currentTarget.value)}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
-                  setCurrentSearchResult(
-                    searchResultIndex + (event.shiftKey ? -1 : 1)
-                  );
+                  setCurrentSearchResult(searchResultIndex + (event.shiftKey ? -1 : 1));
                 } else if (event.key === "Escape") {
                   updateSearchText("");
                 }
@@ -1319,14 +1194,9 @@ export const FiberTree = () => {
                     aria-label="Current search result"
                     inputMode="numeric"
                     size={1}
-                    value={
-                      searchResultFiberIds.length > 0
-                        ? searchResultIndex + 1
-                        : 0
-                    }
+                    value={searchResultFiberIds.length > 0 ? searchResultIndex + 1 : 0}
                     onChange={(event) => {
-                      const nextResultIndex =
-                        Number(event.currentTarget.value) - 1;
+                      const nextResultIndex = Number(event.currentTarget.value) - 1;
                       if (Number.isInteger(nextResultIndex)) {
                         setCurrentSearchResult(nextResultIndex);
                       }
@@ -1362,12 +1232,8 @@ export const FiberTree = () => {
                   currentSearchText={searchText}
                   indentationSize={indentationSize}
                   isCollapsed={collapsedFiberIds.has(fiberNode.fiberId)}
-                  isCurrentSearchResult={
-                    fiberNode.fiberId === currentSearchResultFiberId
-                  }
-                  isSearchResult={searchResultFiberIds.includes(
-                    fiberNode.fiberId
-                  )}
+                  isCurrentSearchResult={fiberNode.fiberId === currentSearchResultFiberId}
+                  isSearchResult={searchResultFiberIds.includes(fiberNode.fiberId)}
                   isSelected={fiberNode.fiberId === effectiveSelectedFiberId}
                   onSelect={() => selectFiber(fiberNode.fiberId)}
                   onToggle={() => toggleFiber(fiberNode.fiberId)}
@@ -1381,10 +1247,7 @@ export const FiberTree = () => {
         <FiberResizeHandle />
         <FiberInspector fiberTreeNode={inspectedFiberNode} />
       </FiberTreeLayout>
-      <ElementPickerOverlay
-        element={pickerElement}
-        fiberName={pickerFiberName}
-      />
+      <ElementPickerOverlay element={pickerElement} fiberName={pickerFiberName} />
     </figure>
   );
 };

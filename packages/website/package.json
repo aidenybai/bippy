@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "pnpm --filter bippy build && next build",
     "start": "next start"
   },
   "dependencies": {
