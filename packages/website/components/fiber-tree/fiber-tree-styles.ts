@@ -57,7 +57,7 @@ export const fiberTreeClassNames = {
     devtoolsScrollArea,
   ),
   inspectedElementWrapper:
-    "min-h-0 min-w-0 flex-[1_1_35%] overflow-hidden border-l border-[#30343c] @max-[599px]:flex-[1_1_50%] @max-[599px]:border-l-0",
+    "min-h-0 min-w-0 flex-[1_1_35%] overflow-hidden border-l border-[#30343c] @max-[599px]:flex-[1_1_50%] @max-[599px]:border-t @max-[599px]:border-l-0",
   leftVRule: "mr-1 ml-2 h-5 w-px bg-[#30343c]",
   list: cn(
     "relative h-full overflow-x-hidden overflow-y-auto text-[13px] leading-[22px] select-none",
