@@ -49,11 +49,11 @@
     },
     "./core": {
       "import": {
-        "types": "./dist/core2.d.ts",
+        "types": "./dist/core.d.ts",
         "default": "./dist/core.js"
       },
       "require": {
-        "types": "./dist/core2.d.cts",
+        "types": "./dist/core.d.cts",
         "default": "./dist/core.cjs"
       }
     },

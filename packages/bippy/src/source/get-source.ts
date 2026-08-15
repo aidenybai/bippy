@@ -1,5 +1,5 @@
 import type { Fiber } from "../react-internals/index.js";
-import { getDisplayName } from "../core.js";
+import { getDisplayName } from "../core-implementation.js";
 
 import type { FiberSource } from "./types.js";
 import {

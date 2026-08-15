@@ -1,6 +1,6 @@
 import "./install-hook-only.js";
 import * as React from "react";
-import { isFiber } from "./core.js";
+import { isFiber } from "./core-implementation.js";
 import type { Fiber } from "./react-internals/index.js";
 
 export type { Fiber } from "./react-internals/index.js";
