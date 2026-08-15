@@ -1,5 +1,18 @@
 # bippy
 
+## 0.7.0
+
+### Minor Changes
+
+- 03b829a: Clarify React internals defaults and propagate callback and DCE failures without wrapping them.
+- 3702582: Report an unmount of the last committed fiber when a root loses its current instance (previously this path always threw a TypeError). Second-pass cleanup: shared renderer-dispatcher helpers, shared `getSourceContentFromSourceMap` (adds index-map support to `getDisplayNameFromSource`), and removal of dead options, types, and policy-heavy helpers (`ParseOptions.slice`, `Effect`, `FiberUpdateQueue.lastEffect`/`dispatch`, `getTimings`, `getFiberStack`, `getMutatedHostFibers`, `getNearestHostFiber`, `getNearestHostFibers`, `traverseProps`, `traverseState`, `traverseContexts`, `overrideProps`, `overrideHookState`, `overrideContext`, and `isValidFiber`). Add `getRenderer` for direct access to a fiber's renderer capabilities. Add a providerless `useFiber` hook to the main `bippy` entry point. Add `getFiber` as the concise alias for `getFiberFromHostInstance`. Export React’s internal Fiber, root, renderer, dispatcher, work-tag, flag, symbol, and build-type definitions from the main entry point.
+- a3b3942: Remove dead code and deduplicate shared logic. Fix `getDisplayNameFromSource` mapping already-symbolicated frames through the source map twice, and extract the declaration closest to the mapped line so adjacent components no longer shadow the right name. Removes unused public types (`StackFrame.args`, `ParseOptions.allowEmpty`, `RenderHandler`'s state parameter, and react-reconciler type re-exports nothing consumes — import those from `react-reconciler` directly).
+
+### Patch Changes
+
+- 017d2d0: Support source map resolution across browser extensions and React Native Metro bundles.
+- b88fcb4: Harden React internals, Fiber instrumentation, and source-map handling.
+
 ## 0.6.1
 
 ### Patch Changes
