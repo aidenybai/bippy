@@ -19,31 +19,31 @@ interface InspectorValueProps {
 
 const InspectorValue = ({ value }: InspectorValueProps) => {
   if (typeof value === "string") {
-    return <span className="text-[#d4d4d4]">{JSON.stringify(value)}</span>;
+    return <span className="text-[#cedae0]">{JSON.stringify(value)}</span>;
   }
   if (typeof value === "number" || typeof value === "bigint") {
-    return <span className="text-[#d4d4d4]">{String(value)}</span>;
+    return <span className="text-[#cedae0]">{String(value)}</span>;
   }
   if (typeof value === "boolean") {
-    return <span className="text-[#d4d4d4]">{String(value)}</span>;
+    return <span className="text-[#cedae0]">{String(value)}</span>;
   }
   if (typeof value === "function") {
-    return <span className="text-[#d4d4d4]">{`ƒ ${value.name || "anonymous"}()`}</span>;
+    return <span className="text-[#cedae0]">{`ƒ ${value.name || "anonymous"}()`}</span>;
   }
-  if (value === null) return <span className="text-[#737373]">null</span>;
-  if (value === undefined) return <span className="text-[#737373]">undefined</span>;
+  if (value === null) return <span className="text-[#777d88]">null</span>;
+  if (value === undefined) return <span className="text-[#777d88]">undefined</span>;
   if (Array.isArray(value)) {
-    return <span className="text-[#d4d4d4]">{`Array(${value.length})`}</span>;
+    return <span className="text-[#cedae0]">{`Array(${value.length})`}</span>;
   }
 
-  return <span className="text-[#d4d4d4]">{getObjectName(value)}</span>;
+  return <span className="text-[#cedae0]">{getObjectName(value)}</span>;
 };
 
 const InspectorSection = ({ entries, showIndices = false, title }: InspectorSectionProps) => {
   if (entries.length === 0) return null;
 
   return (
-    <section className="border-b border-[#333333] p-1">
+    <section className="border-b border-[#30343c] p-1">
       <h2 className="font-sans text-[13px] font-medium text-white">{title}</h2>
       <div>
         {entries.map((entry, entryIndex) => (
@@ -70,33 +70,33 @@ const InspectorSection = ({ entries, showIndices = false, title }: InspectorSect
 const FiberTreeInspectorSkeleton = () => (
   <div className="motion-safe:[&_span]:animate-pulse" role="status">
     <span className="sr-only">Reading Fiber details…</span>
-    <section className="border-b border-[#333333] p-1">
+    <section className="border-b border-[#30343c] p-1">
       <div className="flex h-[22px] items-center">
         <span className="h-2.5 w-10 rounded-[2px] bg-[rgba(255,255,255,0.28)]" />
       </div>
       <div className="flex h-[22px] items-center gap-2 pl-2">
         <span className="h-2.5 w-12 rounded-[2px] bg-[rgba(237,237,237,0.24)]" />
-        <span className="h-2.5 w-16 rounded-[2px] bg-[rgba(212,212,212,0.2)]" />
+        <span className="h-2.5 w-16 rounded-[2px] bg-[rgba(206,218,224,0.2)]" />
       </div>
       <div className="flex h-[22px] items-center gap-2 pl-2">
         <span className="h-2.5 w-16 rounded-[2px] bg-[rgba(237,237,237,0.24)]" />
-        <span className="h-2.5 w-20 rounded-[2px] bg-[rgba(212,212,212,0.2)]" />
+        <span className="h-2.5 w-20 rounded-[2px] bg-[rgba(206,218,224,0.2)]" />
       </div>
     </section>
-    <section className="border-b border-[#333333] p-1">
+    <section className="border-b border-[#30343c] p-1">
       <div className="flex h-[22px] items-center">
         <span className="h-2.5 w-10 rounded-[2px] bg-[rgba(255,255,255,0.28)]" />
       </div>
       <div className="flex h-[22px] items-center gap-2">
         <span className="h-5 w-[22px] rounded-[2px] bg-[rgba(0,0,0,0.25)]" />
         <span className="h-2.5 w-12 rounded-[2px] bg-[rgba(97,218,251,0.28)]" />
-        <span className="h-2.5 w-14 rounded-[2px] bg-[rgba(212,212,212,0.2)]" />
+        <span className="h-2.5 w-14 rounded-[2px] bg-[rgba(206,218,224,0.2)]" />
       </div>
     </section>
     <div className="flex h-[30px] items-center gap-2 p-1">
-      <span className="size-2 rounded-[2px] bg-[rgba(163,163,163,0.4)]" />
+      <span className="size-2 rounded-[2px] bg-[rgba(143,148,157,0.4)]" />
       <span className="h-2.5 w-10 rounded-[2px] bg-[rgba(237,237,237,0.24)]" />
-      <span className="h-2.5 w-24 rounded-[2px] bg-[rgba(115,115,115,0.28)]" />
+      <span className="h-2.5 w-24 rounded-[2px] bg-[rgba(119,125,136,0.28)]" />
     </div>
   </div>
 );

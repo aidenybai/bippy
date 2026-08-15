@@ -139,7 +139,7 @@ const ElementPickerOverlay = ({ element, fiberName }: ElementPickerOverlayProps)
       </div>
       <div
         ref={tipElement}
-        className="pointer-events-none fixed z-[10000000] flex flex-row flex-nowrap rounded-[2px] bg-[#262626] px-[5px] py-[3px] font-[SFMono-Regular,Consolas,'Liberation_Mono',Menlo,Courier,monospace] text-xs font-bold whitespace-nowrap"
+        className="pointer-events-none fixed z-[10000000] flex flex-row flex-nowrap rounded-[2px] bg-[#333740] px-[5px] py-[3px] font-[SFMono-Regular,Consolas,'Liberation_Mono',Menlo,Courier,monospace] text-xs font-bold whitespace-nowrap"
         style={tipPosition}
       >
         <span className="mr-2 border-r border-[#aaa] pr-2 text-[#ee78e6]">{label}</span>
