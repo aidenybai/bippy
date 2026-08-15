@@ -1,5 +1,6 @@
 nodeLinker: hoisted
 
 packages:
+  - "examples/*"
   - "packages/*"
   - "packages/e2e/fixtures/*"

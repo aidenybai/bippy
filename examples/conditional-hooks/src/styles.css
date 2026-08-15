@@ -1,0 +1,108 @@
+:root {
+  color: #f5f2e9;
+  background: #11100e;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgb(230 171 79 / 18%), transparent 36rem), #11100e;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+main {
+  width: min(46rem, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 12vh 0 4rem;
+}
+
+h1 {
+  max-width: 12ch;
+  margin: 0;
+  font-size: clamp(2.7rem, 8vw, 5.8rem);
+  font-weight: 600;
+  letter-spacing: -0.065em;
+  line-height: 0.94;
+}
+
+.eyebrow {
+  color: #e6ab4f;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+
+.lede {
+  max-width: 38rem;
+  margin: 2rem 0;
+  color: #aaa398;
+  font-size: 1.1rem;
+  line-height: 1.65;
+}
+
+.toggle,
+.counter,
+.empty {
+  border: 1px solid #39352f;
+  border-radius: 1rem;
+  background: rgb(255 255 255 / 4%);
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.2rem;
+  cursor: pointer;
+}
+
+.toggle input {
+  width: 1.15rem;
+  height: 1.15rem;
+  accent-color: #e6ab4f;
+}
+
+.counter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  align-items: center;
+  margin-top: 1rem;
+  padding: 1.2rem;
+}
+
+.counter button {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.7rem 1rem;
+  color: #211a10;
+  background: #e6ab4f;
+  cursor: pointer;
+}
+
+.counter span {
+  color: #bbb4a8;
+}
+
+.empty {
+  margin: 1rem 0 0;
+  padding: 1.2rem;
+  color: #817a70;
+}
+
+.note {
+  color: #817a70;
+  font-size: 0.9rem;
+}
