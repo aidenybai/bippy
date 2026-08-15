@@ -1,7 +1,7 @@
 import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
-import { FiberTree } from "@/components/fiber-tree";
+import { FiberTreeDemo } from "@/components/fiber-tree";
 import { Link } from "@/components/ui/link";
 
 const Page = () => (
@@ -26,7 +26,7 @@ const Page = () => (
       renderer directly.
     </p>
 
-    <FiberTree />
+    <FiberTreeDemo />
 
     <div className="flex flex-wrap gap-3 pt-2">
       <Button
