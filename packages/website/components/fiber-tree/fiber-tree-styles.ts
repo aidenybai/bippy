@@ -35,7 +35,7 @@ export const fiberTreeClassNames = {
     devtoolsMonoFont,
   ),
   components:
-    "relative flex h-80 w-full flex-row overflow-hidden border border-[#30343c] bg-[#1b1d23] font-sans leading-normal text-white [-webkit-font-smoothing:auto] [&_*]:box-border [&_*]:[-webkit-font-smoothing:auto] @max-[599px]:h-[420px] @max-[599px]:flex-col",
+    "relative flex h-80 w-full flex-row overflow-hidden rounded-lg border border-[#30343c] bg-[#1b1d23] font-sans leading-normal text-white [-webkit-font-smoothing:auto] [&_*]:box-border [&_*]:[-webkit-font-smoothing:auto] @max-[599px]:h-[420px] @max-[599px]:flex-col",
   currentHighlight: "bg-[#f7923b]",
   element: "h-[22px] text-[#61dafb] hover:bg-[rgba(255,255,255,0.1)]",
   expandCollapseToggle:
