@@ -132,23 +132,23 @@ const FiberTreeSkeleton = () => (
       <span className="h-2.5 w-32 rounded-[2px] bg-[rgba(255,255,255,0.4)]" />
     </div>
     <div className="flex h-[22px] items-center px-1 pl-2">
-      <span className="mx-1 size-2 rounded-[2px] bg-[rgba(143,148,157,0.4)]" />
+      <span className="mx-1 size-2 rounded-[2px] bg-[rgba(163,163,163,0.4)]" />
       <span className="h-2.5 w-8 rounded-[2px] bg-[rgba(97,218,251,0.28)]" />
     </div>
     <div className="flex h-[22px] items-center px-1 pl-3">
-      <span className="mx-1 size-2 rounded-[2px] bg-[rgba(143,148,157,0.4)]" />
+      <span className="mx-1 size-2 rounded-[2px] bg-[rgba(163,163,163,0.4)]" />
       <span className="h-2.5 w-20 rounded-[2px] bg-[rgba(97,218,251,0.28)]" />
     </div>
     <div className="flex h-[22px] items-center px-1 pl-4">
-      <span className="mx-1 size-2 rounded-[2px] bg-[rgba(143,148,157,0.4)]" />
+      <span className="mx-1 size-2 rounded-[2px] bg-[rgba(163,163,163,0.4)]" />
       <span className="h-2.5 w-16 rounded-[2px] bg-[rgba(97,218,251,0.28)]" />
     </div>
     <div className="flex h-[22px] items-center px-1 pl-5">
-      <span className="mx-1 size-2 rounded-[2px] bg-[rgba(143,148,157,0.4)]" />
+      <span className="mx-1 size-2 rounded-[2px] bg-[rgba(163,163,163,0.4)]" />
       <span className="h-2.5 w-24 rounded-[2px] bg-[rgba(97,218,251,0.28)]" />
     </div>
     <div className="flex h-[22px] items-center px-1 pl-6">
-      <span className="mx-1 size-2 rounded-[2px] bg-[rgba(143,148,157,0.4)]" />
+      <span className="mx-1 size-2 rounded-[2px] bg-[rgba(163,163,163,0.4)]" />
       <span className="h-2.5 w-36 rounded-[2px] bg-[rgba(97,218,251,0.28)]" />
     </div>
   </div>
