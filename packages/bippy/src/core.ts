@@ -1,5 +1,4 @@
 // React must remain a type-only import because this module loads immediately after the DevTools hook.
-
 import type * as React from "react";
 
 import type {
@@ -339,6 +338,18 @@ const rootRendererIds = new WeakMap<FiberRoot, number>();
 export const getLatestFiber = (fiber: Fiber): Fiber => {
   const alternate = fiber.alternate;
   if (!alternate) return fiber;
+
+  let rootFiber = fiber;
+  while (rootFiber.return) {
+    rootFiber = rootFiber.return;
+  }
+  if (isFiberRoot(rootFiber.stateNode)) {
+    const latestFiber = traverseFiber(rootFiber.stateNode.current, (innerFiber) => {
+      if (innerFiber === fiber || innerFiber === alternate) return true;
+    });
+    if (latestFiber) return latestFiber;
+  }
+
   if (alternate.actualStartTime && fiber.actualStartTime) {
     return alternate.actualStartTime > fiber.actualStartTime ? alternate : fiber;
   }

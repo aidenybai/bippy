@@ -44,7 +44,6 @@ export default defineConfig({
     dts: true,
     entry: {
       index: "./src/index.ts",
-      core: "./src/core.ts",
       source: "./src/source/index.ts",
       "install-hook-only": "./src/install-hook-only.ts",
     },
