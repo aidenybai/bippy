@@ -21,14 +21,20 @@ export * from "./types.js";
 const defaultReactWorkTags = getReactWorkTags();
 const fiberReactWorkTags = new WeakMap<Fiber, Readonly<ReactWorkTagMap>>();
 
+// React's experimental channel historically reported "0.0.0-experimental-<sha>"
+// as the runtime version; those builds use modern work tags, not the 16.x rows
+// the version table would resolve "0.0.0" to.
+const getReactWorkTagsForVersion = (version: string): Readonly<ReactWorkTagMap> =>
+  version.startsWith("0.0.0-") ? defaultReactWorkTags : getReactWorkTags(version);
+
 export const getReactWorkTagsForRenderer = (
   renderer?: ReactRenderer | null,
 ): Readonly<ReactWorkTagMap> => {
   const reconcilerVersion = renderer?.reconcilerVersion;
   if (reconcilerVersion && isSemver(reconcilerVersion)) {
-    return getReactWorkTags(reconcilerVersion);
+    return getReactWorkTagsForVersion(reconcilerVersion);
   }
-  return renderer?.version ? getReactWorkTags(renderer.version) : defaultReactWorkTags;
+  return renderer?.version ? getReactWorkTagsForVersion(renderer.version) : defaultReactWorkTags;
 };
 
 export const setReactWorkTagsForFiber = (fiber: Fiber, renderer?: ReactRenderer): void => {

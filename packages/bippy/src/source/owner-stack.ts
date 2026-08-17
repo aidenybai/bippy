@@ -274,7 +274,9 @@ const describeNativeComponentFrame = (
                 let stackFrame = `\n${sampleLines[sampleIndex].replace(" at new ", " at ")}`;
                 const [parsedStackFrame] = parseStack(stackFrame);
                 if (!parsedStackFrame?.fileName) {
-                  continue;
+                  // Deeper sample frames belong to React internals, not the
+                  // component, so fall back to the synthetic frame instead.
+                  break;
                 }
 
                 const displayName = getDisplayName(component);

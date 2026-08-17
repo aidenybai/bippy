@@ -75,6 +75,22 @@ it("prefers the renderer reconciler version", () => {
   expect(getReactWorkTagsForRenderer()).toBe(getReactWorkTags());
 });
 
+it("resolves experimental-channel versions to the modern work tags", () => {
+  const experimentalRenderer: ReactRenderer = {
+    bundleType: 1,
+    rendererPackageName: "react-dom",
+    version: "0.0.0-experimental-241c4467e-20200129",
+  };
+
+  expect(getReactWorkTagsForRenderer(experimentalRenderer)).toBe(getReactWorkTags());
+  expect(
+    getReactWorkTagsForRenderer({
+      ...experimentalRenderer,
+      reconcilerVersion: "0.0.0-experimental-241c4467e-20200129",
+    }),
+  ).toBe(getReactWorkTags());
+});
+
 it("retains old renderer work tags after a Fiber is detached", () => {
   const rootFiber: Fiber = {
     alternate: null,
