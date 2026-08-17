@@ -5,7 +5,13 @@ import { _fiberRoots, getRDTHook, instrument } from "../src/index.js";
 import type { Fiber, FiberRoot } from "../src/react-internals/index.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
 
-const createMockFiber = (overrides: Partial<Fiber> = {}): Fiber =>
+interface MockFiberOverrides {
+  child?: Fiber | null;
+  memoizedState?: unknown;
+  tag?: number;
+}
+
+const createMockFiber = (overrides: MockFiberOverrides = {}): Fiber =>
   ({
     alternate: null,
     child: null,
