@@ -15,6 +15,7 @@ import {
   createUnsubscribe,
   getRDTHook,
   hasRDTHook,
+  isReactRefresh,
   isRealReactDevtools,
   onRDTHookReplace,
 } from "./rdt-hook.js";
@@ -326,7 +327,11 @@ export const detectReactBuildType = (renderer: ReactRenderer): "development" | "
  */
 export const isInstrumentationActive = (): boolean => {
   const rdtHook = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
-  return Boolean(rdtHook?._instrumentationIsActive) || isRealReactDevtools(rdtHook);
+  return (
+    Boolean(rdtHook?._instrumentationIsActive) ||
+    isRealReactDevtools(rdtHook) ||
+    isReactRefresh(rdtHook)
+  );
 };
 
 export const _fiberRoots = new Set<FiberRoot>();
@@ -576,6 +581,18 @@ const rootInstanceMap = new WeakMap<
   }
 >();
 
+// Roots from custom renderers may not have a memoizedState at all.
+const isRootFiberMounted = (fiber: Fiber): boolean => {
+  const rootState = fiber.memoizedState;
+  if (rootState === null || rootState === undefined) return false;
+  return (
+    rootState.element !== null &&
+    rootState.element !== undefined &&
+    // A dehydrated root is not considered mounted
+    rootState.isDehydrated !== true
+  );
+};
+
 /**
  * Creates a fiber visitor function. Must pass a fiber root and a render handler.
  * @example
@@ -599,18 +616,8 @@ export const traverseRenderedFibers = (root: Fiber | FiberRoot, onRender: Render
       unmountFiber(onRender, prevFiber);
     }
   } else if (prevFiber !== null) {
-    const wasMounted =
-      prevFiber.memoizedState !== null &&
-      prevFiber.memoizedState.element !== null &&
-      prevFiber.memoizedState.element !== undefined &&
-      // A dehydrated root is not considered mounted
-      prevFiber.memoizedState.isDehydrated !== true;
-    const isMounted =
-      fiber.memoizedState !== null &&
-      fiber.memoizedState.element !== null &&
-      fiber.memoizedState.element !== undefined &&
-      // A dehydrated root is not considered mounted
-      fiber.memoizedState.isDehydrated !== true;
+    const wasMounted = isRootFiberMounted(prevFiber);
+    const isMounted = isRootFiberMounted(fiber);
 
     if (!wasMounted && isMounted) {
       mountFiberRecursively(onRender, fiber, false);
@@ -681,17 +688,16 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
       }
       if (hookDispatchers.get(rdtHook)?.onCommitFiberRoot !== dispatchCommitFiberRoot) return;
       setReactWorkTagsForFiber(root.current, rdtHook.renderers.get(rendererID));
-      const rootMemoizedState = root.current.memoizedState;
-      const isUnmounting =
-        rootMemoizedState === null ||
-        rootMemoizedState.element === null ||
-        rootMemoizedState.element === undefined;
-      if (isUnmounting) {
-        _fiberRoots.delete(root);
-        rootRendererIds.delete(root);
-      } else {
+      // DevTools' handleCommitFiberRoot treats a root with children as mounted;
+      // memoizedState.element is kept as a fallback signal so roots without a
+      // memoizedState are not misclassified as unmounting.
+      const isRootMounted = root.current.child !== null || isRootFiberMounted(root.current);
+      if (isRootMounted) {
         _fiberRoots.add(root);
         rootRendererIds.set(root, rendererID);
+      } else {
+        _fiberRoots.delete(root);
+        rootRendererIds.delete(root);
       }
       for (const { options } of instrumentationSubscriptions) {
         if (options.onCommitFiberRoot) {
@@ -920,6 +926,7 @@ export {
   getRDTHook,
   hasRDTHook,
   installRDTHook,
+  isReactRefresh,
   isRealReactDevtools,
   onRendererInject,
   patchRDTHook,

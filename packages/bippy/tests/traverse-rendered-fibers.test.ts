@@ -415,6 +415,23 @@ describe("traverseRenderedFibers", () => {
     expect(onRender).toHaveBeenCalledWith(mountedRootFiber, "unmount");
   });
 
+  it("should not throw when root fibers have no memoizedState", () => {
+    const firstRootFiber = createMockFiber({
+      memoizedState: undefined,
+      tag: latestReactWorkTags.HostRoot,
+    });
+    const root: FiberRoot = { current: firstRootFiber };
+    const onRender = vi.fn();
+    traverseRenderedFibers(root, onRender);
+    const callCountAfterFirstCommit = onRender.mock.calls.length;
+    root.current = createMockFiber({
+      memoizedState: undefined,
+      tag: latestReactWorkTags.HostRoot,
+    });
+    expect(() => traverseRenderedFibers(root, onRender)).not.toThrow();
+    expect(onRender.mock.calls.length).toBe(callCountAfterFirstCommit);
+  });
+
   it("should do nothing when a never-committed root has no current fiber", () => {
     const root = { current: null };
     const onRender = vi.fn();

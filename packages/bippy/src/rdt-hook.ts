@@ -50,6 +50,21 @@ export const isRealReactDevtools = (
   return Boolean(rdtHook && "getFiberRoots" in rdtHook);
 };
 
+// HACK: react-refresh's inject wrapper is the only stock hook whose parameter is named
+// "injected", so its string form identifies hooks installed by react-refresh:
+// https://github.com/facebook/react/blob/main/packages/react-refresh/src/ReactFreshRuntime.js (injectIntoGlobalHook)
+export const isReactRefresh = (
+  rdtHook: ReactDevToolsGlobalHook | undefined | null = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__,
+): boolean => {
+  if (!rdtHook || typeof rdtHook.inject !== "function") return false;
+  if (isRealReactDevtools(rdtHook)) return false;
+  try {
+    return Function.prototype.toString.call(rdtHook.inject).includes("(injected)");
+  } catch {
+    return false;
+  }
+};
+
 export const _onActiveListeners = new Set<ActiveListener>();
 
 export const _renderers = new Set<ReactRenderer>();
@@ -236,6 +251,13 @@ export const patchRDTHook = (onActive?: ActiveListener): void => {
     }
     if (renderers.size) {
       renderers.forEach((renderer) => _renderers.add(renderer));
+      rdtHook._instrumentationIsActive = true;
+      notifyActiveListeners();
+      didNotifyActiveListeners = true;
+    } else if (!isReactDevtools && isReactRefresh(rdtHook)) {
+      // HACK: react-refresh's stub inject never records renderers, so a React app
+      // that injected before bippy loaded is undetectable through the renderers map.
+      // A react-refresh hook implies a dev renderer, so activate immediately.
       rdtHook._instrumentationIsActive = true;
       notifyActiveListeners();
       didNotifyActiveListeners = true;
