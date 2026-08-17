@@ -37,8 +37,30 @@ it("tracks committed roots without memoizedState instead of crashing", () => {
   expect(onCommitFiberRoot).toHaveBeenCalledWith(1, root, undefined, false);
   expect(_fiberRoots.has(root)).toBe(true);
 
-  root.current = createMockFiber();
+  unsubscribe();
+});
+
+it("keeps childless roots without memoizedState tracked", () => {
+  const unsubscribe = instrument({});
+  const rdtHook = getRDTHook();
+  const root: FiberRoot = { current: createMockFiber() };
+
   expect(() => rdtHook.onCommitFiberRoot(1, root, undefined, false)).not.toThrow();
+  expect(_fiberRoots.has(root)).toBe(true);
+
+  unsubscribe();
+});
+
+it("untracks roots whose memoizedState element is cleared", () => {
+  const unsubscribe = instrument({});
+  const rdtHook = getRDTHook();
+  const root: FiberRoot = { current: createMockFiber({ memoizedState: { element: {} } }) };
+
+  rdtHook.onCommitFiberRoot(1, root, undefined, false);
+  expect(_fiberRoots.has(root)).toBe(true);
+
+  root.current = createMockFiber({ memoizedState: { element: null } });
+  rdtHook.onCommitFiberRoot(1, root, undefined, false);
   expect(_fiberRoots.has(root)).toBe(false);
 
   unsubscribe();

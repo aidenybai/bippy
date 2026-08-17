@@ -688,16 +688,19 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
       }
       if (hookDispatchers.get(rdtHook)?.onCommitFiberRoot !== dispatchCommitFiberRoot) return;
       setReactWorkTagsForFiber(root.current, rdtHook.renderers.get(rendererID));
-      // DevTools' handleCommitFiberRoot treats a root with children as mounted;
-      // memoizedState.element is kept as a fallback signal so roots without a
-      // memoizedState are not misclassified as unmounting.
-      const isRootMounted = root.current.child !== null || isRootFiberMounted(root.current);
-      if (isRootMounted) {
-        _fiberRoots.add(root);
-        rootRendererIds.set(root, rendererID);
-      } else {
+      // Custom renderers and test harnesses commit roots without a memoizedState;
+      // those must stay tracked, so only explicit unmount evidence removes a root.
+      const rootMemoizedState = root.current.memoizedState;
+      const isUnmounting =
+        rootMemoizedState === null ||
+        (rootMemoizedState !== undefined &&
+          (rootMemoizedState.element === null || rootMemoizedState.element === undefined));
+      if (isUnmounting) {
         _fiberRoots.delete(root);
         rootRendererIds.delete(root);
+      } else {
+        _fiberRoots.add(root);
+        rootRendererIds.set(root, rendererID);
       }
       for (const { options } of instrumentationSubscriptions) {
         if (options.onCommitFiberRoot) {
@@ -793,9 +796,13 @@ const wireHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
   setHookEventDispatchers(rdtHook);
 };
 
-if (hasRDTHook()) {
-  wireHookEventDispatchers(getRDTHook());
-}
+// Importing bippy must never crash module evaluation, even when a foreign
+// hook is frozen or otherwise rejects patching.
+try {
+  if (hasRDTHook()) {
+    wireHookEventDispatchers(getRDTHook());
+  }
+} catch {}
 
 /**
  * Instruments the DevTools hook. Each hook event is patched once and
