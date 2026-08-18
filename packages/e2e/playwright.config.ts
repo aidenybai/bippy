@@ -43,6 +43,132 @@ const sharedProjectTestIgnore = [
   ...productionOnlyTestMatch,
 ];
 
+interface NamedWebServer {
+  name: string;
+  command: string;
+  port?: number;
+  url?: string;
+  reuseExistingServer: boolean;
+  timeout: number;
+}
+
+// Playwright starts every configured webServer regardless of --project.
+// BIPPY_E2E_SERVERS (comma-separated names matching the project names)
+// limits startup to the servers a run actually needs, e.g. the
+// react-canary workflow sets BIPPY_E2E_SERVERS=refresh-experimental.
+const getRequestedWebServers = () => {
+  const allWebServers: NamedWebServer[] = [
+    {
+      name: "vite",
+      command: `pnpm --filter @bippy/e2e-vite dev --port ${vitePort}`,
+      port: vitePort,
+      reuseExistingServer: !isCI,
+      timeout: 30_000,
+    },
+    {
+      name: "nextjs",
+      command: `pnpm --filter @bippy/e2e-next dev --port ${nextPort}`,
+      // Waiting on the URL (not just the port) lets webpack finish the slow
+      // first compile of the page before tests start hitting it in parallel.
+      url: `http://localhost:${nextPort}`,
+      reuseExistingServer: !isCI,
+      timeout: 120_000,
+    },
+    {
+      name: "tanstack",
+      command: `pnpm --filter @bippy/e2e-tanstack dev --port ${tanstackPort}`,
+      port: tanstackPort,
+      reuseExistingServer: !isCI,
+      timeout: 60_000,
+    },
+    {
+      name: "react-router",
+      command: `pnpm --filter @bippy/e2e-react-router dev --port ${reactRouterPort}`,
+      // Waiting on the URL lets the dev server finish the first compile.
+      url: `http://localhost:${reactRouterPort}`,
+      reuseExistingServer: !isCI,
+      timeout: 120_000,
+    },
+    {
+      name: "remix",
+      command: `pnpm --filter @bippy/e2e-remix dev --port ${remixPort}`,
+      url: `http://localhost:${remixPort}`,
+      reuseExistingServer: !isCI,
+      timeout: 120_000,
+    },
+    {
+      name: "rsbuild",
+      command: `pnpm --filter @bippy/e2e-rsbuild dev --port ${rsbuildPort}`,
+      port: rsbuildPort,
+      reuseExistingServer: !isCI,
+      timeout: 60_000,
+    },
+    {
+      name: "astro",
+      command: `pnpm --filter @bippy/e2e-astro dev --port ${astroPort}`,
+      port: astroPort,
+      reuseExistingServer: !isCI,
+      timeout: 60_000,
+    },
+    {
+      name: "kitchen-sink",
+      command: `pnpm --filter @bippy/e2e-kitchen-sink dev --port ${kitchenSinkPort}`,
+      port: kitchenSinkPort,
+      reuseExistingServer: !isCI,
+      timeout: 60_000,
+    },
+    {
+      name: "stress",
+      command: `pnpm --filter @bippy/e2e-stress dev --port ${stressPort}`,
+      port: stressPort,
+      reuseExistingServer: !isCI,
+      timeout: 60_000,
+    },
+    {
+      name: "refresh",
+      command: `pnpm --filter @bippy/e2e-refresh dev --port ${refreshPort}`,
+      port: refreshPort,
+      reuseExistingServer: !isCI,
+      timeout: 30_000,
+    },
+    {
+      name: "refresh-react18",
+      command: `pnpm --filter @bippy/e2e-refresh-react18 dev --port ${refreshReact18Port}`,
+      port: refreshReact18Port,
+      reuseExistingServer: !isCI,
+      timeout: 30_000,
+    },
+    {
+      name: "refresh-react17",
+      command: `pnpm --filter @bippy/e2e-refresh-react17 dev --port ${refreshReact17Port}`,
+      port: refreshReact17Port,
+      reuseExistingServer: !isCI,
+      timeout: 30_000,
+    },
+    {
+      name: "refresh-experimental",
+      command: `pnpm --filter @bippy/e2e-refresh-experimental dev --port ${refreshExperimentalPort}`,
+      port: refreshExperimentalPort,
+      reuseExistingServer: !isCI,
+      timeout: 30_000,
+    },
+  ];
+
+  const requestedServerNames = process.env.BIPPY_E2E_SERVERS?.split(",")
+    .map((serverName) => serverName.trim())
+    .filter(Boolean);
+  const selectedWebServers = requestedServerNames
+    ? allWebServers.filter((namedServer) => requestedServerNames.includes(namedServer.name))
+    : allWebServers;
+  if (requestedServerNames && selectedWebServers.length !== requestedServerNames.length) {
+    const knownNames = allWebServers.map((namedServer) => namedServer.name);
+    throw new Error(
+      `BIPPY_E2E_SERVERS contains unknown server names; known names: ${knownNames.join(", ")}`,
+    );
+  }
+  return selectedWebServers.map(({ name: _serverName, ...serverConfig }) => serverConfig);
+};
+
 export default defineConfig({
   testDir: "./tests/web",
   fullyParallel: true,
@@ -137,87 +263,5 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-  webServer: [
-    {
-      command: `pnpm --filter @bippy/e2e-vite dev --port ${vitePort}`,
-      port: vitePort,
-      reuseExistingServer: !isCI,
-      timeout: 30_000,
-    },
-    {
-      command: `pnpm --filter @bippy/e2e-next dev --port ${nextPort}`,
-      // Waiting on the URL (not just the port) lets webpack finish the slow
-      // first compile of the page before tests start hitting it in parallel.
-      url: `http://localhost:${nextPort}`,
-      reuseExistingServer: !isCI,
-      timeout: 120_000,
-    },
-    {
-      command: `pnpm --filter @bippy/e2e-tanstack dev --port ${tanstackPort}`,
-      port: tanstackPort,
-      reuseExistingServer: !isCI,
-      timeout: 60_000,
-    },
-    {
-      command: `pnpm --filter @bippy/e2e-react-router dev --port ${reactRouterPort}`,
-      // Waiting on the URL lets the dev server finish the first compile.
-      url: `http://localhost:${reactRouterPort}`,
-      reuseExistingServer: !isCI,
-      timeout: 120_000,
-    },
-    {
-      command: `pnpm --filter @bippy/e2e-remix dev --port ${remixPort}`,
-      url: `http://localhost:${remixPort}`,
-      reuseExistingServer: !isCI,
-      timeout: 120_000,
-    },
-    {
-      command: `pnpm --filter @bippy/e2e-rsbuild dev --port ${rsbuildPort}`,
-      port: rsbuildPort,
-      reuseExistingServer: !isCI,
-      timeout: 60_000,
-    },
-    {
-      command: `pnpm --filter @bippy/e2e-astro dev --port ${astroPort}`,
-      port: astroPort,
-      reuseExistingServer: !isCI,
-      timeout: 60_000,
-    },
-    {
-      command: `pnpm --filter @bippy/e2e-kitchen-sink dev --port ${kitchenSinkPort}`,
-      port: kitchenSinkPort,
-      reuseExistingServer: !isCI,
-      timeout: 60_000,
-    },
-    {
-      command: `pnpm --filter @bippy/e2e-stress dev --port ${stressPort}`,
-      port: stressPort,
-      reuseExistingServer: !isCI,
-      timeout: 60_000,
-    },
-    {
-      command: `pnpm --filter @bippy/e2e-refresh dev --port ${refreshPort}`,
-      port: refreshPort,
-      reuseExistingServer: !isCI,
-      timeout: 30_000,
-    },
-    {
-      command: `pnpm --filter @bippy/e2e-refresh-react18 dev --port ${refreshReact18Port}`,
-      port: refreshReact18Port,
-      reuseExistingServer: !isCI,
-      timeout: 30_000,
-    },
-    {
-      command: `pnpm --filter @bippy/e2e-refresh-react17 dev --port ${refreshReact17Port}`,
-      port: refreshReact17Port,
-      reuseExistingServer: !isCI,
-      timeout: 30_000,
-    },
-    {
-      command: `pnpm --filter @bippy/e2e-refresh-experimental dev --port ${refreshExperimentalPort}`,
-      port: refreshExperimentalPort,
-      reuseExistingServer: !isCI,
-      timeout: 30_000,
-    },
-  ],
+  webServer: getRequestedWebServers(),
 });

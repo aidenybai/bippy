@@ -3,14 +3,14 @@
 // bippy's instrumentation survive every update. Scenario semantics follow
 // facebook/react's ReactFreshIntegration-test.js (MIT licensed, Copyright (c)
 // Meta Platforms, Inc. and affiliates) exercised through a real bundler.
-import { type ChildProcess, spawn } from "node:child_process";
+import type { ChildProcess } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 
 import { expect, test, type Page } from "@playwright/test";
 
-import { getFreePort, waitForServer } from "./server-utils";
+import { getFreePort, spawnDevServer, stopDevServer, waitForServer } from "./server-utils";
 
 import {
   classComponentSource,
@@ -94,15 +94,16 @@ test.beforeAll(async () => {
   writeTarget(INITIAL_TARGET_SOURCE);
   const port = await getFreePort();
   baseUrl = `http://localhost:${port}/`;
-  viteProcess = spawn(process.execPath, [viteBinPath, "--port", String(port), "--strictPort"], {
-    cwd: fixtureDirectory,
-    stdio: "ignore",
-  });
+  viteProcess = spawnDevServer(
+    process.execPath,
+    [viteBinPath, "--port", String(port), "--strictPort"],
+    fixtureDirectory,
+  );
   await waitForServer(baseUrl);
 });
 
 test.afterAll(async () => {
-  viteProcess?.kill("SIGTERM");
+  stopDevServer(viteProcess);
   writeTarget(INITIAL_TARGET_SOURCE);
 });
 

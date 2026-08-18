@@ -35,6 +35,10 @@ jobs:
       - name: Run refresh suite against the nightlies
         run: npx playwright test --project=refresh-experimental
         working-directory: packages/e2e
+        env:
+          # Only the experimental fixture's dev server is needed; without
+          # this, playwright would boot every configured webServer.
+          BIPPY_E2E_SERVERS: refresh-experimental
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

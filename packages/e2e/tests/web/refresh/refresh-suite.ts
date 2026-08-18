@@ -17,13 +17,14 @@ const waitForHarness = async (page: Page): Promise<void> => {
   });
 };
 
-export const defineRefreshSuite = (reactMajor: number): void => {
+export const defineRefreshSuite = (reactMajor: number, versionLabel?: string): void => {
   const applicableNames = getScenarioNamesForReactMajor(reactMajor);
   const applicableDescriptors = scenarioManifest.filter((descriptor) =>
     applicableNames.includes(descriptor.name),
   );
+  const suiteLabel = versionLabel ?? `React ${reactMajor}`;
 
-  test.describe(`ReactFresh (ported from facebook/react) on React ${reactMajor}`, () => {
+  test.describe(`ReactFresh (ported from facebook/react) on ${suiteLabel}`, () => {
     test("scenario registry matches the manifest", async ({ page }) => {
       await waitForHarness(page);
       const registeredNames = await page.evaluate(() => window.__SCENARIO_NAMES__);

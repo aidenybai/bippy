@@ -83,7 +83,7 @@ test.describe("kitchen sink: 50 React libraries", () => {
   test("getFiberFromHostInstance resolves a fiber for every library section", async ({ page }) => {
     const unresolvedSections = await page.evaluate(() => {
       const failures: string[] = [];
-      for (const sectionElement of document.querySelectorAll('[data-testid^="lib-"]')) {
+      for (const sectionElement of Array.from(document.querySelectorAll('[data-testid^="lib-"]'))) {
         const fiber = window.__BIPPY__.getFiberFromHostInstance(sectionElement);
         if (!fiber || !window.__BIPPY__.isFiber(fiber)) {
           failures.push(sectionElement.getAttribute("data-testid") ?? "unknown");

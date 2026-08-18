@@ -2,14 +2,14 @@
 // with bippy installed through instrumentation-client.ts the way Next apps
 // integrate it. Scenario semantics mirror Next.js' own Fast Refresh
 // acceptance tests, rebuilt here as original fixtures.
-import { type ChildProcess, spawn } from "node:child_process";
+import type { ChildProcess } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 
 import { expect, test, type Page } from "@playwright/test";
 
-import { getFreePort, waitForServer } from "./server-utils";
+import { getFreePort, spawnDevServer, stopDevServer, waitForServer } from "./server-utils";
 
 const fixtureDirectory = path.resolve(import.meta.dirname, "../../../fixtures/next-hmr-app");
 const targetFilePath = path.join(fixtureDirectory, "app/target.tsx");
@@ -110,19 +110,17 @@ test.beforeAll(async () => {
   writeTarget(nextCounterSource("v1"));
   const port = await getFreePort();
   baseUrl = `http://localhost:${port}/`;
-  nextProcess = spawn(process.execPath, [nextBinPath, "dev", "--port", String(port)], {
-    cwd: fixtureDirectory,
-    stdio: "ignore",
-    env: {
-      ...process.env,
-      NODE_OPTIONS: "--localstorage-file=/tmp/bippy-e2e-next-hmr-localstorage.json",
-    },
-  });
+  nextProcess = spawnDevServer(
+    process.execPath,
+    [nextBinPath, "dev", "--port", String(port)],
+    fixtureDirectory,
+    { NODE_OPTIONS: "--localstorage-file=/tmp/bippy-e2e-next-hmr-localstorage.json" },
+  );
   await waitForServer(baseUrl, 120_000);
 });
 
 test.afterAll(async () => {
-  nextProcess?.kill("SIGTERM");
+  stopDevServer(nextProcess);
   writeTarget(nextCounterSource("v1"));
 });
 

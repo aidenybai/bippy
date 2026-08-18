@@ -84,43 +84,84 @@ const generateSpecNode = (rng: FuzzRng, depth: number, nextSpecId: { value: numb
   };
 };
 
-const collectNodes = (node: SpecNode, collected: SpecNode[] = []): SpecNode[] => {
-  collected.push(node);
-  for (const child of node.children) collectNodes(child, collected);
+interface SpecPathEntry {
+  node: SpecNode;
+  ancestorChain: SpecNode[];
+}
+
+const collectPaths = (
+  node: SpecNode,
+  ancestors: SpecNode[] = [],
+  collected: SpecPathEntry[] = [],
+): SpecPathEntry[] => {
+  const ancestorChain = [...ancestors, node];
+  collected.push({ node, ancestorChain });
+  for (const child of node.children) collectPaths(child, ancestorChain, collected);
   return collected;
 };
 
+interface SpecMutation {
+  nextSpec: SpecNode;
+  description: string;
+}
+
 // One mutation per step: prop bump, subtree visibility toggle, key
-// shuffle, or host retag (forces a host remount at that position).
-const mutateSpec = (rootSpec: SpecNode, rng: FuzzRng): string => {
-  const candidates = collectNodes(rootSpec);
+// shuffle, or host retag (forces a host remount at that position). The
+// root-to-target spine is cloned so memo wrappers on the path receive
+// fresh props and re-render; untouched subtrees keep their identity,
+// which still exercises memo bailouts without hiding mutations.
+const mutateSpec = (rootSpec: SpecNode, rng: FuzzRng): SpecMutation => {
+  const candidates = collectPaths(rootSpec);
   const target = candidates[pickInteger(rng, candidates.length)];
   let mutationKind = pickInteger(rng, 4);
-  if (mutationKind === 1 && target === rootSpec) {
+  if (mutationKind === 1 && target.node === rootSpec) {
     // Hiding the root would make every later invariant check vacuous.
     mutationKind = 0;
   }
+
+  const mutatedTarget: SpecNode = {
+    ...target.node,
+    keyOrder: [...target.node.keyOrder],
+    children: [...target.node.children],
+  };
+  let description: string;
   switch (mutationKind) {
     case 0:
-      target.propValue = pickInteger(rng, 100);
-      return `prop:${target.specId}`;
+      mutatedTarget.propValue = pickInteger(rng, 100);
+      description = `prop:${mutatedTarget.specId}`;
+      break;
     case 1:
-      target.isHidden = !target.isHidden;
-      return `toggle:${target.specId}`;
+      mutatedTarget.isHidden = !mutatedTarget.isHidden;
+      description = `toggle:${mutatedTarget.specId}`;
+      break;
     case 2: {
-      for (let index = target.keyOrder.length - 1; index > 0; index--) {
+      for (let index = mutatedTarget.keyOrder.length - 1; index > 0; index--) {
         const swapIndex = pickInteger(rng, index + 1);
-        [target.keyOrder[index], target.keyOrder[swapIndex]] = [
-          target.keyOrder[swapIndex],
-          target.keyOrder[index],
+        [mutatedTarget.keyOrder[index], mutatedTarget.keyOrder[swapIndex]] = [
+          mutatedTarget.keyOrder[swapIndex],
+          mutatedTarget.keyOrder[index],
         ];
       }
-      return `shuffle:${target.specId}`;
+      description = `shuffle:${mutatedTarget.specId}`;
+      break;
     }
     default:
-      target.hostTag = HOST_TAGS[(HOST_TAGS.indexOf(target.hostTag) + 1) % HOST_TAGS.length];
-      return `retag:${target.specId}`;
+      mutatedTarget.hostTag =
+        HOST_TAGS[(HOST_TAGS.indexOf(mutatedTarget.hostTag) + 1) % HOST_TAGS.length];
+      description = `retag:${mutatedTarget.specId}`;
   }
+
+  // Rebuild the spine bottom-up with fresh node objects.
+  let clonedChild = mutatedTarget;
+  for (let depth = target.ancestorChain.length - 2; depth >= 0; depth--) {
+    const ancestor = target.ancestorChain[depth];
+    const originalChild = target.ancestorChain[depth + 1];
+    const childIndex = ancestor.children.indexOf(originalChild);
+    const nextChildren = [...ancestor.children];
+    nextChildren[childIndex] = clonedChild;
+    clonedChild = { ...ancestor, keyOrder: [...ancestor.keyOrder], children: nextChildren };
+  }
+  return { nextSpec: clonedChild, description };
 };
 
 const FuzzContext = React.createContext(0);
@@ -287,7 +328,7 @@ export const runFuzz = async (seed: number, mutationCount: number): Promise<Fuzz
     // Three generated subtrees under a fixed host root guarantee every
     // seed produces a tree with real breadth to check.
     const nextSpecId = { value: 1 };
-    const rootSpec: SpecNode = {
+    let rootSpec: SpecNode = {
       kind: "host",
       specId: 0,
       hostTag: "div",
@@ -301,11 +342,12 @@ export const runFuzz = async (seed: number, mutationCount: number): Promise<Fuzz
     checkedHostNodes += checkInvariants(failures, "mount");
 
     for (let mutationIndex = 0; mutationIndex < mutationCount; mutationIndex++) {
-      const mutationDescription = mutateSpec(rootSpec, rng);
-      mutationLog.push(mutationDescription);
-      fuzzRoot.render(<RenderSpec node={{ ...rootSpec }} />);
+      const mutation = mutateSpec(rootSpec, rng);
+      rootSpec = mutation.nextSpec;
+      mutationLog.push(mutation.description);
+      fuzzRoot.render(<RenderSpec node={rootSpec} />);
       await waitForCommitToSettle();
-      checkedHostNodes += checkInvariants(failures, `mutation ${mutationDescription}`);
+      checkedHostNodes += checkInvariants(failures, `mutation ${mutation.description}`);
     }
   } finally {
     fuzzRoot.unmount();

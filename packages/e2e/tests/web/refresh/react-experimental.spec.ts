@@ -6,4 +6,4 @@
 // while still failing on every released major.
 import { defineRefreshSuite } from "./refresh-suite";
 
-defineRefreshSuite(99);
+defineRefreshSuite(99, "React experimental");
