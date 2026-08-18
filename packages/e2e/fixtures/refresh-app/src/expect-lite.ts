@@ -27,15 +27,15 @@ interface ExpectApi {
 export const expect = (actual: unknown): ExpectApi => ({
   toBe(expected) {
     if (!Object.is(actual, expected)) {
-      throw new AssertionFailure(
-        `expected ${formatValue(actual)} to be ${formatValue(expected)}`,
-      );
+      throw new AssertionFailure(`expected ${formatValue(actual)} to be ${formatValue(expected)}`);
     }
   },
   not: {
     toBe(expected) {
       if (Object.is(actual, expected)) {
-        throw new AssertionFailure(`expected ${formatValue(actual)} to not be ${formatValue(expected)}`);
+        throw new AssertionFailure(
+          `expected ${formatValue(actual)} to not be ${formatValue(expected)}`,
+        );
       }
     },
   },

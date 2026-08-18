@@ -7,8 +7,15 @@ import type { Scenario } from "../harness";
 
 export const hookAndRenderingScenarios: Record<string, Scenario> = {
   "resets hooks with dependencies on hot reload": async (tools) => {
-    const { React: ReactModule, render, patch, expect, firstElement, clickElement, container } =
-      tools;
+    const {
+      React: ReactModule,
+      render,
+      patch,
+      expect,
+      firstElement,
+      clickElement,
+      container,
+    } = tools;
 
     let emptyArrayEffectCallCount = 0;
 
@@ -16,10 +23,7 @@ export const hookAndRenderingScenarios: Record<string, Scenario> = {
       const Hello = () => {
         const [value, setValue] = ReactModule.useState(0);
         const transformed = ReactModule.useMemo(() => value * 2, [value]);
-        const handleClick = ReactModule.useCallback(
-          () => setValue((previous) => previous + 1),
-          [],
-        );
+        const handleClick = ReactModule.useCallback(() => setValue((previous) => previous + 1), []);
         ReactModule.useEffect(() => {
           emptyArrayEffectCallCount++;
         }, []);
@@ -45,10 +49,7 @@ export const hookAndRenderingScenarios: Record<string, Scenario> = {
       const Hello = () => {
         const [value, setValue] = ReactModule.useState(0);
         const transformed = ReactModule.useMemo(() => value * 10, [value]);
-        const handleClick = ReactModule.useCallback(
-          () => setValue((previous) => previous - 1),
-          [],
-        );
+        const handleClick = ReactModule.useCallback(() => setValue((previous) => previous - 1), []);
         ReactModule.useEffect(() => {
           emptyArrayEffectCallCount++;
         }, []);
@@ -111,8 +112,15 @@ export const hookAndRenderingScenarios: Record<string, Scenario> = {
   },
 
   "does not re-render ancestor components unnecessarily during a hot update": async (tools) => {
-    const { React: ReactModule, render, patch, expect, firstElement, clickElement, container } =
-      tools;
+    const {
+      React: ReactModule,
+      render,
+      patch,
+      expect,
+      firstElement,
+      clickElement,
+      container,
+    } = tools;
 
     let appRenderCount = 0;
 
@@ -164,7 +172,7 @@ export const hookAndRenderingScenarios: Record<string, Scenario> = {
   },
 
   "batches re-renders during a hot update": async (tools) => {
-    const { React: ReactModule, render, patch, expect, container } = tools;
+    const { render, patch, expect, container } = tools;
 
     interface HelloProps {
       children?: React.ReactNode;
@@ -208,8 +216,15 @@ export const hookAndRenderingScenarios: Record<string, Scenario> = {
   },
 
   "double invokes effects after a forced remount in StrictMode": async (tools) => {
-    const { React: ReactModule, renderElement, patch, expect, firstElement, log, assertLog } =
-      tools;
+    const {
+      React: ReactModule,
+      renderElement,
+      patch,
+      expect,
+      firstElement,
+      log,
+      assertLog,
+    } = tools;
 
     const defineHelloV1 = () => {
       const Hello = () => {
@@ -255,8 +270,15 @@ export const hookAndRenderingScenarios: Record<string, Scenario> = {
   },
 
   "double invokes an effect added during a Fast Refresh remount in StrictMode": async (tools) => {
-    const { React: ReactModule, renderElement, patch, expect, firstElement, log, assertLog } =
-      tools;
+    const {
+      React: ReactModule,
+      renderElement,
+      patch,
+      expect,
+      firstElement,
+      log,
+      assertLog,
+    } = tools;
 
     const defineHelloV1 = () => {
       const Hello = () => <p style={{ color: "blue" }}>Hello</p>;

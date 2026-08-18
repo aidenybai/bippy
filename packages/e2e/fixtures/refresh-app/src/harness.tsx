@@ -7,18 +7,26 @@
 import * as bippy from "bippy";
 import * as React from "react";
 import { createRoot, type Root, type RootOptions } from "react-dom/client";
+// Kept for React 17, whose act lives here; on 18/19 the react export wins.
+import * as ReactDOMTestUtils from "react-dom/test-utils";
 import ReactFreshRuntime from "react-refresh/runtime";
 
 import { expect } from "./expect-lite";
 
 window.IS_REACT_ACT_ENVIRONMENT = true;
 
-interface ReactWithAct {
-  act?: (scope: () => void | Promise<void>) => Promise<void>;
-  unstable_act?: (scope: () => void | Promise<void>) => Promise<void>;
+interface ActImplementation {
+  (scope: () => void | Promise<void>): void | Promise<void>;
 }
 
-const reactAct = (React as ReactWithAct).act ?? (React as ReactWithAct).unstable_act;
+interface ModuleWithAct {
+  act?: ActImplementation;
+  unstable_act?: ActImplementation;
+}
+
+const reactModuleWithAct: ModuleWithAct = React;
+const testUtilsWithAct: ModuleWithAct = ReactDOMTestUtils;
+const reactAct = reactModuleWithAct.act ?? reactModuleWithAct.unstable_act ?? testUtilsWithAct.act;
 
 const flushWithoutAct = async (scope: () => void | Promise<void>): Promise<void> => {
   await scope();
@@ -27,7 +35,11 @@ const flushWithoutAct = async (scope: () => void | Promise<void>): Promise<void>
 
 export const act = async (scope: () => void | Promise<void>): Promise<void> => {
   if (reactAct) {
-    await reactAct(scope);
+    // Always hand act an async scope: React 17's act only flushes
+    // microtasks (e.g. resolved lazy thenables) for async scopes.
+    await reactAct(async () => {
+      await scope();
+    });
     return;
   }
   await flushWithoutAct(scope);

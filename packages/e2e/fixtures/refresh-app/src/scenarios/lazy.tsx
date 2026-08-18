@@ -31,8 +31,16 @@ const runPatchLazyBeforeResolution = async (
   tools: HarnessTools,
   wrapHello: WrapHello,
 ): Promise<void> => {
-  const { React: ReactModule, render, patch, act, expect, firstElement, clickElement, container } =
-    tools;
+  const {
+    React: ReactModule,
+    render,
+    patch,
+    act,
+    expect,
+    firstElement,
+    clickElement,
+    container,
+  } = tools;
 
   let resolveLazy: LazyResolver = () => {};
 
@@ -198,15 +206,7 @@ export const lazyScenarios: Record<string, Scenario> = {
   },
 
   "remounts lazy(memo()) when adding a comparison function": async (tools) => {
-    const {
-      React: ReactModule,
-      render,
-      patch,
-      act,
-      expect,
-      firstElement,
-      container,
-    } = tools;
+    const { React: ReactModule, render, patch, act, expect, firstElement, container } = tools;
 
     let resolveLazy: LazyResolver = () => {};
 
@@ -256,15 +256,7 @@ export const lazyScenarios: Record<string, Scenario> = {
   },
 
   "remounts lazy(memo()) when adding a comparison without re-creating the lazy": async (tools) => {
-    const {
-      React: ReactModule,
-      render,
-      patch,
-      act,
-      expect,
-      firstElement,
-      container,
-    } = tools;
+    const { React: ReactModule, render, patch, act, expect, firstElement, container } = tools;
 
     let resolveLazy: LazyResolver = () => {};
 

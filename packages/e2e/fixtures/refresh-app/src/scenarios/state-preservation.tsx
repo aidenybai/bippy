@@ -148,8 +148,15 @@ export const statePreservationScenarios: Record<string, Scenario> = {
   },
 
   "does not consider two forwardRefs around the same type equivalent": async (tools) => {
-    const { React: ReactModule, render, patch, expect, firstElement, clickElement, container } =
-      tools;
+    const {
+      React: ReactModule,
+      render,
+      patch,
+      expect,
+      firstElement,
+      clickElement,
+      container,
+    } = tools;
 
     interface ParentProps {
       cond: boolean;
@@ -225,8 +232,15 @@ export const statePreservationScenarios: Record<string, Scenario> = {
   },
 
   "updates forwardRef render function together with its wrapper": async (tools) => {
-    const { React: ReactModule, render, patch, expect, firstElement, clickElement, container } =
-      tools;
+    const {
+      React: ReactModule,
+      render,
+      patch,
+      expect,
+      firstElement,
+      clickElement,
+      container,
+    } = tools;
 
     interface ColoredProps {
       color: string;
@@ -263,8 +277,15 @@ export const statePreservationScenarios: Record<string, Scenario> = {
   },
 
   "updates forwardRef render function in isolation": async (tools) => {
-    const { React: ReactModule, render, patch, expect, firstElement, clickElement, container } =
-      tools;
+    const {
+      React: ReactModule,
+      render,
+      patch,
+      expect,
+      firstElement,
+      clickElement,
+      container,
+    } = tools;
 
     interface ColoredProps {
       color: string;
@@ -309,8 +330,15 @@ export const statePreservationScenarios: Record<string, Scenario> = {
   },
 
   "updates simple memo function in isolation": async (tools) => {
-    const { React: ReactModule, render, patch, expect, firstElement, clickElement, container } =
-      tools;
+    const {
+      React: ReactModule,
+      render,
+      patch,
+      expect,
+      firstElement,
+      clickElement,
+      container,
+    } = tools;
 
     await render(() => {
       const Hello = createCounter(tools, "blue");

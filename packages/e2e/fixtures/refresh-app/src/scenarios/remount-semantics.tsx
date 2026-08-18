@@ -226,8 +226,15 @@ export const remountSemanticsScenarios: Record<string, Scenario> = {
   },
 
   "updates a memo comparison function in place": async (tools) => {
-    const { React: ReactModule, render, patch, expect, firstElement, clickElement, container } =
-      tools;
+    const {
+      React: ReactModule,
+      render,
+      patch,
+      expect,
+      firstElement,
+      clickElement,
+      container,
+    } = tools;
 
     interface InnerProps {
       label: string;
@@ -330,8 +337,15 @@ export const remountSemanticsScenarios: Record<string, Scenario> = {
   },
 
   "remounts an unregistered memo wrapper without losing the wrapper": async (tools) => {
-    const { React: ReactModule, render, patch, expect, firstElement, clickElement, container } =
-      tools;
+    const {
+      React: ReactModule,
+      render,
+      patch,
+      expect,
+      firstElement,
+      clickElement,
+      container,
+    } = tools;
 
     interface InnerProps {
       label: string;

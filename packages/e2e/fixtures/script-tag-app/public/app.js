@@ -9,12 +9,12 @@
     },
   });
 
-  var createElement = React.createElement;
+  const createElement = React.createElement;
 
   function Counter() {
-    var countState = React.useState(0);
-    var count = countState[0];
-    var setCount = countState[1];
+    const countState = React.useState(0);
+    const count = countState[0];
+    const setCount = countState[1];
     return createElement(
       "button",
       {
@@ -27,8 +27,6 @@
     );
   }
 
-  var root = ReactDOM.createRoot(document.getElementById("root"));
-  root.render(
-    createElement("div", { "data-testid": "test-child" }, createElement(Counter)),
-  );
+  const root = ReactDOM.createRoot(document.getElementById("root"));
+  root.render(createElement("div", { "data-testid": "test-child" }, createElement(Counter)));
 })();

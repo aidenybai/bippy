@@ -8,7 +8,8 @@ import * as bippy from "bippy";
 window.__BIPPY__ = bippy;
 
 const bootstrap = async (): Promise<void> => {
-  const { runScenario, scenarioNames } = await import("./scenario-runner");
+  const { initScenarios } = await import("./scenario-runner");
+  const { runScenario, scenarioNames } = await initScenarios();
   window.__RUN_SCENARIO__ = runScenario;
   window.__SCENARIO_NAMES__ = scenarioNames;
   window.__HARNESS_READY__ = true;

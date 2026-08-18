@@ -29,7 +29,9 @@ export const Target = () => {
 };
 `;
 
-export const renamedStateVariableSource = (version: string): string => `import { useState } from "react";
+export const renamedStateVariableSource = (
+  version: string,
+): string => `import { useState } from "react";
 
 export const Target = () => {
   const [total, setTotal] = useState(0);
@@ -54,7 +56,9 @@ export const Target = () => {
 };
 `;
 
-export const effectLoggingSource = (version: string): string => `import { useEffect, useState } from "react";
+export const effectLoggingSource = (
+  version: string,
+): string => `import { useEffect, useState } from "react";
 
 export const Target = () => {
   const [count, setCount] = useState(0);

@@ -9,10 +9,7 @@ interface CounterState {
   count: number;
 }
 
-const defineClassCounter = (
-  tools: HarnessTools,
-  color: string,
-): React.ComponentType<object> => {
+const defineClassCounter = (tools: HarnessTools, color: string): React.ComponentType<object> => {
   const { React: ReactModule } = tools;
   class Hello extends ReactModule.Component<object, CounterState> {
     override state: CounterState = { count: 0 };
@@ -131,8 +128,15 @@ export const classAndRefScenarios: Record<string, Scenario> = {
   },
 
   "remounts on conversion from class to function and back": async (tools) => {
-    const { React: ReactModule, render, patch, expect, firstElement, clickElement, container } =
-      tools;
+    const {
+      React: ReactModule,
+      render,
+      patch,
+      expect,
+      firstElement,
+      clickElement,
+      container,
+    } = tools;
 
     const defineFunctionCounter = (color: string) => {
       const Hello = () => {

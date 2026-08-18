@@ -15,7 +15,10 @@ const reactDirectory = path.dirname(fixtureRequire.resolve("react-18/package.jso
 const reactDomDirectory = path.dirname(fixtureRequire.resolve("react-dom-18/package.json"));
 
 for (const umdFileName of ["react.development.js", "react.production.min.js"]) {
-  copyFileSync(path.join(reactDirectory, "umd", umdFileName), path.join(vendorDirectory, umdFileName));
+  copyFileSync(
+    path.join(reactDirectory, "umd", umdFileName),
+    path.join(vendorDirectory, umdFileName),
+  );
 }
 for (const umdFileName of ["react-dom.development.js", "react-dom.production.min.js"]) {
   copyFileSync(

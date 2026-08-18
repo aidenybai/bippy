@@ -338,7 +338,21 @@ export const signatureScenarios: Record<string, Scenario> = {
 
   "remounts on signature change within a lazy simple memo wrapper": async (tools) => {
     await runRemountingWithWrapper(tools, ({ React: ReactModule }, Hello) =>
-      ReactModule.lazy(() => Promise.resolve({ default: ReactModule.memo(Hello) })),
+      // A synchronously-resolving thenable, as in the original test: the
+      // lazy must never actually suspend because there is no Suspense
+      // boundary above it (which legacy React 17 roots would reject).
+      ReactModule.lazy(
+        () =>
+          ({
+            then(onFulfilled: (payload: { default: React.ComponentType<object> }) => void) {
+              onFulfilled({ default: ReactModule.memo(Hello) });
+            },
+            // React's lazy accepts any thenable; the sync-resolving shape is
+            // intentional and not expressible as a real Promise.
+          }) as PromiseLike<{ default: React.ComponentType<object> }> as Promise<{
+            default: React.ComponentType<object>;
+          }>,
+      ),
     );
   },
 

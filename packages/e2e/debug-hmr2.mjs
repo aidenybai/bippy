@@ -49,7 +49,9 @@ await new Promise((resolveSleep) => setTimeout(resolveSleep, 1500));
 
 const browser = await chromium.launch();
 const page = await browser.newPage();
-page.on("console", (message) => console.log(`[page ${message.type()}]`, message.text().slice(0, 160)));
+page.on("console", (message) =>
+  console.log(`[page ${message.type()}]`, message.text().slice(0, 160)),
+);
 page.on("pageerror", (error) => console.log("[pageerror]", error.message.slice(0, 200)));
 page.on("load", () => console.log("[navigation] page loaded"));
 await page.goto(`http://localhost:${port}/`);
@@ -63,7 +65,10 @@ console.log("overlay present:", await page.locator("vite-error-overlay").count()
 
 writeFileSync(targetFilePath, counterSource("v2"));
 await new Promise((resolveSleep) => setTimeout(resolveSleep, 4000));
-console.log("dom state:", await page.content().then((html) => /data-version="[^"]+/.exec(html)?.[0]));
+console.log(
+  "dom state:",
+  await page.content().then((html) => /data-version="[^"]+/.exec(html)?.[0]),
+);
 console.log("overlay still present:", await page.locator("vite-error-overlay").count());
 
 writeFileSync(targetFilePath, originalSource);

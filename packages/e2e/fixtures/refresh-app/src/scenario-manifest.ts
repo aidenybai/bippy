@@ -10,6 +10,10 @@ export interface ScenarioDescriptor {
   // Specs mark these as expected failures so an upgrade that fixes the
   // behavior upstream flips them to "unexpected pass" and gets noticed.
   knownIssue?: string;
+  // Restricts the known issue to specific React majors (all majors when
+  // omitted). Example: the missing StrictMode double-invoke on forced
+  // remounts affects 19.x only; 18.3 behaves correctly.
+  knownIssueReactMajors?: readonly number[];
 }
 
 // Fixed on React main by facebook/react#36950 and #36964 (kind-changing
@@ -18,8 +22,9 @@ export interface ScenarioDescriptor {
 const KIND_CHANGE_ISSUE =
   "kind-changing edits require facebook/react#36950/#36964, unreleased as of react-refresh 0.18.0";
 
+// A React 19 regression relative to 18.3, where the double-invoke works.
 const STRICT_MODE_REMOUNT_ISSUE =
-  "react-dom 19.2.4 does not double-invoke effects for Fast Refresh forced remounts; React main does";
+  "react-dom 19.2.4 does not double-invoke effects for Fast Refresh forced remounts; React 18.3 and React main do";
 
 export const scenarioManifest: readonly ScenarioDescriptor[] = [
   { name: "preserves state for compatible types" },
@@ -98,11 +103,13 @@ export const scenarioManifest: readonly ScenarioDescriptor[] = [
     name: "double invokes effects after a forced remount in StrictMode",
     minReactMajor: 18,
     knownIssue: STRICT_MODE_REMOUNT_ISSUE,
+    knownIssueReactMajors: [19],
   },
   {
     name: "double invokes an effect added during a Fast Refresh remount in StrictMode",
     minReactMajor: 18,
     knownIssue: STRICT_MODE_REMOUNT_ISSUE,
+    knownIssueReactMajors: [19],
   },
   { name: "remounts failed error boundaries (componentDidCatch)" },
   { name: "remounts failed error boundaries (getDerivedStateFromError)" },

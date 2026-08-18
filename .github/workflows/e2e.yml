@@ -53,6 +53,9 @@ jobs:
       - name: Run Playwright tests
         run: pnpm exec nr test:web
         working-directory: packages/e2e
+      - name: Run Playwright tests against production builds
+        run: pnpm exec nr test:web:production
+        working-directory: packages/e2e
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
