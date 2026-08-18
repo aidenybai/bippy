@@ -12,7 +12,11 @@ import { runtimeApiScenarios } from "./scenarios/runtime-api";
 import { signatureScenarios } from "./scenarios/signatures";
 import { statePreservationScenarios } from "./scenarios/state-preservation";
 
-const reactMajor = Number(React.version.split(".")[0]);
+// Experimental-channel builds report "0.0.0-experimental-<sha>-<date>";
+// they are built from React main, so treat them as newer than any release.
+const reactMajor = React.version.includes("experimental")
+  ? 99
+  : Number(React.version.split(".")[0]);
 
 const scenarios: Record<string, Scenario> = {
   ...statePreservationScenarios,

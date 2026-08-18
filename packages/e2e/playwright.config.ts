@@ -9,17 +9,24 @@ const remixPort = Number(process.env.BIPPY_E2E_REMIX_PORT ?? 3400);
 const rsbuildPort = Number(process.env.BIPPY_E2E_RSBUILD_PORT ?? 3500);
 const astroPort = Number(process.env.BIPPY_E2E_ASTRO_PORT ?? 3600);
 const kitchenSinkPort = Number(process.env.BIPPY_E2E_KITCHEN_SINK_PORT ?? 5199);
+const stressPort = Number(process.env.BIPPY_E2E_STRESS_PORT ?? 5198);
 const refreshPort = Number(process.env.BIPPY_E2E_REFRESH_PORT ?? 5190);
 const refreshReact18Port = Number(process.env.BIPPY_E2E_REFRESH_18_PORT ?? 5191);
 const refreshReact17Port = Number(process.env.BIPPY_E2E_REFRESH_17_PORT ?? 5192);
+const refreshExperimentalPort = Number(process.env.BIPPY_E2E_REFRESH_EXPERIMENTAL_PORT ?? 5193);
 const chromeExtensionTestMatch = /chrome-extension\.spec\.ts/;
 const refreshTestMatch = /refresh\/.*\.spec\.ts/;
 // The late-load regression page exists in every refresh fixture.
 const refreshReact19TestMatch = [/refresh\/react-fresh\.spec\.ts/, /refresh\/late-load\.spec\.ts/];
 const refreshReact18TestMatch = [/refresh\/react-18\.spec\.ts/, /refresh\/late-load\.spec\.ts/];
 const refreshReact17TestMatch = [/refresh\/react-17\.spec\.ts/, /refresh\/late-load\.spec\.ts/];
+const refreshExperimentalTestMatch = [
+  /refresh\/react-experimental\.spec\.ts/,
+  /refresh\/late-load\.spec\.ts/,
+];
 const hmrTestMatch = /hmr\/.*\.spec\.ts/;
 const kitchenSinkTestMatch = /kitchen-sink.*\.spec\.ts/;
+const stressTestMatch = /stress\/.*\.spec\.ts/;
 // Production-only specs run through playwright.production.config.ts.
 const productionOnlyTestMatch = [
   /production\.spec\.ts/,
@@ -32,6 +39,7 @@ const sharedProjectTestIgnore = [
   refreshTestMatch,
   hmrTestMatch,
   kitchenSinkTestMatch,
+  stressTestMatch,
   ...productionOnlyTestMatch,
 ];
 
@@ -88,6 +96,11 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${kitchenSinkPort}` },
     },
     {
+      name: "stress",
+      testMatch: stressTestMatch,
+      use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${stressPort}` },
+    },
+    {
       name: "refresh",
       testMatch: refreshReact19TestMatch,
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${refreshPort}` },
@@ -101,6 +114,14 @@ export default defineConfig({
       name: "refresh-react17",
       testMatch: refreshReact17TestMatch,
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${refreshReact17Port}` },
+    },
+    {
+      name: "refresh-experimental",
+      testMatch: refreshExperimentalTestMatch,
+      use: {
+        ...devices["Desktop Chrome"],
+        baseURL: `http://localhost:${refreshExperimentalPort}`,
+      },
     },
     {
       // Spawns its own vite dev server and edits fixture sources on disk,
@@ -169,6 +190,12 @@ export default defineConfig({
       timeout: 60_000,
     },
     {
+      command: `pnpm --filter @bippy/e2e-stress dev --port ${stressPort}`,
+      port: stressPort,
+      reuseExistingServer: !isCI,
+      timeout: 60_000,
+    },
+    {
       command: `pnpm --filter @bippy/e2e-refresh dev --port ${refreshPort}`,
       port: refreshPort,
       reuseExistingServer: !isCI,
@@ -183,6 +210,12 @@ export default defineConfig({
     {
       command: `pnpm --filter @bippy/e2e-refresh-react17 dev --port ${refreshReact17Port}`,
       port: refreshReact17Port,
+      reuseExistingServer: !isCI,
+      timeout: 30_000,
+    },
+    {
+      command: `pnpm --filter @bippy/e2e-refresh-experimental dev --port ${refreshExperimentalPort}`,
+      port: refreshExperimentalPort,
       reuseExistingServer: !isCI,
       timeout: 30_000,
     },

@@ -18,9 +18,12 @@ export interface ScenarioDescriptor {
 
 // Fixed on React main by facebook/react#36950 and #36964 (kind-changing
 // edits crash or are dropped), but the fixes have not shipped in the
-// published react-refresh 0.18.0 / react-dom 19.2.4 pair yet.
+// published react-refresh 0.18.0 / react-dom 19.2.4 pair yet. The
+// experimental channel (treated as major 99) has the fixes, so these
+// scenarios must pass there.
 const KIND_CHANGE_ISSUE =
   "kind-changing edits require facebook/react#36950/#36964, unreleased as of react-refresh 0.18.0";
+const KIND_CHANGE_ISSUE_MAJORS: readonly number[] = [17, 18, 19];
 
 // A React 19 regression relative to 18.3, where the double-invoke works.
 const STRICT_MODE_REMOUNT_ISSUE =
@@ -40,30 +43,52 @@ export const scenarioManifest: readonly ScenarioDescriptor[] = [
   {
     name: "resets state when switching between different component types",
     knownIssue: KIND_CHANGE_ISSUE,
+    knownIssueReactMajors: KIND_CHANGE_ISSUE_MAJORS,
   },
-  { name: "remounts when function changes to memo", knownIssue: KIND_CHANGE_ISSUE },
-  { name: "remounts when memo changes to forwardRef", knownIssue: KIND_CHANGE_ISSUE },
-  { name: "remounts when function changes to forwardRef", knownIssue: KIND_CHANGE_ISSUE },
+  {
+    name: "remounts when function changes to memo",
+    knownIssue: KIND_CHANGE_ISSUE,
+    knownIssueReactMajors: KIND_CHANGE_ISSUE_MAJORS,
+  },
+  {
+    name: "remounts when memo changes to forwardRef",
+    knownIssue: KIND_CHANGE_ISSUE,
+    knownIssueReactMajors: KIND_CHANGE_ISSUE_MAJORS,
+  },
+  {
+    name: "remounts when function changes to forwardRef",
+    knownIssue: KIND_CHANGE_ISSUE,
+    knownIssueReactMajors: KIND_CHANGE_ISSUE_MAJORS,
+  },
   {
     name: "remounts when memo inner type changes from function to forwardRef",
     knownIssue: KIND_CHANGE_ISSUE,
+    knownIssueReactMajors: KIND_CHANGE_ISSUE_MAJORS,
   },
   {
     name: "mounts an element created before its type changed kinds",
     knownIssue: KIND_CHANGE_ISSUE,
+    knownIssueReactMajors: KIND_CHANGE_ISSUE_MAJORS,
   },
   {
     name: "remounts when adding or removing a memo comparison function",
     knownIssue: KIND_CHANGE_ISSUE,
+    knownIssueReactMajors: KIND_CHANGE_ISSUE_MAJORS,
   },
-  { name: "updates a memo comparison function in place", knownIssue: KIND_CHANGE_ISSUE },
+  {
+    name: "updates a memo comparison function in place",
+    knownIssue: KIND_CHANGE_ISSUE,
+    knownIssueReactMajors: KIND_CHANGE_ISSUE_MAJORS,
+  },
   {
     name: "mounts a pre-edit memo element with the latest comparison function",
     knownIssue: KIND_CHANGE_ISSUE,
+    knownIssueReactMajors: KIND_CHANGE_ISSUE_MAJORS,
   },
   {
     name: "remounts an unregistered memo wrapper without losing the wrapper",
     knownIssue: KIND_CHANGE_ISSUE,
+    knownIssueReactMajors: KIND_CHANGE_ISSUE_MAJORS,
   },
   { name: "preserves state for lazy after resolution" },
   { name: "patches lazy before resolution" },
@@ -73,10 +98,12 @@ export const scenarioManifest: readonly ScenarioDescriptor[] = [
   {
     name: "remounts lazy(memo()) when adding a comparison function",
     knownIssue: KIND_CHANGE_ISSUE,
+    knownIssueReactMajors: KIND_CHANGE_ISSUE_MAJORS,
   },
   {
     name: "remounts lazy(memo()) when adding a comparison without re-creating the lazy",
     knownIssue: KIND_CHANGE_ISSUE,
+    knownIssueReactMajors: KIND_CHANGE_ISSUE_MAJORS,
   },
   { name: "can force remount by changing signature" },
   { name: "keeps a valid tree when forcing remount" },
