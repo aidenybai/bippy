@@ -8,8 +8,15 @@ const refreshPort = Number(process.env.BIPPY_E2E_REFRESH_PORT ?? 5190);
 const chromeExtensionTestMatch = /chrome-extension\.spec\.ts/;
 const refreshTestMatch = /refresh\/.*\.spec\.ts/;
 const hmrTestMatch = /hmr\/.*\.spec\.ts/;
+// Production-only specs run through playwright.production.config.ts.
+const productionOnlyTestMatch = [/production\.spec\.ts/, /profiling\.spec\.ts/];
 // Specs living in dedicated subfolders run only in their dedicated projects.
-const sharedProjectTestIgnore = [chromeExtensionTestMatch, refreshTestMatch, hmrTestMatch];
+const sharedProjectTestIgnore = [
+  chromeExtensionTestMatch,
+  refreshTestMatch,
+  hmrTestMatch,
+  ...productionOnlyTestMatch,
+];
 
 export default defineConfig({
   testDir: "./tests/web",
