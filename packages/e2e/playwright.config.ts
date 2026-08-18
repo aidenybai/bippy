@@ -9,7 +9,11 @@ const chromeExtensionTestMatch = /chrome-extension\.spec\.ts/;
 const refreshTestMatch = /refresh\/.*\.spec\.ts/;
 const hmrTestMatch = /hmr\/.*\.spec\.ts/;
 // Production-only specs run through playwright.production.config.ts.
-const productionOnlyTestMatch = [/production\.spec\.ts/, /profiling\.spec\.ts/];
+const productionOnlyTestMatch = [
+  /production\.spec\.ts/,
+  /profiling\.spec\.ts/,
+  /script-tag\.spec\.ts/,
+];
 // Specs living in dedicated subfolders run only in their dedicated projects.
 const sharedProjectTestIgnore = [
   chromeExtensionTestMatch,

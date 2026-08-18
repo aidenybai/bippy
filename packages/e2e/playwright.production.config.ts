@@ -4,9 +4,11 @@ const vitePort = 5_181;
 const nextPort = 3_101;
 const tanstackPort = 3_201;
 const profilingPort = 5_182;
+const scriptTagPort = 5_183;
 
 const sharedProductionTestMatch = [/use-fiber\.spec\.ts/, /production\.spec\.ts/];
 const profilingTestMatch = /profiling\.spec\.ts/;
+const scriptTagTestMatch = /script-tag\.spec\.ts/;
 
 export default defineConfig({
   testDir: "./tests/web",
@@ -37,6 +39,11 @@ export default defineConfig({
       testMatch: profilingTestMatch,
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${profilingPort}` },
     },
+    {
+      name: "script-tag",
+      testMatch: scriptTagTestMatch,
+      use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${scriptTagPort}` },
+    },
   ],
   webServer: [
     {
@@ -60,6 +67,12 @@ export default defineConfig({
     {
       command: `nr --filter @bippy/e2e-profiling build && nr --filter @bippy/e2e-profiling preview --port ${profilingPort}`,
       port: profilingPort,
+      reuseExistingServer: false,
+      timeout: 60_000,
+    },
+    {
+      command: `nr --filter @bippy/e2e-script-tag prepare-vendor && nr --filter @bippy/e2e-script-tag preview --port ${scriptTagPort}`,
+      port: scriptTagPort,
       reuseExistingServer: false,
       timeout: 60_000,
     },
