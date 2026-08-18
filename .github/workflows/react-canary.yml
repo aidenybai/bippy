@@ -1,0 +1,47 @@
+name: React Canary
+
+# Runs the ported ReactFresh suite against the latest React experimental
+# nightlies (built from facebook/react main). Failures here mean upstream
+# internals changed in a way that will eventually break bippy on stable —
+# months of warning instead of a release-day surprise.
+on:
+  schedule:
+    - cron: "0 6 * * 1,4"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Update to the latest experimental nightlies
+        run: pnpm --filter @bippy/e2e-refresh-experimental run update-experimental
+      - name: Report nightly versions
+        run: node -e "const pkg = require('./packages/e2e/fixtures/refresh-app-experimental/package.json'); console.log(JSON.stringify(pkg.dependencies, null, 2))"
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: packages/e2e
+      - name: Run refresh suite against the nightlies
+        run: npx playwright test --project=refresh-experimental
+        working-directory: packages/e2e
+        env:
+          # Only the experimental fixture's dev server is needed; without
+          # this, playwright would boot every configured webServer.
+          BIPPY_E2E_SERVERS: refresh-experimental
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: react-canary-report
+          path: packages/e2e/playwright-report/
+          retention-days: 14

@@ -1,0 +1,18 @@
+{
+  "name": "@bippy/e2e-script-tag",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare-vendor": "node scripts/prepare-vendor.mjs",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "bippy": "workspace:*",
+    "react-18": "npm:react@18.3.1",
+    "react-dom-18": "npm:react-dom@18.3.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "vite": "^7.3.4"
+  }
+}

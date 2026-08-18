@@ -1,0 +1,17 @@
+{
+  "name": "@bippy/e2e-refresh-react18",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite"
+  },
+  "dependencies": {
+    "bippy": "workspace:*",
+    "react-18": "npm:react@18.3.1",
+    "react-dom-18": "npm:react-dom@18.3.1",
+    "react-refresh": "^0.18.0"
+  },
+  "devDependencies": {
+    "vite": "^7.3.4"
+  }
+}

@@ -57,6 +57,14 @@ test.describe("hook inspection", () => {
   });
 
   test("parseHookNames resolves source variable names for the hooks", async ({ page }) => {
+    // rspack's dev source maps only recover some hook variable names
+    // (count resolves, showConditional does not). Documented gap that
+    // flips to "unexpected pass" when rspack/bippy sourcemap handling
+    // improves.
+    test.fail(
+      test.info().project.name === "rsbuild",
+      "partial hook variable name recovery from rspack dev source maps",
+    );
     const result = await page.evaluate(`(() => {
       ${findTestParentFiber}
       if (!parentFiber) return Promise.resolve(null);
