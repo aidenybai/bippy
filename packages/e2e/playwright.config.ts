@@ -4,6 +4,10 @@ const isCI = Boolean(process.env.CI);
 const vitePort = Number(process.env.BIPPY_E2E_VITE_PORT ?? 5180);
 const nextPort = Number(process.env.BIPPY_E2E_NEXT_PORT ?? 3100);
 const tanstackPort = Number(process.env.BIPPY_E2E_TANSTACK_PORT ?? 3200);
+const reactRouterPort = Number(process.env.BIPPY_E2E_REACT_ROUTER_PORT ?? 3300);
+const remixPort = Number(process.env.BIPPY_E2E_REMIX_PORT ?? 3400);
+const rsbuildPort = Number(process.env.BIPPY_E2E_RSBUILD_PORT ?? 3500);
+const astroPort = Number(process.env.BIPPY_E2E_ASTRO_PORT ?? 3600);
 const refreshPort = Number(process.env.BIPPY_E2E_REFRESH_PORT ?? 5190);
 const refreshReact18Port = Number(process.env.BIPPY_E2E_REFRESH_18_PORT ?? 5191);
 const refreshReact17Port = Number(process.env.BIPPY_E2E_REFRESH_17_PORT ?? 5192);
@@ -56,6 +60,26 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${tanstackPort}` },
     },
     {
+      name: "react-router",
+      testIgnore: sharedProjectTestIgnore,
+      use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${reactRouterPort}` },
+    },
+    {
+      name: "remix",
+      testIgnore: sharedProjectTestIgnore,
+      use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${remixPort}` },
+    },
+    {
+      name: "rsbuild",
+      testIgnore: sharedProjectTestIgnore,
+      use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${rsbuildPort}` },
+    },
+    {
+      name: "astro",
+      testIgnore: sharedProjectTestIgnore,
+      use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${astroPort}` },
+    },
+    {
       name: "refresh",
       testMatch: refreshReact19TestMatch,
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${refreshPort}` },
@@ -102,6 +126,31 @@ export default defineConfig({
     {
       command: `pnpm --filter @bippy/e2e-tanstack dev --port ${tanstackPort}`,
       port: tanstackPort,
+      reuseExistingServer: !isCI,
+      timeout: 60_000,
+    },
+    {
+      command: `pnpm --filter @bippy/e2e-react-router dev --port ${reactRouterPort}`,
+      // Waiting on the URL lets the dev server finish the first compile.
+      url: `http://localhost:${reactRouterPort}`,
+      reuseExistingServer: !isCI,
+      timeout: 120_000,
+    },
+    {
+      command: `pnpm --filter @bippy/e2e-remix dev --port ${remixPort}`,
+      url: `http://localhost:${remixPort}`,
+      reuseExistingServer: !isCI,
+      timeout: 120_000,
+    },
+    {
+      command: `pnpm --filter @bippy/e2e-rsbuild dev --port ${rsbuildPort}`,
+      port: rsbuildPort,
+      reuseExistingServer: !isCI,
+      timeout: 60_000,
+    },
+    {
+      command: `pnpm --filter @bippy/e2e-astro dev --port ${astroPort}`,
+      port: astroPort,
       reuseExistingServer: !isCI,
       timeout: 60_000,
     },

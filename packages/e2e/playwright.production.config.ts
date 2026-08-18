@@ -3,6 +3,10 @@ import { defineConfig, devices } from "@playwright/test";
 const vitePort = 5_181;
 const nextPort = 3_101;
 const tanstackPort = 3_201;
+const reactRouterPort = 3_301;
+const remixPort = 3_401;
+const rsbuildPort = 3_501;
+const astroPort = 3_601;
 const profilingPort = 5_182;
 const scriptTagPort = 5_183;
 
@@ -35,6 +39,26 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${tanstackPort}` },
     },
     {
+      name: "react-router-production",
+      testMatch: sharedProductionTestMatch,
+      use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${reactRouterPort}` },
+    },
+    {
+      name: "remix-production",
+      testMatch: sharedProductionTestMatch,
+      use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${remixPort}` },
+    },
+    {
+      name: "rsbuild-production",
+      testMatch: sharedProductionTestMatch,
+      use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${rsbuildPort}` },
+    },
+    {
+      name: "astro-production",
+      testMatch: sharedProductionTestMatch,
+      use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${astroPort}` },
+    },
+    {
       name: "profiling",
       testMatch: profilingTestMatch,
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${profilingPort}` },
@@ -61,6 +85,30 @@ export default defineConfig({
     {
       command: `nr --filter @bippy/e2e-tanstack build && nr --filter @bippy/e2e-tanstack preview --port ${tanstackPort}`,
       port: tanstackPort,
+      reuseExistingServer: false,
+      timeout: 60_000,
+    },
+    {
+      command: `nr --filter @bippy/e2e-react-router build && PORT=${reactRouterPort} nr --filter @bippy/e2e-react-router start`,
+      port: reactRouterPort,
+      reuseExistingServer: false,
+      timeout: 120_000,
+    },
+    {
+      command: `nr --filter @bippy/e2e-remix build && PORT=${remixPort} nr --filter @bippy/e2e-remix start`,
+      port: remixPort,
+      reuseExistingServer: false,
+      timeout: 120_000,
+    },
+    {
+      command: `nr --filter @bippy/e2e-rsbuild build && nr --filter @bippy/e2e-rsbuild preview --port ${rsbuildPort}`,
+      port: rsbuildPort,
+      reuseExistingServer: false,
+      timeout: 60_000,
+    },
+    {
+      command: `nr --filter @bippy/e2e-astro build && nr --filter @bippy/e2e-astro preview --port ${astroPort}`,
+      port: astroPort,
       reuseExistingServer: false,
       timeout: 60_000,
     },
