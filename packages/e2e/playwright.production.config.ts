@@ -9,6 +9,7 @@ const rsbuildPort = 3_501;
 const astroPort = 3_601;
 const profilingPort = 5_182;
 const scriptTagPort = 5_183;
+const kitchenSinkPort = 5_184;
 
 const sharedProductionTestMatch = [/use-fiber\.spec\.ts/, /production\.spec\.ts/];
 const profilingTestMatch = /profiling\.spec\.ts/;
@@ -68,6 +69,11 @@ export default defineConfig({
       testMatch: scriptTagTestMatch,
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${scriptTagPort}` },
     },
+    {
+      name: "kitchen-sink-production",
+      testMatch: /kitchen-sink\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${kitchenSinkPort}` },
+    },
   ],
   webServer: [
     {
@@ -123,6 +129,12 @@ export default defineConfig({
       port: scriptTagPort,
       reuseExistingServer: false,
       timeout: 60_000,
+    },
+    {
+      command: `nr --filter @bippy/e2e-kitchen-sink build && nr --filter @bippy/e2e-kitchen-sink preview --port ${kitchenSinkPort}`,
+      port: kitchenSinkPort,
+      reuseExistingServer: false,
+      timeout: 180_000,
     },
   ],
 });

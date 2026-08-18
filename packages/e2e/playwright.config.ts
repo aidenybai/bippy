@@ -8,6 +8,7 @@ const reactRouterPort = Number(process.env.BIPPY_E2E_REACT_ROUTER_PORT ?? 3300);
 const remixPort = Number(process.env.BIPPY_E2E_REMIX_PORT ?? 3400);
 const rsbuildPort = Number(process.env.BIPPY_E2E_RSBUILD_PORT ?? 3500);
 const astroPort = Number(process.env.BIPPY_E2E_ASTRO_PORT ?? 3600);
+const kitchenSinkPort = Number(process.env.BIPPY_E2E_KITCHEN_SINK_PORT ?? 5199);
 const refreshPort = Number(process.env.BIPPY_E2E_REFRESH_PORT ?? 5190);
 const refreshReact18Port = Number(process.env.BIPPY_E2E_REFRESH_18_PORT ?? 5191);
 const refreshReact17Port = Number(process.env.BIPPY_E2E_REFRESH_17_PORT ?? 5192);
@@ -18,6 +19,7 @@ const refreshReact19TestMatch = [/refresh\/react-fresh\.spec\.ts/, /refresh\/lat
 const refreshReact18TestMatch = [/refresh\/react-18\.spec\.ts/, /refresh\/late-load\.spec\.ts/];
 const refreshReact17TestMatch = [/refresh\/react-17\.spec\.ts/, /refresh\/late-load\.spec\.ts/];
 const hmrTestMatch = /hmr\/.*\.spec\.ts/;
+const kitchenSinkTestMatch = /kitchen-sink\.spec\.ts/;
 // Production-only specs run through playwright.production.config.ts.
 const productionOnlyTestMatch = [
   /production\.spec\.ts/,
@@ -29,6 +31,7 @@ const sharedProjectTestIgnore = [
   chromeExtensionTestMatch,
   refreshTestMatch,
   hmrTestMatch,
+  kitchenSinkTestMatch,
   ...productionOnlyTestMatch,
 ];
 
@@ -78,6 +81,11 @@ export default defineConfig({
       name: "astro",
       testIgnore: sharedProjectTestIgnore,
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${astroPort}` },
+    },
+    {
+      name: "kitchen-sink",
+      testMatch: kitchenSinkTestMatch,
+      use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${kitchenSinkPort}` },
     },
     {
       name: "refresh",
@@ -151,6 +159,12 @@ export default defineConfig({
     {
       command: `pnpm --filter @bippy/e2e-astro dev --port ${astroPort}`,
       port: astroPort,
+      reuseExistingServer: !isCI,
+      timeout: 60_000,
+    },
+    {
+      command: `pnpm --filter @bippy/e2e-kitchen-sink dev --port ${kitchenSinkPort}`,
+      port: kitchenSinkPort,
       reuseExistingServer: !isCI,
       timeout: 60_000,
     },
