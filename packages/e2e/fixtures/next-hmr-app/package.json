@@ -1,0 +1,19 @@
+{
+  "name": "@bippy/e2e-next-hmr",
+  "private": true,
+  "scripts": {
+    "dev": "NODE_OPTIONS=--localstorage-file=/tmp/bippy-e2e-next-hmr-localstorage.json next dev"
+  },
+  "dependencies": {
+    "bippy": "workspace:*",
+    "next": "15.5.18",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5"
+  }
+}

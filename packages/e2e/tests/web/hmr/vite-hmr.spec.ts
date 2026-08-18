@@ -6,10 +6,11 @@
 import { type ChildProcess, spawn } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { createServer } from "node:net";
 import path from "node:path";
 
 import { expect, test, type Page } from "@playwright/test";
+
+import { getFreePort, waitForServer } from "./server-utils";
 
 import {
   classComponentSource,
@@ -36,32 +37,6 @@ const viteBinPath = path.join(
 
 let viteProcess: ChildProcess | null = null;
 let baseUrl = "";
-
-const getFreePort = async (): Promise<number> =>
-  new Promise((resolve, reject) => {
-    const probeServer = createServer();
-    probeServer.once("error", reject);
-    probeServer.listen(0, "127.0.0.1", () => {
-      const address = probeServer.address();
-      if (address === null || typeof address === "string") {
-        reject(new Error("could not determine a free port"));
-        return;
-      }
-      probeServer.close(() => resolve(address.port));
-    });
-  });
-
-const waitForServer = async (url: string): Promise<void> => {
-  const deadline = Date.now() + 30_000;
-  while (Date.now() < deadline) {
-    try {
-      const response = await fetch(url);
-      if (response.ok) return;
-    } catch {}
-    await new Promise((resolveSleep) => setTimeout(resolveSleep, 200));
-  }
-  throw new Error(`vite dev server did not become ready at ${url}`);
-};
 
 const writeTarget = (source: string): void => {
   writeFileSync(targetFilePath, source);

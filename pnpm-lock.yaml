@@ -287,6 +287,34 @@ importers:
         specifier: ^5
         version: 5.9.3
 
+  packages/e2e/fixtures/next-hmr-app:
+    dependencies:
+      bippy:
+        specifier: workspace:*
+        version: link:../../../bippy
+      next:
+        specifier: 15.5.18
+        version: 15.5.18(@babel/core@7.29.0)(@playwright/test@1.62.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
+    devDependencies:
+      '@types/node':
+        specifier: ^20
+        version: 20.19.34
+      '@types/react':
+        specifier: ^19
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: ^19
+        version: 19.2.3(@types/react@19.2.17)
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+
   packages/e2e/fixtures/refresh-app:
     dependencies:
       bippy:

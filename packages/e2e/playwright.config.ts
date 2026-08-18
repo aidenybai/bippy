@@ -46,7 +46,7 @@ export default defineConfig({
     {
       // Spawns its own vite dev server and edits fixture sources on disk,
       // so its tests must not run concurrently.
-      name: "vite-hmr",
+      name: "hmr",
       testMatch: hmrTestMatch,
       fullyParallel: false,
       use: { ...devices["Desktop Chrome"] },
