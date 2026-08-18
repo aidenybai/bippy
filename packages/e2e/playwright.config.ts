@@ -44,8 +44,11 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${refreshPort}` },
     },
     {
+      // Spawns its own vite dev server and edits fixture sources on disk,
+      // so its tests must not run concurrently.
       name: "vite-hmr",
       testMatch: hmrTestMatch,
+      fullyParallel: false,
       use: { ...devices["Desktop Chrome"] },
     },
     {
