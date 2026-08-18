@@ -1,5 +1,11 @@
 # bippy
 
+## 0.7.2
+
+### Patch Changes
+
+- 742a3b5: Comprehensive Fast Refresh e2e coverage: ported React suite, real HMR, build and version matrices
+
 ## 0.7.1
 
 ### Patch Changes
