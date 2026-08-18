@@ -4,7 +4,12 @@ const isCI = Boolean(process.env.CI);
 const vitePort = Number(process.env.BIPPY_E2E_VITE_PORT ?? 5180);
 const nextPort = Number(process.env.BIPPY_E2E_NEXT_PORT ?? 3100);
 const tanstackPort = Number(process.env.BIPPY_E2E_TANSTACK_PORT ?? 3200);
+const refreshPort = Number(process.env.BIPPY_E2E_REFRESH_PORT ?? 5190);
 const chromeExtensionTestMatch = /chrome-extension\.spec\.ts/;
+const refreshTestMatch = /refresh\/.*\.spec\.ts/;
+const hmrTestMatch = /hmr\/.*\.spec\.ts/;
+// Specs living in dedicated subfolders run only in their dedicated projects.
+const sharedProjectTestIgnore = [chromeExtensionTestMatch, refreshTestMatch, hmrTestMatch];
 
 export default defineConfig({
   testDir: "./tests/web",
@@ -20,18 +25,28 @@ export default defineConfig({
   projects: [
     {
       name: "vite",
-      testIgnore: chromeExtensionTestMatch,
+      testIgnore: sharedProjectTestIgnore,
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${vitePort}` },
     },
     {
       name: "nextjs",
-      testIgnore: chromeExtensionTestMatch,
+      testIgnore: sharedProjectTestIgnore,
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${nextPort}` },
     },
     {
       name: "tanstack",
-      testIgnore: chromeExtensionTestMatch,
+      testIgnore: sharedProjectTestIgnore,
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${tanstackPort}` },
+    },
+    {
+      name: "refresh",
+      testMatch: refreshTestMatch,
+      use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${refreshPort}` },
+    },
+    {
+      name: "vite-hmr",
+      testMatch: hmrTestMatch,
+      use: { ...devices["Desktop Chrome"] },
     },
     {
       name: "chrome-extension",
@@ -59,6 +74,12 @@ export default defineConfig({
       port: tanstackPort,
       reuseExistingServer: !isCI,
       timeout: 60_000,
+    },
+    {
+      command: `pnpm --filter @bippy/e2e-refresh dev --port ${refreshPort}`,
+      port: refreshPort,
+      reuseExistingServer: !isCI,
+      timeout: 30_000,
     },
   ],
 });
