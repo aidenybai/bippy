@@ -19,7 +19,7 @@ const refreshReact19TestMatch = [/refresh\/react-fresh\.spec\.ts/, /refresh\/lat
 const refreshReact18TestMatch = [/refresh\/react-18\.spec\.ts/, /refresh\/late-load\.spec\.ts/];
 const refreshReact17TestMatch = [/refresh\/react-17\.spec\.ts/, /refresh\/late-load\.spec\.ts/];
 const hmrTestMatch = /hmr\/.*\.spec\.ts/;
-const kitchenSinkTestMatch = /kitchen-sink\.spec\.ts/;
+const kitchenSinkTestMatch = /kitchen-sink.*\.spec\.ts/;
 // Production-only specs run through playwright.production.config.ts.
 const productionOnlyTestMatch = [
   /production\.spec\.ts/,

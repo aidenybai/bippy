@@ -14,12 +14,24 @@ import type { LibrarySection } from "../section-registry";
 
 const queryClient = new QueryClient();
 
+let queryFetchCount = 0;
+
 const QueryDemo = () => {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ["kitchen-sink"],
-    queryFn: async () => "query-data",
+    queryFn: async () => {
+      queryFetchCount++;
+      return `query-data-${queryFetchCount}`;
+    },
   });
-  return <output data-testid="react-query-value">{isLoading ? "loading" : data}</output>;
+  return (
+    <div>
+      <output data-testid="react-query-value">{isLoading ? "loading" : data}</output>
+      <button data-testid="interact-react-query" onClick={() => refetch()}>
+        refetch
+      </button>
+    </div>
+  );
 };
 
 const ReactQuerySection = () => (
@@ -28,9 +40,21 @@ const ReactQuerySection = () => (
   </QueryClientProvider>
 );
 
+let swrFetchCount = 0;
+
 const SwrSection = () => {
-  const { data } = useSWR("kitchen-sink", async () => "swr-data");
-  return <output data-testid="swr-value">{data ?? "loading"}</output>;
+  const { data, mutate } = useSWR("kitchen-sink", async () => {
+    swrFetchCount++;
+    return `swr-data-${swrFetchCount}`;
+  });
+  return (
+    <div>
+      <output data-testid="swr-value">{data ?? "loading"}</output>
+      <button data-testid="interact-swr" onClick={() => mutate()}>
+        revalidate
+      </button>
+    </div>
+  );
 };
 
 interface CounterStore {

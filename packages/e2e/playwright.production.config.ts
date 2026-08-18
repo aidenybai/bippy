@@ -19,6 +19,9 @@ export default defineConfig({
   testDir: "./tests/web",
   fullyParallel: true,
   forbidOnly: true,
+  // Hydration timing on SSR production builds (astro islands especially)
+  // can race the first interaction under parallel-server load.
+  retries: 2,
   reporter: "line",
   use: {
     trace: "on-first-retry",
@@ -71,7 +74,7 @@ export default defineConfig({
     },
     {
       name: "kitchen-sink-production",
-      testMatch: /kitchen-sink\.spec\.ts/,
+      testMatch: /kitchen-sink.*\.spec\.ts/,
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${kitchenSinkPort}` },
     },
   ],

@@ -1,5 +1,6 @@
 import { Chart as ChartJs, registerables } from "chart.js";
 import useEmblaCarousel from "embla-carousel-react";
+import { useEffect, useState } from "react";
 import { Line as ChartJsLine } from "react-chartjs-2";
 import { DayPicker } from "react-day-picker";
 import ReactMarkdown from "react-markdown";
@@ -40,16 +41,46 @@ const ReactMarkdownSection = () => (
   </div>
 );
 
-const DayPickerSection = () => <DayPicker mode="single" defaultMonth={new Date(2026, 7)} />;
+const DayPickerSection = () => {
+  const [selectedDay, setSelectedDay] = useState<Date | undefined>();
+  return (
+    <div>
+      <DayPicker
+        mode="single"
+        defaultMonth={new Date(2026, 7)}
+        selected={selectedDay}
+        onSelect={setSelectedDay}
+      />
+      <output data-testid="day-picker-selected">
+        {selectedDay ? selectedDay.getDate() : "none"}
+      </output>
+    </div>
+  );
+};
 
 const EmblaSection = () => {
-  const [emblaRef] = useEmblaCarousel();
+  const [emblaRef, emblaApi] = useEmblaCarousel();
+  const [selectedSlideIndex, setSelectedSlideIndex] = useState(0);
+  useEffect(() => {
+    if (!emblaApi) return;
+    const handleSelect = () => setSelectedSlideIndex(emblaApi.selectedScrollSnap());
+    emblaApi.on("select", handleSelect);
+    return () => {
+      emblaApi.off("select", handleSelect);
+    };
+  }, [emblaApi]);
   return (
-    <div ref={emblaRef} style={{ overflow: "hidden", width: 200 }}>
-      <div style={{ display: "flex" }}>
-        <div style={{ flex: "0 0 100%" }}>slide one</div>
-        <div style={{ flex: "0 0 100%" }}>slide two</div>
+    <div>
+      <div ref={emblaRef} style={{ overflow: "hidden", width: 200 }}>
+        <div style={{ display: "flex" }}>
+          <div style={{ flex: "0 0 100%" }}>slide one</div>
+          <div style={{ flex: "0 0 100%" }}>slide two</div>
+        </div>
       </div>
+      <button data-testid="interact-embla" onClick={() => emblaApi?.scrollNext()}>
+        next slide
+      </button>
+      <output data-testid="embla-selected">{selectedSlideIndex}</output>
     </div>
   );
 };

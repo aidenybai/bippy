@@ -2,7 +2,7 @@ import { DndContext, useDraggable } from "@dnd-kit/core";
 import { animated, useSpring } from "@react-spring/web";
 import { motion } from "motion/react";
 import { useState } from "react";
-import { DndProvider, useDrag } from "react-dnd";
+import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 
 import type { LibrarySection } from "../section-registry";
@@ -61,15 +61,42 @@ const ReactDndCard = () => {
         dragRef(node);
       }}
       data-testid="react-dnd-card"
+      draggable
     >
       react-dnd:{String(isDragging)}
     </div>
   );
 };
 
+const ReactDndDropZone = () => {
+  const [{ isOver }, dropRef, dropCount] = useDropCounter();
+  return (
+    <div
+      ref={(node) => {
+        dropRef(node);
+      }}
+      data-testid="react-dnd-drop-zone"
+      style={{ minHeight: 40, border: "1px dashed gray" }}
+    >
+      drop zone over:{String(isOver)} drops:{dropCount}
+    </div>
+  );
+};
+
+const useDropCounter = () => {
+  const [dropCount, setDropCount] = useState(0);
+  const [{ isOver }, dropRef] = useDrop(() => ({
+    accept: "card",
+    drop: () => setDropCount((previous) => previous + 1),
+    collect: (monitor) => ({ isOver: monitor.isOver() }),
+  }));
+  return [{ isOver }, dropRef, dropCount] as const;
+};
+
 const ReactDndSection = () => (
   <DndProvider backend={HTML5Backend}>
     <ReactDndCard />
+    <ReactDndDropZone />
   </DndProvider>
 );
 

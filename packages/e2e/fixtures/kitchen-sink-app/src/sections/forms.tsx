@@ -1,4 +1,5 @@
 import { Field, Form, Formik } from "formik";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import type { LibrarySection } from "../section-registry";
@@ -19,13 +20,23 @@ const ReactHookFormSection = () => {
   );
 };
 
-const FormikSection = () => (
-  <Formik initialValues={{ email: "bippy@example.com" }} onSubmit={() => {}}>
-    <Form>
-      <Field data-testid="formik-input" name="email" />
-    </Form>
-  </Formik>
-);
+const FormikSection = () => {
+  const [submittedEmail, setSubmittedEmail] = useState("none");
+  return (
+    <Formik
+      initialValues={{ email: "bippy@example.com" }}
+      onSubmit={(values) => setSubmittedEmail(values.email)}
+    >
+      <Form>
+        <Field data-testid="formik-input" name="email" />
+        <button data-testid="formik-submit" type="submit">
+          submit
+        </button>
+        <output data-testid="formik-submitted">{submittedEmail}</output>
+      </Form>
+    </Formik>
+  );
+};
 
 export const formSections: LibrarySection[] = [
   { name: "react-hook-form", Component: ReactHookFormSection },
