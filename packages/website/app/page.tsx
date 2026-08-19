@@ -1,4 +1,5 @@
 import Image from "next/image";
+import NextLink from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { FiberTreeDemo } from "@/components/fiber-tree";
@@ -32,7 +33,7 @@ const Page = () => (
       <Button
         size="lg"
         nativeButton={false}
-        render={<a href="/guide">Get started</a>}
+        render={<NextLink href="/guide">Get started</NextLink>}
       />
       <Button
         variant="secondary"
