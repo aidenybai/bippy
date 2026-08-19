@@ -32,7 +32,7 @@ const Page = () => (
       <Button
         size="lg"
         nativeButton={false}
-        render={<a href="https://github.com/aidenybai/bippy#install-bippy">Get started</a>}
+        render={<a href="/guide">Get started</a>}
       />
       <Button
         variant="secondary"
