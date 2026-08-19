@@ -169,7 +169,7 @@ const TwoTreesShowcase = () => {
             <div className="mt-4 border-t border-white/8 pt-4 font-mono text-[11px] leading-6 text-white/45">
               <p>
                 <span className="text-white/25">props </span>
-                {"{ size: 40, status: \"online\" }"}
+                {'{ size: 40, status: "online" }'}
               </p>
               <p>
                 <span className="text-white/25">state </span>
@@ -210,7 +210,7 @@ const HookShowcase = () => (
   <div className="flex h-full flex-col justify-center">
     <div className="relative space-y-7">
       {[
-        ["01", "import \"bippy\"", "install the hook"],
+        ["01", 'import "bippy"', "install the hook"],
         ["02", "renderer.inject()", "React phones home"],
         ["03", "onCommitFiberRoot", "every committed tree"],
       ].map(([step, label, detail], stepIndex) => (
@@ -406,7 +406,7 @@ const MiniScanShowcase = () => {
       </div>
       <CodeWindow filename="scan.ts">
         {"traverseRenderedFibers(root, (fiber, phase) => {\n"}
-        {"  if (phase !== \"update\") return\n"}
+        {'  if (phase !== "update") return\n'}
         {"  const host = traverseFiber(fiber,\n"}
         {"    (candidate) => isHostFiber(candidate))\n"}
         {"  outline(host?.stateNode)\n"}
@@ -427,7 +427,9 @@ const ReverseLookupShowcase = () => {
             aria-label="Inspect avatar"
             className={cn(
               "size-11 rounded-full border bg-gradient-to-br from-[#61dafb]/35 to-violet-400/20 transition",
-              selectedElement === "avatar" ? "border-[#61dafb] ring-3 ring-[#61dafb]/10" : "border-white/10",
+              selectedElement === "avatar"
+                ? "border-[#61dafb] ring-3 ring-[#61dafb]/10"
+                : "border-white/10",
             )}
             onClick={() => setSelectedElement("avatar")}
             type="button"
@@ -468,11 +470,7 @@ const ReverseLookupShowcase = () => {
       </div>
       <div className="min-h-0 flex-1 rounded-xl border border-white/8 bg-black/20 p-3">
         <TreeLine tone="plain">
-          {selectedElement === "button"
-            ? "button"
-            : selectedElement === "avatar"
-              ? "img"
-              : "span"}
+          {selectedElement === "button" ? "button" : selectedElement === "avatar" ? "img" : "span"}
         </TreeLine>
         <TreeLine depth={1} tone="accent" isActive>
           {selectedElement === "button"
@@ -512,9 +510,7 @@ const BuiltWithShowcase = () => (
         key={title}
         className={cn(
           "flex flex-col justify-between rounded-xl border p-4",
-          itemIndex === 0
-            ? "border-[#61dafb]/30 bg-[#61dafb]/7"
-            : "border-white/8 bg-black/20",
+          itemIndex === 0 ? "border-[#61dafb]/30 bg-[#61dafb]/7" : "border-white/8 bg-black/20",
         )}
       >
         <span className="font-mono text-[9px] text-white/25">0{itemIndex + 1}</span>
@@ -611,18 +607,11 @@ const showcaseComponents = [
   RecapShowcase,
 ];
 
-export const GuideShowcase = ({
-  activeSectionIndex,
-  compact = false,
-}: GuideShowcaseProps) => {
+export const GuideShowcase = ({ activeSectionIndex, compact = false }: GuideShowcaseProps) => {
   const ActiveShowcase = showcaseComponents[activeSectionIndex] ?? IntroShowcase;
 
   return (
-    <ShowcaseFrame
-      key={activeSectionIndex}
-      compact={compact}
-      sectionIndex={activeSectionIndex}
-    >
+    <ShowcaseFrame key={activeSectionIndex} compact={compact} sectionIndex={activeSectionIndex}>
       <ActiveShowcase />
     </ShowcaseFrame>
   );

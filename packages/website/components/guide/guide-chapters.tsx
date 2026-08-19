@@ -67,8 +67,8 @@ export const guideChapters: GuideChapter[] = [
           hook, then React calls <InlineCode>inject()</InlineCode> and reports every committed root.
         </p>
         <p>
-          bippy pretends to be DevTools. It installs a compatible hook, keeps the original
-          callbacks working, and listens to the same commit stream.
+          bippy pretends to be DevTools. It installs a compatible hook, keeps the original callbacks
+          working, and listens to the same commit stream.
         </p>
         <p>
           Timing is the whole trick: the hook must exist before the renderer loads. In Next 15.3+,
@@ -129,8 +129,8 @@ unsubscribe();`}</GuideCode>
     content: (
       <>
         <p>
-          Now the pieces cash out. Subscribe to commits. Visit the Fibers that updated. Walk down
-          to each component&apos;s nearest host Fiber. Outline its DOM node.
+          Now the pieces cash out. Subscribe to commits. Visit the Fibers that updated. Walk down to
+          each component&apos;s nearest host Fiber. Outline its DOM node.
         </p>
         <p>
           Click either card in the lab. That cyan box is the entire idea behind a render
@@ -213,8 +213,8 @@ instrument({
       <>
         <p>
           Production dead-code elimination changes React&apos;s shape. A hook loaded after React
-          misses the renderer handshake. Real DevTools or refresh runtimes may already own the
-          hook. React Server Components do not create client Fibers on the server.
+          misses the renderer handshake. Real DevTools or refresh runtimes may already own the hook.
+          React Server Components do not create client Fibers on the server.
         </p>
         <p>
           And the big one: React internals change. Work tags move. fields change meaning. Renderers

@@ -33,9 +33,7 @@ const GuideSection = ({
     )}
     data-guide-section={sectionIndex}
   >
-    <p className="mb-4 font-mono text-xs font-medium tracking-[0.12em] text-[#61dafb]">
-      {eyebrow}
-    </p>
+    <p className="mb-4 font-mono text-xs font-medium tracking-[0.12em] text-[#61dafb]">{eyebrow}</p>
     <h2 className="max-w-xl text-2xl font-medium tracking-[-0.025em] text-white sm:text-3xl">
       {title}
     </h2>
