@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { guideChapters } from "@/components/guide/guide-chapters";
 import { GuideShowcase } from "@/components/guide/guide-showcases";
+import { Link } from "@/components/ui/link";
 import { cn } from "@/lib/utils";
 
 interface GuideSectionProps {
@@ -28,17 +29,17 @@ const GuideSection = ({
   <section
     ref={sectionReference}
     className={cn(
-      "flex min-h-[82dvh] scroll-mt-12 flex-col justify-center py-20 transition-opacity duration-500 lg:min-h-[96dvh] lg:py-28",
-      isActive ? "lg:opacity-100" : "lg:opacity-[0.32]",
+      "flex min-h-[72dvh] scroll-mt-12 flex-col justify-center py-16 transition-opacity duration-300 lg:min-h-[78dvh]",
+      isActive ? "lg:opacity-100" : "lg:opacity-60",
     )}
     data-guide-section={sectionIndex}
   >
-    <p className="mb-4 font-mono text-xs font-medium tracking-[0.12em] text-[#61dafb]">{eyebrow}</p>
-    <h2 className="max-w-xl text-2xl font-medium tracking-[-0.025em] text-white sm:text-3xl">
-      {title}
-    </h2>
-    <div className="mt-6 max-w-xl space-y-5 text-base leading-7 text-white/56">{children}</div>
-    <div className="mt-10 lg:hidden">
+    <p className="mb-3 text-xs font-medium text-muted-foreground">{eyebrow}</p>
+    <h2 className="max-w-lg text-2xl font-medium text-foreground">{title}</h2>
+    <div className="mt-4 max-w-lg space-y-4 text-sm leading-relaxed text-muted-foreground">
+      {children}
+    </div>
+    <div className="mt-8 lg:hidden">
       <GuideShowcase activeSectionIndex={sectionIndex} compact />
     </div>
   </section>
@@ -95,56 +96,52 @@ export const GuideEssay = () => {
     };
 
   return (
-    <main className="min-h-screen bg-[#0b0c0f] text-foreground selection:bg-[#61dafb]/25">
-      <div className="mx-auto grid w-full max-w-[1536px] lg:grid-cols-[minmax(0,0.9fr)_minmax(34rem,1.1fr)]">
-        <article className="px-6 sm:px-10 lg:px-14 xl:px-20">
-          <header className="flex h-20 items-center justify-between">
-            <NextLink className="flex items-center gap-2.5" href="/">
-              <Image src="/icon.png" alt="" width={24} height={24} priority />
-              <span className="text-sm font-medium tracking-tight text-white">bippy</span>
+    <main className="min-h-screen bg-background text-foreground selection:bg-muted">
+      <div className="mx-auto grid w-full max-w-7xl lg:grid-cols-[minmax(0,1fr)_minmax(32rem,1fr)]">
+        <article className="px-6 pb-12 sm:px-10 lg:px-12">
+          <header className="flex items-center justify-between pt-16 pb-8">
+            <NextLink className="flex items-center gap-2" href="/">
+              <Image
+                className="size-8 object-contain"
+                src="/icon.png"
+                alt=""
+                width={32}
+                height={32}
+                priority
+              />
+              <span className="text-xl font-medium tracking-tight">bippy</span>
             </NextLink>
-            <a
-              className="font-mono text-xs tracking-[0.08em] text-white/35 transition hover:text-[#61dafb]"
-              href="https://github.com/aidenybai/bippy"
-            >
-              GitHub ↗
-            </a>
+            <Link href="https://github.com/aidenybai/bippy">GitHub</Link>
           </header>
 
           <section
             ref={getSectionReference(0)}
             className={cn(
-              "flex min-h-[calc(100dvh-5rem)] flex-col justify-center py-16 transition-opacity duration-500 lg:py-24",
-              activeSectionIndex === 0 ? "lg:opacity-100" : "lg:opacity-[0.32]",
+              "flex min-h-[68dvh] flex-col justify-center py-16 transition-opacity duration-300",
+              activeSectionIndex === 0 ? "lg:opacity-100" : "lg:opacity-60",
             )}
             data-guide-section="0"
           >
-            <p className="mb-5 font-mono text-xs font-medium tracking-[0.12em] text-[#61dafb]">
-              a field guide to React&apos;s other tree
-            </p>
-            <h1 className="max-w-2xl font-serif text-5xl leading-[0.98] font-normal tracking-[-0.045em] text-white sm:text-6xl xl:text-7xl">
-              What bippy
-              <br />
-              actually is.
+            <h1 className="max-w-lg text-3xl font-medium text-foreground">
+              bippy is the library under the inspector.
             </h1>
-            <div className="mt-8 max-w-xl space-y-5 text-base leading-7 text-white/58">
+            <div className="mt-4 max-w-lg space-y-4 text-sm leading-relaxed text-muted-foreground">
               <p>
-                Give me one render and I&apos;ll show you the component that made it, what it
-                received, and where React put it.
+                The widget on the homepage is a demo built with bippy. It calls{" "}
+                <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">
+                  getFiber()
+                </code>{" "}
+                on its own UI.
               </p>
               <p>
-                Click the counter. The card on this page is only React UI. The render signal behind
-                it is what bippy is built to catch.
-              </p>
-              <p className="border-l border-[#61dafb]/35 pl-4 text-white/38">
-                bippy is not a browser extension or a DevTools panel. It is a tiny library you load
-                into your app before React.
+                bippy is not an extension or a DevTools panel. It is a library you import before
+                React to inspect Fiber, observe renders, and access the renderer.
               </p>
             </div>
-            <p className="mt-10 text-xs text-white/25 lg:hidden">
-              This guide has a scroll-synced lab on desktop. You still get every experiment here.
+            <p className="mt-6 text-xs text-muted-foreground lg:hidden">
+              The examples are scroll-synced on desktop and inline here.
             </p>
-            <div className="mt-10 lg:hidden">
+            <div className="mt-8 lg:hidden">
               <GuideShowcase activeSectionIndex={0} compact />
             </div>
           </section>
@@ -166,9 +163,9 @@ export const GuideEssay = () => {
             );
           })}
 
-          <footer className="flex items-center justify-between border-t border-white/8 py-8 text-xs text-white/25">
-            <span>bippy · React internals without the ceremony</span>
-            <NextLink className="transition hover:text-white" href="/">
+          <footer className="flex items-center justify-between border-t border-border py-8 text-xs text-muted-foreground">
+            <span>bippy hacks into React internals.</span>
+            <NextLink className="transition-colors hover:text-foreground" href="/">
               back to the inspector
             </NextLink>
           </footer>
