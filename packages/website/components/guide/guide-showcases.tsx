@@ -8,12 +8,10 @@ import { cn } from "@/lib/utils";
 
 interface GuideShowcaseProps {
   activeSectionIndex: number;
-  compact?: boolean;
 }
 
 interface ShowcaseFrameProps {
   children: ReactNode;
-  compact: boolean;
 }
 
 interface ShowcaseHeaderProps {
@@ -66,13 +64,8 @@ const TreeRow = ({ children, depth = 0 }: TreeRowProps) => (
   </div>
 );
 
-const ShowcaseFrame = ({ children, compact }: ShowcaseFrameProps) => (
-  <figure
-    className={cn(
-      "flex w-full min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card p-4 text-card-foreground",
-      compact ? "min-h-[420px]" : "h-[min(620px,calc(100dvh-3rem))]",
-    )}
-  >
+const ShowcaseFrame = ({ children }: ShowcaseFrameProps) => (
+  <figure className="flex min-h-[420px] w-full min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card p-4 text-card-foreground">
     {children}
   </figure>
 );
@@ -444,11 +437,11 @@ const showcaseComponents = [
   RecapShowcase,
 ];
 
-export const GuideShowcase = ({ activeSectionIndex, compact = false }: GuideShowcaseProps) => {
+export const GuideShowcase = ({ activeSectionIndex }: GuideShowcaseProps) => {
   const ActiveShowcase = showcaseComponents[activeSectionIndex] ?? IntroShowcase;
 
   return (
-    <ShowcaseFrame key={activeSectionIndex} compact={compact}>
+    <ShowcaseFrame key={activeSectionIndex}>
       <ActiveShowcase />
     </ShowcaseFrame>
   );

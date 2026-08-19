@@ -29,7 +29,7 @@ const GuideSection = ({
   <section
     ref={sectionReference}
     className={cn(
-      "flex min-h-[72dvh] scroll-mt-12 flex-col justify-center py-16 transition-opacity duration-300 lg:min-h-[78dvh]",
+      "flex min-h-[64dvh] scroll-mt-12 flex-col justify-center py-16 transition-opacity duration-300",
       isActive ? "lg:opacity-100" : "lg:opacity-60",
     )}
     data-guide-section={sectionIndex}
@@ -40,7 +40,7 @@ const GuideSection = ({
       {children}
     </div>
     <div className="mt-8 lg:hidden">
-      <GuideShowcase activeSectionIndex={sectionIndex} compact />
+      <GuideShowcase activeSectionIndex={sectionIndex} />
     </div>
   </section>
 );
@@ -117,7 +117,7 @@ export const GuideEssay = () => {
           <section
             ref={getSectionReference(0)}
             className={cn(
-              "flex min-h-[68dvh] flex-col justify-center py-16 transition-opacity duration-300",
+              "flex min-h-[58dvh] flex-col justify-center py-16 transition-opacity duration-300",
               activeSectionIndex === 0 ? "lg:opacity-100" : "lg:opacity-60",
             )}
             data-guide-section="0"
@@ -142,7 +142,7 @@ export const GuideEssay = () => {
               The examples are scroll-synced on desktop and inline here.
             </p>
             <div className="mt-8 lg:hidden">
-              <GuideShowcase activeSectionIndex={0} compact />
+              <GuideShowcase activeSectionIndex={0} />
             </div>
           </section>
 
