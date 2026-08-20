@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import type { Fiber } from "../src/react-internals/index.js";
 import {
+  getRawSource,
   getSource,
   hasDebugSource,
   isSourceFile,
@@ -67,6 +68,22 @@ describe("getSource with _debugSource", () => {
     const fiber = createFiberWithDebugSource(debugSource);
     const result = await getSource(fiber);
     expect(result).toBe(debugSource);
+    expect(getRawSource(fiber)).toBe(debugSource);
+  });
+
+  it("returns a synchronous source from a trusted debug stack", () => {
+    const fiber = createDebugStackFiber([
+      "Error: react-stack-top-frame",
+      "    at jsxDEV (http://localhost/react-jsx-dev-runtime.js:1:1)",
+      "    at App (http://localhost/src/app.tsx:12:4)",
+      "    at react-stack-bottom-frame (http://localhost/react.js:1:1)",
+    ]);
+    expect(getRawSource(fiber)).toEqual({
+      columnNumber: 4,
+      fileName: "http://localhost/src/app.tsx",
+      functionName: "App",
+      lineNumber: 12,
+    });
   });
 });
 

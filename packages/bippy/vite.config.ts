@@ -14,42 +14,39 @@ const licenseBanner = `/**
  * LICENSE file in the root directory of this source tree.
  */`;
 
-const sharedPackOptions = {
-  banner: licenseBanner,
-  clean: false,
-  hash: false,
-  env: {
-    NODE_ENV: process.env.NODE_ENV ?? "development",
-  },
-  define: {
-    "process.env.VERSION": JSON.stringify(pkg.version),
-  },
-  deps: {
-    neverBundle: ["react", "react-dom", "react-reconciler"],
-    alwaysBundle: ["@jridgewell/sourcemap-codec"],
-  },
-  minify: process.env.NODE_ENV === "production" && !process.env.BIPPY_SOURCEMAP,
-  outDir: "./dist",
-  platform: "browser",
-  plugins: [reactInternalsPlugin({ mode: isContinuousIntegration ? "check" : "generate" })],
-  sourcemap: Boolean(process.env.BIPPY_SOURCEMAP),
-  target: "esnext",
-  treeshake: true,
-} satisfies PackUserConfig;
-
 export default defineConfig({
   pack: {
-    ...sharedPackOptions,
+    banner: licenseBanner,
     clean: true,
+    define: {
+      "process.env.VERSION": JSON.stringify(pkg.version),
+    },
+    deps: {
+      alwaysBundle: ["@jridgewell/sourcemap-codec"],
+      neverBundle: ["react", "react-dom", "react-reconciler"],
+    },
     dts: true,
     entry: {
       index: "./src/index.ts",
       source: "./src/source/index.ts",
       "install-hook-only": "./src/install-hook-only.ts",
     },
+    env: {
+      NODE_ENV: process.env.NODE_ENV ?? "development",
+    },
     format: ["esm", "cjs"],
-  },
+    hash: false,
+    minify: process.env.NODE_ENV === "production" && !process.env.BIPPY_SOURCEMAP,
+    outDir: "./dist",
+    platform: "browser",
+    plugins: [reactInternalsPlugin({ mode: isContinuousIntegration ? "check" : "generate" })],
+    sourcemap: Boolean(process.env.BIPPY_SOURCEMAP),
+    target: "esnext",
+    treeshake: true,
+  } satisfies PackUserConfig,
   test: {
+    include: ["tests/**/*.test.{ts,tsx}"],
+    exclude: ["tests/fixtures/**"],
     coverage: {
       include: ["src/**/*.ts", "scripts/react-internals-plugin.ts"],
       exclude: ["src/react-internals/types.ts"],

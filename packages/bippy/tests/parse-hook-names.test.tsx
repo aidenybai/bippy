@@ -79,6 +79,12 @@ describe("extractHookVariableName", () => {
     expect(extractHookVariableName(source, 1, columnOfHookCall)).toBe("userData");
   });
 
+  it("extracts name from an inline require", () => {
+    const source = `const [value, setValue] = require("react").useState("");`;
+    const columnOfHookCall = source.indexOf("require");
+    expect(extractHookVariableName(source, 1, columnOfHookCall)).toBe("value");
+  });
+
   it("extracts name from React.useState", () => {
     const source = `const [value, setValue] = React.useState("");`;
     const columnOfHookCall = source.indexOf("React.useState");
@@ -329,6 +335,11 @@ describe("extractHookVariableName", () => {
     const source = `const [] = useCustomHook();`;
     const columnOfHookCall = source.indexOf("useCustomHook");
     expect(extractHookVariableName(source, 1, columnOfHookCall)).toBeNull();
+  });
+
+  it("handles columnless source maps for named hook declarations", () => {
+    const source = `const [count, setCount] = useState(0);`;
+    expect(extractHookVariableName(source, 1, 0)).toBe("count");
   });
 
   it("handles column at very start of line", () => {

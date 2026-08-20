@@ -114,6 +114,8 @@ export interface HostFiber<T = unknown> extends Fiber<T> {
 
 export interface FiberRoot {
   current: Fiber;
+  effectDuration?: number;
+  passiveEffectDuration?: number;
 }
 
 export interface MemoizedState {
@@ -133,6 +135,7 @@ export interface ReactDevToolsEventHandler {
 export interface ReactDevToolsGlobalHook {
   _instrumentationIsActive?: boolean;
   _instrumentationSource?: string;
+  _isBippyHook?: boolean;
   checkDCE: (fn: unknown) => void;
   emit?: (event: string, data?: unknown) => void;
   getFiberRoots?: (rendererID: number) => Set<FiberRoot>;
@@ -175,7 +178,12 @@ export interface ReactRenderer extends Omit<
   getCurrentFiber?: () => Fiber | null;
   overrideContext?: (fiber: Fiber, contextType: unknown, path: string[], value: unknown) => void;
 
-  overrideHookState?: (fiber: Fiber, id: number, path: string[], value: unknown) => void;
+  overrideHookState?: (
+    fiber: Fiber,
+    id: number,
+    path: Array<number | string>,
+    value: unknown,
+  ) => void;
   overrideHookStateDeletePath?: (fiber: Fiber, id: number, path: Array<number | string>) => void;
   overrideHookStateRenamePath?: (
     fiber: Fiber,
@@ -183,7 +191,7 @@ export interface ReactRenderer extends Omit<
     oldPath: Array<number | string>,
     newPath: Array<number | string>,
   ) => void;
-  overrideProps?: (fiber: Fiber, path: string[], value: unknown) => void;
+  overrideProps?: (fiber: Fiber, path: Array<number | string>, value: unknown) => void;
   overridePropsDeletePath?: (fiber: Fiber, path: Array<number | string>) => void;
   overridePropsRenamePath?: (
     fiber: Fiber,

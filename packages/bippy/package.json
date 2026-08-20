@@ -129,6 +129,6 @@
     "zod": "^4.4.3"
   },
   "peerDependencies": {
-    "react": ">=17.0.1"
+    "react": ">=16.0.0"
   }
 }

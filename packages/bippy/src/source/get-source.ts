@@ -19,6 +19,7 @@ import {
   getSourceMap,
   symbolicateStack,
   type SourceFetch,
+  type SourceMapRequestOptions,
 } from "./symbolication.js";
 
 export const hasDebugSource = (
@@ -67,10 +68,17 @@ const getUsageFrameFromDebugStack = (fiber: Fiber): StackFrame | null => {
   return null;
 };
 
+export const getRawSource = (fiber: Fiber): FiberSource | null => {
+  if (hasDebugSource(fiber)) return fiber._debugSource;
+  const stackFrame = getUsageFrameFromDebugStack(fiber) ?? getDefinitionFrameFromOwnedChild(fiber);
+  return stackFrame ? toFiberSource(stackFrame) : null;
+};
+
 const getSourceByComponentName = async (
   fiber: Fiber,
-  cache: boolean,
-  fetchFn: SourceFetch | undefined,
+  shouldUseCache: boolean,
+  sourceFetch: SourceFetch | undefined,
+  requestOptions: SourceMapRequestOptions,
 ): Promise<FiberSource | null> => {
   const functionName = getDisplayName(fiber.type);
   if (!functionName) return null;
@@ -83,7 +91,7 @@ const getSourceByComponentName = async (
       continue;
     }
     visitedFileNames.add(fileName);
-    const sourceMap = await getSourceMap(fileName, cache, fetchFn);
+    const sourceMap = await getSourceMap(fileName, shouldUseCache, sourceFetch, requestOptions);
     if (!sourceMap) continue;
     const source = getSourceFromSourceMapByFunctionName(sourceMap, functionName);
     if (source && !source.isIgnoreListed) return toFiberSource(source);
@@ -119,30 +127,42 @@ const getSourceByComponentName = async (
  */
 export const getSource = async (
   fiber: Fiber,
-  cache = true,
-  fetchFn?: SourceFetch,
+  shouldUseCache = true,
+  sourceFetch?: SourceFetch,
+  requestOptions: SourceMapRequestOptions = {},
 ): Promise<FiberSource | null> => {
-  if (hasDebugSource(fiber)) {
-    return fiber._debugSource;
+  if (hasDebugSource(fiber)) return fiber._debugSource;
+  const rawSource = getRawSource(fiber);
+  if (rawSource) {
+    const [symbolicatedFrame] = await symbolicateStack(
+      [
+        {
+          columnNumber: rawSource.columnNumber,
+          fileName: rawSource.fileName,
+          functionName: rawSource.functionName,
+          lineNumber: rawSource.lineNumber,
+        },
+      ],
+      shouldUseCache,
+      sourceFetch,
+      requestOptions,
+    );
+    const symbolicatedSource = toFiberSource(symbolicatedFrame);
+    if (symbolicatedSource) return symbolicatedSource;
   }
 
-  const debugStackFrame =
-    getUsageFrameFromDebugStack(fiber) ?? getDefinitionFrameFromOwnedChild(fiber);
-  if (debugStackFrame) {
-    const [symbolicatedFrame] = await symbolicateStack([debugStackFrame], cache, fetchFn);
-    const debugStackSource = toFiberSource(symbolicatedFrame);
-    if (debugStackSource) {
-      return debugStackSource;
-    }
-  }
-
-  const parentStackFrames = await getParentStack(fiber, cache, fetchFn);
+  const parentStackFrames = await getParentStack(
+    fiber,
+    shouldUseCache,
+    sourceFetch,
+    requestOptions,
+  );
   for (const stackFrame of parentStackFrames) {
     if (stackFrame.fileName) {
       return toFiberSource(stackFrame);
     }
   }
-  return getSourceByComponentName(fiber, cache, fetchFn);
+  return getSourceByComponentName(fiber, shouldUseCache, sourceFetch, requestOptions);
 };
 
 const getPathSegmentCount = (path: string): number => path.split("/").filter(Boolean).length;

@@ -9,8 +9,10 @@ import {
   getFiberFromHostInstance,
   getRDTHook,
   instrument,
+  isInstrumentationActive,
   traverseFiber,
 } from "../src/index.js";
+import type { ReactDevToolsTarget } from "../src/index.js";
 import type { Fiber, FiberRoot, ReactRenderer, WorkTag } from "../src/react-internals/index.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
 
@@ -129,6 +131,23 @@ it("should prefer renderer.findFiberByHostInstance when available", () => {
   } finally {
     rdtHook.renderers.delete(999);
   }
+});
+
+it("should resolve host instances against an explicit target", () => {
+  const target: ReactDevToolsTarget = {};
+  const hostInstance = {};
+  const mockFiber = createMockHostFiber(hostInstance) as unknown as Fiber;
+  const renderer: ReactRenderer = {
+    bundleType: 1,
+    findFiberByHostInstance: (value) => (value === hostInstance ? mockFiber : null),
+    rendererPackageName: "target-renderer",
+    version: "19.0.0",
+  };
+  getRDTHook(undefined, target).inject(renderer);
+
+  expect(isInstrumentationActive(target)).toBe(true);
+  expect(getFiber(hostInstance, target)).toBe(mockFiber);
+  expect(getFiber(hostInstance)).toBeNull();
 });
 
 it("should ignore renderers whose findFiberByHostInstance throws", () => {

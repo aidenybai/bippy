@@ -1,9 +1,14 @@
 import type { RendererDispatcherRef } from "../react-internals/index.js";
-import { _renderers, getRDTHook } from "../rdt-hook.js";
+import { _renderers } from "../rdt-hook.js";
+import type { ReactDevToolsTarget } from "../rdt-hook.js";
 
-export const getRendererDispatcherRefs = (): RendererDispatcherRef[] => {
-  const rdtHook = getRDTHook();
-  const renderers = new Set([..._renderers, ...rdtHook.renderers.values()]);
+export const getRendererDispatcherRefs = (
+  target: ReactDevToolsTarget = globalThis,
+): RendererDispatcherRef[] => {
+  const rdtHook = target.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+  const targetRenderers = rdtHook?.renderers instanceof Map ? rdtHook.renderers.values() : [];
+  const renderers =
+    target === globalThis ? new Set([..._renderers, ...targetRenderers]) : new Set(targetRenderers);
   const currentDispatcherRefs: RendererDispatcherRef[] = [];
   const seenCurrentDispatcherRefs = new Set<object>();
   for (const renderer of renderers) {

@@ -18,7 +18,11 @@ import {
   readDispatcher,
   writeDispatcher,
 } from "./renderer-dispatchers.js";
-import { symbolicateStack, type SourceFetch } from "./symbolication.js";
+import {
+  symbolicateStack,
+  type SourceFetch,
+  type SourceMapRequestOptions,
+} from "./symbolication.js";
 
 interface RendererDispatcherSnapshot {
   currentDispatcherRef: RendererDispatcherRef;
@@ -534,7 +538,7 @@ const markFlightServerFrame = (stackFrame: StackFrame): StackFrame =>
  * carries `.debugStack`). This is exact - no re-invoking components, no
  * name-matching heuristics - but requires React 19.
  */
-const getOwnerStackFromDebugStacks = (fiber: Fiber): StackFrame[] => {
+export const getRawOwnerStack = (fiber: Fiber): StackFrame[] => {
   const ownerStackFrames: StackFrame[] = [];
   let owner: Fiber | ServerComponentInfo | null | undefined = fiber;
   while (owner) {
@@ -625,9 +629,11 @@ export const getRawParentStack = (fiber: Fiber): StackFrame[] => {
  */
 export const getParentStack = async (
   fiber: Fiber,
-  shouldCache = true,
-  fetchFunction?: SourceFetch,
-): Promise<StackFrame[]> => symbolicateStack(getRawParentStack(fiber), shouldCache, fetchFunction);
+  shouldUseCache = true,
+  sourceFetch?: SourceFetch,
+  requestOptions: SourceMapRequestOptions = {},
+): Promise<StackFrame[]> =>
+  symbolicateStack(getRawParentStack(fiber), shouldUseCache, sourceFetch, requestOptions);
 
 // an owner frame is only actionable if it can point an editor somewhere:
 // it needs a file location and must not be ignore-listed bundler/framework code
@@ -646,10 +652,11 @@ const isLocatableFrame = (stackFrame: StackFrame): boolean =>
  */
 export const getOwnerStack = async (
   fiber: Fiber,
-  shouldCache = true,
-  fetchFunction?: SourceFetch,
+  shouldUseCache = true,
+  sourceFetch?: SourceFetch,
+  requestOptions: SourceMapRequestOptions = {},
 ): Promise<StackFrame[]> => {
-  const debugStackFrames = getOwnerStackFromDebugStacks(fiber);
+  const debugStackFrames = getRawOwnerStack(fiber);
   if (debugStackFrames.length > 0) {
     // the owner chain does not include the fiber itself, but bippy's stacks
     // always start with the fiber's own frame
@@ -657,8 +664,9 @@ export const getOwnerStack = async (
     selfFrame.functionName = getDisplayName(fiber.type) ?? selfFrame.functionName;
     const symbolicatedFrames = await symbolicateStack(
       [selfFrame, ...debugStackFrames],
-      shouldCache,
-      fetchFunction,
+      shouldUseCache,
+      sourceFetch,
+      requestOptions,
     );
     const hasLocatableOwnerFrame = symbolicatedFrames.some(
       (stackFrame, frameIndex) => frameIndex > 0 && isLocatableFrame(stackFrame),
@@ -668,5 +676,5 @@ export const getOwnerStack = async (
     }
   }
 
-  return getParentStack(fiber, shouldCache, fetchFunction);
+  return getParentStack(fiber, shouldUseCache, sourceFetch, requestOptions);
 };

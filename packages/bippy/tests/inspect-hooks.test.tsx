@@ -504,8 +504,10 @@ describe("getFiberHooks additional hook types", () => {
 
     const hooks = getFiberHooks(fiber!);
     const allHooks = collectAllHooks(hooks);
-    expect(allHooks.some((hook) => hook.name === "StatusWithDebugValue")).toBe(true);
-    expect(allHooks.some((hook) => hook.name === "DebugValue")).toBe(true);
+    expect(
+      allHooks.some((hook) => hook.name === "StatusWithDebugValue" && hook.value === "online"),
+    ).toBe(true);
+    expect(allHooks.some((hook) => hook.name === "DebugValue")).toBe(false);
   });
 
   it("applies debug value formatters", () => {
@@ -529,9 +531,12 @@ describe("getFiberHooks additional hook types", () => {
 
     const hooks = getFiberHooks(fiber!);
     const allHooks = collectAllHooks(hooks);
-    const hookValues = allHooks.map((hook) => hook.value);
-    expect(hookValues).toContain("first");
-    expect(hookValues).toContain("second");
+    expect(
+      allHooks.some(
+        (hook) =>
+          Array.isArray(hook.value) && hook.value[0] === "first" && hook.value[1] === "second",
+      ),
+    ).toBe(true);
   });
 
   it("inspects the full effect hook family", () => {
