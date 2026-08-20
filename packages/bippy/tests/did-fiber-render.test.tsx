@@ -13,7 +13,7 @@ const Example = () => {
   return <div>Hello</div>;
 };
 
-export const ExampleWithUnmount = () => {
+const ExampleWithUnmount = () => {
   const [shouldUnmount, setShouldUnmount] = React.useState(true);
   React.useEffect(() => {
     setShouldUnmount(false);

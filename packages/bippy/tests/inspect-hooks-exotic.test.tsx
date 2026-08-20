@@ -329,7 +329,25 @@ describe("useActionState inspection with committed thenables", () => {
 });
 
 describe("forwardRef and default props", () => {
-  it("applies default props when the element type differs", () => {
+  it("applies function component default props when the element type differs", () => {
+    let capturedProps: Record<string, unknown> | null = null;
+    const DefaultPropsComponent = (props: Record<string, unknown>): null => {
+      capturedProps = props;
+      return null;
+    };
+    DefaultPropsComponent.defaultProps = { greeting: "hello", explicit: "ignored" };
+    const fiber = createInspectableFiber({
+      type: DefaultPropsComponent,
+      elementType: null,
+      memoizedProps: { explicit: "set" },
+    });
+
+    getFiberHooks(fiber);
+
+    expect(capturedProps).toEqual({ greeting: "hello", explicit: "set" });
+  });
+
+  it("applies forwardRef default props when the element type differs", () => {
     let capturedProps: Record<string, unknown> | null = null;
     const forwardRefType = {
       render: (props: Record<string, unknown>): null => {

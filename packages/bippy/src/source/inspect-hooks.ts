@@ -3,6 +3,7 @@ import type {
   ContextDependency,
   MemoizedState,
   ReactContext,
+  ReactDebugInfo,
   RendererDispatcherRef,
 } from "../react-internals/index.js";
 import {
@@ -20,6 +21,7 @@ import {
 
 const REACT_CONTEXT_TYPE = Symbol.for("react.context");
 const REACT_MEMO_CACHE_SENTINEL = Symbol.for("react.memo_cache_sentinel");
+const REACT_RECOVERABLE_TYPE = Symbol.for("react.recoverable");
 
 export interface HookSource {
   lineNumber: number | null;
@@ -34,6 +36,7 @@ export interface HooksNode {
   name: string;
   value: unknown;
   subHooks: HooksNode[];
+  debugInfo: ReactDebugInfo[] | null;
   hookSource: HookSource | null;
 }
 
@@ -44,6 +47,7 @@ interface HookLogEntry {
   primitive: string;
   stackError: Error;
   value: unknown;
+  debugInfo: ReactDebugInfo[] | null;
   dispatcherHookName: string;
 }
 
@@ -61,6 +65,7 @@ interface InspectableThenable {
   status?: unknown;
   then: (...arguments_: unknown[]) => unknown;
   value?: unknown;
+  _debugInfo?: ReactDebugInfo[];
 }
 
 interface ForwardRefRenderType {
@@ -68,6 +73,7 @@ interface ForwardRefRenderType {
 }
 
 interface InspectedActionState {
+  debugInfo: ReactDebugInfo[] | null;
   error: unknown;
   value: unknown;
 }
@@ -132,12 +138,14 @@ const pushHookLogEntry = (
   value: unknown,
   dispatcherHookName: string,
   displayName: string | null = null,
+  debugInfo: ReactDebugInfo[] | null = null,
 ): void => {
   hookLog.push({
     displayName,
     primitive,
     stackError: new Error(),
     value,
+    debugInfo,
     dispatcherHookName,
   });
 };
@@ -153,14 +161,18 @@ const dispatcherUse = (usable: unknown): unknown => {
 
       switch (thenable.status) {
         case "fulfilled": {
-          pushHookLogEntry("Promise", thenable.value, "Use");
+          pushHookLogEntry("Promise", thenable.value, "Use", null, thenable._debugInfo ?? null);
           return thenable.value;
         }
         case "rejected":
           throw thenable.reason;
       }
-      pushHookLogEntry("Unresolved", thenable, "Use");
+      pushHookLogEntry("Unresolved", thenable, "Use", null, thenable._debugInfo ?? null);
       throw SuspenseException;
+    }
+    if ("$$typeof" in usable && usable.$$typeof === REACT_RECOVERABLE_TYPE) {
+      pushHookLogEntry("Recoverable", undefined, "Use");
+      return undefined;
     }
     if ("$$typeof" in usable && usable.$$typeof === REACT_CONTEXT_TYPE && isReactContext(usable)) {
       const context: InspectableReactContext = {
@@ -168,7 +180,7 @@ const dispatcherUse = (usable: unknown): unknown => {
         displayName: typeof usable.displayName === "string" ? usable.displayName : undefined,
       };
       const value = readContext(context);
-      pushHookLogEntry("Context (use)", value, "Use", context.displayName ?? "Context");
+      pushHookLogEntry("Context (use)", value, "Use", context.displayName || "Context");
       return value;
     }
   }
@@ -177,7 +189,7 @@ const dispatcherUse = (usable: unknown): unknown => {
 
 const dispatcherUseContext = (context: InspectableReactContext): unknown => {
   const value = readContext(context);
-  pushHookLogEntry("Context", value, "Context", context.displayName ?? null);
+  pushHookLogEntry("Context", value, "Context", context.displayName || null);
   return value;
 };
 
@@ -304,7 +316,7 @@ const dispatcherUseId = (): string => {
 
 const dispatcherUseMemoCache = (size: number): unknown[] => {
   const fiber = currentFiber;
-  if (fiber === null || fiber === undefined) return [];
+  if (fiber === null) return [];
 
   const memoCache = fiber.updateQueue?.memoCache;
   if (memoCache === null || memoCache === undefined) return [];
@@ -333,6 +345,7 @@ const inspectActionStateHook = (
   initialState: unknown,
 ): InspectedActionState => {
   let value: unknown;
+  let debugInfo: ReactDebugInfo[] | null = null;
   let error: unknown = null;
   if (hook !== null) {
     const actionResult = hook.memoizedState;
@@ -340,6 +353,7 @@ const inspectActionStateHook = (
       switch (actionResult.status) {
         case "fulfilled":
           value = actionResult.value;
+          debugInfo = actionResult._debugInfo ?? null;
           break;
         case "rejected":
           error = actionResult.reason;
@@ -347,6 +361,7 @@ const inspectActionStateHook = (
         default:
           error = SuspenseException;
           value = actionResult;
+          debugInfo = actionResult._debugInfo ?? null;
       }
     } else {
       value = actionResult;
@@ -354,7 +369,7 @@ const inspectActionStateHook = (
   } else {
     value = initialState;
   }
-  return { value, error };
+  return { value, debugInfo, error };
 };
 
 const createActionStateDispatcher =
@@ -363,8 +378,8 @@ const createActionStateDispatcher =
     const hook = nextHook();
     nextHook();
     nextHook();
-    const { value, error } = inspectActionStateHook(hook, initialState);
-    pushHookLogEntry(primitive, value, primitive);
+    const { value, debugInfo, error } = inspectActionStateHook(hook, initialState);
+    pushHookLogEntry(primitive, value, primitive, null, debugInfo);
     if (error !== null) throw error;
     return [value, () => {}, false];
   };
@@ -449,6 +464,7 @@ const getPrimitiveStackCache = (): Map<string, StackFrame[]> => {
     dispatcher.useActionState((state: unknown) => state, null);
     dispatcher.useHostTransitionStatus();
     dispatcher.use({ $$typeof: REACT_CONTEXT_TYPE, _currentValue: null });
+    dispatcher.use({ $$typeof: REACT_RECOVERABLE_TYPE });
     const fulfilledPromise = Promise.resolve(null);
     Reflect.set(fulfilledPromise, "status", "fulfilled");
     Reflect.set(fulfilledPromise, "value", null);
@@ -628,6 +644,7 @@ const buildTree = (rootStack: StackFrame[], capturedHookLog: HookLogEntry[]): Ho
           name: parseHookName(stack[stackIndex - 1].functionName),
           value: undefined,
           subHooks: children,
+          debugInfo: null,
           hookSource: {
             lineNumber: stackFrame.lineNumber ?? null,
             columnNumber: stackFrame.columnNumber ?? null,
@@ -655,7 +672,15 @@ const buildTree = (rootStack: StackFrame[], capturedHookLog: HookLogEntry[]): Ho
       fileName: firstStackFrame?.fileName ?? null,
     };
 
-    levelChildren.push({ id, isStateEditable, name, value: hook.value, subHooks: [], hookSource });
+    levelChildren.push({
+      id,
+      isStateEditable,
+      name,
+      value: hook.value,
+      subHooks: [],
+      debugInfo: hook.debugInfo,
+      hookSource,
+    });
   }
 
   processDebugValues(rootChildren, null);
@@ -723,8 +748,8 @@ const resolveDefaultProps = (
   baseProps: Record<string, unknown>,
 ): Record<string, unknown> => {
   if (
-    component &&
-    typeof component === "object" &&
+    component !== null &&
+    (typeof component === "object" || typeof component === "function") &&
     "defaultProps" in component &&
     typeof component.defaultProps === "object" &&
     component.defaultProps !== null

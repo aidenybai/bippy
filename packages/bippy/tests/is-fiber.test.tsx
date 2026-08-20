@@ -5,7 +5,7 @@ import React from "react";
 import { expect, it } from "vite-plus/test";
 import { getFiberFromHostInstance, isFiber, isHostFiber } from "../src/index.js";
 
-export const Example = () => {
+const Example = () => {
   return <div>Hello</div>;
 };
 
@@ -19,7 +19,9 @@ it("should return true for a composite fiber", () => {
   const { container } = render(<Example />);
 
   const hostFiber = getFiberFromHostInstance(container.firstChild);
-  expect(isHostFiber(hostFiber as unknown as Fiber)).toBe(true);
+  expect(hostFiber).not.toBeNull();
+  if (!hostFiber) throw new Error("Expected the rendered host Fiber");
+  expect(isHostFiber(hostFiber)).toBe(true);
 });
 
 it("should return false for non-object types", () => {

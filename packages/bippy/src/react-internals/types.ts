@@ -31,12 +31,30 @@ export interface ServerComponentInfo {
   env?: string;
   owner?: Fiber | ServerComponentInfo | null;
   debugStack?: Error | null;
+  debugLocation?: Error | null;
+}
+
+export interface ReactIOInfo {
+  name: string;
+  start: number;
+  end: number;
+  byteSize?: number;
+  value?: Promise<unknown> | null;
+  env?: string;
+  owner?: ServerComponentInfo | null;
+  stack?: unknown[] | null;
+  debugStack?: Error | null;
 }
 
 export interface ReactDebugInfo {
-  debugLocation?: unknown;
+  awaited?: ReactIOInfo;
+  debugLocation?: Error | null;
   env?: string;
   name?: string;
+  owner?: ServerComponentInfo | null;
+  stack?: unknown[] | null;
+  debugStack?: Error | null;
+  time?: number;
 }
 
 export interface ReactMemoCache {
@@ -71,10 +89,10 @@ export interface Fiber<T = unknown> extends Omit<
   | "tag"
   | "updateQueue"
 > {
-  _debugInfo?: ReactDebugInfo[];
+  _debugInfo?: ReactDebugInfo[] | null;
   _debugOwner?: Fiber | ServerComponentInfo | null;
   _debugSource?: FiberDebugSource | null;
-  _debugStack?: Error & { stack: string };
+  _debugStack?: Error | null;
   alternate: Fiber | null;
   child: Fiber | null;
   deletions: Fiber[] | null;
@@ -149,8 +167,9 @@ export type RendererDispatcherRef = CurrentDispatcherRef | LegacyDispatcherRef;
 
 export interface ReactRenderer extends Omit<
   ReactReconciler.DevToolsConfig<unknown, unknown, unknown>,
-  "findFiberByHostInstance"
+  "bundleType" | "findFiberByHostInstance"
 > {
+  bundleType: number;
   currentDispatcherRef?: RendererDispatcherRef | null;
   findFiberByHostInstance?: (hostInstance: unknown) => Fiber | null;
   getCurrentFiber?: () => Fiber | null;

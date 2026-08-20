@@ -10,11 +10,11 @@ interface FiberRootRef {
   current: FiberRoot | null;
 }
 
-export const Example = () => {
+const Example = () => {
   return <div>Hello</div>;
 };
 
-export const ExampleWithEffect = () => {
+const ExampleWithEffect = () => {
   React.useEffect(() => {}, []);
   return <div>Hello</div>;
 };

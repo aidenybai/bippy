@@ -53,7 +53,20 @@ describe("describeDebugInfoFrame", () => {
   });
 
   it("describes a frame with an environment", () => {
-    expect(describeDebugInfoFrame("TodoItem", "Server")).toBe("\n    in TodoItem (at Server)");
+    expect(describeDebugInfoFrame("TodoItem", "Server")).toBe("\n    in TodoItem [Server]");
+  });
+
+  it("uses a matching debug location", () => {
+    const location = new Error("react-stack-top-frame");
+    location.stack = [
+      "Error: react-stack-top-frame",
+      "    at fakeJSXCallSite (http://localhost/chunk.js:1:1)",
+      "    at TodoItem (http://localhost/app.js:10:5)",
+      "    at react-stack-bottom-frame (http://localhost/chunk.js:2:2)",
+    ].join("\n");
+    expect(describeDebugInfoFrame("TodoItem", "Server", location)).toBe(
+      "\n    at TodoItem (http://localhost/app.js:10:5)",
+    );
   });
 });
 
@@ -402,7 +415,7 @@ describe("getFallbackParentStack", () => {
       return: rootFiber,
     });
     const stack = getFallbackParentStack(childFiber);
-    expect(stack).toBe("\n    in span\n    in ServerLeaf\n    in ServerRoot (at Server)");
+    expect(stack).toBe("\n    in span\n    in ServerLeaf\n    in ServerRoot [Server]");
   });
 
   it("reports errors thrown while walking the tree", () => {

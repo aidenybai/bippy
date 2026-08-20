@@ -24,7 +24,7 @@ const createMockFiber = (overrides: Record<string, unknown> = {}): Fiber =>
     ...overrides,
   }) as unknown as Fiber;
 
-export const Example = () => {
+const Example = () => {
   return <div>Hello</div>;
 };
 describe("traverseFiber", () => {

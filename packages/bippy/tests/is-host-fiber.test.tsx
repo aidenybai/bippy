@@ -7,7 +7,7 @@ import { getFiberFromHostInstance, instrument, isHostFiber, traverseFiber } from
 import type { Fiber } from "../src/react-internals/index.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
 
-export const Example = () => {
+const Example = () => {
   return <div>Hello</div>;
 };
 

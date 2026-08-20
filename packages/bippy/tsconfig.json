@@ -3,9 +3,10 @@
     "jsx": "react",
     "module": "NodeNext",
     "esModuleInterop": true,
-    "strictNullChecks": true,
-    "allowSyntheticDefaultImports": true,
     "strict": true,
+    "noEmit": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "skipLibCheck": true,
     "lib": ["esnext", "dom"],
     "paths": {

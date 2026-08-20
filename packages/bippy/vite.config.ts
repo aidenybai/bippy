@@ -26,7 +26,7 @@ const sharedPackOptions = {
   },
   deps: {
     neverBundle: ["react", "react-dom", "react-reconciler"],
-    alwaysBundle: ["error-stack-parser-es", "@jridgewell/sourcemap-codec"],
+    alwaysBundle: ["@jridgewell/sourcemap-codec"],
   },
   minify: process.env.NODE_ENV === "production" && !process.env.BIPPY_SOURCEMAP,
   outDir: "./dist",

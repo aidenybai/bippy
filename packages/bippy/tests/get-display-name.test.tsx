@@ -11,8 +11,8 @@ const Example = () => {
 
 Example.displayName = "Example";
 
-export const ForwardRefExample = forwardRef(Example);
-export const MemoizedExample = memo(Example);
+const ForwardRefExample = forwardRef(Example);
+const MemoizedExample = memo(Example);
 
 export class ClassComponent extends Component {
   render() {

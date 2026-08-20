@@ -31,7 +31,9 @@ export const parseStack = (stackString: string, options?: ParseOptions): StackFr
         const parsed = parseV8OrIeString(rawLine)[0];
         if (parsed) frames.push(parsed);
       } else if (/^\s*in\s+/.test(rawLine)) {
-        const elementName = rawLine.replace(/^\s*in\s+/, "").replace(/\s*\(at .*\)$/, "");
+        const elementName = rawLine
+          .replace(/^\s*in\s+/, "")
+          .replace(/\s*(?:\(at .*\)|\[[^\]]+\])$/, "");
         frames.push({ functionName: elementName, source: rawLine });
       } else if (rawLine.match(FIREFOX_SAFARI_STACK_REGEXP)) {
         const parsed = parseFFOrSafariString(rawLine)[0];
