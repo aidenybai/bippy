@@ -24,12 +24,12 @@ import {
 import { getFiberHooks, getOwnerStack, getSource } from "../src/source/index.js";
 import type { Fiber, FiberRoot } from "../src/react-internals/index.js";
 
-export interface RendererHostProps {
+interface RendererHostProps {
   label: string;
   value: number;
 }
 
-export interface RendererController {
+interface RendererController {
   getOutput: () => unknown;
   update: (element: React.ReactElement, updateState: () => void) => Promise<void>;
   unmount: () => Promise<void>;
@@ -49,7 +49,7 @@ export interface RendererAdapterFactory {
   supportsHostInstanceLookup?: boolean;
 }
 
-export type RendererSupportLevel = "automatic" | "compatibility";
+type RendererSupportLevel = "automatic" | "compatibility";
 
 interface CompoundTreeProps {
   revision: number;
@@ -225,14 +225,16 @@ export const runRendererTestHarness = (factories: RendererAdapterFactory[]): voi
       if (!updatedStatefulFiber) throw new Error(`${factory.name} lost the stateful fiber`);
       expect(components.getObservedFiber()).toBe(updatedStatefulFiber);
 
-      expect(updatedStatefulFiber.alternate).not.toBeNull();
+      const previousStatefulFiber = updatedStatefulFiber.alternate;
+      expect(previousStatefulFiber).not.toBeNull();
+      if (!previousStatefulFiber) throw new Error(`${factory.name} did not retain its alternate`);
       expect(getLatestFiber(mountedStatefulFiber)).toBe(updatedStatefulFiber);
       expect(getFiberId(updatedStatefulFiber)).toBe(mountedFiberId);
       expect(didFiberRender(updatedStatefulFiber)).toBe(true);
       expect(didFiberCommit(updatedRoot.current)).toBe(true);
 
       expect(updatedStatefulFiber.memoizedProps.revision).toBe(2);
-      expect(updatedStatefulFiber.alternate.memoizedProps.revision).toBe(1);
+      expect(previousStatefulFiber.memoizedProps.revision).toBe(1);
 
       const hookValues = collectHookValues(getFiberHooks(updatedStatefulFiber));
       expect(hookValues).toContain("compound");

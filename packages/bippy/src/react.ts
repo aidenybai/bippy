@@ -38,6 +38,7 @@ const captureFiberFromHook = (useCaptureHook: () => void): Fiber | null => {
 };
 
 const useExternalStoreCapture = (): void => {
+  if (typeof useSyncExternalStore !== "function") return;
   Reflect.apply(useSyncExternalStore, React, [
     subscribeToEmptyStore,
     readEmptySnapshot,

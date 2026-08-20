@@ -25,9 +25,7 @@ export const BUNDLED_FILE_PATTERN_REGEX =
 
 export const QUERY_PARAMETER_PATTERN_REGEX = /^\?[\w~.-]+(?:=[^&#]*)?(?:&[\w~.-]+(?:=[^&#]*)?)*$/;
 
-export const SERVER_FRAME_MARKER = "(at Server)";
-
-export const SERVER_ENV_PATTERN = /\(at [^)]+\)$/;
+export const SERVER_ENV_PATTERN = /\[[^\]]+\]$/;
 
 export const REACT_STACK_BOTTOM_FRAME_PATTERNS = [
   "react_stack_bottom_frame",

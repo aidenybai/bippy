@@ -6,7 +6,7 @@ import { expect, it } from "vite-plus/test";
 import { instrument, isCompositeFiber } from "../src/index.js";
 import type { Fiber } from "../src/react-internals/index.js";
 
-export const Example = () => {
+const Example = () => {
   return <div>Hello</div>;
 };
 

@@ -1,4 +1,4 @@
-import { encode } from "@jridgewell/sourcemap-codec";
+import { encode, type SourceMapSegment } from "@jridgewell/sourcemap-codec";
 import { describe, expect, it } from "vite-plus/test";
 import type { Fiber } from "../src/react-internals/index.js";
 import { getDisplayNameFromSource } from "../src/source/get-display-name-from-source.js";
@@ -39,7 +39,9 @@ const createFixedPointRawMap = (targetLine: number, options: FixedPointMapOption
   const sourcesContent = options.sourceLines
     ? [options.sourceLines.join("\n")]
     : options.sourcesContent;
-  const mapping = options.mappedName ? [0, 0, targetLine - 1, 0, 0] : [0, 0, targetLine - 1, 0];
+  const mapping: SourceMapSegment = options.mappedName
+    ? [0, 0, targetLine - 1, 0, 0]
+    : [0, 0, targetLine - 1, 0];
   return JSON.stringify({
     version: 3,
     sources: ["src/app.tsx"],
@@ -61,7 +63,9 @@ const createIndexedFixedPointRawMap = (targetLine: number, sourceContent: string
           sourcesContent: [sourceContent],
           names: [],
           mappings: encode(
-            Array.from({ length: TOTAL_MAPPED_LINES }, () => [[0, 0, targetLine - 1, 0]]),
+            Array.from({ length: TOTAL_MAPPED_LINES }, (): SourceMapSegment[] => [
+              [0, 0, targetLine - 1, 0],
+            ]),
           ),
         },
       },

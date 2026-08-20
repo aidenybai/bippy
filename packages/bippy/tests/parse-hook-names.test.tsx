@@ -349,6 +349,7 @@ const createHooksNode = (overrides: Partial<HooksNode>): HooksNode => ({
   name: "State",
   value: 0,
   subHooks: [],
+  debugInfo: null,
   hookSource: null,
   ...overrides,
 });

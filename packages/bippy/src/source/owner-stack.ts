@@ -7,7 +7,6 @@ import type {
 } from "../react-internals/index.js";
 import {
   REACT_STACK_BOTTOM_FRAME_PATTERNS,
-  SERVER_FRAME_MARKER,
   SERVER_ENV_PATTERN,
   SERVER_COMPONENT_URL_PREFIXES,
 } from "./constants.js";
@@ -101,12 +100,18 @@ const describeBuiltInComponentFrame = (name: string): string => {
   return `\n    in ${name}`;
 };
 
-export const describeDebugInfoFrame = (name: string, env?: string): string => {
-  let frameDescription = describeBuiltInComponentFrame(name);
-  if (env) {
-    frameDescription += ` (at ${env})`;
+export const describeDebugInfoFrame = (
+  name: string,
+  env?: string,
+  location?: Error | null,
+): string => {
+  if (location) {
+    const childStack = formatOwnerStack(location.stack ?? "");
+    const lastNewlineIndex = childStack.lastIndexOf("\n");
+    const lastLine = lastNewlineIndex === -1 ? childStack : childStack.slice(lastNewlineIndex + 1);
+    if (lastLine.includes(name)) return `\n${lastLine}`;
   }
-  return frameDescription;
+  return describeBuiltInComponentFrame(`${name}${env ? ` [${env}]` : ""}`);
 };
 
 let reEntry = false;
@@ -115,7 +120,7 @@ let reEntry = false;
 // component type like React DevTools does.
 const componentFrameCache = new WeakMap<React.ComponentType<unknown>, string>();
 
-// https://github.com/facebook/react/blob/f739642745577a8e4dcb9753836ac3589b9c590a/packages/react-devtools-shared/src/backend/shared/DevToolsComponentStackFrame.js#L22
+// https://github.com/facebook/react/blob/eafeac0/packages/shared/ReactComponentStackFrame.js#L64
 const describeNativeComponentFrame = (
   component: React.ComponentType<unknown>,
   construct: boolean,
@@ -153,21 +158,12 @@ const describeNativeComponentFrame = (
                 throw Error();
               },
             });
-            if (typeof Reflect === "object" && Reflect.construct) {
-              try {
-                Reflect.construct(ThrowingConstructor, []);
-              } catch (caughtError) {
-                control = caughtError;
-              }
-              Reflect.construct(component, [], ThrowingConstructor);
-            } else {
-              try {
-                Function.prototype.apply.call(ThrowingConstructor, undefined, []);
-              } catch (caughtError) {
-                control = caughtError;
-              }
-              Function.prototype.apply.call(component, ThrowingConstructor.prototype, []);
+            try {
+              Reflect.construct(ThrowingConstructor, []);
+            } catch (caughtError) {
+              control = caughtError;
             }
+            Reflect.construct(component, [], ThrowingConstructor);
           } else {
             try {
               throw Error();
@@ -312,7 +308,7 @@ const describeNativeComponentFrame = (
   return syntheticFrame;
 };
 
-// https://github.com/facebook/react/blob/ac3e705a18696168acfcaed39dce0cfaa6be8836/packages/react-reconciler/src/ReactFiberComponentStack.js#L180
+// https://github.com/facebook/react/blob/eafeac0/packages/react-reconciler/src/ReactFiberComponentStack.js#L37
 export const describeFiber = (fiber: Fiber, childFiber: Fiber | null): string => {
   let stackFrame = "";
   const workTags = getReactWorkTagsForFiber(fiber);
@@ -384,7 +380,11 @@ export const getFallbackParentStack = (thisFiber: Fiber): string => {
         for (let debugInfoIndex = debugInfo.length - 1; debugInfoIndex >= 0; debugInfoIndex--) {
           const debugEntry = debugInfo[debugInfoIndex];
           if (typeof debugEntry.name === "string") {
-            componentStack += describeDebugInfoFrame(debugEntry.name, debugEntry.env);
+            componentStack += describeDebugInfoFrame(
+              debugEntry.name,
+              debugEntry.env,
+              debugEntry.debugLocation,
+            );
           }
         }
       }
@@ -511,7 +511,7 @@ const getEnrichedServerStackFrame = (
     lineNumber: resolvedRscFrame.lineNumber,
     columnNumber: resolvedRscFrame.columnNumber,
     source: serverFrame.source?.replace(
-      SERVER_FRAME_MARKER,
+      SERVER_ENV_PATTERN,
       `(${resolvedRscFrame.fileName}:${resolvedRscFrame.lineNumber}:${resolvedRscFrame.columnNumber})`,
     ),
   };

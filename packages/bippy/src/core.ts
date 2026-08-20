@@ -312,10 +312,7 @@ export const getDisplayName = (type: unknown): null | string => {
  */
 export const detectReactBuildType = (renderer: ReactRenderer): "development" | "production" => {
   try {
-    if (
-      typeof renderer.version === "string" &&
-      renderer.bundleType === ReactBuildType.Development
-    ) {
+    if (typeof renderer.version === "string" && renderer.bundleType > ReactBuildType.Production) {
       return "development";
     }
   } catch {}
