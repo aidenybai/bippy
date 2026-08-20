@@ -15,64 +15,6 @@ React keeps its internals out of reach. bippy opens them up for metaprogramming,
 >
 > This project uses React internals, which can change at any time. We don’t recommend depending on them unless you have to. By proceeding, you acknowledge the risk of breaking your own code or apps that use your code.
 
-## How React works internally
-
-A Fiber is both a node in React’s internal representation of the UI and a unit of work that React can schedule. As a [UI runtime](https://overreacted.io/react-as-a-ui-runtime/), React produces and maintains a tree in a host environment such as the browser. Fiber is the data structure React uses to reconcile that UI.
-
-React builds the Fiber tree as it renders your [component tree](https://react.dev/learn/understanding-your-ui-as-a-tree). Each Fiber is a mutable object representing a component, host element, text node, or internal boundary. It stores the node’s props, state, position in the tree, and pending work.
-
-Consider this component tree:
-
-```tsx
-const Button = () => <button>Save</button>;
-
-const App = () => (
-  <main>
-    <Button />
-  </main>
-);
-```
-
-Each rendered tree has a [`FiberRoot`](https://github.com/facebook/react/blob/beef6d60f46a97f5c20471df81760fcf365d63ef/packages/react-reconciler/src/ReactInternalTypes.js#L212-L221) container. Its `current` field points to the `HostRoot` Fiber at the top of the tree. `HostRoot`, `FunctionComponent`, and `HostComponent` are [React’s internal work tags](https://github.com/facebook/react/blob/beef6d60f46a97f5c20471df81760fcf365d63ef/packages/react-reconciler/src/ReactWorkTags.js#L44-L49).
-
-```text
-FiberRoot
-└── current → HostRoot Fiber
-              └── App                FunctionComponent
-                  └── main           HostComponent
-                      └── Button     FunctionComponent
-                          └── button HostComponent
-```
-
-Fibers are actual linked objects. React defines their shape in the [`Fiber` type](https://github.com/facebook/react/blob/beef6d60f46a97f5c20471df81760fcf365d63ef/packages/react-reconciler/src/ReactInternalTypes.js#L87-L174) and initializes them in [`FiberNode`](https://github.com/facebook/react/blob/beef6d60f46a97f5c20471df81760fcf365d63ef/packages/react-reconciler/src/ReactFiber.js#L134-L173). The host Fiber for `<button>` resembles this object:
-
-```js
-FiberNode {
-  tag: 5,
-  type: "button",
-  stateNode: HTMLButtonElement {},
-  return: FiberNode { … },
-  child: null,
-  sibling: null,
-  memoizedProps: { children: "Save" },
-  flags: 0,
-  alternate: null
-}
-```
-
-The fields connect React’s component tree, pending work, and rendered output:
-
-- [`tag`](https://github.com/facebook/react/blob/beef6d60f46a97f5c20471df81760fcf365d63ef/packages/react-reconciler/src/ReactInternalTypes.js#L100-L101) identifies the Fiber’s internal node kind
-- [`type`](https://github.com/facebook/react/blob/beef6d60f46a97f5c20471df81760fcf365d63ef/packages/react-reconciler/src/ReactInternalTypes.js#L106-L114) identifies the component or host element, while `stateNode` points to its renderer-owned instance
-- [`return`, `child`, and `sibling`](https://github.com/facebook/react/blob/beef6d60f46a97f5c20471df81760fcf365d63ef/packages/react-reconciler/src/ReactInternalTypes.js#L122-L131) form the linked tree
-- [`memoizedProps`](https://github.com/facebook/react/blob/beef6d60f46a97f5c20471df81760fcf365d63ef/packages/react-reconciler/src/ReactInternalTypes.js#L142-L150) and `memoizedState` contain the inputs used to produce the current output
-- [`flags`](https://github.com/facebook/react/blob/beef6d60f46a97f5c20471df81760fcf365d63ef/packages/react-reconciler/src/ReactFiberFlags.js#L14-L52) records work that React must perform during the commit phase
-- [`alternate`](https://github.com/facebook/react/blob/beef6d60f46a97f5c20471df81760fcf365d63ef/packages/react-reconciler/src/ReactFiber.js#L322-L351) links the current Fiber to its work-in-progress counterpart
-
-During an update, React builds a work-in-progress tree beside the current tree. React can pause or discard this work. During the [commit phase](https://react.dev/learn/render-and-commit#step-3-react-commits-changes-to-the-dom), React applies the finished work and makes that tree current.
-
-React does not expose Fiber as a public API. bippy “hacks into React” by accessing it anyway, giving you a consistent way to inspect Fiber trees across React versions and renderers.
-
 ## Install bippy
 
 Install bippy:
