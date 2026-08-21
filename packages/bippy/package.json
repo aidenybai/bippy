@@ -80,7 +80,7 @@
     "coverage": "vp test --coverage",
     "dev": "NODE_ENV=development vp pack --watch",
     "generate:react-internals": "tsx scripts/generate-react-internals.ts",
-    "prepack": "cp ../../README.md .",
+    "prepack": "cp ../../README.md ../../LICENSE .",
     "prepublishOnly": "nr build",
     "publint": "publint",
     "test": "vp test"

@@ -466,6 +466,11 @@ const resolveSourceMapSources = (rawSourceMap: StandardSourceMap, sourceMapUrl: 
     resolveSourceRoot(rawSourceMap.sourceRoot, source, sourceMapUrl),
   );
 
+// An inline URL carries the whole encoded map, so retaining it in the cache would
+// double the memory held per source map for the lifetime of the process.
+const getRetainableSourceMapUrl = (sourceMapUrl: string): string | undefined =>
+  INLINE_SOURCEMAP_REGEX.test(sourceMapUrl) ? undefined : sourceMapUrl;
+
 const decodeStandardSourceMap = (
   rawSourceMap: StandardSourceMap,
   sourceMapUrl: string,
@@ -476,7 +481,7 @@ const decodeStandardSourceMap = (
       ignoredSourceIndices: getIgnoredSourceIndices(rawSourceMap),
       mappings: decode(rawSourceMap.mappings),
       names: rawSourceMap.names,
-      sourceMapUrl,
+      sourceMapUrl: getRetainableSourceMapUrl(sourceMapUrl),
       sourceRoot: rawSourceMap.sourceRoot,
       sources: resolveSourceMapSources(rawSourceMap, sourceMapUrl),
       sourcesContent: rawSourceMap.sourcesContent,
@@ -539,7 +544,7 @@ const decodeIndexSourceMap = async (
     mappings: [],
     names: [],
     sections: decodedSections,
-    sourceMapUrl,
+    sourceMapUrl: getRetainableSourceMapUrl(sourceMapUrl),
     sourceRoot: undefined,
     sources: Array.from(allSources),
     sourcesContent: undefined,

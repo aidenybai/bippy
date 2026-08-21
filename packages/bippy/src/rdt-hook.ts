@@ -156,8 +156,13 @@ export const onRDTHookReplace = (listener: RDTHookReplaceListener): Unsubscribe 
   });
 };
 
+// A Map built in another realm (an iframe target) fails instanceof, so replacing it
+// would discard that realm's renderer registry. Object.prototype.toString is realm-agnostic.
+export const isRendererMap = (value: unknown): value is Map<number, ReactRenderer> =>
+  Object.prototype.toString.call(value) === "[object Map]";
+
 const getRendererMap = (rdtHook: ReactDevToolsGlobalHook): Map<number, ReactRenderer> => {
-  if (!(rdtHook.renderers instanceof Map)) {
+  if (!isRendererMap(rdtHook.renderers)) {
     rdtHook.renderers = new Map();
   }
   return rdtHook.renderers;

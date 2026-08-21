@@ -1,4 +1,5 @@
 // intentionally avoids importing ../index.js so this file controls hook installation
+import { runInNewContext } from "node:vm";
 import { expect, it, vi } from "vite-plus/test";
 import { ReactBuildType } from "../src/react-internals/index.js";
 import {
@@ -65,6 +66,30 @@ it("getFiberRoots should return a memoized set that callers can register roots i
   rdtHook.onCommitFiberRoot?.(rendererId, unmountedRoot);
   rdtHook.onCommitFiberRoot?.(rendererId, mountedRoot);
   expect(rdtHook.getFiberRoots?.(rendererId)).toBe(rendererRoots);
+});
+
+it("patchRDTHook should keep a renderer map created in another realm", () => {
+  const foreignRenderers: Map<number, ReactRenderer> = runInNewContext("new Map()");
+  foreignRenderers.set(1, createFakeRenderer());
+  const target = {
+    __REACT_DEVTOOLS_GLOBAL_HOOK__: {
+      checkDCE: () => {},
+      hasUnsupportedRendererAttached: false,
+      inject: () => 0,
+      on: () => {},
+      onCommitFiberRoot: () => {},
+      onCommitFiberUnmount: () => {},
+      onPostCommitFiberRoot: () => {},
+      renderers: foreignRenderers,
+      supportsFiber: true,
+      supportsFlight: true,
+    },
+  };
+
+  expect(foreignRenderers instanceof Map).toBe(false);
+  patchRDTHook(undefined, target);
+  expect(target.__REACT_DEVTOOLS_GLOBAL_HOOK__.renderers).toBe(foreignRenderers);
+  expect(target.__REACT_DEVTOOLS_GLOBAL_HOOK__.renderers.size).toBe(1);
 });
 
 it("checkDCE should schedule an error for badly built react", () => {

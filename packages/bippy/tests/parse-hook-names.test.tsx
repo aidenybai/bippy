@@ -61,6 +61,19 @@ describe("extractHookVariableName", () => {
     expect(extractHookVariableName(source, 1, columnOfHookCall)).toBe("count");
   });
 
+  it("extracts name through a deep member-access prefix", () => {
+    const source = `const value = a.b.c.useState(0);`;
+    expect(extractHookVariableName(source, 1, source.indexOf("useState"))).toBe("value");
+  });
+
+  it("returns quickly for a long dotted chain that is not a hook", () => {
+    const chain = Array.from({ length: 30 }, () => "segment").join(".");
+    const source = `const value = ${chain}.notAHook(`;
+    const startedAt = performance.now();
+    expect(extractHookVariableName(source, 1, 0)).toBeNull();
+    expect(performance.now() - startedAt).toBeLessThan(200);
+  });
+
   it("extracts name from simple useRef", () => {
     const source = `const inputRef = useRef(null);`;
     const columnOfHookCall = source.indexOf("useRef");

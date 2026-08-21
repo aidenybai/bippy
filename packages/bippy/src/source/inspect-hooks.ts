@@ -550,6 +550,19 @@ const parseHookName = (functionName: string | undefined): string => {
   return functionName.slice(startIndex);
 };
 
+// Unlike upstream, bippy routes every dispatcher method through a shared log helper, so those
+// frames appear in captured stacks and must not become tree levels. Names are read off the
+// live functions rather than matched by prefix, so user hooks cannot collide and minified
+// builds stay accurate.
+const INTERNAL_HOOK_FRAME_NAMES = new Set(
+  [pushHookLogEntry, ...Object.values(dispatcher)].map((internalFunction) =>
+    parseHookName(internalFunction.name),
+  ),
+);
+
+const isInternalHookFrame = (hookName: string): boolean =>
+  hookName !== "" && INTERNAL_HOOK_FRAME_NAMES.has(hookName);
+
 const isReactWrapper = (functionName: string | undefined, wrapperName: string): boolean => {
   const hookName = parseHookName(functionName);
   if (wrapperName === "HostTransitionStatus") {
@@ -621,10 +634,9 @@ const buildTree = (rootStack: StackFrame[], capturedHookLog: HookLogEntry[]): Ho
     let displayName = hook.displayName;
     if (displayName === null && primitiveFrame !== null) {
       const primitiveName = parseHookName(primitiveFrame.functionName);
-      displayName =
-        primitiveName === "pushHookLogEntry" || primitiveName.startsWith("dispatcher")
-          ? null
-          : primitiveName || parseHookName(hook.dispatcherHookName);
+      displayName = isInternalHookFrame(primitiveName)
+        ? null
+        : primitiveName || parseHookName(hook.dispatcherHookName);
     }
 
     if (stack !== null) {
@@ -699,7 +711,7 @@ const removeInternalHookFrames = (
 ): void => {
   for (let nodeIndex = 0; nodeIndex < hooksTree.length; nodeIndex++) {
     const hooksNode = hooksTree[nodeIndex];
-    if (hooksNode.name === "pushHookLogEntry" || hooksNode.name.startsWith("dispatcher")) {
+    if (isInternalHookFrame(hooksNode.name)) {
       if (parentHooksNode !== null && hooksNode.value !== undefined) {
         if (parentHooksNode.value === undefined) parentHooksNode.value = hooksNode.value;
         else if (Array.isArray(parentHooksNode.value)) {
@@ -721,6 +733,7 @@ const processDebugValues = (hooksTree: HooksTree, parentHooksNode: HooksNode | n
     if (hooksNode.name === "DebugValue") {
       hooksTree.splice(nodeIndex, 1, ...hooksNode.subHooks);
       nodeIndex--;
+      // Internal frames surface as valueless DebugValue levels; only real labels bubble up.
       if (hooksNode.value !== undefined) debugValueNodes.push(hooksNode);
     } else {
       processDebugValues(hooksNode.subHooks, hooksNode);
