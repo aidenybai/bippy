@@ -1,7 +1,12 @@
 import { getRDTHook, instrument, onRendererInject } from "bippy";
 import type { FiberRoot, ReactDevToolsTarget, ReactRenderer, Unsubscribe } from "bippy";
 import { createUnsubscribe } from "./create-unsubscribe.js";
-import { getFiberRootEntries, getRendererForFiber, updateFiberRoot } from "./fiber-roots.js";
+import {
+  getFiberRootEntries,
+  getRendererForFiber,
+  removeFiberRootsForHook,
+  updateFiberRoot,
+} from "./fiber-roots.js";
 import { createRendererActions } from "./renderer-actions.js";
 import type { RendererActions } from "./renderer-actions.js";
 import type { Facade, ProfilingState } from "./types.js";
@@ -99,6 +104,8 @@ export const installFacade = (target: ReactDevToolsTarget = globalThis): Facade 
   const dispose = createUnsubscribe(() => {
     for (const unsubscribe of unsubscribers) unsubscribe();
     unsubscribers.length = 0;
+    removeFiberRootsForHook(hook);
+    fiberRoots.clear();
     listeners.clear();
     rendererActionsByFacade.delete(facade);
   });

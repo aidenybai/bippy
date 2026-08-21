@@ -7,7 +7,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test"
 import { installFacade } from "../src/facade.js";
 import { getFiberDisplayName, getFiberTypeName } from "../src/fiber-metadata.js";
 import { createRendererActions } from "../src/renderer-actions.js";
-import type { Fiber, FiberRoot, ReactDevToolsTarget, ReactRenderer } from "bippy";
+import type {
+  Fiber,
+  FiberRoot,
+  ReactDevToolsGlobalHook,
+  ReactDevToolsTarget,
+  ReactRenderer,
+} from "bippy";
+import type { RendererActions } from "../src/renderer-actions.js";
 import type { Facade } from "../src/types.js";
 
 interface EditableState {
@@ -17,6 +24,21 @@ interface EditableState {
 interface RendererHandlers {
   error?: (fiber: Fiber) => boolean | null;
   suspense?: (fiber: Fiber) => boolean;
+}
+
+interface ActionsHarness {
+  actions: RendererActions;
+  dispose: () => void;
+  handlers: RendererHandlers;
+  hook: ReactDevToolsGlobalHook;
+  rendererId: number;
+  scheduleRetry: ReturnType<typeof vi.fn>;
+  scheduleUpdate: ReturnType<typeof vi.fn>;
+}
+
+interface FiberPair {
+  alternate: Fiber;
+  current: Fiber;
 }
 
 let facade: Facade;
@@ -32,6 +54,50 @@ const getFiberByName = (name: string): Fiber => {
   );
   if (!fiber) throw new Error(`Missing ${name}`);
   return fiber;
+};
+
+const createDetachedFiberPair = (source: Fiber): FiberPair => {
+  const alternate: Fiber = { ...source, actualStartTime: 1, alternate: null, return: null };
+  const current: Fiber = { ...source, actualStartTime: 2, alternate, return: null };
+  Reflect.set(alternate, "alternate", current);
+  return { alternate, current };
+};
+
+const createActionsHarness = (): ActionsHarness => {
+  const target: ReactDevToolsTarget = {};
+  const handlers: RendererHandlers = {};
+  const scheduleRetry = vi.fn();
+  const scheduleUpdate = vi.fn();
+  const actionRenderer: ReactRenderer = {
+    ...renderer,
+    scheduleRetry,
+    scheduleUpdate,
+    setErrorHandler: (handler) => {
+      handlers.error = handler;
+    },
+    setSuspenseHandler: (handler) => {
+      handlers.suspense = handler;
+    },
+  };
+  const localFacade = installFacade(target);
+  const rendererId = localFacade.hook.inject(actionRenderer);
+  const actions = createRendererActions({
+    getRenderer: () => actionRenderer,
+    getRendererById: () => actionRenderer,
+    target,
+  });
+  return {
+    actions,
+    dispose: () => {
+      actions.dispose();
+      localFacade.dispose();
+    },
+    handlers,
+    hook: localFacade.hook,
+    rendererId,
+    scheduleRetry,
+    scheduleUpdate,
+  };
 };
 
 beforeEach(() => {
@@ -73,34 +139,15 @@ afterEach(() => {
 
 describe("upstream renderer action behavior", () => {
   it("tracks and cleans forced error and Suspense handlers", () => {
-    const target: ReactDevToolsTarget = {};
-    const handlers: RendererHandlers = {};
-    const scheduleRetry = vi.fn();
-    const scheduleUpdate = vi.fn();
-    const actionRenderer: ReactRenderer = {
-      ...renderer,
-      scheduleRetry,
-      scheduleUpdate,
-      setErrorHandler: (handler) => {
-        handlers.error = handler;
-      },
-      setSuspenseHandler: (handler) => {
-        handlers.suspense = handler;
-      },
-    };
-    const localFacade = installFacade(target);
-    const localHook = localFacade.hook;
-    const rendererId = localHook.inject(actionRenderer);
-    const actions = createRendererActions({
-      getRenderer: () => actionRenderer,
-      getRendererById: () => actionRenderer,
-      target,
-    });
+    const { actions, dispose, handlers, hook, rendererId, scheduleRetry, scheduleUpdate } =
+      createActionsHarness();
 
     expect(actions.setFiberError(functionFiber, true)).toBe(true);
     expect(handlers.error?.(functionFiber)).toBe(true);
     expect(scheduleUpdate).toHaveBeenCalledWith(functionFiber);
-    localHook.onCommitFiberRoot(rendererId, root, undefined, false);
+    hook.onCommitFiberRoot(rendererId, root, undefined, false);
+    expect(handlers.error?.(functionFiber)).toBe(true);
+    hook.onCommitFiberUnmount(rendererId, functionFiber);
     expect(handlers.error?.(functionFiber)).toBeNull();
 
     expect(actions.setFiberSuspense(functionFiber, true)).toBe(true);
@@ -108,15 +155,57 @@ describe("upstream renderer action behavior", () => {
     expect(actions.setFiberSuspense(functionFiber, false)).toBe(true);
     expect(scheduleRetry).toHaveBeenCalledWith(functionFiber);
     expect(actions.setFiberSuspense(functionFiber, true)).toBe(true);
-    localHook.onCommitFiberUnmount(rendererId, functionFiber);
+    hook.onCommitFiberUnmount(rendererId, functionFiber);
     expect(handlers.suspense?.(functionFiber)).toBe(false);
 
     actions.setFiberError(functionFiber, true);
     actions.setFiberSuspense(functionFiber, true);
-    actions.dispose();
+    dispose();
     expect(handlers.error?.(functionFiber)).toBeNull();
     expect(handlers.suspense?.(functionFiber)).toBe(false);
-    localFacade.dispose();
+  });
+
+  it("keeps forced error overrides alive across commits", () => {
+    const { actions, dispose, handlers, hook, rendererId } = createActionsHarness();
+
+    expect(actions.setFiberError(functionFiber, true)).toBe(true);
+    expect(actions.setFiberError(classFiber, true)).toBe(true);
+    hook.onCommitFiberRoot(rendererId, root, undefined, false);
+    hook.onCommitFiberRoot(rendererId, root, undefined, false);
+
+    expect(handlers.error?.(functionFiber)).toBe(true);
+    expect(handlers.error?.(classFiber)).toBe(true);
+    dispose();
+  });
+
+  it("prunes forced error overrides when a Fiber unmounts", () => {
+    const { actions, dispose, handlers, hook, rendererId } = createActionsHarness();
+    const unmounting = createDetachedFiberPair(functionFiber);
+
+    expect(actions.setFiberError(functionFiber, true)).toBe(true);
+    expect(actions.setFiberError(unmounting.current, true)).toBe(true);
+    hook.onCommitFiberUnmount(rendererId, unmounting.alternate);
+
+    expect(handlers.error?.(unmounting.current)).toBeNull();
+    expect(handlers.error?.(unmounting.alternate)).toBeNull();
+    expect(handlers.error?.(functionFiber)).toBe(true);
+    dispose();
+  });
+
+  it("consumes a toggled off error override on its first read", () => {
+    const { actions, dispose, handlers } = createActionsHarness();
+    const dismissed = createDetachedFiberPair(classFiber);
+
+    expect(actions.setFiberError(functionFiber, true)).toBe(true);
+    expect(actions.setFiberError(dismissed.current, false)).toBe(true);
+    expect(handlers.error?.(dismissed.alternate)).toBe(false);
+    expect(handlers.error?.(dismissed.current)).toBeNull();
+    expect(handlers.error?.(functionFiber)).toBe(true);
+
+    expect(actions.setFiberError(functionFiber, false)).toBe(true);
+    expect(handlers.error?.(functionFiber)).toBe(false);
+    expect(handlers.error?.(functionFiber)).toBeNull();
+    dispose();
   });
 
   it("returns false when renderer capabilities are unavailable", () => {

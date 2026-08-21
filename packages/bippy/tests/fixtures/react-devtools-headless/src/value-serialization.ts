@@ -4,6 +4,20 @@ import type { HookNode } from "./types.js";
 
 const MAX_NORMALIZE_DEPTH = 3;
 
+interface NormalizedCollection {
+  entries: unknown[];
+  size: number;
+  type: "Map" | "Set";
+}
+
+export const safeReadProperty = (target: object, key: string): unknown => {
+  try {
+    return Reflect.get(target, key);
+  } catch (error) {
+    return `[Exception: ${error instanceof Error ? error.message : String(error)}]`;
+  }
+};
+
 export const normalizeValue = (
   value: unknown,
   seenValues: Set<unknown> = new Set(),
@@ -15,6 +29,9 @@ export const normalizeValue = (
   if (typeof value === "bigint") return `${String(value)}n`;
   if (typeof value !== "object" || value === null) return value;
   if (isValidElement(value)) return "[React element]";
+  if (value instanceof Date) {
+    return `[Date ${Number.isNaN(value.getTime()) ? "Invalid Date" : value.toISOString()}]`;
+  }
   if (depth >= MAX_NORMALIZE_DEPTH) return "[max depth]";
   if (seenValues.has(value)) return "[circular]";
 
@@ -25,9 +42,22 @@ export const normalizeValue = (
     return normalizedArray;
   }
 
+  if (value instanceof Map || value instanceof Set) {
+    const normalizedCollection: NormalizedCollection = {
+      entries: [],
+      size: value.size,
+      type: value instanceof Map ? "Map" : "Set",
+    };
+    for (const entry of value) {
+      normalizedCollection.entries.push(normalizeValue(entry, seenValues, depth + 1));
+    }
+    seenValues.delete(value);
+    return normalizedCollection;
+  }
+
   const normalizedObject: Record<string, unknown> = {};
   for (const key of Object.keys(value)) {
-    normalizedObject[key] = normalizeValue(Reflect.get(value, key), seenValues, depth + 1);
+    normalizedObject[key] = normalizeValue(safeReadProperty(value, key), seenValues, depth + 1);
   }
   seenValues.delete(value);
   return normalizedObject;
@@ -39,7 +69,7 @@ export const normalizeProps = (props: unknown): Record<string, unknown> | null =
 
   for (const key of Object.keys(props)) {
     if (key === "children") continue;
-    normalizedProps[key] = normalizeValue(Reflect.get(props, key));
+    normalizedProps[key] = normalizeValue(safeReadProperty(props, key));
   }
 
   return Object.keys(normalizedProps).length > 0 ? normalizedProps : null;

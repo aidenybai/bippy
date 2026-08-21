@@ -25,7 +25,7 @@ const formatDuration = (duration: number): string => (duration < 0.1 ? "<0.1ms" 
 
 export const getRankedChartData = (nodes: ProfilingChartNode[]): RankedChartNode[] =>
   nodes
-    .filter((node) => node.didRender)
+    .filter((node) => node.didRender && node.parentId !== null)
     .map((node) => ({
       id: node.id,
       label: `${node.name}${node.key ? ` key="${node.key}"` : ""} (${formatDuration(node.selfDuration)})`,
@@ -41,10 +41,15 @@ export const getFlamegraphChartData = (nodes: ProfilingChartNode[]): FlameChartN
     const row = rows[depth] ?? [];
     row.push({ ...node, offset });
     rows[depth] = row;
-    let childOffset = offset + node.selfDuration;
-    for (const childId of node.children) {
-      const child = nodesById.get(childId);
-      if (!child) continue;
+    const children = node.children
+      .map((childId) => nodesById.get(childId))
+      .filter((child): child is ProfilingChartNode => child !== undefined);
+    const childrenBaseDuration = children.reduce(
+      (totalBaseDuration, child) => totalBaseDuration + child.treeBaseDuration,
+      0,
+    );
+    let childOffset = offset + node.treeBaseDuration - childrenBaseDuration;
+    for (const child of children) {
       visit(child, depth + 1, childOffset);
       childOffset += child.treeBaseDuration;
     }

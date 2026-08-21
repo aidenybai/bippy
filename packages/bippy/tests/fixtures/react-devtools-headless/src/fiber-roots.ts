@@ -73,15 +73,25 @@ export const getFiberRootEntries = (target: ReactDevToolsTarget = globalThis): F
     }));
 };
 
+const removeFiberRoot = (fiberRoot: FiberRoot): void => {
+  fiberRoots.delete(fiberRoot);
+  rootHooks.delete(fiberRoot);
+  rootRendererIds.delete(fiberRoot);
+};
+
+export const removeFiberRootsForHook = (hook: ReactDevToolsGlobalHook): void => {
+  for (const fiberRoot of fiberRoots) {
+    if (rootHooks.get(fiberRoot) === hook) removeFiberRoot(fiberRoot);
+  }
+};
+
 export const updateFiberRoot = (
   hook: ReactDevToolsGlobalHook,
   rendererId: number,
   fiberRoot: FiberRoot,
 ): boolean => {
   if (isFiberRootUnmounted(fiberRoot)) {
-    fiberRoots.delete(fiberRoot);
-    rootHooks.delete(fiberRoot);
-    rootRendererIds.delete(fiberRoot);
+    removeFiberRoot(fiberRoot);
     return false;
   }
 

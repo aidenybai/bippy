@@ -87,6 +87,26 @@ describe("upstream Fiber root bookkeeping", () => {
     localFacade.dispose();
   });
 
+  it("prunes tracked roots when the owning facade is disposed", () => {
+    const target: ReactDevToolsTarget = {};
+    const localFacade = installFacade(target);
+    const renderer = facade.rendererInternals.get(rendererId);
+    if (!renderer) throw new Error("Missing renderer");
+    const localRendererId = localFacade.hook.inject(renderer);
+    const trackedRoot = createRoot(root.current);
+    localFacade.hook.getFiberRoots = (candidateRendererId) =>
+      candidateRendererId === localRendererId ? new Set([trackedRoot]) : new Set();
+
+    expect(getFiberRootEntries(target)).toContainEqual({
+      rendererId: localRendererId,
+      root: trackedRoot,
+    });
+
+    localFacade.dispose();
+    localFacade.hook.getFiberRoots = () => new Set();
+    expect(getFiberRootEntries(target)).toEqual([]);
+  });
+
   it("rejects detached Fibers and supports targets without hooks", () => {
     const detachedFiber: Fiber = {
       ...root.current,

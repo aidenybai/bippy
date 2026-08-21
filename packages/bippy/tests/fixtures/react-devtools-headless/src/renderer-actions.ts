@@ -59,10 +59,10 @@ export interface RendererActions {
 const hasFiber = (fibers: Set<Fiber>, fiber: Fiber): boolean =>
   fibers.has(fiber) || (fiber.alternate !== null && fibers.has(fiber.alternate));
 
-const getErrorStatus = (fibers: Map<Fiber, boolean>, fiber: Fiber): boolean | null =>
-  fibers.get(fiber) ?? (fiber.alternate ? (fibers.get(fiber.alternate) ?? null) : null);
+const getTrackedFiber = (fibers: Map<Fiber, boolean>, fiber: Fiber): Fiber =>
+  fibers.has(fiber) || fiber.alternate === null ? fiber : fiber.alternate;
 
-const removeFiber = (fibers: Set<Fiber>, fiber: Fiber): void => {
+const removeFiber = (fibers: Map<Fiber, boolean> | Set<Fiber>, fiber: Fiber): void => {
   fibers.delete(fiber);
   if (fiber.alternate) fibers.delete(fiber.alternate);
 };
@@ -148,35 +148,49 @@ export const createRendererActions = ({
   const forcedErrorFibersByRenderer = new Map<ReactRenderer, Map<Fiber, boolean>>();
   const forcedSuspenseFibersByRenderer = new Map<ReactRenderer, Set<Fiber>>();
 
+  const resetErrorHandler = (renderer: ReactRenderer): void => {
+    forcedErrorFibersByRenderer.delete(renderer);
+    renderer.setErrorHandler?.(() => null);
+  };
+
+  const resetSuspenseHandler = (renderer: ReactRenderer): void => {
+    forcedSuspenseFibersByRenderer.delete(renderer);
+    renderer.setSuspenseHandler?.(() => false);
+  };
+
   const instrumentationDispose = instrument({
     name: "react-devtools-headless-actions",
-    onCommitFiberRoot: (_rendererId, root) => {
-      const renderer = getRenderer(root.current);
-      if (!renderer?.setErrorHandler) return;
-      const forcedFibers = forcedErrorFibersByRenderer.get(renderer);
-      if (!forcedFibers) return;
-      traverseFiber(root.current, (fiber) => {
-        forcedFibers.delete(fiber);
-        if (fiber.alternate) forcedFibers.delete(fiber.alternate);
-      });
-      if (forcedFibers.size === 0) {
-        forcedErrorFibersByRenderer.delete(renderer);
-        renderer.setErrorHandler(() => null);
-      }
-    },
     onCommitFiberUnmount: (rendererId, fiber) => {
       const renderer = getRendererById(rendererId);
-      if (!renderer?.setSuspenseHandler) return;
-      const forcedFibers = forcedSuspenseFibersByRenderer.get(renderer);
-      if (!forcedFibers) return;
-      removeFiber(forcedFibers, fiber);
-      if (forcedFibers.size === 0) {
-        forcedSuspenseFibersByRenderer.delete(renderer);
-        renderer.setSuspenseHandler(() => false);
+      if (!renderer) return;
+      const forcedErrorFibers = forcedErrorFibersByRenderer.get(renderer);
+      if (forcedErrorFibers) {
+        removeFiber(forcedErrorFibers, fiber);
+        if (forcedErrorFibers.size === 0) resetErrorHandler(renderer);
+      }
+      const forcedSuspenseFibers = forcedSuspenseFibersByRenderer.get(renderer);
+      if (forcedSuspenseFibers) {
+        removeFiber(forcedSuspenseFibers, fiber);
+        if (forcedSuspenseFibers.size === 0) resetSuspenseHandler(renderer);
       }
     },
     target,
   });
+
+  const readErrorStatus = (
+    renderer: ReactRenderer,
+    forcedFibers: Map<Fiber, boolean>,
+    fiber: Fiber,
+  ): boolean | null => {
+    const trackedFiber = getTrackedFiber(forcedFibers, fiber);
+    const status = forcedFibers.get(trackedFiber);
+    if (status === undefined) return null;
+    if (!status) {
+      forcedFibers.delete(trackedFiber);
+      if (forcedFibers.size === 0) resetErrorHandler(renderer);
+    }
+    return status;
+  };
 
   const setFiberError = (fiber: Fiber, shouldError: boolean): boolean => {
     const latestFiber = getLatestFiber(fiber);
@@ -186,7 +200,9 @@ export const createRendererActions = ({
     forcedFibers.set(latestFiber, shouldError);
     if (latestFiber.alternate) forcedFibers.delete(latestFiber.alternate);
     forcedErrorFibersByRenderer.set(renderer, forcedFibers);
-    renderer.setErrorHandler((candidateFiber) => getErrorStatus(forcedFibers, candidateFiber));
+    renderer.setErrorHandler((candidateFiber) =>
+      readErrorStatus(renderer, forcedFibers, candidateFiber),
+    );
     scheduleFiber(renderer, latestFiber, false);
     return true;
   };
@@ -378,14 +394,8 @@ export const createRendererActions = ({
 
   const dispose = createUnsubscribe(() => {
     instrumentationDispose();
-    for (const renderer of forcedErrorFibersByRenderer.keys()) {
-      renderer.setErrorHandler?.(() => null);
-    }
-    for (const renderer of forcedSuspenseFibersByRenderer.keys()) {
-      renderer.setSuspenseHandler?.(() => false);
-    }
-    forcedErrorFibersByRenderer.clear();
-    forcedSuspenseFibersByRenderer.clear();
+    for (const renderer of forcedErrorFibersByRenderer.keys()) resetErrorHandler(renderer);
+    for (const renderer of forcedSuspenseFibersByRenderer.keys()) resetSuspenseHandler(renderer);
   });
 
   return {

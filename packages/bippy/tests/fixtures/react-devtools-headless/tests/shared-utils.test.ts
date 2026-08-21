@@ -425,4 +425,94 @@ describe("upstream shared utility behavior", () => {
     expect(log.mock.calls[0]?.[0]).toContain("Reset applied activity slice");
     log.mockRestore();
   });
+
+  describe("printOperationsArray", () => {
+    const encodeStringTable = (strings: string[]): number[] => {
+      const encoded = strings.flatMap((value) => {
+        const codePoints = [...value].map((character) => character.codePointAt(0) ?? 0);
+        return [codePoints.length, ...codePoints];
+      });
+      return [encoded.length, ...encoded];
+    };
+
+    const printAndCapture = (operations: number[]): string => {
+      const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+      try {
+        printOperationsArray(operations);
+        expect(log).toHaveBeenCalledOnce();
+        return String(log.mock.calls[0]?.[0]);
+      } finally {
+        log.mockRestore();
+      }
+    };
+
+    it("logs every operation in a realistic commit array", () => {
+      const header = [1, 1, ...encodeStringTable(["App", "Boundary"])];
+      const addRootNode = [1, 1, 11, 1, 1, 1, 0];
+      const addAppNode = [1, 2, 5, 1, 0, 1, 0, 0];
+      const setSubtreeMode = [7, 1, 1];
+      const updateTreeBaseDuration = [4, 2, 12];
+      const updateErrorsOrWarnings = [5, 2, 1, 2];
+      const reorderChildren = [3, 1, 2, 2, 3];
+      const addSuspenseNode = [8, 3, 1, 2, 0, 1, 0, 0, 10, 20];
+      const reorderSuspenseChildren = [10, 3, 1, 4];
+      const resizeSuspenseNode = [11, 3, -1];
+      const updateSuspenders = [12, 1, 3, 1, 2000, 1, 1, 2];
+      const removeSuspenseNode = [9, 1, 3];
+      const removeNodes = [2, 2, 3, 2];
+      const changeActivitySlice = [13, 42, 13, 0];
+      const operations = [
+        header,
+        addRootNode,
+        addAppNode,
+        setSubtreeMode,
+        updateTreeBaseDuration,
+        updateErrorsOrWarnings,
+        reorderChildren,
+        addSuspenseNode,
+        reorderSuspenseChildren,
+        resizeSuspenseNode,
+        updateSuspenders,
+        removeSuspenseNode,
+        removeNodes,
+        changeActivitySlice,
+      ].flat();
+
+      expect(printAndCapture(operations)).toBe(
+        [
+          "operations for renderer:1 and root:1",
+          "Add new root node 1",
+          "Add node 2 (App) as child of 1",
+          "Mode 1 set for subtree with root 1",
+          "Node 2 has 1 errors and 2 warnings",
+          "Re-order node 1 children 2,3",
+          "Add suspense node 3 (Boundary,rects={[(0, 0, 10, 20)]}) under 1 suspended 0",
+          "Re-order suspense node 3 children 4",
+          "Resize suspense node 3 to null",
+          "Suspense node 3 unique suspenders set to true ending at 2 is suspended set to true with 1 environments",
+          "Remove suspense node 3",
+          "Remove node 3",
+          "Remove node 2",
+          "Applied activity slice change to 42",
+          "Reset applied activity slice",
+        ].join("\n"),
+      );
+    });
+
+    it("logs unnamed nodes and resized suspense rects", () => {
+      const operations = [1, 1, 0, 1, 5, 5, 1, 0, 0, 0, 0, 11, 5, 2, 0, 0, 1, 1, 2, 2, 3, 3];
+
+      expect(printAndCapture(operations)).toBe(
+        [
+          "operations for renderer:1 and root:1",
+          "Add node 5 (null) as child of 1",
+          "Resize suspense node 5 to [(0, 0, 1, 1), (2, 2, 3, 3)]",
+        ].join("\n"),
+      );
+    });
+
+    it("throws for opcodes the bridge does not define", () => {
+      expect(() => printOperationsArray([1, 1, 0, 99])).toThrow("Unsupported Bridge operation 99");
+    });
+  });
 });

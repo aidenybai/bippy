@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { createTreeModel } from "../src/tree-model.js";
-import type { TreeModelNode } from "../src/tree-model.js";
+import type { TreeModel, TreeModelNode } from "../src/tree-model.js";
+
+const getFlatUids = (model: TreeModel): string[] => model.getFlatTree().map((node) => node.uid);
 
 const createNodes = (): TreeModelNode[] => [
   { children: ["parent", "sibling"], name: "Grandparent", parentUid: null, uid: "root" },
@@ -54,19 +56,33 @@ describe("upstream TreeContext model behavior", () => {
     const model = createTreeModel(nodes);
     model.dispatch({ type: "select-uid", uid: "parent" });
     model.dispatch({ type: "select-child" });
-    expect(nodes[1].isCollapsed).toBe(false);
+    expect(getFlatUids(model)).toContain("first");
     expect(model.getState().inspectedUid).toBe("first");
   });
 
   it("should select parent elements and then collapse", () => {
-    const nodes = createNodes();
-    const model = createTreeModel(nodes);
+    const model = createTreeModel(createNodes());
     model.dispatch({ type: "select-uid", uid: "first" });
     model.dispatch({ type: "select-parent" });
     expect(model.getState().inspectedUid).toBe("parent");
     model.dispatch({ type: "select-parent" });
-    expect(nodes[1].isCollapsed).toBe(true);
+    expect(getFlatUids(model)).not.toContain("first");
     expect(model.getState().inspectedUid).toBe("parent");
+  });
+
+  it("does not mutate caller-owned nodes while selecting", () => {
+    const nodes = createNodes();
+    nodes[0].isCollapsed = true;
+    nodes[1].isCollapsed = true;
+    nodes[2].isHidden = true;
+    const model = createTreeModel(nodes);
+    model.dispatch({ type: "select-uid", uid: "first" });
+    model.dispatch({ type: "select-child" });
+    model.dispatch({ type: "select-parent" });
+    expect(nodes[0].isCollapsed).toBe(true);
+    expect(nodes[1].isCollapsed).toBe(true);
+    expect(nodes[2].isHidden).toBe(true);
+    expect(getFlatUids(model)).toContain("first");
   });
 
   it("should clear selection if the selected element is unmounted", () => {

@@ -207,24 +207,164 @@ export const stackToComponentLocations = (
         : [frame, null];
     });
 
+const TREE_OPERATION_ADD = 1;
+const TREE_OPERATION_REMOVE = 2;
+const TREE_OPERATION_REORDER_CHILDREN = 3;
+const TREE_OPERATION_UPDATE_TREE_BASE_DURATION = 4;
+const TREE_OPERATION_UPDATE_ERRORS_OR_WARNINGS = 5;
+const TREE_OPERATION_SET_SUBTREE_MODE = 7;
+const SUSPENSE_TREE_OPERATION_ADD = 8;
+const SUSPENSE_TREE_OPERATION_REMOVE = 9;
+const SUSPENSE_TREE_OPERATION_REORDER_CHILDREN = 10;
+const SUSPENSE_TREE_OPERATION_RESIZE = 11;
+const SUSPENSE_TREE_OPERATION_SUSPENDERS = 12;
+const TREE_OPERATION_APPLIED_ACTIVITY_SLICE_CHANGE = 13;
+const ELEMENT_TYPE_ROOT = 11;
+const ADD_ROOT_FIELD_COUNT = 4;
+const ADD_NODE_FIELD_COUNT = 5;
+const RECT_FIELD_COUNT = 4;
+
+const utfDecodeStringWithRanges = (operations: number[], left: number, right: number): string => {
+  let decoded = "";
+  for (let index = left; index <= right; index++)
+    decoded += String.fromCodePoint(operations[index]);
+  return decoded;
+};
+
+const formatRects = (operations: number[], startIndex: number, rectCount: number): string => {
+  if (rectCount === -1) return "null";
+  const rects: string[] = [];
+  for (let rectIndex = 0; rectIndex < rectCount; rectIndex++) {
+    const offset = startIndex + rectIndex * RECT_FIELD_COUNT;
+    const [x, y, width, height] = operations.slice(offset, offset + RECT_FIELD_COUNT);
+    rects.push(`(${x}, ${y}, ${width}, ${height})`);
+  }
+  return `[${rects.join(", ")}]`;
+};
+
 export const printOperationsArray = (operations: number[]): void => {
   const rendererId = operations[0];
   const rootId = operations[1];
   const logs = [`operations for renderer:${rendererId} and root:${rootId}`];
   let index = 2;
+
+  const stringTable: Array<string | null> = [null];
   const stringTableSize = operations[index++] ?? 0;
-  index += stringTableSize;
+  const stringTableEnd = index + stringTableSize;
+  while (index < stringTableEnd) {
+    const stringLength = operations[index++];
+    stringTable.push(utfDecodeStringWithRanges(operations, index, index + stringLength - 1));
+    index += stringLength;
+  }
+
   while (index < operations.length) {
-    const operation = operations[index++];
-    if (operation === 13) {
-      const activitySliceId = operations[index++];
-      logs.push(
-        activitySliceId === 0
-          ? "Reset applied activity slice"
-          : `Applied activity slice change to ${activitySliceId}`,
-      );
-    } else {
-      throw new Error(`Unsupported Bridge operation ${operation}`);
+    const operation = operations[index];
+    switch (operation) {
+      case TREE_OPERATION_ADD: {
+        const id = operations[index + 1];
+        const elementType = operations[index + 2];
+        index += 3;
+        if (elementType === ELEMENT_TYPE_ROOT) {
+          index += ADD_ROOT_FIELD_COUNT;
+          logs.push(`Add new root node ${id}`);
+        } else {
+          const parentId = operations[index];
+          const displayName = stringTable[operations[index + 2]];
+          index += ADD_NODE_FIELD_COUNT;
+          logs.push(`Add node ${id} (${displayName || "null"}) as child of ${parentId}`);
+        }
+        break;
+      }
+      case TREE_OPERATION_REMOVE:
+      case SUSPENSE_TREE_OPERATION_REMOVE: {
+        const nodeLabel = operation === TREE_OPERATION_REMOVE ? "node" : "suspense node";
+        const removeCount = operations[index + 1];
+        index += 2;
+        for (let removeIndex = 0; removeIndex < removeCount; removeIndex++) {
+          logs.push(`Remove ${nodeLabel} ${operations[index++]}`);
+        }
+        break;
+      }
+      case TREE_OPERATION_REORDER_CHILDREN:
+      case SUSPENSE_TREE_OPERATION_REORDER_CHILDREN: {
+        const nodeLabel = operation === TREE_OPERATION_REORDER_CHILDREN ? "node" : "suspense node";
+        const id = operations[index + 1];
+        const childCount = operations[index + 2];
+        index += 3;
+        const children = operations.slice(index, index + childCount);
+        index += childCount;
+        logs.push(`Re-order ${nodeLabel} ${id} children ${children.join(",")}`);
+        break;
+      }
+      case TREE_OPERATION_UPDATE_TREE_BASE_DURATION:
+        index += 3;
+        break;
+      case TREE_OPERATION_UPDATE_ERRORS_OR_WARNINGS: {
+        const id = operations[index + 1];
+        const errorCount = operations[index + 2];
+        const warningCount = operations[index + 3];
+        index += 4;
+        logs.push(`Node ${id} has ${errorCount} errors and ${warningCount} warnings`);
+        break;
+      }
+      case TREE_OPERATION_SET_SUBTREE_MODE: {
+        const id = operations[index + 1];
+        const mode = operations[index + 2];
+        index += 3;
+        logs.push(`Mode ${mode} set for subtree with root ${id}`);
+        break;
+      }
+      case SUSPENSE_TREE_OPERATION_ADD: {
+        const fiberId = operations[index + 1];
+        const parentId = operations[index + 2];
+        const name = stringTable[operations[index + 3]];
+        const isSuspended = operations[index + 4];
+        const rectCount = operations[index + 5];
+        index += 6;
+        const rects = formatRects(operations, index, rectCount);
+        index += Math.max(rectCount, 0) * RECT_FIELD_COUNT;
+        logs.push(
+          `Add suspense node ${fiberId} (${String(name)},rects={${rects}}) under ${parentId} suspended ${isSuspended}`,
+        );
+        break;
+      }
+      case SUSPENSE_TREE_OPERATION_RESIZE: {
+        const id = operations[index + 1];
+        const rectCount = operations[index + 2];
+        index += 3;
+        const rects = formatRects(operations, index, rectCount);
+        index += Math.max(rectCount, 0) * RECT_FIELD_COUNT;
+        logs.push(`Resize suspense node ${id} to ${rects}`);
+        break;
+      }
+      case SUSPENSE_TREE_OPERATION_SUSPENDERS: {
+        const changeCount = operations[index + 1];
+        index += 2;
+        for (let changeIndex = 0; changeIndex < changeCount; changeIndex++) {
+          const id = operations[index++];
+          const hasUniqueSuspenders = operations[index++] === 1;
+          const endTime = operations[index++] / 1000;
+          const isSuspended = operations[index++] === 1;
+          const environmentNamesLength = operations[index++];
+          index += environmentNamesLength;
+          logs.push(
+            `Suspense node ${id} unique suspenders set to ${String(hasUniqueSuspenders)} ending at ${String(endTime)} is suspended set to ${String(isSuspended)} with ${String(environmentNamesLength)} environments`,
+          );
+        }
+        break;
+      }
+      case TREE_OPERATION_APPLIED_ACTIVITY_SLICE_CHANGE: {
+        const activitySliceId = operations[index + 1];
+        index += 2;
+        logs.push(
+          activitySliceId === 0
+            ? "Reset applied activity slice"
+            : `Applied activity slice change to ${activitySliceId}`,
+        );
+        break;
+      }
+      default:
+        throw new Error(`Unsupported Bridge operation ${operation}`);
     }
   }
   console.log(logs.join("\n"));

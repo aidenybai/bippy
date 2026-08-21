@@ -2,6 +2,7 @@ import "../src/index.js";
 
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import React from "react";
+import { jsx } from "react/jsx-runtime";
 import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
 import { buildToolGroup, createTools, installFacade } from "../src/index.js";
 import type { Facade, McpToolGroup, Tools, TreeNode } from "../src/index.js";
@@ -103,6 +104,8 @@ const FancyInput = React.forwardRef<HTMLInputElement, FancyInputProps>(
   ({ placeholder }, reference) => <input ref={reference} placeholder={placeholder} />,
 );
 FancyInput.displayName = "FancyInput";
+
+const Hazard = () => <div>hazard</div>;
 
 const Header = () => (
   <header>
@@ -255,6 +258,36 @@ describe("upstream Chrome DevTools MCP fixture workflow", () => {
       executeTool("react_get_commit_report", { commitIndex: 0, traceName: "fixture" }),
     ).toMatchObject({
       components: expect.arrayContaining([expect.objectContaining({ name: "Counter" })]),
+    });
+  });
+
+  it("inspects hostile props without escaping the tool result shape", () => {
+    const hazardousProps: Record<string, unknown> = {
+      schedule: new Map([["monday", new Date("2024-01-02T03:04:05.000Z")]]),
+      tags: new Set(["urgent"]),
+    };
+    Object.defineProperty(hazardousProps, "boom", {
+      enumerable: true,
+      get: () => {
+        throw new Error("getter exploded");
+      },
+    });
+    render(jsx(Hazard, hazardousProps));
+
+    const hazard = getNode("Hazard");
+    expect(executeTool("react_get_component_by_uid", { uid: hazard.uid })).toEqual({
+      name: "Hazard",
+      props: {
+        boom: "[Exception: getter exploded]",
+        schedule: {
+          entries: [["monday", "[Date 2024-01-02T03:04:05.000Z]"]],
+          size: 1,
+          type: "Map",
+        },
+        tags: { entries: ["urgent"], size: 1, type: "Set" },
+      },
+      type: "function",
+      uid: hazard.uid,
     });
   });
 });

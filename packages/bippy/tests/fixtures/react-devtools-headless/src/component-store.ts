@@ -92,6 +92,7 @@ export const createComponentStore = (options: ComponentStoreOptions = {}): Compo
         element.id,
         {
           ...element,
+          children: [...element.children],
           isCollapsed:
             element.isCollapsed ??
             (options.collapseNodesByDefault === true &&

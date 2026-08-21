@@ -23,8 +23,10 @@ export const getFiberAncestors = (fiber: Fiber): Fiber[] => {
 
 export const getFiberOwners = (fiber: Fiber): Fiber[] => {
   const owners: Fiber[] = [];
+  const seenOwners = new Set<unknown>();
   let owner: unknown = fiber._debugOwner;
-  while (owner) {
+  while (owner && !seenOwners.has(owner)) {
+    seenOwners.add(owner);
     if (isFiber(owner)) {
       owners.push(owner);
       owner = owner._debugOwner;

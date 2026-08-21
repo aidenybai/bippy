@@ -19,7 +19,12 @@ import type {
 import { getFiberDisplayName, getFiberTypeName } from "./fiber-metadata.js";
 import { getFiberAncestors, getFiberChildren, getFiberOwners } from "./fiber-traversal.js";
 import { getSuspenseDetails } from "./suspense-tools.js";
-import { normalizeHooks, normalizeProps, normalizeValue } from "./value-serialization.js";
+import {
+  normalizeHooks,
+  normalizeProps,
+  normalizeValue,
+  safeReadProperty,
+} from "./value-serialization.js";
 
 interface FiberLookupResult {
   error: string | null;
@@ -118,8 +123,8 @@ const buildNodeInfo = (fiber: Fiber, includeHooks = false): NodeInfo | ToolError
     typeof fiber.stateNode === "object" &&
     fiber.stateNode !== null
   ) {
-    const state = Reflect.get(fiber.stateNode, "state");
-    const context = Reflect.get(fiber.stateNode, "context");
+    const state = safeReadProperty(fiber.stateNode, "state");
+    const context = safeReadProperty(fiber.stateNode, "context");
     if (state !== undefined) info.state = normalizeValue(state);
     if (context !== undefined) info.context = normalizeValue(context);
   }

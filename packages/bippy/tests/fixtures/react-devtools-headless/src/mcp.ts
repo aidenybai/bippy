@@ -210,7 +210,13 @@ export const buildToolGroup = (tools: Tools): McpToolGroup => ({
   name: "react",
   tools: toolDefinitions.map((definition) => ({
     description: definition.description,
-    execute: (arguments_) => normalizeToolResult(definition.call(tools, arguments_ ?? {})),
+    execute: (arguments_) => {
+      try {
+        return normalizeToolResult(definition.call(tools, arguments_ ?? {}));
+      } catch (error) {
+        return { error: formatError(error) };
+      }
+    },
     inputSchema: definition.inputSchema,
     name: definition.name,
   })),

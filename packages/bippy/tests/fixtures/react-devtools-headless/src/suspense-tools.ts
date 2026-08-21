@@ -2,6 +2,7 @@ import type { Fiber, FiberRoot, ReactIOInfo } from "bippy";
 import { getFiberChildren } from "./fiber-traversal.js";
 import { getFiberDisplayName, getFiberTypeName } from "./fiber-metadata.js";
 import { getFiberSuspenseInfo } from "./fiber-suspense.js";
+import type { FiberSuspenseInfo } from "./fiber-suspense.js";
 import type {
   ActionResult,
   SuspenseDetails,
@@ -26,28 +27,32 @@ const getResolvedThenableValue = (value: unknown): unknown => {
   return undefined;
 };
 
+const getSuspenseInfoDetails = (
+  suspense: FiberSuspenseInfo,
+  getUid: (fiber: Fiber) => string,
+): SuspenseDetails => ({
+  environments: suspense.environments,
+  isSuspended: suspense.isSuspended,
+  range: suspense.range,
+  rects: suspense.rects,
+  suspendedBy: suspense.suspendedBy.map(({ fiber: sourceFiber, ioInfo }) => ({
+    byteSize: ioInfo.byteSize ?? null,
+    description: normalizeValue(getResolvedThenableValue(ioInfo.value)),
+    end: ioInfo.end,
+    environment: ioInfo.env ?? null,
+    name: ioInfo.name,
+    sourceUid: getUid(sourceFiber),
+    start: ioInfo.start,
+  })),
+  unknownSuspenders: suspense.unknownSuspenders,
+});
+
 export const getSuspenseDetails = (
   fiber: Fiber,
   getUid: (fiber: Fiber) => string,
 ): SuspenseDetails | null => {
   const suspense = getFiberSuspenseInfo(fiber);
-  if (!suspense) return null;
-  return {
-    environments: suspense.environments,
-    isSuspended: suspense.isSuspended,
-    range: suspense.range,
-    rects: suspense.rects,
-    suspendedBy: suspense.suspendedBy.map(({ fiber: sourceFiber, ioInfo }) => ({
-      byteSize: ioInfo.byteSize ?? null,
-      description: normalizeValue(getResolvedThenableValue(ioInfo.value)),
-      end: ioInfo.end,
-      environment: ioInfo.env ?? null,
-      name: ioInfo.name,
-      sourceUid: getUid(sourceFiber),
-      start: ioInfo.start,
-    })),
-    unknownSuspenders: suspense.unknownSuspenders,
-  };
+  return suspense ? getSuspenseInfoDetails(suspense, getUid) : null;
 };
 
 const collectSuspenseTree = (
@@ -61,8 +66,8 @@ const collectSuspenseTree = (
     let nextParentCollection = parentCollection;
     if (getFiberTypeName(fiber) === "suspense") {
       const suspenseInfo = getFiberSuspenseInfo(fiber);
-      const details = getSuspenseDetails(fiber, getUid);
-      if (suspenseInfo && details) {
+      if (suspenseInfo) {
+        const details = getSuspenseInfoDetails(suspenseInfo, getUid);
         const uid = getUid(fiber);
         const ioInfo = new Set(suspenseInfo.suspendedBy.map((suspender) => suspender.ioInfo));
         const hasUniqueSuspenders =
@@ -145,6 +150,7 @@ export const createSuspenseTools = (
       if (nextUids.has(uid)) continue;
       const fiber = getFiberByUid(uid);
       if (fiber) fibers.set(uid, fiber);
+      else forcedUids.delete(uid);
     }
     for (const [uid, fiber] of fibers) {
       const shouldSuspend = nextUids.has(uid);
@@ -152,9 +158,9 @@ export const createSuspenseTools = (
       if (!setFiberSuspense(fiber, shouldSuspend)) {
         return { error: "Renderer does not support Suspense overrides" };
       }
+      if (shouldSuspend) forcedUids.add(uid);
+      else forcedUids.delete(uid);
     }
-    forcedUids.clear();
-    for (const uid of nextUids) forcedUids.add(uid);
     return { success: true };
   };
 

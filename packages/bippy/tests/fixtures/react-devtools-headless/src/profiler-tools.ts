@@ -15,6 +15,8 @@ import type {
   TraceOverviewRow,
 } from "./types.js";
 
+export const MAX_RETAINED_TRACES = 32;
+
 const getPriorityName = (priority: number | void): string => {
   switch (priority) {
     case 1:
@@ -79,15 +81,33 @@ export const createProfilerTools = (
   profilingState: ProfilingState,
   getUid: (fiber: Fiber) => string,
 ): ProfilerTools => {
-  const pendingPassiveCommits = new Map<FiberRoot, ProfilingCommitRecord>();
+  const pendingPassiveCommits = new Map<FiberRoot, ProfilingCommitRecord[]>();
+
+  const getGeneratedTraceName = (): string => {
+    let timestamp = Date.now();
+    while (profilingState.traces.has(`trace-${timestamp}`)) timestamp += 1;
+    return `trace-${timestamp}`;
+  };
+
+  const evictOldestTraces = (): void => {
+    while (profilingState.traces.size >= MAX_RETAINED_TRACES) {
+      const oldestTraceName = profilingState.traces.keys().next().value;
+      if (oldestTraceName === undefined) return;
+      profilingState.traces.delete(oldestTraceName);
+    }
+  };
 
   const startProfiling = (traceName?: string): StartProfilingResult | ToolError => {
     if (profilingState.isActive) {
       return { error: `Already profiling trace "${profilingState.currentTraceName ?? ""}"` };
     }
+    if (traceName !== undefined && profilingState.traces.has(traceName)) {
+      return { error: `Trace "${traceName}" already exists` };
+    }
 
-    const resolvedTraceName = traceName ?? `trace-${Date.now()}`;
+    const resolvedTraceName = traceName ?? getGeneratedTraceName();
     const trace: ProfilingTrace = { commits: [], startTime: Date.now() };
+    evictOldestTraces();
     profilingState.traces.set(resolvedTraceName, trace);
     profilingState.currentTraceName = resolvedTraceName;
     profilingState.isActive = true;
@@ -103,13 +123,16 @@ export const createProfilerTools = (
         timestamp: Date.now(),
       };
       trace.commits.push(record);
-      pendingPassiveCommits.set(root, record);
+      const pendingRecords = pendingPassiveCommits.get(root);
+      if (pendingRecords) pendingRecords.push(record);
+      else pendingPassiveCommits.set(root, [record]);
     };
     profilingState.onPostCommit = (root) => {
-      const record = pendingPassiveCommits.get(root);
-      if (!record) return;
-      record.passiveDuration = root.passiveEffectDuration ?? null;
-      pendingPassiveCommits.delete(root);
+      const pendingRecords = pendingPassiveCommits.get(root);
+      if (!pendingRecords) return;
+      const record = pendingRecords.shift();
+      if (record) record.passiveDuration = root.passiveEffectDuration ?? null;
+      if (pendingRecords.length === 0) pendingPassiveCommits.delete(root);
     };
 
     return { status: "started", traceName: resolvedTraceName };

@@ -43,6 +43,21 @@ describe("remaining upstream MCP conformance", () => {
     facade.dispose();
   });
 
+  it("returns the documented error shape when a tool throws", () => {
+    const facade = installFacade({});
+    const tools: Tools = createTools(facade);
+    Reflect.set(tools, "getComponentByUid", () => {
+      throw new Error("Failed to inspect props.", { cause: new Error("getter exploded") });
+    });
+    const tool = buildToolGroup(tools).tools.find(
+      (candidate) => candidate.name === "react_get_component_by_uid",
+    );
+    expect(tool?.execute({ uid: "r1" })).toEqual({
+      error: "Failed to inspect props. Cause: getter exploded",
+    });
+    facade.dispose();
+  });
+
   it("supports external __dtmcp execution ownership", () => {
     const facade = installFacade({});
     const group = buildToolGroup(createTools(facade));

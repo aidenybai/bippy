@@ -48,6 +48,16 @@ describe("upstream Store behavior", () => {
     expect(() => store.getTransitionTimeline()).toThrow("initial paint");
   });
 
+  it("does not mutate caller-owned elements when removing a node", () => {
+    const store = createComponentStore();
+    const elements = createElements();
+    store.setElements(elements);
+    store.removeElement(3, 2);
+    expect(elements[1].children).toEqual([3, 4]);
+    store.setElements(elements);
+    expect(getVisibleIds(store)).toEqual([2, 3, 4]);
+  });
+
   it("throws before removing a node that is not a child of its parent", () => {
     const store = createComponentStore();
     store.setElements(createElements());

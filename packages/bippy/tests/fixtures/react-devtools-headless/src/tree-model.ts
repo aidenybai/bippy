@@ -57,8 +57,11 @@ export interface TreeModelAction {
 const getWrappedIndex = (index: number, length: number): number =>
   ((index % length) + length) % length;
 
+const createNodeMap = (nodes: TreeModelNode[]): Map<string, TreeModelNode> =>
+  new Map(nodes.map((node) => [node.uid, { ...node, children: [...node.children] }]));
+
 export const createTreeModel = (initialNodes: TreeModelNode[] = []): TreeModel => {
-  let nodes = new Map(initialNodes.map((node) => [node.uid, node]));
+  let nodes = createNodeMap(initialNodes);
   let state: TreeModelState = {
     activityUid: null,
     inspectedUid: null,
@@ -229,7 +232,7 @@ export const createTreeModel = (initialNodes: TreeModelNode[] = []): TreeModel =
 
   const setNodes = (nextNodes: TreeModelNode[]): void => {
     const previousNodes = nodes;
-    nodes = new Map(nextNodes.map((node) => [node.uid, node]));
+    nodes = createNodeMap(nextNodes);
     let inspectedUid = state.inspectedUid;
     while (inspectedUid && !nodes.has(inspectedUid)) {
       inspectedUid = previousNodes.get(inspectedUid)?.parentUid ?? null;
