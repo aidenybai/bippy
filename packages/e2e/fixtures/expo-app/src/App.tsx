@@ -1,6 +1,5 @@
 import {
   detectReactBuildType,
-  didFiberCommit,
   didFiberRender,
   getDisplayName,
   getFiberFromHostInstance,
@@ -241,7 +240,6 @@ const App = () => {
 
     if (testChildFiber) {
       results["didFiberRender"] = String(didFiberRender(testChildFiber));
-      results["didFiberCommit"] = String(didFiberCommit(testChildFiber));
 
       const latestFiber = getLatestFiber(testChildFiber);
       results["getLatestFiber"] = String(isFiber(latestFiber));
@@ -365,7 +363,6 @@ const App = () => {
       ? (getDisplayName(hostFiber.type) ?? "null")
       : "null";
     results["skia-did-render"] = String(didFiberRender(memoLeafFiber));
-    results["skia-did-commit"] = String(didFiberCommit(memoLeafFiber));
     results["skia-fiber-id"] = String(typeof getFiberId(memoLeafFiber) === "number");
     results["skia-latest-fiber"] = String(isFiber(getLatestFiber(memoLeafFiber)));
     results["skia-has-alternate"] = String(memoLeafFiber.alternate !== null);

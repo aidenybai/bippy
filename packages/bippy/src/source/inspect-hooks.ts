@@ -812,9 +812,12 @@ const restoreConsole = (originalMethods: Record<string, unknown>): void => {
   }
 };
 
-const performDispatcherInspection = (
+// The render call must happen in the same frame that captures the ancestor stack,
+// otherwise an extra frame lands in every hook's trimmed stack and becomes a bogus tree level.
+const performDispatcherInspection = <TArgs extends unknown[]>(
   dispatcherRef: RendererDispatcherRef,
-  renderFn: () => void,
+  renderFunction: (...args: TArgs) => unknown,
+  ...renderArgs: TArgs
 ): HooksTree => {
   const previousDispatcher = readDispatcher(dispatcherRef);
   writeDispatcher(dispatcherRef, dispatcherProxy);
@@ -824,7 +827,7 @@ const performDispatcherInspection = (
 
   try {
     ancestorStackError = new Error();
-    renderFn();
+    renderFunction(...renderArgs);
   } catch (renderError) {
     handleRenderFunctionError(renderError);
   } finally {
@@ -879,7 +882,7 @@ const resolveContextDependency = (fiber: Fiber): void => {
   }
 };
 
-const normalizeStandaloneHooks = (hooksTree: HooksTree, renderName: string): HooksTree => {
+const normalizeStandaloneHooks = (hooksTree: HooksTree): HooksTree => {
   const normalizeNode = (hooksNode: HooksNode): HooksNode => {
     const subHooks = hooksNode.subHooks.map(normalizeNode);
     if (subHooks.length === 1) {
@@ -914,12 +917,7 @@ const normalizeStandaloneHooks = (hooksTree: HooksTree, renderName: string): Hoo
     return { ...hooksNode, subHooks };
   };
 
-  return hooksTree.flatMap((hooksNode) => {
-    const normalizedNode = normalizeNode(hooksNode);
-    return normalizedNode.name === renderName && normalizedNode.id === null
-      ? normalizedNode.subHooks
-      : [normalizedNode];
-  });
+  return hooksTree.map(normalizeNode);
 };
 
 export const inspectHooks = (
@@ -936,10 +934,9 @@ export const inspectHooks = (
   currentThenableIndex = 0;
   const originalConsoleMethods = suppressConsole();
   try {
-    const hooksTree = performDispatcherInspection(dispatcherRef, () => {
-      renderFunction(props);
-    });
-    return normalizeStandaloneHooks(hooksTree, renderFunction.name);
+    return normalizeStandaloneHooks(
+      performDispatcherInspection(dispatcherRef, renderFunction, props),
+    );
   } finally {
     currentHook = null;
     currentFiber = null;
@@ -998,10 +995,7 @@ export const getFiberHooks = (fiber: Fiber): HooksTree => {
         throw new BippyHookInspectionError("ForwardRef fiber is missing its render function.");
       }
       const hooksTree = normalizeStandaloneHooks(
-        performDispatcherInspection(dispatcherRef, () => {
-          type.render(props, fiber.ref);
-        }),
-        type.render.name || "render",
+        performDispatcherInspection(dispatcherRef, type.render, props, fiber.ref),
       );
       for (const hooksNode of hooksTree) {
         if (hooksNode.hookSource?.functionName === "Object.render") {
@@ -1016,10 +1010,7 @@ export const getFiberHooks = (fiber: Fiber): HooksTree => {
         "Function component fiber is missing its component function.",
       );
     }
-    const hooksTree = performDispatcherInspection(dispatcherRef, () => {
-      type(props);
-    });
-    return normalizeStandaloneHooks(hooksTree, type.name);
+    return normalizeStandaloneHooks(performDispatcherInspection(dispatcherRef, type, props));
   } finally {
     currentFiber = null;
     currentHook = null;

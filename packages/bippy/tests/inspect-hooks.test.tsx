@@ -115,6 +115,37 @@ describe("getFiberHooks", () => {
     expect(hookValues).toContain("hello");
   });
 
+  it("keeps the custom hook grouping when the component name matches the hook name", () => {
+    const useEditor = () => {
+      const [value] = React.useState("editing");
+      React.useDebugValue("editor-label");
+      return value;
+    };
+    // Editor/useEditor collide; Panel/useEditor do not. Both trees must be identical.
+    const Editor = () => <div>{useEditor()}</div>;
+    const Panel = () => <div>{useEditor()}</div>;
+
+    const renderAndInspect = (element: React.ReactElement): HooksNode[] => {
+      let fiber: Fiber | null = null;
+      captureFiber((fiberNode) => {
+        fiber = fiberNode;
+      });
+      render(element);
+      return getFiberHooks(fiber!);
+    };
+
+    const collidingHooks = renderAndInspect(<Editor />);
+    expect(collidingHooks).toHaveLength(1);
+    expect(collidingHooks[0].name).toBe("Editor");
+    expect(collidingHooks[0].value).toBe("editor-label");
+    expect(collidingHooks[0].subHooks.map((hook) => hook.name)).toEqual(["State"]);
+    expect(collidingHooks[0].subHooks[0].value).toBe("editing");
+
+    const nonCollidingHooks = renderAndInspect(<Panel />);
+    expect(collidingHooks[0].name).toBe(nonCollidingHooks[0].name);
+    expect(collidingHooks[0].value).toBe(nonCollidingHooks[0].value);
+  });
+
   it("returns hook values for useRef", () => {
     let fiber: Fiber | null = null;
     captureFiber((fiberNode) => {

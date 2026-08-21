@@ -23,7 +23,6 @@ import {
 import type { ReactDevToolsTarget, Unsubscribe } from "./rdt-hook.js";
 import {
   getReactWorkTagsForFiber,
-  MutationMask,
   ReactBuildType,
   ReactFiberFlags,
   ReactSymbols,
@@ -151,16 +150,6 @@ export const didFiberRender = (fiber: Fiber): boolean => {
         fiber.alternate.ref !== fiber.ref
       );
   }
-};
-
-/**
- * Returns `true` if the {@link Fiber} has committed. Note that this does not mean the fiber has committed in the current commit, just that it has committed in the past.
- */
-export const didFiberCommit = (fiber: Fiber): boolean => {
-  return Boolean(
-    (fiber.flags & (MutationMask | ReactFiberFlags.Cloned)) !== 0 ||
-    (fiber.subtreeFlags & (MutationMask | ReactFiberFlags.Cloned)) !== 0,
-  );
 };
 
 /**
@@ -1018,7 +1007,6 @@ export const getFiberFromHostInstance = getFiber;
 
 export {
   BIPPY_INSTRUMENTATION_STRING,
-  _onActiveListeners,
   _renderers,
   getRDTHook,
   hasRDTHook,

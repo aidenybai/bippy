@@ -409,22 +409,6 @@ test.describe("render and commit detection", () => {
     expect(result.testChildRendered).toBe(true);
     expect(result.memoChildRendered).toBe(false);
   });
-
-  test("didFiberCommit returns a boolean for a committed fiber", async ({ page }) => {
-    const result = await page.evaluate(() => {
-      return new Promise<{ value: boolean; typeofValue: string }>((resolve) => {
-        window.__BIPPY__.instrument({
-          onCommitFiberRoot: (_rendererID, fiberRoot) => {
-            const rootFiber = fiberRoot.current;
-            const value = window.__BIPPY__.didFiberCommit(rootFiber);
-            resolve({ value, typeofValue: typeof value });
-          },
-        });
-        document.querySelector<HTMLElement>('[data-testid="increment"]')!.click();
-      });
-    });
-    expect(result.typeofValue).toBe("boolean");
-  });
 });
 
 test.describe("traversal", () => {

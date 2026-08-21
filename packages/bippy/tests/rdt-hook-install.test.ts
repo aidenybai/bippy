@@ -5,10 +5,16 @@ import {
   _onActiveListeners,
   getRDTHook,
   hasRDTHook,
+  installRDTHook,
   onRendererInject,
   patchRDTHook,
 } from "../src/rdt-hook.js";
-import type { ReactDevToolsGlobalHook, ReactRenderer } from "../src/react-internals/index.js";
+import type { ReactDevToolsTarget } from "../src/rdt-hook.js";
+import type {
+  FiberRoot,
+  ReactDevToolsGlobalHook,
+  ReactRenderer,
+} from "../src/react-internals/index.js";
 
 const createFakeRenderer = (): ReactRenderer =>
   ({
@@ -43,6 +49,22 @@ it("inject should activate instrumentation and notify listeners", () => {
   const secondRendererId = rdtHook.inject(createFakeRenderer());
   expect(secondRendererId).toBe(2);
   expect(onActive).toHaveBeenCalledTimes(1);
+});
+
+it("getFiberRoots should return a memoized set that callers can register roots into", () => {
+  const target = {} as ReactDevToolsTarget;
+  const rdtHook = installRDTHook(undefined, target);
+  const rendererId = rdtHook.inject(createFakeRenderer());
+  const mountedRoot = { current: { memoizedState: { element: {} } } } as unknown as FiberRoot;
+
+  rdtHook.getFiberRoots?.(rendererId).add(mountedRoot);
+  expect(rdtHook.getFiberRoots?.(rendererId).has(mountedRoot)).toBe(true);
+
+  const rendererRoots = rdtHook.getFiberRoots?.(rendererId);
+  const unmountedRoot = { current: { memoizedState: { element: null } } } as unknown as FiberRoot;
+  rdtHook.onCommitFiberRoot?.(rendererId, unmountedRoot);
+  rdtHook.onCommitFiberRoot?.(rendererId, mountedRoot);
+  expect(rdtHook.getFiberRoots?.(rendererId)).toBe(rendererRoots);
 });
 
 it("checkDCE should schedule an error for badly built react", () => {

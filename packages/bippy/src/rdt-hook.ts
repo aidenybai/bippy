@@ -190,13 +190,19 @@ export const installRDTHook = (
   if (onActive) addActiveListener(onActive, target);
   const renderers = new Map<number, ReactRenderer>();
   const fiberRoots = new Map<number, Set<FiberRoot>>();
+  // Callers register roots by mutating the returned set, so it must be memoized.
+  const getRendererFiberRoots = (rendererId: number): Set<FiberRoot> => {
+    const rendererRoots = fiberRoots.get(rendererId) ?? new Set<FiberRoot>();
+    fiberRoots.set(rendererId, rendererRoots);
+    return rendererRoots;
+  };
   let rendererIdCounter = 0;
   let rdtHook: ReactDevToolsGlobalHook = {
     _instrumentationIsActive: false,
     _instrumentationSource: BIPPY_INSTRUMENTATION_STRING,
     _isBippyHook: true,
     checkDCE,
-    getFiberRoots: (rendererId) => fiberRoots.get(rendererId) ?? new Set(),
+    getFiberRoots: getRendererFiberRoots,
     hasUnsupportedRendererAttached: false,
     inject: (renderer) => {
       const nextRendererId = ++rendererIdCounter;
@@ -205,11 +211,9 @@ export const installRDTHook = (
     },
     on: noOp,
     onCommitFiberRoot: (rendererId, fiberRoot) => {
-      const rendererRoots = fiberRoots.get(rendererId) ?? new Set<FiberRoot>();
+      const rendererRoots = getRendererFiberRoots(rendererId);
       if (isFiberRootUnmounted(fiberRoot)) rendererRoots.delete(fiberRoot);
       else rendererRoots.add(fiberRoot);
-      if (rendererRoots.size === 0) fiberRoots.delete(rendererId);
-      else fiberRoots.set(rendererId, rendererRoots);
     },
     onCommitFiberUnmount: noOp,
     onPostCommitFiberRoot: noOp,
