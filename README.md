@@ -15,65 +15,6 @@ React keeps its internals out of reach. bippy opens them up for metaprogramming,
 >
 > This project uses React internals, which can change at any time. We don’t recommend depending on them unless you have to. By proceeding, you acknowledge the risk of breaking your own code or apps that use your code.
 
-## How React works internally
-
-React represents your UI as a tree of objects called Fibers. Each Fiber is both a node in that tree and a unit of work React can schedule.
-
-React creates a Fiber for each component, host element, text node, or internal boundary. The Fiber stores its props, state, place in the tree, and pending work.
-
-Consider this component tree:
-
-```tsx
-const Button = () => <button>Save</button>;
-
-const App = () => (
-  <main>
-    <Button />
-  </main>
-);
-```
-
-React builds a matching Fiber tree. Its [`FiberRoot`](https://github.com/facebook/react/blob/beef6d60f46a97f5c20471df81760fcf365d63ef/packages/react-reconciler/src/ReactInternalTypes.js#L212-L221) container points to the top `HostRoot` Fiber through its `current` field. The labels on the right are [React’s internal node types](https://github.com/facebook/react/blob/beef6d60f46a97f5c20471df81760fcf365d63ef/packages/react-reconciler/src/ReactWorkTags.js#L44-L49).
-
-```text
-FiberRoot
-└── current → HostRoot Fiber
-              └── App                FunctionComponent
-                  └── main           HostComponent
-                      └── Button     FunctionComponent
-                          └── button HostComponent
-```
-
-Fibers are linked objects. The Fiber for `<button>` resembles this:
-
-```js
-FiberNode {
-  tag: 5,
-  type: "button",
-  stateNode: HTMLButtonElement {},
-  return: FiberNode { … },
-  child: null,
-  sibling: null,
-  memoizedProps: { children: "Save" },
-  flags: 0,
-  alternate: null
-}
-```
-
-Its main fields are:
-
-- `tag` identifies the kind of node
-- `type` identifies the component or host element
-- `stateNode` points to the rendered instance, such as a DOM element
-- `return`, `child`, and `sibling` link the tree together
-- `memoizedProps` and `memoizedState` hold the values used for the current output
-- `flags` marks work for the commit phase
-- `alternate` links the current Fiber to its work-in-progress copy
-
-During an update, React builds a work-in-progress tree next to the current tree. It can pause or discard that work. When the tree is ready, React [commits](https://react.dev/learn/render-and-commit#step-3-react-commits-changes-to-the-dom) its changes and makes it current.
-
-Fiber is private to React. bippy accesses it anyway and provides a consistent way to inspect Fiber trees across React versions and renderers.
-
 ## Install bippy
 
 Install bippy:
