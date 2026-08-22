@@ -1,5 +1,12 @@
 # bippy
 
+## 0.7.3
+
+### Patch Changes
+
+- e113600: Add target-aware instrumentation, stable reverse Fiber ID lookup, React 16 compatibility, standalone hook inspection, DevTools root tracking, and columnless and inline-require source-map hook-name parsing.
+- b756bd6: Align hook inspection and component stacks with current React internals. Hook trees now preserve async debug information, support recoverable `use` values, and resolve function-component default props. Server frames use React's current environment format and debug locations, and non-production renderer bundle types are detected consistently with React DevTools.
+
 ## 0.7.2
 
 ### Patch Changes
