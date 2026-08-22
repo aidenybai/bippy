@@ -354,10 +354,8 @@ const createReactBabylonJsAdapter = async (): Promise<RendererAdapter> => {
 };
 
 const createReactKonvaCompatibilityAdapter = async (): Promise<RendererAdapter> => {
-  const [{ KonvaRenderer }, { Group }] = await Promise.all([
-    import("react-konva/lib/ReactKonvaCore.js"),
-    import("konva/lib/Group.js"),
-  ]);
+  const { KonvaRenderer } = await import("react-konva/lib/ReactKonvaCore.js");
+  const { Group } = await import("konva/lib/Group.js");
   const devToolsConfig = {
     bundleType: ReactBuildType.Development,
     findFiberByHostInstance: () => null,
