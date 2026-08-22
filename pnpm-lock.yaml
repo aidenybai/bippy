@@ -309,6 +309,9 @@ importers:
       bippy:
         specifier: workspace:*
         version: link:../../../bippy
+      cookie:
+        specifier: ^2.0.1
+        version: 2.0.1
       react:
         specifier: ^19.2.4
         version: 19.2.8
