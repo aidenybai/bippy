@@ -976,7 +976,6 @@ export const getFiber = <HostInstance>(
 
   if (
     hostInstance !== null &&
-    hostInstance !== undefined &&
     (typeof hostInstance === "object" || typeof hostInstance === "number")
   ) {
     const targetFiberRoots = new Set<FiberRoot>();

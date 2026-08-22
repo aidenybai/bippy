@@ -155,10 +155,6 @@ export const scenarioManifest: readonly ScenarioDescriptor[] = [
   { name: "refreshes components rendered by two renderers on one page", minReactMajor: 19 },
 ];
 
-export const scenarioNames: readonly string[] = scenarioManifest.map(
-  (descriptor) => descriptor.name,
-);
-
 export const getScenarioNamesForReactMajor = (reactMajor: number): readonly string[] =>
   scenarioManifest
     .filter((descriptor) => reactMajor >= (descriptor.minReactMajor ?? 0))

@@ -43,6 +43,14 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 ```
 
+### Hook-only install
+
+If you only need the React DevTools global hook installed (without the rest of bippy's instrumentation), import the minimal entry point:
+
+```typescript
+import "bippy/install-hook-only";
+```
+
 ## API Reference
 
 ### `getFiber`

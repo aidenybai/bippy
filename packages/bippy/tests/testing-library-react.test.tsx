@@ -1,4 +1,4 @@
-import "../src/index.js";
+import "../src/index.js"; // KEEP THIS LINE ON TOP
 
 import { fireEvent, render } from "@testing-library/react";
 import React from "react";

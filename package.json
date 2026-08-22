@@ -11,7 +11,7 @@
     "fmt": "vp fmt",
     "lint": "vp lint",
     "check": "vp check",
-    "sherif": "sherif --fix",
+    "sherif": "sherif --fix -p './packages/e2e/fixtures/*' -p './packages/expo-playground'",
     "changeset": "nr build && changeset",
     "version": "changeset version",
     "release": "changeset publish"

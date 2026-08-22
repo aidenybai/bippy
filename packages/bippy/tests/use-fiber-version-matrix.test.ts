@@ -1,4 +1,3 @@
-import { spawnSync } from "node:child_process";
 import {
   cpSync,
   mkdirSync,
@@ -13,6 +12,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { afterAll, describe, expect, it } from "vite-plus/test";
+import { type RuntimeResult, runNodeScript } from "./run-node-script.js";
 
 interface ReactVersionFixture {
   major: number;
@@ -27,12 +27,6 @@ interface IsolatedRuntime {
   reactDOMServerUrl: string;
   reactDOMUrl: string;
   reactUrl: string;
-}
-
-interface RuntimeResult {
-  status: number | null;
-  stderr: string;
-  stdout: string;
 }
 
 const packageDirectory = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -374,18 +368,7 @@ const runRuntime = (
     process.exit(0);
   `;
 
-  const result = spawnSync(
-    process.execPath,
-    ["--import", "tsx", "--input-type=module", "--eval", script],
-    {
-      cwd: packageDirectory,
-      encoding: "utf8",
-      env: { ...process.env, NODE_ENV: mode },
-      timeout: 30_000,
-    },
-  );
-
-  return { status: result.status, stderr: result.stderr, stdout: result.stdout };
+  return runNodeScript(script, { environment: { NODE_ENV: mode }, timeout: 30_000 });
 };
 
 afterAll(() => {

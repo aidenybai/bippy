@@ -1,4 +1,4 @@
-import "../src/index.js";
+import "../src/index.js"; // KEEP THIS LINE ON TOP
 
 import React from "react";
 import { sourceFetch } from "./source-fetch.js";
