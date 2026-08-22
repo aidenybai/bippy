@@ -295,7 +295,7 @@ importers:
         specifier: latest
         version: 29.4.12(@babel/core@7.29.7)(@jest/transform@30.4.1)(@jest/types@30.4.1)(babel-jest@30.4.1(@babel/core@7.29.7))(esbuild@0.28.2)(jest-util@30.4.1)(jest@30.4.2(@types/node@20.19.43)(babel-plugin-macros@3.1.0))(typescript@5.9.3)
       typescript:
-        specifier: ^5
+        specifier: ^5.9.3
         version: 5.9.3
 
   packages/e2e/fixtures/astro-app:
@@ -1068,7 +1068,7 @@ importers:
         specifier: ^19.2.4
         version: 19.2.8(react@19.2.8)
       tailwind-merge:
-        specifier: ^2.6.0
+        specifier: ^2.6.1
         version: 2.6.1
     devDependencies:
       '@tailwindcss/postcss':
@@ -1087,7 +1087,7 @@ importers:
         specifier: ^4.3.3
         version: 4.3.3
       typescript:
-        specifier: ^5
+        specifier: ^5.9.3
         version: 5.9.3
 
   packages/vite-playground:
@@ -1118,10 +1118,10 @@ importers:
         specifier: ^4.3.4
         version: 4.7.0(vite@8.2.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))
       tailwindcss:
-        specifier: 4.3.3
+        specifier: ^4.3.3
         version: 4.3.3
       typescript:
-        specifier: ^5.7.3
+        specifier: ^5.9.3
         version: 5.9.3
       vite-plus:
         specifier: latest
@@ -1149,7 +1149,7 @@ importers:
         specifier: ^19.2.4
         version: 19.2.4(@types/react@19.2.18)
       typescript:
-        specifier: ^5
+        specifier: ^5.9.3
         version: 5.9.3
 
 packages:

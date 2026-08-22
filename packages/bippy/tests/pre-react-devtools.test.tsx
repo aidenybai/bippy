@@ -5,13 +5,12 @@
 import { activate, initialize } from "react-devtools-inline/backend";
 // @ts-expect-error - react-devtools-inline types not available
 import { initialize as initializeFrontend } from "react-devtools-inline/frontend";
-import { expect, it, vi } from "vite-plus/test";
+import { expect, vi } from "vite-plus/test";
+import { getDevtoolsTestOrSkip } from "./devtools-test-or-skip.js";
 
 initialize(window);
 
 const React = await import("react");
-const reactMajorVersion = Number.parseInt(React.version.split(".")[0] ?? "0", 10);
-const isUnsupportedReactVersion = reactMajorVersion >= 19;
 
 const DevTools = initializeFrontend(window);
 
@@ -20,7 +19,7 @@ activate(window);
 const { render } = await import("@testing-library/react");
 const { instrument } = await import("../src/index.js");
 
-const testOrSkip = isUnsupportedReactVersion ? it.skip : it;
+const testOrSkip = getDevtoolsTestOrSkip(React.version);
 
 testOrSkip("should be active", () => {
   render(<div>Hello</div>);

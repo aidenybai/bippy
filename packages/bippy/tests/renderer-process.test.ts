@@ -2,30 +2,11 @@ import { spawnSync } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { describe, expect, it } from "vite-plus/test";
-
-interface RuntimeResult {
-  status: number | null;
-  stderr: string;
-  stdout: string;
-}
+import { type RuntimeResult, runNodeScript } from "./run-node-script.js";
 
 const packageDirectory = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const bippyEntryUrl = pathToFileURL(resolve(packageDirectory, "src/index.ts")).href;
 const hookEntryUrl = pathToFileURL(resolve(packageDirectory, "src/install-hook-only.ts")).href;
-
-const runNode = (script: string, environment: NodeJS.ProcessEnv = {}): RuntimeResult => {
-  const result = spawnSync(
-    process.execPath,
-    ["--import", "tsx", "--input-type=module", "--eval", script],
-    {
-      cwd: packageDirectory,
-      encoding: "utf8",
-      env: { ...process.env, ...environment },
-      timeout: 15_000,
-    },
-  );
-  return { status: result.status, stderr: result.stderr, stdout: result.stdout };
-};
 
 const runBun = (script: string): RuntimeResult | null => {
   const bunVersion = spawnSync("bun", ["--version"], { encoding: "utf8" });
@@ -54,7 +35,7 @@ const createRendererReportScript = (entryUrl: string, rendererImport: string): s
 
 describe("DOM-less renderer injection", () => {
   it("captures OpenTUI from the normal Bippy entry in Node", () => {
-    const result = runNode(createRendererReportScript(bippyEntryUrl, "@opentui/react"));
+    const result = runNodeScript(createRendererReportScript(bippyEntryUrl, "@opentui/react"));
     expect(result.status, result.stderr).toBe(0);
     expect(result.stdout).toContain('"hasWindow":false');
     expect(result.stdout).toContain('"renderers":1');
@@ -89,7 +70,7 @@ describe("DOM-less renderer injection", () => {
       instance.cleanup();
       process.exit(0);
     `;
-    const result = runNode(script, { DEV: "true" });
+    const result = runNodeScript(script, { environment: { DEV: "true" } });
     expect(result.status, result.stderr).toBe(0);
     expect(result.stdout).toContain('"renderers":2');
     expect(result.stdout).toContain('"@opentui/react"');
@@ -133,7 +114,7 @@ describe("providerless useFiber", () => {
       root.unmount();
       process.exit(0);
     `;
-    const result = runNode(script, { NODE_ENV: "production" });
+    const result = runNodeScript(script, { environment: { NODE_ENV: "production" } });
     expect(result.status, result.stderr).toBe(0);
     expect(result.stdout).toContain('"captured":true');
     expect(result.stdout).toContain('"latest":true');

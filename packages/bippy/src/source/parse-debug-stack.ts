@@ -1,6 +1,6 @@
 import { JSX_FACTORY_FRAME_COUNT, REACT_STACK_BOTTOM_FRAME_PATTERNS } from "./constants.js";
 import { getPrepareStackTrace, setPrepareStackTrace } from "./error-stack.js";
-import { parseStack, StackFrame } from "./parse-stack.js";
+import { parseStack, type StackFrame } from "./parse-stack.js";
 
 interface V8CallSite {
   getFunctionName?: () => string | null;

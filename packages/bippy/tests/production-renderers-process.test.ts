@@ -1,17 +1,11 @@
-import { spawnSync } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { describe, expect, it } from "vite-plus/test";
+import { type RuntimeResult, runNodeScript } from "./run-node-script.js";
 
 interface ProductionRendererFixture {
   name: string;
   script: string;
-}
-
-interface ProductionRendererResult {
-  status: number | null;
-  stderr: string;
-  stdout: string;
 }
 
 const packageDirectory = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -343,19 +337,11 @@ const createProductionScript = (rendererScript: string): string => `
   process.exit(0);
 `;
 
-const runProductionRenderer = (rendererScript: string): ProductionRendererResult => {
-  const result = spawnSync(
-    process.execPath,
-    ["--import", "tsx", "--input-type=module", "--eval", createProductionScript(rendererScript)],
-    {
-      cwd: packageDirectory,
-      encoding: "utf8",
-      env: { ...process.env, DEV: "false", NODE_ENV: "production" },
-      timeout: 30_000,
-    },
-  );
-  return { status: result.status, stderr: result.stderr, stdout: result.stdout };
-};
+const runProductionRenderer = (rendererScript: string): RuntimeResult =>
+  runNodeScript(createProductionScript(rendererScript), {
+    environment: { DEV: "false", NODE_ENV: "production" },
+    timeout: 30_000,
+  });
 
 describe.each(productionRendererFixtures)("$name production renderer", ({ script }) => {
   it("returns the exact mount and update fibers through the production fallback", () => {

@@ -1,4 +1,4 @@
-import "../src/index.js";
+import "../src/index.js"; // KEEP THIS LINE ON TOP
 
 import { expect, it } from "vite-plus/test";
 import { getRDTHook, getRenderer, instrument } from "../src/index.js";

@@ -2,7 +2,7 @@
 
 import "bippy";
 import { getFiberFromHostInstance, getLatestFiber } from "bippy";
-import { getSource } from "bippy/dist/source";
+import { getSource } from "bippy/source";
 import { useEffect, useRef, useState } from "react";
 
 import { cn } from "./cn";

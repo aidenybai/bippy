@@ -53,6 +53,15 @@ const isReactBabylonJsReconcilerFactory = (
 const isRendererDispatcherRef = (value: unknown): value is RendererDispatcherRef =>
   typeof value === "object" && value !== null && ("H" in value || "current" in value);
 
+const createActRerenderUpdate =
+  (instance: { rerender: (element: React.ReactElement) => void }) =>
+  async (nextElement: React.ReactElement, updateState: () => void): Promise<void> => {
+    await act(async () => {
+      updateState();
+      instance.rerender(nextElement);
+    });
+  };
+
 const createReactNilAdapter = async (): Promise<RendererAdapter> => {
   const { render } = await import("react-nil");
 
@@ -121,12 +130,7 @@ const createInkAdapter = async (): Promise<RendererAdapter> => {
       if (!instance) throw new Error("Ink did not create a renderer instance");
       return {
         getOutput: instance.lastFrame,
-        update: async (nextElement, updateState) => {
-          await act(async () => {
-            updateState();
-            instance.rerender(nextElement);
-          });
-        },
+        update: createActRerenderUpdate(instance),
         unmount: async () => {
           await act(async () => instance.unmount());
           instance.cleanup();
@@ -421,12 +425,7 @@ const createRemotionAdapter = async (): Promise<RendererAdapter> => {
       const instance = render(element);
       return {
         getOutput: () => instance.container.firstChild,
-        update: async (nextElement, updateState) => {
-          await act(async () => {
-            updateState();
-            instance.rerender(nextElement);
-          });
-        },
+        update: createActRerenderUpdate(instance),
         unmount: async () => {
           await act(async () => instance.unmount());
         },

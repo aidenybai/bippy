@@ -4,7 +4,7 @@
 - MUST: When implementing anything in this project, clone `facebook/react` locally and search its source to deeply understand the relevant React internals. Do not rely on memory or assumptions.
 - MUST: Use TypeScript for all project-authored code
 - MUST: Use TypeScript interfaces over types
-- MUST: Use Bun to run scripts
+- MUST: Use pnpm for project scripts (checked-in scripts run via tsx); Bun only for ad-hoc one-off scripts
 - MUST: Use arrow functions over function declarations
 - MUST: Use kebab-case for files
 - MUST: Use descriptive names for variables (avoid shorthands, or 1-2 character names)
