@@ -153,16 +153,6 @@ console.log(didFiberRender(fiber));
 
 Use `traverseRenderedFibers` to inspect renders from a specific commit.
 
-### `didFiberCommit`
-
-Returns whether a Fiber or its subtree has committed work. It does not identify a specific commit.
-
-```typescript
-import { didFiberCommit } from "bippy";
-
-console.log(didFiberCommit(fiber));
-```
-
 ### `setFiberId`
 
 Assigns a numeric ID to a Fiber.

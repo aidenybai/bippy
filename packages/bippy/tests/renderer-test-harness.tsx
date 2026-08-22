@@ -2,7 +2,6 @@ import React from "react";
 import { describe, expect, it } from "vite-plus/test";
 import { sourceFetch } from "./source-fetch.js";
 import {
-  didFiberCommit,
   didFiberRender,
   getDisplayName,
   getFiberFromHostInstance,
@@ -231,7 +230,6 @@ export const runRendererTestHarness = (factories: RendererAdapterFactory[]): voi
       expect(getLatestFiber(mountedStatefulFiber)).toBe(updatedStatefulFiber);
       expect(getFiberId(updatedStatefulFiber)).toBe(mountedFiberId);
       expect(didFiberRender(updatedStatefulFiber)).toBe(true);
-      expect(didFiberCommit(updatedRoot.current)).toBe(true);
 
       expect(updatedStatefulFiber.memoizedProps.revision).toBe(2);
       expect(previousStatefulFiber.memoizedProps.revision).toBe(1);

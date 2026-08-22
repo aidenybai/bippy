@@ -894,6 +894,27 @@ describe("getSourceMapUncached", () => {
     expect(requestRedirects).toEqual(["error", "error"]);
   });
 
+  it("allows an explicit cross-origin source map with a caller-provided fetch", async () => {
+    const sourceMapUrl = "http://assets.example.com/bundle.js.map";
+    const fetchFn = (url: string): Promise<Response> =>
+      Promise.resolve(
+        new Response(
+          url === sourceMapUrl
+            ? STANDARD_RAW_MAP
+            : `const value = 1;\n//# sourceMappingURL=${sourceMapUrl}`,
+        ),
+      );
+    vi.stubGlobal("window", undefined);
+    try {
+      const sourceMap = await getSourceMapUncached("http://example.com/bundle.js", fetchFn, {
+        allowCrossOriginSourceMap: true,
+      });
+      expect(sourceMap?.sourceMapUrl).toBe(sourceMapUrl);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("supports abortable source-map requests with a timeout", async () => {
     const fetchFn = (_url: string, init?: RequestInit): Promise<Response> =>
       new Promise((_resolve, reject) => {
@@ -1097,6 +1118,23 @@ describe("symbolicateStack", () => {
     ];
     const result = await symbolicateStack(frames, false, fetchFn);
     expect(result[0].isSymbolicated).toBeUndefined();
+  });
+
+  it("forwards source-map request options", async () => {
+    let requestSignal: AbortSignal | undefined;
+    const fetchFn = (_url: string, init?: RequestInit): Promise<Response> =>
+      new Promise((_resolve, reject) => {
+        requestSignal = init?.signal ?? undefined;
+        requestSignal?.addEventListener("abort", () => reject(requestSignal?.reason), {
+          once: true,
+        });
+      });
+    const frames: StackFrame[] = [
+      { fileName: "http://localhost/slow.js", lineNumber: 1, columnNumber: 0 },
+    ];
+    const result = await symbolicateStack(frames, false, fetchFn, { timeoutMs: 1 });
+    expect(result).toEqual(frames);
+    expect(requestSignal?.aborted).toBe(true);
   });
 
   it("passes through frames without line or column numbers", async () => {

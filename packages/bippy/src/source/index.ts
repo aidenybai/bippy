@@ -1,5 +1,13 @@
-export { formatOwnerStack, getOwnerStack, getParentStack, hasDebugStack } from "./owner-stack.js";
-export { getSource, isSourceFile, normalizeFileName } from "./get-source.js";
+export {
+  formatOwnerStack,
+  getDefinitionFrameFromOwnedChild,
+  getFallbackParentStack,
+  getOwnerStack,
+  getParentStack,
+  getRawOwnerStack,
+  hasDebugStack,
+} from "./owner-stack.js";
+export { getRawSource, getSource, isSourceFile, normalizeFileName } from "./get-source.js";
 export {
   getSourceContentFromSourceMap,
   getSourceFromSourceMap,
@@ -23,5 +31,11 @@ export {
   BippySourceMapError,
   BippyUnsupportedHookError,
 } from "../errors.js";
-export { getFiberHooks, type HookSource, type HooksNode, type HooksTree } from "./inspect-hooks.js";
+export {
+  getFiberHooks,
+  inspectHooks,
+  type HookSource,
+  type HooksNode,
+  type HooksTree,
+} from "./inspect-hooks.js";
 export { parseHookNames, type HookNames } from "./parse-hook-names.js";

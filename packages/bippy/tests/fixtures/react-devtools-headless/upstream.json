@@ -1,0 +1,2959 @@
+{
+  "committedAt": "2026-08-19T19:50:03+02:00",
+  "repository": "https://github.com/facebook/react.git",
+  "requestedRef": "eafeac097ba51e1eab809c07102126bd5f8e5425",
+  "revision": "eafeac097ba51e1eab809c07102126bd5f8e5425",
+  "schemaVersion": 2,
+  "testFiles": [
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should support editing useState hooks"
+        },
+        {
+          "disabled": false,
+          "title": "should support editable useReducer hooks"
+        },
+        {
+          "disabled": false,
+          "title": "should handle interleaved stateful hooks (e.g. useState) and non-stateful hooks (e.g. useContext)"
+        },
+        {
+          "disabled": false,
+          "title": "should support overriding suspense in legacy mode"
+        },
+        {
+          "disabled": false,
+          "title": "should support overriding suspense in concurrent mode"
+        }
+      ],
+      "path": "packages/react-debug-tools/src/__tests__/ReactDevToolsHooksIntegration-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should inspect a simple useState hook"
+        },
+        {
+          "disabled": false,
+          "title": "should inspect a simple custom hook"
+        },
+        {
+          "disabled": false,
+          "title": "should inspect a tree of multiple hooks"
+        },
+        {
+          "disabled": false,
+          "title": "should inspect a tree of multiple levels of hooks"
+        },
+        {
+          "disabled": false,
+          "title": "should not confuse built-in hooks with custom hooks that have the same name"
+        },
+        {
+          "disabled": false,
+          "title": "should inspect the default value using the useContext hook"
+        },
+        {
+          "disabled": false,
+          "title": "should inspect use() calls for Promise and Context"
+        },
+        {
+          "disabled": false,
+          "title": "should inspect use() calls for unresolved Promise"
+        },
+        {
+          "disabled": false,
+          "title": "should inspect use() calls in anonymous loops"
+        },
+        {
+          "disabled": false,
+          "title": "should be ignored when called outside of a custom hook"
+        },
+        {
+          "disabled": false,
+          "title": "should support an optional formatter function param"
+        }
+      ],
+      "path": "packages/react-debug-tools/src/__tests__/ReactHooksInspection-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should inspect the current state of useState hooks"
+        },
+        {
+          "disabled": false,
+          "title": "should inspect the current state of all stateful hooks"
+        },
+        {
+          "disabled": false,
+          "title": "should inspect the current state of all stateful hooks, including useInsertionEffect"
+        },
+        {
+          "disabled": false,
+          "title": "should inspect the value of the current provider in useContext"
+        },
+        {
+          "disabled": false,
+          "title": "should inspect the value of the current provider in useContext reading the same context multiple times"
+        },
+        {
+          "disabled": false,
+          "title": "should inspect forwardRef"
+        },
+        {
+          "disabled": false,
+          "title": "should inspect memo"
+        },
+        {
+          "disabled": false,
+          "title": "should inspect custom hooks"
+        },
+        {
+          "disabled": false,
+          "title": "should support composite useTransition hook"
+        },
+        {
+          "disabled": false,
+          "title": "should update isPending returned from useTransition"
+        },
+        {
+          "disabled": false,
+          "title": "should support useDeferredValue hook"
+        },
+        {
+          "disabled": false,
+          "title": "should return the deferred value"
+        },
+        {
+          "disabled": false,
+          "title": "should support useId hook"
+        },
+        {
+          "disabled": false,
+          "title": "should not be inspectable"
+        },
+        {
+          "disabled": false,
+          "title": "should work in combination with other hooks"
+        },
+        {
+          "disabled": false,
+          "title": "should support inspectable values for multiple custom hooks"
+        },
+        {
+          "disabled": false,
+          "title": "should support inspectable values for nested custom hooks"
+        },
+        {
+          "disabled": false,
+          "title": "should support multiple inspectable values per custom hooks"
+        },
+        {
+          "disabled": false,
+          "title": "should ignore useDebugValue() made outside of a custom hook"
+        },
+        {
+          "disabled": false,
+          "title": "should support an optional formatter function param"
+        },
+        {
+          "disabled": false,
+          "title": "should properly advance the current hook for useContext"
+        },
+        {
+          "disabled": false,
+          "title": "should support composite useSyncExternalStore hook"
+        },
+        {
+          "disabled": false,
+          "title": "should support use(Context) hook"
+        },
+        {
+          "disabled": false,
+          "title": "should support useOptimistic hook"
+        },
+        {
+          "disabled": false,
+          "title": "should support useActionState hook"
+        }
+      ],
+      "path": "packages/react-debug-tools/src/__tests__/ReactHooksInspectionIntegration-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should support useFormStatus hook"
+        }
+      ],
+      "path": "packages/react-debug-tools/src/__tests__/ReactHooksInspectionIntegrationDOM-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "installs the DevTools hook on register"
+        },
+        {
+          "disabled": false,
+          "title": "does not install any tool globals (chrome-devtools-mcp owns __dtmcp)"
+        },
+        {
+          "disabled": false,
+          "title": "root entry exports tools without registering"
+        },
+        {
+          "disabled": false,
+          "title": "throws when the register entry is imported outside an event target"
+        },
+        {
+          "disabled": false,
+          "title": "register entry installs the DevTools hook"
+        },
+        {
+          "disabled": false,
+          "title": "returns the cached registration for repeated calls per target"
+        },
+        {
+          "disabled": false,
+          "title": "does not write registration state to the target"
+        },
+        {
+          "disabled": false,
+          "title": "builds a \"react\" tool group exposing every facade tool"
+        },
+        {
+          "disabled": false,
+          "title": "declares JSON-Schema input with required params"
+        },
+        {
+          "disabled": false,
+          "title": "react_get_component_tree returns the component tree"
+        },
+        {
+          "disabled": false,
+          "title": "react_find_components maps args and returns paginated results"
+        },
+        {
+          "disabled": false,
+          "title": "react_get_component_by_uid returns props and hooks when requested"
+        },
+        {
+          "disabled": false,
+          "title": "react_get_parent_stack returns structural ancestors"
+        },
+        {
+          "disabled": false,
+          "title": "react_get_component_by_dom_element returns the DOM element component"
+        },
+        {
+          "disabled": false,
+          "title": "react_get_component_by_dom_element returns DOM-oriented errors"
+        },
+        {
+          "disabled": false,
+          "title": "returns tool errors as a raw payload"
+        },
+        {
+          "disabled": false,
+          "title": "serializes Error tool payloads with causes"
+        },
+        {
+          "disabled": false,
+          "title": "profiling tools record and report commits through the integration"
+        },
+        {
+          "disabled": false,
+          "title": "responds synchronously to discovery with the react tool group"
+        },
+        {
+          "disabled": false,
+          "title": "builds the tool group lazily and memoizes it across discoveries"
+        },
+        {
+          "disabled": false,
+          "title": "unregister removes the discovery listener"
+        },
+        {
+          "disabled": false,
+          "title": "tools are callable via window.__dtmcp.executeTool"
+        }
+      ],
+      "path": "packages/react-devtools-cdt-mcp/src/__tests__/DevToolsCdtMcp-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should not ignore list anything"
+        },
+        {
+          "disabled": false,
+          "title": "should include every source"
+        }
+      ],
+      "path": "packages/react-devtools-extensions/src/__tests__/ignoreList-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "installs __REACT_DEVTOOLS_GLOBAL_HOOK__ on globalThis"
+        },
+        {
+          "disabled": false,
+          "title": "returns a Facade handle exposing the hook and tracked state"
+        },
+        {
+          "disabled": false,
+          "title": "does not install any tool globals (the integrator decides those)"
+        },
+        {
+          "disabled": false,
+          "title": "attaches to an existing hook instead of installing a second one"
+        },
+        {
+          "disabled": false,
+          "title": "an attached facade back-fills roots already tracked by the hook"
+        },
+        {
+          "disabled": false,
+          "title": "an attached facade tracks later commits and profiles them"
+        },
+        {
+          "disabled": false,
+          "title": "installs onto an explicit target without touching globalThis"
+        },
+        {
+          "disabled": false,
+          "title": "records the renderer and its fiber root on mount"
+        },
+        {
+          "disabled": false,
+          "title": "removes unmounted roots from tracking"
+        },
+        {
+          "disabled": false,
+          "title": "returns error when nothing is rendered"
+        },
+        {
+          "disabled": false,
+          "title": "returns an array of component nodes"
+        },
+        {
+          "disabled": false,
+          "title": "encodes firstChild and nextSibling relationships"
+        },
+        {
+          "disabled": false,
+          "title": "shows keys in the output"
+        },
+        {
+          "disabled": false,
+          "title": "limits depth with the depth parameter"
+        },
+        {
+          "disabled": false,
+          "title": "starts from a specific node when rootUid is provided"
+        },
+        {
+          "disabled": false,
+          "title": "returns error for non-existent rootUid"
+        },
+        {
+          "disabled": false,
+          "title": "assigns stable uids across calls"
+        },
+        {
+          "disabled": false,
+          "title": "shows class components with class type"
+        },
+        {
+          "disabled": false,
+          "title": "shows host components with host type"
+        },
+        {
+          "disabled": false,
+          "title": "shows Memo components with memo type"
+        },
+        {
+          "disabled": false,
+          "title": "shows ForwardRef components with forwardRef type"
+        },
+        {
+          "disabled": false,
+          "title": "includes Fragment in the tree"
+        },
+        {
+          "disabled": false,
+          "title": "includes HostRoot with type root"
+        },
+        {
+          "disabled": false,
+          "title": "includes Suspense in the tree"
+        },
+        {
+          "disabled": false,
+          "title": "includes Context Provider in the tree"
+        },
+        {
+          "disabled": false,
+          "title": "uids survive re-renders via alternate fiber handling"
+        },
+        {
+          "disabled": false,
+          "title": "removes unmounted roots from the tree"
+        },
+        {
+          "disabled": false,
+          "title": "finds components by name (case-insensitive substring match)"
+        },
+        {
+          "disabled": false,
+          "title": "returns all matches when multiple components match"
+        },
+        {
+          "disabled": false,
+          "title": "returns empty results when no components match"
+        },
+        {
+          "disabled": false,
+          "title": "scopes search to subtree when rootUid is provided"
+        },
+        {
+          "disabled": false,
+          "title": "paginates results with default page size of 10"
+        },
+        {
+          "disabled": false,
+          "title": "supports custom page size"
+        },
+        {
+          "disabled": false,
+          "title": "clamps page number to valid range"
+        },
+        {
+          "disabled": false,
+          "title": "results have same shape as tree snapshot nodes"
+        },
+        {
+          "disabled": false,
+          "title": "uids are consistent with getComponentTree"
+        },
+        {
+          "disabled": false,
+          "title": "matches host components by tag name"
+        },
+        {
+          "disabled": false,
+          "title": "does not match internal nodes with null displayName"
+        },
+        {
+          "disabled": false,
+          "title": "finds Memo components by wrapped display name"
+        },
+        {
+          "disabled": false,
+          "title": "returns error for non-existent rootUid in scoped search"
+        },
+        {
+          "disabled": false,
+          "title": "returns {source: null} for a function component when the location is unavailable"
+        },
+        {
+          "disabled": false,
+          "title": "returns {source: null} for host components"
+        },
+        {
+          "disabled": false,
+          "title": "returns error for non-existent uid"
+        },
+        {
+          "disabled": false,
+          "title": "returns a stack string for a nested component"
+        },
+        {
+          "disabled": false,
+          "title": "returns a stack string for the root component"
+        },
+        {
+          "disabled": false,
+          "title": "returns error for non-existent uid"
+        },
+        {
+          "disabled": false,
+          "title": "returns structural parents from immediate parent to host root"
+        },
+        {
+          "disabled": false,
+          "title": "distinguishes structural parents from JSX owners"
+        },
+        {
+          "disabled": false,
+          "title": "returns an empty array for the host root"
+        },
+        {
+          "disabled": false,
+          "title": "returns error for non-existent uid"
+        },
+        {
+          "disabled": false,
+          "title": "returns owner list for a nested component"
+        },
+        {
+          "disabled": false,
+          "title": "each entry has uid, name, and type"
+        },
+        {
+          "disabled": false,
+          "title": "owner uids are consistent with getComponentTree"
+        },
+        {
+          "disabled": false,
+          "title": "returns empty array for root component with no owner"
+        },
+        {
+          "disabled": false,
+          "title": "returns error for non-existent uid"
+        },
+        {
+          "disabled": false,
+          "title": "is ordered from immediate owner to root ancestor"
+        },
+        {
+          "disabled": false,
+          "title": "returns error for non-existent uid"
+        },
+        {
+          "disabled": false,
+          "title": "returns info for a function component"
+        },
+        {
+          "disabled": false,
+          "title": "returns props (excluding children)"
+        },
+        {
+          "disabled": false,
+          "title": "serializes function props as descriptive strings"
+        },
+        {
+          "disabled": false,
+          "title": "returns key when present"
+        },
+        {
+          "disabled": false,
+          "title": "returns correct type for class components"
+        },
+        {
+          "disabled": false,
+          "title": "returns correct type for host components"
+        },
+        {
+          "disabled": false,
+          "title": "uses uids consistent with getComponentTree"
+        },
+        {
+          "disabled": false,
+          "title": "normalizes nested objects and arrays in props"
+        },
+        {
+          "disabled": false,
+          "title": "normalizes symbol and undefined props"
+        },
+        {
+          "disabled": false,
+          "title": "returns info for Memo component with correct type"
+        },
+        {
+          "disabled": false,
+          "title": "returns info for ForwardRef component with correct type"
+        },
+        {
+          "disabled": false,
+          "title": "returns no props when component has only children"
+        },
+        {
+          "disabled": false,
+          "title": "handles circular references in props without stack overflow"
+        },
+        {
+          "disabled": false,
+          "title": "handles deeply nested objects in props without stack overflow"
+        },
+        {
+          "disabled": false,
+          "title": "returns the full hooks tree for a function component"
+        },
+        {
+          "disabled": false,
+          "title": "does not inspect hooks by default"
+        },
+        {
+          "disabled": false,
+          "title": "returns an error when requested hook inspection fails"
+        },
+        {
+          "disabled": false,
+          "title": "captures the useContext hook with its provided value"
+        },
+        {
+          "disabled": false,
+          "title": "returns an empty hooks array for a function component with no hooks"
+        },
+        {
+          "disabled": false,
+          "title": "does not include hooks for class components"
+        },
+        {
+          "disabled": false,
+          "title": "does not include hooks for host components"
+        },
+        {
+          "disabled": false,
+          "title": "returns the host component for a DOM host element"
+        },
+        {
+          "disabled": false,
+          "title": "returns the host component rather than the tree owner"
+        },
+        {
+          "disabled": false,
+          "title": "keeps uids stable across re-renders via alternate fibers"
+        },
+        {
+          "disabled": false,
+          "title": "does not walk platform parent pointers for unmanaged nested nodes"
+        },
+        {
+          "disabled": false,
+          "title": "returns an error when no roots are mounted"
+        },
+        {
+          "disabled": false,
+          "title": "returns an error for null or undefined references"
+        },
+        {
+          "disabled": false,
+          "title": "startProfiling returns the started status and trace name"
+        },
+        {
+          "disabled": false,
+          "title": "startProfiling auto-generates a trace name when none is provided"
+        },
+        {
+          "disabled": false,
+          "title": "stopProfiling reports the trace name and commit count"
+        },
+        {
+          "disabled": false,
+          "title": "cannot start profiling twice"
+        },
+        {
+          "disabled": false,
+          "title": "cannot stop when not profiling"
+        },
+        {
+          "disabled": false,
+          "title": "records one commit per render and reports the count on stop"
+        },
+        {
+          "disabled": false,
+          "title": "getTraceOverview returns one row per commit"
+        },
+        {
+          "disabled": false,
+          "title": "getTraceOverview returns an error for an unknown trace"
+        },
+        {
+          "disabled": false,
+          "title": "getTraceOverview returns an empty array for a trace with no commits"
+        },
+        {
+          "disabled": false,
+          "title": "getCommitReport returns commit metadata and the full component set"
+        },
+        {
+          "disabled": false,
+          "title": "getCommitReport sorts components by actualDuration descending"
+        },
+        {
+          "disabled": false,
+          "title": "getCommitReport committedAt matches getTraceOverview"
+        },
+        {
+          "disabled": false,
+          "title": "getCommitReport returns an error for an unknown trace"
+        },
+        {
+          "disabled": false,
+          "title": "getCommitReport returns an error for an out-of-range commit index"
+        },
+        {
+          "disabled": false,
+          "title": "does not record internal nodes like Fragment, Mode, or text"
+        },
+        {
+          "disabled": false,
+          "title": "uses uids consistent with the tree tools"
+        },
+        {
+          "disabled": false,
+          "title": "records commits across multiple independent traces"
+        },
+        {
+          "disabled": false,
+          "title": "the hook onPostCommitFiberRoot is a no-op when not profiling"
+        },
+        {
+          "disabled": false,
+          "title": "inject() registers a new renderer and initializes its internals"
+        },
+        {
+          "disabled": false,
+          "title": "getComponentTree aggregates components from multiple roots"
+        },
+        {
+          "disabled": false,
+          "title": "findComponents finds matches across multiple roots"
+        },
+        {
+          "disabled": false,
+          "title": "resolves uids from any root via getComponentByUid"
+        },
+        {
+          "disabled": false,
+          "title": "profiling records commits from all roots"
+        },
+        {
+          "disabled": false,
+          "title": "attaches to the extension hook and reads its component tree"
+        }
+      ],
+      "path": "packages/react-devtools-facade/src/__tests__/DevToolsFacade-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "Should display initial React components"
+        },
+        {
+          "disabled": false,
+          "title": "Should display newly added React components"
+        },
+        {
+          "disabled": false,
+          "title": "Should allow elements to be inspected"
+        },
+        {
+          "disabled": false,
+          "title": "Should allow inspecting source of the element"
+        },
+        {
+          "disabled": false,
+          "title": "should allow props to be edited"
+        },
+        {
+          "disabled": false,
+          "title": "should load and parse hook names for the inspected element"
+        },
+        {
+          "disabled": false,
+          "title": "should allow searching for component by name"
+        }
+      ],
+      "path": "packages/react-devtools-inline/__tests__/__e2e__/components.test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should record renders and commits when active"
+        },
+        {
+          "disabled": false,
+          "title": "should allow searching for a component within the selected commit"
+        }
+      ],
+      "path": "packages/react-devtools-inline/__tests__/__e2e__/profiler.test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "shuts down cleanly when the WebSocket closes"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/backend-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should shutdown properly"
+        },
+        {
+          "disabled": false,
+          "title": "validates messages received from the wall"
+        },
+        {
+          "disabled": false,
+          "title": "requires Wall.listen to return a cleanup function"
+        },
+        {
+          "disabled": false,
+          "title": "flushes pending messages when wall cleanup throws"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/bridge-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "By default, component display names should not have Forget prefix"
+        },
+        {
+          "disabled": false,
+          "title": "If useMemoCache used, the corresponding displayName for a component should have Forget prefix"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/compiler-integration-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should log the current component stack along with an error or warning"
+        },
+        {
+          "disabled": true,
+          "title": "should disable the current dispatcher before shallow rendering so no effects get scheduled"
+        },
+        {
+          "disabled": false,
+          "title": "should log the current component stack with debug info from promises"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/componentStacks-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should pass through logs when there is no current fiber"
+        },
+        {
+          "disabled": false,
+          "title": "should not append multiple stacks"
+        },
+        {
+          "disabled": false,
+          "title": "should append component stacks to errors and warnings logged during render"
+        },
+        {
+          "disabled": false,
+          "title": "should append component stacks to errors and warnings logged from effects"
+        },
+        {
+          "disabled": false,
+          "title": "should append component stacks to errors and warnings logged from commit hooks"
+        },
+        {
+          "disabled": false,
+          "title": "should append component stacks to errors and warnings logged from gDSFP"
+        },
+        {
+          "disabled": false,
+          "title": "should be resilient to prepareStackTrace"
+        },
+        {
+          "disabled": false,
+          "title": "should correctly log Symbols"
+        },
+        {
+          "disabled": false,
+          "title": "should double log if hideConsoleLogsInStrictMode is disabled in Strict mode"
+        },
+        {
+          "disabled": false,
+          "title": "should not double log if hideConsoleLogsInStrictMode is enabled in Strict mode"
+        },
+        {
+          "disabled": false,
+          "title": "should double log from Effects if hideConsoleLogsInStrictMode is disabled in Strict mode"
+        },
+        {
+          "disabled": false,
+          "title": "should not double log from Effects if hideConsoleLogsInStrictMode is enabled in Strict mode"
+        },
+        {
+          "disabled": false,
+          "title": "should double log from useMemo if hideConsoleLogsInStrictMode is disabled in Strict mode"
+        },
+        {
+          "disabled": false,
+          "title": "should not double log from useMemo fns if hideConsoleLogsInStrictMode is enabled in Strict mode"
+        },
+        {
+          "disabled": false,
+          "title": "should double log in Strict mode initial render for extension"
+        },
+        {
+          "disabled": false,
+          "title": "should not double log in Strict mode initial render for extension"
+        },
+        {
+          "disabled": false,
+          "title": "should properly dim component stacks during strict mode double log"
+        },
+        {
+          "disabled": false,
+          "title": "should not dim console logs if disableSecondConsoleLogDimmingInStrictMode is enabled"
+        },
+        {
+          "disabled": false,
+          "title": "should dim console logs if disableSecondConsoleLogDimmingInStrictMode is disabled"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/console-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should have editable values"
+        },
+        {
+          "disabled": false,
+          "title": "should still support overriding prop values with legacy backend methods"
+        },
+        {
+          "disabled": false,
+          "title": "should have editable paths"
+        },
+        {
+          "disabled": false,
+          "title": "should enable adding new object properties and array values"
+        },
+        {
+          "disabled": false,
+          "title": "should have deletable keys"
+        },
+        {
+          "disabled": false,
+          "title": "should support editing host component values"
+        },
+        {
+          "disabled": false,
+          "title": "should have editable values"
+        },
+        {
+          "disabled": false,
+          "title": "should still support overriding state values with legacy backend methods"
+        },
+        {
+          "disabled": false,
+          "title": "should have editable paths"
+        },
+        {
+          "disabled": false,
+          "title": "should enable adding new object properties and array values"
+        },
+        {
+          "disabled": false,
+          "title": "should have deletable keys"
+        },
+        {
+          "disabled": false,
+          "title": "should have editable values"
+        },
+        {
+          "disabled": false,
+          "title": "should still support overriding hook values with legacy backend methods"
+        },
+        {
+          "disabled": false,
+          "title": "should have editable paths"
+        },
+        {
+          "disabled": false,
+          "title": "should enable adding new object properties and array values"
+        },
+        {
+          "disabled": false,
+          "title": "should have deletable keys"
+        },
+        {
+          "disabled": false,
+          "title": "should have editable values"
+        },
+        {
+          "disabled": false,
+          "title": "should still support overriding context values with legacy backend methods"
+        },
+        {
+          "disabled": false,
+          "title": "should have editable paths"
+        },
+        {
+          "disabled": false,
+          "title": "should enable adding new object properties and array values"
+        },
+        {
+          "disabled": false,
+          "title": "should have deletable keys"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/editing-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "reports a Store error before the frontend mounts"
+        },
+        {
+          "disabled": false,
+          "title": "reports a Store error once when multiple error boundaries observe it"
+        },
+        {
+          "disabled": false,
+          "title": "registers the event logger once while its iframe is loading"
+        },
+        {
+          "disabled": false,
+          "title": "normalizes values that are not Error objects"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/errorReporting-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "can dispatch an event with no listeners"
+        },
+        {
+          "disabled": false,
+          "title": "handles a listener being attached multiple times"
+        },
+        {
+          "disabled": false,
+          "title": "notifies all attached listeners of events"
+        },
+        {
+          "disabled": false,
+          "title": "calls later listeners before re-throwing if an earlier one throws"
+        },
+        {
+          "disabled": false,
+          "title": "preserves the first thrown value and reports later errors"
+        },
+        {
+          "disabled": false,
+          "title": "removes attached listeners"
+        },
+        {
+          "disabled": false,
+          "title": "removes all listeners"
+        },
+        {
+          "disabled": false,
+          "title": "should call the initial listeners even if others are added or removed during a dispatch"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/events-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should return an empty result for an empty display name"
+        },
+        {
+          "disabled": false,
+          "title": "should not extract anything from an unwrapped component"
+        },
+        {
+          "disabled": false,
+          "title": "should extract a single wrapper"
+        },
+        {
+          "disabled": false,
+          "title": "should extract every wrapper of a nested display name"
+        },
+        {
+          "disabled": false,
+          "title": "should extract wrappers nested more than two levels deep"
+        },
+        {
+          "disabled": false,
+          "title": "should extract lowercase wrapper names verbatim"
+        },
+        {
+          "disabled": false,
+          "title": "should extract a mix of lowercase and uppercase wrappers"
+        },
+        {
+          "disabled": false,
+          "title": "should not extract from a display name that is not shaped like a wrapper"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/extractHOCNames-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should not break the DevTools store"
+        },
+        {
+          "disabled": false,
+          "title": "should not break when there are warnings in between patching (before post commit hook)"
+        },
+        {
+          "disabled": false,
+          "title": "should not break when there are warnings in between patching (with post commit hook)"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/FastRefreshDevToolsIntegration-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should expect an error for this test"
+        },
+        {
+          "disabled": false,
+          "title": "should not an error for this test"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/gate-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": true,
+          "title": "should inspect the currently selected element (legacy render)"
+        },
+        {
+          "disabled": false,
+          "title": "should inspect the currently selected element (createRoot)"
+        },
+        {
+          "disabled": false,
+          "title": "should have hasLegacyContext flag set to either \"true\" or \"false\" depending on which context API is used."
+        },
+        {
+          "disabled": false,
+          "title": "should poll for updates for the currently selected element"
+        },
+        {
+          "disabled": false,
+          "title": "should not re-render a function with hooks if it did not update since it was last inspected"
+        },
+        {
+          "disabled": false,
+          "title": "should properly recover from a cache miss on the frontend"
+        },
+        {
+          "disabled": false,
+          "title": "should temporarily disable console logging when re-running a component to inspect its hooks"
+        },
+        {
+          "disabled": false,
+          "title": "should support simple data types"
+        },
+        {
+          "disabled": false,
+          "title": "should support complex data types"
+        },
+        {
+          "disabled": false,
+          "title": "should support Thenables in React 19"
+        },
+        {
+          "disabled": false,
+          "title": "should support Promises in React 18"
+        },
+        {
+          "disabled": false,
+          "title": "should not consume iterables while inspecting"
+        },
+        {
+          "disabled": false,
+          "title": "should support objects with no prototype"
+        },
+        {
+          "disabled": false,
+          "title": "should support objects with overridden hasOwnProperty"
+        },
+        {
+          "disabled": false,
+          "title": "should support custom objects with enumerable properties and getters"
+        },
+        {
+          "disabled": false,
+          "title": "should support objects with inherited keys"
+        },
+        {
+          "disabled": false,
+          "title": "should allow component prop value and value`s prototype has same name params."
+        },
+        {
+          "disabled": false,
+          "title": "should not dehydrate nested values until explicitly requested"
+        },
+        {
+          "disabled": false,
+          "title": "should dehydrate complex nested values when requested"
+        },
+        {
+          "disabled": false,
+          "title": "should include updates for nested values that were previously hydrated"
+        },
+        {
+          "disabled": false,
+          "title": "should return a full update if a path is inspected for an object that has other pending changes"
+        },
+        {
+          "disabled": false,
+          "title": "should not tear if hydration is requested after an update"
+        },
+        {
+          "disabled": true,
+          "title": "should inspect hooks for components that only use context (legacy render)"
+        },
+        {
+          "disabled": false,
+          "title": "should inspect hooks for components that only use context (createRoot)"
+        },
+        {
+          "disabled": false,
+          "title": "should enable inspected values to be stored as global variables"
+        },
+        {
+          "disabled": false,
+          "title": "should enable inspected values to be copied to the clipboard"
+        },
+        {
+          "disabled": false,
+          "title": "should enable complex values to be copied to the clipboard"
+        },
+        {
+          "disabled": false,
+          "title": "should display complex values of useDebugValue"
+        },
+        {
+          "disabled": false,
+          "title": "should support Proxies that dont return an iterator"
+        },
+        {
+          "disabled": true,
+          "title": "should not error when an unchanged component is re-inspected after component filters changed (legacy render)"
+        },
+        {
+          "disabled": false,
+          "title": "should not error when an unchanged component is re-inspected after component filters changed (createRoot)"
+        },
+        {
+          "disabled": true,
+          "title": "should display the root type for ReactDOM.hydrate"
+        },
+        {
+          "disabled": true,
+          "title": "should display the root type for ReactDOM.render"
+        },
+        {
+          "disabled": false,
+          "title": "should display the root type for ReactDOMClient.hydrateRoot"
+        },
+        {
+          "disabled": false,
+          "title": "should display the root type for ReactDOMClient.createRoot"
+        },
+        {
+          "disabled": false,
+          "title": "should gracefully surface backend errors on the frontend rather than timing out"
+        },
+        {
+          "disabled": false,
+          "title": "should support function components"
+        },
+        {
+          "disabled": false,
+          "title": "should support memoized function components"
+        },
+        {
+          "disabled": false,
+          "title": "should support forward refs"
+        },
+        {
+          "disabled": false,
+          "title": "should support class components"
+        },
+        {
+          "disabled": false,
+          "title": "during render get recorded"
+        },
+        {
+          "disabled": false,
+          "title": "during render get deduped"
+        },
+        {
+          "disabled": false,
+          "title": "during layout (mount) get recorded"
+        },
+        {
+          "disabled": false,
+          "title": "during passive (mount) get recorded"
+        },
+        {
+          "disabled": false,
+          "title": "from react get recorded without a component stack"
+        },
+        {
+          "disabled": false,
+          "title": "can be cleared for the whole app"
+        },
+        {
+          "disabled": false,
+          "title": "can be cleared for a particular Fiber (only warnings)"
+        },
+        {
+          "disabled": false,
+          "title": "can be cleared for a particular Fiber (only errors)"
+        },
+        {
+          "disabled": true,
+          "title": "inspecting nested renderers should not throw (legacy render)"
+        },
+        {
+          "disabled": false,
+          "title": "inspecting nested renderers should not throw (createRoot)"
+        },
+        {
+          "disabled": false,
+          "title": "can toggle error"
+        },
+        {
+          "disabled": false,
+          "title": "should properly handle when components filters are updated"
+        },
+        {
+          "disabled": false,
+          "title": "should inspect server components"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/inspectedElement-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should have editable values"
+        },
+        {
+          "disabled": false,
+          "title": "should have editable paths"
+        },
+        {
+          "disabled": false,
+          "title": "should enable adding new object properties and array values"
+        },
+        {
+          "disabled": false,
+          "title": "should have deletable keys"
+        },
+        {
+          "disabled": false,
+          "title": "should have editable values"
+        },
+        {
+          "disabled": false,
+          "title": "should have editable paths"
+        },
+        {
+          "disabled": false,
+          "title": "should enable adding new object properties and array values"
+        },
+        {
+          "disabled": false,
+          "title": "should have deletable keys"
+        },
+        {
+          "disabled": false,
+          "title": "should have editable values"
+        },
+        {
+          "disabled": false,
+          "title": "should have editable paths"
+        },
+        {
+          "disabled": false,
+          "title": "should enable adding new object properties and array values"
+        },
+        {
+          "disabled": false,
+          "title": "should have deletable keys"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/legacy/editing-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should inspect the currently selected element"
+        },
+        {
+          "disabled": false,
+          "title": "should support simple data types"
+        },
+        {
+          "disabled": false,
+          "title": "should support complex data types"
+        },
+        {
+          "disabled": false,
+          "title": "should support objects with no prototype"
+        },
+        {
+          "disabled": false,
+          "title": "should support objects with overridden hasOwnProperty"
+        },
+        {
+          "disabled": false,
+          "title": "should not consume iterables while inspecting"
+        },
+        {
+          "disabled": false,
+          "title": "should support custom objects with enumerable properties and getters"
+        },
+        {
+          "disabled": false,
+          "title": "should support objects with inherited keys"
+        },
+        {
+          "disabled": false,
+          "title": "should allow component prop value and value`s prototype has same name params."
+        },
+        {
+          "disabled": false,
+          "title": "should not dehydrate nested values until explicitly requested"
+        },
+        {
+          "disabled": false,
+          "title": "should enable inspected values to be stored as global variables"
+        },
+        {
+          "disabled": false,
+          "title": "should enable inspected values to be copied to the clipboard"
+        },
+        {
+          "disabled": false,
+          "title": "should enable complex values to be copied to the clipboard"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/legacy/inspectElement-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should not allow a root node to be collapsed"
+        },
+        {
+          "disabled": false,
+          "title": "should support mount and update operations"
+        },
+        {
+          "disabled": false,
+          "title": "should support mount and update operations for multiple roots"
+        },
+        {
+          "disabled": false,
+          "title": "should not filter DOM nodes from the store tree"
+        },
+        {
+          "disabled": false,
+          "title": "should support collapsing parts of the tree"
+        },
+        {
+          "disabled": false,
+          "title": "should support adding and removing children"
+        },
+        {
+          "disabled": false,
+          "title": "should support reordering of children"
+        },
+        {
+          "disabled": false,
+          "title": "should support mount and update operations"
+        },
+        {
+          "disabled": false,
+          "title": "should support mount and update operations for multiple roots"
+        },
+        {
+          "disabled": false,
+          "title": "should not filter DOM nodes from the store tree"
+        },
+        {
+          "disabled": false,
+          "title": "should support expanding parts of the tree"
+        },
+        {
+          "disabled": false,
+          "title": "should support reordering of children"
+        },
+        {
+          "disabled": false,
+          "title": "should mark all elements as strict mode compliant"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/legacy/storeLegacy-v15-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "is included in the tree"
+        },
+        {
+          "disabled": false,
+          "title": "is searchable"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/optimisticKeyDevToolsIntegration.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should fetch the owners list for the selected element"
+        },
+        {
+          "disabled": false,
+          "title": "should fetch the owners list for the selected element that includes filtered components"
+        },
+        {
+          "disabled": false,
+          "title": "should include the current element even if there are no other owners"
+        },
+        {
+          "disabled": false,
+          "title": "should include all owners for a component wrapped in react memo"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/ownersListContext-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should identify useContext as the cause for a re-render"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/profilerChangeDescriptions-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "updates updates profiling support based on the attached roots (legacy render)"
+        },
+        {
+          "disabled": false,
+          "title": "updates updates profiling support based on the attached roots (createRoot)"
+        },
+        {
+          "disabled": false,
+          "title": "should gracefully handle an empty profiling session (with no recorded commits)"
+        },
+        {
+          "disabled": false,
+          "title": "should auto-select the root ID matching the Components tab selection if it has profiling data (legacy render)"
+        },
+        {
+          "disabled": false,
+          "title": "should auto-select the root ID matching the Components tab selection if it has profiling data (createRoot)"
+        },
+        {
+          "disabled": false,
+          "title": "should not select the root ID matching the Components tab selection if it has no profiling data (legacy render)"
+        },
+        {
+          "disabled": false,
+          "title": "should not select the root ID matching the Components tab selection if it has no profiling data (createRoot)"
+        },
+        {
+          "disabled": false,
+          "title": "should maintain root selection between profiling sessions so long as there is data for that root (legacy render)"
+        },
+        {
+          "disabled": false,
+          "title": "should maintain root selection between profiling sessions so long as there is data for that root (createRoot)"
+        },
+        {
+          "disabled": false,
+          "title": "should sync selected element in the Components tab too, provided the element is a match"
+        },
+        {
+          "disabled": false,
+          "title": "should toggle profiling when the keyboard shortcut is pressed"
+        },
+        {
+          "disabled": false,
+          "title": "should navigate between commits when the keyboard shortcut is pressed"
+        },
+        {
+          "disabled": false,
+          "title": "should reset commit index when switching to a different root"
+        },
+        {
+          "disabled": false,
+          "title": "should handle commit selection edge cases when filtering commits"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/profilerContext-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should not remove profiling data when roots are unmounted"
+        },
+        {
+          "disabled": false,
+          "title": "should not allow new/saved profiling data to be set while profiling is in progress"
+        },
+        {
+          "disabled": false,
+          "title": "should filter empty commits"
+        },
+        {
+          "disabled": false,
+          "title": "should filter empty commits alt"
+        },
+        {
+          "disabled": false,
+          "title": "should throw if component filters are modified while profiling"
+        },
+        {
+          "disabled": false,
+          "title": "should not throw if state contains a property hasOwnProperty"
+        },
+        {
+          "disabled": false,
+          "title": "should not throw while initializing context values for Fibers within a not-yet-mounted subtree"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/profilerStore-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should collect data for each root (including ones added or mounted after profiling started) (legacy render)"
+        },
+        {
+          "disabled": false,
+          "title": "should collect data for each root (including ones added or mounted after profiling started) (createRoot)"
+        },
+        {
+          "disabled": false,
+          "title": "should collect data for each commit"
+        },
+        {
+          "disabled": false,
+          "title": "should properly detect changed hooks"
+        },
+        {
+          "disabled": false,
+          "title": "should detect what hooks changed in a render with custom and composite hooks"
+        },
+        {
+          "disabled": false,
+          "title": "should detect context changes or lack of changes with conditional use()"
+        },
+        {
+          "disabled": false,
+          "title": "should calculate durations based on actual children (not filtered children)"
+        },
+        {
+          "disabled": false,
+          "title": "should calculate durations correctly for suspended views"
+        },
+        {
+          "disabled": false,
+          "title": "should collect data for each rendered fiber"
+        },
+        {
+          "disabled": false,
+          "title": "should handle unexpectedly shallow suspense trees for react v[18.0.0 - 18.2.0] (legacy render)"
+        },
+        {
+          "disabled": false,
+          "title": "should handle unexpectedly shallow suspense trees for react v[18.0.0 - 18.2.0] (createRoot)"
+        },
+        {
+          "disabled": false,
+          "title": "should handle unexpectedly shallow suspense trees"
+        },
+        {
+          "disabled": false,
+          "title": "should not crash during route transitions with Suspense"
+        },
+        {
+          "disabled": false,
+          "title": "components that were deleted and added to updaters during the layout phase should not crash"
+        },
+        {
+          "disabled": false,
+          "title": "components in a deleted subtree and added to updaters during the layout phase should not crash"
+        },
+        {
+          "disabled": false,
+          "title": "components that were deleted should not be added to updaters during the passive phase"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/profilingCache-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should contain valid data"
+        },
+        {
+          "disabled": false,
+          "title": "should contain valid data"
+        },
+        {
+          "disabled": false,
+          "title": "should not report a component as re-rendered when its filtered parent bailed out"
+        },
+        {
+          "disabled": false,
+          "title": "should not report a component as re-rendered when behind a filtered fragment"
+        },
+        {
+          "disabled": false,
+          "title": "should correctly report sibling components that did not re-render"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/profilingCharts-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should be able to rebuild the store tree for each commit"
+        },
+        {
+          "disabled": false,
+          "title": "should support Lazy components"
+        },
+        {
+          "disabled": false,
+          "title": "should support Lazy components that are unmounted before resolving"
+        },
+        {
+          "disabled": false,
+          "title": "should handle transitioning from fallback back to content during profiling"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/profilingCommitTreeBuilder-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should expose passive and layout effect durations for render()"
+        },
+        {
+          "disabled": false,
+          "title": "should expose passive and layout effect durations for createRoot()"
+        },
+        {
+          "disabled": false,
+          "title": "should properly reset passive and layout effect durations between commits"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/profilingHostRoot-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should throw if importing older/unsupported data"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/profilingUtils-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should not allow a root node to be collapsed"
+        },
+        {
+          "disabled": false,
+          "title": "should properly handle a root with no visible nodes"
+        },
+        {
+          "disabled": false,
+          "title": "throws when a transition timeline is requested during initial paint"
+        },
+        {
+          "disabled": false,
+          "title": "throws before removing a node that is not a child of its parent"
+        },
+        {
+          "disabled": false,
+          "title": "receives operations queued while the frontend transport reconnects"
+        },
+        {
+          "disabled": false,
+          "title": "should handle when a component mounts before its owner"
+        },
+        {
+          "disabled": false,
+          "title": "should handle multibyte character strings"
+        },
+        {
+          "disabled": false,
+          "title": "should handle reorder of filtered elements"
+        },
+        {
+          "disabled": false,
+          "title": "should mark strict root elements as strict"
+        },
+        {
+          "disabled": false,
+          "title": "should mark non strict root elements as not strict"
+        },
+        {
+          "disabled": false,
+          "title": "should mark StrictMode subtree elements as strict"
+        },
+        {
+          "disabled": false,
+          "title": "should mark Activity subtree elements as hidden when mode is hidden"
+        },
+        {
+          "disabled": false,
+          "title": "should not mark Activity subtree as hidden when mode is visible"
+        },
+        {
+          "disabled": false,
+          "title": "should update hidden state when Activity mode toggles"
+        },
+        {
+          "disabled": false,
+          "title": "should propagate hidden state to deeply nested children"
+        },
+        {
+          "disabled": false,
+          "title": "should collapse hidden Activity subtree by default"
+        },
+        {
+          "disabled": false,
+          "title": "should dim nested visible Activity inside a hidden Activity"
+        },
+        {
+          "disabled": false,
+          "title": "should support mount and update operations"
+        },
+        {
+          "disabled": false,
+          "title": "should support mount and update operations for multiple roots (legacy render)"
+        },
+        {
+          "disabled": false,
+          "title": "should support mount and update operations for multiple roots (createRoot)"
+        },
+        {
+          "disabled": false,
+          "title": "should filter DOM nodes from the store tree"
+        },
+        {
+          "disabled": false,
+          "title": "should display Suspense nodes properly in various states"
+        },
+        {
+          "disabled": false,
+          "title": "should support nested Suspense nodes"
+        },
+        {
+          "disabled": false,
+          "title": "can override multiple Suspense simultaneously"
+        },
+        {
+          "disabled": false,
+          "title": "should display a partially rendered SuspenseList"
+        },
+        {
+          "disabled": false,
+          "title": "should support collapsing parts of the tree"
+        },
+        {
+          "disabled": false,
+          "title": "should support reordering of children"
+        },
+        {
+          "disabled": false,
+          "title": "should support mount and update operations"
+        },
+        {
+          "disabled": false,
+          "title": "should support mount and update operations for multiple roots (legacy render)"
+        },
+        {
+          "disabled": false,
+          "title": "should support mount and update operations for multiple roots (createRoot)"
+        },
+        {
+          "disabled": false,
+          "title": "should filter DOM nodes from the store tree"
+        },
+        {
+          "disabled": false,
+          "title": "should display Suspense nodes properly in various states"
+        },
+        {
+          "disabled": false,
+          "title": "should support expanding parts of the tree"
+        },
+        {
+          "disabled": false,
+          "title": "should support expanding deep parts of the tree"
+        },
+        {
+          "disabled": false,
+          "title": "should support reordering of children"
+        },
+        {
+          "disabled": false,
+          "title": "should not add new nodes when suspense is toggled"
+        },
+        {
+          "disabled": false,
+          "title": "should support a single root with a single child"
+        },
+        {
+          "disabled": false,
+          "title": "should support multiple roots with one children each"
+        },
+        {
+          "disabled": false,
+          "title": "should support a single root with multiple top level children"
+        },
+        {
+          "disabled": false,
+          "title": "should support multiple roots with multiple top level children"
+        },
+        {
+          "disabled": false,
+          "title": "detects and updates profiling support based on the attached roots (legacy render)"
+        },
+        {
+          "disabled": false,
+          "title": "detects and updates profiling support based on the attached roots (createRoot)"
+        },
+        {
+          "disabled": false,
+          "title": "should properly serialize non-string key values"
+        },
+        {
+          "disabled": false,
+          "title": "should show the right display names for special component types"
+        },
+        {
+          "disabled": false,
+          "title": "should support Lazy components (legacy render)"
+        },
+        {
+          "disabled": false,
+          "title": "should support Lazy components in (createRoot)"
+        },
+        {
+          "disabled": false,
+          "title": "should support Lazy components that are unmounted before they finish loading (legacy render)"
+        },
+        {
+          "disabled": false,
+          "title": "should support Lazy components that are unmounted before they finish loading in (createRoot)"
+        },
+        {
+          "disabled": false,
+          "title": "during render are counted"
+        },
+        {
+          "disabled": false,
+          "title": "during layout get counted"
+        },
+        {
+          "disabled": false,
+          "title": "are counted (after no delay)"
+        },
+        {
+          "disabled": false,
+          "title": "are flushed early when there is a new commit"
+        },
+        {
+          "disabled": false,
+          "title": "from react get counted [React >= 19.0.1]"
+        },
+        {
+          "disabled": false,
+          "title": "from react get counted [React 18.x]"
+        },
+        {
+          "disabled": false,
+          "title": "can be cleared for the whole app"
+        },
+        {
+          "disabled": false,
+          "title": "can be cleared for particular Fiber (only warnings)"
+        },
+        {
+          "disabled": false,
+          "title": "can be cleared for a particular Fiber (only errors)"
+        },
+        {
+          "disabled": false,
+          "title": "are updated when fibers are removed from the tree"
+        },
+        {
+          "disabled": false,
+          "title": "suspense boundary children should not double unmount and error"
+        },
+        {
+          "disabled": false,
+          "title": "does not show server components without any children reified children"
+        },
+        {
+          "disabled": false,
+          "title": "does show a server component that renders into a filtered node"
+        },
+        {
+          "disabled": false,
+          "title": "can render the same server component twice"
+        },
+        {
+          "disabled": false,
+          "title": "collapses multiple parent server components into one"
+        },
+        {
+          "disabled": false,
+          "title": "can reparent a child when the server components change"
+        },
+        {
+          "disabled": false,
+          "title": "splits a server component parent when a different child appears between"
+        },
+        {
+          "disabled": false,
+          "title": "can reorder keyed server components"
+        },
+        {
+          "disabled": false,
+          "title": "does not duplicate Server Component parents in keyed Fragments"
+        },
+        {
+          "disabled": false,
+          "title": "can reconcile Suspense in fallback positions"
+        },
+        {
+          "disabled": false,
+          "title": "can reconcile resuspended Suspense with Suspense in fallback positions"
+        },
+        {
+          "disabled": false,
+          "title": "should handle an empty root"
+        },
+        {
+          "disabled": false,
+          "title": "should reconcile promise-as-a-child"
+        },
+        {
+          "disabled": false,
+          "title": "should track suspended-by in filtered fallback suspending the root"
+        },
+        {
+          "disabled": false,
+          "title": "should track suspended-by in filtered fallback"
+        },
+        {
+          "disabled": false,
+          "title": "should keep suspended boundaries in the Suspense tree but not hidden Activity"
+        },
+        {
+          "disabled": false,
+          "title": "guesses a Suspense name based on the owner"
+        },
+        {
+          "disabled": false,
+          "title": "measures rects when reconnecting"
+        },
+        {
+          "disabled": false,
+          "title": "can reconcile newly visible Activity with filtered, stable children"
+        },
+        {
+          "disabled": false,
+          "title": "continues to consider Suspense boundary as blocking if some child still is suspended on removed io"
+        },
+        {
+          "disabled": false,
+          "title": "cleans up host hoistables"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/store-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should throw if filters are updated while profiling"
+        },
+        {
+          "disabled": false,
+          "title": "should support filtering by element type"
+        },
+        {
+          "disabled": false,
+          "title": "should filter Suspense"
+        },
+        {
+          "disabled": false,
+          "title": "should filter Activity"
+        },
+        {
+          "disabled": false,
+          "title": "should filter ViewTransition"
+        },
+        {
+          "disabled": false,
+          "title": "should ignore invalid ElementTypeRoot filter"
+        },
+        {
+          "disabled": false,
+          "title": "should filter by display name"
+        },
+        {
+          "disabled": true,
+          "title": "should filter by path"
+        },
+        {
+          "disabled": false,
+          "title": "should filter HOCs"
+        },
+        {
+          "disabled": false,
+          "title": "should not send a bridge update if the set of enabled filters has not changed"
+        },
+        {
+          "disabled": false,
+          "title": "should not break when Suspense nodes are filtered from the tree"
+        },
+        {
+          "disabled": false,
+          "title": "only counts for unfiltered components (legacy render)"
+        },
+        {
+          "disabled": false,
+          "title": "only counts for unfiltered components (createRoot)"
+        },
+        {
+          "disabled": false,
+          "title": "resets forced error and fallback states when filters are changed"
+        },
+        {
+          "disabled": false,
+          "title": "can filter by Activity slices"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/storeComponentFilters-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "resets forced error and fallback states when filters are changed"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/storeForceError-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should drill through intermediate components"
+        },
+        {
+          "disabled": false,
+          "title": "should drill through interleaved intermediate components"
+        },
+        {
+          "disabled": false,
+          "title": "should show the proper owners list order and contents after insertions and deletions"
+        },
+        {
+          "disabled": false,
+          "title": "should show the proper owners list ordering after reordered children"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/storeOwners-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should handle a stress test with different tree operations (Legacy Mode)"
+        },
+        {
+          "disabled": false,
+          "title": "should handle stress test with reordering (Legacy Mode)"
+        },
+        {
+          "disabled": false,
+          "title": "should handle a stress test for Suspense (Legacy Mode)"
+        },
+        {
+          "disabled": false,
+          "title": "should handle a stress test for Suspense without type change (Legacy Mode)"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/storeStressSync-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should handle a stress test with different tree operations (Concurrent Mode)"
+        },
+        {
+          "disabled": false,
+          "title": "should handle stress test with reordering (Concurrent Mode)"
+        },
+        {
+          "disabled": false,
+          "title": "should handle a stress test for Suspense (Concurrent Mode)"
+        },
+        {
+          "disabled": false,
+          "title": "should handle a stress test for Suspense without type change (Concurrent Mode)"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/storeStressTestConcurrent-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should group nodes by position without changing order within group"
+        },
+        {
+          "disabled": false,
+          "title": "should sort groups by lowest count in each group"
+        },
+        {
+          "disabled": false,
+          "title": "should maintain order within groups while sorting groups by lowest count"
+        },
+        {
+          "disabled": false,
+          "title": "should handle multiple groups with same minimum count"
+        },
+        {
+          "disabled": false,
+          "title": "should filter out nodes without rect property"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/traceUpdates-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "reactVersion flag is on >="
+        },
+        {
+          "disabled": false,
+          "title": "reactVersion flag is off >="
+        },
+        {
+          "disabled": false,
+          "title": "reactVersion flag is on <="
+        },
+        {
+          "disabled": false,
+          "title": "reactVersion flag is off <="
+        },
+        {
+          "disabled": false,
+          "title": "reactVersion flag is on >"
+        },
+        {
+          "disabled": false,
+          "title": "reactVersion flag is off >"
+        },
+        {
+          "disabled": false,
+          "title": "reactVersion flag is on <"
+        },
+        {
+          "disabled": false,
+          "title": "reactVersion flag is off <"
+        },
+        {
+          "disabled": false,
+          "title": "reactVersion flag is on ="
+        },
+        {
+          "disabled": false,
+          "title": "reactVersion flag is off ="
+        },
+        {
+          "disabled": false,
+          "title": "reactVersion fit"
+        },
+        {
+          "disabled": false,
+          "title": "reactVersion test.only"
+        },
+        {
+          "disabled": false,
+          "title": "reactVersion multiple pragmas fail"
+        },
+        {
+          "disabled": false,
+          "title": "reactVersion multiple pragmas pass"
+        },
+        {
+          "disabled": false,
+          "title": "reactVersion focused multiple pragmas fail"
+        },
+        {
+          "disabled": false,
+          "title": "reactVersion focused multiple pragmas pass"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/transform-react-version-pragma-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should select the next and previous elements in the tree"
+        },
+        {
+          "disabled": false,
+          "title": "should select child elements"
+        },
+        {
+          "disabled": false,
+          "title": "should select parent elements and then collapse"
+        },
+        {
+          "disabled": false,
+          "title": "should clear selection if the selected element is unmounted"
+        },
+        {
+          "disabled": false,
+          "title": "should navigate next/previous sibling and skip over children in between"
+        },
+        {
+          "disabled": false,
+          "title": "should navigate the owner hierarchy"
+        },
+        {
+          "disabled": false,
+          "title": "should find elements matching search text"
+        },
+        {
+          "disabled": false,
+          "title": "should select the next and previous items within the search results"
+        },
+        {
+          "disabled": false,
+          "title": "should jump directly to a specific search result by index"
+        },
+        {
+          "disabled": false,
+          "title": "should do nothing when jumping to a result with no search matches"
+        },
+        {
+          "disabled": false,
+          "title": "should advance past the selected result when retyping the same search"
+        },
+        {
+          "disabled": false,
+          "title": "should add newly mounted elements to the search results set if they match the current text"
+        },
+        {
+          "disabled": false,
+          "title": "should remove unmounted elements from the search results set"
+        },
+        {
+          "disabled": false,
+          "title": "should support entering and existing the owners tree view"
+        },
+        {
+          "disabled": false,
+          "title": "should remove an element from the owners list if it is unmounted"
+        },
+        {
+          "disabled": false,
+          "title": "should exit the owners list if the current owner is unmounted"
+        },
+        {
+          "disabled": false,
+          "title": "should exit the owners list if an element outside the list is selected"
+        },
+        {
+          "disabled": false,
+          "title": "should handle when there are no errors/warnings"
+        },
+        {
+          "disabled": false,
+          "title": "should cycle through the next errors/warnings and wrap around"
+        },
+        {
+          "disabled": false,
+          "title": "should cycle through the previous errors/warnings and wrap around"
+        },
+        {
+          "disabled": false,
+          "title": "should cycle through the next errors/warnings and wrap around with multiple roots"
+        },
+        {
+          "disabled": false,
+          "title": "should cycle through the previous errors/warnings and wrap around with multiple roots"
+        },
+        {
+          "disabled": false,
+          "title": "should select the next or previous element relative to the current selection"
+        },
+        {
+          "disabled": false,
+          "title": "should update correctly when errors/warnings are cleared for a fiber in the list"
+        },
+        {
+          "disabled": false,
+          "title": "should update correctly when errors/warnings are cleared for the currently selected fiber"
+        },
+        {
+          "disabled": false,
+          "title": "should update correctly when new errors/warnings are added"
+        },
+        {
+          "disabled": false,
+          "title": "should update correctly when all errors/warnings are cleared"
+        },
+        {
+          "disabled": false,
+          "title": "should update correctly when elements are added/removed"
+        },
+        {
+          "disabled": false,
+          "title": "should update correctly when elements are re-ordered"
+        },
+        {
+          "disabled": false,
+          "title": "should update select and auto-expand parts components within hidden parts of the tree"
+        },
+        {
+          "disabled": false,
+          "title": "should preserve errors for fibers even if they are filtered out of the tree initially"
+        },
+        {
+          "disabled": false,
+          "title": "should properly handle errors/warnings from components inside of delayed Suspense"
+        },
+        {
+          "disabled": false,
+          "title": "should properly handle errors/warnings from components that dont mount because of Suspense"
+        },
+        {
+          "disabled": false,
+          "title": "should properly show errors/warnings from components in the Suspense fallback tree"
+        },
+        {
+          "disabled": false,
+          "title": "should properly handle errors from components that dont mount because of an error"
+        },
+        {
+          "disabled": false,
+          "title": "should properly handle warnings from components that dont mount because of an error"
+        },
+        {
+          "disabled": false,
+          "title": "should properly handle errors/warnings from inside of an error boundary"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/treeContext-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should not cause a loop with values like NaN"
+        },
+        {
+          "disabled": false,
+          "title": "should override editable state when external props are updated"
+        },
+        {
+          "disabled": false,
+          "title": "should not override editable state when external props are updated if there are pending changes"
+        },
+        {
+          "disabled": false,
+          "title": "should parse edits to ensure valid JSON"
+        },
+        {
+          "disabled": false,
+          "title": "should reset to external value upon request"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/useEditableValue-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should return a function name"
+        },
+        {
+          "disabled": false,
+          "title": "should return a displayName name if specified"
+        },
+        {
+          "disabled": false,
+          "title": "should return the fallback for anonymous functions"
+        },
+        {
+          "disabled": false,
+          "title": "should return Anonymous for anonymous functions without a fallback"
+        },
+        {
+          "disabled": false,
+          "title": "should return a fallback when the name prop is not a string"
+        },
+        {
+          "disabled": false,
+          "title": "should parse a component stack trace"
+        },
+        {
+          "disabled": false,
+          "title": "should return correct display name for an element with function type"
+        },
+        {
+          "disabled": false,
+          "title": "should return correct display name for an element with a type of StrictMode"
+        },
+        {
+          "disabled": false,
+          "title": "should return correct display name for an element with a type of SuspenseList"
+        },
+        {
+          "disabled": false,
+          "title": "should return NotImplementedInDevtools for an element with invalid symbol type"
+        },
+        {
+          "disabled": false,
+          "title": "should return NotImplementedInDevtools for an element with invalid type"
+        },
+        {
+          "disabled": false,
+          "title": "should return Element for null type"
+        },
+        {
+          "disabled": false,
+          "title": "should format simple strings"
+        },
+        {
+          "disabled": false,
+          "title": "should format multiple argument types"
+        },
+        {
+          "disabled": false,
+          "title": "should support string substitutions"
+        },
+        {
+          "disabled": false,
+          "title": "should support integer substitutions"
+        },
+        {
+          "disabled": false,
+          "title": "should support float substitutions"
+        },
+        {
+          "disabled": false,
+          "title": "should keep argument alignment across mixed substitutions"
+        },
+        {
+          "disabled": false,
+          "title": "should gracefully handle Symbol types"
+        },
+        {
+          "disabled": false,
+          "title": "should gracefully handle Symbol type for the first argument"
+        },
+        {
+          "disabled": false,
+          "title": "should gracefully handle objects with no prototype"
+        },
+        {
+          "disabled": false,
+          "title": "should format empty arrays"
+        },
+        {
+          "disabled": false,
+          "title": "should bail out of strings with styles"
+        },
+        {
+          "disabled": false,
+          "title": "should format simple strings"
+        },
+        {
+          "disabled": false,
+          "title": "should format string substituions"
+        },
+        {
+          "disabled": false,
+          "title": "should support multiple argument types"
+        },
+        {
+          "disabled": false,
+          "title": "should properly format escaped string substituions"
+        },
+        {
+          "disabled": false,
+          "title": "should format non string inputs as the first argument"
+        },
+        {
+          "disabled": false,
+          "title": "gte should compare versions correctly"
+        },
+        {
+          "disabled": false,
+          "title": "gt should compare versions correctly"
+        },
+        {
+          "disabled": false,
+          "title": "should return true for plain objects"
+        },
+        {
+          "disabled": false,
+          "title": "should return false if object is a class instance"
+        },
+        {
+          "disabled": false,
+          "title": "should return false for objects, which have not only Object in its prototype chain"
+        },
+        {
+          "disabled": false,
+          "title": "should return false for primitives"
+        },
+        {
+          "disabled": false,
+          "title": "should return true for objects with no prototype"
+        },
+        {
+          "disabled": false,
+          "title": "should return null if passed empty string"
+        },
+        {
+          "disabled": false,
+          "title": "should construct the source from the first frame if available"
+        },
+        {
+          "disabled": false,
+          "title": "should construct the source from highest available frame"
+        },
+        {
+          "disabled": false,
+          "title": "should construct the source from frame, which has only url specified"
+        },
+        {
+          "disabled": false,
+          "title": "should parse sourceURL correctly if it includes parentheses"
+        },
+        {
+          "disabled": false,
+          "title": "should support Firefox stack"
+        },
+        {
+          "disabled": false,
+          "title": "should parse source map urls"
+        },
+        {
+          "disabled": false,
+          "title": "should not throw for invalid base URL with relative source map"
+        },
+        {
+          "disabled": false,
+          "title": "should resolve absolute source map even if base URL is invalid"
+        },
+        {
+          "disabled": false,
+          "title": "works with empty arguments list"
+        },
+        {
+          "disabled": false,
+          "title": "works for string without escape sequences"
+        },
+        {
+          "disabled": false,
+          "title": "works with strings templates"
+        },
+        {
+          "disabled": false,
+          "title": "skips %%s"
+        },
+        {
+          "disabled": false,
+          "title": "works with %%%s"
+        },
+        {
+          "disabled": false,
+          "title": "doesn't inline objects"
+        },
+        {
+          "disabled": false,
+          "title": "doesn't inline css"
+        },
+        {
+          "disabled": false,
+          "title": "formats nullish values"
+        },
+        {
+          "disabled": false,
+          "title": "keeps a trailing percent sign"
+        },
+        {
+          "disabled": false,
+          "title": "keeps specifiers literal when no argument is supplied"
+        },
+        {
+          "disabled": false,
+          "title": "should log an applied activity slice change and advance past its value"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/__tests__/utils-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should gracefully handle empty values"
+        },
+        {
+          "disabled": false,
+          "title": "should support simple style objects"
+        },
+        {
+          "disabled": false,
+          "title": "should support multiple style objects"
+        },
+        {
+          "disabled": false,
+          "title": "should filter empty rules"
+        },
+        {
+          "disabled": false,
+          "title": "should support pseudo-classes"
+        },
+        {
+          "disabled": false,
+          "title": "should support nested selectors"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/backend/StyleX/__tests__/utils-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should parse names for built-in hooks"
+        },
+        {
+          "disabled": false,
+          "title": "should parse names for custom hooks"
+        },
+        {
+          "disabled": false,
+          "title": "should parse names for nested hook calls"
+        },
+        {
+          "disabled": false,
+          "title": "should skip names for non-nameable hooks"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/hooks/__tests__/generateHookMap-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should parse names for built-in hooks"
+        },
+        {
+          "disabled": false,
+          "title": "should parse names for custom hooks"
+        },
+        {
+          "disabled": false,
+          "title": "should parse names for nested hook calls"
+        },
+        {
+          "disabled": false,
+          "title": "should skip names for non-nameable hooks"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/hooks/__tests__/getHookNameForLocation-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should parse names for useState()"
+        },
+        {
+          "disabled": false,
+          "title": "should parse names for useReducer()"
+        },
+        {
+          "disabled": false,
+          "title": "should skip loading source files for unnamed hooks like useEffect"
+        },
+        {
+          "disabled": false,
+          "title": "should skip loading source files for unnamed hooks like useEffect (alternate)"
+        },
+        {
+          "disabled": false,
+          "title": "should parse names for custom hooks"
+        },
+        {
+          "disabled": false,
+          "title": "should parse names for code using hooks indirectly"
+        },
+        {
+          "disabled": false,
+          "title": "should parse names for code using nested hooks"
+        },
+        {
+          "disabled": false,
+          "title": "should return null for custom hooks without explicit names"
+        },
+        {
+          "disabled": false,
+          "title": "should work for simple components"
+        },
+        {
+          "disabled": false,
+          "title": "should work with more complex files and components"
+        },
+        {
+          "disabled": false,
+          "title": "should work for custom hook"
+        },
+        {
+          "disabled": false,
+          "title": "should work when code is using hooks indirectly"
+        },
+        {
+          "disabled": false,
+          "title": "should work when code is using nested hooks"
+        },
+        {
+          "disabled": false,
+          "title": "should work for external hooks"
+        },
+        {
+          "disabled": false,
+          "title": "should work when multiple hooks are on a line"
+        },
+        {
+          "disabled": true,
+          "title": "should work for inline requires"
+        },
+        {
+          "disabled": false,
+          "title": "should support sources that contain the string \"sourceMappingURL=\""
+        },
+        {
+          "disabled": false,
+          "title": "should work for simple components"
+        },
+        {
+          "disabled": false,
+          "title": "should work with more complex files and components"
+        },
+        {
+          "disabled": false,
+          "title": "should work for custom hook"
+        },
+        {
+          "disabled": false,
+          "title": "should work when code is using hooks indirectly"
+        },
+        {
+          "disabled": false,
+          "title": "should work when code is using nested hooks"
+        },
+        {
+          "disabled": false,
+          "title": "should work for external hooks"
+        },
+        {
+          "disabled": false,
+          "title": "should work when multiple hooks are on a line"
+        },
+        {
+          "disabled": true,
+          "title": "should work for inline requires"
+        },
+        {
+          "disabled": false,
+          "title": "should support sources that contain the string \"sourceMappingURL=\""
+        },
+        {
+          "disabled": false,
+          "title": "should use worker"
+        }
+      ],
+      "path": "packages/react-devtools-shared/src/hooks/__tests__/parseHookNames-test.js"
+    },
+    {
+      "definitions": [
+        {
+          "disabled": false,
+          "title": "should auto-Profile all fibers if the DevTools hook is detected"
+        },
+        {
+          "disabled": false,
+          "title": "should reset the fiber stack correctly after an error when profiling host roots"
+        },
+        {
+          "disabled": false,
+          "title": "regression test: #17159"
+        }
+      ],
+      "path": "packages/react/src/__tests__/ReactProfilerDevToolsIntegration-test.internal.js"
+    }
+  ]
+}

@@ -61,6 +61,19 @@ describe("extractHookVariableName", () => {
     expect(extractHookVariableName(source, 1, columnOfHookCall)).toBe("count");
   });
 
+  it("extracts name through a deep member-access prefix", () => {
+    const source = `const value = a.b.c.useState(0);`;
+    expect(extractHookVariableName(source, 1, source.indexOf("useState"))).toBe("value");
+  });
+
+  it("returns quickly for a long dotted chain that is not a hook", () => {
+    const chain = Array.from({ length: 30 }, () => "segment").join(".");
+    const source = `const value = ${chain}.notAHook(`;
+    const startedAt = performance.now();
+    expect(extractHookVariableName(source, 1, 0)).toBeNull();
+    expect(performance.now() - startedAt).toBeLessThan(200);
+  });
+
   it("extracts name from simple useRef", () => {
     const source = `const inputRef = useRef(null);`;
     const columnOfHookCall = source.indexOf("useRef");
@@ -77,6 +90,12 @@ describe("extractHookVariableName", () => {
     const source = `const userData = useUserData(userId);`;
     const columnOfHookCall = source.indexOf("useUserData");
     expect(extractHookVariableName(source, 1, columnOfHookCall)).toBe("userData");
+  });
+
+  it("extracts name from an inline require", () => {
+    const source = `const [value, setValue] = require("react").useState("");`;
+    const columnOfHookCall = source.indexOf("require");
+    expect(extractHookVariableName(source, 1, columnOfHookCall)).toBe("value");
   });
 
   it("extracts name from React.useState", () => {
@@ -329,6 +348,11 @@ describe("extractHookVariableName", () => {
     const source = `const [] = useCustomHook();`;
     const columnOfHookCall = source.indexOf("useCustomHook");
     expect(extractHookVariableName(source, 1, columnOfHookCall)).toBeNull();
+  });
+
+  it("handles columnless source maps for named hook declarations", () => {
+    const source = `const [count, setCount] = useState(0);`;
+    expect(extractHookVariableName(source, 1, 0)).toBe("count");
   });
 
   it("handles column at very start of line", () => {

@@ -4,6 +4,7 @@ import {
   getSourceFromSourceMap,
   getSourceMap,
   type SourceFetch,
+  type SourceMapRequestOptions,
 } from "./symbolication.js";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -19,8 +20,10 @@ const UNNAMED_HOOKS = new Set([
 
 // HACK: matches `const/let/var [name, ...] = use...(...` or `const/let/var name = use...(...`
 // across up to 10 lines; handles TypeScript generics like `useState<T>(`
+// The member-access prefix consumes one dotless segment per repetition. Letting a segment
+// span dots too would make the parse ambiguous and backtrack exponentially on long chains.
 const HOOK_DECLARATION_REGEX =
-  /(?:const|let|var)\s+((?:\[[\s\S]*?\]|\w+))\s*=\s*(?:[\w$.]+\.)*use[A-Z]\w*\s*(?:<[\s\S]*?>)?\s*\(/g;
+  /(?:const|let|var)\s+((?:\[[\s\S]*?\]|\w+))\s*=\s*(?:(?:[\w$]+|require\s*\([^)]*\))\.)*use[A-Z]\w*\s*(?:<[\s\S]*?>)?\s*\(/g;
 
 export const getHookSourceLocationKey = (hookSource: HookSource): string =>
   `${hookSource.fileName ?? ""}:${hookSource.lineNumber ?? 0}:${hookSource.columnNumber ?? 0}`;
@@ -63,12 +66,13 @@ export const extractHookVariableName = (
 
   const allMatches = [...sourceChunk.matchAll(HOOK_DECLARATION_REGEX)];
 
-  const hookPositionInChunk = sourceChunk.lastIndexOf("\n") + 1 + columnNumber;
-  const closestMatch = allMatches.filter((match) => match.index! <= hookPositionInChunk).at(-1);
+  const hookLineStart = sourceChunk.lastIndexOf("\n") + 1;
+  const hookPositionInChunk = hookLineStart + columnNumber;
+  const closestMatch =
+    allMatches.filter((match) => match.index! <= hookPositionInChunk).at(-1) ??
+    (columnNumber === 0 ? allMatches.find((match) => match.index! >= hookLineStart) : undefined);
 
-  if (closestMatch) {
-    return extractVariableNameFromBinding(closestMatch[1]);
-  }
+  if (closestMatch) return extractVariableNameFromBinding(closestMatch[1]);
 
   return null;
 };
@@ -82,6 +86,7 @@ interface ResolvedSource {
 interface SourceResolutionContext {
   sourceContentCache: Map<string, string | null>;
   fetchFn?: SourceFetch;
+  requestOptions?: SourceMapRequestOptions;
 }
 
 const resolveOriginalSource = async (
@@ -90,9 +95,9 @@ const resolveOriginalSource = async (
   runtimeColumn: number,
   context: SourceResolutionContext,
 ): Promise<ResolvedSource | null> => {
-  const { sourceContentCache, fetchFn } = context;
+  const { sourceContentCache, fetchFn, requestOptions } = context;
 
-  const sourceMap = await getSourceMap(runtimeFileName, true, fetchFn);
+  const sourceMap = await getSourceMap(runtimeFileName, true, fetchFn, requestOptions);
 
   if (sourceMap) {
     const originalLocation = getSourceFromSourceMap(sourceMap, runtimeLine, runtimeColumn);
@@ -136,6 +141,7 @@ const resolveOriginalSource = async (
 export const parseHookNames = async (
   hooksTree: HooksTree,
   fetchFn?: SourceFetch,
+  requestOptions?: SourceMapRequestOptions,
 ): Promise<HookNames> => {
   const hookNames: HookNames = new Map();
   const hooksList = flattenHooksTree(hooksTree);
@@ -145,6 +151,7 @@ export const parseHookNames = async (
   const resolutionContext: SourceResolutionContext = {
     sourceContentCache: new Map(),
     fetchFn,
+    requestOptions,
   };
 
   await Promise.all(

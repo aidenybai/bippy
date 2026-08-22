@@ -1,14 +1,21 @@
 // intentionally avoids importing ../index.js so this file controls hook installation
+import { runInNewContext } from "node:vm";
 import { expect, it, vi } from "vite-plus/test";
 import { ReactBuildType } from "../src/react-internals/index.js";
 import {
   _onActiveListeners,
   getRDTHook,
   hasRDTHook,
+  installRDTHook,
   onRendererInject,
   patchRDTHook,
 } from "../src/rdt-hook.js";
-import type { ReactDevToolsGlobalHook, ReactRenderer } from "../src/react-internals/index.js";
+import type { ReactDevToolsTarget } from "../src/rdt-hook.js";
+import type {
+  FiberRoot,
+  ReactDevToolsGlobalHook,
+  ReactRenderer,
+} from "../src/react-internals/index.js";
 
 const createFakeRenderer = (): ReactRenderer =>
   ({
@@ -43,6 +50,46 @@ it("inject should activate instrumentation and notify listeners", () => {
   const secondRendererId = rdtHook.inject(createFakeRenderer());
   expect(secondRendererId).toBe(2);
   expect(onActive).toHaveBeenCalledTimes(1);
+});
+
+it("getFiberRoots should return a memoized set that callers can register roots into", () => {
+  const target = {} as ReactDevToolsTarget;
+  const rdtHook = installRDTHook(undefined, target);
+  const rendererId = rdtHook.inject(createFakeRenderer());
+  const mountedRoot = { current: { memoizedState: { element: {} } } } as unknown as FiberRoot;
+
+  rdtHook.getFiberRoots?.(rendererId).add(mountedRoot);
+  expect(rdtHook.getFiberRoots?.(rendererId).has(mountedRoot)).toBe(true);
+
+  const rendererRoots = rdtHook.getFiberRoots?.(rendererId);
+  const unmountedRoot = { current: { memoizedState: { element: null } } } as unknown as FiberRoot;
+  rdtHook.onCommitFiberRoot?.(rendererId, unmountedRoot);
+  rdtHook.onCommitFiberRoot?.(rendererId, mountedRoot);
+  expect(rdtHook.getFiberRoots?.(rendererId)).toBe(rendererRoots);
+});
+
+it("patchRDTHook should keep a renderer map created in another realm", () => {
+  const foreignRenderers: Map<number, ReactRenderer> = runInNewContext("new Map()");
+  foreignRenderers.set(1, createFakeRenderer());
+  const target = {
+    __REACT_DEVTOOLS_GLOBAL_HOOK__: {
+      checkDCE: () => {},
+      hasUnsupportedRendererAttached: false,
+      inject: () => 0,
+      on: () => {},
+      onCommitFiberRoot: () => {},
+      onCommitFiberUnmount: () => {},
+      onPostCommitFiberRoot: () => {},
+      renderers: foreignRenderers,
+      supportsFiber: true,
+      supportsFlight: true,
+    },
+  };
+
+  expect(foreignRenderers instanceof Map).toBe(false);
+  patchRDTHook(undefined, target);
+  expect(target.__REACT_DEVTOOLS_GLOBAL_HOOK__.renderers).toBe(foreignRenderers);
+  expect(target.__REACT_DEVTOOLS_GLOBAL_HOOK__.renderers.size).toBe(1);
 });
 
 it("checkDCE should schedule an error for badly built react", () => {

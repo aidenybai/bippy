@@ -1,3 +1,5 @@
+import { getRenderer } from "../core.js";
+import type { ReactDevToolsTarget } from "../rdt-hook.js";
 import type {
   Fiber,
   ContextDependency,
@@ -548,6 +550,19 @@ const parseHookName = (functionName: string | undefined): string => {
   return functionName.slice(startIndex);
 };
 
+// Unlike upstream, bippy routes every dispatcher method through a shared log helper, so those
+// frames appear in captured stacks and must not become tree levels. Names are read off the
+// live functions rather than matched by prefix, so user hooks cannot collide and minified
+// builds stay accurate.
+const INTERNAL_HOOK_FRAME_NAMES = new Set(
+  [pushHookLogEntry, ...Object.values(dispatcher)].map((internalFunction) =>
+    parseHookName(internalFunction.name),
+  ),
+);
+
+const isInternalHookFrame = (hookName: string): boolean =>
+  hookName !== "" && INTERNAL_HOOK_FRAME_NAMES.has(hookName);
+
 const isReactWrapper = (functionName: string | undefined, wrapperName: string): boolean => {
   const hookName = parseHookName(functionName);
   if (wrapperName === "HostTransitionStatus") {
@@ -618,8 +633,10 @@ const buildTree = (rootStack: StackFrame[], capturedHookLog: HookLogEntry[]): Ho
     const [primitiveFrame, stack] = parseTrimmedStack(rootStack, hook);
     let displayName = hook.displayName;
     if (displayName === null && primitiveFrame !== null) {
-      displayName =
-        parseHookName(primitiveFrame.functionName) || parseHookName(hook.dispatcherHookName);
+      const primitiveName = parseHookName(primitiveFrame.functionName);
+      displayName = isInternalHookFrame(primitiveName)
+        ? null
+        : primitiveName || parseHookName(hook.dispatcherHookName);
     }
 
     if (stack !== null) {
@@ -684,17 +701,40 @@ const buildTree = (rootStack: StackFrame[], capturedHookLog: HookLogEntry[]): Ho
   }
 
   processDebugValues(rootChildren, null);
+  removeInternalHookFrames(rootChildren, null);
   return rootChildren;
+};
+
+const removeInternalHookFrames = (
+  hooksTree: HooksTree,
+  parentHooksNode: HooksNode | null,
+): void => {
+  for (let nodeIndex = 0; nodeIndex < hooksTree.length; nodeIndex++) {
+    const hooksNode = hooksTree[nodeIndex];
+    if (isInternalHookFrame(hooksNode.name)) {
+      if (parentHooksNode !== null && hooksNode.value !== undefined) {
+        if (parentHooksNode.value === undefined) parentHooksNode.value = hooksNode.value;
+        else if (Array.isArray(parentHooksNode.value)) {
+          parentHooksNode.value = [...parentHooksNode.value, hooksNode.value];
+        } else parentHooksNode.value = [parentHooksNode.value, hooksNode.value];
+      }
+      hooksTree.splice(nodeIndex, 1, ...hooksNode.subHooks);
+      nodeIndex--;
+    } else {
+      removeInternalHookFrames(hooksNode.subHooks, hooksNode);
+    }
+  }
 };
 
 const processDebugValues = (hooksTree: HooksTree, parentHooksNode: HooksNode | null): void => {
   const debugValueNodes: HooksNode[] = [];
   for (let nodeIndex = 0; nodeIndex < hooksTree.length; nodeIndex++) {
     const hooksNode = hooksTree[nodeIndex];
-    if (hooksNode.name === "DebugValue" && hooksNode.subHooks.length === 0) {
-      hooksTree.splice(nodeIndex, 1);
+    if (hooksNode.name === "DebugValue") {
+      hooksTree.splice(nodeIndex, 1, ...hooksNode.subHooks);
       nodeIndex--;
-      debugValueNodes.push(hooksNode);
+      // Internal frames surface as valueless DebugValue levels; only real labels bubble up.
+      if (hooksNode.value !== undefined) debugValueNodes.push(hooksNode);
     } else {
       processDebugValues(hooksNode.subHooks, hooksNode);
     }
@@ -785,9 +825,12 @@ const restoreConsole = (originalMethods: Record<string, unknown>): void => {
   }
 };
 
-const performDispatcherInspection = (
+// The render call must happen in the same frame that captures the ancestor stack,
+// otherwise an extra frame lands in every hook's trimmed stack and becomes a bogus tree level.
+const performDispatcherInspection = <TArgs extends unknown[]>(
   dispatcherRef: RendererDispatcherRef,
-  renderFn: () => void,
+  renderFunction: (...args: TArgs) => unknown,
+  ...renderArgs: TArgs
 ): HooksTree => {
   const previousDispatcher = readDispatcher(dispatcherRef);
   writeDispatcher(dispatcherRef, dispatcherProxy);
@@ -797,7 +840,7 @@ const performDispatcherInspection = (
 
   try {
     ancestorStackError = new Error();
-    renderFn();
+    renderFunction(...renderArgs);
   } catch (renderError) {
     handleRenderFunctionError(renderError);
   } finally {
@@ -810,8 +853,12 @@ const performDispatcherInspection = (
   return buildTree(rootStack, capturedHookLog);
 };
 
-const requireDispatcherRef = (): RendererDispatcherRef => {
-  const dispatcherRef = getRendererDispatcherRefs()[0];
+const requireDispatcherRef = (
+  fiber?: Fiber,
+  target: ReactDevToolsTarget = globalThis,
+): RendererDispatcherRef => {
+  const rendererDispatcherRef = fiber ? getRenderer(fiber, target)?.currentDispatcherRef : null;
+  const dispatcherRef = rendererDispatcherRef ?? getRendererDispatcherRefs(target)[0];
   if (!dispatcherRef) {
     throw new BippyHookInspectionError(
       "Bippy couldn’t find a React renderer. Load React and install Bippy’s hook.",
@@ -848,8 +895,73 @@ const resolveContextDependency = (fiber: Fiber): void => {
   }
 };
 
+const normalizeStandaloneHooks = (hooksTree: HooksTree): HooksTree => {
+  const normalizeNode = (hooksNode: HooksNode): HooksNode => {
+    const subHooks = hooksNode.subHooks.map(normalizeNode);
+    if (subHooks.length === 1) {
+      const childHook = subHooks[0];
+      if (hooksNode.name === "Context" && childHook.id === null) {
+        return { ...childHook, hookSource: hooksNode.hookSource };
+      }
+      if (hooksNode.name === "FormStatus" && childHook.name === "HostTransitionStatus") {
+        return { ...hooksNode, subHooks: [], value: childHook.value };
+      }
+      if (hooksNode.name === "Use") {
+        if (childHook.name === "Context") {
+          return { ...childHook, hookSource: hooksNode.hookSource };
+        }
+        if (childHook.name === "Promise" || childHook.name === "Unresolved") {
+          return {
+            ...hooksNode,
+            debugInfo: childHook.debugInfo,
+            subHooks: [],
+            value: childHook.value,
+          };
+        }
+      }
+      if (
+        hooksNode.id === null &&
+        hooksNode.value === undefined &&
+        (hooksNode.name === childHook.name || hooksNode.name === "<anonymous>")
+      ) {
+        return { ...childHook, hookSource: hooksNode.hookSource };
+      }
+    }
+    return { ...hooksNode, subHooks };
+  };
+
+  return hooksTree.map(normalizeNode);
+};
+
+export const inspectHooks = (
+  renderFunction: (props: Record<string, unknown>) => unknown,
+  props: Record<string, unknown>,
+  target: ReactDevToolsTarget = globalThis,
+): HooksTree => {
+  const dispatcherRef = requireDispatcherRef(undefined, target);
+  getPrimitiveStackCache();
+  currentHook = null;
+  currentFiber = null;
+  currentContextDependency = null;
+  currentThenableState = null;
+  currentThenableIndex = 0;
+  const originalConsoleMethods = suppressConsole();
+  try {
+    return normalizeStandaloneHooks(
+      performDispatcherInspection(dispatcherRef, renderFunction, props),
+    );
+  } finally {
+    currentHook = null;
+    currentFiber = null;
+    currentContextDependency = null;
+    currentThenableState = null;
+    currentThenableIndex = 0;
+    restoreConsole(originalConsoleMethods);
+  }
+};
+
 export const getFiberHooks = (fiber: Fiber): HooksTree => {
-  const dispatcherRef = requireDispatcherRef();
+  const dispatcherRef = requireDispatcherRef(fiber);
   const workTags = getReactWorkTagsForFiber(fiber);
 
   if (
@@ -895,9 +1007,15 @@ export const getFiberHooks = (fiber: Fiber): HooksTree => {
       if (!isForwardRefRenderType(type)) {
         throw new BippyHookInspectionError("ForwardRef fiber is missing its render function.");
       }
-      return performDispatcherInspection(dispatcherRef, () => {
-        type.render(props, fiber.ref);
-      });
+      const hooksTree = normalizeStandaloneHooks(
+        performDispatcherInspection(dispatcherRef, type.render, props, fiber.ref),
+      );
+      for (const hooksNode of hooksTree) {
+        if (hooksNode.hookSource?.functionName === "Object.render") {
+          hooksNode.hookSource.functionName = null;
+        }
+      }
+      return hooksTree;
     }
 
     if (typeof type !== "function") {
@@ -905,9 +1023,7 @@ export const getFiberHooks = (fiber: Fiber): HooksTree => {
         "Function component fiber is missing its component function.",
       );
     }
-    return performDispatcherInspection(dispatcherRef, () => {
-      type(props);
-    });
+    return normalizeStandaloneHooks(performDispatcherInspection(dispatcherRef, type, props));
   } finally {
     currentFiber = null;
     currentHook = null;

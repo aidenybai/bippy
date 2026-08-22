@@ -6,6 +6,7 @@ import {
   getSourceFromSourceMap,
   getSourceMap,
   type SourceFetch,
+  type SourceMapRequestOptions,
 } from "./symbolication.js";
 import type { StackFrame } from "./parse-stack.js";
 
@@ -53,8 +54,9 @@ const extractComponentNameFromSource = (
 
 export const getDisplayNameFromSource = async (
   fiber: Fiber,
-  cache = true,
-  fetchFn?: SourceFetch,
+  shouldUseCache = true,
+  sourceFetch?: SourceFetch,
+  requestOptions: SourceMapRequestOptions = {},
 ): Promise<string | null> => {
   const stackFrame =
     getDefinitionFrameFromOwnedChild(fiber) ??
@@ -64,7 +66,12 @@ export const getDisplayNameFromSource = async (
     return getDisplayName(fiber.type);
   }
 
-  const bundleSourceMap = await getSourceMap(stackFrame.fileName, cache, fetchFn);
+  const bundleSourceMap = await getSourceMap(
+    stackFrame.fileName,
+    shouldUseCache,
+    sourceFetch,
+    requestOptions,
+  );
 
   if (!bundleSourceMap) {
     return getDisplayName(fiber.type);

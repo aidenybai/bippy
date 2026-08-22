@@ -1,8 +1,10 @@
 import "../src/index.js"; // KEEP THIS LINE ON TOP
 
 import { expect, it, vi } from "vite-plus/test";
+import { ReactBuildType } from "../src/react-internals/index.js";
 import type { FiberRoot, ReactDevToolsGlobalHook } from "../src/react-internals/index.js";
 import { _fiberRoots, getRDTHook, instrument, isInstrumentationActive } from "../src/index.js";
+import type { ReactDevToolsTarget } from "../src/index.js";
 import React from "react";
 import { render } from "@testing-library/react";
 
@@ -33,6 +35,27 @@ it("onActive is called", () => {
   render(<Example />);
   expect(onActive).toHaveBeenCalled();
   expect(isInstrumentationActive()).toBe(true);
+});
+
+it("scopes onActive listeners to their target", () => {
+  const firstTarget: ReactDevToolsTarget = {};
+  const secondTarget: ReactDevToolsTarget = {};
+  const firstOnActive = vi.fn();
+  const secondOnActive = vi.fn();
+  const unsubscribeFirst = instrument({ onActive: firstOnActive, target: firstTarget });
+  const unsubscribeSecond = instrument({ onActive: secondOnActive, target: secondTarget });
+
+  getRDTHook(undefined, firstTarget).inject({
+    bundleType: ReactBuildType.Development,
+    rendererPackageName: "first-renderer",
+    version: "19.0.0",
+  });
+
+  expect(firstOnActive).toHaveBeenCalledOnce();
+  expect(secondOnActive).not.toHaveBeenCalled();
+
+  unsubscribeFirst();
+  unsubscribeSecond();
 });
 
 it("onCommitFiberRoot is called", () => {

@@ -7,3 +7,7 @@ coverage
 .next
 next-env.d.ts
 *.tsbuildinfo
+
+# copied into the package by prepack
+packages/bippy/README.md
+packages/bippy/LICENSE

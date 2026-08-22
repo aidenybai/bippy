@@ -2,6 +2,7 @@ import "../src/index.js";
 
 import { expect, it } from "vite-plus/test";
 import { getRDTHook, getRenderer, instrument } from "../src/index.js";
+import type { ReactDevToolsTarget } from "../src/index.js";
 import type { Fiber, FiberRoot, ReactRenderer } from "../src/react-internals/index.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
 
@@ -57,6 +58,20 @@ it("returns the renderer that committed the fiber root", () => {
   const { childFiber, fiberRoot } = createFiberTree();
   rdtHook.onCommitFiberRoot(2, fiberRoot, undefined);
   expect(getRenderer(childFiber)).toBe(secondRenderer);
+});
+
+it("backfills the renderer from an explicit target", () => {
+  const target: ReactDevToolsTarget = {};
+  const targetHook = getRDTHook(undefined, target);
+  const { childFiber, fiberRoot } = createFiberTree();
+  targetHook.renderers.set(2, secondRenderer);
+  targetHook.getFiberRoots = () => new Set([fiberRoot]);
+  try {
+    expect(getRenderer(childFiber, target)).toBe(secondRenderer);
+  } finally {
+    Reflect.set(fiberRoot.current, "memoizedState", { element: null });
+    targetHook.onCommitFiberRoot(2, fiberRoot, undefined);
+  }
 });
 
 it("returns null when the renderer is no longer registered", () => {

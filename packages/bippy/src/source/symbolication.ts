@@ -39,6 +39,7 @@ export interface SourceFetch {
 }
 
 export interface SourceMapRequestOptions {
+  allowCrossOriginSourceMap?: boolean;
   allowUnsafeServerFetch?: boolean;
   maxBundleSizeBytes?: number;
   maxSourceMapSizeBytes?: number;
@@ -49,6 +50,7 @@ export interface SourceMapRequestOptions {
 export interface SourceMap {
   file?: string;
   ignoredSourceIndices?: Set<number>;
+  sourceMapUrl?: string;
   mappings: SourceMapSegment[][];
   names?: string[];
   sections?: DecodedSourceMapSection[];
@@ -298,10 +300,14 @@ const resolveUrl = (reference: string, baseUrl: string): string | null => {
     return new URL(reference, baseUrl).toString();
   } catch {
     try {
-      const resolvedUrl = new URL(reference, new URL(baseUrl, "https://bippy.invalid/"));
-      return `${resolvedUrl.pathname}${resolvedUrl.search}${resolvedUrl.hash}`;
+      return new URL(reference).toString();
     } catch {
-      return null;
+      try {
+        const resolvedUrl = new URL(reference, new URL(baseUrl, "https://bippy.invalid/"));
+        return `${resolvedUrl.pathname}${resolvedUrl.search}${resolvedUrl.hash}`;
+      } catch {
+        return null;
+      }
     }
   }
 };
@@ -460,6 +466,11 @@ const resolveSourceMapSources = (rawSourceMap: StandardSourceMap, sourceMapUrl: 
     resolveSourceRoot(rawSourceMap.sourceRoot, source, sourceMapUrl),
   );
 
+// An inline URL carries the whole encoded map, so retaining it in the cache would
+// double the memory held per source map for the lifetime of the process.
+const getRetainableSourceMapUrl = (sourceMapUrl: string): string | undefined =>
+  INLINE_SOURCEMAP_REGEX.test(sourceMapUrl) ? undefined : sourceMapUrl;
+
 const decodeStandardSourceMap = (
   rawSourceMap: StandardSourceMap,
   sourceMapUrl: string,
@@ -470,6 +481,7 @@ const decodeStandardSourceMap = (
       ignoredSourceIndices: getIgnoredSourceIndices(rawSourceMap),
       mappings: decode(rawSourceMap.mappings),
       names: rawSourceMap.names,
+      sourceMapUrl: getRetainableSourceMapUrl(sourceMapUrl),
       sourceRoot: rawSourceMap.sourceRoot,
       sources: resolveSourceMapSources(rawSourceMap, sourceMapUrl),
       sourcesContent: rawSourceMap.sourcesContent,
@@ -532,6 +544,7 @@ const decodeIndexSourceMap = async (
     mappings: [],
     names: [],
     sections: decodedSections,
+    sourceMapUrl: getRetainableSourceMapUrl(sourceMapUrl),
     sourceRoot: undefined,
     sources: Array.from(allSources),
     sourcesContent: undefined,
@@ -782,22 +795,23 @@ const readSourceMapDocument = async (
 
 const getSourceMapUncachedInternal = async (
   bundleUrl: string,
-  fetchFn?: SourceFetch,
+  sourceFetchOverride?: SourceFetch,
   options: SourceMapRequestOptions = {},
 ): Promise<null | SourceMap> => {
-  const shouldAllowCustomProtocol = fetchFn !== undefined;
+  const shouldAllowCustomProtocol = sourceFetchOverride !== undefined;
   if (!isFetchableUrl(bundleUrl, shouldAllowCustomProtocol)) {
     return null;
   }
 
   const isServer = isServerRuntime();
-  const shouldRejectRedirects = isServer || isExtensionUrl(bundleUrl);
-  if (isServer && !fetchFn) {
+  const shouldRejectRedirects =
+    (isServer || isExtensionUrl(bundleUrl)) && !options.allowCrossOriginSourceMap;
+  if (isServer && !sourceFetchOverride) {
     if (!options.allowUnsafeServerFetch || !isAbsoluteHttpUrl(bundleUrl)) return null;
   }
 
   const sourceFetch =
-    fetchFn ??
+    sourceFetchOverride ??
     (typeof globalThis.fetch === "function" ? globalThis.fetch.bind(globalThis) : undefined);
   if (!sourceFetch) return null;
   const maxBundleSizeBytes = options.maxBundleSizeBytes ?? defaultMaxBundleSizeBytes;
@@ -864,11 +878,11 @@ const getSourceMapUncachedInternal = async (
 
 export const getSourceMapUncached = async (
   bundleUrl: string,
-  fetchFn?: SourceFetch,
+  sourceFetch?: SourceFetch,
   options: SourceMapRequestOptions = {},
 ): Promise<null | SourceMap> => {
   try {
-    return await getSourceMapUncachedInternal(bundleUrl, fetchFn, options);
+    return await getSourceMapUncachedInternal(bundleUrl, sourceFetch, options);
   } catch (error) {
     if (error instanceof TransientSourceMapError) return null;
     throw error;
@@ -878,66 +892,67 @@ export const getSourceMapUncached = async (
 const getPerFetchMap = <Value>(
   mapsByFetch: WeakMap<SourceFetch, Map<string, Value>>,
   globalMap: Map<string, Value>,
-  fetchFn: SourceFetch | undefined,
+  sourceFetch: SourceFetch | undefined,
 ): Map<string, Value> => {
-  if (!fetchFn) return globalMap;
-  let map = mapsByFetch.get(fetchFn);
+  if (!sourceFetch) return globalMap;
+  let map = mapsByFetch.get(sourceFetch);
   if (!map) {
     map = new Map();
-    mapsByFetch.set(fetchFn, map);
+    mapsByFetch.set(sourceFetch, map);
   }
   return map;
 };
 
-const getSourceMapCache = (fetchFn: SourceFetch | undefined): Map<string, null | SourceMap> =>
-  getPerFetchMap(sourceMapCachesByFetch, sourceMapCache, fetchFn);
+const getSourceMapCache = (sourceFetch: SourceFetch | undefined): Map<string, null | SourceMap> =>
+  getPerFetchMap(sourceMapCachesByFetch, sourceMapCache, sourceFetch);
 
 const getPendingSourceMapRequests = (
-  fetchFn: SourceFetch | undefined,
+  sourceFetch: SourceFetch | undefined,
 ): Map<string, Promise<SourceMapResult>> =>
-  getPerFetchMap(pendingSourceMapRequestsByFetch, pendingSourceMapRequests, fetchFn);
+  getPerFetchMap(pendingSourceMapRequestsByFetch, pendingSourceMapRequests, sourceFetch);
 
 const getSourceMapCacheKey = (file: string, options: SourceMapRequestOptions): string =>
+  options.allowCrossOriginSourceMap === undefined &&
   options.allowUnsafeServerFetch === undefined &&
   options.maxBundleSizeBytes === undefined &&
   options.maxSourceMapSizeBytes === undefined &&
   options.timeoutMs === undefined
     ? file
-    : `${file}\0${options.allowUnsafeServerFetch ?? ""}\0${options.maxBundleSizeBytes ?? ""}\0${options.maxSourceMapSizeBytes ?? ""}\0${options.timeoutMs ?? ""}`;
+    : `${file}\0${options.allowCrossOriginSourceMap ?? ""}\0${options.allowUnsafeServerFetch ?? ""}\0${options.maxBundleSizeBytes ?? ""}\0${options.maxSourceMapSizeBytes ?? ""}\0${options.timeoutMs ?? ""}`;
 
 export const getSourceMap = async (
   file: string,
-  useCache = true,
-  fetchFn?: SourceFetch,
+  shouldUseCache = true,
+  sourceFetch?: SourceFetch,
   options: SourceMapRequestOptions = {},
 ): Promise<null | SourceMap> => {
-  const shouldUseCache = useCache && options.signal === undefined;
-  const cache = getSourceMapCache(fetchFn);
-  const pendingRequests = getPendingSourceMapRequests(fetchFn);
+  const canUseCache = shouldUseCache && options.signal === undefined;
+  const cache = getSourceMapCache(sourceFetch);
+  const pendingRequests = getPendingSourceMapRequests(sourceFetch);
   const cacheKey = getSourceMapCacheKey(file, options);
-  if (shouldUseCache && cache.has(cacheKey)) {
+  if (canUseCache && cache.has(cacheKey)) {
     return cache.get(cacheKey) ?? null;
   }
 
-  const pendingRequest = shouldUseCache ? pendingRequests.get(cacheKey) : undefined;
+  const pendingRequest = canUseCache ? pendingRequests.get(cacheKey) : undefined;
   if (pendingRequest) {
     return (await pendingRequest).sourceMap;
   }
 
   const fetchPromise: Promise<SourceMapResult> = getSourceMapUncachedInternal(
     file,
-    fetchFn,
+    sourceFetch,
     options,
   ).then(
     (sourceMap) => ({ sourceMap, isTransientFailure: false }),
     () => ({ sourceMap: null, isTransientFailure: true }),
   );
-  if (shouldUseCache) {
+  if (canUseCache) {
     pendingRequests.set(cacheKey, fetchPromise);
   }
 
   const { sourceMap, isTransientFailure } = await fetchPromise;
-  if (shouldUseCache) {
+  if (canUseCache) {
     pendingRequests.delete(cacheKey);
     if (!isTransientFailure) {
       cache.set(cacheKey, sourceMap);
@@ -949,13 +964,19 @@ export const getSourceMap = async (
 
 export const symbolicateStack = async (
   stack: StackFrame[],
-  cache = true,
-  fetchFn?: SourceFetch,
+  shouldUseCache = true,
+  sourceFetch?: SourceFetch,
+  requestOptions: SourceMapRequestOptions = {},
 ): Promise<StackFrame[]> => {
   return Promise.all(
     stack.map(async (stackFrame) => {
       if (!stackFrame.fileName) return stackFrame;
-      const sourceMap = await getSourceMap(stackFrame.fileName, cache, fetchFn);
+      const sourceMap = await getSourceMap(
+        stackFrame.fileName,
+        shouldUseCache,
+        sourceFetch,
+        requestOptions,
+      );
       if (
         !sourceMap ||
         typeof stackFrame.lineNumber !== "number" ||

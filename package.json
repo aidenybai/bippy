@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vp run bippy#dev",
     "build": "vp run bippy#build",
-    "test": "vp run bippy#test",
+    "test": "vp test",
     "test:e2e": "vp run @bippy/e2e#test",
     "publint": "vp run bippy#publint",
     "fmt": "vp fmt",
