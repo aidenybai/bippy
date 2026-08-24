@@ -21,12 +21,12 @@ window.__BIPPY__ = { ...bippy, ...bippySource };
 const rootElement = document.getElementById("root");
 if (rootElement) {
   createRoot(rootElement).render(
-    <FiberReferenceProvider>
-      <StrictMode>
+    <StrictMode>
+      <FiberReferenceProvider>
         <UseFiberProbe />
         <UseFiberScenarios />
-        <TestParent />
-      </StrictMode>
-    </FiberReferenceProvider>,
+      </FiberReferenceProvider>
+      <TestParent />
+    </StrictMode>,
   );
 }
