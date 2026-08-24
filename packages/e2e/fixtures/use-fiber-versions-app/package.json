@@ -1,0 +1,25 @@
+{
+  "name": "@bippy/e2e-use-fiber-versions",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:17": "pnpm typecheck && REACT_VERSION=17 vite build --outDir dist/react-17",
+    "build:18": "pnpm typecheck && REACT_VERSION=18 vite build --outDir dist/react-18",
+    "preview:17": "REACT_VERSION=17 vite preview --outDir dist/react-17",
+    "preview:18": "REACT_VERSION=18 vite preview --outDir dist/react-18",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "bippy": "workspace:*",
+    "react-17": "npm:react@17.0.2",
+    "react-18": "npm:react@18.3.1",
+    "react-dom-17": "npm:react-dom@17.0.2",
+    "react-dom-18": "npm:react-dom@18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "typescript": "^5",
+    "vite": "^6"
+  }
+}

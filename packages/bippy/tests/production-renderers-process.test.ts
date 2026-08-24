@@ -11,7 +11,7 @@ interface ProductionRendererFixture {
 const packageDirectory = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const bippyEntryUrl = pathToFileURL(resolve(packageDirectory, "src/index.ts")).href;
 
-const wait = (duration: number): string =>
+const delay = (duration: number): string =>
   `await new Promise((resolvePromise) => setTimeout(resolvePromise, ${duration}));`;
 
 const productionRendererFixtures: ProductionRendererFixture[] = [
@@ -21,13 +21,13 @@ const productionRendererFixtures: ProductionRendererFixture[] = [
       const renderer = await import("react-nil");
       createHostElement = (revision) => React.createElement("nil-view", { revision });
       renderer.render(React.createElement(Probe, { revision: 1 }));
-      ${wait(20)}
+      await waitForRevision(1);
       const mountedFiber = verifyMountedFiber();
       renderer.render(React.createElement(Probe, { revision: 2 }));
-      ${wait(20)}
+      await waitForRevision(2);
       verifyUpdatedFiber(mountedFiber);
       renderer.render(null);
-      ${wait(20)}
+      ${delay(20)}
     `,
   },
   {
@@ -37,10 +37,10 @@ const productionRendererFixtures: ProductionRendererFixture[] = [
       const { render } = await import("ink-testing-library");
       createHostElement = (revision) => React.createElement(Text, null, String(revision));
       const instance = render(React.createElement(Probe, { revision: 1 }));
-      ${wait(30)}
+      await waitForRevision(1);
       const mountedFiber = verifyMountedFiber();
       instance.rerender(React.createElement(Probe, { revision: 2 }));
-      ${wait(30)}
+      await waitForRevision(2);
       verifyUpdatedFiber(mountedFiber);
       instance.unmount();
       instance.cleanup();
@@ -108,10 +108,10 @@ const productionRendererFixtures: ProductionRendererFixture[] = [
       createHostElement = (revision) =>
         React.createElement("bippy-production-test", { id: String(revision) });
       root.render(React.createElement(Probe, { revision: 1 }));
-      ${wait(30)}
+      await waitForRevision(1);
       const mountedFiber = verifyMountedFiber();
       root.render(React.createElement(Probe, { revision: 2 }));
-      ${wait(30)}
+      await waitForRevision(2);
       verifyUpdatedFiber(mountedFiber);
       root.unmount();
       engine.detach();
@@ -136,10 +136,10 @@ const productionRendererFixtures: ProductionRendererFixture[] = [
       createHostElement = (revision) =>
         React.createElement("pixiContainer", { label: String(revision) });
       await root.render(React.createElement(Probe, { revision: 1 }), {});
-      ${wait(20)}
+      await waitForRevision(1);
       const mountedFiber = verifyMountedFiber();
       await root.render(React.createElement(Probe, { revision: 2 }), {});
-      ${wait(20)}
+      await waitForRevision(2);
       verifyUpdatedFiber(mountedFiber);
       await root.render(null, {});
     `,
@@ -276,15 +276,15 @@ const productionRendererFixtures: ProductionRendererFixture[] = [
       createHostElement = (revision) =>
         React.createElement("group", { name: String(revision) });
       root.render(React.createElement(Probe, { revision: 1 }));
-      ${wait(30)}
       reactThreeFiber.reconciler.flushSyncWork();
+      await waitForRevision(1);
       const mountedFiber = verifyMountedFiber();
       root.render(React.createElement(Probe, { revision: 2 }));
-      ${wait(30)}
       reactThreeFiber.reconciler.flushSyncWork();
+      await waitForRevision(2);
       verifyUpdatedFiber(mountedFiber);
       root.unmount();
-      ${wait(10)}
+      ${delay(10)}
     `,
   },
 ];
@@ -302,6 +302,15 @@ const createProductionScript = (rendererScript: string): string => `
   let expectedStateInitializerCalls = 1;
   let stateInitializerCalls = 0;
   let wasBindRestoredDuringRender = true;
+  const waitForRevision = async (expectedRevision) => {
+    const deadline = Date.now() + 2_000;
+    while (observedFiber?.memoizedProps?.revision !== expectedRevision) {
+      if (Date.now() >= deadline) {
+        throw new Error(\`renderer did not render revision \${expectedRevision}\`);
+      }
+      await new Promise((resolvePromise) => setTimeout(resolvePromise, 1));
+    }
+  };
   const Probe = ({ revision }) => {
     observedFiber = Bippy.useFiber();
     wasBindRestoredDuringRender &&= Function.prototype.bind === originalBind;

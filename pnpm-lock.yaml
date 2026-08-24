@@ -991,6 +991,37 @@ importers:
         specifier: ^7
         version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
 
+  packages/e2e/fixtures/use-fiber-versions-app:
+    dependencies:
+      bippy:
+        specifier: workspace:*
+        version: link:../../../bippy
+      react-17:
+        specifier: npm:react@17.0.2
+        version: react@17.0.2
+      react-18:
+        specifier: npm:react@18.3.1
+        version: react@18.3.1
+      react-dom-17:
+        specifier: npm:react-dom@17.0.2
+        version: react-dom@17.0.2(react@19.2.8)
+      react-dom-18:
+        specifier: npm:react-dom@18.3.1
+        version: react-dom@18.3.1(react@19.2.8)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.18
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: ^19.2.4
+        version: 19.2.4(@types/react@19.2.18)
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+      vite:
+        specifier: ^6
+        version: 6.4.3(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
+
   packages/e2e/fixtures/vite-app:
     dependencies:
       bippy:

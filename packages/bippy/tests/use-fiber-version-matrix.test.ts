@@ -132,6 +132,14 @@ const runRuntime = (
     const originalBind = Function.prototype.bind;
     const mountedRoots = [];
 
+    const waitFor = async (condition, message) => {
+      const deadline = Date.now() + 2_000;
+      while (!condition()) {
+        if (Date.now() >= deadline) throw new Error(message);
+        await new Promise((resolvePromise) => setTimeout(resolvePromise, 1));
+      }
+    };
+
     const flush = (callback) => {
       if (typeof ReactDOM.flushSync === "function") {
         ReactDOM.flushSync(callback);
@@ -170,27 +178,49 @@ const runRuntime = (
     };
 
     let observedFiber;
+    let observedSecondFiber;
+    let stateInitializerCalls = 0;
     let updateState;
+    let wasBindRestoredDuringRender = true;
     const Probe = ({ revision }) => {
+      const [, setState] = React.useState(() => {
+        stateInitializerCalls += 1;
+        return 0;
+      });
       observedFiber = Bippy.useFiber();
-      const [, setState] = React.useState(0);
+      wasBindRestoredDuringRender &&= Function.prototype.bind === originalBind;
+      observedSecondFiber = Bippy.useFiber();
+      wasBindRestoredDuringRender &&= Function.prototype.bind === originalBind;
       updateState = setState;
       return React.createElement("div", null, revision);
     };
     const probeRoot = mount(React.createElement(Probe, { revision: 1 }));
     const mountedFiber = observedFiber;
     assertFiber(mountedFiber, Probe);
-    probeRoot.render(React.createElement(Probe, { revision: 2 }));
-    const propsUpdatedFiber = observedFiber;
-    assertFiber(propsUpdatedFiber, Probe);
-    assert.notEqual(propsUpdatedFiber, mountedFiber);
-    assert.equal(propsUpdatedFiber.alternate, mountedFiber);
-    assert.equal(propsUpdatedFiber.memoizedProps.revision, 2);
-    assert.equal(Bippy.getLatestFiber(mountedFiber), propsUpdatedFiber);
+    assert.equal(observedSecondFiber, mountedFiber);
+
+    let previousFiber = mountedFiber;
+    for (let revision = 2; revision <= 12; revision += 1) {
+      probeRoot.render(React.createElement(Probe, { revision }));
+      const propsUpdatedFiber = observedFiber;
+      assertFiber(propsUpdatedFiber, Probe);
+      assert.equal(observedSecondFiber, propsUpdatedFiber);
+      assert.notEqual(propsUpdatedFiber, previousFiber);
+      assert.equal(propsUpdatedFiber.alternate, previousFiber);
+      assert.equal(propsUpdatedFiber.memoizedProps.revision, revision);
+      assert.equal(Bippy.getLatestFiber(previousFiber), propsUpdatedFiber);
+      previousFiber = propsUpdatedFiber;
+    }
+
     flush(() => updateState(1));
     const stateUpdatedFiber = observedFiber;
     assertFiber(stateUpdatedFiber, Probe);
-    assert.notEqual(stateUpdatedFiber, propsUpdatedFiber);
+    assert.equal(observedSecondFiber, stateUpdatedFiber);
+    assert.notEqual(stateUpdatedFiber, previousFiber);
+    assert.equal(stateUpdatedFiber.alternate, previousFiber);
+    assert.equal(stateUpdatedFiber.memoizedProps.revision, 12);
+    assert.equal(stateInitializerCalls, 1);
+    assert.equal(wasBindRestoredDuringRender, true);
 
     const renderPhaseFibers = [];
     const RenderPhaseProbe = () => {
@@ -247,16 +277,22 @@ const runRuntime = (
       if (shouldSuspend) throw suspensePromise;
       return React.createElement("div", null, "ready");
     };
-    const suspenseElement = React.createElement(
-      React.Suspense,
-      { fallback: React.createElement("div", null, "loading") },
-      React.createElement(SuspenseProbe),
-    );
-    const suspenseRoot = mount(suspenseElement);
+    const createSuspenseElement = () =>
+      React.createElement(
+        React.Suspense,
+        { fallback: React.createElement("div", null, "loading") },
+        React.createElement(SuspenseProbe),
+      );
+    const suspenseRoot = mount(createSuspenseElement());
     assertFiber(suspendedFiber, SuspenseProbe);
+    assert.equal(suspenseRoot.container.textContent, "loading");
     shouldSuspend = false;
     resolveSuspense();
-    suspenseRoot.render(suspenseElement);
+    suspenseRoot.render(createSuspenseElement());
+    await waitFor(
+      () => suspenseRoot.container.textContent === "ready",
+      "suspended component did not resolve",
+    );
     assertFiber(suspendedFiber, SuspenseProbe);
 
     let thrownFiber;
@@ -285,9 +321,10 @@ const runRuntime = (
     }
     assertFiber(thrownFiber, ThrowingProbe);
 
+    let firstComponentFiber;
     let remountedFiber;
     const FirstComponent = () => {
-      Bippy.useFiber();
+      firstComponentFiber = Bippy.useFiber();
       return null;
     };
     const ReplacementComponent = () => {
@@ -295,8 +332,19 @@ const runRuntime = (
       return null;
     };
     const replacementRoot = mount(React.createElement(FirstComponent));
+    assertFiber(firstComponentFiber, FirstComponent);
     replacementRoot.render(React.createElement(ReplacementComponent));
     assertFiber(remountedFiber, ReplacementComponent);
+    assert.notEqual(remountedFiber, firstComponentFiber);
+
+    const strictModeFibers = [];
+    const StrictModeProbe = () => {
+      strictModeFibers.push(Bippy.useFiber());
+      return null;
+    };
+    mount(React.createElement(React.StrictMode, null, React.createElement(StrictModeProbe)));
+    assert.ok(strictModeFibers.length >= 1);
+    strictModeFibers.forEach((fiber) => assertFiber(fiber, StrictModeProbe));
 
     if (typeof React.startTransition === "function") {
       let transitionFiber;
@@ -310,9 +358,11 @@ const runRuntime = (
       mount(React.createElement(TransitionProbe));
       const fiberBeforeTransition = transitionFiber;
       React.startTransition(() => setTransitionState(1));
-      await new Promise((resolvePromise) => setTimeout(resolvePromise, 20));
+      await waitFor(
+        () => transitionFiber !== fiberBeforeTransition,
+        "transition did not render a new fiber",
+      );
       assertFiber(transitionFiber, TransitionProbe);
-      assert.notEqual(transitionFiber, fiberBeforeTransition);
     }
 
     let serverFiber = "not-rendered";
@@ -341,7 +391,7 @@ const runRuntime = (
         hydrationContainer,
         React.createElement(HydrationProbe),
       );
-      await new Promise((resolvePromise) => setTimeout(resolvePromise, 20));
+      await waitFor(() => Bippy.isFiber(observedFiber), "hydration did not capture a fiber");
       mountedRoots.push({
         container: hydrationContainer,
         render: () => {},
