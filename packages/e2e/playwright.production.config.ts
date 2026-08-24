@@ -11,6 +11,8 @@ const profilingPort = 5_182;
 const scriptTagPort = 5_183;
 const kitchenSinkPort = 5_184;
 const stressProductionPort = 5_185;
+const react17UseFiberPort = 5_186;
+const react18UseFiberPort = 5_187;
 
 const sharedProductionTestMatch = [/use-fiber\.spec\.ts/, /production\.spec\.ts/];
 const profilingTestMatch = /profiling\.spec\.ts/;
@@ -62,6 +64,16 @@ export default defineConfig({
       name: "astro-production",
       testMatch: sharedProductionTestMatch,
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${astroPort}` },
+    },
+    {
+      name: "react-17-use-fiber-production",
+      testMatch: /use-fiber\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${react17UseFiberPort}` },
+    },
+    {
+      name: "react-18-use-fiber-production",
+      testMatch: /use-fiber\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${react18UseFiberPort}` },
     },
     {
       name: "profiling",
@@ -124,6 +136,18 @@ export default defineConfig({
     {
       command: `nr --filter @bippy/e2e-astro build && nr --filter @bippy/e2e-astro preview --port ${astroPort}`,
       port: astroPort,
+      reuseExistingServer: false,
+      timeout: 60_000,
+    },
+    {
+      command: `pnpm --filter @bippy/e2e-use-fiber-versions build:17 && pnpm --filter @bippy/e2e-use-fiber-versions preview:17 --port ${react17UseFiberPort}`,
+      port: react17UseFiberPort,
+      reuseExistingServer: false,
+      timeout: 60_000,
+    },
+    {
+      command: `pnpm --filter @bippy/e2e-use-fiber-versions build:18 && pnpm --filter @bippy/e2e-use-fiber-versions preview:18 --port ${react18UseFiberPort}`,
+      port: react18UseFiberPort,
       reuseExistingServer: false,
       timeout: 60_000,
     },

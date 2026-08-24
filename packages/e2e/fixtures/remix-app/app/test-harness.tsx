@@ -1,8 +1,11 @@
 import * as bippy from "bippy";
 import * as bippySource from "bippy/source";
 import type { Fiber } from "bippy";
+import { createFiberReference } from "../../fiber-reference";
+import { createUseFiberScenarios } from "../../use-fiber-scenarios";
 
-import React, {
+import * as React from "react";
+import {
   Component,
   Fragment,
   Suspense,
@@ -13,20 +16,34 @@ import React, {
   useEffect,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 
 declare global {
   interface Window {
     __BIPPY__: typeof bippy & typeof bippySource;
     __USE_FIBER__: Fiber | undefined;
+    __USE_FIBER_MATCH__: boolean;
   }
 }
 
+const { FiberProvider, useFiber: useReferenceFiber } = createFiberReference(React);
+const UseFiberScenarios = createUseFiberScenarios({
+  createPortal,
+  react: React,
+  useFiber: bippy.useFiber,
+  useReferenceFiber,
+});
 const TestContext = createContext("default-context");
 
 export const UseFiberProbe = () => {
+  const referenceFiber = useReferenceFiber();
   const fiber = bippy.useFiber();
   const [revision, setRevision] = useState(0);
-  if (typeof window !== "undefined") window.__USE_FIBER__ = fiber;
+  if (typeof window !== "undefined") {
+    window.__USE_FIBER__ = fiber;
+    window.__USE_FIBER_MATCH__ =
+      fiber !== undefined && (fiber === referenceFiber || fiber === referenceFiber?.alternate);
+  }
 
   return (
     <button data-testid="use-fiber-update" onClick={() => setRevision((previous) => previous + 1)}>
@@ -110,9 +127,10 @@ export const TestHarness = () => {
   }, []);
 
   return (
-    <>
+    <FiberProvider>
       <UseFiberProbe />
+      <UseFiberScenarios />
       <TestParent />
-    </>
+    </FiberProvider>
   );
 };

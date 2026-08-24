@@ -38,6 +38,7 @@ declare global {
   interface Window {
     __BIPPY__: typeof Bippy & typeof BippySource;
     __USE_FIBER__: Fiber | undefined;
+    __USE_FIBER_MATCH__: boolean;
     __COMMIT_COUNT__: number;
     __HMR_EFFECT_LOG__: string[];
     __BIPPY_PROBE_READY__: boolean | undefined;

@@ -1,5 +1,8 @@
 import { useFiber } from "bippy";
-import React, {
+import { createFiberReference } from "../../fiber-reference";
+import { createUseFiberScenarios } from "../../use-fiber-scenarios";
+import * as React from "react";
+import {
   Component,
   Fragment,
   Suspense,
@@ -10,13 +13,27 @@ import React, {
   useEffect,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 
+const { FiberProvider: FiberReferenceProvider, useFiber: useReferenceFiber } =
+  createFiberReference(React);
+export const UseFiberScenarios = createUseFiberScenarios({
+  createPortal,
+  react: React,
+  useFiber,
+  useReferenceFiber,
+});
 const TestContext = createContext("default-context");
 
+export { FiberReferenceProvider };
+
 export const UseFiberProbe = () => {
+  const referenceFiber = useReferenceFiber();
   const fiber = useFiber();
   const [revision, setRevision] = useState(0);
   window.__USE_FIBER__ = fiber;
+  window.__USE_FIBER_MATCH__ =
+    fiber !== undefined && (fiber === referenceFiber || fiber === referenceFiber?.alternate);
 
   return (
     <button data-testid="use-fiber-update" onClick={() => setRevision((previous) => previous + 1)}>
