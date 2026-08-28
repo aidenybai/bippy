@@ -1,4 +1,5 @@
 import {
+  ClassComponentTag,
   DeletionFlag,
   HostPortalTag,
   HostRootTag,
@@ -16,6 +17,25 @@ import {
 } from "./constants.js";
 import { startTransition } from "./scheduler.js";
 import type { ReconcilerFiber, ReconcilerRoot } from "./types.js";
+
+interface ClassLifecycleInstance {
+  state: Record<string, unknown>;
+  componentDidMount?(): void;
+  componentDidUpdate?(prevProps: Record<string, unknown>, prevState: Record<string, unknown>): void;
+  componentWillUnmount?(): void;
+}
+
+const commitClassLifecycle = (fiber: ReconcilerFiber, committedFlags: number): void => {
+  if (fiber.tag !== ClassComponentTag) return;
+  const instance = fiber.stateNode as ClassLifecycleInstance | null;
+  if (instance === null) return;
+
+  if (committedFlags === PlacementFlag) {
+    instance.componentDidMount?.();
+  } else if (committedFlags === UpdateFlag) {
+    instance.componentDidUpdate?.(fiber.alternate?.pendingProps ?? {}, instance.state);
+  }
+};
 
 const commitHookEffectList = (
   fiber: ReconcilerFiber,
@@ -62,7 +82,7 @@ const getContainerInstance = (returnFiber: ReconcilerFiber): unknown => {
   return returnFiber.stateNode;
 };
 
-const commitDeletion = (fiber: ReconcilerFiber, returnFiber: ReconcilerFiber | null): void => {
+const removeHostNodes = (fiber: ReconcilerFiber, returnFiber: ReconcilerFiber | null): void => {
   const isContainer =
     returnFiber !== null &&
     returnFiber.stateNode !== null &&
@@ -76,17 +96,34 @@ const commitDeletion = (fiber: ReconcilerFiber, returnFiber: ReconcilerFiber | n
       currentHostConfig.current.removeChild?.(returnInstance, fiber.stateNode);
     }
   } else if (fiber.child !== null) {
-    commitDeletion(fiber.child, returnFiber);
+    removeHostNodes(fiber.child, returnFiber);
 
     let sibling = fiber.child.sibling;
     while (sibling !== null) {
-      commitDeletion(sibling, returnFiber);
+      removeHostNodes(sibling, returnFiber);
       sibling = sibling.sibling;
     }
   }
+};
+
+const commitDeletionEffects = (fiber: ReconcilerFiber): void => {
   startTransition(() => commitHookEffectList(fiber, PassiveHookEffect, DeletionFlag));
   commitHookEffectList(fiber, InsertionHookEffect, DeletionFlag);
   commitHookEffectList(fiber, LayoutHookEffect, DeletionFlag);
+  if (fiber.tag === ClassComponentTag) {
+    (fiber.stateNode as ClassLifecycleInstance | null)?.componentWillUnmount?.();
+  }
+
+  let child = fiber.child;
+  while (child !== null) {
+    commitDeletionEffects(child);
+    child = child.sibling;
+  }
+};
+
+const commitDeletion = (fiber: ReconcilerFiber, returnFiber: ReconcilerFiber | null): void => {
+  removeHostNodes(fiber, returnFiber);
+  commitDeletionEffects(fiber);
   detachRefs(fiber);
 };
 
@@ -217,7 +254,16 @@ const commitWork = (fiber: ReconcilerFiber | null): void => {
   commitWork(fiber.child);
   commitWork(fiber.sibling);
 
-  if (fiber.ref && committedFlags !== DeletionFlag) {
+  const previousRef = fiber.alternate?.ref ?? null;
+  const isRefChanged = fiber.ref !== previousRef;
+  if (previousRef !== null && isRefChanged && committedFlags !== DeletionFlag) {
+    if (typeof previousRef === "function") {
+      previousRef(null);
+    } else {
+      (previousRef as React.MutableRefObject<unknown>).current = null;
+    }
+  }
+  if (fiber.ref && committedFlags !== DeletionFlag && isRefChanged) {
     const publicInstance =
       fiber.stateNode === null || isComponentFiber(fiber)
         ? (fiber.stateNode ?? null)
@@ -232,6 +278,7 @@ const commitWork = (fiber: ReconcilerFiber | null): void => {
   startTransition(() => commitHookEffectList(fiber, PassiveHookEffect, committedFlags));
   commitHookEffectList(fiber, InsertionHookEffect, committedFlags);
   commitHookEffectList(fiber, LayoutHookEffect, committedFlags);
+  commitClassLifecycle(fiber, committedFlags);
 };
 
 export const commitRoot = (

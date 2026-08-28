@@ -163,7 +163,6 @@ const useReducer = (
 ): [unknown, React.Dispatch<unknown>] => {
   const hook = getWorkInProgressHook();
   let queue = hook.queue;
-  const current = currentHook;
   const pendingQueue = queue?.pending;
 
   if (!isMounted || queue === null) {
@@ -175,7 +174,7 @@ const useReducer = (
     };
   } else if (pendingQueue) {
     const firstUpdate = pendingQueue.next;
-    let newState = current!.memoizedState;
+    let newState = queue.lastRenderedState;
     let update = firstUpdate;
     do {
       newState = reducer(newState, update!.action);

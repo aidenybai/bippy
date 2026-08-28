@@ -7,6 +7,7 @@ import {
   HostTextTag,
   NoFlags,
   PlacementFlag,
+  REACT_CONSUMER_TYPE,
   REACT_CONTEXT_TYPE,
   REACT_PORTAL_TYPE,
   REACT_PROVIDER_TYPE,
@@ -56,10 +57,25 @@ const isClassComponent = (type: unknown): boolean =>
   typeof type === "function" &&
   Boolean((type as { prototype?: { isReactComponent?: unknown } }).prototype?.isReactComponent);
 
+const getElementRef = (element: any): unknown => {
+  const refProp = element?.props?.ref;
+  if (refProp !== undefined) return refProp;
+  return Object.getOwnPropertyDescriptor(element ?? {}, "ref")?.value ?? null;
+};
+
+const getElementProps = (element: any): Record<string, unknown> => {
+  const props = element?.props ?? {};
+  if (props.ref === undefined) return props;
+  const { ref: _elementRef, ...restProps } = props;
+  return restProps;
+};
+
 const createFiberFromElement = (element: any): ReconcilerFiber => {
   if (typeof element?.then === "function") element = element.value;
 
-  let { type, props = {}, ref, key } = element ?? {};
+  let { type, key } = element ?? {};
+  let props = getElementProps(element);
+  const ref = getElementRef(element);
   let tag: number;
 
   if (element?.$$typeof === REACT_PORTAL_TYPE) {
@@ -81,7 +97,7 @@ const createFiberFromElement = (element: any): ReconcilerFiber => {
       props = { ...props, _context: (type as ContextLike)._context ?? type };
     }
 
-    if (typeof type !== "function") {
+    if (typeof type !== "function" && typeTag !== REACT_CONSUMER_TYPE) {
       type = type?.render ?? type?.type ?? type?.$$typeof ?? type;
       if (isClassComponent(type)) tag = ClassComponentTag;
     }
@@ -126,11 +142,12 @@ const updateElement = (
       ? oldFiber.tag === HostTextTag
       : oldFiber.elementType === (newChild?.type ?? null));
   if (oldFiber !== null && isMatch) {
+    const oldContext = oldFiber.pendingProps._context;
+    const newProps = isPrimitiveChild ? { text: newChild } : getElementProps(newChild);
     return {
       ...oldFiber,
-      pendingProps: isPrimitiveChild
-        ? { text: newChild }
-        : (newChild.props ?? oldFiber.pendingProps),
+      pendingProps: oldContext === undefined ? newProps : { ...newProps, _context: oldContext },
+      ref: isPrimitiveChild ? oldFiber.ref : getElementRef(newChild),
       key: newChild?.key ?? null,
       return: workInProgress,
       flags: UpdateFlag,
@@ -253,10 +270,18 @@ const reconcileChildrenArray = (
   workInProgress.child = resultingFirstChild;
 };
 
-const flattenChildren = (newChildren: unknown): unknown[] =>
-  (Array.isArray(newChildren) ? newChildren.flat(Number.POSITIVE_INFINITY) : [newChildren]).filter(
-    (child) => child !== null && child !== undefined && typeof child !== "boolean",
-  );
+const isIterableChild = (child: unknown): child is Iterable<unknown> =>
+  typeof child === "object" &&
+  child !== null &&
+  typeof (child as Iterable<unknown>)[Symbol.iterator] === "function";
+
+const flattenChild = (child: unknown): unknown[] => {
+  if (Array.isArray(child)) return child.flatMap(flattenChild);
+  if (isIterableChild(child)) return [...child].flatMap(flattenChild);
+  return child === null || child === undefined || typeof child === "boolean" ? [] : [child];
+};
+
+const flattenChildren = (newChildren: unknown): unknown[] => flattenChild(newChildren);
 
 export const reconcileChildFibers = (
   current: ReconcilerFiber | null,
