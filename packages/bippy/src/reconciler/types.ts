@@ -111,12 +111,7 @@ export interface ReconcilerHostConfig<
   removeChildFromContainer?(container: Container, child: Instance | TextInstance): void;
   clearContainer?(container: Container): void;
   commitTextUpdate?(textInstance: TextInstance, oldText: string, newText: string): void;
-  commitMount?(
-    instance: Instance,
-    type: Type,
-    props: Props,
-    internalHandle: ReconcilerFiber,
-  ): void;
+  commitMount?(instance: Instance, type: Type, props: Props, internalHandle: ReconcilerFiber): void;
   commitUpdate?(
     instance: Instance,
     updatePayloadOrType: UpdatePayload | Type,

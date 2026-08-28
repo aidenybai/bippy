@@ -49,9 +49,7 @@ const requestHostCallback: (callback: (deadline: IdleDeadlineLike) => void) => v
   typeof requestIdleCallback === "function"
     ? requestIdleCallback
     : (callback) =>
-        setTimeout(() =>
-          callback({ didTimeout: false, timeRemaining: () => Number.MAX_VALUE }),
-        );
+        setTimeout(() => callback({ didTimeout: false, timeRemaining: () => Number.MAX_VALUE }));
 
 const finishIfIdle = (): void => {
   if (workQueue.length === 0 && suspendedPromises.length === 0 && actPromise?.resolve) {
@@ -175,10 +173,7 @@ const performUnitOfWork = (unitOfWork: ReconcilerFiber): ReconcilerFiber | null 
 const pendingRootFibers: ReconcilerFiber[] = [];
 const rootHostConfigs = new Map<ReconcilerRoot, ReconcilerHostConfig>();
 
-export const setRootHostConfig = (
-  root: ReconcilerRoot,
-  config: ReconcilerHostConfig,
-): void => {
+export const setRootHostConfig = (root: ReconcilerRoot, config: ReconcilerHostConfig): void => {
   rootHostConfigs.set(root, config);
 };
 

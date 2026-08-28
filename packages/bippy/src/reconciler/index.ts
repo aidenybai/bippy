@@ -8,12 +8,7 @@ import {
   isComponentFiber,
   reactDispatcherRef,
 } from "./constants.js";
-import {
-  flushSyncWork,
-  scheduleRoot,
-  setRootHostConfig,
-  startTransition,
-} from "./scheduler.js";
+import { flushSyncWork, scheduleRoot, setRootHostConfig, startTransition } from "./scheduler.js";
 import type {
   ReconcilerDevToolsConfig,
   ReconcilerFiber,

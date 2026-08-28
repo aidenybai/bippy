@@ -180,8 +180,7 @@ const setComponentSiblingNodes = (firstChild: ReconcilerFiber | null): void => {
   }
 };
 
-const getChildKey = (child: any, index: number): React.Key =>
-  child?.key ?? index;
+const getChildKey = (child: any, index: number): React.Key => child?.key ?? index;
 
 const reconcileChildrenArray = (
   current: ReconcilerFiber | null,

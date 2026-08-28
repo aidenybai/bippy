@@ -202,7 +202,13 @@ const commitWork = (fiber: ReconcilerFiber | null): void => {
           );
         }
       } else {
-        hostConfig.commitUpdate?.(fiber.stateNode, fiber.type, prevProps, fiber.pendingProps, fiber);
+        hostConfig.commitUpdate?.(
+          fiber.stateNode,
+          fiber.type,
+          prevProps,
+          fiber.pendingProps,
+          fiber,
+        );
       }
     }
   }

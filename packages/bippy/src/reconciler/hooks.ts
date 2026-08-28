@@ -11,11 +11,7 @@ import {
   currentHostConfig,
   setReactDispatcher,
 } from "./constants.js";
-import {
-  scheduleUpdateOnFiber,
-  startTransition,
-  suspendedPromises,
-} from "./scheduler.js";
+import { scheduleUpdateOnFiber, startTransition, suspendedPromises } from "./scheduler.js";
 import type {
   ReconcilerEffect,
   ReconcilerFiber,
@@ -198,9 +194,7 @@ const useReducer = (
 const basicStateReducer = (state: unknown, action: unknown): unknown =>
   typeof action === "function" ? action(state) : action;
 
-const useState = (
-  initialState?: unknown,
-): [unknown, React.Dispatch<unknown>] =>
+const useState = (initialState?: unknown): [unknown, React.Dispatch<unknown>] =>
   useReducer(basicStateReducer, initialState, (state) =>
     typeof state === "function" ? state() : state,
   );
@@ -370,18 +364,21 @@ const useActionState = (
 ): [unknown, (payload: unknown) => void, boolean] => {
   const [state, setState] = useState(initialState);
   const [isPending, setIsPending] = useState(false);
-  const dispatch = useCallback((payload: unknown) => {
-    const result = action(state, payload);
-    if (isThenable(result)) {
-      setIsPending(true);
-      result.then((resolvedState) => {
-        setState(resolvedState);
-        setIsPending(false);
-      });
-    } else {
-      setState(result);
-    }
-  }, [state]) as (payload: unknown) => void;
+  const dispatch = useCallback(
+    (payload: unknown) => {
+      const result = action(state, payload);
+      if (isThenable(result)) {
+        setIsPending(true);
+        result.then((resolvedState) => {
+          setState(resolvedState);
+          setIsPending(false);
+        });
+      } else {
+        setState(result);
+      }
+    },
+    [state],
+  ) as (payload: unknown) => void;
   return [state, dispatch, isPending as boolean];
 };
 
@@ -429,8 +426,7 @@ const HookDispatcher = {
 };
 
 const isClassComponentType = (type: unknown): type is ClassComponentType =>
-  typeof type === "function" &&
-  Boolean((type as ClassComponentType).prototype?.isReactComponent);
+  typeof type === "function" && Boolean((type as ClassComponentType).prototype?.isReactComponent);
 
 const isThenable = (value: unknown): value is Thenable<unknown> =>
   typeof (value as Thenable<unknown> | null)?.then === "function";
@@ -454,9 +450,7 @@ export const renderWithHooks = (
   try {
     if (typeof Component === "function") {
       if (isClassComponentType(Component)) {
-        const existingInstance = currentlyRenderingFiber.stateNode as
-          | ClassComponentInstance
-          | null;
+        const existingInstance = currentlyRenderingFiber.stateNode as ClassComponentInstance | null;
         const instance = existingInstance ?? new Component(currentlyRenderingFiber.pendingProps);
 
         instance.props = currentlyRenderingFiber.pendingProps;
