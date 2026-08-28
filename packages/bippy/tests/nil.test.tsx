@@ -82,6 +82,30 @@ it("runs effects and cleanups across unmount", async () => {
   expect(container?.head).toBe(null);
 });
 
+it("runs effect cleanup when dependencies change", async () => {
+  const lifecycle: string[] = [];
+  const Tracker = ({ value }: { value: number }) => {
+    React.useEffect(() => {
+      lifecycle.push(`mount:${value}`);
+      return () => {
+        lifecycle.push(`cleanup:${value}`);
+      };
+    }, [value]);
+    return <leaf />;
+  };
+
+  let container: NilContainer | undefined;
+  await act(() => {
+    container = render(<Tracker value={1} />);
+  });
+  expect(lifecycle).toEqual(["mount:1"]);
+
+  await act(() => {
+    render(<Tracker value={2} />, container);
+  });
+  expect(lifecycle).toEqual(["mount:1", "cleanup:1", "mount:2"]);
+});
+
 it("reconciles keyed children", async () => {
   const List = ({ items }: { items: string[] }) => (
     <list>

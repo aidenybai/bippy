@@ -28,14 +28,12 @@ const commitHookEffectList = (
   for (const effect of effectList) {
     if (effect.tag !== effectTag) continue;
 
-    if (fiberFlags === DeletionFlag || !effect.deps?.length) {
-      effect.destroy?.();
-      effect.destroy = undefined;
+    effect.destroy?.();
+    effect.destroy = undefined;
 
-      if (fiberFlags === DeletionFlag) {
-        effect.tag = NoHookEffect;
-        continue;
-      }
+    if (fiberFlags === DeletionFlag) {
+      effect.tag = NoHookEffect;
+      continue;
     }
 
     effect.destroy = effect.create() ?? undefined;
