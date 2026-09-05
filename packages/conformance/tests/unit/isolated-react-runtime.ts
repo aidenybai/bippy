@@ -37,6 +37,27 @@ const packageRequire = createRequire(import.meta.url);
 const runtimeDirectories: string[] = [];
 const runtimeCache = new Map<string, IsolatedReactRuntime>();
 
+export const earlyReactVersionFixtures: ReactVersionFixture[] = [
+  {
+    label: "16.8.6",
+    major: 16,
+    reactPackageName: "react-16-8",
+    reactDOMPackageName: "react-dom-16-8",
+  },
+  {
+    label: "16.12.0",
+    major: 16,
+    reactPackageName: "react-16-12",
+    reactDOMPackageName: "react-dom-16-12",
+  },
+  {
+    label: "16.13.0",
+    major: 16,
+    reactPackageName: "react-16-13",
+    reactDOMPackageName: "react-dom-16-13",
+  },
+];
+
 export const reactVersionFixtures: ReactVersionFixture[] = [
   {
     label: "16.14",
@@ -167,8 +188,13 @@ export const createReactImportScript = (
   runtime: IsolatedReactRuntime,
   fixture: ReactVersionFixture,
   mode: ReactBuildMode,
+  bippyModuleFormat: "import" | "require" = "import",
 ): string => `
-  const Bippy = await import(${JSON.stringify(runtime.bippyEntryUrl)});
+  const Bippy = ${
+    bippyModuleFormat === "require"
+      ? `(await import("node:module")).createRequire(import.meta.url)(${JSON.stringify(fileURLToPath(runtime.bippyEntryUrl))})`
+      : `await import(${JSON.stringify(runtime.bippyEntryUrl)})`
+  };
   globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__.checkDCE = () => {};
   const ReactModule = await import(${JSON.stringify(runtime.reactUrl)});
   const React = ReactModule.default ?? ReactModule;

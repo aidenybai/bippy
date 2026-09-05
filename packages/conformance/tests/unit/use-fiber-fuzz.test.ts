@@ -5,6 +5,7 @@ import {
   createBrowserBootstrapScript,
   createIsolatedReactRuntime,
   createReactImportScript,
+  earlyReactVersionFixtures,
   type ReactBuildMode,
   type ReactVersionFixture,
   reactVersionFixtures,
@@ -55,17 +56,20 @@ const runFuzz = (
 
 afterAll(removeIsolatedReactRuntimes);
 
-describe.each(reactVersionFixtures)("React $label useFiber fuzz", (fixture) => {
-  describe.each(buildModes)("%s", (mode) => {
-    it.each(seeds)(
-      `survives ${operationCount} randomized operations with seed %i`,
-      (seed) => {
-        const report = runFuzz(fixture, mode, seed);
-        expect(report.operationCount).toBe(operationCount);
-        expect(report.renderCount).toBeGreaterThan(operationCount);
-        expect(report.failures.slice(0, 5)).toEqual([]);
-      },
-      250_000,
-    );
-  });
-});
+describe.each([...earlyReactVersionFixtures, ...reactVersionFixtures])(
+  "React $label useFiber fuzz",
+  (fixture) => {
+    describe.each(buildModes)("%s", (mode) => {
+      it.each(seeds)(
+        `survives ${operationCount} randomized operations with seed %i`,
+        (seed) => {
+          const report = runFuzz(fixture, mode, seed);
+          expect(report.operationCount).toBe(operationCount);
+          expect(report.renderCount).toBeGreaterThan(operationCount);
+          expect(report.failures.slice(0, 5)).toEqual([]);
+        },
+        250_000,
+      );
+    });
+  },
+);

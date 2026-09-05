@@ -5,6 +5,7 @@ import {
   createBrowserBootstrapScript,
   createIsolatedReactRuntime,
   createReactImportScript,
+  earlyReactVersionFixtures,
   type ReactBuildMode,
   reactVersionFixtures,
   removeIsolatedReactRuntimes,
@@ -20,7 +21,9 @@ interface LegacyRegressionReport {
 
 const testsDirectory = dirname(fileURLToPath(import.meta.url));
 const oracleUrl = pathToFileURL(resolve(testsDirectory, "use-fiber-oracle.ts")).href;
-const legacyFixtures = reactVersionFixtures.filter(({ major }) => major < 18);
+const legacyFixtures = [...earlyReactVersionFixtures, ...reactVersionFixtures].filter(
+  ({ major }) => major < 18,
+);
 const buildModes: ReactBuildMode[] = ["development", "production"];
 
 // React 17 binds the Fiber only on mount, so these cover the update paths where the old

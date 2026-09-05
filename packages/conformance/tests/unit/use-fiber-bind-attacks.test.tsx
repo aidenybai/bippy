@@ -1,8 +1,10 @@
 import { useFiber } from "../../../bippy/src/index.js";
+import { _renderers } from "../../../bippy/src/rdt-hook.js";
 import type { Fiber } from "../../../bippy/src/react-internals/index.js";
 import { inspectHooks } from "../../../bippy/src/source/index.js";
 import { createRequire } from "node:module";
-import { pathToFileURL } from "node:url";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { cleanup, render } from "@testing-library/react";
 import React from "react";
 import { afterAll, afterEach, describe, expect, it } from "vite-plus/test";
@@ -10,6 +12,7 @@ import {
   createBrowserBootstrapScript,
   createIsolatedReactRuntime,
   createReactImportScript,
+  type ReactBuildMode,
   reactVersionFixtures,
   removeIsolatedReactRuntimes,
 } from "./isolated-react-runtime.js";
@@ -26,6 +29,7 @@ interface ProbeProps {
 }
 
 interface FrozenBindReport {
+  mismatches: unknown[];
   didThrow: boolean;
   isBindOriginal: boolean;
   observedFibers: Array<"fiber" | "undefined">;
@@ -34,6 +38,9 @@ interface FrozenBindReport {
 
 const originalBind = Function.prototype.bind;
 const packageRequire = createRequire(import.meta.url);
+const oracleUrl = pathToFileURL(
+  resolve(dirname(fileURLToPath(import.meta.url)), "use-fiber-oracle.ts"),
+).href;
 
 const restoreBind = (): void => {
   Object.defineProperty(Function.prototype, "bind", {
@@ -76,14 +83,43 @@ describe("Function.prototype.bind interception", () => {
     expect(observed.map(({ mismatch }) => mismatch)).toEqual([null, null, null]);
   });
 
-  it("degrades to undefined without throwing when bind is non-writable", () => {
+  it("captures without DevTools and only patches bind on mount", () => {
+    const snapshots = [..._renderers].map((renderer) => ({
+      renderer,
+      getCurrentFiber: renderer.getCurrentFiber,
+    }));
+    let storedBind = originalBind;
+    let assignments = 0;
+    Object.defineProperty(Function.prototype, "bind", {
+      configurable: true,
+      get: () => storedBind,
+      set: (value) => {
+        assignments++;
+        storedBind = value;
+      },
+    });
+    try {
+      for (const { renderer } of snapshots) renderer.getCurrentFiber = () => null;
+      const observed = renderProbe([1, 2, 3]);
+      expect(observed.map(({ mismatch }) => mismatch)).toEqual([null, null, null]);
+      expect(assignments).toBe(2);
+      expect(storedBind).toBe(originalBind);
+    } finally {
+      for (const { renderer, getCurrentFiber } of snapshots) {
+        if (getCurrentFiber) renderer.getCurrentFiber = getCurrentFiber;
+        else delete renderer.getCurrentFiber;
+      }
+    }
+  });
+
+  it("captures through DevTools when bind is non-writable", () => {
     Object.defineProperty(Function.prototype, "bind", {
       configurable: true,
       value: originalBind,
       writable: false,
     });
     const observed = renderProbe([1, 2]);
-    expect(observed.map(({ fiber }) => fiber)).toEqual([undefined, undefined]);
+    expect(observed.map(({ mismatch }) => mismatch)).toEqual([null, null]);
     expect(Function.prototype.bind).toBe(originalBind);
   });
 
@@ -101,17 +137,17 @@ describe("Function.prototype.bind interception", () => {
     expect(storedBind).toBe(originalBind);
   });
 
-  it("degrades to undefined when an accessor-based bind ignores assignments", () => {
+  it("captures through DevTools when a bind accessor ignores assignments", () => {
     Object.defineProperty(Function.prototype, "bind", {
       configurable: true,
       get: () => originalBind,
       set: () => {},
     });
     const observed = renderProbe([1, 2]);
-    expect(observed.map(({ fiber }) => fiber)).toEqual([undefined, undefined]);
+    expect(observed.map(({ mismatch }) => mismatch)).toEqual([null, null]);
   });
 
-  it("propagates a throwing bind setter instead of corrupting hook order", () => {
+  it("captures through DevTools without assigning to a throwing bind setter", () => {
     Object.defineProperty(Function.prototype, "bind", {
       configurable: true,
       get: () => originalBind,
@@ -119,13 +155,8 @@ describe("Function.prototype.bind interception", () => {
         throw new Error("bind is locked");
       },
     });
-    const previousConsoleError = console.error;
-    console.error = () => {};
-    try {
-      expect(() => renderProbe([1])).toThrow("bind is locked");
-    } finally {
-      console.error = previousConsoleError;
-    }
+    const observed = renderProbe([1, 2]);
+    expect(observed.map(({ mismatch }) => mismatch)).toEqual([null, null]);
   });
 
   it("wraps and restores a bind that another tool patched first", () => {
@@ -188,19 +219,39 @@ describe("Function.prototype.bind interception", () => {
   });
 });
 
-const createFrozenBindScript = (fixture: (typeof reactVersionFixtures)[number]): string => {
+const createFrozenBindScript = (
+  fixture: (typeof reactVersionFixtures)[number],
+  mode: ReactBuildMode,
+  shouldFreezeBeforeMount: boolean,
+  lockMode: "freeze" | "throwing-setter",
+): string => {
   const runtime = createIsolatedReactRuntime(fixture);
   return `
     ${createBrowserBootstrapScript()}
-    ${createReactImportScript(runtime, fixture, "production")}
-    Object.freeze(Function.prototype);
+    ${createReactImportScript(runtime, fixture, mode)}
+    const { checkCallingFiber, createFiberRootRegistry, matchByProps } = await import(${JSON.stringify(oracleUrl)});
+    const registry = createFiberRootRegistry();
+    const mismatches = [];
     const originalBind = Function.prototype.bind;
+    const lockBind = () => {
+      if (${JSON.stringify(lockMode)} === "freeze") Object.freeze(Function.prototype);
+      else Object.defineProperty(Function.prototype, "bind", {
+        configurable: true,
+        get: () => originalBind,
+        set: () => { throw new Error("bind is locked"); },
+      });
+    };
+    if (${shouldFreezeBeforeMount}) lockBind();
     const observedFibers = [];
     let didThrow = false;
     let update = () => {};
-    const Probe = () => {
+    const Probe = (props) => {
       try {
-        observedFibers.push(Bippy.useFiber() === undefined ? "undefined" : "fiber");
+        const fiber = Bippy.useFiber();
+        observedFibers.push(fiber === undefined ? "undefined" : "fiber");
+        if (fiber !== undefined) {
+          mismatches.push(checkCallingFiber(registry, matchByProps(Probe, props), fiber, ${mode === "development"}));
+        }
       } catch (error) {
         didThrow = true;
         throw error;
@@ -211,15 +262,18 @@ const createFrozenBindScript = (fixture: (typeof reactVersionFixtures)[number]):
     };
     const container = document.createElement("div");
     document.body.appendChild(container);
+    registry.addContainer(container);
     if (ReactDOMClient) {
       const root = ReactDOMClient.createRoot(container);
       ReactDOM.flushSync(() => root.render(React.createElement(Probe)));
     } else {
       ReactDOM.render(React.createElement(Probe), container);
     }
+    lockBind();
     update();
     update();
     console.log("__REPORT__" + JSON.stringify({
+      mismatches,
       didThrow,
       isBindOriginal: Function.prototype.bind === originalBind,
       observedFibers,
@@ -229,20 +283,45 @@ const createFrozenBindScript = (fixture: (typeof reactVersionFixtures)[number]):
   `;
 };
 
-describe.each(reactVersionFixtures)("frozen Function.prototype on React $label", (fixture) => {
-  it("renders and updates with useFiber returning undefined", () => {
-    const result = runNodeScript(createFrozenBindScript(fixture), {
-      environment: { NODE_ENV: "production" },
-      timeout: 60_000,
+const frozenBindModes: ReactBuildMode[] = ["development", "production", "profiling"];
+
+const bindLockModes: Array<"freeze" | "throwing-setter"> = ["freeze", "throwing-setter"];
+
+describe.each(reactVersionFixtures)("locked Function.prototype.bind on React $label", (fixture) => {
+  describe.each(bindLockModes)("%s", (lockMode) => {
+    describe.each(frozenBindModes)("%s", (mode) => {
+      it.each([true, false])(
+        "preserves rendering when frozen before mount: %s",
+        (shouldFreezeBeforeMount) => {
+          const result = runNodeScript(
+            createFrozenBindScript(fixture, mode, shouldFreezeBeforeMount, lockMode),
+            {
+              environment: { NODE_ENV: mode === "development" ? "development" : "production" },
+              timeout: 60_000,
+            },
+          );
+          const reportLine = result.stdout
+            .split("\n")
+            .find((line) => line.startsWith("__REPORT__"));
+          expect(result.status, result.stderr).toBe(0);
+          const report: FrozenBindReport = JSON.parse(
+            reportLine?.slice("__REPORT__".length) ?? "{}",
+          );
+          const mountedResult =
+            shouldFreezeBeforeMount && mode !== "development" ? "undefined" : "fiber";
+          const updatedResult = mountedResult;
+          expect(report.didThrow).toBe(false);
+          expect(report.isBindOriginal).toBe(true);
+          expect(report.observedFibers).toEqual([mountedResult, updatedResult, updatedResult]);
+          expect(report.mismatches).toEqual(
+            report.observedFibers.filter((result) => result === "fiber").map(() => null),
+          );
+          expect(report.rendered).toBe("2");
+        },
+        70_000,
+      );
     });
-    const reportLine = result.stdout.split("\n").find((line) => line.startsWith("__REPORT__"));
-    expect(result.status, result.stderr).toBe(0);
-    const report: FrozenBindReport = JSON.parse(reportLine?.slice("__REPORT__".length) ?? "{}");
-    expect(report.didThrow).toBe(false);
-    expect(report.isBindOriginal).toBe(true);
-    expect(report.observedFibers).toEqual(["undefined", "undefined", "undefined"]);
-    expect(report.rendered).toBe("2");
-  }, 70_000);
+  });
 });
 
 describe("duplicate React copies", () => {

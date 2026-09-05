@@ -5,6 +5,7 @@ import {
   createBrowserBootstrapScript,
   createIsolatedReactRuntime,
   createReactImportScript,
+  earlyReactVersionFixtures,
   type ReactBuildMode,
   type ReactVersionFixture,
   reactVersionFixtures,
@@ -50,14 +51,17 @@ const runAttackScenarios = (
 
 afterAll(removeIsolatedReactRuntimes);
 
-describe.each(reactVersionFixtures)("React $label useFiber attack matrix", (fixture) => {
-  it.each(buildModes)(
-    "returns the exact rendering fiber in %s",
-    (mode) => {
-      const report = runAttackScenarios(fixture, mode);
-      expect(report.scenarioNames.length).toBeGreaterThan(10);
-      expect(report.failures).toEqual([]);
-    },
-    150_000,
-  );
-});
+describe.each([...earlyReactVersionFixtures, ...reactVersionFixtures])(
+  "React $label useFiber attack matrix",
+  (fixture) => {
+    it.each(buildModes)(
+      "returns the exact rendering fiber in %s",
+      (mode) => {
+        const report = runAttackScenarios(fixture, mode);
+        expect(report.scenarioNames.length).toBeGreaterThan(10);
+        expect(report.failures).toEqual([]);
+      },
+      150_000,
+    );
+  },
+);
