@@ -1,4 +1,4 @@
-import { getReactWorkTags, type Fiber } from "bippy";
+import { getReactWorkTags, type Fiber } from "../../bippy/src/index.js";
 
 interface FiberOverrides extends Partial<Omit<Fiber, "tag">> {
   tag?: number;

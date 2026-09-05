@@ -150,12 +150,17 @@ it("assigning a new hook should merge existing renderers into it", () => {
   expect(onActive.mock.calls.length).toBeGreaterThan(callCountBeforeReplacement);
 });
 
-it("propagates active and renderer-injection listener failures", () => {
+it("isolates active and renderer-injection listener failures", () => {
+  using reportError = vi.spyOn(console, "error").mockImplementation(() => {});
   const activeListenerError = new Error("active listener failure");
   const throwingActiveListener = () => {
     throw activeListenerError;
   };
-  expect(() => getRDTHook(throwingActiveListener)).toThrow(activeListenerError);
+  expect(() => getRDTHook(throwingActiveListener)).not.toThrow();
+  expect(reportError).toHaveBeenCalledWith(
+    "Bippy instrumentation encountered an error:",
+    activeListenerError,
+  );
   _onActiveListeners.delete(throwingActiveListener);
 
   const laterListener = vi.fn();
@@ -165,8 +170,12 @@ it("propagates active and renderer-injection listener failures", () => {
   });
   const unsubscribeLaterListener = onRendererInject(laterListener);
   const renderer = createFakeRenderer();
-  expect(() => getRDTHook().inject(renderer)).toThrow(rendererListenerError);
-  expect(laterListener).not.toHaveBeenCalled();
+  expect(() => getRDTHook().inject(renderer)).not.toThrow();
+  expect(laterListener).toHaveBeenCalledWith(renderer);
+  expect(reportError).toHaveBeenCalledWith(
+    "Bippy instrumentation encountered an error:",
+    rendererListenerError,
+  );
   unsubscribeThrowingListener();
   unsubscribeLaterListener();
 });
