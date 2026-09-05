@@ -207,6 +207,13 @@ export const getSourceFromSourceMap = (
   );
 };
 
+const getStringIndex = (values: string[], target: string): number => {
+  for (let valueIndex = 0; valueIndex < values.length; valueIndex++) {
+    if (values[valueIndex] === target) return valueIndex;
+  }
+  return -1;
+};
+
 const getSourceFromMappingsByFunctionName = (
   mappings: SourceMapMappings,
   sources: string[],
@@ -215,13 +222,17 @@ const getSourceFromMappingsByFunctionName = (
   ignoredSourceIndices?: Set<number>,
 ): StackFrame | null => {
   if (!names) return null;
-  const functionNameIndex = names.indexOf(functionName);
+  const functionNameIndex = getStringIndex(names, functionName);
   if (functionNameIndex === -1) return null;
 
   let ignoredSource: StackFrame | null = null;
-  for (const lineMapping of mappings) {
-    for (const segment of lineMapping) {
+  for (let lineIndex = 0; lineIndex < mappings.length; lineIndex++) {
+    const lineMapping = mappings[lineIndex];
+    for (let segmentIndex = 0; segmentIndex < lineMapping.length; segmentIndex++) {
+      const segment = lineMapping[segmentIndex];
       if (segment[4] !== functionNameIndex) continue;
+      if (ignoredSource && segment[1] !== undefined && ignoredSourceIndices?.has(segment[1]))
+        continue;
       const source = getSourceFromSegment(segment, sources, ignoredSourceIndices, names);
       if (!source) continue;
       if (!source.isIgnoreListed) return source;
@@ -267,7 +278,7 @@ const findSourceContentByFileName = (
   fileName: string,
 ): string | null => {
   if (!sourcesContent) return null;
-  const sourceIndex = sources.indexOf(fileName);
+  const sourceIndex = getStringIndex(sources, fileName);
   return sourceIndex === -1 ? null : (sourcesContent[sourceIndex] ?? null);
 };
 
