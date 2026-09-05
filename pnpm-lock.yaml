@@ -150,9 +150,18 @@ importers:
       react:
         specifier: ^19.2.4
         version: 19.2.8
+      react-16-12:
+        specifier: npm:react@16.12.0
+        version: react@16.12.0
+      react-16-13:
+        specifier: npm:react@16.13.0
+        version: react@16.13.0
       react-16-14:
         specifier: npm:react@16.14.0
         version: react@16.14.0
+      react-16-8:
+        specifier: npm:react@16.8.6
+        version: react@16.8.6
       react-17:
         specifier: npm:react@17.0.2
         version: react@17.0.2
@@ -174,9 +183,18 @@ importers:
       react-dom:
         specifier: ^19.2.4
         version: 19.2.8(react@19.2.8)
+      react-dom-16-12:
+        specifier: npm:react-dom@16.12.0
+        version: react-dom@16.12.0(react@19.2.8)
+      react-dom-16-13:
+        specifier: npm:react-dom@16.13.0
+        version: react-dom@16.13.0(react@19.2.8)
       react-dom-16-14:
         specifier: npm:react-dom@16.14.0
         version: react-dom@16.14.0(react@19.2.8)
+      react-dom-16-8:
+        specifier: npm:react-dom@16.8.6
+        version: react-dom@16.8.6(react@19.2.8)
       react-dom-17:
         specifier: npm:react-dom@17.0.2
         version: react-dom@17.0.2(react@19.2.8)
@@ -10432,6 +10450,16 @@ packages:
     peerDependencies:
       react: ^19.2.4
 
+  react-dom@16.12.0:
+    resolution: {integrity: sha512-LMxFfAGrcS3kETtQaCkTKjMiifahaMySFDn71fZUNpPHZQEzmk/GiAeIT8JSOrHB23fnuCOMruL2a8NYlw+8Gw==}
+    peerDependencies:
+      react: ^19.2.4
+
+  react-dom@16.13.0:
+    resolution: {integrity: sha512-y09d2c4cG220DzdlFkPTnVvGTszVvNpC73v+AaLGLHbkpy3SSgvYq8x0rNwPJ/Rk/CicTNgk0hbHNw1gMEZAXg==}
+    peerDependencies:
+      react: ^19.2.4
+
   react-dom@16.14.0:
     resolution: {integrity: sha512-1gCeQXDLoIqMgqD3IO2Ah9bnf0w9kzhwN5q4FGnHZ67hBm9yePzB5JJAIQCc8x3pFnNlwFq4RidZggNAAkzWWw==}
     peerDependencies:
@@ -10799,6 +10827,14 @@ packages:
     resolution: {integrity: sha512-FQfiFfk2z2Fk87OngNJHT05KyC9DOVn8LPeB7ZX+9u5+yU1JK6o5ozRlU3PeOMr0IFkWNvgn9jU8/IhRxR1F0g==}
     engines: {node: '>=0.10.0'}
 
+  react@16.12.0:
+    resolution: {integrity: sha512-fglqy3k5E+81pA8s+7K0/T3DBCF0ZDOher1elBFzF7O6arXJgzyu/FW+COxFvAWXJoJN9KIZbT2LXlukwphYTA==}
+    engines: {node: '>=0.10.0'}
+
+  react@16.13.0:
+    resolution: {integrity: sha512-TSavZz2iSLkq5/oiE7gnFzmURKZMltmi193rm5HEoUDAXpzT9Kzw6oNZnGoai/4+fUnm7FqS5dwgUL34TujcWQ==}
+    engines: {node: '>=0.10.0'}
+
   react@16.14.0:
     resolution: {integrity: sha512-0X2CImDkJGApiAlcf0ODKIneSwBPhqJawOa5wCtKbu7ZECrmS26NvtSILynQ66cgkT/RJ4LidJOc3bUESwmU8g==}
     engines: {node: '>=0.10.0'}
@@ -11112,6 +11148,9 @@ packages:
 
   scheduler@0.13.6:
     resolution: {integrity: sha512-IWnObHt413ucAYKsD9J1QShUKkbKLQQHdxRyw73sw4FN26iWr3DY/H34xGPe4nmL1DwXyWmSWmMrA9TfQbE/XQ==}
+
+  scheduler@0.18.0:
+    resolution: {integrity: sha512-agTSHR1Nbfi6ulI0kYNK0203joW2Y5W4po4l+v03tOoiJKpTBbxpNhWDvqc/4IcOw+KLmSiQLTasZ4cab2/UWQ==}
 
   scheduler@0.19.1:
     resolution: {integrity: sha512-n/zwRWRYSUj0/3g/otKDRPMh6qv2SYMWNq85IEa8iZyAv8od9zDYpGSnpBEjNgcMNq6Scbu5KfIPxNF72R/2EA==}
@@ -23706,6 +23745,22 @@ snapshots:
       prop-types: 15.8.1
       react: 19.2.8
 
+  react-dom@16.12.0(react@19.2.8):
+    dependencies:
+      loose-envify: 1.4.0
+      object-assign: 4.1.1
+      prop-types: 15.8.1
+      react: 19.2.8
+      scheduler: 0.18.0
+
+  react-dom@16.13.0(react@19.2.8):
+    dependencies:
+      loose-envify: 1.4.0
+      object-assign: 4.1.1
+      prop-types: 15.8.1
+      react: 19.2.8
+      scheduler: 0.19.1
+
   react-dom@16.14.0(react@19.2.8):
     dependencies:
       loose-envify: 1.4.0
@@ -24215,6 +24270,18 @@ snapshots:
       object-assign: 4.1.1
       prop-types: 15.8.1
 
+  react@16.12.0:
+    dependencies:
+      loose-envify: 1.4.0
+      object-assign: 4.1.1
+      prop-types: 15.8.1
+
+  react@16.13.0:
+    dependencies:
+      loose-envify: 1.4.0
+      object-assign: 4.1.1
+      prop-types: 15.8.1
+
   react@16.14.0:
     dependencies:
       loose-envify: 1.4.0
@@ -24645,6 +24712,11 @@ snapshots:
       object-assign: 4.1.1
 
   scheduler@0.13.6:
+    dependencies:
+      loose-envify: 1.4.0
+      object-assign: 4.1.1
+
+  scheduler@0.18.0:
     dependencies:
       loose-envify: 1.4.0
       object-assign: 4.1.1

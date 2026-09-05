@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
 import { Window } from "happy-dom";
 import type { Fiber, FiberRoot } from "bippy";
 import { getStateValues } from "../tests/hook-tree.js";
@@ -15,7 +16,11 @@ if (!mode) {
         ["--import", "tsx", import.meta.filename, format],
         {
           encoding: "utf8",
-          env: { ...process.env, NODE_ENV: environment },
+          env: {
+            ...process.env,
+            NODE_ENV: environment,
+            TSX_TSCONFIG_PATH: fileURLToPath(new URL("../tsconfig-built.json", import.meta.url)),
+          },
           timeout: 15000,
         },
       );
@@ -33,6 +38,10 @@ if (!mode) {
   Reflect.set(globalThis, "window", browser);
   Reflect.set(globalThis, "document", browser.document);
   const require = createRequire(import.meta.url);
+  for (const entry of ["bippy", "bippy/source", "bippy/install-hook-only"]) {
+    const resolvedEntry = mode === "import" ? import.meta.resolve(entry) : require.resolve(entry);
+    assert.match(resolvedEntry, /[/\\]dist[/\\]/, `${entry} must resolve to built output`);
+  }
   const hookOnly =
     mode === "import"
       ? await import("bippy/install-hook-only")

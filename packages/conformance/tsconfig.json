@@ -11,6 +11,7 @@
     "skipLibCheck": true,
     "paths": {
       "bippy": ["../bippy/src/index.ts"],
+      "bippy/install-hook-only": ["../bippy/src/install-hook-only.ts"],
       "bippy/source": ["../bippy/src/source/index.ts"]
     }
   },

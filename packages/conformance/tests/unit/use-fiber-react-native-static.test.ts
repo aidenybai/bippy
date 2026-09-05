@@ -17,13 +17,12 @@ const rendererBundles = [
   "ReactNativeRenderer-profiling.js",
 ];
 
-// React Native cannot run in this test environment, so lock the assumption that its shipped
-// reconciler bundles bind the rendering Fiber as the first bound argument of useSyncExternalStore.
 describe.each(rendererBundles)("react-native %s", (bundleName) => {
-  it("binds the Fiber first inside useSyncExternalStore", () => {
+  it("binds a new reducer's Fiber and queue", () => {
     const source = readFileSync(join(rendererDirectory, bundleName), "utf8");
-    const binds = source.match(/subscribeToStore\.bind\(\s*null,\s*(\w+),/g) ?? [];
-    expect(binds.length).toBeGreaterThanOrEqual(2);
-    expect(binds.every((bind) => /\(\s*null,\s*fiber,/.test(bind))).toBe(true);
+    expect(source).toMatch(
+      /dispatchReducerAction\.bind\(\s*null,\s*currentlyRenderingFiber,\s*\w+/,
+    );
+    expect(source).toContain("lastRenderedReducer:");
   });
 });

@@ -1,3 +1,7 @@
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { ModuleKind, ScriptTarget, transpileModule } from "typescript";
 import { useFiber } from "../../../bippy/src/index.js";
 import type { Fiber } from "../../../bippy/src/react-internals/index.js";
 import { transformSync } from "@babel/core";
@@ -54,6 +58,24 @@ const compileProbe = (): CompiledProbeFactory => {
 };
 
 afterEach(cleanup);
+
+it("keeps the library's per-render marker out of compiler memoization", () => {
+  const sourcePath = resolve(
+    dirname(fileURLToPath(import.meta.url)),
+    "../../../bippy/src/react.ts",
+  );
+  const { outputText } = transpileModule(readFileSync(sourcePath, "utf8"), {
+    compilerOptions: { module: ModuleKind.ESNext, target: ScriptTarget.ESNext },
+  });
+  const compiled = transformSync(outputText, {
+    babelrc: false,
+    configFile: false,
+    filename: "react.js",
+    plugins: [["babel-plugin-react-compiler", { target: "19" }]],
+  });
+  expect(compiled?.code).toContain('"use no memo"');
+  expect(compiled?.code).not.toContain("react/compiler-runtime");
+});
 
 it("returns the exact fiber from React Compiler output", () => {
   const CompiledProbe = compileProbe()(compilerRuntimeCache, React, useFiber);

@@ -48,7 +48,10 @@
     "tests": [
       "packages/conformance/tests/live-fibers.test.tsx",
       "packages/conformance/tests/unit/use-fiber-version-matrix.test.ts",
-      "packages/conformance/tests/unit/use-fiber-attack.test.ts"
+      "packages/conformance/tests/unit/use-fiber-attack.test.ts",
+      "packages/conformance/tests/unit/use-fiber-bind-attacks.test.tsx",
+      "packages/conformance/tests/unit/use-fiber-capture-contract.test.ts",
+      "packages/conformance/tests/unit/use-fiber-early-react.test.ts"
     ]
   },
   {
