@@ -32,15 +32,24 @@ export const createHookBenchmarks = ({
 }: BenchmarkContext): BenchmarkCase[] => {
   const cases: BenchmarkCase[] = [];
   for (const count of [1, 16, 128]) {
-    for (const custom of [false, true]) {
+    for (const kind of ["state", "custom", "distinct"]) {
+      const distinctRender: unknown =
+        kind === "distinct"
+          ? new Function(
+              "React",
+              `return () => {\n${Array.from({ length: count }, (_, index) => `React.useState(${index});`).join("\n")}\nreturn null;\n}`,
+            )(React)
+          : null;
       const useBenchValue = (index: number) => {
         const [value] = React.useState(index);
         React.useRef(value);
         return React.useMemo(() => value, [value]);
       };
       const Render = () => {
+        if (typeof distinctRender === "function")
+          return Reflect.apply(distinctRender, undefined, []);
         for (let index = 0; index < count; index++) {
-          if (custom) useBenchValue(index);
+          if (kind === "custom") useBenchValue(index);
           else React.useState(index);
         }
         return null;
@@ -62,7 +71,7 @@ export const createHookBenchmarks = ({
         (candidate) => candidate.type === Render,
       );
       assert.ok(fiber);
-      const scenario = `${custom ? "custom" : "state"}-${count}`;
+      const scenario = `${kind}-${count}`;
       cases.push(
         benchmarkCase(
           `getFiberHooks/${scenario}`,

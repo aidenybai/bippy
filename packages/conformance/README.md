@@ -106,13 +106,13 @@ The meaningful change is removal of repeated root searches on ordinary early-Rea
 
 `pnpm --filter conformance bench` builds Bippy and benchmarks all **65 function/constructor exports** from `bippy` and `bippy/source`. Aliases are verified rather than presented as independent implementations. Data exports are inventoried, not timed as functions. Coverage checks reuse the canonical export reader and reject missing or invented exports.
 
-The suite produces 676 microbenchmark rows (169 scenarios across ESM/CJS × development/production), 72 production `useFiber` configurations, and 12 cold-import measurements:
+The suite produces 708 microbenchmark rows (177 scenarios across ESM/CJS × development/production), 72 production `useFiber` configurations, and 12 cold-import measurements:
 
 - Core helpers, wrapper cycles/depth, IDs, alternate reflection and root-search fallback; deep/wide trees up to 10,000 nodes; mounted/updated trees and Suspense simulated unmounts.
 - Cold/warm work-tag caches, changed associations, live DOM host/renderer lookup, and synthetic Native-tag root searches.
 - Hook installation, subscription churn, activation, renderer injection, commit/unmount/post-commit/schedule fan-out through 1,000 listeners, and throwing listeners with a stubbed reporter.
 - Synthetic debug/owner/parent stacks, V8/Safari parsing, source-map lookup and decoding, indexed maps, symbolication, and hook names. Fetching uses in-memory responses; attempted default network requests fail the worker.
-- `getFiberHooks` and standalone `inspectHooks` on real React roots at 1/16/128 state hooks or custom-hook calls. Each custom hook contains state, memo, and ref primitives.
+- `getFiberHooks` and standalone `inspectHooks` on real React roots at 1/16/128 state hooks, custom-hook calls, or distinct generated state-call sites. Each custom hook contains state, memo, and ref primitives.
 - Production `useFiber` mounts/updates across nine React fixtures, with/without-hook baselines, exact component/props identity checks, and render-count assertions.
 - Fresh-process native Node imports of all three entrypoints; runtime bundle sizes, gzip sizes, and SHA-256 hashes.
 
@@ -120,7 +120,7 @@ Full runs write `benchmarks/results/latest.json` and `latest.md`; generated resu
 
 `bench:smoke` requires existing build output. CI runs it after the packaged checks to validate fixtures, measurements, and export accounting, not to enforce timing thresholds. Smoke mode uses one iteration/sample and a small React 19 `useFiber` configuration; its timings are not benchmark results. Harness unit tests cover async waiting, timing boundaries, cleanup, calibration caps, and coverage failures.
 
-A local Apple M5 Max / Node 24.20.0 / Happy DOM run of production ESM showed these approximate per-operation medians:
+Before the source hot-path optimization below, a local Apple M5 Max / Node 24.20.0 / Happy DOM run of production ESM showed these approximate per-operation medians:
 
 | Workload                                                        |    Time |
 | --------------------------------------------------------------- | ------: |
@@ -139,6 +139,27 @@ For 1,000 null-rendering React 19 components, update medians were 0.244 ms witho
 Hook inspection is the standout cost: avoid replaying every component's hooks on every render/commit. Large reverse source-map lookups and ancestor/root searches remain linear-work candidates for follow-up profiling. Warm direct lookups and listener dispatch are much cheaper in these fixtures. Cache writes and allocation-heavy cold cases show wider sample ranges.
 
 These are workload snapshots, not universal API costs or a before/after comparison with the earlier optimization table. Core/source/inspection timing uses the installed React version; only `useFiber` spans all nine fixtures. Profiling-build timing, browser/mobile renderers, locked intrinsics, every private `dist/*` chunk, network latency, first-ever inspection initialization, and allocation/leak profiling are not covered. Synthetic Native-tag lookup is not a Native renderer benchmark.
+
+### Source hot-path optimization
+
+CPU profiles identified repeated stack parsing and location extraction in hook inspection. Location parsing now scans numeric suffixes from the end, retaining the previous handling of line terminators. Stack parsers consume lines directly instead of splitting/filtering each already-split line. Inspection reuses parsed frames within one tree build, including shared frames across distinct hook call sites; it does not reuse hook values or inspection results. Public `parseStack` calls still return fresh frames.
+
+Reverse source-map lookups use indexed loops and avoid constructing later ignored candidates once a valid ignored fallback exists. No persistent reverse index is used: callers can mutate names, sources, mappings, contents, and ignore sets. First-duplicate semantics and application-source preference remain intact.
+
+Paired production runs against the pre-optimization bundles from `35fe6a6`, using the same expanded fixtures on Node 24.20.0 / Apple M5 Max:
+
+| Workload                                          | ESM before → after | CJS before → after |
+| ------------------------------------------------- | -----------------: | -----------------: |
+| Inspect 128 state hooks                           |     3.21 → 2.28 ms |     3.74 → 2.83 ms |
+| Inspect 128 custom-hook calls / 384 primitives    |     9.70 → 6.92 ms |    11.39 → 8.50 ms |
+| Inspect 128 distinct state-call sites             |     3.82 → 3.03 ms |     4.36 → 3.56 ms |
+| Parse 1,000 V8 frames                             |       655 → 464 µs |       633 → 470 µs |
+| Tail source-content lookup / 10,000 filenames     |        183 → 40 µs |        181 → 40 µs |
+| Function-name lookup past 10,000 ignored mappings |        121 → 59 µs |        125 → 63 µs |
+
+`source-hot-paths.test.ts` checks 17,027 location comparisons against the previous parser, per-parser frame reuse/isolation, fresh public frames, mutable source maps, duplicate sources, and ignored-candidate work. The ignored-candidate regression reproduces 1,001 name reads before the fix versus three afterward. Existing inspection ports continue to check hook values, nesting, IDs, names, and cleanup.
+
+These timings are diagnostic. Other local runs varied with machine load; native Error capture and Node's source-map-aware stack formatting still consume substantial inspection time. Replay is not safe to put indiscriminately on every commit, and these changes do not make reverse lookup or deep ancestor traversal constant-time. Runtime changes are limited to source parsing, symbolication, and inspection; `useFiber` capture behavior is unchanged.
 
 ## `useFiber` capture contract
 

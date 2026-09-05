@@ -240,6 +240,31 @@ export const createSourceBenchmarks = ({ Source }: BenchmarkContext): BenchmarkC
       (value) => assert.equal(value, sourceContent),
     );
   }
+  for (const hasApplicationSource of [false, true]) {
+    const ignoredMap: SourceMap = {
+      version: 3,
+      sources: ["vendor.tsx", "app.tsx"],
+      names: ["Target"],
+      ignoredSourceIndices: new Set([0]),
+      mappings: Array.from({ length: 10000 }, (_, index) => [
+        [0, hasApplicationSource && index === 9999 ? 1 : 0, index, 0, 0],
+      ]),
+    };
+    add(
+      "getSourceFromSourceMapByFunctionName",
+      `ignored-10000-${hasApplicationSource ? "application-tail" : "fallback"}`,
+      () => Source.getSourceFromSourceMapByFunctionName(ignoredMap, "Target"),
+      (value) => {
+        assert.deepEqual(value, {
+          columnNumber: 0,
+          fileName: hasApplicationSource ? "app.tsx" : "vendor.tsx",
+          functionName: "Target",
+          isIgnoreListed: !hasApplicationSource,
+          lineNumber: hasApplicationSource ? 10000 : 1,
+        });
+      },
+    );
+  }
   const indexed: SourceMap = {
     version: 3,
     sources: [],
