@@ -18,8 +18,24 @@ export type {
 } from "./generated/react-work-tags.js";
 export * from "./types.js";
 
+interface InheritedWorkTags {
+  workTags: Readonly<ReactWorkTagMap>;
+  generation: number;
+}
+
 const defaultReactWorkTags = getReactWorkTags();
 const fiberReactWorkTags = new WeakMap<Fiber, Readonly<ReactWorkTagMap>>();
+const inheritedFiberWorkTags = new WeakMap<Fiber, InheritedWorkTags>();
+let workTagGeneration = 0;
+
+const getCachedWorkTags = (fiber: Fiber): Readonly<ReactWorkTagMap> | undefined => {
+  const assignedWorkTags = fiberReactWorkTags.get(fiber);
+  if (assignedWorkTags) return assignedWorkTags;
+  const inheritedWorkTags = inheritedFiberWorkTags.get(fiber);
+  return inheritedWorkTags?.generation === workTagGeneration
+    ? inheritedWorkTags.workTags
+    : undefined;
+};
 
 // React's experimental channel historically reported "0.0.0-experimental-<sha>"
 // as the runtime version; those builds use modern work tags, not the 16.x rows
@@ -39,30 +55,36 @@ export const getReactWorkTagsForRenderer = (
 
 export const setReactWorkTagsForFiber = (fiber: Fiber, renderer?: ReactRenderer): void => {
   const workTags = getReactWorkTagsForRenderer(renderer);
+  if (
+    getCachedWorkTags(fiber) !== workTags ||
+    (fiber.alternate && getCachedWorkTags(fiber.alternate) !== workTags)
+  ) {
+    workTagGeneration++;
+  }
   fiberReactWorkTags.set(fiber, workTags);
   if (fiber.alternate) fiberReactWorkTags.set(fiber.alternate, workTags);
 };
 
 export const getReactWorkTagsForFiber = (fiber: Fiber): Readonly<ReactWorkTagMap> => {
-  const cachedWorkTags = fiberReactWorkTags.get(fiber);
-  if (cachedWorkTags) return cachedWorkTags;
-
-  const traversedFibers: Fiber[] = [fiber];
-  let rootFiber = fiber;
-  let workTags = defaultReactWorkTags;
-  while (rootFiber.return) {
-    rootFiber = rootFiber.return;
-    const ancestorWorkTags = fiberReactWorkTags.get(rootFiber);
-    if (ancestorWorkTags) {
-      workTags = ancestorWorkTags;
+  let workTags = getCachedWorkTags(fiber);
+  if (workTags) return workTags;
+  const traversedFibers: Fiber[] = [];
+  let ancestor = fiber;
+  while (!workTags) {
+    traversedFibers.push(ancestor);
+    const parent = ancestor.return;
+    if (!parent) {
+      workTags = inheritedFiberWorkTags.get(ancestor)?.workTags ?? defaultReactWorkTags;
       break;
     }
-    traversedFibers.push(rootFiber);
+    ancestor = parent;
+    workTags = getCachedWorkTags(ancestor);
   }
+  const inheritedWorkTags = { workTags, generation: workTagGeneration };
   for (const traversedFiber of traversedFibers) {
-    fiberReactWorkTags.set(traversedFiber, workTags);
+    inheritedFiberWorkTags.set(traversedFiber, inheritedWorkTags);
     if (traversedFiber.alternate) {
-      fiberReactWorkTags.set(traversedFiber.alternate, workTags);
+      inheritedFiberWorkTags.set(traversedFiber.alternate, inheritedWorkTags);
     }
   }
   return workTags;

@@ -6,6 +6,7 @@
     "test": "vp test",
     "test:all": "pnpm --workspace-root test && pnpm --workspace-root typecheck && pnpm test:built",
     "test:built": "pnpm --filter bippy build && tsx scripts/check-built.ts",
+    "bench:use-fiber": "pnpm --filter bippy build && tsx scripts/benchmark-use-fiber.ts",
     "typecheck": "tsc --noEmit",
     "check:upstream": "tsx scripts/check-upstream.ts",
     "sync:devtools": "tsx scripts/sync-devtools.ts",
