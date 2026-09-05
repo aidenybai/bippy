@@ -8,11 +8,8 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "skipLibCheck": true,
-    "lib": ["esnext", "dom"],
-    "paths": {
-      "vitest": ["../../node_modules/@voidzero-dev/vite-plus-test/dist/index.d.ts"]
-    }
+    "lib": ["esnext", "dom"]
   },
-  "include": ["src", "tests", "vite.config.ts"],
-  "exclude": ["**/node_modules/**", "**/dist/**", "tests/fixtures/**"]
+  "include": ["src", "scripts", "vite.config.ts"],
+  "exclude": ["**/node_modules/**", "**/dist/**"]
 }

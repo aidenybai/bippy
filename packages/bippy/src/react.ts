@@ -5,6 +5,11 @@ import type { Fiber } from "./react-internals/index.js";
 
 export type { Fiber } from "./react-internals/index.js";
 
+interface FiberHookEffect {
+  create: unknown;
+  next: unknown;
+}
+
 const preserveState = (state: undefined): undefined => state;
 const readEmptySnapshot = (): undefined => undefined;
 const unsubscribeFromEmptyStore = (): void => {};
@@ -53,24 +58,40 @@ const useReducerCapture = (): void => {
 const useFiberWithExternalStore = (): Fiber | undefined =>
   captureFiberFromHook(useExternalStoreCapture) ?? undefined;
 
+const isHookEffect = (value: unknown): value is FiberHookEffect =>
+  typeof value === "object" && value !== null && "create" in value && "next" in value;
+
+const hasRenderMarker = (fiber: Fiber, renderMarker: () => void): boolean => {
+  const lastEffect = fiber.updateQueue?.lastEffect;
+  if (!isHookEffect(lastEffect)) return false;
+  let effect = lastEffect;
+  do {
+    if (effect.create === renderMarker) return true;
+    if (!isHookEffect(effect.next)) return false;
+    effect = effect.next;
+  } while (effect !== lastEffect);
+  return false;
+};
+
+// HACK: React 17 only binds the rendering Fiber on mount. Later renders are identified through
+// the effect list instead: renderWithHooks clears `updateQueue` on the work-in-progress Fiber,
+// so only the Fiber that is rendering right now holds this render's marker effect.
 const useFiberWithReducer = (): Fiber | undefined => {
-  const committedFiberRef = React.useRef<Fiber | null>(null);
-  const renderedFiberRef = React.useRef<Fiber | null>(null);
-  const hookFiber = captureFiberFromHook(useReducerCapture);
-  const fiber =
-    hookFiber ??
-    (renderedFiberRef.current !== committedFiberRef.current
-      ? renderedFiberRef.current
-      : committedFiberRef.current?.alternate) ??
-    committedFiberRef.current;
-
-  renderedFiberRef.current = fiber;
-
-  React.useEffect(() => {
-    committedFiberRef.current = fiber;
-  }, [fiber]);
-
-  return fiber ?? undefined;
+  const fiberRef = React.useRef<Fiber | null>(null);
+  const renderMarker = (): void => {};
+  React.useEffect(renderMarker, []);
+  const mountedFiber = captureFiberFromHook(useReducerCapture);
+  if (mountedFiber) {
+    fiberRef.current = mountedFiber;
+    return mountedFiber;
+  }
+  const knownFiber = fiberRef.current;
+  if (!knownFiber) return undefined;
+  return (
+    [knownFiber, knownFiber.alternate].find(
+      (candidate) => candidate !== null && hasRenderMarker(candidate, renderMarker),
+    ) ?? undefined
+  );
 };
 
 export const useFiber =

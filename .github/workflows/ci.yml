@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        task: [build, check, test]
+        task: [build, check, test, typecheck]
 
     steps:
       - uses: actions/checkout@v4
@@ -31,3 +31,5 @@ jobs:
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
       - run: pnpm run ${{ matrix.task }}
+      - if: matrix.task == 'build'
+        run: pnpm --filter conformance exec tsx scripts/check-built.ts

@@ -29,6 +29,7 @@ jobs:
           filters: |
             native:
               - "packages/bippy/**"
+              - "packages/conformance/**"
               - "packages/e2e/**"
               - ".github/workflows/e2e.yml"
               - "pnpm-lock.yaml"

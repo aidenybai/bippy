@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "NodeNext",
+    "jsx": "react",
+    "esModuleInterop": true,
+    "strict": true,
+    "noEmit": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "skipLibCheck": true,
+    "paths": {
+      "bippy": ["../bippy/src/index.ts"],
+      "bippy/source": ["../bippy/src/source/index.ts"]
+    }
+  },
+  "include": ["tests", "scripts", "vite.config.ts"]
+}

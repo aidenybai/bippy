@@ -2,5 +2,5 @@ nodeLinker: hoisted
 
 packages:
   - "packages/*"
-  - "packages/bippy/tests/fixtures/*"
+  - "packages/conformance/fixtures/*"
   - "packages/e2e/fixtures/*"

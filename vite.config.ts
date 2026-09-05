@@ -1,18 +1,14 @@
 import { defineConfig } from "vite-plus";
+import { conformanceTestConfig } from "./packages/conformance/vite.config.js";
 
 const reactDevToolsHookSources =
-  "packages/bippy/tests/fixtures/react-devtools-headless/fixtures/hook-sources/**";
+  "packages/conformance/fixtures/react-devtools-headless/fixtures/hook-sources/**";
 
 export default defineConfig({
   staged: {
     "*.{js,ts,tsx}": "vp check --fix",
   },
-  test: {
-    projects: [
-      "packages/bippy/vite.config.ts",
-      "packages/bippy/tests/fixtures/react-devtools-headless/vite.config.ts",
-    ],
-  },
+  test: conformanceTestConfig,
   fmt: {
     ignorePatterns: [
       "**/routeTree.gen.ts",

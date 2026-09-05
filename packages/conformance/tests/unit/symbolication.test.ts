@@ -1,0 +1,1209 @@
+import { encode } from "@jridgewell/sourcemap-codec";
+import { describe, expect, it, vi } from "vite-plus/test";
+import type { StackFrame } from "../../../bippy/src/source/parse-stack.js";
+import {
+  getSourceFromSourceMap,
+  getSourceFromSourceMapByFunctionName,
+  getSourceMap,
+  getSourceMapUncached,
+  sourceMapCache,
+  symbolicateStack,
+  type SourceMap,
+} from "../../../bippy/src/source/symbolication.js";
+
+const createStandardSourceMap = (overrides?: Partial<SourceMap>): SourceMap => ({
+  file: "bundle.js",
+  mappings: [
+    [
+      [0, 0, 0, 0],
+      [10, 0, 1, 4],
+      [20, 0, 2, 8],
+    ],
+  ],
+  names: [],
+  sources: ["src/app.tsx"],
+  sourcesContent: ["const value = 1;"],
+  version: 3,
+  ...overrides,
+});
+
+const createResponseWithUrl = (content: string, url: string): Response => {
+  const response = new Response(content, { status: 200 });
+  Object.defineProperty(response, "url", { value: url });
+  return response;
+};
+
+const createResponseWithoutStream = (content: string): Response => {
+  const response = new Response(content, { status: 200 });
+  Object.defineProperty(response, "body", { value: null });
+  return response;
+};
+
+describe("getSourceFromSourceMap", () => {
+  it("resolves the segment at an exact column", () => {
+    const result = getSourceFromSourceMap(createStandardSourceMap(), 1, 10);
+    expect(result).toEqual({
+      columnNumber: 4,
+      fileName: "src/app.tsx",
+      isIgnoreListed: false,
+      lineNumber: 2,
+    });
+  });
+
+  it("resolves the last segment at or before the column", () => {
+    const result = getSourceFromSourceMap(createStandardSourceMap(), 1, 15);
+    expect(result?.lineNumber).toBe(2);
+  });
+
+  it("resolves the last segment when the column is past all segments", () => {
+    const result = getSourceFromSourceMap(createStandardSourceMap(), 1, 100);
+    expect(result?.lineNumber).toBe(3);
+  });
+
+  it("resolves original names from five-field segments", () => {
+    const sourceMap = createStandardSourceMap({
+      mappings: [[[0, 0, 0, 0, 0]]],
+      names: ["BookmarkSaveAction"],
+    });
+
+    expect(getSourceFromSourceMap(sourceMap, 1, 0)?.functionName).toBe("BookmarkSaveAction");
+  });
+
+  it("ignores empty source-map names", () => {
+    const sourceMap = createStandardSourceMap({
+      mappings: [[[0, 0, 0, 0, 0]]],
+      names: [""],
+    });
+
+    expect(getSourceFromSourceMap(sourceMap, 1, 0)?.functionName).toBeUndefined();
+  });
+
+  it("returns null when the column is before all segments after the first", () => {
+    const sourceMap = createStandardSourceMap({ mappings: [[[5, 0, 0, 0]]] });
+    expect(getSourceFromSourceMap(sourceMap, 1, 2)).toBeNull();
+  });
+
+  it("returns null for out-of-range lines", () => {
+    expect(getSourceFromSourceMap(createStandardSourceMap(), 0, 0)).toBeNull();
+    expect(getSourceFromSourceMap(createStandardSourceMap(), 99, 0)).toBeNull();
+  });
+
+  it("returns null for lines without mappings", () => {
+    const sourceMap = createStandardSourceMap({ mappings: [[]] });
+    expect(getSourceFromSourceMap(sourceMap, 1, 0)).toBeNull();
+  });
+
+  it("returns null for segments without source info", () => {
+    const sourceMap = createStandardSourceMap({ mappings: [[[0]]] });
+    expect(getSourceFromSourceMap(sourceMap, 1, 0)).toBeNull();
+  });
+
+  it("returns null for four-field segments with holes", () => {
+    const malformedSegment: number[] = [0, 0];
+    malformedSegment.length = 4;
+    const sourceMap = createStandardSourceMap();
+    Reflect.set(sourceMap, "mappings", [[malformedSegment]]);
+    expect(getSourceFromSourceMap(sourceMap, 1, 0)).toBeNull();
+  });
+
+  it("returns null when the segment points at a missing source", () => {
+    const sourceMap = createStandardSourceMap({ sources: [] });
+    expect(getSourceFromSourceMap(sourceMap, 1, 0)).toBeNull();
+  });
+
+  it("resolves through index map sections with line offsets", () => {
+    const sourceMap = createStandardSourceMap({
+      sections: [
+        {
+          map: {
+            mappings: [[[0, 0, 0, 0]]],
+            sources: ["src/first.tsx"],
+            version: 3,
+          },
+          offset: { column: 0, line: 0 },
+        },
+        {
+          map: {
+            mappings: [[[0, 0, 5, 0]]],
+            sources: ["src/second.tsx"],
+            version: 3,
+          },
+          offset: { column: 0, line: 10 },
+        },
+      ],
+    });
+
+    expect(getSourceFromSourceMap(sourceMap, 1, 0)?.fileName).toBe("src/first.tsx");
+    expect(getSourceFromSourceMap(sourceMap, 11, 0)?.fileName).toBe("src/second.tsx");
+    expect(getSourceFromSourceMap(sourceMap, 11, 0)?.lineNumber).toBe(6);
+  });
+
+  it("keeps the full column for lines after the section offset line", () => {
+    const sourceMap = createStandardSourceMap({
+      sections: [
+        {
+          map: {
+            mappings: [[[0, 0, 0, 0]], [[5, 0, 1, 3]]],
+            sources: ["src/offset.tsx"],
+            version: 3,
+          },
+          offset: { column: 7, line: 3 },
+        },
+      ],
+    });
+
+    const result = getSourceFromSourceMap(sourceMap, 5, 5);
+    expect(result?.fileName).toBe("src/offset.tsx");
+    expect(result?.lineNumber).toBe(2);
+    expect(result?.columnNumber).toBe(3);
+  });
+
+  it("adjusts columns for frames on the section offset line", () => {
+    const sourceMap = createStandardSourceMap({
+      sections: [
+        {
+          map: {
+            mappings: [[[0, 0, 0, 0]]],
+            sources: ["src/first.tsx"],
+            version: 3,
+          },
+          offset: { column: 100, line: 0 },
+        },
+      ],
+    });
+
+    expect(getSourceFromSourceMap(sourceMap, 1, 100)?.fileName).toBe("src/first.tsx");
+    expect(getSourceFromSourceMap(sourceMap, 1, 50)).toBeNull();
+  });
+
+  it("returns null when no section matches the position", () => {
+    const sourceMap = createStandardSourceMap({
+      sections: [
+        {
+          map: { mappings: [[[0, 0, 0, 0]]], sources: ["src/first.tsx"], version: 3 },
+          offset: { column: 0, line: 50 },
+        },
+      ],
+    });
+
+    expect(getSourceFromSourceMap(sourceMap, 10, 0)).toBeNull();
+  });
+});
+
+describe("getSourceFromSourceMapByFunctionName", () => {
+  it("resolves a component definition from a named mapping", () => {
+    const sourceMap = createStandardSourceMap({
+      mappings: [[[0, 0, 10, 6, 0]]],
+      names: ["SkiaMemoLeaf"],
+      sources: ["src/skia-probe.tsx"],
+    });
+
+    expect(getSourceFromSourceMapByFunctionName(sourceMap, "SkiaMemoLeaf")).toEqual({
+      columnNumber: 6,
+      fileName: "src/skia-probe.tsx",
+      functionName: "SkiaMemoLeaf",
+      isIgnoreListed: false,
+      lineNumber: 11,
+    });
+  });
+
+  it("returns null when the component is absent", () => {
+    expect(
+      getSourceFromSourceMapByFunctionName(createStandardSourceMap(), "MissingComponent"),
+    ).toBeNull();
+  });
+
+  it("prefers application sources over ignore-listed dependencies", () => {
+    const sourceMap = createStandardSourceMap({
+      ignoredSourceIndices: new Set([0]),
+      mappings: [
+        [
+          [0, 0, 0, 0, 0],
+          [10, 1, 5, 2, 0],
+        ],
+      ],
+      names: ["Button"],
+      sources: ["node_modules/ui/button.tsx", "src/button.tsx"],
+    });
+
+    expect(getSourceFromSourceMapByFunctionName(sourceMap, "Button")).toEqual({
+      columnNumber: 2,
+      fileName: "src/button.tsx",
+      functionName: "Button",
+      isIgnoreListed: false,
+      lineNumber: 6,
+    });
+  });
+});
+
+const STANDARD_RAW_MAP = JSON.stringify({
+  version: 3,
+  file: "bundle.js",
+  sources: ["src/app.tsx"],
+  sourcesContent: ["const value = 1;"],
+  names: [],
+  mappings: encode([[[0, 0, 0, 0]]]),
+});
+
+const INDEX_RAW_MAP = JSON.stringify({
+  version: 3,
+  sections: [
+    {
+      offset: { line: 0, column: 0 },
+      map: {
+        version: 3,
+        sources: ["src/app.tsx", "src/app.tsx"],
+        names: [],
+        mappings: encode([[[0, 0, 0, 0]]]),
+      },
+    },
+  ],
+});
+
+const createFetchFn = (
+  responses: Record<string, Response | (() => Response)>,
+): ((url: string) => Promise<Response>) => {
+  return (url: string) => {
+    const match = responses[url];
+    if (!match) return Promise.resolve(new Response("not found", { status: 404 }));
+    return Promise.resolve(typeof match === "function" ? match() : match);
+  };
+};
+
+describe("getSourceMapUncached", () => {
+  it("returns null for non-fetchable urls", async () => {
+    expect(await getSourceMapUncached("")).toBeNull();
+    expect(await getSourceMapUncached("   ")).toBeNull();
+    expect(await getSourceMapUncached("rsc://React/Server/file.js")).toBeNull();
+    expect(await getSourceMapUncached("data:application/json;base64,abc")).toBeNull();
+  });
+
+  it("returns null when the runtime does not provide fetch", async () => {
+    const originalFetch = globalThis.fetch;
+    Reflect.deleteProperty(globalThis, "fetch");
+    try {
+      expect(await getSourceMapUncached("http://localhost/bundle.js")).toBeNull();
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("returns null when the bundle fetch is not ok", async () => {
+    const fetchFn = createFetchFn({});
+    expect(await getSourceMapUncached("http://localhost/bundle.js", fetchFn)).toBeNull();
+  });
+
+  it("returns null when the bundle is empty", async () => {
+    const fetchFn = createFetchFn({
+      "http://localhost/bundle.js": new Response("", { status: 200 }),
+    });
+    expect(await getSourceMapUncached("http://localhost/bundle.js", fetchFn)).toBeNull();
+  });
+
+  it("returns null when there is no sourceMappingURL", async () => {
+    const fetchFn = createFetchFn({
+      "http://localhost/bundle.js": new Response("const value = 1;", { status: 200 }),
+    });
+    expect(await getSourceMapUncached("http://localhost/bundle.js", fetchFn)).toBeNull();
+  });
+
+  it("reads React Native responses without streaming bodies", async () => {
+    const bundleUrl = "http://localhost/index.bundle";
+    const sourceMapUrl = "http://localhost/index.map";
+    const requestedUrls: string[] = [];
+    const fetchFn = (url: string): Promise<Response> => {
+      requestedUrls.push(url);
+      return Promise.resolve(
+        createResponseWithoutStream(url === sourceMapUrl ? STANDARD_RAW_MAP : "const value = 1;"),
+      );
+    };
+
+    const sourceMap = await getSourceMapUncached(bundleUrl, fetchFn);
+
+    expect(requestedUrls).toEqual([bundleUrl, sourceMapUrl]);
+    expect(sourceMap?.sources).toEqual(["src/app.tsx"]);
+  });
+
+  it("normalizes Metro bundle parameters embedded in Hermes stack urls", async () => {
+    const bundleUrl = "http://localhost/index.bundle//&platform=android&dev=true";
+    const sourceMapUrl = "http://localhost/index.map?platform=android&dev=true";
+    const requestedUrls: string[] = [];
+    const fetchFn = (url: string): Promise<Response> => {
+      requestedUrls.push(url);
+      return Promise.resolve(new Response(url === sourceMapUrl ? STANDARD_RAW_MAP : "bundle"));
+    };
+
+    const sourceMap = await getSourceMapUncached(bundleUrl, fetchFn);
+
+    expect(requestedUrls).toEqual([bundleUrl, sourceMapUrl]);
+    expect(sourceMap?.sources).toEqual(["src/app.tsx"]);
+  });
+
+  it("returns null for non-fetchable sourcemap urls", async () => {
+    const fetchFn = createFetchFn({
+      "http://localhost/bundle.js": new Response(
+        "const value = 1;\n//# sourceMappingURL=rsc://React/Server/map.js.map",
+        { status: 200 },
+      ),
+    });
+    expect(await getSourceMapUncached("http://localhost/bundle.js", fetchFn)).toBeNull();
+  });
+
+  it.each(["chrome-extension:", "moz-extension:", "safari-web-extension:"])(
+    "resolves relative sourcemap urls for %s bundles",
+    async (extensionProtocol) => {
+      const bundleUrl = `${extensionProtocol}//abcdefghijklmnop/assets/index.js`;
+      const sourceMapUrl = `${extensionProtocol}//abcdefghijklmnop/assets/index.js.map`;
+      const requestedUrls: string[] = [];
+      const fetchFn = (url: string): Promise<Response> => {
+        requestedUrls.push(url);
+        return Promise.resolve(
+          new Response(
+            url === sourceMapUrl
+              ? STANDARD_RAW_MAP
+              : "const value = 1;\n//# sourceMappingURL=index.js.map",
+            { status: 200 },
+          ),
+        );
+      };
+
+      const sourceMap = await getSourceMapUncached(bundleUrl, fetchFn);
+
+      expect(requestedUrls).toEqual([bundleUrl, sourceMapUrl]);
+      expect(sourceMap?.sources).toEqual(["src/app.tsx"]);
+    },
+  );
+
+  it.each([
+    {
+      bundleUrl: "chrome-extension://abcdefghijklmnop/assets/index.js",
+      sourceMapUrl: "chrome-extension://ponmlkjihgfedcba/assets/index.js.map",
+    },
+    {
+      bundleUrl: "chrome-extension://abcdefghijklmnop/assets/index.js",
+      sourceMapUrl: "https://example.com/assets/index.js.map",
+    },
+    {
+      bundleUrl: "https://example.com/assets/index.js",
+      sourceMapUrl: "chrome-extension://abcdefghijklmnop/assets/index.js.map",
+    },
+  ])(
+    "rejects $sourceMapUrl as the sourcemap for $bundleUrl",
+    async ({ bundleUrl, sourceMapUrl }) => {
+      const requestedUrls: string[] = [];
+      const fetchFn = (url: string): Promise<Response> => {
+        requestedUrls.push(url);
+        return Promise.resolve(
+          new Response(
+            url === bundleUrl
+              ? `const value = 1;\n//# sourceMappingURL=${sourceMapUrl}`
+              : STANDARD_RAW_MAP,
+            { status: 200 },
+          ),
+        );
+      };
+
+      expect(await getSourceMapUncached(bundleUrl, fetchFn)).toBeNull();
+      expect(requestedUrls).toEqual([bundleUrl]);
+    },
+  );
+
+  it("rejects cross-origin sections in Chrome extension index maps", async () => {
+    const bundleUrl = "chrome-extension://abcdefghijklmnop/assets/index.js";
+    const sourceMapUrl = "chrome-extension://abcdefghijklmnop/assets/index.js.map";
+    const sectionUrl = "https://example.com/assets/index-section.js.map";
+    const requestedUrls: string[] = [];
+    const indexSourceMap = JSON.stringify({
+      version: 3,
+      sections: [{ offset: { line: 0, column: 0 }, url: sectionUrl }],
+    });
+    const fetchFn = (url: string): Promise<Response> => {
+      requestedUrls.push(url);
+      if (url === bundleUrl) {
+        return Promise.resolve(
+          new Response("const value = 1;\n//# sourceMappingURL=index.js.map", { status: 200 }),
+        );
+      }
+      return Promise.resolve(
+        new Response(url === sourceMapUrl ? indexSourceMap : STANDARD_RAW_MAP, { status: 200 }),
+      );
+    };
+
+    expect(await getSourceMapUncached(bundleUrl, fetchFn)).toBeNull();
+    expect(requestedUrls).toEqual([bundleUrl, sourceMapUrl]);
+  });
+
+  it("rejects a Chrome extension bundle response redirected to another origin", async () => {
+    const bundleUrl = "chrome-extension://abcdefghijklmnop/assets/index.js";
+    const fetchFn = vi.fn(() =>
+      Promise.resolve(
+        createResponseWithUrl(
+          "const value = 1;\n//# sourceMappingURL=index.js.map",
+          "https://example.com/assets/index.js",
+        ),
+      ),
+    );
+
+    expect(await getSourceMapUncached(bundleUrl, fetchFn)).toBeNull();
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects a Chrome extension source map response redirected to another origin", async () => {
+    const bundleUrl = "chrome-extension://abcdefghijklmnop/assets/index.js";
+    const sourceMapUrl = "chrome-extension://abcdefghijklmnop/assets/index.js.map";
+    const requestedUrls: string[] = [];
+    const fetchFn = (url: string): Promise<Response> => {
+      requestedUrls.push(url);
+      return Promise.resolve(
+        url === bundleUrl
+          ? new Response("const value = 1;\n//# sourceMappingURL=index.js.map")
+          : createResponseWithUrl(STANDARD_RAW_MAP, "https://example.com/assets/index.js.map"),
+      );
+    };
+
+    expect(await getSourceMapUncached(bundleUrl, fetchFn)).toBeNull();
+    expect(requestedUrls).toEqual([bundleUrl, sourceMapUrl]);
+  });
+
+  it("uses the SourceMap response header before a source annotation", async () => {
+    const requestedUrls: string[] = [];
+    const fetchFn = (url: string): Promise<Response> => {
+      requestedUrls.push(url);
+      if (url === "http://localhost/bundle.js") {
+        return Promise.resolve(
+          new Response("const value = 1;\n//# sourceMappingURL=annotation.js.map", {
+            headers: { SourceMap: "header.js.map" },
+            status: 200,
+          }),
+        );
+      }
+      return Promise.resolve(new Response(STANDARD_RAW_MAP, { status: 200 }));
+    };
+
+    expect(await getSourceMapUncached("http://localhost/bundle.js", fetchFn)).not.toBeNull();
+    expect(requestedUrls).toEqual(["http://localhost/bundle.js", "http://localhost/header.js.map"]);
+  });
+
+  it("uses the SourceMap response header for an empty bundle", async () => {
+    const fetchFn = (url: string): Promise<Response> =>
+      Promise.resolve(
+        url.endsWith(".map")
+          ? new Response(STANDARD_RAW_MAP)
+          : new Response("", { headers: { SourceMap: "bundle.js.map" } }),
+      );
+
+    expect(await getSourceMapUncached("http://localhost/bundle.js", fetchFn)).not.toBeNull();
+  });
+
+  it("supports the deprecated X-SourceMap response header", async () => {
+    const requestedUrls: string[] = [];
+    const fetchFn = (url: string): Promise<Response> => {
+      requestedUrls.push(url);
+      return Promise.resolve(
+        url.endsWith(".map")
+          ? new Response(STANDARD_RAW_MAP)
+          : new Response("const value = 1;", { headers: { "X-SourceMap": "bundle.js.map" } }),
+      );
+    };
+
+    expect(await getSourceMapUncached("http://localhost/bundle.js", fetchFn)).not.toBeNull();
+    expect(requestedUrls[1]).toBe("http://localhost/bundle.js.map");
+  });
+
+  it("resolves Metro source maps by replacing the bundle extension and preserving options", async () => {
+    const bundleUrl =
+      "http://localhost:8081/index.bundle?platform=ios&dev=true&minify=false#runtime";
+    const sourceMapUrl = "http://localhost:8081/index.map?platform=ios&dev=true&minify=false";
+    const requestedUrls: string[] = [];
+    const fetchFn = (url: string): Promise<Response> => {
+      requestedUrls.push(url);
+      return Promise.resolve(
+        new Response(url === sourceMapUrl ? STANDARD_RAW_MAP : "const value = 1;", {
+          status: 200,
+        }),
+      );
+    };
+
+    const sourceMap = await getSourceMapUncached(bundleUrl, fetchFn);
+
+    expect(sourceMap?.sources).toEqual(["src/app.tsx"]);
+    expect(requestedUrls).toEqual([bundleUrl, sourceMapUrl]);
+  });
+
+  it("allows a custom source loader to resolve packaged native bundles", async () => {
+    const bundleUrl = "file:///data/app/main.jsbundle";
+    const sourceMapUrl = "file:///data/app/main.jsbundle.map";
+    const requestedUrls: string[] = [];
+    const fetchFn = (url: string): Promise<Response> => {
+      requestedUrls.push(url);
+      return Promise.resolve(
+        url === sourceMapUrl
+          ? new Response(STANDARD_RAW_MAP, { status: 200 })
+          : new Response("const value = 1;", {
+              headers: { SourceMap: "main.jsbundle.map" },
+              status: 200,
+            }),
+      );
+    };
+
+    const sourceMap = await getSourceMapUncached(bundleUrl, fetchFn);
+
+    expect(sourceMap?.sources).toEqual(["src/app.tsx"]);
+    expect(requestedUrls).toEqual([bundleUrl, sourceMapUrl]);
+  });
+
+  it("does not access packaged native bundles without a custom source loader", async () => {
+    const fetchFn = vi.fn(() => Promise.resolve(new Response("")));
+    vi.stubGlobal("fetch", fetchFn);
+    try {
+      expect(await getSourceMapUncached("file:///data/app/main.bundle")).toBeNull();
+      expect(fetchFn).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("keeps custom source loaders within the bundle protocol and host", async () => {
+    const bundleUrl = "app://runtime/main.js";
+    const sourceMapUrl = "https://example.com/main.js.map";
+    const requestedUrls: string[] = [];
+    const fetchFn = (url: string): Promise<Response> => {
+      requestedUrls.push(url);
+      return Promise.resolve(
+        new Response(`const value = 1;\n//# sourceMappingURL=${sourceMapUrl}`, { status: 200 }),
+      );
+    };
+
+    expect(await getSourceMapUncached(bundleUrl, fetchFn)).toBeNull();
+    expect(requestedUrls).toEqual([bundleUrl]);
+  });
+
+  it("returns null when the sourcemap fetch is not ok", async () => {
+    const fetchFn = createFetchFn({
+      "http://localhost/bundle.js": new Response(
+        "const value = 1;\n//# sourceMappingURL=bundle.js.map",
+        { status: 200 },
+      ),
+    });
+    expect(await getSourceMapUncached("http://localhost/bundle.js", fetchFn)).toBeNull();
+  });
+
+  it("returns null when the sourcemap is not valid json", async () => {
+    const fetchFn = createFetchFn({
+      "http://localhost/bundle.js": new Response(
+        "const value = 1;\n//# sourceMappingURL=bundle.js.map",
+        { status: 200 },
+      ),
+      "http://localhost/bundle.js.map": new Response("not json", { status: 200 }),
+    });
+    expect(await getSourceMapUncached("http://localhost/bundle.js", fetchFn)).toBeNull();
+  });
+
+  it("resolves relative sourcemap urls against the bundle url", async () => {
+    const requestedUrls: string[] = [];
+    const fetchFn = (url: string): Promise<Response> => {
+      requestedUrls.push(url);
+      if (url === "http://localhost/assets/bundle.js") {
+        return Promise.resolve(
+          new Response("const value = 1;\n//# sourceMappingURL=bundle.js.map", { status: 200 }),
+        );
+      }
+      return Promise.resolve(new Response(STANDARD_RAW_MAP, { status: 200 }));
+    };
+
+    const sourceMap = await getSourceMapUncached("http://localhost/assets/bundle.js", fetchFn);
+    expect(requestedUrls[1]).toBe("http://localhost/assets/bundle.js.map");
+    expect(sourceMap?.sources).toEqual(["src/app.tsx"]);
+  });
+
+  it("resolves root-relative sourcemap urls against the bundle origin", async () => {
+    const requestedUrls: string[] = [];
+    const fetchFn = (url: string): Promise<Response> => {
+      requestedUrls.push(url);
+      if (url === "http://localhost/bundle.js") {
+        return Promise.resolve(
+          new Response("const value = 1;\n//# sourceMappingURL=/maps/bundle.js.map", {
+            status: 200,
+          }),
+        );
+      }
+      return Promise.resolve(new Response(STANDARD_RAW_MAP, { status: 200 }));
+    };
+
+    await getSourceMapUncached("http://localhost/bundle.js", fetchFn);
+    expect(requestedUrls[1]).toBe("http://localhost/maps/bundle.js.map");
+  });
+
+  it("normalizes parent paths and removes the bundle query and hash", async () => {
+    const requestedUrls: string[] = [];
+    const fetchFn = (url: string): Promise<Response> => {
+      requestedUrls.push(url);
+      if (url.includes("app.js?")) {
+        return Promise.resolve(
+          new Response("const value = 1;\n//# sourceMappingURL=../maps/app.js.map", {
+            status: 200,
+          }),
+        );
+      }
+      return Promise.resolve(new Response(STANDARD_RAW_MAP, { status: 200 }));
+    };
+
+    await getSourceMapUncached("http://localhost/assets/chunks/app.js?v=1#dev", fetchFn);
+    expect(requestedUrls[1]).toBe("http://localhost/assets/maps/app.js.map");
+  });
+
+  it("decodes inline data-url sourcemaps (vite dev style)", async () => {
+    const inlineMapUrl = `data:application/json;base64,${Buffer.from(STANDARD_RAW_MAP).toString("base64")}`;
+    const fetchFn = (url: string): Promise<Response> => {
+      if (url === "http://localhost/src/app.tsx") {
+        return Promise.resolve(
+          new Response(`const value = 1;\n//# sourceMappingURL=${inlineMapUrl}`, { status: 200 }),
+        );
+      }
+      return fetch(url);
+    };
+    const sourceMap = await getSourceMapUncached("http://localhost/src/app.tsx", fetchFn);
+    expect(sourceMap?.sources).toEqual(["src/app.tsx"]);
+  });
+
+  it("decodes percent-encoded inline sourcemaps without fetching the data url", async () => {
+    const inlineMapUrl = `data:application/json,${encodeURIComponent(STANDARD_RAW_MAP)}`;
+    const requestedUrls: string[] = [];
+    const fetchFn = (url: string): Promise<Response> => {
+      requestedUrls.push(url);
+      return Promise.resolve(
+        new Response(`const value = 1;\n//# sourceMappingURL=${inlineMapUrl}`, { status: 200 }),
+      );
+    };
+    const sourceMap = await getSourceMapUncached("http://localhost/src/app.tsx", fetchFn);
+    expect(sourceMap?.sources).toEqual(["src/app.tsx"]);
+    expect(requestedUrls).toEqual(["http://localhost/src/app.tsx"]);
+  });
+
+  it("finds the sourceMappingURL in a block comment", async () => {
+    const fetchFn = createFetchFn({
+      "http://localhost/bundle.js": new Response(
+        "const value = 1;\n/*# sourceMappingURL=http://localhost/bundle.js.map */",
+        { status: 200 },
+      ),
+      "http://localhost/bundle.js.map": new Response(STANDARD_RAW_MAP, { status: 200 }),
+    });
+    const sourceMap = await getSourceMapUncached("http://localhost/bundle.js", fetchFn);
+    expect(sourceMap?.sources).toEqual(["src/app.tsx"]);
+  });
+
+  it("finds the sourceMappingURL when trailing lines follow it", async () => {
+    const fetchFn = createFetchFn({
+      "http://localhost/bundle.js": new Response(
+        "const value = 1;\n//# sourceMappingURL=http://localhost/bundle.js.map\nconst tail = 2;",
+        { status: 200 },
+      ),
+      "http://localhost/bundle.js.map": new Response(STANDARD_RAW_MAP, { status: 200 }),
+    });
+    const sourceMap = await getSourceMapUncached("http://localhost/bundle.js", fetchFn);
+    expect(sourceMap?.sources).toEqual(["src/app.tsx"]);
+  });
+
+  it("decodes standard source maps", async () => {
+    const fetchFn = createFetchFn({
+      "http://localhost/bundle.js": new Response(
+        "const value = 1;\n//# sourceMappingURL=http://localhost/bundle.js.map",
+        { status: 200 },
+      ),
+      "http://localhost/bundle.js.map": new Response(STANDARD_RAW_MAP, { status: 200 }),
+    });
+    const sourceMap = await getSourceMapUncached("http://localhost/bundle.js", fetchFn);
+    expect(sourceMap?.mappings).toEqual([[[0, 0, 0, 0]]]);
+    expect(sourceMap?.sections).toBeUndefined();
+  });
+
+  it("resolves sourceRoot for framework source maps", async () => {
+    const sourceMapWithRoot = JSON.stringify({
+      version: 3,
+      sourceRoot: "webpack://application/",
+      sources: ["src/app.tsx"],
+      names: [],
+      mappings: encode([[[0, 0, 0, 0]]]),
+    });
+    const fetchFn = createFetchFn({
+      "http://localhost/bundle.js": new Response(
+        "const value = 1;\n//# sourceMappingURL=http://localhost/bundle.js.map",
+        { status: 200 },
+      ),
+      "http://localhost/bundle.js.map": new Response(sourceMapWithRoot, { status: 200 }),
+    });
+
+    const sourceMap = await getSourceMapUncached("http://localhost/bundle.js", fetchFn);
+    expect(sourceMap?.sources).toEqual(["webpack://application/src/app.tsx"]);
+  });
+
+  it("resolves relative sourceRoot paths against the source map url", async () => {
+    const sourceMapWithRoot = JSON.stringify({
+      version: 3,
+      sourceRoot: "../src",
+      sources: ["app.tsx"],
+      names: [],
+      mappings: encode([[[0, 0, 0, 0]]]),
+    });
+    const fetchFn = createFetchFn({
+      "http://localhost/assets/bundle.js": new Response(
+        "const value = 1;\n//# sourceMappingURL=maps/bundle.js.map",
+        { status: 200 },
+      ),
+      "http://localhost/assets/maps/bundle.js.map": new Response(sourceMapWithRoot, {
+        status: 200,
+      }),
+    });
+
+    const sourceMap = await getSourceMapUncached("http://localhost/assets/bundle.js", fetchFn);
+    expect(sourceMap?.sources).toEqual(["http://localhost/assets/src/app.tsx"]);
+  });
+
+  it("decodes index source maps and deduplicates sources", async () => {
+    const fetchFn = createFetchFn({
+      "http://localhost/bundle.js": new Response(
+        "const value = 1;\n//# sourceMappingURL=http://localhost/bundle.js.map",
+        { status: 200 },
+      ),
+      "http://localhost/bundle.js.map": new Response(INDEX_RAW_MAP, { status: 200 }),
+    });
+    const sourceMap = await getSourceMapUncached("http://localhost/bundle.js", fetchFn);
+    expect(sourceMap?.sections).toHaveLength(1);
+    expect(sourceMap?.sources).toEqual(["src/app.tsx"]);
+  });
+
+  it("loads external index-map sections relative to the index map", async () => {
+    const externalIndexMap = JSON.stringify({
+      version: 3,
+      sections: [{ offset: { line: 0, column: 0 }, url: "sections/app.map" }],
+    });
+    const requestedUrls: string[] = [];
+    const fetchFn = (url: string): Promise<Response> => {
+      requestedUrls.push(url);
+      if (url.endsWith("bundle.js")) {
+        return Promise.resolve(
+          new Response("const value = 1;\n//# sourceMappingURL=maps/index.map", { status: 200 }),
+        );
+      }
+      if (url.endsWith("index.map")) {
+        return Promise.resolve(new Response(externalIndexMap, { status: 200 }));
+      }
+      return Promise.resolve(new Response(STANDARD_RAW_MAP, { status: 200 }));
+    };
+
+    const sourceMap = await getSourceMapUncached("http://localhost/bundle.js", fetchFn);
+    expect(sourceMap?.sections).toHaveLength(1);
+    expect(requestedUrls).toContain("http://localhost/maps/sections/app.map");
+  });
+
+  it("rejects malformed maps and configured size overflows", async () => {
+    const malformedFetch = createFetchFn({
+      "http://localhost/bundle.js": new Response(
+        "const value = 1;\n//# sourceMappingURL=bundle.js.map",
+        { status: 200 },
+      ),
+      "http://localhost/bundle.js.map": new Response(
+        JSON.stringify({ version: 3, mappings: "", sources: [42] }),
+        { status: 200 },
+      ),
+    });
+    expect(await getSourceMapUncached("http://localhost/bundle.js", malformedFetch)).toBeNull();
+
+    const oversizedFetch = createFetchFn({
+      "http://localhost/large.js": new Response(
+        "const value = 123456789;\n//# sourceMappingURL=large.js.map",
+        { status: 200 },
+      ),
+    });
+    expect(
+      await getSourceMapUncached("http://localhost/large.js", oversizedFetch, {
+        maxBundleSizeBytes: 8,
+      }),
+    ).toBeNull();
+  });
+
+  it("stops reading a response after its configured size limit", async () => {
+    let didCancelResponseBody = false;
+    const responseBody = new ReadableStream<Uint8Array>({
+      cancel: () => {
+        didCancelResponseBody = true;
+      },
+      start: (controller) => {
+        controller.enqueue(new TextEncoder().encode("1234"));
+        controller.enqueue(new TextEncoder().encode("5678"));
+        controller.enqueue(new TextEncoder().encode("9012"));
+        controller.close();
+      },
+    });
+    const fetchFn = (): Promise<Response> => Promise.resolve(new Response(responseBody));
+    expect(
+      await getSourceMapUncached("http://localhost/large.js", fetchFn, {
+        maxBundleSizeBytes: 6,
+      }),
+    ).toBeNull();
+    expect(didCancelResponseBody).toBe(true);
+  });
+
+  it("disables source-map network requests in server runtimes by default", async () => {
+    const fetchFn = vi.fn(() => Promise.resolve(new Response("")));
+    vi.stubGlobal("fetch", fetchFn);
+    vi.stubGlobal("window", undefined);
+    try {
+      expect(await getSourceMapUncached("http://169.254.169.254/bundle.js")).toBeNull();
+      expect(fetchFn).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("rejects redirects and cross-origin index sections in server runtimes", async () => {
+    const requestedUrls: string[] = [];
+    const requestRedirects: Array<RequestRedirect | undefined> = [];
+    const indexMap = JSON.stringify({
+      version: 3,
+      sections: [
+        {
+          offset: { line: 0, column: 0 },
+          url: "http://169.254.169.254/latest/meta-data",
+        },
+      ],
+    });
+    const fetchFn = (url: string, init?: RequestInit): Promise<Response> => {
+      requestedUrls.push(url);
+      requestRedirects.push(init?.redirect);
+      return Promise.resolve(
+        url.endsWith(".map")
+          ? new Response(indexMap)
+          : new Response("const value = 1;\n//# sourceMappingURL=bundle.js.map"),
+      );
+    };
+    vi.stubGlobal("window", undefined);
+    try {
+      expect(
+        await getSourceMapUncached("http://example.com/bundle.js", fetchFn, {
+          allowUnsafeServerFetch: true,
+        }),
+      ).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+    expect(requestedUrls).toEqual([
+      "http://example.com/bundle.js",
+      "http://example.com/bundle.js.map",
+    ]);
+    expect(requestRedirects).toEqual(["error", "error"]);
+  });
+
+  it("allows an explicit cross-origin source map with a caller-provided fetch", async () => {
+    const sourceMapUrl = "http://assets.example.com/bundle.js.map";
+    const fetchFn = (url: string): Promise<Response> =>
+      Promise.resolve(
+        new Response(
+          url === sourceMapUrl
+            ? STANDARD_RAW_MAP
+            : `const value = 1;\n//# sourceMappingURL=${sourceMapUrl}`,
+        ),
+      );
+    vi.stubGlobal("window", undefined);
+    try {
+      const sourceMap = await getSourceMapUncached("http://example.com/bundle.js", fetchFn, {
+        allowCrossOriginSourceMap: true,
+      });
+      expect(sourceMap?.sourceMapUrl).toBe(sourceMapUrl);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("supports abortable source-map requests with a timeout", async () => {
+    const fetchFn = (_url: string, init?: RequestInit): Promise<Response> =>
+      new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => reject(init.signal?.reason), { once: true });
+      });
+    expect(
+      await getSourceMap("http://localhost/slow.js", false, fetchFn, { timeoutMs: 1 }),
+    ).toBeNull();
+  });
+});
+
+describe("getSourceMap caching", () => {
+  it.each([429, 500, 503])("does not cache transient bundle response %i", async (status) => {
+    const file = `http://localhost/transient-${status}.js`;
+    let bundleRequestCount = 0;
+    const fetchFn = (url: string): Promise<Response> => {
+      if (url.endsWith(".map")) return Promise.resolve(new Response(STANDARD_RAW_MAP));
+      bundleRequestCount++;
+      return Promise.resolve(
+        bundleRequestCount === 1
+          ? new Response("", { status })
+          : new Response(`const value = 1;\n//# sourceMappingURL=transient-${status}.js.map`),
+      );
+    };
+    expect(await getSourceMap(file, true, fetchFn)).toBeNull();
+    expect(await getSourceMap(file, true, fetchFn)).not.toBeNull();
+    expect(bundleRequestCount).toBe(2);
+  });
+
+  it("does not cache transient source-map responses", async () => {
+    const file = "http://localhost/transient-source-map.js";
+    let sourceMapRequestCount = 0;
+    const fetchFn = (url: string): Promise<Response> => {
+      if (!url.endsWith(".map")) {
+        return Promise.resolve(
+          new Response("const value = 1;\n//# sourceMappingURL=transient-source-map.js.map"),
+        );
+      }
+      sourceMapRequestCount++;
+      return Promise.resolve(
+        sourceMapRequestCount === 1
+          ? new Response("", { status: 503 })
+          : new Response(STANDARD_RAW_MAP),
+      );
+    };
+    expect(await getSourceMap(file, true, fetchFn)).toBeNull();
+    expect(await getSourceMap(file, true, fetchFn)).not.toBeNull();
+    expect(sourceMapRequestCount).toBe(2);
+  });
+
+  it("bypasses the cache when useCache is false", async () => {
+    const file = "http://localhost/uncached-bundle.js";
+    sourceMapCache.delete(file);
+    let fetchCount = 0;
+    const fetchFn = (url: string): Promise<Response> => {
+      if (!url.endsWith(".map")) fetchCount++;
+      return Promise.resolve(
+        url.endsWith(".map")
+          ? new Response(STANDARD_RAW_MAP, { status: 200 })
+          : new Response("const value = 1;\n//# sourceMappingURL=uncached-bundle.js.map", {
+              status: 200,
+            }),
+      );
+    };
+
+    expect(await getSourceMap(file, false, fetchFn)).not.toBeNull();
+    expect(await getSourceMap(file, false, fetchFn)).not.toBeNull();
+    expect(fetchCount).toBe(2);
+    expect(sourceMapCache.has(file)).toBe(false);
+  });
+
+  it("returns the cached map on subsequent calls", async () => {
+    const file = "http://localhost/cached-bundle.js";
+    sourceMapCache.delete(file);
+    let fetchCount = 0;
+    const fetchFn = (url: string): Promise<Response> => {
+      if (!url.endsWith(".map")) fetchCount++;
+      return Promise.resolve(
+        url.endsWith(".map")
+          ? new Response(STANDARD_RAW_MAP, { status: 200 })
+          : new Response("const value = 1;\n//# sourceMappingURL=cached-bundle.js.map", {
+              status: 200,
+            }),
+      );
+    };
+
+    const firstResult = await getSourceMap(file, true, fetchFn);
+    const secondResult = await getSourceMap(file, true, fetchFn);
+    expect(firstResult).toBe(secondResult);
+    expect(fetchCount).toBe(1);
+  });
+
+  it("deduplicates concurrent requests for the same file", async () => {
+    const file = "http://localhost/concurrent-bundle.js";
+    sourceMapCache.delete(file);
+    let fetchCount = 0;
+    const fetchFn = (url: string): Promise<Response> => {
+      if (!url.endsWith(".map")) fetchCount++;
+      return Promise.resolve(
+        url.endsWith(".map")
+          ? new Response(STANDARD_RAW_MAP, { status: 200 })
+          : new Response("const value = 1;\n//# sourceMappingURL=concurrent-bundle.js.map", {
+              status: 200,
+            }),
+      );
+    };
+
+    const [firstResult, secondResult] = await Promise.all([
+      getSourceMap(file, true, fetchFn),
+      getSourceMap(file, true, fetchFn),
+    ]);
+    expect(firstResult).not.toBeNull();
+    expect(secondResult).not.toBeNull();
+    expect(fetchCount).toBe(1);
+  });
+
+  it("does not share cached maps between custom fetch implementations", async () => {
+    const file = "http://localhost/isolated-cache.js";
+    const createIsolatedFetch =
+      (source: string) =>
+      (url: string): Promise<Response> =>
+        Promise.resolve(
+          url.endsWith(".map")
+            ? new Response(
+                JSON.stringify({
+                  version: 3,
+                  sources: [source],
+                  names: [],
+                  mappings: encode([[[0, 0, 0, 0]]]),
+                }),
+                { status: 200 },
+              )
+            : new Response("const value = 1;\n//# sourceMappingURL=isolated-cache.js.map", {
+                status: 200,
+              }),
+        );
+    const firstResult = await getSourceMap(file, true, createIsolatedFetch("src/first.tsx"));
+    const secondResult = await getSourceMap(file, true, createIsolatedFetch("src/second.tsx"));
+    expect(firstResult?.sources).toEqual(["src/first.tsx"]);
+    expect(secondResult?.sources).toEqual(["src/second.tsx"]);
+  });
+
+  it("does not share pending requests between abort signals", async () => {
+    const file = "http://localhost/signal-cache.js";
+    let fetchCount = 0;
+    const fetchFn = (url: string): Promise<Response> => {
+      fetchCount++;
+      return Promise.resolve(
+        url.endsWith(".map")
+          ? new Response(STANDARD_RAW_MAP, { status: 200 })
+          : new Response("const value = 1;\n//# sourceMappingURL=signal-cache.js.map", {
+              status: 200,
+            }),
+      );
+    };
+    const firstAbortController = new AbortController();
+    const secondAbortController = new AbortController();
+
+    await Promise.all([
+      getSourceMap(file, true, fetchFn, { signal: firstAbortController.signal }),
+      getSourceMap(file, true, fetchFn, { signal: secondAbortController.signal }),
+    ]);
+
+    expect(fetchCount).toBe(4);
+  });
+});
+
+describe("default arguments", () => {
+  it("getSourceMap defaults to caching and the global fetch", async () => {
+    expect(await getSourceMap("rsc://React/Server/never-fetched.js")).toBeNull();
+  });
+
+  it("symbolicateStack defaults to caching", async () => {
+    const frames: StackFrame[] = [{ functionName: "App" }];
+    expect(await symbolicateStack(frames)).toEqual(frames);
+  });
+});
+
+describe("symbolicateStack", () => {
+  const createBundleFetchFn = (bundleName: string): ((url: string) => Promise<Response>) => {
+    return (url: string) =>
+      Promise.resolve(
+        url.endsWith(".map")
+          ? new Response(STANDARD_RAW_MAP, { status: 200 })
+          : new Response(`const value = 1;\n//# sourceMappingURL=${bundleName}.map`, {
+              status: 200,
+            }),
+      );
+  };
+
+  it("passes through frames without a file name", async () => {
+    const frames: StackFrame[] = [{ functionName: "App" }];
+    const result = await symbolicateStack(frames, false);
+    expect(result).toEqual(frames);
+  });
+
+  it("passes through frames when no sourcemap exists", async () => {
+    const fetchFn = createFetchFn({});
+    const frames: StackFrame[] = [
+      { fileName: "http://localhost/missing.js", lineNumber: 1, columnNumber: 0 },
+    ];
+    const result = await symbolicateStack(frames, false, fetchFn);
+    expect(result[0].isSymbolicated).toBeUndefined();
+  });
+
+  it("forwards source-map request options", async () => {
+    let requestSignal: AbortSignal | undefined;
+    const fetchFn = (_url: string, init?: RequestInit): Promise<Response> =>
+      new Promise((_resolve, reject) => {
+        requestSignal = init?.signal ?? undefined;
+        requestSignal?.addEventListener("abort", () => reject(requestSignal?.reason), {
+          once: true,
+        });
+      });
+    const frames: StackFrame[] = [
+      { fileName: "http://localhost/slow.js", lineNumber: 1, columnNumber: 0 },
+    ];
+    const result = await symbolicateStack(frames, false, fetchFn, { timeoutMs: 1 });
+    expect(result).toEqual(frames);
+    expect(requestSignal?.aborted).toBe(true);
+  });
+
+  it("passes through frames without line or column numbers", async () => {
+    const fetchFn = createBundleFetchFn("frameless-bundle.js");
+    const frames: StackFrame[] = [{ fileName: "http://localhost/frameless-bundle.js" }];
+    const result = await symbolicateStack(frames, false, fetchFn);
+    expect(result[0].isSymbolicated).toBeUndefined();
+  });
+
+  it("passes through frames when the sourcemap has no matching position", async () => {
+    const fetchFn = createBundleFetchFn("nomatch-bundle.js");
+    const frames: StackFrame[] = [
+      { fileName: "http://localhost/nomatch-bundle.js", lineNumber: 99, columnNumber: 0 },
+    ];
+    const result = await symbolicateStack(frames, false, fetchFn);
+    expect(result[0].isSymbolicated).toBeUndefined();
+  });
+
+  it("rewrites the frame and source string on success", async () => {
+    const fetchFn = createBundleFetchFn("success-bundle.js");
+    const frames: StackFrame[] = [
+      {
+        fileName: "http://localhost/success-bundle.js",
+        lineNumber: 1,
+        columnNumber: 0,
+        source: "    at App (http://localhost/success-bundle.js:1:0)",
+      },
+    ];
+    const result = await symbolicateStack(frames, false, fetchFn);
+    expect(result[0].isSymbolicated).toBe(true);
+    expect(result[0].fileName).toBe("src/app.tsx");
+    expect(result[0].lineNumber).toBe(1);
+    expect(result[0].source).toBe("    at App (src/app.tsx:1:0)");
+  });
+
+  it("rewrites minified function names from source-map name segments", async () => {
+    const rawSourceMap = JSON.stringify({
+      version: 3,
+      sources: ["src/app.tsx"],
+      names: ["BookmarkSaveAction"],
+      mappings: encode([[[0, 0, 0, 0, 0]]]),
+    });
+    const fetchFn = (url: string): Promise<Response> =>
+      Promise.resolve(
+        url.endsWith(".map")
+          ? new Response(rawSourceMap)
+          : new Response("const value = 1;\n//# sourceMappingURL=named-bundle.js.map"),
+      );
+    const frames: StackFrame[] = [
+      {
+        fileName: "http://localhost/named-bundle.js",
+        functionName: "Ag",
+        lineNumber: 1,
+        columnNumber: 0,
+      },
+    ];
+
+    const result = await symbolicateStack(frames, false, fetchFn);
+
+    expect(result[0].functionName).toBe("BookmarkSaveAction");
+  });
+
+  it("keeps an undefined source when the frame has none", async () => {
+    const fetchFn = createBundleFetchFn("sourceless-bundle.js");
+    const frames: StackFrame[] = [
+      { fileName: "http://localhost/sourceless-bundle.js", lineNumber: 1, columnNumber: 0 },
+    ];
+    const result = await symbolicateStack(frames, false, fetchFn);
+    expect(result[0].isSymbolicated).toBe(true);
+    expect(result[0].source).toBeUndefined();
+  });
+});

@@ -21,6 +21,7 @@ import {
   removeActiveListener,
 } from "./rdt-hook.js";
 import type { ReactDevToolsTarget, Unsubscribe } from "./rdt-hook.js";
+import { getCurrentFiberFromRoot } from "./react-internals/current-fiber.js";
 import {
   getReactWorkTagsForFiber,
   ReactBuildType,
@@ -64,8 +65,8 @@ export const isValidElement = (element: unknown): element is React.ReactElement 
   typeof element === "object" &&
   element !== null &&
   "$$typeof" in element &&
-  (String(element.$$typeof) === ReactSymbols.LEGACY_ELEMENT_SYMBOL_STRING ||
-    String(element.$$typeof) === ReactSymbols.ELEMENT_SYMBOL_STRING);
+  (element.$$typeof === Symbol.for("react.element") ||
+    element.$$typeof === Symbol.for("react.transitional.element"));
 
 /**
  * Returns `true` if object is a React Fiber.
@@ -78,7 +79,7 @@ export const isFiber = (fiber: unknown): fiber is Fiber =>
   "return" in fiber &&
   "child" in fiber &&
   "sibling" in fiber &&
-  "flags" in fiber;
+  ("flags" in fiber || "effectTag" in fiber);
 
 const isFiberRoot = (fiberRoot: unknown): fiberRoot is FiberRoot =>
   typeof fiberRoot === "object" &&
@@ -128,7 +129,7 @@ export const isCompositeFiber = (fiber: Fiber): boolean => {
  */
 export const didFiberRender = (fiber: Fiber): boolean => {
   const nextProps = fiber.memoizedProps;
-  const prevProps = fiber.alternate?.memoizedProps || {};
+  const prevProps = fiber.alternate?.memoizedProps;
   const flags = fiber.flags ?? fiber.effectTag ?? 0;
   const workTags = getReactWorkTagsForFiber(fiber);
 
@@ -200,73 +201,63 @@ const shouldFilterFiber = (fiber: Fiber): boolean => {
   }
 };
 
+interface TraverseFiber {
+  (
+    fiber: Fiber | null,
+    selector: (node: Fiber) => boolean | void,
+    ascending?: boolean,
+  ): Fiber | null;
+  (
+    fiber: Fiber | null,
+    selector: (node: Fiber) => Promise<boolean | void>,
+    ascending?: boolean,
+  ): Promise<Fiber | null>;
+  (
+    fiber: Fiber | null,
+    selector: FiberSelector,
+    ascending?: boolean,
+  ): Fiber | null | Promise<Fiber | null>;
+}
+
 /**
  * Traverses up or down a {@link Fiber}, return `true` to stop and select a node.
  */
-export function traverseFiber(
-  fiber: Fiber | null,
-  selector: (node: Fiber) => boolean | void,
-  ascending?: boolean,
-): Fiber | null;
-export function traverseFiber(
-  fiber: Fiber | null,
-  selector: (node: Fiber) => Promise<boolean | void>,
-  ascending?: boolean,
-): Promise<Fiber | null>;
-export function traverseFiber(
-  fiber: Fiber | null,
-  selector: FiberSelector,
-  ascending?: boolean,
-): Fiber | null | Promise<Fiber | null>;
-export function traverseFiber(
+export const traverseFiber = ((
   fiber: Fiber | null,
   selector: FiberSelector,
   ascending = false,
-): Fiber | null | Promise<Fiber | null> {
-  if (!fiber) return null;
-
-  const selection = selector(fiber);
-  if (isPromiseLike<boolean | void>(selection)) {
-    return Promise.resolve(selection).then((didSelectFiber) =>
-      didSelectFiber === true ? fiber : traverseFiberChildren(fiber, selector, ascending),
-    );
-  }
-  if (selection === true) return fiber;
-
-  return traverseFiberChildren(fiber, selector, ascending);
-}
+): Fiber | null | Promise<Fiber | null> => {
+  const pendingSiblings: Fiber[] = [];
+  const getNextFiber = (currentFiber: Fiber): Fiber | null => {
+    if (ascending) return currentFiber.return;
+    if (currentFiber !== fiber && currentFiber.sibling) {
+      pendingSiblings.push(currentFiber.sibling);
+    }
+    return currentFiber.child ?? pendingSiblings.pop() ?? null;
+  };
+  const visit = (firstFiber: Fiber | null): Fiber | null | Promise<Fiber | null> => {
+    let currentFiber = firstFiber;
+    while (currentFiber) {
+      const selectedFiber = currentFiber;
+      const selection = selector(selectedFiber);
+      if (isPromiseLike<boolean | void>(selection)) {
+        return Promise.resolve(selection).then((didSelectFiber) =>
+          didSelectFiber === true ? selectedFiber : visit(getNextFiber(selectedFiber)),
+        );
+      }
+      if (selection === true) return selectedFiber;
+      currentFiber = getNextFiber(selectedFiber);
+    }
+    return null;
+  };
+  return visit(fiber);
+}) as TraverseFiber;
 
 const isPromiseLike = <Result>(value: unknown): value is PromiseLike<Result> =>
   (typeof value === "object" || typeof value === "function") &&
   value !== null &&
   "then" in value &&
   typeof value.then === "function";
-
-const traverseFiberChildren = (
-  fiber: Fiber,
-  selector: FiberSelector,
-  ascending: boolean,
-): Fiber | null | Promise<Fiber | null> => {
-  const firstChild = ascending ? fiber.return : fiber.child;
-  return traverseFiberSiblings(firstChild, selector, ascending);
-};
-
-const traverseFiberSiblings = (
-  fiber: Fiber | null,
-  selector: FiberSelector,
-  ascending: boolean,
-): Fiber | null | Promise<Fiber | null> => {
-  if (!fiber) return null;
-
-  const nextSibling = ascending ? null : fiber.sibling;
-  const match = traverseFiber(fiber, selector, ascending);
-  if (isPromiseLike<Fiber | null>(match)) {
-    return Promise.resolve(match).then(
-      (resolvedMatch) => resolvedMatch ?? traverseFiberSiblings(nextSibling, selector, ascending),
-    );
-  }
-  return match ?? traverseFiberSiblings(nextSibling, selector, ascending);
-};
 
 /**
  * Returns `true` if the {@link Fiber} uses React Compiler's memo cache.
@@ -281,7 +272,14 @@ export const hasMemoCache = (fiber: Fiber): boolean => {
 export const getType = (type: unknown): null | React.ComponentType<unknown> => {
   if (isComponentType(type)) return type;
   if (typeof type !== "object" || type === null) return null;
-  return getType(Reflect.get(type, "type") ?? Reflect.get(type, "render"));
+  const visitedTypes = new Set<object>();
+  let currentType: unknown = type;
+  while (typeof currentType === "object" && currentType !== null) {
+    if (visitedTypes.has(currentType)) return null;
+    visitedTypes.add(currentType);
+    currentType = Reflect.get(currentType, "type") ?? Reflect.get(currentType, "render");
+  }
+  return isComponentType(currentType) ? currentType : null;
 };
 
 /**
@@ -331,6 +329,8 @@ const rootHooks = new WeakMap<FiberRoot, ReactDevToolsGlobalHook>();
 export const getLatestFiber = (fiber: Fiber): Fiber => {
   const alternate = fiber.alternate;
   if (!alternate) return fiber;
+  const currentFiber = getCurrentFiberFromRoot(fiber);
+  if (currentFiber) return currentFiber;
 
   let rootFiber = fiber;
   while (rootFiber.return) {
@@ -483,13 +483,13 @@ const mountFiberRecursively = (
         if (fallbackChildFragment) {
           const fallbackChild = fallbackChildFragment.child;
           if (fallbackChild !== null) {
-            mountFiberRecursively(onRender, fallbackChild, false);
+            mountFiberRecursively(onRender, fallbackChild, true);
           }
         }
       } else {
         const primaryChild = fiber.child?.child ?? null;
         if (primaryChild !== null) {
-          mountFiberRecursively(onRender, primaryChild, false);
+          mountFiberRecursively(onRender, primaryChild, true);
         }
       }
     } else if (fiber.child !== null) {
@@ -967,9 +967,11 @@ export const getFiber = <HostInstance>(
 
     for (const key of Object.keys(hostInstance)) {
       if (isFiberPropertyKey(key)) {
-        knownFiberPropertyKeys.add(key);
         const fiber = Reflect.get(hostInstance, key);
-        if (isFiber(fiber)) return fiber;
+        if (isFiber(fiber)) {
+          knownFiberPropertyKeys.add(key);
+          return fiber;
+        }
       }
     }
   }

@@ -49,6 +49,8 @@ export const isFiberRootUnmounted = (fiberRoot: FiberRoot): boolean => {
 };
 
 const checkDCE = (functionToCheck: unknown): void => {
+  // HACK: Node loads React's unbundled entrypoints, where development guards are intentionally not eliminated.
+  if (typeof process !== "undefined" && process.versions?.node) return;
   try {
     const code = Function.prototype.toString.call(functionToCheck);
     if (code.indexOf("^_^") > -1) {

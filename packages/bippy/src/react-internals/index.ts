@@ -49,11 +49,16 @@ export const getReactWorkTagsForFiber = (fiber: Fiber): Readonly<ReactWorkTagMap
 
   const traversedFibers: Fiber[] = [fiber];
   let rootFiber = fiber;
+  let workTags = defaultReactWorkTags;
   while (rootFiber.return) {
     rootFiber = rootFiber.return;
+    const ancestorWorkTags = fiberReactWorkTags.get(rootFiber);
+    if (ancestorWorkTags) {
+      workTags = ancestorWorkTags;
+      break;
+    }
     traversedFibers.push(rootFiber);
   }
-  const workTags = fiberReactWorkTags.get(rootFiber) ?? defaultReactWorkTags;
   for (const traversedFiber of traversedFibers) {
     fiberReactWorkTags.set(traversedFiber, workTags);
     if (traversedFiber.alternate) {

@@ -44,15 +44,4 @@ export default defineConfig({
     target: "esnext",
     treeshake: true,
   } satisfies PackUserConfig,
-  test: {
-    include: ["tests/**/*.test.{ts,tsx}"],
-    exclude: ["tests/fixtures/**"],
-    coverage: {
-      include: ["src/**/*.ts", "scripts/react-internals-plugin.ts"],
-      exclude: ["src/react-internals/types.ts"],
-      provider: "istanbul",
-      reporter: ["text", "json", "json-summary", "html"],
-    },
-    environment: "happy-dom",
-  },
 });

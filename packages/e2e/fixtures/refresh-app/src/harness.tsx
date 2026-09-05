@@ -33,7 +33,7 @@ const flushWithoutAct = async (scope: () => void | Promise<void>): Promise<void>
   await new Promise((resolveSleep) => setTimeout(resolveSleep, 50));
 };
 
-export const act = async (scope: () => void | Promise<void>): Promise<void> => {
+const act = async (scope: () => void | Promise<void>): Promise<void> => {
   if (reactAct) {
     // Always hand act an async scope: React 17's act only flushes
     // microtasks (e.g. resolved lazy thenables) for async scopes.
@@ -45,25 +45,6 @@ export const act = async (scope: () => void | Promise<void>): Promise<void> => {
   await flushWithoutAct(scope);
 };
 
-export interface Deferred<Value> {
-  promise: Promise<Value>;
-  resolve: (value: Value) => void;
-  reject: (reason: Error) => void;
-}
-
-export const createDeferred = <Value,>(): Deferred<Value> => {
-  let resolve!: (value: Value) => void;
-  let reject!: (reason: Error) => void;
-  const promise = new Promise<Value>((innerResolve, innerReject) => {
-    resolve = innerResolve;
-    reject = innerReject;
-  });
-  return { promise, resolve, reject };
-};
-
-export const sleep = (durationMs: number): Promise<void> =>
-  new Promise((resolveSleep) => setTimeout(resolveSleep, durationMs));
-
 export interface HarnessTools {
   React: typeof React;
   ReactFreshRuntime: typeof ReactFreshRuntime;
@@ -71,8 +52,6 @@ export interface HarnessTools {
   container: HTMLDivElement;
   firstElement: () => HTMLElement;
   clickElement: (element: HTMLElement) => Promise<void>;
-  createDeferred: typeof createDeferred;
-  sleep: typeof sleep;
   expect: typeof expect;
   log: string[];
   assertLog: (expected: string[]) => void;
@@ -107,9 +86,6 @@ bippy.instrument({
   },
 });
 
-const extraContainers: HTMLDivElement[] = [];
-const extraRoots: Root[] = [];
-
 export const createHarnessTools = (): HarnessTools => {
   const container = document.createElement("div");
   document.body.appendChild(container);
@@ -142,8 +118,6 @@ export const createHarnessTools = (): HarnessTools => {
         element.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       });
     },
-    createDeferred,
-    sleep,
     expect,
     log,
     assertLog: (expected) => {
@@ -183,8 +157,6 @@ export const createHarnessTools = (): HarnessTools => {
       const extraContainer = document.createElement("div");
       document.body.appendChild(extraContainer);
       const extraRoot = createRoot(extraContainer, rootOptions);
-      extraContainers.push(extraContainer);
-      extraRoots.push(extraRoot);
       return { container: extraContainer, root: extraRoot };
     },
     expectBippyCommits: () => {

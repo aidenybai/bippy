@@ -1,0 +1,189 @@
+[
+  {
+    "entry": "bippy",
+    "exports": ["isValidElement", "getType", "getDisplayName"],
+    "tests": [
+      "packages/conformance/tests/elements.test.tsx",
+      "packages/conformance/tests/unit/get-display-name.test.tsx"
+    ]
+  },
+  {
+    "entry": "bippy",
+    "exports": ["traverseFiber", "traverseRenderedFibers", "didFiberRender"],
+    "tests": [
+      "packages/conformance/tests/traversal.test.ts",
+      "packages/conformance/tests/unit/traverse-rendered-fibers.test.ts"
+    ]
+  },
+  {
+    "entry": "bippy",
+    "exports": [
+      "getLatestFiber",
+      "getFiber",
+      "getFiberFromHostInstance",
+      "getRenderer",
+      "isFiber",
+      "isHostFiber",
+      "isCompositeFiber",
+      "_fiberRoots"
+    ],
+    "tests": [
+      "packages/conformance/tests/live-fibers.test.tsx",
+      "packages/conformance/tests/current-fiber.test.ts",
+      "packages/conformance/tests/unit/get-fiber-from-host-instance.test.tsx",
+      "packages/conformance/tests/unit/is-fiber.test.tsx"
+    ]
+  },
+  {
+    "entry": "bippy",
+    "exports": ["getFiberId", "setFiberId", "getFiberById"],
+    "tests": [
+      "packages/conformance/tests/unit/fiber-id.test.ts",
+      "packages/conformance/tests/live-fibers.test.tsx"
+    ]
+  },
+  {
+    "entry": "bippy",
+    "exports": ["useFiber"],
+    "tests": [
+      "packages/conformance/tests/live-fibers.test.tsx",
+      "packages/conformance/tests/unit/use-fiber-version-matrix.test.ts",
+      "packages/conformance/tests/unit/use-fiber-attack.test.ts"
+    ]
+  },
+  {
+    "entry": "bippy",
+    "exports": [
+      "instrument",
+      "isInstrumentationActive",
+      "getRDTHook",
+      "installRDTHook",
+      "patchRDTHook",
+      "hasRDTHook",
+      "onRendererInject",
+      "isFiberRootUnmounted",
+      "isReactRefresh",
+      "isRealReactDevtools",
+      "_renderers",
+      "BIPPY_INSTRUMENTATION_STRING",
+      "version"
+    ],
+    "tests": [
+      "packages/conformance/tests/unit/instrument.test.tsx",
+      "packages/conformance/tests/unit/rdt-hook-install.test.ts",
+      "packages/conformance/tests/unit/react-refresh-late-load.test.ts",
+      "packages/conformance/tests/unit/react-devtools-core-compat.test.ts",
+      "packages/conformance/tests/unit/instrument-unmount.test.tsx"
+    ]
+  },
+  {
+    "entry": "bippy",
+    "exports": [
+      "ReactBuildType",
+      "ReactFiberFlags",
+      "ReactSymbols",
+      "MutationMask",
+      "getReactWorkTags",
+      "getReactWorkTagsForFiber",
+      "getReactWorkTagsForRenderer",
+      "setReactWorkTagsForFiber",
+      "compareSemver",
+      "detectReactBuildType",
+      "hasMemoCache"
+    ],
+    "tests": [
+      "packages/conformance/tests/unit/react-internals.test.ts",
+      "packages/conformance/tests/unit/semver.test.ts",
+      "packages/conformance/tests/unit/detect-react-build-type.test.ts",
+      "packages/conformance/tests/unit/has-memo-cache.test.ts",
+      "packages/conformance/tests/performance.test.ts"
+    ]
+  },
+  {
+    "entry": "bippy",
+    "exports": [
+      "BippyError",
+      "BippyHookInspectionError",
+      "BippyHookRenderError",
+      "BippySourceMapError",
+      "BippyUnsupportedHookError"
+    ],
+    "tests": ["packages/conformance/tests/unit/errors.test.ts"]
+  },
+  {
+    "entry": "bippy/source",
+    "exports": [
+      "BippyError",
+      "BippyHookInspectionError",
+      "BippyHookRenderError",
+      "BippySourceMapError",
+      "BippyUnsupportedHookError"
+    ],
+    "tests": [
+      "packages/conformance/tests/unit/errors.test.ts",
+      "packages/conformance/tests/inspection-safety.test.tsx"
+    ]
+  },
+  {
+    "entry": "bippy/source",
+    "exports": ["getFiberHooks", "inspectHooks"],
+    "tests": [
+      "packages/conformance/tests/hooks-inspection.test.tsx",
+      "packages/conformance/tests/inspection-safety.test.tsx",
+      "packages/conformance/tests/live-fibers.test.tsx",
+      "packages/conformance/fixtures/react-devtools-headless/tests/upstream-react-hooks-integration-direct.test.tsx",
+      "packages/conformance/fixtures/react-devtools-headless/tests/upstream-react-hooks-dom-direct.test.tsx"
+    ]
+  },
+  {
+    "entry": "bippy/source",
+    "exports": [
+      "formatOwnerStack",
+      "getDefinitionFrameFromOwnedChild",
+      "getFallbackParentStack",
+      "getOwnerStack",
+      "getParentStack",
+      "getRawOwnerStack",
+      "hasDebugStack"
+    ],
+    "tests": [
+      "packages/conformance/tests/unit/owner-stack.test.ts",
+      "packages/conformance/tests/unit/source.test.tsx"
+    ]
+  },
+  {
+    "entry": "bippy/source",
+    "exports": [
+      "getRawSource",
+      "getSource",
+      "isSourceFile",
+      "normalizeFileName",
+      "getDisplayNameFromSource"
+    ],
+    "tests": [
+      "packages/conformance/tests/unit/get-source.test.ts",
+      "packages/conformance/tests/unit/source.test.tsx",
+      "packages/conformance/tests/unit/get-display-name-from-source.test.ts"
+    ]
+  },
+  {
+    "entry": "bippy/source",
+    "exports": [
+      "getSourceContentFromSourceMap",
+      "getSourceFromSourceMap",
+      "getSourceFromSourceMapByFunctionName",
+      "getSourceMap",
+      "symbolicateStack"
+    ],
+    "tests": ["packages/conformance/tests/unit/symbolication.test.ts"]
+  },
+  {
+    "entry": "bippy/source",
+    "exports": ["parseStack", "parseHookNames"],
+    "tests": [
+      "packages/conformance/tests/unit/parse-stack.test.ts",
+      "packages/conformance/tests/unit/parse-hook-names.test.tsx",
+      "packages/conformance/fixtures/react-devtools-headless/tests/hook-names.test.ts"
+    ]
+  }
+]

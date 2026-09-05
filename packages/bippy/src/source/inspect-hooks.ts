@@ -87,6 +87,16 @@ let currentHook: MemoizedState | null = null;
 let currentContextDependency: ContextDependency<unknown> | null = null;
 let currentThenableIndex = 0;
 let currentThenableState: unknown[] | null = null;
+let currentMemoCacheIndex = 0;
+let isInspectingHooks = false;
+
+const assertNotInspectingHooks = (): void => {
+  if (isInspectingHooks) {
+    throw new BippyHookInspectionError(
+      "Hook inspection cannot be called during another inspection.",
+    );
+  }
+};
 
 const SuspenseException: unknown = new Error(
   "Suspense interrupted this render. This error is an internal implementation detail of `use`.",
@@ -323,16 +333,8 @@ const dispatcherUseMemoCache = (size: number): unknown[] => {
   const memoCache = fiber.updateQueue?.memoCache;
   if (memoCache === null || memoCache === undefined) return [];
 
-  let memoCacheSlots = memoCache.data[memoCache.index];
-  if (memoCacheSlots === undefined) {
-    memoCacheSlots = memoCache.data[memoCache.index] = Array.from(
-      { length: size },
-      () => REACT_MEMO_CACHE_SENTINEL,
-    );
-  }
-
-  memoCache.index++;
-  return memoCacheSlots;
+  const memoCacheSlots = memoCache.data[currentMemoCacheIndex++];
+  return memoCacheSlots?.slice() ?? Array.from({ length: size }, () => REACT_MEMO_CACHE_SENTINEL);
 };
 
 const dispatcherUseOptimistic = (passthrough: unknown): [unknown, () => void] => {
@@ -834,6 +836,7 @@ const performDispatcherInspection = <TArgs extends unknown[]>(
 ): HooksTree => {
   const previousDispatcher = readDispatcher(dispatcherRef);
   writeDispatcher(dispatcherRef, dispatcherProxy);
+  isInspectingHooks = true;
 
   let capturedHookLog: HookLogEntry[] = [];
   let ancestorStackError: Error | undefined;
@@ -846,6 +849,7 @@ const performDispatcherInspection = <TArgs extends unknown[]>(
   } finally {
     capturedHookLog = hookLog;
     hookLog = [];
+    isInspectingHooks = false;
     writeDispatcher(dispatcherRef, previousDispatcher);
   }
 
@@ -938,6 +942,7 @@ export const inspectHooks = (
   props: Record<string, unknown>,
   target: ReactDevToolsTarget = globalThis,
 ): HooksTree => {
+  assertNotInspectingHooks();
   const dispatcherRef = requireDispatcherRef(undefined, target);
   getPrimitiveStackCache();
   currentHook = null;
@@ -961,6 +966,7 @@ export const inspectHooks = (
 };
 
 export const getFiberHooks = (fiber: Fiber): HooksTree => {
+  assertNotInspectingHooks();
   const dispatcherRef = requireDispatcherRef(fiber);
   const workTags = getReactWorkTagsForFiber(fiber);
 
@@ -976,6 +982,7 @@ export const getFiberHooks = (fiber: Fiber): HooksTree => {
 
   currentHook = fiber.memoizedState;
   currentFiber = fiber;
+  currentMemoCacheIndex = 0;
 
   const debugThenableState = fiber.dependencies?._debugThenableState;
   const usedThenables = Array.isArray(debugThenableState)
@@ -984,18 +991,16 @@ export const getFiberHooks = (fiber: Fiber): HooksTree => {
   currentThenableState = Array.isArray(usedThenables) ? usedThenables : null;
   currentThenableIndex = 0;
 
-  resolveContextDependency(fiber);
-
-  const type = fiber.type;
-  let props = fiber.memoizedProps;
-  if (type !== fiber.elementType) {
-    props = resolveDefaultProps(type, props);
-  }
-
   const originalConsoleMethods = suppressConsole();
   const contextMap = new Map<ReactContext<unknown>, unknown>();
 
   try {
+    resolveContextDependency(fiber);
+    const type = fiber.type;
+    const props =
+      type !== fiber.elementType
+        ? resolveDefaultProps(type, fiber.memoizedProps)
+        : fiber.memoizedProps;
     if (
       currentContextDependency !== null &&
       !Object.hasOwn(currentContextDependency, "memoizedValue")
@@ -1030,6 +1035,7 @@ export const getFiberHooks = (fiber: Fiber): HooksTree => {
     currentContextDependency = null;
     currentThenableState = null;
     currentThenableIndex = 0;
+    currentMemoCacheIndex = 0;
     restoreContexts(contextMap);
     restoreConsole(originalConsoleMethods);
   }
