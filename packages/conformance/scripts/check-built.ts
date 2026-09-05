@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { Window } from "happy-dom";
+import ts from "typescript";
 import type { Fiber, FiberRoot } from "bippy";
 import { getStateValues } from "../tests/hook-tree.js";
 import { getExpectedExports } from "./test-inventory.js";
@@ -52,6 +53,28 @@ if (!mode) {
     mode === "import" ? await import("bippy") : require("bippy");
   const Source: typeof import("bippy/source") =
     mode === "import" ? await import("bippy/source") : require("bippy/source");
+  const hookSyntax = ts.createSourceFile(
+    "use-fiber.js",
+    `(${Function.prototype.toString.call(Bippy.useFiber)});`,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.JS,
+  );
+  const hookStatement = hookSyntax.statements[0];
+  assert.ok(ts.isExpressionStatement(hookStatement));
+  assert.ok(ts.isParenthesizedExpression(hookStatement.expression));
+  const hookFunction = hookStatement.expression.expression;
+  assert.ok(ts.isArrowFunction(hookFunction) || ts.isFunctionExpression(hookFunction));
+  assert.ok(ts.isBlock(hookFunction.body));
+  const directives: string[] = [];
+  for (const statement of hookFunction.body.statements) {
+    if (!ts.isExpressionStatement(statement) || !ts.isStringLiteral(statement.expression)) break;
+    directives.push(statement.expression.text);
+  }
+  assert.ok(
+    directives.includes("use no memo"),
+    "Built useFiber lost its React Compiler opt-out directive",
+  );
   for (const { entry, module } of [
     { entry: "bippy", module: Bippy },
     { entry: "bippy/source", module: Source },
