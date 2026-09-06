@@ -107,7 +107,7 @@ export const renderNextPagesRoute = (
   renderer: StaticRenderer,
   model: NextModel,
   options: NextPagesRouteOptions,
-): StaticRenderResult => {
+): Promise<StaticRenderResult> => {
   const pagesDirectory = options.pagesDirectory
     ? renderer.resolvePath(options.pagesDirectory)
     : findFirstDirectory(renderer.options.rootDirectory, ["pages", "src/pages"]);

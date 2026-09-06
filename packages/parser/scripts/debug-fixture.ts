@@ -1,5 +1,6 @@
 import { join, resolve } from "node:path";
-import { createStaticRenderer, formatFiber } from "../src/index.js";
+import { formatPattern, getRenderPattern } from "../src/harness/index.js";
+import { createStaticRenderer } from "../src/index.js";
 
 const [, , fixtureFile] = process.argv;
 if (!fixtureFile) {
@@ -12,8 +13,8 @@ const renderer = createStaticRenderer({
   rootDirectory: componentsDirectory,
   tsconfigPath: join(componentsDirectory, "tsconfig.json"),
 });
-const result = renderer.renderComponent(resolve(componentsDirectory, fixtureFile));
-console.log(formatFiber(result.root, { rootDirectory: componentsDirectory }));
+const result = await renderer.renderComponent(resolve(componentsDirectory, fixtureFile));
+console.log(formatPattern(getRenderPattern(result)));
 for (const diagnostic of result.diagnostics) {
   console.log(`[${diagnostic.severity}] ${diagnostic.code}: ${diagnostic.message}`);
 }

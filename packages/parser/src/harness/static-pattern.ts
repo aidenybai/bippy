@@ -1,16 +1,11 @@
-import type { SourceLocation, StaticFiber } from "../types.js";
-import { getWorkTagName } from "../work-tags.js";
-import { collectChildren } from "../fiber/serialize.js";
-import type { SnapshotWorkTag } from "./snapshot.js";
+import { MARKER_NAMES } from "../materialize/markers.js";
+import type { StaticRenderResult } from "../types.js";
+import type { RuntimeFiberSnapshot, SnapshotPropValue, SnapshotWorkTag } from "./snapshot.js";
 
-// A pattern is the static fiber tree flattened into something the matcher can
-// consume: concrete nodes, text, alternatives, repeats, and wildcards.
+// A pattern is the materialized fiber tree as the matcher consumes it:
+// concrete nodes, text, alternatives, repeats, opaque subtrees and wildcards.
 
-export interface PatternNodeBase {
-  location: SourceLocation | null;
-}
-
-export interface PatternFiber extends PatternNodeBase {
+export interface PatternFiber {
   kind: "fiber";
   tag: SnapshotWorkTag;
   name: string | null;
@@ -18,24 +13,24 @@ export interface PatternFiber extends PatternNodeBase {
   children: PatternNode[];
 }
 
-export interface PatternText extends PatternNodeBase {
+export interface PatternText {
   kind: "text";
   text: string | null;
 }
 
-export interface PatternBranch extends PatternNodeBase {
+export interface PatternBranch {
   kind: "branch";
   reason: string;
   preferredIndex: number | null;
   alternatives: PatternNode[][];
 }
 
-export interface PatternRepeat extends PatternNodeBase {
+export interface PatternRepeat {
   kind: "repeat";
   children: PatternNode[];
 }
 
-export interface PatternOpaque extends PatternNodeBase {
+export interface PatternOpaque {
   kind: "opaque";
   name: string;
   key: string | null;
@@ -44,7 +39,7 @@ export interface PatternOpaque extends PatternNodeBase {
   passedChildren: PatternNode[];
 }
 
-export interface PatternWildcard extends PatternNodeBase {
+export interface PatternWildcard {
   kind: "wildcard";
   reason: string;
 }
@@ -57,48 +52,76 @@ export type PatternNode =
   | PatternOpaque
   | PatternWildcard;
 
-export const toPattern = (fiber: StaticFiber): PatternNode => {
-  switch (fiber.kind) {
-    case "fiber":
-      return {
-        kind: "fiber",
-        tag: getWorkTagName(fiber.tag),
-        name: fiber.displayName,
-        key: fiber.key,
-        children: collectChildren(fiber.child).map(toPattern),
-        location: fiber.location,
-      };
-    case "text":
-      return { kind: "text", text: fiber.text, location: fiber.location };
-    case "branch":
-      return {
-        kind: "branch",
-        reason: fiber.reason,
-        preferredIndex: fiber.preferredIndex,
-        alternatives: fiber.alternatives.map((alternative) =>
-          collectChildren(alternative).map(toPattern),
-        ),
-        location: fiber.location,
-      };
-    case "repeat":
-      return {
-        kind: "repeat",
-        children: collectChildren(fiber.child).map(toPattern),
-        location: fiber.location,
-      };
-    case "opaque":
-      return {
-        kind: "opaque",
-        name: fiber.displayName,
-        key: fiber.key,
-        reason: fiber.reason,
-        passedChildren: collectChildren(fiber.passedChildren).map(toPattern),
-        location: fiber.location,
-      };
-    case "unknown":
-      return { kind: "wildcard", reason: fiber.reason, location: fiber.location };
+const readString = (props: Record<string, SnapshotPropValue>, key: string): string | null => {
+  const value = props[key];
+  return typeof value === "string" ? value : null;
+};
+
+const readNumber = (props: Record<string, SnapshotPropValue>, key: string): number | null => {
+  const value = props[key];
+  return typeof value === "number" ? value : null;
+};
+
+const toPatternNode = (fiber: RuntimeFiberSnapshot): PatternNode[] => {
+  if (fiber.tag === "HostText") return [{ kind: "text", text: fiber.text }];
+  switch (fiber.name) {
+    case MARKER_NAMES.branch:
+      return [
+        {
+          kind: "branch",
+          reason: readString(fiber.props, "reason") ?? "",
+          preferredIndex: readNumber(fiber.props, "preferredIndex"),
+          alternatives: fiber.children.map((alternative) =>
+            snapshotToPattern(alternative.children),
+          ),
+        },
+      ];
+    case MARKER_NAMES.repeat:
+      return [{ kind: "repeat", children: snapshotToPattern(fiber.children) }];
+    case MARKER_NAMES.opaque:
+      return [
+        {
+          kind: "opaque",
+          name: readString(fiber.props, "displayName") ?? "",
+          key: fiber.key,
+          reason: readString(fiber.props, "reason") ?? "",
+          passedChildren: snapshotToPattern(fiber.children),
+        },
+      ];
+    case MARKER_NAMES.unknown:
+      return [{ kind: "wildcard", reason: readString(fiber.props, "reason") ?? "" }];
+    case MARKER_NAMES.text:
+      return [{ kind: "text", text: null }];
+    case MARKER_NAMES.suspenseBoundary:
+      return snapshotToPattern(fiber.children);
+    case MARKER_NAMES.suspended:
+      return [];
+    default:
+      return [
+        {
+          kind: "fiber",
+          tag: fiber.tag,
+          name: fiber.name,
+          key: fiber.key,
+          children: snapshotToPattern(fiber.children),
+        },
+      ];
   }
 };
+
+/**
+ * Reads the materialized fiber tree back into a pattern: marker components
+ * become branches, repeats, opaque subtrees and wildcards; everything else is
+ * a concrete fiber. A tree without markers is a fully concrete pattern.
+ */
+export const snapshotToPattern = (fibers: RuntimeFiberSnapshot[]): PatternNode[] =>
+  fibers.flatMap(toPatternNode);
+
+export const getRenderPattern = (result: StaticRenderResult): PatternNode[] =>
+  snapshotToPattern(result.snapshot.roots);
+
+export const getRenderRootChildren = (result: StaticRenderResult): PatternNode[] =>
+  snapshotToPattern(result.snapshot.roots.flatMap((root) => root.children));
 
 const flattenPatternNode = (node: PatternNode, transparent: ReadonlySet<string>): PatternNode[] => {
   switch (node.kind) {
@@ -158,3 +181,43 @@ export const countPatternFibers = (node: PatternNode): number => {
       return 0;
   }
 };
+
+const formatPatternNode = (node: PatternNode, depth: number): string[] => {
+  const indent = "  ".repeat(depth);
+  switch (node.kind) {
+    case "fiber": {
+      const key = node.key === null ? "" : ` key=${JSON.stringify(node.key)}`;
+      return [
+        `${indent}<${node.name ?? "?"}>${key}`,
+        ...node.children.flatMap((child) => formatPatternNode(child, depth + 1)),
+      ];
+    }
+    case "text":
+      return [`${indent}${node.text === null ? "#text(?)" : JSON.stringify(node.text)}`];
+    case "branch":
+      return [
+        `${indent}?branch(${node.reason})`,
+        ...node.alternatives.flatMap((alternative, index) => [
+          `${indent}  |${index}${node.preferredIndex === index ? " (preferred)" : ""}`,
+          ...alternative.flatMap((child) => formatPatternNode(child, depth + 2)),
+        ]),
+      ];
+    case "repeat":
+      return [
+        `${indent}*repeat`,
+        ...node.children.flatMap((child) => formatPatternNode(child, depth + 1)),
+      ];
+    case "opaque": {
+      const key = node.key === null ? "" : ` key=${JSON.stringify(node.key)}`;
+      return [
+        `${indent}<${node.name}>${key} (opaque: ${node.reason})`,
+        ...node.passedChildren.flatMap((child) => formatPatternNode(child, depth + 1)),
+      ];
+    }
+    case "wildcard":
+      return [`${indent}?unknown(${node.reason})`];
+  }
+};
+
+export const formatPattern = (nodes: PatternNode[]): string =>
+  nodes.flatMap((node) => formatPatternNode(node, 0)).join("\n");

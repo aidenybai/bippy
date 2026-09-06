@@ -4,20 +4,29 @@
       "id": "actual",
       "revision": "8867158f0a2e101467fb191c9e253f47c75a9e2d",
       "framework": "spa",
-      "capturedAt": "2026-09-06T04:58:34.058Z",
-      "durationMs": 108,
+      "capturedAt": "2026-09-06T14:17:10.528Z",
+      "durationMs": 569,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 184,
-          "textCount": 31,
-          "branchCount": 77,
-          "repeatCount": 0,
-          "opaqueCount": 282,
-          "unknownCount": 122,
-          "modulesLoaded": 128
+          "fiberCount": 4789,
+          "textCount": 72,
+          "branchCount": 271,
+          "repeatCount": 24,
+          "opaqueCount": 2021,
+          "unknownCount": 468,
+          "modulesLoaded": 271
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 89
+          },
+          {
+            "code": "unsettled-state",
+            "count": 1
+          }
+        ]
       },
       "report": null,
       "anchor": null,
@@ -28,8 +37,8 @@
       "id": "bulletproof-react",
       "revision": "9506629ed003a561c6627735480cce4994244bb4",
       "framework": "react-router",
-      "capturedAt": "2026-09-06T04:58:34.178Z",
-      "durationMs": 18,
+      "capturedAt": "2026-09-06T14:17:11.109Z",
+      "durationMs": 85,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -42,15 +51,20 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 44,
+          "fiberCount": 322,
           "textCount": 0,
-          "branchCount": 2,
-          "repeatCount": 0,
-          "opaqueCount": 6,
-          "unknownCount": 1,
-          "modulesLoaded": 27
+          "branchCount": 14,
+          "repeatCount": 4,
+          "opaqueCount": 54,
+          "unknownCount": 8,
+          "modulesLoaded": 29
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
       },
       "report": {
         "matchedFibers": 35,
@@ -64,10 +78,11 @@
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 46,
-        "staticFibers": 42,
+        "staticFibers": 56,
         "coverage": 1,
+        "strictCoverage": 0.7608695652173914,
         "divergence": null,
-        "stepsUsed": 59,
+        "stepsUsed": 60,
         "budgetExhausted": false
       },
       "anchor": null,
@@ -78,18 +93,18 @@
       "id": "cal-diy",
       "revision": "abffde336e744e15cf69626c10e436d6172bc406",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T04:58:34.196Z",
-      "durationMs": 7,
+      "capturedAt": "2026-09-06T14:17:11.195Z",
+      "durationMs": 67,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 13,
+          "fiberCount": 31,
           "textCount": 0,
           "branchCount": 2,
           "repeatCount": 0,
-          "opaqueCount": 7,
+          "opaqueCount": 6,
           "unknownCount": 0,
-          "modulesLoaded": 6
+          "modulesLoaded": 14
         },
         "diagnostics": []
       },
@@ -102,20 +117,25 @@
       "id": "epic-stack",
       "revision": "8473afd804b66dba6a23f317908dc35d1535e90d",
       "framework": "react-router",
-      "capturedAt": "2026-09-06T04:58:34.203Z",
-      "durationMs": 19,
+      "capturedAt": "2026-09-06T14:17:11.262Z",
+      "durationMs": 64,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 322,
-          "textCount": 30,
-          "branchCount": 8,
+          "fiberCount": 49,
+          "textCount": 0,
+          "branchCount": 2,
           "repeatCount": 0,
-          "opaqueCount": 101,
-          "unknownCount": 7,
-          "modulesLoaded": 24
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 10
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "render-error",
+            "count": 1
+          }
+        ]
       },
       "report": null,
       "anchor": null,
@@ -126,29 +146,20 @@
       "id": "excalidraw",
       "revision": "214cd6e6e8ac3ad6b68486aa7aa7241abdf9445f",
       "framework": "spa",
-      "capturedAt": "2026-09-06T04:58:34.224Z",
-      "durationMs": 813,
+      "capturedAt": "2026-09-06T14:17:11.327Z",
+      "durationMs": 142,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 2721,
-          "textCount": 18,
-          "branchCount": 538,
+          "fiberCount": 126,
+          "textCount": 0,
+          "branchCount": 12,
           "repeatCount": 0,
-          "opaqueCount": 87,
-          "unknownCount": 633,
-          "modulesLoaded": 297
+          "opaqueCount": 4,
+          "unknownCount": 8,
+          "modulesLoaded": 51
         },
-        "diagnostics": [
-          {
-            "code": "budget-exhausted",
-            "count": 29
-          },
-          {
-            "code": "unsupported-assignment",
-            "count": 2
-          }
-        ]
+        "diagnostics": []
       },
       "report": null,
       "anchor": null,
@@ -159,18 +170,18 @@
       "id": "graphiql",
       "revision": "fd32cea3e191eb6eb41b785e157403308d787b12",
       "framework": "spa",
-      "capturedAt": "2026-09-06T04:58:35.085Z",
-      "durationMs": 7,
+      "capturedAt": "2026-09-06T14:17:11.470Z",
+      "durationMs": 96,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 4,
+          "fiberCount": 1591,
           "textCount": 0,
-          "branchCount": 0,
+          "branchCount": 10,
           "repeatCount": 0,
-          "opaqueCount": 1,
-          "unknownCount": 1,
-          "modulesLoaded": 7
+          "opaqueCount": 0,
+          "unknownCount": 520,
+          "modulesLoaded": 14
         },
         "diagnostics": []
       },
@@ -183,20 +194,33 @@
       "id": "invoify",
       "revision": "3859b3cbae28ca4ec559db5ef87e41b798740340",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T04:58:35.092Z",
-      "durationMs": 70,
+      "capturedAt": "2026-09-06T14:17:11.567Z",
+      "durationMs": 425,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 1978,
-          "textCount": 111,
-          "branchCount": 529,
-          "repeatCount": 0,
-          "opaqueCount": 860,
-          "unknownCount": 574,
-          "modulesLoaded": 99
+          "fiberCount": 14113,
+          "textCount": 253,
+          "branchCount": 1061,
+          "repeatCount": 8,
+          "opaqueCount": 2190,
+          "unknownCount": 1216,
+          "modulesLoaded": 102
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 5
+          },
+          {
+            "code": "dynamic-props",
+            "count": 2
+          },
+          {
+            "code": "unsettled-state",
+            "count": 2
+          }
+        ]
       },
       "report": null,
       "anchor": null,
@@ -207,18 +231,18 @@
       "id": "lexical",
       "revision": "c3b629dcf6b5111811bb9ca5a3db0665099b2856",
       "framework": "spa",
-      "capturedAt": "2026-09-06T04:58:35.192Z",
-      "durationMs": 123,
+      "capturedAt": "2026-09-06T14:17:12.002Z",
+      "durationMs": 193,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 20,
+          "fiberCount": 36,
           "textCount": 0,
-          "branchCount": 2,
+          "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 2,
+          "opaqueCount": 4,
           "unknownCount": 2,
-          "modulesLoaded": 181
+          "modulesLoaded": 182
         },
         "diagnostics": []
       },
@@ -231,20 +255,25 @@
       "id": "nextjs-boilerplate",
       "revision": "1dffa39a32450300c8b01d8cfd3819f9b6e95842",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T04:58:35.316Z",
-      "durationMs": 12,
+      "capturedAt": "2026-09-06T14:17:12.196Z",
+      "durationMs": 72,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 231,
+          "fiberCount": 279,
           "textCount": 44,
           "branchCount": 1,
-          "repeatCount": 0,
+          "repeatCount": 2,
           "opaqueCount": 16,
           "unknownCount": 20,
           "modulesLoaded": 11
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
       },
       "report": null,
       "anchor": null,
@@ -255,8 +284,8 @@
       "id": "nextjs-examples",
       "revision": "4fed8eaf197aaa60fd85371352482199a4c2107f",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T04:58:35.329Z",
-      "durationMs": 10,
+      "capturedAt": "2026-09-06T14:17:12.269Z",
+      "durationMs": 71,
       "runtime": {
         "reactVersion": "19.3.0-canary-cbb046ab-20260731",
         "rendererName": "react-dom",
@@ -269,32 +298,33 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 61,
+          "fiberCount": 102,
           "textCount": 6,
-          "branchCount": 2,
-          "repeatCount": 0,
+          "branchCount": 3,
+          "repeatCount": 1,
           "opaqueCount": 0,
-          "unknownCount": 5,
-          "modulesLoaded": 13
+          "unknownCount": 8,
+          "modulesLoaded": 14
         },
         "diagnostics": []
       },
       "report": {
-        "matchedFibers": 43,
+        "matchedFibers": 77,
         "matchedText": 6,
         "opaqueSubtrees": 0,
         "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
-        "wildcardAbsorbedFibers": 34,
-        "branchesResolved": 2,
-        "repeatIterations": 0,
+        "wildcardAbsorbedFibers": 0,
+        "branchesResolved": 4,
+        "repeatIterations": 2,
         "status": "partial",
         "runtimeFibers": 83,
-        "staticFibers": 49,
+        "staticFibers": 66,
         "coverage": 1,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 56,
+        "stepsUsed": 101,
         "budgetExhausted": false
       },
       "anchor": "body",
@@ -305,12 +335,12 @@
       "id": "puck",
       "revision": "74a42c74db2b52da13ce1fc49087a07a6653dac8",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T04:58:35.340Z",
-      "durationMs": 12,
+      "capturedAt": "2026-09-06T14:17:12.340Z",
+      "durationMs": 80,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 11,
+          "fiberCount": 17,
           "textCount": 0,
           "branchCount": 2,
           "repeatCount": 0,
@@ -329,18 +359,18 @@
       "id": "react-admin",
       "revision": "fa7ede4a25d36917b41f9b9e9936e9e7ab8fa8ab",
       "framework": "spa",
-      "capturedAt": "2026-09-06T04:58:35.352Z",
-      "durationMs": 14,
+      "capturedAt": "2026-09-06T14:17:12.421Z",
+      "durationMs": 63,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 2,
+          "fiberCount": 13,
           "textCount": 0,
           "branchCount": 0,
           "repeatCount": 0,
           "opaqueCount": 12,
           "unknownCount": 0,
-          "modulesLoaded": 28
+          "modulesLoaded": 30
         },
         "diagnostics": []
       },
@@ -353,20 +383,25 @@
       "id": "react-email",
       "revision": "0f0cb94e1f15581131a2d50b80f8daa13dd1c9fc",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T04:58:35.366Z",
-      "durationMs": 4,
+      "capturedAt": "2026-09-06T14:17:12.485Z",
+      "durationMs": 178,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 11,
-          "textCount": 0,
-          "branchCount": 0,
+          "fiberCount": 1400,
+          "textCount": 61,
+          "branchCount": 49,
           "repeatCount": 0,
-          "opaqueCount": 11,
-          "unknownCount": 0,
-          "modulesLoaded": 2
+          "opaqueCount": 227,
+          "unknownCount": 16,
+          "modulesLoaded": 36
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "unsettled-state",
+            "count": 1
+          }
+        ]
       },
       "report": null,
       "anchor": null,
@@ -377,8 +412,8 @@
       "id": "react-router-templates",
       "revision": "b68be71489a22315c7a734a86a18347745b393d2",
       "framework": "react-router",
-      "capturedAt": "2026-09-06T04:58:35.371Z",
-      "durationMs": 5,
+      "capturedAt": "2026-09-06T14:17:12.664Z",
+      "durationMs": 73,
       "runtime": {
         "reactVersion": "19.2.7",
         "rendererName": "react-dom",
@@ -391,8 +426,8 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 49,
-          "textCount": 2,
+          "fiberCount": 96,
+          "textCount": 4,
           "branchCount": 0,
           "repeatCount": 0,
           "opaqueCount": 0,
@@ -415,6 +450,7 @@
         "runtimeFibers": 50,
         "staticFibers": 50,
         "coverage": 1,
+        "strictCoverage": 1,
         "divergence": null,
         "stepsUsed": 50,
         "budgetExhausted": false
@@ -427,12 +463,12 @@
       "id": "redux-toolkit",
       "revision": "e99fe6135188219f031c5028f653fb82e671de24",
       "framework": "spa",
-      "capturedAt": "2026-09-06T04:58:35.376Z",
-      "durationMs": 5,
+      "capturedAt": "2026-09-06T14:17:12.737Z",
+      "durationMs": 54,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 5,
+          "fiberCount": 14,
           "textCount": 2,
           "branchCount": 1,
           "repeatCount": 0,
@@ -451,20 +487,25 @@
       "id": "shadcn-ui",
       "revision": "7c9eaba1c0a6404c990c144a654792e3313c650d",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T04:58:35.381Z",
-      "durationMs": 68,
+      "capturedAt": "2026-09-06T14:17:12.792Z",
+      "durationMs": 270,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 696,
-          "textCount": 227,
-          "branchCount": 61,
-          "repeatCount": 0,
-          "opaqueCount": 1012,
-          "unknownCount": 10,
-          "modulesLoaded": 91
+          "fiberCount": 2826,
+          "textCount": 378,
+          "branchCount": 104,
+          "repeatCount": 11,
+          "opaqueCount": 1418,
+          "unknownCount": 31,
+          "modulesLoaded": 94
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 8
+          }
+        ]
       },
       "report": null,
       "anchor": null,
@@ -475,8 +516,8 @@
       "id": "sonner",
       "revision": "8e4662b39255120b62138312058f5d77c0139a5e",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T04:58:35.463Z",
-      "durationMs": 10,
+      "capturedAt": "2026-09-06T14:17:13.067Z",
+      "durationMs": 67,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
@@ -489,12 +530,12 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 49,
+          "fiberCount": 52,
           "textCount": 0,
-          "branchCount": 4,
+          "branchCount": 0,
           "repeatCount": 0,
           "opaqueCount": 0,
-          "unknownCount": 3,
+          "unknownCount": 4,
           "modulesLoaded": 3
         },
         "diagnostics": []
@@ -507,14 +548,15 @@
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "wildcardAbsorbedFibers": 0,
-        "branchesResolved": 3,
+        "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "partial",
+        "status": "exact",
         "runtimeFibers": 44,
-        "staticFibers": 47,
+        "staticFibers": 44,
         "coverage": 1,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 52,
+        "stepsUsed": 46,
         "budgetExhausted": false
       },
       "anchor": "body",
@@ -525,8 +567,8 @@
       "id": "tanstack-query",
       "revision": "1893a965d219032207cbe147880d0e9f757a5a56",
       "framework": "spa",
-      "capturedAt": "2026-09-06T04:58:35.474Z",
-      "durationMs": 5,
+      "capturedAt": "2026-09-06T14:17:13.134Z",
+      "durationMs": 54,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -539,32 +581,38 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 21,
-          "textCount": 5,
-          "branchCount": 3,
-          "repeatCount": 0,
+          "fiberCount": 22,
+          "textCount": 3,
+          "branchCount": 1,
+          "repeatCount": 1,
           "opaqueCount": 2,
-          "unknownCount": 5,
+          "unknownCount": 2,
           "modulesLoaded": 1
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
       },
       "report": {
-        "matchedFibers": 9,
+        "matchedFibers": 209,
         "matchedText": 2,
         "opaqueSubtrees": 2,
         "opaqueSkippedFibers": 6,
         "slotsMatched": 1,
         "slotsUnmatched": 0,
-        "wildcardAbsorbedFibers": 200,
-        "branchesResolved": 2,
-        "repeatIterations": 0,
+        "wildcardAbsorbedFibers": 0,
+        "branchesResolved": 1,
+        "repeatIterations": 100,
         "status": "partial",
         "runtimeFibers": 217,
-        "staticFibers": 16,
+        "staticFibers": 15,
         "coverage": 1,
+        "strictCoverage": 0.9723502304147466,
         "divergence": null,
-        "stepsUsed": 21,
+        "stepsUsed": 320,
         "budgetExhausted": false
       },
       "anchor": null,
@@ -575,8 +623,8 @@
       "id": "tanstack-router",
       "revision": "cf166d160e6397007a979bfc7065b45ff69ea543",
       "framework": "spa",
-      "capturedAt": "2026-09-06T04:58:35.479Z",
-      "durationMs": 4,
+      "capturedAt": "2026-09-06T14:17:13.189Z",
+      "durationMs": 46,
       "runtime": null,
       "static": {
         "stats": {
@@ -599,17 +647,17 @@
       "id": "tldraw",
       "revision": "e8f61acedcbf2dc69693ea1e1f612a7f635fb4b5",
       "framework": "react-router",
-      "capturedAt": "2026-09-06T04:58:35.484Z",
-      "durationMs": 12,
+      "capturedAt": "2026-09-06T14:17:13.235Z",
+      "durationMs": 77,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 133,
+          "fiberCount": 804,
           "textCount": 4,
-          "branchCount": 21,
+          "branchCount": 30,
           "repeatCount": 0,
-          "opaqueCount": 10,
-          "unknownCount": 138,
+          "opaqueCount": 3,
+          "unknownCount": 271,
           "modulesLoaded": 6
         },
         "diagnostics": []

@@ -13,21 +13,11 @@ export { createModuleRecord } from "./graph/module-record.js";
 export { Interpreter, type InterpreterOptions } from "./evaluate/interpreter.js";
 export { describeValue, objectValue, objectFromRecord, unknownValue } from "./evaluate/values.js";
 export { toElementType } from "./react/element-type.js";
-export { FiberBuilder, type FiberBuilderOptions, describeFiberType } from "./fiber/build-fiber.js";
-export {
-  serializeFiber,
-  formatFiber,
-  formatSerializedFiber,
-  collectChildren,
-  type SerializedFiber,
-  type SerializedElementFiber,
-  type SerializedTextFiber,
-  type SerializedBranchFiber,
-  type SerializedRepeatFiber,
-  type SerializedOpaqueFiber,
-  type SerializedUnknownFiber,
-  type FormatFiberOptions,
-} from "./fiber/serialize.js";
+export { Materializer, type MaterializerOptions } from "./materialize/materializer.js";
+export { MARKER_NAMES } from "./materialize/markers.js";
+export { loadReactRuntime, type ReactRuntime } from "./materialize/react-runtime.js";
+export { ensureDomGlobals } from "./materialize/dom-environment.js";
+export { mountNode, type MountResult } from "./materialize/mount.js";
 export {
   StaticRenderer,
   createStaticRenderer,

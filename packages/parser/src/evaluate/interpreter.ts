@@ -54,6 +54,7 @@ import {
   evaluateBuiltinCall,
   getBuiltinGlobal,
   getGlobalTypeof,
+  isModeledOpaqueMethodName,
   isPromiseMethodName,
 } from "./builtin-calls.js";
 import { collectClassMembers } from "./class-component.js";
@@ -62,6 +63,7 @@ import type { ContextFrame, EvaluationContext } from "./context.js";
 import { lookupContextValue, withScope } from "./context.js";
 import { decodeJsxEntities } from "./jsx-entities.js";
 import { cleanJsxText } from "./jsx-text.js";
+import { markEscapedSetters } from "./hooks.js";
 import { evaluateLoop } from "./loops.js";
 import { evaluateReactApiCall } from "./react-calls.js";
 import { createScope, declareInScope, findOwningScope, lookupScope } from "./scope.js";
@@ -211,6 +213,7 @@ export class Interpreter {
       uncertainDepth: 0,
       forkDepth: 0,
       environment,
+      hooks: null,
     };
   }
 
@@ -532,8 +535,12 @@ export class Interpreter {
           context,
           nameHint,
         );
-      case "AwaitExpression":
-        return this.evaluateExpression(node.argument, context, nameHint);
+      case "AwaitExpression": {
+        const awaited = this.evaluateExpression(node.argument, context, nameHint);
+        if (context.hooks && (awaited.kind === "unknown" || awaited.kind === "external"))
+          context.hooks.isDeferred = true;
+        return awaited;
+      }
       case "MemberExpression":
         return this.evaluateMemberExpression(node, context);
       case "CallExpression":
@@ -1014,6 +1021,8 @@ export class Interpreter {
           const api = resolveReactApi(object.packageName, key);
           if (api) return { kind: "react-api", api };
         }
+        if (object.derived && isModeledOpaqueMethodName(key))
+          return { kind: "method", receiver: object, name: key };
         return {
           kind: "external",
           packageName: object.packageName,
@@ -1153,9 +1162,13 @@ export class Interpreter {
           options.nameHint ?? null,
         );
       case "method":
-      case "global":
-        return evaluateBuiltinCall(this, callee, args, context, location);
+      case "global": {
+        const result = evaluateBuiltinCall(this, callee, args, context, location);
+        if (result.kind === "unknown") this.markEscapes(args);
+        return result;
+      }
       case "external":
+        this.markEscapes(args);
         return {
           kind: "external",
           packageName: callee.packageName,
@@ -1167,26 +1180,51 @@ export class Interpreter {
           readContext: (definition) =>
             lookupContextValue(context.contextFrame, definition) ?? definition.defaultValue,
           callAwaited: (fn, fnArgs) => this.callAwaited(fn, fnArgs, context, location),
+          call: (fn, fnArgs) => this.callValue(fn, fnArgs, context, location),
         });
       case "class":
         return unknownValue(`class ${callee.name ?? ""} called without new`, location);
       case "unknown":
+        this.markEscapes(args);
         return unknownValue(`call of ${callee.reason}`, location);
       case "primitive":
         return unknownValue(`call of ${String(callee.value)}`, location);
       default:
+        this.markEscapes(args);
         return unknownValue(`call of ${describeValue(callee)}`, location);
     }
+  }
+
+  private markEscapes(args: StaticValue[]): void {
+    for (const argument of args) markEscapedSetters(argument);
   }
 
   private evaluateNewExpression(node: NewExpression, context: EvaluationContext): StaticValue {
     const callee = this.evaluateExpression(node.callee, context);
     const location = this.locate(context.module, node);
+    const args = this.evaluateArguments(node.arguments, context);
     if (callee.kind === "global") {
-      const args = this.evaluateArguments(node.arguments, context);
       return evaluateBuiltinCall(this, callee, args, context, location, true);
     }
+    this.markEscapes(args);
     return unknownValue(`new ${describeValue(callee)}`, location);
+  }
+
+  /** Calls a promise continuation: updates it queues land after the captured commit. */
+  callDeferred(
+    fn: Extract<StaticValue, { kind: "function" }>,
+    args: StaticValue[],
+    context: EvaluationContext,
+  ): StaticValue {
+    const frame = context.hooks;
+    if (!frame) return this.callFunction(fn, args, context);
+    const wasDeferred = frame.isDeferred;
+    frame.isDeferred = true;
+    try {
+      return this.callFunction(fn, args, context);
+    } finally {
+      frame.isDeferred = wasDeferred;
+    }
   }
 
   /** Calls `callee` as a framework does when it awaits the returned promise. */
@@ -1224,12 +1262,28 @@ export class Interpreter {
     if (occurrences >= this.maxRecursionPerFunction) {
       return unknownValue(`recursive call of ${fn.name ?? "anonymous function"}`, location);
     }
-    // Server components may be async; React awaits them before rendering, so
-    // evaluating the body synchronously (with `await x` as `x`) models the result.
-    const awaited = options.awaited || context.environment === "server";
-    if (fn.node.generator || (fn.node.async && !awaited)) {
-      return unknownValue(`${fn.node.async ? "async" : "generator"} function result`, location);
+    if (fn.node.generator) return unknownValue("generator function result", location);
+    const frame = context.hooks;
+    const wasDeferred = frame?.isDeferred ?? false;
+    const result = this.evaluateFunctionBody(fn, args, context, options);
+    // An async body runs synchronously up to its first `await` of an unknown
+    // promise; only a framework-awaited call (server components, route `lazy`)
+    // lets what follows count as settled before the captured commit.
+    if (frame && fn.node.async && !options.awaited && frame.isDeferred && !wasDeferred) {
+      frame.isDeferred = wasDeferred;
+      return unknownValue("promise settled asynchronously", location);
     }
+    return result;
+  }
+
+  private evaluateFunctionBody(
+    fn: Extract<StaticValue, { kind: "function" }>,
+    args: StaticValue[],
+    context: EvaluationContext,
+    options: CallOptions,
+  ): StaticValue {
+    const location = this.locate(fn.module, fn.node);
+    const callStack = options.callStack ?? context.callStack;
     const scope = createScope(fn.scope);
     const callContext: EvaluationContext = {
       module: fn.module,
@@ -1242,6 +1296,7 @@ export class Interpreter {
       uncertainDepth: context.uncertainDepth,
       forkDepth: context.forkDepth,
       environment: context.environment,
+      hooks: context.hooks,
     };
     this.bindParameters(fn.node.params, args, scope, callContext);
     if (fn.node.type !== "ArrowFunctionExpression") {
@@ -1579,8 +1634,12 @@ export class Interpreter {
     }
     const forkContext: EvaluationContext = { ...context, forkDepth: context.forkDepth + 1 };
     const snapshot = snapshotScopes(context.scope);
+    const hookCursor = context.hooks?.cursor ?? 0;
     const outcomes = branches.map((branch, branchIndex) => {
-      if (branchIndex > 0) restoreScopes(snapshot);
+      if (branchIndex > 0) {
+        restoreScopes(snapshot);
+        if (context.hooks) context.hooks.cursor = hookCursor;
+      }
       return runBranch(branch, forkContext);
     });
     return mergeOutcomes(outcomes, reason, location);

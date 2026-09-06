@@ -6,6 +6,7 @@ import type {
   Scope,
   StaticValue,
 } from "../types.js";
+import type { HookFrame } from "./hooks.js";
 
 export interface ContextFrame {
   context: ContextDefinition;
@@ -22,6 +23,7 @@ export interface EvaluationContext {
   uncertainDepth: number;
   forkDepth: number;
   environment: RenderEnvironment | null;
+  hooks: HookFrame | null;
 }
 
 export const withScope = (context: EvaluationContext, scope: Scope): EvaluationContext => ({

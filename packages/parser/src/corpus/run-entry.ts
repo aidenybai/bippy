@@ -1,13 +1,13 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { formatFiber } from "../fiber/serialize.js";
 import { renderFramework } from "../frameworks/render-framework.js";
 import { flattenTransparentFibers } from "../frameworks/framework-profile.js";
 import { getFrameworkProfile } from "../frameworks/profiles.js";
 import { BrowserCapturer, type BrowserCaptureResult } from "../harness/capture-browser.js";
 import { compareStaticToRuntime } from "../harness/compare-render.js";
 import { countSnapshotFibers, formatRuntimeSnapshot, readSnapshot } from "../harness/snapshot.js";
+import { formatPattern, getRenderPattern } from "../harness/static-pattern.js";
 import type { Diagnostic, StaticRenderResult } from "../types.js";
 import { DevServer, runCommand } from "./dev-server.js";
 import type { CorpusEntry, CorpusResult, CorpusRuntimeSummary } from "./manifest.js";
@@ -54,6 +54,39 @@ export const ensureClone = (
 
 const installMarker = (cloneDirectory: string, entry: CorpusEntry): string =>
   path.join(cloneDirectory, `.bippy-parser-installed-${entry.revision.slice(0, 10)}`);
+
+export const ensureInstalled = async (
+  entry: CorpusEntry,
+  cloneDirectory: string,
+  logPath: string,
+  log: (message: string) => void,
+): Promise<void> => {
+  const marker = installMarker(cloneDirectory, entry);
+  if (existsSync(marker)) return;
+  mkdirSync(path.dirname(logPath), { recursive: true });
+  log(`install: ${entry.install}`);
+  await runCommand({
+    command: entry.install,
+    cwd: cloneDirectory,
+    env: entry.env,
+    logPath,
+    timeoutMs: INSTALL_TIMEOUT_MS,
+  });
+  for (const command of entry.setup ?? []) {
+    log(`setup: ${command}`);
+    await runCommand({
+      command,
+      cwd: path.join(cloneDirectory, entry.workingDirectory),
+      env: entry.env,
+      logPath,
+      timeoutMs: SETUP_TIMEOUT_MS,
+    });
+  }
+  writeFileSync(marker, new Date().toISOString());
+};
+
+export const installLogPath = (corpusDirectory: string, entry: CorpusEntry): string =>
+  path.join(corpusDirectory, ".logs", `${entry.id}.log`);
 
 const summarizeDiagnostics = (diagnostics: Diagnostic[]): { code: string; count: number }[] => {
   const counts = new Map<string, number>();
@@ -141,18 +174,12 @@ const writeArtifacts = (
   entry: CorpusEntry,
   staticResult: StaticRenderResult | null,
   capture: BrowserCaptureResult | null,
-  cloneDirectory: string,
 ): void => {
   mkdirSync(outputDirectory, { recursive: true });
   if (staticResult) {
     writeFileSync(
       path.join(outputDirectory, `${entry.id}.static.txt`),
-      formatFiber(staticResult.root, {
-        showProps: true,
-        showLocations: true,
-        showNotes: true,
-        rootDirectory: cloneDirectory,
-      }),
+      formatPattern(getRenderPattern(staticResult)),
     );
     writeFileSync(
       path.join(outputDirectory, `${entry.id}.diagnostics.json`),
@@ -191,7 +218,7 @@ export const runCorpusEntry = async (
     failure: null,
   };
   const outputDirectory = path.join(options.corpusDirectory, ".out");
-  const logPath = path.join(options.corpusDirectory, ".logs", `${entry.id}.log`);
+  const logPath = installLogPath(options.corpusDirectory, entry);
   mkdirSync(path.dirname(logPath), { recursive: true });
 
   let staticResult: StaticRenderResult | null = null;
@@ -202,7 +229,7 @@ export const runCorpusEntry = async (
     const workingDirectory = path.join(cloneDirectory, entry.workingDirectory);
 
     log("static render");
-    staticResult = renderFramework(entry, cloneDirectory);
+    staticResult = await renderFramework(entry, cloneDirectory);
     result.static = {
       stats: staticResult.stats,
       diagnostics: summarizeDiagnostics(staticResult.diagnostics),
@@ -221,28 +248,7 @@ export const runCorpusEntry = async (
       return result;
     }
 
-    const marker = installMarker(cloneDirectory, entry);
-    if (!options.skipInstall && !existsSync(marker)) {
-      log(`install: ${entry.install}`);
-      await runCommand({
-        command: entry.install,
-        cwd: cloneDirectory,
-        env: entry.env,
-        logPath,
-        timeoutMs: INSTALL_TIMEOUT_MS,
-      });
-      for (const command of entry.setup ?? []) {
-        log(`setup: ${command}`);
-        await runCommand({
-          command,
-          cwd: workingDirectory,
-          env: entry.env,
-          logPath,
-          timeoutMs: SETUP_TIMEOUT_MS,
-        });
-      }
-      writeFileSync(marker, new Date().toISOString());
-    }
+    if (!options.skipInstall) await ensureInstalled(entry, cloneDirectory, logPath, log);
 
     log(`dev server: ${entry.dev}`);
     const server = new DevServer({
@@ -272,7 +278,6 @@ export const runCorpusEntry = async (
     return result;
   } finally {
     result.durationMs = Date.now() - startedAt;
-    if (cloneDirectory)
-      writeArtifacts(outputDirectory, entry, staticResult, capture, cloneDirectory);
+    if (cloneDirectory) writeArtifacts(outputDirectory, entry, staticResult, capture);
   }
 };

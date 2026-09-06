@@ -31,7 +31,7 @@ const requireField = (target: FrameworkRenderTarget, field: "entry" | "route"): 
 export const renderFrameworkTarget = (
   target: FrameworkRenderTarget,
   options: StaticRendererOptions,
-): StaticRenderResult => {
+): Promise<StaticRenderResult> => {
   switch (target.framework) {
     case "spa":
       return createStaticRenderer(options).renderEntry(requireField(target, "entry"));
@@ -78,7 +78,10 @@ export const createRendererForEntry = (
   cloneDirectory: string,
 ): StaticRenderer => createStaticRenderer(rendererOptionsForEntry(entry, cloneDirectory));
 
-export const renderFramework = (entry: CorpusEntry, cloneDirectory: string): StaticRenderResult =>
+export const renderFramework = (
+  entry: CorpusEntry,
+  cloneDirectory: string,
+): Promise<StaticRenderResult> =>
   renderFrameworkTarget(
     { framework: entry.framework, entry: entry.static.entry, route: entry.static.route },
     rendererOptionsForEntry(entry, cloneDirectory),

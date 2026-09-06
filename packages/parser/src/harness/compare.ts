@@ -1,4 +1,3 @@
-import type { SourceLocation } from "../types.js";
 import { countSnapshotFibers, type RuntimeFiberSnapshot } from "./snapshot.js";
 import {
   countPatternFibers,
@@ -26,7 +25,6 @@ export interface ComparisonDivergence {
   path: string;
   expected: string;
   actual: string;
-  location: SourceLocation | null;
 }
 
 export interface ComparisonTally {
@@ -174,7 +172,6 @@ class Matcher {
         path: `${path.join(" > ")}[${index}]`,
         expected: expected ? describePatternNode(expected) : "<end of children>",
         actual: describeRuntimeFiber(actual),
-        location: expected?.location ?? null,
       },
     };
   }

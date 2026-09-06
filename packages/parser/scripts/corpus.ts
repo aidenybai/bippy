@@ -2,7 +2,12 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { readCorpusManifest, type CorpusResult } from "../src/corpus/manifest.js";
-import { runCorpusEntry } from "../src/corpus/run-entry.js";
+import {
+  ensureClone,
+  ensureInstalled,
+  installLogPath,
+  runCorpusEntry,
+} from "../src/corpus/run-entry.js";
 import {
   formatCorpusMarkdown,
   formatCorpusTable,
@@ -16,9 +21,13 @@ const USAGE = `usage: tsx scripts/corpus.ts [options] [entry-id ...]
 
   --static-only     render statically; do not install or start dev servers
   --skip-install    assume dependencies are already installed
+  --install-only    clone and install the selected entries, then exit
+  --parallel <n>    install this many entries concurrently (default 1)
   --manifest <p>    corpus manifest (default corpus/manifest.json)
   --results <p>     merged results file (default corpus/results.json)
   --markdown <p>    also write a markdown table of all results
+  --corpus-dir <p>  where repositories are cloned (default .corpus; keep it outside
+                    this monorepo for tools that walk up to the nearest workspace root)
   --headed          run the capture browser headed
   --list            print manifest entries and exit`;
 
@@ -26,7 +35,10 @@ const { values, positionals } = parseArgs({
   allowPositionals: true,
   options: {
     "static-only": { type: "boolean", default: false },
+    "corpus-dir": { type: "string", default: ".corpus" },
     "skip-install": { type: "boolean", default: false },
+    "install-only": { type: "boolean", default: false },
+    parallel: { type: "string", default: "1" },
     manifest: { type: "string", default: "corpus/manifest.json" },
     results: { type: "string", default: "corpus/results.json" },
     markdown: { type: "string" },
@@ -44,7 +56,7 @@ if (values.help) {
 const packageDirectory = path.resolve(import.meta.dirname, "..");
 const manifestPath = path.resolve(packageDirectory, values.manifest);
 const resultsPath = path.resolve(packageDirectory, values.results);
-const corpusDirectory = path.join(packageDirectory, ".corpus");
+const corpusDirectory = path.resolve(packageDirectory, values["corpus-dir"]);
 const manifest = readCorpusManifest(manifestPath);
 
 if (values.list) {
@@ -81,6 +93,28 @@ const writeResults = (results: CorpusResult[]): void => {
     );
   }
 };
+
+if (values["install-only"]) {
+  const queue = [...selected];
+  const failures: string[] = [];
+  const worker = async (): Promise<void> => {
+    for (let entry = queue.shift(); entry; entry = queue.shift()) {
+      const log = (message: string) => console.log(`[${entry.id}] ${message}`);
+      try {
+        const cloneDirectory = ensureClone(entry, corpusDirectory, log);
+        await ensureInstalled(entry, cloneDirectory, installLogPath(corpusDirectory, entry), log);
+        log("installed");
+      } catch (error) {
+        failures.push(entry.id);
+        log(`install failed: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+  };
+  const parallel = Math.max(1, Number.parseInt(values.parallel, 10) || 1);
+  await Promise.all(Array.from({ length: parallel }, worker));
+  if (failures.length > 0) console.error(`install failures: ${failures.join(", ")}`);
+  process.exit(failures.length > 0 ? 1 : 0);
+}
 
 const capturer = new BrowserCapturer({ headless: !values.headed });
 const fresh: CorpusResult[] = [];

@@ -3,11 +3,14 @@ import type {
   ReactApi,
   SourceLocation,
   StaticElementType,
+  StaticNativeFunctionValue,
   StaticObjectEntry,
   StaticValue,
+  StubRenderTools,
 } from "../types.js";
 import type { EvaluationContext } from "./context.js";
 import { lookupContextValue } from "./context.js";
+import { nextStateCell, queueStateUpdate } from "./hooks.js";
 import type { Interpreter } from "./interpreter.js";
 import {
   branchValue,
@@ -24,6 +27,38 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "./values.js";
+
+const stateHook = (
+  context: EvaluationContext,
+  name: string,
+  initial: StaticValue,
+  reduce: (
+    action: StaticValue | undefined,
+    current: StaticValue,
+    tools: StubRenderTools,
+  ) => StaticValue,
+): StaticValue => {
+  const frame = context.hooks;
+  if (!frame) {
+    return listValue([
+      branchValue([initial, unknownValue(`updated state of ${name}`)], "state may change", null),
+      unknownValue("state setter"),
+    ]);
+  }
+  const cell = nextStateCell(frame, name, initial);
+  const setter: StaticNativeFunctionValue = {
+    kind: "native-function",
+    name: `set ${name}`,
+    call: ([action], tools) => {
+      queueStateUpdate(frame, cell, reduce(action, cell.next ?? cell.current, tools));
+      return UNDEFINED_VALUE;
+    },
+    onEscape: () => {
+      cell.isEscaped = true;
+    },
+  };
+  return listValue([cell.current, setter]);
+};
 
 const propsFromValue = (
   value: StaticValue | undefined,
@@ -267,28 +302,20 @@ export const evaluateReactApiCall = (
         first?.kind === "function"
           ? interpreter.callFunction(first, [], context)
           : (first ?? UNDEFINED_VALUE);
-      return listValue([
-        branchValue(
-          [initial, unknownValue(`updated state of ${nameHint ?? "useState"}`)],
-          "state may change after mount",
-          location,
-        ),
-        unknownValue("state setter"),
-      ]);
+      return stateHook(context, nameHint ?? "useState", initial, (action, current, tools) =>
+        action?.kind === "function" ? tools.call(action, [current]) : (action ?? UNDEFINED_VALUE),
+      );
     }
     case "useReducer": {
       const initial =
         third?.kind === "function"
           ? interpreter.callFunction(third, [second ?? UNDEFINED_VALUE], context)
           : (second ?? UNDEFINED_VALUE);
-      return listValue([
-        branchValue(
-          [initial, unknownValue("reducer state after dispatch")],
-          "reducer state may change",
-          location,
-        ),
-        unknownValue("dispatch"),
-      ]);
+      return stateHook(context, nameHint ?? "useReducer", initial, (action, current, tools) =>
+        first && action
+          ? tools.call(first, [current, action])
+          : unknownValue("reducer state after dispatch"),
+      );
     }
     case "useMemo":
       return first?.kind === "function"
@@ -308,14 +335,30 @@ export const evaluateReactApiCall = (
     case "useEffect":
     case "useLayoutEffect":
     case "useInsertionEffect":
+      if (context.hooks?.isRendering && first) {
+        context.hooks.effects.push({
+          isLayout: api !== "useEffect",
+          callback: first,
+          deps: second ?? null,
+        });
+      }
+      return UNDEFINED_VALUE;
     case "useImperativeHandle":
     case "useDebugValue":
-    case "startTransition":
       return UNDEFINED_VALUE;
+    case "startTransition":
+      return first ? interpreter.callValue(first, [], context, location) : UNDEFINED_VALUE;
     case "useId":
       return unknownPrimitiveValue("string", "useId");
     case "useTransition":
-      return listValue([FALSE_VALUE, unknownValue("startTransition")]);
+      return listValue([
+        FALSE_VALUE,
+        {
+          kind: "native-function",
+          name: "startTransition",
+          call: ([callback], tools) => (callback ? tools.call(callback, []) : UNDEFINED_VALUE),
+        },
+      ]);
     case "useDeferredValue":
       return first ?? UNDEFINED_VALUE;
     case "useSyncExternalStore": {

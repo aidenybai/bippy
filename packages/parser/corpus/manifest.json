@@ -64,7 +64,11 @@
       "framework": "react-router",
       "workingDirectory": ".",
       "install": "npm install",
-      "setup": ["npx prisma migrate deploy", "npx prisma generate --sql"],
+      "setup": [
+        "test -f .env || cp .env.example .env",
+        "npx prisma migrate deploy",
+        "npx prisma generate --sql"
+      ],
       "dev": "npm run dev",
       "url": "http://localhost:3000/",
       "readyTimeoutMs": 600000,

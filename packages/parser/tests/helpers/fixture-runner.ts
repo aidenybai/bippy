@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { formatFiber, type StaticRenderResult } from "../../src/index.js";
+import type { StaticRenderResult } from "../../src/index.js";
 import {
   flattenTransparentFibers,
   getFrameworkProfile,
@@ -11,7 +11,9 @@ import {
   compareStaticToRuntime,
   createCommitRecorder,
   formatComparisonReport,
+  formatPattern,
   formatRuntimeSnapshot,
+  getRenderPattern,
   getRootContainer,
   type CompareRenderResult,
   type ComparisonStatus,
@@ -96,7 +98,7 @@ const mountFixture = async (fixture: FixtureCase): Promise<RuntimeSnapshot> => {
 
 export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult> => {
   const profile = getFrameworkProfile(fixture.manifest.framework);
-  const staticResult = renderFrameworkTarget(
+  const staticResult = await renderFrameworkTarget(
     {
       framework: fixture.manifest.framework,
       entry: join(fixture.directory, fixture.manifest.entry),
@@ -126,7 +128,7 @@ export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult
 export const describeFixtureRun = (fixture: FixtureCase, run: FixtureRunResult): string => {
   const sections = [
     `fixture: ${fixture.name}`,
-    `static:\n${formatFiber(run.staticResult.root, { rootDirectory: fixture.directory })}`,
+    `static:\n${formatPattern(getRenderPattern(run.staticResult))}`,
   ];
   if (run.runtime) {
     sections.push(

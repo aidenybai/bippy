@@ -7,6 +7,7 @@ import type {
 } from "../types.js";
 import type { EvaluationContext } from "./context.js";
 import { createCollectionValue, createPromiseValue } from "./collections.js";
+import { markEscapedSetters } from "./hooks.js";
 import type { Interpreter } from "./interpreter.js";
 import {
   branchValue,
@@ -32,6 +33,12 @@ import {
 const PROMISE_METHOD_NAMES = new Set(["then", "catch", "finally"]);
 
 export const isPromiseMethodName = (name: string): boolean => PROMISE_METHOD_NAMES.has(name);
+
+const ITERATION_METHOD_NAMES = new Set(["map", "forEach", "flatMap", "filter"]);
+
+/** Methods whose callbacks run synchronously (or on promise settlement) even when the receiver is opaque. */
+export const isModeledOpaqueMethodName = (name: string): boolean =>
+  PROMISE_METHOD_NAMES.has(name) || ITERATION_METHOD_NAMES.has(name);
 
 const GLOBAL_NAMES = new Set([
   "Object",
@@ -331,8 +338,14 @@ const callGlobal = (
     case "queueMicrotask":
     case "requestAnimationFrame":
     case "requestIdleCallback":
-      // The runtime snapshot is taken once everything settled, so deferred callbacks have run.
-      if (first) interpreter.callValue(first, [], context, location);
+      // The runtime snapshot is taken once short timers settled; longer or dynamic delays may not have fired.
+      if (first) {
+        if (isSettledDelay(second)) interpreter.callValue(first, [], context, location);
+        else markEscapedSetters(first);
+      }
+      return unknownValue(`${name} handle`, location);
+    case "setInterval":
+      if (first) markEscapedSetters(first);
       return unknownValue(`${name} handle`, location);
     case "console.log":
     case "console.warn":
@@ -391,6 +404,15 @@ const arrayLikeToList = (value: Extract<StaticValue, { kind: "object" }>): Stati
 };
 
 type CallableValue = Extract<StaticValue, { kind: "function" | "native-function" | "global" }>;
+
+const MAX_SETTLED_DELAY_MS = 2_000;
+
+const isSettledDelay = (delay: StaticValue | undefined): boolean =>
+  delay === undefined ||
+  (delay.kind === "primitive" &&
+    (delay.value === undefined ||
+      delay.value === null ||
+      (typeof delay.value === "number" && delay.value <= MAX_SETTLED_DELAY_MS)));
 
 const isCallable = (value: StaticValue | undefined): value is CallableValue =>
   value?.kind === "function" || value?.kind === "native-function" || value?.kind === "global";
@@ -670,7 +692,14 @@ export const evaluateBuiltinCall = (
 
   if (isPromiseMethodName(name)) {
     if (name === "then" && first?.kind === "function") {
-      return interpreter.callFunction(first, [receiver], context);
+      const isSettled = receiver.kind !== "unknown" && receiver.kind !== "external";
+      return isSettled
+        ? interpreter.callFunction(first, [receiver], context)
+        : interpreter.callDeferred(first, [receiver], context);
+    }
+    if (!isCallable(first) && !isCallable(second)) return receiver;
+    if (receiver.kind === "unknown" || receiver.kind === "external") {
+      for (const callback of args) markEscapedSetters(callback);
     }
     return receiver;
   }

@@ -10,9 +10,8 @@ export const formatComparisonReport = (report: ComparisonReport): string => {
     `steps: ${report.stepsUsed}${report.budgetExhausted ? " (budget exhausted)" : ""}`,
   ];
   if (report.divergence) {
-    const { path, expected, actual, location } = report.divergence;
-    const where = location ? ` @ ${location.filePath}:${location.line}:${location.column}` : "";
-    lines.push(`divergence at ${path}: expected ${expected}, saw ${actual}${where}`);
+    const { path, expected, actual } = report.divergence;
+    lines.push(`divergence at ${path}: expected ${expected}, saw ${actual}`);
   }
   return lines.join("\n");
 };

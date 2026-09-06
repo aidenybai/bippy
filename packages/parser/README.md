@@ -1,14 +1,18 @@
 # @bippy/parser
 
 Static reconstruction of React fiber trees from source ASTs. The parser reads a project with
-`oxc-parser`, links its modules with `oxc-resolver`, abstractly evaluates component bodies, and
-emits a fiber-shaped tree without executing the application. A harness captures the real tree
-through Bippy (in-process or in a browser against a dev server) and compares the two.
+`oxc-parser`, links its modules with `oxc-resolver`, and abstractly evaluates component bodies
+without executing the application. The evaluated element values are then materialized into real
+React elements whose component types are thin proxies back into the interpreter, rendered with
+`react-dom` in happy-dom, and captured through Bippy — so the output is a real committed fiber
+tree, built by React's own reconciler. A harness captures the application's actual tree the same
+way (in-process, or in a browser against a dev server) and compares the two fiber trees directly.
 
-The output is _fiber-like_, not a fiber. Anything the source does not decide statically — data
-from the network, router state, third-party component internals — is kept as explicit uncertainty
-(branches, repeats, opaque and unknown nodes) rather than guessed. Exactness against runtime is
-only expected where the source fully determines the tree.
+Anything the source does not decide statically — data from the network, router state, third-party
+component internals — is kept as explicit uncertainty: marker components (`$Branch`, `$Repeat`,
+`$Opaque`, `$Unknown`, `$Text`) sit in the materialized tree at the position of the uncertainty
+rather than being guessed. Exactness against runtime is only expected where the source fully
+determines the tree.
 
 ## Run
 
@@ -42,11 +46,13 @@ source files ──oxc-parser──▶ ModuleRecord (imports/exports/bindings, c
                              StaticValue, returning every reachable `return` as a branch
                                    │
                                    ▼
-                             FiberBuilder: createFiberFromTypeAndProps + reconcileChildFibers
-                             semantics over StaticValue, producing linked StaticFiber nodes
+                             Materializer: StaticValue ─▶ React elements; source components
+                             become proxies that call the interpreter from inside React's
+                             render, uncertainty becomes marker components
                                    │
-                                   ▼
-                    serialize / formatFiber ─▶ StaticPattern ─▶ compare against RuntimeSnapshot
+                                   ▼  react-dom + happy-dom, captured with bippy
+                             RuntimeSnapshot (real fibers) ─▶ pattern ─▶ compare against the
+                             application's RuntimeSnapshot
 ```
 
 ### Parse (`src/parse`)
@@ -92,16 +98,26 @@ confident tree.
 
 JSX text follows React's whitespace rules and the same entity table as esbuild/swc/oxc.
 
-### Fiber model (`src/fiber`)
+### Materialization (`src/materialize`)
 
-`StaticFiber` carries `tag` (React work tag), `name`, `key`, `props`, `location`, `notes`, and
-`return`/`child`/`sibling`/`index` links. Element types mirror `createFiberFromTypeAndProps`:
-host strings, function and class components, `memo`, `forwardRef`, `lazy`, `Fragment`,
-`StrictMode`, `Profiler`, `Suspense`, `SuspenseList`, `Activity`, `ViewTransition`, context
-providers/consumers, portals, `HostText`, and React 19 `HostSingleton`/`HostHoistable`
-(`host-semantics.ts` also applies `shouldSetTextContent`, so single-text-child hosts do not get a
-`HostText` fiber, matching React DOM). Non-fiber node kinds — `branch`, `repeat`, `opaque`,
-`unknown` — sit in the same tree so uncertainty is positional.
+`Materializer` turns the interpreter's `StaticValue`s into React elements and `mountNode` renders
+them with the project's own `react`/`react-dom` (resolved through the module graph, so versions
+match the application). Nothing from the application runs: every source-defined function or class
+component becomes a proxy component of the same name whose render calls
+`Interpreter.callFunction` on the source body; `memo`, `forwardRef`, `lazy`, contexts, `Fragment`,
+`StrictMode`, `Profiler`, `Suspense`, portals and host elements map to the real React APIs, so
+work tags, `shouldSetTextContent`, hoistables/singletons, memo bailouts and error boundaries are
+React's, not a reimplementation. Proxy identity is the source closure (node + scope), so a HOC
+applied twice yields two component types, as at runtime. Hooks run against a per-proxy
+`HookFrame`: `useState`/`useReducer` setters called from effects re-render the proxy through real
+React state, so the committed tree reflects settled post-effect state where the source determines
+it.
+
+Uncertainty is materialized as marker components (`markers.ts`): `$Branch`/`$Alternative` for
+unresolved conditionals (with a preferred alternative), `$Repeat` for lists of unknown length,
+`$Opaque` for unmodeled externals (their passed children are rendered inside), `$Unknown` for
+anything else, `$Text` for dynamic text. Markers are ordinary fibers in the captured tree, so
+uncertainty is positional and the same snapshot type describes both sides of a comparison.
 
 With `serverComponents: true` (`next-app`), modules without `"use client"` are evaluated as
 Server Components: their function components render without a fiber boundary (as the Flight
@@ -135,8 +151,10 @@ framework internals; application mismatches are never hidden this way.
   isolated per fixture and React 19 resource/preload fibers are allowed to settle.
 - `BrowserCapturer` bundles `browser-inject.ts` with esbuild and installs it via Playwright
   `addInitScript` before any application script, so live dev servers are captured unchanged.
-- `compareStaticToRuntime` matches a `StaticPattern` (built from the static tree) against the
-  runtime tree: hierarchy, tags, names, keys, host elements, text. Branches try each alternative;
+- `compareStaticToRuntime` reads the materialized fiber tree back into a pattern (`static-pattern.ts`:
+  marker fibers become branch/repeat/opaque/wildcard nodes, everything else is a concrete fiber)
+  and matches it against the runtime tree: hierarchy, tags, names, keys, host elements, text.
+  A marker-free tree is a plain fiber-by-fiber diff. Branches try each alternative;
   repeats absorb any count; `opaque` subtrees match one runtime subtree (by name, or an anonymous /
   bundler-placeholder name such as esbuild's `_a2`) and slot their passed children back in;
   `unknown` is a wildcard. The report carries a tally (matched, absorbed,
@@ -168,10 +186,10 @@ demonstrably framework machinery.
   nodes and their contents are opaque to comparison.
 - Third-party components are opaque unless modeled. `react-admin`'s `<Admin>` and TanStack
   Router's `<RouterProvider>` end the static tree.
-- Effects, refs, event handlers and post-mount state changes are not simulated; the static tree is
-  the initial render.
-- Hook state is the initial render; `use(promise)`, custom hooks over external stores and anything
-  behind a setter is unknown.
+- Refs, event handlers and anything behind a user interaction are not simulated; only effects that
+  the source fully determines (synchronous `setState` in `useEffect`/`useLayoutEffect`) update the
+  tree.
+- `use(promise)`, custom hooks over external stores and state set from unknown values is unknown.
 - Framework profiles are observed against specific versions (Next 14–16, react-router 7/8); other versions may introduce wrapper names that show up as mismatches.
 - Runtime capture depends on the dev server starting; failures are recorded per entry.
 
@@ -182,7 +200,7 @@ src/parse        oxc parsing, cache, source locations
 src/graph        resolver, module records, module graph
 src/evaluate     interpreter, values, scopes, loops, hooks/React calls, class components, JSX text
 src/react        element-type resolution, React API recognition
-src/fiber        fiber builder, host semantics, serialization/formatting
+src/materialize  StaticValue -> React elements, proxy components, markers, react-dom mount
 src/render       StaticRenderer, root render discovery
 src/frameworks   framework adapters, profiles, stubs
 src/harness      runtime capture, snapshots, pattern matching, comparison, report formatting

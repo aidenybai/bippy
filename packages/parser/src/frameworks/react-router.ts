@@ -755,7 +755,7 @@ const renderFrameworkRoutes = (
   model: ReactRouterModel,
   routesModulePath: string,
   routes: RouteRecord[],
-): StaticRenderResult => {
+): Promise<StaticRenderResult> => {
   const appDirectory = path.dirname(routesModulePath);
   const findModule = (names: string[]): ModuleRecord | null => {
     for (const name of names) {
@@ -861,7 +861,7 @@ const renderFrameworkRoutes = (
     // without one, `@react-router/dev` uses `<StrictMode><HydratedRouter /></StrictMode>`.
     if (clientEntry) {
       const entry = renderer.evaluateEntryElement(interpreter, clientEntry);
-      if (entry) return entry.value;
+      if (entry) return entry;
     }
     return element(
       { kind: "strict-mode" },
@@ -872,11 +872,11 @@ const renderFrameworkRoutes = (
   });
 };
 
-export const renderReactRouterRoute = (
+export const renderReactRouterRoute = async (
   renderer: StaticRenderer,
   model: ReactRouterModel,
   options: ReactRouterRouteOptions,
-): StaticRenderResult => {
+): Promise<StaticRenderResult> => {
   if (!options.routesModule) {
     return renderer.renderWith((interpreter) => {
       interpreter.report(
@@ -899,7 +899,7 @@ export const renderReactRouterRoute = (
   if (findRootRenderCalls(module).length > 0) return renderer.renderEntry(modulePath);
 
   const probed: { routes: RouteRecord[] | null } = { routes: null };
-  const probe = renderer.renderWith((interpreter) => {
+  const probe = await renderer.renderWith((interpreter) => {
     const config = interpreter.evaluateModuleExport(module, "default");
     if (config.kind === "list") probed.routes = readRouteList(config, null);
     else if (

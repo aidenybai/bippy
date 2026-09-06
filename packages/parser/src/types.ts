@@ -7,7 +7,8 @@ import type {
   Program,
   Span,
 } from "oxc-parser";
-import type { HostTextTag, WorkTag } from "./work-tags.js";
+import type { RuntimeSnapshot } from "./harness/snapshot.js";
+import type { WorkTag } from "./work-tags.js";
 
 export type SourceLanguage = "js" | "jsx" | "ts" | "tsx";
 
@@ -213,6 +214,7 @@ export interface StubRenderTools {
   readContext: (context: ContextDefinition) => StaticValue;
   /** Calls a function whose promise the framework awaits (route `lazy`), with `await x` read as `x`. */
   callAwaited: (callee: StaticValue, args: StaticValue[]) => StaticValue;
+  call: (callee: StaticValue, args: StaticValue[]) => StaticValue;
 }
 
 /**
@@ -377,6 +379,8 @@ export interface StaticNativeFunctionValue {
   kind: "native-function";
   name: string;
   call: (args: StaticValue[], tools: StubRenderTools) => StaticValue;
+  /** Invoked when the value flows into code the evaluator does not follow. */
+  onEscape?: () => void;
 }
 
 export type StaticValue =
@@ -458,71 +462,6 @@ export interface Scope {
   bindings: Map<string, StaticValue>;
 }
 
-export type StaticFiberKind = "fiber" | "text" | "branch" | "repeat" | "opaque" | "unknown";
-
-export interface StaticFiberBase {
-  id: number;
-  kind: StaticFiberKind;
-  return: StaticFiber | null;
-  sibling: StaticFiber | null;
-  index: number;
-  location: SourceLocation | null;
-}
-
-export interface StaticElementFiber extends StaticFiberBase {
-  kind: "fiber";
-  tag: WorkTag;
-  type: StaticElementType;
-  elementType: StaticElementType;
-  displayName: string | null;
-  key: string | null;
-  props: StaticObjectValue;
-  child: StaticFiber | null;
-  notes: string[];
-}
-
-export interface StaticTextFiber extends StaticFiberBase {
-  kind: "text";
-  tag: typeof HostTextTag;
-  text: string | null;
-}
-
-export interface StaticBranchFiber extends StaticFiberBase {
-  kind: "branch";
-  alternatives: Array<StaticFiber | null>;
-  preferredIndex: number;
-  reason: string;
-}
-
-export interface StaticRepeatFiber extends StaticFiberBase {
-  kind: "repeat";
-  child: StaticFiber | null;
-}
-
-export interface StaticOpaqueFiber extends StaticFiberBase {
-  kind: "opaque";
-  displayName: string;
-  packageName: string | null;
-  key: string | null;
-  props: StaticObjectValue;
-  passedChildren: StaticFiber | null;
-  reason: string;
-}
-
-export interface StaticUnknownFiber extends StaticFiberBase {
-  kind: "unknown";
-  reason: string;
-  isThrown: boolean;
-}
-
-export type StaticFiber =
-  | StaticElementFiber
-  | StaticTextFiber
-  | StaticBranchFiber
-  | StaticRepeatFiber
-  | StaticOpaqueFiber
-  | StaticUnknownFiber;
-
 export interface StaticRenderStats {
   fiberCount: number;
   textCount: number;
@@ -534,7 +473,8 @@ export interface StaticRenderStats {
 }
 
 export interface StaticRenderResult {
-  root: StaticElementFiber;
+  /** The fiber tree React committed for the materialized element, as bippy observed it. */
+  snapshot: RuntimeSnapshot;
   diagnostics: Diagnostic[];
   stats: StaticRenderStats;
 }
@@ -548,11 +488,8 @@ export interface StaticRendererOptions {
   maxRecursionPerComponent?: number;
   maxCallDepth?: number;
   maxSteps?: number;
-  /** Wall-clock budget for one render; analysis degrades to unknowns once it is spent. */
-  timeBudgetMs?: number;
   resolveExternalPackages?: boolean;
   externalPackageAllowList?: string[];
-  supportsSingletons?: boolean;
   /** Apply React Server Components semantics: components outside `"use client"` modules render without a fiber. */
   serverComponents?: boolean;
   externalValues?: ExternalValueProvider;

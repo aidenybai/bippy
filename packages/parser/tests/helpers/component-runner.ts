@@ -3,12 +3,14 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { act, createElement, type ComponentType } from "react";
 import { createRoot } from "react-dom/client";
-import { createStaticRenderer, formatFiber, type StaticRenderResult } from "../../src/index.js";
+import { createStaticRenderer, type StaticRenderResult } from "../../src/index.js";
 import {
   compareStaticToRuntime,
   createCommitRecorder,
   formatComparisonReport,
+  formatPattern,
   formatRuntimeSnapshot,
+  getRenderPattern,
   getRootContainer,
   type CompareRenderResult,
   type RuntimeSnapshot,
@@ -84,7 +86,7 @@ export const runComponentFixture = async (
     rootDirectory: COMPONENTS_DIRECTORY,
     tsconfigPath: join(COMPONENTS_DIRECTORY, "tsconfig.json"),
   });
-  const staticResult = renderer.renderComponent(fixture.filePath);
+  const staticResult = await renderer.renderComponent(fixture.filePath);
   const runtime = await mountComponent(loaded.default);
   const comparison = compareStaticToRuntime(staticResult, runtime);
   return { staticResult, runtime, comparison, minCoverage: loaded.minCoverage ?? 1 };
@@ -93,7 +95,7 @@ export const runComponentFixture = async (
 export const describeComponentRun = (fixture: ComponentFixture, run: ComponentRunResult): string =>
   [
     `fixture: ${fixture.name}`,
-    `static:\n${formatFiber(run.staticResult.root, { rootDirectory: COMPONENTS_DIRECTORY })}`,
+    `static:\n${formatPattern(getRenderPattern(run.staticResult))}`,
     `runtime:\n${run.runtime.roots.map((root) => formatRuntimeSnapshot(root)).join("\n")}`,
     `comparison:\n${formatComparisonReport(run.comparison.report)}`,
     ...(run.staticResult.diagnostics.length > 0

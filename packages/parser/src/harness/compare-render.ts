@@ -1,4 +1,4 @@
-import type { StaticFiber, StaticRenderResult } from "../types.js";
+import type { StaticRenderResult } from "../types.js";
 import {
   comparePatternToRuntime,
   type ComparisonOptions,
@@ -7,7 +7,7 @@ import {
 import { findSnapshotFiber, type RuntimeFiberSnapshot, type RuntimeSnapshot } from "./snapshot.js";
 import {
   flattenPatternFibers,
-  toPattern,
+  getRenderRootChildren,
   type PatternFiber,
   type PatternNode,
 } from "./static-pattern.js";
@@ -58,11 +58,8 @@ const findPatternFiber = (
   return null;
 };
 
-const isStaticRootUnresolved = (root: StaticFiber): boolean => {
-  if (root.kind !== "fiber") return true;
-  const first = root.child;
-  return first !== null && first.kind === "unknown" && first.sibling === null;
-};
+const isStaticRootUnresolved = (pattern: PatternNode[]): boolean =>
+  pattern.length === 1 && pattern[0].kind === "wildcard";
 
 const skipped = (
   staticPattern: PatternNode[],
@@ -136,12 +133,12 @@ export const compareStaticToRuntime = (
   runtime: RuntimeSnapshot,
   options: CompareRenderOptions = {},
 ): CompareRenderResult => {
-  const rootPattern = toPattern(staticResult.root);
+  const rootPattern = getRenderRootChildren(staticResult);
   const staticChildren = flattenPatternFibers(
-    rootPattern.kind === "fiber" ? rootPattern.children : [rootPattern],
+    rootPattern,
     options.transparentStaticFibers ?? new Set(),
   );
-  if (isStaticRootUnresolved(staticResult.root)) {
+  if (isStaticRootUnresolved(rootPattern)) {
     return skipped(
       staticChildren,
       "static render did not resolve to a component tree",

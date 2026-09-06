@@ -131,7 +131,7 @@ export const renderNextAppRoute = (
   renderer: StaticRenderer,
   model: NextModel,
   options: NextAppRouteOptions,
-): StaticRenderResult => {
+): Promise<StaticRenderResult> => {
   const appDirectory = options.appDirectory
     ? renderer.resolvePath(options.appDirectory)
     : findFirstDirectory(renderer.options.rootDirectory, ["app", "src/app"]);
