@@ -13,6 +13,7 @@ import type { Interpreter } from "./interpreter.js";
 import { createScope } from "./scope.js";
 import {
   branchValue,
+  describeValue,
   getObjectProperty,
   NULL_VALUE,
   objectFromRecord,
@@ -183,49 +184,7 @@ export const renderClassComponent = (
     context: unknownValue("legacy class context"),
     refs: objectFromRecord({}),
   });
-  const chain = collectClassChain(classValue);
-  const seen = new Set<string>();
-  const perClass = chain.map((current) => {
-    const methodContext: EvaluationContext = {
-      ...context,
-      module: current.module,
-      scope: current.scope,
-      thisValue: instance,
-    };
-    return {
-      current,
-      methodContext,
-      members: bindMethods(interpreter, current, instance, methodContext, seen),
-    };
-  });
-  for (const { current, methodContext, members } of [...perClass].reverse()) {
-    for (const field of members.fields) {
-      const fieldContext: EvaluationContext = {
-        ...methodContext,
-        scope: createScope(current.scope),
-        thisValue: instance,
-      };
-      const value =
-        field.kind === "field" && field.value
-          ? interpreter.evaluateExpression(field.value, fieldContext, field.key)
-          : UNDEFINED_VALUE;
-      instance.entries.push({ kind: "property", key: field.key, value });
-    }
-    if (members.constructor) {
-      interpreter.callFunction(members.constructor, [props], methodContext, {
-        thisValue: instance,
-      });
-    }
-  }
-  for (const { methodContext, members } of perClass) {
-    for (const getter of members.getters) {
-      instance.entries.push({
-        kind: "property",
-        key: getter.key,
-        value: interpreter.callFunction(getter.fn, [], methodContext, { thisValue: instance }),
-      });
-    }
-  }
+  const chain = initializeInstance(interpreter, classValue, instance, [props], context);
   if (caughtError) {
     const derived = deriveStateFromError(interpreter, chain, context);
     if (!derived) return NULL_VALUE;
@@ -256,4 +215,76 @@ export const renderClassComponent = (
     return unknownValue(`class ${classValue.name ?? "component"} has no static render method`);
   }
   return interpreter.callFunction(render, [], context, { thisValue: instance });
+};
+
+/** `new Class(...args)`: the instance as it is right after construction. */
+export const constructClassInstance = (
+  interpreter: Interpreter,
+  classValue: StaticClassValue,
+  args: StaticValue[],
+  context: EvaluationContext,
+): StaticObjectValue => {
+  const instance = objectFromRecord({});
+  const chain = initializeInstance(interpreter, classValue, instance, args, context);
+  const baseValue = chain[chain.length - 1].body.superValue;
+  if (baseValue && baseValue.kind !== "class") {
+    instance.entries.unshift({
+      kind: "spread",
+      value: unknownValue(`members inherited from ${describeValue(baseValue)}`),
+    });
+  }
+  return instance;
+};
+
+const initializeInstance = (
+  interpreter: Interpreter,
+  classValue: StaticClassValue,
+  instance: StaticObjectValue,
+  args: StaticValue[],
+  context: EvaluationContext,
+): StaticClassValue[] => {
+  const chain = collectClassChain(classValue);
+  const seen = new Set<string>();
+  const perClass = chain.map((current) => {
+    const methodContext: EvaluationContext = {
+      ...context,
+      module: current.module,
+      scope: current.scope,
+      thisValue: instance,
+    };
+    return {
+      current,
+      methodContext,
+      members: bindMethods(interpreter, current, instance, methodContext, seen),
+    };
+  });
+  for (const { current, methodContext, members } of [...perClass].reverse()) {
+    for (const field of members.fields) {
+      const fieldContext: EvaluationContext = {
+        ...methodContext,
+        scope: createScope(current.scope),
+        thisValue: instance,
+      };
+      const value =
+        field.kind === "field" && field.value
+          ? interpreter.evaluateExpression(field.value, fieldContext, field.key)
+          : UNDEFINED_VALUE;
+      instance.entries.push({ kind: "property", key: field.key, value });
+    }
+    if (members.constructor) {
+      interpreter.callFunction(members.constructor, args, methodContext, {
+        thisValue: instance,
+      });
+    }
+  }
+  for (const { methodContext, members } of perClass) {
+    for (const getter of members.getters) {
+      instance.entries.push({
+        kind: "property",
+        key: getter.key,
+        value: interpreter.callFunction(getter.fn, [], methodContext, { thisValue: instance }),
+      });
+    }
+  }
+  return chain;
 };

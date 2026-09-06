@@ -114,6 +114,8 @@ export interface ModuleRecord {
   exports: ExportEntry[];
   bindings: Map<string, TopLevelBinding>;
   memberAssignments: MemberAssignment[];
+  /** Top-level bindings mutated (`x.set(...)`, `x.prop = ...`) from inside a function body. */
+  deferredMutations: Set<string>;
   /** Exports were collected from `exports.x = ` / `module.exports` assignments rather than ESM syntax. */
   isCommonJs: boolean;
 }
@@ -183,9 +185,9 @@ export type StaticElementType =
   | { kind: "host"; tagName: string }
   | { kind: "function"; component: ComponentDefinition }
   | { kind: "class"; component: ComponentDefinition }
-  | { kind: "memo"; inner: StaticElementType; hasCompare: boolean; displayName: string | null }
-  | { kind: "forward-ref"; component: ComponentDefinition; displayName: string | null }
-  | { kind: "lazy"; inner: StaticElementType | null; displayName: string | null }
+  | ({ kind: "memo"; inner: StaticElementType; hasCompare: boolean } & WrapperElementType)
+  | ({ kind: "forward-ref"; component: ComponentDefinition } & WrapperElementType)
+  | ({ kind: "lazy"; inner: StaticElementType | null } & WrapperElementType)
   | { kind: "fragment" }
   | { kind: "strict-mode" }
   | { kind: "profiler" }
@@ -200,6 +202,12 @@ export type StaticElementType =
   | { kind: "stub"; stub: StubComponent }
   | { kind: "unknown"; displayName: string | null; reason: string };
 
+/** `React.memo`/`forwardRef`/`lazy` objects: statics assigned to them (`Button.__radixId = ...`) live on the object. */
+export interface WrapperElementType {
+  displayName: string | null;
+  properties: Map<string, StaticValue>;
+}
+
 /**
  * A library component modeled by the harness rather than analyzed from source
  * (e.g. a router's `Outlet` yielding the matched child route). It renders as a
@@ -210,6 +218,8 @@ export interface StubComponent {
   displayName: string | null;
   /** Work tag of the real component (e.g. `ForwardRef` for `Link`); defaults to a function component. */
   tag?: WorkTag;
+  /** Statics the library hangs on the component (`Styled.withComponent`). */
+  properties?: ReadonlyMap<string, StaticValue>;
   render: (props: StaticObjectValue, tools: StubRenderTools) => StaticValue;
 }
 
@@ -219,6 +229,8 @@ export interface StubRenderTools {
   /** Calls a function whose promise the framework awaits (route `lazy`), with `await x` read as `x`. */
   callAwaited: (callee: StaticValue, args: StaticValue[]) => StaticValue;
   call: (callee: StaticValue, args: StaticValue[]) => StaticValue;
+  /** Binding the call's result is assigned to, as build-time labelers (Emotion's babel/swc plugin) see it. */
+  nameHint: string | null;
 }
 
 /**
@@ -228,6 +240,83 @@ export interface StubRenderTools {
  * import opaque.
  */
 export type ExternalValueProvider = (specifier: string, importedName: string) => StaticValue | null;
+
+/** What a library model may learn about the analyzed project: which transforms shaped the runtime, and what the running page held. */
+export interface ProjectContext {
+  hasDeclaredDependency: (packageName: string) => boolean;
+  /** The captured TanStack Query cache entry for a query hash (`hashKey(queryKey)`), if the page held one. */
+  findQuery: (queryHash: string) => CapturedQuery | null;
+  /** Captured mutations for a mutation key hash (`null` for keyless mutations); `null` when the mutation cache was not recorded. */
+  findMutations: (mutationHash: string | null) => CapturedMutation[] | null;
+}
+
+export type LibraryValueProvider = (
+  specifier: string,
+  importedName: string,
+  project: ProjectContext,
+) => StaticValue | null;
+
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
+/**
+ * A runtime value serialized from the page: JSON, except that nodes JSON cannot
+ * carry are replaced by an opaque marker object (see `observations.ts`) so the
+ * rest of the structure stays known. Absent (`undefined`) values are omitted.
+ */
+export type CapturedValue = JsonValue;
+
+/** One entry of a TanStack Query cache (`Query.state`) as it stood when the page was captured. */
+export interface CapturedQuery {
+  queryHash: string;
+  status: "pending" | "error" | "success";
+  fetchStatus: "fetching" | "paused" | "idle";
+  data?: CapturedValue;
+  error: CapturedValue;
+  dataUpdateCount: number;
+  dataUpdatedAt: number;
+  errorUpdateCount: number;
+  errorUpdatedAt: number;
+  fetchFailureCount: number;
+  fetchFailureReason: CapturedValue;
+  isInvalidated: boolean;
+  /** `Query.isStale()` at capture, which folds in the observers' `staleTime`. */
+  isStale: boolean;
+}
+
+/** One entry of a TanStack mutation cache (`Mutation.state`); a mutation only enters the cache once `mutate` ran. */
+export interface CapturedMutation {
+  mutationHash: string | null;
+  status: "idle" | "pending" | "success" | "error";
+  data?: CapturedValue;
+  error: CapturedValue;
+  variables?: CapturedValue;
+  context?: CapturedValue;
+  failureCount: number;
+  failureReason: CapturedValue;
+  isPaused: boolean;
+  submittedAt: number;
+}
+
+/** Both TanStack caches of every mounted `QueryClient`. */
+export interface CapturedQueryCaches {
+  queries: CapturedQuery[];
+  mutations: CapturedMutation[];
+}
+
+/** What the running page held that its code reads at render: inputs the static render takes as given. */
+export interface RuntimeObservations {
+  /** `window` properties recorded whole (bootstrap payloads); nested objects are complete, so unlisted keys are `undefined`. */
+  globals: Record<string, CapturedValue>;
+  queries: CapturedQuery[];
+  /** Absent in captures that predate mutation recording, which then stays uncertain. */
+  mutations?: CapturedMutation[];
+}
 
 export type StaticPrimitive = string | number | boolean | null | undefined | bigint;
 
@@ -273,6 +362,8 @@ export interface StaticUnknownPrimitiveValue {
 export interface StaticListValue {
   kind: "list";
   items: StaticValue[];
+  /** Named properties an array carries besides its indices, like `index` on a match. */
+  properties?: ReadonlyMap<string, StaticValue>;
 }
 
 export interface StaticRepeatValue {
@@ -321,6 +412,7 @@ export interface StaticRegExpValue {
   kind: "regexp";
   pattern: string;
   flags: string;
+  lastIndex: number;
 }
 
 /** A `Symbol.for(key)` registry symbol; unregistered symbols stay unknown. */
@@ -520,5 +612,15 @@ export interface StaticRendererOptions {
   externalPackageAllowList?: string[];
   /** Apply React Server Components semantics: components outside `"use client"` modules render without a fiber. */
   serverComponents?: boolean;
+  /**
+   * Functions the boot code calls before mounting (registries, stores), as
+   * `path#exportName` or `path#exportName(globalName, ...)` to pass `window`
+   * properties; evaluated in order before the root.
+   */
+  bootstrap?: string[];
+  /** `window` properties the served page defines (server-injected config); nested objects are partial, so unlisted keys stay unknown. */
+  globals?: Record<string, JsonValue>;
+  /** What a running page was observed to hold; the render takes these as its runtime inputs. */
+  observations?: RuntimeObservations;
   externalValues?: ExternalValueProvider;
 }

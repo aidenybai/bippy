@@ -20,6 +20,7 @@ export default defineConfig({
     ignorePatterns: [
       "**/routeTree.gen.ts",
       "packages/bippy/src/react-internals/generated/**",
+      "packages/parser/corpus/results.json",
       reactDevToolsHookSources,
     ],
     semi: true,

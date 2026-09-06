@@ -8,18 +8,23 @@ import type {
 } from "../types.js";
 import type { HookFrame } from "./hooks.js";
 
-export interface ContextFrame {
-  context: ContextDefinition;
-  value: StaticValue;
-  parent: ContextFrame | null;
+/** The value the nearest provider of a context supplies at the position being evaluated, or null without one. */
+export type ContextReader = (context: ContextDefinition) => StaticValue | null;
+
+export const NO_PROVIDERS: ContextReader = () => null;
+
+export interface CallFrame {
+  node: FunctionLikeNode;
+  scope: Scope;
+  args: StaticValue[];
 }
 
 export interface EvaluationContext {
   module: ModuleRecord;
   scope: Scope;
   thisValue: StaticValue | null;
-  contextFrame: ContextFrame | null;
-  callStack: FunctionLikeNode[];
+  readContext: ContextReader;
+  callStack: CallFrame[];
   uncertainDepth: number;
   forkDepth: number;
   environment: RenderEnvironment | null;
@@ -30,15 +35,3 @@ export const withScope = (context: EvaluationContext, scope: Scope): EvaluationC
   ...context,
   scope,
 });
-
-export const lookupContextValue = (
-  frame: ContextFrame | null,
-  context: ContextDefinition,
-): StaticValue | null => {
-  let current = frame;
-  while (current) {
-    if (current.context === context) return current.value;
-    current = current.parent;
-  }
-  return null;
-};

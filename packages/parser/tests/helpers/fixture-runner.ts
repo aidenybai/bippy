@@ -1,6 +1,10 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import type { StaticRenderResult } from "../../src/index.js";
+import type {
+  CapturedQueryCaches,
+  RuntimeObservations,
+  StaticRenderResult,
+} from "../../src/index.js";
 import {
   flattenTransparentFibers,
   getFrameworkProfile,
@@ -15,8 +19,10 @@ import {
   formatRuntimeSnapshot,
   getRenderPattern,
   getRootContainer,
+  type CommitRecorder,
   type CompareRenderResult,
   type ComparisonStatus,
+  type RuntimeFiberSnapshot,
   type RuntimeSnapshot,
 } from "../../src/harness/index.js";
 
@@ -29,6 +35,8 @@ export interface FixtureManifest {
   route?: string;
   anchor?: string;
   externalPackages?: string[];
+  /** Runtime state replayed into the static render, as a live capture would record it. */
+  observations?: RuntimeObservations;
   skipRuntime?: boolean;
   notes?: string;
 }
@@ -42,7 +50,13 @@ export interface FixtureCase {
 export interface FixtureRunResult {
   staticResult: StaticRenderResult;
   runtime: RuntimeSnapshot | null;
+  capturedCaches: CapturedQueryCaches;
   comparison: CompareRenderResult | null;
+}
+
+interface MountResult {
+  snapshot: RuntimeSnapshot;
+  caches: CapturedQueryCaches;
 }
 
 const FIXTURES_DIRECTORY = resolve(import.meta.dirname, "../fixtures");
@@ -52,7 +66,8 @@ const DEFAULT_MANIFEST: FixtureManifest = {
   minCoverage: 1,
   framework: "spa",
 };
-const SETTLE_ROUNDS = 5;
+const SETTLE_QUIET_MS = 50;
+const SETTLE_TIMEOUT_MS = 2_000;
 
 const readManifest = (directory: string): FixtureManifest => {
   const manifestPath = join(directory, "fixture.json");
@@ -70,13 +85,32 @@ export const listFixtures = (): FixtureCase[] =>
     })
     .sort((left, right) => left.name.localeCompare(right.name));
 
-const flushMacrotasks = async (rounds: number): Promise<void> => {
-  for (let round = 0; round < rounds; round++) {
+/** A Suspense boundary showing its fallback keeps the hidden primary Offscreen next to the fallback fragment. */
+const hasSuspendedBoundary = (fiber: RuntimeFiberSnapshot): boolean =>
+  (fiber.tag === "SuspenseComponent" && fiber.children.length > 1) ||
+  fiber.children.some(hasSuspendedBoundary);
+
+/** Yields until React has been quiet with nothing suspended (lazy imports and data resolve across several macrotasks). */
+const settleCommits = async (recorder: CommitRecorder): Promise<void> => {
+  const deadline = Date.now() + SETTLE_TIMEOUT_MS;
+  let commits = recorder.commitCount();
+  let quietSince = Date.now();
+  while (Date.now() < deadline) {
     await new Promise<void>((resolveTick) => setTimeout(resolveTick, 0));
+    if (recorder.commitCount() !== commits) {
+      commits = recorder.commitCount();
+      quietSince = Date.now();
+    }
+    if (
+      Date.now() - quietSince >= SETTLE_QUIET_MS &&
+      !recorder.snapshot().roots.some(hasSuspendedBoundary)
+    ) {
+      return;
+    }
   }
 };
 
-const mountFixture = async (fixture: FixtureCase): Promise<RuntimeSnapshot> => {
+const mountFixture = async (fixture: FixtureCase): Promise<MountResult> => {
   if (fixture.manifest.route) window.history.replaceState(null, "", fixture.manifest.route);
   document.body.innerHTML = "";
   const container = document.createElement("div");
@@ -89,8 +123,8 @@ const mountFixture = async (fixture: FixtureCase): Promise<RuntimeSnapshot> => {
     const commit = recorder.waitForCommit();
     await import(/* @vite-ignore */ join(fixture.directory, fixture.manifest.entry));
     await commit;
-    await flushMacrotasks(SETTLE_ROUNDS);
-    return recorder.snapshot();
+    await settleCommits(recorder);
+    return { snapshot: recorder.snapshot(), caches: recorder.queryCaches() };
   } finally {
     recorder.dispose();
   }
@@ -110,10 +144,18 @@ export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult
         ? join(fixture.directory, "tsconfig.json")
         : undefined,
       externalPackageAllowList: fixture.manifest.externalPackages,
+      observations: fixture.manifest.observations,
     },
   );
-  if (fixture.manifest.skipRuntime) return { staticResult, runtime: null, comparison: null };
-  const runtime = await mountFixture(fixture);
+  if (fixture.manifest.skipRuntime) {
+    return {
+      staticResult,
+      runtime: null,
+      capturedCaches: { queries: [], mutations: [] },
+      comparison: null,
+    };
+  }
+  const { snapshot: runtime, caches: capturedCaches } = await mountFixture(fixture);
   const comparison = compareStaticToRuntime(
     staticResult,
     flattenTransparentFibers(runtime, profile),
@@ -122,7 +164,7 @@ export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult
       transparentStaticFibers: profile.transparentStaticFibers,
     },
   );
-  return { staticResult, runtime, comparison };
+  return { staticResult, runtime, capturedCaches, comparison };
 };
 
 export const describeFixtureRun = (fixture: FixtureCase, run: FixtureRunResult): string => {

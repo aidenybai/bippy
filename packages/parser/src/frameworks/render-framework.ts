@@ -1,7 +1,7 @@
 import path from "node:path";
 import type { CorpusEntry } from "../corpus/manifest.js";
 import { createStaticRenderer, type StaticRenderer } from "../render/static-renderer.js";
-import type { StaticRenderResult, StaticRendererOptions } from "../types.js";
+import type { RuntimeObservations, StaticRenderResult, StaticRendererOptions } from "../types.js";
 import type { FrameworkKind } from "./framework-profile.js";
 import { renderNextAppRoute } from "./next-app-router.js";
 import { createNextModel } from "./next-externals.js";
@@ -16,6 +16,11 @@ export interface FrameworkRenderTarget {
   route?: string;
   /** Next: the `app/` or `pages/` directory when it is not directly under the renderer root. */
   appDirectory?: string;
+  /**
+   * Export of `entry` that the boot code mounts when it does not pass a literal
+   * element to the root render call (`renderDom(Main, ...)`).
+   */
+  rootComponent?: string;
 }
 
 const requireField = (target: FrameworkRenderTarget, field: "entry" | "route"): string => {
@@ -34,6 +39,7 @@ export const renderFrameworkTarget = (
   target: FrameworkRenderTarget,
   options: StaticRendererOptions,
 ): Promise<StaticRenderResult> => {
+  if (target.rootComponent !== undefined) return renderRootComponent(target, options);
   switch (target.framework) {
     case "spa":
       return createStaticRenderer(options).renderEntry(requireField(target, "entry"));
@@ -64,15 +70,39 @@ export const renderFrameworkTarget = (
   }
 };
 
+const renderRootComponent = (
+  target: FrameworkRenderTarget,
+  options: StaticRendererOptions,
+): Promise<StaticRenderResult> => {
+  const entry = requireField(target, "entry");
+  const exportName = target.rootComponent;
+  switch (target.framework) {
+    case "spa":
+      return createStaticRenderer(options).renderComponent(entry, { exportName });
+    case "react-router": {
+      const model = createReactRouterModel(requireField(target, "route"));
+      const renderer = createStaticRenderer({ ...options, externalValues: model.externalValues });
+      return renderer.renderComponent(entry, { exportName });
+    }
+    case "next-app":
+    case "next-pages":
+      throw new Error(`${target.framework} targets render routes, not a "rootComponent"`);
+  }
+};
+
 const rendererOptionsForEntry = (
   entry: CorpusEntry,
   cloneDirectory: string,
+  observations?: RuntimeObservations,
 ): StaticRendererOptions => {
   const rootDirectory = path.join(cloneDirectory, entry.static.rootDirectory);
   return {
     rootDirectory,
     tsconfigPath: path.join(rootDirectory, entry.static.tsconfig ?? "tsconfig.json"),
     externalPackageAllowList: entry.static.externalPackageAllowList,
+    bootstrap: entry.static.bootstrap,
+    globals: entry.static.globals,
+    observations,
     maxFiberCount: entry.static.maxFiberCount,
     maxComponentDepth: entry.static.maxComponentDepth,
   };
@@ -86,6 +116,7 @@ export const createRendererForEntry = (
 export const renderFramework = (
   entry: CorpusEntry,
   cloneDirectory: string,
+  observations?: RuntimeObservations,
 ): Promise<StaticRenderResult> =>
   renderFrameworkTarget(
     {
@@ -93,6 +124,7 @@ export const renderFramework = (
       entry: entry.static.entry,
       route: entry.static.route,
       appDirectory: entry.static.appDirectory,
+      rootComponent: entry.static.rootComponent,
     },
-    rendererOptionsForEntry(entry, cloneDirectory),
+    rendererOptionsForEntry(entry, cloneDirectory, observations),
   );

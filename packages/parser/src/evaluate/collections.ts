@@ -42,6 +42,7 @@ const isDefiniteKey = (key: StaticValue): boolean =>
 class StaticCollection {
   private readonly entries: CollectionEntry[] = [];
   private hasDynamicKeys = false;
+  private isExternallyMutable = false;
 
   constructor(
     private readonly kind: CollectionKind,
@@ -53,21 +54,39 @@ class StaticCollection {
   }
 
   private isExact(key: StaticValue): boolean {
-    return isDefiniteKey(key) && !this.hasDynamicKeys;
+    return isDefiniteKey(key) && !this.hasDynamicKeys && !this.isExternallyMutable;
+  }
+
+  markExternallyMutable(): void {
+    this.isExternallyMutable = true;
+  }
+
+  private describeUncertainty(method: string): string {
+    return this.isExternallyMutable
+      ? `${this.kind}.${method}() on a ${this.kind} mutated outside the rendered code`
+      : `${this.kind}.${method}() with a dynamic key`;
   }
 
   get(key: StaticValue): StaticValue {
     if (this.isExact(key)) return this.find(key)?.value ?? UNDEFINED_VALUE;
+    const reason = this.describeUncertainty("get");
+    if (this.hasDynamicKeys || !isDefiniteKey(key)) {
+      const stored = this.entries.map((entry) => entry.value);
+      if (this.isExternallyMutable) stored.push(unknownValue(reason, this.location));
+      return branchValue([...stored, UNDEFINED_VALUE], reason, this.location);
+    }
+    // Registrations the analysis saw are the likely runtime contents; code it
+    // did not see may still have changed them.
     return branchValue(
-      [...this.entries.map((entry) => entry.value), UNDEFINED_VALUE],
-      `${this.kind}.get() with a dynamic key`,
+      [this.find(key)?.value ?? UNDEFINED_VALUE, unknownValue(reason, this.location)],
+      reason,
       this.location,
     );
   }
 
   has(key: StaticValue): StaticValue {
     if (this.isExact(key)) return this.find(key) ? TRUE_VALUE : FALSE_VALUE;
-    return unknownPrimitiveValue("boolean", `${this.kind}.has() with a dynamic key`);
+    return unknownPrimitiveValue("boolean", this.describeUncertainty("has"));
   }
 
   set(key: StaticValue, value: StaticValue): void {
@@ -80,7 +99,7 @@ class StaticCollection {
   delete(key: StaticValue): StaticValue {
     if (!this.isExact(key)) {
       this.hasDynamicKeys = true;
-      return unknownPrimitiveValue("boolean", `${this.kind}.delete() with a dynamic key`);
+      return unknownPrimitiveValue("boolean", this.describeUncertainty("delete"));
     }
     const index = this.entries.findIndex((entry) => isSameKey(entry.key, key));
     if (index === -1) return FALSE_VALUE;
@@ -94,6 +113,8 @@ class StaticCollection {
   }
 
   project(select: (entry: CollectionEntry) => StaticValue): StaticValue {
+    if (this.isExternallyMutable)
+      return unknownValue(`${this.kind} mutated outside the rendered code`, this.location);
     if (this.hasDynamicKeys) return unknownValue(`${this.kind} with dynamic keys`, this.location);
     return listValue(this.entries.map(select));
   }
@@ -125,6 +146,17 @@ const seedCollection = (
     if (item.kind !== "list" || item.items.length < 2) return false;
     collection.set(item.items[0], item.items[1]);
   }
+  return true;
+};
+
+const collectionsByValue = new WeakMap<StaticObjectValue, StaticCollection>();
+
+export const markCollectionExternallyMutable = (value: StaticObjectValue): boolean => {
+  const collection = collectionsByValue.get(value);
+  if (!collection) return false;
+  collection.markExternallyMutable();
+  const sizeEntry = value.entries[0];
+  if (sizeEntry.kind === "property") sizeEntry.value = collection.size();
   return true;
 };
 
@@ -171,6 +203,7 @@ export const createCollectionValue = (
   for (const [key, value] of Object.entries(methods)) {
     self.entries.push({ kind: "property", key, value });
   }
+  collectionsByValue.set(self, collection);
   return self;
 };
 

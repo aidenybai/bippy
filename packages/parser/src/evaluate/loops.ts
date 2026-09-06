@@ -4,11 +4,9 @@ import type {
   ForOfStatement,
   ForStatement,
   ForStatementLeft,
-  Node,
   Statement,
   WhileStatement,
 } from "oxc-parser";
-import { forEachChildNode, isFunctionLikeNode } from "../parse/ast-walk.js";
 import type { SourceLocation, StaticValue } from "../types.js";
 import type { EvaluationContext } from "./context.js";
 import { withScope } from "./context.js";
@@ -16,6 +14,7 @@ import {
   COMPLETES,
   type Interpreter,
   mergeOutcomes,
+  returnOutcome,
   type StatementOutcome,
 } from "./interpreter.js";
 import { createScope } from "./scope.js";
@@ -42,34 +41,10 @@ type UnrollResult =
   | { kind: "exact"; outcome: StatementOutcome }
   | { kind: "partial"; outcomes: StatementOutcome[] };
 
-const isLoopNode = (node: Node): boolean =>
-  node.type === "ForStatement" ||
-  node.type === "ForOfStatement" ||
-  node.type === "ForInStatement" ||
-  node.type === "WhileStatement" ||
-  node.type === "DoWhileStatement";
-
-/**
- * True when `body` contains a `break` or `continue` that targets the enclosing
- * loop. Nested loops/switches own their unlabeled jumps; labeled jumps are
- * always treated as targeting us since resolving labels is not worth the cost.
- */
-const hasJumpTargetingLoop = (body: Statement): boolean => {
-  const visit = (node: Node, insideLoop: boolean, insideSwitch: boolean): boolean => {
-    if (isFunctionLikeNode(node)) return false;
-    if (node.type === "BreakStatement")
-      return node.label !== null || (!insideLoop && !insideSwitch);
-    if (node.type === "ContinueStatement") return node.label !== null || !insideLoop;
-    const childInsideLoop = insideLoop || isLoopNode(node);
-    const childInsideSwitch = insideSwitch || node.type === "SwitchStatement";
-    let found = false;
-    forEachChildNode(node, (child) => {
-      if (!found) found = visit(child, childInsideLoop, childInsideSwitch);
-    });
-    return found;
-  };
-  return visit(body, false, false);
-};
+const exactCompletion = (outcomes: StatementOutcome[]): UnrollResult => ({
+  kind: "exact",
+  outcome: mergeOutcomes([...outcomes, COMPLETES], "return inside a loop", null),
+});
 
 const bindLoopLeft = (
   interpreter: Interpreter,
@@ -102,12 +77,39 @@ const iterationValues = (
   return keys ? keys.map(primitiveValue) : null;
 };
 
-/** Evaluates the loop body once; the caller decides whether the iteration was concrete. */
 const runBody = (
   interpreter: Interpreter,
   body: Statement,
   context: EvaluationContext,
 ): StatementOutcome => interpreter.evaluateBlock([body], context, true);
+
+/**
+ * Runs one concrete iteration. A definite `continue` or completion moves on, a
+ * definite `break` ends the loop, a definite return ends the function; anything
+ * that only happens on some paths leaves the remaining iterations uncertain.
+ */
+const runIteration = (
+  interpreter: Interpreter,
+  body: Statement,
+  context: EvaluationContext,
+  outcomes: StatementOutcome[],
+): "next" | UnrollResult => {
+  const outcome = runBody(interpreter, body, context);
+  const isDefinite = !outcome.mayComplete && outcome.returned === null;
+  if (outcome.jump === "continue" && isDefinite) return "next";
+  if (outcome.jump === "break" && isDefinite) return exactCompletion(outcomes);
+  if (outcome.jump === null) {
+    if (outcome.returned === null) return "next";
+    if (!outcome.mayComplete) {
+      return {
+        kind: "exact",
+        outcome: mergeOutcomes([...outcomes, outcome], "return inside a loop", null),
+      };
+    }
+  }
+  if (outcome.returned) outcomes.push(returnOutcome(outcome.returned));
+  return { kind: "partial", outcomes };
+};
 
 const unrollForEach = (
   interpreter: Interpreter,
@@ -120,21 +122,10 @@ const unrollForEach = (
   for (const value of values) {
     const iterationContext = withScope(context, createScope(context.scope));
     bindLoopLeft(interpreter, statement.left, value, iterationContext);
-    const outcome = runBody(interpreter, statement.body, iterationContext);
-    if (!outcome.mayComplete)
-      return {
-        kind: "exact",
-        outcome: mergeOutcomes([...outcomes, outcome], "return inside a loop", null),
-      };
-    if (outcome.returned) {
-      outcomes.push({ returned: outcome.returned, mayComplete: false });
-      return { kind: "partial", outcomes };
-    }
+    const step = runIteration(interpreter, statement.body, iterationContext, outcomes);
+    if (step !== "next") return step;
   }
-  return {
-    kind: "exact",
-    outcome: mergeOutcomes([...outcomes, COMPLETES], "return inside a loop", null),
-  };
+  return exactCompletion(outcomes);
 };
 
 const unrollConditional = (
@@ -164,23 +155,11 @@ const unrollConditional = (
       const truthiness = getTruthiness(interpreter.evaluateExpression(test, loopContext));
       if (truthiness === null)
         return outcomes.length > 0 || iteration > 0 ? { kind: "partial", outcomes } : null;
-      if (truthiness === false)
-        return {
-          kind: "exact",
-          outcome: mergeOutcomes([...outcomes, COMPLETES], "return inside a loop", null),
-        };
+      if (truthiness === false) return exactCompletion(outcomes);
     }
     skipFirstTest = false;
-    const outcome = runBody(interpreter, statement.body, loopContext);
-    if (!outcome.mayComplete)
-      return {
-        kind: "exact",
-        outcome: mergeOutcomes([...outcomes, outcome], "return inside a loop", null),
-      };
-    if (outcome.returned) {
-      outcomes.push({ returned: outcome.returned, mayComplete: false });
-      return { kind: "partial", outcomes };
-    }
+    const step = runIteration(interpreter, statement.body, loopContext, outcomes);
+    if (step !== "next") return step;
     if (statement.type === "ForStatement" && statement.update)
       interpreter.evaluateExpression(statement.update, loopContext);
   }
@@ -223,13 +202,13 @@ const evaluateUncertainTail = (
     }
   }
   const outcome = runBody(interpreter, statement.body, loopContext);
-  return { returned: outcome.returned, mayComplete: true };
+  return { returned: outcome.returned, mayComplete: true, jump: null };
 };
 
 /**
  * Loops are unrolled while their iteration count is statically known (a known
- * list, a known key set, or a counter whose test stays decidable) and the body
- * contains no `break`/`continue`. Once that stops being true the remaining
+ * list, a known key set, or a counter whose test stays decidable) and every
+ * `break`/`continue` is definite. Once that stops being true the remaining
  * iterations collapse into a single uncertain evaluation.
  */
 export const evaluateLoop = (
@@ -238,9 +217,8 @@ export const evaluateLoop = (
   context: EvaluationContext,
   location: SourceLocation,
 ): StatementOutcome => {
-  const unrolled = hasJumpTargetingLoop(statement.body)
-    ? null
-    : statement.type === "ForOfStatement" || statement.type === "ForInStatement"
+  const unrolled =
+    statement.type === "ForOfStatement" || statement.type === "ForInStatement"
       ? unrollForEach(interpreter, statement, context)
       : unrollConditional(interpreter, statement, context);
   if (unrolled?.kind === "exact") return unrolled.outcome;

@@ -47,8 +47,15 @@ const describeRuntime = (result: CorpusResult): string => {
 const describeComparison = (result: CorpusResult): string => {
   if (!result.report) return "-";
   const { report } = result;
-  const parts = [`coverage ${percent(report.coverage)}`, `${report.matchedFibers} matched`];
-  if (report.opaqueSubtrees) parts.push(`${report.opaqueSubtrees} opaque`);
+  const parts = [
+    `coverage ${percent(report.coverage)} (strict ${percent(report.strictCoverage)})`,
+    `${report.matchedFibers} matched`,
+  ];
+  if (report.opaqueSubtrees) {
+    parts.push(
+      `${report.opaqueSubtrees} opaque (${report.opaqueSkippedFibers} skipped, slots ${report.slotsMatched}/${report.slotsMatched + report.slotsUnmatched})`,
+    );
+  }
   if (report.divergence) {
     parts.push(
       `diverged at ${report.divergence.path}: expected ${report.divergence.expected}, saw ${report.divergence.actual}`,

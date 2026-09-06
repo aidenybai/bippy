@@ -4,23 +4,27 @@
       "id": "actual",
       "revision": "8867158f0a2e101467fb191c9e253f47c75a9e2d",
       "framework": "spa",
-      "capturedAt": "2026-09-06T14:53:48.992Z",
-      "durationMs": 541,
+      "capturedAt": "2026-09-06T17:49:45.536Z",
+      "durationMs": 1605,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 4810,
-          "textCount": 72,
+          "fiberCount": 7432,
+          "textCount": 90,
           "branchCount": 275,
-          "repeatCount": 24,
-          "opaqueCount": 2032,
-          "unknownCount": 465,
-          "modulesLoaded": 271
+          "repeatCount": 27,
+          "opaqueCount": 3626,
+          "unknownCount": 968,
+          "modulesLoaded": 268
         },
         "diagnostics": [
           {
             "code": "dynamic-key",
             "count": 89
+          },
+          {
+            "code": "budget-exhausted",
+            "count": 9
           },
           {
             "code": "unsettled-state",
@@ -37,8 +41,8 @@
       "id": "bulletproof-react",
       "revision": "9506629ed003a561c6627735480cce4994244bb4",
       "framework": "react-router",
-      "capturedAt": "2026-09-06T14:53:49.543Z",
-      "durationMs": 83,
+      "capturedAt": "2026-09-06T17:49:47.153Z",
+      "durationMs": 96,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -74,6 +78,7 @@
         "slotsMatched": 4,
         "slotsUnmatched": 1,
         "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
         "branchesResolved": 2,
         "repeatIterations": 0,
         "status": "partial",
@@ -93,8 +98,8 @@
       "id": "cal-diy",
       "revision": "abffde336e744e15cf69626c10e436d6172bc406",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T16:51:09.495Z",
-      "durationMs": 1776,
+      "capturedAt": "2026-09-06T17:49:47.250Z",
+      "durationMs": 1742,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
@@ -107,29 +112,33 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 14079,
+          "fiberCount": 20029,
           "textCount": 0,
-          "branchCount": 412,
+          "branchCount": 518,
           "repeatCount": 0,
           "opaqueCount": 0,
-          "unknownCount": 3732,
-          "modulesLoaded": 172
+          "unknownCount": 5544,
+          "modulesLoaded": 167
         },
         "diagnostics": [
           {
             "code": "dynamic-key",
             "count": 1
+          },
+          {
+            "code": "max-fiber-count",
+            "count": 1
           }
         ]
       },
       "report": {
-        "matchedFibers": 303,
+        "matchedFibers": 297,
         "matchedText": 0,
         "opaqueSubtrees": 0,
         "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
-        "wildcardAbsorbedFibers": 635,
+        "wildcardAbsorbedFibers": 641,
         "wildcards": [
           {
             "path": "root > <body> [HostComponent] > <InlineSVG> [FunctionComponent] > <ReactInlineSVG> [FunctionComponent]",
@@ -138,17 +147,26 @@
             "heads": [
               "<svg> key=\"0-0\" [HostComponent]"
             ]
+          },
+          {
+            "path": "root > <body> [HostComponent] > <Providers> [FunctionComponent] > <GeoProvider> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <TrpcProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <Toasts> [FunctionComponent] > <FloatingPortalLite> [ForwardRef]",
+            "reason": "element budget exhausted",
+            "absorbedFibers": 6,
+            "heads": [
+              "<Portal> [HostPortal]",
+              "<Portal> [HostPortal]"
+            ]
           }
         ],
-        "branchesResolved": 25,
+        "branchesResolved": 20,
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 938,
-        "staticFibers": 337,
+        "staticFibers": 324,
         "coverage": 1,
-        "strictCoverage": 0.3230277185501066,
+        "strictCoverage": 0.31663113006396587,
         "divergence": null,
-        "stepsUsed": 346,
+        "stepsUsed": 375,
         "budgetExhausted": false
       },
       "anchor": "body",
@@ -636,6 +654,77 @@
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-06T14:32:25.006Z",
+      "failure": null
+    },
+    {
+      "id": "sentry",
+      "revision": "a7b4a8a2a78a666418e527d812e81528147789da",
+      "framework": "react-router",
+      "capturedAt": "2026-09-06T23:25:22.011Z",
+      "durationMs": 14971,
+      "runtime": {
+        "reactVersion": "19.2.3",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 576,
+        "commits": 13,
+        "pageErrors": [
+          "An unknown error occurred when fetching the script.",
+          "Failed to load resource: the server responded with a status of 403 ()",
+          "Error tracking analytics event TypeError: Cannot read properties of null (reading 'dateJoined')\n    at getUserAge (https://localhost:7999/_assets/chunks/app_components_events_autofix_v3_utils_ts-gsApp_registerOverrides_tsx.02556c416c188019.js:22306:86)\n    at rawTrackAnalyticsEvent (https://localhost:7999/_assets/chunks/app_components_events_autofix_v3_utils_ts-gsApp_registerOverrides_tsx.02556c416c188019.js:22384:29)\n    at rawTrackAnalyticsEvent (https://localhost:7999/_assets/chunks/app_components_core_form_index_ts-app_components_emptyMessage_tsx-app_components_sentryDocume-e4d45b.77ef74e3cde899bc.js:155933:140)\n    at https://localhost:7999/_assets/chunks/app_components_core_form_index_ts-app_components_emptyMessage_tsx-app_components_sentryDocume-e4d45b.77ef74e3cde899bc.js:155959:13\n    at t10 (https://localhost:7999/_assets/chunks/app_views_authV2_authLogin_index_tsx.d8f9372505bf4158.js:4318:72)\n    at Object.react_stack_bottom_frame (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:57788:22)\n    at runWithFiberInDEV (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:44823:74)\n    at commitHookEffectListMount (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:50965:167)\n    at commitHookPassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51000:60)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51989:33)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52037:428)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52029:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51993:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51993:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51993:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)",
+          "Failed to load resource: the server responded with a status of 403 ()",
+          "Failed to load resource: the server responded with a status of 403 ()",
+          "Failed to load resource: the server responded with a status of 403 ()"
+        ],
+        "title": "Sentry"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 2261,
+          "textCount": 55,
+          "branchCount": 54,
+          "repeatCount": 12,
+          "opaqueCount": 19,
+          "unknownCount": 56,
+          "modulesLoaded": 702
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 9
+          },
+          {
+            "code": "dynamic-props",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 558,
+        "matchedText": 8,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 9,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 566,
+        "staticFibers": 655,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 583,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": null,
       "failure": null
     },
     {

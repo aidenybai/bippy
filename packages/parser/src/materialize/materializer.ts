@@ -1,8 +1,8 @@
 import type { Class } from "oxc-parser";
 import type { ComponentClass, ComponentType, Context, ExoticComponent, ReactNode } from "react";
 import { isErrorBoundaryClass, renderClassComponent } from "../evaluate/class-component.js";
-import type { ContextFrame, EvaluationContext } from "../evaluate/context.js";
-import { lookupContextValue } from "../evaluate/context.js";
+import type { ContextReader, EvaluationContext } from "../evaluate/context.js";
+import { providedContextValue } from "../evaluate/react-calls.js";
 import {
   beginHookPass,
   commitHookPass,
@@ -35,9 +35,10 @@ import type {
   StaticFunctionValue,
   StaticHostNodeValue,
   StaticObjectValue,
-  StaticRenderStats,
+  StaticUnknownValue,
   StaticValue,
   StubComponent,
+  StubRenderTools,
 } from "../types.js";
 import { ForwardRefTag } from "../work-tags.js";
 import {
@@ -53,7 +54,7 @@ import {
 } from "./markers.js";
 import type { ReactRuntime } from "./react-runtime.js";
 
-const DEFAULT_MAX_COMPONENT_DEPTH = 64;
+const DEFAULT_MAX_COMPONENT_DEPTH = 512;
 const DEFAULT_MAX_ELEMENT_COUNT = 50_000;
 const DEFAULT_MAX_RECURSION_PER_COMPONENT = 16;
 const MAX_RENDER_PASSES = 8;
@@ -98,6 +99,8 @@ export interface SuspenseScope {
 
 export interface CompositeFrame {
   node: ComponentDefinition["node"];
+  /** Closure the component was created in: a factory's components share a node but not a scope. */
+  scope: Scope;
   props: StaticValue;
 }
 
@@ -108,7 +111,6 @@ export interface CompositeFrame {
  */
 export interface MaterializeContext {
   depth: number;
-  contextFrame: ContextFrame | null;
   componentStack: CompositeFrame[];
   suspenseScope: SuspenseScope | null;
   environment: RenderEnvironment | null;
@@ -142,6 +144,26 @@ interface CompositeEvaluation {
   childContext: MaterializeContext;
   componentContext: EvaluationContext | null;
 }
+
+interface MaterializedElement {
+  context: MaterializeContext;
+  isTopLevel: boolean;
+  node: ReactNode;
+}
+
+const isSameFrame = (first: CompositeFrame, second: CompositeFrame): boolean =>
+  first.node === second.node && first.scope === second.scope && first.props === second.props;
+
+/** Whether two contexts describe the same tree position; the owner differs between renders of one component. */
+const isSamePosition = (first: MaterializeContext, second: MaterializeContext): boolean =>
+  first.depth === second.depth &&
+  first.suspenseScope === second.suspenseScope &&
+  first.environment === second.environment &&
+  first.errorBoundaryDepth === second.errorBoundaryDepth &&
+  first.ignoresMaybeThrows === second.ignoresMaybeThrows &&
+  first.alternativeDepth === second.alternativeDepth &&
+  first.componentStack.length === second.componentStack.length &&
+  first.componentStack.every((frame, index) => isSameFrame(frame, second.componentStack[index]));
 
 /** Thrown by a proxy whose static render evaluates to a thrown value, so React's error boundaries take over. */
 export class StaticThrowError extends Error {
@@ -183,6 +205,26 @@ const getThrowCertainty = (value: StaticValue): ThrowCertainty => {
     default:
       return "never";
   }
+};
+
+const findThrown = (value: StaticValue): StaticUnknownValue | null => {
+  switch (value.kind) {
+    case "unknown":
+      return value.isThrown ? value : null;
+    case "list":
+      return value.items.map(findThrown).find((thrown) => thrown !== null) ?? null;
+    case "branch":
+      return value.alternatives.map(findThrown).find((thrown) => thrown !== null) ?? null;
+    default:
+      return null;
+  }
+};
+
+const describeThrow = (value: StaticValue): string => {
+  const thrown = findThrown(value);
+  if (!thrown) return "component throws";
+  const where = thrown.location ? ` at ${thrown.location.filePath}:${thrown.location.line}` : "";
+  return `${thrown.reason}${where}`;
 };
 
 const withoutThrows = (value: StaticValue): StaticValue => {
@@ -333,15 +375,7 @@ const noop = (): void => {};
 export class Materializer {
   readonly interpreter: Interpreter;
   readonly runtime: ReactRuntime;
-  readonly stats: StaticRenderStats = {
-    fiberCount: 0,
-    textCount: 0,
-    branchCount: 0,
-    repeatCount: 0,
-    opaqueCount: 0,
-    unknownCount: 0,
-    modulesLoaded: 0,
-  };
+  private materializedCount = 0;
   private readonly maxComponentDepth: number;
   private readonly maxElementCount: number;
   private readonly maxRecursionPerComponent: number;
@@ -352,11 +386,21 @@ export class Materializer {
   private readonly forwardRefProxies = new ComponentCache<Map<string, ComponentType<ProxyProps>>>();
   private readonly memoTypes = new WeakMap<object, Map<string, ComponentType<ProxyProps>>>();
   private readonly lazyTypes = new WeakMap<object, ComponentType<ProxyProps>>();
-  private readonly contexts = new WeakMap<ContextDefinition | StaticElementType, Context<null>>();
+  private readonly contexts = new WeakMap<
+    ContextDefinition | StaticElementType,
+    Context<StaticValue | null>
+  >();
+  private isInsideComponentRender = false;
+  /** `use` reads a context from any render (class bodies, Consumer render props included); older Reacts only have `useContext`. */
+  private readonly useStaticContext: (context: Context<StaticValue | null>) => StaticValue | null;
+  /** Context values flow through React itself, so a proxy reads them at its own fiber, as the real hook would. */
+  private readonly readContext: ContextReader = (definition) =>
+    this.isInsideComponentRender ? this.useStaticContext(this.getContext(definition)) : null;
   private readonly stubProxies = new WeakMap<StubComponent, ComponentType<ProxyProps>>();
   private readonly suspenseBoundaryProxy: ComponentType<ProxyProps>;
   private portalContainer: Element | null = null;
   private readonly hostNodes = new WeakMap<Element, StaticHostNodeValue>();
+  private readonly materializedElements = new WeakMap<StaticElementValue, MaterializedElement[]>();
 
   constructor(interpreter: Interpreter, runtime: ReactRuntime, options: MaterializerOptions = {}) {
     this.interpreter = interpreter;
@@ -366,6 +410,7 @@ export class Materializer {
     this.maxRecursionPerComponent =
       options.maxRecursionPerComponent ?? DEFAULT_MAX_RECURSION_PER_COMPONENT;
     this.serverComponents = options.serverComponents ?? false;
+    this.useStaticContext = runtime.react.use ?? runtime.react.useContext;
     this.suspenseBoundaryProxy = setFunctionName(
       ({ input }: ProxyProps): ReactNode => this.renderSuspenseBoundary(input),
       MARKER_NAMES.suspenseBoundary,
@@ -375,7 +420,6 @@ export class Materializer {
   createRootContext(): MaterializeContext {
     return {
       depth: 0,
-      contextFrame: null,
       componentStack: [],
       suspenseScope: null,
       environment: this.serverComponents ? "server" : null,
@@ -397,49 +441,28 @@ export class Materializer {
    * nested arrays become implicit Fragments.
    */
   toNode(value: StaticValue, context: MaterializeContext, isTopLevel: boolean): ReactNode {
-    if (this.stats.fiberCount >= this.maxElementCount) {
-      if (!this.isBudgetExhausted) {
-        this.isBudgetExhausted = true;
-        this.interpreter.report(
-          "max-fiber-count",
-          `element budget of ${this.maxElementCount} exhausted`,
-          null,
-          "warning",
-        );
-      }
-      return this.unknownNode("element budget exhausted", context);
-    }
     switch (value.kind) {
       case "primitive": {
         const primitive = value.value;
         if (typeof primitive === "string" || typeof primitive === "number") {
-          if (primitive !== "") this.stats.textCount++;
           return primitive;
         }
         return typeof primitive === "bigint" ? primitive.toString() : null;
       }
       case "unknown-primitive":
         if (value.primitiveType === "string" || value.primitiveType === "number") {
-          this.stats.textCount++;
-          this.stats.fiberCount++;
           return this.runtime.react.createElement(TextMarker);
         }
         if (value.primitiveType === "boolean") return null;
-        return this.unknownNode(`dynamic child (${value.reason})`, context);
+        return this.unknownNode(`dynamic child (${value.reason})`);
       case "element":
         return this.elementToNode(value, context, isTopLevel);
       case "list":
         return value.items.map((item) => this.toNode(item, context, false));
-      case "repeat": {
-        this.stats.repeatCount++;
-        this.stats.fiberCount++;
-        const repeat = this.runtime.react.createElement(RepeatMarker, {
+      case "repeat":
+        return this.runtime.react.createElement(RepeatMarker, {
           children: [this.toNode(value.item, context, false)],
         });
-        return isTopLevel
-          ? repeat
-          : this.runtime.react.createElement(this.runtime.react.Fragment, null, repeat);
-      }
       case "branch":
         return this.branchNode(
           value.alternatives.map((alternative, index) =>
@@ -457,11 +480,14 @@ export class Materializer {
           isTopLevel,
         );
       case "unknown":
-        return this.unknownNode(value.reason, context);
+        return this.unknownNode(value.reason);
       case "external":
-        return this.unknownNode(`value from ${value.packageName} (${value.importedName})`, context);
+        return this.unknownElementNode(
+          `value from ${value.packageName} (${value.importedName})`,
+          context,
+        );
       default:
-        return this.unknownNode(`${describeValue(value)} is not a valid React child`, context);
+        return this.unknownNode(`${describeValue(value)} is not a valid React child`);
     }
   }
 
@@ -475,7 +501,6 @@ export class Materializer {
     if (context.alternativeDepth >= MAX_ALTERNATIVE_DEPTH) {
       return this.unknownNode(
         `alternative nested ${MAX_ALTERNATIVE_DEPTH} branches away from the preferred path`,
-        context,
       );
     }
     return this.toNode(
@@ -492,8 +517,6 @@ export class Materializer {
     isTopLevel: boolean,
   ): ReactNode {
     const { createElement } = this.runtime.react;
-    this.stats.branchCount++;
-    this.stats.fiberCount += 1 + alternatives.length;
     return createElement(BranchMarker, {
       reason,
       preferredIndex,
@@ -503,18 +526,46 @@ export class Materializer {
     });
   }
 
-  private unknownNode(reason: string, context: MaterializeContext): ReactNode {
-    this.stats.unknownCount++;
-    this.stats.fiberCount++;
-    this.markMaySuspend(context);
+  private unknownNode(reason: string): ReactNode {
     return this.runtime.react.createElement(UnknownMarker, { reason });
+  }
+
+  /** An element whose component is not known may suspend (a `use()` or lazy inside it). */
+  private unknownElementNode(reason: string, context: MaterializeContext): ReactNode {
+    this.markMaySuspend(context);
+    return this.unknownNode(reason);
   }
 
   private markMaySuspend(context: MaterializeContext): void {
     if (context.suspenseScope) context.suspenseScope.maySuspend = true;
   }
 
+  /**
+   * React bails a child out of re-rendering only when it receives the very same
+   * element object, so a static element materialized again at the same
+   * position must yield the element it produced before.
+   */
   private elementToNode(
+    element: StaticElementValue,
+    context: MaterializeContext,
+    isTopLevel: boolean,
+  ): ReactNode {
+    let materialized = this.materializedElements.get(element);
+    if (!materialized) {
+      materialized = [];
+      this.materializedElements.set(element, materialized);
+    }
+    const previous = materialized.find(
+      (candidate) =>
+        candidate.isTopLevel === isTopLevel && isSamePosition(candidate.context, context),
+    );
+    if (previous) return previous.node;
+    const node = this.freshElementToNode(element, context, isTopLevel);
+    materialized.push({ context, isTopLevel, node });
+    return node;
+  }
+
+  private freshElementToNode(
     element: StaticElementValue,
     context: MaterializeContext,
     isTopLevel: boolean,
@@ -547,10 +598,21 @@ export class Materializer {
     context: MaterializeContext,
   ): ReactNode {
     const { createElement } = this.runtime.react;
+    if (type.kind !== "fragment" && this.materializedCount++ >= this.maxElementCount) {
+      if (!this.isBudgetExhausted) {
+        this.isBudgetExhausted = true;
+        this.interpreter.report(
+          "max-fiber-count",
+          `element budget of ${this.maxElementCount} exhausted`,
+          null,
+          "warning",
+        );
+      }
+      return this.unknownNode("element budget exhausted");
+    }
     const reactKey = this.keyToString(key, location);
     const children = getObjectProperty(props, "children");
     const input: ProxyInput = { props, ref: null, location, context };
-    this.stats.fiberCount++;
     switch (type.kind) {
       case "host":
         return createElement(
@@ -563,7 +625,8 @@ export class Materializer {
         return createElement(this.getClassProxy(type.component), { key: reactKey, input });
       case "memo": {
         const memoType = this.getMemoType(type);
-        if (!memoType) return this.unknownNode(`memo of ${type.inner.kind} element type`, context);
+        if (!memoType)
+          return this.unknownElementNode(`memo of ${type.inner.kind} element type`, context);
         return createElement(memoType, { key: reactKey, input });
       }
       case "forward-ref": {
@@ -582,10 +645,9 @@ export class Materializer {
         });
       }
       case "lazy": {
-        this.markMaySuspend(context);
         const lazyType = this.getLazyType(type);
         if (!lazyType) {
-          return this.unknownNode(
+          return this.unknownElementNode(
             type.inner
               ? `lazy of ${type.inner.kind} element type`
               : "lazy component target could not be resolved statically",
@@ -621,27 +683,17 @@ export class Materializer {
       case "view-transition": {
         const exotic = this.getExoticType(type.kind);
         if (!exotic) {
-          return this.unknownNode(
-            `${type.kind} is not available in React ${this.runtime.version}`,
-            context,
-          );
+          return this.unknownNode(`${type.kind} is not available in React ${this.runtime.version}`);
         }
         return createElement(exotic, { key: reactKey }, this.toNode(children, context, true));
       }
       case "context-provider": {
         const realContext = this.getContext(type.context ?? type);
         this.noteUnresolvedContext(type.context, location);
-        const nextFrame: ContextFrame | null = type.context
-          ? {
-              context: type.context,
-              value: getObjectProperty(props, "value"),
-              parent: context.contextFrame,
-            }
-          : context.contextFrame;
         return createElement(
           realContext.Provider,
-          { key: reactKey, value: null },
-          this.toNode(children, { ...context, contextFrame: nextFrame }, true),
+          { key: reactKey, value: type.context ? getObjectProperty(props, "value") : null },
+          this.toNode(children, context, true),
         );
       }
       case "context-consumer": {
@@ -649,7 +701,8 @@ export class Materializer {
         this.noteUnresolvedContext(type.context, location);
         return createElement(realContext.Consumer, {
           key: reactKey,
-          children: () => this.renderConsumer(type.context, children, context),
+          children: (provided) =>
+            this.renderConsumer(type.context, provided, children, context, location),
         });
       }
       case "portal":
@@ -659,7 +712,6 @@ export class Materializer {
           reactKey ?? null,
         );
       case "external": {
-        this.stats.opaqueCount++;
         this.markMaySuspend(context);
         markEscapedSetters(props);
         return createElement(OpaqueMarker, {
@@ -674,7 +726,7 @@ export class Materializer {
       case "stub":
         return createElement(this.getStubProxy(type.stub), { key: reactKey, input });
       case "unknown":
-        return this.unknownNode(
+        return this.unknownElementNode(
           `${type.displayName ? `<${type.displayName}>` : "element"}: ${type.reason}`,
           context,
         );
@@ -683,18 +735,19 @@ export class Materializer {
 
   private renderConsumer(
     definition: ContextDefinition | null,
+    provided: StaticValue | null,
     children: StaticValue,
     context: MaterializeContext,
+    location: SourceLocation | null,
   ): ReactNode {
     if (children.kind !== "function") {
-      return this.unknownNode("Consumer render prop is dynamic", context);
+      return this.unknownElementNode("Consumer render prop is dynamic", context);
     }
     const contextValue = definition
-      ? this.lookupContext(definition, context)
+      ? providedContextValue(this.interpreter, definition, provided, location)
       : unknownValue("context value from an unresolved context");
-    const evaluationContext = this.interpreter.createModuleContext(
-      children.module,
-      context.contextFrame,
+    const evaluationContext = this.interpreter.createModuleContext(children.module, (candidate) =>
+      candidate === definition ? provided : null,
     );
     return this.toNode(
       this.interpreter.callFunction(children, [contextValue], evaluationContext),
@@ -784,6 +837,9 @@ export class Materializer {
           const inner = this.toAttribute(entry.key, entry.value, context);
           if (inner !== undefined) record[entry.key] = inner;
         }
+        if (key === "dangerouslySetInnerHTML" && typeof record.__html !== "string") {
+          record.__html = "";
+        }
         return record;
       }
       case "list":
@@ -841,14 +897,10 @@ export class Materializer {
     }
   }
 
-  private lookupContext(definition: ContextDefinition, context: MaterializeContext): StaticValue {
-    return lookupContextValue(context.contextFrame, definition) ?? definition.defaultValue;
-  }
-
-  private getContext(key: ContextDefinition | StaticElementType): Context<null> {
+  private getContext(key: ContextDefinition | StaticElementType): Context<StaticValue | null> {
     let context = this.contexts.get(key);
     if (!context) {
-      context = this.runtime.react.createContext<null>(null);
+      context = this.runtime.react.createContext<StaticValue | null>(null);
       if ("displayName" in key && key.displayName) context.displayName = key.displayName;
       this.contexts.set(key, context);
     }
@@ -890,7 +942,8 @@ export class Materializer {
     let proxy = this.functionProxies.get(component);
     if (!proxy) {
       const render = setFunctionName(
-        ({ input }: ProxyProps): ReactNode => this.renderFunctionProxy(input, component, null),
+        ({ input }: ProxyProps): ReactNode =>
+          this.renderInsideComponent(() => this.renderFunctionProxy(input, component, null)),
         getComponentDisplayName(component),
       );
       // React.memo only takes its SimpleMemoComponent fast path when the inner type has no defaultProps.
@@ -905,7 +958,9 @@ export class Materializer {
     if (!proxy) {
       const classValue = toClassValue(component);
       const renderProxy = (input: ProxyInput, caught: StaticThrowError | null): ReactNode =>
-        this.renderClassProxy(input, component, classValue, caught);
+        this.renderInsideComponent(() =>
+          this.renderClassProxy(input, component, classValue, caught),
+        );
       class ClassProxy extends this.runtime.react.Component<ProxyProps, ErrorBoundaryState> {
         state: ErrorBoundaryState = { caught: null };
 
@@ -951,7 +1006,7 @@ export class Materializer {
         setFunctionName(
           // React warns unless a forwardRef render function declares (props, ref).
           ({ input }: ProxyProps, _forwardedRef: unknown): ReactNode =>
-            this.renderFunctionProxy(input, component, input.ref),
+            this.renderInsideComponent(() => this.renderFunctionProxy(input, component, input.ref)),
           getComponentDisplayName(component),
         ),
       );
@@ -1020,7 +1075,8 @@ export class Materializer {
     let proxy = this.stubProxies.get(stub);
     if (!proxy) {
       const render = setFunctionName(
-        ({ input }: ProxyProps): ReactNode => this.renderStub(input, stub),
+        ({ input }: ProxyProps): ReactNode =>
+          this.renderInsideComponent(() => this.renderStub(input, stub)),
         stub.displayName,
       );
       proxy =
@@ -1032,16 +1088,31 @@ export class Materializer {
     return proxy;
   }
 
+  private renderInsideComponent<T>(render: () => T): T {
+    this.isInsideComponentRender = true;
+    try {
+      return render();
+    } finally {
+      this.isInsideComponentRender = false;
+    }
+  }
+
   private renderStub(input: ProxyInput, stub: StubComponent): ReactNode {
     const { context, props, location } = input;
-    const rendered = stub.render(props, {
-      readContext: (definition) => this.lookupContext(definition, context),
+    const tools: StubRenderTools = {
+      readContext: (definition) =>
+        providedContextValue(this.interpreter, definition, this.readContext(definition), location),
       callAwaited: (callee, args) => this.callAwaited(callee, args, context, location),
-      call: (callee, args) =>
-        callee.kind === "function"
-          ? this.interpreter.callFunction(callee, args, this.moduleContext(callee, context))
-          : unknownValue(`call of ${describeValue(callee)}`, location),
-    });
+      call: (callee, args) => {
+        if (callee.kind === "function") {
+          return this.interpreter.callFunction(callee, args, this.moduleContext(callee, context));
+        }
+        if (callee.kind === "native-function") return callee.call(args, tools);
+        return unknownValue(`call of ${describeValue(callee)}`, location);
+      },
+      nameHint: null,
+    };
+    const rendered = stub.render(props, tools);
     return this.finishRender(rendered, { ...context, depth: context.depth + 1 }, input);
   }
 
@@ -1097,13 +1168,15 @@ export class Materializer {
       if (changedCells.length === 0) return;
       passRef.current++;
       if (passRef.current >= MAX_RENDER_PASSES) {
-        giveUpOnHookPass(changedCells);
         this.interpreter.report(
           "unsettled-state",
-          `${describeComponent(component)} state did not settle after ${MAX_RENDER_PASSES} render passes`,
+          `${describeComponent(component)} state did not settle after ${MAX_RENDER_PASSES} render passes: ${changedCells
+            .map((cell) => `${cell.name} = ${describeValue(cell.current)}`)
+            .join(", ")}`,
           input.location,
           "warning",
         );
+        giveUpOnHookPass(frame, changedCells);
       }
       setPass((pass) => pass + 1);
     });
@@ -1157,7 +1230,7 @@ export class Materializer {
     input: ProxyInput,
   ): ReactNode {
     const certainty = getThrowCertainty(rendered);
-    if (certainty === "always") throw new StaticThrowError("component throws", false);
+    if (certainty === "always") throw new StaticThrowError(describeThrow(rendered), false);
     if (certainty === "maybe") {
       if (input.context.errorBoundaryDepth > 0 && !input.context.ignoresMaybeThrows) {
         throw new StaticThrowError("component may throw", true);
@@ -1179,7 +1252,10 @@ export class Materializer {
     const childContext: MaterializeContext = {
       ...context,
       depth: context.depth + 1,
-      componentStack: [...context.componentStack, { node: component.node, props }],
+      componentStack: [
+        ...context.componentStack,
+        { node: component.node, scope: component.scope, props },
+      ],
       environment,
       owner: null,
     };
@@ -1197,7 +1273,9 @@ export class Materializer {
       };
     }
     const ancestors = context.componentStack.filter((frame) => frame.node === component.node);
-    const isNonTerminating = ancestors.some((frame) => areValuesEquivalent(frame.props, props));
+    const isNonTerminating = ancestors.some(
+      (frame) => frame.scope === component.scope && areValuesEquivalent(frame.props, props),
+    );
     if (isNonTerminating || ancestors.length >= this.maxRecursionPerComponent) {
       this.interpreter.report(
         "max-recursion",
@@ -1214,7 +1292,7 @@ export class Materializer {
       };
     }
     const componentContext: EvaluationContext = {
-      ...this.interpreter.createModuleContext(component.module, context.contextFrame, environment),
+      ...this.interpreter.createModuleContext(component.module, this.readContext, environment),
       hooks,
     };
     childContext.owner = componentContext;
@@ -1250,7 +1328,7 @@ export class Materializer {
   ): EvaluationContext {
     return this.interpreter.createModuleContext(
       callee.module,
-      context.contextFrame,
+      this.readContext,
       context.environment,
     );
   }
@@ -1273,10 +1351,11 @@ export class Materializer {
   }
 
   /**
-   * A Suspense boundary whose primary subtree can suspend (lazy, external or
-   * unknown content) is observed either showing its content or its fallback;
-   * the second alternative really suspends so React lays out the hidden
-   * primary tree and the fallback itself.
+   * A Suspense boundary whose primary subtree can still be suspended once the
+   * page has settled (external or unknown content; a resolved `lazy` has loaded
+   * by then) is observed either showing its content or its fallback; the second
+   * alternative really suspends so React lays out the hidden primary tree and
+   * the fallback itself.
    */
   renderSuspenseBoundary(input: ProxyInput): ReactNode {
     const { useRef, useState, useLayoutEffect, createElement, Suspense } = this.runtime.react;

@@ -46,11 +46,31 @@ const withChildrenSlot =
 
 const Frame = ({ children }: { children: ReactNode }) => <section>{children}</section>;
 
+const createMotion = <Props extends object>(Component: string | ComponentType<Props>) => {
+  function MotionComponent(props: Props, ref: React.Ref<HTMLElement>) {
+    return <Component {...props} ref={ref} />;
+  }
+  MotionComponent.displayName = `motion.${
+    typeof Component === "string"
+      ? Component
+      : `create(${Component.displayName ?? Component.name ?? ""})`
+  }`;
+  return forwardRef(MotionComponent);
+};
+
+const StackComponent = forwardRef<HTMLDivElement, { children?: ReactNode }>((props, ref) => (
+  <div ref={ref} className="stack">
+    {props.children}
+  </div>
+));
+
 const BorderedLabel = withBorder(Label);
 const PrefixedLabel = withPrefix("» ")(Label);
 const RefLabel = withRef(Label);
 const Composed = compose(withBorder, withPrefix("~ "), memo)(Label);
 const SlottedFrame = withChildrenSlot(Frame);
+const MotionStack = createMotion(StackComponent);
+const MotionDiv = createMotion("div");
 
 export default function Hocs() {
   return (
@@ -60,6 +80,9 @@ export default function Hocs() {
       <RefLabel label="ref" />
       <Composed label="composed" />
       <SlottedFrame title="slotted" />
+      <MotionStack>
+        <MotionDiv />
+      </MotionStack>
     </main>
   );
 }

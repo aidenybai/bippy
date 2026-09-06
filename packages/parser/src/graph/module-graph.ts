@@ -6,6 +6,7 @@ import type {
   ModuleResolution,
   ResolvedSymbol,
 } from "../types.js";
+import { isModeledLibraryExport, isModeledLibraryPackage } from "../libraries/index.js";
 import { isCompilerHelperPackage } from "./helper-packages.js";
 import { createModuleRecord } from "./module-record.js";
 import { ModuleResolver } from "./module-resolver.js";
@@ -83,7 +84,10 @@ export class ModuleGraph {
     specifier: string,
     fromModule: ModuleRecord,
   ): ModuleRecord | ModuleResolution {
-    const resolution = this.resolveSpecifier(specifier, fromModule);
+    return this.getResolvedModule(this.resolveSpecifier(specifier, fromModule));
+  }
+
+  private getResolvedModule(resolution: ModuleResolution): ModuleRecord | ModuleResolution {
     if (resolution.kind === "internal") {
       return this.getModule(resolution.filePath) ?? resolution;
     }
@@ -142,7 +146,7 @@ export class ModuleGraph {
   }
 
   private shouldAnalyzePackage(packageName: string): boolean {
-    if (isCompilerHelperPackage(packageName)) return false;
+    if (isCompilerHelperPackage(packageName) || isModeledLibraryPackage(packageName)) return false;
     return (
       this.resolveExternalPackages ||
       this.externalPackageAllowList.has(packageName) ||
@@ -156,7 +160,15 @@ export class ModuleGraph {
     fromModule: ModuleRecord,
     visited: Set<string>,
   ): ResolvedSymbol {
-    const target = this.resolveImportedModule(specifier, fromModule);
+    const resolution = this.resolveSpecifier(specifier, fromModule);
+    if (
+      resolution.kind === "external" &&
+      imported.kind === "named" &&
+      isModeledLibraryExport(resolution.packageName, imported.name)
+    ) {
+      return { kind: "external", packageName: resolution.packageName, imported, specifier };
+    }
+    const target = this.getResolvedModule(resolution);
     if (isModuleRecord(target)) {
       if (imported.kind === "namespace") return { kind: "namespace", module: target };
       return this.resolveExportWithVisited(target, describeImportedName(imported), visited);

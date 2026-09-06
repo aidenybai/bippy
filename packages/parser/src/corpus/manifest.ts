@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import type { ComparisonOptions, ComparisonReport } from "../harness/compare.js";
-import type { StaticRenderStats } from "../types.js";
+import type { JsonValue, StaticRenderStats } from "../types.js";
 import type { FrameworkKind } from "../frameworks/framework-profile.js";
 
 // A corpus entry pins a real React repository at a revision so the static
@@ -12,6 +12,8 @@ export interface CorpusStaticTarget {
   tsconfig?: string;
   /** SPA only: module containing the `createRoot().render()` call. */
   entry?: string;
+  /** Export of `entry` mounted by the boot code when the root render call is not literal. */
+  rootComponent?: string;
   /** Framework routers: pathname whose route tree is composed statically. */
   route?: string;
   /** Next: `app/` or `pages/` directory relative to `rootDirectory` when it is not directly under it. */
@@ -19,6 +21,10 @@ export interface CorpusStaticTarget {
   /** Component name both trees are aligned on before matching. */
   anchor?: string;
   externalPackageAllowList?: string[];
+  /** `path#export` functions the boot code calls before mounting, in order. */
+  bootstrap?: string[];
+  /** `window` properties the served page defines (server-injected config); objects are partial. */
+  globals?: Record<string, JsonValue>;
   maxFiberCount?: number;
   maxComponentDepth?: number;
 }
@@ -43,6 +49,8 @@ export interface CorpusEntry {
   readyTimeoutMs?: number;
   waitForSelector?: string;
   settleMs?: number;
+  /** `window` properties recorded from the settled page and handed to the static render as `globals` (bootstrap payloads the page fetched). */
+  capturedGlobals?: string[];
   static: CorpusStaticTarget;
   compare?: ComparisonOptions;
   notes?: string;
@@ -95,6 +103,25 @@ export const readCorpusManifest = (manifestPath: string): CorpusManifest => {
   const entries: CorpusEntry[] = [];
   for (const candidate of parsed.entries) entries.push(validateEntry(candidate, manifestPath));
   return { entries };
+};
+
+const toJsonValue = (value: unknown, where: string): JsonValue => {
+  if (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
+    return value;
+  }
+  if (Array.isArray(value))
+    return value.map((item, index) => toJsonValue(item, `${where}[${index}]`));
+  if (typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, toJsonValue(item, `${where}.${key}`)]),
+    );
+  }
+  throw new Error(`${where} must be JSON`);
 };
 
 const FRAMEWORK_KINDS: FrameworkKind[] = ["spa", "next-app", "next-pages", "react-router"];
@@ -155,6 +182,18 @@ class ManifestReader {
     return result;
   }
 
+  optionalJsonRecord(field: string): Record<string, JsonValue> | undefined {
+    const value = this.record[field];
+    if (value === undefined) return undefined;
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+      this.fail(field, "an object");
+    }
+    const result: Record<string, JsonValue> = {};
+    for (const [key, item] of Object.entries(value))
+      result[key] = toJsonValue(item, `${field}.${key}`);
+    return result;
+  }
+
   object(field: string): ManifestReader {
     const value = this.record[field];
     if (typeof value !== "object" || value === null || Array.isArray(value)) {
@@ -180,10 +219,13 @@ const readStaticTarget = (reader: ManifestReader): CorpusStaticTarget => ({
   rootDirectory: reader.string("rootDirectory"),
   tsconfig: reader.optionalString("tsconfig"),
   entry: reader.optionalString("entry"),
+  rootComponent: reader.optionalString("rootComponent"),
   route: reader.optionalString("route"),
   appDirectory: reader.optionalString("appDirectory"),
   anchor: reader.optionalString("anchor"),
   externalPackageAllowList: reader.optionalStringList("externalPackageAllowList"),
+  bootstrap: reader.optionalStringList("bootstrap"),
+  globals: reader.optionalJsonRecord("globals"),
   maxFiberCount: reader.optionalNumber("maxFiberCount"),
   maxComponentDepth: reader.optionalNumber("maxComponentDepth"),
 });
@@ -218,6 +260,7 @@ const validateEntry = (candidate: unknown, manifestPath: string): CorpusEntry =>
     readyTimeoutMs: reader.optionalNumber("readyTimeoutMs"),
     waitForSelector: reader.optionalString("waitForSelector"),
     settleMs: reader.optionalNumber("settleMs"),
+    capturedGlobals: reader.optionalStringList("capturedGlobals"),
     static: readStaticTarget(reader.object("static")),
     compare: compare ? readComparisonOptions(compare) : undefined,
     notes: reader.optionalString("notes"),

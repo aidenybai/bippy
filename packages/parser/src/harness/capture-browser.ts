@@ -4,6 +4,8 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build, stop as stopEsbuild } from "esbuild";
 import { chromium, type Browser, type Page } from "playwright";
+import { readObservationsJson } from "../observations.js";
+import type { RuntimeObservations } from "../types.js";
 import type { HarnessGlobals } from "./browser-inject.js";
 import { parseSnapshot, type RuntimeSnapshot } from "./snapshot.js";
 
@@ -13,6 +15,8 @@ export interface BrowserCaptureOptions {
   settleMs?: number;
   timeoutMs?: number;
   headless?: boolean;
+  /** `window` properties to record once the page has settled (bootstrap payloads the server injects or the page fetches). */
+  globals?: string[];
   onConsole?: (type: string, text: string) => void;
 }
 
@@ -21,6 +25,7 @@ export interface BrowserCaptureResult {
   commits: number;
   pageErrors: string[];
   title: string;
+  observations: RuntimeObservations;
 }
 
 const DEFAULT_SETTLE_MS = 1_500;
@@ -90,6 +95,20 @@ const readSnapshot = async (page: Page): Promise<RuntimeSnapshot | null> => {
   return json === null ? null : parseSnapshot(json);
 };
 
+const readObservations = async (page: Page, names: string[]): Promise<RuntimeObservations> => {
+  const json = await page.evaluate((globalNames) => {
+    const globals: Partial<HarnessGlobals> = Object(globalThis);
+    const caches = globals.__BIPPY_PARSER_QUERY_CACHES__?.();
+    const observed: RuntimeObservations = {
+      globals: globals.__BIPPY_PARSER_GLOBALS__?.(globalNames) ?? {},
+      queries: caches?.queries ?? [],
+      ...(caches ? { mutations: caches.mutations } : {}),
+    };
+    return JSON.stringify(observed);
+  }, names);
+  return readObservationsJson(JSON.parse(json));
+};
+
 const readDevServerOverlay = (page: Page): Promise<string | null> =>
   page.evaluate(() => {
     const overlay = document.querySelector("vite-error-overlay, nextjs-portal");
@@ -140,7 +159,7 @@ export class BrowserCapturer {
     const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     const settleMs = options.settleMs ?? DEFAULT_SETTLE_MS;
     const [browser, inject] = await Promise.all([this.browser(), buildInjectBundle()]);
-    const context = await browser.newContext();
+    const context = await browser.newContext({ ignoreHTTPSErrors: true });
     const pageErrors: string[] = [];
     try {
       await context.addInitScript(inject);
@@ -163,7 +182,8 @@ export class BrowserCapturer {
         const overlay = await readDevServerOverlay(page);
         if (overlay) pageErrors.push(overlay);
       }
-      return { snapshot, commits, pageErrors, title: await page.title() };
+      const observations = await readObservations(page, options.globals ?? []);
+      return { snapshot, commits, pageErrors, title: await page.title(), observations };
     } finally {
       await context.close();
     }

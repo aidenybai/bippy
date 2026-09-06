@@ -1,5 +1,5 @@
 import type { Node } from "oxc-parser";
-import type { FunctionLikeNode, StaticValue } from "../types.js";
+import type { FunctionLikeNode, StaticNativeFunctionValue, StaticValue } from "../types.js";
 import { forEachChildNode } from "../parse/ast-walk.js";
 import { lookupScope } from "./scope.js";
 import { areValuesEquivalent, branchValue, unknownValue } from "./values.js";
@@ -9,6 +9,7 @@ export interface StateCell {
   initial: StaticValue;
   current: StaticValue;
   next: StaticValue | null;
+  setter: StaticNativeFunctionValue | null;
   isEscaped: boolean;
 }
 
@@ -28,6 +29,8 @@ export interface EffectRecord {
  * `workInProgressHook` list. `isDeferred` is set once evaluation passes an
  * `await` of an unknown promise: updates queued from there land after the
  * captured commit, so they are treated as escaped rather than applied.
+ * `isFrozen` is set once the state failed to settle: the cells that kept
+ * changing hold unknown values and further updates no longer schedule passes.
  */
 export interface HookFrame {
   cells: StateCell[];
@@ -38,6 +41,7 @@ export interface HookFrame {
   previousEffects: EffectRecord[];
   isRendering: boolean;
   isDeferred: boolean;
+  isFrozen: boolean;
 }
 
 export const createHookFrame = (): HookFrame => ({
@@ -49,6 +53,7 @@ export const createHookFrame = (): HookFrame => ({
   previousEffects: [],
   isRendering: false,
   isDeferred: false,
+  isFrozen: false,
 });
 
 export const beginHookPass = (frame: HookFrame): void => {
@@ -63,7 +68,14 @@ export const nextStateCell = (frame: HookFrame, name: string, initial: StaticVal
   const index = frame.cursor++;
   const existing = frame.cells[index];
   if (existing) return existing;
-  const cell: StateCell = { name, initial, current: initial, next: null, isEscaped: false };
+  const cell: StateCell = {
+    name,
+    initial,
+    current: initial,
+    next: null,
+    setter: null,
+    isEscaped: false,
+  };
   frame.cells[index] = cell;
   return cell;
 };
@@ -107,7 +119,7 @@ export const commitHookPass = (frame: HookFrame): StateCell[] => {
   const changedCells: StateCell[] = [];
   for (const cell of frame.cells) {
     const next = cell.isEscaped ? escapedStateValue(cell) : cell.next;
-    if (next !== null && !areValuesEquivalent(next, cell.current)) {
+    if (next !== null && !frame.isFrozen && !areValuesEquivalent(next, cell.current)) {
       cell.current = next;
       changedCells.push(cell);
     }
@@ -116,7 +128,8 @@ export const commitHookPass = (frame: HookFrame): StateCell[] => {
   return changedCells;
 };
 
-export const giveUpOnHookPass = (cells: StateCell[]): void => {
+export const giveUpOnHookPass = (frame: HookFrame, cells: StateCell[]): void => {
+  frame.isFrozen = true;
   for (const cell of cells) cell.current = unknownValue(`${cell.name} keeps updating after mount`);
 };
 

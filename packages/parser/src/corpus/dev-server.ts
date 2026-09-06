@@ -1,5 +1,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { createWriteStream, type WriteStream } from "node:fs";
+import { request as httpRequest } from "node:http";
+import { request as httpsRequest } from "node:https";
 import { setTimeout as sleep } from "node:timers/promises";
 
 export interface DevServerOptions {
@@ -18,6 +20,21 @@ export interface RunCommandOptions {
 }
 
 const READY_POLL_INTERVAL_MS = 500;
+
+// Dev servers that only speak https (Sentry's rspack dev-ui) use a self-signed
+// certificate, which the global fetch rejects before getting a status code.
+const probeStatus = (url: string): Promise<number> =>
+  new Promise((resolve, reject) => {
+    const request = url.startsWith("https:")
+      ? httpsRequest(url, { rejectUnauthorized: false })
+      : httpRequest(url);
+    request.once("response", (response) => {
+      response.resume();
+      resolve(response.statusCode ?? 0);
+    });
+    request.once("error", reject);
+    request.end();
+  });
 const KILL_GRACE_MS = 3_000;
 
 // Race timers must not keep the process alive once the child has exited.
@@ -108,8 +125,7 @@ export class DevServer {
         );
       }
       try {
-        const response = await fetch(url, { redirect: "manual" });
-        if (response.status < 500) return;
+        if ((await probeStatus(url)) < 500) return;
       } catch {
         // not listening yet
       }

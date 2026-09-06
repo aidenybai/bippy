@@ -206,7 +206,7 @@ export const renderNextAppRoute = (
     };
 
     const serverContext = (module: ModuleRecord) =>
-      interpreter.createModuleContext(module, null, "server");
+      interpreter.createModuleContext(module, undefined, "server");
 
     let element: StaticValue = interpreter.createElement(
       page.component,

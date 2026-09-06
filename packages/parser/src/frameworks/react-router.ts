@@ -16,6 +16,11 @@ import { toElementType } from "../react/element-type.js";
 import { findRootRenderCalls } from "../render/find-root-elements.js";
 import { AUTO_ROUTES_PACKAGE, readAutoRoutes } from "./react-router-auto-routes.js";
 import {
+  FLAT_ROUTES_PACKAGE,
+  ROUTES_OPTION_ADAPTER_PACKAGE,
+  readFlatRoutes,
+} from "./remix-flat-routes.js";
+import {
   type FrameworkDocument,
   dedupeLinkDescriptors,
   renderLinkDescriptors,
@@ -908,6 +913,13 @@ export const renderReactRouterRoute = async (
       config.importedName === "autoRoutes()"
     ) {
       probed.routes = readAutoRoutes(path.dirname(modulePath));
+    } else if (
+      config.kind === "external" &&
+      config.packageName === ROUTES_OPTION_ADAPTER_PACKAGE &&
+      config.importedName === "remixRoutesOptionAdapter()" &&
+      module.imports.some((binding) => binding.specifier === FLAT_ROUTES_PACKAGE)
+    ) {
+      probed.routes = readFlatRoutes(path.dirname(modulePath));
     }
     return NULL_VALUE;
   });

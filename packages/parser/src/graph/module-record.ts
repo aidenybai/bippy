@@ -6,11 +6,13 @@ import type {
   Expression,
   ImportDeclaration,
   ModuleExportName,
+  Node,
   ObjectExpression,
   PropertyKey,
   Statement,
   VariableDeclaration,
 } from "oxc-parser";
+import { forEachChildNode, isFunctionLikeNode } from "../parse/ast-walk.js";
 import type {
   ExportEntry,
   ImportBinding,
@@ -221,7 +223,7 @@ const collectStatement = (
       }
       return;
     case "VariableDeclaration":
-      collectVariableBindings(statement, bindings);
+      if (!statement.declare) collectVariableBindings(statement, bindings);
       return;
     case "FunctionDeclaration":
       if (statement.id) {
@@ -291,6 +293,68 @@ const collectMemberAssignment = (
     condition,
     span: statement,
   });
+};
+
+const MUTATING_METHODS = new Set([
+  "set",
+  "add",
+  "delete",
+  "clear",
+  "push",
+  "pop",
+  "shift",
+  "unshift",
+  "splice",
+  "sort",
+  "reverse",
+  "fill",
+  "copyWithin",
+]);
+
+const getMutatedObjectName = (node: Node): string | null => {
+  switch (node.type) {
+    case "CallExpression": {
+      const callee = node.callee;
+      if (callee.type !== "MemberExpression" || callee.object.type !== "Identifier") return null;
+      const method = callee.computed ? null : callee.property;
+      return method?.type === "Identifier" && MUTATING_METHODS.has(method.name)
+        ? callee.object.name
+        : null;
+    }
+    case "AssignmentExpression":
+    case "UpdateExpression": {
+      const target = node.type === "AssignmentExpression" ? node.left : node.argument;
+      return target.type === "MemberExpression" && target.object.type === "Identifier"
+        ? target.object.name
+        : null;
+    }
+    case "UnaryExpression":
+      return node.operator === "delete" &&
+        node.argument.type === "MemberExpression" &&
+        node.argument.object.type === "Identifier"
+        ? node.argument.object.name
+        : null;
+    default:
+      return null;
+  }
+};
+
+/**
+ * Module-level containers mutated from inside a function may be filled in by
+ * code the interpreter never sees run (other modules calling an exported
+ * `register`, effects, event handlers), so their contents are not exact.
+ */
+const collectDeferredMutations = (
+  node: Node,
+  isInsideFunction: boolean,
+  names: Set<string>,
+): void => {
+  if (isInsideFunction) {
+    const name = getMutatedObjectName(node);
+    if (name !== null) names.add(name);
+  }
+  const isEnteringFunction = isInsideFunction || isFunctionLikeNode(node);
+  forEachChildNode(node, (child) => collectDeferredMutations(child, isEnteringFunction, names));
 };
 
 const getStaticPropertyName = (property: PropertyKey, computed: boolean): string | null => {
@@ -580,6 +644,7 @@ export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
   const exports: ExportEntry[] = [];
   const bindings = new Map<string, TopLevelBinding>();
   const memberAssignments: MemberAssignment[] = [];
+  const deferredMutations = new Set<string>();
   const directives: string[] = [];
   for (const statement of file.program.body) {
     if (
@@ -592,6 +657,7 @@ export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
     }
     collectStatement(statement, imports, exports, bindings);
     collectMemberAssignment(statement, memberAssignments);
+    collectDeferredMutations(statement, false, deferredMutations);
   }
   for (const importBinding of imports) {
     if (importBinding.isTypeOnly) continue;
@@ -614,6 +680,7 @@ export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
     exports,
     bindings,
     memberAssignments,
+    deferredMutations,
     isCommonJs,
   };
 };

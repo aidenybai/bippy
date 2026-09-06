@@ -403,6 +403,83 @@
         "route": "/",
         "maxFiberCount": 20000
       }
+    },
+    {
+      "id": "documenso",
+      "repository": "https://github.com/documenso/documenso",
+      "revision": "2cac63a000e22422bdea449f68b8025e709aa73a",
+      "description": "Documenso sign-in page (React Router v7 framework mode via remix-flat-routes, npm workspaces, Prisma over the repository's own development PostgreSQL container)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npm install --no-audit --no-fund",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/documenso-setup.sh\""],
+      "services": ["docker compose -f docker/development/compose.yml up -d database redis"],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npm run dev:remix",
+      "url": "http://localhost:3000/signin",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": "apps/remix",
+        "entry": "app/routes.ts",
+        "route": "/signin",
+        "externalPackageAllowList": [
+          "@documenso/*",
+          "@radix-ui/*",
+          "lucide-react",
+          "react-hook-form",
+          "remix-themes",
+          "nuqs",
+          "@tanstack/react-query",
+          "@trpc/*"
+        ],
+        "maxFiberCount": 20000
+      },
+      "notes": "routes.ts delegates to remix-flat-routes through @react-router/remix-routes-option-adapter; the static side mirrors its hybrid `folder+/` flattening and longest-prefix nesting. Loader data (signin transports, theme, session) stays unknown."
+    },
+    {
+      "id": "sentry",
+      "repository": "https://github.com/getsentry/sentry",
+      "revision": "a7b4a8a2a78a666418e527d812e81528147789da",
+      "description": "Sentry frontend login page (React 19 SPA on react-router data routers, rspack dev server in UI-only mode proxying the API to sentry.io)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.30.2 install --frozen-lockfile",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.30.2 exec rspack serve",
+      "env": {
+        "SENTRY_UI_DEV_ONLY": "1",
+        "SENTRY_WEBPACK_PROXY_PORT": "7999"
+      },
+      "url": "https://localhost:7999/auth/login/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "capturedGlobals": ["__initialData"],
+      "static": {
+        "rootDirectory": ".",
+        "entry": "static/app/main.tsx",
+        "rootComponent": "Main",
+        "route": "/auth/login/",
+        "externalPackageAllowList": [
+          "sentry-docs",
+          "@sentry-internal/*",
+          "@react-aria/*",
+          "react-aria",
+          "@react-stately/*",
+          "framer-motion",
+          "motion-dom",
+          "motion-utils",
+          "nuqs",
+          "@tanstack/react-query",
+          "@tanstack/react-query-persist-client",
+          "@tanstack/query-core",
+          "@tanstack/query-persist-client-core"
+        ],
+        "bootstrap": [
+          "static/gsApp/registerOverrides.tsx#registerGsAppOverrides",
+          "static/app/bootstrap/commonInitialization.tsx#commonInitialization(__initialData)"
+        ],
+        "maxFiberCount": 20000
+      },
+      "notes": "index.tsx boots asynchronously: in SaaS mode it registers the getsentry overrides, loads the /api/client-config/ payload (window.__initialData, captured from the live page) into ConfigStore and then calls renderDom(Main), so the static side runs the same bootstrap before rendering the exported Main component. UI-only mode serves the SPA over a self-signed https certificate; the login page fetches from sentry.io and logs 403s for unauthenticated endpoints."
     }
   ]
 }

@@ -9,6 +9,7 @@ import { compareStaticToRuntime } from "../harness/compare-render.js";
 import { rankWildcards } from "../harness/format-report.js";
 import { countSnapshotFibers, formatRuntimeSnapshot, readSnapshot } from "../harness/snapshot.js";
 import { formatPattern, getRenderPattern } from "../harness/static-pattern.js";
+import { readObservationsJson } from "../observations.js";
 import type { Diagnostic, StaticRenderResult } from "../types.js";
 import { DevServer, runCommand } from "./dev-server.js";
 import type { CorpusEntry, CorpusResult, CorpusRuntimeSummary } from "./manifest.js";
@@ -176,7 +177,43 @@ const readSavedCapture = (
     commits: parsed.commits,
     pageErrors: parsed.pageErrors,
     title: parsed.title,
+    observations: readObservationsJson(parsed.observations ?? { globals: parsed.globals }),
   };
+};
+
+const captureLive = async (
+  entry: CorpusEntry,
+  cloneDirectory: string,
+  options: RunEntryOptions,
+  logPath: string,
+  log: (message: string) => void,
+): Promise<BrowserCaptureResult> => {
+  if (options.skipInstall) {
+    await startServices(entry, cloneDirectory, options.scriptsDirectory, logPath, log);
+  } else {
+    await ensureInstalled(entry, cloneDirectory, options.scriptsDirectory, logPath, log);
+  }
+  log(`dev server: ${entry.dev}`);
+  const server = new DevServer({
+    command: entry.dev,
+    cwd: path.join(cloneDirectory, entry.workingDirectory),
+    env: getCommandEnv(entry, options.scriptsDirectory),
+    logPath,
+  });
+  server.start();
+  try {
+    await server.waitUntilReady(entry.url, entry.readyTimeoutMs ?? DEFAULT_READY_TIMEOUT_MS);
+    log(`capture ${entry.url}`);
+    return await options.capturer.capture({
+      url: entry.url,
+      waitForSelector: entry.waitForSelector,
+      settleMs: entry.settleMs ?? DEFAULT_SETTLE_MS,
+      timeoutMs: CAPTURE_TIMEOUT_MS,
+      globals: entry.capturedGlobals,
+    });
+  } finally {
+    await server.stop();
+  }
 };
 
 const compareEntry = (
@@ -259,64 +296,51 @@ export const runCorpusEntry = async (
   let staticResult: StaticRenderResult | null = null;
   let capture: BrowserCaptureResult | null = null;
   let cloneDirectory: string | null = null;
-  try {
-    cloneDirectory = ensureClone(entry, options.corpusDirectory, log);
-    const workingDirectory = path.join(cloneDirectory, entry.workingDirectory);
-
+  // The runtime is captured first so what the page fetched (bootstrap payloads,
+  // query caches) can be handed to the static render as observed inputs.
+  const renderStatic = async (
+    directory: string,
+    runtime: BrowserCaptureResult | null,
+  ): Promise<StaticRenderResult> => {
     log("static render");
-    staticResult = await renderFramework(entry, cloneDirectory);
+    staticResult = await renderFramework(entry, directory, runtime?.observations);
     result.static = {
       stats: staticResult.stats,
       diagnostics: summarizeDiagnostics(staticResult.diagnostics),
     };
+    return staticResult;
+  };
+  try {
+    cloneDirectory = ensureClone(entry, options.corpusDirectory, log);
     if (options.staticOnly) {
       const saved = readSavedCapture(outputDirectory, entry);
       if (!saved) {
+        await renderStatic(cloneDirectory, null);
         result.note = "static only";
         return result;
       }
       log(`replaying capture from ${saved.snapshot.capturedAt}`);
-      compareEntry(entry, staticResult, saved, result);
+      compareEntry(entry, await renderStatic(cloneDirectory, saved), saved, result);
       result.note = [result.note, `runtime replayed from ${saved.snapshot.capturedAt}`]
         .filter((part) => part !== null)
         .join("; ");
       return result;
     }
-
-    if (options.skipInstall) {
-      await startServices(entry, cloneDirectory, options.scriptsDirectory, logPath, log);
-    } else {
-      await ensureInstalled(entry, cloneDirectory, options.scriptsDirectory, logPath, log);
-    }
-
-    log(`dev server: ${entry.dev}`);
-    const server = new DevServer({
-      command: entry.dev,
-      cwd: workingDirectory,
-      env: getCommandEnv(entry, options.scriptsDirectory),
-      logPath,
-    });
-    server.start();
     try {
-      await server.waitUntilReady(entry.url, entry.readyTimeoutMs ?? DEFAULT_READY_TIMEOUT_MS);
-      log(`capture ${entry.url}`);
-      capture = await options.capturer.capture({
-        url: entry.url,
-        waitForSelector: entry.waitForSelector,
-        settleMs: entry.settleMs ?? DEFAULT_SETTLE_MS,
-        timeoutMs: CAPTURE_TIMEOUT_MS,
-      });
-    } finally {
-      await server.stop();
+      capture = await captureLive(entry, cloneDirectory, options, logPath, log);
+    } catch (error) {
+      await renderStatic(cloneDirectory, null);
+      throw error;
     }
     if (capture.commits === 0) {
+      await renderStatic(cloneDirectory, null);
       throw new Error(
         [`no React commits observed at ${entry.url} ("${capture.title}")`, ...capture.pageErrors]
           .join("; ")
           .slice(0, 1_000),
       );
     }
-    compareEntry(entry, staticResult, capture, result);
+    compareEntry(entry, await renderStatic(cloneDirectory, capture), capture, result);
     return result;
   } catch (error) {
     result.failure = describeError(error);

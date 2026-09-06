@@ -36,6 +36,26 @@ export interface WildcardAbsorption {
   heads: string[];
 }
 
+/** An opaque subtree whose passed children could not be located in the runtime output. */
+export interface UnmatchedSlot {
+  path: string;
+  reason: string;
+  head: string;
+  skippedFibers: number;
+  /** Where the most promising slot candidate stopped matching. */
+  divergence: ComparisonDivergence | null;
+}
+
+/** A branch matched by an alternative other than the one the evaluator expected. */
+export interface BranchDeviation {
+  path: string;
+  reason: string;
+  preferredIndex: number;
+  chosenIndex: number;
+  /** Where the preferred alternative stopped matching. */
+  divergence: ComparisonDivergence | null;
+}
+
 export interface ComparisonTally {
   matchedFibers: number;
   matchedText: number;
@@ -45,9 +65,13 @@ export interface ComparisonTally {
   slotsMatched: number;
   /** Opaque subtrees whose passed children could not be located; the whole subtree was skipped. */
   slotsUnmatched: number;
+  /** Opaque subtrees matched by structure whose runtime component name disagreed with the static one. */
+  opaqueRenamed: number;
+  unmatchedSlots: UnmatchedSlot[];
   wildcardAbsorbedFibers: number;
   wildcards: WildcardAbsorption[];
   branchesResolved: number;
+  branchDeviations: BranchDeviation[];
   repeatIterations: number;
 }
 
@@ -76,9 +100,12 @@ const EMPTY_TALLY: ComparisonTally = {
   opaqueSkippedFibers: 0,
   slotsMatched: 0,
   slotsUnmatched: 0,
+  opaqueRenamed: 0,
+  unmatchedSlots: [],
   wildcardAbsorbedFibers: 0,
   wildcards: [],
   branchesResolved: 0,
+  branchDeviations: [],
   repeatIterations: 0,
 };
 
@@ -89,13 +116,30 @@ const addTally = (left: ComparisonTally, right: Partial<ComparisonTally>): Compa
   opaqueSkippedFibers: left.opaqueSkippedFibers + (right.opaqueSkippedFibers ?? 0),
   slotsMatched: left.slotsMatched + (right.slotsMatched ?? 0),
   slotsUnmatched: left.slotsUnmatched + (right.slotsUnmatched ?? 0),
+  opaqueRenamed: left.opaqueRenamed + (right.opaqueRenamed ?? 0),
+  unmatchedSlots: right.unmatchedSlots
+    ? [...right.unmatchedSlots, ...left.unmatchedSlots]
+    : left.unmatchedSlots,
   wildcardAbsorbedFibers: left.wildcardAbsorbedFibers + (right.wildcardAbsorbedFibers ?? 0),
   wildcards: right.wildcards ? [...right.wildcards, ...left.wildcards] : left.wildcards,
   branchesResolved: left.branchesResolved + (right.branchesResolved ?? 0),
+  branchDeviations: right.branchDeviations
+    ? [...right.branchDeviations, ...left.branchDeviations]
+    : left.branchDeviations,
   repeatIterations: left.repeatIterations + (right.repeatIterations ?? 0),
 });
 
 type Continuation = (runtimeIndex: number) => ComparisonTally | null;
+
+interface FurthestFailure {
+  position: number;
+  divergence: ComparisonDivergence;
+}
+
+interface SlotMatch {
+  tally: ComparisonTally;
+  consumedFibers: number;
+}
 
 class BudgetExceeded extends Error {}
 
@@ -144,6 +188,8 @@ const tagsCompatible = (expected: string, actual: string): boolean =>
 // Pre-order positions over the runtime tree; a failure is reported at the
 // furthest position any alternative reached, as parsers report their
 // furthest-failure, so backtracked branches do not hide the real divergence.
+// Isolated attempts (slot searches, preferred branches) get their own frame so
+// their failures can be inspected without polluting the enclosing frame.
 interface RuntimePositions {
   start: Map<RuntimeFiberSnapshot, number>;
   end: Map<RuntimeFiberSnapshot[], number>;
@@ -165,8 +211,7 @@ const indexRuntime = (roots: RuntimeFiberSnapshot[]): RuntimePositions => {
 
 class Matcher {
   private steps = 0;
-  private slotSearchDepth = 0;
-  private furthest: { position: number; divergence: ComparisonDivergence } | null = null;
+  private readonly furthest: (FurthestFailure | null)[] = [null];
   private positions: RuntimePositions = { start: new Map(), end: new Map() };
   private readonly compareKeys: boolean;
   private readonly compareTags: boolean;
@@ -185,7 +230,7 @@ class Matcher {
   }
 
   get divergence(): ComparisonDivergence | null {
-    return this.furthest?.divergence ?? null;
+    return this.furthest[this.furthest.length - 1]?.divergence ?? null;
   }
 
   indexRuntime(roots: RuntimeFiberSnapshot[]): void {
@@ -198,12 +243,13 @@ class Matcher {
     index: number,
     expected: PatternNode | null,
   ): void {
-    if (this.slotSearchDepth > 0) return;
     const actual = runtime[index];
     const position =
       (actual ? this.positions.start.get(actual) : this.positions.end.get(runtime)) ?? 0;
-    if (this.furthest && this.furthest.position >= position) return;
-    this.furthest = {
+    const level = this.furthest.length - 1;
+    const current = this.furthest[level];
+    if (current && current.position >= position) return;
+    this.furthest[level] = {
       position,
       divergence: {
         path: `${path.join(" > ")}[${index}]`,
@@ -216,6 +262,23 @@ class Matcher {
   private tick(): void {
     this.steps++;
     if (this.steps > this.maxSteps) throw new BudgetExceeded();
+  }
+
+  private attempt<Result>(run: () => Result): { result: Result; failure: FurthestFailure | null } {
+    this.furthest.push(null);
+    try {
+      const result = run();
+      return { result, failure: this.furthest[this.furthest.length - 1] };
+    } finally {
+      this.furthest.pop();
+    }
+  }
+
+  private recordFurthest(failure: FurthestFailure | null): void {
+    if (!failure) return;
+    const level = this.furthest.length - 1;
+    const current = this.furthest[level];
+    if (!current || failure.position > current.position) this.furthest[level] = failure;
   }
 
   matchList(
@@ -268,31 +331,43 @@ class Matcher {
         return rest ? addTally(rest, { matchedText: 1 }) : null;
       }
       case "opaque": {
-        if (actual && this.opaqueHeadMatches(pattern, actual)) {
-          const rest = continuation(runtimeIndex + 1);
-          if (rest) {
-            const slot =
-              pattern.passedChildren.length > 0
-                ? this.matchSlot(pattern, actual, [...path, describePatternNode(pattern)])
-                : null;
-            if (slot) {
-              return addTally(addTally(rest, slot.tally), {
-                opaqueSubtrees: 1,
-                slotsMatched: 1,
-                opaqueSkippedFibers: countSnapshotFibers(actual) - slot.consumedFibers,
-              });
-            }
-            return addTally(rest, {
-              opaqueSubtrees: 1,
-              slotsUnmatched: pattern.passedChildren.length > 0 ? 1 : 0,
-              opaqueSkippedFibers: countSnapshotFibers(actual),
-            });
-          }
+        if (!actual || !this.opaqueHeadMatches(pattern, actual)) {
+          this.recordFailure(path, runtime, runtimeIndex, pattern);
+          return null;
         }
-        const skipped = continuation(runtimeIndex);
-        if (skipped) return addTally(skipped, { opaqueSubtrees: 1 });
-        this.recordFailure(path, runtime, runtimeIndex, pattern);
-        return null;
+        const rest = continuation(runtimeIndex + 1);
+        if (!rest) return null;
+        const head: Partial<ComparisonTally> = {
+          opaqueSubtrees: 1,
+          opaqueRenamed: this.opaqueNameAgrees(pattern, actual) ? 0 : 1,
+        };
+        const skippedFibers = countSnapshotFibers(actual);
+        if (pattern.passedChildren.length === 0) {
+          return addTally(rest, { ...head, opaqueSkippedFibers: skippedFibers });
+        }
+        const slotPath = [...path, describePatternNode(pattern)];
+        const slot = this.matchSlot(pattern, actual, slotPath);
+        if (slot.match) {
+          return addTally(addTally(rest, slot.match.tally), {
+            ...head,
+            slotsMatched: 1,
+            opaqueSkippedFibers: skippedFibers - slot.match.consumedFibers,
+          });
+        }
+        return addTally(rest, {
+          ...head,
+          slotsUnmatched: 1,
+          opaqueSkippedFibers: skippedFibers,
+          unmatchedSlots: [
+            {
+              path: slotPath.join(" > "),
+              reason: pattern.reason,
+              head: describeRuntimeFiber(actual),
+              skippedFibers,
+              divergence: slot.divergence,
+            },
+          ],
+        });
       }
       case "wildcard": {
         for (let absorbed = 0; runtimeIndex + absorbed <= runtime.length; absorbed++) {
@@ -326,18 +401,46 @@ class Matcher {
           order.splice(order.indexOf(pattern.preferredIndex), 1);
           order.unshift(pattern.preferredIndex);
         }
+        let preferredDivergence: ComparisonDivergence | null = null;
+        const resolve = (result: ComparisonTally, chosenIndex: number): ComparisonTally =>
+          addTally(result, {
+            branchesResolved: 1,
+            branchDeviations:
+              pattern.preferredIndex !== null && chosenIndex !== pattern.preferredIndex
+                ? [
+                    {
+                      path: path.join(" > "),
+                      reason: pattern.reason,
+                      preferredIndex: pattern.preferredIndex,
+                      chosenIndex,
+                      divergence: preferredDivergence,
+                    },
+                  ]
+                : [],
+          });
+        // Alternatives are tried in preference order, but one that explains the
+        // runtime without leaning on wildcards beats an earlier one that does.
+        let best: { tally: ComparisonTally; index: number } | null = null;
         for (const alternativeIndex of order) {
-          const result = this.matchList(
-            pattern.alternatives[alternativeIndex],
-            0,
-            runtime,
-            runtimeIndex,
-            path,
-            continuation,
-          );
-          if (result) return addTally(result, { branchesResolved: 1 });
+          const alternative = pattern.alternatives[alternativeIndex];
+          const run = (): ComparisonTally | null =>
+            this.matchList(alternative, 0, runtime, runtimeIndex, path, continuation);
+          let result: ComparisonTally | null;
+          if (alternativeIndex === pattern.preferredIndex) {
+            const attempt = this.attempt(run);
+            this.recordFurthest(attempt.failure);
+            result = attempt.result;
+            if (!result) preferredDivergence = attempt.failure?.divergence ?? null;
+          } else {
+            result = run();
+          }
+          if (!result) continue;
+          if (result.wildcardAbsorbedFibers === 0) return resolve(result, alternativeIndex);
+          if (!best || result.wildcardAbsorbedFibers < best.tally.wildcardAbsorbedFibers) {
+            best = { tally: result, index: alternativeIndex };
+          }
         }
-        return null;
+        return best ? resolve(best.tally, best.index) : null;
       }
       case "repeat": {
         const iterate = (start: number): ComparisonTally | null => {
@@ -368,67 +471,71 @@ class Matcher {
     return true;
   }
 
+  // An opaque component's runtime identity is whatever non-host fiber sits in its
+  // place; name agreement is tracked separately as it is only a hint.
   private opaqueHeadMatches(pattern: PatternOpaque, actual: RuntimeFiberSnapshot): boolean {
-    if (actual.tag === "HostText") return false;
-    if (
+    if (isHostTag(actual.tag)) return false;
+    return !(
       this.compareKeys &&
       pattern.key !== null &&
       actual.key !== null &&
       pattern.key !== actual.key
-    )
-      return false;
+    );
+  }
+
+  private opaqueNameAgrees(pattern: PatternOpaque, actual: RuntimeFiberSnapshot): boolean {
     if (actual.name === null || isBundlerPlaceholderName(actual.name)) return true;
-    if (pattern.runtimeNames === null) return !isHostTag(actual.tag);
-    return pattern.runtimeNames.includes(actual.name);
+    return pattern.runtimeNames === null || pattern.runtimeNames.includes(actual.name);
   }
 
   // Searches the library's runtime subtree for the place where it rendered the
   // children the application passed in. Libraries may render siblings around the
-  // slot, so the passed children only need to appear as a contiguous run.
+  // slot, so the passed children only need to appear as a contiguous run. When
+  // no candidate fits, the one that got furthest past its start explains why.
   private matchSlot(
     pattern: PatternOpaque,
     actual: RuntimeFiberSnapshot,
     path: string[],
-  ): { tally: ComparisonTally; consumedFibers: number } | null {
+  ): { match: SlotMatch | null; divergence: ComparisonDivergence | null } {
     const queue: { fiber: RuntimeFiberSnapshot; depth: number }[] = [{ fiber: actual, depth: 0 }];
-    this.slotSearchDepth++;
-    try {
-      return this.searchSlot(pattern, queue, path);
-    } finally {
-      this.slotSearchDepth--;
-    }
-  }
-
-  private searchSlot(
-    pattern: PatternOpaque,
-    queue: { fiber: RuntimeFiberSnapshot; depth: number }[],
-    path: string[],
-  ): { tally: ComparisonTally; consumedFibers: number } | null {
+    let best: { progress: number; divergence: ComparisonDivergence } | null = null;
     for (let queueIndex = 0; queueIndex < queue.length; queueIndex++) {
       const { fiber, depth } = queue[queueIndex];
       for (let start = 0; start < fiber.children.length; start++) {
-        let consumedFibers = 0;
-        const tally = this.matchList(
-          pattern.passedChildren,
-          0,
-          fiber.children,
-          start,
-          path,
-          (nextIndex) => {
-            if (nextIndex === start) return null;
-            for (let index = start; index < nextIndex; index++) {
-              consumedFibers += countSnapshotFibers(fiber.children[index]);
-            }
-            return EMPTY_TALLY;
-          },
+        const { result, failure } = this.attempt(() =>
+          this.matchSlotAt(pattern, fiber.children, start, path),
         );
-        if (tally) return { tally, consumedFibers };
+        if (result) return { match: result, divergence: null };
+        const startPosition = this.positions.start.get(fiber.children[start]) ?? 0;
+        if (failure && (!best || failure.position - startPosition > best.progress)) {
+          best = { progress: failure.position - startPosition, divergence: failure.divergence };
+        }
       }
       if (depth < MAX_SLOT_SEARCH_DEPTH) {
         for (const child of fiber.children) queue.push({ fiber: child, depth: depth + 1 });
       }
     }
-    return null;
+    // Passed children that evaluate to nothing (all-empty branches) leave no
+    // runtime trace to find; they match against an empty sibling list.
+    const empty = this.attempt(() => this.matchSlotAt(pattern, [], 0, path));
+    return { match: empty.result, divergence: best?.divergence ?? null };
+  }
+
+  private matchSlotAt(
+    pattern: PatternOpaque,
+    siblings: RuntimeFiberSnapshot[],
+    start: number,
+    path: string[],
+  ): SlotMatch | null {
+    let consumedFibers = 0;
+    const tally = this.matchList(pattern.passedChildren, 0, siblings, start, path, (nextIndex) => {
+      if (nextIndex === start && siblings.length > 0) return null;
+      for (let index = start; index < nextIndex; index++) {
+        consumedFibers += countSnapshotFibers(siblings[index]);
+      }
+      return EMPTY_TALLY;
+    });
+    return tally ? { tally, consumedFibers } : null;
   }
 
   private matchChildren(

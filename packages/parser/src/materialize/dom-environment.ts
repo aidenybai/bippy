@@ -9,7 +9,9 @@ const WINDOW_GLOBALS = ["window", "self", "document", "navigator", "location", "
 export const settlePreloadLinks = (nodes: NodeList): void => {
   nodes.forEach((node) => {
     if (!(node instanceof HTMLLinkElement) || node.rel !== "preload") return;
-    queueMicrotask(() => node.dispatchEvent(new Event("error")));
+    const view = node.ownerDocument.defaultView;
+    if (!view) return;
+    queueMicrotask(() => node.dispatchEvent(new view.Event("error")));
   });
 };
 

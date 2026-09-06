@@ -1,6 +1,8 @@
+import { getOpaqueCaptureDescription } from "../observations.js";
 import type {
+  CapturedValue,
+  JsonValue,
   SourceLocation,
-  StaticBranchValue,
   StaticElementType,
   StaticListValue,
   StaticObjectEntry,
@@ -13,7 +15,7 @@ import type {
   StaticValue,
   UnknownPrimitiveType,
 } from "../types.js";
-import { getExternalMember } from "../react/react-api.js";
+import { getExternalMember, getReactApiTypeof } from "../react/react-api.js";
 
 export const isKnownString = (
   value: StaticValue,
@@ -54,6 +56,86 @@ export const objectValue = (entries: StaticObjectEntry[] = []): StaticObjectValu
 export const objectFromRecord = (record: Record<string, StaticValue>): StaticObjectValue =>
   objectValue(Object.entries(record).map(([key, value]) => ({ kind: "property", key, value })));
 
+/**
+ * A value the served page defines (e.g. on `window`). Only the configured keys
+ * are known; objects stay open so reads of other keys are unknown rather than
+ * `undefined`.
+ */
+export const partialJsonValue = (json: JsonValue, name: string): StaticValue => {
+  if (json === null || typeof json !== "object") return primitiveValue(json);
+  if (Array.isArray(json)) {
+    return listValue(json.map((item, index) => partialJsonValue(item, `${name}[${index}]`)));
+  }
+  return objectValue([
+    { kind: "spread", value: unknownValue(`${name} beyond the configured keys`) },
+    ...Object.entries(json).map(([key, item]): StaticObjectEntry => ({
+      kind: "property",
+      key,
+      value: partialJsonValue(item, `${name}.${key}`),
+    })),
+  ]);
+};
+
+/** A value serialized whole from a running page: every key is known, and nodes JSON could not carry stay unknown. */
+export const capturedValue = (captured: CapturedValue, name: string): StaticValue => {
+  if (captured === null || typeof captured !== "object") return primitiveValue(captured);
+  if (Array.isArray(captured)) {
+    return listValue(captured.map((item, index) => capturedValue(item, `${name}[${index}]`)));
+  }
+  const opaque = getOpaqueCaptureDescription(captured);
+  if (opaque !== null) return unknownValue(`${name}: ${opaque} recorded from the page`);
+  return objectValue(
+    Object.entries(captured).map(([key, item]): StaticObjectEntry => ({
+      kind: "property",
+      key,
+      value: capturedValue(item, `${name}.${key}`),
+    })),
+  );
+};
+
+/**
+ * What `JSON.stringify` would produce for a value every part of which is known;
+ * `undefined` when some part is not (or when the value itself serializes to nothing).
+ */
+export const toJsonValue = (value: StaticValue): JsonValue | undefined => {
+  switch (value.kind) {
+    case "primitive":
+      if (typeof value.value === "number") {
+        return Number.isFinite(value.value) ? value.value : null;
+      }
+      return value.value === undefined || typeof value.value === "bigint" ? undefined : value.value;
+    case "list": {
+      if (!hasDefiniteItems(value)) return undefined;
+      const items: JsonValue[] = [];
+      for (const item of value.items) {
+        if (item.kind === "primitive" && item.value === undefined) {
+          items.push(null);
+          continue;
+        }
+        const json = toJsonValue(item);
+        if (json === undefined) return undefined;
+        items.push(json);
+      }
+      return items;
+    }
+    case "object": {
+      const keys = getKnownObjectKeys(value);
+      if (keys === null) return undefined;
+      const record: Record<string, JsonValue> = {};
+      for (const key of keys) {
+        const property = getObjectProperty(value, key);
+        if (property.kind === "primitive" && property.value === undefined) continue;
+        const json = toJsonValue(property);
+        if (json === undefined) return undefined;
+        record[key] = json;
+      }
+      return record;
+    }
+    default:
+      return undefined;
+  }
+};
+
 export const getObjectProperty = (object: StaticObjectValue, key: string): StaticValue => {
   for (let index = object.entries.length - 1; index >= 0; index--) {
     const entry = object.entries[index];
@@ -72,10 +154,14 @@ export const getObjectProperty = (object: StaticObjectValue, key: string): Stati
     if (spread.kind === "external" && spread.importedName === "*" && !spread.derived)
       return getExternalMember(spread, key);
     if (spread.kind === "branch") {
+      let fromEarlier: StaticValue | null = null;
       return branchValue(
-        spread.alternatives.map((alternative) =>
-          getObjectProperty(objectValue([{ kind: "spread", value: alternative }]), key),
-        ),
+        spread.alternatives.map((alternative) => {
+          const own = getObjectProperty(objectValue([{ kind: "spread", value: alternative }]), key);
+          if (own.kind !== "primitive" || own.value !== undefined) return own;
+          fromEarlier ??= getObjectProperty(objectValue(object.entries.slice(0, index)), key);
+          return fromEarlier;
+        }),
         spread.reason,
         spread.location,
         spread.preferredIndex,
@@ -118,6 +204,13 @@ export const omitObjectKeys = (object: StaticObjectValue, omitted: Set<string>):
       continue;
     }
     if (entry.value.kind === "primitive") continue;
+    if (entry.value.kind === "branch") {
+      const rest = mapValue(entry.value, (alternative) =>
+        omitObjectKeys(objectValue([{ kind: "spread", value: alternative }]), omitted),
+      );
+      entries.push({ kind: "spread", value: rest });
+      continue;
+    }
     return unknownValue(`rest of ${describeValue(entry.value)}`);
   }
   return objectValue(entries);
@@ -153,6 +246,34 @@ const REFERENCE_KINDS = new Set<StaticValue["kind"]>([
   "namespace",
 ]);
 
+const SYMBOL_ELEMENT_KINDS = new Set<StaticElementType["kind"]>([
+  "fragment",
+  "strict-mode",
+  "profiler",
+  "suspense",
+  "suspense-list",
+  "activity",
+  "view-transition",
+]);
+
+/** The runtime `typeof` a value is known to have, when identity can be decided from it. */
+const getIdentityClass = (value: StaticValue): "scalar" | "symbol" | "reference" | null => {
+  switch (value.kind) {
+    case "primitive":
+      return "scalar";
+    case "symbol":
+      return "symbol";
+    case "react-api":
+      return getReactApiTypeof(value.api) === "symbol" ? "symbol" : "reference";
+    case "component-reference":
+      if (SYMBOL_ELEMENT_KINDS.has(value.type.kind)) return "symbol";
+      if (value.type.kind === "host") return "scalar";
+      return value.type.kind === "external" || value.type.kind === "unknown" ? null : "reference";
+    default:
+      return REFERENCE_KINDS.has(value.kind) ? "reference" : null;
+  }
+};
+
 /**
  * `===` between two values, or null when analysis cannot decide. Import
  * bindings of the same external export are the same object; a primitive can
@@ -162,19 +283,23 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
   if (left.kind === "primitive" && right.kind === "primitive") return left.value === right.value;
   if (left === right) return true;
   if (left.kind === "symbol" && right.kind === "symbol") return left.key === right.key;
+  if (left.kind === "react-api" && right.kind === "react-api") return left.api === right.api;
+  const hostTagName = (value: StaticValue): string | null =>
+    value.kind === "component-reference" && value.type.kind === "host" ? value.type.tagName : null;
+  if (hostTagName(left) !== null && hostTagName(right) !== null)
+    return hostTagName(left) === hostTagName(right);
+  if (hostTagName(left) !== null && right.kind === "primitive")
+    return hostTagName(left) === right.value;
+  if (hostTagName(right) !== null && left.kind === "primitive")
+    return hostTagName(right) === left.value;
   if (left.kind === "external" && right.kind === "external" && !left.derived && !right.derived) {
     return left.packageName === right.packageName && left.importedName === right.importedName
       ? true
       : null;
   }
-  const isScalar = (value: StaticValue): boolean =>
-    value.kind === "primitive" || value.kind === "symbol";
-  if (
-    (isScalar(left) && REFERENCE_KINDS.has(right.kind)) ||
-    (isScalar(right) && REFERENCE_KINDS.has(left.kind))
-  ) {
-    return false;
-  }
+  const leftClass = getIdentityClass(left);
+  const rightClass = getIdentityClass(right);
+  if (leftClass && rightClass && leftClass !== rightClass) return false;
   return null;
 };
 
@@ -238,6 +363,12 @@ export const areValuesEquivalent = (left: StaticValue, right: StaticValue, depth
       return right.kind === "function" && left.node === right.node;
     case "symbol":
       return right.kind === "symbol" && left.key === right.key;
+    case "external":
+      return (
+        right.kind === "external" &&
+        left.packageName === right.packageName &&
+        left.importedName === right.importedName
+      );
     default:
       return false;
   }
@@ -267,28 +398,33 @@ export const branchValue = (
 ): StaticValue => {
   const flattened: StaticValue[] = [];
   let resolvedPreferred = 0;
+  const add = (value: StaticValue): number => {
+    const existing = flattened.findIndex((candidate) => isSameValue(candidate, value));
+    if (existing !== -1) return existing;
+    flattened.push(value);
+    return flattened.length - 1;
+  };
   alternatives.forEach((alternative, index) => {
-    const startIndex = flattened.length;
     if (alternative.kind === "branch") {
-      for (const inner of alternative.alternatives) {
-        if (!flattened.some((existing) => isSameValue(existing, inner))) flattened.push(inner);
-      }
-    } else if (!flattened.some((existing) => isSameValue(existing, alternative))) {
-      flattened.push(alternative);
-    }
-    if (index === preferredIndex) {
-      resolvedPreferred = Math.min(startIndex, flattened.length - 1);
+      alternative.alternatives.forEach((inner, innerIndex) => {
+        const position = add(inner);
+        if (index === preferredIndex && innerIndex === alternative.preferredIndex) {
+          resolvedPreferred = position;
+        }
+      });
+    } else {
+      const position = add(alternative);
+      if (index === preferredIndex) resolvedPreferred = position;
     }
   });
   if (flattened.length === 1) return flattened[0];
-  const branch: StaticBranchValue = {
+  return {
     kind: "branch",
     alternatives: flattened,
-    preferredIndex: Math.max(0, resolvedPreferred),
+    preferredIndex: resolvedPreferred,
     reason,
     location,
   };
-  return branch;
 };
 
 export const isRenderableValue = (value: StaticValue): boolean =>
@@ -331,6 +467,22 @@ export const getTruthiness = (value: StaticValue): boolean | null => {
       return true;
   }
 };
+
+/** `Boolean(value)` / `!!value`, keeping a branch's alternatives and preferred side. */
+export const toBooleanValue = (value: StaticValue): StaticValue =>
+  mapValue(value, (alternative) => {
+    const truthiness = getTruthiness(alternative);
+    if (truthiness === null) {
+      return unknownPrimitiveValue("boolean", `Boolean(${describeValue(alternative)})`);
+    }
+    return truthiness ? TRUE_VALUE : FALSE_VALUE;
+  });
+
+/** Truthiness along the alternative analysis prefers, so nested forks pick a consistent side. */
+export const getPreferredTruthiness = (value: StaticValue): boolean | null =>
+  value.kind === "branch"
+    ? getPreferredTruthiness(value.alternatives[value.preferredIndex])
+    : getTruthiness(value);
 
 export const isNullish = (value: StaticValue): boolean | null => {
   if (value.kind === "primitive") return value.value === null || value.value === undefined;
@@ -392,6 +544,61 @@ export const optionalValue = (
   reason: string,
   location: SourceLocation | null = null,
 ): StaticOptionalValue => ({ kind: "optional", value, reason, location });
+
+/**
+ * Items contributed by `...value` inside an array literal (also `concat`,
+ * `flatMap`). A branch over lists stays positional when every alternative has
+ * the same length, becomes one optional item when the alternatives are `[x]`
+ * and `[]`, and otherwise collapses to a repeat over everything it could hold.
+ */
+export const spreadListItems = (
+  value: StaticValue,
+  location: SourceLocation | null,
+): StaticValue[] => {
+  if (value.kind === "list") return value.items;
+  if (value.kind === "repeat") return [value];
+  if (value.kind === "optional") {
+    return spreadListItems(value.value, location).map((item) =>
+      item.kind === "repeat" ? item : optionalValue(item, value.reason, value.location),
+    );
+  }
+  if (value.kind === "branch" && value.alternatives.every(hasDefiniteItems)) {
+    const lists = value.alternatives.filter(hasDefiniteItems);
+    const lengths = new Set(lists.map((list) => list.items.length));
+    if (lengths.size === 1) {
+      return lists[0].items.map((_, index) =>
+        branchValue(
+          lists.map((list) => list.items[index]),
+          value.reason,
+          value.location,
+          value.preferredIndex,
+        ),
+      );
+    }
+    const present = lists.filter((list) => list.items.length > 0);
+    if (present.every((list) => list.items.length === 1)) {
+      const item = branchValue(
+        present.map((list) => list.items[0]),
+        value.reason,
+        value.location,
+        Math.max(0, present.indexOf(lists[value.preferredIndex])),
+      );
+      return [optionalValue(item, value.reason, value.location)];
+    }
+    return [
+      {
+        kind: "repeat",
+        item: branchValue(
+          lists.flatMap((list) => list.items),
+          value.reason,
+          value.location,
+        ),
+        location,
+      },
+    ];
+  }
+  return [{ kind: "repeat", item: unknownValue(`spread of ${describeValue(value)}`), location }];
+};
 
 const MAX_OPTIONAL_CANDIDATES = 8;
 

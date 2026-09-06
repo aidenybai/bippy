@@ -1,16 +1,16 @@
 import { createFunctionComponentDefinition, toElementType } from "../react/element-type.js";
 import { REACT_MEMO_CACHE_SENTINEL_KEY } from "../react/react-api.js";
 import type {
+  ContextDefinition,
   ReactApi,
   SourceLocation,
   StaticElementType,
-  StaticNativeFunctionValue,
   StaticObjectEntry,
   StaticValue,
   StubRenderTools,
 } from "../types.js";
+import { callUncertainCallback } from "./builtin-calls.js";
 import type { EvaluationContext } from "./context.js";
-import { lookupContextValue } from "./context.js";
 import { nextMemoCell, nextStateCell, queueStateUpdate } from "./hooks.js";
 import type { Interpreter } from "./interpreter.js";
 import {
@@ -21,8 +21,10 @@ import {
   getObjectProperty,
   isNullish,
   listValue,
+  mapValue,
   objectFromRecord,
   objectValue,
+  optionalValue,
   primitiveValue,
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
@@ -47,7 +49,7 @@ const stateHook = (
     ]);
   }
   const cell = nextStateCell(frame, name, initial);
-  const setter: StaticNativeFunctionValue = {
+  cell.setter ??= {
     kind: "native-function",
     name: `set ${name}`,
     call: ([action], tools) => {
@@ -58,7 +60,7 @@ const stateHook = (
       cell.isEscaped = true;
     },
   };
-  return listValue([cell.current, setter]);
+  return listValue([cell.current, cell.setter]);
 };
 
 const propsFromValue = (
@@ -111,6 +113,25 @@ const resolveLazyTarget = (
   }
 };
 
+/** What a consumer of `definition` sees when `provided` is what the nearest provider supplies (null without one). */
+export const providedContextValue = (
+  interpreter: Interpreter,
+  definition: ContextDefinition,
+  provided: StaticValue | null,
+  location: SourceLocation | null,
+): StaticValue => {
+  if (provided) return provided;
+  if (!interpreter.assumeOuterProviders) return definition.defaultValue;
+  return branchValue(
+    [
+      definition.defaultValue,
+      unknownValue(`${definition.name} provided outside the analyzed tree`),
+    ],
+    `no provider for ${definition.name}`,
+    location,
+  );
+};
+
 const readContextValue = (
   interpreter: Interpreter,
   contextValue: StaticValue,
@@ -118,15 +139,10 @@ const readContextValue = (
   location: SourceLocation | null,
 ): StaticValue => {
   if (contextValue.kind === "context") {
-    const provided = lookupContextValue(context.contextFrame, contextValue.context);
-    if (provided) return provided;
-    if (!interpreter.assumeOuterProviders) return contextValue.context.defaultValue;
-    return branchValue(
-      [
-        contextValue.context.defaultValue,
-        unknownValue(`${contextValue.context.name} provided outside the analyzed tree`),
-      ],
-      `no provider for ${contextValue.context.name}`,
+    return providedContextValue(
+      interpreter,
+      contextValue.context,
+      context.readContext(contextValue.context),
       location,
     );
   }
@@ -153,7 +169,8 @@ const mapChildren = (
         item.kind === "repeat"
           ? {
               kind: "repeat",
-              item: interpreter.callFunction(
+              item: callUncertainCallback(
+                interpreter,
                 callback,
                 [item.item, unknownPrimitiveValue("number", "index")],
                 context,
@@ -167,7 +184,8 @@ const mapChildren = (
   if (children.kind === "repeat") {
     return {
       kind: "repeat",
-      item: interpreter.callFunction(
+      item: callUncertainCallback(
+        interpreter,
         callback,
         [children.item, unknownPrimitiveValue("number", "index")],
         context,
@@ -177,6 +195,19 @@ const mapChildren = (
   }
   if (children.kind === "element" || children.kind === "primitive") {
     return listValue([interpreter.callFunction(callback, [children, primitiveValue(0)], context)]);
+  }
+  const uncertainContext = { ...context, uncertainDepth: context.uncertainDepth + 1 };
+  if (children.kind === "branch") {
+    return mapValue(children, (alternative) =>
+      mapChildren(interpreter, alternative, callback, uncertainContext),
+    );
+  }
+  if (children.kind === "optional") {
+    return optionalValue(
+      mapChildren(interpreter, children.value, callback, uncertainContext),
+      children.reason,
+      children.location,
+    );
   }
   return {
     kind: "repeat",
@@ -261,7 +292,13 @@ export const evaluateReactApiCall = (
       if (!first) return unknownValue("memo without a component", location);
       const inner = toElementType(first, null);
       const hasCompare = second !== undefined && isNullish(second) !== true;
-      return componentReference({ kind: "memo", inner, hasCompare, displayName: null });
+      return componentReference({
+        kind: "memo",
+        inner,
+        hasCompare,
+        displayName: null,
+        properties: new Map(),
+      });
     }
     case "forwardRef": {
       if (first?.kind !== "function") {
@@ -275,17 +312,24 @@ export const evaluateReactApiCall = (
         kind: "forward-ref",
         component: createFunctionComponentDefinition(first, first.name),
         displayName: null,
+        properties: new Map(),
       });
     }
     case "lazy": {
       if (first?.kind !== "function") {
-        return componentReference({ kind: "lazy", inner: null, displayName: null });
+        return componentReference({
+          kind: "lazy",
+          inner: null,
+          displayName: null,
+          properties: new Map(),
+        });
       }
       const resolved = interpreter.callFunction(first, [], context);
       return componentReference({
         kind: "lazy",
         inner: resolveLazyTarget(interpreter, resolved),
         displayName: null,
+        properties: new Map(),
       });
     }
     case "createContext":
@@ -376,10 +420,9 @@ export const evaluateReactApiCall = (
     case "useDeferredValue":
       return first ?? UNDEFINED_VALUE;
     case "useSyncExternalStore": {
-      const snapshot =
-        second?.kind === "function"
-          ? interpreter.callFunction(second, [], context)
-          : unknownValue("external store snapshot");
+      const snapshot = second
+        ? interpreter.callValue(second, [], context, location)
+        : unknownValue("external store snapshot");
       return branchValue(
         [snapshot, unknownValue("external store snapshot may change")],
         "external store",

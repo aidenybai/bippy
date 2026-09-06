@@ -28,7 +28,14 @@ import type {
   UpdateExpression,
 } from "oxc-parser";
 import type { ModuleGraph } from "../graph/module-graph.js";
+import { getLibraryValue } from "../libraries/index.js";
 import { getSourceLocation } from "../parse/source-location.js";
+import {
+  FUNCTION_OWN_KEYS,
+  REACT_ELEMENT_OWN_KEYS,
+  WRAPPER_OWN_KEYS,
+  getReactElementSymbolKey,
+} from "../react/element-shape.js";
 import { toElementType } from "../react/element-type.js";
 import {
   getExternalMember,
@@ -42,12 +49,16 @@ import type {
   Diagnostic,
   ExternalValueProvider,
   FunctionLikeNode,
+  CapturedValue,
+  JsonValue,
   ModuleRecord,
+  ProjectContext,
   RenderEnvironment,
   ResolvedSymbol,
   Scope,
   SourceLocation,
   StaticClassValue,
+  StaticElementType,
   StaticElementValue,
   StaticFunctionValue,
   StaticObjectEntry,
@@ -55,6 +66,7 @@ import type {
   StaticPrimitive,
   StaticValue,
   TopLevelBinding,
+  UnknownPrimitiveType,
 } from "../types.js";
 import {
   evaluateBuiltinCall,
@@ -63,52 +75,73 @@ import {
   isModeledOpaqueMethodName,
   isPromiseMethodName,
 } from "./builtin-calls.js";
-import { collectClassMembers } from "./class-component.js";
+import { collectClassMembers, constructClassInstance } from "./class-component.js";
+import { markCollectionExternallyMutable } from "./collections.js";
+import { HeapJournal, type MutableHeapValue } from "./heap-journal.js";
+import { createStorageAreas, getStorageAreaName, getStorageLength } from "./web-storage.js";
 import { type CompiledClass, getCompiledClass } from "./compiled-class.js";
-import type { ContextFrame, EvaluationContext } from "./context.js";
-import { lookupContextValue, withScope } from "./context.js";
+import type { CallFrame, ContextReader, EvaluationContext } from "./context.js";
+import { NO_PROVIDERS, withScope } from "./context.js";
 import { decodeJsxEntities } from "./jsx-entities.js";
 import { cleanJsxText } from "./jsx-text.js";
 import { markEscapedSetters } from "./hooks.js";
 import { evaluateLoop } from "./loops.js";
+import { applyNarrowing, narrowTest, withNarrowedBinding } from "./narrowing.js";
 import { evaluateReactApiCall } from "./react-calls.js";
 import { createScope, declareInScope, findOwningScope, lookupScope } from "./scope.js";
 import {
+  areValuesEquivalent,
   branchValue,
   compareIdentity,
   componentReference,
   describeValue,
   FALSE_VALUE,
   falsyCounterpart,
+  getKnownObjectKeys,
   getListItem,
   getListLength,
   getObjectProperty,
+  getPreferredTruthiness,
   getTruthiness,
   isNullish,
   listValue,
   mapValue,
   NULL_VALUE,
+  capturedValue,
   objectValue,
   omitObjectKeys,
+  partialJsonValue,
   primitiveValue,
   TRUE_VALUE,
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
+  spreadListItems,
   unknownValue,
 } from "./values.js";
 
 export interface InterpreterOptions {
   maxCallDepth?: number;
-  maxRecursionPerFunction?: number;
   maxForkDepth?: number;
   maxSteps?: number;
   externalValues?: ExternalValueProvider;
+  /** `window` properties the served page defines; objects are partial (see `partialJsonValue`). */
+  globals?: Record<string, JsonValue>;
+  /** `window` properties recorded whole from a running page (see `capturedValue`). */
+  capturedGlobals?: Record<string, CapturedValue>;
   /** The rendered tree may be mounted under providers that are not part of the analysis, so unprovided contexts are uncertain. */
   assumeOuterProviders?: boolean;
+  /** The analyzed app's React version; decides which `$$typeof` symbol tags elements. */
+  reactVersion?: string | null;
+  project?: ProjectContext;
 }
 
+const UNKNOWN_PROJECT: ProjectContext = {
+  hasDeclaredDependency: () => false,
+  findQuery: () => null,
+  findMutations: () => null,
+};
+
 const DEFAULT_MAX_CALL_DEPTH = 32;
-const DEFAULT_MAX_RECURSION_PER_FUNCTION = 2;
 const DEFAULT_MAX_FORK_DEPTH = 5;
 const DEFAULT_MAX_STEPS = 2_000_000;
 export const STYLED_JSX_SPECIFIER = "styled-jsx/style";
@@ -124,6 +157,25 @@ const OBJECT_PROTOTYPE_METHODS = new Set([
   "valueOf",
 ]);
 
+const PRIMITIVE_PROTOTYPES: Record<UnknownPrimitiveType, object | null> = {
+  string: String.prototype,
+  number: Number.prototype,
+  boolean: Boolean.prototype,
+  any: null,
+};
+
+/** A member read on a value whose prototype chain is fully known: absent names are `undefined`. */
+const prototypeMember = (
+  receiver: StaticValue,
+  prototype: object | null,
+  key: string,
+): StaticValue =>
+  prototype === null || key in prototype
+    ? { kind: "method", receiver, name: key }
+    : UNDEFINED_VALUE;
+
+export type LoopJump = "break" | "continue";
+
 /**
  * Result of evaluating a statement list. `returned` collects the values of every
  * path that returned; `mayComplete` is set when at least one path fell through
@@ -132,13 +184,34 @@ const OBJECT_PROTOTYPE_METHODS = new Set([
 export interface StatementOutcome {
   returned: StaticValue | null;
   mayComplete: boolean;
+  /** Set when some path left the enclosing loop early; labeled jumps are `uncertain`. */
+  jump: LoopJump | "uncertain" | null;
 }
 
-export const COMPLETES: StatementOutcome = { returned: null, mayComplete: true };
+export const COMPLETES: StatementOutcome = { returned: null, mayComplete: true, jump: null };
+
+const jumpOutcome = (jump: LoopJump, label: string | null): StatementOutcome => ({
+  returned: null,
+  mayComplete: false,
+  jump: label === null ? jump : "uncertain",
+});
+
+const mergeJumps = (outcomes: StatementOutcome[]): StatementOutcome["jump"] => {
+  const jumps = outcomes.map((outcome) => outcome.jump).filter((jump) => jump !== null);
+  if (jumps.length === 0) return null;
+  return jumps.every((jump) => jump === jumps[0]) ? jumps[0] : "uncertain";
+};
+
+export interface StatementContinuation {
+  (context: EvaluationContext): StatementOutcome;
+}
+
+const completeBlock: StatementContinuation = () => COMPLETES;
 
 export const returnOutcome = (value: StaticValue): StatementOutcome => ({
   returned: value,
   mayComplete: false,
+  jump: null,
 });
 
 export const outcomeToReturnValue = (
@@ -154,24 +227,64 @@ export const outcomeToReturnValue = (
   );
 };
 
+/**
+ * `preferredOutcome` is the index of the outcome the code is expected to take;
+ * when that path completes without returning, the fall-through (last) outcome
+ * is what it would return.
+ */
 export const mergeOutcomes = (
   outcomes: StatementOutcome[],
   reason: string,
   location: SourceLocation | null,
+  preferredOutcome = 0,
 ): StatementOutcome => {
-  const returnedValues = outcomes.flatMap((outcome) =>
-    outcome.returned ? [outcome.returned] : [],
-  );
+  const returnedValues: StaticValue[] = [];
+  let preferredIndex = 0;
+  const isFallThroughPreferred = !outcomes[preferredOutcome]?.returned;
+  outcomes.forEach((outcome, index) => {
+    if (!outcome.returned) return;
+    if (index === preferredOutcome || (isFallThroughPreferred && index === outcomes.length - 1)) {
+      preferredIndex = returnedValues.length;
+    }
+    returnedValues.push(outcome.returned);
+  });
   return {
-    returned: returnedValues.length > 0 ? branchValue(returnedValues, reason, location) : null,
+    returned:
+      returnedValues.length > 0
+        ? branchValue(returnedValues, reason, location, preferredIndex)
+        : null,
     mayComplete: outcomes.some((outcome) => outcome.mayComplete),
+    jump: mergeJumps(outcomes),
   };
+};
+
+/**
+ * A recursive call whose arguments are equivalent to those of an activation
+ * already on the stack would never bottom out (dynamic values never become
+ * more precise); one that makes progress (walking a tree) is followed until
+ * the call-depth limit.
+ */
+const isNonProgressingRecursion = (
+  callStack: CallFrame[],
+  fn: StaticFunctionValue,
+  args: StaticValue[],
+): boolean =>
+  callStack.some(
+    (frame) =>
+      frame.node === fn.node &&
+      frame.scope === fn.scope &&
+      frame.args.length === args.length &&
+      frame.args.every((argument, index) => areValuesEquivalent(argument, args[index])),
+  );
+
+const markExternallyMutable = (value: StaticValue, reason: string): void => {
+  if (value.kind !== "object" || markCollectionExternallyMutable(value)) return;
+  value.entries.push({ kind: "spread", value: unknownValue(reason) });
 };
 
 export interface CallOptions {
   thisValue?: StaticValue | null;
-  contextFrame?: ContextFrame | null;
-  callStack?: FunctionLikeNode[];
+  callStack?: CallFrame[];
   /** The caller awaits the result (route `lazy`, server components), so an async body is evaluated with `await x` as `x`. */
   awaited?: boolean;
 }
@@ -181,9 +294,15 @@ export class Interpreter {
   readonly diagnostics: Diagnostic[] = [];
   readonly assumeOuterProviders: boolean;
   private readonly maxCallDepth: number;
-  private readonly maxRecursionPerFunction: number;
   private readonly maxForkDepth: number;
   private readonly externalValues: ExternalValueProvider | null;
+  private readonly project: ProjectContext;
+  private readonly windowGlobals = new Map<string, StaticValue>();
+  readonly storageAreas = createStorageAreas();
+  private readonly heapJournals: HeapJournal[] = [];
+  private readonly heapEpochs = new WeakMap<MutableHeapValue, number>();
+  private heapEpoch = 0;
+  private readonly elementSymbolKey: string;
   private remainingSteps: number;
   private readonly moduleScopes = new Map<string, Scope>();
   private readonly moduleValues = new Map<string, Map<string, StaticValue | typeof IN_PROGRESS>>();
@@ -192,12 +311,22 @@ export class Interpreter {
   constructor(graph: ModuleGraph, options: InterpreterOptions = {}) {
     this.graph = graph;
     this.maxCallDepth = options.maxCallDepth ?? DEFAULT_MAX_CALL_DEPTH;
-    this.maxRecursionPerFunction =
-      options.maxRecursionPerFunction ?? DEFAULT_MAX_RECURSION_PER_FUNCTION;
     this.maxForkDepth = options.maxForkDepth ?? DEFAULT_MAX_FORK_DEPTH;
     this.remainingSteps = options.maxSteps ?? DEFAULT_MAX_STEPS;
     this.externalValues = options.externalValues ?? null;
+    this.project = options.project ?? UNKNOWN_PROJECT;
+    for (const [name, json] of Object.entries(options.globals ?? {})) {
+      this.windowGlobals.set(name, partialJsonValue(json, `window.${name}`));
+    }
+    for (const [name, captured] of Object.entries(options.capturedGlobals ?? {})) {
+      this.windowGlobals.set(name, capturedValue(captured, `window.${name}`));
+    }
+    this.elementSymbolKey = getReactElementSymbolKey(options.reactVersion ?? null);
     this.assumeOuterProviders = options.assumeOuterProviders ?? false;
+  }
+
+  getWindowGlobal(name: string): StaticValue {
+    return this.windowGlobals.get(name) ?? unknownValue(`window.${name}`);
   }
 
   report(
@@ -218,14 +347,14 @@ export class Interpreter {
 
   createModuleContext(
     module: ModuleRecord,
-    contextFrame: ContextFrame | null = null,
+    readContext: ContextReader = NO_PROVIDERS,
     environment: RenderEnvironment | null = null,
   ): EvaluationContext {
     return {
       module,
       scope: this.getModuleScope(module),
       thisValue: module.isCommonJs ? objectValue() : UNDEFINED_VALUE,
-      contextFrame,
+      readContext,
       callStack: [],
       uncertainDepth: 0,
       forkDepth: 0,
@@ -288,6 +417,9 @@ export class Interpreter {
     const value = this.evaluateTopLevelBindingValue(module, binding, context);
     values.set(name, value);
     const result = this.applyMemberAssignments(module, name, value, context);
+    if (binding.kind === "variable" && module.deferredMutations.has(name)) {
+      markExternallyMutable(result, `"${name}" is mutated outside the rendered code`);
+    }
     values.set(name, result);
     return result;
   }
@@ -317,10 +449,10 @@ export class Interpreter {
           const api = resolveReactApi(symbol.packageName, symbol.imported.name, symbol.specifier);
           if (api) return { kind: "react-api", api };
         }
-        if (this.externalValues) {
-          const provided = this.externalValues(symbol.specifier, importedName);
-          if (provided) return provided;
-        }
+        const provided =
+          this.externalValues?.(symbol.specifier, importedName) ??
+          getLibraryValue(symbol.specifier, importedName, this.project);
+        if (provided) return provided;
         if (symbol.imported.kind === "namespace" || symbol.imported.kind === "default") {
           const api = resolveReactApi(symbol.packageName, "*");
           if (api) return { kind: "react-api", api };
@@ -389,11 +521,13 @@ export class Interpreter {
   ): StaticValue {
     switch (target.kind) {
       case "object":
+        this.recordHeapMutation(target);
         target.entries.push({ kind: "property", key: propertyName, value });
         return target;
       case "list": {
         const index = Number(propertyName);
         if (Number.isInteger(index) && index >= 0 && index < target.items.length) {
+          this.recordHeapMutation(target);
           target.items[index] = value;
         }
         return target;
@@ -401,6 +535,12 @@ export class Interpreter {
       case "function":
       case "class":
         target.properties.set(propertyName, value);
+        return target;
+      case "regexp":
+        if (propertyName === "lastIndex") {
+          target.lastIndex =
+            value.kind === "primitive" && typeof value.value === "number" ? value.value : 0;
+        }
         return target;
       case "proxy": {
         const trap = getObjectProperty(target.handler, "set");
@@ -426,16 +566,19 @@ export class Interpreter {
         }
         return target;
       case "component-reference": {
-        if (
-          propertyName !== "displayName" ||
-          value.kind !== "primitive" ||
-          typeof value.value !== "string"
-        )
-          return target;
         const type = target.type;
-        if (type.kind === "memo" || type.kind === "forward-ref" || type.kind === "lazy") {
-          return componentReference({ ...type, displayName: value.value });
+        if (type.kind === "function" || type.kind === "class") {
+          type.component.properties.set(propertyName, value);
+          return target;
         }
+        if (type.kind !== "memo" && type.kind !== "forward-ref" && type.kind !== "lazy")
+          return target;
+        if (propertyName === "displayName") {
+          return value.kind === "primitive" && typeof value.value === "string"
+            ? componentReference({ ...type, displayName: value.value })
+            : target;
+        }
+        type.properties.set(propertyName, value);
         return target;
       }
       default:
@@ -579,7 +722,12 @@ export class Interpreter {
     switch (node.type) {
       case "Literal":
         if ("regex" in node) {
-          return { kind: "regexp", pattern: node.regex.pattern, flags: node.regex.flags };
+          return {
+            kind: "regexp",
+            pattern: node.regex.pattern,
+            flags: node.regex.flags,
+            lastIndex: 0,
+          };
         }
         return primitiveValue(node.value);
       case "TemplateLiteral":
@@ -635,13 +783,19 @@ export class Interpreter {
         const truthiness = getTruthiness(test);
         if (truthiness === true) return this.evaluateExpression(node.consequent, context, nameHint);
         if (truthiness === false) return this.evaluateExpression(node.alternate, context, nameHint);
+        const [consequent, alternate] = this.evaluateTestedPaths(
+          node.test,
+          context,
+          () => this.evaluateExpression(node.consequent, context, nameHint),
+          () => this.evaluateExpression(node.alternate, context, nameHint),
+        );
+        if (!consequent) return alternate ?? UNDEFINED_VALUE;
+        if (!alternate) return consequent;
         return branchValue(
-          [
-            this.evaluateExpression(node.consequent, context, nameHint),
-            this.evaluateExpression(node.alternate, context, nameHint),
-          ],
+          [consequent, alternate],
           `conditional on ${describeValue(test)}`,
           location,
+          getPreferredTruthiness(test) === false ? 1 : 0,
         );
       }
       case "LogicalExpression":
@@ -675,7 +829,7 @@ export class Interpreter {
         const values = node.quasi.expressions.map((expression) =>
           this.evaluateExpression(expression, context),
         );
-        return this.callValue(tag, [strings, ...values], context, location);
+        return this.callValue(tag, [strings, ...values], context, location, { nameHint });
       }
       case "MetaProperty":
         return unknownValue(`${node.meta.name}.${node.property.name}`, location);
@@ -714,20 +868,27 @@ export class Interpreter {
       }
       if (element.type === "SpreadElement") {
         const spread = this.evaluateExpression(element.argument, context);
-        if (spread.kind === "list") items.push(...spread.items);
-        else if (spread.kind === "repeat") items.push(spread);
-        else {
-          items.push({
-            kind: "repeat",
-            item: unknownValue(`spread of ${describeValue(spread)}`),
-            location: this.locate(context.module, element),
-          });
-        }
+        items.push(...spreadListItems(spread, this.locate(context.module, element)));
         continue;
       }
       items.push(this.evaluateExpression(element, context));
     }
-    return listValue(items);
+    return this.stampHeapValue(listValue(items));
+  }
+
+  private stampHeapValue<Value extends MutableHeapValue>(value: Value): Value {
+    this.heapEpochs.set(value, this.heapEpoch);
+    return value;
+  }
+
+  /** Mutating a value that predates an enclosing fork must be undone for the fork's other paths. */
+  recordHeapMutation(target: MutableHeapValue): void {
+    const epoch = this.heapEpochs.get(target) ?? 0;
+    for (let index = this.heapJournals.length - 1; index >= 0; index--) {
+      const journal = this.heapJournals[index];
+      if (epoch >= journal.entryEpoch) return;
+      journal.record(target);
+    }
   }
 
   private evaluatePropertyKey(
@@ -772,7 +933,7 @@ export class Interpreter {
         value: this.evaluateExpression(property.value, context, key),
       });
     }
-    return objectValue(entries);
+    return this.stampHeapValue(objectValue(entries));
   }
 
   private evaluateLogicalExpression(
@@ -787,20 +948,39 @@ export class Interpreter {
         const truthiness = getTruthiness(left);
         if (truthiness === true) return this.evaluateExpression(node.right, context, nameHint);
         if (truthiness === false) return left;
+        const [right, falsyLeft] = this.evaluateTestedPaths(
+          node.left,
+          context,
+          () => this.evaluateExpression(node.right, context, nameHint),
+          (narrowed) =>
+            narrowed ? this.evaluateExpression(node.left, context) : falsyCounterpart(left),
+        );
+        if (!right) return falsyLeft ?? falsyCounterpart(left);
+        if (!falsyLeft) return right;
         return branchValue(
-          [this.evaluateExpression(node.right, context, nameHint), falsyCounterpart(left)],
+          [right, falsyLeft],
           `&& on ${describeValue(left)}`,
           location,
+          getPreferredTruthiness(left) === false ? 1 : 0,
         );
       }
       case "||": {
         const truthiness = getTruthiness(left);
         if (truthiness === true) return left;
         if (truthiness === false) return this.evaluateExpression(node.right, context, nameHint);
+        const [truthyLeft, right] = this.evaluateTestedPaths(
+          node.left,
+          context,
+          (narrowed) => (narrowed ? this.evaluateExpression(node.left, context) : left),
+          () => this.evaluateExpression(node.right, context, nameHint),
+        );
+        if (!truthyLeft) return right ?? left;
+        if (!right) return truthyLeft;
         return branchValue(
-          [left, this.evaluateExpression(node.right, context, nameHint)],
+          [truthyLeft, right],
           `|| on ${describeValue(left)}`,
           location,
+          getPreferredTruthiness(left) === false ? 1 : 0,
         );
       }
       case "??": {
@@ -814,6 +994,26 @@ export class Interpreter {
         );
       }
     }
+  }
+
+  /**
+   * Evaluates the two sides of an uncertain test with the tested identifier
+   * narrowed to what it must be on each side; a side the narrowing rules out
+   * is `null`. The callbacks receive the narrowed value when there is one.
+   */
+  private evaluateTestedPaths<Result>(
+    test: Expression,
+    context: EvaluationContext,
+    onTrue: (narrowed: StaticValue | null) => Result,
+    onFalse: (narrowed: StaticValue | null) => Result,
+  ): [Result | null, Result | null] {
+    const narrowing = narrowTest(test, (name) => lookupScope(context.scope, name));
+    if (!narrowing) return [onTrue(null), onFalse(null)];
+    const runSide = (value: StaticValue | null, run: (narrowed: StaticValue | null) => Result) =>
+      value === null
+        ? null
+        : withNarrowedBinding(context.scope, narrowing.name, value, () => run(value));
+    return [runSide(narrowing.whenTrue, onTrue), runSide(narrowing.whenFalse, onFalse)];
   }
 
   private evaluateUnaryExpression(node: UnaryExpression, context: EvaluationContext): StaticValue {
@@ -860,6 +1060,8 @@ export class Interpreter {
       return unknownPrimitiveValue("boolean", "private in");
     const left = this.evaluateExpression(node.left, context);
     const right = this.evaluateExpression(node.right, context);
+    if (node.operator === "in")
+      return hasProperty(left, right) ?? applyBinaryOperator("in", left, right);
     return applyBinaryOperator(node.operator, left, right);
   }
 
@@ -1022,6 +1224,52 @@ export class Interpreter {
     return unknownValue(`dynamic member access on ${describeValue(object)}`, location);
   }
 
+  private readComponentProperty(
+    type: StaticElementType,
+    key: string,
+    location: SourceLocation | null,
+  ): StaticValue {
+    switch (type.kind) {
+      case "function":
+      case "class": {
+        const property = type.component.properties.get(key);
+        if (property) return property;
+        if (key === "name") return primitiveValue(type.component.name ?? "");
+        if (type.kind === "class" || FUNCTION_OWN_KEYS.has(key)) {
+          return key === "displayName"
+            ? UNDEFINED_VALUE
+            : unknownValue(`${type.component.name ?? "component"}.${key}`, location);
+        }
+        return UNDEFINED_VALUE;
+      }
+      case "memo":
+      case "forward-ref":
+      case "lazy": {
+        const property = type.properties.get(key);
+        if (property) return property;
+        if (key === "displayName")
+          return type.displayName === null ? UNDEFINED_VALUE : primitiveValue(type.displayName);
+        if (key === "$$typeof") return { kind: "symbol", key: WRAPPER_SYMBOL_KEYS[type.kind] };
+        if (WRAPPER_OWN_KEYS[type.kind].has(key))
+          return unknownValue(`${type.kind}.${key}`, location);
+        return UNDEFINED_VALUE;
+      }
+      case "stub": {
+        const property = type.stub.properties?.get(key);
+        if (property) return property;
+        if (key === "displayName" || key === "name")
+          return type.stub.displayName === null
+            ? UNDEFINED_VALUE
+            : primitiveValue(type.stub.displayName);
+        return unknownValue(`${type.stub.displayName ?? "stub"}.${key}`, location);
+      }
+      default:
+        return key === "displayName" || key === "name"
+          ? unknownPrimitiveValue("string", "component name")
+          : unknownValue(`component property "${key}"`, location);
+    }
+  }
+
   getProperty(
     object: StaticValue,
     key: string,
@@ -1050,7 +1298,7 @@ export class Interpreter {
         if (Number.isInteger(index) && index >= 0) {
           return getListItem(object.items, index, location);
         }
-        return { kind: "method", receiver: object, name: key };
+        return object.properties?.get(key) ?? prototypeMember(object, Array.prototype, key);
       }
       case "optional":
         return branchValue(
@@ -1062,10 +1310,11 @@ export class Interpreter {
         if (key === "source") return primitiveValue(object.pattern);
         if (key === "flags") return primitiveValue(object.flags);
         if (key === "global") return primitiveValue(object.flags.includes("g"));
-        return { kind: "method", receiver: object, name: key };
+        if (key === "lastIndex") return primitiveValue(object.lastIndex);
+        return prototypeMember(object, RegExp.prototype, key);
       case "symbol":
         if (key === "description") return primitiveValue(object.key);
-        return { kind: "method", receiver: object, name: key };
+        return prototypeMember(object, Symbol.prototype, key);
       case "primitive":
         if (object.value === null || object.value === undefined) {
           if (optional) return UNDEFINED_VALUE;
@@ -1073,10 +1322,10 @@ export class Interpreter {
         }
         if (typeof object.value === "string" && key === "length")
           return primitiveValue(object.value.length);
-        return { kind: "method", receiver: object, name: key };
+        return prototypeMember(object, Object.getPrototypeOf(object.value), key);
       case "unknown-primitive":
         if (key === "length") return unknownPrimitiveValue("number", "length of dynamic value");
-        return { kind: "method", receiver: object, name: key };
+        return prototypeMember(object, PRIMITIVE_PROTOTYPES[object.primitiveType], key);
       case "context":
         if (key === "Provider") {
           return componentReference({
@@ -1127,18 +1376,28 @@ export class Interpreter {
         if (isPromiseMethodName(key)) return { kind: "method", receiver: object, name: key };
         if (key === "__esModule" && !object.module.isCommonJs) return TRUE_VALUE;
         return this.evaluateModuleExport(object.module, key);
-      case "global":
+      case "global": {
+        const storageAreaName = getStorageAreaName(object.name);
+        if (storageAreaName !== null) {
+          return key === "length"
+            ? getStorageLength(this.storageAreas[storageAreaName], storageAreaName)
+            : { kind: "method", receiver: object, name: key };
+        }
         return (
+          (object.name === "window" ? this.windowGlobals.get(key) : undefined) ??
           getBuiltinGlobal(`${object.name}.${key}`) ?? {
             kind: "method",
             receiver: object,
             name: key,
           }
         );
+      }
       case "element":
         if (key === "props") return object.props;
         if (key === "key") return object.key ?? NULL_VALUE;
         if (key === "type") return componentReference(object.type);
+        if (key === "$$typeof") return { kind: "symbol", key: this.elementSymbolKey };
+        if (!REACT_ELEMENT_OWN_KEYS.has(key)) return UNDEFINED_VALUE;
         return unknownValue(`element.${key}`, location);
       case "function":
       case "class": {
@@ -1149,9 +1408,7 @@ export class Interpreter {
         return unknownValue(`${describeValue(object)}.${key}`, location);
       }
       case "component-reference":
-        if (key === "displayName" || key === "name")
-          return unknownPrimitiveValue("string", "component name");
-        return unknownValue(`component property "${key}"`, location);
+        return this.readComponentProperty(object.type, key, location);
       case "repeat":
         if (key === "length") return unknownPrimitiveValue("number", "length of a repeated list");
         return { kind: "method", receiver: object, name: key };
@@ -1334,10 +1591,10 @@ export class Interpreter {
         };
       case "native-function":
         return callee.call(args, {
-          readContext: (definition) =>
-            lookupContextValue(context.contextFrame, definition) ?? definition.defaultValue,
+          readContext: (definition) => context.readContext(definition) ?? definition.defaultValue,
           callAwaited: (fn, fnArgs) => this.callAwaited(fn, fnArgs, context, location),
           call: (fn, fnArgs) => this.callValue(fn, fnArgs, context, location),
+          nameHint: options.nameHint ?? null,
         });
       case "class":
         return unknownValue(`class ${callee.name ?? ""} called without new`, location);
@@ -1383,6 +1640,8 @@ export class Interpreter {
     if (callee.kind === "global") {
       return evaluateBuiltinCall(this, callee, args, context, location, true);
     }
+    if (callee.kind === "native-function") return this.callValue(callee, args, context, location);
+    if (callee.kind === "class") return constructClassInstance(this, callee, args, context);
     if (callee.kind === "proxy") {
       const trap = getObjectProperty(callee.handler, "construct");
       return trap.kind === "primitive" && trap.value === undefined
@@ -1440,9 +1699,7 @@ export class Interpreter {
       );
       return unknownValue("call depth exceeded", location);
     }
-    let occurrences = 0;
-    for (const frame of callStack) if (frame === fn.node) occurrences++;
-    if (occurrences >= this.maxRecursionPerFunction) {
+    if (isNonProgressingRecursion(callStack, fn, args)) {
       return unknownValue(`recursive call of ${fn.name ?? "anonymous function"}`, location);
     }
     if (fn.node.generator) return unknownValue("generator function result", location);
@@ -1473,9 +1730,8 @@ export class Interpreter {
       scope,
       thisValue:
         fn.node.type === "ArrowFunctionExpression" ? fn.thisValue : (options.thisValue ?? null),
-      contextFrame:
-        options.contextFrame === undefined ? context.contextFrame : options.contextFrame,
-      callStack: [...callStack, fn.node],
+      readContext: context.readContext,
+      callStack: [...callStack, { node: fn.node, scope: fn.scope, args }],
       uncertainDepth: context.uncertainDepth,
       forkDepth: context.forkDepth,
       environment: context.environment,
@@ -1647,43 +1903,43 @@ export class Interpreter {
     }
   }
 
+  /**
+   * Statement lists are evaluated in continuation-passing style: `continuation`
+   * is the rest of the enclosing function, so a fork inside a nested block runs
+   * everything after it once per path instead of leaking one path's scope state
+   * into the parent list.
+   */
   evaluateBlock(
     statements: Statement[],
     context: EvaluationContext,
     createChildScope: boolean,
+    continuation: StatementContinuation = completeBlock,
   ): StatementOutcome {
     const blockContext = createChildScope
       ? withScope(context, createScope(context.scope))
       : context;
     this.hoistDeclarations(statements, blockContext);
-    return this.evaluateStatements(statements, 0, blockContext);
+    return this.evaluateStatements(statements, 0, blockContext, continuation);
   }
 
   private evaluateStatements(
     statements: Statement[],
     startIndex: number,
     context: EvaluationContext,
+    continuation: StatementContinuation,
   ): StatementOutcome {
     for (let index = startIndex; index < statements.length; index++) {
       const statement = statements[index];
       const location = this.locate(context.module, statement);
       if (!this.consumeStep(location))
         return returnOutcome(unknownValue("step budget exhausted", location));
-      // A nested statement list that returned on some paths but fell through on
-      // others continues with the rest of this list for the fall-through paths.
-      const continueAfter = (outcome: StatementOutcome): StatementOutcome | null => {
-        if (!outcome.returned) return null;
-        if (!outcome.mayComplete) return outcome;
-        const rest = this.evaluateStatements(statements, index + 1, {
-          ...context,
-          uncertainDepth: context.uncertainDepth + 1,
-        });
-        return mergeOutcomes(
-          [{ returned: outcome.returned, mayComplete: false }, rest],
-          "return on some paths",
-          location,
+      const proceed: StatementContinuation = (pathContext) =>
+        this.evaluateStatements(
+          statements,
+          index + 1,
+          withScope(pathContext, context.scope),
+          continuation,
         );
-      };
       switch (statement.type) {
         case "ReturnStatement":
           return returnOutcome(
@@ -1693,6 +1949,10 @@ export class Interpreter {
           );
         case "ThrowStatement":
           return returnOutcome({ ...unknownValue("component throws", location), isThrown: true });
+        case "BreakStatement":
+          return jumpOutcome("break", statement.label?.name ?? null);
+        case "ContinueStatement":
+          return jumpOutcome("continue", statement.label?.name ?? null);
         case "VariableDeclaration":
           for (const declarator of statement.declarations) {
             const nameHint = declarator.id.type === "Identifier" ? declarator.id.name : null;
@@ -1716,147 +1976,172 @@ export class Interpreter {
         case "ExpressionStatement":
           this.evaluateExpression(statement.expression, context);
           break;
-        case "BlockStatement": {
-          const abrupt = continueAfter(this.evaluateBlock(statement.body, context, true));
-          if (abrupt) return abrupt;
-          break;
-        }
+        case "BlockStatement":
+          return this.evaluateBlock(statement.body, context, true, proceed);
         case "IfStatement": {
           const test = this.evaluateExpression(statement.test, context);
           const truthiness = getTruthiness(test);
-          if (truthiness === true) {
-            const abrupt = continueAfter(this.evaluateBlock([statement.consequent], context, true));
-            if (abrupt) return abrupt;
-            break;
-          }
-          if (truthiness === false) {
-            if (!statement.alternate) break;
-            const abrupt = continueAfter(this.evaluateBlock([statement.alternate], context, true));
-            if (abrupt) return abrupt;
-            break;
-          }
+          const alternate = statement.alternate;
+          const runConsequent: StatementContinuation = (pathContext) =>
+            this.evaluateBlock([statement.consequent], pathContext, true, proceed);
+          const runAlternate: StatementContinuation = (pathContext) =>
+            alternate
+              ? this.evaluateBlock([alternate], pathContext, true, proceed)
+              : proceed(pathContext);
+          if (truthiness === true) return runConsequent(context);
+          if (truthiness === false) return runAlternate(context);
+          const narrowing = narrowTest(statement.test, (name) => lookupScope(context.scope, name));
+          if (narrowing?.whenTrue === null) return runAlternate(context);
+          if (narrowing?.whenFalse === null) return runConsequent(context);
+          const narrowed =
+            (value: StaticValue | null, run: StatementContinuation): StatementContinuation =>
+            (pathContext) => {
+              if (narrowing && value) applyNarrowing(context.scope, narrowing.name, value);
+              return run(pathContext);
+            };
           return this.forkPaths(
             [
-              (pathContext) => this.evaluateBlock([statement.consequent], pathContext, true),
-              (pathContext) =>
-                statement.alternate
-                  ? this.evaluateBlock([statement.alternate], pathContext, true)
-                  : COMPLETES,
+              narrowed(narrowing?.whenTrue ?? null, (pathContext) =>
+                this.evaluateBlock([statement.consequent], pathContext, true),
+              ),
+              narrowed(narrowing?.whenFalse ?? null, (pathContext) =>
+                alternate ? this.evaluateBlock([alternate], pathContext, true) : COMPLETES,
+              ),
             ],
-            statements,
-            index + 1,
             context,
+            proceed,
             `if (${describeValue(test)})`,
             location,
+            getPreferredTruthiness(test) === false ? 1 : 0,
           );
         }
         case "SwitchStatement":
-          return this.evaluateSwitch(statement, statements, index + 1, context, location);
+          return this.evaluateSwitch(statement, context, proceed, location);
         case "TryStatement": {
-          const abrupt = continueAfter(this.evaluateBlock(statement.block.body, context, true));
-          if (abrupt) return abrupt;
-          if (statement.finalizer) {
-            const finalAbrupt = continueAfter(
-              this.evaluateBlock(statement.finalizer.body, context, true),
-            );
-            if (finalAbrupt) return finalAbrupt;
-          }
-          break;
+          const finalizer = statement.finalizer;
+          return this.evaluateBlock(
+            statement.block.body,
+            context,
+            true,
+            finalizer
+              ? (pathContext) => this.evaluateBlock(finalizer.body, pathContext, true, proceed)
+              : proceed,
+          );
         }
         case "ForOfStatement":
         case "ForInStatement":
         case "ForStatement":
         case "WhileStatement":
         case "DoWhileStatement": {
-          const abrupt = continueAfter(evaluateLoop(this, statement, context, location));
-          if (abrupt) return abrupt;
-          break;
+          const outcome = evaluateLoop(this, statement, context, location);
+          if (!outcome.mayComplete) return outcome;
+          if (!outcome.returned) break;
+          // Loop bodies are not in continuation style: a return on some
+          // iterations leaves the rest of the function uncertain.
+          const rest = proceed({ ...context, uncertainDepth: context.uncertainDepth + 1 });
+          return mergeOutcomes(
+            [{ returned: outcome.returned, mayComplete: false, jump: null }, rest],
+            "return inside a loop",
+            location,
+          );
         }
-        case "LabeledStatement": {
-          const abrupt = continueAfter(this.evaluateBlock([statement.body], context, false));
-          if (abrupt) return abrupt;
-          break;
-        }
+        case "LabeledStatement":
+          return this.evaluateBlock([statement.body], context, false, proceed);
         default:
           break;
       }
     }
-    return COMPLETES;
+    return continuation(context);
   }
 
+  /**
+   * Runs each path from the same scope state, then joins the states of the
+   * paths that complete normally (bindings that differ become branch values,
+   * like SSA phis) and continues with the rest of the function exactly once.
+   * Paths that jump out of a loop are joined too: the loop then gives up
+   * unrolling, so their state is only ever observed as uncertain.
+   */
   private forkPaths(
-    branches: Array<(pathContext: EvaluationContext) => StatementOutcome>,
-    statements: Statement[],
-    continueIndex: number,
+    branches: StatementContinuation[],
     context: EvaluationContext,
+    proceed: StatementContinuation,
     reason: string,
     location: SourceLocation,
+    preferredBranch = 0,
   ): StatementOutcome {
-    const runBranch = (
-      branch: (pathContext: EvaluationContext) => StatementOutcome,
-      pathContext: EvaluationContext,
-    ) => {
-      const outcome = branch(pathContext);
-      if (!outcome.mayComplete) return outcome;
-      const rest = this.evaluateStatements(statements, continueIndex, pathContext);
-      return mergeOutcomes(
-        [{ returned: outcome.returned, mayComplete: false }, rest],
-        reason,
-        location,
-      );
+    const isTooDeep = context.forkDepth >= this.maxForkDepth;
+    const forkContext: EvaluationContext = {
+      ...context,
+      forkDepth: context.forkDepth + 1,
+      uncertainDepth: context.uncertainDepth + (isTooDeep ? 1 : 0),
     };
-    if (context.forkDepth >= this.maxForkDepth) {
-      const uncertainContext: EvaluationContext = {
-        ...context,
-        uncertainDepth: context.uncertainDepth + 1,
-      };
-      return mergeOutcomes(
-        branches.map((branch) => runBranch(branch, uncertainContext)),
-        reason,
-        location,
-      );
-    }
-    const forkContext: EvaluationContext = { ...context, forkDepth: context.forkDepth + 1 };
-    const snapshot = snapshotScopes(context.scope);
+    const entrySnapshot = snapshotScopes(context.scope);
     const hookCursor = context.hooks?.cursor ?? 0;
+    const joinedSnapshots: ScopeSnapshot[][] = [];
+    let completedHookCursor = hookCursor;
+    const journal = new HeapJournal(++this.heapEpoch);
+    this.heapJournals.push(journal);
     const outcomes = branches.map((branch, branchIndex) => {
       if (branchIndex > 0) {
-        restoreScopes(snapshot);
+        restoreScopes(entrySnapshot);
         if (context.hooks) context.hooks.cursor = hookCursor;
       }
-      return runBranch(branch, forkContext);
+      const outcome = branch(forkContext);
+      if (outcome.mayComplete || outcome.jump !== null) {
+        joinedSnapshots.push(snapshotScopes(context.scope));
+      }
+      if (outcome.mayComplete) completedHookCursor = context.hooks?.cursor ?? hookCursor;
+      journal.endPath();
+      return outcome;
     });
-    return mergeOutcomes(outcomes, reason, location);
+    this.heapJournals.pop();
+    journal.join(reason, location, preferredBranch);
+    if (joinedSnapshots.length > 0) joinScopes(joinedSnapshots, reason, location);
+    if (!outcomes.some((outcome) => outcome.mayComplete)) {
+      return mergeOutcomes(outcomes, reason, location, preferredBranch);
+    }
+    if (context.hooks) context.hooks.cursor = completedHookCursor;
+    const rest = proceed(context);
+    return mergeOutcomes(
+      [...outcomes.map((outcome) => ({ ...outcome, mayComplete: false })), rest],
+      reason,
+      location,
+      preferredBranch,
+    );
   }
 
   private evaluateSwitch(
     statement: SwitchStatement,
-    statements: Statement[],
-    continueIndex: number,
     context: EvaluationContext,
+    proceed: StatementContinuation,
     location: SourceLocation,
   ): StatementOutcome {
     const discriminant = this.evaluateExpression(statement.discriminant, context);
     const caseValues = statement.cases.map((switchCase) =>
       switchCase.test ? this.evaluateExpression(switchCase.test, context) : null,
     );
+    const runCases = (caseIndex: number, switchContext: EvaluationContext): StatementOutcome => {
+      if (caseIndex >= statement.cases.length) return COMPLETES;
+      return this.evaluateBlock(
+        statement.cases[caseIndex].consequent,
+        switchContext,
+        false,
+        (pathContext) => runCases(caseIndex + 1, pathContext),
+      );
+    };
     const runFrom = (startCase: number, pathContext: EvaluationContext): StatementOutcome => {
-      const switchContext = withScope(pathContext, createScope(pathContext.scope));
-      const outcomes: StatementOutcome[] = [];
-      for (let caseIndex = startCase; caseIndex < statement.cases.length; caseIndex++) {
-        const consequent = statement.cases[caseIndex].consequent;
-        const breakIndex = consequent.findIndex((inner) => inner.type === "BreakStatement");
-        const body = breakIndex === -1 ? consequent : consequent.slice(0, breakIndex);
-        const outcome = this.evaluateBlock(body, switchContext, false);
-        outcomes.push({ returned: outcome.returned, mayComplete: false });
-        if (!outcome.mayComplete) break;
-        if (breakIndex !== -1) {
-          outcomes.push(COMPLETES);
-          break;
-        }
-        if (caseIndex === statement.cases.length - 1) outcomes.push(COMPLETES);
-      }
-      return mergeOutcomes(outcomes, "switch case", location);
+      const outcome = runCases(startCase, withScope(pathContext, createScope(pathContext.scope)));
+      return outcome.jump === "break" ? { ...outcome, mayComplete: true, jump: null } : outcome;
+    };
+    const runThenProceed = (startCase: number): StatementOutcome => {
+      const outcome = runFrom(startCase, context);
+      if (!outcome.mayComplete) return outcome;
+      const rest = proceed(context);
+      return mergeOutcomes(
+        [{ ...outcome, mayComplete: false }, rest],
+        `switch (${describeValue(discriminant)})`,
+        location,
+      );
     };
     if (
       discriminant.kind === "primitive" &&
@@ -1870,29 +2155,17 @@ export class Interpreter {
       );
       if (matchIndex === -1)
         matchIndex = statement.cases.findIndex((switchCase) => switchCase.test === null);
-      if (matchIndex === -1) return this.evaluateStatements(statements, continueIndex, context);
-      const outcome = runFrom(matchIndex, context);
-      if (!outcome.mayComplete) return outcome;
-      const restContext = outcome.returned
-        ? { ...context, uncertainDepth: context.uncertainDepth + 1 }
-        : context;
-      const rest = this.evaluateStatements(statements, continueIndex, restContext);
-      return mergeOutcomes(
-        [{ returned: outcome.returned, mayComplete: false }, rest],
-        "switch",
-        location,
-      );
+      return matchIndex === -1 ? proceed(context) : runThenProceed(matchIndex);
     }
     const hasDefault = statement.cases.some((switchCase) => switchCase.test === null);
-    const branches = statement.cases.map(
-      (_, caseIndex) => (pathContext: EvaluationContext) => runFrom(caseIndex, pathContext),
+    const branches: StatementContinuation[] = statement.cases.map(
+      (_, caseIndex) => (pathContext) => runFrom(caseIndex, pathContext),
     );
     if (!hasDefault) branches.push(() => COMPLETES);
     return this.forkPaths(
       branches,
-      statements,
-      continueIndex,
       context,
+      proceed,
       `switch (${describeValue(discriminant)})`,
       location,
     );
@@ -2106,11 +2379,99 @@ const restoreScopes = (snapshots: ScopeSnapshot[]): void => {
   }
 };
 
+const joinScopes = (paths: ScopeSnapshot[][], reason: string, location: SourceLocation): void => {
+  const [firstPath, ...otherPaths] = paths;
+  firstPath.forEach((snapshot, scopeIndex) => {
+    const siblings = otherPaths.map((path) => path[scopeIndex].bindings);
+    const names = new Set([
+      ...snapshot.bindings.keys(),
+      ...siblings.flatMap((bindings) => [...bindings.keys()]),
+    ]);
+    snapshot.scope.bindings.clear();
+    for (const name of names) {
+      const values = [snapshot.bindings, ...siblings].map(
+        (bindings) => bindings.get(name) ?? UNDEFINED_VALUE,
+      );
+      snapshot.scope.bindings.set(name, branchValue(values, reason, location));
+    }
+  });
+};
+
+/** `key in target` when the target's own keys are known; null when it depends on runtime shape. */
+const hasProperty = (key: StaticValue, target: StaticValue): StaticValue | null => {
+  if (key.kind !== "primitive") return null;
+  const name = String(key.value);
+  switch (target.kind) {
+    case "branch": {
+      const results: StaticValue[] = [];
+      for (const alternative of target.alternatives) {
+        const result = hasProperty(key, alternative);
+        if (!result) return null;
+        results.push(result);
+      }
+      return branchValue(results, target.reason, target.location, target.preferredIndex);
+    }
+    case "element":
+      return REACT_ELEMENT_OWN_KEYS.has(name) ? TRUE_VALUE : FALSE_VALUE;
+    case "object": {
+      const keys = getKnownObjectKeys(target);
+      if (keys?.includes(name)) return TRUE_VALUE;
+      return keys && !OBJECT_PROTOTYPE_METHODS.has(name) ? FALSE_VALUE : null;
+    }
+    case "component-reference":
+      return hasComponentProperty(target.type, name);
+    case "primitive":
+      return target.value === null || target.value === undefined
+        ? { ...unknownValue(`"${name}" in ${String(target.value)}`), isThrown: true }
+        : null;
+    default:
+      return null;
+  }
+};
+
+const WRAPPER_SYMBOL_KEYS = {
+  memo: "react.memo",
+  "forward-ref": "react.forward_ref",
+  lazy: "react.lazy",
+} as const;
+
+const hasComponentProperty = (type: StaticElementType, name: string): StaticValue | null => {
+  switch (type.kind) {
+    case "function":
+    case "class":
+      if (type.component.properties.has(name)) return TRUE_VALUE;
+      return type.kind === "function" && !FUNCTION_OWN_KEYS.has(name) ? FALSE_VALUE : null;
+    case "memo":
+    case "forward-ref":
+    case "lazy":
+      return WRAPPER_OWN_KEYS[type.kind].has(name) ||
+        type.properties.has(name) ||
+        (name === "displayName" && type.displayName !== null)
+        ? TRUE_VALUE
+        : FALSE_VALUE;
+    default:
+      return null;
+  }
+};
+
+const MAX_DISTRIBUTED_ALTERNATIVES = 16;
+
+const countAlternatives = (value: StaticValue): number =>
+  value.kind === "branch" ? value.alternatives.length : 1;
+
 const applyBinaryOperator = (
   operator: string,
   left: StaticValue,
   right: StaticValue,
 ): StaticValue => {
+  if (countAlternatives(left) * countAlternatives(right) <= MAX_DISTRIBUTED_ALTERNATIVES) {
+    if (left.kind === "branch") {
+      return mapValue(left, (alternative) => applyBinaryOperator(operator, alternative, right));
+    }
+    if (right.kind === "branch") {
+      return mapValue(right, (alternative) => applyBinaryOperator(operator, left, alternative));
+    }
+  }
   if (left.kind === "primitive" && right.kind === "primitive") {
     const computed = computeBinary(operator, left.value, right.value);
     if (computed !== undefined) return computed;
@@ -2144,6 +2505,12 @@ const applyBinaryOperator = (
 
 const EQUALITY_OPERATORS = new Set(["===", "!==", "==", "!="]);
 
+/** Loose equality only differs from identity when both sides can coerce; null, undefined and symbols never do. */
+const mayCoerce = (value: StaticValue): boolean =>
+  value.kind === "primitive"
+    ? value.value !== null && value.value !== undefined
+    : value.kind !== "symbol";
+
 /**
  * React's memo cache sentinel never reaches application values, so comparing
  * it against anything the interpreter cannot see is still a definite answer.
@@ -2156,7 +2523,7 @@ const compareEquality = (
   if (!EQUALITY_OPERATORS.has(operator)) return null;
   const isStrict = operator === "===" || operator === "!==";
   let isEqual = compareIdentity(left, right);
-  if (isEqual === false && !isStrict) isEqual = null;
+  if (isEqual === false && !isStrict && mayCoerce(left) && mayCoerce(right)) isEqual = null;
   if (isEqual === null) {
     const isSentinel = (value: StaticValue): boolean =>
       value.kind === "symbol" && value.key === REACT_MEMO_CACHE_SENTINEL_KEY;

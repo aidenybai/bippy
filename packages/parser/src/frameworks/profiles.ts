@@ -128,6 +128,7 @@ export const NEXT_PAGES_PROFILE: FrameworkProfile = {
 const REACT_ROUTER_RUNTIME_WRAPPERS = [
   "Router",
   "DataRoutes",
+  "DataRoutes2",
   "RenderErrorBoundary",
   "DataRouter",
   "DataRouterState",
@@ -146,8 +147,11 @@ const REACT_ROUTER_RUNTIME_WRAPPERS = [
   "FrameworkContext",
   "RemixErrorBoundary",
   "WithComponentProps",
+  "WithComponentProps2",
   "WithHydrateFallbackProps",
+  "WithHydrateFallbackProps2",
   "WithErrorBoundaryProps",
+  "WithErrorBoundaryProps2",
   "RSCRouterContext",
   "RSCRouterGlobalErrorBoundary",
 ];

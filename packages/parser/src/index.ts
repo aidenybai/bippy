@@ -13,6 +13,12 @@ export { createModuleRecord } from "./graph/module-record.js";
 export { Interpreter, type InterpreterOptions } from "./evaluate/interpreter.js";
 export { describeValue, objectValue, objectFromRecord, unknownValue } from "./evaluate/values.js";
 export { toElementType } from "./react/element-type.js";
+export {
+  EMPTY_OBSERVATIONS,
+  getOpaqueCaptureDescription,
+  opaqueCapture,
+  readObservationsJson,
+} from "./observations.js";
 export { Materializer, type MaterializerOptions } from "./materialize/materializer.js";
 export { MARKER_NAMES } from "./materialize/markers.js";
 export { loadReactRuntime, type ReactRuntime } from "./materialize/react-runtime.js";
