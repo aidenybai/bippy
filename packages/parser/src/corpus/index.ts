@@ -8,3 +8,4 @@ export * from "./repositories.js";
 export * from "./scan.js";
 export * from "./sources.js";
 export * from "./workspace-apps.js";
+export * from "./workspaces.js";

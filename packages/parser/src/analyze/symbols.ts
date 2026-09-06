@@ -8,6 +8,7 @@ import {
 } from "../module/types.js";
 import { normalizeExternal } from "./access.js";
 import { classifyClass } from "./components.js";
+import { evaluateEnum } from "./enums.js";
 import type { Interpreter } from "./interpreter.js";
 import { bindPattern } from "./patterns.js";
 import { createScope, declareVariable, type Scope } from "./scope.js";
@@ -72,6 +73,8 @@ const evaluateDeclaration = (
         binding.localName,
         classifyClass(interpreter, node, module, scope, binding.localName, context),
       );
+    case "TSEnumDeclaration":
+      return evaluateEnum(interpreter, node, context);
     default:
       return applyDisplayName(interpreter, module, binding.localName, {
         kind: "function",

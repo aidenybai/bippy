@@ -40,6 +40,11 @@ export interface CorpusCheckout {
   live: LiveTarget | null;
   /** Resolved commit for cloned repositories; `null` for workspace apps. */
   commit: string | null;
+  /**
+   * Directories of linked workspace packages the resolver searches before
+   * `node_modules`; empty when the checkout's dependencies are installed.
+   */
+  moduleDirectories: string[];
 }
 
 export interface CorpusRepository {

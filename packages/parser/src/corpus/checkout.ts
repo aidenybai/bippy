@@ -7,10 +7,13 @@ import {
   getRepositoryDirectoryName,
   getRepositoryUrl,
 } from "./repositories.js";
+import { linkWorkspacePackages } from "./workspaces.js";
 
 export interface CheckoutOptions {
   /** Directory that holds one clone per repository. */
   cacheDirectory: string;
+  /** Directory that holds one set of workspace package links per repository. */
+  linksDirectory: string;
   /** Fetch the branch tip again for clones that already exist. */
   update: boolean;
   /** Fail instead of cloning when a repository is missing from the cache. */
@@ -28,15 +31,18 @@ const git = (args: string[], cwd: string): Promise<string> =>
 
 /**
  * Shallow clone of the default branch; only the working tree matters for
- * analysis, so history is not fetched. Returns the checkout together with
- * the commit that was analyzed, for reproducible reports.
+ * analysis, so history is not fetched. Dependencies are not installed, but
+ * workspace packages are linked so cross-package imports resolve to source.
+ * Returns the checkout together with the commit that was analyzed, for
+ * reproducible reports.
  */
 export const checkoutRepository = async (
   repository: CorpusRepository,
   options: CheckoutOptions,
 ): Promise<CorpusCheckout> => {
   mkdirSync(options.cacheDirectory, { recursive: true });
-  const rootDirectory = join(options.cacheDirectory, getRepositoryDirectoryName(repository));
+  const directoryName = getRepositoryDirectoryName(repository);
+  const rootDirectory = join(options.cacheDirectory, directoryName);
   const exists = existsSync(join(rootDirectory, ".git"));
   if (!exists) {
     if (options.offline) throw new Error(`${repository.slug} is not in ${options.cacheDirectory}`);
@@ -60,6 +66,10 @@ export const checkoutRepository = async (
     await git(["clean", "-fdx", "--exclude=node_modules", "--exclude=.env*"], rootDirectory);
   }
   const commit = (await git(["rev-parse", "HEAD"], rootDirectory)).trim();
+  const linkedModules = linkWorkspacePackages(
+    rootDirectory,
+    join(options.linksDirectory, directoryName),
+  );
   return {
     name: repository.slug,
     rootDirectory,
@@ -69,5 +79,6 @@ export const checkoutRepository = async (
     reactVersion: repository.reactVersion,
     live: repository.live,
     commit,
+    moduleDirectories: linkedModules ? [linkedModules] : [],
   };
 };

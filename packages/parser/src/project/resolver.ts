@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { dirname, join, resolve, sep } from "node:path";
 import { type NapiResolveOptions, ResolverFactory } from "oxc-resolver";
+import { readTsconfigPaths } from "./tsconfig.js";
 
 export interface ResolvedModule {
   path: string;
@@ -17,6 +18,11 @@ export interface ModuleResolverOptions {
   rootDirectory: string;
   /** Extra aliases, e.g. from a bundler config: `{ "@": ["./src"] }`. */
   alias?: Record<string, string[]>;
+  /**
+   * Absolute directories searched for bare specifiers ahead of `node_modules`,
+   * e.g. a directory of workspace package links standing in for an install.
+   */
+  moduleDirectories?: string[];
 }
 
 const RESOLVER_EXTENSIONS = [".tsx", ".ts", ".jsx", ".js", ".mjs", ".cjs", ".mts", ".cts", ".json"];
@@ -42,6 +48,8 @@ const FALLBACK_OPTIONS: NapiResolveOptions = {
   ...BASE_OPTIONS,
   conditionNames: ["require", "node", "default"],
 };
+
+const TSCONFIG_LOAD_ERROR = /^(Tsconfig|Failed to load tsconfig)/;
 
 export const getPackageNameFromSpecifier = (specifier: string): string | null => {
   if (specifier.startsWith(".") || specifier.startsWith("/")) return null;
@@ -74,6 +82,20 @@ export const findNearestFile = (
 };
 
 /**
+ * Oxc loads a tsconfig lazily and reports a config it cannot load (usually an
+ * `extends` into an uninstalled package) on every resolution instead of at
+ * construction, so one probe from the tsconfig's directory tells.
+ */
+const hasUnloadableTsconfig = (resolver: ResolverFactory, tsconfigPath: string): boolean => {
+  try {
+    const probe = resolver.sync(dirname(tsconfigPath), ".");
+    return probe.error !== undefined && TSCONFIG_LOAD_ERROR.test(probe.error);
+  } catch {
+    return true;
+  }
+};
+
+/**
  * Wraps oxc-resolver with the conventions React projects rely on: tsconfig
  * `paths` (per nearest tsconfig, with project references), `.js` → `.ts`
  * extension aliases, and a CommonJS fallback for packages without ESM
@@ -83,7 +105,7 @@ export const createModuleResolver = (options: ModuleResolverOptions): ModuleReso
   const rootDirectory = resolve(options.rootDirectory);
   const resolversByTsconfig = new Map<string, ResolverFactory[]>();
   const tsconfigByDirectory = new Map<string, string | null>();
-  const alias = options.alias;
+  const modules = [...(options.moduleDirectories ?? []), "node_modules"];
 
   const getTsconfigForDirectory = (directory: string): string | null => {
     const cached = tsconfigByDirectory.get(directory);
@@ -95,24 +117,27 @@ export const createModuleResolver = (options: ModuleResolverOptions): ModuleReso
     return tsconfigPath;
   };
 
+  const createResolverPair = (overrides: NapiResolveOptions): ResolverFactory[] =>
+    [BASE_OPTIONS, FALLBACK_OPTIONS].map(
+      (base) => new ResolverFactory({ ...base, alias: options.alias, modules, ...overrides }),
+    );
+
+  /**
+   * When oxc cannot load the tsconfig, its own `paths` and `baseUrl` are
+   * replayed as aliases and module directories, which loses only what the
+   * unreachable parent config would have added.
+   */
   const createResolvers = (tsconfigPath: string | null): ResolverFactory[] => {
-    const tsconfig = tsconfigPath
-      ? { configFile: tsconfigPath, references: "auto" as const }
-      : undefined;
-    const attempts: NapiResolveOptions[] = [
-      { ...BASE_OPTIONS, alias, tsconfig },
-      { ...FALLBACK_OPTIONS, alias, tsconfig },
-    ];
-    const resolvers: ResolverFactory[] = [];
-    for (const attempt of attempts) {
-      try {
-        resolvers.push(new ResolverFactory(attempt));
-      } catch {
-        if (attempt.tsconfig)
-          resolvers.push(new ResolverFactory({ ...attempt, tsconfig: undefined }));
-      }
-    }
-    return resolvers;
+    if (tsconfigPath === null) return createResolverPair({});
+    const resolvers = createResolverPair({
+      tsconfig: { configFile: tsconfigPath, references: "auto" },
+    });
+    if (!hasUnloadableTsconfig(resolvers[0], tsconfigPath)) return resolvers;
+    const mapping = readTsconfigPaths(tsconfigPath);
+    return createResolverPair({
+      alias: { ...mapping.alias, ...options.alias },
+      modules: mapping.baseUrl ? [mapping.baseUrl, ...modules] : modules,
+    });
   };
 
   const getResolvers = (fromDirectory: string): ResolverFactory[] => {

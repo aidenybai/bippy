@@ -4,6 +4,7 @@ import type {
   Function as FunctionNode,
   Program,
   Span,
+  TSEnumDeclaration,
   VariableDeclarator,
 } from "@oxc-project/types";
 import type { EcmaScriptModule, OxcError } from "oxc-parser";
@@ -22,7 +23,7 @@ export interface ImportBinding {
   span: Span;
 }
 
-export type DeclarationNode = FunctionNode | Class | VariableDeclarator;
+export type DeclarationNode = FunctionNode | Class | VariableDeclarator | TSEnumDeclaration;
 
 export interface DeclarationBinding {
   kind: "declaration";

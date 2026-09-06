@@ -337,6 +337,7 @@ export const scanCheckout = (
   const startedAt = performance.now();
   const renderer = createStaticRenderer({
     rootDirectory: checkout.rootDirectory,
+    moduleDirectories: checkout.moduleDirectories,
     followExternalModules: options.followExternalModules,
     build: { maxFiberCount: options.maxFiberCount },
     timeBudgetMs: options.timeBudgetMs,

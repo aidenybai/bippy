@@ -13,6 +13,7 @@ import type {
 import { isNodeOfType, walk } from "../module/ast.js";
 import { getIterationItem } from "./access.js";
 import { classifyClass } from "./components.js";
+import { evaluateEnum } from "./enums.js";
 import {
   BREAK_COMPLETION,
   type Completion,
@@ -503,6 +504,9 @@ const evaluateStatement = (
         );
         declareVariable(context.scope, statement.id.name, classValue);
       }
+      return NORMAL_COMPLETION;
+    case "TSEnumDeclaration":
+      declareVariable(context.scope, statement.id.name, evaluateEnum(interpreter, statement, context));
       return NORMAL_COMPLETION;
     case "ReturnStatement":
       return returnCompletion(

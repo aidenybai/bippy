@@ -345,6 +345,17 @@ describe("interpreter: functions and modules", () => {
     ).toBe('["Save", "Hello", ["title", "buttons"]]');
   });
 
+  it("compiles enums to objects with counted members and reverse mappings", () => {
+    expect(
+      describe_(
+        `export enum Step { Password, Code = 5, Done, Label = "done" }
+         enum Direction { Up = 1, Down = Up * 2 }
+         const local = () => { const enum Size { S = "s" } return Size.S; };
+         export const value = [Step.Password, Step.Done, Step[5], Step.Label, Direction.Down, local()];`,
+      ),
+    ).toBe('[0, 6, "Code", "done", 2, "s"]');
+  });
+
   it("names closures after their bindings and honours displayName", () => {
     expect(
       describe_(

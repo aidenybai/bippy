@@ -359,6 +359,8 @@ const getDeclaredNames = (declaration: Statement): string[] => {
     case "FunctionDeclaration":
     case "ClassDeclaration":
       return declaration.id ? [declaration.id.name] : [];
+    case "TSEnumDeclaration":
+      return [declaration.id.name];
     case "VariableDeclaration": {
       const names = new Map<string, Binding>();
       for (const declarator of declaration.declarations) {
@@ -389,6 +391,14 @@ const collectDeclaration = (statement: Statement, bindings: Map<string, Binding>
         if (collectRequireBindings(declarator, bindings)) continue;
         collectPatternBindings(declarator.id, declarator, bindings);
       }
+      return;
+    case "TSEnumDeclaration":
+      bindings.set(statement.id.name, {
+        kind: "declaration",
+        localName: statement.id.name,
+        node: statement,
+        span: { start: statement.start, end: statement.end },
+      });
       return;
   }
 };

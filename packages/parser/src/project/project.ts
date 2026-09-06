@@ -17,6 +17,8 @@ export interface ProjectOptions {
    */
   files?: Record<string, string>;
   alias?: Record<string, string[]>;
+  /** Absolute directories searched for bare specifiers ahead of `node_modules`. */
+  moduleDirectories?: string[];
   /** Parse dependencies inside `node_modules` when linking components. */
   followExternalModules?: boolean;
 }
@@ -69,7 +71,11 @@ export const createProject = (options: ProjectOptions): Project => {
   const moduleCache = new Map<string, ParsedModule | null>();
   let resolver: ModuleResolver | null = null;
   const getResolver = (): ModuleResolver => {
-    resolver ??= createModuleResolver({ rootDirectory, alias: options.alias });
+    resolver ??= createModuleResolver({
+      rootDirectory,
+      alias: options.alias,
+      moduleDirectories: options.moduleDirectories,
+    });
     return resolver;
   };
 

@@ -27,6 +27,7 @@ const USAGE = `usage: pnpm corpus [options] [name...]
   --externals          link into node_modules (default: off for scans, on for live)
   --max-components <n> stop scanning a repository after n components
   --cache <dir>        clone directory (default: packages/parser/.corpus/repos)
+  --links <dir>        workspace package links (default: packages/parser/.corpus/links)
   --out <dir>          report directory (default: packages/parser/.corpus/report)
   --update             fetch the branch tip again for existing clones
   --offline            never clone or fetch`;
@@ -49,6 +50,7 @@ const { values, positionals } = parseArgs({
     externals: { type: "boolean" },
     "max-components": { type: "string", default: "0" },
     cache: { type: "string", default: resolve(corpusDirectory, "repos") },
+    links: { type: "string", default: resolve(corpusDirectory, "links") },
     out: { type: "string", default: resolve(corpusDirectory, "report") },
     update: { type: "boolean", default: false },
     offline: { type: "boolean", default: false },
@@ -80,6 +82,7 @@ const selectEntries = (): Selection[] => {
     getCheckout: () =>
       checkoutRepository(repository, {
         cacheDirectory: values.cache,
+        linksDirectory: values.links,
         update: values.update,
         offline: values.offline,
       }),

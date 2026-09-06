@@ -4,6 +4,7 @@ export * from "./module/parse.js";
 export * from "./module/types.js";
 export * from "./project/project.js";
 export * from "./project/resolver.js";
+export * from "./project/tsconfig.js";
 export * from "./link/linker.js";
 export * from "./link/react-api.js";
 export * from "./analyze/index.js";

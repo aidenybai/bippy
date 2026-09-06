@@ -100,4 +100,5 @@ export const toWorkspaceCheckout = (app: WorkspaceApp, monorepoRoot: string): Co
   reactVersion: app.reactVersion,
   live: app.live,
   commit: null,
+  moduleDirectories: [],
 });
