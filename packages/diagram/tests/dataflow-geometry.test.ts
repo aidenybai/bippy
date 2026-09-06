@@ -10,10 +10,10 @@ const target: DataflowNode = { id: "target", label: "onQueryChange", x: 220, y: 
 const edge: DataflowEdge = { id: "edge", from: source.id, to: target.id, kind: "data" };
 const radius = diagramMetrics.nodeRadius + diagramMetrics.strokeWidth / 2;
 
-test("uses equal label clearance in either direction and stops at node outlines", () => {
+test("keeps arrows clear of node outlines without detaching outgoing wires", () => {
   assert.deepEqual(getDataflowOffsets(edge, source, target), {
     fromOffset: { x: getLabelWidth(source) + 4, y: 0 },
-    toOffset: { x: -radius, y: 0 },
+    toOffset: { x: -radius - diagramMetrics.arrowGap, y: 0 },
   });
   assert.deepEqual(getDataflowOffsets({ ...edge, kind: "update" }, target, source), {
     fromOffset: { x: -radius, y: 0 },
@@ -25,7 +25,7 @@ test("uses the actual first and last nonzero segments for vertical ports", () =>
   const below = { ...target, x: source.x, y: 100 };
   assert.deepEqual(getDataflowOffsets(edge, source, below), {
     fromOffset: { x: 0, y: radius },
-    toOffset: { x: 0, y: -radius },
+    toOffset: { x: 0, y: -radius - diagramMetrics.arrowGap },
   });
   assert.deepEqual(
     getDataflowOffsets(
@@ -42,7 +42,7 @@ test("uses the actual first and last nonzero segments for vertical ports", () =>
       source,
       target,
     ),
-    { fromOffset: { x: 0, y: radius }, toOffset: { x: -radius, y: 0 } },
+    { fromOffset: { x: 0, y: radius }, toOffset: { x: -radius - diagramMetrics.arrowGap, y: 0 } },
   );
 });
 

@@ -62,7 +62,7 @@ The example includes:
 - `useSyncExternalStore` → snapshots → rendered count, including `getSnapshot`, effect subscription/cleanup, notifications, and external writes.
 - Provider value → `useContext` → component props → host styles.
 
-Arrows indicate value/update direction. Callback edges describe invocation back to an updater; they are not a second prop-value transfer. Connections attach to circle outlines or outside labels rather than crossing through them. Arrow tips end at the connection endpoint, with the same label clearance in either direction. Supply `waypoints`, `fromOffset`, `toOffset`, or `labelPosition` when custom routing is needed.
+Arrows indicate value/update direction. Callback edges describe invocation back to an updater; they are not a second prop-value transfer. Connections attach to circle outlines or outside labels rather than crossing through them. Arrow tips stop 3px before node outlines; outgoing wires remain attached. Label clearance is the same in either direction. Supply `waypoints`, `fromOffset`, `toOffset`, or `labelPosition` when custom routing is needed.
 
 ## Themes
 

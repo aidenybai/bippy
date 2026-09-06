@@ -6,6 +6,7 @@ export const diagramMetrics = {
   annotationFontSize: 6,
   labelOffset: 7,
   strokeWidth: 0.5,
+  arrowGap: 3,
 };
 
 interface DiagramLabel {

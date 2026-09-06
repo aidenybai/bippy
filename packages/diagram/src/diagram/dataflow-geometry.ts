@@ -6,13 +6,13 @@ interface DataflowOffsets {
   toOffset: Point;
 }
 
-const getPortOffset = (node: DataflowNode, adjacent: Point): Point => {
+const getPortOffset = (node: DataflowNode, adjacent: Point, nodeGap = 0): Point => {
   const horizontalDistance = adjacent.x - node.x;
   const verticalDistance = adjacent.y - node.y;
   if (verticalDistance === 0 && horizontalDistance > 0) return { x: getLabelWidth(node) + 4, y: 0 };
   const distance = Math.hypot(horizontalDistance, verticalDistance);
   if (distance === 0) return { x: 0, y: 0 };
-  const radius = diagramMetrics.nodeRadius + diagramMetrics.strokeWidth / 2;
+  const radius = diagramMetrics.nodeRadius + diagramMetrics.strokeWidth / 2 + nodeGap;
   return { x: (horizontalDistance / distance) * radius, y: (verticalDistance / distance) * radius };
 };
 
@@ -39,6 +39,6 @@ export const getDataflowOffsets = (
       .find((point) => point.x !== to.x || point.y !== to.y) ?? from;
   return {
     fromOffset: edge.fromOffset ?? getPortOffset(from, firstPoint),
-    toOffset: edge.toOffset ?? getPortOffset(to, lastPoint),
+    toOffset: edge.toOffset ?? getPortOffset(to, lastPoint, diagramMetrics.arrowGap),
   };
 };

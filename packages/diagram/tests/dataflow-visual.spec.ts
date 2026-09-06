@@ -25,8 +25,8 @@ test("keeps prop glyphs and wire endpoints consistent without overlapping tree b
     String(diagramMetrics.strokeWidth),
   );
   const endpoints = await diagram.evaluate((element) => {
-    const path = element.querySelector('[data-edge-id="query-prop"] > path');
-    const node = element.querySelector('[data-node-id="toolbar-query"]');
+    const path = element.querySelector('[data-edge-id="snapshot-result"] > path');
+    const node = element.querySelector('[data-node-id="cart-snapshot"]');
     if (!(path instanceof SVGPathElement) || !(node instanceof SVGGElement))
       throw new Error("Missing connection");
     const transform = node.transform.baseVal.consolidate()?.matrix;
@@ -35,7 +35,7 @@ test("keeps prop glyphs and wire endpoints consistent without overlapping tree b
     return { distance: transform.e - point.x, verticalOffset: transform.f - point.y };
   });
   expect(endpoints.distance).toBeCloseTo(
-    diagramMetrics.nodeRadius + diagramMetrics.strokeWidth / 2,
+    diagramMetrics.nodeRadius + diagramMetrics.strokeWidth / 2 + diagramMetrics.arrowGap,
   );
   expect(endpoints.verticalOffset).toBe(0);
   for (const theme of ["light", "dark"]) {
@@ -58,7 +58,7 @@ test("keeps prop glyphs and wire endpoints consistent without overlapping tree b
         radius: String(diagramMetrics.nodeRadius),
         strokeWidth: `${diagramMetrics.strokeWidth}px`,
       });
-    const bounds = await diagram.locator('[data-node-id="toolbar-query"]').boundingBox();
+    const bounds = await diagram.locator('[data-node-id="cart-snapshot"]').boundingBox();
     if (!bounds) throw new Error("Missing query port");
     await page.screenshot({
       path: `test-results/dataflow-ports-${theme}.png`,
