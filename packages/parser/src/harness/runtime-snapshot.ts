@@ -1,6 +1,11 @@
 import type { Fiber, FiberRoot, ReactRenderer, ReactWorkTagMap } from "bippy";
 import { getDisplayName, getReactWorkTagsForFiber } from "bippy";
-import type { RuntimeFiberSnapshot, RuntimeSnapshot, SnapshotPropValue, SnapshotWorkTag } from "./snapshot.js";
+import type {
+  RuntimeFiberSnapshot,
+  RuntimeSnapshot,
+  SnapshotPropValue,
+  SnapshotWorkTag,
+} from "./snapshot.js";
 
 const MAX_STRING_PROP_LENGTH = 200;
 
@@ -49,7 +54,9 @@ const buildTagLookup = (workTags: Readonly<ReactWorkTagMap>): Map<number, Snapsh
 const toPropValue = (value: unknown): SnapshotPropValue | undefined => {
   switch (typeof value) {
     case "string":
-      return value.length > MAX_STRING_PROP_LENGTH ? `${value.slice(0, MAX_STRING_PROP_LENGTH)}…` : value;
+      return value.length > MAX_STRING_PROP_LENGTH
+        ? `${value.slice(0, MAX_STRING_PROP_LENGTH)}…`
+        : value;
     case "number":
     case "boolean":
       return value;
@@ -129,7 +136,10 @@ const getFiberName = (fiber: Fiber, tag: SnapshotWorkTag): string | null => {
   }
 };
 
-const snapshotFiber = (fiber: Fiber, lookup: Map<number, SnapshotWorkTag>): RuntimeFiberSnapshot => {
+const snapshotFiber = (
+  fiber: Fiber,
+  lookup: Map<number, SnapshotWorkTag>,
+): RuntimeFiberSnapshot => {
   const tag = lookup.get(fiber.tag) ?? "Unknown";
   const children: RuntimeFiberSnapshot[] = [];
   let child = fiber.child;
@@ -159,7 +169,11 @@ export interface RuntimeSnapshotSource {
 export const createRuntimeSnapshot = (source: RuntimeSnapshotSource): RuntimeSnapshot => ({
   reactVersion: source.renderer?.version ?? null,
   rendererName: source.renderer?.rendererPackageName ?? null,
-  buildType: source.renderer ? (source.renderer.bundleType === 1 ? "development" : "production") : null,
+  buildType: source.renderer
+    ? source.renderer.bundleType === 1
+      ? "development"
+      : "production"
+    : null,
   roots: source.roots.map((root) => snapshotFiberTree(root.current)),
   capturedAt: new Date().toISOString(),
 });

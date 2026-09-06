@@ -143,7 +143,8 @@ const collectNamedExports = (
       exports.push({
         kind: "re-export",
         exportedName,
-        imported: localName === "default" ? { kind: "default" } : { kind: "named", name: localName },
+        imported:
+          localName === "default" ? { kind: "default" } : { kind: "named", name: localName },
         specifier: declaration.source.value,
       });
     } else {
@@ -242,7 +243,10 @@ const collectStatement = (
   }
 };
 
-const collectMemberAssignment = (statement: Statement, memberAssignments: MemberAssignment[]): void => {
+const collectMemberAssignment = (
+  statement: Statement,
+  memberAssignments: MemberAssignment[],
+): void => {
   if (statement.type !== "ExpressionStatement") return;
   const expression = statement.expression;
   if (expression.type !== "AssignmentExpression" || expression.operator !== "=") return;
@@ -263,7 +267,11 @@ export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
   const bindings = new Map<string, TopLevelBinding>();
   const memberAssignments: MemberAssignment[] = [];
   for (const statement of file.program.body) {
-    if (statement.type === "ExpressionStatement" && "directive" in statement && statement.directive) {
+    if (
+      statement.type === "ExpressionStatement" &&
+      "directive" in statement &&
+      statement.directive
+    ) {
       continue;
     }
     collectStatement(statement, imports, exports, bindings);

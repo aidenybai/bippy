@@ -105,10 +105,16 @@ export const serializeFiber = (fiber: StaticFiber): SerializedFiber => {
         kind: "branch",
         reason: fiber.reason,
         preferredIndex: fiber.preferredIndex,
-        alternatives: fiber.alternatives.map((alternative) => collectChildren(alternative).map(serializeFiber)),
+        alternatives: fiber.alternatives.map((alternative) =>
+          collectChildren(alternative).map(serializeFiber),
+        ),
       };
     case "repeat":
-      return { ...base, kind: "repeat", children: collectChildren(fiber.child).map(serializeFiber) };
+      return {
+        ...base,
+        kind: "repeat",
+        children: collectChildren(fiber.child).map(serializeFiber),
+      };
     case "opaque":
       return {
         ...base,
@@ -132,11 +138,15 @@ export interface FormatFiberOptions {
   rootDirectory?: string;
 }
 
-const formatLocation = (location: SourceLocation | null, rootDirectory: string | undefined): string => {
+const formatLocation = (
+  location: SourceLocation | null,
+  rootDirectory: string | undefined,
+): string => {
   if (!location) return "";
-  const filePath = rootDirectory && location.filePath.startsWith(rootDirectory)
-    ? location.filePath.slice(rootDirectory.length).replace(/^[/\\]/, "")
-    : location.filePath;
+  const filePath =
+    rootDirectory && location.filePath.startsWith(rootDirectory)
+      ? location.filePath.slice(rootDirectory.length).replace(/^[/\\]/, "")
+      : location.filePath;
   return ` @ ${filePath}:${location.line}:${location.column}`;
 };
 
@@ -146,9 +156,15 @@ const formatProps = (props: Record<string, string>): string => {
   return ` {${entries.map(([key, value]) => `${key}=${value}`).join(", ")}}`;
 };
 
-export const formatSerializedFiber = (fiber: SerializedFiber, options: FormatFiberOptions = {}, depth = 0): string => {
+export const formatSerializedFiber = (
+  fiber: SerializedFiber,
+  options: FormatFiberOptions = {},
+  depth = 0,
+): string => {
   const indent = "  ".repeat(depth);
-  const location = options.showLocations ? formatLocation(fiber.location, options.rootDirectory) : "";
+  const location = options.showLocations
+    ? formatLocation(fiber.location, options.rootDirectory)
+    : "";
   const lines: string[] = [];
   switch (fiber.kind) {
     case "fiber": {
@@ -156,28 +172,34 @@ export const formatSerializedFiber = (fiber: SerializedFiber, options: FormatFib
       const props = options.showProps ? formatProps(fiber.props) : "";
       lines.push(`${indent}<${fiber.name ?? "?"}>${key}${props}${location}`);
       if (options.showNotes) for (const note of fiber.notes) lines.push(`${indent}  // ${note}`);
-      for (const child of fiber.children) lines.push(formatSerializedFiber(child, options, depth + 1));
+      for (const child of fiber.children)
+        lines.push(formatSerializedFiber(child, options, depth + 1));
       break;
     }
     case "text":
-      lines.push(`${indent}${fiber.text === null ? "#text(?)" : JSON.stringify(fiber.text)}${location}`);
+      lines.push(
+        `${indent}${fiber.text === null ? "#text(?)" : JSON.stringify(fiber.text)}${location}`,
+      );
       break;
     case "branch":
       lines.push(`${indent}?branch(${fiber.reason})${location}`);
       fiber.alternatives.forEach((alternative, index) => {
         lines.push(`${indent}  |${index}${fiber.preferredIndex === index ? " (preferred)" : ""}`);
-        for (const child of alternative) lines.push(formatSerializedFiber(child, options, depth + 2));
+        for (const child of alternative)
+          lines.push(formatSerializedFiber(child, options, depth + 2));
       });
       break;
     case "repeat":
       lines.push(`${indent}*repeat${location}`);
-      for (const child of fiber.children) lines.push(formatSerializedFiber(child, options, depth + 1));
+      for (const child of fiber.children)
+        lines.push(formatSerializedFiber(child, options, depth + 1));
       break;
     case "opaque": {
       const key = fiber.key === null ? "" : ` key=${JSON.stringify(fiber.key)}`;
       const props = options.showProps ? formatProps(fiber.props) : "";
       lines.push(`${indent}<${fiber.name}>${key}${props} (opaque: ${fiber.reason})${location}`);
-      for (const child of fiber.passedChildren) lines.push(formatSerializedFiber(child, options, depth + 1));
+      for (const child of fiber.passedChildren)
+        lines.push(formatSerializedFiber(child, options, depth + 1));
       break;
     }
     case "unknown":

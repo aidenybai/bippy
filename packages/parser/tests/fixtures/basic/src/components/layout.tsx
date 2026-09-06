@@ -1,6 +1,9 @@
 import { memo, type ReactNode } from "react";
 
-interface LayoutProps { title: string; children: ReactNode }
+interface LayoutProps {
+  title: string;
+  children: ReactNode;
+}
 
 const LayoutImpl = ({ title, children }: LayoutProps) => (
   <main>

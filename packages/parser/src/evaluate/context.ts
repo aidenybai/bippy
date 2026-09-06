@@ -1,4 +1,10 @@
-import type { ContextDefinition, FunctionLikeNode, ModuleRecord, Scope, StaticValue } from "../types.js";
+import type {
+  ContextDefinition,
+  FunctionLikeNode,
+  ModuleRecord,
+  Scope,
+  StaticValue,
+} from "../types.js";
 
 export interface ContextFrame {
   context: ContextDefinition;

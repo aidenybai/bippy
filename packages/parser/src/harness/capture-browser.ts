@@ -31,7 +31,8 @@ const requireFromHere = createRequire(import.meta.url);
 
 let injectBundlePromise: Promise<string> | null = null;
 
-const bippySourceEntry = (): string => resolve(dirname(requireFromHere.resolve("bippy/package.json")), "src/index.ts");
+const bippySourceEntry = (): string =>
+  resolve(dirname(requireFromHere.resolve("bippy/package.json")), "src/index.ts");
 
 export const buildInjectBundle = (): Promise<string> => {
   injectBundlePromise ??= build({
@@ -68,11 +69,16 @@ const readSnapshot = (page: Page): Promise<RuntimeSnapshot | null> =>
     return read ? read() : null;
   });
 
-const sleep = (ms: number): Promise<void> => new Promise((resolveSleep) => setTimeout(resolveSleep, ms));
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolveSleep) => setTimeout(resolveSleep, ms));
 
 // Waits until the commit counter stops moving for `settleMs`, so the snapshot
 // reflects the tree after effects, lazy boundaries and data fetches settle.
-const waitForQuietCommits = async (page: Page, settleMs: number, timeoutMs: number): Promise<number> => {
+const waitForQuietCommits = async (
+  page: Page,
+  settleMs: number,
+  timeoutMs: number,
+): Promise<number> => {
   const deadline = Date.now() + timeoutMs;
   let lastCount = await readCommitCount(page);
   let quietSince = Date.now();
@@ -139,7 +145,9 @@ export class BrowserCapturer {
   }
 }
 
-export const captureBrowserSnapshot = async (options: BrowserCaptureOptions): Promise<BrowserCaptureResult> => {
+export const captureBrowserSnapshot = async (
+  options: BrowserCaptureOptions,
+): Promise<BrowserCaptureResult> => {
   const capturer = new BrowserCapturer({ headless: options.headless });
   try {
     return await capturer.capture(options);

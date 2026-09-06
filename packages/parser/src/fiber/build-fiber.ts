@@ -2,9 +2,16 @@ import type { Class } from "oxc-parser";
 import type { ContextFrame } from "../evaluate/context.js";
 import { renderClassComponent } from "../evaluate/class-component.js";
 import type { Interpreter } from "../evaluate/interpreter.js";
-import { describeElementType, describeValue, getObjectProperty, omitObjectKeys, unknownValue } from "../evaluate/values.js";
+import {
+  describeElementType,
+  describeValue,
+  getObjectProperty,
+  omitObjectKeys,
+  unknownValue,
+} from "../evaluate/values.js";
 import type {
   ComponentDefinition,
+  ContextDefinition,
   SourceLocation,
   StaticElementFiber,
   StaticElementType,
@@ -61,17 +68,30 @@ const DEFAULT_MAX_COMPONENT_DEPTH = 64;
 const DEFAULT_MAX_FIBER_COUNT = 50_000;
 const DEFAULT_MAX_RECURSION_PER_COMPONENT = 3;
 
+/** Mutable per-Suspense-boundary record; set when something in the primary subtree can suspend. */
+interface SuspenseScope {
+  maySuspend: boolean;
+}
+
 interface BuildContext {
   depth: number;
   contextFrame: ContextFrame | null;
   componentStack: ComponentDefinition["node"][];
+  suspenseScope: SuspenseScope | null;
 }
 
 const isClassNode = (node: ComponentDefinition["node"]): node is Class =>
   node.type === "ClassDeclaration" || node.type === "ClassExpression";
 
+const describeComponent = (component: ComponentDefinition): string =>
+  component.name ?? "anonymous component";
+
 const isSkippedChild = (value: StaticValue): boolean =>
-  (value.kind === "primitive" && (value.value === null || value.value === undefined || typeof value.value === "boolean" || value.value === "")) ||
+  (value.kind === "primitive" &&
+    (value.value === null ||
+      value.value === undefined ||
+      typeof value.value === "boolean" ||
+      value.value === "")) ||
   (value.kind === "unknown-primitive" && value.primitiveType === "boolean");
 
 export class FiberBuilder {
@@ -96,13 +116,27 @@ export class FiberBuilder {
     this.interpreter = interpreter;
     this.maxComponentDepth = options.maxComponentDepth ?? DEFAULT_MAX_COMPONENT_DEPTH;
     this.maxFiberCount = options.maxFiberCount ?? DEFAULT_MAX_FIBER_COUNT;
-    this.maxRecursionPerComponent = options.maxRecursionPerComponent ?? DEFAULT_MAX_RECURSION_PER_COMPONENT;
+    this.maxRecursionPerComponent =
+      options.maxRecursionPerComponent ?? DEFAULT_MAX_RECURSION_PER_COMPONENT;
     this.supportsSingletons = options.supportsSingletons ?? true;
   }
 
   buildRoot(rootValue: StaticValue, location: SourceLocation | null): StaticElementFiber {
-    const root = this.createElementFiber(HostRootTag, { kind: "host", tagName: "#root" }, { kind: "host", tagName: "#root" }, "HostRoot", null, { kind: "object", entries: [] }, location);
-    const context: BuildContext = { depth: 0, contextFrame: null, componentStack: [] };
+    const root = this.createElementFiber(
+      HostRootTag,
+      { kind: "host", tagName: "#root" },
+      { kind: "host", tagName: "#root" },
+      "HostRoot",
+      null,
+      { kind: "object", entries: [] },
+      location,
+    );
+    const context: BuildContext = {
+      depth: 0,
+      contextFrame: null,
+      componentStack: [],
+      suspenseScope: null,
+    };
     root.child = this.reconcileChildren(root, rootValue, context);
     return root;
   }
@@ -139,9 +173,26 @@ export class FiberBuilder {
     };
   }
 
-  private createUnknownFiber(reason: string, location: SourceLocation | null): StaticFiber {
+  private createUnknownFiber(
+    reason: string,
+    location: SourceLocation | null,
+    context?: BuildContext,
+  ): StaticFiber {
     this.stats.unknownCount++;
-    return { id: this.allocateId(), kind: "unknown", reason, return: null, sibling: null, index: 0, location };
+    if (context) this.markMaySuspend(context);
+    return {
+      id: this.allocateId(),
+      kind: "unknown",
+      reason,
+      return: null,
+      sibling: null,
+      index: 0,
+      location,
+    };
+  }
+
+  private markMaySuspend(context: BuildContext): void {
+    if (context.suspenseScope) context.suspenseScope.maySuspend = true;
   }
 
   private link(parent: StaticFiber, children: StaticFiber[]): StaticFiber | null {
@@ -156,17 +207,31 @@ export class FiberBuilder {
     return children[0] ?? null;
   }
 
-  reconcileChildren(parent: StaticFiber, value: StaticValue, context: BuildContext): StaticFiber | null {
+  reconcileChildren(
+    parent: StaticFiber,
+    value: StaticValue,
+    context: BuildContext,
+  ): StaticFiber | null {
     const children: StaticFiber[] = [];
     this.appendChildFibers(value, context, children, true);
     return this.link(parent, children);
   }
 
-  private appendChildFibers(value: StaticValue, context: BuildContext, out: StaticFiber[], isTopLevel: boolean): void {
+  private appendChildFibers(
+    value: StaticValue,
+    context: BuildContext,
+    out: StaticFiber[],
+    isTopLevel: boolean,
+  ): void {
     if (this.stats.fiberCount >= this.maxFiberCount) {
       if (!this.budgetExhausted) {
         this.budgetExhausted = true;
-        this.interpreter.report("max-fiber-count", `static fiber budget of ${this.maxFiberCount} exhausted`, null, "warning");
+        this.interpreter.report(
+          "max-fiber-count",
+          `static fiber budget of ${this.maxFiberCount} exhausted`,
+          null,
+          "warning",
+        );
       }
       out.push(this.createUnknownFiber("fiber budget exhausted", null));
       return;
@@ -175,12 +240,30 @@ export class FiberBuilder {
     switch (value.kind) {
       case "primitive":
         this.stats.textCount++;
-        out.push({ id: this.allocateId(), kind: "text", tag: HostTextTag, text: String(value.value), return: null, sibling: null, index: 0, location: null });
+        out.push({
+          id: this.allocateId(),
+          kind: "text",
+          tag: HostTextTag,
+          text: String(value.value),
+          return: null,
+          sibling: null,
+          index: 0,
+          location: null,
+        });
         return;
       case "unknown-primitive":
         if (value.primitiveType === "string" || value.primitiveType === "number") {
           this.stats.textCount++;
-          out.push({ id: this.allocateId(), kind: "text", tag: HostTextTag, text: null, return: null, sibling: null, index: 0, location: null });
+          out.push({
+            id: this.allocateId(),
+            kind: "text",
+            tag: HostTextTag,
+            text: null,
+            return: null,
+            sibling: null,
+            index: 0,
+            location: null,
+          });
           return;
         }
         out.push(this.createUnknownFiber(`dynamic child (${value.reason})`, null));
@@ -201,7 +284,15 @@ export class FiberBuilder {
         return;
       case "repeat": {
         this.stats.repeatCount++;
-        const repeat: StaticFiber = { id: this.allocateId(), kind: "repeat", child: null, return: null, sibling: null, index: 0, location: value.location };
+        const repeat: StaticFiber = {
+          id: this.allocateId(),
+          kind: "repeat",
+          child: null,
+          return: null,
+          sibling: null,
+          index: 0,
+          location: value.location,
+        };
         const items: StaticFiber[] = [];
         this.appendChildFibers(value.item, context, items, true);
         repeat.child = this.link(repeat, items);
@@ -209,7 +300,15 @@ export class FiberBuilder {
           out.push(repeat);
           return;
         }
-        const fragment = this.createElementFiber(FragmentTag, { kind: "fragment" }, { kind: "fragment" }, null, null, { kind: "object", entries: [] }, value.location);
+        const fragment = this.createElementFiber(
+          FragmentTag,
+          { kind: "fragment" },
+          { kind: "fragment" },
+          null,
+          null,
+          { kind: "object", entries: [] },
+          value.location,
+        );
         fragment.notes.push("nested array rendered as an implicit Fragment");
         fragment.child = this.link(fragment, [repeat]);
         out.push(fragment);
@@ -237,18 +336,33 @@ export class FiberBuilder {
         return;
       }
       case "unknown":
-        out.push(this.createUnknownFiber(value.reason, value.location));
+        out.push(this.createUnknownFiber(value.reason, value.location, context));
         return;
       case "external":
-        out.push(this.createUnknownFiber(`value from ${value.packageName} (${value.importedName})`, null));
+        out.push(
+          this.createUnknownFiber(`value from ${value.packageName} (${value.importedName})`, null),
+        );
         return;
       default:
-        out.push(this.createUnknownFiber(`${describeValue(value)} is not a valid React child`, null));
+        out.push(
+          this.createUnknownFiber(`${describeValue(value)} is not a valid React child`, null),
+        );
     }
   }
 
-  private createArrayFragment(value: Extract<StaticValue, { kind: "list" }>, context: BuildContext): StaticFiber {
-    const fragment = this.createElementFiber(FragmentTag, { kind: "fragment" }, { kind: "fragment" }, null, null, { kind: "object", entries: [] }, null);
+  private createArrayFragment(
+    value: Extract<StaticValue, { kind: "list" }>,
+    context: BuildContext,
+  ): StaticFiber {
+    const fragment = this.createElementFiber(
+      FragmentTag,
+      { kind: "fragment" },
+      { kind: "fragment" },
+      null,
+      null,
+      { kind: "object", entries: [] },
+      null,
+    );
     fragment.notes.push("nested array rendered as an implicit Fragment");
     const children: StaticFiber[] = [];
     for (const item of value.items) this.appendChildFibers(item, context, children, false);
@@ -267,7 +381,14 @@ export class FiberBuilder {
   }
 
   private createFiberFromElement(element: StaticElementValue, context: BuildContext): StaticFiber {
-    return this.createFiberFromTypeAndProps(element.type, element.type, element.key, element.props, element.location, context);
+    return this.createFiberFromTypeAndProps(
+      element.type,
+      element.type,
+      element.key,
+      element.props,
+      element.location,
+      context,
+    );
   }
 
   private createFiberFromTypeAndProps(
@@ -283,7 +404,15 @@ export class FiberBuilder {
     switch (type.kind) {
       case "host": {
         const tag = this.getHostTag(type.tagName, props);
-        const fiber = this.createElementFiber(tag, type, elementType, type.tagName, null, props, location);
+        const fiber = this.createElementFiber(
+          tag,
+          type,
+          elementType,
+          type.tagName,
+          null,
+          props,
+          location,
+        );
         fiber.key = this.keyToString(key, fiber);
         if (shouldSetTextContent(type.tagName, props)) {
           return fiber;
@@ -292,24 +421,78 @@ export class FiberBuilder {
         return fiber;
       }
       case "function":
-        return this.renderFunctionFiber(FunctionComponentTag, type, elementType, displayName, key, props, location, context, type.component, null);
+        return this.renderFunctionFiber(
+          FunctionComponentTag,
+          type,
+          elementType,
+          displayName,
+          key,
+          props,
+          location,
+          context,
+          type.component,
+          null,
+        );
       case "class": {
         const resolvedProps = applyDefaultProps(type.component, props);
-        const fiber = this.createElementFiber(ClassComponentTag, type, elementType, displayName, null, resolvedProps, location);
+        const fiber = this.createElementFiber(
+          ClassComponentTag,
+          type,
+          elementType,
+          displayName,
+          null,
+          resolvedProps,
+          location,
+        );
         fiber.key = this.keyToString(key, fiber);
         this.renderComposite(fiber, type.component, context, (componentContext) => {
           const classValue = this.toClassValue(type.component);
-          return renderClassComponent(this.interpreter, classValue, resolvedProps, componentContext);
+          return renderClassComponent(
+            this.interpreter,
+            classValue,
+            resolvedProps,
+            componentContext,
+          );
         });
         return fiber;
       }
       case "memo": {
-        if (type.inner.kind === "function" && !type.hasCompare && !hasDefaultProps(type.inner.component)) {
-          return this.renderFunctionFiber(SimpleMemoComponentTag, type.inner, elementType, displayName, key, props, location, context, type.inner.component, null);
+        if (
+          type.inner.kind === "function" &&
+          !type.hasCompare &&
+          !hasDefaultProps(type.inner.component)
+        ) {
+          return this.renderFunctionFiber(
+            SimpleMemoComponentTag,
+            type.inner,
+            elementType,
+            displayName,
+            key,
+            props,
+            location,
+            context,
+            type.inner.component,
+            null,
+          );
         }
-        const fiber = this.createElementFiber(MemoComponentTag, type, elementType, displayName, null, props, location);
+        const fiber = this.createElementFiber(
+          MemoComponentTag,
+          type,
+          elementType,
+          displayName,
+          null,
+          props,
+          location,
+        );
         fiber.key = this.keyToString(key, fiber);
-        const inner = this.createFiberFromTypeAndProps(type.inner, type.inner, null, props, location, this.descend(context));
+        const inner = this.createFiberFromTypeAndProps(
+          type.inner,
+          type.inner,
+          null,
+          props,
+          location,
+          this.descend(context),
+        );
         fiber.child = this.link(fiber, [inner]);
         return fiber;
       }
@@ -330,70 +513,194 @@ export class FiberBuilder {
         );
       }
       case "lazy": {
+        this.markMaySuspend(context);
         if (!type.inner) {
-          const fiber = this.createElementFiber(LazyComponentTag, type, elementType, displayName, null, props, location);
+          const fiber = this.createElementFiber(
+            LazyComponentTag,
+            type,
+            elementType,
+            displayName,
+            null,
+            props,
+            location,
+          );
           fiber.key = this.keyToString(key, fiber);
           fiber.notes.push("lazy component target could not be resolved statically");
-          fiber.child = this.link(fiber, [this.createUnknownFiber("unresolved lazy component", location)]);
+          fiber.child = this.link(fiber, [
+            this.createUnknownFiber("unresolved lazy component", location, context),
+          ]);
           return fiber;
         }
-        const resolved = this.createFiberFromTypeAndProps(type.inner, elementType, key, props, location, context);
-        if (resolved.kind === "fiber") resolved.notes.push("resolved from React.lazy; runtime shows the Suspense fallback until the chunk loads");
+        const resolved = this.createFiberFromTypeAndProps(
+          type.inner,
+          elementType,
+          key,
+          props,
+          location,
+          context,
+        );
+        if (resolved.kind === "fiber")
+          resolved.notes.push(
+            "resolved from React.lazy; the nearest Suspense shows its fallback until the chunk loads",
+          );
         return resolved;
       }
       case "fragment":
-        return this.renderPassthrough(FragmentTag, type, elementType, null, key, props, location, context);
+        return this.renderPassthrough(
+          FragmentTag,
+          type,
+          elementType,
+          null,
+          key,
+          props,
+          location,
+          context,
+        );
       case "strict-mode":
-        return this.renderPassthrough(ModeTag, type, elementType, displayName, key, props, location, context);
+        return this.renderPassthrough(
+          ModeTag,
+          type,
+          elementType,
+          displayName,
+          key,
+          props,
+          location,
+          context,
+        );
       case "profiler":
-        return this.renderPassthrough(ProfilerTag, type, elementType, displayName, key, props, location, context);
+        return this.renderPassthrough(
+          ProfilerTag,
+          type,
+          elementType,
+          displayName,
+          key,
+          props,
+          location,
+          context,
+        );
       case "suspense-list":
-        return this.renderPassthrough(SuspenseListComponentTag, type, elementType, displayName, key, props, location, context);
+        return this.renderPassthrough(
+          SuspenseListComponentTag,
+          type,
+          elementType,
+          displayName,
+          key,
+          props,
+          location,
+          context,
+        );
       case "view-transition":
-        return this.renderPassthrough(ViewTransitionComponentTag, type, elementType, displayName, key, props, location, context);
+        return this.renderPassthrough(
+          ViewTransitionComponentTag,
+          type,
+          elementType,
+          displayName,
+          key,
+          props,
+          location,
+          context,
+        );
       case "suspense":
-        return this.renderOffscreenBoundary(SuspenseComponentTag, type, elementType, displayName, key, props, location, context);
+        return this.renderSuspenseBoundary(
+          type,
+          elementType,
+          displayName,
+          key,
+          props,
+          location,
+          context,
+        );
       case "activity":
-        return this.renderOffscreenBoundary(ActivityComponentTag, type, elementType, displayName, key, props, location, context);
+        return this.renderActivityBoundary(
+          type,
+          elementType,
+          displayName,
+          key,
+          props,
+          location,
+          context,
+        );
       case "context-provider": {
-        const fiber = this.createElementFiber(ContextProviderTag, type, elementType, displayName, null, props, location);
+        const fiber = this.createElementFiber(
+          ContextProviderTag,
+          type,
+          elementType,
+          displayName,
+          null,
+          props,
+          location,
+        );
         fiber.key = this.keyToString(key, fiber);
+        this.noteAnonymousContext(fiber, type.context);
         const nextFrame: ContextFrame | null = type.context
-          ? { context: type.context, value: getObjectProperty(props, "value"), parent: context.contextFrame }
+          ? {
+              context: type.context,
+              value: getObjectProperty(props, "value"),
+              parent: context.contextFrame,
+            }
           : context.contextFrame;
-        fiber.child = this.reconcileChildren(fiber, children, { ...context, contextFrame: nextFrame });
+        fiber.child = this.reconcileChildren(fiber, children, {
+          ...context,
+          contextFrame: nextFrame,
+        });
         return fiber;
       }
       case "context-consumer": {
-        const fiber = this.createElementFiber(ContextConsumerTag, type, elementType, displayName, null, props, location);
+        const fiber = this.createElementFiber(
+          ContextConsumerTag,
+          type,
+          elementType,
+          displayName,
+          null,
+          props,
+          location,
+        );
         fiber.key = this.keyToString(key, fiber);
+        this.noteAnonymousContext(fiber, type.context);
         if (children.kind !== "function") {
           fiber.notes.push("Consumer children is not a function");
-          fiber.child = this.link(fiber, [this.createUnknownFiber("Consumer render prop is dynamic", location)]);
+          fiber.child = this.link(fiber, [
+            this.createUnknownFiber("Consumer render prop is dynamic", location),
+          ]);
           return fiber;
         }
         const contextValue = type.context
           ? this.lookupContext(type.context, context)
           : unknownValue("context value from an unresolved context");
-        const evaluationContext = this.interpreter.createModuleContext(children.module, context.contextFrame);
+        const evaluationContext = this.interpreter.createModuleContext(
+          children.module,
+          context.contextFrame,
+        );
         const rendered = this.interpreter.callFunction(children, [contextValue], evaluationContext);
         fiber.child = this.reconcileChildren(fiber, rendered, context);
         return fiber;
       }
       case "portal": {
-        const fiber = this.createElementFiber(HostPortalTag, type, elementType, displayName, null, props, location);
+        const fiber = this.createElementFiber(
+          HostPortalTag,
+          type,
+          elementType,
+          displayName,
+          null,
+          props,
+          location,
+        );
         fiber.key = this.keyToString(key, fiber);
         fiber.child = this.reconcileChildren(fiber, children, context);
         return fiber;
       }
       case "external": {
         this.stats.opaqueCount++;
+        this.markMaySuspend(context);
         const opaque: StaticFiber = {
           id: this.allocateId(),
           kind: "opaque",
           displayName: type.displayName,
           packageName: type.packageName,
-          key: key?.kind === "primitive" && key.value != null ? String(key.value) : null,
+          key:
+            key?.kind === "primitive" && key.value !== null && key.value !== undefined
+              ? String(key.value)
+              : null,
           props,
           passedChildren: null,
           reason: `${type.importedName} from ${type.packageName} is not analyzed`,
@@ -406,7 +713,11 @@ export class FiberBuilder {
         return opaque;
       }
       case "unknown":
-        return this.createUnknownFiber(`${type.displayName ? `<${type.displayName}>` : "element"}: ${type.reason}`, location);
+        return this.createUnknownFiber(
+          `${type.displayName ? `<${type.displayName}>` : "element"}: ${type.reason}`,
+          location,
+          context,
+        );
     }
   }
 
@@ -430,14 +741,52 @@ export class FiberBuilder {
     location: SourceLocation | null,
     context: BuildContext,
   ): StaticFiber {
-    const fiber = this.createElementFiber(tag, type, elementType, displayName, null, props, location);
+    const fiber = this.createElementFiber(
+      tag,
+      type,
+      elementType,
+      displayName,
+      null,
+      props,
+      location,
+    );
     fiber.key = this.keyToString(key, fiber);
     fiber.child = this.reconcileChildren(fiber, getObjectProperty(props, "children"), context);
     return fiber;
   }
 
-  private renderOffscreenBoundary(
-    tag: WorkTag,
+  /** The reconciler's internal Offscreen fiber that wraps a boundary's primary children. */
+  private createOffscreenFiber(
+    mode: "visible" | "hidden",
+    location: SourceLocation | null,
+  ): StaticElementFiber {
+    const internalType: StaticElementType = {
+      kind: "unknown",
+      displayName: "Offscreen",
+      reason: "internal",
+    };
+    return this.createElementFiber(
+      OffscreenComponentTag,
+      internalType,
+      internalType,
+      "Offscreen",
+      null,
+      {
+        kind: "object",
+        entries: [{ kind: "property", key: "mode", value: { kind: "primitive", value: mode } }],
+      },
+      location,
+    );
+  }
+
+  /**
+   * Mirrors mountSuspensePrimaryChildren / mountSuspenseFallbackChildren: the
+   * primary tree lives under a visible Offscreen fiber; while suspended React
+   * instead mounts an empty hidden Offscreen followed by a Fragment holding the
+   * fallback. The suspended shape is only emitted as an alternative when the
+   * primary subtree contains something that can suspend (lazy, opaque, unknown).
+   */
+  private renderSuspenseBoundary(
     type: StaticElementType,
     elementType: StaticElementType,
     displayName: string | null,
@@ -446,19 +795,94 @@ export class FiberBuilder {
     location: SourceLocation | null,
     context: BuildContext,
   ): StaticFiber {
-    const fiber = this.createElementFiber(tag, type, elementType, displayName, null, props, location);
-    fiber.key = this.keyToString(key, fiber);
-    const offscreen = this.createElementFiber(
-      OffscreenComponentTag,
-      { kind: "unknown", displayName: "Offscreen", reason: "internal" },
-      { kind: "unknown", displayName: "Offscreen", reason: "internal" },
-      "Offscreen",
+    const fiber = this.createElementFiber(
+      SuspenseComponentTag,
+      type,
+      elementType,
+      displayName,
       null,
-      { kind: "object", entries: [{ kind: "property", key: "mode", value: { kind: "primitive", value: "visible" } }] },
+      props,
       location,
     );
-    offscreen.notes.push("primary children; the fallback is only mounted while suspended");
-    offscreen.child = this.reconcileChildren(offscreen, getObjectProperty(props, "children"), context);
+    fiber.key = this.keyToString(key, fiber);
+    const suspenseScope: SuspenseScope = { maySuspend: false };
+    const primary = this.createOffscreenFiber("visible", location);
+    primary.notes.push("primary children");
+    primary.child = this.reconcileChildren(primary, getObjectProperty(props, "children"), {
+      ...context,
+      suspenseScope,
+    });
+    if (!suspenseScope.maySuspend) {
+      fiber.child = this.link(fiber, [primary]);
+      return fiber;
+    }
+    const hidden = this.createOffscreenFiber("hidden", location);
+    hidden.notes.push("primary children are not mounted while suspended");
+    const fallbackType: StaticElementType = { kind: "fragment" };
+    const fallback = this.createElementFiber(
+      FragmentTag,
+      fallbackType,
+      fallbackType,
+      null,
+      null,
+      { kind: "object", entries: [] },
+      location,
+    );
+    fallback.notes.push("Suspense fallback");
+    fallback.child = this.reconcileChildren(
+      fallback,
+      getObjectProperty(props, "fallback"),
+      context,
+    );
+    this.stats.branchCount++;
+    const branch: StaticFiber = {
+      id: this.allocateId(),
+      kind: "branch",
+      alternatives: [],
+      preferredIndex: 0,
+      reason: "Suspense boundary may be suspended when observed",
+      return: null,
+      sibling: null,
+      index: 0,
+      location,
+    };
+    branch.alternatives = [this.link(branch, [primary]), this.link(branch, [hidden, fallback])];
+    fiber.child = this.link(fiber, [branch]);
+    return fiber;
+  }
+
+  /** `<Activity>` keeps its children mounted in both modes; only the Offscreen mode changes. */
+  private renderActivityBoundary(
+    type: StaticElementType,
+    elementType: StaticElementType,
+    displayName: string | null,
+    key: StaticValue | null,
+    props: StaticObjectValue,
+    location: SourceLocation | null,
+    context: BuildContext,
+  ): StaticFiber {
+    const fiber = this.createElementFiber(
+      ActivityComponentTag,
+      type,
+      elementType,
+      displayName,
+      null,
+      props,
+      location,
+    );
+    fiber.key = this.keyToString(key, fiber);
+    const mode = getObjectProperty(props, "mode");
+    const offscreen = this.createOffscreenFiber(
+      mode.kind === "primitive" && mode.value === "hidden" ? "hidden" : "visible",
+      location,
+    );
+    if (mode.kind !== "primitive")
+      offscreen.notes.push("Activity mode is dynamic; assumed visible");
+    offscreen.child = this.reconcileChildren(
+      offscreen,
+      getObjectProperty(props, "children"),
+      context,
+    );
     fiber.child = this.link(fiber, [offscreen]);
     return fiber;
   }
@@ -475,7 +899,15 @@ export class FiberBuilder {
     component: ComponentDefinition,
     secondArgument: StaticValue | null,
   ): StaticFiber {
-    const fiber = this.createElementFiber(tag, type, elementType, displayName, null, props, location);
+    const fiber = this.createElementFiber(
+      tag,
+      type,
+      elementType,
+      displayName,
+      null,
+      props,
+      location,
+    );
     fiber.key = this.keyToString(key, fiber);
     this.renderComposite(fiber, component, context, (componentContext) => {
       const fn = this.toFunctionValue(component);
@@ -493,22 +925,36 @@ export class FiberBuilder {
   ): void {
     const location = fiber.location;
     if (context.depth >= this.maxComponentDepth) {
-      this.interpreter.report("max-component-depth", `component depth ${this.maxComponentDepth} exceeded at ${component.name}`, location, "warning");
-      fiber.child = this.link(fiber, [this.createUnknownFiber("component depth exceeded", location)]);
+      this.interpreter.report(
+        "max-component-depth",
+        `component depth ${this.maxComponentDepth} exceeded at ${describeComponent(component)}`,
+        location,
+        "warning",
+      );
+      fiber.child = this.link(fiber, [
+        this.createUnknownFiber("component depth exceeded", location),
+      ]);
       return;
     }
     let occurrences = 0;
     for (const node of context.componentStack) if (node === component.node) occurrences++;
     if (occurrences >= this.maxRecursionPerComponent) {
-      fiber.notes.push(`recursive render of ${component.name} truncated after ${occurrences} levels`);
-      fiber.child = this.link(fiber, [this.createUnknownFiber(`recursive ${component.name}`, location)]);
+      fiber.notes.push(
+        `recursive render of ${describeComponent(component)} truncated after ${occurrences} levels`,
+      );
+      fiber.child = this.link(fiber, [
+        this.createUnknownFiber(`recursive ${describeComponent(component)}`, location, context),
+      ]);
       return;
     }
-    const componentContext = this.interpreter.createModuleContext(component.module, context.contextFrame);
+    const componentContext = this.interpreter.createModuleContext(
+      component.module,
+      context.contextFrame,
+    );
     const rendered = render(componentContext);
     const childContext: BuildContext = {
+      ...context,
       depth: context.depth + 1,
-      contextFrame: context.contextFrame,
       componentStack: [...context.componentStack, component.node],
     };
     fiber.child = this.reconcileChildren(fiber, rendered, childContext);
@@ -517,7 +963,7 @@ export class FiberBuilder {
   private toFunctionValue(component: ComponentDefinition): StaticFunctionValue {
     const node = component.node;
     if (isClassNode(node)) {
-      throw new Error(`${component.name} is a class component`);
+      throw new Error(`${describeComponent(component)} is a class component`);
     }
     return {
       kind: "function",
@@ -533,7 +979,7 @@ export class FiberBuilder {
   private toClassValue(component: ComponentDefinition): StaticClassValue {
     const node = component.node;
     if (!isClassNode(node)) {
-      throw new Error(`${component.name} is not a class component`);
+      throw new Error(`${describeComponent(component)} is not a class component`);
     }
     return {
       kind: "class",
@@ -545,7 +991,19 @@ export class FiberBuilder {
     };
   }
 
-  private lookupContext(definition: NonNullable<Extract<StaticElementType, { kind: "context-consumer" }>["context"]>, context: BuildContext): StaticValue {
+  /** React only names context fibers from `displayName`; keep the binding name discoverable. */
+  private noteAnonymousContext(
+    fiber: StaticElementFiber,
+    definition: ContextDefinition | null,
+  ): void {
+    if (definition && definition.displayName === null)
+      fiber.notes.push(`context ${definition.name} has no displayName`);
+  }
+
+  private lookupContext(
+    definition: NonNullable<Extract<StaticElementType, { kind: "context-consumer" }>["context"]>,
+    context: BuildContext,
+  ): StaticValue {
     let frame = context.contextFrame;
     while (frame) {
       if (frame.context === definition) return frame.value;

@@ -9,12 +9,23 @@ export interface CommitRecorder {
   dispose: () => void;
 }
 
+export interface CommitRecorderOptions {
+  /** Restricts recording to matching roots, e.g. by `root.containerInfo`. */
+  rootFilter?: (root: FiberRoot) => boolean;
+}
+
 const DEFAULT_COMMIT_TIMEOUT_MS = 5_000;
+
+/** The host container a root renders into (`containerInfo` is not part of bippy's public FiberRoot shape). */
+export const getRootContainer = (root: FiberRoot): unknown =>
+  "containerInfo" in root ? root.containerInfo : null;
 
 // Observes every React commit through bippy's DevTools hook and turns the
 // live roots into serializable snapshots. Works in Node (happy-dom) and in
 // the browser injection bundle alike.
-export const createCommitRecorder = (): CommitRecorder => {
+export const createCommitRecorder = ({
+  rootFilter,
+}: CommitRecorderOptions = {}): CommitRecorder => {
   const roots = new Set<FiberRoot>();
   let renderer: ReactRenderer | null = null;
   let commits = 0;
@@ -22,6 +33,7 @@ export const createCommitRecorder = (): CommitRecorder => {
   const unsubscribe = instrument({
     name: "bippy-parser-harness",
     onCommitFiberRoot: (rendererId, root) => {
+      if (rootFilter && !rootFilter(root)) return;
       roots.add(root);
       renderer = getRDTHook().renderers.get(rendererId) ?? renderer;
       commits++;
@@ -39,7 +51,10 @@ export const createCommitRecorder = (): CommitRecorder => {
     commitCount: () => commits,
     waitForCommit: (timeoutMs = DEFAULT_COMMIT_TIMEOUT_MS) =>
       new Promise<void>((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error(`no React commit observed within ${timeoutMs}ms`)), timeoutMs);
+        const timer = setTimeout(
+          () => reject(new Error(`no React commit observed within ${timeoutMs}ms`)),
+          timeoutMs,
+        );
         commitWaiters.push(() => {
           clearTimeout(timer);
           resolve();

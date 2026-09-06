@@ -69,7 +69,10 @@ export class ModuleGraph {
     return this.resolver.resolve(specifier, fromModule.filePath);
   }
 
-  resolveImportedModule(specifier: string, fromModule: ModuleRecord): ModuleRecord | ModuleResolution {
+  resolveImportedModule(
+    specifier: string,
+    fromModule: ModuleRecord,
+  ): ModuleRecord | ModuleResolution {
     const resolution = this.resolveSpecifier(specifier, fromModule);
     if (resolution.kind === "internal") {
       return this.getModule(resolution.filePath) ?? resolution;
@@ -149,7 +152,10 @@ export class ModuleGraph {
   ): ResolvedSymbol {
     const binding = module.bindings.get(localName);
     if (!binding) {
-      return { kind: "unresolved", reason: `no top-level binding "${localName}" in ${module.filePath}` };
+      return {
+        kind: "unresolved",
+        reason: `no top-level binding "${localName}" in ${module.filePath}`,
+      };
     }
     if (binding.kind === "import") {
       return this.resolveImportedName(

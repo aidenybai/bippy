@@ -4,7 +4,7 @@ export const createFunctionComponentDefinition = (
   value: Extract<StaticValue, { kind: "function" }>,
   fallbackName: string | null,
 ): ComponentDefinition => ({
-  name: value.name ?? fallbackName ?? "Anonymous",
+  name: value.name ?? fallbackName,
   module: value.module,
   node: value.node,
   scope: value.scope,
@@ -16,7 +16,7 @@ export const createClassComponentDefinition = (
   value: Extract<StaticValue, { kind: "class" }>,
   fallbackName: string | null,
 ): ComponentDefinition => ({
-  name: value.name ?? fallbackName ?? "Anonymous",
+  name: value.name ?? fallbackName,
   module: value.module,
   node: value.node,
   scope: value.scope,
@@ -28,7 +28,11 @@ export const toElementType = (value: StaticValue, nameHint: string | null): Stat
   switch (value.kind) {
     case "primitive":
       if (typeof value.value === "string") return { kind: "host", tagName: value.value };
-      return { kind: "unknown", displayName: nameHint, reason: `element type is ${String(value.value)}` };
+      return {
+        kind: "unknown",
+        displayName: nameHint,
+        reason: `element type is ${String(value.value)}`,
+      };
     case "function":
       return { kind: "function", component: createFunctionComponentDefinition(value, nameHint) };
     case "class":
@@ -36,7 +40,11 @@ export const toElementType = (value: StaticValue, nameHint: string | null): Stat
     case "component-reference":
       return value.type;
     case "context":
-      return { kind: "context-provider", context: value.context, displayName: value.context.name };
+      return {
+        kind: "context-provider",
+        context: value.context,
+        displayName: value.context.displayName,
+      };
     case "react-api":
       switch (value.api) {
         case "Fragment":
@@ -54,7 +62,11 @@ export const toElementType = (value: StaticValue, nameHint: string | null): Stat
         case "ViewTransition":
           return { kind: "view-transition" };
         default:
-          return { kind: "unknown", displayName: nameHint, reason: `React.${value.api} is not an element type` };
+          return {
+            kind: "unknown",
+            displayName: nameHint,
+            reason: `React.${value.api} is not an element type`,
+          };
       }
     case "external":
       return {
@@ -68,7 +80,11 @@ export const toElementType = (value: StaticValue, nameHint: string | null): Stat
     case "unknown":
       return { kind: "unknown", displayName: nameHint, reason: value.reason };
     case "unknown-primitive":
-      return { kind: "unknown", displayName: nameHint, reason: `dynamic ${value.primitiveType} element type` };
+      return {
+        kind: "unknown",
+        displayName: nameHint,
+        reason: `dynamic ${value.primitiveType} element type`,
+      };
     case "element":
     case "list":
     case "repeat":
@@ -76,6 +92,10 @@ export const toElementType = (value: StaticValue, nameHint: string | null): Stat
     case "namespace":
     case "global":
     case "method":
-      return { kind: "unknown", displayName: nameHint, reason: `invalid element type (${value.kind})` };
+      return {
+        kind: "unknown",
+        displayName: nameHint,
+        reason: `invalid element type (${value.kind})`,
+      };
   }
 };

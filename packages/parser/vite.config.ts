@@ -20,9 +20,16 @@ const fixtureAliasPlugin = (): Plugin => ({
     const relativeToFixtures = relative(fixturesDirectory, importer);
     if (relativeToFixtures.startsWith("..")) return null;
     const [fixtureName] = relativeToFixtures.split(sep);
-    const base = join(fixturesDirectory, fixtureName, "src", source.slice(FIXTURE_ALIAS_PREFIX.length));
+    const base = join(
+      fixturesDirectory,
+      fixtureName,
+      "src",
+      source.slice(FIXTURE_ALIAS_PREFIX.length),
+    );
     const candidates = [base, ...RESOLVE_EXTENSIONS.map((extension) => `${base}${extension}`)];
-    return candidates.find((candidate) => existsSync(candidate) && statSync(candidate).isFile()) ?? null;
+    return (
+      candidates.find((candidate) => existsSync(candidate) && statSync(candidate).isFile()) ?? null
+    );
   },
 });
 
@@ -38,6 +45,17 @@ export default defineConfig({
   test: {
     name: "parser",
     environment: "happy-dom",
+    environmentOptions: {
+      happyDOM: {
+        // Fixtures reference stylesheets/scripts that do not exist; React DOM
+        // suspends the commit on `<link precedence>` until load/error fires.
+        settings: {
+          disableCSSFileLoading: true,
+          disableJavaScriptFileLoading: true,
+          handleDisabledFileLoadingAsSuccess: true,
+        },
+      },
+    },
     include: ["tests/**/*.test.{ts,tsx}"],
     setupFiles: ["./tests/setup.ts"],
     testTimeout: 20_000,

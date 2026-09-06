@@ -29,14 +29,19 @@ export class StaticRenderer {
   constructor(options: StaticRendererOptions) {
     this.options = options;
     this.graph = new ModuleGraph({
-      resolver: new ModuleResolver({ tsconfigPath: options.tsconfigPath, conditionNames: options.conditionNames }),
+      resolver: new ModuleResolver({
+        tsconfigPath: options.tsconfigPath,
+        conditionNames: options.conditionNames,
+      }),
       resolveExternalPackages: options.resolveExternalPackages,
       externalPackageAllowList: options.externalPackageAllowList,
     });
   }
 
   resolvePath(filePath: string): string {
-    return path.isAbsolute(filePath) ? filePath : path.resolve(this.options.rootDirectory, filePath);
+    return path.isAbsolute(filePath)
+      ? filePath
+      : path.resolve(this.options.rootDirectory, filePath);
   }
 
   loadModule(filePath: string): ModuleRecord | null {
@@ -59,7 +64,12 @@ export class StaticRenderer {
     });
   }
 
-  private finish(interpreter: Interpreter, builder: FiberBuilder, rootValue: StaticValue, location: SourceLocation | null): StaticRenderResult {
+  private finish(
+    interpreter: Interpreter,
+    builder: FiberBuilder,
+    rootValue: StaticValue,
+    location: SourceLocation | null,
+  ): StaticRenderResult {
     const root = builder.buildRoot(rootValue, location);
     builder.stats.modulesLoaded = this.graph.loadedModuleCount;
     return { root, diagnostics: [...interpreter.diagnostics], stats: builder.stats };
@@ -68,7 +78,12 @@ export class StaticRenderer {
   private missingModuleResult(filePath: string, message: string): StaticRenderResult {
     const interpreter = this.createInterpreter();
     const builder = this.createBuilder(interpreter);
-    const diagnostic: Diagnostic = { severity: "error", code: "module-not-found", message, location: null };
+    const diagnostic: Diagnostic = {
+      severity: "error",
+      code: "module-not-found",
+      message,
+      location: null,
+    };
     interpreter.diagnostics.push(diagnostic);
     return this.finish(interpreter, builder, unknownValue(`${filePath}: ${message}`), null);
   }
@@ -81,7 +96,12 @@ export class StaticRenderer {
     const interpreter = this.createInterpreter();
     const builder = this.createBuilder(interpreter);
     const componentValue = interpreter.evaluateModuleExport(module, exportName);
-    const type = toElementType(componentValue, exportName === "default" ? path.basename(absolutePath, path.extname(absolutePath)) : exportName);
+    const type = toElementType(
+      componentValue,
+      exportName === "default"
+        ? path.basename(absolutePath, path.extname(absolutePath))
+        : exportName,
+    );
     const element: StaticValue = {
       kind: "element",
       type,
@@ -100,11 +120,21 @@ export class StaticRenderer {
     const builder = this.createBuilder(interpreter);
     const rootCalls = findRootRenderCalls(module);
     if (rootCalls.length === 0) {
-      interpreter.report("no-root-render", `no createRoot().render / hydrateRoot / ReactDOM.render call found in ${absolutePath}`, null, "error");
+      interpreter.report(
+        "no-root-render",
+        `no createRoot().render / hydrateRoot / ReactDOM.render call found in ${absolutePath}`,
+        null,
+        "error",
+      );
       return this.finish(interpreter, builder, unknownValue("no root render call"), null);
     }
     if (rootCalls.length > 1) {
-      interpreter.report("multiple-root-renders", `${rootCalls.length} root render calls found in ${absolutePath}; using the first`, null, "warning");
+      interpreter.report(
+        "multiple-root-renders",
+        `${rootCalls.length} root render calls found in ${absolutePath}; using the first`,
+        null,
+        "warning",
+      );
     }
     const rootCall = rootCalls[0];
     const moduleContext = interpreter.createModuleContext(module);
@@ -120,4 +150,5 @@ export class StaticRenderer {
   }
 }
 
-export const createStaticRenderer = (options: StaticRendererOptions): StaticRenderer => new StaticRenderer(options);
+export const createStaticRenderer = (options: StaticRendererOptions): StaticRenderer =>
+  new StaticRenderer(options);

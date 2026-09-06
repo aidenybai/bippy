@@ -1,7 +1,13 @@
 import { getObjectProperty } from "../evaluate/values.js";
-import type { ComponentDefinition, StaticElementType, StaticObjectValue, StaticValue } from "../types.js";
+import type {
+  ComponentDefinition,
+  StaticElementType,
+  StaticObjectValue,
+  StaticValue,
+} from "../types.js";
 
-const isKnownString = (value: StaticValue): boolean => value.kind === "primitive" && typeof value.value === "string";
+const isKnownString = (value: StaticValue): boolean =>
+  value.kind === "primitive" && typeof value.value === "string";
 
 const isNonNullish = (value: StaticValue): boolean =>
   !(value.kind === "primitive" && (value.value === null || value.value === undefined));
@@ -12,9 +18,13 @@ export const shouldSetTextContent = (tagName: string, props: StaticObjectValue):
   const children = getObjectProperty(props, "children");
   if (children.kind === "primitive") {
     const value = children.value;
-    if (typeof value === "string" || typeof value === "number" || typeof value === "bigint") return true;
+    if (typeof value === "string" || typeof value === "number" || typeof value === "bigint")
+      return true;
   }
-  if (children.kind === "unknown-primitive" && (children.primitiveType === "string" || children.primitiveType === "number")) {
+  if (
+    children.kind === "unknown-primitive" &&
+    (children.primitiveType === "string" || children.primitiveType === "number")
+  ) {
     return true;
   }
   const innerHtml = getObjectProperty(props, "dangerouslySetInnerHTML");
@@ -34,36 +44,60 @@ export const isHostHoistable = (tagName: string, props: StaticObjectValue): bool
       return true;
     case "style": {
       const href = getObjectProperty(props, "href");
-      return isKnownString(getObjectProperty(props, "precedence")) && isKnownString(href) && href.kind === "primitive" && href.value !== "";
+      return (
+        isKnownString(getObjectProperty(props, "precedence")) &&
+        isKnownString(href) &&
+        href.kind === "primitive" &&
+        href.value !== ""
+      );
     }
     case "link": {
       const rel = getObjectProperty(props, "rel");
       const href = getObjectProperty(props, "href");
-      if (!isKnownString(rel) || !isKnownString(href) || (href.kind === "primitive" && href.value === "")) return false;
-      if (isNonNullish(getObjectProperty(props, "onLoad")) || isNonNullish(getObjectProperty(props, "onError"))) return false;
+      if (
+        !isKnownString(rel) ||
+        !isKnownString(href) ||
+        (href.kind === "primitive" && href.value === "")
+      )
+        return false;
+      if (
+        isNonNullish(getObjectProperty(props, "onLoad")) ||
+        isNonNullish(getObjectProperty(props, "onError"))
+      )
+        return false;
       if (rel.kind === "primitive" && rel.value === "stylesheet") {
-        return isKnownString(getObjectProperty(props, "precedence")) && !isNonNullish(getObjectProperty(props, "disabled"));
+        return (
+          isKnownString(getObjectProperty(props, "precedence")) &&
+          !isNonNullish(getObjectProperty(props, "disabled"))
+        );
       }
       return true;
     }
     case "script": {
       const src = getObjectProperty(props, "src");
       const isAsync = getObjectProperty(props, "async");
-      if (!isKnownString(src) || !(isAsync.kind === "primitive" && Boolean(isAsync.value))) return false;
-      return !isNonNullish(getObjectProperty(props, "onLoad")) && !isNonNullish(getObjectProperty(props, "onError"));
+      if (!isKnownString(src) || !(isAsync.kind === "primitive" && Boolean(isAsync.value)))
+        return false;
+      return (
+        !isNonNullish(getObjectProperty(props, "onLoad")) &&
+        !isNonNullish(getObjectProperty(props, "onError"))
+      );
     }
     default:
       return false;
   }
 };
 
-export const getComponentDisplayName = (component: ComponentDefinition): string => {
+export const getComponentDisplayName = (component: ComponentDefinition): string | null => {
   const displayName = component.properties.get("displayName");
-  if (displayName?.kind === "primitive" && typeof displayName.value === "string") return displayName.value;
+  if (displayName?.kind === "primitive" && typeof displayName.value === "string")
+    return displayName.value;
   return component.name;
 };
 
-// Mirrors bippy's getDisplayName: explicit displayName, then the wrapped type's name.
+// Mirrors bippy's getDisplayName: explicit displayName, then the wrapped type's
+// name, null for anonymous functions (React's own fallbacks such as
+// "ForwardRef"/"Memo" are DevTools presentation, not fiber data).
 export const getElementDisplayName = (type: StaticElementType): string | null => {
   switch (type.kind) {
     case "host":
@@ -93,7 +127,7 @@ export const getElementDisplayName = (type: StaticElementType): string | null =>
       return "ViewTransition";
     case "context-provider":
     case "context-consumer":
-      return type.displayName ?? type.context?.name ?? null;
+      return type.displayName;
     case "portal":
       return "Portal";
     case "external":
@@ -108,7 +142,10 @@ export const hasDefaultProps = (component: ComponentDefinition): boolean => {
   return defaults !== undefined && isNonNullish(defaults);
 };
 
-export const applyDefaultProps = (component: ComponentDefinition, props: StaticObjectValue): StaticObjectValue => {
+export const applyDefaultProps = (
+  component: ComponentDefinition,
+  props: StaticObjectValue,
+): StaticObjectValue => {
   const defaults = component.properties.get("defaultProps");
   if (!defaults || !isNonNullish(defaults)) return props;
   return { kind: "object", entries: [{ kind: "spread", value: defaults }, ...props.entries] };

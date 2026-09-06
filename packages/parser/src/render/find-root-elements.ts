@@ -8,8 +8,13 @@ export interface RootRenderCall {
 }
 
 const isRootFactory = (callee: Expression): boolean => {
-  if (callee.type === "Identifier") return callee.name === "createRoot" || callee.name === "hydrateRoot";
-  if (callee.type === "MemberExpression" && !callee.computed && callee.property.type === "Identifier") {
+  if (callee.type === "Identifier")
+    return callee.name === "createRoot" || callee.name === "hydrateRoot";
+  if (
+    callee.type === "MemberExpression" &&
+    !callee.computed &&
+    callee.property.type === "Identifier"
+  ) {
     return callee.property.name === "createRoot" || callee.property.name === "hydrateRoot";
   }
   return false;
@@ -17,7 +22,11 @@ const isRootFactory = (callee: Expression): boolean => {
 
 const calleeName = (callee: Expression): string | null => {
   if (callee.type === "Identifier") return callee.name;
-  if (callee.type === "MemberExpression" && !callee.computed && callee.property.type === "Identifier") {
+  if (
+    callee.type === "MemberExpression" &&
+    !callee.computed &&
+    callee.property.type === "Identifier"
+  ) {
     return callee.property.name;
   }
   return null;
@@ -25,7 +34,11 @@ const calleeName = (callee: Expression): string | null => {
 
 const unwrapCallee = (callee: Expression): Expression => {
   let current = callee;
-  while (current.type === "TSNonNullExpression" || current.type === "TSAsExpression" || current.type === "ParenthesizedExpression") {
+  while (
+    current.type === "TSNonNullExpression" ||
+    current.type === "TSAsExpression" ||
+    current.type === "ParenthesizedExpression"
+  ) {
     current = current.expression;
   }
   return current;
@@ -56,10 +69,17 @@ const collectCall = (call: CallExpression, out: RootRenderCall[]): void => {
     out.push({ element: secondArgument, api: "hydrateRoot", call });
     return;
   }
-  if ((name === "render" || name === "hydrate") && call.arguments.length >= 2 && firstArgument && firstArgument.type !== "SpreadElement") {
+  if (
+    (name === "render" || name === "hydrate") &&
+    call.arguments.length >= 2 &&
+    firstArgument &&
+    firstArgument.type !== "SpreadElement"
+  ) {
     const isReactDomCall =
       callee.type === "Identifier" ||
-      (callee.type === "MemberExpression" && callee.object.type === "Identifier" && /react/i.test(callee.object.name));
+      (callee.type === "MemberExpression" &&
+        callee.object.type === "Identifier" &&
+        /react/i.test(callee.object.name));
     if (isReactDomCall) out.push({ element: firstArgument, api: name, call });
   }
 };
@@ -78,7 +98,10 @@ const walk = (node: Node, visit: (node: Node) => void): void => {
 };
 
 const isNode = (value: unknown): value is Node =>
-  typeof value === "object" && value !== null && "type" in value && typeof (value as { type: unknown }).type === "string";
+  typeof value === "object" &&
+  value !== null &&
+  "type" in value &&
+  typeof (value as { type: unknown }).type === "string";
 
 export const findRootRenderCalls = (module: ModuleRecord): RootRenderCall[] => {
   const calls: RootRenderCall[] = [];

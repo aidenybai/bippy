@@ -6,6 +6,7 @@ import {
   createCommitRecorder,
   formatComparisonReport,
   formatRuntimeSnapshot,
+  getRootContainer,
   type CompareRenderResult,
   type ComparisonStatus,
   type RuntimeSnapshot,
@@ -34,7 +35,11 @@ export interface FixtureRunResult {
 }
 
 const FIXTURES_DIRECTORY = resolve(import.meta.dirname, "../fixtures");
-const DEFAULT_MANIFEST: FixtureManifest = { entry: "src/main.tsx", expectedStatus: "exact", minCoverage: 1 };
+const DEFAULT_MANIFEST: FixtureManifest = {
+  entry: "src/main.tsx",
+  expectedStatus: "exact",
+  minCoverage: 1,
+};
 const SETTLE_ROUNDS = 5;
 
 const readManifest = (directory: string): FixtureManifest => {
@@ -64,7 +69,9 @@ const mountFixture = async (fixture: FixtureCase): Promise<RuntimeSnapshot> => {
   const container = document.createElement("div");
   container.id = "root";
   document.body.appendChild(container);
-  const recorder = createCommitRecorder();
+  const recorder = createCommitRecorder({
+    rootFilter: (root) => getRootContainer(root) === container,
+  });
   try {
     const commit = recorder.waitForCommit();
     await import(/* @vite-ignore */ join(fixture.directory, fixture.manifest.entry));
@@ -79,13 +86,17 @@ const mountFixture = async (fixture: FixtureCase): Promise<RuntimeSnapshot> => {
 export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult> => {
   const renderer = createStaticRenderer({
     rootDirectory: fixture.directory,
-    tsconfigPath: existsSync(join(fixture.directory, "tsconfig.json")) ? join(fixture.directory, "tsconfig.json") : undefined,
+    tsconfigPath: existsSync(join(fixture.directory, "tsconfig.json"))
+      ? join(fixture.directory, "tsconfig.json")
+      : undefined,
     externalPackageAllowList: fixture.manifest.externalPackages,
   });
   const staticResult = renderer.renderEntry(join(fixture.directory, fixture.manifest.entry));
   if (fixture.manifest.skipRuntime) return { staticResult, runtime: null, comparison: null };
   const runtime = await mountFixture(fixture);
-  const comparison = compareStaticToRuntime(staticResult, runtime, { anchor: fixture.manifest.anchor });
+  const comparison = compareStaticToRuntime(staticResult, runtime, {
+    anchor: fixture.manifest.anchor,
+  });
   return { staticResult, runtime, comparison };
 };
 
@@ -95,7 +106,9 @@ export const describeFixtureRun = (fixture: FixtureCase, run: FixtureRunResult):
     `static:\n${formatFiber(run.staticResult.root, { rootDirectory: fixture.directory })}`,
   ];
   if (run.runtime) {
-    sections.push(`runtime:\n${run.runtime.roots.map((root) => formatRuntimeSnapshot(root)).join("\n")}`);
+    sections.push(
+      `runtime:\n${run.runtime.roots.map((root) => formatRuntimeSnapshot(root)).join("\n")}`,
+    );
   }
   if (run.comparison) {
     sections.push(`comparison:\n${formatComparisonReport(run.comparison.report)}`);

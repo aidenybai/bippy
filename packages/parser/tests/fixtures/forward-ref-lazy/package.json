@@ -1,0 +1,5 @@
+{
+  "name": "fixture-forward-ref-lazy",
+  "private": true,
+  "type": "module"
+}

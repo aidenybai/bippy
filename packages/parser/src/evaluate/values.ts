@@ -23,7 +23,10 @@ export const primitiveValue = (value: StaticPrimitive): StaticPrimitiveValue => 
   value,
 });
 
-export const unknownValue = (reason: string, location: SourceLocation | null = null): StaticUnknownValue => ({
+export const unknownValue = (
+  reason: string,
+  location: SourceLocation | null = null,
+): StaticUnknownValue => ({
   kind: "unknown",
   reason,
   location,
@@ -57,7 +60,8 @@ export const getObjectProperty = (object: StaticObjectValue, key: string): Stati
       if (nested.kind !== "primitive" || nested.value !== undefined) return nested;
       continue;
     }
-    if (spread.kind === "primitive" || spread.kind === "function" || spread.kind === "class") continue;
+    if (spread.kind === "primitive" || spread.kind === "function" || spread.kind === "class")
+      continue;
     if (spread.kind === "branch") {
       return branchValue(
         spread.alternatives.map((alternative) =>
@@ -229,9 +233,20 @@ export const mapValue = (
 export const getStaticPrimitive = (value: StaticValue): StaticPrimitive | undefined =>
   value.kind === "primitive" ? value.value : undefined;
 
+export const getListLength = (list: StaticListValue): StaticValue => {
+  const hasUnknownLength = list.items.some(
+    (item) => item.kind === "repeat" || item.kind === "unknown",
+  );
+  return hasUnknownLength
+    ? unknownPrimitiveValue("number", "length of a partially known list")
+    : primitiveValue(list.items.length);
+};
+
 export const isKnownList = (value: StaticValue): value is StaticListValue =>
   value.kind === "list" &&
-  value.items.every((item) => item.kind !== "unknown" && item.kind !== "repeat" && item.kind !== "branch");
+  value.items.every(
+    (item) => item.kind !== "unknown" && item.kind !== "repeat" && item.kind !== "branch",
+  );
 
 export const describeValue = (value: StaticValue): string => {
   switch (value.kind) {
@@ -278,11 +293,11 @@ export const describeElementType = (type: StaticElementType): string => {
       return type.tagName;
     case "function":
     case "class":
-      return type.component.name;
+      return type.component.name ?? "Anonymous";
     case "memo":
       return type.displayName ?? `memo(${describeElementType(type.inner)})`;
     case "forward-ref":
-      return type.displayName ?? type.component.name;
+      return type.displayName ?? type.component.name ?? "ForwardRef";
     case "lazy":
       return type.displayName ?? (type.inner ? describeElementType(type.inner) : "lazy");
     case "fragment":

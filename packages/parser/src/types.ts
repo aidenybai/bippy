@@ -35,7 +35,10 @@ export interface Diagnostic {
   location: SourceLocation | null;
 }
 
-export type ImportedName = { kind: "default" } | { kind: "namespace" } | { kind: "named"; name: string };
+export type ImportedName =
+  | { kind: "default" }
+  | { kind: "namespace" }
+  | { kind: "named"; name: string };
 
 export interface ImportBinding {
   localName: string;
@@ -74,11 +77,23 @@ export type ExportEntry = ExportedLocal | ExportedExpression | ReExport | ReExpo
 export type FunctionLikeNode = FunctionNode | ArrowFunctionExpression;
 
 export type TopLevelBinding =
-  | { kind: "variable"; name: string; init: Expression | null; declarationKind: "const" | "let" | "var" | "using" | "await using"; span: Span }
+  | {
+      kind: "variable";
+      name: string;
+      init: Expression | null;
+      declarationKind: "const" | "let" | "var" | "using" | "await using";
+      span: Span;
+    }
   | { kind: "function"; name: string; node: FunctionNode; span: Span }
   | { kind: "class"; name: string; node: Class; span: Span }
   | { kind: "import"; name: string; binding: ImportBinding; span: Span }
-  | { kind: "destructured"; name: string; pattern: BindingPattern; init: Expression | null; span: Span };
+  | {
+      kind: "destructured";
+      name: string;
+      pattern: BindingPattern;
+      init: Expression | null;
+      span: Span;
+    };
 
 export interface MemberAssignment {
   objectName: string;
@@ -110,7 +125,8 @@ export type ResolvedSymbol =
   | { kind: "unresolved"; reason: string };
 
 export interface ComponentDefinition {
-  name: string;
+  /** Function/class name or the binding it was assigned to; null for anonymous components. */
+  name: string | null;
   module: ModuleRecord;
   node: FunctionLikeNode | Class;
   scope: Scope;
@@ -119,7 +135,10 @@ export interface ComponentDefinition {
 }
 
 export interface ContextDefinition {
+  /** Inferred from the binding the context was assigned to; used for notes only. */
   name: string;
+  /** Explicit `Context.displayName`; React names provider/consumer fibers from it. */
+  displayName: string | null;
   defaultValue: StaticValue;
   location: SourceLocation | null;
 }

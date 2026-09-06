@@ -1,9 +1,44 @@
 import type { Class, ClassElement } from "oxc-parser";
-import type { StaticClassValue, StaticFunctionValue, StaticObjectValue, StaticValue } from "../types.js";
+import { someNode } from "../parse/ast-walk.js";
+import type {
+  StaticClassValue,
+  StaticFunctionValue,
+  StaticObjectValue,
+  StaticValue,
+} from "../types.js";
 import type { EvaluationContext } from "./context.js";
 import type { Interpreter } from "./interpreter.js";
 import { createScope } from "./scope.js";
-import { getObjectProperty, objectFromRecord, UNDEFINED_VALUE, unknownValue } from "./values.js";
+import {
+  branchValue,
+  getObjectProperty,
+  objectFromRecord,
+  UNDEFINED_VALUE,
+  unknownValue,
+} from "./values.js";
+
+/**
+ * A class whose body never calls `this.setState` (or derives state from props)
+ * renders with exactly the state its constructor/fields produced.
+ */
+const mayUpdateState = (chain: StaticClassValue[]): boolean =>
+  chain.some((current) =>
+    someNode(current.node, (node) => {
+      if (node.type === "MemberExpression") {
+        return (
+          node.object.type === "ThisExpression" &&
+          node.property.type === "Identifier" &&
+          (node.property.name === "setState" || node.property.name === "forceUpdate")
+        );
+      }
+      return (
+        node.type === "MethodDefinition" &&
+        node.static &&
+        node.key.type === "Identifier" &&
+        node.key.name === "getDerivedStateFromProps"
+      );
+    }),
+  );
 
 const MAX_INHERITANCE_DEPTH = 8;
 
@@ -17,7 +52,11 @@ const getElementName = (element: ClassElement): string | null => {
   return null;
 };
 
-const collectClassChain = (interpreter: Interpreter, classValue: StaticClassValue, context: EvaluationContext): StaticClassValue[] => {
+const collectClassChain = (
+  interpreter: Interpreter,
+  classValue: StaticClassValue,
+  context: EvaluationContext,
+): StaticClassValue[] => {
   const chain: StaticClassValue[] = [classValue];
   let current: StaticClassValue = classValue;
   while (chain.length < MAX_INHERITANCE_DEPTH && current.node.superClass) {
@@ -39,7 +78,10 @@ const bindMethods = (
   instance: StaticObjectValue,
   methodContext: EvaluationContext,
   seen: Set<string>,
-): { constructor: StaticFunctionValue | null; fields: Array<{ name: string; node: Class["body"]["body"][number] }> } => {
+): {
+  constructor: StaticFunctionValue | null;
+  fields: Array<{ name: string; node: Class["body"]["body"][number] }>;
+} => {
   let constructor: StaticFunctionValue | null = null;
   const fields: Array<{ name: string; node: Class["body"]["body"][number] }> = [];
   for (const element of classValue.node.body.body) {
@@ -56,7 +98,12 @@ const bindMethods = (
       if (element.kind !== "method" || seen.has(name)) continue;
       seen.add(name);
       const fn = interpreter.createFunctionValue(element.value, methodContext, name);
-      if (fn.kind === "function") instance.entries.push({ kind: "property", key: name, value: { ...fn, thisValue: instance } });
+      if (fn.kind === "function")
+        instance.entries.push({
+          kind: "property",
+          key: name,
+          value: { ...fn, thisValue: instance },
+        });
       continue;
     }
     if (element.type === "PropertyDefinition" || element.type === "TSAbstractPropertyDefinition") {
@@ -89,18 +136,43 @@ export const renderClassComponent = (
       scope: current.scope,
       thisValue: instance,
     };
-    return { current, methodContext, ...bindMethods(interpreter, current, instance, methodContext, seen) };
+    return {
+      current,
+      methodContext,
+      ...bindMethods(interpreter, current, instance, methodContext, seen),
+    };
   });
   for (const { current, methodContext, fields, constructor } of [...perClass].reverse()) {
     for (const { name, node } of fields) {
-      if (node.type !== "PropertyDefinition" && node.type !== "TSAbstractPropertyDefinition") continue;
-      const fieldContext: EvaluationContext = { ...methodContext, scope: createScope(current.scope), thisValue: instance };
-      const value = node.value ? interpreter.evaluateExpression(node.value, fieldContext, name) : UNDEFINED_VALUE;
+      if (node.type !== "PropertyDefinition" && node.type !== "TSAbstractPropertyDefinition")
+        continue;
+      const fieldContext: EvaluationContext = {
+        ...methodContext,
+        scope: createScope(current.scope),
+        thisValue: instance,
+      };
+      const value = node.value
+        ? interpreter.evaluateExpression(node.value, fieldContext, name)
+        : UNDEFINED_VALUE;
       instance.entries.push({ kind: "property", key: name, value });
     }
     if (constructor) {
       interpreter.callFunction(constructor, [props], methodContext, { thisValue: instance });
     }
+  }
+  if (mayUpdateState(chain)) {
+    instance.entries.push({
+      kind: "property",
+      key: "state",
+      value: branchValue(
+        [
+          getObjectProperty(instance, "state"),
+          unknownValue(`updated state of ${classValue.name ?? "class component"}`),
+        ],
+        "class state may change after mount",
+        null,
+      ),
+    });
   }
   const render = getObjectProperty(instance, "render");
   if (render.kind !== "function") {

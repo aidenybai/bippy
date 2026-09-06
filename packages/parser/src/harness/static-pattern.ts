@@ -47,7 +47,13 @@ export interface PatternWildcard extends PatternNodeBase {
   reason: string;
 }
 
-export type PatternNode = PatternFiber | PatternText | PatternBranch | PatternRepeat | PatternOpaque | PatternWildcard;
+export type PatternNode =
+  | PatternFiber
+  | PatternText
+  | PatternBranch
+  | PatternRepeat
+  | PatternOpaque
+  | PatternWildcard;
 
 export const toPattern = (fiber: StaticFiber): PatternNode => {
   switch (fiber.kind) {
@@ -67,13 +73,25 @@ export const toPattern = (fiber: StaticFiber): PatternNode => {
         kind: "branch",
         reason: fiber.reason,
         preferredIndex: fiber.preferredIndex,
-        alternatives: fiber.alternatives.map((alternative) => collectChildren(alternative).map(toPattern)),
+        alternatives: fiber.alternatives.map((alternative) =>
+          collectChildren(alternative).map(toPattern),
+        ),
         location: fiber.location,
       };
     case "repeat":
-      return { kind: "repeat", children: collectChildren(fiber.child).map(toPattern), location: fiber.location };
+      return {
+        kind: "repeat",
+        children: collectChildren(fiber.child).map(toPattern),
+        location: fiber.location,
+      };
     case "opaque":
-      return { kind: "opaque", name: fiber.displayName, key: fiber.key, reason: fiber.reason, location: fiber.location };
+      return {
+        kind: "opaque",
+        name: fiber.displayName,
+        key: fiber.key,
+        reason: fiber.reason,
+        location: fiber.location,
+      };
     case "unknown":
       return { kind: "wildcard", reason: fiber.reason, location: fiber.location };
   }
@@ -87,7 +105,12 @@ export const countPatternFibers = (node: PatternNode): number => {
     case "opaque":
       return 1;
     case "branch":
-      return Math.max(0, ...node.alternatives.map((alternative) => alternative.reduce((sum, child) => sum + countPatternFibers(child), 0)));
+      return Math.max(
+        0,
+        ...node.alternatives.map((alternative) =>
+          alternative.reduce((sum, child) => sum + countPatternFibers(child), 0),
+        ),
+      );
     case "repeat":
       return node.children.reduce((sum, child) => sum + countPatternFibers(child), 0);
     case "wildcard":

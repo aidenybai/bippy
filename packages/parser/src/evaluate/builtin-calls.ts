@@ -6,6 +6,7 @@ import {
   describeValue,
   FALSE_VALUE,
   getKnownObjectKeys,
+  getListLength,
   getObjectProperty,
   getTruthiness,
   isKnownList,
@@ -17,6 +18,10 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "./values.js";
+
+const PROMISE_METHOD_NAMES = new Set(["then", "catch", "finally"]);
+
+export const isPromiseMethodName = (name: string): boolean => PROMISE_METHOD_NAMES.has(name);
 
 const GLOBAL_NAMES = new Set([
   "Object",
@@ -146,7 +151,10 @@ export const getBuiltinGlobal = (name: string): StaticValue | null => {
   if (name === "process.env" || name.startsWith("process.env.")) {
     return name === "process.env"
       ? { kind: "global", name }
-      : unknownPrimitiveValue("string", `environment variable ${name.slice("process.env.".length)}`);
+      : unknownPrimitiveValue(
+          "string",
+          `environment variable ${name.slice("process.env.".length)}`,
+        );
   }
   if (name.startsWith("Math.") && name !== "Math.max" && name !== "Math.min") {
     const constant = name.slice("Math.".length);
@@ -164,13 +172,15 @@ const toStringValue = (value: StaticValue): StaticValue => {
 };
 
 const toNumberValue = (value: StaticValue): StaticValue => {
-  if (value.kind === "primitive" && typeof value.value !== "bigint") return primitiveValue(Number(value.value));
+  if (value.kind === "primitive" && typeof value.value !== "bigint")
+    return primitiveValue(Number(value.value));
   return unknownPrimitiveValue("number", `Number(${describeValue(value)})`);
 };
 
 const toBooleanValue = (value: StaticValue): StaticValue => {
   const truthiness = getTruthiness(value);
-  if (truthiness === null) return unknownPrimitiveValue("boolean", `Boolean(${describeValue(value)})`);
+  if (truthiness === null)
+    return unknownPrimitiveValue("boolean", `Boolean(${describeValue(value)})`);
   return truthiness ? TRUE_VALUE : FALSE_VALUE;
 };
 
@@ -191,7 +201,9 @@ const callGlobal = (
     case "Boolean":
       return first ? toBooleanValue(first) : FALSE_VALUE;
     case "Array":
-      return isConstructor || args.length !== 1 ? listValue(args) : unknownValue("Array(length)", location);
+      return isConstructor || args.length !== 1
+        ? listValue(args)
+        : unknownValue("Array(length)", location);
     case "Array.isArray":
       if (!first) return FALSE_VALUE;
       if (first.kind === "list" || first.kind === "repeat") return TRUE_VALUE;
@@ -199,21 +211,27 @@ const callGlobal = (
         return unknownPrimitiveValue("boolean", "Array.isArray on dynamic value");
       }
       return FALSE_VALUE;
-    case "Array.from":
-      if (first?.kind === "list" || first?.kind === "repeat") {
-        if (second?.kind === "function") return mapList(interpreter, first, second, context);
-        return first;
+    case "Array.from": {
+      const source = first?.kind === "object" ? arrayLikeToList(first) : first;
+      if (source?.kind === "list" || source?.kind === "repeat") {
+        if (second?.kind === "function") return mapList(interpreter, source, second, context);
+        return source;
       }
       return unknownValue("Array.from of dynamic iterable", location);
+    }
     case "Object.keys":
     case "Object.values":
     case "Object.entries": {
-      if (first?.kind !== "object") return unknownValue(`${name} of ${first ? describeValue(first) : "nothing"}`, location);
+      if (first?.kind !== "object")
+        return unknownValue(`${name} of ${first ? describeValue(first) : "nothing"}`, location);
       const keys = getKnownObjectKeys(first);
       if (!keys) return unknownValue(`${name} of an object with dynamic spreads`, location);
       if (name === "Object.keys") return listValue(keys.map((key) => primitiveValue(key)));
-      if (name === "Object.values") return listValue(keys.map((key) => getObjectProperty(first, key)));
-      return listValue(keys.map((key) => listValue([primitiveValue(key), getObjectProperty(first, key)])));
+      if (name === "Object.values")
+        return listValue(keys.map((key) => getObjectProperty(first, key)));
+      return listValue(
+        keys.map((key) => listValue([primitiveValue(key), getObjectProperty(first, key)])),
+      );
     }
     case "Object.assign":
       return objectValue(args.map((argument) => ({ kind: "spread", value: argument })));
@@ -236,7 +254,9 @@ const callGlobal = (
     case "parseInt":
     case "parseFloat":
       if (first?.kind === "primitive" && typeof first.value === "string") {
-        return primitiveValue(name === "parseInt" ? Number.parseInt(first.value, 10) : Number.parseFloat(first.value));
+        return primitiveValue(
+          name === "parseInt" ? Number.parseInt(first.value, 10) : Number.parseFloat(first.value),
+        );
       }
       return unknownPrimitiveValue("number", name);
     case "JSON.stringify":
@@ -253,8 +273,12 @@ const callGlobal = (
       break;
   }
   if (name.startsWith("Math.")) {
-    if (args.every((argument) => argument.kind === "primitive" && typeof argument.value === "number")) {
-      const numbers = args.map((argument) => (argument.kind === "primitive" ? Number(argument.value) : 0));
+    if (
+      args.every((argument) => argument.kind === "primitive" && typeof argument.value === "number")
+    ) {
+      const numbers = args.map((argument) =>
+        argument.kind === "primitive" ? Number(argument.value) : 0,
+      );
       const method = name.slice("Math.".length);
       switch (method) {
         case "max":
@@ -279,6 +303,22 @@ const callGlobal = (
   return unknownValue(`${name}()`, location);
 };
 
+const MAX_ARRAY_LIKE_LENGTH = 1_000;
+
+// `{ length: n }` (and sparse array-likes) as consumed by `Array.from`.
+const arrayLikeToList = (value: Extract<StaticValue, { kind: "object" }>): StaticValue => {
+  const length = getObjectProperty(value, "length");
+  if (length.kind !== "primitive" || typeof length.value !== "number") {
+    return unknownValue("Array.from of an array-like with dynamic length", null);
+  }
+  if (!Number.isInteger(length.value) || length.value < 0 || length.value > MAX_ARRAY_LIKE_LENGTH) {
+    return { kind: "repeat", item: UNDEFINED_VALUE, location: null };
+  }
+  return listValue(
+    Array.from({ length: length.value }, (_, index) => getObjectProperty(value, String(index))),
+  );
+};
+
 const mapList = (
   interpreter: Interpreter,
   receiver: StaticValue,
@@ -291,7 +331,11 @@ const mapList = (
         if (item.kind === "repeat") {
           return {
             kind: "repeat",
-            item: interpreter.callFunction(callback, [item.item, unknownPrimitiveValue("number", "index"), receiver], context),
+            item: interpreter.callFunction(
+              callback,
+              [item.item, unknownPrimitiveValue("number", "index"), receiver],
+              context,
+            ),
             location: item.location,
           };
         }
@@ -302,7 +346,11 @@ const mapList = (
   if (receiver.kind === "repeat") {
     return {
       kind: "repeat",
-      item: interpreter.callFunction(callback, [receiver.item, unknownPrimitiveValue("number", "index"), receiver], context),
+      item: interpreter.callFunction(
+        callback,
+        [receiver.item, unknownPrimitiveValue("number", "index"), receiver],
+        context,
+      ),
       location: receiver.location,
     };
   }
@@ -310,15 +358,25 @@ const mapList = (
     kind: "repeat",
     item: interpreter.callFunction(
       callback,
-      [unknownValue(`item of ${describeValue(receiver)}`), unknownPrimitiveValue("number", "index"), receiver],
+      [
+        unknownValue(`item of ${describeValue(receiver)}`),
+        unknownPrimitiveValue("number", "index"),
+        receiver,
+      ],
       context,
     ),
     location: null,
   };
 };
 
-const callStringMethod = (receiver: string, name: string, args: StaticValue[]): StaticValue | null => {
-  const primitiveArgs = args.map((argument) => (argument.kind === "primitive" ? argument.value : undefined));
+const callStringMethod = (
+  receiver: string,
+  name: string,
+  args: StaticValue[],
+): StaticValue | null => {
+  const primitiveArgs = args.map((argument) =>
+    argument.kind === "primitive" ? argument.value : undefined,
+  );
   const allKnown = args.every((argument) => argument.kind === "primitive");
   if (!allKnown) return null;
   switch (name) {
@@ -329,11 +387,18 @@ const callStringMethod = (receiver: string, name: string, args: StaticValue[]): 
     case "trim":
       return primitiveValue(receiver.trim());
     case "slice":
-      return primitiveValue(receiver.slice(Number(primitiveArgs[0] ?? 0), primitiveArgs[1] === undefined ? undefined : Number(primitiveArgs[1])));
+      return primitiveValue(
+        receiver.slice(
+          Number(primitiveArgs[0] ?? 0),
+          primitiveArgs[1] === undefined ? undefined : Number(primitiveArgs[1]),
+        ),
+      );
     case "charAt":
       return primitiveValue(receiver.charAt(Number(primitiveArgs[0] ?? 0)));
     case "split":
-      return listValue(receiver.split(String(primitiveArgs[0] ?? "")).map((part) => primitiveValue(part)));
+      return listValue(
+        receiver.split(String(primitiveArgs[0] ?? "")).map((part) => primitiveValue(part)),
+      );
     case "replace":
     case "replaceAll":
       if (typeof primitiveArgs[0] === "string" && typeof primitiveArgs[1] === "string") {
@@ -362,11 +427,18 @@ const callStringMethod = (receiver: string, name: string, args: StaticValue[]): 
   }
 };
 
-const fallbackMethodResult = (receiver: StaticValue, name: string, location: SourceLocation | null): StaticValue => {
+const fallbackMethodResult = (
+  receiver: StaticValue,
+  name: string,
+  location: SourceLocation | null,
+): StaticValue => {
   if (STRING_RESULT_METHODS.has(name)) return unknownPrimitiveValue("string", `${name}()`);
   if (BOOLEAN_RESULT_METHODS.has(name)) return unknownPrimitiveValue("boolean", `${name}()`);
   if (NUMBER_RESULT_METHODS.has(name)) return unknownPrimitiveValue("number", `${name}()`);
-  if (LIST_PRESERVING_METHODS.has(name) && (receiver.kind === "unknown" || receiver.kind === "repeat")) {
+  if (
+    LIST_PRESERVING_METHODS.has(name) &&
+    (receiver.kind === "unknown" || receiver.kind === "repeat")
+  ) {
     return receiver;
   }
   return unknownValue(`${describeValue(receiver)}.${name}()`, location);
@@ -380,11 +452,12 @@ export const evaluateBuiltinCall = (
   location: SourceLocation | null,
   isConstructor = false,
 ): StaticValue => {
-  if (callee.kind === "global") return callGlobal(interpreter, callee.name, args, context, location, isConstructor);
+  if (callee.kind === "global")
+    return callGlobal(interpreter, callee.name, args, context, location, isConstructor);
   const { receiver, name } = callee;
   const [first, second] = args;
 
-  if (name === "then" || name === "catch" || name === "finally") {
+  if (isPromiseMethodName(name)) {
     if (name === "then" && first?.kind === "function") {
       return interpreter.callFunction(first, [receiver], context);
     }
@@ -393,7 +466,10 @@ export const evaluateBuiltinCall = (
 
   if (receiver.kind === "function") {
     if (name === "bind") return { ...receiver, thisValue: first ?? receiver.thisValue };
-    if (name === "call") return interpreter.callFunction(receiver, args.slice(1), context, { thisValue: first ?? null });
+    if (name === "call")
+      return interpreter.callFunction(receiver, args.slice(1), context, {
+        thisValue: first ?? null,
+      });
     if (name === "apply") {
       return interpreter.callFunction(
         receiver,
@@ -414,12 +490,18 @@ export const evaluateBuiltinCall = (
     return unknownPrimitiveValue("string", "process.env access");
   }
 
-  if (name === "map" && first?.kind === "function") return mapList(interpreter, receiver, first, context);
+  if (name === "map" && first?.kind === "function")
+    return mapList(interpreter, receiver, first, context);
 
   if (name === "forEach" && first?.kind === "function") {
     if (receiver.kind === "list") {
       receiver.items.forEach((item, index) => {
-        if (item.kind === "repeat") interpreter.callFunction(first, [item.item, unknownPrimitiveValue("number", "index")], context);
+        if (item.kind === "repeat")
+          interpreter.callFunction(
+            first,
+            [item.item, unknownPrimitiveValue("number", "index")],
+            context,
+          );
         else interpreter.callFunction(first, [item, primitiveValue(index)], context);
       });
     }
@@ -445,9 +527,12 @@ export const evaluateBuiltinCall = (
         if (first?.kind === "function" && isKnownList(receiver)) {
           const kept: StaticValue[] = [];
           receiver.items.forEach((item, index) => {
-            const verdict = getTruthiness(interpreter.callFunction(first, [item, primitiveValue(index), receiver], context));
+            const verdict = getTruthiness(
+              interpreter.callFunction(first, [item, primitiveValue(index), receiver], context),
+            );
             if (verdict === true) kept.push(item);
-            else if (verdict === null) kept.push(branchValue([item, unknownValue("filtered out")], "uncertain filter"));
+            else if (verdict === null)
+              kept.push(branchValue([item, unknownValue("filtered out")], "uncertain filter"));
           });
           return listValue(kept);
         }
@@ -456,7 +541,8 @@ export const evaluateBuiltinCall = (
         if (!isKnownList(receiver)) return receiver;
         const start = first?.kind === "primitive" ? Number(first.value) : undefined;
         const end = second?.kind === "primitive" ? Number(second.value) : undefined;
-        if (first && start === undefined) return unknownValue("slice with dynamic bounds", location);
+        if (first && start === undefined)
+          return unknownValue("slice with dynamic bounds", location);
         return listValue(receiver.items.slice(start, end));
       }
       case "concat": {
@@ -485,7 +571,9 @@ export const evaluateBuiltinCall = (
         if (receiver.items.every((item) => item.kind === "primitive")) {
           const separator = first?.kind === "primitive" ? String(first.value) : ",";
           return primitiveValue(
-            receiver.items.map((item) => (item.kind === "primitive" ? String(item.value ?? "") : "")).join(separator),
+            receiver.items
+              .map((item) => (item.kind === "primitive" ? String(item.value ?? "") : ""))
+              .join(separator),
           );
         }
         return unknownPrimitiveValue("string", "join of dynamic list");
@@ -504,8 +592,17 @@ export const evaluateBuiltinCall = (
       case "reduce":
         return unknownValue("reduce()", location);
       case "push":
-        receiver.items.push(...args);
-        return primitiveValue(receiver.items.length);
+      case "unshift": {
+        // Inside an uncertain path (e.g. a loop of unknown length) the pushed
+        // items may occur any number of times, so they become a repeat.
+        const pushed: StaticValue[] =
+          context.uncertainDepth > 0
+            ? [{ kind: "repeat", item: args.length === 1 ? args[0] : listValue(args), location }]
+            : args;
+        if (name === "push") receiver.items.push(...pushed);
+        else receiver.items.unshift(...pushed);
+        return getListLength(receiver);
+      }
       default:
         break;
     }

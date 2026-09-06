@@ -1,5 +1,9 @@
 import type { StaticFiber, StaticRenderResult } from "../types.js";
-import { comparePatternToRuntime, type ComparisonOptions, type ComparisonReport } from "./compare.js";
+import {
+  comparePatternToRuntime,
+  type ComparisonOptions,
+  type ComparisonReport,
+} from "./compare.js";
 import { findSnapshotFiber, type RuntimeFiberSnapshot, type RuntimeSnapshot } from "./snapshot.js";
 import { toPattern, type PatternFiber, type PatternNode } from "./static-pattern.js";
 
@@ -16,7 +20,10 @@ export interface CompareRenderResult {
   note: string | null;
 }
 
-const findPatternFiber = (nodes: PatternNode[], predicate: (fiber: PatternFiber) => boolean): PatternFiber | null => {
+const findPatternFiber = (
+  nodes: PatternNode[],
+  predicate: (fiber: PatternFiber) => boolean,
+): PatternFiber | null => {
   for (const node of nodes) {
     switch (node.kind) {
       case "fiber": {
@@ -50,7 +57,11 @@ const isStaticRootUnresolved = (root: StaticFiber): boolean => {
   return first !== null && first.kind === "unknown" && first.sibling === null;
 };
 
-const skipped = (staticPattern: PatternNode[], note: string, status: "unresolved" | "skipped"): CompareRenderResult => ({
+const skipped = (
+  staticPattern: PatternNode[],
+  note: string,
+  status: "unresolved" | "skipped",
+): CompareRenderResult => ({
   report: {
     status,
     matchedFibers: 0,
@@ -81,17 +92,27 @@ export const compareStaticToRuntime = (
   const rootPattern = toPattern(staticResult.root);
   const staticChildren = rootPattern.kind === "fiber" ? rootPattern.children : [rootPattern];
   if (isStaticRootUnresolved(staticResult.root)) {
-    return skipped(staticChildren, "static render did not resolve to a component tree", "unresolved");
+    return skipped(
+      staticChildren,
+      "static render did not resolve to a component tree",
+      "unresolved",
+    );
   }
   const runtimeRoot = runtime.roots[options.rootIndex ?? 0];
-  if (!runtimeRoot) return skipped(staticChildren, "runtime snapshot has no committed roots", "skipped");
+  if (!runtimeRoot)
+    return skipped(staticChildren, "runtime snapshot has no committed roots", "skipped");
 
   if (options.anchor) {
     const anchor = options.anchor;
     const staticAnchor = findPatternFiber(staticChildren, (fiber) => fiber.name === anchor);
-    const runtimeAnchor = findSnapshotFiber(runtimeRoot, (fiber) => fiber.name === anchor && fiber.tag !== "HostText");
-    if (!staticAnchor) return skipped(staticChildren, `anchor <${anchor}> not found in static tree`, "unresolved");
-    if (!runtimeAnchor) return skipped(staticChildren, `anchor <${anchor}> not found in runtime tree`, "skipped");
+    const runtimeAnchor = findSnapshotFiber(
+      runtimeRoot,
+      (fiber) => fiber.name === anchor && fiber.tag !== "HostText",
+    );
+    if (!staticAnchor)
+      return skipped(staticChildren, `anchor <${anchor}> not found in static tree`, "unresolved");
+    if (!runtimeAnchor)
+      return skipped(staticChildren, `anchor <${anchor}> not found in runtime tree`, "skipped");
     return {
       report: comparePatternToRuntime([staticAnchor], [runtimeAnchor], options),
       staticPattern: [staticAnchor],

@@ -1,0 +1,1 @@
+{ "entry": "src/main.js", "expectedStatus": "exact", "minCoverage": 1 }
