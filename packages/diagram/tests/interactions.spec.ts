@@ -57,6 +57,11 @@ test("has minimal metadata and an icon-only persistent theme switch", async ({ p
   const toggle = page.getByRole("button", { name: "Switch to dark mode" });
   await expect(toggle).toHaveText("");
   await expect(toggle.locator("svg")).toHaveCount(1);
+  await expect(toggle).toHaveCSS("appearance", "none");
+  await expect(toggle).toHaveCSS("border-top-width", "0px");
+  await expect(toggle).toHaveCSS("border-bottom-width", "0px");
+  await expect(toggle).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(toggle).toHaveCSS("width", "32px");
   await toggle.click();
   await expect(page.locator("[data-theme]")).toHaveAttribute("data-theme", "dark");
   await expect(page.getByRole("button", { name: "Switch to light mode" })).toHaveCSS(
