@@ -1,4 +1,5 @@
-import { getReactWorkTags, type Fiber } from "../../bippy/src/index.js";
+import { getReactWorkTags } from "../../bippy/src/react-internals/generated/react-work-tags.js";
+import type { Fiber } from "../../bippy/src/react-internals/types.js";
 
 interface FiberOverrides extends Partial<Omit<Fiber, "tag">> {
   tag?: number;
