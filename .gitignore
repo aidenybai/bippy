@@ -14,3 +14,4 @@ packages/bippy/LICENSE
 
 # committed fake packages used by the parser harness fixtures
 !packages/parser/tests/fixtures/*/node_modules
+packages/parser/.corpus
