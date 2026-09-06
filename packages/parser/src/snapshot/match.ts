@@ -149,6 +149,10 @@ const isSuspendedShape = (actual: FiberSnapshot): boolean =>
   actual.children[1].kind === "fiber" &&
   actual.children[1].tag === "Fragment";
 
+/** A bundler numbers a name that collides with another module's (`Le4`, `RouterProvider2`). */
+const isSameNameDeconflicted = (expected: string, actual: string): boolean =>
+  actual.startsWith(expected) && /^\d+$/.test(actual.slice(expected.length));
+
 const compareAttributes = (expected: FiberSnapshot, actual: FiberSnapshot): string | null => {
   if (expected.tag !== null && expected.tag !== actual.tag) {
     return `tag ${actual.tag ?? "?"} where ${expected.tag} was expected`;
@@ -157,7 +161,8 @@ const compareAttributes = (expected: FiberSnapshot, actual: FiberSnapshot): stri
     NAMED_TAGS.has(expected.tag) &&
     expected.name !== null &&
     actual.name !== null &&
-    expected.name !== actual.name
+    expected.name !== actual.name &&
+    !isSameNameDeconflicted(expected.name, actual.name)
   ) {
     return `name ${actual.name} where ${expected.name} was expected`;
   }

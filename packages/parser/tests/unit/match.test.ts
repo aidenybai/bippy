@@ -78,6 +78,8 @@ describe("matchSnapshots", () => {
       'child 1 is App key="b"; expected App key="a"',
     );
     expect(matchSnapshots(named("App"), named("App", "b")).isMatch).toBe(true);
+    expect(matchSnapshots(named("Le"), named("Le4")).isMatch).toBe(true);
+    expect(matchSnapshots(named("Le4"), named("Le")).isMatch).toBe(false);
     expect(matchSnapshots(root([textFiber("yes")]), root([textFiber("no")])).isMatch).toBe(false);
     expect(matchSnapshots(root([textFiber(null)]), root([textFiber("any")])).isMatch).toBe(true);
     const anonymous = root([fiber(null, null, [host("div")])]);
