@@ -11,6 +11,7 @@ import {
   type ExternalValue,
   FALSE,
   isNullish,
+  mapConditional,
   mergeObjects,
   NULL,
   object,
@@ -69,28 +70,31 @@ const createElementFromJsxRuntime = (
   );
 };
 
+/** `cloneElement(element, config, ...children)`, on each element a conditional may hold. */
 const cloneElement = (
   interpreter: Interpreter,
   callArguments: StaticValue[],
   span: Span,
   context: EvaluationContext,
 ): StaticValue => {
-  const [element, config, ...children] = callArguments;
-  if (element?.kind !== "element") return unknown("cloneElement of non-element");
-  const props = cloneObject(element.props);
-  let key = element.key;
-  if (config?.kind === "object") {
-    mergeObjects(props, config);
-    const configKey = config.properties.get("key");
-    if (configKey) key = configKey;
-    props.properties.delete("key");
-  } else if (config && !isNullishValue(config)) props.hasUnknownSpread = true;
-  const childrenValue = childrenProp(children);
-  if (childrenValue) props.properties.set("children", childrenValue);
-  return {
-    ...createElementValue(interpreter, element.type, props, key, span, context),
-    owner: element.owner,
-  };
+  const [element = UNDEFINED, config, ...children] = callArguments;
+  return mapConditional(element, (arm) => {
+    if (arm.kind !== "element") return unknown("cloneElement of non-element");
+    const props = cloneObject(arm.props);
+    let key = arm.key;
+    if (config?.kind === "object") {
+      mergeObjects(props, config);
+      const configKey = config.properties.get("key");
+      if (configKey) key = configKey;
+      props.properties.delete("key");
+    } else if (config && !isNullishValue(config)) props.hasUnknownSpread = true;
+    const childrenValue = childrenProp(children);
+    if (childrenValue) props.properties.set("children", childrenValue);
+    return {
+      ...createElementValue(interpreter, arm.type, props, key, span, context),
+      owner: arm.owner,
+    };
+  });
 };
 
 const resolveLazyTarget = (interpreter: Interpreter, loaded: StaticValue): StaticValue => {
@@ -190,9 +194,10 @@ export const evaluateReactCall = (
         context,
       );
     case "isValidElement":
-      if (!first || first.kind === "unknown" || first.kind === "conditional")
-        return unknown(description);
-      return first.kind === "element" ? TRUE : FALSE;
+      return mapConditional(first ?? UNDEFINED, (arm) => {
+        if (arm.kind === "unknown" || arm.kind === "external") return unknown(description);
+        return arm.kind === "element" ? TRUE : FALSE;
+      });
     case "createRef":
       return object([["current", NULL]]);
     case "startTransition":

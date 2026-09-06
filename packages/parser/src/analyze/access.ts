@@ -5,6 +5,7 @@ import {
   type ArrayValue,
   builtin,
   type BuiltinComponentName,
+  type ClassComponentDefinition,
   type ComponentDefinition,
   type ComponentValue,
   component,
@@ -13,6 +14,7 @@ import {
   getObjectProperty,
   list,
   literal,
+  NULL,
   optional,
   readItem,
   selectItem,
@@ -52,6 +54,65 @@ export const accessExternalMember = (value: ExternalValue, member: string): Stat
     name: value.name ? `${value.name}.${member}` : member,
   });
 
+/** Fields of an element object (`ReactJSXElement.js`), and those development builds add. */
+const ELEMENT_KEYS = new Set(["$$typeof", "type", "key", "ref", "props"]);
+const ELEMENT_DEVELOPMENT_KEYS = new Set([
+  "_owner",
+  "_store",
+  "_debugInfo",
+  "_debugStack",
+  "_debugTask",
+]);
+
+/** Fields of the wrapper objects React's `memo`, `forwardRef`, `lazy` and `createContext` return. */
+const DEFINITION_KEYS: Partial<Record<ComponentDefinition["kind"], string[]>> = {
+  memo: ["$$typeof", "type", "compare"],
+  forwardRef: ["$$typeof", "render"],
+  lazy: ["$$typeof", "_payload", "_init"],
+  context: ["$$typeof", "Provider", "Consumer", "_currentValue", "_currentValue2", "_threadCount"],
+};
+
+const hasStaticMember = (definition: ClassComponentDefinition, key: string): boolean =>
+  definition.members.some((member) => member.isStatic && member.key === key) ||
+  (definition.base !== null && hasStaticMember(definition.base, key));
+
+/** `key in value`, when the value's shape decides it; `null` otherwise. */
+export const hasProperty = (value: StaticValue, key: string): boolean | null => {
+  switch (value.kind) {
+    case "object":
+      if (value.properties.has(key) || key in Object.prototype) return true;
+      return value.hasUnknownSpread ? null : false;
+    case "array": {
+      if (key in Array.prototype) return true;
+      const index = Number(key);
+      if (!Number.isInteger(index) || index < 0) return false;
+      const firstOptional = value.items.findIndex((item) => item.kind === "optional");
+      if (firstOptional === -1) return index < value.items.length;
+      return index < firstOptional ? true : null;
+    }
+    case "element":
+      if (ELEMENT_KEYS.has(key) || key in Object.prototype) return true;
+      return ELEMENT_DEVELOPMENT_KEYS.has(key) ? null : false;
+    case "function":
+      return value.statics.has(key) || key in Function.prototype;
+    case "component": {
+      if (value.statics.has(key)) return true;
+      const definition = value.definition;
+      if (definition.kind === "builtin") return null;
+      if (definition.kind === "class") {
+        return key in Function.prototype || hasStaticMember(definition, key);
+      }
+      return key in Object.prototype || (DEFINITION_KEYS[definition.kind]?.includes(key) ?? false);
+    }
+    case "regexp":
+      return key in RegExp.prototype;
+    case "global":
+      return getGlobalMember(value, key).kind !== "unknown";
+    default:
+      return null;
+  }
+};
+
 /**
  * Static property read, mirroring what the runtime would observe on each
  * kind of value. Unknown objects produce unknown properties that remember
@@ -83,11 +144,15 @@ export const getProperty = (
         case "props":
           return target.props;
         case "key":
-          return target.key ?? UNDEFINED;
+          return target.key ?? NULL;
         case "type":
           return target.type;
+        case "$$typeof":
+          return literal(interpreter.elementType);
+        case "ref":
+          return target.props.properties.get("ref") ?? NULL;
         default:
-          return unknown(`element.${key}`);
+          return ELEMENT_DEVELOPMENT_KEYS.has(key) ? unknown(`element.${key}`) : UNDEFINED;
       }
     case "literal":
       if (typeof target.value === "string" && key === "length") return literal(target.value.length);

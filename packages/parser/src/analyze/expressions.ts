@@ -44,7 +44,7 @@ import {
 } from "./narrowing.js";
 import { applyBinaryOperator, applyUnaryOperator, getBinaryOperator } from "./operators.js";
 import { assignToTarget, getPropertyKeyName } from "./patterns.js";
-import { hasLocalBinding, lookupVariable } from "./scope.js";
+import { lookupVariable } from "./scope.js";
 import {
   array,
   conditional,
@@ -104,21 +104,6 @@ export const resolveIdentifier = (
 };
 
 /**
- * Static members assigned after a declaration (`Card.Header = Header`,
- * `Object.assign(Card, { Header })`) are not visible through the value
- * itself; the linker tracks them per module.
- */
-const resolveAssignedMember = (
-  interpreter: Interpreter,
-  chain: string[],
-  context: EvaluationContext,
-): StaticValue | null => {
-  if (hasLocalBinding(context.scope, chain[0])) return null;
-  const symbol = interpreter.linker.resolveReference(context.module, chain);
-  return symbol.kind === "unresolved" ? null : interpreter.valueFromSymbol(symbol);
-};
-
-/**
  * Reads `key` off each possible target. Inside an optional chain a nullish
  * target short-circuits to `undefined` instead of failing the read.
  */
@@ -150,12 +135,7 @@ const accessLinks = (
     : resolveIdentifier(interpreter, chain[0], span, context);
   for (let index = isEnvironmentRead ? 3 : 1; index < chain.length; index++) {
     const isShortCircuiting = firstOptional !== -1 && index >= firstOptional;
-    const next = accessMember(interpreter, value, chain[index], isShortCircuiting);
-    const isStaticHost = value.kind === "function" || value.kind === "component";
-    value =
-      (next.kind === "unknown" && isStaticHost
-        ? resolveAssignedMember(interpreter, chain.slice(0, index + 1), context)
-        : null) ?? next;
+    value = accessMember(interpreter, value, chain[index], isShortCircuiting);
   }
   return value;
 };

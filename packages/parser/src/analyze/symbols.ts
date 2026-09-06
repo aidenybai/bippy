@@ -24,27 +24,27 @@ export const getModuleScope = (interpreter: Interpreter, module: ParsedModule): 
   return scope;
 };
 
-/** The statics React reads off a component that a module assigns after declaring it. */
-const REACT_STATICS = ["displayName", "defaultProps", "contextType", "getDerivedStateFromError"];
-
+/**
+ * Members a module assigns to a function or component after declaring it
+ * (`Card.Header = Header`, `Form.displayName = "Form"`). They are folded
+ * once the binding is declared, so an initializer that refers back to the
+ * binding sees the value rather than a cycle.
+ */
 const applyAssignedStatics = (
   interpreter: Interpreter,
   module: ParsedModule,
   localName: string,
   value: StaticValue,
-): StaticValue => {
-  if (value.kind !== "function" && value.kind !== "component") return value;
+): void => {
+  if (value.kind !== "function" && value.kind !== "component") return;
   const assignments = interpreter.linker.getMemberAssignments(module, localName);
-  for (const key of REACT_STATICS) {
-    const assigned = assignments.get(key);
-    if (!assigned) continue;
+  for (const [key, assigned] of assignments) {
     const staticValue = interpreter.evaluateExpression(
       assigned,
       interpreter.createModuleContext(module),
     );
     assignStatic(value, key, staticValue);
   }
-  return value;
 };
 
 const evaluateDeclaration = (
@@ -60,28 +60,18 @@ const evaluateDeclaration = (
       if (!node.init) return unknown(`${binding.localName} declared without an initializer`);
       const value = interpreter.evaluateExpression(node.init, context);
       if (node.id.type === "Identifier") {
-        return applyAssignedStatics(
-          interpreter,
-          module,
-          binding.localName,
-          nameValue(value, binding.localName, isAnonymousFunctionDefinition(node.init)),
-        );
+        return nameValue(value, binding.localName, isAnonymousFunctionDefinition(node.init));
       }
       bindPattern(interpreter, node.id, value, context);
       return scope.variables.get(binding.localName) ?? UNDEFINED;
     }
     case "ClassDeclaration":
     case "ClassExpression":
-      return applyAssignedStatics(
-        interpreter,
-        module,
-        binding.localName,
-        classifyClass(interpreter, node, module, scope, binding.localName, context),
-      );
+      return classifyClass(interpreter, node, module, scope, binding.localName, context);
     case "TSEnumDeclaration":
       return evaluateEnum(interpreter, node, context);
     default:
-      return applyAssignedStatics(interpreter, module, binding.localName, {
+      return {
         kind: "function",
         fn: node,
         module,
@@ -89,7 +79,7 @@ const evaluateDeclaration = (
         thisValue: null,
         name: node.id?.name ?? binding.localName,
         statics: new Map(),
-      });
+      };
   }
 };
 
@@ -129,6 +119,7 @@ export const resolveModuleBinding = (
       ? importValue(interpreter, module, binding)
       : evaluateDeclaration(interpreter, module, binding);
   declareVariable(scope, name, value);
+  applyAssignedStatics(interpreter, module, name, value);
   return value;
 };
 

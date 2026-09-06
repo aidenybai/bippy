@@ -1,9 +1,14 @@
 import type { AssignmentOperator, BinaryOperator, UnaryOperator } from "@oxc-project/types";
+import { hasProperty } from "./access.js";
 import {
+  type ComponentDefinition,
+  countArms,
   getTruthiness,
   isNullish,
   literal,
+  mapConditional,
   type Primitive,
+  SELECTION_LIMIT,
   type StaticValue,
   text,
   UNDEFINED,
@@ -29,6 +34,16 @@ const COMPOUND_ASSIGNMENT_OPERATORS: Partial<Record<AssignmentOperator, BinaryOp
 export const getBinaryOperator = (operator: AssignmentOperator): BinaryOperator | null =>
   COMPOUND_ASSIGNMENT_OPERATORS[operator] ?? null;
 
+/** `typeof` of what each component definition is at runtime: classes are functions, wrappers objects, Fragment and friends symbols. */
+const COMPONENT_TYPE_NAMES: Record<ComponentDefinition["kind"], string> = {
+  class: "function",
+  memo: "object",
+  forwardRef: "object",
+  lazy: "object",
+  context: "object",
+  builtin: "symbol",
+};
+
 const typeOfValue = (value: StaticValue): string | null => {
   switch (value.kind) {
     case "literal":
@@ -43,8 +58,9 @@ const typeOfValue = (value: StaticValue): string | null => {
     case "namespace":
       return "object";
     case "function":
-    case "component":
       return "function";
+    case "component":
+      return COMPONENT_TYPE_NAMES[value.definition.kind];
     case "global":
       return value.typeName;
     default:
@@ -182,7 +198,7 @@ const decideEquality = (
   return null;
 };
 
-export const applyBinaryOperator = (
+const applyToArms = (
   operator: BinaryOperator,
   left: StaticValue,
   right: StaticValue,
@@ -196,10 +212,31 @@ export const applyBinaryOperator = (
     const isEqual = decideEquality(left, right, operator === "===" || operator === "!==");
     if (isEqual !== null) return literal(operator.startsWith("!") ? !isEqual : isEqual);
   }
+  if (operator === "in" && left.kind === "literal" && typeof left.value !== "symbol") {
+    const isPresent = hasProperty(right, String(left.value));
+    if (isPresent !== null) return literal(isPresent);
+  }
   if (operator === "+") {
     const isStringLike = (value: StaticValue): boolean =>
       value.kind === "text" || (value.kind === "literal" && typeof value.value === "string");
     if (isStringLike(left) || isStringLike(right)) return text(description);
   }
   return unknown(description);
+};
+
+/**
+ * Binary operators apply to each arm of a conditional operand, so a test on
+ * `show ? a : b` decides per branch; past a few arms the result is unknown
+ * rather than a product of both operands' branches.
+ */
+export const applyBinaryOperator = (
+  operator: BinaryOperator,
+  left: StaticValue,
+  right: StaticValue,
+  description: string,
+): StaticValue => {
+  if (countArms(left) * countArms(right) > SELECTION_LIMIT) return unknown(description);
+  return mapConditional(left, (leftArm) =>
+    mapConditional(right, (rightArm) => applyToArms(operator, leftArm, rightArm, description)),
+  );
 };

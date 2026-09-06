@@ -381,6 +381,10 @@ export const isNullish = (value: Primitive): value is null | undefined =>
 export const isNullishValue = (value: StaticValue): boolean =>
   value.kind === "literal" && isNullish(value.value);
 
+/** Leaves of a conditional tree; one for any other value. */
+export const countArms = (value: StaticValue): number =>
+  value.kind === "conditional" ? countArms(value.whenTrue) + countArms(value.whenFalse) : 1;
+
 /** Applies `transform` to every arm of a conditional, keeping its branch structure. */
 export const mapConditional = (
   value: StaticValue,

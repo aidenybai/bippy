@@ -1,6 +1,24 @@
+import { join } from "node:path";
 import { DEFAULT_EXPORT_NAME, NAMESPACE_IMPORT_NAME } from "../module/types.js";
+import type { Project } from "../project/project.js";
 
 export type ReactApiSource = "react" | "react-dom" | "react/jsx-runtime";
+
+/**
+ * The `$$typeof` brand of an element (`shared/ReactSymbols.js`), which React
+ * 19 renamed so that older `react-is` builds stop recognising its elements.
+ * Read from the React the project resolves; a project without one is taken
+ * to be current.
+ */
+export const getReactElementType = (project: Project): symbol => {
+  const resolved = project.resolveSpecifier(
+    join(project.rootDirectory, "index.js"),
+    "react/package.json",
+  );
+  const manifest = resolved ? project.readSource(resolved.path) : null;
+  const major = Number(manifest === null ? undefined : /"version":\s*"(\d+)/.exec(manifest)?.[1]);
+  return major < 19 ? Symbol.for("react.element") : Symbol.for("react.transitional.element");
+};
 
 export interface ReactApiReference {
   api: string;

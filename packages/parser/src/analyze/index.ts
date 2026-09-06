@@ -1,5 +1,6 @@
 import type { Span } from "@oxc-project/types";
 import type { Linker } from "../link/linker.js";
+import { getReactElementType } from "../link/react-api.js";
 import type { SourceLocation } from "../module/location.js";
 import type { ParsedModule } from "../module/types.js";
 import type { Project } from "../project/project.js";
@@ -58,6 +59,7 @@ export const createInterpreter = (
     linker,
     maxCallDepth: options.maxCallDepth ?? DEFAULT_MAX_CALL_DEPTH,
     environment: options.environment ?? DEFAULT_ENVIRONMENT,
+    elementType: getReactElementType(project),
     diagnostics,
     setTimeBudget: (nextBudgetMs) => {
       budgetMs = nextBudgetMs;

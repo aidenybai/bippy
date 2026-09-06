@@ -106,6 +106,8 @@ export interface Interpreter {
   linker: Linker;
   maxCallDepth: number;
   environment: Record<string, string>;
+  /** `$$typeof` of the elements the project's React creates. */
+  elementType: symbol;
   diagnostics: Diagnostic[];
   /** Makes evaluation throw `AnalysisTimeoutError` after `budgetMs`; `null` removes the limit. */
   setTimeBudget: (budgetMs: number | null) => void;

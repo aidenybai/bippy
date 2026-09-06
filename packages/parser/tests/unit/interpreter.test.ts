@@ -192,6 +192,61 @@ describe("interpreter: arrays and objects", () => {
     ).toBe('"kids"');
   });
 
+  it("answers `in` from the shape of objects, arrays, elements and functions", () => {
+    expect(describe_(`export const value = "a" in { a: 1 };`)).toBe("true");
+    expect(describe_(`export const value = "b" in { a: 1 };`)).toBe("false");
+    expect(describe_(`export const value = "toString" in {};`)).toBe("true");
+    expect(
+      describe_(`declare const rest: object; export const value = "b" in { a: 1, ...rest };`),
+    ).toMatch(/^unknown\(/);
+    expect(describe_(`export const value = [1 in [0, 1], 2 in [0, 1], "length" in [0]];`)).toBe(
+      "[true, false, true]",
+    );
+    expect(
+      describe_(`const el = <div />; export const value = ["$$typeof" in el, "_payload" in el];`),
+    ).toBe("[true, false]");
+    expect(
+      describe_(
+        `const Tag = () => null; Tag.__brand = 1; export const value = ["__brand" in Tag, "other" in Tag, "name" in Tag];`,
+      ),
+    ).toBe("[true, false, true]");
+  });
+
+  it("exposes the fixed shape of an element as React 19 builds it", () => {
+    expect(describe_(`const el = <div />; export const value = el.$$typeof;`)).toBe(
+      "Symbol(react.transitional.element)",
+    );
+    expect(
+      describe_(`const el = <div />; export const value = [el.key, el.ref, el._payload];`),
+    ).toBe("[null, null, undefined]");
+    expect(
+      describe_(
+        `const el = <div key="k" ref={{ current: null }} />; export const value = [el.key, el.ref];`,
+      ),
+    ).toBe('["k", {current}]');
+  });
+
+  it("knows what typeof says about React's wrapper objects", () => {
+    expect(
+      describe_(`import { memo, forwardRef, Fragment } from "react";
+        const Fn = () => null;
+        class Cls extends React.Component { render() { return null; } }
+        export const value = [typeof Fn, typeof Cls, typeof memo(Fn), typeof forwardRef(Fn), typeof Fragment];`),
+    ).toBe('["function", "function", "object", "object", "symbol"]');
+  });
+
+  it("applies operators to each arm of a conditional operand", () => {
+    expect(
+      describe_(`declare const show: boolean; export const value = (show ? "a" : "b") === "a";`),
+    ).toBe("(show ? true : false)");
+    expect(
+      describe_(`declare const show: boolean; export const value = (show ? 1 : 2) + 10;`),
+    ).toBe("(show ? 11 : 12)");
+    expect(describe_(`declare const show: boolean; export const value = (show ? 1 : 1) + 1;`)).toBe(
+      "2",
+    );
+  });
+
   it("decides equality between shapes and primitives an object can never be", () => {
     expect(describe_(`const source = {}; export const value = source == null;`)).toBe("false");
     expect(describe_(`const source = {}; export const value = source !== undefined;`)).toBe("true");
