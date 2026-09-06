@@ -361,6 +361,25 @@ describe("interpreter: arrays and objects", () => {
     );
   });
 
+  it("collapses values that branched on the test a path has decided", () => {
+    const label = `const label = show ? "Close" : "Open";`;
+    expect(run(`${label} if (show) return label; return "none";`)).toBe(
+      '(show ? "Close" : "none")',
+    );
+    expect(run(`${label} if (!show) return "none"; return label;`)).toBe(
+      '(show ? "Close" : "none")',
+    );
+    expect(run(`${label} return show ? label : "none";`)).toBe('(show ? "Close" : "none")');
+    expect(run(`${label} return !show && label;`)).toBe('(show ? false : "Open")');
+    const size = `const size = kind === "x" ? 1 : 2;`;
+    expect(
+      run(`${label} ${size} if (show && kind === "x") return label + size; return size;`),
+    ).toBe('(show && kind === "x" ? "Close1" : (kind === "x" ? 1 : 2))');
+    expect(
+      run(`${label} ${size} if (show || kind === "x") return size; return label + size;`),
+    ).toBe('(show || kind === "x" ? (kind === "x" ? 1 : 2) : "Open2")');
+  });
+
   it("narrows property paths through objects, keeping short-circuited optional reads", () => {
     const state = `const state = { item: show ? { label: "x" } : undefined };`;
     expect(run(`${state} return state.item ? state.item.label : "none";`)).toBe(

@@ -176,12 +176,17 @@ const evaluateMember = (
  */
 /** The context for code that only runs once `test` had `outcome`. */
 const enterOutcome = (
+  interpreter: Interpreter,
   context: EvaluationContext,
   test: Expression,
   testSource: string,
   outcome: boolean,
-): EvaluationContext =>
-  enterUndecided(context, testSource, narrowScope(context.scope, collectNarrowings(test, outcome)));
+): EvaluationContext => {
+  const narrowings = collectNarrowings(test, outcome, (expression) =>
+    interpreter.getSource(context.module, expression),
+  );
+  return enterUndecided(context, testSource, narrowScope(context.scope, narrowings));
+};
 
 const evaluateLogical = (
   interpreter: Interpreter,
@@ -195,7 +200,7 @@ const evaluateLogical = (
       expression.right,
       expression.operator === "??"
         ? enterUndecided(context, test, context.scope)
-        : enterOutcome(context, expression.left, test, expression.operator === "&&"),
+        : enterOutcome(interpreter, context, expression.left, test, expression.operator === "&&"),
     ),
   );
 };
@@ -397,11 +402,11 @@ export const evaluateExpression = (
         testSource,
         interpreter.evaluateExpression(
           expression.consequent,
-          enterOutcome(context, expression.test, testSource, true),
+          enterOutcome(interpreter, context, expression.test, testSource, true),
         ),
         interpreter.evaluateExpression(
           expression.alternate,
-          enterOutcome(context, expression.test, testSource, false),
+          enterOutcome(interpreter, context, expression.test, testSource, false),
         ),
       );
     }

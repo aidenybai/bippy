@@ -93,10 +93,19 @@ interface ArmNarrowings {
 
 const NO_NARROWINGS: ArmNarrowings = { inside: [], exit: [] };
 
-const testNarrowings = (test: Expression, outcome: boolean): ArmNarrowings => ({
-  inside: collectNarrowings(test, outcome),
-  exit: collectNarrowings(test, !outcome),
-});
+const testNarrowings = (
+  interpreter: Interpreter,
+  test: Expression,
+  outcome: boolean,
+  context: EvaluationContext,
+): ArmNarrowings => {
+  const describe = (expression: Expression): string =>
+    interpreter.getSource(context.module, expression);
+  return {
+    inside: collectNarrowings(test, outcome, describe),
+    exit: collectNarrowings(test, !outcome, describe),
+  };
+};
 
 const evaluateArm = (
   interpreter: Interpreter,
@@ -171,7 +180,7 @@ const evaluateIf = (
         test,
         toStatements(statement.consequent),
         context,
-        testNarrowings(statement.test, true),
+        testNarrowings(interpreter, statement.test, true, context),
       ),
     ],
     fallback: statement.alternate
@@ -180,7 +189,7 @@ const evaluateIf = (
           `!(${test})`,
           toStatements(statement.alternate),
           context,
-          testNarrowings(statement.test, false),
+          testNarrowings(interpreter, statement.test, false, context),
         )
       : null,
   };

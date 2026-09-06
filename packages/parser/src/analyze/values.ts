@@ -268,16 +268,23 @@ export const list = (item: StaticValue, description: string, isFlat = false): Li
   isFlat,
   isInline: false,
 });
-/** Rewrites `value` knowing that `test` evaluated to `outcome` on this path. */
-const assumeTest = (value: StaticValue, test: string, outcome: boolean): StaticValue => {
+const assumeOutcome = (value: StaticValue, test: string, outcome: boolean): StaticValue => {
   if (value.kind !== "conditional") return value;
   if (value.test === test)
-    return assumeTest(outcome ? value.whenTrue : value.whenFalse, test, outcome);
-  const whenTrue = assumeTest(value.whenTrue, test, outcome);
-  const whenFalse = assumeTest(value.whenFalse, test, outcome);
+    return assumeOutcome(outcome ? value.whenTrue : value.whenFalse, test, outcome);
+  const whenTrue = assumeOutcome(value.whenTrue, test, outcome);
+  const whenFalse = assumeOutcome(value.whenFalse, test, outcome);
   return whenTrue === value.whenTrue && whenFalse === value.whenFalse
     ? value
     : { ...value, whenTrue, whenFalse };
+};
+
+/** Rewrites `value` knowing that `test` evaluated to `outcome` on this path. */
+export const assumeTest = (value: StaticValue, test: string, outcome: boolean): StaticValue => {
+  const operand = getNegatedOperand(test);
+  return operand === null
+    ? assumeOutcome(value, test, outcome)
+    : assumeOutcome(value, operand, !outcome);
 };
 
 const isSameLiteral = (left: StaticValue, right: StaticValue): boolean =>
@@ -314,8 +321,8 @@ export const conditional = (
 ): StaticValue => {
   const operand = getNegatedOperand(test);
   if (operand !== null) return conditional(operand, whenFalse, whenTrue);
-  const assumedTrue = assumeTest(whenTrue, test, true);
-  const assumedFalse = assumeTest(whenFalse, test, false);
+  const assumedTrue = assumeOutcome(whenTrue, test, true);
+  const assumedFalse = assumeOutcome(whenFalse, test, false);
   if (assumedTrue === assumedFalse || isSameLiteral(assumedTrue, assumedFalse)) return assumedTrue;
   return { kind: "conditional", test, whenTrue: assumedTrue, whenFalse: assumedFalse };
 };

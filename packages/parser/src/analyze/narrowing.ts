@@ -1,8 +1,15 @@
 import type { Expression } from "@oxc-project/types";
 import { getMemberLinks, unwrapExpression } from "../module/ast.js";
 import { equalsPrimitive } from "./operators.js";
-import { createScope, declareVariable, lookupVariable, type Scope } from "./scope.js";
 import {
+  createScope,
+  declareVariable,
+  isModuleScope,
+  lookupVariable,
+  type Scope,
+} from "./scope.js";
+import {
+  assumeTest,
   conditional,
   getTruthiness,
   isNullishValue,
@@ -15,12 +22,25 @@ import {
 export type ArmFilter = (arm: StaticValue) => boolean | null;
 
 /** A variable, or a property path below one, and the arms of its value a path keeps. */
-export interface Narrowing {
+export interface PathNarrowing {
+  kind: "path";
   path: string[];
   keep: ArmFilter;
   /** Read through `?.`, so a nullish prefix yields `undefined` instead of failing. */
   isOptional: boolean;
 }
+
+/** The outcome a path fixes for a test, so every value branching on that test loses the other arm. */
+export interface TestAssumption {
+  kind: "assumption";
+  test: string;
+  outcome: boolean;
+}
+
+export type Narrowing = PathNarrowing | TestAssumption;
+
+/** The source text of a test, in the form conditional values quote it. */
+export type DescribeTest = (test: Expression) => string;
 
 const negate =
   (keep: ArmFilter): ArmFilter =>
@@ -83,6 +103,7 @@ const narrowExpression = (expression: Expression, keep: ArmFilter, into: Narrowi
   const links = getMemberLinks(expression);
   if (links && links[0].name !== "this") {
     into.push({
+      kind: "path",
       path: links.map((link) => link.name),
       keep,
       isOptional: links.some((link) => link.isOptional),
@@ -90,20 +111,28 @@ const narrowExpression = (expression: Expression, keep: ArmFilter, into: Narrowi
     return;
   }
   const root = keep(UNDEFINED) === false ? getSpineRoot(expression) : null;
-  if (root !== null) into.push({ path: [root], keep: keepNonNullish, isOptional: false });
+  if (root !== null) {
+    into.push({ kind: "path", path: [root], keep: keepNonNullish, isOptional: false });
+  }
 };
 
 /**
- * What a test's `outcome` says about the variables it reads: `if (x)`,
+ * What a test's `outcome` says: values that branched on the same test lose
+ * their other arm, and the variables it reads are refined for `if (x)`,
  * `!x.y`, `x != null`, `x?.y === "a"`, and conjunctions or disjunctions
  * whose outcome decides every operand.
  */
 export const collectNarrowings = (
   test: Expression,
   outcome: boolean,
+  describe: DescribeTest,
   into: Narrowing[] = [],
 ): Narrowing[] => {
   const expression = unwrapExpression(test);
+  if (expression.type === "UnaryExpression" && expression.operator === "!") {
+    return collectNarrowings(expression.argument, !outcome, describe, into);
+  }
+  into.push({ kind: "assumption", test: describe(test), outcome });
   switch (expression.type) {
     case "Identifier":
     case "MemberExpression":
@@ -111,13 +140,10 @@ export const collectNarrowings = (
     case "ChainExpression":
       narrowExpression(expression, outcome ? keepTruthy : keepFalsy, into);
       break;
-    case "UnaryExpression":
-      if (expression.operator === "!") collectNarrowings(expression.argument, !outcome, into);
-      break;
     case "LogicalExpression":
       if ((expression.operator === "&&") === outcome && expression.operator !== "??") {
-        collectNarrowings(expression.left, outcome, into);
-        collectNarrowings(expression.right, outcome, into);
+        collectNarrowings(expression.left, outcome, describe, into);
+        collectNarrowings(expression.right, outcome, describe, into);
       }
       break;
     case "BinaryExpression": {
@@ -197,6 +223,18 @@ const narrowPath = (
   return { ...value, properties: new Map(value.properties).set(key, refined) };
 };
 
+/** Names bound between `scope` and the module scope, whose bindings are too many to revisit. */
+const getLocalNames = (scope: Scope): Set<string> => {
+  const names = new Set<string>();
+  for (
+    let current: Scope | null = scope;
+    current && !isModuleScope(current);
+    current = current.parent
+  )
+    for (const name of current.variables.keys()) names.add(name);
+  return names;
+};
+
 /**
  * A scope for a path on which `narrowings` hold: variables whose values
  * branch lose the arms the path rules out. Writes go through to the
@@ -204,14 +242,26 @@ const narrowPath = (
  */
 export const narrowScope = (scope: Scope, narrowings: Narrowing[]): Scope => {
   let narrowed: Scope | null = null;
-  for (const { path, keep, isOptional } of narrowings) {
-    const [name, ...propertyPath] = path;
-    const current = lookupVariable(narrowed ?? scope, name);
-    if (current === undefined) continue;
-    const refined = narrowPath(current, propertyPath, keep, isOptional);
-    if (refined === null || refined === current) continue;
+  let localNames: Set<string> | null = null;
+  const refine = (name: string, refined: StaticValue | null, current: StaticValue): void => {
+    if (refined === null || refined === current) return;
     narrowed ??= createScope(scope, "narrowing");
     declareVariable(narrowed, name, refined);
+  };
+  for (const narrowing of narrowings) {
+    if (narrowing.kind === "assumption") {
+      localNames ??= getLocalNames(scope);
+      for (const name of localNames) {
+        const current = lookupVariable(narrowed ?? scope, name);
+        if (current === undefined) continue;
+        refine(name, assumeTest(current, narrowing.test, narrowing.outcome), current);
+      }
+      continue;
+    }
+    const [name, ...propertyPath] = narrowing.path;
+    const current = lookupVariable(narrowed ?? scope, name);
+    if (current === undefined) continue;
+    refine(name, narrowPath(current, propertyPath, narrowing.keep, narrowing.isOptional), current);
   }
   return narrowed ?? scope;
 };
