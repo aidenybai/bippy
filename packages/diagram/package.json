@@ -1,0 +1,36 @@
+{
+  "name": "diagram",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens": "./src/diagram/tokens.stylex.ts"
+  },
+  "scripts": {
+    "dev": "next dev -p 3100",
+    "build": "next build",
+    "start": "next start -p 3100",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "test:browser": "playwright test"
+  },
+  "dependencies": {
+    "@stylexjs/stylex": "^0.19.0",
+    "lucide-react": "^1.32.0",
+    "next": "15.5.18",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "tailwind-stylex": "0.1.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@stylexswc/nextjs-plugin": "^0.18.6",
+    "@stylexswc/webpack-plugin": "^0.18.6",
+    "@types/node": "^20.19.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.3"
+  }
+}
