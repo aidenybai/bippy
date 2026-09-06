@@ -14,6 +14,11 @@ const ITEMS: Item[] = [
 
 const EMPTY: Item[] = [];
 
+const FIRST_FRUIT = "apple";
+const SECOND_FRUIT = "banana";
+const NUMERIC_STRING = "10";
+const LIMIT = 9;
+
 const Tile = ({ label }: { label: string }) => <div className="tile">{label}</div>;
 
 const Empty = () => <p>nothing</p>;
@@ -48,6 +53,8 @@ export const App = ({ mode }: { mode: "grid" | "list" }) => {
       ))}
       {visible.length}
       {mode ?? "fallback"}
+      {FIRST_FRUIT < SECOND_FRUIT ? <b>sorted</b> : <b>unsorted</b>}
+      {NUMERIC_STRING < LIMIT ? <em>numeric</em> : <em>lexical</em>}
     </>
   );
 };

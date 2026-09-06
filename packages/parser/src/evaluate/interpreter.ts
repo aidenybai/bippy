@@ -1804,6 +1804,20 @@ const computeBinary = (
   if (typeof left === "string" || typeof right === "string") {
     if (operator === "+") return primitiveValue(String(left) + String(right));
   }
+  if (typeof left === "string" && typeof right === "string") {
+    switch (operator) {
+      case "<":
+        return primitiveValue(left < right);
+      case "<=":
+        return primitiveValue(left <= right);
+      case ">":
+        return primitiveValue(left > right);
+      case ">=":
+        return primitiveValue(left >= right);
+      default:
+        break;
+    }
+  }
   const leftNumber = Number(left);
   const rightNumber = Number(right);
   switch (operator) {
