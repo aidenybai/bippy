@@ -167,6 +167,11 @@ const reconcileChildren = (
         reconcileChildren(builder, parent, value.whenTrue, frame, canUnwrapFragment),
         reconcileChildren(builder, parent, value.whenFalse, frame, canUnwrapFragment),
       ]);
+    case "optional":
+      return branch(value.test, [
+        reconcileChildren(builder, parent, value.value, frame, canUnwrapFragment),
+        [],
+      ]);
     case "element":
       if (canUnwrapFragment && isUnkeyedFragment(value)) {
         return reconcileChildren(builder, parent, childrenOf(value.props), frame, false);
@@ -217,6 +222,8 @@ const createChild = (
         createChild(builder, parent, value.whenTrue, frame),
         createChild(builder, parent, value.whenFalse, frame),
       ]);
+    case "optional":
+      return branch(value.test, [createChild(builder, parent, value.value, frame), []]);
     case "element":
       return createFiberFromElement(builder, parent, value, frame);
     case "array":

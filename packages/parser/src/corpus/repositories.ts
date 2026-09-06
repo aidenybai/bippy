@@ -353,14 +353,14 @@ export const CORPUS_REPOSITORIES: CorpusRepository[] = [
   },
   {
     slug: "heroui-inc/heroui",
-    defaultBranch: "canary",
+    defaultBranch: "v3",
     framework: "next",
     packageManager: "pnpm",
     reactVersion: "19.2.6",
-    appDirectory: "packages/components",
-    entryFiles: ["packages/components/button/src/button.tsx"],
+    appDirectory: "packages/react/src/components",
+    entryFiles: ["packages/react/src/components/button/button.tsx"],
     live: null,
-    notes: "Component library packages; every component is a forwardRef with slots.",
+    notes: "Component library on react-aria-components; compound components built from slots.",
   },
   {
     slug: "refinedev/refine",

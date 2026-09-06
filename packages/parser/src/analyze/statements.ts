@@ -337,7 +337,7 @@ const planForOfIterations = (
   const subject = interpreter.evaluateExpression(statement.right, context);
   const values =
     statement.type === "ForOfStatement"
-      ? subject.kind === "array"
+      ? subject.kind === "array" && subject.items.every((item) => item.kind !== "optional")
         ? subject.items
         : null
       : subject.kind === "object" && !subject.hasUnknownSpread
@@ -506,7 +506,11 @@ const evaluateStatement = (
       }
       return NORMAL_COMPLETION;
     case "TSEnumDeclaration":
-      declareVariable(context.scope, statement.id.name, evaluateEnum(interpreter, statement, context));
+      declareVariable(
+        context.scope,
+        statement.id.name,
+        evaluateEnum(interpreter, statement, context),
+      );
       return NORMAL_COMPLETION;
     case "ReturnStatement":
       return returnCompletion(

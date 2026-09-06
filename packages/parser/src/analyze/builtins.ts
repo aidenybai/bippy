@@ -11,6 +11,8 @@ import {
   literal,
   mergeObjects,
   object,
+  optional,
+  selectItem,
   type StaticValue,
   text,
   TRUE,
@@ -150,6 +152,44 @@ const ARRAY_LIKE_METHODS = new Set([
 const isCallable = (value: StaticValue | undefined): value is StaticValue =>
   value !== undefined && value.kind === "function";
 
+type Verdict = boolean | null;
+
+const presentValue = (item: StaticValue): StaticValue =>
+  item.kind === "optional" ? item.value : item;
+
+/**
+ * The first item, in `order`, whose verdict holds. Undecided verdicts and
+ * items that may be absent each add a branch that falls through to the next
+ * candidate, which is how `find` reads on a filtered array.
+ */
+const findMatch = (
+  items: StaticValue[],
+  verdicts: Verdict[],
+  order: number[],
+  describeTest: (index: number) => string,
+): StaticValue => {
+  let fallthrough: StaticValue = UNDEFINED;
+  for (const index of [...order].reverse()) {
+    const item = items[index];
+    const verdict = verdicts[index];
+    if (verdict === false) continue;
+    const candidate = presentValue(item);
+    const matched: StaticValue =
+      verdict === true ? candidate : conditional(describeTest(index), candidate, fallthrough);
+    fallthrough = item.kind === "optional" ? conditional(item.test, matched, fallthrough) : matched;
+  }
+  return fallthrough;
+};
+
+/** `some`/`every` decided from per-item verdicts; an absent item cannot decide either. */
+const quantify = (items: StaticValue[], verdicts: Verdict[], isEvery: boolean): StaticValue => {
+  const decides = (verdict: Verdict, index: number): boolean =>
+    verdict === !isEvery && items[index].kind !== "optional";
+  if (verdicts.some(decides)) return literal(!isEvery);
+  if (verdicts.every((verdict) => verdict === isEvery)) return literal(isEvery);
+  return unknown(isEvery ? "every()" : "some()");
+};
+
 /**
  * Array method semantics on the three iterable shapes: known arrays keep
  * per-item precision, lists stay lists and unknown receivers become lists
@@ -164,20 +204,36 @@ export const evaluateArrayMethod = (
   context: EvaluationContext,
 ): StaticValue | null => {
   if (!ARRAY_LIKE_METHODS.has(method)) return null;
+  const callDescription = `${description}.${method}()`;
   const items = target.kind === "array" ? target.items : null;
   const itemShape = getIterationItem(target, description);
   const [callback, secondArgument] = callArguments;
+  /** Positions are certain only up to the first item that may be absent. */
+  const hasOptionalBefore = (index: number): boolean =>
+    items !== null && items.slice(0, index).some((item) => item.kind === "optional");
+  const indexAt = (index: number): StaticValue =>
+    hasOptionalBefore(index) ? unknown("index") : literal(index);
+  /** Applies `mapper` to every item; an item that may be absent yields a result that may be absent. */
   const mapItems = (
     mapper: (item: StaticValue, index: StaticValue) => StaticValue,
     isFlat: boolean,
   ): StaticValue => {
     if (!items) return list(mapper(itemShape, unknown("index")), description, isFlat);
-    const mapped = items.map((item, index) => mapper(item, literal(index)));
+    const mapped = items.map((item, index) =>
+      item.kind === "optional"
+        ? optional(item.test, mapper(item.value, indexAt(index)))
+        : mapper(item, indexAt(index)),
+    );
     if (!isFlat) return array(mapped);
     const flattened: StaticValue[] = [];
     for (const mappedItem of mapped) flattenInto(flattened, mappedItem);
     return array(flattened);
   };
+  /** Runs a predicate over every present item, in source order. */
+  const testItems = (predicate: StaticValue): Verdict[] =>
+    (items ?? []).map((item, index) =>
+      getTruthiness(invoke(predicate, [presentValue(item), indexAt(index), target])),
+    );
   const asIndex = (value: StaticValue | undefined, fallback: number): number | null => {
     if (value === undefined) return fallback;
     return value.kind === "literal" && typeof value.value === "number" ? value.value : null;
@@ -185,34 +241,52 @@ export const evaluateArrayMethod = (
   switch (method) {
     case "map":
     case "flatMap":
-      if (!isCallable(callback)) return unknown(description);
+      if (!isCallable(callback)) return unknown(callDescription);
       return mapItems(
         (item, index) => invoke(callback, [item, index, target]),
         method === "flatMap",
       );
     case "filter": {
-      if (!isCallable(callback)) return unknown(description);
-      if (!items) return target.kind === "list" ? target : unknown(description);
+      if (!isCallable(callback)) return unknown(callDescription);
+      if (!items) return target.kind === "list" ? target : unknown(callDescription);
+      const verdicts = testItems(callback);
       const kept: StaticValue[] = [];
       items.forEach((item, index) => {
-        const verdict = getTruthiness(invoke(callback, [item, literal(index), target]));
+        const verdict = verdicts[index];
         if (verdict === true) kept.push(item);
-        else if (verdict === null) kept.push(conditional(description, item, UNDEFINED));
+        else if (verdict === null) kept.push(optional(`${callDescription} keeps [${index}]`, item));
       });
       return array(kept);
     }
+    case "find":
+    case "findLast": {
+      if (!isCallable(callback)) return unknown(callDescription);
+      if (!items) return unknown(callDescription);
+      const order = items.map((_item, index) => index);
+      if (method === "findLast") order.reverse();
+      return findMatch(
+        items,
+        testItems(callback),
+        order,
+        (index) => `${callDescription} matches [${index}]`,
+      );
+    }
     case "forEach":
-      if (isCallable(callback)) invoke(callback, [itemShape, unknown("index"), target]);
+      if (!isCallable(callback)) return UNDEFINED;
+      if (items) mapItems((item, index) => invoke(callback, [item, index, target]), false);
+      else invoke(callback, [itemShape, unknown("index"), target]);
       return UNDEFINED;
     case "slice": {
-      if (!items) return target.kind === "list" ? target : unknown(description);
+      if (!items) return target.kind === "list" ? target : unknown(callDescription);
       const start = asIndex(callback, 0);
       const end = asIndex(secondArgument, items.length);
-      if (start === null || end === null) return list(itemShape, description);
+      if (start === null || end === null || hasOptionalBefore(end)) {
+        return list(itemShape, description);
+      }
       return array(items.slice(start, end));
     }
     case "concat": {
-      if (!items) return unknown(description);
+      if (!items) return unknown(callDescription);
       const combined = [...items];
       for (const argument of callArguments) flattenInto(combined, argument);
       return array(combined);
@@ -223,28 +297,31 @@ export const evaluateArrayMethod = (
         ? array([...items].reverse())
         : target.kind === "list"
           ? target
-          : unknown(description);
+          : unknown(callDescription);
     case "sort":
     case "toSorted":
       if (items && items.length <= 1) return array(items);
       return target.kind === "list" ? target : list(itemShape, description);
     case "flat": {
-      if (!items)
-        return target.kind === "list" ? list(target.item, description, true) : unknown(description);
+      if (!items) {
+        return target.kind === "list"
+          ? list(target.item, description, true)
+          : unknown(callDescription);
+      }
       const flattened: StaticValue[] = [];
       for (const item of items) flattenInto(flattened, item);
       return array(flattened);
     }
     case "join":
-      return text(description);
+      return text(callDescription);
     case "push":
     case "unshift": {
-      if (target.kind !== "array") return unknown(description);
+      if (target.kind !== "array") return unknown(callDescription);
       const undecided = context.undecided;
       const pushed =
         undecided && isEffectUndecided(context, target.depth)
           ? callArguments.map((argument) => ({
-              ...list(argument, `${description} under ${undecided.test}`),
+              ...list(argument, `${callDescription} under ${undecided.test}`),
               isInline: true,
             }))
           : callArguments;
@@ -254,11 +331,13 @@ export const evaluateArrayMethod = (
     }
     case "reduce":
     case "reduceRight": {
-      if (!items || !isCallable(callback)) return unknown(description);
+      if (!items || !isCallable(callback) || hasOptionalBefore(items.length)) {
+        return unknown(callDescription);
+      }
       const order = items.map((_item, index) => index);
       if (method === "reduceRight") order.reverse();
       const hasInitial = callArguments.length > 1;
-      if (!hasInitial && order.length === 0) return unknown(description);
+      if (!hasInitial && order.length === 0) return unknown(callDescription);
       let accumulator = hasInitial ? (secondArgument ?? UNDEFINED) : items[order[0]];
       for (const index of order.slice(hasInitial ? 0 : 1)) {
         accumulator = invoke(callback, [accumulator, items[index], literal(index), target]);
@@ -267,12 +346,14 @@ export const evaluateArrayMethod = (
     }
     case "pop":
     case "shift": {
-      if (target.kind !== "array") return unknown(description);
-      if (isEffectUndecided(context, target.depth)) return forgetArrayItems(target, description);
+      if (target.kind !== "array") return unknown(callDescription);
+      if (isEffectUndecided(context, target.depth) || hasOptionalBefore(target.items.length)) {
+        return forgetArrayItems(target, description);
+      }
       return (method === "pop" ? target.items.pop() : target.items.shift()) ?? UNDEFINED;
     }
     case "splice": {
-      if (target.kind !== "array") return unknown(description);
+      if (target.kind !== "array") return unknown(callDescription);
       const [start, deleteCount, ...added] = callArguments;
       const startIndex = asIndex(start, 0);
       const deleteCountIndex = asIndex(deleteCount, target.items.length);
@@ -286,18 +367,30 @@ export const evaluateArrayMethod = (
       return array(target.items.splice(startIndex, deleteCountIndex, ...added));
     }
     case "at": {
-      if (items && callback?.kind === "literal" && typeof callback.value === "number") {
-        return items.at(callback.value) ?? UNDEFINED;
+      if (!items || callback?.kind !== "literal" || typeof callback.value !== "number") {
+        return unknown(callDescription);
       }
-      return unknown(description);
+      if (callback.value >= 0) return selectItem(items, callback.value);
+      return hasOptionalBefore(items.length)
+        ? unknown(callDescription)
+        : (items.at(callback.value) ?? UNDEFINED);
     }
-    case "includes":
+    case "includes": {
+      if (!items || !callback) return unknown(callDescription);
+      const verdicts: Verdict[] = items.map((item) => {
+        const candidate = presentValue(item);
+        return candidate.kind === "literal" && callback.kind === "literal"
+          ? Object.is(candidate.value, callback.value)
+          : null;
+      });
+      return quantify(items, verdicts, false);
+    }
     case "some":
     case "every":
-      if (items && items.length === 0) return method === "every" ? TRUE : FALSE;
-      return unknown(description);
+      if (!items || !isCallable(callback)) return unknown(callDescription);
+      return quantify(items, testItems(callback), method === "every");
     default:
-      return unknown(description);
+      return unknown(callDescription);
   }
 };
 

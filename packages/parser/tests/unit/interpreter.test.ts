@@ -144,7 +144,7 @@ describe("interpreter: arrays and objects", () => {
 
   it("tracks pushes and property writes, conditional when the control flow is undecided", () => {
     expect(run(`const items = [1]; if (show) items.push(2); return items;`)).toBe(
-      "[1, list(items under show)]",
+      "[1, list(items.push() under show)]",
     );
     expect(
       run(`const theme = { mode: "light" }; if (show) theme.mode = "dark"; return theme.mode;`),
@@ -156,6 +156,65 @@ describe("interpreter: arrays and objects", () => {
 
   it("forgets array contents after untrackable mutations", () => {
     expect(run(`const items = [1, 2]; if (show) items.pop(); return items;`)).toBe("[list(items)]");
+  });
+
+  it("keeps items whose filter verdict is undecided as optional items", () => {
+    const filtered = `const kept = [1, 2, 3].filter((n) => n === 2 || (show && n === 3));`;
+    expect(run(`${filtered} return kept;`)).toBe(
+      "[2, ([1, 2, 3].filter() keeps [2] ? 3 : absent)]",
+    );
+    expect(run(`${filtered} return kept.map((n) => n * 10);`)).toBe(
+      "[20, ([1, 2, 3].filter() keeps [2] ? 30 : absent)]",
+    );
+    expect(run(`${filtered} return kept.length;`)).toBe("unknown(array.length)");
+    expect(run(`${filtered} return kept[0];`)).toBe("2");
+    expect(run(`${filtered} return kept[1];`)).toBe(
+      "([1, 2, 3].filter() keeps [2] ? 3 : undefined)",
+    );
+    expect(run(`const kept = [1, 2].filter((n) => n === 2 || show); return kept[0];`)).toBe(
+      "([1, 2].filter() keeps [0] ? 1 : 2)",
+    );
+    expect(run(`const kept = [1, 2].filter((n) => n === 2 || show); return kept.at(-1);`)).toBe(
+      "unknown(kept.at())",
+    );
+  });
+
+  it("models find as a fall-through over undecided matches", () => {
+    expect(run(`return [1, 2, 3].find((n) => n > 1);`)).toBe("2");
+    expect(run(`return [1, 2, 3].find((n) => n > 5);`)).toBe("undefined");
+    expect(run(`return [1, 2, 3].find((n) => n === 2 || show);`)).toBe(
+      "([1, 2, 3].find() matches [0] ? 1 : 2)",
+    );
+    expect(run(`return [1, 2, 3].findLast((n) => n === 2 || show);`)).toBe(
+      "([1, 2, 3].findLast() matches [2] ? 3 : 2)",
+    );
+    expect(
+      run(`const kept = [1, 2].filter((n) => n === 2 || show); return kept.find((n) => n > 0);`),
+    ).toBe("([1, 2].filter() keeps [0] ? 1 : 2)");
+  });
+
+  it("decides some, every and includes from known items", () => {
+    expect(run(`return [1, 2, 3].some((n) => n > 2);`)).toBe("true");
+    expect(run(`return [1, 2, 3].every((n) => n > 2);`)).toBe("false");
+    expect(run(`return [1, 2, 3].every((n) => n > 0);`)).toBe("true");
+    expect(run(`return [1, 2, 3].some((n) => show);`)).toBe("unknown(some())");
+    expect(run(`return ["a", "b"].includes("b");`)).toBe("true");
+    expect(run(`return ["a", "b"].includes(kind);`)).toBe("unknown(some())");
+  });
+
+  it("short-circuits optional chains on nullish values", () => {
+    expect(run(`const user = undefined; return user?.profile.name;`)).toBe("undefined");
+    expect(run(`const user = { profile: null }; return user.profile?.name ?? "anon";`)).toBe(
+      '"anon"',
+    );
+    expect(run(`const user = show ? { name: "a" } : null; return user?.name ?? "anon";`)).toBe(
+      '(show ? "a" : "anon")',
+    );
+    expect(run(`const onSelect = undefined; return onSelect?.(1);`)).toBe("undefined");
+    expect(run(`const api = show ? { get: () => 1 } : undefined; return api?.get();`)).toBe(
+      "(show ? 1 : undefined)",
+    );
+    expect(run(`const user = undefined; return user.name;`)).toBe("unknown(undefined.name)");
   });
 });
 

@@ -6,6 +6,8 @@ import {
   list,
   literal,
   NULL,
+  type OptionalValue,
+  optional,
   type StaticValue,
   UNDEFINED,
   unknown,
@@ -87,9 +89,8 @@ const mapLeaf = (
   nameSoFar: string | null,
 ): void => {
   const normalized = isNullishChild(child) ? NULL : child;
-  const mapped = callback
-    ? traversal.invoke(callback, [normalized, literal(traversal.count)])
-    : normalized;
+  const index = traversal.isPrecise ? literal(traversal.count) : unknown("index");
+  const mapped = callback ? traversal.invoke(callback, [normalized, index]) : normalized;
   traversal.count += 1;
   const childKey = nameSoFar === "" ? joinKeys(SEPARATOR, getElementKey(normalized, 0)) : nameSoFar;
   if (mapped.kind === "array") {
@@ -106,6 +107,22 @@ const mapLeaf = (
   traversal.results.push(mapped);
 };
 
+/**
+ * A child that may be absent is visited on its own: whatever it maps to is
+ * equally optional, and every later index and key is uncertain.
+ */
+const mapOptionalChild = (
+  child: OptionalValue,
+  traversal: ChildTraversal,
+  callback: StaticValue | null,
+  escapedPrefix: string | null,
+): void => {
+  traversal.isPrecise = false;
+  const inner: ChildTraversal = { ...traversal, results: [] };
+  mapIntoArray(child.value, inner, callback, escapedPrefix, null);
+  for (const result of inner.results) traversal.results.push(optional(child.test, result));
+};
+
 const mapIntoArray = (
   children: StaticValue,
   traversal: ChildTraversal,
@@ -120,6 +137,10 @@ const mapIntoArray = (
   if (children.kind === "array") {
     const nextNamePrefix = nameSoFar === "" ? SEPARATOR : joinKeys(nameSoFar, SUBSEPARATOR);
     children.items.forEach((child, index) => {
+      if (child.kind === "optional") {
+        mapOptionalChild(child, traversal, callback, escapedPrefix);
+        return;
+      }
       mapIntoArray(
         child,
         traversal,
@@ -128,6 +149,10 @@ const mapIntoArray = (
         joinKeys(nextNamePrefix, getElementKey(child, index)),
       );
     });
+    return;
+  }
+  if (children.kind === "optional") {
+    mapOptionalChild(children, traversal, callback, escapedPrefix);
     return;
   }
   traversal.isPrecise = false;

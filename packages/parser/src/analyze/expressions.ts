@@ -10,7 +10,12 @@ import type {
   TaggedTemplateExpression,
   TemplateLiteral,
 } from "@oxc-project/types";
-import { getMemberChain, isStringLiteral } from "../module/ast.js";
+import {
+  getMemberLinks,
+  isOptionalSpine,
+  isStringLiteral,
+  type MemberLink,
+} from "../module/ast.js";
 import { getProperty, normalizeExternal, spreadInto } from "./access.js";
 import { isKnownGlobal } from "./builtins.js";
 import { evaluateCall } from "./calls.js";
@@ -33,10 +38,13 @@ import {
   type FunctionValue,
   getTruthiness,
   isNullish,
+  isNullishValue,
   literal,
+  mapConditional,
   mergeObjects,
   nameValue,
   object,
+  readItem,
   regexp,
   type StaticValue,
   text,
@@ -94,15 +102,32 @@ const resolveAssignedMember = (
   return symbol.kind === "unresolved" ? null : interpreter.valueFromSymbol(symbol);
 };
 
-export const evaluateChain = (
+/**
+ * Reads `key` off each possible target. Inside an optional chain a nullish
+ * target short-circuits to `undefined` instead of failing the read.
+ */
+const accessMember = (
   interpreter: Interpreter,
-  chain: string[],
+  target: StaticValue,
+  key: string,
+  isShortCircuiting: boolean,
+): StaticValue =>
+  mapConditional(target, (arm) =>
+    isShortCircuiting && isNullishValue(arm) ? UNDEFINED : getProperty(interpreter, arm, key),
+  );
+
+const accessLinks = (
+  interpreter: Interpreter,
+  links: MemberLink[],
   span: Span,
   context: EvaluationContext,
 ): StaticValue => {
+  const chain = links.map((link) => link.name);
+  const firstOptional = links.findIndex((link) => link.isOptional);
   let value = resolveIdentifier(interpreter, chain[0], span, context);
   for (let index = 1; index < chain.length; index++) {
-    const next = getProperty(interpreter, value, chain[index]);
+    const isShortCircuiting = firstOptional !== -1 && index >= firstOptional;
+    const next = accessMember(interpreter, value, chain[index], isShortCircuiting);
     const isStaticHost = value.kind === "function" || value.kind === "component";
     value =
       (next.kind === "unknown" && isStaticHost
@@ -112,18 +137,32 @@ export const evaluateChain = (
   return value;
 };
 
+export const evaluateChain = (
+  interpreter: Interpreter,
+  chain: string[],
+  span: Span,
+  context: EvaluationContext,
+): StaticValue =>
+  accessLinks(
+    interpreter,
+    chain.map((name) => ({ name, isOptional: false })),
+    span,
+    context,
+  );
+
 const evaluateMember = (
   interpreter: Interpreter,
   expression: MemberExpression,
   context: EvaluationContext,
 ): StaticValue => {
-  const chain = getMemberChain(expression);
-  if (chain && chain[0] !== "this") return evaluateChain(interpreter, chain, expression, context);
+  const links = getMemberLinks(expression);
+  if (links && links[0].name !== "this")
+    return accessLinks(interpreter, links, expression, context);
   const target = interpreter.evaluateExpression(expression.object, context);
   const key = getPropertyKeyName(interpreter, expression.property, expression.computed, context);
-  if (key !== null) return getProperty(interpreter, target, key);
+  if (key !== null) return accessMember(interpreter, target, key, isOptionalSpine(expression));
   if (target.kind === "list") return target.item;
-  if (target.kind === "array" && target.items.length === 1) return target.items[0];
+  if (target.kind === "array" && target.items.length === 1) return readItem(target.items[0]);
   return unknown(interpreter.getSource(context.module, expression));
 };
 
@@ -144,31 +183,37 @@ const evaluateLogical = (
   );
 };
 
-/** Short-circuits when the left side decides; otherwise both sides remain possible. */
+/**
+ * Short-circuits when the left side decides; otherwise both sides remain
+ * possible. A left side that already branches is decided arm by arm.
+ */
 const applyLogicalOperator = (
   operator: LogicalOperator,
   left: StaticValue,
   test: string,
-  right: () => StaticValue,
+  evaluateRight: () => StaticValue,
 ): StaticValue => {
-  const truthiness = getTruthiness(left);
-  switch (operator) {
-    case "&&":
-      if (truthiness === false) return left;
-      if (truthiness === true) return right();
-      return conditional(test, right(), left.kind === "literal" ? left : FALSE);
-    case "||":
-      if (truthiness === true) return left;
-      if (truthiness === false) return right();
-      return conditional(test, left, right());
-    case "??": {
-      if (left.kind === "literal") return isNullish(left.value) ? right() : left;
-      if (left.kind === "unknown" || left.kind === "conditional") {
-        return conditional(`${test} != null`, left, right());
-      }
-      return left;
+  let rightValue: StaticValue | null = null;
+  const right = (): StaticValue => {
+    rightValue ??= evaluateRight();
+    return rightValue;
+  };
+  return mapConditional(left, (arm) => {
+    const truthiness = getTruthiness(arm);
+    switch (operator) {
+      case "&&":
+        if (truthiness === false) return arm;
+        if (truthiness === true) return right();
+        return conditional(test, right(), arm.kind === "literal" ? arm : FALSE);
+      case "||":
+        if (truthiness === true) return arm;
+        if (truthiness === false) return right();
+        return conditional(test, arm, right());
+      case "??":
+        if (arm.kind === "literal") return isNullish(arm.value) ? right() : arm;
+        return arm.kind === "unknown" ? conditional(`${test} != null`, arm, right()) : arm;
     }
-  }
+  });
 };
 
 const LOGICAL_ASSIGNMENT_OPERATORS: Partial<Record<AssignmentOperator, LogicalOperator>> = {

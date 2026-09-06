@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { AnalysisTimeoutError } from "../analyze/interpreter.js";
-import { isComponentName } from "../analyze/naming.js";
+import { callsHooksOrCreatesJsx, isComponentName } from "../analyze/naming.js";
 import {
   describeValue,
   getValueName,
@@ -200,7 +200,7 @@ const collectTreeStats = (nodes: StaticNode[], stats: TreeStats, histograms: His
 const getComponentKind = (value: StaticValue, exportName: string): ComponentKind | null => {
   if (value.kind === "function") {
     const name = value.name ?? exportName;
-    return isComponentName(name) ? "function" : null;
+    return isComponentName(name) && callsHooksOrCreatesJsx(value.fn) ? "function" : null;
   }
   if (value.kind !== "component") return null;
   switch (value.definition.kind) {

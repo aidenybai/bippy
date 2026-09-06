@@ -56,7 +56,10 @@ const readPackageWorkspaceGlobs = (rootDirectory: string): string[] => {
 const listSubdirectories = (directory: string): string[] => {
   try {
     return readdirSync(directory, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory() && !entry.name.startsWith(".") && entry.name !== "node_modules")
+      .filter(
+        (entry) =>
+          entry.isDirectory() && !entry.name.startsWith(".") && entry.name !== "node_modules",
+      )
       .map((entry) => join(directory, entry.name));
   } catch {
     return [];
@@ -81,13 +84,17 @@ const expandWorkspaceGlob = (rootDirectory: string, glob: string): string[] => {
     } else if (segment.includes("*")) {
       const pattern = toSegmentPattern(segment);
       directories = directories.flatMap((directory) =>
-        listSubdirectories(directory).filter((child) => pattern.test(child.slice(directory.length + 1))),
+        listSubdirectories(directory).filter((child) =>
+          pattern.test(child.slice(directory.length + 1)),
+        ),
       );
     } else {
       directories = directories.map((directory) => join(directory, segment));
     }
   }
-  return [...new Set(directories)].filter((directory) => existsSync(join(directory, "package.json")));
+  return [...new Set(directories)].filter((directory) =>
+    existsSync(join(directory, "package.json")),
+  );
 };
 
 /**
@@ -111,7 +118,8 @@ export const findWorkspacePackages = (rootDirectory: string): WorkspacePackage[]
       if (excluded.has(directory)) continue;
       const manifest = readJson(join(directory, "package.json"));
       if (!isRecord(manifest) || typeof manifest.name !== "string") continue;
-      if (!packages.has(manifest.name)) packages.set(manifest.name, { name: manifest.name, directory });
+      if (!packages.has(manifest.name))
+        packages.set(manifest.name, { name: manifest.name, directory });
     }
   }
   return [...packages.values()];

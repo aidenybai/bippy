@@ -56,6 +56,18 @@ export interface ConditionalValue {
   whenFalse: StaticValue;
 }
 
+/**
+ * An array item that is present only when `test` passes at runtime: what
+ * `.filter()` keeps when its predicate cannot be decided. Unlike a
+ * conditional with an `undefined` arm, callbacks over the array never see
+ * the absent case and the array's length and indices become unknown.
+ */
+export interface OptionalValue {
+  kind: "optional";
+  test: string;
+  value: StaticValue;
+}
+
 export interface ObjectValue {
   kind: "object";
   properties: Map<string, StaticValue>;
@@ -122,6 +134,7 @@ export type StaticValue =
   | ArrayValue
   | ListValue
   | ConditionalValue
+  | OptionalValue
   | ObjectValue
   | FunctionValue
   | ComponentValue
@@ -252,6 +265,41 @@ export const conditional = (
   if (assumedTrue === assumedFalse || isSameLiteral(assumedTrue, assumedFalse)) return assumedTrue;
   return { kind: "conditional", test, whenTrue: assumedTrue, whenFalse: assumedFalse };
 };
+/** Nested optionals are one item that needs every test to pass. */
+export const optional = (test: string, value: StaticValue): OptionalValue =>
+  value.kind === "optional"
+    ? { kind: "optional", test: `${value.test} && ${test}`, value: value.value }
+    : { kind: "optional", test, value };
+/** An optional item read on its own, e.g. as a spread argument: it is `undefined` when absent. */
+export const readItem = (value: StaticValue): StaticValue =>
+  value.kind === "optional" ? conditional(value.test, value.value, UNDEFINED) : value;
+
+/** Beyond this many items, selecting through absent ones is not worth the branching. */
+const SELECTION_LIMIT = 8;
+
+/**
+ * The item at `position` once absent items are skipped, so `filtered[0]`
+ * reads as the first item that is present. Each optional item before the
+ * position contributes one branch on its presence test.
+ */
+export const selectItem = (items: StaticValue[], position: number): StaticValue => {
+  const firstOptional = items.findIndex((item) => item.kind === "optional");
+  if (firstOptional === -1 || firstOptional > position) return items[position] ?? UNDEFINED;
+  if (items.length > SELECTION_LIMIT) return unknown(`array[${position}]`);
+  const select = (start: number, remaining: number): StaticValue => {
+    const item = items[start];
+    if (item === undefined) return UNDEFINED;
+    if (item.kind !== "optional") {
+      return remaining === 0 ? item : select(start + 1, remaining - 1);
+    }
+    return conditional(
+      item.test,
+      remaining === 0 ? item.value : select(start + 1, remaining - 1),
+      select(start + 1, remaining),
+    );
+  };
+  return select(0, position);
+};
 export const object = (
   properties: Iterable<[string, StaticValue]> = [],
   hasUnknownSpread = false,
@@ -275,6 +323,22 @@ export const FALSE = literal(false);
 
 export const isNullish = (value: Primitive): value is null | undefined =>
   value === null || value === undefined;
+
+export const isNullishValue = (value: StaticValue): boolean =>
+  value.kind === "literal" && isNullish(value.value);
+
+/** Applies `transform` to every arm of a conditional, keeping its branch structure. */
+export const mapConditional = (
+  value: StaticValue,
+  transform: (arm: StaticValue) => StaticValue,
+): StaticValue =>
+  value.kind === "conditional"
+    ? conditional(
+        value.test,
+        mapConditional(value.whenTrue, transform),
+        mapConditional(value.whenFalse, transform),
+      )
+    : transform(value);
 
 export const isRenderedAsText = (value: Primitive): boolean =>
   (typeof value === "string" && value !== "") ||
@@ -348,6 +412,7 @@ const isFullyKnownInner = (value: StaticValue, visited: Set<StaticValue>): boole
     case "unknown":
     case "list":
     case "conditional":
+    case "optional":
       return false;
     case "array":
       if (visited.has(value)) return true;
@@ -399,6 +464,8 @@ export const getTruthiness = (value: StaticValue): boolean | null => {
       const whenFalse = getTruthiness(value.whenFalse);
       return whenTrue !== null && whenTrue === whenFalse ? whenTrue : null;
     }
+    case "optional":
+      return getTruthiness(value.value) === false ? false : null;
   }
 };
 
@@ -449,6 +516,8 @@ export const describeValue = (value: StaticValue): string => {
       return `list(${value.description})`;
     case "conditional":
       return `(${value.test} ? ${describeValue(value.whenTrue)} : ${describeValue(value.whenFalse)})`;
+    case "optional":
+      return `(${value.test} ? ${describeValue(value.value)} : absent)`;
     case "object":
       return `{${[...value.properties.keys()].join(", ")}${value.hasUnknownSpread ? ", ..." : ""}}`;
     case "function":

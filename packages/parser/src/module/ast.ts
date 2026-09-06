@@ -92,22 +92,28 @@ export const unwrapExpression = (expression: Expression): Expression => {
   }
 };
 
+export interface MemberLink {
+  name: string;
+  /** Reached through `?.`, so a nullish object short-circuits from here on. */
+  isOptional: boolean;
+}
+
 /**
- * Returns the identifier chain of a static member access such as
- * `React.Fragment` → `["React", "Fragment"]`. Returns `null` when any link
- * is computed or not an identifier.
+ * Returns the links of a static member access such as `React.Fragment` →
+ * `React`, `Fragment`. Returns `null` when any link is computed or not an
+ * identifier.
  */
-export const getMemberChain = (expression: Expression): string[] | null => {
-  const chain: string[] = [];
+export const getMemberLinks = (expression: Expression): MemberLink[] | null => {
+  const links: MemberLink[] = [];
   let current: Expression = unwrapExpression(expression);
   while (true) {
     if (current.type === "Identifier") {
-      chain.unshift(current.name);
-      return chain;
+      links.unshift({ name: current.name, isOptional: false });
+      return links;
     }
     if (current.type === "ThisExpression") {
-      chain.unshift("this");
-      return chain;
+      links.unshift({ name: "this", isOptional: false });
+      return links;
     }
     if (current.type === "ChainExpression") {
       const element = current.expression;
@@ -117,12 +123,32 @@ export const getMemberChain = (expression: Expression): string[] | null => {
     }
     if (current.type === "MemberExpression" && !current.computed) {
       if (current.property.type !== "Identifier") return null;
-      chain.unshift(current.property.name);
+      links.unshift({ name: current.property.name, isOptional: current.optional });
       current = unwrapExpression(current.object);
       continue;
     }
     return null;
   }
+};
+
+/** The names along a static member access, `React.Fragment` → `["React", "Fragment"]`. */
+export const getMemberChain = (expression: Expression): string[] | null =>
+  getMemberLinks(expression)?.map((link) => link.name) ?? null;
+
+/**
+ * Whether `?.` appears on the access spine ending at `expression`. Every
+ * later member access or call on that spine short-circuits to `undefined`
+ * once an object is nullish; parentheses end the spine.
+ */
+export const isOptionalSpine = (expression: Expression): boolean => {
+  let current = unwrapExpression(expression);
+  while (current.type === "MemberExpression" || current.type === "CallExpression") {
+    if (current.optional) return true;
+    current = unwrapExpression(
+      current.type === "MemberExpression" ? current.object : current.callee,
+    );
+  }
+  return false;
 };
 
 export const getJsxNameChain = (name: JSXElementName): string[] | null => {

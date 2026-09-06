@@ -11,6 +11,9 @@ import {
   getObjectProperty,
   list,
   literal,
+  optional,
+  readItem,
+  selectItem,
   type StaticValue,
   UNDEFINED,
   unknown,
@@ -61,10 +64,15 @@ export const getProperty = (
     case "object":
       return getObjectProperty(target, key);
     case "array": {
-      if (key === "length") return literal(target.items.length);
+      if (key === "length") {
+        return target.items.some((item) => item.kind === "optional")
+          ? unknown("array.length")
+          : literal(target.items.length);
+      }
       const index = Number(key);
-      if (Number.isInteger(index)) return target.items[index] ?? UNDEFINED;
-      return unknown(`array.${key}`);
+      return Number.isInteger(index) && index >= 0
+        ? selectItem(target.items, index)
+        : unknown(`array.${key}`);
     }
     case "list":
       return key === "length" ? unknown(`${target.description}.length`) : unknown(`list.${key}`);
@@ -92,6 +100,8 @@ export const getProperty = (
         getProperty(interpreter, target.whenTrue, key),
         getProperty(interpreter, target.whenFalse, key),
       );
+    case "optional":
+      return getProperty(interpreter, readItem(target), key);
     case "namespace":
       return interpreter.getModuleExport(target.module, key);
     case "external":
@@ -142,8 +152,11 @@ export const getIterationItem = (value: StaticValue, description: string): Stati
   switch (value.kind) {
     case "list":
       return value.item;
-    case "array":
-      return value.items.length === 1 ? value.items[0] : unknown(`item of ${description}`);
+    case "array": {
+      const [only] = value.items;
+      if (value.items.length !== 1) return unknown(`item of ${description}`);
+      return only.kind === "optional" ? only.value : only;
+    }
     default:
       return unknown(`item of ${description}`);
   }
@@ -158,6 +171,12 @@ export const flattenInto = (items: StaticValue[], value: StaticValue): void => {
     case "list":
       items.push({ ...value, isInline: true });
       return;
+    case "optional": {
+      const inner: StaticValue[] = [];
+      flattenInto(inner, value.value);
+      for (const item of inner) items.push(optional(value.test, item));
+      return;
+    }
     default:
       items.push(value);
   }

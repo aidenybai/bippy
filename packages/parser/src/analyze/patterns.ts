@@ -15,6 +15,7 @@ import {
   assignStatic,
   cloneObject,
   conditional,
+  list,
   type ObjectValue,
   type StaticValue,
   UNDEFINED,
@@ -63,9 +64,10 @@ const restOfObject = (value: StaticValue, consumedKeys: string[]): StaticValue =
 };
 
 const restOfArray = (value: StaticValue, start: number): StaticValue => {
-  if (value.kind === "array") return array(value.items.slice(start));
   if (value.kind === "list") return value;
-  return unknown(`rest of ${value.kind}`);
+  if (value.kind !== "array") return unknown(`rest of ${value.kind}`);
+  const isOffsetKnown = value.items.slice(0, start).every((item) => item.kind !== "optional");
+  return isOffsetKnown ? array(value.items.slice(start)) : list(unknown("rest item"), "array rest");
 };
 
 /**

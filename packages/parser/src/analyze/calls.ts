@@ -1,6 +1,11 @@
 import type { Argument, CallExpression, Expression } from "@oxc-project/types";
 import { getReactApiReference } from "../link/react-api.js";
-import { getMemberChain, isStringLiteral, unwrapExpression } from "../module/ast.js";
+import {
+  getMemberChain,
+  isOptionalSpine,
+  isStringLiteral,
+  unwrapExpression,
+} from "../module/ast.js";
 import { getProperty, spreadInto } from "./access.js";
 import { evaluateArrayMethod, evaluateGlobalCall, GLOBAL_NAMESPACES } from "./builtins.js";
 import { readContext } from "./contexts.js";
@@ -16,6 +21,8 @@ import {
   type ExternalValue,
   type FunctionValue,
   isFullyKnown,
+  isNullishValue,
+  readItem,
   type StaticValue,
   text,
   UNDEFINED,
@@ -30,7 +37,9 @@ const evaluateArguments = (
   const values: StaticValue[] = [];
   for (const argument of callArguments) {
     if (argument.type === "SpreadElement") {
-      spreadInto(values, interpreter.evaluateExpression(argument.argument, context));
+      const spread: StaticValue[] = [];
+      spreadInto(spread, interpreter.evaluateExpression(argument.argument, context));
+      values.push(...spread.map(readItem));
     } else values.push(interpreter.evaluateExpression(argument, context));
   }
   return values;
@@ -232,11 +241,13 @@ export const evaluateCall = (
       return evaluateHookCall(interpreter, call, member, calleeDisplay, callArguments, context);
     }
     const targetDescription = interpreter.getSource(context.module, callee.object);
+    const isShortCircuiting = isOptionalSpine(call);
     /** A receiver that depends on a test is called on each arm. */
     const callOn = (receiver: StaticValue): StaticValue => {
       if (receiver.kind === "conditional") {
         return conditional(receiver.test, callOn(receiver.whenTrue), callOn(receiver.whenFalse));
       }
+      if (isShortCircuiting && isNullishValue(receiver)) return UNDEFINED;
       const modelled = evaluateMethodCall(
         interpreter,
         receiver,
@@ -249,6 +260,7 @@ export const evaluateCall = (
       if (modelled) return modelled;
       const receiverMember =
         receiver === target ? member : getProperty(interpreter, receiver, method);
+      if (isShortCircuiting && isNullishValue(receiverMember)) return UNDEFINED;
       return invokeValue(interpreter, receiverMember, callArguments, call, description, context);
     };
     return callOn(target);
@@ -268,6 +280,7 @@ export const evaluateCall = (
   if (isHookCallee(callee) || isReactHook(calleeValue)) {
     return evaluateHookCall(interpreter, call, calleeValue, calleeDisplay, callArguments, context);
   }
+  if (isOptionalSpine(call) && isNullishValue(calleeValue)) return UNDEFINED;
   return invokeValue(interpreter, calleeValue, callArguments, call, description, context);
 };
 
