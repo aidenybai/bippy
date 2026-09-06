@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import { defineConfig } from "vite-plus";
 import { conformanceTestConfig } from "./packages/conformance/vite.config.js";
 
@@ -8,7 +9,13 @@ export default defineConfig({
   staged: {
     "*.{js,ts,tsx}": "vp check --fix",
   },
-  test: conformanceTestConfig,
+  test: {
+    ...conformanceTestConfig,
+    projects: [
+      ...(conformanceTestConfig.projects ?? []),
+      resolve(import.meta.dirname, "packages/parser/vite.config.ts"),
+    ],
+  },
   fmt: {
     ignorePatterns: [
       "**/routeTree.gen.ts",

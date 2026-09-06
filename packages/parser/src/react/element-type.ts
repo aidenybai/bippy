@@ -1,0 +1,81 @@
+import type { ComponentDefinition, StaticElementType, StaticValue } from "../types.js";
+
+export const createFunctionComponentDefinition = (
+  value: Extract<StaticValue, { kind: "function" }>,
+  fallbackName: string | null,
+): ComponentDefinition => ({
+  name: value.name ?? fallbackName ?? "Anonymous",
+  module: value.module,
+  node: value.node,
+  scope: value.scope,
+  isClass: false,
+  properties: value.properties,
+});
+
+export const createClassComponentDefinition = (
+  value: Extract<StaticValue, { kind: "class" }>,
+  fallbackName: string | null,
+): ComponentDefinition => ({
+  name: value.name ?? fallbackName ?? "Anonymous",
+  module: value.module,
+  node: value.node,
+  scope: value.scope,
+  isClass: true,
+  properties: value.properties,
+});
+
+export const toElementType = (value: StaticValue, nameHint: string | null): StaticElementType => {
+  switch (value.kind) {
+    case "primitive":
+      if (typeof value.value === "string") return { kind: "host", tagName: value.value };
+      return { kind: "unknown", displayName: nameHint, reason: `element type is ${String(value.value)}` };
+    case "function":
+      return { kind: "function", component: createFunctionComponentDefinition(value, nameHint) };
+    case "class":
+      return { kind: "class", component: createClassComponentDefinition(value, nameHint) };
+    case "component-reference":
+      return value.type;
+    case "context":
+      return { kind: "context-provider", context: value.context, displayName: value.context.name };
+    case "react-api":
+      switch (value.api) {
+        case "Fragment":
+          return { kind: "fragment" };
+        case "StrictMode":
+          return { kind: "strict-mode" };
+        case "Suspense":
+          return { kind: "suspense" };
+        case "SuspenseList":
+          return { kind: "suspense-list" };
+        case "Profiler":
+          return { kind: "profiler" };
+        case "Activity":
+          return { kind: "activity" };
+        case "ViewTransition":
+          return { kind: "view-transition" };
+        default:
+          return { kind: "unknown", displayName: nameHint, reason: `React.${value.api} is not an element type` };
+      }
+    case "external":
+      return {
+        kind: "external",
+        packageName: value.packageName,
+        importedName: value.importedName,
+        displayName: nameHint ?? value.importedName.split(".").pop() ?? value.importedName,
+      };
+    case "branch":
+      return { kind: "unknown", displayName: nameHint, reason: "element type depends on a branch" };
+    case "unknown":
+      return { kind: "unknown", displayName: nameHint, reason: value.reason };
+    case "unknown-primitive":
+      return { kind: "unknown", displayName: nameHint, reason: `dynamic ${value.primitiveType} element type` };
+    case "element":
+    case "list":
+    case "repeat":
+    case "object":
+    case "namespace":
+    case "global":
+    case "method":
+      return { kind: "unknown", displayName: nameHint, reason: `invalid element type (${value.kind})` };
+  }
+};

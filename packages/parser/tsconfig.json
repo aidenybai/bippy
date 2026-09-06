@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "strict": true,
+    "noEmit": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noUncheckedIndexedAccess": false,
+    "skipLibCheck": true,
+    "lib": ["esnext", "dom"],
+    "types": ["node"],
+    "paths": {
+      "bippy": ["../bippy/src/index.ts"]
+    }
+  },
+  "include": ["src", "tests", "scripts", "vite.config.ts"],
+  "exclude": ["**/node_modules/**", "**/dist/**", "tests/fixtures/**"]
+}

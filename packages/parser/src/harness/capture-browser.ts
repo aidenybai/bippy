@@ -1,0 +1,149 @@
+import { createRequire } from "node:module";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { build } from "esbuild";
+import { chromium, type Browser, type Page } from "playwright";
+import type { HarnessGlobals } from "./browser-inject.js";
+import type { RuntimeSnapshot } from "./snapshot.js";
+
+export interface BrowserCaptureOptions {
+  url: string;
+  waitForSelector?: string;
+  settleMs?: number;
+  timeoutMs?: number;
+  headless?: boolean;
+  onConsole?: (type: string, text: string) => void;
+}
+
+export interface BrowserCaptureResult {
+  snapshot: RuntimeSnapshot;
+  commits: number;
+  pageErrors: string[];
+  title: string;
+}
+
+const DEFAULT_SETTLE_MS = 1_500;
+const DEFAULT_TIMEOUT_MS = 60_000;
+const COMMIT_POLL_INTERVAL_MS = 100;
+
+const harnessDirectory = dirname(fileURLToPath(import.meta.url));
+const requireFromHere = createRequire(import.meta.url);
+
+let injectBundlePromise: Promise<string> | null = null;
+
+const bippySourceEntry = (): string => resolve(dirname(requireFromHere.resolve("bippy/package.json")), "src/index.ts");
+
+export const buildInjectBundle = (): Promise<string> => {
+  injectBundlePromise ??= build({
+    entryPoints: [resolve(harnessDirectory, "browser-inject.ts")],
+    bundle: true,
+    write: false,
+    format: "iife",
+    platform: "browser",
+    target: "es2020",
+    alias: { bippy: bippySourceEntry() },
+    define: { "process.env.NODE_ENV": JSON.stringify("development") },
+    logLevel: "silent",
+  }).then((result) => {
+    const [output] = result.outputFiles;
+    if (!output) throw new Error("esbuild produced no output for browser-inject");
+    return output.text;
+  });
+  return injectBundlePromise;
+};
+
+// Functions passed to page.evaluate are serialized, so they cannot close over
+// module constants; the global names are spelled out inline.
+const readCommitCount = (page: Page): Promise<number> =>
+  page.evaluate(() => {
+    const globals: Partial<HarnessGlobals> = Object(globalThis);
+    const read = globals.__BIPPY_PARSER_COMMITS__;
+    return read ? read() : 0;
+  });
+
+const readSnapshot = (page: Page): Promise<RuntimeSnapshot | null> =>
+  page.evaluate(() => {
+    const globals: Partial<HarnessGlobals> = Object(globalThis);
+    const read = globals.__BIPPY_PARSER_SNAPSHOT__;
+    return read ? read() : null;
+  });
+
+const sleep = (ms: number): Promise<void> => new Promise((resolveSleep) => setTimeout(resolveSleep, ms));
+
+// Waits until the commit counter stops moving for `settleMs`, so the snapshot
+// reflects the tree after effects, lazy boundaries and data fetches settle.
+const waitForQuietCommits = async (page: Page, settleMs: number, timeoutMs: number): Promise<number> => {
+  const deadline = Date.now() + timeoutMs;
+  let lastCount = await readCommitCount(page);
+  let quietSince = Date.now();
+  while (Date.now() < deadline) {
+    await sleep(COMMIT_POLL_INTERVAL_MS);
+    const count = await readCommitCount(page);
+    if (count !== lastCount) {
+      lastCount = count;
+      quietSince = Date.now();
+    } else if (count > 0 && Date.now() - quietSince >= settleMs) {
+      return count;
+    }
+  }
+  return lastCount;
+};
+
+export class BrowserCapturer {
+  private browserPromise: Promise<Browser> | null = null;
+  private readonly headless: boolean;
+
+  constructor(options: { headless?: boolean } = {}) {
+    this.headless = options.headless ?? true;
+  }
+
+  private browser(): Promise<Browser> {
+    this.browserPromise ??= chromium.launch({ headless: this.headless });
+    return this.browserPromise;
+  }
+
+  async capture(options: BrowserCaptureOptions): Promise<BrowserCaptureResult> {
+    const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    const settleMs = options.settleMs ?? DEFAULT_SETTLE_MS;
+    const [browser, inject] = await Promise.all([this.browser(), buildInjectBundle()]);
+    const context = await browser.newContext();
+    const pageErrors: string[] = [];
+    try {
+      await context.addInitScript(inject);
+      const page = await context.newPage();
+      page.on("pageerror", (error) => pageErrors.push(error.message));
+      if (options.onConsole) {
+        const onConsole = options.onConsole;
+        page.on("console", (message) => onConsole(message.type(), message.text()));
+      }
+      await page.goto(options.url, { waitUntil: "domcontentloaded", timeout: timeoutMs });
+      if (options.waitForSelector) {
+        await page.waitForSelector(options.waitForSelector, { timeout: timeoutMs });
+      }
+      const commits = await waitForQuietCommits(page, settleMs, timeoutMs);
+      const snapshot = await readSnapshot(page);
+      if (!snapshot) {
+        throw new Error(`harness globals missing on ${options.url}; the init script did not run`);
+      }
+      return { snapshot, commits, pageErrors, title: await page.title() };
+    } finally {
+      await context.close();
+    }
+  }
+
+  async close(): Promise<void> {
+    if (!this.browserPromise) return;
+    const browser = await this.browserPromise;
+    this.browserPromise = null;
+    await browser.close();
+  }
+}
+
+export const captureBrowserSnapshot = async (options: BrowserCaptureOptions): Promise<BrowserCaptureResult> => {
+  const capturer = new BrowserCapturer({ headless: options.headless });
+  try {
+    return await capturer.capture(options);
+  } finally {
+    await capturer.close();
+  }
+};
