@@ -13,6 +13,7 @@ import type {
   StaticValue,
   UnknownPrimitiveType,
 } from "../types.js";
+import { getExternalMember } from "../react/react-api.js";
 
 export const isKnownString = (
   value: StaticValue,
@@ -68,6 +69,8 @@ export const getObjectProperty = (object: StaticObjectValue, key: string): Stati
     }
     if (spread.kind === "primitive" || spread.kind === "function" || spread.kind === "class")
       continue;
+    if (spread.kind === "external" && spread.importedName === "*" && !spread.derived)
+      return getExternalMember(spread, key);
     if (spread.kind === "branch") {
       return branchValue(
         spread.alternatives.map((alternative) =>
@@ -133,6 +136,48 @@ const isSameValue = (left: StaticValue, right: StaticValue): boolean => {
   return false;
 };
 
+const REFERENCE_KINDS = new Set<StaticValue["kind"]>([
+  "element",
+  "list",
+  "object",
+  "function",
+  "class",
+  "regexp",
+  "context",
+  "native-function",
+  "proxy",
+  "host-node",
+  "method",
+  "react-api",
+  "component-reference",
+  "namespace",
+]);
+
+/**
+ * `===` between two values, or null when analysis cannot decide. Import
+ * bindings of the same external export are the same object; a primitive can
+ * never be identical to a reference value.
+ */
+export const compareIdentity = (left: StaticValue, right: StaticValue): boolean | null => {
+  if (left.kind === "primitive" && right.kind === "primitive") return left.value === right.value;
+  if (left === right) return true;
+  if (left.kind === "symbol" && right.kind === "symbol") return left.key === right.key;
+  if (left.kind === "external" && right.kind === "external" && !left.derived && !right.derived) {
+    return left.packageName === right.packageName && left.importedName === right.importedName
+      ? true
+      : null;
+  }
+  const isScalar = (value: StaticValue): boolean =>
+    value.kind === "primitive" || value.kind === "symbol";
+  if (
+    (isScalar(left) && REFERENCE_KINDS.has(right.kind)) ||
+    (isScalar(right) && REFERENCE_KINDS.has(left.kind))
+  ) {
+    return false;
+  }
+  return null;
+};
+
 const MAX_EQUIVALENCE_DEPTH = 6;
 
 /**
@@ -191,6 +236,8 @@ export const areValuesEquivalent = (left: StaticValue, right: StaticValue, depth
       );
     case "function":
       return right.kind === "function" && left.node === right.node;
+    case "symbol":
+      return right.kind === "symbol" && left.key === right.key;
     default:
       return false;
   }
@@ -271,13 +318,16 @@ export const getTruthiness = (value: StaticValue): boolean | null => {
     case "function":
     case "class":
     case "regexp":
+    case "symbol":
     case "component-reference":
     case "context":
     case "react-api":
     case "namespace":
     case "global":
+    case "host-node":
     case "method":
     case "native-function":
+    case "proxy":
       return true;
   }
 };
@@ -323,7 +373,7 @@ export const getStaticPrimitive = (value: StaticValue): StaticPrimitive | undefi
   value.kind === "primitive" ? value.value : undefined;
 
 export const isIndefiniteItem = (item: StaticValue): boolean =>
-  item.kind === "repeat" || item.kind === "unknown" || item.kind === "optional";
+  item.kind === "repeat" || item.kind === "optional";
 
 export const getListLength = (list: StaticListValue): StaticValue =>
   list.items.some(isIndefiniteItem)
@@ -363,7 +413,7 @@ export const getListItem = (
       candidates.push(UNDEFINED_VALUE);
       return true;
     }
-    if (head.kind === "repeat" || head.kind === "unknown") return false;
+    if (head.kind === "repeat") return false;
     if (head.kind === "optional") return pick([head.value, ...rest], offset) && pick(rest, offset);
     if (offset === 0) {
       candidates.push(head);
@@ -395,6 +445,8 @@ export const describeValue = (value: StaticValue): string => {
       return `optional(${describeValue(value.value)})`;
     case "regexp":
       return `/${value.pattern}/${value.flags}`;
+    case "symbol":
+      return `Symbol.for(${JSON.stringify(value.key)})`;
     case "object":
       return `{${value.entries.map((entry) => (entry.kind === "property" ? entry.key : "...")).join(", ")}}`;
     case "function":
@@ -413,10 +465,14 @@ export const describeValue = (value: StaticValue): string => {
       return `namespace ${value.module.filePath}`;
     case "global":
       return `global ${value.name}`;
+    case "host-node":
+      return `<${value.tagName}> node`;
     case "method":
       return `${describeValue(value.receiver)}.${value.name}`;
     case "native-function":
       return `native ${value.name}`;
+    case "proxy":
+      return `proxy of ${describeValue(value.target)}`;
     case "unknown":
       return `unknown(${value.reason})`;
   }

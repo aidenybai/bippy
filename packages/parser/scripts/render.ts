@@ -1,12 +1,28 @@
 import path from "node:path";
+import { parseArgs } from "node:util";
 import { formatPattern, getRenderPattern } from "../src/harness/index.js";
 import { createStaticRenderer } from "../src/index.js";
 
-const [, , rootArg, entryArg, exportName] = process.argv;
-const rootDirectory = path.resolve(rootArg ?? ".");
+const { values, positionals } = parseArgs({
+  allowPositionals: true,
+  options: {
+    packages: { type: "string", multiple: true, default: [] },
+    "all-packages": { type: "boolean", default: false },
+  },
+});
+const [rootArg, entryArg, exportName] = positionals;
+if (!rootArg || !entryArg) {
+  console.error(
+    "usage: tsx scripts/render.ts [--packages <name>]... [--all-packages] <root> <entry> [exportName]",
+  );
+  process.exit(1);
+}
+const rootDirectory = path.resolve(rootArg);
 const renderer = createStaticRenderer({
   rootDirectory,
   tsconfigPath: path.join(rootDirectory, "tsconfig.json"),
+  externalPackageAllowList: values.packages,
+  resolveExternalPackages: values["all-packages"],
 });
 const result = await (exportName
   ? renderer.renderComponent(entryArg, { exportName })

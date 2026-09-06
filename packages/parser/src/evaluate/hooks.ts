@@ -12,6 +12,11 @@ export interface StateCell {
   isEscaped: boolean;
 }
 
+export interface MemoCell {
+  value: StaticValue;
+  deps: StaticValue | null;
+}
+
 export interface EffectRecord {
   isLayout: boolean;
   callback: StaticValue;
@@ -27,6 +32,8 @@ export interface EffectRecord {
 export interface HookFrame {
   cells: StateCell[];
   cursor: number;
+  memoCells: MemoCell[];
+  memoCursor: number;
   effects: EffectRecord[];
   previousEffects: EffectRecord[];
   isRendering: boolean;
@@ -36,6 +43,8 @@ export interface HookFrame {
 export const createHookFrame = (): HookFrame => ({
   cells: [],
   cursor: 0,
+  memoCells: [],
+  memoCursor: 0,
   effects: [],
   previousEffects: [],
   isRendering: false,
@@ -44,6 +53,7 @@ export const createHookFrame = (): HookFrame => ({
 
 export const beginHookPass = (frame: HookFrame): void => {
   frame.cursor = 0;
+  frame.memoCursor = 0;
   frame.previousEffects = frame.effects;
   frame.effects = [];
   frame.isRendering = true;
@@ -56,6 +66,24 @@ export const nextStateCell = (frame: HookFrame, name: string, initial: StaticVal
   const cell: StateCell = { name, initial, current: initial, next: null, isEscaped: false };
   frame.cells[index] = cell;
   return cell;
+};
+
+/**
+ * Mirrors `updateMemo`/`updateRef`: the stored value is reused while the
+ * dependency list is unchanged; `deps === null` keeps it for the instance's
+ * lifetime, as for refs.
+ */
+export const nextMemoCell = (
+  frame: HookFrame,
+  deps: StaticValue | null,
+  compute: () => StaticValue,
+): StaticValue => {
+  const index = frame.memoCursor++;
+  const existing = frame.memoCells[index];
+  if (existing && (deps === null || areDepsEqual(existing.deps, deps))) return existing.value;
+  const cell: MemoCell = { value: compute(), deps };
+  frame.memoCells[index] = cell;
+  return cell.value;
 };
 
 export const queueStateUpdate = (frame: HookFrame, cell: StateCell, value: StaticValue): void => {

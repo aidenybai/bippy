@@ -1,9 +1,13 @@
 import type {
   BindingPattern,
+  CallExpression,
   ExportDefaultDeclaration,
   ExportNamedDeclaration,
+  Expression,
   ImportDeclaration,
   ModuleExportName,
+  ObjectExpression,
+  PropertyKey,
   Statement,
   VariableDeclaration,
 } from "oxc-parser";
@@ -14,6 +18,7 @@ import type {
   MemberAssignment,
   ModuleRecord,
   ParsedSourceFile,
+  ReExportAll,
   TopLevelBinding,
 } from "../types.js";
 
@@ -246,9 +251,35 @@ const collectStatement = (
 const collectMemberAssignment = (
   statement: Statement,
   memberAssignments: MemberAssignment[],
+  condition: Expression | null = null,
 ): void => {
+  if (statement.type === "IfStatement" && !statement.alternate && condition === null) {
+    const body =
+      statement.consequent.type === "BlockStatement"
+        ? statement.consequent.body
+        : [statement.consequent];
+    for (const inner of body) collectMemberAssignment(inner, memberAssignments, statement.test);
+    return;
+  }
   if (statement.type !== "ExpressionStatement") return;
   const expression = statement.expression;
+  if (isObjectAssignCall(expression)) {
+    const [target, source] = expression.arguments;
+    if (target.type !== "Identifier" || source?.type !== "ObjectExpression") return;
+    for (const property of source.properties) {
+      if (property.type !== "Property" || property.kind !== "init") continue;
+      const propertyName = getStaticPropertyName(property.key, property.computed);
+      if (propertyName === null) continue;
+      memberAssignments.push({
+        objectName: target.name,
+        propertyName,
+        value: property.value,
+        condition,
+        span: statement,
+      });
+    }
+    return;
+  }
   if (expression.type !== "AssignmentExpression" || expression.operator !== "=") return;
   const target = expression.left;
   if (target.type !== "MemberExpression" || target.computed) return;
@@ -257,8 +288,291 @@ const collectMemberAssignment = (
     objectName: target.object.name,
     propertyName: target.property.name,
     value: expression.right,
+    condition,
     span: statement,
   });
+};
+
+const getStaticPropertyName = (property: PropertyKey, computed: boolean): string | null => {
+  if (!computed && property.type === "Identifier") return property.name;
+  if (computed && property.type === "Literal" && typeof property.value === "string") {
+    return property.value;
+  }
+  return null;
+};
+
+const isObjectAssignCall = (node: Expression): node is CallExpression =>
+  node.type === "CallExpression" &&
+  node.callee.type === "MemberExpression" &&
+  !node.callee.computed &&
+  node.callee.object.type === "Identifier" &&
+  node.callee.object.name === "Object" &&
+  node.callee.property.type === "Identifier" &&
+  node.callee.property.name === "assign";
+
+/** `exports` or `module.exports`, the CommonJS export objects. */
+const isExportsObject = (node: Expression): boolean =>
+  (node.type === "Identifier" && node.name === "exports") ||
+  (node.type === "MemberExpression" &&
+    !node.computed &&
+    node.object.type === "Identifier" &&
+    node.object.name === "module" &&
+    node.property.type === "Identifier" &&
+    node.property.name === "exports");
+
+/** `exports.name` / `module.exports.name` / `exports["name"]`. */
+const getExportedMemberName = (node: Expression): string | null => {
+  if (node.type !== "MemberExpression" || !isExportsObject(node.object)) return null;
+  return getStaticPropertyName(node.property, node.computed);
+};
+
+const getRequiredSpecifier = (node: Expression): string | null => {
+  if (
+    node.type === "CallExpression" &&
+    node.callee.type === "Identifier" &&
+    node.callee.name === "require" &&
+    node.arguments.length === 1
+  ) {
+    const [argument] = node.arguments;
+    if (argument.type === "Literal" && typeof argument.value === "string") return argument.value;
+  }
+  return null;
+};
+
+/** Unwraps `_interopRequireDefault(require("x"))`-style helper calls around a `require`. */
+const getWrappedRequiredSpecifier = (node: Expression): string | null => {
+  const direct = getRequiredSpecifier(node);
+  if (direct !== null) return direct;
+  if (node.type === "CallExpression" && node.arguments.length >= 1) {
+    const [argument] = node.arguments;
+    if (argument.type !== "SpreadElement") return getRequiredSpecifier(argument);
+  }
+  return null;
+};
+
+const isVoidZero = (node: Expression): boolean =>
+  node.type === "UnaryExpression" && node.operator === "void";
+
+/** Return expression of a `get() { return x; }` accessor or `() => x`. */
+const getGetterExpression = (node: Expression): Expression | null => {
+  if (node.type !== "FunctionExpression" && node.type !== "ArrowFunctionExpression") return null;
+  if (!node.body) return null;
+  if (node.body.type !== "BlockStatement") return node.body;
+  const [statement] = node.body.body;
+  return statement?.type === "ReturnStatement" ? statement.argument : null;
+};
+
+class CommonJsCollector {
+  /** Later assignments replace earlier ones, so `exports.x = void 0` placeholders yield to the real value. */
+  readonly exports = new Map<string, ExportEntry>();
+  readonly reExportAll: string[] = [];
+  isCommonJs = false;
+
+  constructor(private readonly requiredBindings: Map<string, string>) {}
+
+  private setExport(entry: Exclude<ExportEntry, ReExportAll>): void {
+    this.isCommonJs = true;
+    this.exports.set(entry.exportedName, entry);
+  }
+
+  private setExpression(exportedName: string, expression: Expression): void {
+    if (isVoidZero(expression)) {
+      this.isCommonJs = true;
+      if (!this.exports.has(exportedName)) {
+        this.exports.set(exportedName, { kind: "expression", exportedName, expression });
+      }
+      return;
+    }
+    this.setExport({ kind: "expression", exportedName, expression });
+  }
+
+  private addReExportAll(specifier: string): void {
+    this.isCommonJs = true;
+    this.reExportAll.push(specifier);
+  }
+
+  /** `module.exports = value` exposes `value` as default and its literal members as named exports. */
+  private setModuleExports(value: Expression): void {
+    const specifier = getRequiredSpecifier(value);
+    if (specifier !== null) {
+      this.addReExportAll(specifier);
+      this.setExport({
+        kind: "re-export",
+        exportedName: "default",
+        imported: { kind: "default" },
+        specifier,
+      });
+      return;
+    }
+    this.setExpression("default", value);
+    if (value.type === "ObjectExpression") this.collectObjectMembers(value);
+  }
+
+  private collectObjectMembers(object: ObjectExpression): void {
+    for (const property of object.properties) {
+      if (property.type !== "Property" || property.kind !== "init") continue;
+      const name = getStaticPropertyName(property.key, property.computed);
+      if (name !== null) this.setExpression(name, property.value);
+    }
+  }
+
+  /** Follows `exports.a = exports.b = value` chains; returns the innermost value. */
+  collectAssignment(expression: Expression, localName: string | null): Expression {
+    if (expression.type !== "AssignmentExpression" || expression.operator !== "=") {
+      return expression;
+    }
+    const value = this.collectAssignment(expression.right, localName);
+    if (expression.left.type !== "MemberExpression" && expression.left.type !== "Identifier") {
+      return value;
+    }
+    if (isExportsObject(expression.left)) {
+      this.setModuleExports(value);
+      return value;
+    }
+    const exportedName = getExportedMemberName(expression.left);
+    if (exportedName === null) return value;
+    if (localName !== null) {
+      this.setExport({ kind: "local", exportedName, localName });
+    } else {
+      this.setExpression(exportedName, value);
+    }
+    return value;
+  }
+
+  collectCall(call: CallExpression): void {
+    const { callee } = call;
+    const args = call.arguments.filter((argument) => argument.type !== "SpreadElement");
+    if (args.length !== call.arguments.length) return;
+    if (
+      callee.type === "MemberExpression" &&
+      !callee.computed &&
+      callee.property.type === "Identifier"
+    ) {
+      const method = callee.property.name;
+      if (
+        callee.object.type === "Identifier" &&
+        callee.object.name === "Object" &&
+        method === "defineProperty" &&
+        args.length === 3 &&
+        isExportsObject(args[0])
+      ) {
+        this.collectDefineProperty(args[1], args[2]);
+        return;
+      }
+      if (method === "forEach" && args.length === 1) {
+        this.collectKeysForEach(callee.object);
+        return;
+      }
+      if (method === "__exportStar" && args.length === 2) this.collectExportStar(args[0], args[1]);
+      return;
+    }
+    if (callee.type === "Identifier" && /^_*(__exportStar|exportStar)$/.test(callee.name)) {
+      if (args.length === 2) this.collectExportStar(args[0], args[1]);
+    }
+  }
+
+  private collectDefineProperty(key: Expression, descriptor: Expression): void {
+    if (key.type !== "Literal" || typeof key.value !== "string") return;
+    if (descriptor.type !== "ObjectExpression") return;
+    for (const property of descriptor.properties) {
+      if (property.type !== "Property") continue;
+      const name = getStaticPropertyName(property.key, property.computed);
+      if (name === "value") {
+        this.setExpression(key.value, property.value);
+        return;
+      }
+      if (name === "get") {
+        const expression = getGetterExpression(property.value);
+        if (expression) this.setExpression(key.value, expression);
+        return;
+      }
+    }
+  }
+
+  /** Babel's `export *`: `Object.keys(_mod).forEach(function (key) { ... exports[key] = _mod[key] })`. */
+  private collectKeysForEach(receiver: Expression): void {
+    if (receiver.type !== "CallExpression" || receiver.arguments.length !== 1) return;
+    const { callee } = receiver;
+    if (
+      callee.type !== "MemberExpression" ||
+      callee.computed ||
+      callee.object.type !== "Identifier" ||
+      callee.object.name !== "Object" ||
+      callee.property.type !== "Identifier" ||
+      callee.property.name !== "keys"
+    ) {
+      return;
+    }
+    const [namespace] = receiver.arguments;
+    if (namespace.type !== "Identifier") return;
+    const specifier = this.requiredBindings.get(namespace.name);
+    if (specifier !== undefined) this.addReExportAll(specifier);
+  }
+
+  /** TypeScript's `export *`: `__exportStar(require("./x"), exports)`. */
+  private collectExportStar(source: Expression, target: Expression): void {
+    if (!isExportsObject(target)) return;
+    const specifier =
+      getRequiredSpecifier(source) ??
+      (source.type === "Identifier" ? (this.requiredBindings.get(source.name) ?? null) : null);
+    if (specifier !== null) this.addReExportAll(specifier);
+  }
+
+  collectStatement(statement: Statement): void {
+    if (statement.type === "ExpressionStatement") {
+      const { expression } = statement;
+      if (expression.type === "AssignmentExpression") this.collectAssignment(expression, null);
+      else if (expression.type === "CallExpression") this.collectCall(expression);
+      return;
+    }
+    if (statement.type !== "VariableDeclaration") return;
+    for (const declarator of statement.declarations) {
+      if (!declarator.init || declarator.init.type !== "AssignmentExpression") continue;
+      const localName = declarator.id.type === "Identifier" ? declarator.id.name : null;
+      this.collectAssignment(declarator.init, localName);
+    }
+  }
+}
+
+/** Top-level `var x = require("spec")` (optionally wrapped in an interop helper) by binding name. */
+const collectRequiredBindings = (statements: Statement[]): Map<string, string> => {
+  const required = new Map<string, string>();
+  for (const statement of statements) {
+    if (statement.type !== "VariableDeclaration") continue;
+    for (const declarator of statement.declarations) {
+      if (declarator.id.type !== "Identifier" || !declarator.init) continue;
+      const specifier = getWrappedRequiredSpecifier(declarator.init);
+      if (specifier !== null) required.set(declarator.id.name, specifier);
+    }
+  }
+  return required;
+};
+
+const collectCommonJsExports = (
+  statements: Statement[],
+  bindings: Map<string, TopLevelBinding>,
+  exports: ExportEntry[],
+): boolean => {
+  const collector = new CommonJsCollector(collectRequiredBindings(statements));
+  for (const statement of statements) collector.collectStatement(statement);
+  if (!collector.isCommonJs) return false;
+  for (const entry of collector.exports.values()) {
+    if (
+      entry.kind === "expression" &&
+      entry.expression.type === "Identifier" &&
+      bindings.has(entry.expression.name)
+    ) {
+      exports.push({
+        kind: "local",
+        exportedName: entry.exportedName,
+        localName: entry.expression.name,
+      });
+      continue;
+    }
+    exports.push(entry);
+  }
+  for (const specifier of collector.reExportAll) exports.push({ kind: "re-export-all", specifier });
+  return true;
 };
 
 export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
@@ -288,6 +602,10 @@ export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
       span: importBinding.span,
     });
   }
+  const isCommonJs =
+    imports.length === 0 &&
+    exports.length === 0 &&
+    collectCommonJsExports(file.program.body, bindings, exports);
   return {
     filePath: file.filePath,
     file,
@@ -296,5 +614,6 @@ export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
     exports,
     bindings,
     memberAssignments,
+    isCommonJs,
   };
 };

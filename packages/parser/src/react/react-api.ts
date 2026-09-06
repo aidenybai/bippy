@@ -1,7 +1,11 @@
-import type { ReactApi, StaticValue } from "../types.js";
+import type { ReactApi, StaticExternalValue, StaticValue } from "../types.js";
 
 const REACT_PACKAGES = new Set(["react", "preact/compat"]);
 const REACT_DOM_PACKAGES = new Set(["react-dom", "preact/compat"]);
+const COMPILER_RUNTIME_SPECIFIERS = new Set(["react/compiler-runtime", "react-compiler-runtime"]);
+
+/** `Symbol.for` key of the value `useMemoCache` fills a fresh cache with. */
+export const REACT_MEMO_CACHE_SENTINEL_KEY = "react.memo_cache_sentinel";
 
 const REACT_API_NAMES: ReadonlySet<string> = new Set<ReactApi>([
   "memo",
@@ -39,6 +43,7 @@ const REACT_API_NAMES: ReadonlySet<string> = new Set<ReactApi>([
   "useSyncExternalStore",
   "useOptimistic",
   "useActionState",
+  "useMemoCache",
   "startTransition",
   "jsx",
   "jsxs",
@@ -74,7 +79,14 @@ const normalizeApiName = (name: string): string => {
 const isReactApi = (candidate: string, names: ReadonlySet<string>): candidate is ReactApi =>
   names.has(candidate);
 
-export const resolveReactApi = (packageName: string, importedName: string): ReactApi | null => {
+export const resolveReactApi = (
+  packageName: string,
+  importedName: string,
+  specifier = packageName,
+): ReactApi | null => {
+  if (COMPILER_RUNTIME_SPECIFIERS.has(specifier)) {
+    return importedName === "c" ? "useMemoCache" : null;
+  }
   const normalized = normalizeApiName(importedName);
   if (REACT_PACKAGES.has(packageName) && isReactApi(normalized, REACT_API_NAMES)) return normalized;
   if (REACT_DOM_PACKAGES.has(packageName) && isReactApi(normalized, REACT_DOM_API_NAMES)) {
@@ -83,8 +95,40 @@ export const resolveReactApi = (packageName: string, importedName: string): Reac
   return null;
 };
 
+const SYMBOL_API_NAMES: ReadonlySet<ReactApi> = new Set<ReactApi>([
+  "Fragment",
+  "StrictMode",
+  "Suspense",
+  "SuspenseList",
+  "Profiler",
+  "Activity",
+  "ViewTransition",
+]);
+
+export const getReactApiTypeof = (api: ReactApi): string => {
+  if (SYMBOL_API_NAMES.has(api)) return "symbol";
+  return api === "Children" ? "object" : "function";
+};
+
 export const isReactLikePackage = (packageName: string): boolean =>
   REACT_PACKAGES.has(packageName) || REACT_DOM_PACKAGES.has(packageName);
+
+/** A member read off an external binding: a React API for React-like packages, otherwise an opaque derived value. */
+export const getExternalMember = (object: StaticExternalValue, key: string): StaticValue => {
+  if (
+    isReactLikePackage(object.packageName) &&
+    (object.importedName === "*" || object.importedName === "default")
+  ) {
+    const api = resolveReactApi(object.packageName, key);
+    if (api) return { kind: "react-api", api };
+  }
+  return {
+    kind: "external",
+    packageName: object.packageName,
+    importedName: `${object.importedName}.${key}`,
+    derived: true,
+  };
+};
 
 export const resolveReactApiMember = (api: ReactApi, memberName: string): StaticValue | null => {
   if (api !== "Children") return null;

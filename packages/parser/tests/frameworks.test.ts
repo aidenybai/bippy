@@ -47,7 +47,7 @@ describe("next app router", () => {
 
   it("models next/link as LinkComponent -> anonymous provider -> <a>", async () => {
     const { tree } = await render("next-app", { framework: "next-app", route: "/" });
-    expect(tree).toMatch(/<LinkComponent>\n\s+<\?>\n\s+<a>\n\s+<LinkComponent>/);
+    expect(tree).toMatch(/<LinkComponent>\n\s+<ContextProvider>\n\s+<a>\n\s+<LinkComponent>/);
   });
 
   it("nests segment layouts, loading boundaries and resolves dynamic params", async () => {
@@ -115,7 +115,7 @@ describe("react router framework mode with react-router-auto-routes", () => {
     );
     expect(tree).toMatch(/<ScrollRestoration>\n\s+<script>\n\s+<Scripts>/);
     expect(tree).toMatch(
-      /<App>\n\s+<div>\n\s+<Outlet>\n\s+<\?>\n\s+<RenderedRoute>\n\s+<Route>\n\s+<Home>\n\s+<main>/,
+      /<App>\n\s+<div>\n\s+<Outlet>\n\s+<ContextProvider>\n\s+<RenderedRoute>\n\s+<Route>\n\s+<Home>\n\s+<main>/,
     );
   });
 
@@ -126,7 +126,7 @@ describe("react router framework mode with react-router-auto-routes", () => {
 
   it("nests only under `_layout` files and resolves `$param` segments", async () => {
     expect((await target("/blog")).tree).toMatch(
-      /<BlogLayout>\n\s+<section>\n\s+<Outlet>\n\s+<\?>\n\s+<RenderedRoute>\n\s+<Route>\n\s+<BlogIndex>/,
+      /<BlogLayout>\n\s+<section>\n\s+<Outlet>\n\s+<ContextProvider>\n\s+<RenderedRoute>\n\s+<Route>\n\s+<BlogIndex>/,
     );
     const post = (await target("/blog/hello")).tree;
     expect(post).toMatch(/<BlogLayout>[\s\S]*<BlogPost>\n\s+<h1>\n\s+"Post "\n\s+"hello"/);

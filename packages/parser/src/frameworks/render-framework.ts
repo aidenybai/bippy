@@ -14,6 +14,8 @@ export interface FrameworkRenderTarget {
   entry?: string;
   /** URL pathname to render for routed frameworks. */
   route?: string;
+  /** Next: the `app/` or `pages/` directory when it is not directly under the renderer root. */
+  appDirectory?: string;
 }
 
 const requireField = (target: FrameworkRenderTarget, field: "entry" | "route"): string => {
@@ -43,13 +45,16 @@ export const renderFrameworkTarget = (
         serverComponents: true,
         externalValues: model.externalValues,
       });
-      return renderNextAppRoute(renderer, model, { route });
+      return renderNextAppRoute(renderer, model, { route, appDirectory: target.appDirectory });
     }
     case "next-pages": {
       const route = requireField(target, "route");
       const model = createNextModel({ kind: "next-pages", route });
       const renderer = createStaticRenderer({ ...options, externalValues: model.externalValues });
-      return renderNextPagesRoute(renderer, model, { route });
+      return renderNextPagesRoute(renderer, model, {
+        route,
+        pagesDirectory: target.appDirectory,
+      });
     }
     case "react-router": {
       const model = createReactRouterModel(requireField(target, "route"));
@@ -83,6 +88,11 @@ export const renderFramework = (
   cloneDirectory: string,
 ): Promise<StaticRenderResult> =>
   renderFrameworkTarget(
-    { framework: entry.framework, entry: entry.static.entry, route: entry.static.route },
+    {
+      framework: entry.framework,
+      entry: entry.static.entry,
+      route: entry.static.route,
+      appDirectory: entry.static.appDirectory,
+    },
     rendererOptionsForEntry(entry, cloneDirectory),
   );

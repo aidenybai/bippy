@@ -6,6 +6,7 @@ import type {
   ModuleResolution,
   ResolvedSymbol,
 } from "../types.js";
+import { isCompilerHelperPackage } from "./helper-packages.js";
 import { createModuleRecord } from "./module-record.js";
 import { ModuleResolver } from "./module-resolver.js";
 
@@ -33,12 +34,17 @@ export class ModuleGraph {
   private readonly modules = new Map<string, ModuleRecord | null>();
   private readonly resolveExternalPackages: boolean;
   private readonly externalPackageAllowList: Set<string>;
+  private readonly externalScopeAllowList: Set<string>;
 
   constructor(options: ModuleGraphOptions) {
     this.resolver = options.resolver;
     this.sourceFileCache = options.sourceFileCache ?? new SourceFileCache();
     this.resolveExternalPackages = options.resolveExternalPackages ?? false;
-    this.externalPackageAllowList = new Set(options.externalPackageAllowList ?? []);
+    const allowList = options.externalPackageAllowList ?? [];
+    this.externalPackageAllowList = new Set(allowList.filter((name) => !name.endsWith("/*")));
+    this.externalScopeAllowList = new Set(
+      allowList.filter((name) => name.endsWith("/*")).map((name) => name.slice(0, -2)),
+    );
   }
 
   get loadedModuleCount(): number {
@@ -66,7 +72,11 @@ export class ModuleGraph {
   }
 
   resolveSpecifier(specifier: string, fromModule: ModuleRecord): ModuleResolution {
-    return this.resolver.resolve(specifier, fromModule.filePath);
+    return this.resolver.resolve(
+      specifier,
+      fromModule.filePath,
+      fromModule.isCommonJs ? "commonjs" : "esm",
+    );
   }
 
   resolveImportedModule(
@@ -132,7 +142,12 @@ export class ModuleGraph {
   }
 
   private shouldAnalyzePackage(packageName: string): boolean {
-    return this.resolveExternalPackages || this.externalPackageAllowList.has(packageName);
+    if (isCompilerHelperPackage(packageName)) return false;
+    return (
+      this.resolveExternalPackages ||
+      this.externalPackageAllowList.has(packageName) ||
+      this.externalScopeAllowList.has(packageName.split("/")[0])
+    );
   }
 
   private resolveImportedName(

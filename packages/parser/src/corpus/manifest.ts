@@ -14,6 +14,8 @@ export interface CorpusStaticTarget {
   entry?: string;
   /** Framework routers: pathname whose route tree is composed statically. */
   route?: string;
+  /** Next: `app/` or `pages/` directory relative to `rootDirectory` when it is not directly under it. */
+  appDirectory?: string;
   /** Component name both trees are aligned on before matching. */
   anchor?: string;
   externalPackageAllowList?: string[];
@@ -31,8 +33,10 @@ export interface CorpusEntry {
   workingDirectory: string;
   /** Run once at the clone root after cloning. */
   install: string;
-  /** Extra commands run in `workingDirectory` before the dev server (databases, generated code). */
+  /** Commands run once in `workingDirectory` after install (env files, migrations, seeds). */
   setup?: string[];
+  /** Idempotent commands run at the clone root before every dev-server start (e.g. a database container). */
+  services?: string[];
   dev: string;
   env?: Record<string, string>;
   url: string;
@@ -177,6 +181,7 @@ const readStaticTarget = (reader: ManifestReader): CorpusStaticTarget => ({
   tsconfig: reader.optionalString("tsconfig"),
   entry: reader.optionalString("entry"),
   route: reader.optionalString("route"),
+  appDirectory: reader.optionalString("appDirectory"),
   anchor: reader.optionalString("anchor"),
   externalPackageAllowList: reader.optionalStringList("externalPackageAllowList"),
   maxFiberCount: reader.optionalNumber("maxFiberCount"),
@@ -206,6 +211,7 @@ const validateEntry = (candidate: unknown, manifestPath: string): CorpusEntry =>
     workingDirectory: reader.string("workingDirectory"),
     install: reader.string("install"),
     setup: reader.optionalStringList("setup"),
+    services: reader.optionalStringList("services"),
     dev: reader.string("dev"),
     env: reader.optionalStringRecord("env"),
     url: reader.string("url"),

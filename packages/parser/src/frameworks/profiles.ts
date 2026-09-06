@@ -46,6 +46,7 @@ const NEXT_APP_RUNTIME_WRAPPERS = [
   "ClientSegmentRoot",
   "InnerScrollHandlerNew",
   "InnerScrollAndFocusHandler",
+  "InnerScrollAndFocusHandlerOld",
   "LoadingBoundary",
   "TemplateContext",
   "LayoutRouterContext",
@@ -63,18 +64,25 @@ const NEXT_APP_RUNTIME_WRAPPERS = [
 
 // Subtrees Next renders around a segment with no source in the application:
 // the parallel-route outlet boundary, segment trigger nodes, the route
-// announcer, and the layer-asset `<script key="script-N">` hoistables that
-// `get-layer-assets` emits next to each layout.
+// announcer, and the layer assets `get-layer-assets` emits next to each layout
+// (`<script key="script-N">`, and `<link>`/`<style key={index}>` stylesheets
+// from `render-css-resource`).
 const NEXT_APP_INJECTED_FIBERS = new Set([
   "__next_outlet_boundary__",
   "SegmentBoundaryTriggerNode",
   "RouterAnnouncer",
 ]);
-const NEXT_LAYER_ASSET_KEY = /^script-\d+$/;
+const NEXT_LAYER_SCRIPT_KEY = /^script-\d+$/;
+const NEXT_LAYER_STYLE_KEY = /^\d+$/;
+
+const isNextLayerAsset = (fiber: RuntimeFiberSnapshot): boolean => {
+  if (fiber.tag !== "HostHoistable" || fiber.key === null) return false;
+  if (fiber.name === "script") return NEXT_LAYER_SCRIPT_KEY.test(fiber.key);
+  return (fiber.name === "link" || fiber.name === "style") && NEXT_LAYER_STYLE_KEY.test(fiber.key);
+};
 
 const isNextAppInjectedFiber = (fiber: RuntimeFiberSnapshot): boolean =>
-  (fiber.name !== null && NEXT_APP_INJECTED_FIBERS.has(fiber.name)) ||
-  (fiber.tag === "HostHoistable" && fiber.key !== null && NEXT_LAYER_ASSET_KEY.test(fiber.key));
+  (fiber.name !== null && NEXT_APP_INJECTED_FIBERS.has(fiber.name)) || isNextLayerAsset(fiber);
 
 export const NEXT_APP_PROFILE: FrameworkProfile = {
   kind: "next-app",

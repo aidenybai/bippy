@@ -5,6 +5,9 @@ import type {
   StaticRegExpValue,
   StaticValue,
 } from "../types.js";
+import { getReactApiTypeof } from "../react/react-api.js";
+import { getBrowserGlobalMember, isBrowserGlobalName } from "./browser-globals.js";
+import { mediaQueryListValue } from "./media-query.js";
 import type { EvaluationContext } from "./context.js";
 import { createCollectionValue, createPromiseValue } from "./collections.js";
 import { markEscapedSetters } from "./hooks.js";
@@ -17,6 +20,7 @@ import {
   getListLength,
   getObjectProperty,
   getTruthiness,
+  compareIdentity,
   hasDefiniteItems,
   isKnownList,
   listValue,
@@ -59,6 +63,7 @@ const GLOBAL_NAMES = new Set([
   "RegExp",
   "Intl",
   "Reflect",
+  "Proxy",
   "console",
   "window",
   "document",
@@ -116,6 +121,9 @@ const STRING_RESULT_METHODS = new Set([
   "toDateString",
   "format",
 ]);
+
+/** Static output is compared against dev servers and test renderers, which both bundle with a development `NODE_ENV`. */
+const DEV_SERVER_NODE_ENV = "development";
 
 const BOOLEAN_RESULT_METHODS = new Set([
   "includes",
@@ -180,6 +188,7 @@ const CONSTRUCTOR_GLOBALS = new Set([
   "Symbol",
   "Error",
   "RegExp",
+  "Proxy",
 ]);
 
 /** `typeof <global>` as observed by the rendering environment; null when it depends on the host. */
@@ -195,9 +204,51 @@ export const getGlobalTypeof = (
   return null;
 };
 
+export const getTypeofValue = (
+  value: StaticValue,
+  environment: RenderEnvironment | null,
+): StaticValue => {
+  switch (value.kind) {
+    case "primitive":
+      return primitiveValue(typeof value.value);
+    case "function":
+    case "class":
+    case "native-function":
+    case "method":
+      return primitiveValue("function");
+    case "react-api":
+      return primitiveValue(getReactApiTypeof(value.api));
+    case "proxy":
+      return getTypeofValue(value.target, environment);
+    case "host-node":
+      return primitiveValue("object");
+    case "symbol":
+      return primitiveValue("symbol");
+    case "object":
+    case "list":
+    case "element":
+    case "namespace":
+    case "context":
+      return primitiveValue("object");
+    case "external":
+      return value.importedName === "*" && !value.derived
+        ? primitiveValue("object")
+        : unknownPrimitiveValue("string", "typeof unknown");
+    case "global": {
+      const globalType = getGlobalTypeof(value.name, environment);
+      return globalType
+        ? primitiveValue(globalType)
+        : unknownPrimitiveValue("string", "typeof unknown");
+    }
+    default:
+      return unknownPrimitiveValue("string", "typeof unknown");
+  }
+};
+
 export const getBuiltinGlobal = (name: string): StaticValue | null => {
   if (name === "NaN") return primitiveValue(Number.NaN);
   if (name === "Infinity") return primitiveValue(Number.POSITIVE_INFINITY);
+  if (name === "process.env.NODE_ENV") return primitiveValue(DEV_SERVER_NODE_ENV);
   if (name === "process.env" || name.startsWith("process.env.")) {
     return name === "process.env"
       ? { kind: "global", name }
@@ -213,6 +264,12 @@ export const getBuiltinGlobal = (name: string): StaticValue | null => {
   }
   const root = name.split(".")[0];
   if (!GLOBAL_NAMES.has(root)) return null;
+  if (root !== name && isBrowserGlobalName(root)) {
+    const member = name.slice(root.length + 1);
+    if ((root === "window" || root === "globalThis") && GLOBAL_NAMES.has(member))
+      return getBuiltinGlobal(member);
+    return getBrowserGlobalMember(root, member, getBuiltinGlobal);
+  }
   return { kind: "global", name };
 };
 
@@ -257,6 +314,10 @@ const callGlobal = (
     case "Map":
     case "Set":
       return createCollectionValue(name, first, location);
+    case "Proxy":
+      return isConstructor && first && second?.kind === "object"
+        ? { kind: "proxy", target: first, handler: second }
+        : unknownValue("Proxy without a static handler", location);
     case "Promise":
       return createPromiseValue(
         first,
@@ -264,6 +325,10 @@ const callGlobal = (
           interpreter.callValue(executor, executorArgs, context, location),
         location,
       );
+    case "Symbol.for":
+      return first?.kind === "primitive" && typeof first.value === "string"
+        ? { kind: "symbol", key: first.value }
+        : unknownValue("Symbol.for with a dynamic key", location);
     case "Promise.resolve":
       return first ?? UNDEFINED_VALUE;
     case "Promise.reject":
@@ -300,8 +365,15 @@ const callGlobal = (
       );
     }
     case "Object.assign":
-      // Statics attached to a function/class (`Object.assign(Component, {...})`)
-      // do not change what it renders; keep the callable identity.
+      if (first?.kind === "function" || first?.kind === "class") {
+        for (const source of args.slice(1)) {
+          if (source.kind !== "object") continue;
+          for (const key of getKnownObjectKeys(source) ?? []) {
+            first.properties.set(key, getObjectProperty(source, key));
+          }
+        }
+        return first;
+      }
       if (first && first.kind !== "object" && first.kind !== "unknown" && first.kind !== "branch")
         return first;
       return objectValue(args.map((argument) => ({ kind: "spread", value: argument })));
@@ -721,7 +793,20 @@ export const evaluateBuiltinCall = (
     return unknownValue(`function.${name}()`, location);
   }
 
+  if (
+    receiver.kind === "object" &&
+    (name === "hasOwnProperty" || name === "propertyIsEnumerable") &&
+    first?.kind === "primitive"
+  ) {
+    const keys = getKnownObjectKeys(receiver);
+    return keys
+      ? primitiveValue(keys.includes(String(first.value)))
+      : unknownPrimitiveValue("boolean", `${name} of an object with dynamic spreads`);
+  }
+
   if (receiver.kind === "global") {
+    if ((receiver.name === "window" || receiver.name === "globalThis") && name === "matchMedia")
+      return mediaQueryListValue(first);
     if (name === "bind") return receiver;
     if (name === "call")
       return callGlobal(interpreter, receiver.name, args.slice(1), context, location, false);
@@ -744,6 +829,19 @@ export const evaluateBuiltinCall = (
         (receiver.api === "Component" || receiver.api === "PureComponent")))
   ) {
     return UNDEFINED_VALUE;
+  }
+
+  if (receiver.kind === "react-api" || receiver.kind === "native-function") {
+    if (name === "call") return interpreter.callValue(receiver, args.slice(1), context, location);
+    if (name === "apply") {
+      return interpreter.callValue(
+        receiver,
+        second?.kind === "list" ? second.items : [unknownValue("apply arguments")],
+        context,
+        location,
+      );
+    }
+    if (name === "bind") return receiver;
   }
 
   if (receiver.kind === "primitive" && typeof receiver.value === "string") {
@@ -849,6 +947,22 @@ export const evaluateBuiltinCall = (
           return receiver.items.at(index) ?? UNDEFINED_VALUE;
         }
         return unknownValue("at() with dynamic index", location);
+      }
+      case "includes":
+      case "indexOf": {
+        if (!first || !hasDefiniteItems(receiver)) break;
+        const verdicts = receiver.items.map((item) => compareIdentity(item, first));
+        const foundIndex = verdicts.indexOf(true);
+        if (
+          foundIndex !== -1 &&
+          verdicts.slice(0, foundIndex).every((verdict) => verdict === false)
+        ) {
+          return name === "includes" ? TRUE_VALUE : primitiveValue(foundIndex);
+        }
+        if (verdicts.every((verdict) => verdict === false)) {
+          return name === "includes" ? FALSE_VALUE : primitiveValue(-1);
+        }
+        break;
       }
       case "find":
       case "findLast": {

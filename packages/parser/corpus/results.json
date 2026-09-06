@@ -4,17 +4,17 @@
       "id": "actual",
       "revision": "8867158f0a2e101467fb191c9e253f47c75a9e2d",
       "framework": "spa",
-      "capturedAt": "2026-09-06T14:17:10.528Z",
-      "durationMs": 569,
+      "capturedAt": "2026-09-06T14:53:48.992Z",
+      "durationMs": 541,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 4789,
+          "fiberCount": 4810,
           "textCount": 72,
-          "branchCount": 271,
+          "branchCount": 275,
           "repeatCount": 24,
-          "opaqueCount": 2021,
-          "unknownCount": 468,
+          "opaqueCount": 2032,
+          "unknownCount": 465,
           "modulesLoaded": 271
         },
         "diagnostics": [
@@ -37,8 +37,8 @@
       "id": "bulletproof-react",
       "revision": "9506629ed003a561c6627735480cce4994244bb4",
       "framework": "react-router",
-      "capturedAt": "2026-09-06T14:17:11.109Z",
-      "durationMs": 85,
+      "capturedAt": "2026-09-06T14:53:49.543Z",
+      "durationMs": 83,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -93,32 +93,74 @@
       "id": "cal-diy",
       "revision": "abffde336e744e15cf69626c10e436d6172bc406",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T14:17:11.195Z",
-      "durationMs": 67,
-      "runtime": null,
+      "capturedAt": "2026-09-06T16:51:09.495Z",
+      "durationMs": 1776,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 1195,
+        "commits": 23,
+        "pageErrors": [],
+        "title": "Login | Cal.diy"
+      },
       "static": {
         "stats": {
-          "fiberCount": 31,
+          "fiberCount": 14079,
           "textCount": 0,
-          "branchCount": 2,
+          "branchCount": 412,
           "repeatCount": 0,
-          "opaqueCount": 6,
-          "unknownCount": 0,
-          "modulesLoaded": 14
+          "opaqueCount": 0,
+          "unknownCount": 3732,
+          "modulesLoaded": 172
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
       },
-      "report": null,
-      "anchor": null,
-      "note": "static only",
+      "report": {
+        "matchedFibers": 303,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "wildcardAbsorbedFibers": 635,
+        "wildcards": [
+          {
+            "path": "root > <body> [HostComponent] > <InlineSVG> [FunctionComponent] > <ReactInlineSVG> [FunctionComponent]",
+            "reason": "cloneElement of branch(null | unknown(updated state of useReducer))",
+            "absorbedFibers": 635,
+            "heads": [
+              "<svg> key=\"0-0\" [HostComponent]"
+            ]
+          }
+        ],
+        "branchesResolved": 25,
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 938,
+        "staticFibers": 337,
+        "coverage": 1,
+        "strictCoverage": 0.3230277185501066,
+        "divergence": null,
+        "stepsUsed": 346,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-06T15:26:30.199Z",
       "failure": null
     },
     {
       "id": "epic-stack",
       "revision": "8473afd804b66dba6a23f317908dc35d1535e90d",
       "framework": "react-router",
-      "capturedAt": "2026-09-06T14:17:11.262Z",
-      "durationMs": 64,
+      "capturedAt": "2026-09-06T14:53:49.691Z",
+      "durationMs": 60,
       "runtime": null,
       "static": {
         "stats": {
@@ -146,8 +188,8 @@
       "id": "excalidraw",
       "revision": "214cd6e6e8ac3ad6b68486aa7aa7241abdf9445f",
       "framework": "spa",
-      "capturedAt": "2026-09-06T14:17:11.327Z",
-      "durationMs": 142,
+      "capturedAt": "2026-09-06T14:53:49.751Z",
+      "durationMs": 140,
       "runtime": null,
       "static": {
         "stats": {
@@ -170,20 +212,25 @@
       "id": "graphiql",
       "revision": "fd32cea3e191eb6eb41b785e157403308d787b12",
       "framework": "spa",
-      "capturedAt": "2026-09-06T14:17:11.470Z",
-      "durationMs": 96,
+      "capturedAt": "2026-09-06T14:53:49.891Z",
+      "durationMs": 596,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 1591,
+          "fiberCount": 1936,
           "textCount": 0,
-          "branchCount": 10,
+          "branchCount": 196,
           "repeatCount": 0,
-          "opaqueCount": 0,
-          "unknownCount": 520,
-          "modulesLoaded": 14
+          "opaqueCount": 192,
+          "unknownCount": 334,
+          "modulesLoaded": 30
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "budget-exhausted",
+            "count": 13
+          }
+        ]
       },
       "report": null,
       "anchor": null,
@@ -194,8 +241,8 @@
       "id": "invoify",
       "revision": "3859b3cbae28ca4ec559db5ef87e41b798740340",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T14:17:11.567Z",
-      "durationMs": 425,
+      "capturedAt": "2026-09-06T14:53:50.488Z",
+      "durationMs": 361,
       "runtime": null,
       "static": {
         "stats": {
@@ -231,9 +278,18 @@
       "id": "lexical",
       "revision": "c3b629dcf6b5111811bb9ca5a3db0665099b2856",
       "framework": "spa",
-      "capturedAt": "2026-09-06T14:17:12.002Z",
-      "durationMs": 193,
-      "runtime": null,
+      "capturedAt": "2026-09-06T14:53:50.861Z",
+      "durationMs": 189,
+      "runtime": {
+        "reactVersion": "19.2.5",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 226,
+        "commits": 12,
+        "pageErrors": [],
+        "title": "Lexical Playground"
+      },
       "static": {
         "stats": {
           "fiberCount": 36,
@@ -246,17 +302,35 @@
         },
         "diagnostics": []
       },
-      "report": null,
+      "report": {
+        "matchedFibers": 15,
+        "matchedText": 0,
+        "opaqueSubtrees": 2,
+        "opaqueSkippedFibers": 2,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "wildcardAbsorbedFibers": 208,
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 225,
+        "staticFibers": 17,
+        "coverage": 1,
+        "strictCoverage": 0.06666666666666667,
+        "divergence": null,
+        "stepsUsed": 18,
+        "budgetExhausted": false
+      },
       "anchor": null,
-      "note": "static only",
+      "note": "runtime replayed from 2026-09-06T14:41:44.154Z",
       "failure": null
     },
     {
       "id": "nextjs-boilerplate",
       "revision": "1dffa39a32450300c8b01d8cfd3819f9b6e95842",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T14:17:12.196Z",
-      "durationMs": 72,
+      "capturedAt": "2026-09-06T14:53:51.050Z",
+      "durationMs": 71,
       "runtime": null,
       "static": {
         "stats": {
@@ -284,8 +358,8 @@
       "id": "nextjs-examples",
       "revision": "4fed8eaf197aaa60fd85371352482199a4c2107f",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T14:17:12.269Z",
-      "durationMs": 71,
+      "capturedAt": "2026-09-06T14:53:51.122Z",
+      "durationMs": 67,
       "runtime": {
         "reactVersion": "19.3.0-canary-cbb046ab-20260731",
         "rendererName": "react-dom",
@@ -335,33 +409,69 @@
       "id": "puck",
       "revision": "74a42c74db2b52da13ce1fc49087a07a6653dac8",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T14:17:12.340Z",
-      "durationMs": 80,
-      "runtime": null,
+      "capturedAt": "2026-09-06T14:55:04.899Z",
+      "durationMs": 177,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 630,
+        "commits": 17,
+        "pageErrors": [],
+        "title": "Puck Example"
+      },
       "static": {
         "stats": {
-          "fiberCount": 17,
-          "textCount": 0,
-          "branchCount": 2,
+          "fiberCount": 133,
+          "textCount": 2,
+          "branchCount": 6,
           "repeatCount": 0,
-          "opaqueCount": 1,
-          "unknownCount": 0,
-          "modulesLoaded": 30
+          "opaqueCount": 0,
+          "unknownCount": 4,
+          "modulesLoaded": 76
         },
         "diagnostics": []
       },
-      "report": null,
-      "anchor": null,
-      "note": "static only",
+      "report": {
+        "matchedFibers": 92,
+        "matchedText": 2,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "wildcardAbsorbedFibers": 356,
+        "branchesResolved": 5,
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 450,
+        "staticFibers": 94,
+        "coverage": 1,
+        "strictCoverage": 0.2088888888888889,
+        "divergence": null,
+        "stepsUsed": 101,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-06T14:42:06.387Z",
       "failure": null
     },
     {
       "id": "react-admin",
       "revision": "fa7ede4a25d36917b41f9b9e9936e9e7ab8fa8ab",
       "framework": "spa",
-      "capturedAt": "2026-09-06T14:17:12.421Z",
-      "durationMs": 63,
-      "runtime": null,
+      "capturedAt": "2026-09-06T14:53:51.310Z",
+      "durationMs": 269,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 5581,
+        "commits": 69,
+        "pageErrors": [],
+        "title": "React Admin"
+      },
       "static": {
         "stats": {
           "fiberCount": 13,
@@ -374,17 +484,35 @@
         },
         "diagnostics": []
       },
-      "report": null,
+      "report": {
+        "matchedFibers": 1,
+        "matchedText": 0,
+        "opaqueSubtrees": 8,
+        "opaqueSkippedFibers": 5579,
+        "slotsMatched": 1,
+        "slotsUnmatched": 0,
+        "wildcardAbsorbedFibers": 0,
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 5580,
+        "staticFibers": 13,
+        "coverage": 1,
+        "strictCoverage": 0.00017921146953405018,
+        "divergence": null,
+        "stepsUsed": 51,
+        "budgetExhausted": false
+      },
       "anchor": null,
-      "note": "static only",
+      "note": "runtime replayed from 2026-09-06T14:42:18.572Z",
       "failure": null
     },
     {
       "id": "react-email",
       "revision": "0f0cb94e1f15581131a2d50b80f8daa13dd1c9fc",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T14:17:12.485Z",
-      "durationMs": 178,
+      "capturedAt": "2026-09-06T14:53:51.580Z",
+      "durationMs": 144,
       "runtime": null,
       "static": {
         "stats": {
@@ -412,8 +540,8 @@
       "id": "react-router-templates",
       "revision": "b68be71489a22315c7a734a86a18347745b393d2",
       "framework": "react-router",
-      "capturedAt": "2026-09-06T14:17:12.664Z",
-      "durationMs": 73,
+      "capturedAt": "2026-09-06T14:53:51.725Z",
+      "durationMs": 70,
       "runtime": {
         "reactVersion": "19.2.7",
         "rendererName": "react-dom",
@@ -463,9 +591,18 @@
       "id": "redux-toolkit",
       "revision": "e99fe6135188219f031c5028f653fb82e671de24",
       "framework": "spa",
-      "capturedAt": "2026-09-06T14:17:12.737Z",
-      "durationMs": 54,
-      "runtime": null,
+      "capturedAt": "2026-09-06T14:53:51.795Z",
+      "durationMs": 52,
+      "runtime": {
+        "reactVersion": "19.2.4",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 7,
+        "commits": 3,
+        "pageErrors": [],
+        "title": "React App"
+      },
       "static": {
         "stats": {
           "fiberCount": 14,
@@ -478,17 +615,35 @@
         },
         "diagnostics": []
       },
-      "report": null,
+      "report": {
+        "matchedFibers": 4,
+        "matchedText": 0,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 2,
+        "slotsMatched": 1,
+        "slotsUnmatched": 0,
+        "wildcardAbsorbedFibers": 0,
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 6,
+        "staticFibers": 5,
+        "coverage": 1,
+        "strictCoverage": 0.6666666666666666,
+        "divergence": null,
+        "stepsUsed": 10,
+        "budgetExhausted": false
+      },
       "anchor": null,
-      "note": "static only",
+      "note": "runtime replayed from 2026-09-06T14:32:25.006Z",
       "failure": null
     },
     {
       "id": "shadcn-ui",
       "revision": "7c9eaba1c0a6404c990c144a654792e3313c650d",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T14:17:12.792Z",
-      "durationMs": 270,
+      "capturedAt": "2026-09-06T14:53:51.847Z",
+      "durationMs": 228,
       "runtime": null,
       "static": {
         "stats": {
@@ -516,8 +671,8 @@
       "id": "sonner",
       "revision": "8e4662b39255120b62138312058f5d77c0139a5e",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T14:17:13.067Z",
-      "durationMs": 67,
+      "capturedAt": "2026-09-06T14:53:52.080Z",
+      "durationMs": 62,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
@@ -567,8 +722,8 @@
       "id": "tanstack-query",
       "revision": "1893a965d219032207cbe147880d0e9f757a5a56",
       "framework": "spa",
-      "capturedAt": "2026-09-06T14:17:13.134Z",
-      "durationMs": 54,
+      "capturedAt": "2026-09-06T14:53:52.143Z",
+      "durationMs": 51,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -623,9 +778,18 @@
       "id": "tanstack-router",
       "revision": "cf166d160e6397007a979bfc7065b45ff69ea543",
       "framework": "spa",
-      "capturedAt": "2026-09-06T14:17:13.189Z",
-      "durationMs": 46,
-      "runtime": null,
+      "capturedAt": "2026-09-06T14:55:05.082Z",
+      "durationMs": 52,
+      "runtime": {
+        "reactVersion": "19.2.3",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 49,
+        "commits": 3,
+        "pageErrors": [],
+        "title": "Vite App"
+      },
       "static": {
         "stats": {
           "fiberCount": 1,
@@ -638,26 +802,44 @@
         },
         "diagnostics": []
       },
-      "report": null,
+      "report": {
+        "matchedFibers": 0,
+        "matchedText": 0,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 48,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "wildcardAbsorbedFibers": 0,
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 48,
+        "staticFibers": 1,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": null,
+        "stepsUsed": 1,
+        "budgetExhausted": false
+      },
       "anchor": null,
-      "note": "static only",
+      "note": "runtime replayed from 2026-09-06T14:42:26.770Z",
       "failure": null
     },
     {
       "id": "tldraw",
       "revision": "e8f61acedcbf2dc69693ea1e1f612a7f635fb4b5",
       "framework": "react-router",
-      "capturedAt": "2026-09-06T14:17:13.235Z",
+      "capturedAt": "2026-09-06T14:53:52.240Z",
       "durationMs": 77,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 804,
+          "fiberCount": 1010,
           "textCount": 4,
-          "branchCount": 30,
+          "branchCount": 34,
           "repeatCount": 0,
           "opaqueCount": 3,
-          "unknownCount": 271,
+          "unknownCount": 337,
           "modulesLoaded": 6
         },
         "diagnostics": []

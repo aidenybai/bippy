@@ -41,20 +41,37 @@
       "id": "cal-diy",
       "repository": "https://github.com/calcom/cal.diy",
       "revision": "abffde336e744e15cf69626c10e436d6172bc406",
-      "description": "cal.diy web app (Next app router + pages router hybrid, Yarn 4 monorepo, Prisma)",
+      "description": "cal.diy web app login page (Next app router + pages router hybrid, Yarn 4 monorepo, Prisma over a local PostgreSQL container)",
       "framework": "next-app",
       "workingDirectory": "apps/web",
       "install": "yarn install",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/cal-diy-setup.sh\""],
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-cal-pg 5450 calendso"],
       "dev": "yarn dev",
-      "url": "http://localhost:3000/",
+      "url": "http://localhost:3000/auth/login",
       "readyTimeoutMs": 900000,
       "settleMs": 10000,
       "static": {
         "rootDirectory": "apps/web",
-        "route": "/",
+        "route": "/auth/login",
+        "externalPackageAllowList": [
+          "@calcom/*",
+          "@coss/*",
+          "@base-ui/*",
+          "@radix-ui/*",
+          "next-auth",
+          "@tanstack/react-query",
+          "@trpc/*",
+          "react-inlinesvg",
+          "next-themes",
+          "nuqs",
+          "react-hook-form",
+          "framer-motion",
+          "lucide-react"
+        ],
         "maxFiberCount": 20000
       },
-      "notes": "The dev server needs a Postgres database and app-store env; runtime capture is expected to be blocked outside a provisioned environment."
+      "notes": "The seeded database comes from cal.diy's own `db-seed`; `/` redirects unauthenticated visitors to the login page, which is captured directly."
     },
     {
       "id": "epic-stack",
@@ -210,7 +227,9 @@
       "readyTimeoutMs": 600000,
       "settleMs": 8000,
       "static": {
-        "rootDirectory": "apps/demo",
+        "rootDirectory": ".",
+        "tsconfig": "apps/demo/tsconfig.json",
+        "appDirectory": "apps/demo/app",
         "route": "/",
         "maxFiberCount": 20000
       }
@@ -353,6 +372,9 @@
       "framework": "spa",
       "workingDirectory": "examples/react/basic",
       "install": "pnpm install",
+      "setup": [
+        "CI=1 NX_DAEMON=false pnpm nx run-many --target=build --projects=@tanstack/react-router,@tanstack/react-router-devtools --skipRemoteCache"
+      ],
       "dev": "pnpm dev",
       "url": "http://localhost:3000/",
       "readyTimeoutMs": 600000,

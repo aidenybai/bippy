@@ -1,3 +1,4 @@
+import { STYLED_JSX_SPECIFIER } from "../evaluate/interpreter.js";
 import {
   NULL_VALUE,
   UNDEFINED_VALUE,
@@ -332,6 +333,8 @@ export const createNextModel = (options: NextModelOptions): NextModel => {
         return appNavigationValue(importedName, url, params);
       case "next/router":
         return pagesRouterValue(importedName, url, params);
+      case STYLED_JSX_SPECIFIER:
+        return importedName === "default" ? stubValue(emptyStub("JSXStyle")) : null;
       default:
         return null;
     }

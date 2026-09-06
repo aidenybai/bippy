@@ -100,6 +100,8 @@ export interface MemberAssignment {
   objectName: string;
   propertyName: string;
   value: Expression;
+  /** Guard of the enclosing module-level `if` (`if (process.env.NODE_ENV !== "production") X.displayName = ...`). */
+  condition: Expression | null;
   span: Span;
 }
 
@@ -112,6 +114,8 @@ export interface ModuleRecord {
   exports: ExportEntry[];
   bindings: Map<string, TopLevelBinding>;
   memberAssignments: MemberAssignment[];
+  /** Exports were collected from `exports.x = ` / `module.exports` assignments rather than ESM syntax. */
+  isCommonJs: boolean;
 }
 
 export type ModuleResolution =
@@ -319,6 +323,12 @@ export interface StaticRegExpValue {
   flags: string;
 }
 
+/** A `Symbol.for(key)` registry symbol; unregistered symbols stay unknown. */
+export interface StaticSymbolValue {
+  kind: "symbol";
+  key: string;
+}
+
 export interface StaticComponentReferenceValue {
   kind: "component-reference";
   type: StaticElementType;
@@ -356,6 +366,12 @@ export interface StaticGlobalValue {
   name: string;
 }
 
+/** A DOM node handed to a ref once React committed the host element; one value per node so identity comparisons hold. */
+export interface StaticHostNodeValue {
+  kind: "host-node";
+  tagName: string;
+}
+
 export interface StaticMethodValue {
   kind: "method";
   receiver: StaticValue;
@@ -375,6 +391,13 @@ export interface StaticUnknownValue {
  * factories). `call` receives the statically evaluated arguments and the same
  * context tools a stub component gets, so modeled hooks can read providers.
  */
+/** `new Proxy(target, handler)`: traps run through the interpreter on access, call, and construction. */
+export interface StaticProxyValue {
+  kind: "proxy";
+  target: StaticValue;
+  handler: StaticObjectValue;
+}
+
 export interface StaticNativeFunctionValue {
   kind: "native-function";
   name: string;
@@ -395,14 +418,17 @@ export type StaticValue =
   | StaticFunctionValue
   | StaticClassValue
   | StaticRegExpValue
+  | StaticSymbolValue
   | StaticComponentReferenceValue
   | StaticContextValue
   | StaticReactApiValue
   | StaticExternalValue
   | StaticNamespaceValue
   | StaticGlobalValue
+  | StaticHostNodeValue
   | StaticMethodValue
   | StaticNativeFunctionValue
+  | StaticProxyValue
   | StaticUnknownValue;
 
 export type ReactApi =
@@ -446,6 +472,7 @@ export type ReactApi =
   | "useSyncExternalStore"
   | "useOptimistic"
   | "useActionState"
+  | "useMemoCache"
   | "startTransition"
   | "createPortal"
   | "flushSync"
@@ -489,6 +516,7 @@ export interface StaticRendererOptions {
   maxCallDepth?: number;
   maxSteps?: number;
   resolveExternalPackages?: boolean;
+  /** Package names to analyze from source; `@scope/*` admits every package in a scope (monorepo workspaces). */
   externalPackageAllowList?: string[];
   /** Apply React Server Components semantics: components outside `"use client"` modules render without a fiber. */
   serverComponents?: boolean;

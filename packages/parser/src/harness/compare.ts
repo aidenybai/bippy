@@ -27,6 +27,15 @@ export interface ComparisonDivergence {
   actual: string;
 }
 
+/** A runtime run of fibers a static wildcard stood in for. */
+export interface WildcardAbsorption {
+  path: string;
+  reason: string;
+  absorbedFibers: number;
+  /** The runtime nodes at the head of the absorbed run. */
+  heads: string[];
+}
+
 export interface ComparisonTally {
   matchedFibers: number;
   matchedText: number;
@@ -37,6 +46,7 @@ export interface ComparisonTally {
   /** Opaque subtrees whose passed children could not be located; the whole subtree was skipped. */
   slotsUnmatched: number;
   wildcardAbsorbedFibers: number;
+  wildcards: WildcardAbsorption[];
   branchesResolved: number;
   repeatIterations: number;
 }
@@ -67,6 +77,7 @@ const EMPTY_TALLY: ComparisonTally = {
   slotsMatched: 0,
   slotsUnmatched: 0,
   wildcardAbsorbedFibers: 0,
+  wildcards: [],
   branchesResolved: 0,
   repeatIterations: 0,
 };
@@ -79,6 +90,7 @@ const addTally = (left: ComparisonTally, right: Partial<ComparisonTally>): Compa
   slotsMatched: left.slotsMatched + (right.slotsMatched ?? 0),
   slotsUnmatched: left.slotsUnmatched + (right.slotsUnmatched ?? 0),
   wildcardAbsorbedFibers: left.wildcardAbsorbedFibers + (right.wildcardAbsorbedFibers ?? 0),
+  wildcards: right.wildcards ? [...right.wildcards, ...left.wildcards] : left.wildcards,
   branchesResolved: left.branchesResolved + (right.branchesResolved ?? 0),
   repeatIterations: left.repeatIterations + (right.repeatIterations ?? 0),
 });
@@ -122,14 +134,40 @@ const TAG_EQUIVALENTS: Record<string, string[]> = {
   ClassComponent: ["ClassComponent", "IncompleteClassComponent"],
 };
 
+const HOST_TAGS = new Set(["HostComponent", "HostSingleton", "HostHoistable", "HostText"]);
+
+const isHostTag = (tag: string): boolean => HOST_TAGS.has(tag);
+
 const tagsCompatible = (expected: string, actual: string): boolean =>
   expected === actual || (TAG_EQUIVALENTS[expected]?.includes(actual) ?? false);
+
+// Pre-order positions over the runtime tree; a failure is reported at the
+// furthest position any alternative reached, as parsers report their
+// furthest-failure, so backtracked branches do not hide the real divergence.
+interface RuntimePositions {
+  start: Map<RuntimeFiberSnapshot, number>;
+  end: Map<RuntimeFiberSnapshot[], number>;
+}
+
+const indexRuntime = (roots: RuntimeFiberSnapshot[]): RuntimePositions => {
+  const positions: RuntimePositions = { start: new Map(), end: new Map() };
+  let position = 0;
+  const visitList = (fibers: RuntimeFiberSnapshot[]): void => {
+    for (const fiber of fibers) {
+      positions.start.set(fiber, position++);
+      visitList(fiber.children);
+    }
+    positions.end.set(fibers, position);
+  };
+  visitList(roots);
+  return positions;
+};
 
 class Matcher {
   private steps = 0;
   private slotSearchDepth = 0;
-  private furthest: { depth: number; index: number; divergence: ComparisonDivergence } | null =
-    null;
+  private furthest: { position: number; divergence: ComparisonDivergence } | null = null;
+  private positions: RuntimePositions = { start: new Map(), end: new Map() };
   private readonly compareKeys: boolean;
   private readonly compareTags: boolean;
   private readonly compareText: boolean;
@@ -150,24 +188,23 @@ class Matcher {
     return this.furthest?.divergence ?? null;
   }
 
-  private recordFailure(
+  indexRuntime(roots: RuntimeFiberSnapshot[]): void {
+    this.positions = indexRuntime(roots);
+  }
+
+  recordFailure(
     path: string[],
+    runtime: RuntimeFiberSnapshot[],
     index: number,
     expected: PatternNode | null,
-    actual: RuntimeFiberSnapshot | undefined,
   ): void {
-    const depth = path.length;
-    if (
-      this.slotSearchDepth > 0 ||
-      (this.furthest &&
-        (this.furthest.depth > depth ||
-          (this.furthest.depth === depth && this.furthest.index >= index)))
-    ) {
-      return;
-    }
+    if (this.slotSearchDepth > 0) return;
+    const actual = runtime[index];
+    const position =
+      (actual ? this.positions.start.get(actual) : this.positions.end.get(runtime)) ?? 0;
+    if (this.furthest && this.furthest.position >= position) return;
     this.furthest = {
-      depth,
-      index,
+      position,
       divergence: {
         path: `${path.join(" > ")}[${index}]`,
         expected: expected ? describePatternNode(expected) : "<end of children>",
@@ -207,7 +244,7 @@ class Matcher {
     switch (pattern.kind) {
       case "fiber": {
         if (!actual || !this.headMatches(pattern, actual)) {
-          this.recordFailure(path, runtimeIndex, pattern, actual);
+          this.recordFailure(path, runtime, runtimeIndex, pattern);
           return null;
         }
         const childTally = this.matchChildren(pattern, actual, [
@@ -224,7 +261,7 @@ class Matcher {
           actual.tag !== "HostText" ||
           (this.compareText && pattern.text !== null && pattern.text !== actual.text)
         ) {
-          this.recordFailure(path, runtimeIndex, pattern, actual);
+          this.recordFailure(path, runtime, runtimeIndex, pattern);
           return null;
         }
         const rest = continuation(runtimeIndex + 1);
@@ -254,20 +291,33 @@ class Matcher {
         }
         const skipped = continuation(runtimeIndex);
         if (skipped) return addTally(skipped, { opaqueSubtrees: 1 });
-        this.recordFailure(path, runtimeIndex, pattern, actual);
+        this.recordFailure(path, runtime, runtimeIndex, pattern);
         return null;
       }
       case "wildcard": {
         for (let absorbed = 0; runtimeIndex + absorbed <= runtime.length; absorbed++) {
           const rest = continuation(runtimeIndex + absorbed);
           if (rest) {
-            let absorbedFibers = 0;
-            for (let offset = 0; offset < absorbed; offset++)
-              absorbedFibers += countSnapshotFibers(runtime[runtimeIndex + offset]);
-            return addTally(rest, { wildcardAbsorbedFibers: absorbedFibers });
+            const absorbedRun = runtime.slice(runtimeIndex, runtimeIndex + absorbed);
+            const absorbedFibers = absorbedRun.reduce(
+              (total, fiber) => total + countSnapshotFibers(fiber),
+              0,
+            );
+            if (absorbedFibers === 0) return rest;
+            return addTally(rest, {
+              wildcardAbsorbedFibers: absorbedFibers,
+              wildcards: [
+                {
+                  path: path.join(" > "),
+                  reason: pattern.reason,
+                  absorbedFibers,
+                  heads: absorbedRun.map(describeRuntimeFiber),
+                },
+              ],
+            });
           }
         }
-        this.recordFailure(path, runtimeIndex, pattern, actual);
+        this.recordFailure(path, runtime, runtimeIndex, pattern);
         return null;
       }
       case "branch": {
@@ -327,9 +377,9 @@ class Matcher {
       pattern.key !== actual.key
     )
       return false;
-    return (
-      actual.name === null || actual.name === pattern.name || isBundlerPlaceholderName(actual.name)
-    );
+    if (actual.name === null || isBundlerPlaceholderName(actual.name)) return true;
+    if (pattern.runtimeNames === null) return !isHostTag(actual.tag);
+    return pattern.runtimeNames.includes(actual.name);
   }
 
   // Searches the library's runtime subtree for the place where it rendered the
@@ -388,7 +438,7 @@ class Matcher {
   ): ComparisonTally | null {
     return this.matchList(pattern.children, 0, actual.children, 0, path, (nextIndex) => {
       if (nextIndex === actual.children.length) return EMPTY_TALLY;
-      this.recordFailure(path, nextIndex, null, actual.children[nextIndex]);
+      this.recordFailure(path, actual.children, nextIndex, null);
       return null;
     });
   }
@@ -408,14 +458,17 @@ export const comparePatternToRuntime = (
   options: ComparisonOptions = {},
 ): ComparisonReport => {
   const matcher = new Matcher(options);
+  matcher.indexRuntime(runtime);
   const runtimeFibers = runtime.reduce((sum, fiber) => sum + countSnapshotFibers(fiber), 0);
   const staticFibers = patterns.reduce((sum, node) => sum + countPatternFibers(node), 0);
   let tally: ComparisonTally | null = null;
   let budgetExhausted = false;
   try {
-    tally = matcher.matchList(patterns, 0, runtime, 0, ["root"], (nextIndex) =>
-      nextIndex === runtime.length ? EMPTY_TALLY : null,
-    );
+    tally = matcher.matchList(patterns, 0, runtime, 0, ["root"], (nextIndex) => {
+      if (nextIndex === runtime.length) return EMPTY_TALLY;
+      matcher.recordFailure(["root"], runtime, nextIndex, null);
+      return null;
+    });
   } catch (error) {
     if (!(error instanceof BudgetExceeded)) throw error;
     budgetExhausted = true;

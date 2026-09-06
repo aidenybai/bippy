@@ -1,4 +1,5 @@
 import { createFunctionComponentDefinition, toElementType } from "../react/element-type.js";
+import { REACT_MEMO_CACHE_SENTINEL_KEY } from "../react/react-api.js";
 import type {
   ReactApi,
   SourceLocation,
@@ -10,7 +11,7 @@ import type {
 } from "../types.js";
 import type { EvaluationContext } from "./context.js";
 import { lookupContextValue } from "./context.js";
-import { nextStateCell, queueStateUpdate } from "./hooks.js";
+import { nextMemoCell, nextStateCell, queueStateUpdate } from "./hooks.js";
 import type { Interpreter } from "./interpreter.js";
 import {
   branchValue,
@@ -317,14 +318,25 @@ export const evaluateReactApiCall = (
           : unknownValue("reducer state after dispatch"),
       );
     }
-    case "useMemo":
-      return first?.kind === "function"
-        ? interpreter.callFunction(first, [], context)
-        : unknownValue("useMemo factory", location);
-    case "useCallback":
-      return first ?? UNDEFINED_VALUE;
-    case "useRef":
-      return objectFromRecord({ current: first ?? UNDEFINED_VALUE });
+    case "useMemo": {
+      const compute = (): StaticValue =>
+        first?.kind === "function"
+          ? interpreter.callFunction(first, [], context)
+          : unknownValue("useMemo factory", location);
+      return context.hooks && second?.kind === "list"
+        ? nextMemoCell(context.hooks, second, compute)
+        : compute();
+    }
+    case "useCallback": {
+      const callback = first ?? UNDEFINED_VALUE;
+      return context.hooks && second?.kind === "list"
+        ? nextMemoCell(context.hooks, second, () => callback)
+        : callback;
+    }
+    case "useRef": {
+      const createRef = (): StaticValue => objectFromRecord({ current: first ?? UNDEFINED_VALUE });
+      return context.hooks ? nextMemoCell(context.hooks, null, createRef) : createRef();
+    }
     case "useContext":
       return first
         ? readContextValue(interpreter, first, context, location)
@@ -348,8 +360,10 @@ export const evaluateReactApiCall = (
       return UNDEFINED_VALUE;
     case "startTransition":
       return first ? interpreter.callValue(first, [], context, location) : UNDEFINED_VALUE;
-    case "useId":
-      return unknownPrimitiveValue("string", "useId");
+    case "useId": {
+      const createId = (): StaticValue => unknownPrimitiveValue("string", "useId");
+      return context.hooks ? nextMemoCell(context.hooks, null, createId) : createId();
+    }
     case "useTransition":
       return listValue([
         FALSE_VALUE,
@@ -376,6 +390,13 @@ export const evaluateReactApiCall = (
       return listValue([first ?? UNDEFINED_VALUE, unknownValue("optimistic setter")]);
     case "useActionState":
       return listValue([second ?? UNDEFINED_VALUE, unknownValue("form action"), FALSE_VALUE]);
+    case "useMemoCache": {
+      if (first?.kind !== "primitive" || typeof first.value !== "number") {
+        return unknownValue("memo cache of dynamic size", location);
+      }
+      const sentinel: StaticValue = { kind: "symbol", key: REACT_MEMO_CACHE_SENTINEL_KEY };
+      return listValue(Array.from({ length: first.value }, () => sentinel));
+    }
     case "createPortal": {
       const props = objectValue(first ? [{ kind: "property", key: "children", value: first }] : []);
       return {

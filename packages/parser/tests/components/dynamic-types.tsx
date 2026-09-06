@@ -34,6 +34,12 @@ const Polymorphic = ({ isLink }: { isLink: boolean }) => {
   return <Element>{isLink ? "link" : "button"}</Element>;
 };
 
+const NavItem = ({ href }: { href: string }) => {
+  const isCurrent = typeof window !== "undefined" && window.location.pathname === href;
+  const El = isCurrent ? "span" : "a";
+  return <El href={href}>{href}</El>;
+};
+
 export default function DynamicTypes() {
   return (
     <div>
@@ -45,6 +51,7 @@ export default function DynamicTypes() {
       <Box as="section">section box</Box>
       <Polymorphic isLink />
       <Polymorphic isLink={false} />
+      <NavItem href="/docs" />
     </div>
   );
 }

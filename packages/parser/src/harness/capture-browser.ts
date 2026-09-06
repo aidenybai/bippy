@@ -90,6 +90,13 @@ const readSnapshot = async (page: Page): Promise<RuntimeSnapshot | null> => {
   return json === null ? null : parseSnapshot(json);
 };
 
+const readDevServerOverlay = (page: Page): Promise<string | null> =>
+  page.evaluate(() => {
+    const overlay = document.querySelector("vite-error-overlay, nextjs-portal");
+    const text = overlay?.shadowRoot?.textContent ?? overlay?.textContent ?? null;
+    return text?.replace(/\s+/g, " ").trim().slice(0, 500) || null;
+  });
+
 const sleep = (ms: number): Promise<void> =>
   new Promise((resolveSleep) => setTimeout(resolveSleep, ms));
 
@@ -139,10 +146,10 @@ export class BrowserCapturer {
       await context.addInitScript(inject);
       const page = await context.newPage();
       page.on("pageerror", (error) => pageErrors.push(error.message));
-      if (options.onConsole) {
-        const onConsole = options.onConsole;
-        page.on("console", (message) => onConsole(message.type(), message.text()));
-      }
+      page.on("console", (message) => {
+        if (message.type() === "error") pageErrors.push(message.text());
+        options.onConsole?.(message.type(), message.text());
+      });
       await page.goto(options.url, { waitUntil: "domcontentloaded", timeout: timeoutMs });
       if (options.waitForSelector) {
         await page.waitForSelector(options.waitForSelector, { timeout: timeoutMs });
@@ -151,6 +158,10 @@ export class BrowserCapturer {
       const snapshot = await readSnapshot(page);
       if (!snapshot) {
         throw new Error(`harness globals missing on ${options.url}; the init script did not run`);
+      }
+      if (commits === 0) {
+        const overlay = await readDevServerOverlay(page);
+        if (overlay) pageErrors.push(overlay);
       }
       return { snapshot, commits, pageErrors, title: await page.title() };
     } finally {

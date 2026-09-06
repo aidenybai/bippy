@@ -70,6 +70,9 @@ export default defineConfig({
     environment: "happy-dom",
     environmentOptions: {
       happyDOM: {
+        // Playwright's default viewport, which `DEFAULT_BROWSER_ENVIRONMENT` models for `matchMedia`.
+        width: 1280,
+        height: 720,
         // Fixtures reference stylesheets/scripts that do not exist; React DOM
         // suspends the commit on `<link precedence>` until load/error fires.
         settings: {

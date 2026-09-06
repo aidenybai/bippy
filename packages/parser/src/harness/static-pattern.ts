@@ -33,6 +33,8 @@ export interface PatternRepeat {
 export interface PatternOpaque {
   kind: "opaque";
   name: string;
+  /** Runtime names the external component may report; null when its export cannot be named statically (namespace member, default import, call result). */
+  runtimeNames: string[] | null;
   key: string | null;
   reason: string;
   /** Children the application passed to the external component; matched somewhere inside its runtime subtree. */
@@ -55,6 +57,16 @@ export type PatternNode =
 const readString = (props: Record<string, SnapshotPropValue>, key: string): string | null => {
   const value = props[key];
   return typeof value === "string" ? value : null;
+};
+
+const UNNAMEABLE_IMPORT = /[.*()`]|^default$/;
+
+const getOpaqueRuntimeNames = (
+  displayName: string | null,
+  importedName: string | null,
+): string[] | null => {
+  if (importedName === null || UNNAMEABLE_IMPORT.test(importedName)) return null;
+  return [...new Set([importedName, displayName].filter((name) => name !== null))];
 };
 
 const readNumber = (props: Record<string, SnapshotPropValue>, key: string): number | null => {
@@ -83,6 +95,10 @@ const toPatternNode = (fiber: RuntimeFiberSnapshot): PatternNode[] => {
         {
           kind: "opaque",
           name: readString(fiber.props, "displayName") ?? "",
+          runtimeNames: getOpaqueRuntimeNames(
+            readString(fiber.props, "displayName"),
+            readString(fiber.props, "importedName"),
+          ),
           key: fiber.key,
           reason: readString(fiber.props, "reason") ?? "",
           passedChildren: snapshotToPattern(fiber.children),
@@ -188,7 +204,7 @@ const formatPatternNode = (node: PatternNode, depth: number): string[] => {
     case "fiber": {
       const key = node.key === null ? "" : ` key=${JSON.stringify(node.key)}`;
       return [
-        `${indent}<${node.name ?? "?"}>${key}`,
+        `${indent}<${node.name ?? node.tag}>${key}`,
         ...node.children.flatMap((child) => formatPatternNode(child, depth + 1)),
       ];
     }

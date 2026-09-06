@@ -6,6 +6,7 @@ import type { ModuleResolution } from "../types.js";
 export interface ModuleResolverOptions {
   tsconfigPath?: string;
   conditionNames?: string[];
+  requireConditionNames?: string[];
   /**
    * Package specifiers that resolve outside this directory are external even
    * when the resolved file is not under `node_modules` (workspace symlinks
@@ -23,7 +24,10 @@ const EXTENSION_ALIAS: Record<string, string[]> = {
   ".cjs": [".cjs", ".cts"],
 };
 
-const DEFAULT_CONDITION_NAMES = ["browser", "import", "module", "default", "require"];
+const DEFAULT_CONDITION_NAMES = ["browser", "import", "module", "default"];
+const DEFAULT_REQUIRE_CONDITION_NAMES = ["browser", "require", "module", "default"];
+
+export type ImporterKind = "esm" | "commonjs";
 
 const NODE_MODULES_SEGMENT = "/node_modules/";
 
@@ -49,49 +53,64 @@ export const getPackageNameFromFilePath = (filePath: string): string | null => {
 export const isInsideNodeModules = (filePath: string): boolean =>
   filePath.replaceAll("\\", "/").includes(NODE_MODULES_SEGMENT);
 
+interface ResolverPair {
+  primary: ResolverFactory;
+  fallback: ResolverFactory;
+}
+
 export class ModuleResolver {
-  private readonly primary: ResolverFactory;
-  private readonly fallback: ResolverFactory;
+  private readonly resolvers: Record<ImporterKind, ResolverPair>;
   private readonly cache = new Map<string, ModuleResolution>();
   private readonly rootDirectory: string | null;
 
   constructor(options: ModuleResolverOptions = {}) {
     this.rootDirectory = options.rootDirectory ? path.resolve(options.rootDirectory) : null;
-    const conditionNames = options.conditionNames ?? DEFAULT_CONDITION_NAMES;
-    const baseOptions = {
-      extensions: SOURCE_EXTENSIONS,
-      extensionAlias: EXTENSION_ALIAS,
-      conditionNames,
-      mainFields: ["browser", "module", "main"],
-      nodePath: false,
+    const createPair = (conditionNames: string[]): ResolverPair => {
+      const baseOptions = {
+        extensions: SOURCE_EXTENSIONS,
+        extensionAlias: EXTENSION_ALIAS,
+        conditionNames,
+        mainFields: ["browser", "module", "main"],
+        nodePath: false,
+      };
+      return {
+        primary: new ResolverFactory({
+          ...baseOptions,
+          tsconfig: options.tsconfigPath
+            ? { configFile: options.tsconfigPath, references: "auto" }
+            : "auto",
+        }),
+        fallback: new ResolverFactory(baseOptions),
+      };
     };
-    this.primary = new ResolverFactory({
-      ...baseOptions,
-      tsconfig: options.tsconfigPath
-        ? { configFile: options.tsconfigPath, references: "auto" }
-        : "auto",
-    });
-    this.fallback = new ResolverFactory(baseOptions);
+    this.resolvers = {
+      esm: createPair(options.conditionNames ?? DEFAULT_CONDITION_NAMES),
+      commonjs: createPair(options.requireConditionNames ?? DEFAULT_REQUIRE_CONDITION_NAMES),
+    };
   }
 
-  resolve(specifier: string, fromFile: string): ModuleResolution {
-    const cacheKey = `${fromFile}\u0000${specifier}`;
+  resolve(specifier: string, fromFile: string, importer: ImporterKind = "esm"): ModuleResolution {
+    const cacheKey = `${importer}\u0000${fromFile}\u0000${specifier}`;
     const cached = this.cache.get(cacheKey);
     if (cached) return cached;
-    const resolution = this.resolveUncached(specifier, fromFile);
+    const resolution = this.resolveUncached(specifier, fromFile, this.resolvers[importer]);
     this.cache.set(cacheKey, resolution);
     return resolution;
   }
 
-  private resolveUncached(specifier: string, fromFile: string): ModuleResolution {
+  private resolveUncached(
+    specifier: string,
+    fromFile: string,
+    { primary, fallback }: ResolverPair,
+  ): ModuleResolution {
     const bareSpecifier = specifier.replace(/^node:/, "");
     if (specifier.startsWith("node:") || isBuiltin(bareSpecifier)) {
       return { kind: "builtin", specifier };
     }
     const cleanSpecifier = specifier.split("?")[0];
-    let result = this.primary.resolveFileSync(fromFile, cleanSpecifier);
+    let result = primary.resolveFileSync(fromFile, cleanSpecifier);
     if (!result.path) {
-      const fallbackResult = this.fallback.resolveFileSync(fromFile, cleanSpecifier);
+      const fallbackResult = fallback.resolveFileSync(fromFile, cleanSpecifier);
       if (fallbackResult.path) result = fallbackResult;
     }
     const specifierPackage = getPackageNameFromSpecifier(cleanSpecifier);

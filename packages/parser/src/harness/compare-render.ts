@@ -61,6 +61,10 @@ const findPatternFiber = (
 const isStaticRootUnresolved = (pattern: PatternNode[]): boolean =>
   pattern.length === 1 && pattern[0].kind === "wildcard";
 
+const didMaterializedRenderFail = (staticResult: StaticRenderResult): boolean =>
+  staticResult.snapshot.roots.every((root) => root.children.length === 0) &&
+  staticResult.diagnostics.some((diagnostic) => diagnostic.code === "render-error");
+
 const skipped = (
   staticPattern: PatternNode[],
   note: string,
@@ -75,6 +79,7 @@ const skipped = (
     slotsMatched: 0,
     slotsUnmatched: 0,
     wildcardAbsorbedFibers: 0,
+    wildcards: [],
     branchesResolved: 0,
     repeatIterations: 0,
     runtimeFibers: 0,
@@ -144,6 +149,9 @@ export const compareStaticToRuntime = (
       "static render did not resolve to a component tree",
       "unresolved",
     );
+  }
+  if (didMaterializedRenderFail(staticResult)) {
+    return skipped(staticChildren, "React failed to render the materialized tree", "unresolved");
   }
   const runtimeRoot = chooseRuntimeRoot(runtime, options);
   if (!runtimeRoot)

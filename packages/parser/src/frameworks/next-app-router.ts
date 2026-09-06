@@ -6,6 +6,7 @@ import type { ModuleRecord, StaticObjectValue, StaticRenderResult, StaticValue }
 import type { NextModel } from "./next-externals.js";
 import {
   classifySegment,
+  type DynamicSegment,
   findFirstDirectory,
   findRouteFile,
   listSubdirectories,
@@ -41,58 +42,87 @@ const readSegment = (directory: string, params: Record<string, string>): NextApp
   params,
 });
 
+/** A routable child directory reached through zero or more transparent route groups. */
+interface RouteChild {
+  name: string;
+  segment: DynamicSegment;
+  /** Group directories between the parent and the child, outermost first. */
+  groups: string[];
+}
+
+const collectRouteChildren = (directory: string, groups: string[]): RouteChild[] =>
+  listSubdirectories(directory)
+    .filter((name) => !isPrivateFolder(name))
+    .flatMap((name) =>
+      isRouteGroup(name)
+        ? collectRouteChildren(path.join(directory, name), [...groups, name])
+        : [{ name, segment: classifySegment(name), groups }],
+    );
+
+/** Directory chain from `directory` down to the one owning `page.*`, descending only through route groups. */
+const findPageThroughGroups = (directory: string): string[] | null => {
+  if (findRouteFile(directory, "page")) return [directory];
+  for (const name of listSubdirectories(directory).filter(isRouteGroup)) {
+    const chain = findPageThroughGroups(path.join(directory, name));
+    if (chain) return [directory, ...chain];
+  }
+  return null;
+};
+
 /**
  * Walks the `app/` tree the way Next matches a URL: route groups `(name)` add a
  * directory level without consuming a URL segment, `[param]` consumes one,
- * `[...slug]` consumes the rest. Returns the directory chain ending at the
- * directory that owns `page.*`, or null when nothing matches.
+ * `[...slug]` consumes the rest. Children across all sibling groups compete by
+ * specificity (static beats dynamic beats catch-all). Returns the directory
+ * chain ending at the directory that owns `page.*`, or null when nothing matches.
  */
 const matchSegments = (
   directory: string,
   remaining: string[],
   params: Record<string, string>,
 ): NextAppSegment[] | null => {
-  if (remaining.length === 0 && findRouteFile(directory, "page")) {
-    return [readSegment(directory, params)];
+  if (remaining.length === 0) {
+    const pageChain = findPageThroughGroups(directory);
+    if (pageChain)
+      return pageChain.map((segmentDirectory) => readSegment(segmentDirectory, params));
   }
 
-  const candidates = listSubdirectories(directory).filter((name) => !isPrivateFolder(name));
-  const groups = candidates.filter(isRouteGroup);
-  for (const group of groups) {
-    const matched = matchSegments(path.join(directory, group), remaining, params);
-    if (matched) return [readSegment(directory, params), ...matched];
-  }
+  const ranked = collectRouteChildren(directory, []).sort(
+    (left, right) => segmentSpecificity(left.segment) - segmentSpecificity(right.segment),
+  );
 
-  const ranked = candidates
-    .filter((name) => !isRouteGroup(name))
-    .map((name) => ({ name, segment: classifySegment(name) }))
-    .sort((left, right) => segmentSpecificity(left.segment) - segmentSpecificity(right.segment));
-
-  for (const { name, segment } of ranked) {
-    const child = path.join(directory, name);
+  for (const { name, segment, groups } of ranked) {
+    const child = path.join(directory, ...groups, name);
+    const prefix = groups.map((_, index) =>
+      readSegment(path.join(directory, ...groups.slice(0, index + 1)), params),
+    );
+    const descend = (nextRemaining: string[], nextParams: Record<string, string>) => {
+      const matched = matchSegments(child, nextRemaining, nextParams);
+      return matched ? [readSegment(directory, params), ...prefix, ...matched] : null;
+    };
     switch (segment.kind) {
       case "static": {
         if (remaining[0] !== name) continue;
-        const matched = matchSegments(child, remaining.slice(1), params);
-        if (matched) return [readSegment(directory, params), ...matched];
+        const matched = descend(remaining.slice(1), params);
+        if (matched) return matched;
         break;
       }
       case "dynamic": {
         if (remaining.length === 0) continue;
-        const matched = matchSegments(child, remaining.slice(1), {
+        const matched = descend(remaining.slice(1), {
           ...params,
           [segment.param]: decodeURIComponent(remaining[0]),
         });
-        if (matched) return [readSegment(directory, params), ...matched];
+        if (matched) return matched;
         break;
       }
       case "catch-all": {
         if (remaining.length === 0 && !segment.optional) continue;
-        const matched = matchSegments(child, [], {
+        const matched = descend([], {
           ...params,
           [segment.param]: remaining.map(decodeURIComponent).join("/"),
         });
-        if (matched) return [readSegment(directory, params), ...matched];
+        if (matched) return matched;
         break;
       }
     }

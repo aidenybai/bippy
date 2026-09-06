@@ -1,0 +1,5 @@
+{
+  "name": "fixture-commonjs-package",
+  "private": true,
+  "type": "module"
+}

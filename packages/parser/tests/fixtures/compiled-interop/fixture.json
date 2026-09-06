@@ -1,0 +1,4 @@
+{
+  "externalPackages": ["proxy-kit"],
+  "notes": "Compiled dependency patterns beyond export collection: Babel helpers inlined as `function _name()` declarations, module-level temp variables (`(_React$createContext = React.createContext) === null || ... : _React$createContext.call(React, undefined)`), `typeof` on React namespaces, and a tRPC-style `new Proxy(noop, { get, apply })` client whose members are only known through its traps."
+}

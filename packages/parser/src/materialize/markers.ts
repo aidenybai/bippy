@@ -34,6 +34,7 @@ export interface BranchMarkerProps extends MarkerChildrenProps {
 
 export interface OpaqueMarkerProps extends MarkerChildrenProps {
   displayName: string | null;
+  importedName: string | null;
   packageName: string | null;
   reason: string;
 }

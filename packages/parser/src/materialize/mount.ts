@@ -33,7 +33,7 @@ export const mountNode = async (runtime: ReactRuntime, node: ReactNode): Promise
     onRecoverableError: () => {},
   });
   const { error: consoleError, warn: consoleWarn } = console;
-  // React DOM's dev warnings (missing keys on materialized lists, DOM nesting
+  // HACK: React DOM's dev warnings (missing keys on materialized lists, DOM nesting
   // inside the harness container) describe the materialized tree, not the app;
   // real render failures are reported through the root callbacks instead.
   console.error = noop;

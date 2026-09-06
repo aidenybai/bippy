@@ -1,0 +1,4 @@
+{
+  "externalPackages": ["cjs-kit"],
+  "notes": "A dependency shipped as compiled CommonJS: Babel output (interop/extends/objectWithoutProperties helpers, `exports.x =`, `Object.keys(...).forEach` re-exports) and tsc output (inline `__importDefault`, `exports.default =`), analyzed from source through the CommonJS export model."
+}

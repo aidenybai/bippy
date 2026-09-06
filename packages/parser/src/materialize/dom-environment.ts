@@ -1,4 +1,5 @@
 import { Window } from "happy-dom";
+import { DEFAULT_BROWSER_ENVIRONMENT } from "../evaluate/media-query.js";
 
 const WINDOW_GLOBALS = ["window", "self", "document", "navigator", "location", "history"];
 
@@ -27,6 +28,8 @@ export const ensureDomGlobals = (): void => {
   if (typeof globalThis.document !== "undefined") return;
   const window = new Window({
     url: "http://localhost:3000",
+    width: DEFAULT_BROWSER_ENVIRONMENT.viewportWidth,
+    height: DEFAULT_BROWSER_ENVIRONMENT.viewportHeight,
     settings: {
       disableCSSFileLoading: true,
       disableJavaScriptFileLoading: true,

@@ -30,7 +30,13 @@ import type {
 import type { ModuleGraph } from "../graph/module-graph.js";
 import { getSourceLocation } from "../parse/source-location.js";
 import { toElementType } from "../react/element-type.js";
-import { isReactLikePackage, resolveReactApi, resolveReactApiMember } from "../react/react-api.js";
+import {
+  getExternalMember,
+  REACT_MEMO_CACHE_SENTINEL_KEY,
+  resolveReactApi,
+  resolveReactApiMember,
+} from "../react/react-api.js";
+import { getCompilerHelper, getInlineCompilerHelper } from "./compiler-helpers.js";
 import type {
   ClassBody,
   Diagnostic,
@@ -53,7 +59,7 @@ import type {
 import {
   evaluateBuiltinCall,
   getBuiltinGlobal,
-  getGlobalTypeof,
+  getTypeofValue,
   isModeledOpaqueMethodName,
   isPromiseMethodName,
 } from "./builtin-calls.js";
@@ -69,6 +75,7 @@ import { evaluateReactApiCall } from "./react-calls.js";
 import { createScope, declareInScope, findOwningScope, lookupScope } from "./scope.js";
 import {
   branchValue,
+  compareIdentity,
   componentReference,
   describeValue,
   FALSE_VALUE,
@@ -104,8 +111,18 @@ const DEFAULT_MAX_CALL_DEPTH = 32;
 const DEFAULT_MAX_RECURSION_PER_FUNCTION = 2;
 const DEFAULT_MAX_FORK_DEPTH = 5;
 const DEFAULT_MAX_STEPS = 2_000_000;
+export const STYLED_JSX_SPECIFIER = "styled-jsx/style";
 
 const IN_PROGRESS = Symbol("in-progress");
+
+const OBJECT_PROTOTYPE_METHODS = new Set([
+  "hasOwnProperty",
+  "propertyIsEnumerable",
+  "isPrototypeOf",
+  "toString",
+  "toLocaleString",
+  "valueOf",
+]);
 
 /**
  * Result of evaluating a statement list. `returned` collects the values of every
@@ -207,7 +224,7 @@ export class Interpreter {
     return {
       module,
       scope: this.getModuleScope(module),
-      thisValue: null,
+      thisValue: module.isCommonJs ? objectValue() : UNDEFINED_VALUE,
       contextFrame,
       callStack: [],
       uncertainDepth: 0,
@@ -245,14 +262,19 @@ export class Interpreter {
     );
   }
 
-  evaluateModuleBinding(module: ModuleRecord, name: string): StaticValue | null {
-    const binding = module.bindings.get(name);
-    if (!binding) return null;
+  private getModuleValues(module: ModuleRecord): Map<string, StaticValue | typeof IN_PROGRESS> {
     let values = this.moduleValues.get(module.filePath);
     if (!values) {
       values = new Map();
       this.moduleValues.set(module.filePath, values);
     }
+    return values;
+  }
+
+  evaluateModuleBinding(module: ModuleRecord, name: string): StaticValue | null {
+    const binding = module.bindings.get(name);
+    if (!binding) return null;
+    const values = this.getModuleValues(module);
     const cached = values.get(name);
     if (cached === IN_PROGRESS) {
       return unknownValue(
@@ -289,8 +311,10 @@ export class Interpreter {
             : symbol.imported.kind === "default"
               ? "default"
               : "*";
+        const helper = getCompilerHelper(symbol.packageName, symbol.specifier, importedName);
+        if (helper) return helper;
         if (symbol.imported.kind === "named") {
-          const api = resolveReactApi(symbol.packageName, symbol.imported.name);
+          const api = resolveReactApi(symbol.packageName, symbol.imported.name, symbol.specifier);
           if (api) return { kind: "react-api", api };
         }
         if (this.externalValues) {
@@ -317,25 +341,81 @@ export class Interpreter {
     let result = value;
     for (const assignment of module.memberAssignments) {
       if (assignment.objectName !== name) continue;
+      if (
+        assignment.condition &&
+        getTruthiness(this.evaluateExpression(assignment.condition, context)) !== true
+      )
+        continue;
       const assigned = this.evaluateExpression(assignment.value, context, assignment.propertyName);
-      result = this.assignProperty(result, assignment.propertyName, assigned);
+      result = this.assignProperty(result, assignment.propertyName, assigned, context);
     }
     return result;
+  }
+
+  /** What React does with a `ref` on commit: call a callback ref or set `current` on a ref object. */
+  assignRef(
+    ref: StaticValue,
+    node: StaticValue,
+    context: EvaluationContext,
+    location: SourceLocation | null,
+  ): void {
+    switch (ref.kind) {
+      case "object":
+        this.assignProperty(ref, "current", node, context);
+        return;
+      case "function":
+      case "native-function":
+      case "method":
+      case "proxy":
+        this.callValue(ref, [node], context, location);
+        return;
+      case "branch":
+        for (const alternative of ref.alternatives)
+          this.assignRef(alternative, node, context, location);
+        return;
+      case "optional":
+        this.assignRef(ref.value, node, context, location);
+        return;
+      default:
+        return;
+    }
   }
 
   private assignProperty(
     target: StaticValue,
     propertyName: string,
     value: StaticValue,
+    context: EvaluationContext,
   ): StaticValue {
     switch (target.kind) {
       case "object":
         target.entries.push({ kind: "property", key: propertyName, value });
         return target;
+      case "list": {
+        const index = Number(propertyName);
+        if (Number.isInteger(index) && index >= 0 && index < target.items.length) {
+          target.items[index] = value;
+        }
+        return target;
+      }
       case "function":
       case "class":
         target.properties.set(propertyName, value);
         return target;
+      case "proxy": {
+        const trap = getObjectProperty(target.handler, "set");
+        if (trap.kind === "primitive" && trap.value === undefined) {
+          this.assignProperty(target.target, propertyName, value, context);
+        } else {
+          this.callValue(
+            trap,
+            [target.target, primitiveValue(propertyName), value, target],
+            context,
+            null,
+          );
+        }
+        return target;
+      }
       case "context":
         if (
           propertyName === "displayName" &&
@@ -374,7 +454,10 @@ export class Interpreter {
           ? this.evaluateExpression(binding.init, context, binding.name)
           : UNDEFINED_VALUE;
       case "function":
-        return this.createFunctionValue(binding.node, context, binding.name);
+        return (
+          getInlineCompilerHelper(binding.name) ??
+          this.createFunctionValue(binding.node, context, binding.name)
+        );
       case "class":
         return this.createClassValue(binding.node, context, binding.name);
       case "import":
@@ -579,17 +662,7 @@ export class Interpreter {
         if (node.source.type !== "Literal" || typeof node.source.value !== "string") {
           return unknownValue("dynamic import with non-literal specifier", location);
         }
-        const target = this.graph.resolveImportedModule(node.source.value, context.module);
-        if ("bindings" in target) return { kind: "namespace", module: target };
-        if (target.kind === "external") {
-          return {
-            kind: "external",
-            packageName: target.packageName,
-            importedName: "*",
-            derived: false,
-          };
-        }
-        return unknownValue(`cannot resolve dynamic import "${node.source.value}"`, location);
+        return this.importModule(node.source.value, context, location, false);
       }
       case "TaggedTemplateExpression": {
         const tag = this.evaluateExpression(node.tag, context);
@@ -643,7 +716,13 @@ export class Interpreter {
         const spread = this.evaluateExpression(element.argument, context);
         if (spread.kind === "list") items.push(...spread.items);
         else if (spread.kind === "repeat") items.push(spread);
-        else items.push(unknownValue(`spread of ${describeValue(spread)}`));
+        else {
+          items.push({
+            kind: "repeat",
+            item: unknownValue(`spread of ${describeValue(spread)}`),
+            location: this.locate(context.module, element),
+          });
+        }
         continue;
       }
       items.push(this.evaluateExpression(element, context));
@@ -755,17 +834,7 @@ export class Interpreter {
         return truthiness ? FALSE_VALUE : TRUE_VALUE;
       }
       case "typeof":
-        if (argument.kind === "primitive") return primitiveValue(typeof argument.value);
-        if (argument.kind === "function" || argument.kind === "class")
-          return primitiveValue("function");
-        if (argument.kind === "object" || argument.kind === "list" || argument.kind === "element") {
-          return primitiveValue("object");
-        }
-        if (argument.kind === "global") {
-          const globalType = getGlobalTypeof(argument.name, context.environment);
-          if (globalType) return primitiveValue(globalType);
-        }
-        return unknownPrimitiveValue("string", "typeof unknown");
+        return getTypeofValue(argument, context.environment);
       case "-":
         if (argument.kind === "primitive" && typeof argument.value === "number")
           return primitiveValue(-argument.value);
@@ -885,7 +954,7 @@ export class Interpreter {
     context: EvaluationContext,
   ): void {
     const object = this.evaluateExpression(objectNode, context);
-    const reassigned = this.assignProperty(object, key, value);
+    const reassigned = this.assignProperty(object, key, value, context);
     if (reassigned !== object && objectNode.type === "Identifier") {
       this.assignIdentifier(objectNode.name, reassigned, context);
     }
@@ -893,16 +962,31 @@ export class Interpreter {
 
   private assignIdentifier(name: string, value: StaticValue, context: EvaluationContext): void {
     const owner = findOwningScope(context.scope, name);
-    if (!owner) return;
-    if (context.uncertainDepth > 0) {
-      const previous = owner.bindings.get(name) ?? UNDEFINED_VALUE;
+    if (owner) {
       owner.bindings.set(
         name,
-        branchValue([value, previous], `assignment to ${name} in an uncertain path`),
+        this.withUncertainAssignment(owner.bindings.get(name), value, name, context),
       );
       return;
     }
-    owner.bindings.set(name, value);
+    if (context.module.bindings.get(name)?.kind !== "variable") return;
+    const values = this.getModuleValues(context.module);
+    const previous = values.get(name);
+    if (previous === IN_PROGRESS) return;
+    values.set(name, this.withUncertainAssignment(previous, value, name, context));
+  }
+
+  private withUncertainAssignment(
+    previous: StaticValue | undefined,
+    value: StaticValue,
+    name: string,
+    context: EvaluationContext,
+  ): StaticValue {
+    if (context.uncertainDepth === 0) return value;
+    return branchValue(
+      [value, previous ?? UNDEFINED_VALUE],
+      `assignment to ${name} in an uncertain path`,
+    );
   }
 
   private evaluateMemberExpression(
@@ -950,8 +1034,16 @@ export class Interpreter {
         return mapValue(object, (alternative) =>
           this.getProperty(alternative, key, context, location, optional),
         );
-      case "object":
-        return getObjectProperty(object, key);
+      case "object": {
+        const property = getObjectProperty(object, key);
+        if (
+          property.kind === "primitive" &&
+          property.value === undefined &&
+          OBJECT_PROTOTYPE_METHODS.has(key)
+        )
+          return { kind: "method", receiver: object, name: key };
+        return property;
+      }
       case "list": {
         if (key === "length") return getListLength(object);
         const index = Number(key);
@@ -970,6 +1062,9 @@ export class Interpreter {
         if (key === "source") return primitiveValue(object.pattern);
         if (key === "flags") return primitiveValue(object.flags);
         if (key === "global") return primitiveValue(object.flags.includes("g"));
+        return { kind: "method", receiver: object, name: key };
+      case "symbol":
+        if (key === "description") return primitiveValue(object.key);
         return { kind: "method", receiver: object, name: key };
       case "primitive":
         if (object.value === null || object.value === undefined) {
@@ -1004,33 +1099,33 @@ export class Interpreter {
         }
         return unknownValue(`context property "${key}"`, location);
       case "react-api": {
-        if (object.api === "Component" || object.api === "PureComponent") {
-          if (key === "call" || key === "apply")
-            return { kind: "method", receiver: object, name: key };
-          return unknownValue(`React.${object.api}.${key}`, location);
-        }
+        if (key === "call" || key === "apply" || key === "bind")
+          return { kind: "method", receiver: object, name: key };
         const member = resolveReactApiMember(object.api, key);
         if (member) return member;
         return unknownValue(`React.${object.api}.${key}`, location);
       }
       case "external":
-        if (
-          isReactLikePackage(object.packageName) &&
-          (object.importedName === "*" || object.importedName === "default")
-        ) {
-          const api = resolveReactApi(object.packageName, key);
-          if (api) return { kind: "react-api", api };
+        if (object.importedName === "*" && !object.derived) {
+          if (key === "__esModule") return TRUE_VALUE;
+          if (key === "default") {
+            return this.resolvedSymbolToValue(
+              {
+                kind: "external",
+                packageName: object.packageName,
+                imported: { kind: "default" },
+                specifier: object.packageName,
+              },
+              null,
+            );
+          }
         }
         if (object.derived && isModeledOpaqueMethodName(key))
           return { kind: "method", receiver: object, name: key };
-        return {
-          kind: "external",
-          packageName: object.packageName,
-          importedName: `${object.importedName}.${key}`,
-          derived: true,
-        };
+        return getExternalMember(object, key);
       case "namespace":
         if (isPromiseMethodName(key)) return { kind: "method", receiver: object, name: key };
+        if (key === "__esModule" && !object.module.isCommonJs) return TRUE_VALUE;
         return this.evaluateModuleExport(object.module, key);
       case "global":
         return (
@@ -1063,7 +1158,21 @@ export class Interpreter {
       case "method":
         return unknownValue(`property "${key}" of a method`, location);
       case "native-function":
+        if (key === "call" || key === "apply" || key === "bind")
+          return { kind: "method", receiver: object, name: key };
         return unknownValue(`property "${key}" of ${object.name}`, location);
+      case "proxy": {
+        const trap = getObjectProperty(object.handler, "get");
+        return trap.kind === "primitive" && trap.value === undefined
+          ? this.getProperty(object.target, key, context, location, optional)
+          : this.callValue(trap, [object.target, primitiveValue(key), object], context, location);
+      }
+      case "host-node":
+        if (key === "tagName" || key === "nodeName")
+          return primitiveValue(object.tagName.toUpperCase());
+        if (key === "localName") return primitiveValue(object.tagName);
+        if (key === "nodeType") return primitiveValue(1);
+        return unknownValue(`property "${key}" of <${object.tagName}> node`, location);
       case "unknown":
         return unknownValue(object.reason, location);
     }
@@ -1086,6 +1195,51 @@ export class Interpreter {
     return values;
   }
 
+  /**
+   * `import("x")` / `require("x")`. A `require` of a CommonJS module yields its
+   * `module.exports` value; everything else yields the module namespace.
+   */
+  private importModule(
+    specifier: string,
+    context: EvaluationContext,
+    location: SourceLocation | null,
+    isRequire: boolean,
+  ): StaticValue {
+    const target = this.graph.resolveImportedModule(specifier, context.module);
+    if ("bindings" in target) {
+      if (
+        isRequire &&
+        target.isCommonJs &&
+        target.exports.some((entry) => "exportedName" in entry && entry.exportedName === "default")
+      ) {
+        return this.evaluateModuleExport(target, "default");
+      }
+      return { kind: "namespace", module: target };
+    }
+    if (target.kind === "external" || target.kind === "builtin") {
+      const packageName = target.kind === "external" ? target.packageName : target.specifier;
+      return this.resolvedSymbolToValue(
+        { kind: "external", packageName, imported: { kind: "namespace" }, specifier },
+        null,
+      );
+    }
+    return unknownValue(
+      target.kind === "unresolved"
+        ? `cannot resolve "${specifier}": ${target.error}`
+        : `module "${specifier}" was not loaded into the graph`,
+      location,
+    );
+  }
+
+  private getRequireSpecifier(node: CallExpression, context: EvaluationContext): string | null {
+    if (node.callee.type !== "Identifier" || node.callee.name !== "require") return null;
+    if (node.arguments.length !== 1 || node.arguments[0].type !== "Literal") return null;
+    if (typeof node.arguments[0].value !== "string") return null;
+    if (lookupScope(context.scope, "require") || context.module.bindings.has("require"))
+      return null;
+    return node.arguments[0].value;
+  }
+
   private evaluateCallExpression(
     node: CallExpression,
     context: EvaluationContext,
@@ -1094,6 +1248,9 @@ export class Interpreter {
     const location = this.locate(context.module, node);
     const compiled = getCompiledClass(node);
     if (compiled) return this.evaluateCompiledClass(compiled, node, context);
+    const requiredSpecifier = this.getRequireSpecifier(node, context);
+    if (requiredSpecifier !== null)
+      return this.importModule(requiredSpecifier, context, location, true);
     let callee: StaticValue;
     let thisValue: StaticValue | null = null;
     if (node.callee.type === "MemberExpression") {
@@ -1184,6 +1341,17 @@ export class Interpreter {
         });
       case "class":
         return unknownValue(`class ${callee.name ?? ""} called without new`, location);
+      case "proxy": {
+        const trap = getObjectProperty(callee.handler, "apply");
+        return trap.kind === "primitive" && trap.value === undefined
+          ? this.callValue(callee.target, args, context, location, options)
+          : this.callValue(
+              trap,
+              [callee.target, options.thisValue ?? UNDEFINED_VALUE, listValue(args)],
+              context,
+              location,
+            );
+      }
       case "unknown":
         this.markEscapes(args);
         return unknownValue(`call of ${callee.reason}`, location);
@@ -1203,8 +1371,23 @@ export class Interpreter {
     const callee = this.evaluateExpression(node.callee, context);
     const location = this.locate(context.module, node);
     const args = this.evaluateArguments(node.arguments, context);
+    return this.construct(callee, args, context, location);
+  }
+
+  construct(
+    callee: StaticValue,
+    args: StaticValue[],
+    context: EvaluationContext,
+    location: SourceLocation | null,
+  ): StaticValue {
     if (callee.kind === "global") {
       return evaluateBuiltinCall(this, callee, args, context, location, true);
+    }
+    if (callee.kind === "proxy") {
+      const trap = getObjectProperty(callee.handler, "construct");
+      return trap.kind === "primitive" && trap.value === undefined
+        ? this.construct(callee.target, args, context, location)
+        : this.callValue(trap, [callee.target, listValue(args), callee], context, location);
     }
     this.markEscapes(args);
     return unknownValue(`new ${describeValue(callee)}`, location);
@@ -1495,10 +1678,11 @@ export class Interpreter {
           ...context,
           uncertainDepth: context.uncertainDepth + 1,
         });
-        return {
-          returned: mergeOutcomes([outcome, rest], "return on some paths", location).returned,
-          mayComplete: false,
-        };
+        return mergeOutcomes(
+          [{ returned: outcome.returned, mayComplete: false }, rest],
+          "return on some paths",
+          location,
+        );
       };
       switch (statement.type) {
         case "ReturnStatement":
@@ -1833,25 +2017,36 @@ export class Interpreter {
     location: SourceLocation | null,
     nameHint: string | null,
     context: EvaluationContext,
-  ): StaticElementValue {
+  ): StaticValue {
     if (children.length === 1) {
       props.entries.push({ kind: "property", key: "children", value: children[0] });
     } else if (children.length > 1) {
       props.entries.push({ kind: "property", key: "children", value: listValue(children) });
     }
-    return {
+    const element = (elementType: StaticValue): StaticElementValue => ({
       kind: "element",
-      type: toElementType(type, nameHint),
+      type: toElementType(elementType, nameHint),
       key,
       props,
       location,
       environment: context.environment,
-    };
+    });
+    if (type.kind === "branch") {
+      return branchValue(
+        type.alternatives.map(element),
+        type.reason,
+        type.location,
+        type.preferredIndex,
+      );
+    }
+    return element(type);
   }
 
   private evaluateJsxElement(node: JSXElement, context: EvaluationContext): StaticValue {
-    const type = this.evaluateJsxName(node.openingElement.name, context);
     const { props, key } = this.evaluateJsxAttributes(node.openingElement.attributes, context);
+    const type =
+      this.getStyledJsxType(node.openingElement.name, props) ??
+      this.evaluateJsxName(node.openingElement.name, context);
     const children = this.evaluateJsxChildren(node.children, context);
     return this.createElement(
       type,
@@ -1862,6 +2057,17 @@ export class Interpreter {
       this.describeJsxName(node.openingElement.name),
       context,
     );
+  }
+
+  // styled-jsx's compile step rewrites `<style jsx>` into its `JSXStyle`
+  // component; the framework model supplies that component when it applies.
+  private getStyledJsxType(name: JSXElementName, props: StaticObjectValue): StaticValue | null {
+    if (name.type !== "JSXIdentifier" || name.name !== "style") return null;
+    const hasJsxAttribute = props.entries.some(
+      (entry) => entry.kind === "property" && entry.key === "jsx",
+    );
+    if (!hasJsxAttribute) return null;
+    return this.externalValues?.(STYLED_JSX_SPECIFIER, "default") ?? null;
   }
 
   private evaluateJsxFragment(node: JSXFragment, context: EvaluationContext): StaticValue {
@@ -1909,6 +2115,8 @@ const applyBinaryOperator = (
     const computed = computeBinary(operator, left.value, right.value);
     if (computed !== undefined) return computed;
   }
+  const equality = compareEquality(operator, left, right);
+  if (equality) return equality;
   switch (operator) {
     case "==":
     case "!=":
@@ -1932,6 +2140,30 @@ const applyBinaryOperator = (
     default:
       return unknownPrimitiveValue("number", `${operator} on dynamic values`);
   }
+};
+
+const EQUALITY_OPERATORS = new Set(["===", "!==", "==", "!="]);
+
+/**
+ * React's memo cache sentinel never reaches application values, so comparing
+ * it against anything the interpreter cannot see is still a definite answer.
+ */
+const compareEquality = (
+  operator: string,
+  left: StaticValue,
+  right: StaticValue,
+): StaticValue | null => {
+  if (!EQUALITY_OPERATORS.has(operator)) return null;
+  const isStrict = operator === "===" || operator === "!==";
+  let isEqual = compareIdentity(left, right);
+  if (isEqual === false && !isStrict) isEqual = null;
+  if (isEqual === null) {
+    const isSentinel = (value: StaticValue): boolean =>
+      value.kind === "symbol" && value.key === REACT_MEMO_CACHE_SENTINEL_KEY;
+    if (!isSentinel(left) && !isSentinel(right)) return null;
+    isEqual = false;
+  }
+  return primitiveValue(operator === "===" || operator === "==" ? isEqual : !isEqual);
 };
 
 const computeBinary = (

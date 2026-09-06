@@ -58,6 +58,7 @@ const manifestPath = path.resolve(packageDirectory, values.manifest);
 const resultsPath = path.resolve(packageDirectory, values.results);
 const corpusDirectory = path.resolve(packageDirectory, values["corpus-dir"]);
 const manifest = readCorpusManifest(manifestPath);
+const scriptsDirectory = path.join(path.dirname(manifestPath), "scripts");
 
 if (values.list) {
   for (const entry of manifest.entries) {
@@ -102,7 +103,13 @@ if (values["install-only"]) {
       const log = (message: string) => console.log(`[${entry.id}] ${message}`);
       try {
         const cloneDirectory = ensureClone(entry, corpusDirectory, log);
-        await ensureInstalled(entry, cloneDirectory, installLogPath(corpusDirectory, entry), log);
+        await ensureInstalled(
+          entry,
+          cloneDirectory,
+          scriptsDirectory,
+          installLogPath(corpusDirectory, entry),
+          log,
+        );
         log("installed");
       } catch (error) {
         failures.push(entry.id);
@@ -122,6 +129,7 @@ try {
   for (const entry of selected) {
     const result = await runCorpusEntry(entry, {
       corpusDirectory,
+      scriptsDirectory,
       capturer,
       skipInstall: values["skip-install"],
       staticOnly: values["static-only"],

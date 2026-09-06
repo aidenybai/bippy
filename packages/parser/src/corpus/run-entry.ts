@@ -6,6 +6,7 @@ import { flattenTransparentFibers } from "../frameworks/framework-profile.js";
 import { getFrameworkProfile } from "../frameworks/profiles.js";
 import { BrowserCapturer, type BrowserCaptureResult } from "../harness/capture-browser.js";
 import { compareStaticToRuntime } from "../harness/compare-render.js";
+import { rankWildcards } from "../harness/format-report.js";
 import { countSnapshotFibers, formatRuntimeSnapshot, readSnapshot } from "../harness/snapshot.js";
 import { formatPattern, getRenderPattern } from "../harness/static-pattern.js";
 import type { Diagnostic, StaticRenderResult } from "../types.js";
@@ -14,6 +15,8 @@ import type { CorpusEntry, CorpusResult, CorpusRuntimeSummary } from "./manifest
 
 export interface RunEntryOptions {
   corpusDirectory: string;
+  /** Helper scripts manifest commands may call through `$BIPPY_CORPUS_SCRIPTS`. */
+  scriptsDirectory: string;
   capturer: BrowserCapturer;
   skipInstall?: boolean;
   staticOnly?: boolean;
@@ -22,9 +25,16 @@ export interface RunEntryOptions {
 
 const INSTALL_TIMEOUT_MS = 30 * 60_000;
 const SETUP_TIMEOUT_MS = 20 * 60_000;
+const SERVICE_TIMEOUT_MS = 5 * 60_000;
+
+const getCommandEnv = (entry: CorpusEntry, scriptsDirectory: string): Record<string, string> => ({
+  ...entry.env,
+  BIPPY_CORPUS_SCRIPTS: scriptsDirectory,
+});
 const DEFAULT_READY_TIMEOUT_MS = 5 * 60_000;
 const DEFAULT_SETTLE_MS = 3_000;
 const CAPTURE_TIMEOUT_MS = 120_000;
+const MAX_RECORDED_WILDCARDS = 10;
 
 const git = (cwd: string, args: string[]): string =>
   execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
@@ -58,31 +68,53 @@ const installMarker = (cloneDirectory: string, entry: CorpusEntry): string =>
 export const ensureInstalled = async (
   entry: CorpusEntry,
   cloneDirectory: string,
+  scriptsDirectory: string,
   logPath: string,
   log: (message: string) => void,
 ): Promise<void> => {
   const marker = installMarker(cloneDirectory, entry);
   if (existsSync(marker)) return;
   mkdirSync(path.dirname(logPath), { recursive: true });
+  const env = getCommandEnv(entry, scriptsDirectory);
   log(`install: ${entry.install}`);
   await runCommand({
     command: entry.install,
     cwd: cloneDirectory,
-    env: entry.env,
+    env,
     logPath,
     timeoutMs: INSTALL_TIMEOUT_MS,
   });
+  await startServices(entry, cloneDirectory, scriptsDirectory, logPath, log);
   for (const command of entry.setup ?? []) {
     log(`setup: ${command}`);
     await runCommand({
       command,
       cwd: path.join(cloneDirectory, entry.workingDirectory),
-      env: entry.env,
+      env,
       logPath,
       timeoutMs: SETUP_TIMEOUT_MS,
     });
   }
   writeFileSync(marker, new Date().toISOString());
+};
+
+const startServices = async (
+  entry: CorpusEntry,
+  cloneDirectory: string,
+  scriptsDirectory: string,
+  logPath: string,
+  log: (message: string) => void,
+): Promise<void> => {
+  for (const command of entry.services ?? []) {
+    log(`service: ${command}`);
+    await runCommand({
+      command,
+      cwd: cloneDirectory,
+      env: getCommandEnv(entry, scriptsDirectory),
+      logPath,
+      timeoutMs: SERVICE_TIMEOUT_MS,
+    });
+  }
 };
 
 export const installLogPath = (corpusDirectory: string, entry: CorpusEntry): string =>
@@ -164,7 +196,10 @@ const compareEntry = (
     },
   );
   result.runtime = summarizeRuntime(capture);
-  result.report = comparison.report;
+  result.report = {
+    ...comparison.report,
+    wildcards: rankWildcards(comparison.report.wildcards, MAX_RECORDED_WILDCARDS),
+  };
   result.anchor = comparison.anchor;
   result.note = comparison.note;
 };
@@ -186,7 +221,7 @@ const writeArtifacts = (
       JSON.stringify(staticResult.diagnostics, null, 2),
     );
   }
-  if (capture) {
+  if (capture && capture.commits > 0) {
     writeFileSync(
       capturePath(outputDirectory, entry),
       JSON.stringify({ revision: entry.revision, ...capture }, null, 2),
@@ -248,13 +283,17 @@ export const runCorpusEntry = async (
       return result;
     }
 
-    if (!options.skipInstall) await ensureInstalled(entry, cloneDirectory, logPath, log);
+    if (options.skipInstall) {
+      await startServices(entry, cloneDirectory, options.scriptsDirectory, logPath, log);
+    } else {
+      await ensureInstalled(entry, cloneDirectory, options.scriptsDirectory, logPath, log);
+    }
 
     log(`dev server: ${entry.dev}`);
     const server = new DevServer({
       command: entry.dev,
       cwd: workingDirectory,
-      env: entry.env,
+      env: getCommandEnv(entry, options.scriptsDirectory),
       logPath,
     });
     server.start();
@@ -269,6 +308,13 @@ export const runCorpusEntry = async (
       });
     } finally {
       await server.stop();
+    }
+    if (capture.commits === 0) {
+      throw new Error(
+        [`no React commits observed at ${entry.url} ("${capture.title}")`, ...capture.pageErrors]
+          .join("; ")
+          .slice(0, 1_000),
+      );
     }
     compareEntry(entry, staticResult, capture, result);
     return result;

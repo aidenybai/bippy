@@ -33,6 +33,7 @@ import type {
   StaticElementType,
   StaticElementValue,
   StaticFunctionValue,
+  StaticHostNodeValue,
   StaticObjectValue,
   StaticRenderStats,
   StaticValue,
@@ -56,7 +57,32 @@ const DEFAULT_MAX_COMPONENT_DEPTH = 64;
 const DEFAULT_MAX_ELEMENT_COUNT = 50_000;
 const DEFAULT_MAX_RECURSION_PER_COMPONENT = 16;
 const MAX_RENDER_PASSES = 8;
+// Every alternative of a branch is materialized, so nested branches multiply the
+// work; deviations from the preferred path deeper than this become wildcards.
+const MAX_ALTERNATIVE_DEPTH = 2;
 const USE_CLIENT_DIRECTIVE = "use client";
+
+/** Tags whose `children` React DOM either rejects (void elements) or never reconciles (`textarea`, `noscript`). */
+const CHILDLESS_HOST_TAGS = new Set([
+  "area",
+  "base",
+  "br",
+  "col",
+  "embed",
+  "hr",
+  "img",
+  "input",
+  "keygen",
+  "link",
+  "menuitem",
+  "meta",
+  "noscript",
+  "param",
+  "source",
+  "textarea",
+  "track",
+  "wbr",
+]);
 
 export interface MaterializerOptions {
   maxComponentDepth?: number;
@@ -89,6 +115,10 @@ export interface MaterializeContext {
   errorBoundaryDepth: number;
   /** Set while an error boundary re-renders the path on which its child did not throw. */
   ignoresMaybeThrows: boolean;
+  /** How many non-preferred branch alternatives enclose this node. */
+  alternativeDepth: number;
+  /** The component whose render produced this position; host refs are committed into it. */
+  owner: EvaluationContext | null;
 }
 
 /** The static element a proxy component stands for, handed to it as its only prop. */
@@ -326,6 +356,7 @@ export class Materializer {
   private readonly stubProxies = new WeakMap<StubComponent, ComponentType<ProxyProps>>();
   private readonly suspenseBoundaryProxy: ComponentType<ProxyProps>;
   private portalContainer: Element | null = null;
+  private readonly hostNodes = new WeakMap<Element, StaticHostNodeValue>();
 
   constructor(interpreter: Interpreter, runtime: ReactRuntime, options: MaterializerOptions = {}) {
     this.interpreter = interpreter;
@@ -350,6 +381,8 @@ export class Materializer {
       environment: this.serverComponents ? "server" : null,
       errorBoundaryDepth: 0,
       ignoresMaybeThrows: false,
+      alternativeDepth: 0,
+      owner: null,
     };
   }
 
@@ -409,7 +442,9 @@ export class Materializer {
       }
       case "branch":
         return this.branchNode(
-          value.alternatives.map((alternative) => this.toNode(alternative, context, isTopLevel)),
+          value.alternatives.map((alternative, index) =>
+            this.alternativeNode(alternative, index === value.preferredIndex, context, isTopLevel),
+          ),
           value.reason,
           value.preferredIndex,
           isTopLevel,
@@ -428,6 +463,26 @@ export class Materializer {
       default:
         return this.unknownNode(`${describeValue(value)} is not a valid React child`, context);
     }
+  }
+
+  private alternativeNode(
+    value: StaticValue,
+    isPreferred: boolean,
+    context: MaterializeContext,
+    isTopLevel: boolean,
+  ): ReactNode {
+    if (isPreferred) return this.toNode(value, context, isTopLevel);
+    if (context.alternativeDepth >= MAX_ALTERNATIVE_DEPTH) {
+      return this.unknownNode(
+        `alternative nested ${MAX_ALTERNATIVE_DEPTH} branches away from the preferred path`,
+        context,
+      );
+    }
+    return this.toNode(
+      value,
+      { ...context, alternativeDepth: context.alternativeDepth + 1 },
+      isTopLevel,
+    );
   }
 
   private branchNode(
@@ -498,7 +553,10 @@ export class Materializer {
     this.stats.fiberCount++;
     switch (type.kind) {
       case "host":
-        return createElement(type.tagName, this.hostProps(type.tagName, props, reactKey, context));
+        return createElement(
+          type.tagName,
+          this.hostProps(type.tagName, props, reactKey, location, context),
+        );
       case "function":
         return createElement(this.getFunctionProxy(type.component), { key: reactKey, input });
       case "class":
@@ -607,6 +665,7 @@ export class Materializer {
         return createElement(OpaqueMarker, {
           key: reactKey,
           displayName: type.displayName,
+          importedName: type.importedName,
           packageName: type.packageName,
           reason: `${type.importedName} from ${type.packageName} is not analyzed`,
           children: this.toNode(children, context, true),
@@ -658,11 +717,14 @@ export class Materializer {
     tagName: string,
     props: StaticObjectValue,
     key: string | undefined,
+    location: SourceLocation | null,
     context: MaterializeContext,
   ): Record<string, unknown> {
     const result: Record<string, unknown> = { key };
     this.collectHostAttributes(props, result, context);
-    if (tagName === "textarea" || tagName === "noscript") return result;
+    const ref = this.hostRef(getObjectProperty(props, "ref"), location, context);
+    if (ref) result.ref = ref;
+    if (CHILDLESS_HOST_TAGS.has(tagName)) return result;
     const children = getObjectProperty(props, "children");
     if (!isNonNullish(children)) {
       const innerHtml = getObjectProperty(props, "dangerouslySetInnerHTML");
@@ -737,6 +799,7 @@ export class Materializer {
       case "function":
       case "native-function":
       case "method":
+      case "proxy":
         return key.startsWith("on") ? noop : undefined;
       default:
         return undefined;
@@ -790,6 +853,32 @@ export class Materializer {
       this.contexts.set(key, context);
     }
     return context;
+  }
+
+  private hostRef(
+    ref: StaticValue,
+    location: SourceLocation | null,
+    context: MaterializeContext,
+  ): ((node: Element | null) => void) | undefined {
+    const owner = context.owner;
+    if (!owner || !isNonNullish(ref)) return undefined;
+    return (node) => {
+      this.interpreter.assignRef(
+        ref,
+        node ? this.hostNodeValue(node) : NULL_VALUE,
+        owner,
+        location,
+      );
+    };
+  }
+
+  private hostNodeValue(node: Element): StaticHostNodeValue {
+    let value = this.hostNodes.get(node);
+    if (!value) {
+      value = { kind: "host-node", tagName: node.tagName.toLowerCase() };
+      this.hostNodes.set(node, value);
+    }
+    return value;
   }
 
   private getPortalContainer(): Element {
@@ -1092,6 +1181,7 @@ export class Materializer {
       depth: context.depth + 1,
       componentStack: [...context.componentStack, { node: component.node, props }],
       environment,
+      owner: null,
     };
     if (context.depth >= this.maxComponentDepth) {
       this.interpreter.report(
@@ -1127,6 +1217,7 @@ export class Materializer {
       ...this.interpreter.createModuleContext(component.module, context.contextFrame, environment),
       hooks,
     };
+    childContext.owner = componentContext;
     return { rendered: render(componentContext), childContext, componentContext };
   }
 

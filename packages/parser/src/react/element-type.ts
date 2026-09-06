@@ -91,10 +91,13 @@ export const toElementType = (value: StaticValue, nameHint: string | null): Stat
     case "optional":
     case "object":
     case "regexp":
+    case "symbol":
     case "namespace":
     case "global":
+    case "host-node":
     case "method":
     case "native-function":
+    case "proxy":
       return {
         kind: "unknown",
         displayName: nameHint,
