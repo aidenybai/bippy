@@ -143,6 +143,7 @@ const hoistFunctionDeclarations = (statements: Statement[], context: EvaluationC
       thisValue: null,
       name: statement.id.name,
       statics: new Map(),
+      hasUnknownStatics: false,
     });
   }
 };

@@ -191,6 +191,7 @@ const installMembers = (
     thisValue: instance,
     name,
     statics: new Map(),
+    hasUnknownStatics: false,
   });
   for (const member of definition.members) {
     if (member.isStatic) continue;

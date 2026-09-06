@@ -91,6 +91,8 @@ export interface FunctionValue {
   name: string | null;
   /** Properties assigned on the function object itself (`Card.Header = Header`). */
   statics: Map<string, StaticValue>;
+  /** Written with keys or by code the analysis did not follow, so a key `statics` lacks may exist. */
+  hasUnknownStatics: boolean;
 }
 
 export interface ComponentValue {
@@ -98,6 +100,8 @@ export interface ComponentValue {
   definition: ComponentDefinition;
   /** Properties assigned on the component object itself (`Sidebar.Tabs = Tabs`). */
   statics: Map<string, StaticValue>;
+  /** Written with keys or by code the analysis did not follow, so a key `statics` lacks may exist. */
+  hasUnknownStatics: boolean;
 }
 
 export interface ElementValue {
@@ -372,10 +376,12 @@ export const object = (
 export const component = (
   definition: ComponentDefinition,
   statics: Map<string, StaticValue> = new Map(),
+  hasUnknownStatics = false,
 ): ComponentValue => ({
   kind: "component",
   definition,
   statics,
+  hasUnknownStatics,
 });
 export const builtin = (name: BuiltinComponentName): ComponentValue =>
   component({ kind: "builtin", name });
@@ -446,7 +452,7 @@ export const nameValue = (
   const definition = value.definition;
   const isNameable = definition.kind === "context" || (definition.kind === "class" && isDefinition);
   return isNameable && definition.name === null
-    ? component({ ...definition, name }, value.statics)
+    ? component({ ...definition, name }, value.statics, value.hasUnknownStatics)
     : value;
 };
 
@@ -472,6 +478,11 @@ export const assignStatic = (target: StaticValue, key: string, value: StaticValu
     if (assignClassStatic(target.definition, key, value)) return;
   }
   target.statics.set(key, value);
+};
+
+/** A write with a key or through code the analysis did not follow: absent statics are no longer `undefined`. */
+export const forgetStatics = (target: StaticValue): void => {
+  if (target.kind === "function" || target.kind === "component") target.hasUnknownStatics = true;
 };
 
 /** The statics React reads off a class itself, assigned after the class the way compilers emit them. */

@@ -13,7 +13,14 @@ import { evaluateEnum } from "./enums.js";
 import type { Interpreter } from "./interpreter.js";
 import { bindPattern } from "./patterns.js";
 import { createScope, declareVariable, type Scope } from "./scope.js";
-import { assignStatic, nameValue, type StaticValue, UNDEFINED, unknown } from "./values.js";
+import {
+  assignStatic,
+  forgetStatics,
+  nameValue,
+  type StaticValue,
+  UNDEFINED,
+  unknown,
+} from "./values.js";
 
 export const getModuleScope = (interpreter: Interpreter, module: ParsedModule): Scope => {
   let scope = interpreter.moduleScopes.get(module);
@@ -37,14 +44,18 @@ const applyAssignedStatics = (
   value: StaticValue,
 ): void => {
   if (value.kind !== "function" && value.kind !== "component") return;
-  const assignments = interpreter.linker.getMemberAssignments(module, localName);
-  for (const [key, assigned] of assignments) {
+  const { members, hasUntrackedWrites } = interpreter.linker.getMemberAssignments(
+    module,
+    localName,
+  );
+  for (const [key, assigned] of members) {
     const staticValue = interpreter.evaluateExpression(
       assigned,
       interpreter.createModuleContext(module),
     );
     assignStatic(value, key, staticValue);
   }
+  if (hasUntrackedWrites) forgetStatics(value);
 };
 
 const evaluateDeclaration = (
@@ -79,6 +90,7 @@ const evaluateDeclaration = (
         thisValue: null,
         name: node.id?.name ?? binding.localName,
         statics: new Map(),
+        hasUnknownStatics: false,
       };
   }
 };

@@ -1,5 +1,6 @@
-import type { Class, Expression, Function as FunctionNode } from "@oxc-project/types";
+import type { Class, Expression, Function as FunctionNode, Statement } from "@oxc-project/types";
 import {
+  collectIdentifierNames,
   getMemberChain,
   isCallExpression,
   isStringLiteral,
@@ -73,11 +74,19 @@ export const isOpaqueSpecifier = (specifier: string): boolean =>
   specifier.startsWith("react-native/") ||
   specifier.startsWith("node:");
 
+/** What a module's top level does to a binding after declaring it. */
+export interface MemberAssignments {
+  /** `X.member = …` and `Object.assign(X, { member: … })`, by member. */
+  members: Map<string, Expression>;
+  /** The binding also appears in top-level code the analysis never runs, which may write more. */
+  hasUntrackedWrites: boolean;
+}
+
 export interface Linker {
   resolveReference: (module: ParsedModule, chain: string[]) => LinkedSymbol;
   resolveExport: (module: ParsedModule, exportedName: string) => LinkedSymbol;
   resolveImportedModule: (fromModule: ParsedModule, specifier: string) => ParsedModule | null;
-  getMemberAssignments: (module: ParsedModule, localName: string) => Map<string, Expression>;
+  getMemberAssignments: (module: ParsedModule, localName: string) => MemberAssignments;
 }
 
 const unresolved = (name: string, reason: string, memberPath: string[] = []): UnresolvedSymbol => ({
@@ -100,72 +109,105 @@ const external = (
  */
 const getAssignedObjectMembers = (
   expression: Expression,
-): { target: string; members: [string, Expression][] } | null => {
+): { target: string; members: [string, Expression][]; isComplete: boolean } | null => {
   if (!isCallExpression(expression)) return null;
   const chain = getMemberChain(expression.callee);
   if (chain?.join(".") !== "Object.assign") return null;
   const [target, ...sources] = expression.arguments;
   if (target?.type !== "Identifier") return null;
   const members: [string, Expression][] = [];
+  let isComplete = true;
   for (const source of sources) {
-    if (source.type !== "ObjectExpression") continue;
-    for (const property of source.properties) {
-      if (property.type !== "Property" || property.computed) continue;
-      const key =
-        property.key.type === "Identifier"
-          ? property.key.name
-          : isStringLiteral(property.key)
-            ? property.key.value
-            : null;
-      if (key !== null) members.push([key, property.value]);
-    }
-  }
-  return { target: target.name, members };
-};
-
-const collectMemberAssignments = (module: ParsedModule): Map<string, Map<string, Expression>> => {
-  const table = new Map<string, Map<string, Expression>>();
-  const record = (target: string, member: string, value: Expression): void => {
-    let members = table.get(target);
-    if (!members) {
-      members = new Map();
-      table.set(target, members);
-    }
-    members.set(member, value);
-  };
-  for (const statement of module.program.body) {
-    if (statement.type !== "ExpressionStatement") continue;
-    const expression = unwrapExpression(statement.expression);
-    const assigned = getAssignedObjectMembers(expression);
-    if (assigned) {
-      for (const [member, value] of assigned.members) record(assigned.target, member, value);
+    if (source.type !== "ObjectExpression") {
+      isComplete = false;
       continue;
     }
-    if (expression.type !== "AssignmentExpression" || expression.operator !== "=") continue;
-    if (expression.left.type !== "MemberExpression" || expression.left.computed) continue;
-    const object = unwrapExpression(expression.left.object);
-    if (object.type !== "Identifier" || expression.left.property.type !== "Identifier") continue;
-    record(object.name, expression.left.property.name, expression.right);
+    for (const property of source.properties) {
+      const key =
+        property.type !== "Property" || property.computed
+          ? null
+          : property.key.type === "Identifier"
+            ? property.key.name
+            : isStringLiteral(property.key)
+              ? property.key.value
+              : null;
+      if (key === null || property.type !== "Property") isComplete = false;
+      else members.push([key, property.value]);
+    }
+  }
+  return { target: target.name, members, isComplete };
+};
+
+/** `X.member = value` with a plain identifier and a static member name. */
+const getAssignedMember = (
+  expression: Expression,
+): { target: string; member: string; value: Expression } | null => {
+  if (expression.type !== "AssignmentExpression" || expression.operator !== "=") return null;
+  if (expression.left.type !== "MemberExpression" || expression.left.computed) return null;
+  const object = unwrapExpression(expression.left.object);
+  if (object.type !== "Identifier" || expression.left.property.type !== "Identifier") return null;
+  return { target: object.name, member: expression.left.property.name, value: expression.right };
+};
+
+/** Top-level statements that run when the module loads; declarations are evaluated on demand instead. */
+const isRunOnLoad = (statement: Statement): boolean =>
+  !statement.type.endsWith("Declaration") &&
+  statement.type !== "EmptyStatement" &&
+  statement.type !== "DebuggerStatement";
+
+/**
+ * Member writes the module's top level makes to its bindings. Only the two
+ * assignment forms are followed; every binding a statement of any other
+ * shape mentions may have been written in ways the analysis cannot see.
+ */
+const collectMemberAssignments = (module: ParsedModule): Map<string, MemberAssignments> => {
+  const table = new Map<string, MemberAssignments>();
+  const entryFor = (target: string): MemberAssignments => {
+    let entry = table.get(target);
+    if (!entry) {
+      entry = { members: new Map(), hasUntrackedWrites: false };
+      table.set(target, entry);
+    }
+    return entry;
+  };
+  const markUntracked = (node: object): void => {
+    const names = new Set<string>();
+    collectIdentifierNames(node, names);
+    for (const name of names) entryFor(name).hasUntrackedWrites = true;
+  };
+  for (const statement of module.program.body) {
+    if (!isRunOnLoad(statement)) continue;
+    if (statement.type !== "ExpressionStatement") {
+      markUntracked(statement);
+      continue;
+    }
+    const expression = unwrapExpression(statement.expression);
+    const assignedObject = getAssignedObjectMembers(expression);
+    if (assignedObject) {
+      const entry = entryFor(assignedObject.target);
+      for (const [member, value] of assignedObject.members) entry.members.set(member, value);
+      if (!assignedObject.isComplete) entry.hasUntrackedWrites = true;
+      continue;
+    }
+    const assigned = getAssignedMember(expression);
+    if (assigned) entryFor(assigned.target).members.set(assigned.member, assigned.value);
+    else markUntracked(statement);
   }
   return table;
 };
 
-export const createLinker = (project: Project): Linker => {
-  const memberAssignmentsByModule = new WeakMap<
-    ParsedModule,
-    Map<string, Map<string, Expression>>
-  >();
+const NO_MEMBER_ASSIGNMENTS: MemberAssignments = { members: new Map(), hasUntrackedWrites: false };
 
-  const getMemberAssignments = (
-    module: ParsedModule,
-    localName: string,
-  ): Map<string, Expression> => {
+export const createLinker = (project: Project): Linker => {
+  const memberAssignmentsByModule = new WeakMap<ParsedModule, Map<string, MemberAssignments>>();
+
+  const getMemberAssignments = (module: ParsedModule, localName: string): MemberAssignments => {
     let table = memberAssignmentsByModule.get(module);
     if (!table) {
       table = collectMemberAssignments(module);
       memberAssignmentsByModule.set(module, table);
     }
-    return table.get(localName) ?? new Map();
+    return table.get(localName) ?? NO_MEMBER_ASSIGNMENTS;
   };
 
   const resolveImportedModule = (
@@ -216,7 +258,7 @@ export const createLinker = (project: Project): Linker => {
           visited,
         );
       case "declaration": {
-        const assigned = getMemberAssignments(symbol.module, symbol.localName).get(member);
+        const assigned = getMemberAssignments(symbol.module, symbol.localName).members.get(member);
         if (assigned) {
           return applyMemberPath(
             resolveExpression(symbol.module, assigned, visited),

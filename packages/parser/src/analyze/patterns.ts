@@ -13,6 +13,7 @@ import {
   array,
   type ArrayValue,
   assignStatic,
+  forgetStatics,
   cloneObject,
   conditional,
   list,
@@ -233,7 +234,9 @@ export const assignToTarget = (
         );
       } else if (objectValue.kind === "object") {
         assignObjectProperty(objectValue, keyName, value, context);
-      } else if (keyName !== null) {
+      } else if (keyName === null) {
+        forgetStatics(objectValue);
+      } else {
         assignStatic(objectValue, keyName, value);
       }
       return;

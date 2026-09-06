@@ -108,9 +108,10 @@ export const hasProperty = (value: StaticValue, key: string): boolean | null => 
     case "function":
       if (value.statics.has(key) || key in Function.prototype) return true;
       /** Only arrow functions lack one, and the value does not tell them apart. */
-      return key === "prototype" ? null : false;
+      return value.hasUnknownStatics || key === "prototype" ? null : false;
     case "component": {
       if (value.statics.has(key)) return true;
+      if (value.hasUnknownStatics) return null;
       const definition = value.definition;
       if (definition.kind === "builtin") return null;
       if (definition.kind === "class") {

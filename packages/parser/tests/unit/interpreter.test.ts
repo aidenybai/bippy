@@ -231,6 +231,26 @@ describe("interpreter: arrays and objects", () => {
     ).toMatch(/^\[unknown\(Tag\.length\), unknown\(Tag\.prototype\)\]$/);
   });
 
+  it("keeps statics unknown once top-level code it does not run, or a computed key, wrote them", () => {
+    expect(
+      describe_(`const animated = (c) => c;
+        for (const tag of ["div", "span"]) animated[tag] = tag;
+        export const value = animated.div;`),
+    ).toBe("unknown(animated.div)");
+    expect(
+      describe_(`declare const extra: object; const fn = () => 1; Object.assign(fn, extra);
+        export const value = fn.div;`),
+    ).toBe("unknown(fn.div)");
+    expect(
+      describe_(`declare const decorate: (fn: object) => void; const fn = () => 1; decorate(fn);
+        export const value = [fn.div, fn.name];`),
+    ).toBe('[unknown(fn.div), "fn"]');
+    expect(run(`const fn = () => 1; fn[kind] = 1; return fn.div;`)).toBe("unknown(fn.div)");
+    expect(describe_(`const fn = () => 1; fn.a = 1; export const value = fn.div;`)).toBe(
+      "undefined",
+    );
+  });
+
   it("keeps named members written onto an array, as tuple-and-object hook results are built", () => {
     expect(
       run(`const result = [1, "b"]; result.ref = result[0]; result.inView = result[1];
