@@ -71,7 +71,11 @@ const evaluateArm = (
   context: EvaluationContext,
 ): Arm => {
   const scope = forkScope(context.scope);
-  return { test, scope, completion: interpreter.evaluateStatements(statements, enterUndecided(context, test, scope)) };
+  return {
+    test,
+    scope,
+    completion: interpreter.evaluateStatements(statements, enterUndecided(context, test, scope)),
+  };
 };
 
 /** `break` ends a switch case or loop iteration, not the enclosing function. */
@@ -99,11 +103,21 @@ const evaluateIf = (
 ): Completion | ArmSet => {
   const truthiness = getTruthiness(interpreter.evaluateExpression(statement.test, context));
   if (truthiness === true) {
-    return evaluateInScope(interpreter, toStatements(statement.consequent), createScope(context.scope), context);
+    return evaluateInScope(
+      interpreter,
+      toStatements(statement.consequent),
+      createScope(context.scope),
+      context,
+    );
   }
   if (truthiness === false) {
     return statement.alternate
-      ? evaluateInScope(interpreter, toStatements(statement.alternate), createScope(context.scope), context)
+      ? evaluateInScope(
+          interpreter,
+          toStatements(statement.alternate),
+          createScope(context.scope),
+          context,
+        )
       : NORMAL_COMPLETION;
   }
   const test = interpreter.getSource(context.module, statement.test);
@@ -160,16 +174,27 @@ const evaluateSwitch = (
     );
     const startIndex = matchIndex === -1 ? testValues.indexOf(null) : matchIndex;
     if (startIndex === -1) return NORMAL_COMPLETION;
-    const statements = statement.cases.slice(startIndex).flatMap((switchCase) => switchCase.consequent);
-    const completion = evaluateInScope(interpreter, statements, createScope(context.scope), context);
+    const statements = statement.cases
+      .slice(startIndex)
+      .flatMap((switchCase) => switchCase.consequent);
+    const completion = evaluateInScope(
+      interpreter,
+      statements,
+      createScope(context.scope),
+      context,
+    );
     return completion.kind === "break" ? NORMAL_COMPLETION : completion;
   }
   const discriminantSource = interpreter.getSource(context.module, statement.discriminant);
   const arms: Arm[] = [];
   let fallback: Arm | null = null;
   for (const group of groupSwitchCases(interpreter, statement, context)) {
-    const test = group.tests.map((caseTest) => `${discriminantSource} === ${caseTest}`).join(" || ");
-    const arm = withoutBreak(evaluateArm(interpreter, test || "default", group.statements, context));
+    const test = group.tests
+      .map((caseTest) => `${discriminantSource} === ${caseTest}`)
+      .join(" || ");
+    const arm = withoutBreak(
+      evaluateArm(interpreter, test || "default", group.statements, context),
+    );
     if (group.isDefault && group.tests.length === 0) fallback = arm;
     else arms.push(arm);
   }
@@ -183,7 +208,8 @@ const bindLoopVariable = (
   context: EvaluationContext,
 ): void => {
   if (left.type === "VariableDeclaration") {
-    for (const declarator of left.declarations) bindPattern(interpreter, declarator.id, value, context);
+    for (const declarator of left.declarations)
+      bindPattern(interpreter, declarator.id, value, context);
     return;
   }
   assignToTarget(interpreter, left, value, context);
@@ -217,9 +243,12 @@ const collectIdentifierNames = (root: object, names: Set<string>): void => {
 const collectLoopBodyFacts = (body: Statement): LoopBodyFacts => {
   const facts: LoopBodyFacts = { assignedNames: new Set(), hasJump: false };
   walk(body, (node) => {
-    if (isNodeOfType(node, "AssignmentExpression")) collectIdentifierNames(node.left, facts.assignedNames);
-    else if (isNodeOfType(node, "UpdateExpression")) collectIdentifierNames(node.argument, facts.assignedNames);
-    else if (isNodeOfType(node, "BreakStatement") || isNodeOfType(node, "ContinueStatement")) facts.hasJump = true;
+    if (isNodeOfType(node, "AssignmentExpression"))
+      collectIdentifierNames(node.left, facts.assignedNames);
+    else if (isNodeOfType(node, "UpdateExpression"))
+      collectIdentifierNames(node.argument, facts.assignedNames);
+    else if (isNodeOfType(node, "BreakStatement") || isNodeOfType(node, "ContinueStatement"))
+      facts.hasJump = true;
   });
   return facts;
 };
@@ -348,7 +377,12 @@ const evaluateLoop = (
     case "ForOfStatement": {
       const iterable = interpreter.evaluateExpression(statement.right, loopContext);
       const description = interpreter.getSource(context.module, statement.right);
-      bindLoopVariable(interpreter, statement.left, getIterationItem(iterable, description), loopContext);
+      bindLoopVariable(
+        interpreter,
+        statement.left,
+        getIterationItem(iterable, description),
+        loopContext,
+      );
       break;
     }
     case "ForInStatement":
@@ -356,7 +390,11 @@ const evaluateLoop = (
       break;
   }
   const completion = evaluateInScope(interpreter, toStatements(body), scope, loopContext);
-  return { kind: "arms", arms: [withoutBreak({ test: header, scope, completion })], fallback: null };
+  return {
+    kind: "arms",
+    arms: [withoutBreak({ test: header, scope, completion })],
+    fallback: null,
+  };
 };
 
 const evaluateTry = (
@@ -428,7 +466,9 @@ const evaluateStatement = (
       return NORMAL_COMPLETION;
     case "ReturnStatement":
       return returnCompletion(
-        statement.argument ? interpreter.evaluateExpression(statement.argument, context) : UNDEFINED,
+        statement.argument
+          ? interpreter.evaluateExpression(statement.argument, context)
+          : UNDEFINED,
       );
     case "ExpressionStatement":
       interpreter.evaluateExpression(statement.expression, context);

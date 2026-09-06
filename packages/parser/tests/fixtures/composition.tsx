@@ -16,7 +16,9 @@ const Layout = ({ title, sidebar, children }: LayoutProps) => (
   </div>
 );
 
-const RenderProp = ({ render }: { render: (value: string) => ReactNode }) => <div>{render("value")}</div>;
+const RenderProp = ({ render }: { render: (value: string) => ReactNode }) => (
+  <div>{render("value")}</div>
+);
 
 const Compound = () => (
   <Card>

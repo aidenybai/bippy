@@ -4,6 +4,7 @@ import { parserTestProject } from "./packages/parser/vite.config.js";
 
 const reactDevToolsHookSources =
   "packages/conformance/fixtures/react-devtools-headless/fixtures/hook-sources/**";
+const compiledParserFixtures = "packages/parser/tests/fixtures/compiled-*.js";
 
 export default defineConfig({
   staged: {
@@ -41,6 +42,7 @@ export default defineConfig({
       "coverage",
       "pnpm-lock.yaml",
       reactDevToolsHookSources,
+      compiledParserFixtures,
     ],
   },
 });

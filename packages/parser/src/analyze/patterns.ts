@@ -97,7 +97,13 @@ export const bindPattern = (
       const consumedKeys: string[] = [];
       for (const property of pattern.properties) {
         if (property.type === "RestElement") {
-          bindPattern(interpreter, property.argument, restOfObject(value, consumedKeys), context, mode);
+          bindPattern(
+            interpreter,
+            property.argument,
+            restOfObject(value, consumedKeys),
+            context,
+            mode,
+          );
           continue;
         }
         const keyName = getPropertyKeyName(interpreter, property.key, property.computed, context);
@@ -117,7 +123,13 @@ export const bindPattern = (
           bindPattern(interpreter, element.argument, restOfArray(value, index), context, mode);
           return;
         }
-        bindPattern(interpreter, element, getProperty(interpreter, value, String(index)), context, mode);
+        bindPattern(
+          interpreter,
+          element,
+          getProperty(interpreter, value, String(index)),
+          context,
+          mode,
+        );
       });
       return;
   }
@@ -158,8 +170,20 @@ const assignObjectProperty = (
   const previous = target.properties.get(keyName) ?? UNDEFINED;
   target.properties.set(
     keyName,
-    undecided && isEffectUndecided(context, target.depth) ? conditional(undecided.test, value, previous) : value,
+    undecided && isEffectUndecided(context, target.depth)
+      ? conditional(undecided.test, value, previous)
+      : value,
   );
+};
+
+/**
+ * `Wrapped.displayName = "…"` inside a factory renames the value every
+ * holder sees, as the runtime assignment does to the function object.
+ */
+const assignDisplayName = (target: StaticValue, displayName: string): void => {
+  if (target.kind === "function") target.name = displayName;
+  else if (target.kind === "component" && target.definition.kind !== "builtin")
+    target.definition.name = displayName;
 };
 
 const assignArrayItem = (
@@ -192,9 +216,21 @@ export const assignToTarget = (
       const objectValue = interpreter.evaluateExpression(target.object, context);
       const keyName = getPropertyKeyName(interpreter, target.property, target.computed, context);
       if (objectValue.kind === "array") {
-        assignArrayItem(objectValue, keyName, value, interpreter.getSource(context.module, target), context);
+        assignArrayItem(
+          objectValue,
+          keyName,
+          value,
+          interpreter.getSource(context.module, target),
+          context,
+        );
       } else if (objectValue.kind === "object") {
         assignObjectProperty(objectValue, keyName, value, context);
+      } else if (
+        keyName === "displayName" &&
+        value.kind === "literal" &&
+        typeof value.value === "string"
+      ) {
+        assignDisplayName(objectValue, value.value);
       }
       return;
     }
@@ -216,7 +252,12 @@ export const assignToTarget = (
       const consumedKeys: string[] = [];
       for (const property of target.properties) {
         if (property.type === "RestElement") {
-          assignToTarget(interpreter, property.argument, restOfObject(value, consumedKeys), context);
+          assignToTarget(
+            interpreter,
+            property.argument,
+            restOfObject(value, consumedKeys),
+            context,
+          );
           continue;
         }
         const keyName = getPropertyKeyName(interpreter, property.key, property.computed, context);
@@ -226,7 +267,12 @@ export const assignToTarget = (
             ? unknown("computed destructuring key")
             : getProperty(interpreter, value, keyName);
         if (property.value.type === "AssignmentPattern") {
-          const withDefault = applyDefault(interpreter, propertyValue, property.value.right, context);
+          const withDefault = applyDefault(
+            interpreter,
+            propertyValue,
+            property.value.right,
+            context,
+          );
           assignToTarget(interpreter, property.value.left, withDefault, context);
         } else {
           assignToTarget(interpreter, property.value, propertyValue, context);

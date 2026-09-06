@@ -1,8 +1,8 @@
 {
   "name": "@bippy/parser",
   "version": "0.0.0",
-  "description": "construct react fiber trees from source without running it",
   "private": true,
+  "description": "construct react fiber trees from source without running it",
   "license": "MIT",
   "author": {
     "name": "Aiden Bai",

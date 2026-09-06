@@ -142,10 +142,7 @@ const collectRequireBindings = (
 
 const isExportsObject = (expression: Expression): boolean => {
   const chain = getMemberChain(expression);
-  return (
-    chain !== null &&
-    (chain.join(".") === "exports" || chain.join(".") === "module.exports")
-  );
+  return chain !== null && (chain.join(".") === "exports" || chain.join(".") === "module.exports");
 };
 
 const getExportsMemberName = (expression: Expression): string | null => {

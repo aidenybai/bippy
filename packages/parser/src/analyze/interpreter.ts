@@ -35,13 +35,18 @@ export interface UndecidedFrame {
   depth: number;
 }
 
-export const enterUndecided = (context: EvaluationContext, test: string, scope: Scope): EvaluationContext => ({
+export const enterUndecided = (
+  context: EvaluationContext,
+  test: string,
+  scope: Scope,
+): EvaluationContext => ({
   ...context,
   scope,
   undecided: { test, depth: getUndecidedDepth(context) + 1 },
 });
 
-export const getUndecidedDepth = (context: EvaluationContext): number => context.undecided?.depth ?? 0;
+export const getUndecidedDepth = (context: EvaluationContext): number =>
+  context.undecided?.depth ?? 0;
 
 /** Whether a side effect happening now on a value created at `createdAtDepth` is conditional. */
 export const isEffectUndecided = (context: EvaluationContext, createdAtDepth: number): boolean =>

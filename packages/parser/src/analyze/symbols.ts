@@ -30,8 +30,13 @@ const applyDisplayName = (
 ): StaticValue => {
   const assigned = interpreter.linker.getMemberAssignments(module, localName).get("displayName");
   if (!assigned) return value;
-  const displayName = interpreter.evaluateExpression(assigned, interpreter.createModuleContext(module));
-  return displayName.kind === "literal" && typeof displayName.value === "string" && displayName.value
+  const displayName = interpreter.evaluateExpression(
+    assigned,
+    interpreter.createModuleContext(module),
+  );
+  return displayName.kind === "literal" &&
+    typeof displayName.value === "string" &&
+    displayName.value
     ? withDisplayName(value, displayName.value)
     : value;
 };
@@ -49,7 +54,12 @@ const evaluateDeclaration = (
       if (!node.init) return UNDEFINED;
       const value = interpreter.evaluateExpression(node.init, context);
       if (node.id.type === "Identifier") {
-        return applyDisplayName(interpreter, module, binding.localName, nameValue(value, binding.localName));
+        return applyDisplayName(
+          interpreter,
+          module,
+          binding.localName,
+          nameValue(value, binding.localName),
+        );
       }
       bindPattern(interpreter, node.id, value, context);
       return scope.variables.get(binding.localName) ?? UNDEFINED;
@@ -126,7 +136,8 @@ export const valueFromSymbol = (interpreter: Interpreter, symbol: LinkedSymbol):
       if (cached) return cached;
       interpreter.valueCache.set(cacheKey, unknown(`cyclic export ${symbol.exportedName}`));
       const context = interpreter.createModuleContext(symbol.module);
-      const isNamedExport = symbol.exportedName !== DEFAULT_EXPORT_NAME && symbol.exportedName !== "";
+      const isNamedExport =
+        symbol.exportedName !== DEFAULT_EXPORT_NAME && symbol.exportedName !== "";
       const value = nameValue(
         interpreter.evaluateExpression(symbol.node, context),
         isNamedExport ? symbol.exportedName : null,
@@ -156,4 +167,5 @@ export const getModuleExport = (
   interpreter: Interpreter,
   module: ParsedModule,
   exportedName: string,
-): StaticValue => valueFromSymbol(interpreter, interpreter.linker.resolveExport(module, exportedName));
+): StaticValue =>
+  valueFromSymbol(interpreter, interpreter.linker.resolveExport(module, exportedName));

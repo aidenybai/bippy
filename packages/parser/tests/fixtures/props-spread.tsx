@@ -16,7 +16,11 @@ const Passthrough = (props: BoxProps) => <Box {...props} />;
 
 const defaults = { title: "defaults", className: "d" };
 
-const Merged = () => <Box {...defaults} title="override">merged</Box>;
+const Merged = () => (
+  <Box {...defaults} title="override">
+    merged
+  </Box>
+);
 
 const WithChildrenProp = () => <Box title="prop" children={<span>children prop</span>} />;
 

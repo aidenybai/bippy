@@ -58,7 +58,14 @@ const createElementFromJsxRuntime = (
   const [type, config, key] = callArguments;
   if (!type) return unknown("jsx without type");
   const props = config?.kind === "object" ? cloneObject(config) : object([], config !== undefined);
-  return createElementValue(interpreter, type, props, isNullish(key) ? null : (key ?? null), span, context);
+  return createElementValue(
+    interpreter,
+    type,
+    props,
+    isNullish(key) ? null : (key ?? null),
+    span,
+    context,
+  );
 };
 
 const cloneElement = (
@@ -79,7 +86,10 @@ const cloneElement = (
   } else if (config && !isNullish(config)) props.hasUnknownSpread = true;
   const childrenValue = childrenProp(children);
   if (childrenValue) props.properties.set("children", childrenValue);
-  return { ...createElementValue(interpreter, element.type, props, key, span, context), owner: element.owner };
+  return {
+    ...createElementValue(interpreter, element.type, props, key, span, context),
+    owner: element.owner,
+  };
 };
 
 const resolveLazyTarget = (interpreter: Interpreter, loaded: StaticValue): StaticValue => {
@@ -167,7 +177,8 @@ export const evaluateReactCall = (
         context,
       );
     case "isValidElement":
-      if (!first || first.kind === "unknown" || first.kind === "conditional") return unknown(description);
+      if (!first || first.kind === "unknown" || first.kind === "conditional")
+        return unknown(description);
       return first.kind === "element" ? TRUE : FALSE;
     case "createRef":
       return object([["current", NULL]]);

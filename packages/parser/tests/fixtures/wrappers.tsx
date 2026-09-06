@@ -1,4 +1,12 @@
-import { forwardRef, lazy, memo, Suspense, type ReactNode, useImperativeHandle, useRef } from "react";
+import {
+  forwardRef,
+  lazy,
+  memo,
+  Suspense,
+  type ReactNode,
+  useImperativeHandle,
+  useRef,
+} from "react";
 
 const Plain = ({ label }: { label: string }) => <span>{label}</span>;
 
@@ -11,7 +19,10 @@ const MemoWithCompare = memo(
   (previous, next) => previous.label === next.label,
 );
 
-const Input = forwardRef<HTMLInputElement, { placeholder: string }>(function Input({ placeholder }, ref) {
+const Input = forwardRef<HTMLInputElement, { placeholder: string }>(function Input(
+  { placeholder },
+  ref,
+) {
   return <input ref={ref} placeholder={placeholder} />;
 });
 

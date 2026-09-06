@@ -45,10 +45,13 @@ export const createInterpreter = (
     diagnostics,
     moduleScopes: new WeakMap(),
     valueCache: new Map(),
-    evaluateExpression: (expression, context) => evaluateExpression(interpreter, expression, context),
+    evaluateExpression: (expression, context) =>
+      evaluateExpression(interpreter, expression, context),
     evaluateChain: (chain, span, context) => evaluateChain(interpreter, chain, span, context),
-    evaluateStatements: (statements, context) => evaluateStatements(interpreter, statements, context),
-    callFunction: (fn, callArguments, context) => callFunction(interpreter, fn, callArguments, context),
+    evaluateStatements: (statements, context) =>
+      evaluateStatements(interpreter, statements, context),
+    callFunction: (fn, callArguments, context) =>
+      callFunction(interpreter, fn, callArguments, context),
     getModuleScope: (module) => getModuleScope(interpreter, module),
     resolveModuleBinding: (module, name) => resolveModuleBinding(interpreter, module, name),
     getModuleExport: (module, exportedName) => getModuleExport(interpreter, module, exportedName),

@@ -59,7 +59,8 @@ const MAX_MISMATCHES = 25;
 
 const compileSequence = (nodes: NodeSnapshot[], states: State[], exit: number): number => {
   let entry = exit;
-  for (let index = nodes.length - 1; index >= 0; index--) entry = compileNode(nodes[index], states, entry);
+  for (let index = nodes.length - 1; index >= 0; index--)
+    entry = compileNode(nodes[index], states, entry);
   return entry;
 };
 
@@ -70,7 +71,9 @@ const compileNode = (node: NodeSnapshot, states: State[], exit: number): number 
     case "unknown":
       return states.push({ kind: "any", next: [exit] }) - 1;
     case "branch": {
-      const alternatives = node.alternatives.map((alternative) => compileSequence(alternative, states, exit));
+      const alternatives = node.alternatives.map((alternative) =>
+        compileSequence(alternative, states, exit),
+      );
       return states.push({ kind: "epsilon", next: alternatives }) - 1;
     }
     case "list": {
@@ -180,19 +183,29 @@ const compareFibers = (
   if (cached) return cached;
   const attributeMismatch = compareAttributes(expected, actual);
   if (attributeMismatch) {
-    return remember(matcher, expected, actual, { mismatches: [{ path, message: attributeMismatch }], explained: 0 });
+    return remember(matcher, expected, actual, {
+      mismatches: [{ path, message: attributeMismatch }],
+      explained: 0,
+    });
   }
   const childPath = path ? `${path} › ${formatFiberLabel(actual)}` : formatFiberLabel(actual);
   const children = runtimeChildren(actual);
-  const isSuspended = expected.tag === "SuspenseComponent" && expected.fallback !== null && isSuspendedShape(actual);
+  const isSuspended =
+    expected.tag === "SuspenseComponent" && expected.fallback !== null && isSuspendedShape(actual);
   const comparison = isSuspended
-    ? matchChildren(matcher, expected.fallback ?? [], runtimeChildren(children[1]), `${childPath} › fallback`)
+    ? matchChildren(
+        matcher,
+        expected.fallback ?? [],
+        runtimeChildren(children[1]),
+        `${childPath} › fallback`,
+      )
     : matchChildren(matcher, expected.children, children, childPath);
   if (comparison.mismatches.length > 0) return remember(matcher, expected, actual, comparison);
+  const isIdentified = expected.tag !== null;
   const structuralFibers = isSuspended ? children.length : 0;
   return remember(matcher, expected, actual, {
     mismatches: [],
-    explained: comparison.explained + 1 + structuralFibers,
+    explained: comparison.explained + (isIdentified ? 1 : 0) + structuralFibers,
   });
 };
 
@@ -245,7 +258,10 @@ const matchChildren = (
       const deeper = dedupe(nestedMismatches.filter((mismatch) => mismatch.path !== path));
       if (deeper.length > 0) return { mismatches: deeper.slice(0, MAX_MISMATCHES), explained: 0 };
       const message = `child ${position + 1} is ${formatFiberLabel(fiber)}; expected ${describeExpectation(automaton, alive)}`;
-      return { mismatches: dedupe([{ path, message }, ...nestedMismatches]).slice(0, MAX_MISMATCHES), explained: 0 };
+      return {
+        mismatches: dedupe([{ path, message }, ...nestedMismatches]).slice(0, MAX_MISMATCHES),
+        explained: 0,
+      };
     }
     alive = closure(automaton, next);
   }
@@ -253,7 +269,10 @@ const matchChildren = (
   if (accepted !== undefined) return { mismatches: [], explained: accepted };
   return {
     mismatches: [
-      { path, message: `children ended after ${actual.length}; expected ${describeExpectation(automaton, alive)}` },
+      {
+        path,
+        message: `children ended after ${actual.length}; expected ${describeExpectation(automaton, alive)}`,
+      },
     ],
     explained: 0,
   };

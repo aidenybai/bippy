@@ -46,7 +46,8 @@ const FALLBACK_OPTIONS: NapiResolveOptions = {
 export const getPackageNameFromSpecifier = (specifier: string): string | null => {
   if (specifier.startsWith(".") || specifier.startsWith("/")) return null;
   const segments = specifier.split("/");
-  if (specifier.startsWith("@")) return segments.length >= 2 ? segments.slice(0, 2).join("/") : null;
+  if (specifier.startsWith("@"))
+    return segments.length >= 2 ? segments.slice(0, 2).join("/") : null;
   return segments[0] || null;
 };
 
@@ -95,7 +96,9 @@ export const createModuleResolver = (options: ModuleResolverOptions): ModuleReso
   };
 
   const createResolvers = (tsconfigPath: string | null): ResolverFactory[] => {
-    const tsconfig = tsconfigPath ? { configFile: tsconfigPath, references: "auto" as const } : undefined;
+    const tsconfig = tsconfigPath
+      ? { configFile: tsconfigPath, references: "auto" as const }
+      : undefined;
     const attempts: NapiResolveOptions[] = [
       { ...BASE_OPTIONS, alias, tsconfig },
       { ...FALLBACK_OPTIONS, alias, tsconfig },
@@ -105,7 +108,8 @@ export const createModuleResolver = (options: ModuleResolverOptions): ModuleReso
       try {
         resolvers.push(new ResolverFactory(attempt));
       } catch {
-        if (attempt.tsconfig) resolvers.push(new ResolverFactory({ ...attempt, tsconfig: undefined }));
+        if (attempt.tsconfig)
+          resolvers.push(new ResolverFactory({ ...attempt, tsconfig: undefined }));
       }
     }
     return resolvers;

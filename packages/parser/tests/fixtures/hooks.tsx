@@ -13,7 +13,10 @@ const Form = () => {
   const [state] = useReducer(reducer, { items: ["a", "b"] });
   const inputRef = useRef<HTMLInputElement>(null);
   const upper = useMemo(() => value.toUpperCase(), [value]);
-  const onChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => setValue(event.target.value), []);
+  const onChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => setValue(event.target.value),
+    [],
+  );
   useEffect(() => {
     inputRef.current?.focus();
   }, []);

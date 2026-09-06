@@ -15,7 +15,12 @@ import { getProperty, normalizeExternal, spreadInto } from "./access.js";
 import { GLOBAL_NAMESPACES } from "./builtins.js";
 import { evaluateCall } from "./calls.js";
 import { classifyClass } from "./components.js";
-import { enterUndecided, type EvaluationContext, getUndecidedDepth, type Interpreter } from "./interpreter.js";
+import {
+  enterUndecided,
+  type EvaluationContext,
+  getUndecidedDepth,
+  type Interpreter,
+} from "./interpreter.js";
 import { evaluateJsxElement, evaluateJsxFragment } from "./jsx.js";
 import { applyBinaryOperator, applyUnaryOperator, getBinaryOperator } from "./operators.js";
 import { assignToTarget, getPropertyKeyName } from "./patterns.js";
@@ -31,6 +36,7 @@ import {
   mergeObjects,
   nameValue,
   object,
+  regexp,
   type StaticValue,
   text,
   UNDEFINED,
@@ -183,10 +189,17 @@ const evaluateCompoundAssignment = (
   const current = interpreter.evaluateExpression(target, context);
   const logicalOperator = LOGICAL_ASSIGNMENT_OPERATORS[expression.operator];
   if (logicalOperator) {
-    return applyLogicalOperator(logicalOperator, current, interpreter.getSource(context.module, target), () => right);
+    return applyLogicalOperator(
+      logicalOperator,
+      current,
+      interpreter.getSource(context.module, target),
+      () => right,
+    );
   }
   const binaryOperator = getBinaryOperator(expression.operator);
-  return binaryOperator ? applyBinaryOperator(binaryOperator, current, right, source) : unknown(source);
+  return binaryOperator
+    ? applyBinaryOperator(binaryOperator, current, right, source)
+    : unknown(source);
 };
 
 const evaluateTemplate = (
@@ -214,7 +227,9 @@ const evaluateTaggedTemplate = (
   const tag = interpreter.evaluateExpression(expression.tag, context);
   const source = interpreter.getSource(context.module, expression);
   if (tag.kind !== "function") return unknown(source);
-  const strings = array(expression.quasi.quasis.map((quasi) => literal(quasi.value.cooked ?? quasi.value.raw)));
+  const strings = array(
+    expression.quasi.quasis.map((quasi) => literal(quasi.value.cooked ?? quasi.value.raw)),
+  );
   const values = expression.quasi.expressions.map((inner) =>
     interpreter.evaluateExpression(inner, context),
   );
@@ -270,7 +285,9 @@ export const evaluateExpression = (
   const source = (): string => interpreter.getSource(context.module, expression);
   switch (expression.type) {
     case "Literal":
-      return "regex" in expression ? unknown(source()) : literal(expression.value);
+      return "regex" in expression
+        ? regexp(expression.regex.pattern, expression.regex.flags)
+        : literal(expression.value);
     case "TemplateLiteral":
       return evaluateTemplate(interpreter, expression, context);
     case "Identifier":
@@ -302,8 +319,10 @@ export const evaluateExpression = (
     case "ConditionalExpression": {
       const test = interpreter.evaluateExpression(expression.test, context);
       const truthiness = getTruthiness(test);
-      if (truthiness === true) return interpreter.evaluateExpression(expression.consequent, context);
-      if (truthiness === false) return interpreter.evaluateExpression(expression.alternate, context);
+      if (truthiness === true)
+        return interpreter.evaluateExpression(expression.consequent, context);
+      if (truthiness === false)
+        return interpreter.evaluateExpression(expression.alternate, context);
       const testSource = interpreter.getSource(context.module, expression.test);
       const armContext = enterUndecided(context, testSource, context.scope);
       return conditional(
@@ -324,13 +343,16 @@ export const evaluateExpression = (
       return unknown(source());
     case "SequenceExpression": {
       let last: StaticValue = UNDEFINED;
-      for (const inner of expression.expressions) last = interpreter.evaluateExpression(inner, context);
+      for (const inner of expression.expressions)
+        last = interpreter.evaluateExpression(inner, context);
       return last;
     }
     case "AssignmentExpression": {
       const right = interpreter.evaluateExpression(expression.right, context);
       const value =
-        expression.operator === "=" ? right : evaluateCompoundAssignment(interpreter, expression, right, context);
+        expression.operator === "="
+          ? right
+          : evaluateCompoundAssignment(interpreter, expression, right, context);
       assignToTarget(interpreter, expression.left, value, context);
       return value;
     }
@@ -370,7 +392,10 @@ export const evaluateExpression = (
       return interpreter.evaluateExpression(expression.expression, context);
     case "ImportExpression": {
       if (!isStringLiteral(expression.source)) return unknown(source());
-      const module = interpreter.linker.resolveImportedModule(context.module, expression.source.value);
+      const module = interpreter.linker.resolveImportedModule(
+        context.module,
+        expression.source.value,
+      );
       if (module) return { kind: "namespace", module };
       return normalizeExternal({
         kind: "external",

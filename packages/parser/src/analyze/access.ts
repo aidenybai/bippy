@@ -4,6 +4,7 @@ import {
   type ArrayValue,
   builtin,
   type BuiltinComponentName,
+  type ComponentDefinition,
   component,
   conditional,
   type ExternalValue,
@@ -34,7 +35,7 @@ const BUILTIN_COMPONENT_BY_API: Record<string, BuiltinComponentName> = {
  */
 export const normalizeExternal = (value: ExternalValue): StaticValue => {
   const reference = getReactApiReference(value);
-  if (!reference || reference.source !== "react") return value;
+  if (!reference || reference.source === "react-dom") return value;
   const builtinName = BUILTIN_COMPONENT_BY_API[reference.api];
   return builtinName ? builtin(builtinName) : value;
 };
@@ -81,6 +82,10 @@ export const getProperty = (
     case "literal":
       if (typeof target.value === "string" && key === "length") return literal(target.value.length);
       return unknown(`${JSON.stringify(target.value)}.${key}`);
+    case "regexp":
+      if (key === "source") return literal(target.pattern);
+      if (key === "flags") return literal(target.flags);
+      return unknown(`/${target.pattern}/.${key}`);
     case "conditional":
       return conditional(
         target.test,
@@ -92,18 +97,31 @@ export const getProperty = (
     case "external":
       return accessExternalMember(target, key);
     case "component":
-      if (target.definition.kind === "context") {
-        if (key === "Provider") return component({ ...target.definition, role: "provider" });
-        if (key === "Consumer") return component({ ...target.definition, role: "consumer" });
-      }
-      return unknown(`${target.definition.kind} component.${key}`);
+      return getComponentProperty(target.definition, key);
     case "function":
+      if (key === "name") return literal(target.name ?? "");
+      if (key === "displayName") return UNDEFINED;
       return unknown(`${target.name ?? "function"}.${key}`);
     case "text":
       return key === "length" ? unknown("text.length") : unknown(`text.${key}`);
     case "unknown":
       return unknown(`${target.description}.${key}`);
   }
+};
+
+/**
+ * Static members of component values. `displayName` reads `undefined`
+ * because an assigned display name is folded into the definition's `name`.
+ */
+const getComponentProperty = (definition: ComponentDefinition, key: string): StaticValue => {
+  if (definition.kind === "context") {
+    if (key === "Provider") return component({ ...definition, role: "provider" });
+    if (key === "Consumer") return component({ ...definition, role: "consumer" });
+  }
+  if (key === "displayName") return UNDEFINED;
+  if (key === "name")
+    return definition.kind === "class" ? literal(definition.name ?? "") : UNDEFINED;
+  return unknown(`${definition.kind} component.${key}`);
 };
 
 /** Elements of an iterable value, or `null` when the count is unknown. */
@@ -141,13 +159,16 @@ export const flattenInto = (items: StaticValue[], value: StaticValue): void => {
   }
 };
 
-/** Appends the elements of `...value`; a spread list marks its items as inline siblings. */
 /** A mutation that cannot be tracked leaves the array holding any number of unknown items. */
 export const forgetArrayItems = (target: ArrayValue, description: string): StaticValue => {
-  target.items.splice(0, target.items.length, { ...list(unknown(description), description), isInline: true });
+  target.items.splice(0, target.items.length, {
+    ...list(unknown(description), description),
+    isInline: true,
+  });
   return unknown(description);
 };
 
+/** Appends the elements of `...value`; a spread list marks its items as inline siblings. */
 export const spreadInto = (items: StaticValue[], value: StaticValue): void => {
   if (value.kind === "array" || value.kind === "list") flattenInto(items, value);
   else items.push(unknown(`spread of ${value.kind}`));

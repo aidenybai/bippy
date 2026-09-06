@@ -60,6 +60,7 @@ const ARRAY_LIKE_METHODS = new Set([
   "indexOf",
   "findIndex",
   "reduce",
+  "reduceRight",
   "push",
   "unshift",
   "pop",
@@ -109,7 +110,10 @@ export const evaluateArrayMethod = (
     case "map":
     case "flatMap":
       if (!isCallable(callback)) return unknown(description);
-      return mapItems((item, index) => invoke(callback, [item, index, target]), method === "flatMap");
+      return mapItems(
+        (item, index) => invoke(callback, [item, index, target]),
+        method === "flatMap",
+      );
     case "filter": {
       if (!isCallable(callback)) return unknown(description);
       if (!items) return target.kind === "list" ? target : unknown(description);
@@ -139,13 +143,18 @@ export const evaluateArrayMethod = (
     }
     case "reverse":
     case "toReversed":
-      return items ? array([...items].reverse()) : target.kind === "list" ? target : unknown(description);
+      return items
+        ? array([...items].reverse())
+        : target.kind === "list"
+          ? target
+          : unknown(description);
     case "sort":
     case "toSorted":
       if (items && items.length <= 1) return array(items);
       return target.kind === "list" ? target : list(itemShape, description);
     case "flat": {
-      if (!items) return target.kind === "list" ? list(target.item, description, true) : unknown(description);
+      if (!items)
+        return target.kind === "list" ? list(target.item, description, true) : unknown(description);
       const flattened: StaticValue[] = [];
       for (const item of items) flattenInto(flattened, item);
       return array(flattened);
@@ -167,6 +176,19 @@ export const evaluateArrayMethod = (
       else target.items.unshift(...pushed);
       return literal(target.items.length);
     }
+    case "reduce":
+    case "reduceRight": {
+      if (!items || !isCallable(callback)) return unknown(description);
+      const order = items.map((_item, index) => index);
+      if (method === "reduceRight") order.reverse();
+      const hasInitial = callArguments.length > 1;
+      if (!hasInitial && order.length === 0) return unknown(description);
+      let accumulator = hasInitial ? (secondArgument ?? UNDEFINED) : items[order[0]];
+      for (const index of order.slice(hasInitial ? 0 : 1)) {
+        accumulator = invoke(callback, [accumulator, items[index], literal(index), target]);
+      }
+      return accumulator;
+    }
     case "pop":
     case "shift": {
       if (target.kind !== "array") return unknown(description);
@@ -178,7 +200,11 @@ export const evaluateArrayMethod = (
       const [start, deleteCount, ...added] = callArguments;
       const startIndex = asIndex(start, 0);
       const deleteCountIndex = asIndex(deleteCount, target.items.length);
-      if (isEffectUndecided(context, target.depth) || startIndex === null || deleteCountIndex === null) {
+      if (
+        isEffectUndecided(context, target.depth) ||
+        startIndex === null ||
+        deleteCountIndex === null
+      ) {
         return forgetArrayItems(target, description);
       }
       return array(target.items.splice(startIndex, deleteCountIndex, ...added));
@@ -197,82 +223,6 @@ export const evaluateArrayMethod = (
     default:
       return unknown(description);
   }
-};
-
-const STRING_METHODS_RETURNING_STRING = new Set([
-  "toUpperCase",
-  "toLowerCase",
-  "trim",
-  "trimStart",
-  "trimEnd",
-  "slice",
-  "substring",
-  "substr",
-  "replace",
-  "replaceAll",
-  "padStart",
-  "padEnd",
-  "repeat",
-  "concat",
-  "normalize",
-  "toString",
-  "toLocaleUpperCase",
-  "toLocaleLowerCase",
-  "charAt",
-  "at",
-]);
-
-export const evaluateStringMethod = (
-  target: StaticValue,
-  method: string,
-  callArguments: StaticValue[],
-  description: string,
-): StaticValue | null => {
-  if (target.kind !== "text" && !(target.kind === "literal" && typeof target.value === "string")) {
-    return null;
-  }
-  if (target.kind === "literal" && typeof target.value === "string") {
-    const receiver = target.value;
-    const literalArguments = callArguments.every((argument) => argument.kind === "literal")
-      ? callArguments.map((argument) => (argument.kind === "literal" ? argument.value : undefined))
-      : null;
-    if (literalArguments) {
-      switch (method) {
-        case "toUpperCase":
-          return literal(receiver.toUpperCase());
-        case "toLowerCase":
-          return literal(receiver.toLowerCase());
-        case "trim":
-          return literal(receiver.trim());
-        case "split":
-          return array(receiver.split(String(literalArguments[0])).map((part) => literal(part)));
-        case "slice":
-          return literal(
-            receiver.slice(Number(literalArguments[0] ?? 0), Number(literalArguments[1] ?? receiver.length)),
-          );
-        case "charAt":
-          return literal(receiver.charAt(Number(literalArguments[0] ?? 0)));
-        case "replace":
-        case "replaceAll":
-          if (typeof literalArguments[0] === "string" && typeof literalArguments[1] === "string") {
-            return literal(
-              method === "replace"
-                ? receiver.replace(literalArguments[0], literalArguments[1])
-                : receiver.replaceAll(literalArguments[0], literalArguments[1]),
-            );
-          }
-          break;
-        case "startsWith":
-          return literal(receiver.startsWith(String(literalArguments[0])));
-        case "endsWith":
-          return literal(receiver.endsWith(String(literalArguments[0])));
-        case "includes":
-          return literal(receiver.includes(String(literalArguments[0])));
-      }
-    }
-  }
-  if (STRING_METHODS_RETURNING_STRING.has(method)) return text(description);
-  return unknown(description);
 };
 
 const toStringValue = (value: StaticValue, description: string): StaticValue => {
@@ -339,7 +289,8 @@ export const evaluateGlobalCall = (
     case "Object.create":
       return object();
     case "Array.isArray":
-      if (!first || first.kind === "unknown" || first.kind === "conditional") return unknown(description);
+      if (!first || first.kind === "unknown" || first.kind === "conditional")
+        return unknown(description);
       return first.kind === "array" || first.kind === "list" ? TRUE : FALSE;
     case "Array.of":
       return array(callArguments);
@@ -352,7 +303,10 @@ export const evaluateGlobalCall = (
           : first;
       }
       const item = first.kind === "list" ? first.item : unknown(`item of ${description}`);
-      return list(isCallable(mapper) ? invoke(mapper, [item, unknown("index")]) : item, description);
+      return list(
+        isCallable(mapper) ? invoke(mapper, [item, unknown("index")]) : item,
+        description,
+      );
     }
     case "String":
       return first ? toStringValue(first, description) : literal("");

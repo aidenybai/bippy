@@ -41,7 +41,9 @@ describe("fixture conformance", () => {
   for (const fileName of fixtureFiles) {
     it(`${fileName} matches the committed fiber tree`, async () => {
       const filePath = join(fixturesDirectory, fileName);
-      const fixture: Record<string, unknown> = await import(/* @vite-ignore */ pathToFileURL(filePath).href);
+      const fixture: Record<string, unknown> = await import(
+        /* @vite-ignore */ pathToFileURL(filePath).href
+      );
       const Component = fixture.default;
       if (!isComponent(Component)) throw new Error(`${fileName} has no default export component`);
       const runtime = await renderRuntimeSnapshot(createElement(Component));

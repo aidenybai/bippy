@@ -10,7 +10,11 @@ const CountContext = createContext(0);
 
 const ThemedBox = () => {
   const theme = useContext(ThemeContext);
-  return <div className={theme.mode}>{theme.mode === "dark" ? <span>dark</span> : <span>light</span>}</div>;
+  return (
+    <div className={theme.mode}>
+      {theme.mode === "dark" ? <span>dark</span> : <span>light</span>}
+    </div>
+  );
 };
 
 const CountReader = () => {
@@ -19,7 +23,9 @@ const CountReader = () => {
 };
 
 const ConsumerBox = () => (
-  <ThemeContext.Consumer>{(theme) => <p className={theme.accent}>{theme.accent}</p>}</ThemeContext.Consumer>
+  <ThemeContext.Consumer>
+    {(theme) => <p className={theme.accent}>{theme.accent}</p>}
+  </ThemeContext.Consumer>
 );
 
 const Provider = ({ children }: { children: ReactNode }) => (

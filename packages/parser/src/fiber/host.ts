@@ -1,4 +1,9 @@
-import { getObjectProperty, getTruthiness, type ObjectValue, type StaticValue } from "../analyze/values.js";
+import {
+  getObjectProperty,
+  getTruthiness,
+  type ObjectValue,
+  type StaticValue,
+} from "../analyze/values.js";
 import type { WorkTagName } from "./types.js";
 
 /** `typeof value === "string"` when statically decidable; unknown values are assumed strings. */

@@ -24,6 +24,13 @@ export interface UnknownValue {
   description: string;
 }
 
+/** A regular expression literal; matching is stateless, `lastIndex` is not tracked. */
+export interface RegExpValue {
+  kind: "regexp";
+  pattern: string;
+  flags: string;
+}
+
 export interface ArrayValue {
   kind: "array";
   items: StaticValue[];
@@ -107,6 +114,7 @@ export type StaticValue =
   | LiteralValue
   | TextValue
   | UnknownValue
+  | RegExpValue
   | ArrayValue
   | ListValue
   | ConditionalValue
@@ -133,6 +141,12 @@ export interface ClassComponentDefinition {
   module: ParsedModule;
   classNode: Class;
   scope: Scope;
+  /** Project-local class component this one extends and inherits members from. */
+  base: ClassComponentDefinition | null;
+  /** `static defaultProps`, resolved into props the way `createElement` does for classes. */
+  defaultProps: ObjectValue | null;
+  /** `static contextType`, read into `this.context`. */
+  contextType: StaticValue | null;
   isErrorBoundary: boolean;
   span: Span;
 }
@@ -185,7 +199,18 @@ export type ComponentDefinition =
 export const literal = (value: Primitive): LiteralValue => ({ kind: "literal", value });
 export const text = (description: string): TextValue => ({ kind: "text", description });
 export const unknown = (description: string): UnknownValue => ({ kind: "unknown", description });
-export const array = (items: StaticValue[], depth = 0): ArrayValue => ({ kind: "array", items, depth });
+export const regexp = (pattern: string, flags: string): RegExpValue => ({
+  kind: "regexp",
+  pattern,
+  flags,
+});
+/** A fresh `RegExp` for one match, so shared values never observe each other's `lastIndex`. */
+export const toRegExp = (value: RegExpValue): RegExp => new RegExp(value.pattern, value.flags);
+export const array = (items: StaticValue[], depth = 0): ArrayValue => ({
+  kind: "array",
+  items,
+  depth,
+});
 export const list = (item: StaticValue, description: string, isFlat = false): ListValue => ({
   kind: "list",
   item,
@@ -261,6 +286,7 @@ export const getTruthiness = (value: StaticValue): boolean | null => {
   switch (value.kind) {
     case "literal":
       return Boolean(value.value);
+    case "regexp":
     case "array":
     case "object":
     case "function":
@@ -320,6 +346,8 @@ export const describeValue = (value: StaticValue): string => {
       return `text(${value.description})`;
     case "unknown":
       return `unknown(${value.description})`;
+    case "regexp":
+      return `/${value.pattern}/${value.flags}`;
     case "array":
       return `[${value.items.map(describeValue).join(", ")}]`;
     case "list":

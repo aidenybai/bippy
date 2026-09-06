@@ -52,7 +52,11 @@ const rootDirectory = values.root
 
 const renderer = createStaticRenderer({ rootDirectory });
 const result = renderer.renderExport(filePath, values.export);
-const renderOptions = { showIds: values.ids, showHooks: values.hooks, showLocations: values.locations };
+const renderOptions = {
+  showIds: values.ids,
+  showHooks: values.hooks,
+  showLocations: values.locations,
+};
 
 if (values.json) {
   console.log(JSON.stringify(result.snapshot, null, 2));

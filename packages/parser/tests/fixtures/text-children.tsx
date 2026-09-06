@@ -12,9 +12,7 @@ export default function TextChildren() {
         {"two"}
         {"strings"}
       </p>
-      <p>
-        hello {name}!
-      </p>
+      <p>hello {name}!</p>
       <p>{`template ${name}`}</p>
       <p>{count > 2 ? "many" : "few"}</p>
       <p>{0}</p>
@@ -29,11 +27,7 @@ export default function TextChildren() {
       </p>
       <textarea value="ignored children" readOnly />
       <p>&amp; &lt;entities&gt; &nbsp; &#169; &#x1F600;</p>
-      <p>
-        multi
-        line
-        text
-      </p>
+      <p>multi line text</p>
     </div>
   );
 }

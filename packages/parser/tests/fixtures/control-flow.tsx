@@ -62,7 +62,12 @@ export default function ControlFlow() {
       <Guarded user={null} />
       <Guarded user={{ name: "ada", isAdmin: true }} />
       <Guarded user={{ name: "bob", isAdmin: false }} />
-      <Sections entries={[["first", ["x", "y"]], ["second", []]]} />
+      <Sections
+        entries={[
+          ["first", ["x", "y"]],
+          ["second", []],
+        ]}
+      />
       <Early mode="a" />
       <Early mode="z" />
     </div>

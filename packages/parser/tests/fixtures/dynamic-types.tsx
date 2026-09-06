@@ -1,7 +1,17 @@
 import type { ComponentType, ReactNode } from "react";
 
-const IconA = () => <svg><title>A</title><path d="M0" /></svg>;
-const IconB = () => <svg><title>B</title><circle r="1" /></svg>;
+const IconA = () => (
+  <svg>
+    <title>A</title>
+    <path d="M0" />
+  </svg>
+);
+const IconB = () => (
+  <svg>
+    <title>B</title>
+    <circle r="1" />
+  </svg>
+);
 
 const ICONS: Record<string, ComponentType> = { a: IconA, b: IconB };
 
@@ -15,7 +25,9 @@ const Heading = ({ level, children }: { level: 1 | 2 | 3; children: ReactNode })
   return <Tag>{children}</Tag>;
 };
 
-const Box = ({ as: As = "div", children }: { as?: "div" | "section"; children: ReactNode }) => <As>{children}</As>;
+const Box = ({ as: As = "div", children }: { as?: "div" | "section"; children: ReactNode }) => (
+  <As>{children}</As>
+);
 
 const Polymorphic = ({ isLink }: { isLink: boolean }) => {
   const Element = isLink ? "a" : "button";

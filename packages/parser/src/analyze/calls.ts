@@ -2,7 +2,7 @@ import type { Argument, CallExpression, Expression } from "@oxc-project/types";
 import { getReactApiReference } from "../link/react-api.js";
 import { getMemberChain, isStringLiteral, unwrapExpression } from "../module/ast.js";
 import { getProperty, spreadInto } from "./access.js";
-import { evaluateArrayMethod, evaluateGlobalCall, evaluateStringMethod, GLOBAL_NAMESPACES } from "./builtins.js";
+import { evaluateArrayMethod, evaluateGlobalCall, GLOBAL_NAMESPACES } from "./builtins.js";
 import { readContext } from "./contexts.js";
 import { isBuiltinHookName, modelBuiltinHook } from "./hooks.js";
 import { type EvaluationContext, getReturnValue, type Interpreter } from "./interpreter.js";
@@ -10,6 +10,7 @@ import { isHookCallee, isHookName } from "./naming.js";
 import { bindParameters } from "./patterns.js";
 import { type CallbackInvoker, evaluateReactCall } from "./react-calls.js";
 import { createScope, hasLocalBinding } from "./scope.js";
+import { evaluateRegExpMethod, evaluateStringMethod } from "./strings.js";
 import {
   type ExternalValue,
   type FunctionValue,
@@ -75,8 +76,11 @@ const evaluateHookCall = (
     location: interpreter.getLocation(context.module, call),
   });
   if (reference) {
-    return modelBuiltinHook(reference.api, callArguments, createInvoker(interpreter, context), (target) =>
-      readContext(context.contexts, target),
+    return modelBuiltinHook(
+      reference.api,
+      callArguments,
+      createInvoker(interpreter, context),
+      (target) => readContext(context.contexts, target),
     );
   }
   if (callee.kind === "function") return interpreter.callFunction(callee, callArguments, context);
@@ -125,17 +129,20 @@ const evaluateMethodCall = (
     case "list":
       return evaluateArrayMethod(target, method, callArguments, invoke, targetDescription, context);
     case "unknown":
-      if (method === "then" || method === "catch" || method === "finally") return unknown(description);
+      if (method === "then" || method === "catch" || method === "finally")
+        return unknown(description);
       if (method === "toString" || method === "toLocaleString" || method === "toFixed") {
         return text(description);
       }
       return (
         evaluateArrayMethod(target, method, callArguments, invoke, targetDescription, context) ??
-        evaluateStringMethod(text(targetDescription), method, callArguments, description)
+        evaluateStringMethod(text(targetDescription), method, callArguments, invoke, description)
       );
     case "literal":
     case "text":
-      return evaluateStringMethod(target, method, callArguments, description);
+      return evaluateStringMethod(target, method, callArguments, invoke, description);
+    case "regexp":
+      return evaluateRegExpMethod(target, method, callArguments, invoke, description);
     case "object": {
       const member = target.properties.get(method);
       if (member?.kind === "function") {
@@ -176,8 +183,11 @@ const evaluateMethodCall = (
   }
 };
 
-const describeCallee = (interpreter: Interpreter, callee: Expression, context: EvaluationContext): string =>
-  getMemberChain(callee)?.join(".") ?? interpreter.getSource(context.module, callee);
+const describeCallee = (
+  interpreter: Interpreter,
+  callee: Expression,
+  context: EvaluationContext,
+): string => getMemberChain(callee)?.join(".") ?? interpreter.getSource(context.module, callee);
 
 export const evaluateCall = (
   interpreter: Interpreter,
@@ -198,11 +208,20 @@ export const evaluateCall = (
     return unknown(description);
   }
 
-  if (callee.type === "MemberExpression" && !callee.computed && callee.property.type === "Identifier") {
+  if (
+    callee.type === "MemberExpression" &&
+    !callee.computed &&
+    callee.property.type === "Identifier"
+  ) {
     const method = callee.property.name;
     const chain = getMemberChain(callee);
     if (chain && isGlobalChain(chain, context)) {
-      const modelled = evaluateGlobalCall(chain, callArguments, createInvoker(interpreter, context), description);
+      const modelled = evaluateGlobalCall(
+        chain,
+        callArguments,
+        createInvoker(interpreter, context),
+        description,
+      );
       if (modelled) return modelled;
     }
     const target = interpreter.evaluateExpression(callee.object, context);
@@ -225,7 +244,12 @@ export const evaluateCall = (
   }
 
   if (callee.type === "Identifier" && isGlobalChain([callee.name], context)) {
-    const modelled = evaluateGlobalCall([callee.name], callArguments, createInvoker(interpreter, context), description);
+    const modelled = evaluateGlobalCall(
+      [callee.name],
+      callArguments,
+      createInvoker(interpreter, context),
+      description,
+    );
     if (modelled) return modelled;
   }
 
@@ -249,7 +273,12 @@ export const callFunction = (
 ): StaticValue => {
   const displayName = fn.name ?? "anonymous function";
   if (context.callDepth >= interpreter.maxCallDepth) {
-    interpreter.report("call-depth", `call depth limit reached in ${displayName}`, fn.module, fn.fn);
+    interpreter.report(
+      "call-depth",
+      `call depth limit reached in ${displayName}`,
+      fn.module,
+      fn.fn,
+    );
     return unknown(`${displayName}() beyond call depth`);
   }
   if (fn.fn.type !== "ArrowFunctionExpression" && fn.fn.generator) {
@@ -264,6 +293,7 @@ export const callFunction = (
   };
   bindParameters(interpreter, fn.fn.params, callArguments, inner);
   if (fn.fn.body === null) return UNDEFINED;
-  if (fn.fn.body.type !== "BlockStatement") return interpreter.evaluateExpression(fn.fn.body, inner);
+  if (fn.fn.body.type !== "BlockStatement")
+    return interpreter.evaluateExpression(fn.fn.body, inner);
   return getReturnValue(interpreter.evaluateStatements(fn.fn.body.body, inner), UNDEFINED);
 };

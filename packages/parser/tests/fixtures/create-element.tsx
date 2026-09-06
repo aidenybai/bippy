@@ -1,4 +1,11 @@
-import React, { createElement, cloneElement, Children, isValidElement, type ReactElement, type ReactNode } from "react";
+import React, {
+  createElement,
+  cloneElement,
+  Children,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 
 const Item = ({ label, isActive }: { label: string; isActive?: boolean }) => (
   <li className={isActive ? "active" : undefined}>{label}</li>
@@ -7,7 +14,9 @@ const Item = ({ label, isActive }: { label: string; isActive?: boolean }) => (
 const ActiveFirst = ({ children }: { children: ReactNode }) => (
   <ul>
     {Children.map(children, (child, index) =>
-      isValidElement<{ isActive?: boolean }>(child) ? cloneElement(child, { isActive: index === 0 }) : child,
+      isValidElement<{ isActive?: boolean }>(child)
+        ? cloneElement(child, { isActive: index === 0 })
+        : child,
     )}
   </ul>
 );
@@ -21,7 +30,9 @@ const Classic = () =>
     "three",
   );
 
-const Wrapped = ({ element }: { element: ReactElement<{ title?: string }> }) => <div>{cloneElement(element, { title: "wrapped" })}</div>;
+const Wrapped = ({ element }: { element: ReactElement<{ title?: string }> }) => (
+  <div>{cloneElement(element, { title: "wrapped" })}</div>
+);
 
 export default function CreateElement() {
   return (

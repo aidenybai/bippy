@@ -28,13 +28,15 @@ const shortenLocation = (location: string): string => {
 
 const describeHooks = (hooks: FiberSnapshot["hooks"]): string | null => {
   if (hooks === null) return null;
-  if (typeof hooks === "number") return hooks === 0 ? null : `{${hooks} hook${hooks === 1 ? "" : "s"}}`;
+  if (typeof hooks === "number")
+    return hooks === 0 ? null : `{${hooks} hook${hooks === 1 ? "" : "s"}}`;
   return hooks.length === 0 ? null : `{${hooks.join(", ")}}`;
 };
 
 export const formatFiberLabel = (fiber: FiberSnapshot, options: RenderTreeOptions = {}): string => {
   const parts: string[] = [];
-  if (fiber.tag === "HostText") parts.push(fiber.text === null ? '"?"' : JSON.stringify(fiber.text));
+  if (fiber.tag === "HostText")
+    parts.push(fiber.text === null ? '"?"' : JSON.stringify(fiber.text));
   else if (fiber.tag === "HostRoot") parts.push("HostRoot");
   else parts.push(fiber.name ?? (fiber.tag === "Fragment" ? "Fragment" : "Anonymous"));
   if (fiber.tag === null) parts.push("(?)");

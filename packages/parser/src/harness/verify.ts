@@ -38,7 +38,10 @@ const countStatic = (nodes: NodeSnapshot[], totals: { fibers: number; unknowns: 
 };
 
 /** Compares a static snapshot against what React actually committed. */
-export const verifySnapshots = (staticRoot: FiberSnapshot, runtimeRoot: FiberSnapshot): VerificationReport => {
+export const verifySnapshots = (
+  staticRoot: FiberSnapshot,
+  runtimeRoot: FiberSnapshot,
+): VerificationReport => {
   const result = matchSnapshots(staticRoot, runtimeRoot);
   const totals = { fibers: 0, unknowns: 0 };
   countStatic([staticRoot], totals);
@@ -49,7 +52,8 @@ export const verifySnapshots = (staticRoot: FiberSnapshot, runtimeRoot: FiberSna
     staticUnknownCount: totals.unknowns,
     runtimeFiberCount: result.runtimeFiberCount,
     explainedFiberCount: result.explainedFiberCount,
-    coverage: result.runtimeFiberCount === 0 ? 1 : result.explainedFiberCount / result.runtimeFiberCount,
+    coverage:
+      result.runtimeFiberCount === 0 ? 1 : result.explainedFiberCount / result.runtimeFiberCount,
     staticTree: renderSnapshotTree(staticRoot),
     runtimeTree: renderSnapshotTree(runtimeRoot),
   };

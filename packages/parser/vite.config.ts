@@ -20,6 +20,8 @@ export const parserTestProject = defineProject({
         replacement: resolve(bippyDirectory, "src/install-hook-only.ts"),
       },
       { find: "bippy/source", replacement: resolve(bippyDirectory, "src/source/index.ts") },
+      { find: /^@shared\//, replacement: `${resolve(parserDirectory, "tests/fixtures/shared")}/` },
+      { find: /^~\//, replacement: `${resolve(parserDirectory, "tests/fixtures")}/` },
     ],
   },
   test: {

@@ -9,36 +9,15 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "skipLibCheck": true,
-    "lib": [
-      "esnext",
-      "dom"
-    ],
+    "lib": ["esnext", "dom"],
     "paths": {
-      "@bippy/parser": [
-        "./src/index.ts"
-      ],
-      "@bippy/parser/harness": [
-        "./src/harness/index.ts"
-      ],
-      "bippy": [
-        "../bippy/src/index.ts"
-      ],
-      "bippy/install-hook-only": [
-        "../bippy/src/install-hook-only.ts"
-      ],
-      "bippy/source": [
-        "../bippy/src/source/index.ts"
-      ]
+      "@bippy/parser": ["./src/index.ts"],
+      "@bippy/parser/harness": ["./src/harness/index.ts"],
+      "bippy": ["../bippy/src/index.ts"],
+      "bippy/install-hook-only": ["../bippy/src/install-hook-only.ts"],
+      "bippy/source": ["../bippy/src/source/index.ts"]
     }
   },
-  "include": [
-    "src",
-    "tests",
-    "scripts",
-    "vite.config.ts"
-  ],
-  "exclude": [
-    "**/node_modules/**",
-    "tests/fixtures/**"
-  ]
+  "include": ["src", "tests", "scripts", "vite.config.ts"],
+  "exclude": ["**/node_modules/**", "tests/fixtures/**"]
 }

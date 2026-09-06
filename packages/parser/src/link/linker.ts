@@ -109,9 +109,15 @@ const collectMemberAssignments = (module: ParsedModule): Map<string, Map<string,
 };
 
 export const createLinker = (project: Project): Linker => {
-  const memberAssignmentsByModule = new WeakMap<ParsedModule, Map<string, Map<string, Expression>>>();
+  const memberAssignmentsByModule = new WeakMap<
+    ParsedModule,
+    Map<string, Map<string, Expression>>
+  >();
 
-  const getMemberAssignments = (module: ParsedModule, localName: string): Map<string, Expression> => {
+  const getMemberAssignments = (
+    module: ParsedModule,
+    localName: string,
+  ): Map<string, Expression> => {
     let table = memberAssignmentsByModule.get(module);
     if (!table) {
       table = collectMemberAssignments(module);
@@ -120,7 +126,10 @@ export const createLinker = (project: Project): Linker => {
     return table.get(localName) ?? new Map();
   };
 
-  const resolveImportedModule = (fromModule: ParsedModule, specifier: string): ParsedModule | null => {
+  const resolveImportedModule = (
+    fromModule: ParsedModule,
+    specifier: string,
+  ): ParsedModule | null => {
     if (isOpaqueSpecifier(specifier)) return null;
     const resolved = project.resolveSpecifier(fromModule.filePath, specifier);
     if (!resolved) return null;
@@ -153,13 +162,25 @@ export const createLinker = (project: Project): Linker => {
       case "unresolved":
         return { ...symbol, memberPath: [...symbol.memberPath, ...memberPath] };
       case "namespace":
-        return applyMemberPath(resolveExportInternal(symbol.module, member, visited), rest, visited);
+        return applyMemberPath(
+          resolveExportInternal(symbol.module, member, visited),
+          rest,
+          visited,
+        );
       case "value":
-        return applyMemberPath(resolveExpressionMember(symbol.module, symbol.node, member, visited), rest, visited);
+        return applyMemberPath(
+          resolveExpressionMember(symbol.module, symbol.node, member, visited),
+          rest,
+          visited,
+        );
       case "declaration": {
         const assigned = getMemberAssignments(symbol.module, symbol.localName).get(member);
         if (assigned) {
-          return applyMemberPath(resolveExpression(symbol.module, assigned, visited), rest, visited);
+          return applyMemberPath(
+            resolveExpression(symbol.module, assigned, visited),
+            rest,
+            visited,
+          );
         }
         if (symbol.node.type === "VariableDeclarator" && symbol.node.init) {
           return applyMemberPath(
@@ -170,11 +191,20 @@ export const createLinker = (project: Project): Linker => {
         }
         if (symbol.node.type === "ClassDeclaration" || symbol.node.type === "ClassExpression") {
           for (const element of symbol.node.body.body) {
-            if (element.type !== "PropertyDefinition" || !element.static || element.computed) continue;
-            if (element.key.type !== "Identifier" || element.key.name !== member || !element.value) {
+            if (element.type !== "PropertyDefinition" || !element.static || element.computed)
+              continue;
+            if (
+              element.key.type !== "Identifier" ||
+              element.key.name !== member ||
+              !element.value
+            ) {
               continue;
             }
-            return applyMemberPath(resolveExpression(symbol.module, element.value, visited), rest, visited);
+            return applyMemberPath(
+              resolveExpression(symbol.module, element.value, visited),
+              rest,
+              visited,
+            );
           }
         }
         return unresolved(symbol.localName, `no member "${member}"`, memberPath);
@@ -248,7 +278,11 @@ export const createLinker = (project: Project): Linker => {
           const aliasKey = `${module.filePath}::${binding.localName}`;
           if (!visited.has(aliasKey)) {
             visited.add(aliasKey);
-            const aliased = resolveReferenceInternal(module, [...aliasChain, ...memberPath], visited);
+            const aliased = resolveReferenceInternal(
+              module,
+              [...aliasChain, ...memberPath],
+              visited,
+            );
             if (aliased.kind !== "unresolved") return aliased;
           }
         }
@@ -261,7 +295,10 @@ export const createLinker = (project: Project): Linker => {
     }
     if (binding.importedName === NAMESPACE_IMPORT_NAME) {
       if (memberPath.length === 0) {
-        if (targetModule.exports.isCommonJs && targetModule.exports.named.has(DEFAULT_EXPORT_NAME)) {
+        if (
+          targetModule.exports.isCommonJs &&
+          targetModule.exports.named.has(DEFAULT_EXPORT_NAME)
+        ) {
           return resolveExportInternal(targetModule, DEFAULT_EXPORT_NAME, visited);
         }
         return { kind: "namespace", module: targetModule };
@@ -314,7 +351,8 @@ export const createLinker = (project: Project): Linker => {
           return resolveExpression(module, named.node, visited, exportedName);
         case "reexport": {
           const targetModule = resolveImportedModule(module, named.moduleRequest);
-          if (!targetModule) return describeImport(module, named.moduleRequest, named.importedName, []);
+          if (!targetModule)
+            return describeImport(module, named.moduleRequest, named.importedName, []);
           if (named.importedName === NAMESPACE_IMPORT_NAME) {
             return { kind: "namespace", module: targetModule };
           }

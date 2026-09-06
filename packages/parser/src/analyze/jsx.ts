@@ -31,7 +31,9 @@ export const decodeJsxEntities = (raw: string): string =>
   raw.replace(ENTITY_PATTERN, (match, body: string) => {
     if (body[0] === "#") {
       const codePoint =
-        body[1] === "x" || body[1] === "X" ? Number.parseInt(body.slice(2), 16) : Number(body.slice(1));
+        body[1] === "x" || body[1] === "X"
+          ? Number.parseInt(body.slice(2), 16)
+          : Number(body.slice(1));
       return Number.isFinite(codePoint) && codePoint <= 0x10ffff
         ? String.fromCodePoint(codePoint)
         : match;

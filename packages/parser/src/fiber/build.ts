@@ -1,4 +1,4 @@
-import { instantiateClassComponent } from "../analyze/components.js";
+import { instantiateClassComponent, resolveClassProps } from "../analyze/components.js";
 import {
   EMPTY_CONTEXTS,
   provideContext,
@@ -66,7 +66,12 @@ interface FiberInit {
   owner: StaticFiber | null;
 }
 
-const ROOT_FRAME: Frame = { contexts: EMPTY_CONTEXTS, depth: 0, isInsideSvg: false, renderStack: [] };
+const ROOT_FRAME: Frame = {
+  contexts: EMPTY_CONTEXTS,
+  depth: 0,
+  isInsideSvg: false,
+  renderStack: [],
+};
 
 const BUILTIN_FIBER_NAMES: Record<BuiltinComponentName, string> = {
   Fragment: "Fragment",
@@ -105,7 +110,11 @@ const branch = (test: string, alternatives: StaticNode[][]): StaticNode[] => {
   return [node];
 };
 
-const createFiber = (builder: Builder, parent: StaticFiber | null, init: FiberInit): StaticFiber => {
+const createFiber = (
+  builder: Builder,
+  parent: StaticFiber | null,
+  init: FiberInit,
+): StaticFiber => {
   builder.fiberCount++;
   const element = init.element;
   return {
@@ -126,12 +135,17 @@ const createFiber = (builder: Builder, parent: StaticFiber | null, init: FiberIn
   };
 };
 
-const createTextFiber = (builder: Builder, parent: StaticFiber, text: string | null): StaticFiber => ({
+const createTextFiber = (
+  builder: Builder,
+  parent: StaticFiber,
+  text: string | null,
+): StaticFiber => ({
   ...createFiber(builder, parent, { tag: "HostText", name: null, element: null, owner: parent }),
   text,
 });
 
-const isOverBudget = (builder: Builder): boolean => builder.fiberCount >= builder.options.maxFiberCount;
+const isOverBudget = (builder: Builder): boolean =>
+  builder.fiberCount >= builder.options.maxFiberCount;
 
 /**
  * `reconcileChildFibers`: the value a render returned (or a `children`
@@ -188,14 +202,15 @@ const createChild = (
   switch (value.kind) {
     case "literal": {
       const primitive = value.value;
-      if (typeof primitive === "string") return primitive === "" ? [] : [createTextFiber(builder, parent, primitive)];
+      if (typeof primitive === "string")
+        return primitive === "" ? [] : [createTextFiber(builder, parent, primitive)];
       if (typeof primitive === "number" || typeof primitive === "bigint") {
         return [createTextFiber(builder, parent, String(primitive))];
       }
       return [];
     }
     case "text":
-      return [createTextFiber(builder, parent, null)];
+      return branch(`${value.description} !== ""`, [[createTextFiber(builder, parent, null)], []]);
     case "conditional":
       return branch(value.test, [
         createChild(builder, parent, value.whenTrue, frame),
@@ -272,7 +287,9 @@ const createFiberFromElement = (
       if (typeof type.value === "string") {
         return [createHostFiber(builder, parent, element, type.value, frame)];
       }
-      return [createOpaqueFiber(builder, parent, element, null, `element type ${describeValue(type)}`)];
+      return [
+        createOpaqueFiber(builder, parent, element, null, `element type ${describeValue(type)}`),
+      ];
     case "function":
       return [createFunctionComponentFiber(builder, parent, element, type, frame)];
     case "component":
@@ -284,7 +301,13 @@ const createFiberFromElement = (
       ]);
     case "external":
       return [
-        createOpaqueFiber(builder, parent, element, type.name, `implementation of ${type.name ?? type.specifier}`),
+        createOpaqueFiber(
+          builder,
+          parent,
+          element,
+          type.name,
+          `implementation of ${type.name ?? type.specifier}`,
+        ),
       ];
     default:
       return [createOpaqueFiber(builder, parent, element, getValueName(type), describeValue(type))];
@@ -328,7 +351,12 @@ const reconcileHostChildren = (
   return reconcileChildren(builder, parent, value, frame);
 };
 
-const createRenderContext = (builder: Builder, fiber: StaticFiber, module: FunctionValue["module"], frame: Frame): EvaluationContext => ({
+const createRenderContext = (
+  builder: Builder,
+  fiber: StaticFiber,
+  module: FunctionValue["module"],
+  frame: Frame,
+): EvaluationContext => ({
   ...builder.interpreter.createModuleContext(module),
   owner: fiber,
   hooks: fiber.hooks,
@@ -345,7 +373,12 @@ const renderInto = (
 ): StaticNode[] => {
   const displayName = fiber.name ?? "anonymous component";
   if (frame.depth >= builder.options.maxRenderDepth) {
-    builder.interpreter.report("call-depth", `render depth limit reached at ${displayName}`, render.module, render.fn);
+    builder.interpreter.report(
+      "call-depth",
+      `render depth limit reached at ${displayName}`,
+      render.module,
+      render.fn,
+    );
     return [unknownNode(builder, `render depth limit at ${displayName}`)];
   }
   const recursion = frame.renderStack.filter((entry) => entry === render.fn).length;
@@ -391,7 +424,8 @@ const createFiberFromDefinition = (
       const fiber = createFiber(builder, parent, { tag: "ClassComponent", name, element, owner });
       if (definition.isErrorBoundary) fiber.annotations.push("error boundary");
       const context = createRenderContext(builder, fiber, definition.module, frame);
-      const { render } = instantiateClassComponent(builder.interpreter, definition, element.props, context);
+      const props = resolveClassProps(definition, element.props);
+      const { render } = instantiateClassComponent(builder.interpreter, definition, props, context);
       fiber.children = render
         ? renderInto(builder, fiber, render, [], frame)
         : [unknownNode(builder, `render() of ${name ?? "class component"}`)];
@@ -400,7 +434,16 @@ const createFiberFromDefinition = (
     case "memo": {
       const inner = definition.inner;
       if (inner.kind === "function" && !definition.hasCompare) {
-        return [createFunctionComponentFiber(builder, parent, element, inner, frame, "SimpleMemoComponent")];
+        return [
+          createFunctionComponentFiber(
+            builder,
+            parent,
+            element,
+            inner,
+            frame,
+            "SimpleMemoComponent",
+          ),
+        ];
       }
       const fiber = createFiber(builder, parent, { tag: "MemoComponent", name, element, owner });
       fiber.children = createFiberFromElement(
@@ -424,7 +467,12 @@ const createFiberFromDefinition = (
       return [fiber];
     }
     case "lazy": {
-      const nodes = createFiberFromElement(builder, parent, { ...element, type: definition.inner }, frame);
+      const nodes = createFiberFromElement(
+        builder,
+        parent,
+        { ...element, type: definition.inner },
+        frame,
+      );
       for (const node of nodes) if (node.kind === "fiber") node.annotations.push("lazy");
       return nodes;
     }
@@ -475,7 +523,12 @@ const createOffscreenFiber = (
   mode: string,
   frame: Frame,
 ): StaticFiber => {
-  const fiber = createFiber(builder, parent, { tag: "OffscreenComponent", name: "Offscreen", element: null, owner: parent.owner });
+  const fiber = createFiber(builder, parent, {
+    tag: "OffscreenComponent",
+    name: "Offscreen",
+    element: null,
+    owner: parent.owner,
+  });
   fiber.annotations.push(`mode=${mode}`);
   fiber.children = reconcileChildren(builder, fiber, children, frame);
   return fiber;
@@ -503,11 +556,17 @@ const createBuiltinFiber = (
   switch (name) {
     case "Suspense":
       fiber.children = [createOffscreenFiber(builder, fiber, childrenOf(props), "visible", frame)];
-      fiber.fallback = reconcileChildren(builder, fiber, getObjectProperty(props, "fallback"), frame);
+      fiber.fallback = reconcileChildren(
+        builder,
+        fiber,
+        getObjectProperty(props, "fallback"),
+        frame,
+      );
       return fiber;
     case "Activity": {
       const mode = getObjectProperty(props, "mode");
-      const modeName = mode.kind === "literal" && typeof mode.value === "string" ? mode.value : "visible";
+      const modeName =
+        mode.kind === "literal" && typeof mode.value === "string" ? mode.value : "visible";
       fiber.children = [createOffscreenFiber(builder, fiber, childrenOf(props), modeName, frame)];
       return fiber;
     }
@@ -540,7 +599,7 @@ const getBuiltinWorkTag = (name: BuiltinComponentName): WorkTagName => {
 
 const DEFAULT_OPTIONS: Required<BuildOptions> = {
   maxRenderDepth: 64,
-  maxRecursion: 2,
+  maxRecursion: 8,
   maxFiberCount: 50_000,
 };
 
@@ -556,7 +615,12 @@ export const buildStaticTree = (
     fiberCount: 0,
     unknownCount: 0,
   };
-  const root = createFiber(builder, null, { tag: "HostRoot", name: null, element: null, owner: null });
+  const root = createFiber(builder, null, {
+    tag: "HostRoot",
+    name: null,
+    element: null,
+    owner: null,
+  });
   root.children = reconcileChildren(builder, root, value, ROOT_FRAME);
   return { root, fiberCount: builder.fiberCount, unknownCount: builder.unknownCount };
 };

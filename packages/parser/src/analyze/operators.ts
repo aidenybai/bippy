@@ -34,6 +34,7 @@ const typeOfValue = (value: StaticValue): string | null => {
       return typeof value.value;
     case "text":
       return "string";
+    case "regexp":
     case "array":
     case "list":
     case "object":

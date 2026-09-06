@@ -27,7 +27,8 @@ interface ChildTraversal {
 const SEPARATOR = ".";
 const SUBSEPARATOR = ":";
 
-const escapeKey = (key: string): string => `$${key.replace(/[=:]/g, (match) => (match === "=" ? "=0" : "=2"))}`;
+const escapeKey = (key: string): string =>
+  `$${key.replace(/[=:]/g, (match) => (match === "=" ? "=0" : "=2"))}`;
 
 const escapeUserProvidedKey = (key: string): string => key.replace(/\/+/g, "$&/");
 
@@ -54,7 +55,8 @@ const isNullishChild = (value: StaticValue): boolean =>
 const isLeafChild = (value: StaticValue): boolean =>
   value.kind === "literal" || value.kind === "text" || value.kind === "element";
 
-const toKeyValue = (key: string | null): StaticValue => (key === null ? unknown("Children key") : literal(key));
+const toKeyValue = (key: string | null): StaticValue =>
+  key === null ? unknown("Children key") : literal(key);
 
 const withRuntimeKey = (value: StaticValue): StaticValue => {
   if (value.kind === "element") return { ...value, key: unknown("Children key") };
@@ -62,7 +64,11 @@ const withRuntimeKey = (value: StaticValue): StaticValue => {
   return value;
 };
 
-const getMappedKey = (child: StaticValue, mapped: ElementValue, childKey: string | null): string | null => {
+const getMappedKey = (
+  child: StaticValue,
+  mapped: ElementValue,
+  childKey: string | null,
+): string | null => {
   const mappedKey = getLiteralKey(mapped);
   if (mappedKey === null) return null;
   if (mappedKey === undefined) return childKey;
@@ -80,7 +86,9 @@ const mapLeaf = (
   nameSoFar: string | null,
 ): void => {
   const normalized = isNullishChild(child) ? NULL : child;
-  const mapped = callback ? traversal.invoke(callback, [normalized, literal(traversal.count)]) : normalized;
+  const mapped = callback
+    ? traversal.invoke(callback, [normalized, literal(traversal.count)])
+    : normalized;
   traversal.count += 1;
   const childKey = nameSoFar === "" ? joinKeys(SEPARATOR, getElementKey(normalized, 0)) : nameSoFar;
   if (mapped.kind === "array") {
@@ -111,7 +119,13 @@ const mapIntoArray = (
   if (children.kind === "array") {
     const nextNamePrefix = nameSoFar === "" ? SEPARATOR : joinKeys(nameSoFar, SUBSEPARATOR);
     children.items.forEach((child, index) => {
-      mapIntoArray(child, traversal, callback, escapedPrefix, joinKeys(nextNamePrefix, getElementKey(child, index)));
+      mapIntoArray(
+        child,
+        traversal,
+        callback,
+        escapedPrefix,
+        joinKeys(nextNamePrefix, getElementKey(child, index)),
+      );
     });
     return;
   }
@@ -131,7 +145,11 @@ const traverseChildren = (
   return traversal;
 };
 
-const mapChildren = (children: StaticValue, callback: StaticValue | null, invoke: CallbackInvoker): StaticValue => {
+const mapChildren = (
+  children: StaticValue,
+  callback: StaticValue | null,
+  invoke: CallbackInvoker,
+): StaticValue => {
   if (children.kind === "literal" && children.value == null) return children;
   const traversal = traverseChildren(children, callback, invoke);
   const [only] = traversal.results;
@@ -165,7 +183,9 @@ export const evaluateChildrenApi = (
       return traversal.isPrecise ? literal(traversal.count) : unknown(description);
     }
     case "only":
-      return children.kind === "element" || children.kind === "unknown" ? children : unknown(description);
+      return children.kind === "element" || children.kind === "unknown"
+        ? children
+        : unknown(description);
     default:
       return unknown(description);
   }

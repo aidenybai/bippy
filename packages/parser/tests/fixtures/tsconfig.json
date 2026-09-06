@@ -8,7 +8,14 @@
     "noEmit": true,
     "skipLibCheck": true,
     "lib": ["esnext", "dom"],
-    "types": ["react", "react-dom"]
+    "types": ["react", "react-dom"],
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["./shared/*"],
+      "~/*": ["./*"]
+    },
+    "allowJs": true,
+    "checkJs": false
   },
   "include": ["."]
 }

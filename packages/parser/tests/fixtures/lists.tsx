@@ -43,7 +43,9 @@ const WithHeader = ({ items }: { items: Item[] }) => (
 );
 
 const Spread = ({ items }: { items: Item[] }) => (
-  <div>{[<span key="h">h</span>, ...items.map((item) => <span key={item.id}>{item.label}</span>)]}</div>
+  <div>
+    {[<span key="h">h</span>, ...items.map((item) => <span key={item.id}>{item.label}</span>)]}
+  </div>
 );
 
 const Filtered = () => (
@@ -60,7 +62,12 @@ export default function Lists() {
   return (
     <div>
       <List items={STATIC_ITEMS} />
-      <Table rows={[["a", "b"], ["c", "d"]]} />
+      <Table
+        rows={[
+          ["a", "b"],
+          ["c", "d"],
+        ]}
+      />
       <WithHeader items={STATIC_ITEMS} />
       <Spread items={STATIC_ITEMS} />
       <Filtered />

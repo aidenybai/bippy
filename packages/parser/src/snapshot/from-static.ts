@@ -40,7 +40,11 @@ const snapshotNode = (node: StaticNode, state: StaticSnapshotState): NodeSnapsho
         alternatives: node.alternatives.map((alternative) => snapshotNodes(alternative, state)),
       };
     case "list":
-      return { kind: "list", description: node.description, items: snapshotNodes(node.items, state) };
+      return {
+        kind: "list",
+        description: node.description,
+        items: snapshotNodes(node.items, state),
+      };
     case "unknown":
       return node;
   }

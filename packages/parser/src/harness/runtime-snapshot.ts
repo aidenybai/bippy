@@ -60,7 +60,8 @@ const getRuntimeText = (fiber: Fiber, tag: WorkTagName | null): string | null =>
   return typeof props === "string" ? props : String(props);
 };
 
-const getRuntimeKey = (fiber: Fiber): string | null => (typeof fiber.key === "string" ? fiber.key : null);
+const getRuntimeKey = (fiber: Fiber): string | null =>
+  typeof fiber.key === "string" ? fiber.key : null;
 
 const getRuntimeName = (fiber: Fiber, tag: WorkTagName | null): string | null => {
   if (tag === "HostText" || tag === "HostRoot") return null;
@@ -85,7 +86,8 @@ const snapshotFiber = (fiber: Fiber, state: RuntimeSnapshotState): FiberSnapshot
   if (fiber.alternate) state.ids.set(fiber.alternate, id);
   const tag = getWorkTagName(fiber);
   const children: FiberSnapshot[] = [];
-  for (let child = fiber.child; child; child = child.sibling) children.push(snapshotFiber(child, state));
+  for (let child = fiber.child; child; child = child.sibling)
+    children.push(snapshotFiber(child, state));
   return {
     kind: "fiber",
     id,

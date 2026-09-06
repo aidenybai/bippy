@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vite-plus/test";
-import { createLinker, createProject, getReactApiReference, type LinkedSymbol } from "@bippy/parser";
+import {
+  createLinker,
+  createProject,
+  getReactApiReference,
+  type LinkedSymbol,
+} from "@bippy/parser";
 
 const createFixtureProject = (files: Record<string, string>) =>
   createProject({ rootDirectory: "/virtual", files });
