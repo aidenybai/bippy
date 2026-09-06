@@ -7,6 +7,9 @@ export interface ReactApiReference {
   source: ReactApiSource;
 }
 
+/** The classes React offers to extend. */
+export const REACT_BASE_CLASSES = new Set(["Component", "PureComponent"]);
+
 /** The shape shared by external linker symbols and external static values. */
 export interface ExternalReference {
   specifier: string;

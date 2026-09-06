@@ -548,6 +548,34 @@ describe("interpreter: functions and modules", () => {
     ).toBe("component(Child)");
   });
 
+  it("recognises classes lowered to constructor functions by Babel and TypeScript", () => {
+    expect(
+      describe_(
+        `import React from "react";
+         var Greeting = /*#__PURE__*/function (_React$Component) {
+           _inheritsLoose(Greeting, _React$Component);
+           function Greeting(props) {
+             var _this;
+             _this = _React$Component.call(this, props) || this;
+             _this.state = { count: 0 };
+             return _this;
+           }
+           var _proto = Greeting.prototype;
+           _proto.render = function render() { return this.props.title; };
+           return Greeting;
+         }(React.Component);
+         Greeting.defaultProps = { title: "hello" };
+         var Plain = function (_Base) {
+           function Plain() { return _Base.apply(this, arguments) || this; }
+           Plain.prototype.describe = function () { return "not a component"; };
+           return Plain;
+         }(Object);
+         var count = function () { return arguments.length; };
+         export const value = [Greeting, Greeting.defaultProps.title, Plain, count(1, 2, 3)];`,
+      ),
+    ).toBe('[component(Greeting), "hello", unknown(class Plain), 3]');
+  });
+
   it("exposes React's $$typeof brands and registered symbols, as react-is style checks read them", () => {
     expect(
       describe_(

@@ -9,6 +9,7 @@ import {
 } from "../module/ast.js";
 import { getProperty, spreadInto } from "./access.js";
 import { evaluateArrayMethod, evaluateGlobalCall, isGlobalChain } from "./builtins.js";
+import { evaluateCompiledClass, getCompiledClass } from "./compiled-classes.js";
 import { readContext } from "./contexts.js";
 import { isBuiltinHookName, modelBuiltinHook } from "./hooks.js";
 import { type EvaluationContext, getReturnValue, type Interpreter } from "./interpreter.js";
@@ -242,6 +243,13 @@ export const evaluateCall = (
       if (module) return { kind: "namespace", module };
     }
     return unknown(description);
+  }
+
+  if (callee.type === "FunctionExpression") {
+    const compiled = getCompiledClass(call);
+    if (compiled) {
+      return evaluateCompiledClass(interpreter, compiled, callArguments[0] ?? UNDEFINED, context);
+    }
   }
 
   if (

@@ -1,4 +1,4 @@
-import type { Class, Span } from "@oxc-project/types";
+import type { Expression, Span } from "@oxc-project/types";
 import type { StaticFiber } from "../fiber/types.js";
 import type { FunctionLike } from "../module/ast.js";
 import type { SourceLocation } from "../module/location.js";
@@ -152,11 +152,33 @@ export type BuiltinComponentName =
   | "ViewTransition"
   | "Portal";
 
+export interface ClassFunctionMember {
+  key: string;
+  isStatic: boolean;
+  kind: "constructor" | "method" | "getter";
+  fn: FunctionLike;
+}
+
+export interface ClassFieldMember {
+  key: string;
+  isStatic: boolean;
+  kind: "field";
+  /** The initializer; `null` when the field is declared without one. */
+  value: Expression | null;
+}
+
+/**
+ * One member of a class component, whether written as class syntax or as
+ * the prototype and static assignments a compiler lowers a class to.
+ */
+export type ClassMember = ClassFunctionMember | ClassFieldMember;
+
 export interface ClassComponentDefinition {
   kind: "class";
   name: string | null;
   module: ParsedModule;
-  classNode: Class;
+  members: ClassMember[];
+  /** Scope the members close over: the module, or the wrapper a compiler emitted. */
   scope: Scope;
   /** Project-local class component this one extends and inherits members from. */
   base: ClassComponentDefinition | null;
@@ -404,29 +426,50 @@ export const nameValue = (
     : value;
 };
 
-/** `Component.displayName = "…"`, which the runtime prefers over `Function.name`. */
-export const withDisplayName = (value: StaticValue, displayName: string): StaticValue => {
-  if (value.kind === "function") return { ...value, name: displayName };
-  if (value.kind === "component" && value.definition.kind !== "builtin") {
-    return component({ ...value.definition, name: displayName }, value.statics);
-  }
-  return value;
-};
-
 /**
  * `Target.key = value` on a function or component, as written for compound
  * components and static config. `displayName` is folded into the name the
- * way the runtime prefers it.
+ * way the runtime prefers it, and the statics React reads off a class into
+ * its definition.
  */
 export const assignStatic = (target: StaticValue, key: string, value: StaticValue): void => {
   if (target.kind !== "function" && target.kind !== "component") return;
   if (key === "displayName" || (key === "name" && target.kind === "function")) {
     if (value.kind !== "literal" || typeof value.value !== "string") return;
-    if (target.kind === "function") target.name = value.value || null;
-    else if (target.definition.kind !== "builtin") target.definition.name = value.value;
+    const name = value.value || null;
+    if (target.kind === "function") {
+      if (key === "name" || name !== null) target.name = name;
+    } else if (target.definition.kind !== "builtin" && name !== null) {
+      target.definition.name = name;
+    }
     return;
   }
+  if (target.kind === "component" && target.definition.kind === "class") {
+    if (assignClassStatic(target.definition, key, value)) return;
+  }
   target.statics.set(key, value);
+};
+
+/** The statics React reads off a class itself, assigned after the class the way compilers emit them. */
+const assignClassStatic = (
+  definition: ClassComponentDefinition,
+  key: string,
+  value: StaticValue,
+): boolean => {
+  switch (key) {
+    case "defaultProps":
+      if (value.kind !== "object") return false;
+      definition.defaultProps = value;
+      return true;
+    case "contextType":
+      definition.contextType = value;
+      return true;
+    case "getDerivedStateFromError":
+      definition.isErrorBoundary = true;
+      return false;
+    default:
+      return false;
+  }
 };
 
 const isFullyKnownInner = (value: StaticValue, visited: Set<StaticValue>): boolean => {

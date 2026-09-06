@@ -190,20 +190,6 @@ export const getExpressionBody = (fn: FunctionLike): Expression | null => {
   return fn.body.type === "BlockStatement" ? null : fn.body;
 };
 
-/**
- * Finds an instance method or a function-valued instance property by name.
- */
-export const getClassMember = (classNode: Class, memberName: string): FunctionLike | null => {
-  for (const element of classNode.body.body) {
-    if (element.type !== "MethodDefinition" && element.type !== "PropertyDefinition") continue;
-    if (element.computed || element.static) continue;
-    if (element.key.type !== "Identifier" || element.key.name !== memberName) continue;
-    if (element.type === "MethodDefinition") return element.value;
-    if (element.value && isFunctionLike(element.value)) return element.value;
-  }
-  return null;
-};
-
 export const forEachChildNode = (node: object, visit: (child: SpannedNode) => void): void => {
   for (const key of Object.keys(node)) {
     if (key === "parent") continue;

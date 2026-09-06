@@ -151,6 +151,9 @@ const getComponentProperty = (value: ComponentValue, key: string): StaticValue =
     return definition.render;
   }
   if (key === "type" && definition.kind === "memo") return definition.inner;
+  if (key === "defaultProps" && definition.kind === "class") {
+    return definition.defaultProps ?? UNDEFINED;
+  }
   return unknown(`${definition.kind} component.${key}`);
 };
 

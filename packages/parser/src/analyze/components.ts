@@ -1,6 +1,6 @@
-import type { Class, ClassElement } from "@oxc-project/types";
-import { getReactApiReference } from "../link/react-api.js";
-import { getClassMember, isFunctionLike } from "../module/ast.js";
+import type { Class, Span } from "@oxc-project/types";
+import { getReactApiReference, REACT_BASE_CLASSES } from "../link/react-api.js";
+import { type FunctionLike, isFunctionLike } from "../module/ast.js";
 import type { ParsedModule } from "../module/types.js";
 import { readContext } from "./contexts.js";
 import type { EvaluationContext, Interpreter } from "./interpreter.js";
@@ -8,6 +8,7 @@ import { getPropertyKeyName } from "./patterns.js";
 import { createScope, type Scope } from "./scope.js";
 import {
   type ClassComponentDefinition,
+  type ClassMember,
   component,
   type FunctionValue,
   NULL,
@@ -18,36 +19,98 @@ import {
   unknown,
 } from "./values.js";
 
-const REACT_BASE_CLASSES = new Set(["Component", "PureComponent"]);
+/** A class before it is known to be a component: its members and what it extends. */
+export interface ClassSource {
+  name: string | null;
+  module: ParsedModule;
+  scope: Scope;
+  members: ClassMember[];
+  superValue: StaticValue;
+  span: Span;
+}
 
-const hasErrorBoundaryMembers = (classNode: Class): boolean =>
-  classNode.body.body.some(
-    (element) =>
-      (element.type === "MethodDefinition" || element.type === "PropertyDefinition") &&
-      element.key.type === "Identifier" &&
-      ((element.key.name === "componentDidCatch" && !element.static) ||
-        (element.key.name === "getDerivedStateFromError" && element.static)),
+/** The members of class syntax, with computed keys resolved in the class's scope. */
+const collectClassMembers = (
+  interpreter: Interpreter,
+  classNode: Class,
+  context: EvaluationContext,
+): ClassMember[] => {
+  const members: ClassMember[] = [];
+  for (const element of classNode.body.body) {
+    if (element.type !== "MethodDefinition" && element.type !== "PropertyDefinition") continue;
+    const key = getPropertyKeyName(interpreter, element.key, element.computed, context);
+    if (key === null) continue;
+    if (!("kind" in element)) {
+      members.push({ key, isStatic: element.static, kind: "field", value: element.value });
+    } else if (element.kind !== "set") {
+      const kind = element.kind === "get" ? "getter" : element.kind;
+      members.push({ key, isStatic: element.static, kind, fn: element.value });
+    }
+  }
+  return members;
+};
+
+const hasErrorBoundaryMembers = (members: ClassMember[]): boolean =>
+  members.some(
+    (member) =>
+      (member.key === "componentDidCatch" && !member.isStatic) ||
+      (member.key === "getDerivedStateFromError" && member.isStatic),
   );
 
 const getStaticProperty = (
   interpreter: Interpreter,
-  classNode: Class,
+  members: ClassMember[],
   name: string,
   context: EvaluationContext,
 ): StaticValue | null => {
-  for (const element of classNode.body.body) {
-    if (element.type !== "PropertyDefinition" || !element.static || !element.value) continue;
-    if (getPropertyKeyName(interpreter, element.key, element.computed, context) !== name) continue;
-    return interpreter.evaluateExpression(element.value, context);
+  for (const member of members) {
+    if (!member.isStatic || member.key !== name || member.kind !== "field" || !member.value) continue;
+    return interpreter.evaluateExpression(member.value, context);
   }
   return null;
 };
 
 /**
- * Classifies a class as a React class component when it extends
+ * Defines a class as a React class component when it extends
  * `React.Component`/`PureComponent`, another class component, or at least
  * defines `render()` under an unresolved base class.
  */
+export const defineClassComponent = (
+  interpreter: Interpreter,
+  source: ClassSource,
+  context: EvaluationContext,
+): StaticValue => {
+  const { superValue, members } = source;
+  const reactApi = superValue.kind === "external" ? getReactApiReference(superValue) : null;
+  const extendsReactComponent = reactApi !== null && REACT_BASE_CLASSES.has(reactApi.api);
+  const base =
+    superValue.kind === "component" && superValue.definition.kind === "class"
+      ? superValue.definition
+      : null;
+  const hasRender = members.some((member) => member.key === "render" && !member.isStatic);
+  if (!extendsReactComponent && !base && !hasRender) {
+    return unknown(`class ${source.name ?? "anonymous"}`);
+  }
+  const defaultProps = getStaticProperty(interpreter, members, "defaultProps", context);
+  const displayName = getStaticProperty(interpreter, members, "displayName", context);
+  return component({
+    kind: "class",
+    name:
+      displayName?.kind === "literal" && typeof displayName.value === "string"
+        ? displayName.value
+        : source.name,
+    module: source.module,
+    members,
+    scope: source.scope,
+    base,
+    defaultProps: defaultProps?.kind === "object" ? defaultProps : (base?.defaultProps ?? null),
+    contextType:
+      getStaticProperty(interpreter, members, "contextType", context) ?? base?.contextType ?? null,
+    isErrorBoundary: hasErrorBoundaryMembers(members) || (base?.isErrorBoundary ?? false),
+    span: source.span,
+  });
+};
+
 export const classifyClass = (
   interpreter: Interpreter,
   classNode: Class,
@@ -58,33 +121,18 @@ export const classifyClass = (
 ): StaticValue => {
   const name = classNode.id?.name ?? nameHint;
   if (!classNode.superClass) return unknown(`class ${name ?? "anonymous"}`);
-  const superValue = interpreter.evaluateExpression(classNode.superClass, context);
-  const reactApi = superValue.kind === "external" ? getReactApiReference(superValue) : null;
-  const extendsReactComponent = reactApi !== null && REACT_BASE_CLASSES.has(reactApi.api);
-  const base =
-    superValue.kind === "component" && superValue.definition.kind === "class"
-      ? superValue.definition
-      : null;
-  const hasRender = getClassMember(classNode, "render") !== null;
-  if (!extendsReactComponent && !base && !hasRender) {
-    return unknown(`class ${name ?? "anonymous"}`);
-  }
-  const defaultProps = getStaticProperty(interpreter, classNode, "defaultProps", context);
-  return component({
-    kind: "class",
-    name,
-    module,
-    classNode,
-    scope,
-    base,
-    defaultProps: defaultProps?.kind === "object" ? defaultProps : (base?.defaultProps ?? null),
-    contextType:
-      getStaticProperty(interpreter, classNode, "contextType", context) ??
-      base?.contextType ??
-      null,
-    isErrorBoundary: hasErrorBoundaryMembers(classNode) || (base?.isErrorBoundary ?? false),
-    span: { start: classNode.start, end: classNode.end },
-  });
+  return defineClassComponent(
+    interpreter,
+    {
+      name,
+      module,
+      scope,
+      members: collectClassMembers(interpreter, classNode, context),
+      superValue: interpreter.evaluateExpression(classNode.superClass, context),
+      span: { start: classNode.start, end: classNode.end },
+    },
+    context,
+  );
 };
 
 /** `resolveClassComponentProps`: `defaultProps` fill in props that are `undefined`. */
@@ -134,7 +182,7 @@ const installMembers = (
     thisValue: instance,
     hooks: null,
   };
-  const asMethod = (fn: FunctionValue["fn"], name: string): FunctionValue => ({
+  const asMethod = (fn: FunctionLike, name: string): FunctionValue => ({
     kind: "function",
     fn,
     module: definition.module,
@@ -143,33 +191,33 @@ const installMembers = (
     name,
     statics: new Map(),
   });
-  const install = (element: ClassElement): void => {
-    if (element.type !== "MethodDefinition" && element.type !== "PropertyDefinition") return;
-    if (element.static) return;
-    const key = getPropertyKeyName(interpreter, element.key, element.computed, instanceContext);
-    if (key === null) return;
-    if (element.type === "MethodDefinition") {
-      if (element.kind === "constructor")
-        members.constructorMethod = asMethod(element.value, "constructor");
-      else if (element.kind === "get") {
+  for (const member of definition.members) {
+    if (member.isStatic) continue;
+    switch (member.kind) {
+      case "constructor":
+        members.constructorMethod = asMethod(member.fn, "constructor");
+        break;
+      case "getter":
         instance.properties.set(
-          key,
-          interpreter.callFunction(asMethod(element.value, key), [], instanceContext),
+          member.key,
+          interpreter.callFunction(asMethod(member.fn, member.key), [], instanceContext),
         );
-      } else if (element.kind === "method")
-        instance.properties.set(key, asMethod(element.value, key));
-      return;
+        break;
+      case "method":
+        instance.properties.set(member.key, asMethod(member.fn, member.key));
+        break;
+      case "field":
+        instance.properties.set(
+          member.key,
+          member.value === null
+            ? UNDEFINED
+            : isFunctionLike(member.value)
+              ? asMethod(member.value, member.key)
+              : interpreter.evaluateExpression(member.value, instanceContext),
+        );
+        break;
     }
-    if (!element.value) {
-      instance.properties.set(key, UNDEFINED);
-      return;
-    }
-    const value = isFunctionLike(element.value)
-      ? asMethod(element.value, key)
-      : interpreter.evaluateExpression(element.value, instanceContext);
-    instance.properties.set(key, value);
-  };
-  for (const element of definition.classNode.body.body) install(element);
+  }
 };
 
 /**

@@ -13,7 +13,7 @@ import { evaluateEnum } from "./enums.js";
 import type { Interpreter } from "./interpreter.js";
 import { bindPattern } from "./patterns.js";
 import { createScope, declareVariable, type Scope } from "./scope.js";
-import { nameValue, type StaticValue, UNDEFINED, unknown, withDisplayName } from "./values.js";
+import { assignStatic, nameValue, type StaticValue, UNDEFINED, unknown } from "./values.js";
 
 export const getModuleScope = (interpreter: Interpreter, module: ParsedModule): Scope => {
   let scope = interpreter.moduleScopes.get(module);
@@ -24,23 +24,27 @@ export const getModuleScope = (interpreter: Interpreter, module: ParsedModule): 
   return scope;
 };
 
-const applyDisplayName = (
+/** The statics React reads off a component that a module assigns after declaring it. */
+const REACT_STATICS = ["displayName", "defaultProps", "contextType", "getDerivedStateFromError"];
+
+const applyAssignedStatics = (
   interpreter: Interpreter,
   module: ParsedModule,
   localName: string,
   value: StaticValue,
 ): StaticValue => {
-  const assigned = interpreter.linker.getMemberAssignments(module, localName).get("displayName");
-  if (!assigned) return value;
-  const displayName = interpreter.evaluateExpression(
-    assigned,
-    interpreter.createModuleContext(module),
-  );
-  return displayName.kind === "literal" &&
-    typeof displayName.value === "string" &&
-    displayName.value
-    ? withDisplayName(value, displayName.value)
-    : value;
+  if (value.kind !== "function" && value.kind !== "component") return value;
+  const assignments = interpreter.linker.getMemberAssignments(module, localName);
+  for (const key of REACT_STATICS) {
+    const assigned = assignments.get(key);
+    if (!assigned) continue;
+    const staticValue = interpreter.evaluateExpression(
+      assigned,
+      interpreter.createModuleContext(module),
+    );
+    assignStatic(value, key, staticValue);
+  }
+  return value;
 };
 
 const evaluateDeclaration = (
@@ -56,7 +60,7 @@ const evaluateDeclaration = (
       if (!node.init) return unknown(`${binding.localName} declared without an initializer`);
       const value = interpreter.evaluateExpression(node.init, context);
       if (node.id.type === "Identifier") {
-        return applyDisplayName(
+        return applyAssignedStatics(
           interpreter,
           module,
           binding.localName,
@@ -68,7 +72,7 @@ const evaluateDeclaration = (
     }
     case "ClassDeclaration":
     case "ClassExpression":
-      return applyDisplayName(
+      return applyAssignedStatics(
         interpreter,
         module,
         binding.localName,
@@ -77,7 +81,7 @@ const evaluateDeclaration = (
     case "TSEnumDeclaration":
       return evaluateEnum(interpreter, node, context);
     default:
-      return applyDisplayName(interpreter, module, binding.localName, {
+      return applyAssignedStatics(interpreter, module, binding.localName, {
         kind: "function",
         fn: node,
         module,

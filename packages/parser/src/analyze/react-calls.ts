@@ -1,5 +1,5 @@
 import type { Span } from "@oxc-project/types";
-import { getReactApiReference } from "../link/react-api.js";
+import { getReactApiReference, REACT_BASE_CLASSES } from "../link/react-api.js";
 import { evaluateChildrenApi } from "./children.js";
 import type { EvaluationContext, Interpreter } from "./interpreter.js";
 import { createElementValue } from "./jsx.js";
@@ -105,6 +105,17 @@ const resolveLazyTarget = (interpreter: Interpreter, loaded: StaticValue): Stati
 };
 
 /**
+ * `_Component.call(this, props)` in a lowered class: React's base
+ * constructors assign to `this` and return nothing, so `|| this` keeps
+ * the instance.
+ */
+const isBaseConstructorCall = (callee: ExternalValue, path: string[]): boolean =>
+  callee.specifier === "react" &&
+  path.length >= 2 &&
+  REACT_BASE_CLASSES.has(path[path.length - 2]) &&
+  (path[path.length - 1] === "call" || path[path.length - 1] === "apply");
+
+/**
  * Models calls into React's own API surface. Returns `null` for references
  * that are not React's, so the caller can fall back to opaque handling.
  */
@@ -122,6 +133,7 @@ export const evaluateReactCall = (
   if (callee.specifier === "react" && childrenIndex !== -1 && childrenIndex === path.length - 2) {
     return evaluateChildrenApi(path[childrenIndex + 1], callArguments, invoke, description);
   }
+  if (isBaseConstructorCall(callee, path)) return UNDEFINED;
   const reference = getReactApiReference(callee);
   if (!reference) return null;
   const [first, second] = callArguments;
