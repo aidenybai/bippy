@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { getDataflowIndex, getDataflowHighlight } from "../src/diagram/dataflow-model";
-import { dataflowNodes, dataflowEdges } from "../src/board/dataflow-fixture";
+import { dataflowNodes, dataflowEdges } from "./fixtures/dataflow-fixture";
 import { getEdgePath, getEdgeLabelPosition } from "../src/diagram/geometry";
 
 const index = getDataflowIndex(dataflowNodes, dataflowEdges);

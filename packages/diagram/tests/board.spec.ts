@@ -6,7 +6,7 @@ test("uses the minimal fixed-size million-ui board", async ({ page }) => {
   page.on("pageerror", (error) => errors.push(error.message));
   await page.setViewportSize({ width: 1200, height: 815 });
   await page.goto("/");
-  await expect(page.locator("main section")).toHaveCount(17);
+  await expect(page.locator("main section")).toHaveCount(16);
   await expect(page.locator("header, footer, nav, h1")).toHaveCount(0);
   const first = page.locator("main section").first();
   await expect(first).toHaveCSS("width", "325px");
@@ -52,14 +52,14 @@ test("keeps SVG typography and geometry at native size", async ({ page }) => {
 test("hover and keyboard focus fade other nodes without selection boxes", async ({ page }) => {
   await page.goto("/");
   const diagram = page.locator('#parent-tree [data-tree-relationship="parent"]');
-  const node = diagram.locator('[data-node-id="strong"]');
+  const node = diagram.locator('[data-node-id="main"]');
   const other = diagram.locator('[data-node-id="frame"]');
   await node.hover();
   await expect(node).toHaveCSS("opacity", "1");
   await expect(other).toHaveCSS("opacity", "0.2");
   await expect(node.locator("rect")).toHaveCSS("fill", "rgba(0, 0, 0, 0)");
   await expect(node.locator("rect")).toHaveCSS("stroke", "none");
-  await expect(diagram.locator('[data-edge-from="section"][data-edge-to="strong"]')).toHaveCSS(
+  await expect(diagram.locator('[data-edge-from="div"][data-edge-to="main"]')).toHaveCSS(
     "opacity",
     "1",
   );
@@ -73,7 +73,9 @@ test("hover and keyboard focus fade other nodes without selection boxes", async 
   await page.keyboard.press("Tab");
   const focused = diagram.locator("[data-node-id]:focus");
   await expect(focused).toHaveCount(1);
-  await expect(diagram.locator('[data-emphasis="dimmed"]')).toHaveCount(23);
+  await expect(diagram.locator('[data-emphasis="dimmed"]')).toHaveCount(
+    (await diagram.locator("[data-node-id]").count()) - 1,
+  );
   await page.screenshot({ path: "test-results/hover-static.png" });
 });
 

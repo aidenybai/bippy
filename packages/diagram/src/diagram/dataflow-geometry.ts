@@ -21,6 +21,15 @@ export const getDataflowOffsets = (
   from: DataflowNode,
   to: DataflowNode,
 ): DataflowOffsets => {
+  if (edge.shape === "curve") {
+    const direction = edge.side === "right" ? 1 : -1;
+    return {
+      fromOffset: edge.fromOffset ?? getPortOffset(from, { x: from.x + direction, y: from.y }),
+      toOffset:
+        edge.toOffset ??
+        getPortOffset(to, { x: to.x + direction, y: to.y }, diagramMetrics.arrowGap),
+    };
+  }
   const middleX = (from.x + to.x) / 2;
   const waypoints =
     edge.waypoints ??

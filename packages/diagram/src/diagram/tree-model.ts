@@ -5,6 +5,7 @@ export interface TreeNode {
   label: string;
   parentId?: string;
   ownerId?: string;
+  componentId?: string;
   contextProviderIds?: readonly string[];
   kind?:
     | "component"

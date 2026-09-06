@@ -4,11 +4,18 @@ import { useMemo } from "react";
 import { DiagramCanvas, DiagramEdge, DiagramNode, DiagramScope } from "./primitives";
 import { getTreeRows, type TreeNode } from "./tree-model";
 import { getOwnerNodes, getTreeHighlightIndex } from "./tree-highlight";
-import { DiagramInteractionContext, useDiagramInteractionState } from "./interaction";
-import { diagramMetrics } from "./geometry";
+import {
+  DiagramInteractionContext,
+  useDiagramInteractionState,
+  type DiagramInteraction,
+} from "./interaction";
+import { getDataflowIndex, getDataflowHighlight, type DataflowEdge } from "./dataflow-model";
+import { getDataflowOffsets } from "./dataflow-geometry";
+import { diagramMetrics, getEdgeLabelPosition, type EdgeGeometry } from "./geometry";
 
 export interface TreeDiagramProps {
   nodes: readonly TreeNode[];
+  dataflowEdges?: readonly DataflowEdge[];
   label: string;
   relationship?: "parent" | "owner";
   width?: number;
@@ -22,6 +29,7 @@ export interface TreeDiagramProps {
 
 export const TreeDiagram = ({
   nodes,
+  dataflowEdges,
   label,
   relationship = "parent",
   width = 400,
@@ -38,37 +46,47 @@ export const TreeDiagram = ({
     () => (relationship === "owner" ? getTreeRows(getOwnerNodes(nodes)) : model),
     [model, nodes, relationship],
   );
-  const interaction = useDiagramInteractionState(highlightIndex, relationship);
+  const baseInteraction = useDiagramInteractionState(highlightIndex, relationship);
+  const flowIndex = useMemo(
+    () => (dataflowEdges ? getDataflowIndex(nodes, dataflowEdges) : undefined),
+    [nodes, dataflowEdges],
+  );
+  const activeNode =
+    baseInteraction.activeId === null
+      ? undefined
+      : highlightIndex.nodeById.get(baseInteraction.activeId);
+  const flow = useMemo(
+    () =>
+      flowIndex &&
+      activeNode &&
+      (activeNode.componentId !== undefined || activeNode.kind === "store")
+        ? getDataflowHighlight(flowIndex, activeNode.id)
+        : undefined,
+    [flowIndex, activeNode],
+  );
+  const interaction = useMemo<DiagramInteraction>(
+    () =>
+      flow
+        ? {
+            ...baseInteraction,
+            mode: "flow",
+            highlightedIds: flow.nodeIds,
+            highlightedEdgeIds: flow.edgeIds,
+          }
+        : baseInteraction,
+    [baseInteraction, flow],
+  );
   const positions = rows.map((row, index) => ({
     x: diagramMetrics.indent * 2 + row.depth * indent,
     y: rowHeight / 2 + index * rowHeight,
   }));
   const indexById = new Map(rows.map((row, index) => [row.node.id, index]));
-  const hasOwnerArcs = showOwners && relationship === "parent";
-  if (hasOwnerArcs) {
-    let minimumX = 0;
-    for (const [index, row] of rows.entries()) {
-      const ownerIndex =
-        row.node.ownerId && row.node.ownerId !== row.node.parentId
-          ? indexById.get(row.node.ownerId)
-          : undefined;
-      if (ownerIndex === undefined) continue;
-      const from = positions[ownerIndex];
-      const to = positions[index];
-      minimumX = Math.min(
-        minimumX,
-        (from.x + to.x) / 2 - Math.hypot(to.x - from.x, to.y - from.y) / 2 - 8,
-      );
-    }
-    if (minimumX < 0) for (const position of positions) position.x -= minimumX;
-  }
+  const hasOwnerArcs = showOwners && relationship === "parent" && interaction.mode === "owner";
   const scopeIndex =
     scopeId && relationship === "parent" && interaction.activeId === scopeId
       ? indexById.get(scopeId)
       : undefined;
   const scopePosition = scopeIndex === undefined ? undefined : positions[scopeIndex];
-  const activeNode =
-    interaction.activeId === null ? undefined : highlightIndex.nodeById.get(interaction.activeId);
   return (
     <DiagramInteractionContext value={interaction}>
       <DiagramCanvas
@@ -103,7 +121,7 @@ export const TreeDiagram = ({
             />
           ))}
         {rows.map((row, index) =>
-          row.parentIndex < 0 ? null : (
+          row.parentIndex < 0 || (flow && row.node.componentId !== undefined) ? null : (
             <DiagramEdge
               key={row.node.id}
               from={positions[row.parentIndex]}
@@ -129,7 +147,7 @@ export const TreeDiagram = ({
         {hasOwnerArcs &&
           rows.map((row, index) => {
             const ownerIndex =
-              row.node.ownerId && row.node.ownerId !== row.node.parentId
+              row.node.ownerId === interaction.activeId && row.node.ownerId !== row.node.parentId
                 ? indexById.get(row.node.ownerId)
                 : undefined;
             return ownerIndex === undefined ? null : (
@@ -140,9 +158,60 @@ export const TreeDiagram = ({
                 fromId={row.node.ownerId}
                 toId={row.node.id}
                 kind="owner"
+                shape="curve"
               />
             );
           })}
+        {flow &&
+          dataflowEdges
+            ?.filter((edge) => flow.edgeIds.has(edge.id))
+            .map((edge) => {
+              const fromIndex = indexById.get(edge.from);
+              const toIndex = indexById.get(edge.to);
+              if (fromIndex === undefined || toIndex === undefined)
+                throw new Error(`Missing endpoint for edge ${edge.id}`);
+              const fromNode = { ...rows[fromIndex].node, ...positions[fromIndex] };
+              const toNode = { ...rows[toIndex].node, ...positions[toIndex] };
+              const offsets = getDataflowOffsets({ ...edge, shape: "curve" }, fromNode, toNode);
+              const lane = dataflowEdges
+                .filter(
+                  (other) =>
+                    (other.from === edge.from && other.to === edge.to) ||
+                    (other.from === edge.to && other.to === edge.from),
+                )
+                .findIndex((other) => other.id === edge.id);
+              const geometry: EdgeGeometry = {
+                kind: edge.kind,
+                shape: "curve",
+                side: edge.side,
+                bend: diagramMetrics.indent * (2 + lane),
+                from: {
+                  x: fromNode.x + offsets.fromOffset.x,
+                  y: fromNode.y + offsets.fromOffset.y,
+                },
+                to: { x: toNode.x + offsets.toOffset.x, y: toNode.y + offsets.toOffset.y },
+              };
+              const labelPosition = getEdgeLabelPosition(geometry);
+              return (
+                <DiagramEdge
+                  key={edge.id}
+                  id={edge.id}
+                  {...geometry}
+                  directed
+                  fromId={edge.from}
+                  toId={edge.to}
+                  label={
+                    edge.from === activeNode?.id || edge.to === activeNode?.id
+                      ? edge.label
+                      : undefined
+                  }
+                  labelPosition={{
+                    ...labelPosition,
+                    y: labelPosition.y + lane * (diagramMetrics.annotationFontSize * 2 + 2),
+                  }}
+                />
+              );
+            })}
         {rows.map((row, index) => (
           <DiagramNode
             key={row.node.id}

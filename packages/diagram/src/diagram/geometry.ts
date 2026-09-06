@@ -37,6 +37,7 @@ export interface EdgeGeometry {
     | "update"
     | "subscription";
   waypoints?: readonly Point[];
+  shape?: "curve";
   bend?: number;
   side?: "left" | "right";
   labelPosition?: Point;
@@ -49,7 +50,13 @@ export const getEdgePath = ({
   bend = 40,
   side = "left",
   waypoints,
+  shape,
 }: EdgeGeometry) => {
+  if (shape === "curve") {
+    const controlX =
+      side === "left" ? Math.min(from.x, to.x) - bend : Math.max(from.x, to.x) + bend;
+    return `M ${from.x} ${from.y} C ${controlX} ${from.y} ${controlX} ${to.y} ${to.x} ${to.y}`;
+  }
   if (waypoints)
     return `M ${from.x} ${from.y}${[...waypoints, to].map((point) => ` L ${point.x} ${point.y}`).join("")}`;
   if (kind === "data" || kind === "update" || kind === "subscription")
@@ -70,8 +77,14 @@ export const getEdgeLabelPosition = ({
   side = "left",
   labelPosition,
   waypoints,
+  shape,
 }: EdgeGeometry): Point => {
   if (labelPosition) return labelPosition;
+  if (shape === "curve") {
+    const controlX =
+      side === "left" ? Math.min(from.x, to.x) - bend : Math.max(from.x, to.x) + bend;
+    return { x: (from.x + to.x) / 8 + controlX * 0.75, y: (from.y + to.y) / 2 - 6 };
+  }
   if (waypoints || kind === "data" || kind === "update" || kind === "subscription") {
     const middleX = (from.x + to.x) / 2;
     const points = [

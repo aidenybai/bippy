@@ -18,7 +18,7 @@ The board follows `millionco/million-ui`'s square-cell layout: 325px white cells
 - `DiagramScope`: labeled context or error-boundary region.
 - `DiagramScene`: positioned nodes and ID-based edges.
 - `TreeDiagram`: parent or owner layout, owner arcs, provider-hover context scopes, and boundary-hover catch regions.
-- `TreeComparison`: linked parent/owner views of the same model.
+- `TreeComparison`: linked parent/owner views with inline hook/prop rows and hover-driven dataflow.
 - `DataflowDiagram`: directed hook, value, prop, callback, context, and external-store graphs.
 - `VirtualTree`: fixed-row windowing, adaptive indentation, collapse/expand, and keyboard navigation.
 
@@ -51,18 +51,24 @@ This private workspace package exports TypeScript source. Consumers must transpi
 
 ## Dataflow
 
-The dataflow specimen is an explicit, illustrative model—not automatic runtime instrumentation. `DataflowNode` adds `componentId` to a positioned node. `DataflowEdge` connects node IDs with `data`, `update`, `context`, or `subscription` semantics. Component headers and indentation supply visual grouping; tree branches are not drawn over data wires. All prop ports are hollow, including callback props. Filled callback nodes represent callable operations such as `setQuery` and `dispatch`.
+Dataflow is embedded in the parent/owner comparison; there is no standalone dataflow specimen. Hooks, values, and props appear directly beneath their component in both projections. Set `componentId` on these metadata rows and attach them with `parentId`/`ownerId`; they are not additional React fibers. Pass ID-based `dataflowEdges` to `TreeComparison` or `TreeDiagram`.
 
-Hover follows incoming and outgoing dependency paths independently. It does not spread through every sibling hook merely because they share a component. Focusing a component includes its ports; focusing a derived value reveals all its inputs. Cycles such as store subscription/notification loops terminate safely.
+The model is illustrative, not automatic runtime instrumentation. Hook and prop rows are neutral at rest. Hover or keyboard-focus a metadata row to reveal its dependency paths in one accent color across both views. Owner links appear when an owner is active; context/error scopes appear when their provider/boundary is active. Prop ports are hollow, including callback props; callable operations such as `setQuery` and `dispatch` are filled.
+
+Hover follows incoming and outgoing dependency paths independently. It does not spread through every sibling hook merely because they share a component. Component focus preserves ownership emphasis; focusing a derived value reveals all its inputs. Cycles such as store subscription/notification loops terminate safely.
 
 The example includes:
 
-- `useState` → query props → input, with callbacks returning to `setQuery`.
-- `useReducer` → todos → filtered values combining query and todos → list/item props, with actions returning to `dispatch`.
+- `useState` + `useReducer` → `visibleTodos` → Feed/Post props → host content.
+- Host callbacks → component callback props → `setQuery` or `dispatch`.
 - `useSyncExternalStore` → snapshots → rendered count, including `getSnapshot`, effect subscription/cleanup, notifications, and external writes.
-- Provider value → `useContext` → component props → host styles.
+- Provider value → Stats' `useContext` → host styles.
 
-Arrows indicate value/update direction. Callback edges describe invocation back to an updater; they are not a second prop-value transfer. Connections attach to circle outlines or outside labels rather than crossing through them. Arrow tips stop 3px before node outlines; outgoing wires remain attached. Label clearance is the same in either direction. Supply `waypoints`, `fromOffset`, `toOffset`, or `labelPosition` when custom routing is needed.
+Tree dataflow uses bounded curved links, independently routed for each projection. Only relevant paths appear, and opposing subscription/notification links use separate lanes. Arrow tips stop 3px before node outlines; outgoing wires remain attached.
+
+Callback edges describe invocation back to an updater, not a second prop-value transfer. Boundary scopes describe render-time containment, not error handling for event callbacks or external-store operations.
+
+`DataflowDiagram` remains available for explicitly positioned graphs. It supports `waypoints`, `fromOffset`, `toOffset`, and `labelPosition` for custom routing.
 
 ## Themes
 

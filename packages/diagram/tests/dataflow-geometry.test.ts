@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { getDataflowOffsets } from "../src/diagram/dataflow-geometry";
 import { diagramMetrics, getLabelWidth } from "../src/diagram/geometry";
 import type { DataflowNode, DataflowEdge } from "../src/diagram/dataflow-model";
-import { dataflowNodes } from "../src/board/dataflow-fixture";
+import { dataflowNodes } from "./fixtures/dataflow-fixture";
 
 const source: DataflowNode = { id: "source", label: "query", annotation: '"rea"', x: 20, y: 20 };
 const target: DataflowNode = { id: "target", label: "onQueryChange", x: 220, y: 20 };

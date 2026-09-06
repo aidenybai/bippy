@@ -65,13 +65,14 @@ const styles = stylex.create({
   boundary: { color: colors.red },
   special: { color: colors.muted, fontStyle: "italic" },
   suspense: { color: colors.teal },
-  hook: { color: colors.violet },
-  value: { color: colors.blue },
-  callback: { color: colors.orange },
-  store: { color: colors.teal },
-  data: { stroke: colors.blue, strokeOpacity: 0.7 },
-  update: { stroke: colors.orange, strokeOpacity: 0.7, strokeDasharray: "3 2" },
-  subscription: { stroke: colors.teal, strokeOpacity: 0.7, strokeDasharray: "2 2" },
+  hook: { color: colors.text },
+  value: { color: colors.text },
+  callback: { color: colors.text },
+  store: { color: colors.text },
+  data: { strokeOpacity: 0.7 },
+  update: { strokeOpacity: 0.7, strokeDasharray: "3 2" },
+  subscription: { strokeOpacity: 0.7, strokeDasharray: "2 2" },
+  activeFlow: { stroke: colors.blue, strokeOpacity: 1 },
   portal: { color: colors.yellow },
   blue: { color: colors.blue },
   violet: { color: colors.violet },
@@ -153,6 +154,9 @@ export const DiagramNode = ({
         styles[kind],
         isInteractive && onSelect && styles.interactive,
         node.tone && styles[node.tone],
+        diagramInteraction?.mode === "flow" &&
+          diagramInteraction.activeId === node.id &&
+          styles.blue,
         isDimmed && drawing.dimmed,
       )}
       transform={`translate(${x} ${y})`}
@@ -281,6 +285,7 @@ export const DiagramEdge = (props: DiagramEdgeProps) => {
         {...stylex.props(
           drawing.connector,
           kind !== "parent" && (kind === "portal" ? styles.portalEdge : styles[kind]),
+          interaction?.mode === "flow" && kind !== "parent" && !isDimmed && styles.activeFlow,
         )}
       />
       {label && (

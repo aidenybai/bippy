@@ -10,16 +10,9 @@ import { VirtualTree } from "../diagram/virtual-tree";
 import { diagramMetrics } from "../diagram/geometry";
 import { colors } from "../diagram/tokens.stylex";
 import type { TreeNode } from "../diagram/tree-model";
-import {
-  branchingNodes,
-  deepNodes,
-  parentNodes,
-  relationshipEdges,
-  relationshipNodes,
-} from "./fixtures";
+import { branchingNodes, deepNodes, relationshipEdges, relationshipNodes } from "./fixtures";
 import { Specimen } from "./specimen";
-import { DataflowDiagram } from "../diagram/dataflow-diagram";
-import { dataflowNodes, dataflowEdges } from "./dataflow-fixture";
+import { treeDataflowNodes, treeDataflowEdges } from "./tree-dataflow-fixture";
 
 interface NodeSpecimen {
   name: string;
@@ -198,17 +191,13 @@ export const Board = () => (
           />
         </DiagramScene>
       </Specimen>
-      <Specimen id="dataflow" name="Dataflow" size="full">
-        <DataflowDiagram
-          nodes={dataflowNodes}
-          edges={dataflowEdges}
-          width={940}
-          height={590}
-          label="Hook, prop, callback, context, and external store dataflow"
-        />
-      </Specimen>
       <Specimen id="parent-tree" name="Parent / owner" size="full">
-        <TreeComparison nodes={parentNodes} scopeId="theme" scopeLabel="ThemeContext" />
+        <TreeComparison
+          nodes={treeDataflowNodes}
+          dataflowEdges={treeDataflowEdges}
+          scopeId="theme"
+          scopeLabel="ThemeContext"
+        />
       </Specimen>
       <Specimen id="deep-tree" name="Virtualized / Deep">
         <div {...stylex.props(styles.virtual)}>

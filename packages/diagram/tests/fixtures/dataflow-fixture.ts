@@ -1,4 +1,4 @@
-import type { DataflowNode, DataflowEdge } from "../diagram/dataflow-model";
+import type { DataflowNode, DataflowEdge } from "../../src/diagram/dataflow-model";
 
 export const dataflowNodes: DataflowNode[] = [
   { id: "flow-app", label: "App", x: 48, y: 20 },

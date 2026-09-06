@@ -1,15 +1,18 @@
 import type { SceneEdge, SceneNode } from "./diagram-scene";
 
-export interface DataflowNode extends SceneNode {
+interface DataflowMember {
+  id: string;
   componentId?: string;
 }
+
+export interface DataflowNode extends SceneNode {}
 
 export interface DataflowEdge extends SceneEdge {
   kind: "data" | "update" | "subscription" | "context";
 }
 
-export interface DataflowIndex {
-  nodeById: ReadonlyMap<string, DataflowNode>;
+export interface DataflowIndex<NodeModel extends DataflowMember = DataflowMember> {
+  nodeById: ReadonlyMap<string, NodeModel>;
   incoming: ReadonlyMap<string, readonly DataflowEdge[]>;
   outgoing: ReadonlyMap<string, readonly DataflowEdge[]>;
   members: ReadonlyMap<string, readonly string[]>;
@@ -20,11 +23,11 @@ export interface DataflowHighlight {
   edgeIds: ReadonlySet<string>;
 }
 
-export const getDataflowIndex = (
-  nodes: readonly DataflowNode[],
+export const getDataflowIndex = <NodeModel extends DataflowMember>(
+  nodes: readonly NodeModel[],
   edges: readonly DataflowEdge[],
-): DataflowIndex => {
-  const nodeById = new Map<string, DataflowNode>();
+): DataflowIndex<NodeModel> => {
+  const nodeById = new Map<string, NodeModel>();
   const incoming = new Map<string, DataflowEdge[]>();
   const outgoing = new Map<string, DataflowEdge[]>();
   const members = new Map<string, string[]>();

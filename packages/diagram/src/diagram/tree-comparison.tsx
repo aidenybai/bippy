@@ -7,6 +7,7 @@ import { TreeDiagram, type TreeDiagramProps } from "./tree-diagram";
 
 export interface TreeComparisonProps {
   nodes: TreeDiagramProps["nodes"];
+  dataflowEdges?: TreeDiagramProps["dataflowEdges"];
   scopeId?: string;
   scopeLabel?: string;
   onSelect?: TreeDiagramProps["onSelect"];
@@ -17,7 +18,13 @@ const styles = stylex.create({
   title: { margin: 0, marginBottom: 12, fontSize: 12, fontWeight: 400, color: colors.muted },
 });
 
-export const TreeComparison = ({ nodes, scopeId, scopeLabel, onSelect }: TreeComparisonProps) => {
+export const TreeComparison = ({
+  nodes,
+  dataflowEdges,
+  scopeId,
+  scopeLabel,
+  onSelect,
+}: TreeComparisonProps) => {
   const interaction = useDiagramInteractionState();
   return (
     <DiagramInteractionContext value={interaction}>
@@ -27,6 +34,7 @@ export const TreeComparison = ({ nodes, scopeId, scopeLabel, onSelect }: TreeCom
           <TreeDiagram
             nodes={nodes}
             label="Parent tree"
+            dataflowEdges={dataflowEdges}
             width={460}
             showOwners
             scopeId={scopeId}
@@ -39,6 +47,7 @@ export const TreeComparison = ({ nodes, scopeId, scopeLabel, onSelect }: TreeCom
           <TreeDiagram
             nodes={nodes}
             label="Owner tree"
+            dataflowEdges={dataflowEdges}
             width={260}
             relationship="owner"
             onSelect={onSelect}

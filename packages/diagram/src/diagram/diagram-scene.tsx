@@ -24,6 +24,7 @@ export interface SceneEdge {
   side?: DiagramEdgeProps["side"];
   labelPosition?: Point;
   waypoints?: readonly Point[];
+  shape?: DiagramEdgeProps["shape"];
   directed?: boolean;
   fromOffset?: Point;
   toOffset?: Point;
