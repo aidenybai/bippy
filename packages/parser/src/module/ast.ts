@@ -217,6 +217,23 @@ export const forEachChildNode = (node: object, visit: (child: SpannedNode) => vo
 };
 
 /**
+ * The spec's `IsAnonymousFunctionDefinition`: the initializers a binding
+ * lends its name to. A function reached through a call or a property read
+ * keeps whatever name it already has.
+ */
+export const isAnonymousFunctionDefinition = (
+  node: Expression | FunctionNode | Class | null | undefined,
+): boolean => {
+  if (!node) return false;
+  const unwrapped = isFunctionLike(node) || isClassLike(node) ? node : unwrapExpression(node);
+  if (unwrapped.type === "ArrowFunctionExpression") return true;
+  if (unwrapped.type === "FunctionExpression" || unwrapped.type === "ClassExpression") {
+    return unwrapped.id === null;
+  }
+  return false;
+};
+
+/**
  * Depth-first traversal. Return `false` from the visitor to skip a subtree.
  */
 export const walk = (root: object, visit: (node: SpannedNode) => boolean | void): void => {

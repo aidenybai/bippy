@@ -11,7 +11,7 @@ import type {
   TryStatement,
   VariableDeclarator,
 } from "@oxc-project/types";
-import { isNodeOfType, walk } from "../module/ast.js";
+import { isAnonymousFunctionDefinition, isNodeOfType, walk } from "../module/ast.js";
 import { getIterationItem } from "./access.js";
 import { classifyClass } from "./components.js";
 import { evaluateEnum } from "./enums.js";
@@ -540,7 +540,11 @@ const evaluateStatement = (
       for (const declarator of statement.declarations) {
         const nameHint = declarator.id.type === "Identifier" ? declarator.id.name : null;
         const value = declarator.init
-          ? nameValue(interpreter.evaluateExpression(declarator.init, context), nameHint)
+          ? nameValue(
+              interpreter.evaluateExpression(declarator.init, context),
+              nameHint,
+              isAnonymousFunctionDefinition(declarator.init),
+            )
           : UNDEFINED;
         bindPattern(interpreter, declarator.id, value, context);
       }

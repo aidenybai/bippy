@@ -489,4 +489,17 @@ describe("interpreter: functions and modules", () => {
       ),
     ).toBe("component(Child)");
   });
+
+  it("exposes React's $$typeof brands and registered symbols, as react-is style checks read them", () => {
+    expect(
+      describe_(
+        `import { forwardRef, memo } from "react";
+         const Plain = () => null;
+         const Ref = forwardRef(() => null);
+         const isForwardRef = (type: unknown) => type.$$typeof === Symbol.for("react.forward_ref");
+         const render = isForwardRef(Ref) ? Ref.render : Ref;
+         export const value = [isForwardRef(Plain), isForwardRef(Ref), memo(Plain).type === Plain, render];`,
+      ),
+    ).toBe("[false, true, true, fn(anonymous)]");
+  });
 });

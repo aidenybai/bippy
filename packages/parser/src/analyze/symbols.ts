@@ -1,4 +1,5 @@
 import type { LinkedSymbol } from "../link/linker.js";
+import { isAnonymousFunctionDefinition } from "../module/ast.js";
 import {
   type DeclarationBinding,
   DEFAULT_EXPORT_NAME,
@@ -59,7 +60,7 @@ const evaluateDeclaration = (
           interpreter,
           module,
           binding.localName,
-          nameValue(value, binding.localName),
+          nameValue(value, binding.localName, isAnonymousFunctionDefinition(node.init)),
         );
       }
       bindPattern(interpreter, node.id, value, context);
@@ -145,6 +146,7 @@ export const valueFromSymbol = (interpreter: Interpreter, symbol: LinkedSymbol):
       const value = nameValue(
         interpreter.evaluateExpression(symbol.node, context),
         isNamedExport ? symbol.exportedName : null,
+        isAnonymousFunctionDefinition(symbol.node),
       );
       interpreter.valueCache.set(cacheKey, value);
       return value;

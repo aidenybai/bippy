@@ -360,15 +360,24 @@ export const cloneObject = (value: ObjectValue): ObjectValue =>
 /**
  * Applies the name a value is bound to, mirroring the runtime's
  * `Function.name` inference: `const Header = () => …` names the arrow, but
- * `const Header = memo(() => …)` leaves the inner function anonymous.
- * Contexts are named for display; the runtime has no name for them either way.
+ * `const Header = memo(() => …)` or `const Header = parts.header` leaves the
+ * function as it was, so `isDefinition` says whether the binding's
+ * initializer was the anonymous function or class itself. Contexts are
+ * named for display; the runtime has no name for them either way.
  */
-export const nameValue = (value: StaticValue, name: string | null): StaticValue => {
+export const nameValue = (
+  value: StaticValue,
+  name: string | null,
+  isDefinition: boolean,
+): StaticValue => {
   if (name === null) return value;
-  if (value.kind === "function") return value.name === null ? { ...value, name } : value;
+  if (value.kind === "function") {
+    return isDefinition && value.name === null ? { ...value, name } : value;
+  }
   if (value.kind !== "component") return value;
   const definition = value.definition;
-  const isNameable = definition.kind === "class" || definition.kind === "context";
+  const isNameable =
+    definition.kind === "context" || (definition.kind === "class" && isDefinition);
   return isNameable && definition.name === null
     ? component({ ...definition, name }, value.statics)
     : value;

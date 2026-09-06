@@ -12,6 +12,7 @@ import type {
 } from "@oxc-project/types";
 import {
   getMemberLinks,
+  isAnonymousFunctionDefinition,
   isOptionalSpine,
   isStringLiteral,
   type MemberLink,
@@ -330,7 +331,10 @@ const evaluateObject = (
     }
     let value = interpreter.evaluateExpression(property.value, context);
     if (value.kind === "function" && property.method) value = { ...value, thisValue: result };
-    result.properties.set(key, nameValue(value, key));
+    result.properties.set(
+      key,
+      nameValue(value, key, isAnonymousFunctionDefinition(property.value)),
+    );
   }
   return result;
 };
