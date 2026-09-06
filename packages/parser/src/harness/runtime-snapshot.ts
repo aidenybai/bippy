@@ -77,6 +77,14 @@ const BUILTIN_NAMES: Partial<Record<WorkTagName, string>> = {
 
 const STRICT_MODE_TYPE = Symbol.for("react.strict_mode");
 
+/** esbuild names a class it lowers `_a`, `_a2`, …; the source name is gone, so the fiber counts as unnamed. */
+const BUNDLER_TEMPORARY = /^_[a-z]\d*$/;
+
+const getTypeName = (type: unknown): string | null => {
+  const name = getDisplayName(type);
+  return name !== null && BUNDLER_TEMPORARY.test(name) ? null : name;
+};
+
 const getContextName = (type: unknown): string => {
   const context: unknown =
     typeof type === "object" && type !== null && "_context" in type ? type._context : type;
@@ -99,7 +107,7 @@ const getRuntimeName = (fiber: Fiber, tag: WorkTagName | null): string | null =>
     case "ContextConsumer":
       return `${getContextName(fiber.type)}.Consumer`;
     default:
-      return (tag && BUILTIN_NAMES[tag]) ?? getDisplayName(fiber.type);
+      return (tag && BUILTIN_NAMES[tag]) ?? getTypeName(fiber.type);
   }
 };
 
