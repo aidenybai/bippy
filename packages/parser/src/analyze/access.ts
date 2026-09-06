@@ -4,6 +4,7 @@ import {
   type ArrayValue,
   builtin,
   type BuiltinComponentName,
+  type ComponentDefinition,
   type ComponentValue,
   component,
   conditional,
@@ -112,7 +113,7 @@ export const getProperty = (
       const assigned = target.statics.get(key);
       if (assigned) return assigned;
       if (key === "name") return literal(target.name ?? "");
-      if (key === "displayName") return UNDEFINED;
+      if (key === "displayName" || key === "$$typeof") return UNDEFINED;
       return unknown(`${target.name ?? "function"}.${key}`);
     }
     case "text":
@@ -120,6 +121,14 @@ export const getProperty = (
     case "unknown":
       return unknown(`${target.description}.${key}`);
   }
+};
+
+/** `$$typeof` of the wrapper objects React creates (`shared/ReactSymbols.js`); classes have none. */
+const TYPEOF_BY_DEFINITION: Partial<Record<ComponentDefinition["kind"], StaticValue>> = {
+  memo: literal(Symbol.for("react.memo")),
+  forwardRef: literal(Symbol.for("react.forward_ref")),
+  lazy: literal(Symbol.for("react.lazy")),
+  class: UNDEFINED,
 };
 
 /**
@@ -135,6 +144,13 @@ const getComponentProperty = (value: ComponentValue, key: string): StaticValue =
   if (key === "displayName") return UNDEFINED;
   if (key === "name")
     return definition.kind === "class" ? literal(definition.name ?? "") : UNDEFINED;
+  if (key === "$$typeof") {
+    return TYPEOF_BY_DEFINITION[definition.kind] ?? unknown(`${definition.kind} component.$$typeof`);
+  }
+  if (key === "render" && definition.kind === "forwardRef" && definition.render) {
+    return definition.render;
+  }
+  if (key === "type" && definition.kind === "memo") return definition.inner;
   return unknown(`${definition.kind} component.${key}`);
 };
 

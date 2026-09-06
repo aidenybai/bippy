@@ -126,6 +126,17 @@ const foldPrimitives = (
   }
 };
 
+const REFERENCE_KINDS = new Set<StaticValue["kind"]>([
+  "function",
+  "component",
+  "object",
+  "array",
+  "element",
+  "namespace",
+]);
+
+const EQUALITY_OPERATORS = new Set<BinaryOperator>(["===", "==", "!==", "!="]);
+
 export const applyBinaryOperator = (
   operator: BinaryOperator,
   left: StaticValue,
@@ -135,6 +146,10 @@ export const applyBinaryOperator = (
   if (left.kind === "literal" && right.kind === "literal") {
     const folded = foldPrimitives(operator, left.value, right.value);
     if (folded !== null) return literal(folded);
+  }
+  /** One static value stands for one runtime object; distinct values may still be the same object. */
+  if (left === right && REFERENCE_KINDS.has(left.kind) && EQUALITY_OPERATORS.has(operator)) {
+    return literal(operator === "===" || operator === "==");
   }
   if (operator === "+") {
     const isStringLike = (value: StaticValue): boolean =>

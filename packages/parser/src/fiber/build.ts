@@ -441,6 +441,14 @@ const createFiberFromDefinition = (
     }
     case "memo": {
       const inner = definition.inner;
+      if (inner.kind === "conditional") {
+        return branch(
+          inner.test,
+          [inner.whenTrue, inner.whenFalse].map((arm) =>
+            createFiberFromDefinition(builder, parent, element, { ...definition, inner: arm }, frame),
+          ),
+        );
+      }
       if (inner.kind === "function" && !definition.hasCompare) {
         return [
           createFunctionComponentFiber(

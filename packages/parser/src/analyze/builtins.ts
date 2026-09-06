@@ -456,6 +456,19 @@ export const evaluateGlobalCall = (
     case "structuredClone":
     case "Promise.resolve":
       return first ?? UNDEFINED;
+    case "Object.defineProperty": {
+      const descriptor = callArguments[2];
+      if (!first || second?.kind !== "literal" || descriptor?.kind !== "object") {
+        return first ?? UNDEFINED;
+      }
+      const key = String(second.value);
+      const value =
+        descriptor.properties.get("value") ??
+        (descriptor.properties.has("get") ? unknown(`accessor ${key}`) : UNDEFINED);
+      if (first.kind === "object") first.properties.set(key, value);
+      else assignStatic(first, key, value);
+      return first;
+    }
     case "Object.fromEntries": {
       if (first?.kind !== "array") return unknown(description);
       const result = object();
@@ -497,7 +510,16 @@ export const evaluateGlobalCall = (
     case "Number":
     case "parseInt":
     case "parseFloat":
-      if (first?.kind === "literal") return literal(Number(first.value));
+      if (first?.kind === "literal" && typeof first.value !== "symbol") {
+        return literal(Number(first.value));
+      }
+      return unknown(description);
+    case "Symbol":
+      return literal(Symbol(first?.kind === "literal" ? String(first.value) : description));
+    case "Symbol.for":
+      if (first?.kind === "literal" && typeof first.value === "string") {
+        return literal(Symbol.for(first.value));
+      }
       return unknown(description);
     case "Boolean": {
       if (!first) return FALSE;

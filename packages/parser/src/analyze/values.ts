@@ -5,7 +5,7 @@ import type { SourceLocation } from "../module/location.js";
 import type { ParsedModule } from "../module/types.js";
 import type { Scope } from "./scope.js";
 
-export type Primitive = string | number | boolean | bigint | null | undefined;
+export type Primitive = string | number | boolean | bigint | symbol | null | undefined;
 
 /** A fully known primitive. */
 export interface LiteralValue {
@@ -390,9 +390,9 @@ export const withDisplayName = (value: StaticValue, displayName: string): Static
  */
 export const assignStatic = (target: StaticValue, key: string, value: StaticValue): void => {
   if (target.kind !== "function" && target.kind !== "component") return;
-  if (key === "displayName") {
+  if (key === "displayName" || (key === "name" && target.kind === "function")) {
     if (value.kind !== "literal" || typeof value.value !== "string") return;
-    if (target.kind === "function") target.name = value.value;
+    if (target.kind === "function") target.name = value.value || null;
     else if (target.definition.kind !== "builtin") target.definition.name = value.value;
     return;
   }
