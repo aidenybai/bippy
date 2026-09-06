@@ -51,7 +51,7 @@ const evaluateDeclaration = (
   const node = binding.node;
   switch (node.type) {
     case "VariableDeclarator": {
-      if (!node.init) return UNDEFINED;
+      if (!node.init) return unknown(`${binding.localName} declared without an initializer`);
       const value = interpreter.evaluateExpression(node.init, context);
       if (node.id.type === "Identifier") {
         return applyDisplayName(

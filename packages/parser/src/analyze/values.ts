@@ -218,11 +218,36 @@ export const list = (item: StaticValue, description: string, isFlat = false): Li
   isFlat,
   isInline: false,
 });
+/** Rewrites `value` knowing that `test` evaluated to `outcome` on this path. */
+const assumeTest = (value: StaticValue, test: string, outcome: boolean): StaticValue => {
+  if (value.kind !== "conditional") return value;
+  if (value.test === test)
+    return assumeTest(outcome ? value.whenTrue : value.whenFalse, test, outcome);
+  const whenTrue = assumeTest(value.whenTrue, test, outcome);
+  const whenFalse = assumeTest(value.whenFalse, test, outcome);
+  return whenTrue === value.whenTrue && whenFalse === value.whenFalse
+    ? value
+    : { ...value, whenTrue, whenFalse };
+};
+
+const isSameLiteral = (left: StaticValue, right: StaticValue): boolean =>
+  left.kind === "literal" && right.kind === "literal" && Object.is(left.value, right.value);
+
+/**
+ * A value that depends on `test`. Within a render the same test expression
+ * has one outcome, so nested conditionals on it collapse; identical arms
+ * collapse to the value itself.
+ */
 export const conditional = (
   test: string,
   whenTrue: StaticValue,
   whenFalse: StaticValue,
-): ConditionalValue => ({ kind: "conditional", test, whenTrue, whenFalse });
+): StaticValue => {
+  const assumedTrue = assumeTest(whenTrue, test, true);
+  const assumedFalse = assumeTest(whenFalse, test, false);
+  if (assumedTrue === assumedFalse || isSameLiteral(assumedTrue, assumedFalse)) return assumedTrue;
+  return { kind: "conditional", test, whenTrue: assumedTrue, whenFalse: assumedFalse };
+};
 export const object = (
   properties: Iterable<[string, StaticValue]> = [],
   hasUnknownSpread = false,

@@ -1,0 +1,270 @@
+import { describe, expect, it } from "vite-plus/test";
+import { createStaticRenderer, describeValue, type StaticValue } from "@bippy/parser";
+
+/** Evaluates the `value` export of a module written around `source`. */
+const evaluate = (source: string, files: Record<string, string> = {}): StaticValue => {
+  const renderer = createStaticRenderer({
+    rootDirectory: "/virtual",
+    files: { "src/main.tsx": source, ...files },
+  });
+  return renderer.getExportValue("src/main.tsx", "value");
+};
+
+const describe_ = (source: string, files?: Record<string, string>): string =>
+  describeValue(evaluate(source, files));
+
+/** Runs `body` inside a function so statements execute in order, and exports its return value. */
+const run = (body: string): string =>
+  describe_(`declare const show: boolean;
+    declare const kind: string;
+    declare const rows: number[];
+    const run = () => { ${body} };
+    export const value = run();`);
+
+describe("interpreter: literals and operators", () => {
+  it("folds arithmetic, comparisons and string concatenation", () => {
+    expect(describe_(`export const value = 1 + 2 * 3;`)).toBe("7");
+    expect(describe_(`export const value = "a" + 1 + true;`)).toBe('"a1true"');
+    expect(describe_(`export const value = 3 > 2 && "yes";`)).toBe('"yes"');
+    expect(describe_(`export const value = null ?? undefined ?? 0;`)).toBe("0");
+    expect(describe_(`export const value = typeof [] === "object";`)).toBe("true");
+  });
+
+  it("folds template literals with known parts and keeps unknown ones as text", () => {
+    expect(describe_(`const n = 2; export const value = \`n=\${n}\`;`)).toBe('"n=2"');
+    expect(describe_(`export const value = \`id-\${Math.random()}\`;`)).toMatch(/^text\(/);
+  });
+
+  it("evaluates ternaries and logical expressions with undecidable tests", () => {
+    expect(describe_(`declare const flag: boolean; export const value = flag ? 1 : 2;`)).toBe(
+      "(flag ? 1 : 2)",
+    );
+    expect(describe_(`export const value = Math.random() > 0.5 || "fallback";`)).toBe(
+      '(Math.random() > 0.5 ? unknown(Math.random() > 0.5) : "fallback")',
+    );
+    expect(
+      describe_(`declare const flag: boolean; export const value = flag ? (flag ? 1 : 2) : 3;`),
+    ).toBe("(flag ? 1 : 3)");
+    expect(
+      describe_(`declare const flag: boolean; export const value = flag ? "same" : "same";`),
+    ).toBe('"same"');
+  });
+});
+
+describe("interpreter: strings and regular expressions", () => {
+  it("runs pure string methods when every operand is known", () => {
+    expect(describe_(`export const value = "a-b-c".split("-");`)).toBe('["a", "b", "c"]');
+    expect(describe_(`export const value = "Hello".toUpperCase().padEnd(7, "!");`)).toBe(
+      '"HELLO!!"',
+    );
+    expect(describe_(`export const value = "x <a>b</a> y".split(/(<\\w+>[^<]*<\\/\\w+>)/);`)).toBe(
+      '["x ", "<a>b</a>", " y"]',
+    );
+  });
+
+  it("routes replace callbacks through the interpreter", () => {
+    expect(
+      describe_(
+        `const values = { name: "Ada" };
+         export const value = "Hi {name}!".replace(/\\{(\\w+)\\}/g, (_m, key) => values[key]);`,
+      ),
+    ).toBe('"Hi Ada!"');
+    expect(
+      describe_(`export const value = "Hi {name}".replace(/\\{(\\w+)\\}/g, () => Math.random());`),
+    ).toMatch(/^text\(/);
+  });
+
+  it("evaluates regexp test and exec statelessly", () => {
+    expect(describe_(`export const value = /^a/g.test("abc");`)).toBe("true");
+    expect(describe_(`const re = /^<(\\w+)>$/; export const value = re.exec("<b>");`)).toBe(
+      '["<b>", "b"]',
+    );
+    expect(describe_(`export const value = /x/.exec("y");`)).toBe("null");
+    expect(describe_(`export const value = /x/gi.flags;`)).toBe('"gi"');
+  });
+
+  it("degrades to text for unknown receivers", () => {
+    expect(describe_(`declare const s: string; export const value = s.trim();`)).toMatch(/^text\(/);
+    expect(describe_(`declare const s: string; export const value = s.split(",");`)).toMatch(
+      /^list\(/,
+    );
+    expect(describe_(`declare const s: string; export const value = s.startsWith("a");`)).toMatch(
+      /^unknown\(/,
+    );
+  });
+});
+
+describe("interpreter: arrays and objects", () => {
+  it("maps, filters and reduces known arrays item by item", () => {
+    expect(describe_(`export const value = [1, 2, 3].map((n) => n * 2);`)).toBe("[2, 4, 6]");
+    expect(describe_(`export const value = [1, 2, 3].filter((n) => n > 1);`)).toBe("[2, 3]");
+    expect(describe_(`export const value = [1, 2, 3].reduce((sum, n) => sum + n, 0);`)).toBe("6");
+    expect(
+      describe_(`export const value = ["a", "b"].reduceRight((acc, item) => acc + item, "");`),
+    ).toBe('"ba"');
+    expect(describe_(`export const value = [[1], [2, 3]].flat();`)).toBe("[1, 2, 3]");
+    expect(describe_(`export const value = [3, 1].concat([2], 4);`)).toBe("[3, 1, 2, 4]");
+  });
+
+  it("keeps unknown arrays as lists of the mapped shape", () => {
+    expect(
+      describe_(`declare const rows: number[]; export const value = rows.map((r) => r);`),
+    ).toBe("list(rows)");
+    expect(describe_(`export const value = Array.from({ length: 3 }, (_, i) => i);`)).toBe(
+      "list(Array.from())",
+    );
+  });
+
+  it("supports Object.keys/values/entries/fromEntries on known objects", () => {
+    expect(describe_(`export const value = Object.keys({ a: 1, b: 2 });`)).toBe('["a", "b"]');
+    expect(describe_(`export const value = Object.values({ a: 1, b: 2 });`)).toBe("[1, 2]");
+    expect(describe_(`export const value = Object.fromEntries([["a", 1]]);`)).toBe("{a}");
+    expect(describe_(`export const value = { ...{ a: 1 }, b: 2 };`)).toBe("{a, b}");
+    expect(describe_(`declare const rest: object; export const value = { a: 1, ...rest };`)).toBe(
+      "{a, ...}",
+    );
+  });
+
+  it("tracks pushes and property writes, conditional when the control flow is undecided", () => {
+    expect(run(`const items = [1]; if (show) items.push(2); return items;`)).toBe(
+      "[1, list(items under show)]",
+    );
+    expect(
+      run(`const theme = { mode: "light" }; if (show) theme.mode = "dark"; return theme.mode;`),
+    ).toBe('(show ? "dark" : "light")');
+    expect(run(`const items = [1, 2]; if (items.length > 1) items.push(3); return items;`)).toBe(
+      "[1, 2, 3]",
+    );
+  });
+
+  it("forgets array contents after untrackable mutations", () => {
+    expect(run(`const items = [1, 2]; if (show) items.pop(); return items;`)).toBe("[list(items)]");
+  });
+});
+
+describe("interpreter: control flow", () => {
+  it("unrolls loops with static trip counts", () => {
+    expect(run(`const out = []; for (let i = 0; i < 3; i++) out.push(i * i); return out;`)).toBe(
+      "[0, 1, 4]",
+    );
+    expect(
+      run(`const out = []; for (const key in { a: 1, b: 2 }) out.push(key); return out;`),
+    ).toBe('["a", "b"]');
+    expect(
+      run(
+        `let total = 0; for (const n of [1, 2, 3]) { if (n === 2) continue; total += n; } return total;`,
+      ),
+    ).toBe("4");
+    expect(
+      run(
+        `const out = []; for (const n of [1, 2]) { switch (n) { case 1: break; } out.push(n); } return out;`,
+      ),
+    ).toBe("[1, 2]");
+  });
+
+  it("does not unroll loops that break, since a break may depend on runtime state", () => {
+    expect(
+      run(
+        `const out = []; for (const n of [1, 2, 3]) { if (show) break; out.push(n); } return out;`,
+      ),
+    ).toMatch(/^\[list\(/);
+    expect(
+      run(
+        `const out = []; for (const n of [1, 2, 3]) { if (n === 2) break; out.push(n); } return out;`,
+      ),
+    ).toMatch(/^\[list\(/);
+  });
+
+  it("falls back to a single undecided pass for unbounded loops", () => {
+    expect(run(`const out = []; for (const row of rows) out.push(row); return out;`)).toMatch(
+      /^\[list\(/,
+    );
+  });
+
+  it("merges assignments across branches and early returns", () => {
+    expect(
+      run(`let label = "none";
+           switch (kind) {
+             case "a": label = "A"; break;
+             case "b": return "early";
+             default: label = "other";
+           }
+           return label;`),
+    ).toBe('(kind === "a" ? "A" : (kind === "b" ? "early" : "other"))');
+    expect(
+      describe_(
+        `const pick = (n: number) => {
+           if (n > 1) return "big";
+           return "small";
+         };
+         export const value = [pick(2), pick(0)];`,
+      ),
+    ).toBe('["big", "small"]');
+  });
+
+  it("evaluates try/catch as a branch and destructuring with defaults", () => {
+    expect(
+      describe_(
+        `const { a = 1, b: [c] = [2], ...rest } = { b: [3], d: 4 } as { a?: number; b?: number[]; d: number };
+         export const value = [a, c, Object.keys(rest)];`,
+      ),
+    ).toBe('[1, 3, ["d"]]');
+    expect(
+      describe_(
+        `const parse = () => { try { return JSON.parse("1"); } catch { return null; } };
+         export const value = parse();`,
+      ),
+    ).toMatch(/^\(try/);
+  });
+});
+
+describe("interpreter: functions and modules", () => {
+  it("binds rest and default parameters and reads closures", () => {
+    expect(
+      describe_(
+        `const join = (separator = ",", ...parts: string[]) => parts.join(separator);
+         export const value = join("-", "a", "b");`,
+      ),
+    ).toMatch(/^text\(/);
+    expect(
+      describe_(
+        `const make = (base: number) => (n: number) => base + n;
+         export const value = make(10)(5);`,
+      ),
+    ).toBe("15");
+  });
+
+  it("resolves values across modules, barrels and namespace imports", () => {
+    expect(
+      describe_(
+        `import { SIZE } from "./ui"; import * as ns from "./ui"; export const value = [SIZE, ns.double(SIZE)];`,
+        {
+          "src/ui/index.ts": `export * from "./size";`,
+          "src/ui/size.ts": `export const SIZE = 21; export const double = (n: number) => n * 2;`,
+        },
+      ),
+    ).toBe("[21, 42]");
+  });
+
+  it("names closures after their bindings and honours displayName", () => {
+    expect(
+      describe_(
+        `const Header = () => null;
+         const Footer = () => null;
+         Footer.displayName = "SiteFooter";
+         export const value = [Header, Footer];`,
+      ),
+    ).toBe("[fn(Header), fn(SiteFooter)]");
+  });
+
+  it("models class components with inherited members and defaultProps", () => {
+    expect(
+      describe_(
+        `import { Component } from "react";
+         class Base extends Component<{ n?: number }> { static defaultProps = { n: 1 }; }
+         class Child extends Base { render() { return null; } }
+         export const value = Child;`,
+      ),
+    ).toBe("component(Child)");
+  });
+});

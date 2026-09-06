@@ -219,9 +219,10 @@ const dedupe = (mismatches: Mismatch[]): Mismatch[] => {
   });
 };
 
+/** States are allocated back to front, so descending ids read in source order. */
 const describeExpectation = (automaton: Automaton, alive: Frontier): string => {
   const labels = new Set<string>();
-  for (const stateId of alive.keys()) {
+  for (const stateId of [...alive.keys()].sort((left, right) => right - left)) {
     const state = automaton.states[stateId];
     if (state.kind === "fiber") labels.add(formatFiberLabel(state.fiber));
     else if (state.kind === "accept") labels.add("end of children");
@@ -258,10 +259,7 @@ const matchChildren = (
       const deeper = dedupe(nestedMismatches.filter((mismatch) => mismatch.path !== path));
       if (deeper.length > 0) return { mismatches: deeper.slice(0, MAX_MISMATCHES), explained: 0 };
       const message = `child ${position + 1} is ${formatFiberLabel(fiber)}; expected ${describeExpectation(automaton, alive)}`;
-      return {
-        mismatches: dedupe([{ path, message }, ...nestedMismatches]).slice(0, MAX_MISMATCHES),
-        explained: 0,
-      };
+      return { mismatches: [{ path, message }], explained: 0 };
     }
     alive = closure(automaton, next);
   }

@@ -527,7 +527,7 @@ const createOffscreenFiber = (
     tag: "OffscreenComponent",
     name: "Offscreen",
     element: null,
-    owner: parent.owner,
+    owner: null,
   });
   fiber.annotations.push(`mode=${mode}`);
   fiber.children = reconcileChildren(builder, fiber, children, frame);

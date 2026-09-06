@@ -60,8 +60,11 @@ export const isEffectUndecided = (context: EvaluationContext, createdAtDepth: nu
 export type Completion =
   | { kind: "normal" }
   | { kind: "break" }
+  | { kind: "continue" }
   | { kind: "return"; value: StaticValue }
   | { kind: "partial"; complete: (restValue: StaticValue) => StaticValue };
+
+export type JumpKind = Extract<Completion, { kind: "break" | "continue" }>["kind"];
 
 export type DiagnosticCode =
   | "unresolved-reference"
@@ -111,6 +114,7 @@ export interface Interpreter {
 
 export const NORMAL_COMPLETION: Completion = { kind: "normal" };
 export const BREAK_COMPLETION: Completion = { kind: "break" };
+export const CONTINUE_COMPLETION: Completion = { kind: "continue" };
 
 export const returnCompletion = (value: StaticValue): Completion => ({ kind: "return", value });
 

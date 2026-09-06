@@ -4,6 +4,7 @@ import type {
   ForStatement,
   ForStatementLeft,
   IfStatement,
+  Span,
   Statement,
   SwitchStatement,
   TryStatement,
@@ -15,9 +16,11 @@ import { classifyClass } from "./components.js";
 import {
   BREAK_COMPLETION,
   type Completion,
+  CONTINUE_COMPLETION,
   enterUndecided,
   type EvaluationContext,
   type Interpreter,
+  type JumpKind,
   NORMAL_COMPLETION,
   returnCompletion,
 } from "./interpreter.js";
@@ -78,9 +81,14 @@ const evaluateArm = (
   };
 };
 
-/** `break` ends a switch case or loop iteration, not the enclosing function. */
-const withoutBreak = (arm: Arm): Arm =>
-  arm.completion.kind === "break" ? { ...arm, completion: NORMAL_COMPLETION } : arm;
+const LOOP_JUMPS: JumpKind[] = ["break", "continue"];
+const SWITCH_JUMPS: JumpKind[] = ["break"];
+
+/** Jumps end a switch case or loop iteration, not the enclosing function. */
+const absorbJumps = (arm: Arm, jumps: JumpKind[]): Arm =>
+  jumps.some((jump) => jump === arm.completion.kind)
+    ? { ...arm, completion: NORMAL_COMPLETION }
+    : arm;
 
 const hoistFunctionDeclarations = (statements: Statement[], context: EvaluationContext): void => {
   for (const statement of statements) {
@@ -192,8 +200,9 @@ const evaluateSwitch = (
     const test = group.tests
       .map((caseTest) => `${discriminantSource} === ${caseTest}`)
       .join(" || ");
-    const arm = withoutBreak(
+    const arm = absorbJumps(
       evaluateArm(interpreter, test || "default", group.statements, context),
+      SWITCH_JUMPS,
     );
     if (group.isDefault && group.tests.length === 0) fallback = arm;
     else arms.push(arm);
@@ -231,8 +240,18 @@ type IterationBinding = (context: EvaluationContext) => void;
 interface LoopBodyFacts {
   /** Identifiers assigned or updated anywhere in the body, nested closures included. */
   assignedNames: Set<string>;
-  hasJump: boolean;
+  /** A `break` that leaves this loop rather than a nested loop or switch. */
+  hasBreak: boolean;
 }
+
+const BREAK_TARGETS = new Set<string>([
+  "ForStatement",
+  "ForInStatement",
+  "ForOfStatement",
+  "WhileStatement",
+  "DoWhileStatement",
+  "SwitchStatement",
+]);
 
 const collectIdentifierNames = (root: object, names: Set<string>): void => {
   walk(root, (node) => {
@@ -240,22 +259,34 @@ const collectIdentifierNames = (root: object, names: Set<string>): void => {
   });
 };
 
+const contains = (outer: Span, inner: Span): boolean =>
+  outer.start <= inner.start && inner.end <= outer.end;
+
+/**
+ * A conditional `break` would make later iterations conditional, which the
+ * unrolled model cannot express; `continue` only ends the current iteration.
+ */
 const collectLoopBodyFacts = (body: Statement): LoopBodyFacts => {
-  const facts: LoopBodyFacts = { assignedNames: new Set(), hasJump: false };
+  const assignedNames = new Set<string>();
+  const breaks: { label: object | null; span: Span }[] = [];
+  const nestedTargets: Span[] = [];
   walk(body, (node) => {
     if (isNodeOfType(node, "AssignmentExpression"))
-      collectIdentifierNames(node.left, facts.assignedNames);
+      collectIdentifierNames(node.left, assignedNames);
     else if (isNodeOfType(node, "UpdateExpression"))
-      collectIdentifierNames(node.argument, facts.assignedNames);
-    else if (isNodeOfType(node, "BreakStatement") || isNodeOfType(node, "ContinueStatement"))
-      facts.hasJump = true;
+      collectIdentifierNames(node.argument, assignedNames);
+    else if (isNodeOfType(node, "BreakStatement")) breaks.push({ label: node.label, span: node });
+    else if (BREAK_TARGETS.has(node.type)) nestedTargets.push(node);
   });
-  return facts;
+  const hasBreak = breaks.some(
+    (jump) => jump.label !== null || !nestedTargets.some((target) => contains(target, jump.span)),
+  );
+  return { assignedNames, hasBreak };
 };
 
 /**
  * Simulates a `for` header without the body: iterations are known when the
- * test stays decidable, the body never jumps and never assigns anything the
+ * test stays decidable, the body never breaks and never assigns anything the
  * header reads.
  */
 const planForIterations = (
@@ -270,7 +301,7 @@ const planForIterations = (
   );
   if (counters.length !== init.declarations.length) return null;
   const facts = collectLoopBodyFacts(statement.body);
-  if (facts.hasJump) return null;
+  if (facts.hasBreak) return null;
   const headerNames = new Set<string>();
   collectIdentifierNames(test, headerNames);
   if (update) collectIdentifierNames(update, headerNames);
@@ -299,7 +330,7 @@ const planForOfIterations = (
   statement: ForOfStatement | ForInStatement,
   context: EvaluationContext,
 ): IterationBinding[] | null => {
-  if (collectLoopBodyFacts(statement.body).hasJump) return null;
+  if (collectLoopBodyFacts(statement.body).hasBreak) return null;
   const subject = interpreter.evaluateExpression(statement.right, context);
   const values =
     statement.type === "ForOfStatement"
@@ -330,6 +361,7 @@ const runIterations = (
   iterations[index](iterationContext);
   const completion = interpreter.evaluateStatements(toStatements(body), iterationContext);
   if (completion.kind === "return") return completion;
+  if (completion.kind === "break") return NORMAL_COMPLETION;
   const rest = (): Completion => runIterations(interpreter, iterations, body, context, index + 1);
   return completion.kind === "partial" ? continuePartial(completion.complete, rest()) : rest();
 };
@@ -392,7 +424,7 @@ const evaluateLoop = (
   const completion = evaluateInScope(interpreter, toStatements(body), scope, loopContext);
   return {
     kind: "arms",
-    arms: [withoutBreak({ test: header, scope, completion })],
+    arms: [absorbJumps({ test: header, scope, completion }, LOOP_JUMPS)],
     fallback: null,
   };
 };
@@ -478,8 +510,9 @@ const evaluateStatement = (
         unknown(`throw ${interpreter.getSource(context.module, statement.argument)}`),
       );
     case "BreakStatement":
-    case "ContinueStatement":
       return BREAK_COMPLETION;
+    case "ContinueStatement":
+      return CONTINUE_COMPLETION;
     default:
       return NORMAL_COMPLETION;
   }
@@ -512,8 +545,12 @@ const combineArms = (armSet: ArmSet, context: EvaluationContext): Completion => 
     armSet.fallback && !isReturning(armSet.fallback.completion) ? armSet.fallback.scope : null;
   mergeBranchScopes(context.scope, continuingArms, continuingFallback);
   if (returningArms.length === 0) {
-    const allBreak = allArms.every((arm) => arm.completion.kind === "break");
-    return allBreak && armSet.fallback ? BREAK_COMPLETION : NORMAL_COMPLETION;
+    const [first] = allArms;
+    const isSharedJump =
+      armSet.fallback !== null &&
+      LOOP_JUMPS.some((jump) => jump === first.completion.kind) &&
+      allArms.every((arm) => arm.completion.kind === first.completion.kind);
+    return isSharedJump ? first.completion : NORMAL_COMPLETION;
   }
   const complete = (restValue: StaticValue): StaticValue => {
     let merged = armSet.fallback ? valueOf(armSet.fallback, restValue) : restValue;
