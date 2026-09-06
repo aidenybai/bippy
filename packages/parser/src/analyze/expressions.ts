@@ -12,7 +12,7 @@ import type {
 } from "@oxc-project/types";
 import { getMemberChain, isStringLiteral } from "../module/ast.js";
 import { getProperty, normalizeExternal, spreadInto } from "./access.js";
-import { GLOBAL_NAMESPACES } from "./builtins.js";
+import { isKnownGlobal } from "./builtins.js";
 import { evaluateCall } from "./calls.js";
 import { classifyClass } from "./components.js";
 import {
@@ -32,6 +32,7 @@ import {
   FALSE,
   type FunctionValue,
   getTruthiness,
+  isNullish,
   literal,
   mergeObjects,
   nameValue,
@@ -72,7 +73,7 @@ export const resolveIdentifier = (
   const globalLiteral = GLOBAL_LITERALS[name];
   if (globalLiteral) return globalLiteral;
   if (name === "React") return REACT_GLOBAL;
-  if (!GLOBAL_NAMESPACES.has(name)) {
+  if (!isKnownGlobal(name)) {
     interpreter.report("unresolved-reference", `no binding for "${name}"`, context.module, span);
   }
   return unknown(`global ${name}`);
@@ -161,7 +162,7 @@ const applyLogicalOperator = (
       if (truthiness === false) return right();
       return conditional(test, left, right());
     case "??": {
-      if (left.kind === "literal") return left.value == null ? right() : left;
+      if (left.kind === "literal") return isNullish(left.value) ? right() : left;
       if (left.kind === "unknown" || left.kind === "conditional") {
         return conditional(`${test} != null`, left, right());
       }

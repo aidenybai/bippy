@@ -38,6 +38,81 @@ export const GLOBAL_NAMESPACES = new Set([
   "process",
 ]);
 
+/** Browser globals the analysis host (Node) does not define. */
+const DOM_GLOBALS = new Set([
+  "location",
+  "history",
+  "screen",
+  "self",
+  "parent",
+  "top",
+  "frames",
+  "localStorage",
+  "sessionStorage",
+  "indexedDB",
+  "caches",
+  "requestAnimationFrame",
+  "cancelAnimationFrame",
+  "requestIdleCallback",
+  "cancelIdleCallback",
+  "matchMedia",
+  "getComputedStyle",
+  "getSelection",
+  "scrollTo",
+  "scrollBy",
+  "alert",
+  "confirm",
+  "prompt",
+  "open",
+  "print",
+  "innerWidth",
+  "innerHeight",
+  "devicePixelRatio",
+  "Image",
+  "Audio",
+  "Option",
+  "FileReader",
+  "XMLHttpRequest",
+  "Worker",
+  "DOMParser",
+  "XMLSerializer",
+  "Notification",
+  "MutationObserver",
+  "IntersectionObserver",
+  "ResizeObserver",
+  "CSS",
+  "Node",
+  "Text",
+  "Element",
+  "Range",
+  "Selection",
+  "NodeList",
+  "DocumentFragment",
+  "ShadowRoot",
+  "DataTransfer",
+  "MediaQueryList",
+  "ImageData",
+  "Path2D",
+  "OffscreenCanvas",
+  "AudioContext",
+  "MediaRecorder",
+  "MediaStream",
+  "IDBKeyRange",
+]);
+
+const DOM_GLOBAL_PATTERN = /^(?:HTML|SVG|CSS|Webkit|WebKit)[A-Z]|Event$|Element$/;
+
+/**
+ * Whether a free identifier names a value the runtime provides. Anything
+ * ECMAScript or the web platform defines in Node is checked against the host,
+ * so the list only has to cover what browsers add on top.
+ */
+export const isKnownGlobal = (name: string): boolean =>
+  GLOBAL_NAMESPACES.has(name) ||
+  DOM_GLOBALS.has(name) ||
+  DOM_GLOBAL_PATTERN.test(name) ||
+  name in globalThis;
+
 const ARRAY_LIKE_METHODS = new Set([
   "map",
   "flatMap",

@@ -2,6 +2,7 @@ import type { CallbackInvoker } from "./react-calls.js";
 import {
   array,
   type ElementValue,
+  isNullish,
   list,
   literal,
   NULL,
@@ -39,7 +40,7 @@ const joinKeys = (...parts: (string | null)[]): string | null =>
 const getLiteralKey = (element: ElementValue): string | null | undefined => {
   if (element.key === null) return undefined;
   if (element.key.kind !== "literal") return null;
-  return element.key.value == null ? undefined : String(element.key.value);
+  return isNullish(element.key.value) ? undefined : String(element.key.value);
 };
 
 const getElementKey = (child: StaticValue, index: number): string | null => {
@@ -50,7 +51,7 @@ const getElementKey = (child: StaticValue, index: number): string | null => {
 };
 
 const isNullishChild = (value: StaticValue): boolean =>
-  value.kind === "literal" && (value.value == null || typeof value.value === "boolean");
+  value.kind === "literal" && (isNullish(value.value) || typeof value.value === "boolean");
 
 const isLeafChild = (value: StaticValue): boolean =>
   value.kind === "literal" || value.kind === "text" || value.kind === "element";
@@ -150,7 +151,7 @@ const mapChildren = (
   callback: StaticValue | null,
   invoke: CallbackInvoker,
 ): StaticValue => {
-  if (children.kind === "literal" && children.value == null) return children;
+  if (children.kind === "literal" && isNullish(children.value)) return children;
   const traversal = traverseChildren(children, callback, invoke);
   const [only] = traversal.results;
   if (!traversal.isPrecise && traversal.results.length === 1 && only.kind === "list") {
@@ -178,7 +179,7 @@ export const evaluateChildrenApi = (
       return mapped.kind === "literal" ? array([]) : mapped;
     }
     case "count": {
-      if (children.kind === "literal" && children.value == null) return literal(0);
+      if (children.kind === "literal" && isNullish(children.value)) return literal(0);
       const traversal = traverseChildren(children, null, invoke);
       return traversal.isPrecise ? literal(traversal.count) : unknown(description);
     }

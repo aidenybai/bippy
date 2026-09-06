@@ -14,6 +14,7 @@ import { evaluateRegExpMethod, evaluateStringMethod } from "./strings.js";
 import {
   type ExternalValue,
   type FunctionValue,
+  isFullyKnown,
   type StaticValue,
   text,
   UNDEFINED,
@@ -260,6 +261,25 @@ export const evaluateCall = (
   return invokeValue(interpreter, calleeValue, callArguments, call, description, context);
 };
 
+/** Nested activations of one function before its recursion evaluates to unknown. */
+export const MAX_RECURSION_DEPTH = 8;
+
+/**
+ * Whether a call to a function already on the stack is worth following.
+ * Recursion reaches its base case only through fully known arguments; with
+ * anything unknown in them every level would re-evaluate the same undecided
+ * branches, and each branch that recurses multiplies the work.
+ */
+const isRecursionFollowed = (
+  fn: FunctionValue,
+  callArguments: StaticValue[],
+  context: EvaluationContext,
+): boolean => {
+  const activations = context.activeCalls.get(fn.fn) ?? 0;
+  if (activations === 0) return true;
+  return activations < MAX_RECURSION_DEPTH && callArguments.every(isFullyKnown);
+};
+
 /**
  * Invokes a closure: parameters bind in a fresh scope under the closure's
  * defining scope, and `async` results are treated as already awaited since
@@ -284,12 +304,18 @@ export const callFunction = (
   if (fn.fn.type !== "ArrowFunctionExpression" && fn.fn.generator) {
     return unknown(`generator ${displayName}()`);
   }
+  if (!isRecursionFollowed(fn, callArguments, context)) {
+    return unknown(`recursive ${displayName}()`);
+  }
+  const activeCalls = new Map(context.activeCalls);
+  activeCalls.set(fn.fn, (activeCalls.get(fn.fn) ?? 0) + 1);
   const inner: EvaluationContext = {
     ...context,
     module: fn.module,
     scope: createScope(fn.scope),
     thisValue: fn.thisValue,
     callDepth: context.callDepth + 1,
+    activeCalls,
   };
   bindParameters(interpreter, fn.fn.params, callArguments, inner);
   if (fn.fn.body === null) return UNDEFINED;

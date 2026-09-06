@@ -1,13 +1,14 @@
 import type { Expression, Span, Statement } from "@oxc-project/types";
 import type { StaticFiber } from "../fiber/types.js";
 import type { LinkedSymbol, Linker } from "../link/linker.js";
+import type { FunctionLike } from "../module/ast.js";
 import type { SourceLocation } from "../module/location.js";
 import type { ParsedModule } from "../module/types.js";
 import type { Project } from "../project/project.js";
 import type { ProvidedContexts } from "./contexts.js";
 import type { HookCall } from "./hooks.js";
 import type { Scope } from "./scope.js";
-import type { FunctionValue, StaticValue } from "./values.js";
+import { type FunctionValue, type StaticValue, unknown } from "./values.js";
 
 export interface EvaluationContext {
   module: ParsedModule;
@@ -21,6 +22,8 @@ export interface EvaluationContext {
   /** Context values provided by the fibers above the render in progress. */
   contexts: ProvidedContexts;
   callDepth: number;
+  /** How many times each function on the call stack is executing, to bound recursion. */
+  activeCalls: ReadonlyMap<FunctionLike, number>;
   /** Innermost branch or loop whose direction is not known statically, if any. */
   undecided: UndecidedFrame | null;
 }
@@ -55,12 +58,14 @@ export const isEffectUndecided = (context: EvaluationContext, createdAtDepth: nu
 /**
  * How a statement list finished. A `partial` completion returned on some
  * paths only; it becomes a value once the rest of the enclosing sequence has
- * been evaluated and its result is passed to `complete`.
+ * been evaluated and its result is passed to `complete`. A `throw` leaves
+ * the render path: React shows an error boundary instead of a value.
  */
 export type Completion =
   | { kind: "normal" }
   | { kind: "break" }
   | { kind: "continue" }
+  | { kind: "throw" }
   | { kind: "return"; value: StaticValue }
   | { kind: "partial"; complete: (restValue: StaticValue) => StaticValue };
 
@@ -83,11 +88,21 @@ export interface InterpreterOptions {
   maxCallDepth?: number;
 }
 
+/** Thrown from evaluation once the render's time budget is spent. */
+export class AnalysisTimeoutError extends Error {
+  constructor(budgetMs: number) {
+    super(`analysis exceeded its ${budgetMs}ms budget`);
+    this.name = "AnalysisTimeoutError";
+  }
+}
+
 export interface Interpreter {
   project: Project;
   linker: Linker;
   maxCallDepth: number;
   diagnostics: Diagnostic[];
+  /** Makes evaluation throw `AnalysisTimeoutError` after `budgetMs`; `null` removes the limit. */
+  setTimeBudget: (budgetMs: number | null) => void;
   moduleScopes: WeakMap<ParsedModule, Scope>;
   /** Evaluated export expressions keyed by module path and node offset. */
   valueCache: Map<string, StaticValue>;
@@ -115,6 +130,7 @@ export interface Interpreter {
 export const NORMAL_COMPLETION: Completion = { kind: "normal" };
 export const BREAK_COMPLETION: Completion = { kind: "break" };
 export const CONTINUE_COMPLETION: Completion = { kind: "continue" };
+export const THROW_COMPLETION: Completion = { kind: "throw" };
 
 export const returnCompletion = (value: StaticValue): Completion => ({ kind: "return", value });
 
@@ -125,6 +141,8 @@ export const getReturnValue = (completion: Completion, fallthrough: StaticValue)
       return completion.value;
     case "partial":
       return completion.complete(fallthrough);
+    case "throw":
+      return unknown("thrown error");
     default:
       return fallthrough;
   }

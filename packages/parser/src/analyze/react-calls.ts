@@ -10,6 +10,7 @@ import {
   component,
   type ExternalValue,
   FALSE,
+  isNullish,
   mergeObjects,
   NULL,
   object,
@@ -22,8 +23,8 @@ import {
 
 export type CallbackInvoker = (callback: StaticValue, callArguments: StaticValue[]) => StaticValue;
 
-const isNullish = (value: StaticValue | undefined): boolean =>
-  value === undefined || (value.kind === "literal" && value.value == null);
+const isNullishValue = (value: StaticValue | undefined): boolean =>
+  value === undefined || (value.kind === "literal" && isNullish(value.value));
 
 const childrenProp = (children: StaticValue[]): StaticValue | null => {
   if (children.length === 0) return null;
@@ -40,7 +41,7 @@ const createElementFromCall = (
   const [type, config, ...children] = callArguments;
   if (!type) return unknown("createElement without type");
   const props: ObjectValue = config?.kind === "object" ? cloneObject(config) : object();
-  if (config && config.kind !== "object" && !isNullish(config)) props.hasUnknownSpread = true;
+  if (config && config.kind !== "object" && !isNullishValue(config)) props.hasUnknownSpread = true;
   const key = props.properties.get("key") ?? null;
   props.properties.delete("key");
   const childrenValue = childrenProp(children);
@@ -62,7 +63,7 @@ const createElementFromJsxRuntime = (
     interpreter,
     type,
     props,
-    isNullish(key) ? null : (key ?? null),
+    isNullishValue(key) ? null : (key ?? null),
     span,
     context,
   );
@@ -83,7 +84,7 @@ const cloneElement = (
     const configKey = config.properties.get("key");
     if (configKey) key = configKey;
     props.properties.delete("key");
-  } else if (config && !isNullish(config)) props.hasUnknownSpread = true;
+  } else if (config && !isNullishValue(config)) props.hasUnknownSpread = true;
   const childrenValue = childrenProp(children);
   if (childrenValue) props.properties.set("children", childrenValue);
   return {
@@ -131,7 +132,7 @@ export const evaluateReactCall = (
         kind: "memo",
         name: null,
         inner: first ?? unknown("memo without component"),
-        hasCompare: second !== undefined && !isNullish(second),
+        hasCompare: second !== undefined && !isNullishValue(second),
         span: spanOf(),
       });
     case "forwardRef":

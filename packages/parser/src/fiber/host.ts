@@ -1,6 +1,7 @@
 import {
   getObjectProperty,
   getTruthiness,
+  isNullish,
   type ObjectValue,
   type StaticValue,
 } from "../analyze/values.js";
@@ -27,7 +28,7 @@ const isNonEmptyString = (value: StaticValue): boolean =>
 const isTruthy = (value: StaticValue): boolean => getTruthiness(value) !== false;
 
 const isDefined = (value: StaticValue): boolean =>
-  !(value.kind === "literal" && value.value == null);
+  !(value.kind === "literal" && isNullish(value.value));
 
 /**
  * `shouldSetTextContent` from `ReactFiberConfigDOM`: a lone string child is

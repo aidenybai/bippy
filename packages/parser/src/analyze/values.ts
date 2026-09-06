@@ -265,6 +265,9 @@ export const NULL = literal(null);
 export const TRUE = literal(true);
 export const FALSE = literal(false);
 
+export const isNullish = (value: Primitive): value is null | undefined =>
+  value === null || value === undefined;
+
 export const isRenderedAsText = (value: Primitive): boolean =>
   (typeof value === "string" && value !== "") ||
   typeof value === "number" ||
@@ -305,6 +308,47 @@ export const withDisplayName = (value: StaticValue, displayName: string): Static
   }
   return value;
 };
+
+const isFullyKnownInner = (value: StaticValue, visited: Set<StaticValue>): boolean => {
+  switch (value.kind) {
+    case "literal":
+    case "regexp":
+    case "function":
+    case "component":
+    case "namespace":
+    case "external":
+      return true;
+    case "text":
+    case "unknown":
+    case "list":
+    case "conditional":
+      return false;
+    case "array":
+      if (visited.has(value)) return true;
+      visited.add(value);
+      return value.items.every((item) => isFullyKnownInner(item, visited));
+    case "object":
+      if (visited.has(value)) return true;
+      visited.add(value);
+      return (
+        !value.hasUnknownSpread &&
+        [...value.properties.values()].every((property) => isFullyKnownInner(property, visited))
+      );
+    case "element":
+      return (
+        isFullyKnownInner(value.type, visited) &&
+        (value.key === null || isFullyKnownInner(value.key, visited)) &&
+        isFullyKnownInner(value.props, visited)
+      );
+  }
+};
+
+/**
+ * Whether no part of `value` stands in for a runtime value. Computation on
+ * fully known input can be followed to its result; anything else can only be
+ * approximated.
+ */
+export const isFullyKnown = (value: StaticValue): boolean => isFullyKnownInner(value, new Set());
 
 /** Truthiness when statically decidable, otherwise `null`. */
 export const getTruthiness = (value: StaticValue): boolean | null => {

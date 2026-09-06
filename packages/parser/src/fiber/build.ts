@@ -9,14 +9,15 @@ import type { EvaluationContext, Interpreter } from "../analyze/interpreter.js";
 import {
   type BuiltinComponentName,
   cloneObject,
-  type ComponentDefinition,
   component,
+  type ComponentDefinition,
   describeValue,
   type ElementValue,
   type FunctionValue,
   getComponentName,
   getObjectProperty,
   getValueName,
+  isNullish,
   type ListValue,
   NULL,
   object,
@@ -95,7 +96,7 @@ const isUnkeyedFragment = (value: StaticValue): value is ElementValue =>
 
 /** React coerces keys with `"" + key`; keys only known at runtime stay `null`. */
 const getKey = (key: StaticValue | null): string | null => {
-  if (key === null || key.kind !== "literal" || key.value == null) return null;
+  if (key === null || key.kind !== "literal" || isNullish(key.value)) return null;
   return String(key.value);
 };
 

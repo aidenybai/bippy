@@ -23,6 +23,7 @@ import {
   type JumpKind,
   NORMAL_COMPLETION,
   returnCompletion,
+  THROW_COMPLETION,
 } from "./interpreter.js";
 import { assignToTarget, bindPattern } from "./patterns.js";
 import {
@@ -360,7 +361,7 @@ const runIterations = (
   const iterationContext: EvaluationContext = { ...context, scope: createScope(context.scope) };
   iterations[index](iterationContext);
   const completion = interpreter.evaluateStatements(toStatements(body), iterationContext);
-  if (completion.kind === "return") return completion;
+  if (completion.kind === "return" || completion.kind === "throw") return completion;
   if (completion.kind === "break") return NORMAL_COMPLETION;
   const rest = (): Completion => runIterations(interpreter, iterations, body, context, index + 1);
   return completion.kind === "partial" ? continuePartial(completion.complete, rest()) : rest();
@@ -429,12 +430,17 @@ const evaluateLoop = (
   };
 };
 
+/**
+ * A `catch` handler is one more arm, since any call in the block may throw
+ * at runtime; it is the only arm once the block itself is known to throw.
+ */
 const evaluateTry = (
   interpreter: Interpreter,
   statement: TryStatement,
   context: EvaluationContext,
-): ArmSet => {
+): Completion | ArmSet => {
   const tryArm = evaluateArm(interpreter, "try", statement.block.body, context);
+  const isThrowing = tryArm.completion.kind === "throw";
   let fallback: Arm | null = null;
   if (statement.handler) {
     const scope = forkScope(context.scope);
@@ -449,7 +455,8 @@ const evaluateTry = (
     };
   }
   if (statement.finalizer) interpreter.evaluateStatements(statement.finalizer.body, context);
-  return { kind: "arms", arms: [tryArm], fallback };
+  if (isThrowing && fallback === null) return THROW_COMPLETION;
+  return { kind: "arms", arms: isThrowing ? [] : [tryArm], fallback };
 };
 
 const evaluateStatement = (
@@ -506,9 +513,7 @@ const evaluateStatement = (
       interpreter.evaluateExpression(statement.expression, context);
       return NORMAL_COMPLETION;
     case "ThrowStatement":
-      return returnCompletion(
-        unknown(`throw ${interpreter.getSource(context.module, statement.argument)}`),
-      );
+      return THROW_COMPLETION;
     case "BreakStatement":
       return BREAK_COMPLETION;
     case "ContinueStatement":
@@ -532,36 +537,45 @@ const valueOf = (arm: Arm, restValue: StaticValue): StaticValue => {
   }
 };
 
+const isLive = (arm: Arm): boolean => arm.completion.kind !== "throw";
+
 /**
- * Joins the arms of a branch. Every arm returning gives a conditional over
- * their values; otherwise the result stays partial and is completed with
- * whatever the statements after the branch evaluate to.
+ * Joins the arms of a branch. Arms that throw leave the render path and are
+ * dropped. Every live arm returning gives a conditional over their values;
+ * otherwise the result stays partial and is completed with whatever the
+ * statements after the branch evaluate to.
  */
 const combineArms = (armSet: ArmSet, context: EvaluationContext): Completion => {
-  const allArms = armSet.fallback ? [...armSet.arms, armSet.fallback] : armSet.arms;
-  const returningArms = allArms.filter((arm) => isReturning(arm.completion));
-  const continuingArms = armSet.arms.filter((arm) => !isReturning(arm.completion));
-  const continuingFallback =
-    armSet.fallback && !isReturning(armSet.fallback.completion) ? armSet.fallback.scope : null;
+  const arms = armSet.arms.filter(isLive);
+  const fallback = armSet.fallback && isLive(armSet.fallback) ? armSet.fallback : null;
+  /** Control reaches the next statement without entering any arm. */
+  const isSkippable = armSet.fallback === null;
+  const liveArms = fallback ? [...arms, fallback] : arms;
+  if (liveArms.length === 0) return isSkippable ? NORMAL_COMPLETION : THROW_COMPLETION;
+  const returningArms = liveArms.filter((arm) => isReturning(arm.completion));
+  const continuingArms = arms.filter((arm) => !isReturning(arm.completion));
+  const continuingFallback = fallback && !isReturning(fallback.completion) ? fallback.scope : null;
   mergeBranchScopes(context.scope, continuingArms, continuingFallback);
   if (returningArms.length === 0) {
-    const [first] = allArms;
+    const [first] = liveArms;
     const isSharedJump =
-      armSet.fallback !== null &&
+      !isSkippable &&
       LOOP_JUMPS.some((jump) => jump === first.completion.kind) &&
-      allArms.every((arm) => arm.completion.kind === first.completion.kind);
+      liveArms.every((arm) => arm.completion.kind === first.completion.kind);
     return isSharedJump ? first.completion : NORMAL_COMPLETION;
   }
+  /** The last live arm needs no test once every other path is dead or tested. */
+  const testedArms = isSkippable ? liveArms : liveArms.slice(0, -1);
   const complete = (restValue: StaticValue): StaticValue => {
-    let merged = armSet.fallback ? valueOf(armSet.fallback, restValue) : restValue;
-    for (let index = armSet.arms.length - 1; index >= 0; index--) {
-      const arm = armSet.arms[index];
+    let merged = isSkippable ? restValue : valueOf(liveArms[liveArms.length - 1], restValue);
+    for (let index = testedArms.length - 1; index >= 0; index--) {
+      const arm = testedArms[index];
       merged = conditional(arm.test, valueOf(arm, restValue), merged);
     }
     return merged;
   };
   const everyPathReturns =
-    armSet.fallback !== null && allArms.every((arm) => arm.completion.kind === "return");
+    !isSkippable && liveArms.every((arm) => arm.completion.kind === "return");
   return everyPathReturns ? returnCompletion(complete(UNDEFINED)) : { kind: "partial", complete };
 };
 

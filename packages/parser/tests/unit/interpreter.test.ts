@@ -216,6 +216,52 @@ describe("interpreter: control flow", () => {
       ),
     ).toMatch(/^\(try/);
   });
+
+  it("drops paths that throw, since React renders an error boundary there instead", () => {
+    expect(
+      run(`if (!show) throw new Error("must be inside provider");
+           return "content";`),
+    ).toBe('"content"');
+    expect(
+      run(`if (show) return "a";
+           else if (kind === "b") return "b";
+           else throw new Error("unreachable");`),
+    ).toBe('(show ? "a" : "b")');
+    expect(run(`try { throw new Error("boom"); } catch { return "recovered"; }`)).toBe(
+      '"recovered"',
+    );
+    expect(
+      describe_(`const fail = () => { throw new Error("always"); }; export const value = fail();`),
+    ).toBe("unknown(thrown error)");
+  });
+});
+
+describe("interpreter: recursion", () => {
+  it("follows recursion on fully known arguments to its result", () => {
+    expect(
+      describe_(
+        `const sum = (items: number[]): number =>
+           items.length === 0 ? 0 : items[0] + sum(items.slice(1));
+         export const value = sum([1, 2, 3]);`,
+      ),
+    ).toBe("6");
+  });
+
+  it("cuts recursion as soon as an argument is unknown, instead of exploring every branch", () => {
+    const startedAt = performance.now();
+    expect(
+      describe_(
+        `declare const flag: boolean;
+         const midpoint = (a: string, b: string): string => {
+           if (flag) return midpoint(a.slice(1), b) + "x";
+           if (a.length > b.length) return midpoint(a, b.slice(1));
+           return midpoint(a.slice(1), b.slice(1));
+         };
+         export const value = midpoint("abc", "de");`,
+      ),
+    ).toMatch(/^(\(flag|unknown\(|text\()/);
+    expect(performance.now() - startedAt).toBeLessThan(2_000);
+  });
 });
 
 describe("interpreter: functions and modules", () => {
