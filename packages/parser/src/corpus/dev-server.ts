@@ -1,5 +1,6 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { createWriteStream, type WriteStream } from "node:fs";
+import { setTimeout as sleep } from "node:timers/promises";
 
 export interface DevServerOptions {
   command: string;
@@ -19,8 +20,8 @@ export interface RunCommandOptions {
 const READY_POLL_INTERVAL_MS = 500;
 const KILL_GRACE_MS = 3_000;
 
-const sleep = (ms: number): Promise<void> =>
-  new Promise((resolveSleep) => setTimeout(resolveSleep, ms));
+// Race timers must not keep the process alive once the child has exited.
+const deadline = <T>(ms: number, value: T): Promise<T> => sleep(ms, value, { ref: false });
 
 const spawnShell = (
   command: string,
@@ -33,7 +34,9 @@ const spawnShell = (
     shell: true,
     detached: true,
     stdio: ["ignore", "pipe", "pipe"],
-    env: { ...process.env, ...env, FORCE_COLOR: "0", CI: "1" },
+    // Clones live under bippy's tree, whose `packageManager` field would otherwise make
+    // corepack refuse the yarn/npm commands the corpus repositories expect.
+    env: { ...process.env, ...env, FORCE_COLOR: "0", CI: "1", COREPACK_ENABLE_STRICT: "0" },
   });
   child.stdout?.pipe(log, { end: false });
   child.stderr?.pipe(log, { end: false });
@@ -50,10 +53,7 @@ const killProcessGroup = async (child: ChildProcess): Promise<void> => {
   } catch {
     return;
   }
-  const timedOut = await Promise.race([
-    exited.then(() => false),
-    sleep(KILL_GRACE_MS).then(() => true),
-  ]);
+  const timedOut = await Promise.race([exited.then(() => false), deadline(KILL_GRACE_MS, true)]);
   if (timedOut) {
     try {
       process.kill(-child.pid, "SIGKILL");
@@ -71,8 +71,7 @@ export const runCommand = async (options: RunCommandOptions): Promise<void> => {
     child.once("error", rejectExit);
     child.once("exit", (code) => resolveExit(code));
   });
-  const timeout = sleep(options.timeoutMs).then(() => "timeout" as const);
-  const outcome = await Promise.race([exit, timeout]);
+  const outcome = await Promise.race([exit, deadline(options.timeoutMs, "timeout" as const)]);
   if (outcome === "timeout") {
     await killProcessGroup(child);
     log.end();

@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { formatFiber } from "../fiber/serialize.js";
 import { renderFramework } from "../frameworks/render-framework.js";
@@ -7,7 +7,7 @@ import { flattenTransparentFibers } from "../frameworks/framework-profile.js";
 import { getFrameworkProfile } from "../frameworks/profiles.js";
 import { BrowserCapturer, type BrowserCaptureResult } from "../harness/capture-browser.js";
 import { compareStaticToRuntime } from "../harness/compare-render.js";
-import { countSnapshotFibers, formatRuntimeSnapshot } from "../harness/snapshot.js";
+import { countSnapshotFibers, formatRuntimeSnapshot, readSnapshot } from "../harness/snapshot.js";
 import type { Diagnostic, StaticRenderResult } from "../types.js";
 import { DevServer, runCommand } from "./dev-server.js";
 import type { CorpusEntry, CorpusResult, CorpusRuntimeSummary } from "./manifest.js";
@@ -79,6 +79,63 @@ const summarizeRuntime = (capture: BrowserCaptureResult): CorpusRuntimeSummary =
 const describeError = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
+const capturePath = (outputDirectory: string, entry: CorpusEntry): string =>
+  path.join(outputDirectory, `${entry.id}.capture.json`);
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const isStringArray = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.every((item) => typeof item === "string");
+
+// A browser capture saved by an earlier live run; static-only passes replay it so
+// evaluator changes are re-verified against the same runtime tree without a dev server.
+const readSavedCapture = (
+  outputDirectory: string,
+  entry: CorpusEntry,
+): BrowserCaptureResult | null => {
+  const filePath = capturePath(outputDirectory, entry);
+  if (!existsSync(filePath)) return null;
+  const parsed: unknown = JSON.parse(readFileSync(filePath, "utf8"));
+  if (
+    !isRecord(parsed) ||
+    parsed.revision !== entry.revision ||
+    typeof parsed.commits !== "number" ||
+    typeof parsed.title !== "string" ||
+    !isStringArray(parsed.pageErrors)
+  ) {
+    return null;
+  }
+  return {
+    snapshot: readSnapshot(parsed.snapshot),
+    commits: parsed.commits,
+    pageErrors: parsed.pageErrors,
+    title: parsed.title,
+  };
+};
+
+const compareEntry = (
+  entry: CorpusEntry,
+  staticResult: StaticRenderResult,
+  capture: BrowserCaptureResult,
+  result: CorpusResult,
+): void => {
+  const profile = getFrameworkProfile(entry.framework);
+  const comparison = compareStaticToRuntime(
+    staticResult,
+    flattenTransparentFibers(capture.snapshot, profile),
+    {
+      ...entry.compare,
+      anchor: entry.static.anchor ?? profile.defaultAnchor ?? undefined,
+      transparentStaticFibers: profile.transparentStaticFibers,
+    },
+  );
+  result.runtime = summarizeRuntime(capture);
+  result.report = comparison.report;
+  result.anchor = comparison.anchor;
+  result.note = comparison.note;
+};
+
 const writeArtifacts = (
   outputDirectory: string,
   entry: CorpusEntry,
@@ -104,8 +161,8 @@ const writeArtifacts = (
   }
   if (capture) {
     writeFileSync(
-      path.join(outputDirectory, `${entry.id}.runtime.json`),
-      JSON.stringify(capture.snapshot, null, 2),
+      capturePath(outputDirectory, entry),
+      JSON.stringify({ revision: entry.revision, ...capture }, null, 2),
     );
     writeFileSync(
       path.join(outputDirectory, `${entry.id}.runtime.txt`),
@@ -151,7 +208,16 @@ export const runCorpusEntry = async (
       diagnostics: summarizeDiagnostics(staticResult.diagnostics),
     };
     if (options.staticOnly) {
-      result.note = "static only";
+      const saved = readSavedCapture(outputDirectory, entry);
+      if (!saved) {
+        result.note = "static only";
+        return result;
+      }
+      log(`replaying capture from ${saved.snapshot.capturedAt}`);
+      compareEntry(entry, staticResult, saved, result);
+      result.note = [result.note, `runtime replayed from ${saved.snapshot.capturedAt}`]
+        .filter((part) => part !== null)
+        .join("; ");
       return result;
     }
 
@@ -198,21 +264,7 @@ export const runCorpusEntry = async (
     } finally {
       await server.stop();
     }
-    result.runtime = summarizeRuntime(capture);
-
-    const profile = getFrameworkProfile(entry.framework);
-    const comparison = compareStaticToRuntime(
-      staticResult,
-      flattenTransparentFibers(capture.snapshot, profile),
-      {
-        ...entry.compare,
-        anchor: entry.static.anchor ?? profile.defaultAnchor ?? undefined,
-        transparentStaticFibers: profile.transparentStaticFibers,
-      },
-    );
-    result.report = comparison.report;
-    result.anchor = comparison.anchor;
-    result.note = comparison.note;
+    compareEntry(entry, staticResult, capture, result);
     return result;
   } catch (error) {
     result.failure = describeError(error);

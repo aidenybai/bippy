@@ -42,7 +42,7 @@ describe("next app router", () => {
   it("awaits async server components and their data helpers", () => {
     const { tree } = render("next-app", { framework: "next-app", route: "/" });
     expect(tree).not.toContain("async function result");
-    expect(tree).toContain('"1"');
+    expect(tree).toMatch(/<h1>\n\s+<Counter>\n\s+<button>/);
   });
 
   it("models next/link as LinkComponent -> anonymous provider -> <a>", () => {

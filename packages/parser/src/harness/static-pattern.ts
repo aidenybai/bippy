@@ -104,7 +104,7 @@ const flattenPatternNode = (node: PatternNode, transparent: ReadonlySet<string>)
   switch (node.kind) {
     case "fiber": {
       const children = flattenPatternFibers(node.children, transparent);
-      if (node.name !== null && transparent.has(node.name)) return children;
+      if (transparent.has(node.name ?? node.tag)) return children;
       return [{ ...node, children }];
     }
     case "branch":
@@ -126,7 +126,7 @@ const flattenPatternNode = (node: PatternNode, transparent: ReadonlySet<string>)
   }
 };
 
-/** Splices out fibers named in `transparent`, promoting their children; used for framework wrappers synthesized on the static side. */
+/** Splices out fibers named in `transparent` (anonymous ones by tag), promoting their children; used for framework wrappers synthesized on the static side. */
 export const flattenPatternFibers = (
   nodes: PatternNode[],
   transparent: ReadonlySet<string>,

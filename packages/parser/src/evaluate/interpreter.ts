@@ -212,6 +212,21 @@ export class Interpreter {
     return this.resolvedSymbolToValue(this.graph.resolveExport(module, exportedName), exportedName);
   }
 
+  /** The exports of a module as an object, for `{ ...m }` / `const { a, ...rest } = m` over a namespace. */
+  materializeNamespace(module: ModuleRecord): StaticValue {
+    const { names, complete } = this.graph.collectExportNames(module);
+    if (!complete) {
+      return unknownValue(`namespace of ${module.filePath} re-exports an unanalyzed module`);
+    }
+    return objectValue(
+      names.map((name) => ({
+        kind: "property",
+        key: name,
+        value: this.evaluateModuleExport(module, name),
+      })),
+    );
+  }
+
   evaluateModuleBinding(module: ModuleRecord, name: string): StaticValue | null {
     const binding = module.bindings.get(name);
     if (!binding) return null;
@@ -614,9 +629,10 @@ export class Interpreter {
     const entries: StaticObjectEntry[] = [];
     for (const property of node.properties) {
       if (property.type === "SpreadElement") {
+        const spread = this.evaluateExpression(property.argument, context);
         entries.push({
           kind: "spread",
-          value: this.evaluateExpression(property.argument, context),
+          value: spread.kind === "namespace" ? this.materializeNamespace(spread.module) : spread,
         });
         continue;
       }
@@ -1230,10 +1246,12 @@ export class Interpreter {
         const usedKeys = new Set<string>();
         for (const property of pattern.properties) {
           if (property.type === "RestElement") {
+            const source =
+              value.kind === "namespace" ? this.materializeNamespace(value.module) : value;
             const rest =
-              value.kind === "object"
-                ? omitObjectKeys(value, usedKeys)
-                : unknownValue(`rest of ${describeValue(value)}`);
+              source.kind === "object"
+                ? omitObjectKeys(source, usedKeys)
+                : unknownValue(`rest of ${describeValue(source)}`);
             this.bindPattern(property.argument, rest, scope, context);
             continue;
           }

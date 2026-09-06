@@ -9,6 +9,12 @@ import {
 
 export type ComparisonStatus = "exact" | "partial" | "mismatch" | "unresolved" | "skipped";
 
+// esbuild lowers `class X { static … }` to `var _a; _a = class {…}`, so pre-bundled
+// library components can surface as `_a`, `_a2`, … with no identity to compare.
+const BUNDLER_PLACEHOLDER_NAME = /^_[a-z]\d*$/;
+
+const isBundlerPlaceholderName = (name: string): boolean => BUNDLER_PLACEHOLDER_NAME.test(name);
+
 export interface ComparisonOptions {
   compareKeys?: boolean;
   compareTags?: boolean;
@@ -321,7 +327,9 @@ class Matcher {
       pattern.key !== actual.key
     )
       return false;
-    return actual.name === null || actual.name === pattern.name;
+    return (
+      actual.name === null || actual.name === pattern.name || isBundlerPlaceholderName(actual.name)
+    );
   }
 
   // Searches the library's runtime subtree for the place where it rendered the

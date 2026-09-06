@@ -93,6 +93,43 @@ const skipped = (
   note,
 });
 
+const countFibers = (fibers: RuntimeFiberSnapshot[]): number => {
+  let count = 0;
+  for (const fiber of fibers) count += 1 + countFibers(fiber.children);
+  return count;
+};
+
+/**
+ * Pages mount more than one React root (dev overlays, portals rendered with a
+ * second `createRoot`). Without an explicit `rootIndex`, prefer the root that
+ * holds the anchor, otherwise the largest one.
+ */
+const chooseRuntimeRoot = (
+  runtime: RuntimeSnapshot,
+  options: CompareRenderOptions,
+): RuntimeFiberSnapshot | null => {
+  if (options.rootIndex !== undefined) return runtime.roots[options.rootIndex] ?? null;
+  const anchor = options.anchor;
+  if (anchor) {
+    const anchored = runtime.roots.find(
+      (root) =>
+        findSnapshotFiber(root, (fiber) => fiber.name === anchor && fiber.tag !== "HostText") !==
+        null,
+    );
+    if (anchored) return anchored;
+  }
+  let largest: RuntimeFiberSnapshot | null = null;
+  let largestSize = -1;
+  for (const root of runtime.roots) {
+    const size = countFibers(root.children);
+    if (size > largestSize) {
+      largest = root;
+      largestSize = size;
+    }
+  }
+  return largest;
+};
+
 export const compareStaticToRuntime = (
   staticResult: StaticRenderResult,
   runtime: RuntimeSnapshot,
@@ -110,7 +147,7 @@ export const compareStaticToRuntime = (
       "unresolved",
     );
   }
-  const runtimeRoot = runtime.roots[options.rootIndex ?? 0];
+  const runtimeRoot = chooseRuntimeRoot(runtime, options);
   if (!runtimeRoot)
     return skipped(staticChildren, "runtime snapshot has no committed roots", "skipped");
 

@@ -12,7 +12,7 @@
     "fmt": "vp fmt",
     "lint": "vp lint",
     "check": "vp check",
-    "typecheck": "pnpm --filter bippy exec tsc --noEmit && pnpm --filter conformance typecheck",
+    "typecheck": "pnpm --filter bippy exec tsc --noEmit && pnpm --filter conformance typecheck && pnpm --filter @bippy/parser typecheck",
     "sherif": "sherif --fix -p './packages/e2e/fixtures/*' -p './packages/expo-playground'",
     "changeset": "nr build && changeset",
     "version": "changeset version",

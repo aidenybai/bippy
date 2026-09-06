@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { build } from "esbuild";
+import { build, stop as stopEsbuild } from "esbuild";
 import { chromium, type Browser, type Page } from "playwright";
 import type { HarnessGlobals } from "./browser-inject.js";
 import { parseSnapshot, type RuntimeSnapshot } from "./snapshot.js";
@@ -159,6 +159,10 @@ export class BrowserCapturer {
   }
 
   async close(): Promise<void> {
+    if (injectBundlePromise) {
+      injectBundlePromise = null;
+      await stopEsbuild();
+    }
     if (!this.browserPromise) return;
     const browser = await this.browserPromise;
     this.browserPromise = null;

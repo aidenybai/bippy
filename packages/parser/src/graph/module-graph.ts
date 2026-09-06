@@ -99,23 +99,36 @@ export class ModuleGraph {
     return this.resolveExportWithVisited(module, exportedName, new Set());
   }
 
-  listExportNames(module: ModuleRecord, visited = new Set<string>()): string[] {
-    if (visited.has(module.filePath)) return [];
+  listExportNames(module: ModuleRecord): string[] {
+    return this.collectExportNames(module, new Set()).names;
+  }
+
+  /** Export names plus whether an `export *` from an unanalyzed module may add more. */
+  collectExportNames(
+    module: ModuleRecord,
+    visited = new Set<string>(),
+  ): { names: string[]; complete: boolean } {
+    if (visited.has(module.filePath)) return { names: [], complete: true };
     visited.add(module.filePath);
     const names = new Set<string>();
+    let complete = true;
     for (const entry of module.exports) {
       if (entry.kind === "re-export-all") {
         const target = this.resolveImportedModule(entry.specifier, module);
         if (isModuleRecord(target)) {
-          for (const name of this.listExportNames(target, visited)) {
+          const nested = this.collectExportNames(target, visited);
+          complete &&= nested.complete;
+          for (const name of nested.names) {
             if (name !== "default") names.add(name);
           }
+        } else {
+          complete = false;
         }
         continue;
       }
       names.add(entry.exportedName);
     }
-    return [...names];
+    return { names: [...names], complete };
   }
 
   private shouldAnalyzePackage(packageName: string): boolean {

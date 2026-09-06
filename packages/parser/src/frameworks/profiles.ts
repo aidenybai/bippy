@@ -1,9 +1,16 @@
-import { type FrameworkKind, type FrameworkProfile, SPA_PROFILE } from "./framework-profile.js";
+import type { RuntimeFiberSnapshot } from "../harness/snapshot.js";
+import {
+  type FrameworkKind,
+  type FrameworkProfile,
+  neverInjected,
+  SPA_PROFILE,
+} from "./framework-profile.js";
 
 // Names observed in Next 15/16 development builds (app router). Everything here
 // is framework plumbing that wraps application output without rendering host
-// nodes of its own; `Fragment` is flattened on both sides because Next inserts
-// bare fragments around segments and the static side cannot know where.
+// nodes of its own; `Fragment` and anonymous `ContextProvider`s are flattened
+// on both sides because Next inserts bare fragments and unnamed providers
+// around segments and the static side cannot know where.
 const NEXT_APP_RUNTIME_WRAPPERS = [
   "Root",
   "ServerRoot",
@@ -15,6 +22,10 @@ const NEXT_APP_RUNTIME_WRAPPERS = [
   "HistoryUpdater",
   "HotReload",
   "AppDevOverlayErrorBoundary",
+  "ReactDevOverlay",
+  "DevRootNotFoundBoundary",
+  "NotFoundBoundary",
+  "NotFoundErrorBoundary",
   "ReplaySsrOnlyErrors",
   "DevRootHTTPAccessFallbackBoundary",
   "HTTPAccessFallbackBoundary",
@@ -30,6 +41,9 @@ const NEXT_APP_RUNTIME_WRAPPERS = [
   "InnerLayoutRouter",
   "RenderFromTemplateContext",
   "ScrollAndMaybeFocusHandler",
+  "ScrollAndFocusHandler",
+  "ClientPageRoot",
+  "ClientSegmentRoot",
   "InnerScrollHandlerNew",
   "InnerScrollAndFocusHandler",
   "LoadingBoundary",
@@ -42,13 +56,31 @@ const NEXT_APP_RUNTIME_WRAPPERS = [
   "PathnameContext",
   "SearchParamsContext",
   "HeadManagerContext",
+  "SegmentStateContext",
   "Fragment",
+  "ContextProvider",
 ];
+
+// Subtrees Next renders around a segment with no source in the application:
+// the parallel-route outlet boundary, segment trigger nodes, the route
+// announcer, and the layer-asset `<script key="script-N">` hoistables that
+// `get-layer-assets` emits next to each layout.
+const NEXT_APP_INJECTED_FIBERS = new Set([
+  "__next_outlet_boundary__",
+  "SegmentBoundaryTriggerNode",
+  "RouterAnnouncer",
+]);
+const NEXT_LAYER_ASSET_KEY = /^script-\d+$/;
+
+const isNextAppInjectedFiber = (fiber: RuntimeFiberSnapshot): boolean =>
+  (fiber.name !== null && NEXT_APP_INJECTED_FIBERS.has(fiber.name)) ||
+  (fiber.tag === "HostHoistable" && fiber.key !== null && NEXT_LAYER_ASSET_KEY.test(fiber.key));
 
 export const NEXT_APP_PROFILE: FrameworkProfile = {
   kind: "next-app",
   transparentRuntimeFibers: new Set(NEXT_APP_RUNTIME_WRAPPERS),
-  transparentStaticFibers: new Set(["Fragment"]),
+  transparentStaticFibers: new Set(["Fragment", "ContextProvider"]),
+  isInjectedRuntimeFiber: isNextAppInjectedFiber,
   defaultAnchor: "body",
 };
 
@@ -76,6 +108,7 @@ export const NEXT_PAGES_PROFILE: FrameworkProfile = {
   kind: "next-pages",
   transparentRuntimeFibers: new Set(NEXT_PAGES_RUNTIME_WRAPPERS),
   transparentStaticFibers: new Set(["Fragment"]),
+  isInjectedRuntimeFiber: neverInjected,
   defaultAnchor: null,
 };
 
@@ -97,8 +130,11 @@ const REACT_ROUTER_RUNTIME_WRAPPERS = [
   "RouteError",
   "AwaitContextProvider",
   // framework mode (`@react-router/dev`); `HydratedRouter` and the core
-  // `RouterProvider` stay as fibers because the static side renders them.
+  // `RouterProvider` stay as fibers because the static side renders them. The
+  // `react-router/dom` wrapper is renamed by the bundler: `$1` by rollup, `2` by
+  // esbuild (Vite dev pre-bundling).
   "RouterProvider$1",
+  "RouterProvider2",
   "FrameworkContext",
   "RemixErrorBoundary",
   "WithComponentProps",
@@ -112,6 +148,7 @@ export const REACT_ROUTER_PROFILE: FrameworkProfile = {
   kind: "react-router",
   transparentRuntimeFibers: new Set(REACT_ROUTER_RUNTIME_WRAPPERS),
   transparentStaticFibers: new Set(),
+  isInjectedRuntimeFiber: neverInjected,
   defaultAnchor: null,
 };
 

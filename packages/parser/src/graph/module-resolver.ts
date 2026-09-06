@@ -1,10 +1,17 @@
 import { isBuiltin } from "node:module";
+import path from "node:path";
 import { ResolverFactory } from "oxc-resolver";
 import type { ModuleResolution } from "../types.js";
 
 export interface ModuleResolverOptions {
   tsconfigPath?: string;
   conditionNames?: string[];
+  /**
+   * Package specifiers that resolve outside this directory are external even
+   * when the resolved file is not under `node_modules` (workspace symlinks
+   * pointing at sibling packages' sources or build output).
+   */
+  rootDirectory?: string;
 }
 
 const SOURCE_EXTENSIONS = [".tsx", ".ts", ".jsx", ".js", ".mjs", ".cjs", ".mts", ".cts", ".json"];
@@ -46,8 +53,10 @@ export class ModuleResolver {
   private readonly primary: ResolverFactory;
   private readonly fallback: ResolverFactory;
   private readonly cache = new Map<string, ModuleResolution>();
+  private readonly rootDirectory: string | null;
 
   constructor(options: ModuleResolverOptions = {}) {
+    this.rootDirectory = options.rootDirectory ? path.resolve(options.rootDirectory) : null;
     const conditionNames = options.conditionNames ?? DEFAULT_CONDITION_NAMES;
     const baseOptions = {
       extensions: SOURCE_EXTENSIONS,
@@ -85,17 +94,25 @@ export class ModuleResolver {
       const fallbackResult = this.fallback.resolveFileSync(fromFile, cleanSpecifier);
       if (fallbackResult.path) result = fallbackResult;
     }
+    const specifierPackage = getPackageNameFromSpecifier(cleanSpecifier);
     if (result.path) {
-      const packageName = getPackageNameFromFilePath(result.path);
+      const packageName =
+        getPackageNameFromFilePath(result.path) ??
+        (specifierPackage !== null && this.isOutsideRoot(result.path) ? specifierPackage : null);
       if (packageName) {
         return { kind: "external", packageName, filePath: result.path };
       }
       return { kind: "internal", filePath: result.path };
     }
-    const packageName = getPackageNameFromSpecifier(cleanSpecifier);
-    if (packageName) {
-      return { kind: "external", packageName, filePath: null };
+    if (specifierPackage) {
+      return { kind: "external", packageName: specifierPackage, filePath: null };
     }
     return { kind: "unresolved", specifier, error: result.error ?? "not found" };
+  }
+
+  private isOutsideRoot(filePath: string): boolean {
+    if (this.rootDirectory === null) return false;
+    const relative = path.relative(this.rootDirectory, filePath);
+    return relative.startsWith("..") || path.isAbsolute(relative);
   }
 }

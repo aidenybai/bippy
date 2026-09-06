@@ -6,6 +6,7 @@ import {
   describeElementType,
   describeValue,
   getObjectProperty,
+  NULL_VALUE,
   omitObjectKeys,
   unknownValue,
 } from "../evaluate/values.js";
@@ -56,6 +57,7 @@ import {
   hasDefaultProps,
   isHostHoistable,
   isHostSingleton,
+  isTextContentChild,
   shouldSetTextContent,
 } from "./host-semantics.js";
 
@@ -232,6 +234,24 @@ export class FiberBuilder {
     const children: StaticFiber[] = [];
     this.appendChildFibers(value, context, children, true);
     return this.link(parent, children);
+  }
+
+  // Each alternative of a branched `children` prop is its own possible props
+  // object, so text-only alternatives set textContent instead of child fibers.
+  private reconcileHostChildren(
+    parent: StaticFiber,
+    tagName: string,
+    props: StaticObjectValue,
+    children: StaticValue,
+    context: BuildContext,
+  ): StaticFiber | null {
+    if (shouldSetTextContent(tagName, props)) return null;
+    if (children.kind !== "branch") return this.reconcileChildren(parent, children, context);
+    const alternatives = children.alternatives.map((alternative) =>
+      isTextContentChild(alternative) ? NULL_VALUE : alternative,
+    );
+    if (alternatives.every((alternative) => alternative === NULL_VALUE)) return null;
+    return this.reconcileChildren(parent, { ...children, alternatives }, context);
   }
 
   private appendChildFibers(
@@ -448,10 +468,7 @@ export class FiberBuilder {
           location,
         );
         fiber.key = this.keyToString(key, fiber);
-        if (shouldSetTextContent(type.tagName, props)) {
-          return fiber;
-        }
-        fiber.child = this.reconcileChildren(fiber, children, context);
+        fiber.child = this.reconcileHostChildren(fiber, type.tagName, props, children, context);
         return fiber;
       }
       case "function":

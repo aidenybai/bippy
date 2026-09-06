@@ -4,13 +4,13 @@
       "id": "actual",
       "revision": "8867158f0a2e101467fb191c9e253f47c75a9e2d",
       "framework": "spa",
-      "capturedAt": "2026-09-06T03:42:27.451Z",
-      "durationMs": 106,
+      "capturedAt": "2026-09-06T04:58:34.058Z",
+      "durationMs": 108,
       "runtime": null,
       "static": {
         "stats": {
           "fiberCount": 184,
-          "textCount": 45,
+          "textCount": 31,
           "branchCount": 77,
           "repeatCount": 0,
           "opaqueCount": 282,
@@ -28,32 +28,58 @@
       "id": "bulletproof-react",
       "revision": "9506629ed003a561c6627735480cce4994244bb4",
       "framework": "react-router",
-      "capturedAt": "2026-09-06T03:42:27.569Z",
-      "durationMs": 14,
-      "runtime": null,
+      "capturedAt": "2026-09-06T04:58:34.178Z",
+      "durationMs": 18,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 57,
+        "commits": 3,
+        "pageErrors": [],
+        "title": "Bulletproof React"
+      },
       "static": {
         "stats": {
-          "fiberCount": 19,
+          "fiberCount": 44,
           "textCount": 0,
           "branchCount": 2,
           "repeatCount": 0,
-          "opaqueCount": 5,
-          "unknownCount": 2,
-          "modulesLoaded": 23
+          "opaqueCount": 6,
+          "unknownCount": 1,
+          "modulesLoaded": 27
         },
         "diagnostics": []
       },
-      "report": null,
+      "report": {
+        "matchedFibers": 35,
+        "matchedText": 0,
+        "opaqueSubtrees": 6,
+        "opaqueSkippedFibers": 11,
+        "slotsMatched": 4,
+        "slotsUnmatched": 1,
+        "wildcardAbsorbedFibers": 0,
+        "branchesResolved": 2,
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 46,
+        "staticFibers": 42,
+        "coverage": 1,
+        "divergence": null,
+        "stepsUsed": 59,
+        "budgetExhausted": false
+      },
       "anchor": null,
-      "note": "static only",
+      "note": "runtime replayed from 2026-09-06T04:55:18.601Z",
       "failure": null
     },
     {
       "id": "cal-diy",
       "revision": "abffde336e744e15cf69626c10e436d6172bc406",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T03:42:27.583Z",
-      "durationMs": 6,
+      "capturedAt": "2026-09-06T04:58:34.196Z",
+      "durationMs": 7,
       "runtime": null,
       "static": {
         "stats": {
@@ -76,18 +102,18 @@
       "id": "epic-stack",
       "revision": "8473afd804b66dba6a23f317908dc35d1535e90d",
       "framework": "react-router",
-      "capturedAt": "2026-09-06T03:45:17.904Z",
-      "durationMs": 38,
+      "capturedAt": "2026-09-06T04:58:34.203Z",
+      "durationMs": 19,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 310,
+          "fiberCount": 322,
           "textCount": 30,
           "branchCount": 8,
           "repeatCount": 0,
           "opaqueCount": 101,
           "unknownCount": 7,
-          "modulesLoaded": 22
+          "modulesLoaded": 24
         },
         "diagnostics": []
       },
@@ -100,14 +126,14 @@
       "id": "excalidraw",
       "revision": "214cd6e6e8ac3ad6b68486aa7aa7241abdf9445f",
       "framework": "spa",
-      "capturedAt": "2026-09-06T03:42:27.593Z",
-      "durationMs": 768,
+      "capturedAt": "2026-09-06T04:58:34.224Z",
+      "durationMs": 813,
       "runtime": null,
       "static": {
         "stats": {
           "fiberCount": 2721,
-          "textCount": 34,
-          "branchCount": 540,
+          "textCount": 18,
+          "branchCount": 538,
           "repeatCount": 0,
           "opaqueCount": 87,
           "unknownCount": 633,
@@ -133,7 +159,7 @@
       "id": "graphiql",
       "revision": "fd32cea3e191eb6eb41b785e157403308d787b12",
       "framework": "spa",
-      "capturedAt": "2026-09-06T03:42:28.409Z",
+      "capturedAt": "2026-09-06T04:58:35.085Z",
       "durationMs": 7,
       "runtime": null,
       "static": {
@@ -157,14 +183,14 @@
       "id": "invoify",
       "revision": "3859b3cbae28ca4ec559db5ef87e41b798740340",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T03:42:28.416Z",
-      "durationMs": 66,
+      "capturedAt": "2026-09-06T04:58:35.092Z",
+      "durationMs": 70,
       "runtime": null,
       "static": {
         "stats": {
           "fiberCount": 1978,
-          "textCount": 678,
-          "branchCount": 531,
+          "textCount": 111,
+          "branchCount": 529,
           "repeatCount": 0,
           "opaqueCount": 860,
           "unknownCount": 574,
@@ -181,8 +207,8 @@
       "id": "lexical",
       "revision": "c3b629dcf6b5111811bb9ca5a3db0665099b2856",
       "framework": "spa",
-      "capturedAt": "2026-09-06T03:42:28.513Z",
-      "durationMs": 104,
+      "capturedAt": "2026-09-06T04:58:35.192Z",
+      "durationMs": 123,
       "runtime": null,
       "static": {
         "stats": {
@@ -205,8 +231,8 @@
       "id": "nextjs-boilerplate",
       "revision": "1dffa39a32450300c8b01d8cfd3819f9b6e95842",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T03:42:28.617Z",
-      "durationMs": 11,
+      "capturedAt": "2026-09-06T04:58:35.316Z",
+      "durationMs": 12,
       "runtime": null,
       "static": {
         "stats": {
@@ -229,9 +255,18 @@
       "id": "nextjs-examples",
       "revision": "4fed8eaf197aaa60fd85371352482199a4c2107f",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T03:42:28.629Z",
-      "durationMs": 6,
-      "runtime": null,
+      "capturedAt": "2026-09-06T04:58:35.329Z",
+      "durationMs": 10,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-cbb046ab-20260731",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 237,
+        "commits": 11,
+        "pageErrors": [],
+        "title": "Next.js Blog Example with Markdown"
+      },
       "static": {
         "stats": {
           "fiberCount": 61,
@@ -244,27 +279,44 @@
         },
         "diagnostics": []
       },
-      "report": null,
-      "anchor": null,
-      "note": "static only",
+      "report": {
+        "matchedFibers": 43,
+        "matchedText": 6,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "wildcardAbsorbedFibers": 34,
+        "branchesResolved": 2,
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 83,
+        "staticFibers": 49,
+        "coverage": 1,
+        "divergence": null,
+        "stepsUsed": 56,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-06T04:55:26.311Z",
       "failure": null
     },
     {
       "id": "puck",
       "revision": "74a42c74db2b52da13ce1fc49087a07a6653dac8",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T03:42:28.635Z",
-      "durationMs": 23,
+      "capturedAt": "2026-09-06T04:58:35.340Z",
+      "durationMs": 12,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 99,
-          "textCount": 2,
+          "fiberCount": 11,
+          "textCount": 0,
           "branchCount": 2,
           "repeatCount": 0,
-          "opaqueCount": 0,
-          "unknownCount": 4,
-          "modulesLoaded": 67
+          "opaqueCount": 1,
+          "unknownCount": 0,
+          "modulesLoaded": 30
         },
         "diagnostics": []
       },
@@ -277,8 +329,8 @@
       "id": "react-admin",
       "revision": "fa7ede4a25d36917b41f9b9e9936e9e7ab8fa8ab",
       "framework": "spa",
-      "capturedAt": "2026-09-06T03:42:28.658Z",
-      "durationMs": 9,
+      "capturedAt": "2026-09-06T04:58:35.352Z",
+      "durationMs": 14,
       "runtime": null,
       "static": {
         "stats": {
@@ -301,7 +353,7 @@
       "id": "react-email",
       "revision": "0f0cb94e1f15581131a2d50b80f8daa13dd1c9fc",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T03:42:28.667Z",
+      "capturedAt": "2026-09-06T04:58:35.366Z",
       "durationMs": 4,
       "runtime": null,
       "static": {
@@ -325,8 +377,8 @@
       "id": "react-router-templates",
       "revision": "b68be71489a22315c7a734a86a18347745b393d2",
       "framework": "react-router",
-      "capturedAt": "2026-09-06T04:00:59.001Z",
-      "durationMs": 6618,
+      "capturedAt": "2026-09-06T04:58:35.371Z",
+      "durationMs": 5,
       "runtime": {
         "reactVersion": "19.2.7",
         "rendererName": "react-dom",
@@ -368,15 +420,15 @@
         "budgetExhausted": false
       },
       "anchor": null,
-      "note": null,
+      "note": "runtime replayed from 2026-09-06T04:55:32.863Z",
       "failure": null
     },
     {
       "id": "redux-toolkit",
       "revision": "e99fe6135188219f031c5028f653fb82e671de24",
       "framework": "spa",
-      "capturedAt": "2026-09-06T03:42:28.676Z",
-      "durationMs": 3,
+      "capturedAt": "2026-09-06T04:58:35.376Z",
+      "durationMs": 5,
       "runtime": null,
       "static": {
         "stats": {
@@ -399,14 +451,14 @@
       "id": "shadcn-ui",
       "revision": "7c9eaba1c0a6404c990c144a654792e3313c650d",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T03:42:28.680Z",
-      "durationMs": 62,
+      "capturedAt": "2026-09-06T04:58:35.381Z",
+      "durationMs": 68,
       "runtime": null,
       "static": {
         "stats": {
           "fiberCount": 696,
-          "textCount": 229,
-          "branchCount": 62,
+          "textCount": 227,
+          "branchCount": 61,
           "repeatCount": 0,
           "opaqueCount": 1012,
           "unknownCount": 10,
@@ -423,9 +475,18 @@
       "id": "sonner",
       "revision": "8e4662b39255120b62138312058f5d77c0139a5e",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T03:42:28.751Z",
-      "durationMs": 8,
-      "runtime": null,
+      "capturedAt": "2026-09-06T04:58:35.463Z",
+      "durationMs": 10,
+      "runtime": {
+        "reactVersion": "18.3.0-canary-14898b6a9-20240318",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 95,
+        "commits": 3,
+        "pageErrors": [],
+        "title": "Create Next App"
+      },
       "static": {
         "stats": {
           "fiberCount": 49,
@@ -438,23 +499,49 @@
         },
         "diagnostics": []
       },
-      "report": null,
-      "anchor": null,
-      "note": "static only",
+      "report": {
+        "matchedFibers": 44,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "wildcardAbsorbedFibers": 0,
+        "branchesResolved": 3,
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 44,
+        "staticFibers": 47,
+        "coverage": 1,
+        "divergence": null,
+        "stepsUsed": 52,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-06T04:55:41.386Z",
       "failure": null
     },
     {
       "id": "tanstack-query",
       "revision": "1893a965d219032207cbe147880d0e9f757a5a56",
       "framework": "spa",
-      "capturedAt": "2026-09-06T03:42:28.760Z",
-      "durationMs": 3,
-      "runtime": null,
+      "capturedAt": "2026-09-06T04:58:35.474Z",
+      "durationMs": 5,
+      "runtime": {
+        "reactVersion": "19.2.4",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 218,
+        "commits": 4,
+        "pageErrors": [],
+        "title": "TanStack Query React Basic Example App"
+      },
       "static": {
         "stats": {
           "fiberCount": 21,
-          "textCount": 10,
-          "branchCount": 5,
+          "textCount": 5,
+          "branchCount": 3,
           "repeatCount": 0,
           "opaqueCount": 2,
           "unknownCount": 5,
@@ -462,17 +549,34 @@
         },
         "diagnostics": []
       },
-      "report": null,
+      "report": {
+        "matchedFibers": 9,
+        "matchedText": 2,
+        "opaqueSubtrees": 2,
+        "opaqueSkippedFibers": 6,
+        "slotsMatched": 1,
+        "slotsUnmatched": 0,
+        "wildcardAbsorbedFibers": 200,
+        "branchesResolved": 2,
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 217,
+        "staticFibers": 16,
+        "coverage": 1,
+        "divergence": null,
+        "stepsUsed": 21,
+        "budgetExhausted": false
+      },
       "anchor": null,
-      "note": "static only",
+      "note": "runtime replayed from 2026-09-06T04:55:49.026Z",
       "failure": null
     },
     {
       "id": "tanstack-router",
       "revision": "cf166d160e6397007a979bfc7065b45ff69ea543",
       "framework": "spa",
-      "capturedAt": "2026-09-06T03:42:28.763Z",
-      "durationMs": 6,
+      "capturedAt": "2026-09-06T04:58:35.479Z",
+      "durationMs": 4,
       "runtime": null,
       "static": {
         "stats": {
@@ -495,8 +599,8 @@
       "id": "tldraw",
       "revision": "e8f61acedcbf2dc69693ea1e1f612a7f635fb4b5",
       "framework": "react-router",
-      "capturedAt": "2026-09-06T03:42:28.770Z",
-      "durationMs": 8,
+      "capturedAt": "2026-09-06T04:58:35.484Z",
+      "durationMs": 12,
       "runtime": null,
       "static": {
         "stats": {

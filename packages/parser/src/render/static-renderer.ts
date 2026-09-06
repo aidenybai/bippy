@@ -32,6 +32,7 @@ export class StaticRenderer {
       resolver: new ModuleResolver({
         tsconfigPath: options.tsconfigPath,
         conditionNames: options.conditionNames,
+        rootDirectory: options.rootDirectory,
       }),
       resolveExternalPackages: options.resolveExternalPackages,
       externalPackageAllowList: options.externalPackageAllowList,

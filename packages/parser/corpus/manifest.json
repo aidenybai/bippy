@@ -35,7 +35,7 @@
         "entry": "src/main.tsx",
         "route": "/"
       },
-      "notes": "Routes are lazily imported (`lazy: () => import(...)`), so the static side stops at the router's lazy boundary."
+      "notes": "Routes are `lazy: () => import(...).then(convert)`; the static side awaits the import and materializes the module namespace through `convert`'s rest spread. QueryClientProvider, HelmetProvider, react-error-boundary and react-query-auth's AuthLoader are opaque with slotted children; Helmet's <meta> is a side effect, not a fiber, so that slot stays unmatched."
     },
     {
       "id": "cal-diy",
@@ -190,7 +190,8 @@
       "static": {
         "rootDirectory": "examples/blog-starter",
         "route": "/"
-      }
+      },
+      "notes": "Live: Next 16 canary. Framework wrappers and injected nodes are normalized by the next-app profile; the posts list comes from the filesystem at request time and stays a repeat over unknown data (partial)."
     },
     {
       "id": "puck",
@@ -273,7 +274,10 @@
       "workingDirectory": "examples/query/react/basic",
       "install": "yarn install",
       "dev": "yarn start",
-      "env": { "BROWSER": "none", "PORT": "3005" },
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3005"
+      },
       "url": "http://localhost:3005/",
       "readyTimeoutMs": 600000,
       "settleMs": 6000,
@@ -316,7 +320,8 @@
         "rootDirectory": "test",
         "route": "/",
         "externalPackageAllowList": ["sonner"]
-      }
+      },
+      "notes": "Live: Next 14 (React 18.3 canary). Same profile normalization as nextjs-examples; the toaster state is runtime-only (partial)."
     },
     {
       "id": "tanstack-query",
@@ -325,7 +330,7 @@
       "description": "TanStack Query examples/react/basic (Vite SPA, QueryClientProvider + useQuery)",
       "framework": "spa",
       "workingDirectory": "examples/react/basic",
-      "install": "pnpm install",
+      "install": "pnpm install && pnpm --filter \"@tanstack/query-example-react-basic^...\" build",
       "dev": "pnpm dev",
       "url": "http://localhost:5173/",
       "readyTimeoutMs": 600000,
@@ -333,7 +338,8 @@
       "static": {
         "rootDirectory": "examples/react/basic",
         "entry": "src/index.tsx"
-      }
+      },
+      "notes": "Workspace packages must be built before Vite can resolve @tanstack/react-query; the install builds the example's dependency closure. Query results are remote data, so the post list is an opaque slot (partial)."
     },
     {
       "id": "tanstack-router",

@@ -108,8 +108,9 @@ const KNOWN_TAGS: ReadonlySet<string> = new Set<SnapshotWorkTag>([
 
 const isKnownTag = (tag: string): tag is SnapshotWorkTag => KNOWN_TAGS.has(tag);
 
-export const parseSnapshot = (json: string): RuntimeSnapshot => {
-  const value: unknown = JSON.parse(json);
+export const parseSnapshot = (json: string): RuntimeSnapshot => readSnapshot(JSON.parse(json));
+
+export const readSnapshot = (value: unknown): RuntimeSnapshot => {
   if (!isRecord(value) || !Array.isArray(value.roots)) {
     throw new Error("snapshot: expected { roots: [...] }");
   }

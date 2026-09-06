@@ -9,21 +9,22 @@ import type {
 const isNonNullish = (value: StaticValue): boolean =>
   !(value.kind === "primitive" && (value.value === null || value.value === undefined));
 
+// A lone text child is written as textContent; React creates no HostText fiber for it.
+export const isTextContentChild = (children: StaticValue): boolean => {
+  if (children.kind === "primitive") {
+    const value = children.value;
+    return typeof value === "string" || typeof value === "number" || typeof value === "bigint";
+  }
+  return (
+    children.kind === "unknown-primitive" &&
+    (children.primitiveType === "string" || children.primitiveType === "number")
+  );
+};
+
 // Mirrors react-dom's shouldSetTextContent: these hosts never get child fibers.
 export const shouldSetTextContent = (tagName: string, props: StaticObjectValue): boolean => {
   if (tagName === "textarea" || tagName === "noscript") return true;
-  const children = getObjectProperty(props, "children");
-  if (children.kind === "primitive") {
-    const value = children.value;
-    if (typeof value === "string" || typeof value === "number" || typeof value === "bigint")
-      return true;
-  }
-  if (
-    children.kind === "unknown-primitive" &&
-    (children.primitiveType === "string" || children.primitiveType === "number")
-  ) {
-    return true;
-  }
+  if (isTextContentChild(getObjectProperty(props, "children"))) return true;
   const innerHtml = getObjectProperty(props, "dangerouslySetInnerHTML");
   if (innerHtml.kind === "object") return isNonNullish(getObjectProperty(innerHtml, "__html"));
   return innerHtml.kind === "unknown" || innerHtml.kind === "external";
