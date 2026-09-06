@@ -2,8 +2,7 @@
 
 import { useMemo } from "react";
 import { DiagramScene } from "./diagram-scene";
-import { DiagramEdge } from "./primitives";
-import { getLabelWidth } from "./geometry";
+import { getDataflowOffsets } from "./dataflow-geometry";
 import {
   DiagramInteractionContext,
   useDiagramInteractionState,
@@ -55,18 +54,7 @@ export const DataflowDiagram = ({
         const from = index.nodeById.get(edge.from);
         const to = index.nodeById.get(edge.to);
         if (!from || !to) throw new Error(`Missing endpoint for edge ${edge.id}`);
-        const firstPoint =
-          edge.waypoints?.[0] ?? (edge.kind === "context" && !edge.waypoints ? from : to);
-        const lastPoint = edge.waypoints?.at(-1) ?? from;
-        return {
-          ...edge,
-          directed: true,
-          fromOffset:
-            edge.fromOffset ??
-            (firstPoint.x > from.x ? { x: getLabelWidth(from) + 4, y: 0 } : undefined),
-          toOffset:
-            edge.toOffset ?? (lastPoint.x > to.x ? { x: getLabelWidth(to) + 8, y: 0 } : undefined),
-        };
+        return { ...edge, directed: true, ...getDataflowOffsets(edge, from, to) };
       }),
     [edges, index],
   );
@@ -79,15 +67,7 @@ export const DataflowDiagram = ({
         height={height}
         label={label}
         onSelect={onSelect}
-      >
-        {nodes.map((node) => {
-          const parent =
-            node.parentId === undefined ? undefined : index.nodeById.get(node.parentId);
-          return parent ? (
-            <DiagramEdge key={node.id} from={parent} to={node} fromId={parent.id} toId={node.id} />
-          ) : null;
-        })}
-      </DiagramScene>
+      />
     </DiagramInteractionContext>
   );
 };

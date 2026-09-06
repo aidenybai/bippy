@@ -18,7 +18,7 @@ export interface TreeNode {
     | "value"
     | "callback"
     | "store";
-  tone?: "blue" | "violet";
+  tone?: "blue" | "violet" | "orange";
   isPortalTarget?: boolean;
   annotation?: string;
 }

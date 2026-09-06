@@ -34,8 +34,6 @@ export const getDataflowIndex = (
     nodeById.set(node.id, node);
   }
   for (const node of nodes) {
-    if (node.parentId !== undefined && !nodeById.has(node.parentId))
-      throw new Error(`Missing parent: ${node.parentId}`);
     if (node.componentId === undefined) continue;
     if (!nodeById.has(node.componentId)) throw new Error(`Missing component: ${node.componentId}`);
     const componentMembers = members.get(node.componentId) ?? [];

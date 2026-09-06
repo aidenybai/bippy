@@ -51,7 +51,7 @@ This private workspace package exports TypeScript source. Consumers must transpi
 
 ## Dataflow
 
-The dataflow specimen is an explicit, illustrative model—not automatic runtime instrumentation. `DataflowNode` adds `componentId` to a positioned node. `DataflowEdge` connects node IDs with `data`, `update`, `context`, or `subscription` semantics. `parentId` supplies optional visual grouping; it is not a data dependency.
+The dataflow specimen is an explicit, illustrative model—not automatic runtime instrumentation. `DataflowNode` adds `componentId` to a positioned node. `DataflowEdge` connects node IDs with `data`, `update`, `context`, or `subscription` semantics. Component headers and indentation supply visual grouping; tree branches are not drawn over data wires. All prop ports are hollow, including callback props. Filled callback nodes represent callable operations such as `setQuery` and `dispatch`.
 
 Hover follows incoming and outgoing dependency paths independently. It does not spread through every sibling hook merely because they share a component. Focusing a component includes its ports; focusing a derived value reveals all its inputs. Cycles such as store subscription/notification loops terminate safely.
 
@@ -62,7 +62,7 @@ The example includes:
 - `useSyncExternalStore` → snapshots → rendered count, including `getSnapshot`, effect subscription/cleanup, notifications, and external writes.
 - Provider value → `useContext` → component props → host styles.
 
-Arrows indicate value/update direction. Callback edges describe invocation back to an updater; they are not a second prop-value transfer. Connections attach outside labels rather than crossing through them. Supply `waypoints`, `fromOffset`, `toOffset`, or `labelPosition` when custom routing is needed.
+Arrows indicate value/update direction. Callback edges describe invocation back to an updater; they are not a second prop-value transfer. Connections attach to circle outlines or outside labels rather than crossing through them. Arrow tips end at the connection endpoint, with the same label clearance in either direction. Supply `waypoints`, `fromOffset`, `toOffset`, or `labelPosition` when custom routing is needed.
 
 ## Themes
 

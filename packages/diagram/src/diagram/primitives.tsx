@@ -75,6 +75,7 @@ const styles = stylex.create({
   portal: { color: colors.yellow },
   blue: { color: colors.blue },
   violet: { color: colors.violet },
+  orange: { color: colors.orange },
   owner: { strokeOpacity: 1, strokeDasharray: "3 2" },
   reference: { strokeOpacity: 1, strokeDasharray: "3 2" },
   context: { stroke: colors.blue, strokeOpacity: 1 },
@@ -158,6 +159,7 @@ export const DiagramNode = ({
       role={isInteractive && onSelect ? "button" : undefined}
       tabIndex={isInteractive ? tabIndex : -1}
       data-node-id={node.id}
+      data-node-kind={kind}
       data-emphasis={isDimmed ? "dimmed" : "normal"}
       aria-label={`${node.label}${node.annotation ? `, ${node.annotation}` : ""}`}
       onPointerEnter={() => interaction?.setHoveredId(node.id)}
@@ -257,13 +259,19 @@ export const DiagramEdge = (props: DiagramEdgeProps) => {
           <marker
             id={markerId}
             viewBox="0 0 8 8"
-            refX={10}
+            refX={4}
             refY={4}
             markerWidth={8}
             markerHeight={8}
             orient="auto"
           >
-            <path d="M 1 1 L 6 4 L 1 7" fill="none" stroke="context-stroke" strokeWidth={0.7} />
+            <path
+              d="M 1 2 L 4 4 L 1 6"
+              fill="none"
+              stroke="context-stroke"
+              strokeWidth={diagramMetrics.strokeWidth}
+              strokeLinejoin="round"
+            />
           </marker>
         </defs>
       )}

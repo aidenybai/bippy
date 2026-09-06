@@ -57,7 +57,7 @@ test("rejects duplicate IDs and missing endpoints or components", () => {
     /Duplicate/,
   );
   assert.throws(() => getDataflowIndex([], dataflowEdges), /Missing endpoint/);
-  assert.throws(() => getDataflowIndex([dataflowNodes[1]], []), /Missing parent/);
+  assert.throws(() => getDataflowIndex([dataflowNodes[1]], []), /Missing component/);
 });
 
 test("routes directed connections through explicit waypoints", () => {
