@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { getSampleStatistics } from "./statistics.js";
 
 export interface BenchmarkCase {
   id: string;
@@ -7,7 +8,7 @@ export interface BenchmarkCase {
   verify: (value: unknown) => void;
   prepare?: (iterations: number) => void | Promise<void>;
   cleanup?: () => void | Promise<void>;
-  async?: boolean;
+  isAsync?: boolean;
   maxIterations?: number;
   units?: number;
 }
@@ -70,7 +71,7 @@ export const runBenchmark = async (
     // HACK: Yield between batches so WeakRef targets from the previous batch can be collected.
     await new Promise<void>((resolve) => setImmediate(resolve));
     await benchmark.prepare?.(iterations);
-    const elapsed = benchmark.async
+    const elapsed = benchmark.isAsync
       ? await measureAsync(benchmark, iterations)
       : measureSync(benchmark, iterations);
     benchmark.verify(resultsSink[(iterations - 1) % resultsSink.length]);
@@ -83,7 +84,11 @@ export const runBenchmark = async (
       initialValue !== null &&
       (typeof initialValue === "object" || typeof initialValue === "function") &&
       typeof Reflect.get(initialValue, "then") === "function";
-    assert.equal(isAsync, Boolean(benchmark.async), `${benchmark.id}: incorrect async declaration`);
+    assert.equal(
+      isAsync,
+      Boolean(benchmark.isAsync),
+      `${benchmark.id}: incorrect async declaration`,
+    );
     benchmark.verify(await initialValue);
     let iterations = 1;
     while (true) {
@@ -95,16 +100,16 @@ export const runBenchmark = async (
     for (let sample = 0; sample < options.samples; sample++) {
       sampleUs.push(((await measure(iterations)) * 1000) / iterations);
     }
-    const ordered = sampleUs.toSorted((first, second) => first - second);
+    const statistics = getSampleStatistics(sampleUs);
     return {
       id: benchmark.id,
       apis: benchmark.apis,
       units: benchmark.units ?? 1,
       iterations,
       samples: options.samples,
-      medianUs: ordered[Math.floor(ordered.length / 2)],
-      minUs: ordered[0],
-      maxUs: ordered[ordered.length - 1],
+      medianUs: statistics.median,
+      minUs: statistics.min,
+      maxUs: statistics.max,
       sampleUs,
     };
   } finally {
@@ -119,6 +124,27 @@ export const benchmarkCase = (
   run: BenchmarkCase["run"],
   verify: BenchmarkCase["verify"],
   options: Partial<
-    Pick<BenchmarkCase, "prepare" | "cleanup" | "async" | "maxIterations" | "units">
+    Pick<BenchmarkCase, "prepare" | "cleanup" | "isAsync" | "maxIterations" | "units">
   > = {},
 ): BenchmarkCase => ({ id: benchmarkId, apis, run, verify, ...options });
+
+export const equals =
+  (expected: unknown) =>
+  (actual: unknown): void =>
+    assert.equal(actual, expected);
+
+export const createBenchmarkSuite = (entry: string) => {
+  const cases: BenchmarkCase[] = [];
+  const add = (
+    name: string,
+    scenario: string,
+    run: BenchmarkCase["run"],
+    verify: BenchmarkCase["verify"],
+    isAsync = false,
+  ): void => {
+    cases.push(
+      benchmarkCase(`${name}/${scenario}`, [`${entry}#${name}`], run, verify, { isAsync }),
+    );
+  };
+  return { cases, add };
+};
