@@ -5,6 +5,7 @@ import type {
   StaticListValue,
   StaticObjectEntry,
   StaticObjectValue,
+  StaticOptionalValue,
   StaticPrimitive,
   StaticPrimitiveValue,
   StaticUnknownPrimitiveValue,
@@ -132,6 +133,85 @@ const isSameValue = (left: StaticValue, right: StaticValue): boolean => {
   return false;
 };
 
+const MAX_EQUIVALENCE_DEPTH = 6;
+
+/**
+ * Structural equivalence for detecting non-terminating recursion: dynamic
+ * values are equivalent to each other because analysis can never tell them
+ * apart, so a component re-rendering itself with them would never bottom out.
+ */
+export const areValuesEquivalent = (left: StaticValue, right: StaticValue, depth = 0): boolean => {
+  if (isSameValue(left, right)) return true;
+  if (left.kind !== right.kind) return false;
+  if (depth >= MAX_EQUIVALENCE_DEPTH) return true;
+  switch (left.kind) {
+    case "unknown":
+    case "unknown-primitive":
+    case "global":
+      return true;
+    case "object": {
+      if (right.kind !== "object") return false;
+      const leftKeys = getKnownObjectKeys(left);
+      const rightKeys = getKnownObjectKeys(right);
+      if (!leftKeys || !rightKeys || leftKeys.length !== rightKeys.length)
+        return !leftKeys && !rightKeys;
+      return leftKeys.every(
+        (key) =>
+          rightKeys.includes(key) &&
+          areValuesEquivalent(
+            getObjectProperty(left, key),
+            getObjectProperty(right, key),
+            depth + 1,
+          ),
+      );
+    }
+    case "list":
+      return (
+        right.kind === "list" &&
+        left.items.length === right.items.length &&
+        left.items.every((item, index) => areValuesEquivalent(item, right.items[index], depth + 1))
+      );
+    case "repeat":
+      return right.kind === "repeat" && areValuesEquivalent(left.item, right.item, depth + 1);
+    case "optional":
+      return right.kind === "optional" && areValuesEquivalent(left.value, right.value, depth + 1);
+    case "branch":
+      return (
+        right.kind === "branch" &&
+        left.alternatives.length === right.alternatives.length &&
+        left.alternatives.every((alternative, index) =>
+          areValuesEquivalent(alternative, right.alternatives[index], depth + 1),
+        )
+      );
+    case "element":
+      return (
+        right.kind === "element" &&
+        areElementTypesEquivalent(left.type, right.type) &&
+        areValuesEquivalent(left.props, right.props, depth + 1)
+      );
+    case "function":
+      return right.kind === "function" && left.node === right.node;
+    default:
+      return false;
+  }
+};
+
+const areElementTypesEquivalent = (left: StaticElementType, right: StaticElementType): boolean => {
+  if (left.kind !== right.kind) return false;
+  switch (left.kind) {
+    case "host":
+      return right.kind === "host" && left.tagName === right.tagName;
+    case "function":
+    case "class":
+      return (
+        (right.kind === "function" || right.kind === "class") &&
+        left.component.node === right.component.node
+      );
+    default:
+      return true;
+  }
+};
+
 export const branchValue = (
   alternatives: StaticValue[],
   reason: string,
@@ -180,6 +260,7 @@ export const getTruthiness = (value: StaticValue): boolean | null => {
     case "unknown-primitive":
     case "unknown":
     case "branch":
+    case "optional":
       return null;
     case "external":
       return value.derived ? null : true;
@@ -189,6 +270,7 @@ export const getTruthiness = (value: StaticValue): boolean | null => {
     case "object":
     case "function":
     case "class":
+    case "regexp":
     case "component-reference":
     case "context":
     case "react-api":
@@ -240,20 +322,60 @@ export const mapValue = (
 export const getStaticPrimitive = (value: StaticValue): StaticPrimitive | undefined =>
   value.kind === "primitive" ? value.value : undefined;
 
-export const getListLength = (list: StaticListValue): StaticValue => {
-  const hasUnknownLength = list.items.some(
-    (item) => item.kind === "repeat" || item.kind === "unknown",
-  );
-  return hasUnknownLength
+export const isIndefiniteItem = (item: StaticValue): boolean =>
+  item.kind === "repeat" || item.kind === "unknown" || item.kind === "optional";
+
+export const getListLength = (list: StaticListValue): StaticValue =>
+  list.items.some(isIndefiniteItem)
     ? unknownPrimitiveValue("number", "length of a partially known list")
     : primitiveValue(list.items.length);
-};
+
+/** Every item is present with certainty (it may still be a branch of values). */
+export const hasDefiniteItems = (value: StaticValue): value is StaticListValue =>
+  value.kind === "list" && !value.items.some(isIndefiniteItem);
 
 export const isKnownList = (value: StaticValue): value is StaticListValue =>
-  value.kind === "list" &&
-  value.items.every(
-    (item) => item.kind !== "unknown" && item.kind !== "repeat" && item.kind !== "branch",
-  );
+  hasDefiniteItems(value) && value.items.every((item) => item.kind !== "branch");
+
+export const optionalValue = (
+  value: StaticValue,
+  reason: string,
+  location: SourceLocation | null = null,
+): StaticOptionalValue => ({ kind: "optional", value, reason, location });
+
+const MAX_OPTIONAL_CANDIDATES = 8;
+
+/**
+ * `items[index]` when some earlier items may be absent: each optional item
+ * either occupies a position or does not, so the result is a branch over the
+ * items that could land on `index`.
+ */
+export const getListItem = (
+  items: StaticValue[],
+  index: number,
+  location: SourceLocation | null,
+): StaticValue => {
+  const candidates: StaticValue[] = [];
+  const pick = (remaining: StaticValue[], offset: number): boolean => {
+    if (candidates.length > MAX_OPTIONAL_CANDIDATES) return false;
+    const [head, ...rest] = remaining;
+    if (head === undefined) {
+      candidates.push(UNDEFINED_VALUE);
+      return true;
+    }
+    if (head.kind === "repeat" || head.kind === "unknown") return false;
+    if (head.kind === "optional") return pick([head.value, ...rest], offset) && pick(rest, offset);
+    if (offset === 0) {
+      candidates.push(head);
+      return true;
+    }
+    return pick(rest, offset - 1);
+  };
+  if (!pick(items, index)) {
+    return unknownValue(`index ${index} of a partially known list`, location);
+  }
+  return branchValue(candidates, `item ${index} of a filtered list`, location);
+};
 
 export const describeValue = (value: StaticValue): string => {
   switch (value.kind) {
@@ -269,6 +391,10 @@ export const describeValue = (value: StaticValue): string => {
       return `repeat(${describeValue(value.item)})`;
     case "branch":
       return `branch(${value.alternatives.map(describeValue).join(" | ")})`;
+    case "optional":
+      return `optional(${describeValue(value.value)})`;
+    case "regexp":
+      return `/${value.pattern}/${value.flags}`;
     case "object":
       return `{${value.entries.map((entry) => (entry.kind === "property" ? entry.key : "...")).join(", ")}}`;
     case "function":

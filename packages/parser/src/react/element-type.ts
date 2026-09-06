@@ -8,7 +8,7 @@ export const createFunctionComponentDefinition = (
   module: value.module,
   node: value.node,
   scope: value.scope,
-  isClass: false,
+  classBody: null,
   properties: value.properties,
 });
 
@@ -20,7 +20,7 @@ export const createClassComponentDefinition = (
   module: value.module,
   node: value.node,
   scope: value.scope,
-  isClass: true,
+  classBody: value.body,
   properties: value.properties,
 });
 
@@ -88,7 +88,9 @@ export const toElementType = (value: StaticValue, nameHint: string | null): Stat
     case "element":
     case "list":
     case "repeat":
+    case "optional":
     case "object":
+    case "regexp":
     case "namespace":
     case "global":
     case "method":

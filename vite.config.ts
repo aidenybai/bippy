@@ -43,6 +43,7 @@ export default defineConfig({
       "dist",
       "coverage",
       "pnpm-lock.yaml",
+      "packages/parser/tests/components/compiled-*.js",
       reactDevToolsHookSources,
     ],
   },

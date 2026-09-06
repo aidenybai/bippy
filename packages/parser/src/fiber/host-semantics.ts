@@ -24,7 +24,9 @@ export const isTextContentChild = (children: StaticValue): boolean => {
 // Mirrors react-dom's shouldSetTextContent: these hosts never get child fibers.
 export const shouldSetTextContent = (tagName: string, props: StaticObjectValue): boolean => {
   if (tagName === "textarea" || tagName === "noscript") return true;
-  if (isTextContentChild(getObjectProperty(props, "children"))) return true;
+  const children = getObjectProperty(props, "children");
+  if (isTextContentChild(children)) return true;
+  if (isNonNullish(children)) return false;
   const innerHtml = getObjectProperty(props, "dangerouslySetInnerHTML");
   if (innerHtml.kind === "object") return isNonNullish(getObjectProperty(innerHtml, "__html"));
   return innerHtml.kind === "unknown" || innerHtml.kind === "external";

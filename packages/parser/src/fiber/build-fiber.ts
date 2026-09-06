@@ -1,12 +1,14 @@
 import type { Class } from "oxc-parser";
 import type { ContextFrame } from "../evaluate/context.js";
-import { renderClassComponent } from "../evaluate/class-component.js";
+import { isErrorBoundaryClass, renderClassComponent } from "../evaluate/class-component.js";
 import type { Interpreter } from "../evaluate/interpreter.js";
 import {
+  areValuesEquivalent,
   describeElementType,
   describeValue,
   getObjectProperty,
   NULL_VALUE,
+  branchValue,
   omitObjectKeys,
   unknownValue,
 } from "../evaluate/values.js";
@@ -16,6 +18,7 @@ import type {
   ModuleRecord,
   RenderEnvironment,
   SourceLocation,
+  StaticBranchFiber,
   StaticElementFiber,
   StaticElementType,
   StaticElementValue,
@@ -76,9 +79,14 @@ export interface FiberBuilderOptions {
 
 const USE_CLIENT_DIRECTIVE = "use client";
 
+interface CompositeFrame {
+  node: ComponentDefinition["node"];
+  props: StaticValue;
+}
+
 const DEFAULT_MAX_COMPONENT_DEPTH = 64;
 const DEFAULT_MAX_FIBER_COUNT = 50_000;
-const DEFAULT_MAX_RECURSION_PER_COMPONENT = 3;
+const DEFAULT_MAX_RECURSION_PER_COMPONENT = 16;
 
 /** Mutable per-Suspense-boundary record; set when something in the primary subtree can suspend. */
 interface SuspenseScope {
@@ -88,7 +96,7 @@ interface SuspenseScope {
 interface BuildContext {
   depth: number;
   contextFrame: ContextFrame | null;
-  componentStack: ComponentDefinition["node"][];
+  componentStack: CompositeFrame[];
   suspenseScope: SuspenseScope | null;
   environment: RenderEnvironment | null;
 }
@@ -98,6 +106,57 @@ const isClientModule = (module: ModuleRecord): boolean =>
 
 const isClassNode = (node: ComponentDefinition["node"]): node is Class =>
   node.type === "ClassDeclaration" || node.type === "ClassExpression";
+
+type ThrowCertainty = "never" | "maybe" | "always";
+
+const combineSiblings = (left: ThrowCertainty, right: ThrowCertainty): ThrowCertainty =>
+  left === "always" || right === "always"
+    ? "always"
+    : left === "maybe" || right === "maybe"
+      ? "maybe"
+      : "never";
+
+const isErrorBoundaryFiber = (fiber: StaticFiber): boolean =>
+  fiber.kind === "fiber" &&
+  fiber.tag === ClassComponentTag &&
+  fiber.type.kind === "class" &&
+  fiber.type.component.classBody !== null &&
+  isErrorBoundaryClass(fiber.type.component.classBody);
+
+/** Whether rendering the fibers from `first` onward throws, stopping at nested error boundaries. */
+const getThrowCertainty = (first: StaticFiber | null): ThrowCertainty => {
+  let certainty: ThrowCertainty = "never";
+  for (let fiber = first; fiber; fiber = fiber.sibling) {
+    let own: ThrowCertainty = "never";
+    switch (fiber.kind) {
+      case "unknown":
+        own = fiber.isThrown ? "always" : "never";
+        break;
+      case "fiber":
+        own = isErrorBoundaryFiber(fiber) ? "never" : getThrowCertainty(fiber.child);
+        break;
+      case "repeat":
+        own = getThrowCertainty(fiber.child) === "never" ? "never" : "maybe";
+        break;
+      case "branch": {
+        const outcomes = fiber.alternatives.map(getThrowCertainty);
+        own = outcomes.every((outcome) => outcome === "always")
+          ? "always"
+          : outcomes.every((outcome) => outcome === "never")
+            ? "never"
+            : "maybe";
+        break;
+      }
+      case "opaque":
+        own = getThrowCertainty(fiber.passedChildren);
+        break;
+      case "text":
+        break;
+    }
+    certainty = combineSiblings(certainty, own);
+  }
+  return certainty;
+};
 
 const describeComponent = (component: ComponentDefinition): string =>
   component.name ?? "anonymous component";
@@ -196,6 +255,7 @@ export class FiberBuilder {
     reason: string,
     location: SourceLocation | null,
     context?: BuildContext,
+    isThrown = false,
   ): StaticFiber {
     this.stats.unknownCount++;
     if (context) this.markMaySuspend(context);
@@ -203,6 +263,7 @@ export class FiberBuilder {
       id: this.allocateId(),
       kind: "unknown",
       reason,
+      isThrown,
       return: null,
       sibling: null,
       index: 0,
@@ -314,6 +375,7 @@ export class FiberBuilder {
           const component = value.type.component;
           const server = this.evaluateComposite(
             component,
+            value.props,
             { ...context, environment: value.environment ?? context.environment },
             value.location,
             null,
@@ -389,8 +451,18 @@ export class FiberBuilder {
         out.push(branch);
         return;
       }
+      case "optional":
+        this.appendChildFibers(
+          branchValue([value.value, NULL_VALUE], value.reason, value.location),
+          context,
+          out,
+          isTopLevel,
+        );
+        return;
       case "unknown":
-        out.push(this.createUnknownFiber(value.reason, value.location, context));
+        out.push(
+          this.createUnknownFiber(value.reason, value.location, context, value.isThrown === true),
+        );
         return;
       case "external":
         out.push(
@@ -496,15 +568,19 @@ export class FiberBuilder {
           location,
         );
         fiber.key = this.keyToString(key, fiber);
-        this.renderComposite(fiber, type.component, context, (componentContext) => {
-          const classValue = this.toClassValue(type.component);
-          return renderClassComponent(
-            this.interpreter,
-            classValue,
-            resolvedProps,
-            componentContext,
+        const classValue = this.toClassValue(type.component);
+        const renderBoundary = (caughtError: boolean) =>
+          this.renderComposite(fiber, type.component, context, (componentContext) =>
+            renderClassComponent(
+              this.interpreter,
+              classValue,
+              resolvedProps,
+              componentContext,
+              caughtError,
+            ),
           );
-        });
+        renderBoundary(false);
+        if (isErrorBoundaryClass(classValue.body)) this.catchThrownChildren(fiber, renderBoundary);
         return fiber;
       }
       case "memo": {
@@ -1011,6 +1087,7 @@ export class FiberBuilder {
 
   private evaluateComposite(
     component: ComponentDefinition,
+    props: StaticValue,
     context: BuildContext,
     location: SourceLocation | null,
     notes: string[] | null,
@@ -1020,7 +1097,7 @@ export class FiberBuilder {
     const childContext: BuildContext = {
       ...context,
       depth: context.depth + 1,
-      componentStack: [...context.componentStack, component.node],
+      componentStack: [...context.componentStack, { node: component.node, props }],
       environment,
     };
     if (context.depth >= this.maxComponentDepth) {
@@ -1032,10 +1109,12 @@ export class FiberBuilder {
       );
       return { rendered: unknownValue("component depth exceeded", location), childContext };
     }
-    let occurrences = 0;
-    for (const node of context.componentStack) if (node === component.node) occurrences++;
-    if (occurrences >= this.maxRecursionPerComponent) {
-      const note = `recursive render of ${describeComponent(component)} truncated after ${occurrences} levels`;
+    const ancestors = context.componentStack.filter((frame) => frame.node === component.node);
+    const isNonTerminating = ancestors.some((frame) => areValuesEquivalent(frame.props, props));
+    if (isNonTerminating || ancestors.length >= this.maxRecursionPerComponent) {
+      const note = isNonTerminating
+        ? `recursive render of ${describeComponent(component)} with equivalent props truncated`
+        : `recursive render of ${describeComponent(component)} truncated after ${ancestors.length} levels`;
       if (notes) notes.push(note);
       else this.interpreter.report("max-recursion", note, location, "warning");
       return {
@@ -1059,12 +1138,52 @@ export class FiberBuilder {
   ): void {
     const { rendered, childContext } = this.evaluateComposite(
       component,
+      fiber.props,
       context,
       fiber.location,
       fiber.notes,
       render,
     );
     fiber.child = this.reconcileChildren(fiber, rendered, childContext);
+  }
+
+  /**
+   * Mirrors `throwException` + `finishClassComponent` for an error boundary: a
+   * throw anywhere below it (outside nested boundaries) discards the subtree
+   * and re-renders the boundary with the caught error. A throw on only some
+   * paths keeps both outcomes as a branch.
+   */
+  private catchThrownChildren(
+    fiber: StaticElementFiber,
+    renderBoundary: (caughtError: boolean) => void,
+  ): void {
+    const certainty = getThrowCertainty(fiber.child);
+    if (certainty === "never") return;
+    const uncaught = fiber.child;
+    renderBoundary(true);
+    if (certainty === "always") {
+      fiber.notes.push("error boundary caught a thrown render");
+      return;
+    }
+    const branch: StaticBranchFiber = {
+      id: this.allocateId(),
+      kind: "branch",
+      alternatives: [],
+      preferredIndex: 0,
+      reason: "a child may throw into this error boundary",
+      return: fiber,
+      sibling: null,
+      index: 0,
+      location: fiber.location,
+    };
+    branch.alternatives = [uncaught, fiber.child].map((child) => this.reparent(child, branch));
+    this.stats.branchCount++;
+    fiber.child = branch;
+  }
+
+  private reparent(child: StaticFiber | null, parent: StaticFiber): StaticFiber | null {
+    for (let current = child; current; current = current.sibling) current.return = parent;
+    return child;
   }
 
   private toFunctionValue(component: ComponentDefinition): StaticFunctionValue {
@@ -1084,13 +1203,13 @@ export class FiberBuilder {
   }
 
   private toClassValue(component: ComponentDefinition): StaticClassValue {
-    const node = component.node;
-    if (!isClassNode(node)) {
+    if (!component.classBody) {
       throw new Error(`${describeComponent(component)} is not a class component`);
     }
     return {
       kind: "class",
-      node,
+      node: component.node,
+      body: component.classBody,
       scope: component.scope,
       module: component.module,
       name: component.name,

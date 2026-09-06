@@ -1,0 +1,109 @@
+import { readdirSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
+import { act, createElement, type ComponentType } from "react";
+import { createRoot } from "react-dom/client";
+import { createStaticRenderer, formatFiber, type StaticRenderResult } from "../../src/index.js";
+import {
+  compareStaticToRuntime,
+  createCommitRecorder,
+  formatComparisonReport,
+  formatRuntimeSnapshot,
+  getRootContainer,
+  type CompareRenderResult,
+  type RuntimeSnapshot,
+} from "../../src/harness/index.js";
+
+export interface ComponentFixture {
+  name: string;
+  filePath: string;
+}
+
+export interface ComponentFixtureModule {
+  default: ComponentType;
+  minCoverage?: number;
+}
+
+export interface ComponentRunResult {
+  staticResult: StaticRenderResult;
+  runtime: RuntimeSnapshot;
+  comparison: CompareRenderResult;
+  minCoverage: number;
+}
+
+export const COMPONENTS_DIRECTORY = resolve(import.meta.dirname, "../components");
+const FIXTURE_EXTENSIONS = [".tsx", ".jsx", ".js"];
+const SETTLE_ROUNDS = 8;
+
+export const listComponentFixtures = (): ComponentFixture[] =>
+  readdirSync(COMPONENTS_DIRECTORY, { withFileTypes: true })
+    .filter(
+      (entry) =>
+        entry.isFile() && FIXTURE_EXTENSIONS.some((extension) => entry.name.endsWith(extension)),
+    )
+    .map((entry) => ({ name: entry.name, filePath: join(COMPONENTS_DIRECTORY, entry.name) }))
+    .sort((left, right) => left.name.localeCompare(right.name));
+
+const isComponentModule = (value: unknown): value is ComponentFixtureModule =>
+  typeof value === "object" &&
+  value !== null &&
+  "default" in value &&
+  (typeof value.default === "function" ||
+    (typeof value.default === "object" && value.default !== null));
+
+const mountComponent = async (Component: ComponentType): Promise<RuntimeSnapshot> => {
+  const container = document.createElement("div");
+  document.body.appendChild(container);
+  const recorder = createCommitRecorder({
+    rootFilter: (root) => getRootContainer(root) === container,
+  });
+  const root = createRoot(container);
+  try {
+    await act(async () => root.render(createElement(Component)));
+    for (let round = 0; round < SETTLE_ROUNDS; round++) {
+      await act(async () => {
+        await new Promise<void>((resolveTick) => setTimeout(resolveTick, 0));
+      });
+    }
+    return recorder.snapshot();
+  } finally {
+    await act(async () => root.unmount());
+    recorder.dispose();
+    container.remove();
+  }
+};
+
+export const runComponentFixture = async (
+  fixture: ComponentFixture,
+): Promise<ComponentRunResult> => {
+  const loaded: unknown = await import(/* @vite-ignore */ pathToFileURL(fixture.filePath).href);
+  if (!isComponentModule(loaded)) {
+    throw new Error(`${fixture.name} has no default export component`);
+  }
+  const renderer = createStaticRenderer({
+    rootDirectory: COMPONENTS_DIRECTORY,
+    tsconfigPath: join(COMPONENTS_DIRECTORY, "tsconfig.json"),
+  });
+  const staticResult = renderer.renderComponent(fixture.filePath);
+  const runtime = await mountComponent(loaded.default);
+  const comparison = compareStaticToRuntime(staticResult, runtime);
+  return { staticResult, runtime, comparison, minCoverage: loaded.minCoverage ?? 1 };
+};
+
+export const describeComponentRun = (fixture: ComponentFixture, run: ComponentRunResult): string =>
+  [
+    `fixture: ${fixture.name}`,
+    `static:\n${formatFiber(run.staticResult.root, { rootDirectory: COMPONENTS_DIRECTORY })}`,
+    `runtime:\n${run.runtime.roots.map((root) => formatRuntimeSnapshot(root)).join("\n")}`,
+    `comparison:\n${formatComparisonReport(run.comparison.report)}`,
+    ...(run.staticResult.diagnostics.length > 0
+      ? [
+          `diagnostics:\n${run.staticResult.diagnostics
+            .map(
+              (diagnostic) =>
+                `  [${diagnostic.severity}] ${diagnostic.code}: ${diagnostic.message}`,
+            )
+            .join("\n")}`,
+        ]
+      : []),
+  ].join("\n\n");

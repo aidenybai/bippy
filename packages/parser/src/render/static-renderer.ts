@@ -20,6 +20,8 @@ import { findRootRenderCalls } from "./find-root-elements.js";
 export interface RenderComponentOptions {
   exportName?: string;
   props?: StaticObjectValue;
+  /** The component is rendered somewhere inside a larger app, so unprovided contexts may still be provided. */
+  isolated?: boolean;
 }
 
 export class StaticRenderer {
@@ -49,11 +51,12 @@ export class StaticRenderer {
     return this.graph.getModule(this.resolvePath(filePath));
   }
 
-  private createInterpreter(): Interpreter {
+  private createInterpreter(assumeOuterProviders = false): Interpreter {
     return new Interpreter(this.graph, {
       maxCallDepth: this.options.maxCallDepth,
       maxSteps: this.options.maxSteps,
       externalValues: this.options.externalValues,
+      assumeOuterProviders,
     });
   }
 
@@ -96,7 +99,7 @@ export class StaticRenderer {
     const module = this.graph.getModule(absolutePath);
     if (!module) return this.missingModuleResult(absolutePath, `could not parse ${absolutePath}`);
     const exportName = options.exportName ?? "default";
-    const interpreter = this.createInterpreter();
+    const interpreter = this.createInterpreter(options.isolated ?? false);
     const builder = this.createBuilder(interpreter);
     const componentValue = interpreter.evaluateModuleExport(module, exportName);
     const type = toElementType(

@@ -8,6 +8,13 @@ import type {
 } from "./snapshot.js";
 
 const MAX_STRING_PROP_LENGTH = 200;
+// Vite's SSR transform names an anonymous `export default` after its export slot.
+const VITE_SSR_DEFAULT_EXPORT_NAME = "__vite_ssr_export_default__";
+
+const getComponentName = (type: unknown): string | null => {
+  const name = getDisplayName(type);
+  return name === VITE_SSR_DEFAULT_EXPORT_NAME ? "default" : name;
+};
 
 const SNAPSHOT_TAG_KEYS: Array<[keyof ReactWorkTagMap, SnapshotWorkTag]> = [
   ["FunctionComponent", "FunctionComponent"],
@@ -130,9 +137,9 @@ const getFiberName = (fiber: Fiber, tag: SnapshotWorkTag): string | null => {
     case "SimpleMemoComponent":
       // React DevTools prefers the memo wrapper's own displayName over the
       // wrapped function's name; fiber.type is already the inner function.
-      return getDisplayName(fiber.elementType) ?? getDisplayName(fiber.type);
+      return getComponentName(fiber.elementType) ?? getComponentName(fiber.type);
     default:
-      return getDisplayName(fiber.type);
+      return getComponentName(fiber.type);
   }
 };
 

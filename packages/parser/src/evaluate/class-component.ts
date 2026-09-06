@@ -1,6 +1,8 @@
-import type { Class, ClassElement } from "oxc-parser";
+import type { Class, ClassElement, Node } from "oxc-parser";
 import { someNode } from "../parse/ast-walk.js";
 import type {
+  ClassBody,
+  ClassMember,
   StaticClassValue,
   StaticFunctionValue,
   StaticObjectValue,
@@ -12,33 +14,13 @@ import { createScope } from "./scope.js";
 import {
   branchValue,
   getObjectProperty,
+  NULL_VALUE,
   objectFromRecord,
+  objectValue,
   UNDEFINED_VALUE,
+  unknownPrimitiveValue,
   unknownValue,
 } from "./values.js";
-
-/**
- * A class whose body never calls `this.setState` (or derives state from props)
- * renders with exactly the state its constructor/fields produced.
- */
-const mayUpdateState = (chain: StaticClassValue[]): boolean =>
-  chain.some((current) =>
-    someNode(current.node, (node) => {
-      if (node.type === "MemberExpression") {
-        return (
-          node.object.type === "ThisExpression" &&
-          node.property.type === "Identifier" &&
-          (node.property.name === "setState" || node.property.name === "forceUpdate")
-        );
-      }
-      return (
-        node.type === "MethodDefinition" &&
-        node.static &&
-        node.key.type === "Identifier" &&
-        node.key.name === "getDerivedStateFromProps"
-      );
-    }),
-  );
 
 const MAX_INHERITANCE_DEPTH = 8;
 
@@ -52,25 +34,76 @@ const getElementName = (element: ClassElement): string | null => {
   return null;
 };
 
-const collectClassChain = (
-  interpreter: Interpreter,
-  classValue: StaticClassValue,
-  context: EvaluationContext,
-): StaticClassValue[] => {
+export const collectClassMembers = (node: Class): ClassMember[] => {
+  const members: ClassMember[] = [];
+  for (const element of node.body.body) {
+    const key = getElementName(element);
+    if (key === null) continue;
+    if (element.type === "MethodDefinition" || element.type === "TSAbstractMethodDefinition") {
+      if (element.kind === "set") continue;
+      const kind = element.kind === "get" ? "getter" : element.kind;
+      members.push({ key, isStatic: element.static, kind, fn: element.value });
+    } else if (
+      element.type === "PropertyDefinition" ||
+      element.type === "TSAbstractPropertyDefinition"
+    ) {
+      members.push({ key, isStatic: element.static, kind: "field", value: element.value });
+    }
+  }
+  return members;
+};
+
+const memberNode = (member: ClassMember): Node | null =>
+  member.kind === "field" ? member.value : member.fn;
+
+/**
+ * A class whose body never calls `this.setState` (or derives state from props)
+ * renders with exactly the state its constructor/fields produced.
+ */
+const mayUpdateState = (chain: StaticClassValue[]): boolean =>
+  chain.some((current) =>
+    current.body.members.some((member) => {
+      if (member.isStatic) return member.key === "getDerivedStateFromProps";
+      const node = memberNode(member);
+      return (
+        node !== null &&
+        someNode(
+          node,
+          (candidate) =>
+            candidate.type === "MemberExpression" &&
+            candidate.object.type === "ThisExpression" &&
+            candidate.property.type === "Identifier" &&
+            (candidate.property.name === "setState" || candidate.property.name === "forceUpdate"),
+        )
+      );
+    }),
+  );
+
+export const isErrorBoundaryClass = (body: ClassBody): boolean =>
+  body.members.some(
+    (member) =>
+      (member.key === "getDerivedStateFromError" && member.isStatic) ||
+      (member.key === "componentDidCatch" && !member.isStatic),
+  ) ||
+  (body.superValue?.kind === "class" && isErrorBoundaryClass(body.superValue.body));
+
+const collectClassChain = (classValue: StaticClassValue): StaticClassValue[] => {
   const chain: StaticClassValue[] = [classValue];
   let current: StaticClassValue = classValue;
-  while (chain.length < MAX_INHERITANCE_DEPTH && current.node.superClass) {
-    const superValue = interpreter.evaluateExpression(current.node.superClass, {
-      ...context,
-      module: current.module,
-      scope: current.scope,
-    });
-    if (superValue.kind !== "class" || chain.includes(superValue)) break;
+  while (chain.length < MAX_INHERITANCE_DEPTH) {
+    const superValue = current.body.superValue;
+    if (superValue?.kind !== "class" || chain.includes(superValue)) break;
     chain.push(superValue);
     current = superValue;
   }
   return chain;
 };
+
+interface InstanceMembers {
+  constructor: StaticFunctionValue | null;
+  fields: ClassMember[];
+  getters: Array<{ key: string; fn: StaticFunctionValue }>;
+}
 
 const bindMethods = (
   interpreter: Interpreter,
@@ -78,48 +111,71 @@ const bindMethods = (
   instance: StaticObjectValue,
   methodContext: EvaluationContext,
   seen: Set<string>,
-): {
-  constructor: StaticFunctionValue | null;
-  fields: Array<{ name: string; node: Class["body"]["body"][number] }>;
-} => {
-  let constructor: StaticFunctionValue | null = null;
-  const fields: Array<{ name: string; node: Class["body"]["body"][number] }> = [];
-  for (const element of classValue.node.body.body) {
-    if (element.type === "StaticBlock" || element.type === "TSIndexSignature") continue;
-    if (element.static) continue;
-    const name = getElementName(element);
-    if (!name) continue;
-    if (element.type === "MethodDefinition" || element.type === "TSAbstractMethodDefinition") {
-      if (element.kind === "constructor") {
-        const fn = interpreter.createFunctionValue(element.value, methodContext, "constructor");
-        if (fn.kind === "function") constructor = fn;
-        continue;
-      }
-      if (element.kind !== "method" || seen.has(name)) continue;
-      seen.add(name);
-      const fn = interpreter.createFunctionValue(element.value, methodContext, name);
-      if (fn.kind === "function")
-        instance.entries.push({
-          kind: "property",
-          key: name,
-          value: { ...fn, thisValue: instance },
-        });
+): InstanceMembers => {
+  const members: InstanceMembers = { constructor: null, fields: [], getters: [] };
+  for (const member of classValue.body.members) {
+    if (member.isStatic) continue;
+    if (member.kind === "constructor") {
+      const fn = interpreter.createFunctionValue(member.fn, methodContext, "constructor");
+      if (fn.kind === "function") members.constructor = fn;
       continue;
     }
-    if (element.type === "PropertyDefinition" || element.type === "TSAbstractPropertyDefinition") {
-      if (seen.has(name)) continue;
-      seen.add(name);
-      fields.push({ name, node: element });
+    if (seen.has(member.key)) continue;
+    seen.add(member.key);
+    if (member.kind === "field") {
+      members.fields.push(member);
+      continue;
     }
+    const fn = interpreter.createFunctionValue(member.fn, methodContext, member.key);
+    if (fn.kind !== "function") continue;
+    const bound: StaticFunctionValue = { ...fn, thisValue: instance };
+    if (member.kind === "getter") members.getters.push({ key: member.key, fn: bound });
+    else instance.entries.push({ kind: "property", key: member.key, value: bound });
   }
-  return { constructor, fields };
+  return members;
 };
 
+const caughtErrorValue = (): StaticValue =>
+  objectFromRecord({
+    name: unknownPrimitiveValue("string", "caught error name"),
+    message: unknownPrimitiveValue("string", "caught error message"),
+    stack: unknownPrimitiveValue("string", "caught error stack"),
+  });
+
+/**
+ * `static getDerivedStateFromError(error)` from the nearest class in the chain
+ * that defines it; null when the boundary only has `componentDidCatch`.
+ */
+const deriveStateFromError = (
+  interpreter: Interpreter,
+  chain: StaticClassValue[],
+  context: EvaluationContext,
+): StaticValue | null => {
+  for (const current of chain) {
+    const derive = current.properties.get("getDerivedStateFromError");
+    if (derive?.kind === "function") {
+      return interpreter.callFunction(derive, [caughtErrorValue()], context, {
+        thisValue: current,
+      });
+    }
+  }
+  return null;
+};
+
+/**
+ * Builds the `this` a class component instance observes in `render()`: props,
+ * fields and methods from the base classes down, then whatever the constructors
+ * assigned. With `caughtError` the instance renders as React re-renders an
+ * error boundary: with `getDerivedStateFromError` merged into state, or with
+ * null children when the class only defines `componentDidCatch`
+ * (`finishClassComponent`).
+ */
 export const renderClassComponent = (
   interpreter: Interpreter,
   classValue: StaticClassValue,
   props: StaticValue,
   context: EvaluationContext,
+  caughtError = false,
 ): StaticValue => {
   const instance = objectFromRecord({
     props,
@@ -127,7 +183,7 @@ export const renderClassComponent = (
     context: unknownValue("legacy class context"),
     refs: objectFromRecord({}),
   });
-  const chain = collectClassChain(interpreter, classValue, context);
+  const chain = collectClassChain(classValue);
   const seen = new Set<string>();
   const perClass = chain.map((current) => {
     const methodContext: EvaluationContext = {
@@ -139,28 +195,49 @@ export const renderClassComponent = (
     return {
       current,
       methodContext,
-      ...bindMethods(interpreter, current, instance, methodContext, seen),
+      members: bindMethods(interpreter, current, instance, methodContext, seen),
     };
   });
-  for (const { current, methodContext, fields, constructor } of [...perClass].reverse()) {
-    for (const { name, node } of fields) {
-      if (node.type !== "PropertyDefinition" && node.type !== "TSAbstractPropertyDefinition")
-        continue;
+  for (const { current, methodContext, members } of [...perClass].reverse()) {
+    for (const field of members.fields) {
       const fieldContext: EvaluationContext = {
         ...methodContext,
         scope: createScope(current.scope),
         thisValue: instance,
       };
-      const value = node.value
-        ? interpreter.evaluateExpression(node.value, fieldContext, name)
-        : UNDEFINED_VALUE;
-      instance.entries.push({ kind: "property", key: name, value });
+      const value =
+        field.kind === "field" && field.value
+          ? interpreter.evaluateExpression(field.value, fieldContext, field.key)
+          : UNDEFINED_VALUE;
+      instance.entries.push({ kind: "property", key: field.key, value });
     }
-    if (constructor) {
-      interpreter.callFunction(constructor, [props], methodContext, { thisValue: instance });
+    if (members.constructor) {
+      interpreter.callFunction(members.constructor, [props], methodContext, {
+        thisValue: instance,
+      });
     }
   }
-  if (mayUpdateState(chain)) {
+  for (const { methodContext, members } of perClass) {
+    for (const getter of members.getters) {
+      instance.entries.push({
+        kind: "property",
+        key: getter.key,
+        value: interpreter.callFunction(getter.fn, [], methodContext, { thisValue: instance }),
+      });
+    }
+  }
+  if (caughtError) {
+    const derived = deriveStateFromError(interpreter, chain, context);
+    if (!derived) return NULL_VALUE;
+    instance.entries.push({
+      kind: "property",
+      key: "state",
+      value: objectValue([
+        { kind: "spread", value: getObjectProperty(instance, "state") },
+        { kind: "spread", value: derived },
+      ]),
+    });
+  } else if (mayUpdateState(chain)) {
     instance.entries.push({
       kind: "property",
       key: "state",

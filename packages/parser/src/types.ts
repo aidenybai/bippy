@@ -130,10 +130,39 @@ export interface ComponentDefinition {
   /** Function/class name or the binding it was assigned to; null for anonymous components. */
   name: string | null;
   module: ModuleRecord;
+  /** The function, class, or (for a compiler-lowered class) the wrapper that produced it. */
   node: FunctionLikeNode | Class;
   scope: Scope;
-  isClass: boolean;
+  /** Present for class components. */
+  classBody: ClassBody | null;
   properties: Map<string, StaticValue>;
+}
+
+export interface ClassMemberBase {
+  key: string;
+  isStatic: boolean;
+}
+
+export interface ClassFunctionMember extends ClassMemberBase {
+  kind: "constructor" | "method" | "getter";
+  fn: FunctionLikeNode;
+}
+
+export interface ClassFieldMember extends ClassMemberBase {
+  kind: "field";
+  value: Expression | null;
+}
+
+export type ClassMember = ClassFunctionMember | ClassFieldMember;
+
+/**
+ * What a class declares, independent of whether it was written with class
+ * syntax or lowered by a compiler into a constructor function with prototype
+ * assignments.
+ */
+export interface ClassBody {
+  members: ClassMember[];
+  superValue: StaticValue | null;
 }
 
 export interface ContextDefinition {
@@ -266,11 +295,26 @@ export interface StaticFunctionValue {
 
 export interface StaticClassValue {
   kind: "class";
-  node: Class;
+  node: Class | FunctionLikeNode;
+  body: ClassBody;
   scope: Scope;
   module: ModuleRecord;
   name: string | null;
   properties: Map<string, StaticValue>;
+}
+
+/** A list item (or child) that is present on some paths and absent on others, as `filter` produces. */
+export interface StaticOptionalValue {
+  kind: "optional";
+  value: StaticValue;
+  reason: string;
+  location: SourceLocation | null;
+}
+
+export interface StaticRegExpValue {
+  kind: "regexp";
+  pattern: string;
+  flags: string;
 }
 
 export interface StaticComponentReferenceValue {
@@ -320,6 +364,8 @@ export interface StaticUnknownValue {
   kind: "unknown";
   reason: string;
   location: SourceLocation | null;
+  /** The value stands for a `throw` on this path, which an error boundary above may catch. */
+  isThrown?: boolean;
 }
 
 /**
@@ -340,9 +386,11 @@ export type StaticValue =
   | StaticListValue
   | StaticRepeatValue
   | StaticBranchValue
+  | StaticOptionalValue
   | StaticObjectValue
   | StaticFunctionValue
   | StaticClassValue
+  | StaticRegExpValue
   | StaticComponentReferenceValue
   | StaticContextValue
   | StaticReactApiValue
@@ -464,6 +512,7 @@ export interface StaticOpaqueFiber extends StaticFiberBase {
 export interface StaticUnknownFiber extends StaticFiberBase {
   kind: "unknown";
   reason: string;
+  isThrown: boolean;
 }
 
 export type StaticFiber =
@@ -499,6 +548,8 @@ export interface StaticRendererOptions {
   maxRecursionPerComponent?: number;
   maxCallDepth?: number;
   maxSteps?: number;
+  /** Wall-clock budget for one render; analysis degrades to unknowns once it is spent. */
+  timeBudgetMs?: number;
   resolveExternalPackages?: boolean;
   externalPackageAllowList?: string[];
   supportsSingletons?: boolean;

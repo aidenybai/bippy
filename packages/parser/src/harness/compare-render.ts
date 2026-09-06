@@ -83,6 +83,7 @@ const skipped = (
     runtimeFibers: 0,
     staticFibers: 0,
     coverage: 0,
+    strictCoverage: 0,
     divergence: null,
     stepsUsed: 0,
     budgetExhausted: false,

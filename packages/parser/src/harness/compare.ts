@@ -47,7 +47,10 @@ export interface ComparisonReport extends ComparisonTally {
   status: ComparisonStatus;
   runtimeFibers: number;
   staticFibers: number;
+  /** Explained fibers over the runtime fibers left after opaque and wildcard subtrees are set aside. */
   coverage: number;
+  /** Explained fibers over every runtime fiber; wildcards and opaque subtrees cannot raise it. */
+  strictCoverage: number;
   divergence: ComparisonDivergence | null;
   stepsUsed: number;
   budgetExhausted: boolean;
@@ -431,6 +434,9 @@ export const comparePatternToRuntime = (
     runtimeFibers,
     staticFibers,
     coverage: tally ? (base.matchedFibers + base.matchedText) / denominator : 0,
+    strictCoverage: tally
+      ? (base.matchedFibers + base.matchedText) / Math.max(1, runtimeFibers)
+      : 0,
     divergence: tally ? null : matcher.divergence,
     stepsUsed: matcher.stepsUsed,
     budgetExhausted,

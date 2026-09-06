@@ -5,31 +5,54 @@ import { defineConfig, type Plugin } from "vite-plus";
 const parserDirectory = import.meta.dirname;
 const bippyDirectory = resolve(parserDirectory, "../bippy");
 const fixturesDirectory = resolve(parserDirectory, "tests/fixtures");
+const componentsDirectory = resolve(parserDirectory, "tests/components");
 
-const FIXTURE_ALIAS_PREFIX = "@/";
 const RESOLVE_EXTENSIONS = [".tsx", ".ts", ".jsx", ".js", "/index.tsx", "/index.ts"];
 
-// Fixtures declare `@/* -> src/*` in their own tsconfig so the static resolver
-// exercises tsconfig paths; this mirrors that mapping for the runtime import
+interface FixtureAlias {
+  prefix: string;
+  target: string;
+}
+
+const COMPONENT_ALIASES: FixtureAlias[] = [
+  { prefix: "@shared/", target: join(componentsDirectory, "shared") },
+  { prefix: "~/", target: componentsDirectory },
+];
+
+const resolveFile = (base: string): string | null => {
+  const candidates = [base, ...RESOLVE_EXTENSIONS.map((extension) => `${base}${extension}`)];
+  return (
+    candidates.find((candidate) => existsSync(candidate) && statSync(candidate).isFile()) ?? null
+  );
+};
+
+const applyAlias = (source: string, alias: FixtureAlias): string | null =>
+  source.startsWith(alias.prefix)
+    ? resolveFile(join(alias.target, source.slice(alias.prefix.length)))
+    : null;
+
+// Fixtures declare path aliases in their own tsconfig so the static resolver
+// exercises tsconfig paths; this mirrors those mappings for the runtime import
 // that vitest performs when rendering the same fixture with react-dom.
 const fixtureAliasPlugin = (): Plugin => ({
   name: "bippy-parser-fixture-alias",
   enforce: "pre",
   resolveId(source, importer) {
-    if (!importer || !source.startsWith(FIXTURE_ALIAS_PREFIX)) return null;
+    if (!importer) return null;
+    if (!relative(componentsDirectory, importer).startsWith("..")) {
+      for (const alias of COMPONENT_ALIASES) {
+        const resolved = applyAlias(source, alias);
+        if (resolved) return resolved;
+      }
+      return null;
+    }
     const relativeToFixtures = relative(fixturesDirectory, importer);
     if (relativeToFixtures.startsWith("..")) return null;
     const [fixtureName] = relativeToFixtures.split(sep);
-    const base = join(
-      fixturesDirectory,
-      fixtureName,
-      "src",
-      source.slice(FIXTURE_ALIAS_PREFIX.length),
-    );
-    const candidates = [base, ...RESOLVE_EXTENSIONS.map((extension) => `${base}${extension}`)];
-    return (
-      candidates.find((candidate) => existsSync(candidate) && statSync(candidate).isFile()) ?? null
-    );
+    return applyAlias(source, {
+      prefix: "@/",
+      target: join(fixturesDirectory, fixtureName, "src"),
+    });
   },
 });
 

@@ -84,6 +84,7 @@ const readContextValue = (
   if (contextValue.kind === "context") {
     const provided = lookupContextValue(context.contextFrame, contextValue.context);
     if (provided) return provided;
+    if (!interpreter.assumeOuterProviders) return contextValue.context.defaultValue;
     return branchValue(
       [
         contextValue.context.defaultValue,
@@ -303,7 +304,7 @@ export const evaluateReactApiCall = (
         : unknownValue("useContext without a context", location);
     case "use":
       if (first?.kind === "context") return readContextValue(interpreter, first, context, location);
-      return unknownValue("use(promise)", location);
+      return first ?? unknownValue("use() without an argument", location);
     case "useEffect":
     case "useLayoutEffect":
     case "useInsertionEffect":
