@@ -104,13 +104,13 @@ export const verifyLive = async (
   };
   const log = options.onLog ?? (() => {});
   try {
+    await installDependencies(checkout, target, log);
     log("rendering static tree");
     const { result, mountApi } = renderStaticRoot(checkout, target, options);
     verification.mountApi = mountApi;
     verification.diagnosticCount = result.diagnostics.length;
     log(`static tree: ${result.root.fiberCount} fibers, ${result.root.unknownCount} unknown`);
 
-    await installDependencies(checkout, target, log);
     log(`starting dev server: ${target.devCommand}`);
     const server = await startDevServer(checkout, target);
     verification.url = server.url;

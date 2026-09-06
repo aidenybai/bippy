@@ -25,6 +25,8 @@ export interface LiveTarget {
   entryFile: string;
   /** Milliseconds to allow the dev server's first compile. */
   readyTimeoutMs: number;
+  /** Variables the app reads at boot, standing in for its `.env`. */
+  environment?: Record<string, string>;
 }
 
 /** A corpus entry on disk, whether cloned from GitHub or living in this workspace. */
@@ -225,6 +227,10 @@ export const CORPUS_REPOSITORIES: CorpusRepository[] = [
       port: 3010,
       entryFile: "apps/react-vite/src/main.tsx",
       readyTimeoutMs: 120_000,
+      environment: {
+        VITE_APP_API_URL: "https://api.bulletproofapp.com",
+        VITE_APP_ENABLE_API_MOCKING: "true",
+      },
     },
     notes: "Reference architecture app; API is mocked in the browser with MSW.",
   },
@@ -346,10 +352,11 @@ export const CORPUS_REPOSITORIES: CorpusRepository[] = [
     framework: "next",
     packageManager: "pnpm",
     reactVersion: "19.2.7",
-    appDirectory: "app",
+    appDirectory: ".",
     entryFiles: ["app/layout.tsx"],
     live: null,
-    notes: "Auth and database required; small enough to read end to end.",
+    notes:
+      "Auth and database required; small enough to read end to end. Components live beside `app/`.",
   },
   {
     slug: "heroui-inc/heroui",

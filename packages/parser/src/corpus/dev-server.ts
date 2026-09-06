@@ -87,7 +87,7 @@ export const startDevServer = async (
   const url = getLiveUrl(target);
   const server = startBackgroundProcess(target.devCommand, {
     cwd: checkout.rootDirectory,
-    env: SERVER_ENVIRONMENT,
+    env: { ...SERVER_ENVIRONMENT, ...target.environment },
   });
   try {
     await waitUntilServing(url, server, target.readyTimeoutMs);
