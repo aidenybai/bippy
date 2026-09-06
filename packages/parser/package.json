@@ -1,0 +1,50 @@
+{
+  "name": "@bippy/parser",
+  "version": "0.0.0",
+  "description": "construct react fiber trees from source without running it",
+  "private": true,
+  "license": "MIT",
+  "author": {
+    "name": "Aiden Bai",
+    "email": "aiden@million.dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aidenybai/bippy.git",
+    "directory": "packages/parser"
+  },
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts",
+    "./harness": "./src/harness/index.ts",
+    "./corpus": "./src/corpus/index.ts"
+  },
+  "scripts": {
+    "test": "vp test --project parser",
+    "typecheck": "tsc --noEmit",
+    "inspect": "tsx scripts/inspect.ts",
+    "corpus": "tsx scripts/corpus.ts",
+    "corpus:live": "BIPPY_PARSER_CORPUS_LIVE=1 tsx scripts/corpus.ts"
+  },
+  "dependencies": {
+    "@oxc-project/types": "^0.148.0",
+    "oxc-parser": "^0.148.0",
+    "oxc-resolver": "^11.24.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "latest",
+    "@types/node": "^20",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "bippy": "workspace:*",
+    "happy-dom": "^20.11.6",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vite-plus": "latest"
+  }
+}
