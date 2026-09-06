@@ -12,6 +12,7 @@ import {
   mergeObjects,
   object,
   optional,
+  SELECTION_LIMIT,
   selectItem,
   type StaticValue,
   text,
@@ -160,22 +161,30 @@ const presentValue = (item: StaticValue): StaticValue =>
 /**
  * The first item, in `order`, whose verdict holds. Undecided verdicts and
  * items that may be absent each add a branch that falls through to the next
- * candidate, which is how `find` reads on a filtered array.
+ * candidate, which is how `find` reads on a filtered array; `null` once the
+ * branching would outgrow its usefulness.
  */
 const findMatch = (
   items: StaticValue[],
   verdicts: Verdict[],
   order: number[],
   describeTest: (index: number) => string,
-): StaticValue => {
+): StaticValue | null => {
+  const candidates: number[] = [];
+  for (const index of order) {
+    if (verdicts[index] === false) continue;
+    candidates.push(index);
+    if (verdicts[index] === true && items[index].kind !== "optional") break;
+  }
+  if (candidates.length > SELECTION_LIMIT) return null;
   let fallthrough: StaticValue = UNDEFINED;
-  for (const index of [...order].reverse()) {
+  for (const index of candidates.reverse()) {
     const item = items[index];
-    const verdict = verdicts[index];
-    if (verdict === false) continue;
     const candidate = presentValue(item);
     const matched: StaticValue =
-      verdict === true ? candidate : conditional(describeTest(index), candidate, fallthrough);
+      verdicts[index] === true
+        ? candidate
+        : conditional(describeTest(index), candidate, fallthrough);
     fallthrough = item.kind === "optional" ? conditional(item.test, matched, fallthrough) : matched;
   }
   return fallthrough;
@@ -264,11 +273,13 @@ export const evaluateArrayMethod = (
       if (!items) return unknown(callDescription);
       const order = items.map((_item, index) => index);
       if (method === "findLast") order.reverse();
-      return findMatch(
-        items,
-        testItems(callback),
-        order,
-        (index) => `${callDescription} matches [${index}]`,
+      return (
+        findMatch(
+          items,
+          testItems(callback),
+          order,
+          (index) => `${callDescription} matches [${index}]`,
+        ) ?? unknown(callDescription)
       );
     }
     case "forEach":

@@ -274,8 +274,8 @@ export const optional = (test: string, value: StaticValue): OptionalValue =>
 export const readItem = (value: StaticValue): StaticValue =>
   value.kind === "optional" ? conditional(value.test, value.value, UNDEFINED) : value;
 
-/** Beyond this many items, selecting through absent ones is not worth the branching. */
-const SELECTION_LIMIT = 8;
+/** Beyond this many undecided items, selecting one is not worth the branching. */
+export const SELECTION_LIMIT = 8;
 
 /**
  * The item at `position` once absent items are skipped, so `filtered[0]`

@@ -27,6 +27,15 @@ import {
   type Interpreter,
 } from "./interpreter.js";
 import { evaluateJsxElement, evaluateJsxFragment } from "./jsx.js";
+import {
+  collectNarrowings,
+  keepArms,
+  keepFalsy,
+  keepNonNullish,
+  keepNullish,
+  keepTruthy,
+  narrowScope,
+} from "./narrowing.js";
 import { applyBinaryOperator, applyUnaryOperator, getBinaryOperator } from "./operators.js";
 import { assignToTarget, getPropertyKeyName } from "./patterns.js";
 import { hasLocalBinding, lookupVariable } from "./scope.js";
@@ -37,7 +46,6 @@ import {
   FALSE,
   type FunctionValue,
   getTruthiness,
-  isNullish,
   isNullishValue,
   literal,
   mapConditional,
@@ -171,6 +179,15 @@ const evaluateMember = (
  * operand is assumed to be one React skips (`false`, `null`, `undefined`,
  * `""`) rather than a `0` that would render as text.
  */
+/** The context for code that only runs once `test` had `outcome`. */
+const enterOutcome = (
+  context: EvaluationContext,
+  test: Expression,
+  testSource: string,
+  outcome: boolean,
+): EvaluationContext =>
+  enterUndecided(context, testSource, narrowScope(context.scope, collectNarrowings(test, outcome)));
+
 const evaluateLogical = (
   interpreter: Interpreter,
   expression: LogicalExpression,
@@ -179,41 +196,48 @@ const evaluateLogical = (
   const left = interpreter.evaluateExpression(expression.left, context);
   const test = interpreter.getSource(context.module, expression.left);
   return applyLogicalOperator(expression.operator, left, test, () =>
-    interpreter.evaluateExpression(expression.right, enterUndecided(context, test, context.scope)),
+    interpreter.evaluateExpression(
+      expression.right,
+      expression.operator === "??"
+        ? enterUndecided(context, test, context.scope)
+        : enterOutcome(context, expression.left, test, expression.operator === "&&"),
+    ),
   );
 };
 
 /**
  * Short-circuits when the left side decides; otherwise both sides remain
- * possible. A left side that already branches is decided arm by arm.
+ * possible, and the arm that keeps the left side only keeps what the
+ * operator lets through (`a || b` yields `a` only where `a` is truthy).
  */
 const applyLogicalOperator = (
   operator: LogicalOperator,
   left: StaticValue,
   test: string,
-  evaluateRight: () => StaticValue,
+  right: () => StaticValue,
 ): StaticValue => {
-  let rightValue: StaticValue | null = null;
-  const right = (): StaticValue => {
-    rightValue ??= evaluateRight();
-    return rightValue;
-  };
-  return mapConditional(left, (arm) => {
-    const truthiness = getTruthiness(arm);
-    switch (operator) {
-      case "&&":
-        if (truthiness === false) return arm;
-        if (truthiness === true) return right();
-        return conditional(test, right(), arm.kind === "literal" ? arm : FALSE);
-      case "||":
-        if (truthiness === true) return arm;
-        if (truthiness === false) return right();
-        return conditional(test, arm, right());
-      case "??":
-        if (arm.kind === "literal") return isNullish(arm.value) ? right() : arm;
-        return arm.kind === "unknown" ? conditional(`${test} != null`, arm, right()) : arm;
+  const truthiness = getTruthiness(left);
+  switch (operator) {
+    case "&&": {
+      if (truthiness === false) return left;
+      if (truthiness === true) return right();
+      /** An unknown that turned out falsy is modelled as `false`, the boolean case. */
+      const falsyLeft = mapConditional(keepArms(left, keepFalsy) ?? FALSE, (arm) =>
+        arm.kind === "literal" ? arm : FALSE,
+      );
+      return conditional(test, right(), falsyLeft);
     }
-  });
+    case "||":
+      if (truthiness === true) return left;
+      if (truthiness === false) return right();
+      return conditional(test, keepArms(left, keepTruthy) ?? left, right());
+    case "??": {
+      const nonNullish = keepArms(left, keepNonNullish);
+      if (nonNullish === null) return right();
+      if (keepArms(left, keepNullish) === null) return left;
+      return conditional(`${test} != null`, nonNullish, right());
+    }
+  }
 };
 
 const LOGICAL_ASSIGNMENT_OPERATORS: Partial<Record<AssignmentOperator, LogicalOperator>> = {
@@ -371,11 +395,16 @@ export const evaluateExpression = (
       if (truthiness === false)
         return interpreter.evaluateExpression(expression.alternate, context);
       const testSource = interpreter.getSource(context.module, expression.test);
-      const armContext = enterUndecided(context, testSource, context.scope);
       return conditional(
         testSource,
-        interpreter.evaluateExpression(expression.consequent, armContext),
-        interpreter.evaluateExpression(expression.alternate, armContext),
+        interpreter.evaluateExpression(
+          expression.consequent,
+          enterOutcome(context, expression.test, testSource, true),
+        ),
+        interpreter.evaluateExpression(
+          expression.alternate,
+          enterOutcome(context, expression.test, testSource, false),
+        ),
       );
     }
     case "LogicalExpression":

@@ -202,13 +202,66 @@ describe("interpreter: arrays and objects", () => {
     expect(run(`return ["a", "b"].includes(kind);`)).toBe("unknown(some())");
   });
 
+  it("narrows a branching variable by the tests a path has passed", () => {
+    const preset = `const preset = [{ v: "a", label: "A" }, { v: "b", label: "B" }].find((p) => p.v === kind);`;
+    expect(run(`${preset} if (preset) return preset.label; return "none";`)).toBe(
+      '(preset ? ([{ v: "a", label: "A" }, { v: "b", label: "B" }].find() matches [0] ? "A" : "B") : "none")',
+    );
+    expect(run(`${preset} if (!preset) return "none"; return preset.label;`)).toBe(
+      '(!preset ? "none" : ([{ v: "a", label: "A" }, { v: "b", label: "B" }].find() matches [0] ? "A" : "B"))',
+    );
+    expect(run(`${preset} return preset ? preset.label : "none";`)).toBe(
+      '(preset ? ([{ v: "a", label: "A" }, { v: "b", label: "B" }].find() matches [0] ? "A" : "B") : "none")',
+    );
+    expect(run(`${preset} return preset && preset.label;`)).toBe(
+      '(preset ? ([{ v: "a", label: "A" }, { v: "b", label: "B" }].find() matches [0] ? "A" : "B") : undefined)',
+    );
+    expect(run(`${preset} if (preset == null) throw new Error(); return preset.label;`)).toBe(
+      '([{ v: "a", label: "A" }, { v: "b", label: "B" }].find() matches [0] ? "A" : "B")',
+    );
+    expect(run(`${preset} return preset?.label && preset.label.length;`)).toBe(
+      "(preset?.label ? 1 : undefined)",
+    );
+  });
+
+  it("narrows property paths through objects, keeping short-circuited optional reads", () => {
+    const state = `const state = { item: show ? { label: "x" } : undefined };`;
+    expect(run(`${state} return state.item ? state.item.label : "none";`)).toBe(
+      '(state.item ? "x" : "none")',
+    );
+    expect(run(`${state} if (!state.item) return "none"; return state.item.label;`)).toBe(
+      '(!state.item ? "none" : "x")',
+    );
+    const maybe = `const maybe = show ? { item: { label: "x" } } : undefined;`;
+    expect(run(`${maybe} return maybe?.item.label === "x" ? maybe.item.label : "none";`)).toBe(
+      '(maybe?.item.label === "x" ? "x" : "none")',
+    );
+    expect(run(`${maybe} return maybe?.item.label !== "x" ? String(maybe) : "same";`)).toBe(
+      '(maybe?.item.label !== "x" ? "undefined" : "same")',
+    );
+  });
+
+  it("narrows by equality with a primitive, including switch cases", () => {
+    const mode = `const mode = show ? "a" : kind === "x" ? "b" : "c";`;
+    expect(run(`${mode} if (mode === "a") return 1; return mode;`)).toBe(
+      '(mode === "a" ? 1 : (kind === "x" ? "b" : "c"))',
+    );
+    expect(run(`${mode} if (mode !== "a") return mode; return mode;`)).toBe(
+      '(mode !== "a" ? (kind === "x" ? "b" : "c") : "a")',
+    );
+    expect(
+      run(`${mode} switch (mode) { case "a": case "b": return mode; default: return mode; }`),
+    ).toBe('(mode === "a" || mode === "b" ? (show ? "a" : "b") : "c")');
+    expect(run(`let x = show ? 1 : 0; if (x) { x = 2; return x; } return x;`)).toBe("(x ? 2 : 0)");
+  });
+
   it("short-circuits optional chains on nullish values", () => {
     expect(run(`const user = undefined; return user?.profile.name;`)).toBe("undefined");
     expect(run(`const user = { profile: null }; return user.profile?.name ?? "anon";`)).toBe(
       '"anon"',
     );
     expect(run(`const user = show ? { name: "a" } : null; return user?.name ?? "anon";`)).toBe(
-      '(show ? "a" : "anon")',
+      '(user?.name != null ? "a" : "anon")',
     );
     expect(run(`const onSelect = undefined; return onSelect?.(1);`)).toBe("undefined");
     expect(run(`const api = show ? { get: () => 1 } : undefined; return api?.get();`)).toBe(

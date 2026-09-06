@@ -1,4 +1,5 @@
 import type {
+  Expression,
   ForInStatement,
   ForOfStatement,
   ForStatement,
@@ -26,6 +27,12 @@ import {
   returnCompletion,
   THROW_COMPLETION,
 } from "./interpreter.js";
+import {
+  collectCaseNarrowings,
+  collectNarrowings,
+  type Narrowing,
+  narrowScope,
+} from "./narrowing.js";
 import { assignToTarget, bindPattern } from "./patterns.js";
 import {
   createScope,
@@ -49,6 +56,8 @@ interface Arm {
   test: string;
   scope: Scope;
   completion: Completion;
+  /** What holds for the statements after the branch when this arm leaves the function. */
+  exitNarrowings: Narrowing[];
 }
 
 /** Outcome of a control-flow statement whose direction is unknown statically. */
@@ -69,17 +78,32 @@ const evaluateInScope = (
   context: EvaluationContext,
 ): Completion => interpreter.evaluateStatements(statements, { ...context, scope });
 
+/** Variables refined by a test's outcome inside the arm, and by the opposite outcome after it. */
+interface ArmNarrowings {
+  inside: Narrowing[];
+  exit: Narrowing[];
+}
+
+const NO_NARROWINGS: ArmNarrowings = { inside: [], exit: [] };
+
+const testNarrowings = (test: Expression, outcome: boolean): ArmNarrowings => ({
+  inside: collectNarrowings(test, outcome),
+  exit: collectNarrowings(test, !outcome),
+});
+
 const evaluateArm = (
   interpreter: Interpreter,
   test: string,
   statements: Statement[],
   context: EvaluationContext,
+  narrowings: ArmNarrowings = NO_NARROWINGS,
 ): Arm => {
-  const scope = forkScope(context.scope);
+  const scope = forkScope(narrowScope(context.scope, narrowings.inside));
   return {
     test,
     scope,
     completion: interpreter.evaluateStatements(statements, enterUndecided(context, test, scope)),
+    exitNarrowings: narrowings.exit,
   };
 };
 
@@ -134,29 +158,39 @@ const evaluateIf = (
   const test = interpreter.getSource(context.module, statement.test);
   return {
     kind: "arms",
-    arms: [evaluateArm(interpreter, test, toStatements(statement.consequent), context)],
+    arms: [
+      evaluateArm(
+        interpreter,
+        test,
+        toStatements(statement.consequent),
+        context,
+        testNarrowings(statement.test, true),
+      ),
+    ],
     fallback: statement.alternate
-      ? evaluateArm(interpreter, `!(${test})`, toStatements(statement.alternate), context)
+      ? evaluateArm(
+          interpreter,
+          `!(${test})`,
+          toStatements(statement.alternate),
+          context,
+          testNarrowings(statement.test, false),
+        )
       : null,
   };
 };
 
 interface CaseGroup {
-  tests: string[];
+  tests: Expression[];
   isDefault: boolean;
   statements: Statement[];
 }
 
 /** Cases with empty bodies fall through into the next non-empty case. */
-const groupSwitchCases = (
-  interpreter: Interpreter,
-  statement: SwitchStatement,
-  context: EvaluationContext,
-): CaseGroup[] => {
+const groupSwitchCases = (statement: SwitchStatement): CaseGroup[] => {
   const groups: CaseGroup[] = [];
   let pending: CaseGroup = { tests: [], isDefault: false, statements: [] };
   for (const switchCase of statement.cases) {
-    if (switchCase.test) pending.tests.push(interpreter.getSource(context.module, switchCase.test));
+    if (switchCase.test) pending.tests.push(switchCase.test);
     else pending.isDefault = true;
     if (switchCase.consequent.length === 0) continue;
     pending.statements = switchCase.consequent;
@@ -197,14 +231,32 @@ const evaluateSwitch = (
     return completion.kind === "break" ? NORMAL_COMPLETION : completion;
   }
   const discriminantSource = interpreter.getSource(context.module, statement.discriminant);
+  const groups = groupSwitchCases(statement);
+  const allTests = groups.flatMap((group) => group.tests);
   const arms: Arm[] = [];
   let fallback: Arm | null = null;
-  for (const group of groupSwitchCases(interpreter, statement, context)) {
+  for (const group of groups) {
     const test = group.tests
-      .map((caseTest) => `${discriminantSource} === ${caseTest}`)
+      .map(
+        (caseTest) =>
+          `${discriminantSource} === ${interpreter.getSource(context.module, caseTest)}`,
+      )
       .join(" || ");
+    /** The default case is reached once no other case matched. */
+    const narrowings: ArmNarrowings = group.isDefault
+      ? {
+          inside:
+            group.tests.length === 0
+              ? collectCaseNarrowings(statement.discriminant, allTests, false)
+              : [],
+          exit: [],
+        }
+      : {
+          inside: collectCaseNarrowings(statement.discriminant, group.tests, true),
+          exit: collectCaseNarrowings(statement.discriminant, group.tests, false),
+        };
     const arm = absorbJumps(
-      evaluateArm(interpreter, test || "default", group.statements, context),
+      evaluateArm(interpreter, test || "default", group.statements, context, narrowings),
       SWITCH_JUMPS,
     );
     if (group.isDefault && group.tests.length === 0) fallback = arm;
@@ -427,7 +479,7 @@ const evaluateLoop = (
   const completion = evaluateInScope(interpreter, toStatements(body), scope, loopContext);
   return {
     kind: "arms",
-    arms: [absorbJumps({ test: header, scope, completion }, LOOP_JUMPS)],
+    arms: [absorbJumps({ test: header, scope, completion, exitNarrowings: [] }, LOOP_JUMPS)],
     fallback: null,
   };
 };
@@ -454,6 +506,7 @@ const evaluateTry = (
       test: "catch",
       scope,
       completion: interpreter.evaluateStatements(statement.handler.body.body, handlerContext),
+      exitNarrowings: [],
     };
   }
   if (statement.finalizer) interpreter.evaluateStatements(statement.finalizer.body, context);
@@ -603,15 +656,33 @@ const continuePartial = (
   }
 };
 
+const leavesFunction = (arm: Arm): boolean =>
+  arm.completion.kind === "return" || arm.completion.kind === "throw";
+
+/** The statements after a branch only run on paths through arms that did not leave. */
+const narrowAfterBranch = (armSet: ArmSet, context: EvaluationContext): EvaluationContext => {
+  const exitNarrowings = [...armSet.arms, ...(armSet.fallback ? [armSet.fallback] : [])]
+    .filter(leavesFunction)
+    .flatMap((arm) => arm.exitNarrowings);
+  const scope = narrowScope(context.scope, exitNarrowings);
+  return scope === context.scope ? context : { ...context, scope };
+};
+
 const evaluateSequence = (
   interpreter: Interpreter,
   statements: Statement[],
   startIndex: number,
-  context: EvaluationContext,
+  initialContext: EvaluationContext,
 ): Completion => {
+  let context = initialContext;
   for (let index = startIndex; index < statements.length; index++) {
     const outcome = evaluateStatement(interpreter, statements[index], context);
-    const completion = outcome.kind === "arms" ? combineArms(outcome, context) : outcome;
+    if (outcome.kind !== "arms") {
+      if (outcome.kind === "normal") continue;
+      return outcome;
+    }
+    const completion = combineArms(outcome, context);
+    context = narrowAfterBranch(outcome, context);
     if (completion.kind === "normal") continue;
     if (completion.kind !== "partial") return completion;
     return continuePartial(

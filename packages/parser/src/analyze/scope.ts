@@ -1,15 +1,18 @@
 import { conditional, type StaticValue } from "./values.js";
 
 /**
- * Lexical scope for the abstract interpreter. Module scope has no parent;
- * component bodies and nested functions create plain child scopes, while
- * control-flow arms create branch scopes whose assignments shadow the outer
- * binding until the arms are merged back as a conditional.
+ * - `lexical`: a module, function or block body; declarations live here.
+ * - `branch`: a control-flow arm; assignments shadow the outer binding until
+ *   the arms are merged back as a conditional.
+ * - `narrowing`: a path on which a test's outcome is known; holds refined
+ *   copies of outer variables and never receives writes.
  */
+export type ScopeKind = "lexical" | "branch" | "narrowing";
+
 export interface Scope {
   parent: Scope | null;
   variables: Map<string, StaticValue>;
-  isBranch: boolean;
+  kind: ScopeKind;
   /** Names assigned (not declared) inside a branch scope. */
   assigned: Set<string>;
 }
@@ -19,10 +22,10 @@ export interface BranchOutcome {
   scope: Scope;
 }
 
-export const createScope = (parent: Scope | null = null, isBranch = false): Scope => ({
+export const createScope = (parent: Scope | null = null, kind: ScopeKind = "lexical"): Scope => ({
   parent,
   variables: new Map(),
-  isBranch,
+  kind,
   assigned: new Set(),
 });
 
@@ -55,16 +58,18 @@ export const declareVariable = (scope: Scope, name: string, value: StaticValue):
 /**
  * Assigns to the nearest declaring scope, unless a branch scope is crossed
  * first: then the assignment shadows inside the branch so the other arms
- * still observe the previous value.
+ * still observe the previous value. A narrowing scope crossed on the way
+ * drops its refinement, since the write supersedes what the path assumed.
  */
 export const assignVariable = (scope: Scope, name: string, value: StaticValue): void => {
   let current: Scope | null = scope;
   while (current) {
-    if (current.variables.has(name)) {
+    if (current.kind === "narrowing") {
+      current.variables.delete(name);
+    } else if (current.variables.has(name)) {
       current.variables.set(name, value);
       return;
-    }
-    if (current.isBranch) {
+    } else if (current.kind === "branch") {
       current.variables.set(name, value);
       current.assigned.add(name);
       return;
@@ -74,7 +79,7 @@ export const assignVariable = (scope: Scope, name: string, value: StaticValue): 
   scope.variables.set(name, value);
 };
 
-export const forkScope = (scope: Scope): Scope => createScope(scope, true);
+export const forkScope = (scope: Scope): Scope => createScope(scope, "branch");
 
 /**
  * Merges branch scopes back into `scope`: every variable assigned in any arm
