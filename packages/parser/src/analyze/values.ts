@@ -250,16 +250,37 @@ const assumeTest = (value: StaticValue, test: string, outcome: boolean): StaticV
 const isSameLiteral = (left: StaticValue, right: StaticValue): boolean =>
   left.kind === "literal" && right.kind === "literal" && Object.is(left.value, right.value);
 
+const isWrappedInParentheses = (source: string): boolean => {
+  if (!source.startsWith("(") || !source.endsWith(")")) return false;
+  let depth = 0;
+  for (let index = 0; index < source.length; index++) {
+    if (source[index] === "(") depth++;
+    else if (source[index] === ")" && --depth === 0) return index === source.length - 1;
+  }
+  return false;
+};
+
+/** The operand of a test that negates one thing: `x` for `!x` and `!(x && y)`, `null` otherwise. */
+const getNegatedOperand = (test: string): string | null => {
+  if (!test.startsWith("!")) return null;
+  const operand = test.slice(1);
+  if (/^[\w$.]+$/.test(operand)) return operand;
+  return isWrappedInParentheses(operand) ? operand.slice(1, -1) : null;
+};
+
 /**
  * A value that depends on `test`. Within a render the same test expression
  * has one outcome, so nested conditionals on it collapse; identical arms
- * collapse to the value itself.
+ * collapse to the value itself. A negated test is stored as the positive
+ * one with its arms swapped, so `x` and `!x` share an outcome.
  */
 export const conditional = (
   test: string,
   whenTrue: StaticValue,
   whenFalse: StaticValue,
 ): StaticValue => {
+  const operand = getNegatedOperand(test);
+  if (operand !== null) return conditional(operand, whenFalse, whenTrue);
   const assumedTrue = assumeTest(whenTrue, test, true);
   const assumedFalse = assumeTest(whenFalse, test, false);
   if (assumedTrue === assumedFalse || isSameLiteral(assumedTrue, assumedFalse)) return assumedTrue;

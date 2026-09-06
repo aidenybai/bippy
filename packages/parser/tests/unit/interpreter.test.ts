@@ -208,7 +208,7 @@ describe("interpreter: arrays and objects", () => {
       '(preset ? ([{ v: "a", label: "A" }, { v: "b", label: "B" }].find() matches [0] ? "A" : "B") : "none")',
     );
     expect(run(`${preset} if (!preset) return "none"; return preset.label;`)).toBe(
-      '(!preset ? "none" : ([{ v: "a", label: "A" }, { v: "b", label: "B" }].find() matches [0] ? "A" : "B"))',
+      '(preset ? ([{ v: "a", label: "A" }, { v: "b", label: "B" }].find() matches [0] ? "A" : "B") : "none")',
     );
     expect(run(`${preset} return preset ? preset.label : "none";`)).toBe(
       '(preset ? ([{ v: "a", label: "A" }, { v: "b", label: "B" }].find() matches [0] ? "A" : "B") : "none")',
@@ -230,7 +230,7 @@ describe("interpreter: arrays and objects", () => {
       '(state.item ? "x" : "none")',
     );
     expect(run(`${state} if (!state.item) return "none"; return state.item.label;`)).toBe(
-      '(!state.item ? "none" : "x")',
+      '(state.item ? "x" : "none")',
     );
     const maybe = `const maybe = show ? { item: { label: "x" } } : undefined;`;
     expect(run(`${maybe} return maybe?.item.label === "x" ? maybe.item.label : "none";`)).toBe(
@@ -329,6 +329,28 @@ describe("interpreter: control flow", () => {
          export const value = [pick(2), pick(0)];`,
       ),
     ).toBe('["big", "small"]');
+  });
+
+  it("keeps mutations after an undecided early return conditional on not having returned", () => {
+    expect(
+      run(`const acc = { flag: false, items: [] as number[] };
+           if (!show) return acc;
+           acc.flag = true;
+           acc.items.push(1);
+           return acc;`),
+    ).toBe("{flag, items}");
+    expect(
+      run(`const acc = { flag: false };
+           if (!show) return acc;
+           acc.flag = true;
+           return acc.flag;`),
+    ).toBe("(show ? true : {flag})");
+    expect(
+      run(`const acc = { flag: false };
+           if (kind === "a") return acc.flag;
+           acc.flag = true;
+           return acc.flag;`),
+    ).toBe('(kind === "a" ? false : true)');
   });
 
   it("evaluates try/catch as a branch and destructuring with defaults", () => {

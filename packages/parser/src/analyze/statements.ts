@@ -658,12 +658,22 @@ const continuePartial = (
 const leavesFunction = (arm: Arm): boolean =>
   arm.completion.kind === "return" || arm.completion.kind === "throw";
 
-/** The statements after a branch only run on paths through arms that did not leave. */
+/**
+ * The statements after a branch only run on paths through arms that did not
+ * leave. Variables those paths narrow are refined; when some arm returned,
+ * the rest is also undecided control flow, so what it does to values shared
+ * with the returning paths stays conditional.
+ */
 const narrowAfterBranch = (armSet: ArmSet, context: EvaluationContext): EvaluationContext => {
-  const exitNarrowings = [...armSet.arms, ...(armSet.fallback ? [armSet.fallback] : [])]
-    .filter(leavesFunction)
-    .flatMap((arm) => arm.exitNarrowings);
-  const scope = narrowScope(context.scope, exitNarrowings);
+  const allArms = [...armSet.arms, ...(armSet.fallback ? [armSet.fallback] : [])];
+  const scope = narrowScope(
+    context.scope,
+    allArms.filter(leavesFunction).flatMap((arm) => arm.exitNarrowings),
+  );
+  const returningTests = allArms
+    .filter((arm) => isReturning(arm.completion))
+    .map((arm) => `!(${arm.test})`);
+  if (returningTests.length > 0) return enterUndecided(context, returningTests.join(" && "), scope);
   return scope === context.scope ? context : { ...context, scope };
 };
 
