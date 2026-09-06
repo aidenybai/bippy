@@ -18,7 +18,7 @@ import {
   type MemberLink,
 } from "../module/ast.js";
 import { getProperty, normalizeExternal, spreadInto } from "./access.js";
-import { isKnownGlobal } from "./builtins.js";
+import { isGlobalChain, isKnownGlobal, readEnvironmentVariable } from "./builtins.js";
 import { evaluateCall } from "./calls.js";
 import { classifyClass } from "./components.js";
 import {
@@ -133,8 +133,12 @@ const accessLinks = (
 ): StaticValue => {
   const chain = links.map((link) => link.name);
   const firstOptional = links.findIndex((link) => link.isOptional);
-  let value = resolveIdentifier(interpreter, chain[0], span, context);
-  for (let index = 1; index < chain.length; index++) {
+  const isEnvironmentRead =
+    chain[0] === "process" && chain[1] === "env" && chain.length > 2 && isGlobalChain(chain, context);
+  let value = isEnvironmentRead
+    ? readEnvironmentVariable(interpreter, chain[2])
+    : resolveIdentifier(interpreter, chain[0], span, context);
+  for (let index = isEnvironmentRead ? 3 : 1; index < chain.length; index++) {
     const isShortCircuiting = firstOptional !== -1 && index >= firstOptional;
     const next = accessMember(interpreter, value, chain[index], isShortCircuiting);
     const isStaticHost = value.kind === "function" || value.kind === "component";

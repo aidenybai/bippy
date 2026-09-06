@@ -123,6 +123,17 @@ describe("interpreter: arrays and objects", () => {
     expect(describe_(`export const value = [3, 1].concat([2], 4);`)).toBe("[3, 1, 2, 4]");
   });
 
+  it("joins known primitive items and degrades to text otherwise", () => {
+    expect(describe_(`export const value = ["Tag", "preset"].join(".");`)).toBe('"Tag.preset"');
+    expect(describe_(`export const value = [1, null, undefined, true].join();`)).toBe('"1,,,true"');
+    expect(describe_(`declare const rows: number[]; export const value = rows.join("-");`)).toBe(
+      "text(rows.join())",
+    );
+    expect(describe_(`export const value = [1, Math.random()].join("-");`)).toBe(
+      "text([1, Math.random()].join())",
+    );
+  });
+
   it("keeps unknown arrays as lists of the mapped shape", () => {
     expect(
       describe_(`declare const rows: number[]; export const value = rows.map((r) => r);`),
@@ -422,7 +433,7 @@ describe("interpreter: functions and modules", () => {
         `const join = (separator = ",", ...parts: string[]) => parts.join(separator);
          export const value = join("-", "a", "b");`,
       ),
-    ).toMatch(/^text\(/);
+    ).toBe('"a-b"');
     expect(
       describe_(
         `const make = (base: number) => (n: number) => base + n;
@@ -499,6 +510,31 @@ describe("interpreter: functions and modules", () => {
          export const value = [Header, Footer];`,
       ),
     ).toBe("[fn(Header), fn(SiteFooter)]");
+  });
+
+  it("reads process.env as a development build unless told otherwise, and only for free process", () => {
+    expect(
+      describe_(
+        `export const value = [
+           process.env.NODE_ENV,
+           process.env.NODE_ENV !== "production",
+           process.env.API_URL,
+           process.env.NODE_ENV.length,
+         ];`,
+      ),
+    ).toBe('["development", true, unknown(process.env.API_URL), 11]');
+    expect(
+      describe_(
+        `const process = { env: { NODE_ENV: "test" } };
+         export const value = process.env.NODE_ENV;`,
+      ),
+    ).toBe('"test"');
+    const renderer = createStaticRenderer({
+      rootDirectory: "/virtual",
+      files: { "src/main.tsx": `export const value = process.env.NODE_ENV;` },
+      interpreter: { environment: { NODE_ENV: "production" } },
+    });
+    expect(describeValue(renderer.getExportValue("src/main.tsx", "value"))).toBe('"production"');
   });
 
   it("models class components with inherited members and defaultProps", () => {

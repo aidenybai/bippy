@@ -1,12 +1,14 @@
 import { flattenInto, forgetArrayItems, getIterationItem } from "./access.js";
-import { type EvaluationContext, isEffectUndecided } from "./interpreter.js";
+import { type EvaluationContext, type Interpreter, isEffectUndecided } from "./interpreter.js";
 import type { CallbackInvoker } from "./react-calls.js";
+import { hasLocalBinding } from "./scope.js";
 import {
   array,
   assignStatic,
   conditional,
   FALSE,
   getTruthiness,
+  isNullish,
   list,
   literal,
   mergeObjects,
@@ -117,6 +119,21 @@ export const isKnownGlobal = (name: string): boolean =>
   DOM_GLOBAL_PATTERN.test(name) ||
   name in globalThis;
 
+/** Whether an access chain starts at a global namespace rather than a binding that shadows it. */
+export const isGlobalChain = (chain: string[], context: EvaluationContext): boolean =>
+  GLOBAL_NAMESPACES.has(chain[0]) &&
+  !hasLocalBinding(context.scope, chain[0]) &&
+  !context.module.bindings.has(chain[0]);
+
+/**
+ * `process.env.<NAME>` as a bundler substitutes it: the configured value, or
+ * unknown for a variable the analysis was not told about.
+ */
+export const readEnvironmentVariable = (interpreter: Interpreter, name: string): StaticValue => {
+  const value = interpreter.environment[name];
+  return value === undefined ? unknown(`process.env.${name}`) : literal(value);
+};
+
 const ARRAY_LIKE_METHODS = new Set([
   "map",
   "flatMap",
@@ -152,6 +169,12 @@ const ARRAY_LIKE_METHODS = new Set([
 
 const isCallable = (value: StaticValue | undefined): value is StaticValue =>
   value !== undefined && value.kind === "function";
+
+/** What `join` writes for a known primitive item or separator: nullish become empty, symbols throw. */
+const asJoinable = (value: StaticValue): string | null => {
+  if (value.kind !== "literal" || typeof value.value === "symbol") return null;
+  return isNullish(value.value) ? "" : String(value.value);
+};
 
 type Verdict = boolean | null;
 
@@ -323,8 +346,16 @@ export const evaluateArrayMethod = (
       for (const item of items) flattenInto(flattened, item);
       return array(flattened);
     }
-    case "join":
-      return text(callDescription);
+    case "join": {
+      const separator = callback === undefined ? "," : asJoinable(callback);
+      if (!items || separator === null || hasOptionalBefore(items.length)) {
+        return text(callDescription);
+      }
+      const joinable = items.map(asJoinable);
+      return joinable.every((item) => item !== null)
+        ? literal(joinable.join(separator))
+        : text(callDescription);
+    }
     case "push":
     case "unshift": {
       if (target.kind !== "array") return unknown(callDescription);

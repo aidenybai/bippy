@@ -86,6 +86,11 @@ export interface Diagnostic {
 export interface InterpreterOptions {
   /** Nested call depth after which calls evaluate to an unknown value. */
   maxCallDepth?: number;
+  /**
+   * What `process.env.<NAME>` reads as, the way a bundler substitutes it.
+   * Defaults to a development build, which is what the harness renders.
+   */
+  environment?: Record<string, string>;
 }
 
 /** Thrown from evaluation once the render's time budget is spent. */
@@ -100,6 +105,7 @@ export interface Interpreter {
   project: Project;
   linker: Linker;
   maxCallDepth: number;
+  environment: Record<string, string>;
   diagnostics: Diagnostic[];
   /** Makes evaluation throw `AnalysisTimeoutError` after `budgetMs`; `null` removes the limit. */
   setTimeBudget: (budgetMs: number | null) => void;

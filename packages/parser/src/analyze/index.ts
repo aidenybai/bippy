@@ -24,6 +24,8 @@ import {
 
 export const DEFAULT_MAX_CALL_DEPTH = 24;
 
+export const DEFAULT_ENVIRONMENT: Record<string, string> = { NODE_ENV: "development" };
+
 /** Expression evaluations between clock reads while a time budget is set. */
 const CLOCK_CHECK_INTERVAL = 512;
 
@@ -55,6 +57,7 @@ export const createInterpreter = (
     project,
     linker,
     maxCallDepth: options.maxCallDepth ?? DEFAULT_MAX_CALL_DEPTH,
+    environment: options.environment ?? DEFAULT_ENVIRONMENT,
     diagnostics,
     setTimeBudget: (nextBudgetMs) => {
       budgetMs = nextBudgetMs;

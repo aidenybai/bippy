@@ -8,20 +8,14 @@ import {
   unwrapExpression,
 } from "../module/ast.js";
 import { getProperty, spreadInto } from "./access.js";
-import { evaluateArrayMethod, evaluateGlobalCall, GLOBAL_NAMESPACES } from "./builtins.js";
+import { evaluateArrayMethod, evaluateGlobalCall, isGlobalChain } from "./builtins.js";
 import { readContext } from "./contexts.js";
 import { isBuiltinHookName, modelBuiltinHook } from "./hooks.js";
 import { type EvaluationContext, getReturnValue, type Interpreter } from "./interpreter.js";
 import { isHookCallee, isHookName } from "./naming.js";
 import { bindParameters } from "./patterns.js";
 import { type CallbackInvoker, evaluateReactCall } from "./react-calls.js";
-import {
-  assignVariable,
-  createScope,
-  hasLocalBinding,
-  isEnclosingScope,
-  lookupVariable,
-} from "./scope.js";
+import { assignVariable, createScope, isEnclosingScope, lookupVariable } from "./scope.js";
 import { evaluateRegExpMethod, evaluateStringMethod } from "./strings.js";
 import {
   conditional,
@@ -67,11 +61,6 @@ const isReactHook = (callee: StaticValue): callee is ExternalValue => {
   if (reference === null || reference.source !== "react") return false;
   return isBuiltinHookName(reference.api) || isHookName(reference.api);
 };
-
-const isGlobalChain = (chain: string[], context: EvaluationContext): boolean =>
-  GLOBAL_NAMESPACES.has(chain[0]) &&
-  !hasLocalBinding(context.scope, chain[0]) &&
-  !context.module.bindings.has(chain[0]);
 
 /**
  * Hook calls are recognised the way React Compiler does (by name) and,
