@@ -48,7 +48,7 @@ export const normalizeExternal = (value: ExternalValue): StaticValue => {
   return builtinName ? builtin(builtinName) : value;
 };
 
-export const accessExternalMember = (value: ExternalValue, member: string): StaticValue =>
+const accessExternalMember = (value: ExternalValue, member: string): StaticValue =>
   normalizeExternal({
     ...value,
     memberPath: [...value.memberPath, member],
@@ -252,15 +252,6 @@ const getComponentProperty = (value: ComponentValue, key: string): StaticValue =
   return hasProperty(value, key) === false
     ? UNDEFINED
     : unknown(`${definition.kind} component.${key}`);
-};
-
-/** Elements of an iterable value, or `null` when the count is unknown. */
-export const getArrayItems = (value: StaticValue): StaticValue[] | null => {
-  if (value.kind === "array") return value.items;
-  if (value.kind === "literal" && typeof value.value === "string") {
-    return [...value.value].map((character) => literal(character));
-  }
-  return null;
 };
 
 /** Shape of one element of an iterable value. */

@@ -375,7 +375,7 @@ export const evaluateCall = (
 };
 
 /** Nested activations of one function before its recursion evaluates to unknown. */
-export const MAX_RECURSION_DEPTH = 8;
+const MAX_RECURSION_DEPTH = 8;
 
 /**
  * Whether a call to a function already on the stack is worth following.

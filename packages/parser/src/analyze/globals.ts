@@ -18,7 +18,7 @@ const STANDARD_NAMESPACES = new Set([
   "Intl",
 ]);
 
-export const GLOBAL_NAMESPACES = new Set([
+const GLOBAL_NAMESPACES = new Set([
   ...STANDARD_NAMESPACES,
   "console",
   "window",

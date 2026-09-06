@@ -82,7 +82,7 @@ const REACT_GLOBAL: ExternalValue = {
   name: "React",
 };
 
-export const resolveIdentifier = (
+const resolveIdentifier = (
   interpreter: Interpreter,
   name: string,
   span: Span,
