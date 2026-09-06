@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import type { Fiber, FiberRoot } from "bippy";
 import { benchmarkCase, type BenchmarkCase, type BenchmarkContext } from "./harness.js";
-import { createHookComponent } from "./hook-fixtures.js";
+import { createHookComponent, type HookFixtureConfiguration } from "./hook-fixtures.js";
+
+const hookKinds: HookFixtureConfiguration["kind"][] = ["state", "custom", "distinct"];
 
 interface RootCapture {
   current: FiberRoot | null;
@@ -39,8 +41,8 @@ export const createHookBenchmarks = ({
 }: BenchmarkContext): BenchmarkCase[] => {
   const cases: BenchmarkCase[] = [];
   for (const count of [1, 16, 128]) {
-    for (const kind of ["state", "custom", "multi-site"]) {
-      const Render = createHookComponent(React, count, kind);
+    for (const kind of hookKinds) {
+      const Render = createHookComponent(React, { count, kind });
       const scenario = `${kind}-${count}`;
       let container: HTMLDivElement | undefined;
       let root: ReturnType<typeof ReactDOMClient.createRoot> | undefined;

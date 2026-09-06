@@ -112,7 +112,7 @@ The suite produces 708 microbenchmark rows (177 scenarios across ESM/CJS × deve
 - Cold/warm work-tag caches, changed associations, live DOM host/renderer lookup, and synthetic Native-tag root searches.
 - Hook installation, subscription churn, activation, renderer injection, commit/unmount/post-commit/schedule fan-out through 1,000 listeners, and throwing listeners with a stubbed reporter.
 - Synthetic debug/owner/parent stacks, V8/Safari parsing, source-map lookup and decoding, indexed maps, symbolication, and hook names. Fetching uses in-memory responses; attempted default network requests fail the worker.
-- `getFiberHooks` and standalone `inspectHooks` at 1/16/128 state hooks, custom-hook calls, or multi-site state hooks. The multi-site fixture uses 16 explicit, typechecked call sites, repeated for the 128-hook workload; it no longer generates code with `new Function`. Each custom hook contains state, memo, and ref primitives. Live inspection roots are mounted only for their owning case and unmounted even after verification failures.
+- `getFiberHooks` and standalone `inspectHooks` at 1/16/128 state hooks, custom-hook calls, or distinct state-call sites. The distinct fixture keeps all 128 call sites explicit in a typechecked TypeScript file rather than generating executable code with `new Function`. Each custom hook contains state, memo, and ref primitives. Live inspection roots are mounted only for their owning case and unmounted even after verification failures.
 - Production `useFiber` mounts/updates across nine React fixtures, with/without-hook baselines, exact component/props identity checks, and render-count assertions.
 - Fresh-process native Node imports of all three entrypoints; runtime bundle sizes, gzip sizes, and SHA-256 hashes.
 
@@ -148,7 +148,7 @@ CPU profiles identified repeated stack parsing and location extraction in hook i
 
 Reverse source-map lookups use indexed loops and avoid constructing later ignored candidates once a valid ignored fallback exists. No persistent reverse index is used: callers can mutate names, sources, mappings, contents, and ignore sets. First-duplicate semantics and application-source preference remain intact.
 
-Historical paired production runs against the pre-optimization bundles from `35fe6a6`, using the same expanded fixtures on Node 24.20.0 / Apple M5 Max. The distinct-call-site row used the former generated fixture and is not directly comparable to the current typed multi-site fixture:
+Historical paired production runs against the pre-optimization bundles from `35fe6a6`, using the same expanded fixtures on Node 24.20.0 / Apple M5 Max. The distinct-call-site row used the former generated fixture; the current checked-in fixture preserves the distinct sites but changes stack layout, so its absolute timings are not directly comparable:
 
 | Workload                                          | ESM before → after | CJS before → after |
 | ------------------------------------------------- | -----------------: | -----------------: |

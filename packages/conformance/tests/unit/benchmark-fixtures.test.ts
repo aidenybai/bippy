@@ -5,11 +5,26 @@ import React from "react";
 import * as ReactDOM from "react-dom";
 import * as ReactDOMClient from "react-dom/client";
 import { createHookBenchmarks } from "../../benchmarks/hooks.js";
+import { createHookComponent } from "../../benchmarks/hook-fixtures.js";
 import { createCoreBenchmarks } from "../../benchmarks/core.js";
 import { runBenchmark } from "../../benchmarks/harness.js";
 
 const context = { Bippy, Source, React, ReactDOM, ReactDOMClient };
 const options = { samples: 1, targetMs: 0, maxIterations: 1 };
+
+it.each([1, 16, 128])("retains %i distinct, typed state-call sites", (count) => {
+  const Render = createHookComponent(React, { count, kind: "distinct" });
+  const hooks = Source.inspectHooks(Render, {});
+  expect(hooks.map(({ value }) => value)).toEqual(
+    Array.from({ length: count }, (_, index) => index),
+  );
+  const locations = hooks.map(
+    ({ hookSource }) =>
+      hookSource && `${hookSource.fileName}:${hookSource.lineNumber}:${hookSource.columnNumber}`,
+  );
+  expect(locations.every(Boolean)).toBe(true);
+  expect(new Set(locations).size).toBe(count);
+});
 
 it("mounts hook fixtures lazily and cleans them before another case runs", async () => {
   const createRoot = vi.fn(ReactDOMClient.createRoot);
