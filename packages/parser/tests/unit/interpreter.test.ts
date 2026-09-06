@@ -212,6 +212,35 @@ describe("interpreter: arrays and objects", () => {
     ).toBe("[true, false, true]");
   });
 
+  it("reads undefined for keys the shape of primitives, functions and wrappers rules out", () => {
+    expect(
+      describe_(`export const value = ["span".__emotion_base, "abc"[1], "abc"[3], (1).x];`),
+    ).toBe('[undefined, "b", undefined, undefined]');
+    expect(describe_(`export const value = ["abc".at, /a/.lastIndex, /a/.other];`)).toMatch(
+      /^\[unknown\("abc"\.at\), unknown\(\/a\/\.lastIndex\), undefined\]$/,
+    );
+    expect(
+      describe_(`import { forwardRef } from "react";
+        const Base = forwardRef((props, ref) => <span ref={ref} {...props} />);
+        const Tag = (props) => <b {...props} />;
+        const isReal = (tag) => tag.__emotion_real === tag;
+        export const value = [isReal(Base), isReal(Tag), isReal("span"), Base.render === undefined];`),
+    ).toBe("[false, false, false, false]");
+    expect(
+      describe_(`const Tag = () => null; export const value = [Tag.length, Tag.prototype];`),
+    ).toMatch(/^\[unknown\(Tag\.length\), unknown\(Tag\.prototype\)\]$/);
+  });
+
+  it("keeps named members written onto an array, as tuple-and-object hook results are built", () => {
+    expect(
+      run(`const result = [1, "b"]; result.ref = result[0]; result.inView = result[1];
+        return [result.ref, result.inView, result.entry, result.length, result[1]];`),
+    ).toBe('[1, "b", undefined, 2, "b"]');
+    expect(run(`const result = [1]; if (show) result.flag = true; return result.flag;`)).toBe(
+      "(show ? true : undefined)",
+    );
+  });
+
   it("exposes the fixed shape of an element as React 19 builds it", () => {
     expect(describe_(`const el = <div />; export const value = el.$$typeof;`)).toBe(
       "Symbol(react.transitional.element)",

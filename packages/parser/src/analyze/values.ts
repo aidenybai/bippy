@@ -36,6 +36,8 @@ export interface ArrayValue {
   items: StaticValue[];
   /** Undecided control-flow depth the array was created at; mutations from deeper are conditional. */
   depth: number;
+  /** Named members written onto the array, as `useInView` does with `result.ref = result[0]`. */
+  properties: Map<string, StaticValue>;
 }
 
 /** Zero or more repetitions of `item`, the shape produced by `.map()`. */
@@ -260,6 +262,7 @@ export const array = (items: StaticValue[], depth = 0): ArrayValue => ({
   kind: "array",
   items,
   depth,
+  properties: new Map(),
 });
 export const list = (item: StaticValue, description: string, isFlat = false): ListValue => ({
   kind: "list",

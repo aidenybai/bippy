@@ -6,7 +6,7 @@ import type {
   PropertyKey,
 } from "@oxc-project/types";
 import { isStringLiteral, unwrapExpression } from "../module/ast.js";
-import { forgetArrayItems, getProperty } from "./access.js";
+import { forgetArrayItems, getIndex, getProperty } from "./access.js";
 import { type EvaluationContext, type Interpreter, isEffectUndecided } from "./interpreter.js";
 import { assignVariable, declareVariable } from "./scope.js";
 import {
@@ -159,16 +159,12 @@ export const bindParameters = (
  * Member writes mutate object values in place so constructor-style
  * `this.state = {…}` and `styles.header = …` are observed by later reads.
  */
-const assignObjectProperty = (
-  target: ObjectValue,
-  keyName: string | null,
+const writeProperty = (
+  target: ObjectValue | ArrayValue,
+  keyName: string,
   value: StaticValue,
   context: EvaluationContext,
 ): void => {
-  if (keyName === null) {
-    target.hasUnknownSpread = true;
-    return;
-  }
   const undecided = context.undecided;
   const previous = target.properties.get(keyName) ?? UNDEFINED;
   target.properties.set(
@@ -179,10 +175,21 @@ const assignObjectProperty = (
   );
 };
 
+const assignObjectProperty = (
+  target: ObjectValue,
+  keyName: string | null,
+  value: StaticValue,
+  context: EvaluationContext,
+): void => {
+  if (keyName === null) target.hasUnknownSpread = true;
+  else writeProperty(target, keyName, value, context);
+};
+
 /**
  * `Wrapped.displayName = "…"` inside a factory renames the value every
  * holder sees, as the runtime assignment does to the function object.
  */
+/** Writes an item, a named member (`result.ref = …`), or forgets the items when the write cannot be placed. */
 const assignArrayItem = (
   target: ArrayValue,
   keyName: string | null,
@@ -190,8 +197,12 @@ const assignArrayItem = (
   description: string,
   context: EvaluationContext,
 ): void => {
-  const index = keyName === null ? Number.NaN : Number(keyName);
-  if (!Number.isInteger(index) || index < 0 || isEffectUndecided(context, target.depth)) {
+  const index = keyName === null ? null : getIndex(keyName);
+  if (keyName !== null && index === null && keyName !== "length") {
+    writeProperty(target, keyName, value, context);
+    return;
+  }
+  if (index === null || isEffectUndecided(context, target.depth)) {
     forgetArrayItems(target, description);
     return;
   }

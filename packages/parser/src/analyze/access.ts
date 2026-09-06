@@ -10,6 +10,7 @@ import {
   type ComponentValue,
   component,
   conditional,
+  describeValue,
   type ExternalValue,
   getObjectProperty,
   list,
@@ -76,6 +77,15 @@ const hasStaticMember = (definition: ClassComponentDefinition, key: string): boo
   definition.members.some((member) => member.isStatic && member.key === key) ||
   (definition.base !== null && hasStaticMember(definition.base, key));
 
+/** Has `lastIndex`, an own property of every regular expression, along with the prototype. */
+const REGEXP_INSTANCE = /./;
+
+/** The array index a property key denotes, or `null` for any other key. */
+export const getIndex = (key: string): number | null => {
+  const index = Number(key);
+  return Number.isInteger(index) && index >= 0 && String(index) === key ? index : null;
+};
+
 /** `key in value`, when the value's shape decides it; `null` otherwise. */
 export const hasProperty = (value: StaticValue, key: string): boolean | null => {
   switch (value.kind) {
@@ -83,29 +93,33 @@ export const hasProperty = (value: StaticValue, key: string): boolean | null => 
       if (value.properties.has(key) || key in Object.prototype) return true;
       return value.hasUnknownSpread ? null : false;
     case "array": {
-      if (key in Array.prototype) return true;
-      const index = Number(key);
-      if (!Number.isInteger(index) || index < 0) return false;
+      if (value.properties.has(key) || key in Array.prototype) return true;
+      const index = getIndex(key);
+      if (index === null) return false;
       const firstOptional = value.items.findIndex((item) => item.kind === "optional");
       if (firstOptional === -1) return index < value.items.length;
       return index < firstOptional ? true : null;
     }
+    case "literal":
+      return value.value === null || value.value === undefined ? null : key in Object(value.value);
     case "element":
       if (ELEMENT_KEYS.has(key) || key in Object.prototype) return true;
       return ELEMENT_DEVELOPMENT_KEYS.has(key) ? null : false;
     case "function":
-      return value.statics.has(key) || key in Function.prototype;
+      if (value.statics.has(key) || key in Function.prototype) return true;
+      /** Only arrow functions lack one, and the value does not tell them apart. */
+      return key === "prototype" ? null : false;
     case "component": {
       if (value.statics.has(key)) return true;
       const definition = value.definition;
       if (definition.kind === "builtin") return null;
       if (definition.kind === "class") {
-        return key in Function.prototype || hasStaticMember(definition, key);
+        return key === "prototype" || key in Function.prototype || hasStaticMember(definition, key);
       }
       return key in Object.prototype || (DEFINITION_KEYS[definition.kind]?.includes(key) ?? false);
     }
     case "regexp":
-      return key in RegExp.prototype;
+      return key in REGEXP_INSTANCE;
     case "global":
       return getGlobalMember(value, key).kind !== "unknown";
     default:
@@ -132,10 +146,11 @@ export const getProperty = (
           ? unknown("array.length")
           : literal(target.items.length);
       }
-      const index = Number(key);
-      return Number.isInteger(index) && index >= 0
-        ? selectItem(target.items, index)
-        : unknown(`array.${key}`);
+      const index = getIndex(key);
+      if (index !== null) return selectItem(target.items, index);
+      return (
+        target.properties.get(key) ?? (key in Array.prototype ? unknown(`array.${key}`) : UNDEFINED)
+      );
     }
     case "list":
       return key === "length" ? unknown(`${target.description}.length`) : unknown(`list.${key}`);
@@ -154,13 +169,21 @@ export const getProperty = (
         default:
           return ELEMENT_DEVELOPMENT_KEYS.has(key) ? unknown(`element.${key}`) : UNDEFINED;
       }
-    case "literal":
-      if (typeof target.value === "string" && key === "length") return literal(target.value.length);
-      return unknown(`${JSON.stringify(target.value)}.${key}`);
+    case "literal": {
+      const { value } = target;
+      if (typeof value === "string") {
+        if (key === "length") return literal(value.length);
+        const index = getIndex(key);
+        if (index !== null) return index < value.length ? literal(value[index]) : UNDEFINED;
+      }
+      return hasProperty(target, key) === false
+        ? UNDEFINED
+        : unknown(`${describeValue(target)}.${key}`);
+    }
     case "regexp":
       if (key === "source") return literal(target.pattern);
       if (key === "flags") return literal(target.flags);
-      return unknown(`/${target.pattern}/.${key}`);
+      return hasProperty(target, key) ? unknown(`/${target.pattern}/.${key}`) : UNDEFINED;
     case "conditional":
       return conditional(
         target.test,
@@ -181,8 +204,9 @@ export const getProperty = (
       const assigned = target.statics.get(key);
       if (assigned) return assigned;
       if (key === "name") return literal(target.name ?? "");
-      if (key === "displayName" || key === "$$typeof") return UNDEFINED;
-      return unknown(`${target.name ?? "function"}.${key}`);
+      return hasProperty(target, key) === false
+        ? UNDEFINED
+        : unknown(`${target.name ?? "function"}.${key}`);
     }
     case "text":
       return key === "length" ? unknown("text.length") : unknown(`text.${key}`);
@@ -224,7 +248,9 @@ const getComponentProperty = (value: ComponentValue, key: string): StaticValue =
   if (key === "defaultProps" && definition.kind === "class") {
     return definition.defaultProps ?? UNDEFINED;
   }
-  return unknown(`${definition.kind} component.${key}`);
+  return hasProperty(value, key) === false
+    ? UNDEFINED
+    : unknown(`${definition.kind} component.${key}`);
 };
 
 /** Elements of an iterable value, or `null` when the count is unknown. */
