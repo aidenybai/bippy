@@ -27,6 +27,15 @@ export const parserTestProject = defineProject({
     include: ["tests/**/*.test.{ts,tsx}"],
     exclude: ["tests/fixtures/**"],
     environment: "happy-dom",
+    environmentOptions: {
+      happyDOM: {
+        settings: {
+          disableCSSFileLoading: true,
+          disableJavaScriptFileLoading: true,
+          handleDisabledFileLoadingAsSuccess: true,
+        },
+      },
+    },
     setupFiles: ["./tests/setup.ts"],
     testTimeout: 30000,
   },

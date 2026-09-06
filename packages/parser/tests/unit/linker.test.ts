@@ -87,8 +87,10 @@ describe("linker", () => {
     const moduleB = project.getModule("src/b.js");
     if (!moduleA || !moduleB) throw new Error("missing module");
 
-    const apiOf = (module: typeof moduleA, chain: string[]) =>
-      getReactApiReference(linker.resolveReference(module, chain))?.api ?? null;
+    const apiOf = (module: typeof moduleA, chain: string[]) => {
+      const symbol = linker.resolveReference(module, chain);
+      return symbol.kind === "external" ? (getReactApiReference(symbol)?.api ?? null) : null;
+    };
 
     expect(apiOf(moduleA, ["React", "memo"])).toBe("memo");
     expect(apiOf(moduleA, ["memo"])).toBe("memo");

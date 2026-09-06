@@ -24,7 +24,7 @@
   },
   "scripts": {
     "test": "vp test --project parser",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tests/fixtures",
     "inspect": "tsx scripts/inspect.ts",
     "corpus": "tsx scripts/corpus.ts",
     "corpus:live": "BIPPY_PARSER_CORPUS_LIVE=1 tsx scripts/corpus.ts"
