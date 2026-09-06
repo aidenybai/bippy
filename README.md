@@ -295,14 +295,7 @@ These definitions follow React’s private implementation and may change between
 
 ### `getSource`
 
-Returns the source location for a Fiber from these renderers:
-
-- DOM
-- Native
-- Terminal
-- Canvas
-- PDF
-- Custom
+Returns the source location for a Fiber.
 
 ```typescript
 import { getSource } from "bippy/source";

@@ -1,4 +1,5 @@
-import { expect, expectTypeOf, it } from "vite-plus/test";
+import { expect, expectTypeOf, it, vi } from "vite-plus/test";
+import { createFiber, linkChildren } from "../fiber-fixture.js";
 import {
   compareSemver,
   getReactWorkTagsForFiber,
@@ -17,6 +18,90 @@ import type {
   ReactRenderer,
   RendererDispatcherRef,
 } from "../../../bippy/src/index.js";
+
+const createRenderer = (version: string): ReactRenderer => ({
+  bundleType: 1,
+  rendererPackageName: "test-renderer",
+  version,
+});
+
+it("updates cached descendants and alternates after late renderer association", () => {
+  const previousRoot = createFiber();
+  const nextRoot = createFiber({ alternate: previousRoot });
+  previousRoot.alternate = nextRoot;
+  const previousChild = createFiber();
+  const nextChild = createFiber({ alternate: previousChild });
+  previousChild.alternate = nextChild;
+  linkChildren(previousRoot, [previousChild]);
+  linkChildren(nextRoot, [nextChild]);
+  const grandchild = createFiber();
+  linkChildren(nextChild, [grandchild]);
+
+  expect(getReactWorkTagsForFiber(grandchild)).toBe(getReactWorkTags());
+  expect(getReactWorkTagsForFiber(previousChild)).toBe(getReactWorkTags());
+  setReactWorkTagsForFiber(nextRoot, createRenderer("16.0.0"));
+  for (const fiber of [previousRoot, nextRoot, previousChild, nextChild, grandchild]) {
+    expect(getReactWorkTagsForFiber(fiber)).toBe(getReactWorkTags("16.0.0"));
+  }
+});
+
+it("refreshes inherited tags when a renderer association changes", () => {
+  const root = createFiber();
+  const child = createFiber();
+  linkChildren(root, [child]);
+  for (const version of ["19.2.4", "16.0.0", "17.0.1", "19.2.4"]) {
+    setReactWorkTagsForFiber(root, createRenderer(version));
+    expect(getReactWorkTagsForFiber(child)).toBe(getReactWorkTags(version));
+  }
+});
+
+it("keeps explicit subtree and unrelated root associations independent", () => {
+  const root = createFiber();
+  const child = createFiber();
+  const sibling = createFiber();
+  const grandchild = createFiber();
+  const unrelatedRoot = createFiber();
+  const unrelatedChild = createFiber();
+  linkChildren(root, [child, sibling]);
+  linkChildren(child, [grandchild]);
+  linkChildren(unrelatedRoot, [unrelatedChild]);
+  setReactWorkTagsForFiber(root, createRenderer("19.2.4"));
+  setReactWorkTagsForFiber(unrelatedRoot, createRenderer("17.0.1"));
+  expect(getReactWorkTagsForFiber(grandchild)).toBe(getReactWorkTags());
+  expect(getReactWorkTagsForFiber(unrelatedChild)).toBe(getReactWorkTags("17.0.1"));
+
+  setReactWorkTagsForFiber(child, createRenderer("16.0.0"));
+  expect(getReactWorkTagsForFiber(grandchild)).toBe(getReactWorkTags("16.0.0"));
+  expect(getReactWorkTagsForFiber(sibling)).toBe(getReactWorkTags());
+  expect(getReactWorkTagsForFiber(unrelatedChild)).toBe(getReactWorkTags("17.0.1"));
+  setReactWorkTagsForFiber(root, createRenderer("17.0.1"));
+  expect(getReactWorkTagsForFiber(grandchild)).toBe(getReactWorkTags("16.0.0"));
+  expect(getReactWorkTagsForFiber(sibling)).toBe(getReactWorkTags("17.0.1"));
+});
+
+it("retains detached tags when another root is associated", () => {
+  const root = createFiber();
+  const child = createFiber();
+  linkChildren(root, [child]);
+  setReactWorkTagsForFiber(root, createRenderer("16.0.0"));
+  expect(getReactWorkTagsForFiber(child)).toBe(getReactWorkTags("16.0.0"));
+  child.return = null;
+  setReactWorkTagsForFiber(createFiber(), createRenderer("19.2.4"));
+  expect(getReactWorkTagsForFiber(child)).toBe(getReactWorkTags("16.0.0"));
+});
+
+it("does not invalidate inherited tags for unchanged renderer associations", () => {
+  const root = createFiber();
+  const child = createFiber();
+  const getParent = vi.fn(() => root);
+  Object.defineProperty(child, "return", { get: getParent });
+  setReactWorkTagsForFiber(root, createRenderer("16.0.0"));
+  getReactWorkTagsForFiber(child);
+  getParent.mockClear();
+  setReactWorkTagsForFiber(root, createRenderer("16.0.0"));
+  expect(getReactWorkTagsForFiber(child)).toBe(getReactWorkTags("16.0.0"));
+  expect(getParent).not.toHaveBeenCalled();
+});
 
 it("exports React internals from the main entry point", () => {
   expect(compareSemver("18.0.0", "19.0.0")).toBe(-1);
