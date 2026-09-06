@@ -23,6 +23,10 @@ export interface SceneEdge {
   bend?: number;
   side?: DiagramEdgeProps["side"];
   labelPosition?: Point;
+  waypoints?: readonly Point[];
+  directed?: boolean;
+  fromOffset?: Point;
+  toOffset?: Point;
 }
 
 export interface DiagramSceneProps {
@@ -61,8 +65,12 @@ export const DiagramScene = ({
           <DiagramEdge
             key={edge.id}
             {...edge}
-            from={from}
-            to={to}
+            from={
+              edge.fromOffset
+                ? { x: from.x + edge.fromOffset.x, y: from.y + edge.fromOffset.y }
+                : from
+            }
+            to={edge.toOffset ? { x: to.x + edge.toOffset.x, y: to.y + edge.toOffset.y } : to}
             fromId={edge.from}
             toId={edge.to}
           />

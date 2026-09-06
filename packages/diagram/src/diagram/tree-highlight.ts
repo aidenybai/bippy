@@ -6,14 +6,13 @@ export interface CatchRange {
 }
 
 export interface TreeHighlightIndex {
-  rows: readonly TreeRow[];
   nodeById: ReadonlyMap<string, TreeNode>;
   ownedIds: ReadonlyMap<string, readonly string[]>;
   catchRanges: ReadonlyMap<string, readonly CatchRange[]>;
 }
 
 export interface TreeHighlight {
-  mode: "none" | "node" | "owner" | "boundary";
+  mode: "none" | "node" | "owner" | "boundary" | "flow";
   highlightedIds: ReadonlySet<string> | null;
   catchRanges: readonly CatchRange[];
 }
@@ -41,7 +40,7 @@ export const getTreeHighlightIndex = (rows: readonly TreeRow[]): TreeHighlightIn
     else ranges.push({ start: index, end: index + 1 });
     catchRanges.set(catcherId, ranges);
   }
-  return { rows, nodeById, ownedIds, catchRanges };
+  return { nodeById, ownedIds, catchRanges };
 };
 
 export const getTreeHighlight = (
@@ -56,6 +55,12 @@ export const getTreeHighlight = (
       highlightedIds: null,
       catchRanges: index.catchRanges.get(activeId) ?? [],
     };
+  }
+  if (index.nodeById.get(activeId)?.kind === "provider") {
+    const highlightedIds = new Set([activeId]);
+    for (const node of index.nodeById.values())
+      if (node.contextProviderIds?.includes(activeId)) highlightedIds.add(node.id);
+    return { mode: "node", highlightedIds, catchRanges: [] };
   }
   const ownedIds = index.ownedIds.get(activeId);
   if (!ownedIds?.length)

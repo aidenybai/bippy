@@ -8,6 +8,15 @@ export type {
 } from "./diagram/primitives";
 export { diagramMetrics, getEdgePath, getEdgeLabelPosition } from "./diagram/geometry";
 export type { EdgeGeometry } from "./diagram/geometry";
+export { DataflowDiagram } from "./diagram/dataflow-diagram";
+export type { DataflowDiagramProps } from "./diagram/dataflow-diagram";
+export { getDataflowIndex, getDataflowHighlight } from "./diagram/dataflow-model";
+export type {
+  DataflowNode,
+  DataflowEdge,
+  DataflowIndex,
+  DataflowHighlight,
+} from "./diagram/dataflow-model";
 export { DiagramScene } from "./diagram/diagram-scene";
 export type { DiagramSceneProps, SceneNode, SceneEdge } from "./diagram/diagram-scene";
 export { TreeComparison } from "./diagram/tree-comparison";

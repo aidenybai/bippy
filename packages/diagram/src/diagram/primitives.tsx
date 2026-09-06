@@ -1,7 +1,7 @@
 "use client";
 
 import * as stylex from "@stylexjs/stylex";
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import { colors } from "./tokens.stylex";
 import { drawing } from "./drawing.stylex";
 import type { TreeNode } from "./tree-model";
@@ -16,6 +16,7 @@ import {
   diagramMetrics,
   getEdgePath,
   getEdgeLabelPosition,
+  getLabelWidth,
   type EdgeGeometry,
   type Point,
 } from "./geometry";
@@ -39,6 +40,8 @@ export interface DiagramNodeProps extends Point {
 }
 
 export interface DiagramEdgeProps extends EdgeGeometry {
+  id?: string;
+  directed?: boolean;
   label?: string;
   fromId?: string;
   toId?: string;
@@ -62,6 +65,13 @@ const styles = stylex.create({
   boundary: { color: colors.red },
   special: { color: colors.muted, fontStyle: "italic" },
   suspense: { color: colors.teal },
+  hook: { color: colors.violet },
+  value: { color: colors.blue },
+  callback: { color: colors.orange },
+  store: { color: colors.teal },
+  data: { stroke: colors.blue, strokeOpacity: 0.7 },
+  update: { stroke: colors.orange, strokeOpacity: 0.7, strokeDasharray: "3 2" },
+  subscription: { stroke: colors.teal, strokeOpacity: 0.7, strokeDasharray: "2 2" },
   portal: { color: colors.yellow },
   blue: { color: colors.blue },
   violet: { color: colors.violet },
@@ -118,6 +128,7 @@ export const DiagramNode = ({
   const interaction = isInteractive ? diagramInteraction : null;
   const kind = node.kind ?? "component";
   const isHollow =
+    kind === "value" ||
     kind === "host" ||
     kind === "special" ||
     kind === "suspense" ||
@@ -186,10 +197,7 @@ export const DiagramNode = ({
           1,
           Math.min(
             maxWidth === undefined ? Infinity : maxWidth + 6,
-            characters.length * characterWidth +
-              (annotation ? annotation.length * diagramMetrics.annotationFontSize * 0.61 + 4 : 0) +
-              diagramMetrics.labelOffset +
-              12,
+            getLabelWidth({ label, annotation }) + 12,
           ),
         )}
         height={hitHeight}
@@ -230,19 +238,38 @@ export const DiagramNode = ({
 };
 
 export const DiagramEdge = (props: DiagramEdgeProps) => {
-  const { kind = "parent", label } = props;
+  const { kind = "parent", label, directed } = props;
+  const markerId = useId();
   const labelPosition = getEdgeLabelPosition(props);
   const interaction = useDiagramInteraction();
-  const isDimmed = !getIsEdgeHighlighted(interaction, props.fromId, props.toId);
+  const isDimmed = !getIsEdgeHighlighted(interaction, props.fromId, props.toId, props.id);
   return (
     <g
       aria-hidden="true"
+      data-edge-id={props.id}
+      data-edge-kind={kind}
       data-edge-from={props.fromId}
       data-edge-to={props.toId}
       {...stylex.props(isDimmed && drawing.dimmed)}
     >
+      {directed && (
+        <defs>
+          <marker
+            id={markerId}
+            viewBox="0 0 8 8"
+            refX={10}
+            refY={4}
+            markerWidth={8}
+            markerHeight={8}
+            orient="auto"
+          >
+            <path d="M 1 1 L 6 4 L 1 7" fill="none" stroke="context-stroke" strokeWidth={0.7} />
+          </marker>
+        </defs>
+      )}
       <path
         d={getEdgePath(props)}
+        markerEnd={directed ? `url(#${markerId})` : undefined}
         {...stylex.props(
           drawing.connector,
           kind !== "parent" && (kind === "portal" ? styles.portalEdge : styles[kind]),

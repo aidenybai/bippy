@@ -13,16 +13,18 @@ The board follows `millionco/million-ui`'s square-cell layout: 325px white cells
 ## Components
 
 - `DiagramCanvas`: native-size SVG canvas. It does not scale text, nodes, or strokes to fit a card; the specimen scrolls when needed.
-- `DiagramNode`: component, host, provider, boundary, special, and portal nodes. `tone` is independent of node kind; a blue SVG element is still a hollow host node. `isPortalTarget` adds a ring without changing node kind.
-- `DiagramEdge`: parent, owner, reference, context, and portal connections. Labels can use an explicit `labelPosition` to avoid nearby nodes.
-- `DiagramScope`: labeled context region.
+- `DiagramNode`: component, host, provider, boundary, suspense, special, portal, hook, value, callback, and store nodes. `tone` is independent of node kind; a blue SVG element is still a hollow host node. `isPortalTarget` adds a ring without changing node kind.
+- `DiagramEdge`: structural, reference, context, portal, data, update, and subscription connections. Optional arrowheads, waypoints, and explicit label positions support directed flows.
+- `DiagramScope`: labeled context or error-boundary region.
 - `DiagramScene`: positioned nodes and ID-based edges.
-- `TreeDiagram`: preorder layout from parent IDs, with optional owner arcs and context scope.
+- `TreeDiagram`: parent or owner layout, owner arcs, provider-hover context scopes, and boundary-hover catch regions.
+- `TreeComparison`: linked parent/owner views of the same model.
+- `DataflowDiagram`: directed hook, value, prop, callback, context, and external-store graphs.
 - `VirtualTree`: fixed-row windowing, adaptive indentation, collapse/expand, and keyboard navigation.
 
 All diagrams use the same compact 20px row grid, 20px maximum indent, 10px labels, 3px node radius, 0.5px node outlines, and 1px connectors. The virtualized tree renders the same SVG node component rather than a separate HTML row design. Parent and owner compositions are derived from one model.
 
-Hovering or keyboard-focusing a node keeps it and its connections at full opacity and fades other elements to 20%. Pointer exit restores the diagram. Virtual rows have continuous full-height, full-width hitboxes: the label, node, whitespace, and expand control share one hover target. There are no selection boxes or persistent row backgrounds.
+Hover and keyboard focus emphasize the relevant nodes and connections, fading unrelated elements to 20%. In linked trees, owner focus shows direct creations in the parent view and the ownership subtree in the owner view. Boundary focus shows catch regions, including nested boundary nodes but excluding their contents. Blue context scopes only appear while their provider is active. Pointer exit restores the diagram. Virtual rows have continuous full-height, full-width hitboxes: the label, node, whitespace, and expand control share one hover target. There are no selection boxes or persistent row backgrounds.
 
 The supplied SVG's circular arcs, thin connectors, geometric text rendering, and stroke-masked labels are implemented in the shared primitives. There is no separate SVG references specimen. Shared drawing styles live in `drawing.stylex.ts`; shared geometry lives in `geometry.ts`.
 
@@ -47,6 +49,25 @@ IDs must be unique. Missing parents and parent cycles are rejected. Input order 
 
 This private workspace package exports TypeScript source. Consumers must transpile it and compile its StyleX styles, including `tailwind-stylex`; see `next.config.ts`.
 
+## Dataflow
+
+The dataflow specimen is an explicit, illustrative model—not automatic runtime instrumentation. `DataflowNode` adds `componentId` to a positioned node. `DataflowEdge` connects node IDs with `data`, `update`, `context`, or `subscription` semantics. `parentId` supplies optional visual grouping; it is not a data dependency.
+
+Hover follows incoming and outgoing dependency paths independently. It does not spread through every sibling hook merely because they share a component. Focusing a component includes its ports; focusing a derived value reveals all its inputs. Cycles such as store subscription/notification loops terminate safely.
+
+The example includes:
+
+- `useState` → query props → input, with callbacks returning to `setQuery`.
+- `useReducer` → todos → filtered values combining query and todos → list/item props, with actions returning to `dispatch`.
+- `useSyncExternalStore` → snapshots → rendered count, including `getSnapshot`, effect subscription/cleanup, notifications, and external writes.
+- Provider value → `useContext` → component props → host styles.
+
+Arrows indicate value/update direction. Callback edges describe invocation back to an updater; they are not a second prop-value transfer. Connections attach outside labels rather than crossing through them. Supply `waypoints`, `fromOffset`, `toOffset`, or `labelPosition` when custom routing is needed.
+
+## Themes
+
+The icon-only sun/moon switch saves the chosen theme locally and initially follows the system preference. Diagram colors, label masks, surfaces, and scopes use shared StyleX variables. `darkTheme` is available from `diagram/tokens` for consumers.
+
 ## Virtualization
 
 The model is indexed without recursion. Only the viewport plus five overscan rows on either side is mounted. Indentation rebases against visible ancestry, keeps two levels of context, and fits into at most 42% of the viewport width. Absolute depth remains in `aria-level` and `data-depth`; it is not shown as a badge. Visible, mounted, and total counts are separate data attributes, not ambiguous footer stats.
@@ -69,4 +90,4 @@ Browser tests start a dev server if port 3100 is free. Screenshots go to `test-r
 
 - Board: `millionco/million-ui`, `32f775f`, `src/board/board.candidate.tsx`; translated from Tailwind to StyleX.
 - Adaptive indentation: `aidenybai-website/src/components/fiber-tree/fiber-tree-list.tsx`.
-- React source inspected locally: `ReactInternalTypes.js`, `ReactFiber.js`, `ReactChildFiber.js`, `ReactFiberCommitHostEffects.js`, DevTools `Components/Tree.js`, and `ReactFizzConfigDOM.js`.
+- React source inspected locally: `ReactInternalTypes.js`, `ReactFiber.js`, `ReactChildFiber.js`, `ReactFiberCommitHostEffects.js`, `ReactFiberThrow.js`, `ReactFiberHooks.js`, `ReactFiberNewContext.js`, DevTools `Components/Tree.js`, and `ReactFizzConfigDOM.js`.

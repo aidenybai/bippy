@@ -6,7 +6,7 @@ test("uses the minimal fixed-size million-ui board", async ({ page }) => {
   page.on("pageerror", (error) => errors.push(error.message));
   await page.setViewportSize({ width: 1200, height: 815 });
   await page.goto("/");
-  await expect(page.locator("main section")).toHaveCount(16);
+  await expect(page.locator("main section")).toHaveCount(17);
   await expect(page.locator("header, footer, nav, h1")).toHaveCount(0);
   const first = page.locator("main section").first();
   await expect(first).toHaveCSS("width", "325px");

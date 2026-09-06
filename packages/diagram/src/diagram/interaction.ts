@@ -4,6 +4,7 @@ import { createContext, useContext, useMemo, useState } from "react";
 import { getTreeHighlight, type TreeHighlight, type TreeHighlightIndex } from "./tree-highlight";
 
 export interface DiagramInteraction extends TreeHighlight {
+  highlightedEdgeIds?: ReadonlySet<string>;
   activeId: string | null;
   setHoveredId: (nodeId: string | null) => void;
   setFocusedId: (nodeId: string | null) => void;
@@ -48,9 +49,11 @@ export const getIsEdgeHighlighted = (
   interaction: DiagramInteraction | null,
   fromId?: string,
   toId?: string,
+  edgeId?: string,
 ) => {
   if (!interaction || interaction.activeId === null || interaction.mode === "boundary") return true;
-  if (interaction.mode === "owner")
+  if (interaction.highlightedEdgeIds && edgeId) return interaction.highlightedEdgeIds.has(edgeId);
+  if (interaction.mode === "owner" || interaction.mode === "flow")
     return (
       fromId !== undefined &&
       toId !== undefined &&

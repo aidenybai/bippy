@@ -6,7 +6,18 @@ export interface TreeNode {
   parentId?: string;
   ownerId?: string;
   contextProviderIds?: readonly string[];
-  kind?: "component" | "host" | "provider" | "boundary" | "special" | "suspense" | "portal";
+  kind?:
+    | "component"
+    | "host"
+    | "provider"
+    | "boundary"
+    | "special"
+    | "suspense"
+    | "portal"
+    | "hook"
+    | "value"
+    | "callback"
+    | "store";
   tone?: "blue" | "violet";
   isPortalTarget?: boolean;
   annotation?: string;

@@ -8,6 +8,16 @@ export const diagramMetrics = {
   strokeWidth: 0.5,
 };
 
+interface DiagramLabel {
+  label: string;
+  annotation?: string;
+}
+
+export const getLabelWidth = ({ label, annotation }: DiagramLabel) =>
+  Array.from(label).length * diagramMetrics.fontSize * 0.61 +
+  diagramMetrics.labelOffset +
+  (annotation ? Array.from(annotation).length * diagramMetrics.annotationFontSize * 0.61 + 4 : 0);
+
 export interface Point {
   x: number;
   y: number;
@@ -16,7 +26,16 @@ export interface Point {
 export interface EdgeGeometry {
   from: Point;
   to: Point;
-  kind?: "parent" | "owner" | "reference" | "context" | "portal";
+  kind?:
+    | "parent"
+    | "owner"
+    | "reference"
+    | "context"
+    | "portal"
+    | "data"
+    | "update"
+    | "subscription";
+  waypoints?: readonly Point[];
   bend?: number;
   side?: "left" | "right";
   labelPosition?: Point;
@@ -28,7 +47,12 @@ export const getEdgePath = ({
   kind = "parent",
   bend = 40,
   side = "left",
+  waypoints,
 }: EdgeGeometry) => {
+  if (waypoints)
+    return `M ${from.x} ${from.y}${[...waypoints, to].map((point) => ` L ${point.x} ${point.y}`).join("")}`;
+  if (kind === "data" || kind === "update" || kind === "subscription")
+    return `M ${from.x} ${from.y} H ${(from.x + to.x) / 2} V ${to.y} H ${to.x}`;
   if (kind === "parent" || kind === "context") return `M ${from.x} ${from.y} V ${to.y} H ${to.x}`;
   if (kind === "portal")
     return `M ${from.x} ${from.y} Q ${(from.x + to.x) / 2} ${Math.min(from.y, to.y) - bend} ${to.x} ${to.y}`;
@@ -44,8 +68,34 @@ export const getEdgeLabelPosition = ({
   bend = 40,
   side = "left",
   labelPosition,
+  waypoints,
 }: EdgeGeometry): Point => {
   if (labelPosition) return labelPosition;
+  if (waypoints || kind === "data" || kind === "update" || kind === "subscription") {
+    const middleX = (from.x + to.x) / 2;
+    const points = [
+      from,
+      ...(waypoints ?? [
+        { x: middleX, y: from.y },
+        { x: middleX, y: to.y },
+      ]),
+      to,
+    ];
+    const lengths = points
+      .slice(1)
+      .map((point, index) => Math.hypot(point.x - points[index].x, point.y - points[index].y));
+    let remaining = lengths.reduce((total, length) => total + length, 0) / 2;
+    for (const [index, length] of lengths.entries()) {
+      if (remaining <= length) {
+        const ratio = length === 0 ? 0 : remaining / length;
+        return {
+          x: points[index].x + (points[index + 1].x - points[index].x) * ratio,
+          y: points[index].y + (points[index + 1].y - points[index].y) * ratio - 6,
+        };
+      }
+      remaining -= length;
+    }
+  }
   if (kind === "portal")
     return {
       x: (from.x + to.x) / 2,
