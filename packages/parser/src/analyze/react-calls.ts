@@ -1,5 +1,6 @@
 import type { Span } from "@oxc-project/types";
 import { getReactApiReference } from "../link/react-api.js";
+import { evaluateChildrenApi } from "./children.js";
 import type { EvaluationContext, Interpreter } from "./interpreter.js";
 import { createElementValue } from "./jsx.js";
 import {
@@ -9,8 +10,6 @@ import {
   component,
   type ExternalValue,
   FALSE,
-  list,
-  literal,
   mergeObjects,
   NULL,
   object,
@@ -94,69 +93,6 @@ const resolveLazyTarget = (interpreter: Interpreter, loaded: StaticValue): Stati
   }
 };
 
-const mapChildren = (
-  children: StaticValue | undefined,
-  invoke: CallbackInvoker,
-  callback: StaticValue | undefined,
-  description: string,
-): StaticValue => {
-  if (!children || !callback) return unknown(description);
-  switch (children.kind) {
-    case "array":
-      return array(children.items.map((item, index) => invoke(callback, [item, literal(index)])));
-    case "list":
-      return list(invoke(callback, [children.item, unknown("index")]), description);
-    case "literal":
-      return children.value == null || typeof children.value === "boolean"
-        ? array([])
-        : array([invoke(callback, [children, literal(0)])]);
-    case "element":
-    case "text":
-      return array([invoke(callback, [children, literal(0)])]);
-    default:
-      return list(invoke(callback, [unknown("child"), unknown("index")]), description);
-  }
-};
-
-const toChildArray = (children: StaticValue | undefined): StaticValue => {
-  if (!children) return array([]);
-  switch (children.kind) {
-    case "array":
-    case "list":
-      return children;
-    case "literal":
-      return children.value == null || typeof children.value === "boolean" ? array([]) : array([children]);
-    case "unknown":
-      return children;
-    default:
-      return array([children]);
-  }
-};
-
-const evaluateChildrenApi = (
-  method: string,
-  callArguments: StaticValue[],
-  invoke: CallbackInvoker,
-  description: string,
-): StaticValue => {
-  const [children, callback] = callArguments;
-  switch (method) {
-    case "map":
-      return mapChildren(children, invoke, callback, description);
-    case "forEach":
-      mapChildren(children, invoke, callback, description);
-      return UNDEFINED;
-    case "toArray":
-      return toChildArray(children);
-    case "only":
-      return children ?? unknown("Children.only()");
-    case "count":
-      return unknown("Children.count()");
-    default:
-      return unknown(description);
-  }
-};
-
 /**
  * Models calls into React's own API surface. Returns `null` for references
  * that are not React's, so the caller can fall back to opaque handling.
@@ -169,14 +105,11 @@ export const evaluateReactCall = (
   span: Span,
   context: EvaluationContext,
 ): StaticValue | null => {
-  const description = `${callee.name ?? [callee.importedName, ...callee.memberPath].join(".")}()`;
-  const childrenIndex = callee.memberPath.indexOf("Children");
-  if (
-    callee.specifier === "react" &&
-    childrenIndex !== -1 &&
-    childrenIndex === callee.memberPath.length - 2
-  ) {
-    return evaluateChildrenApi(callee.memberPath[childrenIndex + 1], callArguments, invoke, description);
+  const path = [callee.importedName, ...callee.memberPath];
+  const description = `${callee.name ?? path.join(".")}()`;
+  const childrenIndex = path.indexOf("Children");
+  if (callee.specifier === "react" && childrenIndex !== -1 && childrenIndex === path.length - 2) {
+    return evaluateChildrenApi(path[childrenIndex + 1], callArguments, invoke, description);
   }
   const reference = getReactApiReference(callee);
   if (!reference) return null;

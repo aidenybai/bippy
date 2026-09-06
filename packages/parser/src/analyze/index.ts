@@ -61,7 +61,7 @@ export const createInterpreter = (
       thisValue: null,
       contexts: EMPTY_CONTEXTS,
       callDepth: 0,
-      isInsideLoop: false,
+      undecided: null,
     }),
     getLocation,
     getSource: getSourcePreview,

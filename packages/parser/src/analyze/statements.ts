@@ -1,4 +1,7 @@
 import type {
+  ForInStatement,
+  ForOfStatement,
+  ForStatement,
   ForStatementLeft,
   IfStatement,
   Statement,
@@ -6,11 +9,13 @@ import type {
   TryStatement,
   VariableDeclarator,
 } from "@oxc-project/types";
+import { isNodeOfType, walk } from "../module/ast.js";
 import { getIterationItem } from "./access.js";
 import { classifyClass } from "./components.js";
 import {
   BREAK_COMPLETION,
   type Completion,
+  enterUndecided,
   type EvaluationContext,
   type Interpreter,
   NORMAL_COMPLETION,
@@ -21,12 +26,14 @@ import {
   createScope,
   declareVariable,
   forkScope,
+  lookupVariable,
   mergeBranchScopes,
   type Scope,
 } from "./scope.js";
 import {
   conditional,
   getTruthiness,
+  literal,
   nameValue,
   type StaticValue,
   UNDEFINED,
@@ -64,7 +71,7 @@ const evaluateArm = (
   context: EvaluationContext,
 ): Arm => {
   const scope = forkScope(context.scope);
-  return { test, scope, completion: evaluateInScope(interpreter, statements, scope, context) };
+  return { test, scope, completion: interpreter.evaluateStatements(statements, enterUndecided(context, test, scope)) };
 };
 
 /** `break` ends a switch case or loop iteration, not the enclosing function. */
@@ -190,32 +197,134 @@ const forgetLoopCounters = (declarations: VariableDeclarator[], scope: Scope): v
   }
 };
 
-/** Loop bodies run once in a branch scope: zero iterations is always possible. */
+const MAX_UNROLLED_ITERATIONS = 100;
+
+/** Binds one iteration's variables into the scope the body will run in. */
+type IterationBinding = (context: EvaluationContext) => void;
+
+interface LoopBodyFacts {
+  /** Identifiers assigned or updated anywhere in the body, nested closures included. */
+  assignedNames: Set<string>;
+  hasJump: boolean;
+}
+
+const collectIdentifierNames = (root: object, names: Set<string>): void => {
+  walk(root, (node) => {
+    if (isNodeOfType(node, "Identifier")) names.add(node.name);
+  });
+};
+
+const collectLoopBodyFacts = (body: Statement): LoopBodyFacts => {
+  const facts: LoopBodyFacts = { assignedNames: new Set(), hasJump: false };
+  walk(body, (node) => {
+    if (isNodeOfType(node, "AssignmentExpression")) collectIdentifierNames(node.left, facts.assignedNames);
+    else if (isNodeOfType(node, "UpdateExpression")) collectIdentifierNames(node.argument, facts.assignedNames);
+    else if (isNodeOfType(node, "BreakStatement") || isNodeOfType(node, "ContinueStatement")) facts.hasJump = true;
+  });
+  return facts;
+};
+
+/**
+ * Simulates a `for` header without the body: iterations are known when the
+ * test stays decidable, the body never jumps and never assigns anything the
+ * header reads.
+ */
+const planForIterations = (
+  interpreter: Interpreter,
+  statement: ForStatement,
+  context: EvaluationContext,
+): IterationBinding[] | null => {
+  const { init, test, update } = statement;
+  if (init?.type !== "VariableDeclaration" || !test) return null;
+  const counters = init.declarations.flatMap((declarator) =>
+    declarator.id.type === "Identifier" ? [declarator.id.name] : [],
+  );
+  if (counters.length !== init.declarations.length) return null;
+  const facts = collectLoopBodyFacts(statement.body);
+  if (facts.hasJump) return null;
+  const headerNames = new Set<string>();
+  collectIdentifierNames(test, headerNames);
+  if (update) collectIdentifierNames(update, headerNames);
+  if ([...headerNames].some((name) => facts.assignedNames.has(name))) return null;
+  const scratchContext: EvaluationContext = { ...context, scope: createScope(context.scope) };
+  evaluateStatement(interpreter, init, scratchContext);
+  const iterations: IterationBinding[] = [];
+  while (iterations.length <= MAX_UNROLLED_ITERATIONS) {
+    const truthiness = getTruthiness(interpreter.evaluateExpression(test, scratchContext));
+    if (truthiness === null) return null;
+    if (truthiness === false) return iterations;
+    const values = counters.map((name): [string, StaticValue] => [
+      name,
+      lookupVariable(scratchContext.scope, name) ?? UNDEFINED,
+    ]);
+    iterations.push((iterationContext) => {
+      for (const [name, value] of values) declareVariable(iterationContext.scope, name, value);
+    });
+    if (update) interpreter.evaluateExpression(update, scratchContext);
+  }
+  return null;
+};
+
+const planForOfIterations = (
+  interpreter: Interpreter,
+  statement: ForOfStatement | ForInStatement,
+  context: EvaluationContext,
+): IterationBinding[] | null => {
+  if (collectLoopBodyFacts(statement.body).hasJump) return null;
+  const subject = interpreter.evaluateExpression(statement.right, context);
+  const values =
+    statement.type === "ForOfStatement"
+      ? subject.kind === "array"
+        ? subject.items
+        : null
+      : subject.kind === "object" && !subject.hasUnknownSpread
+        ? [...subject.properties.keys()].map((key) => literal(key))
+        : null;
+  if (values === null || values.length > MAX_UNROLLED_ITERATIONS) return null;
+  return values.map(
+    (value): IterationBinding =>
+      (iterationContext) =>
+        bindLoopVariable(interpreter, statement.left, value, iterationContext),
+  );
+};
+
+/** Runs every planned iteration in order, chaining early returns like a statement sequence. */
+const runIterations = (
+  interpreter: Interpreter,
+  iterations: IterationBinding[],
+  body: Statement,
+  context: EvaluationContext,
+  index = 0,
+): Completion => {
+  if (index >= iterations.length) return NORMAL_COMPLETION;
+  const iterationContext: EvaluationContext = { ...context, scope: createScope(context.scope) };
+  iterations[index](iterationContext);
+  const completion = interpreter.evaluateStatements(toStatements(body), iterationContext);
+  if (completion.kind === "return") return completion;
+  const rest = (): Completion => runIterations(interpreter, iterations, body, context, index + 1);
+  return completion.kind === "partial" ? continuePartial(completion.complete, rest()) : rest();
+};
+
+/**
+ * Loops with a statically known trip count run iteration by iteration. Any
+ * other loop body runs once under an undecided frame: zero iterations is
+ * always possible, and repeated side effects become lists.
+ */
 const evaluateLoop = (
   interpreter: Interpreter,
   statement: Statement,
   context: EvaluationContext,
-): ArmSet | null => {
-  const scope = forkScope(context.scope);
-  const loopContext: EvaluationContext = { ...context, scope, isInsideLoop: true };
+): Completion | ArmSet | null => {
   let body: Statement;
+  let iterations: IterationBinding[] | null = null;
   switch (statement.type) {
     case "ForStatement":
-      if (statement.init?.type === "VariableDeclaration") {
-        evaluateStatement(interpreter, statement.init, loopContext);
-        forgetLoopCounters(statement.init.declarations, scope);
-      } else if (statement.init) interpreter.evaluateExpression(statement.init, loopContext);
+      iterations = planForIterations(interpreter, statement, context);
       body = statement.body;
       break;
-    case "ForOfStatement": {
-      const iterable = interpreter.evaluateExpression(statement.right, loopContext);
-      const description = interpreter.getSource(context.module, statement.right);
-      bindLoopVariable(interpreter, statement.left, getIterationItem(iterable, description), loopContext);
-      body = statement.body;
-      break;
-    }
+    case "ForOfStatement":
     case "ForInStatement":
-      bindLoopVariable(interpreter, statement.left, unknown("enumerated key"), loopContext);
+      iterations = planForOfIterations(interpreter, statement, context);
       body = statement.body;
       break;
     case "WhileStatement":
@@ -225,7 +334,27 @@ const evaluateLoop = (
     default:
       return null;
   }
+  if (iterations) return runIterations(interpreter, iterations, body, context);
   const header = interpreter.getSource(context.module, { start: statement.start, end: body.start });
+  const scope = forkScope(context.scope);
+  const loopContext = enterUndecided(context, header, scope);
+  switch (statement.type) {
+    case "ForStatement":
+      if (statement.init?.type === "VariableDeclaration") {
+        evaluateStatement(interpreter, statement.init, loopContext);
+        forgetLoopCounters(statement.init.declarations, scope);
+      } else if (statement.init) interpreter.evaluateExpression(statement.init, loopContext);
+      break;
+    case "ForOfStatement": {
+      const iterable = interpreter.evaluateExpression(statement.right, loopContext);
+      const description = interpreter.getSource(context.module, statement.right);
+      bindLoopVariable(interpreter, statement.left, getIterationItem(iterable, description), loopContext);
+      break;
+    }
+    case "ForInStatement":
+      bindLoopVariable(interpreter, statement.left, unknown("enumerated key"), loopContext);
+      break;
+  }
   const completion = evaluateInScope(interpreter, toStatements(body), scope, loopContext);
   return { kind: "arms", arms: [withoutBreak({ test: header, scope, completion })], fallback: null };
 };
@@ -239,7 +368,7 @@ const evaluateTry = (
   let fallback: Arm | null = null;
   if (statement.handler) {
     const scope = forkScope(context.scope);
-    const handlerContext = { ...context, scope };
+    const handlerContext = enterUndecided(context, "catch", scope);
     if (statement.handler.param) {
       bindPattern(interpreter, statement.handler.param, unknown("caught error"), handlerContext);
     }

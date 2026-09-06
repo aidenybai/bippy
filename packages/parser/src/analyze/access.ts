@@ -1,12 +1,14 @@
 import { getReactApiReference } from "../link/react-api.js";
 import type { Interpreter } from "./interpreter.js";
 import {
+  type ArrayValue,
   builtin,
   type BuiltinComponentName,
   component,
   conditional,
   type ExternalValue,
   getObjectProperty,
+  list,
   literal,
   type StaticValue,
   UNDEFINED,
@@ -140,6 +142,12 @@ export const flattenInto = (items: StaticValue[], value: StaticValue): void => {
 };
 
 /** Appends the elements of `...value`; a spread list marks its items as inline siblings. */
+/** A mutation that cannot be tracked leaves the array holding any number of unknown items. */
+export const forgetArrayItems = (target: ArrayValue, description: string): StaticValue => {
+  target.items.splice(0, target.items.length, { ...list(unknown(description), description), isInline: true });
+  return unknown(description);
+};
+
 export const spreadInto = (items: StaticValue[], value: StaticValue): void => {
   if (value.kind === "array" || value.kind === "list") flattenInto(items, value);
   else items.push(unknown(`spread of ${value.kind}`));

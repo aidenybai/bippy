@@ -1,5 +1,5 @@
-import { flattenInto, getIterationItem } from "./access.js";
-import type { EvaluationContext } from "./interpreter.js";
+import { flattenInto, forgetArrayItems, getIterationItem } from "./access.js";
+import { type EvaluationContext, isEffectUndecided } from "./interpreter.js";
 import type { CallbackInvoker } from "./react-calls.js";
 import {
   array,
@@ -155,12 +155,33 @@ export const evaluateArrayMethod = (
     case "push":
     case "unshift": {
       if (target.kind !== "array") return unknown(description);
-      const pushed = context.isInsideLoop
-        ? callArguments.map((argument) => ({ ...list(argument, description), isInline: true }))
-        : callArguments;
+      const undecided = context.undecided;
+      const pushed =
+        undecided && isEffectUndecided(context, target.depth)
+          ? callArguments.map((argument) => ({
+              ...list(argument, `${description} under ${undecided.test}`),
+              isInline: true,
+            }))
+          : callArguments;
       if (method === "push") target.items.push(...pushed);
       else target.items.unshift(...pushed);
       return literal(target.items.length);
+    }
+    case "pop":
+    case "shift": {
+      if (target.kind !== "array") return unknown(description);
+      if (isEffectUndecided(context, target.depth)) return forgetArrayItems(target, description);
+      return (method === "pop" ? target.items.pop() : target.items.shift()) ?? UNDEFINED;
+    }
+    case "splice": {
+      if (target.kind !== "array") return unknown(description);
+      const [start, deleteCount, ...added] = callArguments;
+      const startIndex = asIndex(start, 0);
+      const deleteCountIndex = asIndex(deleteCount, target.items.length);
+      if (isEffectUndecided(context, target.depth) || startIndex === null || deleteCountIndex === null) {
+        return forgetArrayItems(target, description);
+      }
+      return array(target.items.splice(startIndex, deleteCountIndex, ...added));
     }
     case "at": {
       if (items && callback?.kind === "literal" && typeof callback.value === "number") {

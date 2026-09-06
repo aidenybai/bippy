@@ -31,6 +31,12 @@ export const isNode = (value: unknown): value is SpannedNode =>
   typeof Reflect.get(value, "type") === "string" &&
   typeof Reflect.get(value, "start") === "number";
 
+/** Narrows a node met during `walk` to one of Oxc's node types. */
+export const isNodeOfType = <Type extends Node["type"]>(
+  node: SpannedNode,
+  type: Type,
+): node is Extract<Node, { type: Type }> => node.type === type;
+
 export const isFunctionLike = (node: Node | null | undefined): node is FunctionLike =>
   node?.type === "FunctionDeclaration" ||
   node?.type === "FunctionExpression" ||

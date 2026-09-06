@@ -11,6 +11,12 @@ export interface MatchResult {
   isMatch: boolean;
   mismatches: Mismatch[];
   runtimeFiberCount: number;
+  /**
+   * Runtime fibers matched by a concrete static fiber rather than absorbed
+   * by an unknown wildcard; equals `runtimeFiberCount` for a fully
+   * explained tree. Zero when the trees do not match.
+   */
+  explainedFiberCount: number;
 }
 
 interface FiberState {
@@ -82,38 +88,55 @@ const compile = (nodes: NodeSnapshot[]): Automaton => {
   return { states, start: compileSequence(nodes, states, accept), accept };
 };
 
-const closure = (automaton: Automaton, seeds: Iterable<number>): Set<number> => {
-  const reached = new Set<number>();
+/** Alive automaton states, each with the best number of explained fibers on a path reaching it. */
+type Frontier = Map<number, number>;
+
+const advance = (frontier: Frontier, stateId: number, score: number): void => {
+  const known = frontier.get(stateId);
+  if (known === undefined || known < score) frontier.set(stateId, score);
+};
+
+const closure = (automaton: Automaton, seeds: Frontier): Frontier => {
+  const reached: Frontier = new Map();
   const pending = [...seeds];
   while (pending.length > 0) {
-    const stateId = pending.pop();
-    if (stateId === undefined || reached.has(stateId)) continue;
-    reached.add(stateId);
+    const entry = pending.pop();
+    if (!entry) continue;
+    const [stateId, score] = entry;
+    const known = reached.get(stateId);
+    if (known !== undefined && known >= score) continue;
+    reached.set(stateId, score);
     const state = automaton.states[stateId];
-    if (state.kind === "epsilon" || state.kind === "any") pending.push(...state.next);
+    if (state.kind === "epsilon" || state.kind === "any") {
+      for (const target of state.next) pending.push([target, score]);
+    }
   }
   return reached;
 };
 
-interface Matcher {
-  results: Map<FiberSnapshot, WeakMap<FiberSnapshot, boolean>>;
-  /** Why `expected` rejected `actual`, for the pair most recently compared. */
-  reasons: Map<FiberSnapshot, WeakMap<FiberSnapshot, Mismatch[]>>;
+interface Comparison {
+  mismatches: Mismatch[];
+  /** Fibers under (and including) the runtime fiber explained by concrete static fibers. */
+  explained: number;
 }
 
-const remember = <Value>(
-  table: Map<FiberSnapshot, WeakMap<FiberSnapshot, Value>>,
+interface Matcher {
+  results: Map<FiberSnapshot, WeakMap<FiberSnapshot, Comparison>>;
+}
+
+const remember = (
+  matcher: Matcher,
   expected: FiberSnapshot,
   actual: FiberSnapshot,
-  value: Value,
-): Value => {
-  let row = table.get(expected);
+  comparison: Comparison,
+): Comparison => {
+  let row = matcher.results.get(expected);
   if (!row) {
     row = new WeakMap();
-    table.set(expected, row);
+    matcher.results.set(expected, row);
   }
-  row.set(actual, value);
-  return value;
+  row.set(actual, comparison);
+  return comparison;
 };
 
 const isSuspendedShape = (actual: FiberSnapshot): boolean =>
@@ -147,27 +170,30 @@ const compareAttributes = (expected: FiberSnapshot, actual: FiberSnapshot): stri
 const runtimeChildren = (fiber: FiberSnapshot): FiberSnapshot[] =>
   fiber.children.filter((child): child is FiberSnapshot => child.kind === "fiber");
 
-const matchFiber = (
+const compareFibers = (
   matcher: Matcher,
   expected: FiberSnapshot,
   actual: FiberSnapshot,
   path: string,
-): boolean => {
+): Comparison => {
   const cached = matcher.results.get(expected)?.get(actual);
-  if (cached !== undefined) return cached;
+  if (cached) return cached;
   const attributeMismatch = compareAttributes(expected, actual);
   if (attributeMismatch) {
-    remember(matcher.reasons, expected, actual, [{ path, message: attributeMismatch }]);
-    return remember(matcher.results, expected, actual, false);
+    return remember(matcher, expected, actual, { mismatches: [{ path, message: attributeMismatch }], explained: 0 });
   }
   const childPath = path ? `${path} › ${formatFiberLabel(actual)}` : formatFiberLabel(actual);
   const children = runtimeChildren(actual);
-  const mismatches =
-    expected.tag === "SuspenseComponent" && expected.fallback && isSuspendedShape(actual)
-      ? matchChildren(matcher, expected.fallback, runtimeChildren(children[1]), `${childPath} › fallback`)
-      : matchChildren(matcher, expected.children, children, childPath);
-  remember(matcher.reasons, expected, actual, mismatches);
-  return remember(matcher.results, expected, actual, mismatches.length === 0);
+  const isSuspended = expected.tag === "SuspenseComponent" && expected.fallback !== null && isSuspendedShape(actual);
+  const comparison = isSuspended
+    ? matchChildren(matcher, expected.fallback ?? [], runtimeChildren(children[1]), `${childPath} › fallback`)
+    : matchChildren(matcher, expected.children, children, childPath);
+  if (comparison.mismatches.length > 0) return remember(matcher, expected, actual, comparison);
+  const structuralFibers = isSuspended ? children.length : 0;
+  return remember(matcher, expected, actual, {
+    mismatches: [],
+    explained: comparison.explained + 1 + structuralFibers,
+  });
 };
 
 const dedupe = (mismatches: Mismatch[]): Mismatch[] => {
@@ -180,9 +206,9 @@ const dedupe = (mismatches: Mismatch[]): Mismatch[] => {
   });
 };
 
-const describeExpectation = (automaton: Automaton, alive: Set<number>): string => {
+const describeExpectation = (automaton: Automaton, alive: Frontier): string => {
   const labels = new Set<string>();
-  for (const stateId of alive) {
+  for (const stateId of alive.keys()) {
     const state = automaton.states[stateId];
     if (state.kind === "fiber") labels.add(formatFiberLabel(state.fiber));
     else if (state.kind === "accept") labels.add("end of children");
@@ -190,40 +216,47 @@ const describeExpectation = (automaton: Automaton, alive: Set<number>): string =
   return [...labels].join(" | ") || "nothing";
 };
 
-/** Simulates the children automaton over the runtime siblings; empty result means a match. */
+/**
+ * Simulates the children automaton over the runtime siblings. Among all
+ * accepting paths the one explaining the most runtime fibers wins, so
+ * wildcards only absorb what no concrete fiber can account for.
+ */
 const matchChildren = (
   matcher: Matcher,
   expected: NodeSnapshot[],
   actual: FiberSnapshot[],
   path: string,
-): Mismatch[] => {
+): Comparison => {
   const automaton = compile(expected);
-  let alive = closure(automaton, [automaton.start]);
+  let alive = closure(automaton, new Map([[automaton.start, 0]]));
   for (const [position, fiber] of actual.entries()) {
-    const next = new Set<number>();
+    const next: Frontier = new Map();
     const nestedMismatches: Mismatch[] = [];
-    for (const stateId of alive) {
+    for (const [stateId, score] of alive) {
       const state = automaton.states[stateId];
-      if (state.kind === "any") next.add(stateId);
+      if (state.kind === "any") advance(next, stateId, score);
       if (state.kind !== "fiber") continue;
-      if (matchFiber(matcher, state.fiber, fiber, path)) for (const target of state.next) next.add(target);
-      else nestedMismatches.push(...(matcher.reasons.get(state.fiber)?.get(fiber) ?? []));
+      const comparison = compareFibers(matcher, state.fiber, fiber, path);
+      if (comparison.mismatches.length === 0) {
+        for (const target of state.next) advance(next, target, score + comparison.explained);
+      } else nestedMismatches.push(...comparison.mismatches);
     }
     if (next.size === 0) {
       const deeper = dedupe(nestedMismatches.filter((mismatch) => mismatch.path !== path));
-      if (deeper.length > 0) return deeper.slice(0, MAX_MISMATCHES);
+      if (deeper.length > 0) return { mismatches: deeper.slice(0, MAX_MISMATCHES), explained: 0 };
       const message = `child ${position + 1} is ${formatFiberLabel(fiber)}; expected ${describeExpectation(automaton, alive)}`;
-      return dedupe([{ path, message }, ...nestedMismatches]).slice(0, MAX_MISMATCHES);
+      return { mismatches: dedupe([{ path, message }, ...nestedMismatches]).slice(0, MAX_MISMATCHES), explained: 0 };
     }
     alive = closure(automaton, next);
   }
-  if (alive.has(automaton.accept)) return [];
-  return [
-    {
-      path,
-      message: `children ended after ${actual.length}; expected ${describeExpectation(automaton, alive)}`,
-    },
-  ];
+  const accepted = alive.get(automaton.accept);
+  if (accepted !== undefined) return { mismatches: [], explained: accepted };
+  return {
+    mismatches: [
+      { path, message: `children ended after ${actual.length}; expected ${describeExpectation(automaton, alive)}` },
+    ],
+    explained: 0,
+  };
 };
 
 const countFibers = (fiber: FiberSnapshot): number =>
@@ -235,12 +268,13 @@ const countFibers = (fiber: FiberSnapshot): number =>
  * alternatives and lists match any number of repetitions.
  */
 export const matchSnapshots = (expected: FiberSnapshot, actual: FiberSnapshot): MatchResult => {
-  const matcher: Matcher = { results: new Map(), reasons: new Map() };
-  const isMatch = matchFiber(matcher, expected, actual, "");
+  const matcher: Matcher = { results: new Map() };
+  const comparison = compareFibers(matcher, expected, actual, "");
   return {
-    isMatch,
-    mismatches: isMatch ? [] : (matcher.reasons.get(expected)?.get(actual) ?? []),
+    isMatch: comparison.mismatches.length === 0,
+    mismatches: comparison.mismatches,
     runtimeFiberCount: countFibers(actual),
+    explainedFiberCount: comparison.explained,
   };
 };
 

@@ -45,7 +45,8 @@ const createInvoker =
 const isReactHook = (callee: StaticValue): callee is ExternalValue => {
   if (callee.kind !== "external") return false;
   const reference = getReactApiReference(callee);
-  return reference !== null && reference.source === "react" && isHookName(reference.api);
+  if (reference === null || reference.source !== "react") return false;
+  return isBuiltinHookName(reference.api) || isHookName(reference.api);
 };
 
 const isGlobalChain = (chain: string[], context: EvaluationContext): boolean =>

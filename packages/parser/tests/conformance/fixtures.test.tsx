@@ -2,18 +2,34 @@ import { readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createStaticRenderer, type StaticRenderer } from "@bippy/parser";
-import { formatVerificationReport, renderRuntimeSnapshot, verifySnapshots } from "@bippy/parser/harness";
+import {
+  formatCoverage,
+  formatVerificationReport,
+  renderRuntimeSnapshot,
+  verifySnapshots,
+} from "@bippy/parser/harness";
 import { createElement, type ComponentType } from "react";
 import { describe, expect, it } from "vite-plus/test";
+
+/**
+ * Every fixture renders its default export both ways. The runtime tree must
+ * be one of the trees the static analysis describes, and unless the fixture
+ * exports `minCoverage` every runtime fiber must be explained by a concrete
+ * static fiber, so a match cannot be bought with wildcards.
+ */
+const FIXTURE_EXTENSIONS = [".tsx", ".jsx", ".js"];
 
 const fixturesDirectory = join(dirname(fileURLToPath(import.meta.url)), "../fixtures");
 
 const fixtureFiles = readdirSync(fixturesDirectory)
-  .filter((fileName) => fileName.endsWith(".tsx"))
+  .filter((fileName) => FIXTURE_EXTENSIONS.some((extension) => fileName.endsWith(extension)))
   .sort();
 
 const isComponent = (value: unknown): value is ComponentType =>
   typeof value === "function" || (typeof value === "object" && value !== null);
+
+const getMinCoverage = (fixture: Record<string, unknown>): number =>
+  typeof fixture.minCoverage === "number" ? fixture.minCoverage : 1;
 
 let renderer: StaticRenderer | null = null;
 const getRenderer = (): StaticRenderer => {
@@ -38,6 +54,11 @@ describe("fixture conformance", () => {
           : "",
       ].join("\n\n");
       expect(report.isMatch, details).toBe(true);
+      const minCoverage = getMinCoverage(fixture);
+      expect(
+        report.coverage >= minCoverage,
+        `coverage ${formatCoverage(report.coverage)} is below the fixture's ${formatCoverage(minCoverage)} floor\n\n${details}`,
+      ).toBe(true);
     });
   }
 });

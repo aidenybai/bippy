@@ -8,6 +8,10 @@ export interface VerificationReport {
   staticFiberCount: number;
   staticUnknownCount: number;
   runtimeFiberCount: number;
+  /** Runtime fibers accounted for by a concrete static fiber rather than a wildcard. */
+  explainedFiberCount: number;
+  /** `explainedFiberCount / runtimeFiberCount`; `1` means nothing was absorbed by a wildcard. */
+  coverage: number;
   staticTree: string;
   runtimeTree: string;
 }
@@ -44,14 +48,18 @@ export const verifySnapshots = (staticRoot: FiberSnapshot, runtimeRoot: FiberSna
     staticFiberCount: totals.fibers,
     staticUnknownCount: totals.unknowns,
     runtimeFiberCount: result.runtimeFiberCount,
+    explainedFiberCount: result.explainedFiberCount,
+    coverage: result.runtimeFiberCount === 0 ? 1 : result.explainedFiberCount / result.runtimeFiberCount,
     staticTree: renderSnapshotTree(staticRoot),
     runtimeTree: renderSnapshotTree(runtimeRoot),
   };
 };
 
+export const formatCoverage = (coverage: number): string => `${(coverage * 100).toFixed(1)}%`;
+
 export const formatVerificationReport = (report: VerificationReport): string => {
   const summary = report.isMatch
-    ? `match: ${report.staticFiberCount} static fibers (${report.staticUnknownCount} unknown) vs ${report.runtimeFiberCount} runtime fibers`
+    ? `match: ${report.explainedFiberCount}/${report.runtimeFiberCount} runtime fibers explained (${formatCoverage(report.coverage)}); ${report.staticFiberCount} static fibers, ${report.staticUnknownCount} unknown`
     : `mismatch: ${report.mismatches.length} problem(s)`;
   const sections = [summary];
   if (!report.isMatch) sections.push(formatMismatches(report.mismatches));

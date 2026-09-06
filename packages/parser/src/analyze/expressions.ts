@@ -1,6 +1,9 @@
 import type {
+  AssignmentExpression,
+  AssignmentOperator,
   Expression,
   LogicalExpression,
+  LogicalOperator,
   MemberExpression,
   ObjectExpression,
   Span,
@@ -9,11 +12,12 @@ import type {
 } from "@oxc-project/types";
 import { getMemberChain, isStringLiteral } from "../module/ast.js";
 import { getProperty, normalizeExternal, spreadInto } from "./access.js";
+import { GLOBAL_NAMESPACES } from "./builtins.js";
 import { evaluateCall } from "./calls.js";
 import { classifyClass } from "./components.js";
-import type { EvaluationContext, Interpreter } from "./interpreter.js";
+import { enterUndecided, type EvaluationContext, getUndecidedDepth, type Interpreter } from "./interpreter.js";
 import { evaluateJsxElement, evaluateJsxFragment } from "./jsx.js";
-import { applyBinaryOperator, applyUnaryOperator } from "./operators.js";
+import { applyBinaryOperator, applyUnaryOperator, getBinaryOperator } from "./operators.js";
 import { assignToTarget, getPropertyKeyName } from "./patterns.js";
 import { hasLocalBinding, lookupVariable } from "./scope.js";
 import {
@@ -62,7 +66,9 @@ export const resolveIdentifier = (
   const globalLiteral = GLOBAL_LITERALS[name];
   if (globalLiteral) return globalLiteral;
   if (name === "React") return REACT_GLOBAL;
-  interpreter.report("unresolved-reference", `no binding for "${name}"`, context.module, span);
+  if (!GLOBAL_NAMESPACES.has(name)) {
+    interpreter.report("unresolved-reference", `no binding for "${name}"`, context.module, span);
+  }
   return unknown(`global ${name}`);
 };
 
@@ -125,10 +131,21 @@ const evaluateLogical = (
   context: EvaluationContext,
 ): StaticValue => {
   const left = interpreter.evaluateExpression(expression.left, context);
-  const truthiness = getTruthiness(left);
   const test = interpreter.getSource(context.module, expression.left);
-  const right = (): StaticValue => interpreter.evaluateExpression(expression.right, context);
-  switch (expression.operator) {
+  return applyLogicalOperator(expression.operator, left, test, () =>
+    interpreter.evaluateExpression(expression.right, enterUndecided(context, test, context.scope)),
+  );
+};
+
+/** Short-circuits when the left side decides; otherwise both sides remain possible. */
+const applyLogicalOperator = (
+  operator: LogicalOperator,
+  left: StaticValue,
+  test: string,
+  right: () => StaticValue,
+): StaticValue => {
+  const truthiness = getTruthiness(left);
+  switch (operator) {
     case "&&":
       if (truthiness === false) return left;
       if (truthiness === true) return right();
@@ -145,6 +162,31 @@ const evaluateLogical = (
       return left;
     }
   }
+};
+
+const LOGICAL_ASSIGNMENT_OPERATORS: Partial<Record<AssignmentOperator, LogicalOperator>> = {
+  "&&=": "&&",
+  "||=": "||",
+  "??=": "??",
+};
+
+/** `x += y`, `x ||= y`: the current value combined with the right side. */
+const evaluateCompoundAssignment = (
+  interpreter: Interpreter,
+  expression: AssignmentExpression,
+  right: StaticValue,
+  context: EvaluationContext,
+): StaticValue => {
+  const target = expression.left;
+  const source = interpreter.getSource(context.module, expression);
+  if (target.type === "ArrayPattern" || target.type === "ObjectPattern") return unknown(source);
+  const current = interpreter.evaluateExpression(target, context);
+  const logicalOperator = LOGICAL_ASSIGNMENT_OPERATORS[expression.operator];
+  if (logicalOperator) {
+    return applyLogicalOperator(logicalOperator, current, interpreter.getSource(context.module, target), () => right);
+  }
+  const binaryOperator = getBinaryOperator(expression.operator);
+  return binaryOperator ? applyBinaryOperator(binaryOperator, current, right, source) : unknown(source);
 };
 
 const evaluateTemplate = (
@@ -184,7 +226,7 @@ const evaluateObject = (
   expression: ObjectExpression,
   context: EvaluationContext,
 ): StaticValue => {
-  const result = object();
+  const result = object([], false, getUndecidedDepth(context));
   for (const property of expression.properties) {
     if (property.type === "SpreadElement") {
       const spread = interpreter.evaluateExpression(property.argument, context);
@@ -243,7 +285,7 @@ export const evaluateExpression = (
           spreadInto(items, interpreter.evaluateExpression(element.argument, context));
         } else items.push(interpreter.evaluateExpression(element, context));
       }
-      return array(items);
+      return array(items, getUndecidedDepth(context));
     }
     case "ObjectExpression":
       return evaluateObject(interpreter, expression, context);
@@ -262,10 +304,12 @@ export const evaluateExpression = (
       const truthiness = getTruthiness(test);
       if (truthiness === true) return interpreter.evaluateExpression(expression.consequent, context);
       if (truthiness === false) return interpreter.evaluateExpression(expression.alternate, context);
+      const testSource = interpreter.getSource(context.module, expression.test);
+      const armContext = enterUndecided(context, testSource, context.scope);
       return conditional(
-        interpreter.getSource(context.module, expression.test),
-        interpreter.evaluateExpression(expression.consequent, context),
-        interpreter.evaluateExpression(expression.alternate, context),
+        testSource,
+        interpreter.evaluateExpression(expression.consequent, armContext),
+        interpreter.evaluateExpression(expression.alternate, armContext),
       );
     }
     case "LogicalExpression":
@@ -285,9 +329,19 @@ export const evaluateExpression = (
     }
     case "AssignmentExpression": {
       const right = interpreter.evaluateExpression(expression.right, context);
-      const value = expression.operator === "=" ? right : unknown(source());
+      const value =
+        expression.operator === "=" ? right : evaluateCompoundAssignment(interpreter, expression, right, context);
       assignToTarget(interpreter, expression.left, value, context);
       return value;
+    }
+    case "UpdateExpression": {
+      const current = interpreter.evaluateExpression(expression.argument, context);
+      const updated =
+        current.kind === "literal" && typeof current.value === "number"
+          ? literal(current.value + (expression.operator === "++" ? 1 : -1))
+          : unknown(source());
+      assignToTarget(interpreter, expression.argument, updated, context);
+      return expression.prefix ? updated : current;
     }
     case "UnaryExpression":
       return applyUnaryOperator(
@@ -331,7 +385,6 @@ export const evaluateExpression = (
       return evaluateJsxElement(interpreter, expression, context);
     case "JSXFragment":
       return evaluateJsxFragment(interpreter, expression, context);
-    case "UpdateExpression":
     case "YieldExpression":
     case "MetaProperty":
     case "Super":

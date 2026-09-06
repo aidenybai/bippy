@@ -21,9 +21,31 @@ export interface EvaluationContext {
   /** Context values provided by the fibers above the render in progress. */
   contexts: ProvidedContexts;
   callDepth: number;
-  /** Inside a loop body, `array.push(x)` appends a list instead of one item. */
-  isInsideLoop: boolean;
+  /** Innermost branch or loop whose direction is not known statically, if any. */
+  undecided: UndecidedFrame | null;
 }
+
+/**
+ * Control flow the analysis could not decide. Side effects performed under
+ * it on values created outside it (`items.push(x)` inside `if (flag)`) must
+ * stay conditional; `depth` tells the two apart.
+ */
+export interface UndecidedFrame {
+  test: string;
+  depth: number;
+}
+
+export const enterUndecided = (context: EvaluationContext, test: string, scope: Scope): EvaluationContext => ({
+  ...context,
+  scope,
+  undecided: { test, depth: getUndecidedDepth(context) + 1 },
+});
+
+export const getUndecidedDepth = (context: EvaluationContext): number => context.undecided?.depth ?? 0;
+
+/** Whether a side effect happening now on a value created at `createdAtDepth` is conditional. */
+export const isEffectUndecided = (context: EvaluationContext, createdAtDepth: number): boolean =>
+  context.undecided !== null && context.undecided.depth > createdAtDepth;
 
 /**
  * How a statement list finished. A `partial` completion returned on some

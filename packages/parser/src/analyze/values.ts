@@ -27,6 +27,8 @@ export interface UnknownValue {
 export interface ArrayValue {
   kind: "array";
   items: StaticValue[];
+  /** Undecided control-flow depth the array was created at; mutations from deeper are conditional. */
+  depth: number;
 }
 
 /** Zero or more repetitions of `item`, the shape produced by `.map()`. */
@@ -52,6 +54,8 @@ export interface ObjectValue {
   properties: Map<string, StaticValue>;
   /** An unknown object was spread in, so absent keys may still exist. */
   hasUnknownSpread: boolean;
+  /** Undecided control-flow depth the object was created at; mutations from deeper are conditional. */
+  depth: number;
 }
 
 /** A closure: the function together with the scope it was created in. */
@@ -181,7 +185,7 @@ export type ComponentDefinition =
 export const literal = (value: Primitive): LiteralValue => ({ kind: "literal", value });
 export const text = (description: string): TextValue => ({ kind: "text", description });
 export const unknown = (description: string): UnknownValue => ({ kind: "unknown", description });
-export const array = (items: StaticValue[]): ArrayValue => ({ kind: "array", items });
+export const array = (items: StaticValue[], depth = 0): ArrayValue => ({ kind: "array", items, depth });
 export const list = (item: StaticValue, description: string, isFlat = false): ListValue => ({
   kind: "list",
   item,
@@ -197,7 +201,8 @@ export const conditional = (
 export const object = (
   properties: Iterable<[string, StaticValue]> = [],
   hasUnknownSpread = false,
-): ObjectValue => ({ kind: "object", properties: new Map(properties), hasUnknownSpread });
+  depth = 0,
+): ObjectValue => ({ kind: "object", properties: new Map(properties), hasUnknownSpread, depth });
 export const component = (definition: ComponentDefinition): ComponentValue => ({
   kind: "component",
   definition,

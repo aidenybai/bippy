@@ -1,4 +1,4 @@
-import type { BinaryOperator, UnaryOperator } from "@oxc-project/types";
+import type { AssignmentOperator, BinaryOperator, UnaryOperator } from "@oxc-project/types";
 import {
   getTruthiness,
   literal,
@@ -8,6 +8,25 @@ import {
   UNDEFINED,
   unknown,
 } from "./values.js";
+
+const COMPOUND_ASSIGNMENT_OPERATORS: Partial<Record<AssignmentOperator, BinaryOperator>> = {
+  "+=": "+",
+  "-=": "-",
+  "*=": "*",
+  "/=": "/",
+  "%=": "%",
+  "**=": "**",
+  "<<=": "<<",
+  ">>=": ">>",
+  ">>>=": ">>>",
+  "|=": "|",
+  "^=": "^",
+  "&=": "&",
+};
+
+/** The binary operator a compound assignment applies, or `null` for `=` and logical assignments. */
+export const getBinaryOperator = (operator: AssignmentOperator): BinaryOperator | null =>
+  COMPOUND_ASSIGNMENT_OPERATORS[operator] ?? null;
 
 const typeOfValue = (value: StaticValue): string | null => {
   switch (value.kind) {
