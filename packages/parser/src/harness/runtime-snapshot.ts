@@ -63,9 +63,44 @@ const getRuntimeText = (fiber: Fiber, tag: WorkTagName | null): string | null =>
 const getRuntimeKey = (fiber: Fiber): string | null =>
   typeof fiber.key === "string" ? fiber.key : null;
 
+/** Names React DevTools gives built-in fibers (`getDisplayNameForFiber`), plus the ones it hides. */
+const BUILTIN_NAMES: Partial<Record<WorkTagName, string>> = {
+  Fragment: "Fragment",
+  SuspenseComponent: "Suspense",
+  SuspenseListComponent: "SuspenseList",
+  OffscreenComponent: "Offscreen",
+  ActivityComponent: "Activity",
+  ViewTransitionComponent: "ViewTransition",
+  Profiler: "Profiler",
+  HostPortal: "Portal",
+};
+
+const STRICT_MODE_TYPE = Symbol.for("react.strict_mode");
+
+const getContextName = (type: unknown): string => {
+  const context: unknown =
+    typeof type === "object" && type !== null && "_context" in type ? type._context : type;
+  const displayName: unknown =
+    typeof context === "object" && context !== null && "displayName" in context
+      ? context.displayName
+      : null;
+  return typeof displayName === "string" && displayName ? displayName : "Context";
+};
+
 const getRuntimeName = (fiber: Fiber, tag: WorkTagName | null): string | null => {
-  if (tag === "HostText" || tag === "HostRoot") return null;
-  return getDisplayName(fiber.type);
+  switch (tag) {
+    case "HostText":
+    case "HostRoot":
+      return null;
+    case "Mode":
+      return fiber.type === STRICT_MODE_TYPE ? "StrictMode" : "Mode";
+    case "ContextProvider":
+      return `${getContextName(fiber.type)}.Provider`;
+    case "ContextConsumer":
+      return `${getContextName(fiber.type)}.Consumer`;
+    default:
+      return (tag && BUILTIN_NAMES[tag]) ?? getDisplayName(fiber.type);
+  }
 };
 
 interface RuntimeSnapshotState {
