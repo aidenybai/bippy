@@ -134,6 +134,32 @@ describe("interpreter: arrays and objects", () => {
     );
   });
 
+  it("searches known arrays with indexOf, findIndex and includes", () => {
+    expect(describe_(`export const value = ["a", "b"].indexOf("b");`)).toBe("1");
+    expect(describe_(`export const value = ["a", "b"].indexOf("z") >= 0;`)).toBe("false");
+    expect(describe_(`export const value = [4, 9].findIndex((n) => n > 5);`)).toBe("1");
+    expect(describe_(`export const value = [4, 9].includes(9);`)).toBe("true");
+    expect(describe_(`declare const rows: number[]; export const value = rows.indexOf(1);`)).toBe(
+      "unknown(rows.indexOf())",
+    );
+    expect(run(`const kept = [1, 2].filter((n) => n === 2 || show); return kept.indexOf(1);`)).toBe(
+      "([1, 2].filter() keeps [0] ? 0 : -1)",
+    );
+  });
+
+  it("decides equality between shapes and primitives an object can never be", () => {
+    expect(describe_(`const source = {}; export const value = source == null;`)).toBe("false");
+    expect(describe_(`const source = {}; export const value = source !== undefined;`)).toBe("true");
+    expect(describe_(`const fn = () => 1; export const value = fn === 1;`)).toBe("false");
+    expect(describe_(`export const value = [] == "";`)).toMatch(/^unknown\(/);
+    expect(
+      describe_(`declare const rows: number[]; export const value = \`\${rows.length}\` === 3;`),
+    ).toBe("false");
+    expect(
+      describe_(`declare const rows: number[]; export const value = \`\${rows.length}\` === "3";`),
+    ).toMatch(/^unknown\(/);
+  });
+
   it("keeps unknown arrays as lists of the mapped shape", () => {
     expect(
       describe_(`declare const rows: number[]; export const value = rows.map((r) => r);`),
@@ -300,6 +326,20 @@ describe("interpreter: control flow", () => {
         `const out = []; for (const n of [1, 2]) { switch (n) { case 1: break; } out.push(n); } return out;`,
       ),
     ).toBe("[1, 2]");
+  });
+
+  it("unrolls loops whose header assigns outer counters, as Babel's helpers do", () => {
+    expect(
+      run(
+        `var key, i; const target = {}; const source = { a: 1, action: 2 }; const keys = Object.keys(source);
+         for (i = 0; i < keys.length; i++) {
+           key = keys[i];
+           if (["action"].indexOf(key) >= 0) continue;
+           target[key] = source[key];
+         }
+         return [target, key, i];`,
+      ),
+    ).toBe('[{a}, "action", 2]');
   });
 
   it("does not unroll loops that break, since a break may depend on runtime state", () => {

@@ -1,6 +1,7 @@
 import type { AssignmentOperator, BinaryOperator, UnaryOperator } from "@oxc-project/types";
 import {
   getTruthiness,
+  isNullish,
   literal,
   type Primitive,
   type StaticValue,
@@ -135,7 +136,40 @@ const REFERENCE_KINDS = new Set<StaticValue["kind"]>([
   "namespace",
 ]);
 
+const OBJECT_KINDS = new Set<StaticValue["kind"]>([...REFERENCE_KINDS, "regexp", "list"]);
+
 const EQUALITY_OPERATORS = new Set<BinaryOperator>(["===", "==", "!==", "!="]);
+
+/**
+ * Whether a value known only by shape can equal `primitive`: an object never
+ * strictly equals a primitive and is never loosely nullish, though it may
+ * coerce to a string, number or boolean; a string is never nullish and only
+ * strictly equals another string.
+ */
+const canEqualPrimitive = (
+  value: StaticValue,
+  primitive: Primitive,
+  isStrict: boolean,
+): boolean | null => {
+  if (isNullish(primitive))
+    return OBJECT_KINDS.has(value.kind) || value.kind === "text" ? false : null;
+  if (!isStrict) return null;
+  if (OBJECT_KINDS.has(value.kind)) return false;
+  return value.kind === "text" && typeof primitive !== "string" ? false : null;
+};
+
+/** `left` and `right` are equal, when their shapes decide it; `null` otherwise. */
+const decideEquality = (
+  left: StaticValue,
+  right: StaticValue,
+  isStrict: boolean,
+): boolean | null => {
+  /** One static value stands for one runtime object; distinct values may still be the same object. */
+  if (left === right && REFERENCE_KINDS.has(left.kind)) return true;
+  if (right.kind === "literal") return canEqualPrimitive(left, right.value, isStrict);
+  if (left.kind === "literal") return canEqualPrimitive(right, left.value, isStrict);
+  return null;
+};
 
 export const applyBinaryOperator = (
   operator: BinaryOperator,
@@ -147,9 +181,9 @@ export const applyBinaryOperator = (
     const folded = foldPrimitives(operator, left.value, right.value);
     if (folded !== null) return literal(folded);
   }
-  /** One static value stands for one runtime object; distinct values may still be the same object. */
-  if (left === right && REFERENCE_KINDS.has(left.kind) && EQUALITY_OPERATORS.has(operator)) {
-    return literal(operator === "===" || operator === "==");
+  if (EQUALITY_OPERATORS.has(operator)) {
+    const isEqual = decideEquality(left, right, operator === "===" || operator === "!==");
+    if (isEqual !== null) return literal(operator.startsWith("!") ? !isEqual : isEqual);
   }
   if (operator === "+") {
     const isStringLike = (value: StaticValue): boolean =>

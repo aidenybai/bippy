@@ -134,7 +134,10 @@ const accessLinks = (
   const chain = links.map((link) => link.name);
   const firstOptional = links.findIndex((link) => link.isOptional);
   const isEnvironmentRead =
-    chain[0] === "process" && chain[1] === "env" && chain.length > 2 && isGlobalChain(chain, context);
+    chain[0] === "process" &&
+    chain[1] === "env" &&
+    chain.length > 2 &&
+    isGlobalChain(chain, context);
   let value = isEnvironmentRead
     ? readEnvironmentVariable(interpreter, chain[2])
     : resolveIdentifier(interpreter, chain[0], span, context);

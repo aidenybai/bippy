@@ -64,7 +64,8 @@ const getStaticProperty = (
   context: EvaluationContext,
 ): StaticValue | null => {
   for (const member of members) {
-    if (!member.isStatic || member.key !== name || member.kind !== "field" || !member.value) continue;
+    if (!member.isStatic || member.key !== name || member.kind !== "field" || !member.value)
+      continue;
     return interpreter.evaluateExpression(member.value, context);
   }
   return null;

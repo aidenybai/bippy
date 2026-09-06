@@ -145,7 +145,9 @@ const getComponentProperty = (value: ComponentValue, key: string): StaticValue =
   if (key === "name")
     return definition.kind === "class" ? literal(definition.name ?? "") : UNDEFINED;
   if (key === "$$typeof") {
-    return TYPEOF_BY_DEFINITION[definition.kind] ?? unknown(`${definition.kind} component.$$typeof`);
+    return (
+      TYPEOF_BY_DEFINITION[definition.kind] ?? unknown(`${definition.kind} component.$$typeof`)
+    );
   }
   if (key === "render" && definition.kind === "forwardRef" && definition.render) {
     return definition.render;

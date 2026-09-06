@@ -419,8 +419,7 @@ export const nameValue = (
   }
   if (value.kind !== "component") return value;
   const definition = value.definition;
-  const isNameable =
-    definition.kind === "context" || (definition.kind === "class" && isDefinition);
+  const isNameable = definition.kind === "context" || (definition.kind === "class" && isDefinition);
   return isNameable && definition.name === null
     ? component({ ...definition, name }, value.statics)
     : value;

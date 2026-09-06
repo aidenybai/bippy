@@ -61,8 +61,10 @@ const getReturnedName = (statements: Statement[]): string | null => {
 
 const toMember = (target: MemberTarget, descriptor: Descriptor): ClassMember => {
   const { key, isStatic } = target;
-  if (isFunctionLike(descriptor.getter)) return { key, isStatic, kind: "getter", fn: descriptor.getter };
-  if (isFunctionLike(descriptor.value)) return { key, isStatic, kind: "method", fn: descriptor.value };
+  if (isFunctionLike(descriptor.getter))
+    return { key, isStatic, kind: "getter", fn: descriptor.getter };
+  if (isFunctionLike(descriptor.value))
+    return { key, isStatic, kind: "method", fn: descriptor.value };
   return { key, isStatic, kind: "field", value: descriptor.value };
 };
 
@@ -99,14 +101,17 @@ const getDescriptorMembers = (
   for (const element of argument.elements) {
     if (element?.type !== "ObjectExpression") return null;
     const descriptor = readDescriptor(element);
-    if (descriptor?.key == null) return null;
+    if (descriptor === null || descriptor.key === null) return null;
     members.push(toMember({ key: descriptor.key, isStatic }, descriptor));
   }
   return members;
 };
 
 /** Which member a reference names: `X.prototype.m` and `_proto.m` are instance members, `X.m` a static. */
-const getMemberTarget = (reference: Expression, collector: MemberCollector): MemberTarget | null => {
+const getMemberTarget = (
+  reference: Expression,
+  collector: MemberCollector,
+): MemberTarget | null => {
   const chain = getMemberChain(reference);
   if (!chain) return null;
   const [root, ...path] = chain;

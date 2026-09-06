@@ -181,18 +181,31 @@ type Verdict = boolean | null;
 const presentValue = (item: StaticValue): StaticValue =>
   item.kind === "optional" ? item.value : item;
 
+interface MatchSearch {
+  items: StaticValue[];
+  verdicts: Verdict[];
+  order: number[];
+  describeTest: (index: number) => string;
+  /** What the search yields for a hit at `index` (`find` the item, `indexOf` its position). */
+  select: (index: number) => StaticValue;
+  /** What it yields when nothing matches. */
+  miss: StaticValue;
+}
+
 /**
  * The first item, in `order`, whose verdict holds. Undecided verdicts and
  * items that may be absent each add a branch that falls through to the next
  * candidate, which is how `find` reads on a filtered array; `null` once the
  * branching would outgrow its usefulness.
  */
-const findMatch = (
-  items: StaticValue[],
-  verdicts: Verdict[],
-  order: number[],
-  describeTest: (index: number) => string,
-): StaticValue | null => {
+const findMatch = ({
+  items,
+  verdicts,
+  order,
+  describeTest,
+  select,
+  miss,
+}: MatchSearch): StaticValue | null => {
   const candidates: number[] = [];
   for (const index of order) {
     if (verdicts[index] === false) continue;
@@ -200,17 +213,23 @@ const findMatch = (
     if (verdicts[index] === true && items[index].kind !== "optional") break;
   }
   if (candidates.length > SELECTION_LIMIT) return null;
-  let fallthrough: StaticValue = UNDEFINED;
+  let fallthrough = miss;
   for (const index of candidates.reverse()) {
     const item = items[index];
-    const candidate = presentValue(item);
     const matched: StaticValue =
       verdicts[index] === true
-        ? candidate
-        : conditional(describeTest(index), candidate, fallthrough);
+        ? select(index)
+        : conditional(describeTest(index), select(index), fallthrough);
     fallthrough = item.kind === "optional" ? conditional(item.test, matched, fallthrough) : matched;
   }
   return fallthrough;
+};
+
+/** Whether `item` is the value `includes`/`indexOf` look for, by SameValueZero on known primitives. */
+const equalsSearched = (item: StaticValue, searched: StaticValue): Verdict => {
+  const candidate = presentValue(item);
+  if (candidate.kind !== "literal" || searched.kind !== "literal") return null;
+  return candidate.value === searched.value || Object.is(candidate.value, searched.value);
 };
 
 /** `some`/`every` decided from per-item verdicts; an absent item cannot decide either. */
@@ -291,18 +310,26 @@ export const evaluateArrayMethod = (
       return array(kept);
     }
     case "find":
-    case "findLast": {
-      if (!isCallable(callback)) return unknown(callDescription);
-      if (!items) return unknown(callDescription);
+    case "findLast":
+    case "findIndex":
+    case "indexOf": {
+      if (!items || !callback) return unknown(callDescription);
+      const isByValue = method === "indexOf";
+      if (!isByValue && !isCallable(callback)) return unknown(callDescription);
       const order = items.map((_item, index) => index);
       if (method === "findLast") order.reverse();
+      const isPosition = method === "findIndex" || isByValue;
       return (
-        findMatch(
+        findMatch({
           items,
-          testItems(callback),
+          verdicts: isByValue
+            ? items.map((item) => equalsSearched(item, callback))
+            : testItems(callback),
           order,
-          (index) => `${callDescription} matches [${index}]`,
-        ) ?? unknown(callDescription)
+          describeTest: (index) => `${callDescription} matches [${index}]`,
+          select: isPosition ? indexAt : (index) => presentValue(items[index]),
+          miss: isPosition ? literal(-1) : UNDEFINED,
+        }) ?? unknown(callDescription)
       );
     }
     case "forEach":
@@ -417,16 +444,13 @@ export const evaluateArrayMethod = (
         ? unknown(callDescription)
         : (items.at(callback.value) ?? UNDEFINED);
     }
-    case "includes": {
+    case "includes":
       if (!items || !callback) return unknown(callDescription);
-      const verdicts: Verdict[] = items.map((item) => {
-        const candidate = presentValue(item);
-        return candidate.kind === "literal" && callback.kind === "literal"
-          ? Object.is(candidate.value, callback.value)
-          : null;
-      });
-      return quantify(items, verdicts, false);
-    }
+      return quantify(
+        items,
+        items.map((item) => equalsSearched(item, callback)),
+        false,
+      );
     case "some":
     case "every":
       if (!items || !isCallable(callback)) return unknown(callDescription);

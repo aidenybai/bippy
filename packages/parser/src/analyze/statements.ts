@@ -41,6 +41,7 @@ import {
 } from "./narrowing.js";
 import { assignToTarget, bindPattern } from "./patterns.js";
 import {
+  assignVariable,
   createScope,
   declareVariable,
   forkScope,
@@ -334,10 +335,30 @@ const collectLoopBodyFacts = (body: Statement): LoopBodyFacts => {
   return { assignedNames: collectAssignedNames(body), hasBreak };
 };
 
+/** The identifiers a `for` header initialises, whether it declares them or assigns outer ones. */
+const getForCounters = (init: NonNullable<ForStatement["init"]>): string[] | null => {
+  if (init.type === "VariableDeclaration") {
+    const names = init.declarations.flatMap((declarator) =>
+      declarator.id.type === "Identifier" ? [declarator.id.name] : [],
+    );
+    return names.length === init.declarations.length ? names : null;
+  }
+  const assignments = init.type === "SequenceExpression" ? init.expressions : [init];
+  const names = assignments.flatMap((expression) =>
+    expression.type === "AssignmentExpression" &&
+    expression.operator === "=" &&
+    expression.left.type === "Identifier"
+      ? [expression.left.name]
+      : [],
+  );
+  return names.length === assignments.length ? names : null;
+};
+
 /**
  * Simulates a `for` header without the body: iterations are known when the
  * test stays decidable, the body never breaks and never assigns anything the
- * header reads.
+ * header reads. Counters the header assigns rather than declares keep their
+ * final value once the loop is done.
  */
 const planForIterations = (
   interpreter: Interpreter,
@@ -345,24 +366,34 @@ const planForIterations = (
   context: EvaluationContext,
 ): IterationBinding[] | null => {
   const { init, test, update } = statement;
-  if (init?.type !== "VariableDeclaration" || !test) return null;
-  const counters = init.declarations.flatMap((declarator) =>
-    declarator.id.type === "Identifier" ? [declarator.id.name] : [],
-  );
-  if (counters.length !== init.declarations.length) return null;
+  if (!init || !test) return null;
+  const counters = getForCounters(init);
+  if (counters === null) return null;
   const facts = collectLoopBodyFacts(statement.body);
   if (facts.hasBreak) return null;
   const headerNames = new Set<string>();
   collectIdentifierNames(test, headerNames);
   if (update) collectIdentifierNames(update, headerNames);
   if ([...headerNames].some((name) => facts.assignedNames.has(name))) return null;
-  const scratchContext: EvaluationContext = { ...context, scope: createScope(context.scope) };
-  evaluateStatement(interpreter, init, scratchContext);
+  const scratchContext: EvaluationContext = { ...context, scope: forkScope(context.scope) };
+  if (init.type === "VariableDeclaration") evaluateStatement(interpreter, init, scratchContext);
+  else interpreter.evaluateExpression(init, scratchContext);
   const iterations: IterationBinding[] = [];
   while (iterations.length <= MAX_UNROLLED_ITERATIONS) {
     const truthiness = getTruthiness(interpreter.evaluateExpression(test, scratchContext));
     if (truthiness === null) return null;
-    if (truthiness === false) return iterations;
+    if (truthiness === false) {
+      if (init.type !== "VariableDeclaration") {
+        for (const name of counters) {
+          assignVariable(
+            context.scope,
+            name,
+            lookupVariable(scratchContext.scope, name) ?? UNDEFINED,
+          );
+        }
+      }
+      return iterations;
+    }
     const values = counters.map((name): [string, StaticValue] => [
       name,
       lookupVariable(scratchContext.scope, name) ?? UNDEFINED,

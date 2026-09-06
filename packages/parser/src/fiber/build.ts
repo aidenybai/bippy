@@ -445,7 +445,13 @@ const createFiberFromDefinition = (
         return branch(
           inner.test,
           [inner.whenTrue, inner.whenFalse].map((arm) =>
-            createFiberFromDefinition(builder, parent, element, { ...definition, inner: arm }, frame),
+            createFiberFromDefinition(
+              builder,
+              parent,
+              element,
+              { ...definition, inner: arm },
+              frame,
+            ),
           ),
         );
       }
