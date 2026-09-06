@@ -1,0 +1,66 @@
+import { NULL_VALUE, getObjectProperty, objectFromRecord } from "../evaluate/values.js";
+import type {
+  StaticElementType,
+  StaticElementValue,
+  StaticObjectValue,
+  StaticValue,
+  StubComponent,
+  StubRenderTools,
+} from "../types.js";
+
+// Building blocks for framework models: values a framework's package exports
+// resolve to so the static side can stand in for code it does not analyze.
+
+export const element = (
+  type: StaticElementType,
+  props: StaticObjectValue,
+  key: StaticValue | null = null,
+): StaticElementValue => ({
+  kind: "element",
+  type,
+  key,
+  props,
+  location: null,
+  environment: null,
+});
+
+export const hostElement = (
+  tagName: string,
+  props: Record<string, StaticValue>,
+): StaticElementValue => element({ kind: "host", tagName }, objectFromRecord(props));
+
+export const stubValue = (stub: StubComponent): StaticValue => ({
+  kind: "component-reference",
+  type: { kind: "stub", stub },
+});
+
+export const stubElement = (
+  stub: StubComponent,
+  props: Record<string, StaticValue>,
+): StaticElementValue => element({ kind: "stub", stub }, objectFromRecord(props));
+
+export const nativeFunction = (
+  name: string,
+  call: (args: StaticValue[], tools: StubRenderTools) => StaticValue,
+): StaticValue => ({ kind: "native-function", name, call });
+
+/** A component that renders exactly its children (context/state wrappers with no host output). */
+export const passthroughStub = (displayName: string): StubComponent => ({
+  displayName,
+  render: (props) => getObjectProperty(props, "children"),
+});
+
+/** A component that renders nothing (effects, portals to `<head>`, metadata). */
+export const emptyStub = (displayName: string): StubComponent => ({
+  displayName,
+  render: () => NULL_VALUE,
+});
+
+/** Copies `props` minus the framework-only keys the component consumes itself. */
+export const omitProps = (
+  props: StaticObjectValue,
+  omitted: ReadonlySet<string>,
+): StaticObjectValue => ({
+  kind: "object",
+  entries: props.entries.filter((entry) => entry.kind !== "property" || !omitted.has(entry.key)),
+});

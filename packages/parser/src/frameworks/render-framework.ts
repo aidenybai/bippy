@@ -4,6 +4,7 @@ import { createStaticRenderer, type StaticRenderer } from "../render/static-rend
 import type { StaticRenderResult, StaticRendererOptions } from "../types.js";
 import type { FrameworkKind } from "./framework-profile.js";
 import { renderNextAppRoute } from "./next-app-router.js";
+import { createNextModel } from "./next-externals.js";
 import { renderNextPagesRoute } from "./next-pages-router.js";
 import { createReactRouterModel, renderReactRouterRoute } from "./react-router.js";
 
@@ -34,14 +35,22 @@ export const renderFrameworkTarget = (
   switch (target.framework) {
     case "spa":
       return createStaticRenderer(options).renderEntry(requireField(target, "entry"));
-    case "next-app":
-      return renderNextAppRoute(createStaticRenderer({ ...options, serverComponents: true }), {
-        route: requireField(target, "route"),
+    case "next-app": {
+      const route = requireField(target, "route");
+      const model = createNextModel({ kind: "next-app", route });
+      const renderer = createStaticRenderer({
+        ...options,
+        serverComponents: true,
+        externalValues: model.externalValues,
       });
-    case "next-pages":
-      return renderNextPagesRoute(createStaticRenderer(options), {
-        route: requireField(target, "route"),
-      });
+      return renderNextAppRoute(renderer, model, { route });
+    }
+    case "next-pages": {
+      const route = requireField(target, "route");
+      const model = createNextModel({ kind: "next-pages", route });
+      const renderer = createStaticRenderer({ ...options, externalValues: model.externalValues });
+      return renderNextPagesRoute(renderer, model, { route });
+    }
     case "react-router": {
       const model = createReactRouterModel(requireField(target, "route"));
       const renderer = createStaticRenderer({ ...options, externalValues: model.externalValues });
@@ -69,10 +78,7 @@ export const createRendererForEntry = (
   cloneDirectory: string,
 ): StaticRenderer => createStaticRenderer(rendererOptionsForEntry(entry, cloneDirectory));
 
-export const renderFramework = (
-  entry: CorpusEntry,
-  cloneDirectory: string,
-): StaticRenderResult =>
+export const renderFramework = (entry: CorpusEntry, cloneDirectory: string): StaticRenderResult =>
   renderFrameworkTarget(
     { framework: entry.framework, entry: entry.static.entry, route: entry.static.route },
     rendererOptionsForEntry(entry, cloneDirectory),

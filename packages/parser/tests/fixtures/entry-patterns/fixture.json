@@ -1,0 +1,3 @@
+{
+  "notes": "Root render inside a function body, React.createElement through a default import, Object.assign statics on a component, and <lowercase.Provider> member tags."
+}

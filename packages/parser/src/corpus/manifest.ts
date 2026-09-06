@@ -167,7 +167,8 @@ class ManifestReader {
 const readFramework = (reader: ManifestReader): FrameworkKind => {
   const value = reader.string("framework");
   const kind = FRAMEWORK_KINDS.find((candidate) => candidate === value);
-  if (!kind) throw new Error(`unknown framework "${value}"; expected ${FRAMEWORK_KINDS.join(", ")}`);
+  if (!kind)
+    throw new Error(`unknown framework "${value}"; expected ${FRAMEWORK_KINDS.join(", ")}`);
   return kind;
 };
 

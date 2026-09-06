@@ -1,13 +1,10 @@
-import { getObjectProperty } from "../evaluate/values.js";
+import { getObjectProperty, isKnownString } from "../evaluate/values.js";
 import type {
   ComponentDefinition,
   StaticElementType,
   StaticObjectValue,
   StaticValue,
 } from "../types.js";
-
-const isKnownString = (value: StaticValue): boolean =>
-  value.kind === "primitive" && typeof value.value === "string";
 
 const isNonNullish = (value: StaticValue): boolean =>
   !(value.kind === "primitive" && (value.value === null || value.value === undefined));

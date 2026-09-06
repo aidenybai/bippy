@@ -220,6 +220,7 @@ export const runCorpusEntry = async (
     return result;
   } finally {
     result.durationMs = Date.now() - startedAt;
-    if (cloneDirectory) writeArtifacts(outputDirectory, entry, staticResult, capture, cloneDirectory);
+    if (cloneDirectory)
+      writeArtifacts(outputDirectory, entry, staticResult, capture, cloneDirectory);
   }
 };

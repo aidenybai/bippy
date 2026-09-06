@@ -234,6 +234,10 @@ const callGlobal = (
       );
     }
     case "Object.assign":
+      // Statics attached to a function/class (`Object.assign(Component, {...})`)
+      // do not change what it renders; keep the callable identity.
+      if (first && first.kind !== "object" && first.kind !== "unknown" && first.kind !== "branch")
+        return first;
       return objectValue(args.map((argument) => ({ kind: "spread", value: argument })));
     case "Object.freeze":
     case "Object.seal":

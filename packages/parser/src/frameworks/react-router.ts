@@ -2,6 +2,7 @@ import path from "node:path";
 import {
   NULL_VALUE,
   UNDEFINED_VALUE,
+  branchValue,
   getObjectProperty,
   getTruthiness,
   listValue,
@@ -12,11 +13,11 @@ import {
 } from "../evaluate/values.js";
 import { toElementType } from "../react/element-type.js";
 import { findRootRenderCalls } from "../render/find-root-elements.js";
+import { AUTO_ROUTES_PACKAGE, readAutoRoutes } from "./react-router-auto-routes.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
 import type {
   ContextDefinition,
   ExternalValueProvider,
-  StaticElementType,
   StaticElementValue,
   StaticObjectValue,
   StaticRenderResult,
@@ -26,6 +27,7 @@ import type {
 } from "../types.js";
 import { ForwardRefTag } from "../work-tags.js";
 import { splitPathname } from "./route-files.js";
+import { element, emptyStub, nativeFunction, passthroughStub, stubValue } from "./stubs.js";
 
 export interface ReactRouterRouteOptions {
   /**
@@ -46,7 +48,12 @@ export interface ReactRouterModel {
   externalValues: ExternalValueProvider;
 }
 
-const ROUTER_PACKAGES = new Set(["react-router", "react-router-dom", "@remix-run/react"]);
+const ROUTER_PACKAGES = new Set([
+  "react-router",
+  "react-router/dom",
+  "react-router-dom",
+  "@remix-run/react",
+]);
 const ROUTE_CONFIG_PACKAGE = "@react-router/dev/routes";
 
 /**
@@ -69,7 +76,7 @@ const OUTLET_CONTEXT: ContextDefinition = {
   location: null,
 };
 
-interface RouteRecord {
+export interface RouteRecord {
   path: string | null;
   index: boolean;
   element: StaticValue | null;
@@ -96,53 +103,87 @@ const uncertainRoute = (uncertainty: string): RouteRecord => ({
   uncertainty,
 });
 
-const readRouteObject = (value: StaticValue): RouteRecord => {
-  if (value.kind !== "object") return uncertainRoute(`route is ${value.kind}`);
-  const hasSpread = value.entries.some((entry) => entry.kind === "spread");
-  const element = getObjectProperty(value, "element");
-  const component = getObjectProperty(value, "Component");
-  const lazy = getObjectProperty(value, "lazy");
+/** Evaluates a route's `lazy` function as the router does when it awaits the route module; null when unavailable. */
+type LazyResolver = ((lazy: StaticValue) => StaticValue) | null;
+
+interface RouteContent {
+  element: StaticValue | null;
+  component: StaticValue | null;
+  uncertainty: string | null;
+}
+
+/** Route module fields (`element`, `Component`), taking `lazy`'s awaited module as a fallback source. */
+const readRouteContent = (
+  fields: StaticObjectValue,
+  lazy: StaticValue,
+  resolveLazy: LazyResolver,
+): RouteContent => {
+  const own = {
+    element: getObjectProperty(fields, "element"),
+    component: getObjectProperty(fields, "Component"),
+  };
+  if (!isDefined(lazy)) {
+    return {
+      element: isDefined(own.element) ? own.element : null,
+      component: isDefined(own.component) ? own.component : null,
+      uncertainty: null,
+    };
+  }
+  const lazyModule = resolveLazy && lazy.kind === "function" ? resolveLazy(lazy) : null;
+  if (!lazyModule || lazyModule.kind !== "object") {
+    return { element: null, component: null, uncertainty: "route is loaded lazily" };
+  }
+  const element = isDefined(own.element) ? own.element : getObjectProperty(lazyModule, "element");
+  const component = isDefined(own.component)
+    ? own.component
+    : getObjectProperty(lazyModule, "Component");
   return {
-    path: readString(getObjectProperty(value, "path")),
-    index: getTruthiness(getObjectProperty(value, "index")) === true,
     element: isDefined(element) ? element : null,
     component: isDefined(component) ? component : null,
-    file: readString(getObjectProperty(value, "file")),
-    children: readRouteList(getObjectProperty(value, "children")),
-    uncertainty: hasSpread
-      ? "route object has a spread"
-      : isDefined(lazy)
-        ? "route is loaded lazily"
-        : null,
+    uncertainty: null,
   };
 };
 
-const readRouteList = (value: StaticValue): RouteRecord[] => {
-  if (value.kind === "list") return value.items.map(readRouteObject);
+const readRouteObject = (value: StaticValue, resolveLazy: LazyResolver): RouteRecord => {
+  if (value.kind !== "object") return uncertainRoute(`route is ${value.kind}`);
+  const hasSpread = value.entries.some((entry) => entry.kind === "spread");
+  const content = readRouteContent(value, getObjectProperty(value, "lazy"), resolveLazy);
+  return {
+    path: readString(getObjectProperty(value, "path")),
+    index: getTruthiness(getObjectProperty(value, "index")) === true,
+    element: content.element,
+    component: content.component,
+    file: readString(getObjectProperty(value, "file")),
+    children: readRouteList(getObjectProperty(value, "children"), resolveLazy),
+    uncertainty: hasSpread ? "route object has a spread" : content.uncertainty,
+  };
+};
+
+const readRouteList = (value: StaticValue, resolveLazy: LazyResolver): RouteRecord[] => {
+  if (value.kind === "list") return value.items.map((item) => readRouteObject(item, resolveLazy));
   if (value.kind === "primitive") return [];
   return [uncertainRoute(`route list is ${value.kind}`)];
 };
 
 /** `<Route path element>` elements nested under `<Routes>` are routes too (`createRoutesFromChildren`). */
-const readRouteElements = (value: StaticValue): RouteRecord[] => {
+const readRouteElements = (value: StaticValue, resolveLazy: LazyResolver): RouteRecord[] => {
   const elements = value.kind === "list" ? value.items : [value];
   const routes: RouteRecord[] = [];
   for (const item of elements) {
     if (item.kind === "element" && item.type.kind === "stub" && item.type.stub === ROUTE_STUB) {
       const props = item.props;
-      const element = getObjectProperty(props, "element");
-      const component = getObjectProperty(props, "Component");
+      const content = readRouteContent(props, getObjectProperty(props, "lazy"), resolveLazy);
       routes.push({
         path: readString(getObjectProperty(props, "path")),
         index: getTruthiness(getObjectProperty(props, "index")) === true,
-        element: isDefined(element) ? element : null,
-        component: isDefined(component) ? component : null,
+        element: content.element,
+        component: content.component,
         file: null,
-        children: readRouteElements(getObjectProperty(props, "children")),
-        uncertainty: null,
+        children: readRouteElements(getObjectProperty(props, "children"), resolveLazy),
+        uncertainty: content.uncertainty,
       });
     } else if (item.kind === "element" && item.type.kind === "fragment") {
-      routes.push(...readRouteElements(getObjectProperty(item.props, "children")));
+      routes.push(...readRouteElements(getObjectProperty(item.props, "children"), resolveLazy));
     } else if (item.kind !== "primitive") {
       routes.push(uncertainRoute(`route child is ${item.kind}`));
     }
@@ -244,22 +285,11 @@ const bestMatch = (routes: RouteRecord[], pathname: string): RouteMatch[] | null
   return matches[0].chain;
 };
 
-const element = (
-  type: StaticElementType,
-  props: StaticObjectValue,
-  key: StaticValue | null = null,
-): StaticElementValue => ({
-  kind: "element",
-  type,
-  key,
-  props,
-  location: null,
-  environment: null,
-});
-
 const paramsValue = (params: RouteParams): StaticValue =>
   objectFromRecord(
-    Object.fromEntries(Object.entries(params).map(([name, value]) => [name, primitiveValue(value)])),
+    Object.fromEntries(
+      Object.entries(params).map(([name, value]) => [name, primitiveValue(value)]),
+    ),
   );
 
 /**
@@ -318,13 +348,27 @@ const renderDataRoute = (route: RouteRecord, outlet: StaticValue): StaticValue =
   return outlet;
 };
 
+/**
+ * Routes whose path is unknown (a spread of a computed list, a dynamic
+ * object) may rank above any statically matched route, so a match found next
+ * to them is only the preferred alternative.
+ */
 const renderMatchedRoutes = (routes: RouteRecord[], pathname: string): StaticValue => {
-  if (routes.some((route) => route.uncertainty !== null && route.path === null)) {
-    return unknownValue("react-router: routes could not be read statically");
-  }
+  const unreadable = routes.filter((route) => route.uncertainty !== null && route.path === null);
   const chain = bestMatch(routes, pathname);
-  if (!chain) return unknownValue(`react-router: no route matches ${pathname}`);
-  return composeChain(chain, renderDataRoute);
+  if (!chain) {
+    return unknownValue(
+      unreadable.length > 0
+        ? "react-router: routes could not be read statically"
+        : `react-router: no route matches ${pathname}`,
+    );
+  }
+  const matched = composeChain(chain, renderDataRoute);
+  if (unreadable.length === 0) return matched;
+  return branchValue(
+    [matched, unknownValue(`react-router: ${unreadable[0].uncertainty}`)],
+    `${unreadable.length} route(s) could not be read statically and may also match ${pathname}`,
+  );
 };
 
 const readRouteContext = (tools: StubRenderTools, field: "outlet" | "params"): StaticValue => {
@@ -384,16 +428,6 @@ const NAV_LINK_STUB: StubComponent = {
   },
 };
 
-const passthroughStub = (displayName: string): StubComponent => ({
-  displayName,
-  render: (props) => getObjectProperty(props, "children"),
-});
-
-const emptyStub = (displayName: string): StubComponent => ({
-  displayName,
-  render: () => NULL_VALUE,
-});
-
 const FORM_STUB: StubComponent = {
   displayName: "Form",
   tag: ForwardRefTag,
@@ -403,16 +437,6 @@ const FORM_STUB: StubComponent = {
       objectFromRecord({ children: getObjectProperty(props, "children") }),
     ),
 };
-
-const stubValue = (stub: StubComponent): StaticValue => ({
-  kind: "component-reference",
-  type: { kind: "stub", stub },
-});
-
-const nativeFunction = (
-  name: string,
-  call: (args: StaticValue[], tools: StubRenderTools) => StaticValue,
-): StaticValue => ({ kind: "native-function", name, call });
 
 const createRouterFactory = (name: string): StaticValue =>
   nativeFunction(name, (args) => objectFromRecord({ routes: args[0] ?? listValue([]) }));
@@ -460,9 +484,7 @@ const routerHookValue = (importedName: string, pathname: string): StaticValue | 
         }),
       );
     case "useNavigate":
-      return nativeFunction(importedName, () =>
-        nativeFunction("navigate", () => UNDEFINED_VALUE),
-      );
+      return nativeFunction(importedName, () => nativeFunction("navigate", () => UNDEFINED_VALUE));
     case "useNavigationType":
       return nativeFunction(importedName, () => primitiveValue("POP"));
     case "useInRouterContext":
@@ -525,18 +547,27 @@ const routeConfigValue = (name: string): StaticValue | null => {
 export const createReactRouterModel = (pathname: string): ReactRouterModel => {
   const routerProviderStub: StubComponent = {
     displayName: "RouterProvider",
-    render: (props) => {
+    render: (props, tools) => {
       const router = getObjectProperty(props, "router");
       if (router.kind !== "object") {
         return unknownValue("react-router: router object was not created statically");
       }
-      return renderMatchedRoutes(readRouteList(getObjectProperty(router, "routes")), pathname);
+      const resolveLazy: LazyResolver = (lazy) => tools.callAwaited(lazy, []);
+      return renderMatchedRoutes(
+        readRouteList(getObjectProperty(router, "routes"), resolveLazy),
+        pathname,
+      );
     },
   };
   const routesStub: StubComponent = {
     displayName: "Routes",
-    render: (props) =>
-      renderMatchedRoutes(readRouteElements(getObjectProperty(props, "children")), pathname),
+    render: (props, tools) =>
+      renderMatchedRoutes(
+        readRouteElements(getObjectProperty(props, "children"), (lazy) =>
+          tools.callAwaited(lazy, []),
+        ),
+        pathname,
+      ),
   };
 
   const routerValue = (importedName: string): StaticValue | null => {
@@ -580,9 +611,9 @@ export const createReactRouterModel = (pathname: string): ReactRouterModel => {
 
   return {
     pathname,
-    externalValues: (packageName, importedName) => {
-      if (ROUTER_PACKAGES.has(packageName)) return routerValue(importedName);
-      if (packageName === ROUTE_CONFIG_PACKAGE) return routeConfigValue(importedName);
+    externalValues: (specifier, importedName) => {
+      if (ROUTER_PACKAGES.has(specifier)) return routerValue(importedName);
+      if (specifier === ROUTE_CONFIG_PACKAGE) return routeConfigValue(importedName);
       return null;
     },
   };
@@ -630,6 +661,8 @@ const renderFrameworkRoutes = (
         interpreter.report("react-router-parse", `could not parse ${route.file}`, null, "error");
         return unknownValue(`unparsable route module ${route.file}`);
       }
+      // Resource routes (loader/action only) render nothing of their own.
+      if (!interpreter.graph.listExportNames(module).includes("default")) return outlet;
       const component = interpreter.evaluateModuleExport(module, "default");
       const params = chain.find((match) => match.route === route)?.params ?? leafParams;
       return element(
@@ -681,7 +714,14 @@ export const renderReactRouterRoute = (
   const probed: { routes: RouteRecord[] | null } = { routes: null };
   const probe = renderer.renderWith((interpreter) => {
     const config = interpreter.evaluateModuleExport(module, "default");
-    if (config.kind === "list") probed.routes = readRouteList(config);
+    if (config.kind === "list") probed.routes = readRouteList(config, null);
+    else if (
+      config.kind === "external" &&
+      config.packageName === AUTO_ROUTES_PACKAGE &&
+      config.importedName === "autoRoutes()"
+    ) {
+      probed.routes = readAutoRoutes(path.dirname(modulePath));
+    }
     return NULL_VALUE;
   });
   if (probed.routes === null) {

@@ -1,0 +1,370 @@
+{
+  "entries": [
+    {
+      "id": "actual",
+      "repository": "https://github.com/actualbudget/actual",
+      "revision": "8867158f0a2e101467fb191c9e253f47c75a9e2d",
+      "description": "Actual Budget desktop client (Vite SPA, React Compiler, Yarn 4 workspaces)",
+      "framework": "spa",
+      "workingDirectory": "packages/desktop-client",
+      "install": "yarn install",
+      "dev": "yarn start:browser",
+      "url": "http://localhost:3001/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "packages/desktop-client",
+        "entry": "src/index.tsx",
+        "maxFiberCount": 20000
+      },
+      "notes": "start:browser builds loot-core for the browser before serving; the first render is the budget-file picker."
+    },
+    {
+      "id": "bulletproof-react",
+      "repository": "https://github.com/alan2207/bulletproof-react",
+      "revision": "9506629ed003a561c6627735480cce4994244bb4",
+      "description": "bulletproof-react Vite app (createBrowserRouter data router, MSW mocks)",
+      "framework": "react-router",
+      "workingDirectory": "apps/react-vite",
+      "install": "cd apps/react-vite && yarn install && cp -n .env.example .env; true",
+      "dev": "yarn dev",
+      "url": "http://localhost:3000/",
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": "apps/react-vite",
+        "entry": "src/main.tsx",
+        "route": "/"
+      },
+      "notes": "Routes are lazily imported (`lazy: () => import(...)`), so the static side stops at the router's lazy boundary."
+    },
+    {
+      "id": "cal-diy",
+      "repository": "https://github.com/calcom/cal.diy",
+      "revision": "abffde336e744e15cf69626c10e436d6172bc406",
+      "description": "cal.diy web app (Next app router + pages router hybrid, Yarn 4 monorepo, Prisma)",
+      "framework": "next-app",
+      "workingDirectory": "apps/web",
+      "install": "yarn install",
+      "dev": "yarn dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": "apps/web",
+        "route": "/",
+        "maxFiberCount": 20000
+      },
+      "notes": "The dev server needs a Postgres database and app-store env; runtime capture is expected to be blocked outside a provisioned environment."
+    },
+    {
+      "id": "epic-stack",
+      "repository": "https://github.com/epicweb-dev/epic-stack",
+      "revision": "8473afd804b66dba6a23f317908dc35d1535e90d",
+      "description": "Epic Stack (React Router framework mode, file-convention routes via react-router-auto-routes, Prisma)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "setup": ["npx prisma migrate deploy", "npx prisma generate --sql"],
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "app/routes.ts",
+        "route": "/"
+      },
+      "notes": "routes.ts delegates to react-router-auto-routes; the static side mirrors its file conventions (_layout nesting, pathless _groups, $params, [.] escapes, trailing-underscore opt-outs) to rebuild the route table without running the generator. Loader data, honeypot and theme values stay unknown."
+    },
+    {
+      "id": "excalidraw",
+      "repository": "https://github.com/excalidraw/excalidraw",
+      "revision": "214cd6e6e8ac3ad6b68486aa7aa7241abdf9445f",
+      "description": "Excalidraw web app (Vite SPA over the @excalidraw/* workspace packages, Yarn 1)",
+      "framework": "spa",
+      "workingDirectory": "excalidraw-app",
+      "install": "yarn install",
+      "dev": "yarn vite",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "excalidraw-app/index.tsx",
+        "externalPackageAllowList": ["@excalidraw/excalidraw", "@excalidraw/common", "@excalidraw/element", "@excalidraw/math", "@excalidraw/utils"],
+        "maxFiberCount": 20000
+      }
+    },
+    {
+      "id": "graphiql",
+      "repository": "https://github.com/graphql/graphiql",
+      "revision": "fd32cea3e191eb6eb41b785e157403308d787b12",
+      "description": "GraphiQL IDE dev page (Vite SPA; the page loads React 18 UMD + the built @graphiql bundle)",
+      "framework": "spa",
+      "workingDirectory": "packages/graphiql",
+      "install": "yarn install && yarn build",
+      "dev": "yarn dev",
+      "url": "http://localhost:5173/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "packages/graphiql",
+        "entry": "src/e2e.ts",
+        "externalPackageAllowList": ["@graphiql/react", "@graphiql/plugin-explorer"],
+        "maxFiberCount": 20000
+      },
+      "notes": "The dev page renders the prebuilt UMD bundle, so runtime fibers come from compiled output while the static side reads sources."
+    },
+    {
+      "id": "invoify",
+      "repository": "https://github.com/al1abb/invoify",
+      "revision": "3859b3cbae28ca4ec559db5ef87e41b798740340",
+      "description": "Invoify invoice generator (Next app router, next-intl, shadcn/ui)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/en",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/en",
+        "maxFiberCount": 20000
+      }
+    },
+    {
+      "id": "lexical",
+      "repository": "https://github.com/facebook/lexical",
+      "revision": "c3b629dcf6b5111811bb9ca5a3db0665099b2856",
+      "description": "Lexical playground (Vite SPA over the lexical monorepo sources, pnpm)",
+      "framework": "spa",
+      "workingDirectory": "packages/lexical-playground",
+      "install": "pnpm install",
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "packages/lexical-playground/src/index.tsx",
+        "maxFiberCount": 20000
+      }
+    },
+    {
+      "id": "nextjs-boilerplate",
+      "repository": "https://github.com/ixartz/Next-js-Boilerplate",
+      "revision": "1dffa39a32450300c8b01d8cfd3819f9b6e95842",
+      "description": "Next-js-Boilerplate (Next app router, next-intl locale segment, Clerk, Drizzle + PGlite)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/en",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/en",
+        "maxFiberCount": 20000
+      }
+    },
+    {
+      "id": "nextjs-examples",
+      "repository": "https://github.com/vercel/next.js",
+      "revision": "4fed8eaf197aaa60fd85371352482199a4c2107f",
+      "description": "vercel/next.js examples/blog-starter (Next app router, async server components, markdown posts)",
+      "framework": "next-app",
+      "workingDirectory": "examples/blog-starter",
+      "install": "cd examples/blog-starter && npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": "examples/blog-starter",
+        "route": "/"
+      }
+    },
+    {
+      "id": "puck",
+      "repository": "https://github.com/puckeditor/puck",
+      "revision": "74a42c74db2b52da13ce1fc49087a07a6653dac8",
+      "description": "Puck editor demo app (Next app router over the @measured/puck workspace package, Yarn 1)",
+      "framework": "next-app",
+      "workingDirectory": "apps/demo",
+      "install": "yarn install",
+      "dev": "yarn dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "apps/demo",
+        "route": "/",
+        "maxFiberCount": 20000
+      }
+    },
+    {
+      "id": "react-admin",
+      "repository": "https://github.com/marmelab/react-admin",
+      "revision": "fa7ede4a25d36917b41f9b9e9936e9e7ab8fa8ab",
+      "description": "react-admin simple example (Vite SPA, react-admin framework, Yarn 4 workspaces)",
+      "framework": "spa",
+      "workingDirectory": "examples/simple",
+      "install": "yarn install",
+      "dev": "yarn dev",
+      "url": "http://localhost:8080/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "examples/simple",
+        "entry": "src/index.tsx",
+        "maxFiberCount": 20000
+      },
+      "notes": "react-admin's <Admin> owns routing and data loading; everything below it is an opaque dependency for the static side."
+    },
+    {
+      "id": "react-email",
+      "repository": "https://github.com/resend/react-email",
+      "revision": "0f0cb94e1f15581131a2d50b80f8daa13dd1c9fc",
+      "description": "react.email marketing site (Next app router, pnpm + turbo workspace)",
+      "framework": "next-app",
+      "workingDirectory": "apps/web",
+      "install": "pnpm install",
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "apps/web",
+        "route": "/",
+        "maxFiberCount": 20000
+      }
+    },
+    {
+      "id": "react-router-templates",
+      "repository": "https://github.com/remix-run/react-router-templates",
+      "revision": "b68be71489a22315c7a734a86a18347745b393d2",
+      "description": "React Router `default` template (framework mode, routes.ts + root.tsx, Vite)",
+      "framework": "react-router",
+      "workingDirectory": "default",
+      "install": "pnpm install",
+      "dev": "pnpm dev",
+      "url": "http://localhost:5173/",
+      "settleMs": 5000,
+      "static": {
+        "rootDirectory": "default",
+        "entry": "app/routes.ts",
+        "route": "/"
+      }
+    },
+    {
+      "id": "redux-toolkit",
+      "repository": "https://github.com/reduxjs/redux-toolkit",
+      "revision": "e99fe6135188219f031c5028f653fb82e671de24",
+      "description": "RTK Query react/basic example (react-scripts SPA inside the Yarn 4 workspace)",
+      "framework": "spa",
+      "workingDirectory": "examples/query/react/basic",
+      "install": "yarn install",
+      "dev": "yarn start",
+      "env": { "BROWSER": "none", "PORT": "3005" },
+      "url": "http://localhost:3005/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": "examples/query/react/basic",
+        "entry": "src/index.tsx"
+      }
+    },
+    {
+      "id": "shadcn-ui",
+      "repository": "https://github.com/shadcn-ui/ui",
+      "revision": "7c9eaba1c0a6404c990c144a654792e3313c650d",
+      "description": "shadcn/ui v4 site (Next app router, registry-driven pages, pnpm + turbo)",
+      "framework": "next-app",
+      "workingDirectory": "apps/v4",
+      "install": "pnpm install",
+      "dev": "pnpm dev",
+      "url": "http://localhost:4000/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": "apps/v4",
+        "route": "/",
+        "maxFiberCount": 20000
+      }
+    },
+    {
+      "id": "sonner",
+      "repository": "https://github.com/emilkowalski/sonner",
+      "revision": "8e4662b39255120b62138312058f5d77c0139a5e",
+      "description": "sonner test app (Next app router page exercising the toast library from workspace source)",
+      "framework": "next-app",
+      "workingDirectory": "test",
+      "install": "pnpm install && pnpm build",
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 5000,
+      "static": {
+        "rootDirectory": "test",
+        "route": "/",
+        "externalPackageAllowList": ["sonner"]
+      }
+    },
+    {
+      "id": "tanstack-query",
+      "repository": "https://github.com/TanStack/query",
+      "revision": "1893a965d219032207cbe147880d0e9f757a5a56",
+      "description": "TanStack Query examples/react/basic (Vite SPA, QueryClientProvider + useQuery)",
+      "framework": "spa",
+      "workingDirectory": "examples/react/basic",
+      "install": "pnpm install",
+      "dev": "pnpm dev",
+      "url": "http://localhost:5173/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": "examples/react/basic",
+        "entry": "src/index.tsx"
+      }
+    },
+    {
+      "id": "tanstack-router",
+      "repository": "https://github.com/TanStack/router",
+      "revision": "cf166d160e6397007a979bfc7065b45ff69ea543",
+      "description": "TanStack Router examples/react/basic (Vite SPA, code-based route tree, lazy routes)",
+      "framework": "spa",
+      "workingDirectory": "examples/react/basic",
+      "install": "pnpm install",
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": "examples/react/basic",
+        "entry": "src/main.tsx"
+      },
+      "notes": "TanStack Router is not modeled; <RouterProvider> is an opaque dependency and the static tree ends there."
+    },
+    {
+      "id": "tldraw",
+      "repository": "https://github.com/tldraw/tldraw",
+      "revision": "e8f61acedcbf2dc69693ea1e1f612a7f635fb4b5",
+      "description": "tldraw examples app (Vite SPA with a react-router-dom data router, Yarn 4 workspaces)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "yarn install",
+      "dev": "yarn dev",
+      "url": "http://localhost:5420/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": "apps/examples",
+        "entry": "src/index.tsx",
+        "route": "/",
+        "maxFiberCount": 20000
+      }
+    }
+  ]
+}

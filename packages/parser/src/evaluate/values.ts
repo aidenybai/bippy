@@ -13,6 +13,11 @@ import type {
   UnknownPrimitiveType,
 } from "../types.js";
 
+export const isKnownString = (
+  value: StaticValue,
+): value is StaticPrimitiveValue & { value: string } =>
+  value.kind === "primitive" && typeof value.value === "string";
+
 export const UNDEFINED_VALUE: StaticPrimitiveValue = { kind: "primitive", value: undefined };
 export const NULL_VALUE: StaticPrimitiveValue = { kind: "primitive", value: null };
 export const TRUE_VALUE: StaticPrimitiveValue = { kind: "primitive", value: true };
@@ -176,6 +181,8 @@ export const getTruthiness = (value: StaticValue): boolean | null => {
     case "unknown":
     case "branch":
       return null;
+    case "external":
+      return value.derived ? null : true;
     case "element":
     case "list":
     case "repeat":
@@ -185,7 +192,6 @@ export const getTruthiness = (value: StaticValue): boolean | null => {
     case "component-reference":
     case "context":
     case "react-api":
-    case "external":
     case "namespace":
     case "global":
     case "method":
@@ -326,7 +332,7 @@ export const describeElementType = (type: StaticElementType): string => {
     case "external":
       return type.displayName;
     case "stub":
-      return type.stub.displayName;
+      return type.stub.displayName ?? "anonymous stub";
     case "unknown":
       return type.displayName ?? "unknown";
   }

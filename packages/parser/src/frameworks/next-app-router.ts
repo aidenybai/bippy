@@ -1,13 +1,9 @@
 import path from "node:path";
 import type { Interpreter } from "../evaluate/interpreter.js";
-import { objectValue, unknownValue } from "../evaluate/values.js";
+import { objectFromRecord, objectValue, primitiveValue, unknownValue } from "../evaluate/values.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
-import type {
-  ModuleRecord,
-  StaticObjectValue,
-  StaticRenderResult,
-  StaticValue,
-} from "../types.js";
+import type { ModuleRecord, StaticObjectValue, StaticRenderResult, StaticValue } from "../types.js";
+import type { NextModel } from "./next-externals.js";
 import {
   classifySegment,
   findFirstDirectory,
@@ -30,16 +26,19 @@ export interface NextAppSegment {
   layout: string | null;
   template: string | null;
   loading: string | null;
+  /** Dynamic params matched from the URL down to (and including) this segment. */
+  params: Record<string, string>;
 }
 
 const isRouteGroup = (name: string): boolean => name.startsWith("(") && name.endsWith(")");
 const isPrivateFolder = (name: string): boolean => name.startsWith("_") || name.startsWith("@");
 
-const readSegment = (directory: string): NextAppSegment => ({
+const readSegment = (directory: string, params: Record<string, string>): NextAppSegment => ({
   directory,
   layout: findRouteFile(directory, "layout"),
   template: findRouteFile(directory, "template"),
   loading: findRouteFile(directory, "loading"),
+  params,
 });
 
 /**
@@ -48,14 +47,20 @@ const readSegment = (directory: string): NextAppSegment => ({
  * `[...slug]` consumes the rest. Returns the directory chain ending at the
  * directory that owns `page.*`, or null when nothing matches.
  */
-const matchSegments = (directory: string, remaining: string[]): NextAppSegment[] | null => {
-  if (remaining.length === 0 && findRouteFile(directory, "page")) return [readSegment(directory)];
+const matchSegments = (
+  directory: string,
+  remaining: string[],
+  params: Record<string, string>,
+): NextAppSegment[] | null => {
+  if (remaining.length === 0 && findRouteFile(directory, "page")) {
+    return [readSegment(directory, params)];
+  }
 
   const candidates = listSubdirectories(directory).filter((name) => !isPrivateFolder(name));
   const groups = candidates.filter(isRouteGroup);
   for (const group of groups) {
-    const matched = matchSegments(path.join(directory, group), remaining);
-    if (matched) return [readSegment(directory), ...matched];
+    const matched = matchSegments(path.join(directory, group), remaining, params);
+    if (matched) return [readSegment(directory, params), ...matched];
   }
 
   const ranked = candidates
@@ -68,26 +73,37 @@ const matchSegments = (directory: string, remaining: string[]): NextAppSegment[]
     switch (segment.kind) {
       case "static": {
         if (remaining[0] !== name) continue;
-        const matched = matchSegments(child, remaining.slice(1));
-        if (matched) return [readSegment(directory), ...matched];
+        const matched = matchSegments(child, remaining.slice(1), params);
+        if (matched) return [readSegment(directory, params), ...matched];
         break;
       }
       case "dynamic": {
         if (remaining.length === 0) continue;
-        const matched = matchSegments(child, remaining.slice(1));
-        if (matched) return [readSegment(directory), ...matched];
+        const matched = matchSegments(child, remaining.slice(1), {
+          ...params,
+          [segment.param]: decodeURIComponent(remaining[0]),
+        });
+        if (matched) return [readSegment(directory, params), ...matched];
         break;
       }
       case "catch-all": {
         if (remaining.length === 0 && !segment.optional) continue;
-        const matched = matchSegments(child, []);
-        if (matched) return [readSegment(directory), ...matched];
+        const matched = matchSegments(child, [], {
+          ...params,
+          [segment.param]: remaining.map(decodeURIComponent).join("/"),
+        });
+        if (matched) return [readSegment(directory, params), ...matched];
         break;
       }
     }
   }
   return null;
 };
+
+const stringRecordValue = (record: Record<string, string>): StaticValue =>
+  objectFromRecord(
+    Object.fromEntries(Object.entries(record).map(([key, value]) => [key, primitiveValue(value)])),
+  );
 
 const loadDefaultExport = (
   renderer: StaticRenderer,
@@ -102,8 +118,7 @@ const loadDefaultExport = (
   return { module, component: interpreter.evaluateModuleExport(module, "default") };
 };
 
-const componentName = (filePath: string): string =>
-  path.basename(filePath, path.extname(filePath));
+const componentName = (filePath: string): string => path.basename(filePath, path.extname(filePath));
 
 /**
  * Composes the route the way Next's app router does on the server: the page
@@ -114,6 +129,7 @@ const componentName = (filePath: string): string =>
  */
 export const renderNextAppRoute = (
   renderer: StaticRenderer,
+  model: NextModel,
   options: NextAppRouteOptions,
 ): StaticRenderResult => {
   const appDirectory = options.appDirectory
@@ -125,7 +141,8 @@ export const renderNextAppRoute = (
       interpreter.report("next-app-missing", "no app/ or src/app directory found", null, "error");
       return unknownValue("next app directory not found");
     }
-    const segments = matchSegments(appDirectory, splitPathname(options.route));
+    const url = new URL(options.route, "http://static.invalid");
+    const segments = matchSegments(appDirectory, splitPathname(url.pathname), {});
     if (!segments) {
       interpreter.report(
         "next-app-no-page",
@@ -137,19 +154,21 @@ export const renderNextAppRoute = (
     }
 
     const leaf = segments[segments.length - 1];
+    Object.assign(model.params, leaf.params);
     const pagePath = findRouteFile(leaf.directory, "page");
     if (!pagePath) return unknownValue(`no page for ${options.route}`);
     const page = loadDefaultExport(renderer, interpreter, pagePath);
     if (!page) return unknownValue("unparsable page module");
 
-    const routeProps = (): StaticValue[] => [
-      unknownValue("route params are only known at request time"),
-      unknownValue("search params are only known at request time"),
-    ];
-    const withRouteProps = (children: StaticValue | null): StaticObjectValue => {
-      const [params, searchParams] = routeProps();
+    // Next 15+ hands these to pages and layouts as promises; the interpreter
+    // unwraps `await` of a plain object, so the resolved shape is used directly.
+    const searchParams = stringRecordValue(Object.fromEntries(url.searchParams));
+    const withRouteProps = (
+      segment: NextAppSegment,
+      children: StaticValue | null,
+    ): StaticObjectValue => {
       const entries = objectValue([
-        { kind: "property", key: "params", value: params },
+        { kind: "property", key: "params", value: stringRecordValue(segment.params) },
         { kind: "property", key: "searchParams", value: searchParams },
       ]);
       if (children) entries.entries.push({ kind: "property", key: "children", value: children });
@@ -161,7 +180,7 @@ export const renderNextAppRoute = (
 
     let element: StaticValue = interpreter.createElement(
       page.component,
-      withRouteProps(null),
+      withRouteProps(leaf, null),
       null,
       [],
       null,
@@ -200,7 +219,7 @@ export const renderNextAppRoute = (
         if (!wrapper) continue;
         element = interpreter.createElement(
           wrapper.component,
-          withRouteProps(element),
+          withRouteProps(segment, element),
           null,
           [],
           null,

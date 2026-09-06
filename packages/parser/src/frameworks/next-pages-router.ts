@@ -3,7 +3,9 @@ import { componentReference, objectValue, unknownValue } from "../evaluate/value
 import { toElementType } from "../react/element-type.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
 import type { StaticRenderResult } from "../types.js";
+import type { NextModel } from "./next-externals.js";
 import {
+  type DynamicSegment,
   classifySegment,
   findFirstDirectory,
   findRouteFile,
@@ -21,22 +23,51 @@ export interface NextPagesRouteOptions {
 }
 
 const RESERVED_PAGES = new Set(["_app", "_document", "_error", "404", "500", "api"]);
+const DATA_FETCHING_EXPORTS = ["getServerSideProps", "getStaticProps", "getInitialProps"];
+
+export interface NextPageMatch {
+  file: string;
+  params: Record<string, string>;
+}
+
+const withParam = (
+  params: Record<string, string>,
+  segment: DynamicSegment,
+  values: string[],
+): Record<string, string> =>
+  segment.kind === "static"
+    ? params
+    : {
+        ...params,
+        [segment.param]:
+          segment.kind === "dynamic"
+            ? decodeURIComponent(values[0])
+            : values.map(decodeURIComponent).join("/"),
+      };
 
 /**
  * Resolves a URL to `pages/**.tsx` following Next's pages-router conventions:
  * `/` → `index`, `/a/b` → `a/b` or `a/b/index`, dynamic `[param]` directories and
- * files as fallbacks, catch-alls last.
+ * files as fallbacks, catch-alls last. Dynamic segments record the URL values
+ * they consumed, which become `router.query`.
  */
-const matchPage = (directory: string, remaining: string[]): string | null => {
-  if (remaining.length === 0) return findRouteFile(directory, "index");
+const matchPage = (
+  directory: string,
+  remaining: string[],
+  params: Record<string, string>,
+): NextPageMatch | null => {
+  if (remaining.length === 0) {
+    const index = findRouteFile(directory, "index");
+    return index ? { file: index, params } : null;
+  }
   const [head, ...rest] = remaining;
   if (rest.length === 0) {
     const file = findRouteFile(directory, head);
-    if (file && !RESERVED_PAGES.has(head)) return file;
+    if (file && !RESERVED_PAGES.has(head)) return { file, params };
   }
   const subdirectories = listSubdirectories(directory);
   if (subdirectories.includes(head) && head !== "api") {
-    const matched = matchPage(path.join(directory, head), rest);
+    const matched = matchPage(path.join(directory, head), rest, params);
     if (matched) return matched;
   }
   const dynamicCandidates = [
@@ -48,25 +79,33 @@ const matchPage = (directory: string, remaining: string[]): string | null => {
     .sort((left, right) => segmentSpecificity(left.segment) - segmentSpecificity(right.segment));
 
   for (const candidate of dynamicCandidates) {
+    const isCatchAll = candidate.segment.kind === "catch-all";
+    const consumed = isCatchAll ? remaining : [head];
+    const nextParams = withParam(params, candidate.segment, consumed);
     if (candidate.isDirectory) {
-      const consumed = candidate.segment.kind === "catch-all" ? [] : rest;
-      const matched = matchPage(path.join(directory, candidate.name), consumed);
+      const matched = matchPage(
+        path.join(directory, candidate.name),
+        isCatchAll ? [] : rest,
+        nextParams,
+      );
       if (matched) return matched;
-    } else if (candidate.segment.kind === "catch-all" || rest.length === 0) {
-      return findRouteFile(directory, candidate.name);
+    } else if (isCatchAll || rest.length === 0) {
+      const file = findRouteFile(directory, candidate.name);
+      if (file) return { file, params: nextParams };
     }
   }
   return null;
 };
 
 /**
- * Composes `<App Component={Page} pageProps={unknown} />` (or just `<Page />`
- * without a custom `_app`). `pageProps` and `router` stay unknown because they
- * come from data fetching at request time; `_document` is server-only and never
- * part of the client fiber tree.
+ * Composes `<App Component={Page} pageProps={…} router={…} />` (or just
+ * `<Page />` without a custom `_app`). `pageProps` is `{}` unless the page
+ * exports a data-fetching function, in which case it is unknown; `_document` is
+ * server-only and never part of the client fiber tree.
  */
 export const renderNextPagesRoute = (
   renderer: StaticRenderer,
+  model: NextModel,
   options: NextPagesRouteOptions,
 ): StaticRenderResult => {
   const pagesDirectory = options.pagesDirectory
@@ -83,8 +122,9 @@ export const renderNextPagesRoute = (
       );
       return unknownValue("next pages directory not found");
     }
-    const pagePath = matchPage(pagesDirectory, splitPathname(options.route));
-    if (!pagePath) {
+    const url = new URL(options.route, "http://static.invalid");
+    const match = matchPage(pagesDirectory, splitPathname(url.pathname), {});
+    if (!match) {
       interpreter.report(
         "next-pages-no-page",
         `no page matches ${options.route} under ${pagesDirectory}`,
@@ -93,6 +133,8 @@ export const renderNextPagesRoute = (
       );
       return unknownValue(`no page for ${options.route}`);
     }
+    Object.assign(model.params, match.params);
+    const pagePath = match.file;
     const pageModule = renderer.loadModule(pagePath);
     if (!pageModule) {
       interpreter.report("next-pages-parse", `could not parse ${pagePath}`, null, "error");
@@ -100,7 +142,15 @@ export const renderNextPagesRoute = (
     }
     const pageName = path.basename(pagePath, path.extname(pagePath));
     const pageComponent = interpreter.evaluateModuleExport(pageModule, "default");
-    const pageProps = unknownValue("pageProps come from data fetching at request time");
+    const fetchesData = DATA_FETCHING_EXPORTS.some((name) =>
+      pageModule.exports.some(
+        (entry) => entry.kind !== "re-export-all" && entry.exportedName === name,
+      ),
+    );
+    const pageProps = fetchesData
+      ? unknownValue("pageProps come from data fetching at request time")
+      : objectValue();
+    const router = model.externalValues("next/router", "default") ?? unknownValue("next router");
 
     const appPath = findRouteFile(pagesDirectory, "_app");
     const appModule = appPath ? renderer.loadModule(appPath) : null;
@@ -125,7 +175,7 @@ export const renderNextPagesRoute = (
           value: componentReference(toElementType(pageComponent, pageName)),
         },
         { kind: "property", key: "pageProps", value: pageProps },
-        { kind: "property", key: "router", value: unknownValue("next router instance") },
+        { kind: "property", key: "router", value: router },
       ]),
       null,
       [],

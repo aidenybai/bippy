@@ -112,10 +112,14 @@ export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult
   );
   if (fixture.manifest.skipRuntime) return { staticResult, runtime: null, comparison: null };
   const runtime = await mountFixture(fixture);
-  const comparison = compareStaticToRuntime(staticResult, flattenTransparentFibers(runtime, profile), {
-    anchor: fixture.manifest.anchor ?? profile.defaultAnchor ?? undefined,
-    transparentStaticFibers: profile.transparentStaticFibers,
-  });
+  const comparison = compareStaticToRuntime(
+    staticResult,
+    flattenTransparentFibers(runtime, profile),
+    {
+      anchor: fixture.manifest.anchor ?? profile.defaultAnchor ?? undefined,
+      transparentStaticFibers: profile.transparentStaticFibers,
+    },
+  );
   return { staticResult, runtime, comparison };
 };
 

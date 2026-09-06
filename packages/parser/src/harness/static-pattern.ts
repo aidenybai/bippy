@@ -100,10 +100,7 @@ export const toPattern = (fiber: StaticFiber): PatternNode => {
   }
 };
 
-const flattenPatternNode = (
-  node: PatternNode,
-  transparent: ReadonlySet<string>,
-): PatternNode[] => {
+const flattenPatternNode = (node: PatternNode, transparent: ReadonlySet<string>): PatternNode[] => {
   switch (node.kind) {
     case "fiber": {
       const children = flattenPatternFibers(node.children, transparent);

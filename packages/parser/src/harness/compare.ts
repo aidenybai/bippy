@@ -152,9 +152,9 @@ class Matcher {
     const depth = path.length;
     if (
       this.slotSearchDepth > 0 ||
-      this.furthest &&
-      (this.furthest.depth > depth ||
-        (this.furthest.depth === depth && this.furthest.index >= index))
+      (this.furthest &&
+        (this.furthest.depth > depth ||
+          (this.furthest.depth === depth && this.furthest.index >= index)))
     ) {
       return;
     }

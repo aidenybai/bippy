@@ -32,8 +32,7 @@ const requireFromHere = createRequire(import.meta.url);
 
 let injectBundlePromise: Promise<string> | null = null;
 
-const bippyPackageDirectory = (): string =>
-  dirname(requireFromHere.resolve("bippy/package.json"));
+const bippyPackageDirectory = (): string => dirname(requireFromHere.resolve("bippy/package.json"));
 
 const bippySourceEntry = (): string => resolve(bippyPackageDirectory(), "src/index.ts");
 

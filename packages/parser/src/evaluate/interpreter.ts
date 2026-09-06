@@ -30,7 +30,7 @@ import type {
 import type { ModuleGraph } from "../graph/module-graph.js";
 import { getSourceLocation } from "../parse/source-location.js";
 import { toElementType } from "../react/element-type.js";
-import { resolveReactApi, resolveReactApiMember } from "../react/react-api.js";
+import { isReactLikePackage, resolveReactApi, resolveReactApiMember } from "../react/react-api.js";
 import type {
   Diagnostic,
   ExternalValueProvider,
@@ -140,6 +140,8 @@ export interface CallOptions {
   thisValue?: StaticValue | null;
   contextFrame?: ContextFrame | null;
   callStack?: FunctionLikeNode[];
+  /** The caller awaits the result (route `lazy`, server components), so an async body is evaluated with `await x` as `x`. */
+  awaited?: boolean;
 }
 
 export class Interpreter {
@@ -256,14 +258,14 @@ export class Interpreter {
           if (api) return { kind: "react-api", api };
         }
         if (this.externalValues) {
-          const provided = this.externalValues(symbol.packageName, importedName);
+          const provided = this.externalValues(symbol.specifier, importedName);
           if (provided) return provided;
         }
         if (symbol.imported.kind === "namespace" || symbol.imported.kind === "default") {
           const api = resolveReactApi(symbol.packageName, "*");
           if (api) return { kind: "react-api", api };
         }
-        return { kind: "external", packageName: symbol.packageName, importedName };
+        return { kind: "external", packageName: symbol.packageName, importedName, derived: false };
       }
       case "unresolved":
         return unknownValue(symbol.reason);
@@ -519,13 +521,20 @@ export class Interpreter {
         const target = this.graph.resolveImportedModule(node.source.value, context.module);
         if ("bindings" in target) return { kind: "namespace", module: target };
         if (target.kind === "external") {
-          return { kind: "external", packageName: target.packageName, importedName: "*" };
+          return {
+            kind: "external",
+            packageName: target.packageName,
+            importedName: "*",
+            derived: false,
+          };
         }
         return unknownValue(`cannot resolve dynamic import "${node.source.value}"`, location);
       }
       case "TaggedTemplateExpression": {
         const tag = this.evaluateExpression(node.tag, context);
-        if (tag.kind === "external") return { ...tag, importedName: `${tag.importedName}\`\`` };
+        if (tag.kind === "external") {
+          return { ...tag, importedName: `${tag.importedName}\`\``, derived: true };
+        }
         if (tag.kind === "function") {
           return this.callFunction(
             tag,
@@ -535,9 +544,10 @@ export class Interpreter {
         }
         return unknownValue("tagged template", location);
       }
+      case "MetaProperty":
+        return unknownValue(`${node.meta.name}.${node.property.name}`, location);
       case "YieldExpression":
       case "Super":
-      case "MetaProperty":
       case "V8IntrinsicExpression":
         return unknownValue(`unsupported expression ${node.type}`, location);
     }
@@ -917,14 +927,18 @@ export class Interpreter {
         return unknownValue(`React.${object.api}.${key}`, location);
       }
       case "external":
-        if (object.packageName === "react" || object.packageName === "react-dom") {
+        if (
+          isReactLikePackage(object.packageName) &&
+          (object.importedName === "*" || object.importedName === "default")
+        ) {
           const api = resolveReactApi(object.packageName, key);
-          if (api && object.importedName === "*") return { kind: "react-api", api };
+          if (api) return { kind: "react-api", api };
         }
         return {
           kind: "external",
           packageName: object.packageName,
           importedName: `${object.importedName}.${key}`,
+          derived: true,
         };
       case "namespace":
         if (isPromiseMethodName(key)) return { kind: "method", receiver: object, name: key };
@@ -1064,11 +1078,13 @@ export class Interpreter {
           kind: "external",
           packageName: callee.packageName,
           importedName: `${callee.importedName}()`,
+          derived: true,
         };
       case "native-function":
         return callee.call(args, {
           readContext: (definition) =>
             lookupContextValue(context.contextFrame, definition) ?? definition.defaultValue,
+          callAwaited: (fn, fnArgs) => this.callAwaited(fn, fnArgs, context, location),
         });
       case "class":
         return unknownValue(`class ${callee.name ?? ""} called without new`, location);
@@ -1089,6 +1105,19 @@ export class Interpreter {
       return evaluateBuiltinCall(this, callee, args, context, location, true);
     }
     return unknownValue(`new ${describeValue(callee)}`, location);
+  }
+
+  /** Calls `callee` as a framework does when it awaits the returned promise. */
+  callAwaited(
+    callee: StaticValue,
+    args: StaticValue[],
+    context: EvaluationContext,
+    location: SourceLocation | null,
+  ): StaticValue {
+    if (callee.kind === "function") {
+      return this.callFunction(callee, args, context, { awaited: true });
+    }
+    return this.callValue(callee, args, context, location);
   }
 
   callFunction(
@@ -1115,7 +1144,8 @@ export class Interpreter {
     }
     // Server components may be async; React awaits them before rendering, so
     // evaluating the body synchronously (with `await x` as `x`) models the result.
-    if (fn.node.generator || (fn.node.async && context.environment !== "server")) {
+    const awaited = options.awaited || context.environment === "server";
+    if (fn.node.generator || (fn.node.async && !awaited)) {
       return unknownValue(`${fn.node.async ? "async" : "generator"} function result`, location);
     }
     const scope = createScope(fn.scope);
@@ -1516,15 +1546,18 @@ export class Interpreter {
   private evaluateJsxName(
     name: JSXElementName | JSXMemberExpressionObject,
     context: EvaluationContext,
+    isMemberObject = false,
   ): StaticValue {
     switch (name.type) {
       case "JSXIdentifier":
-        if (/^[a-z]/.test(name.name)) return primitiveValue(name.name);
+        // Only a bare lowercase tag is a host element; `<ctx.Provider>` looks
+        // up `ctx` whatever its case.
+        if (!isMemberObject && /^[a-z]/.test(name.name)) return primitiveValue(name.name);
         return this.lookupIdentifier(name.name, context);
       case "JSXNamespacedName":
         return primitiveValue(`${name.namespace.name}:${name.name.name}`);
       case "JSXMemberExpression": {
-        const object = this.evaluateJsxName(name.object, context);
+        const object = this.evaluateJsxName(name.object, context, true);
         return this.getProperty(
           object,
           name.property.name,

@@ -114,9 +114,7 @@ export const parseSnapshot = (json: string): RuntimeSnapshot => {
     throw new Error("snapshot: expected { roots: [...] }");
   }
   const buildType =
-    value.buildType === "development" || value.buildType === "production"
-      ? value.buildType
-      : null;
+    value.buildType === "development" || value.buildType === "production" ? value.buildType : null;
   return {
     reactVersion: readNullableString(value.reactVersion ?? null, "reactVersion"),
     rendererName: readNullableString(value.rendererName ?? null, "rendererName"),

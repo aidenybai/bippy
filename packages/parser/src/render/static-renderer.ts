@@ -142,6 +142,9 @@ export class StaticRenderer {
     const rootCall = rootCalls[0];
     const moduleContext = interpreter.createModuleContext(module);
     const context = { ...moduleContext, scope: createScope(moduleContext.scope) };
+    for (const statements of rootCall.enclosingStatements) {
+      interpreter.evaluateBlock(statements, context, false);
+    }
     const rootValue = interpreter.evaluateExpression(rootCall.element, context);
     return this.finish(interpreter, builder, rootValue, interpreter.locate(module, rootCall.call));
   }

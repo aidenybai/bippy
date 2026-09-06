@@ -18,5 +18,10 @@
     }
   },
   "include": ["src", "tests", "scripts", "vite.config.ts"],
-  "exclude": ["**/node_modules/**", "**/dist/**", "tests/fixtures/**"]
+  "exclude": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "tests/fixtures/**",
+    "tests/framework-fixtures/**"
+  ]
 }

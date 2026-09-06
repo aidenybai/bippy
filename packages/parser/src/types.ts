@@ -172,7 +172,8 @@ export type StaticElementType =
  * function-component fiber whose children are whatever `render` returns.
  */
 export interface StubComponent {
-  displayName: string;
+  /** null for components React itself would report anonymously (e.g. an unnamed `forwardRef`). */
+  displayName: string | null;
   /** Work tag of the real component (e.g. `ForwardRef` for `Link`); defaults to a function component. */
   tag?: WorkTag;
   render: (props: StaticObjectValue, tools: StubRenderTools) => StaticValue;
@@ -181,13 +182,17 @@ export interface StubComponent {
 export interface StubRenderTools {
   /** Reads a context value as `useContext` would from the stub's position in the tree. */
   readContext: (context: ContextDefinition) => StaticValue;
+  /** Calls a function whose promise the framework awaits (route `lazy`), with `await x` read as `x`. */
+  callAwaited: (callee: StaticValue, args: StaticValue[]) => StaticValue;
 }
 
-/** Supplies static values for named imports from external packages; return null to keep the import opaque. */
-export type ExternalValueProvider = (
-  packageName: string,
-  importedName: string,
-) => StaticValue | null;
+/**
+ * Supplies static values for imports from external packages. `specifier` is the
+ * import source as written (`next/link`, `react-router/dom`); `importedName` is
+ * the binding (`default`, `*`, or the named export). Return null to keep the
+ * import opaque.
+ */
+export type ExternalValueProvider = (specifier: string, importedName: string) => StaticValue | null;
 
 export type StaticPrimitive = string | number | boolean | null | undefined | bigint;
 
@@ -287,6 +292,12 @@ export interface StaticExternalValue {
   kind: "external";
   packageName: string;
   importedName: string;
+  /**
+   * True when the value was produced by calling or reading a member of an
+   * external binding (`useQuery()`, `api.error`); such values have unknown
+   * truthiness, whereas the import binding itself is defined.
+   */
+  derived: boolean;
 }
 
 export interface StaticNamespaceValue {

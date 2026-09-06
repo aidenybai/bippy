@@ -294,7 +294,7 @@ export class FiberBuilder {
           const component = value.type.component;
           const server = this.evaluateComposite(
             component,
-            context,
+            { ...context, environment: value.environment ?? context.environment },
             value.location,
             null,
             (componentContext) =>
@@ -757,9 +757,12 @@ export class FiberBuilder {
           location,
         );
         fiber.key = this.keyToString(key, fiber);
-        fiber.notes.push(`${type.stub.displayName} is modeled by the harness, not analyzed`);
+        fiber.notes.push(
+          `${type.stub.displayName ?? "anonymous component"} is modeled by the harness, not analyzed`,
+        );
         const rendered = type.stub.render(props, {
           readContext: (definition) => this.lookupContext(definition, context),
+          callAwaited: (callee, args) => this.callAwaited(callee, args, context, location),
         });
         fiber.child = this.reconcileChildren(fiber, rendered, this.descend(context));
         return fiber;
@@ -1085,6 +1088,23 @@ export class FiberBuilder {
   ): void {
     if (definition && definition.displayName === null)
       fiber.notes.push(`context ${definition.name} has no displayName`);
+  }
+
+  private callAwaited(
+    callee: StaticValue,
+    args: StaticValue[],
+    context: BuildContext,
+    location: SourceLocation | null,
+  ): StaticValue {
+    if (callee.kind !== "function") {
+      return unknownValue(`call of ${describeValue(callee)}`, location);
+    }
+    const moduleContext = this.interpreter.createModuleContext(
+      callee.module,
+      context.contextFrame,
+      context.environment,
+    );
+    return this.interpreter.callAwaited(callee, args, moduleContext, location);
   }
 
   private lookupContext(definition: ContextDefinition, context: BuildContext): StaticValue {
