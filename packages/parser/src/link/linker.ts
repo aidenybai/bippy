@@ -1,5 +1,10 @@
 import type { Class, Expression, Function as FunctionNode } from "@oxc-project/types";
-import { getMemberChain, unwrapExpression } from "../module/ast.js";
+import {
+  getMemberChain,
+  isCallExpression,
+  isStringLiteral,
+  unwrapExpression,
+} from "../module/ast.js";
 import {
   type Binding,
   DEFAULT_EXPORT_NAME,
@@ -89,21 +94,58 @@ const external = (
   memberPath: string[],
 ): ExternalSymbol => ({ kind: "external", specifier, packageName, importedName, memberPath });
 
+/**
+ * `Object.assign(Card, { Header, Body })` at module level, the other way
+ * compound components are assembled.
+ */
+const getAssignedObjectMembers = (
+  expression: Expression,
+): { target: string; members: [string, Expression][] } | null => {
+  if (!isCallExpression(expression)) return null;
+  const chain = getMemberChain(expression.callee);
+  if (chain?.join(".") !== "Object.assign") return null;
+  const [target, ...sources] = expression.arguments;
+  if (target?.type !== "Identifier") return null;
+  const members: [string, Expression][] = [];
+  for (const source of sources) {
+    if (source.type !== "ObjectExpression") continue;
+    for (const property of source.properties) {
+      if (property.type !== "Property" || property.computed) continue;
+      const key =
+        property.key.type === "Identifier"
+          ? property.key.name
+          : isStringLiteral(property.key)
+            ? property.key.value
+            : null;
+      if (key !== null) members.push([key, property.value]);
+    }
+  }
+  return { target: target.name, members };
+};
+
 const collectMemberAssignments = (module: ParsedModule): Map<string, Map<string, Expression>> => {
   const table = new Map<string, Map<string, Expression>>();
+  const record = (target: string, member: string, value: Expression): void => {
+    let members = table.get(target);
+    if (!members) {
+      members = new Map();
+      table.set(target, members);
+    }
+    members.set(member, value);
+  };
   for (const statement of module.program.body) {
     if (statement.type !== "ExpressionStatement") continue;
     const expression = unwrapExpression(statement.expression);
+    const assigned = getAssignedObjectMembers(expression);
+    if (assigned) {
+      for (const [member, value] of assigned.members) record(assigned.target, member, value);
+      continue;
+    }
     if (expression.type !== "AssignmentExpression" || expression.operator !== "=") continue;
     if (expression.left.type !== "MemberExpression" || expression.left.computed) continue;
     const object = unwrapExpression(expression.left.object);
     if (object.type !== "Identifier" || expression.left.property.type !== "Identifier") continue;
-    let members = table.get(object.name);
-    if (!members) {
-      members = new Map();
-      table.set(object.name, members);
-    }
-    members.set(expression.left.property.name, expression.right);
+    record(object.name, expression.left.property.name, expression.right);
   }
   return table;
 };

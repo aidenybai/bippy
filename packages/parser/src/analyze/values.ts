@@ -75,11 +75,15 @@ export interface FunctionValue {
   thisValue: StaticValue | null;
   /** Inferred name for display, e.g. `renderHeader` for `const renderHeader = () => …`. */
   name: string | null;
+  /** Properties assigned on the function object itself (`Card.Header = Header`). */
+  statics: Map<string, StaticValue>;
 }
 
 export interface ComponentValue {
   kind: "component";
   definition: ComponentDefinition;
+  /** Properties assigned on the component object itself (`Sidebar.Tabs = Tabs`). */
+  statics: Map<string, StaticValue>;
 }
 
 export interface ElementValue {
@@ -253,9 +257,13 @@ export const object = (
   hasUnknownSpread = false,
   depth = 0,
 ): ObjectValue => ({ kind: "object", properties: new Map(properties), hasUnknownSpread, depth });
-export const component = (definition: ComponentDefinition): ComponentValue => ({
+export const component = (
+  definition: ComponentDefinition,
+  statics: Map<string, StaticValue> = new Map(),
+): ComponentValue => ({
   kind: "component",
   definition,
+  statics,
 });
 export const builtin = (name: BuiltinComponentName): ComponentValue =>
   component({ kind: "builtin", name });
@@ -297,16 +305,34 @@ export const nameValue = (value: StaticValue, name: string | null): StaticValue 
   if (value.kind !== "component") return value;
   const definition = value.definition;
   const isNameable = definition.kind === "class" || definition.kind === "context";
-  return isNameable && definition.name === null ? component({ ...definition, name }) : value;
+  return isNameable && definition.name === null
+    ? component({ ...definition, name }, value.statics)
+    : value;
 };
 
 /** `Component.displayName = "…"`, which the runtime prefers over `Function.name`. */
 export const withDisplayName = (value: StaticValue, displayName: string): StaticValue => {
   if (value.kind === "function") return { ...value, name: displayName };
   if (value.kind === "component" && value.definition.kind !== "builtin") {
-    return component({ ...value.definition, name: displayName });
+    return component({ ...value.definition, name: displayName }, value.statics);
   }
   return value;
+};
+
+/**
+ * `Target.key = value` on a function or component, as written for compound
+ * components and static config. `displayName` is folded into the name the
+ * way the runtime prefers it.
+ */
+export const assignStatic = (target: StaticValue, key: string, value: StaticValue): void => {
+  if (target.kind !== "function" && target.kind !== "component") return;
+  if (key === "displayName") {
+    if (value.kind !== "literal" || typeof value.value !== "string") return;
+    if (target.kind === "function") target.name = value.value;
+    else if (target.definition.kind !== "builtin") target.definition.name = value.value;
+    return;
+  }
+  target.statics.set(key, value);
 };
 
 const isFullyKnownInner = (value: StaticValue, visited: Set<StaticValue>): boolean => {

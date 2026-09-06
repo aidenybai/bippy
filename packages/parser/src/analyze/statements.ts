@@ -101,6 +101,7 @@ const hoistFunctionDeclarations = (statements: Statement[], context: EvaluationC
       scope: context.scope,
       thisValue: null,
       name: statement.id.name,
+      statics: new Map(),
     });
   }
 };

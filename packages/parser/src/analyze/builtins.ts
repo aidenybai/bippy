@@ -3,6 +3,7 @@ import { type EvaluationContext, isEffectUndecided } from "./interpreter.js";
 import type { CallbackInvoker } from "./react-calls.js";
 import {
   array,
+  assignStatic,
   conditional,
   FALSE,
   getTruthiness,
@@ -336,10 +337,12 @@ export const evaluateGlobalCall = (
       return unknown(description);
     case "Object.assign": {
       if (!first) return UNDEFINED;
-      if (first.kind === "object") {
-        for (const source of callArguments.slice(1)) {
+      for (const source of callArguments.slice(1)) {
+        if (first.kind === "object") {
           if (source.kind === "object") mergeObjects(first, source);
           else if (source.kind !== "literal") first.hasUnknownSpread = true;
+        } else if (source.kind === "object") {
+          for (const [key, member] of source.properties) assignStatic(first, key, member);
         }
       }
       return first;

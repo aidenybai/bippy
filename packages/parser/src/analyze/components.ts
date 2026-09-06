@@ -141,6 +141,7 @@ const installMembers = (
     scope: definition.scope,
     thisValue: instance,
     name,
+    statics: new Map(),
   });
   const install = (element: ClassElement): void => {
     if (element.type !== "MethodDefinition" && element.type !== "PropertyDefinition") return;

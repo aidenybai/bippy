@@ -1,6 +1,6 @@
 import { readFileSync, statSync } from "node:fs";
 import { dirname, extname, isAbsolute, join, normalize, resolve } from "node:path";
-import { isSourceFilePath, parseModule, SOURCE_EXTENSIONS } from "../module/parse.js";
+import { isModuleFilePath, parseModule, SOURCE_EXTENSIONS } from "../module/parse.js";
 import type { ParsedModule } from "../module/types.js";
 import {
   createModuleResolver,
@@ -88,7 +88,7 @@ export const createProject = (options: ProjectOptions): Project => {
   const getModule = (filePath: string): ParsedModule | null => {
     const absolutePath = resolvePath(filePath);
     if (moduleCache.has(absolutePath)) return moduleCache.get(absolutePath) ?? null;
-    const sourceText = isSourceFilePath(absolutePath) ? readSource(absolutePath) : null;
+    const sourceText = isModuleFilePath(absolutePath) ? readSource(absolutePath) : null;
     const parsed = sourceText === null ? null : parseModule(absolutePath, sourceText);
     moduleCache.set(absolutePath, parsed);
     return parsed;

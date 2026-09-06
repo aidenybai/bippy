@@ -276,6 +276,7 @@ const createFunctionValue = (
   scope: context.scope,
   thisValue: fn.type === "ArrowFunctionExpression" ? context.thisValue : null,
   name: fn.type === "ArrowFunctionExpression" ? null : (fn.id?.name ?? null),
+  statics: new Map(),
 });
 
 export const evaluateExpression = (

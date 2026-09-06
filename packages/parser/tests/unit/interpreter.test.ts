@@ -83,6 +83,23 @@ describe("interpreter: strings and regular expressions", () => {
     expect(describe_(`export const value = /x/gi.flags;`)).toBe('"gi"');
   });
 
+  it("calls methods on each arm of a conditional receiver", () => {
+    expect(
+      describe_(
+        `declare const flag: boolean;
+         const label = flag ? "yes" : "no";
+         export const value = label.toUpperCase();`,
+      ),
+    ).toBe('(flag ? "YES" : "NO")');
+    expect(
+      describe_(
+        `declare const flag: boolean;
+         declare const fallback: string;
+         export const value = (flag ? "a-b" : fallback).replace("-", "+");`,
+      ),
+    ).toBe('(flag ? "a+b" : text((flag ? "a-b" : fallback).replace()))');
+  });
+
   it("degrades to text for unknown receivers", () => {
     expect(describe_(`declare const s: string; export const value = s.trim();`)).toMatch(/^text\(/);
     expect(describe_(`declare const s: string; export const value = s.split(",");`)).toMatch(
@@ -290,6 +307,42 @@ describe("interpreter: functions and modules", () => {
         },
       ),
     ).toBe("[21, 42]");
+  });
+
+  it("reads compound-component statics however they were attached", () => {
+    const files = {
+      "src/parts.tsx": `export const Header = () => <h1 />; export const Body = () => <p />;`,
+    };
+    expect(
+      describe_(
+        `import { Header, Body } from "./parts";
+         const Card = () => <section />;
+         Card.Header = Header;
+         Object.assign(Card, { Body });
+         export const value = [Card.Header, Card.Body];`,
+        files,
+      ),
+    ).toBe("[fn(Header), fn(Body)]");
+    expect(
+      describe_(
+        `import { forwardRef } from "react";
+         import { Header } from "./parts";
+         const Panel = Object.assign(forwardRef<HTMLElement>((props, ref) => <aside ref={ref} />), { Header });
+         Panel.displayName = "Panel";
+         export const value = [Panel, Panel.Header];`,
+        files,
+      ),
+    ).toBe("[component(Panel), fn(Header)]");
+  });
+
+  it("imports JSON modules as their data", () => {
+    expect(
+      describe_(
+        `import en from "./locales/en.json";
+         export const value = [en.buttons.save, en.title, Object.keys(en)];`,
+        { "src/locales/en.json": `{ "title": "Hello", "buttons": { "save": "Save" } }` },
+      ),
+    ).toBe('["Save", "Hello", ["title", "buttons"]]');
   });
 
   it("names closures after their bindings and honours displayName", () => {

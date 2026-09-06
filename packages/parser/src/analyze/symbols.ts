@@ -80,6 +80,7 @@ const evaluateDeclaration = (
         scope,
         thisValue: null,
         name: node.id?.name ?? binding.localName,
+        statics: new Map(),
       });
   }
 };

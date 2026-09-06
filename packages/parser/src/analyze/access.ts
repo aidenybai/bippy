@@ -4,7 +4,7 @@ import {
   type ArrayValue,
   builtin,
   type BuiltinComponentName,
-  type ComponentDefinition,
+  type ComponentValue,
   component,
   conditional,
   type ExternalValue,
@@ -97,11 +97,14 @@ export const getProperty = (
     case "external":
       return accessExternalMember(target, key);
     case "component":
-      return getComponentProperty(target.definition, key);
-    case "function":
+      return target.statics.get(key) ?? getComponentProperty(target, key);
+    case "function": {
+      const assigned = target.statics.get(key);
+      if (assigned) return assigned;
       if (key === "name") return literal(target.name ?? "");
       if (key === "displayName") return UNDEFINED;
       return unknown(`${target.name ?? "function"}.${key}`);
+    }
     case "text":
       return key === "length" ? unknown("text.length") : unknown(`text.${key}`);
     case "unknown":
@@ -113,10 +116,11 @@ export const getProperty = (
  * Static members of component values. `displayName` reads `undefined`
  * because an assigned display name is folded into the definition's `name`.
  */
-const getComponentProperty = (definition: ComponentDefinition, key: string): StaticValue => {
+const getComponentProperty = (value: ComponentValue, key: string): StaticValue => {
+  const definition = value.definition;
   if (definition.kind === "context") {
-    if (key === "Provider") return component({ ...definition, role: "provider" });
-    if (key === "Consumer") return component({ ...definition, role: "consumer" });
+    if (key === "Provider") return component({ ...definition, role: "provider" }, value.statics);
+    if (key === "Consumer") return component({ ...definition, role: "consumer" }, value.statics);
   }
   if (key === "displayName") return UNDEFINED;
   if (key === "name")

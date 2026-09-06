@@ -12,6 +12,7 @@ import { type CallbackInvoker, evaluateReactCall } from "./react-calls.js";
 import { createScope, hasLocalBinding } from "./scope.js";
 import { evaluateRegExpMethod, evaluateStringMethod } from "./strings.js";
 import {
+  conditional,
   type ExternalValue,
   type FunctionValue,
   isFullyKnown,
@@ -231,17 +232,26 @@ export const evaluateCall = (
       return evaluateHookCall(interpreter, call, member, calleeDisplay, callArguments, context);
     }
     const targetDescription = interpreter.getSource(context.module, callee.object);
-    const modelled = evaluateMethodCall(
-      interpreter,
-      target,
-      method,
-      callArguments,
-      description,
-      targetDescription,
-      context,
-    );
-    if (modelled) return modelled;
-    return invokeValue(interpreter, member, callArguments, call, description, context);
+    /** A receiver that depends on a test is called on each arm. */
+    const callOn = (receiver: StaticValue): StaticValue => {
+      if (receiver.kind === "conditional") {
+        return conditional(receiver.test, callOn(receiver.whenTrue), callOn(receiver.whenFalse));
+      }
+      const modelled = evaluateMethodCall(
+        interpreter,
+        receiver,
+        method,
+        callArguments,
+        description,
+        targetDescription,
+        context,
+      );
+      if (modelled) return modelled;
+      const receiverMember =
+        receiver === target ? member : getProperty(interpreter, receiver, method);
+      return invokeValue(interpreter, receiverMember, callArguments, call, description, context);
+    };
+    return callOn(target);
   }
 
   if (callee.type === "Identifier" && isGlobalChain([callee.name], context)) {

@@ -12,6 +12,7 @@ import { assignVariable, declareVariable } from "./scope.js";
 import {
   array,
   type ArrayValue,
+  assignStatic,
   cloneObject,
   conditional,
   type ObjectValue,
@@ -180,12 +181,6 @@ const assignObjectProperty = (
  * `Wrapped.displayName = "…"` inside a factory renames the value every
  * holder sees, as the runtime assignment does to the function object.
  */
-const assignDisplayName = (target: StaticValue, displayName: string): void => {
-  if (target.kind === "function") target.name = displayName;
-  else if (target.kind === "component" && target.definition.kind !== "builtin")
-    target.definition.name = displayName;
-};
-
 const assignArrayItem = (
   target: ArrayValue,
   keyName: string | null,
@@ -225,12 +220,8 @@ export const assignToTarget = (
         );
       } else if (objectValue.kind === "object") {
         assignObjectProperty(objectValue, keyName, value, context);
-      } else if (
-        keyName === "displayName" &&
-        value.kind === "literal" &&
-        typeof value.value === "string"
-      ) {
-        assignDisplayName(objectValue, value.value);
+      } else if (keyName !== null) {
+        assignStatic(objectValue, keyName, value);
       }
       return;
     }
