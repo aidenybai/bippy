@@ -111,6 +111,22 @@ describe("createModuleResolver", () => {
       join(root, "packages/ui/button.tsx"),
     );
   });
+
+  it("does not resolve packages from node_modules above the project root", () => {
+    const outer = createTree({
+      "node_modules/shared/package.json": `{ "name": "shared", "main": "./index.js" }`,
+      "node_modules/shared/index.js": "",
+      "project/node_modules/local/package.json": `{ "name": "local", "main": "./index.js" }`,
+      "project/node_modules/local/index.js": "",
+      "project/src/app.tsx": "",
+    });
+    const resolver = createModuleResolver({ rootDirectory: join(outer, "project") });
+    const fromFile = join(outer, "project/src/app.tsx");
+    expect(resolver.resolve(fromFile, "local")?.path).toBe(
+      join(outer, "project/node_modules/local/index.js"),
+    );
+    expect(resolver.resolve(fromFile, "shared")).toBeNull();
+  });
 });
 
 describe("findWorkspacePackages", () => {

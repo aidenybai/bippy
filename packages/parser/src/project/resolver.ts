@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import { dirname, join, resolve, sep } from "node:path";
 import { type NapiResolveOptions, ResolverFactory } from "oxc-resolver";
 import { readTsconfigPaths } from "./tsconfig.js";
@@ -62,6 +62,9 @@ export const getPackageNameFromSpecifier = (specifier: string): string | null =>
 const isInsideNodeModules = (filePath: string): boolean =>
   filePath.split(sep).includes("node_modules");
 
+const isInsideDirectory = (filePath: string, directory: string): boolean =>
+  filePath === directory || filePath.startsWith(directory + sep);
+
 export const findNearestFile = (
   startDirectory: string,
   fileNames: readonly string[],
@@ -100,9 +103,13 @@ const hasUnloadableTsconfig = (resolver: ResolverFactory, tsconfigPath: string):
  * `paths` (per nearest tsconfig, with project references), `.js` → `.ts`
  * extension aliases, and a CommonJS fallback for packages without ESM
  * conditions. Files that resolve into `node_modules` are flagged external.
+ * A project's dependencies live under its root: a resolution that walks up
+ * into an ancestor's `node_modules` would analyze some other project's copy,
+ * so it counts as unresolved.
  */
 export const createModuleResolver = (options: ModuleResolverOptions): ModuleResolver => {
   const rootDirectory = resolve(options.rootDirectory);
+  const realRootDirectory = existsSync(rootDirectory) ? realpathSync(rootDirectory) : rootDirectory;
   const resolversByTsconfig = new Map<string, ResolverFactory[]>();
   const tsconfigByDirectory = new Map<string, string | null>();
   const modules = [...(options.moduleDirectories ?? []), "node_modules"];
@@ -164,7 +171,7 @@ export const createModuleResolver = (options: ModuleResolverOptions): ModuleReso
         if (result.builtin) {
           return { path: result.builtin.resolved, isExternal: true, packageName: specifier };
         }
-        if (!result.path) continue;
+        if (!result.path || !isInsideDirectory(result.path, realRootDirectory)) continue;
         const isExternal = isInsideNodeModules(result.path);
         return {
           path: result.path,
