@@ -1,7 +1,6 @@
 import { flattenInto, forgetArrayItems, getIterationItem } from "./access.js";
-import { type EvaluationContext, type Interpreter, isEffectUndecided } from "./interpreter.js";
+import { type EvaluationContext, isEffectUndecided } from "./interpreter.js";
 import type { CallbackInvoker } from "./react-calls.js";
-import { hasLocalBinding } from "./scope.js";
 import {
   array,
   assignStatic,
@@ -22,117 +21,6 @@ import {
   UNDEFINED,
   unknown,
 } from "./values.js";
-
-export const GLOBAL_NAMESPACES = new Set([
-  "Object",
-  "Array",
-  "JSON",
-  "Math",
-  "String",
-  "Number",
-  "Boolean",
-  "Date",
-  "Promise",
-  "Symbol",
-  "Reflect",
-  "Intl",
-  "console",
-  "window",
-  "document",
-  "globalThis",
-  "navigator",
-  "process",
-]);
-
-/** Browser globals the analysis host (Node) does not define. */
-const DOM_GLOBALS = new Set([
-  "location",
-  "history",
-  "screen",
-  "self",
-  "parent",
-  "top",
-  "frames",
-  "localStorage",
-  "sessionStorage",
-  "indexedDB",
-  "caches",
-  "requestAnimationFrame",
-  "cancelAnimationFrame",
-  "requestIdleCallback",
-  "cancelIdleCallback",
-  "matchMedia",
-  "getComputedStyle",
-  "getSelection",
-  "scrollTo",
-  "scrollBy",
-  "alert",
-  "confirm",
-  "prompt",
-  "open",
-  "print",
-  "innerWidth",
-  "innerHeight",
-  "devicePixelRatio",
-  "Image",
-  "Audio",
-  "Option",
-  "FileReader",
-  "XMLHttpRequest",
-  "Worker",
-  "DOMParser",
-  "XMLSerializer",
-  "Notification",
-  "MutationObserver",
-  "IntersectionObserver",
-  "ResizeObserver",
-  "CSS",
-  "Node",
-  "Text",
-  "Element",
-  "Range",
-  "Selection",
-  "NodeList",
-  "DocumentFragment",
-  "ShadowRoot",
-  "DataTransfer",
-  "MediaQueryList",
-  "ImageData",
-  "Path2D",
-  "OffscreenCanvas",
-  "AudioContext",
-  "MediaRecorder",
-  "MediaStream",
-  "IDBKeyRange",
-]);
-
-const DOM_GLOBAL_PATTERN = /^(?:HTML|SVG|CSS|Webkit|WebKit)[A-Z]|Event$|Element$/;
-
-/**
- * Whether a free identifier names a value the runtime provides. Anything
- * ECMAScript or the web platform defines in Node is checked against the host,
- * so the list only has to cover what browsers add on top.
- */
-export const isKnownGlobal = (name: string): boolean =>
-  GLOBAL_NAMESPACES.has(name) ||
-  DOM_GLOBALS.has(name) ||
-  DOM_GLOBAL_PATTERN.test(name) ||
-  name in globalThis;
-
-/** Whether an access chain starts at a global namespace rather than a binding that shadows it. */
-export const isGlobalChain = (chain: string[], context: EvaluationContext): boolean =>
-  GLOBAL_NAMESPACES.has(chain[0]) &&
-  !hasLocalBinding(context.scope, chain[0]) &&
-  !context.module.bindings.has(chain[0]);
-
-/**
- * `process.env.<NAME>` as a bundler substitutes it: the configured value, or
- * unknown for a variable the analysis was not told about.
- */
-export const readEnvironmentVariable = (interpreter: Interpreter, name: string): StaticValue => {
-  const value = interpreter.environment[name];
-  return value === undefined ? unknown(`process.env.${name}`) : literal(value);
-};
 
 const ARRAY_LIKE_METHODS = new Set([
   "map",
@@ -168,7 +56,7 @@ const ARRAY_LIKE_METHODS = new Set([
 ]);
 
 const isCallable = (value: StaticValue | undefined): value is StaticValue =>
-  value !== undefined && value.kind === "function";
+  value !== undefined && (value.kind === "function" || value.kind === "global");
 
 /** What `join` writes for a known primitive item or separator: nullish become empty, symbols throw. */
 const asJoinable = (value: StaticValue): string | null => {

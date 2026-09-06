@@ -1,10 +1,10 @@
 import type { Expression } from "@oxc-project/types";
 import { getMemberLinks, unwrapExpression } from "../module/ast.js";
+import { equalsPrimitive } from "./operators.js";
 import { createScope, declareVariable, lookupVariable, type Scope } from "./scope.js";
 import {
   conditional,
   getTruthiness,
-  isNullish,
   isNullishValue,
   type Primitive,
   type StaticValue,
@@ -40,24 +40,12 @@ const either =
 export const keepTruthy: ArmFilter = (arm) => getTruthiness(arm);
 export const keepFalsy = negate(keepTruthy);
 
-/** Values with structure are never equal to a primitive; only unknowns keep both outcomes open. */
-const equalsPrimitive =
+const keepEqualTo =
   (expected: Primitive, isLoose: boolean): ArmFilter =>
-  (arm) => {
-    switch (arm.kind) {
-      case "literal":
-        return isLoose && isNullish(expected) ? isNullish(arm.value) : arm.value === expected;
-      case "text":
-        return typeof expected === "string" ? null : false;
-      case "unknown":
-      case "external":
-        return null;
-      default:
-        return false;
-    }
-  };
+  (arm) =>
+    equalsPrimitive(arm, expected, !isLoose);
 
-export const keepNullish = equalsPrimitive(undefined, true);
+export const keepNullish = keepEqualTo(undefined, true);
 export const keepNonNullish = negate(keepNullish);
 
 interface ComparedPrimitive {
@@ -144,7 +132,7 @@ export const collectNarrowings = (
       for (const [side, other] of operands) {
         const compared = getComparedPrimitive(other);
         if (compared === null) continue;
-        const keep = equalsPrimitive(compared.value, isLoose);
+        const keep = keepEqualTo(compared.value, isLoose);
         narrowExpression(side, isEquality === outcome ? keep : negate(keep), into);
       }
       break;
@@ -163,7 +151,7 @@ export const collectCaseNarrowings = (
   for (const test of tests) {
     const compared = getComparedPrimitive(test);
     if (compared === null) return [];
-    filters.push(equalsPrimitive(compared.value, false));
+    filters.push(keepEqualTo(compared.value, false));
   }
   if (filters.length === 0) return [];
   const into: Narrowing[] = [];

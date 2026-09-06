@@ -8,9 +8,10 @@ import {
   unwrapExpression,
 } from "../module/ast.js";
 import { getProperty, spreadInto } from "./access.js";
-import { evaluateArrayMethod, evaluateGlobalCall, isGlobalChain } from "./builtins.js";
+import { evaluateArrayMethod, evaluateGlobalCall } from "./builtins.js";
 import { evaluateCompiledClass, getCompiledClass } from "./compiled-classes.js";
 import { readContext } from "./contexts.js";
+import { getPrototypeMethod, isGlobalChain } from "./globals.js";
 import { isBuiltinHookName, modelBuiltinHook } from "./hooks.js";
 import { type EvaluationContext, getReturnValue, type Interpreter } from "./interpreter.js";
 import { isHookCallee, isHookName } from "./naming.js";
@@ -28,12 +29,15 @@ import {
   array,
   conditional,
   type ExternalValue,
+  FALSE,
   type FunctionValue,
   isFullyKnown,
   isNullishValue,
+  mapConditional,
   readItem,
   type StaticValue,
   text,
+  TRUE,
   UNDEFINED,
   unknown,
 } from "./values.js";
@@ -54,14 +58,24 @@ const evaluateArguments = (
   return values;
 };
 
-const createInvoker =
-  (interpreter: Interpreter, context: EvaluationContext): CallbackInvoker =>
-  (callback, callArguments) => {
-    if (callback.kind === "function") {
-      return interpreter.callFunction(callback, callArguments, context);
+const createInvoker = (interpreter: Interpreter, context: EvaluationContext): CallbackInvoker => {
+  const invoke: CallbackInvoker = (callback, callArguments) => {
+    switch (callback.kind) {
+      case "function":
+        return interpreter.callFunction(callback, callArguments, context);
+      case "global": {
+        const description = `${callback.chain.join(".")}()`;
+        return (
+          evaluateGlobalCall(callback.chain, callArguments, invoke, description) ??
+          unknown(description)
+        );
+      }
+      default:
+        return unknown(`call of ${callback.kind}`);
     }
-    return unknown(`call of ${callback.kind}`);
   };
+  return invoke;
+};
 
 const isReactHook = (callee: StaticValue): callee is ExternalValue => {
   if (callee.kind !== "external") return false;
@@ -132,6 +146,13 @@ const invokeValue = (
   switch (callee.kind) {
     case "function":
       return interpreter.callFunction(callee, callArguments, context);
+    case "global": {
+      const invoke = createInvoker(interpreter, context);
+      const modelled = evaluateGlobalCall(callee.chain, callArguments, invoke, description);
+      if (modelled) return modelled;
+      releaseCallbackWrites(callArguments, description, context);
+      return unknown(description);
+    }
     case "external": {
       const modelled = evaluateReactCall(
         interpreter,
@@ -189,11 +210,47 @@ const evaluateMethodCall = (
           context,
         );
       }
-      return member ? null : unknown(description);
+      if (member) return null;
+      if (method === "hasOwnProperty" && callArguments[0]?.kind === "literal") {
+        if (target.properties.has(String(callArguments[0].value))) return TRUE;
+        return target.hasUnknownSpread ? unknown(description) : FALSE;
+      }
+      return unknown(description);
     }
     case "namespace":
       if (method === "then") return callArguments[0] ? invoke(callArguments[0], [target]) : target;
       return null;
+    case "global": {
+      if (method !== "call" && method !== "apply") {
+        return evaluateGlobalCall([...target.chain, method], callArguments, invoke, description);
+      }
+      const [receiver = UNDEFINED, applied] = callArguments;
+      const passed =
+        method === "call"
+          ? callArguments.slice(1)
+          : applied?.kind === "array"
+            ? applied.items
+            : null;
+      if (passed === null) return unknown(description);
+      const prototypeMethod = getPrototypeMethod(target);
+      if (prototypeMethod === null) {
+        return evaluateGlobalCall(target.chain, passed, invoke, description);
+      }
+      /** `Array.prototype.slice.call(list)` is `list.slice()`. */
+      return mapConditional(
+        receiver,
+        (arm) =>
+          evaluateMethodCall(
+            interpreter,
+            arm,
+            prototypeMethod,
+            passed,
+            description,
+            description,
+            context,
+          ) ?? unknown(description),
+      );
+    }
     case "function":
       switch (method) {
         case "bind":

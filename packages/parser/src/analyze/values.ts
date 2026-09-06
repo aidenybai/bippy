@@ -126,6 +126,16 @@ export interface ExternalValue {
   name: string | null;
 }
 
+/**
+ * A standard global (`Object.assign`, `Array.prototype.slice`, `Math`) held
+ * as a value, as when `_extends = Object.assign || …` stores it for later.
+ */
+export interface GlobalValue {
+  kind: "global";
+  chain: string[];
+  typeName: "function" | "object";
+}
+
 export type StaticValue =
   | LiteralValue
   | TextValue
@@ -140,7 +150,8 @@ export type StaticValue =
   | ComponentValue
   | ElementValue
   | NamespaceValue
-  | ExternalValue;
+  | ExternalValue
+  | GlobalValue;
 
 export type BuiltinComponentName =
   | "Fragment"
@@ -479,6 +490,7 @@ const isFullyKnownInner = (value: StaticValue, visited: Set<StaticValue>): boole
     case "component":
     case "namespace":
     case "external":
+    case "global":
       return true;
     case "text":
     case "unknown":
@@ -527,6 +539,7 @@ export const getTruthiness = (value: StaticValue): boolean | null => {
     case "list":
     case "namespace":
     case "external":
+    case "global":
       return true;
     case "text":
     case "unknown":
@@ -602,5 +615,7 @@ export const describeValue = (value: StaticValue): string => {
       return `namespace(${value.module.filePath})`;
     case "external":
       return `external(${value.specifier}:${[value.importedName, ...value.memberPath].join(".")})`;
+    case "global":
+      return `global(${value.chain.join(".")})`;
   }
 };

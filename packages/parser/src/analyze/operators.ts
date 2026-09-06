@@ -45,6 +45,8 @@ const typeOfValue = (value: StaticValue): string | null => {
     case "function":
     case "component":
       return "function";
+    case "global":
+      return value.typeName;
     default:
       return null;
   }
@@ -136,23 +138,29 @@ const REFERENCE_KINDS = new Set<StaticValue["kind"]>([
   "namespace",
 ]);
 
-const OBJECT_KINDS = new Set<StaticValue["kind"]>([...REFERENCE_KINDS, "regexp", "list"]);
+const OBJECT_KINDS = new Set<StaticValue["kind"]>([...REFERENCE_KINDS, "regexp", "list", "global"]);
 
 const EQUALITY_OPERATORS = new Set<BinaryOperator>(["===", "==", "!==", "!="]);
 
 /**
- * Whether a value known only by shape can equal `primitive`: an object never
- * strictly equals a primitive and is never loosely nullish, though it may
- * coerce to a string, number or boolean; a string is never nullish and only
- * strictly equals another string.
+ * Whether `value` equals `primitive`, when decidable. A value known only by
+ * shape still decides some comparisons: an object never strictly equals a
+ * primitive and is never loosely nullish, though it may coerce to a string,
+ * number or boolean; a string is never nullish and only strictly equals
+ * another string.
  */
-const canEqualPrimitive = (
+export const equalsPrimitive = (
   value: StaticValue,
   primitive: Primitive,
   isStrict: boolean,
 ): boolean | null => {
-  if (isNullish(primitive))
+  if (value.kind === "literal") {
+    // oxlint-disable-next-line eqeqeq -- folds the source's own loose comparison
+    return isStrict ? value.value === primitive : value.value == primitive;
+  }
+  if (isNullish(primitive)) {
     return OBJECT_KINDS.has(value.kind) || value.kind === "text" ? false : null;
+  }
   if (!isStrict) return null;
   if (OBJECT_KINDS.has(value.kind)) return false;
   return value.kind === "text" && typeof primitive !== "string" ? false : null;
@@ -166,8 +174,11 @@ const decideEquality = (
 ): boolean | null => {
   /** One static value stands for one runtime object; distinct values may still be the same object. */
   if (left === right && REFERENCE_KINDS.has(left.kind)) return true;
-  if (right.kind === "literal") return canEqualPrimitive(left, right.value, isStrict);
-  if (left.kind === "literal") return canEqualPrimitive(right, left.value, isStrict);
+  if (left.kind === "global" && right.kind === "global") {
+    return left.chain.join(".") === right.chain.join(".");
+  }
+  if (right.kind === "literal") return equalsPrimitive(left, right.value, isStrict);
+  if (left.kind === "literal") return equalsPrimitive(right, left.value, isStrict);
   return null;
 };
 

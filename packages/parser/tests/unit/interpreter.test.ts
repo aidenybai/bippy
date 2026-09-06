@@ -147,6 +147,51 @@ describe("interpreter: arrays and objects", () => {
     );
   });
 
+  it("holds standard globals as values and calls them through call, apply and callbacks", () => {
+    expect(
+      describe_(`const assign = Object.assign || (() => 1); export const value = assign;`),
+    ).toBe("global(Object.assign)");
+    expect(describe_(`export const value = Object.assign.apply(null, [{ a: 1 }, { b: 2 }]);`)).toBe(
+      "{a, b}",
+    );
+    expect(
+      describe_(`export const value = Object.prototype.hasOwnProperty.call({ a: 1 }, "a");`),
+    ).toBe("true");
+    expect(
+      describe_(`export const value = Object.prototype.hasOwnProperty.call({ a: 1 }, "b");`),
+    ).toBe("false");
+    expect(describe_(`export const value = Array.prototype.slice.call([1, 2, 3], 1);`)).toBe(
+      "[2, 3]",
+    );
+    expect(describe_(`export const value = [0, "", "x", 2].filter(Boolean);`)).toBe('["x", 2]');
+    expect(describe_(`export const value = [1, 2].map(String);`)).toBe('["1", "2"]');
+    expect(describe_(`export const value = typeof Symbol === "function" && Symbol.iterator;`)).toBe(
+      "Symbol(Symbol.iterator)",
+    );
+    expect(describe_(`export const value = Math.PI > 3;`)).toBe("true");
+    expect(describe_(`export const value = Object.nope;`)).toBe("unknown(Object.nope)");
+    expect(describe_(`export const value = Object.assign === Object.assign;`)).toBe("true");
+    expect(describe_(`export const value = Object.assign == null;`)).toBe("false");
+  });
+
+  it("runs Babel's _extends helper, which stores Object.assign and applies it to arguments", () => {
+    expect(
+      describe_(`function _extends() {
+        _extends = Object.assign || function (target) {
+          for (var i = 1; i < arguments.length; i++) {
+            var source = arguments[i];
+            for (var key in source) {
+              if (Object.prototype.hasOwnProperty.call(source, key)) target[key] = source[key];
+            }
+          }
+          return target;
+        };
+        return _extends.apply(this, arguments);
+      }
+      export const value = _extends({ onSubmit: 1 }, { children: "kids" }).children;`),
+    ).toBe('"kids"');
+  });
+
   it("decides equality between shapes and primitives an object can never be", () => {
     expect(describe_(`const source = {}; export const value = source == null;`)).toBe("false");
     expect(describe_(`const source = {}; export const value = source !== undefined;`)).toBe("true");

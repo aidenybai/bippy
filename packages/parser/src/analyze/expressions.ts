@@ -18,7 +18,12 @@ import {
   type MemberLink,
 } from "../module/ast.js";
 import { getProperty, normalizeExternal, spreadInto } from "./access.js";
-import { isGlobalChain, isKnownGlobal, readEnvironmentVariable } from "./builtins.js";
+import {
+  getStandardGlobal,
+  isGlobalChain,
+  isKnownGlobal,
+  readEnvironmentVariable,
+} from "./globals.js";
 import { evaluateCall } from "./calls.js";
 import { classifyClass } from "./components.js";
 import {
@@ -90,6 +95,8 @@ export const resolveIdentifier = (
   const globalLiteral = GLOBAL_LITERALS[name];
   if (globalLiteral) return globalLiteral;
   if (name === "React") return REACT_GLOBAL;
+  const standard = getStandardGlobal(name);
+  if (standard) return standard;
   if (!isKnownGlobal(name)) {
     interpreter.report("unresolved-reference", `no binding for "${name}"`, context.module, span);
   }

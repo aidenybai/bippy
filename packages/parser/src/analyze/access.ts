@@ -1,4 +1,5 @@
 import { getReactApiReference } from "../link/react-api.js";
+import { getGlobalMember } from "./globals.js";
 import type { Interpreter } from "./interpreter.js";
 import {
   type ArrayValue,
@@ -107,6 +108,8 @@ export const getProperty = (
       return interpreter.getModuleExport(target.module, key);
     case "external":
       return accessExternalMember(target, key);
+    case "global":
+      return getGlobalMember(target, key);
     case "component":
       return target.statics.get(key) ?? getComponentProperty(target, key);
     case "function": {
