@@ -15,9 +15,16 @@ import { type EvaluationContext, getReturnValue, type Interpreter } from "./inte
 import { isHookCallee, isHookName } from "./naming.js";
 import { bindParameters } from "./patterns.js";
 import { type CallbackInvoker, evaluateReactCall } from "./react-calls.js";
-import { assignVariable, createScope, isEnclosingScope, lookupVariable } from "./scope.js";
+import {
+  assignVariable,
+  createScope,
+  declareVariable,
+  isEnclosingScope,
+  lookupVariable,
+} from "./scope.js";
 import { evaluateRegExpMethod, evaluateStringMethod } from "./strings.js";
 import {
+  array,
   conditional,
   type ExternalValue,
   type FunctionValue,
@@ -359,6 +366,9 @@ export const callFunction = (
     activeCalls,
   };
   bindParameters(interpreter, fn.fn.params, callArguments, inner);
+  if (fn.fn.type !== "ArrowFunctionExpression") {
+    declareVariable(inner.scope, "arguments", array(callArguments));
+  }
   if (fn.fn.body === null) return UNDEFINED;
   if (fn.fn.body.type !== "BlockStatement")
     return interpreter.evaluateExpression(fn.fn.body, inner);
