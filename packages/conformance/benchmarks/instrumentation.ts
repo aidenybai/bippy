@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
 import type { ReactDevToolsTarget, ReactRenderer, Unsubscribe } from "bippy";
-import { benchmarkCase, type BenchmarkCase, type BenchmarkContext } from "./harness.js";
+import {
+  benchmarkCase,
+  createBenchmarkSuite,
+  equals,
+  type BenchmarkCase,
+  type BenchmarkContext,
+} from "./harness.js";
 import { createFiber, createTree } from "./fixtures.js";
 
-const equals =
-  (expected: unknown) =>
-  (value: unknown): void =>
-    assert.equal(value, expected);
 const createRenderer = (): ReactRenderer => ({
   version: "19.2.4",
   rendererPackageName: "benchmark",
@@ -23,13 +25,7 @@ const events: Array<"commit" | "unmount" | "post-commit" | "schedule"> = [
 export const createInstrumentationBenchmarks = ({ Bippy }: BenchmarkContext): BenchmarkCase[] => {
   const target: ReactDevToolsTarget = {};
   const hook = Bippy.getRDTHook(undefined, target);
-  const cases: BenchmarkCase[] = [];
-  const add = (
-    name: string,
-    scenario: string,
-    run: BenchmarkCase["run"],
-    verify: BenchmarkCase["verify"],
-  ) => cases.push(benchmarkCase(`${name}/${scenario}`, [`bippy#${name}`], run, verify));
+  const { cases, add } = createBenchmarkSuite("bippy");
   add("getRDTHook", "warm", () => Bippy.getRDTHook(undefined, target), equals(hook));
   add(
     "patchRDTHook",
@@ -55,8 +51,8 @@ export const createInstrumentationBenchmarks = ({ Bippy }: BenchmarkContext): Be
     () => Bippy.onRendererInject(() => {}, target)(),
     equals(undefined),
   );
-  let targets: ReactDevToolsTarget[] = [];
   for (const name of hookInstallers) {
+    let targets: ReactDevToolsTarget[] = [];
     cases.push(
       benchmarkCase(
         `${name}/cold-target`,
@@ -82,18 +78,18 @@ export const createInstrumentationBenchmarks = ({ Bippy }: BenchmarkContext): Be
       const eventRoot = createTree(0, "wide").root;
       const fiber = createFiber({ return: eventRoot.current });
       const subscriptions: Unsubscribe[] = [];
-      let calls = 0;
+      let callCount = 0;
       cases.push(
         benchmarkCase(
           `instrument/${event}-${count}-listeners`,
           ["bippy#instrument"],
           () => {
-            calls = 0;
+            callCount = 0;
             if (event === "commit") eventHook.onCommitFiberRoot(1, eventRoot, undefined);
             else if (event === "unmount") eventHook.onCommitFiberUnmount(1, fiber);
             else if (event === "post-commit") eventHook.onPostCommitFiberRoot(1, eventRoot);
             else eventHook.onScheduleFiberRoot?.(1, eventRoot, null);
-            return calls;
+            return callCount;
           },
           equals(count),
           {
@@ -102,7 +98,7 @@ export const createInstrumentationBenchmarks = ({ Bippy }: BenchmarkContext): Be
               subscriptions.push(Bippy.instrument({ target: eventTarget }));
               for (let index = 0; index < count; index++) {
                 const listener = () => {
-                  calls++;
+                  callCount++;
                 };
                 subscriptions.push(
                   Bippy.instrument({
@@ -163,22 +159,22 @@ export const createInstrumentationBenchmarks = ({ Bippy }: BenchmarkContext): Be
   const throwingHook = Bippy.getRDTHook(undefined, throwingTarget);
   const originalError = console.error;
   let unsubscribeThrowing: Unsubscribe | undefined;
-  let reports = 0;
+  let reportCount = 0;
   const listenerError = new Error("benchmark listener error");
   cases.push(
     benchmarkCase(
       "instrument/throwing-listener-stubbed-reporter",
       ["bippy#instrument"],
       () => {
-        reports = 0;
+        reportCount = 0;
         throwingHook.onCommitFiberRoot(1, root, undefined);
-        return reports;
+        return reportCount;
       },
       equals(1),
       {
         prepare: () => {
           console.error = () => {
-            reports++;
+            reportCount++;
           };
           unsubscribeThrowing ??= Bippy.instrument({
             target: throwingTarget,

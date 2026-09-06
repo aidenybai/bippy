@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import type { Fiber, FiberRoot, ReactDevToolsTarget, ReactRenderer } from "bippy";
-import { benchmarkCase, type BenchmarkCase, type BenchmarkContext } from "./harness.js";
+import {
+  benchmarkCase,
+  createBenchmarkSuite,
+  equals,
+  type BenchmarkCase,
+  type BenchmarkContext,
+} from "./harness.js";
 import {
   Component,
   createFiber,
@@ -12,7 +18,7 @@ import {
 
 interface SuspenseCommit {
   root: FiberRoot;
-  next: Fiber;
+  nextRootFiber: Fiber;
 }
 
 interface TypeWrapper {
@@ -20,10 +26,6 @@ interface TypeWrapper {
 }
 
 const treeShapes: Array<"deep" | "wide"> = ["deep", "wide"];
-const equals =
-  (expected: unknown) =>
-  (value: unknown): void =>
-    assert.equal(value, expected);
 
 export const createCoreBenchmarks = ({
   Bippy,
@@ -31,13 +33,7 @@ export const createCoreBenchmarks = ({
   ReactDOM,
   ReactDOMClient,
 }: BenchmarkContext): BenchmarkCase[] => {
-  const cases: BenchmarkCase[] = [];
-  const add = (
-    name: string,
-    scenario: string,
-    run: BenchmarkCase["run"],
-    verify: BenchmarkCase["verify"],
-  ) => cases.push(benchmarkCase(`${name}/${scenario}`, [`bippy#${name}`], run, verify));
+  const { cases, add } = createBenchmarkSuite("bippy");
   const renderer: ReactRenderer = {
     version: "19.2.4",
     rendererPackageName: "benchmark",
@@ -136,21 +132,21 @@ export const createCoreBenchmarks = ({
 
   for (const size of [100, 1000, 10000]) {
     for (const shape of treeShapes) {
-      const previous = createTree(size, shape);
-      const next = createTree(size, shape);
-      pairTrees(previous, next);
-      const leaf = previous.fibers[size - 1];
-      const selected = next.fibers[size - 1];
+      const previousTree = createTree(size, shape);
+      const nextTree = createTree(size, shape);
+      pairTrees(previousTree, nextTree);
+      const leaf = previousTree.fibers[size - 1];
+      const selected = nextTree.fibers[size - 1];
       add(
         "traverseFiber",
         `${shape}-${size}-tail`,
-        () => Bippy.traverseFiber(next.root.current, (fiber) => fiber === selected),
+        () => Bippy.traverseFiber(nextTree.root.current, (fiber) => fiber === selected),
         equals(selected),
       );
       add(
         "traverseFiber",
         `${shape}-${size}-miss`,
-        () => Bippy.traverseFiber(next.root.current, () => false),
+        () => Bippy.traverseFiber(nextTree.root.current, () => false),
         equals(null),
       );
       add(
@@ -159,7 +155,7 @@ export const createCoreBenchmarks = ({
         () => Bippy.getLatestFiber(leaf),
         equals(selected),
       );
-      Bippy.setReactWorkTagsForFiber(previous.root.current, renderer);
+      Bippy.setReactWorkTagsForFiber(previousTree.root.current, renderer);
       Bippy.getReactWorkTagsForFiber(leaf);
       add(
         "getReactWorkTagsForFiber",
@@ -167,18 +163,18 @@ export const createCoreBenchmarks = ({
         () => Bippy.getReactWorkTagsForFiber(leaf),
         equals(workTags),
       );
-      const currentRoot = next.root;
+      const currentRoot = nextTree.root;
       cases.push(
         benchmarkCase(
           `traverseRenderedFibers/${shape}-${size}-update`,
           ["bippy#traverseRenderedFibers"],
           () => {
             currentRoot.current = currentRoot.current.alternate ?? currentRoot.current;
-            let visited = 0;
+            let visitedFiberCount = 0;
             Bippy.traverseRenderedFibers(currentRoot, (_fiber, phase) => {
-              if (phase === "update") visited++;
+              if (phase === "update") visitedFiberCount++;
             });
-            return visited;
+            return visitedFiberCount;
           },
           equals(size + 1),
           {
@@ -192,15 +188,15 @@ export const createCoreBenchmarks = ({
     }
   }
   for (const size of [100, 1000, 10000]) {
-    const previous = createTree(size, "wide");
-    const next = createTree(size, "wide");
-    pairTrees(previous, next);
-    previous.root.current.alternate = null;
+    const previousTree = createTree(size, "wide");
+    const nextTree = createTree(size, "wide");
+    pairTrees(previousTree, nextTree);
+    previousTree.root.current.alternate = null;
     add(
       "getLatestFiber",
       `synthetic-root-search-${size}`,
-      () => Bippy.getLatestFiber(previous.fibers[size - 1]),
-      equals(next.fibers[size - 1]),
+      () => Bippy.getLatestFiber(previousTree.fibers[size - 1]),
+      equals(nextTree.fibers[size - 1]),
     );
     let commits: SuspenseCommit[] = [];
     cases.push(
@@ -209,12 +205,12 @@ export const createCoreBenchmarks = ({
         ["bippy#traverseRenderedFibers"],
         (iteration) => {
           const commit = commits[iteration];
-          commit.root.current = commit.next;
-          let unmounted = 0;
+          commit.root.current = commit.nextRootFiber;
+          let unmountedFiberCount = 0;
           Bippy.traverseRenderedFibers(commit.root, (_fiber, phase) => {
-            if (phase === "unmount") unmounted++;
+            if (phase === "unmount") unmountedFiberCount++;
           });
-          return unmounted;
+          return unmountedFiberCount;
         },
         equals(size),
         {
@@ -233,19 +229,19 @@ export const createCoreBenchmarks = ({
               boundary.child = offscreen;
               tree.root.current.child = boundary;
               for (const fiber of tree.fibers) fiber.return = offscreen;
-              const next = createFiber({
+              const nextRootFiber = createFiber({
                 tag: workTags.HostRoot,
                 alternate: tree.root.current,
                 memoizedState: tree.root.current.memoizedState,
               });
-              next.child = createFiber({
+              nextRootFiber.child = createFiber({
                 tag: workTags.SuspenseComponent,
                 alternate: boundary,
-                return: next,
+                return: nextRootFiber,
                 memoizedState: { memoizedState: null, next: null },
               });
               Bippy.traverseRenderedFibers(tree.root, () => {});
-              return { root: tree.root, next };
+              return { root: tree.root, nextRootFiber };
             });
           },
           maxIterations: 4,
@@ -268,43 +264,45 @@ export const createCoreBenchmarks = ({
       ["bippy#traverseFiber"],
       () => Bippy.traverseFiber(ascending.root.current, async () => false),
       equals(null),
-      { async: true, units: 1001 },
+      { isAsync: true, units: 1001 },
     ),
   );
 
   for (const size of [100, 1000]) {
-    let trees: FiberTree[] = [];
+    let tagTrees: FiberTree[] = [];
     cases.push(
       benchmarkCase(
         `getReactWorkTagsForFiber/deep-${size}-cold`,
         ["bippy#getReactWorkTagsForFiber", "bippy#setReactWorkTagsForFiber"],
-        (iteration) => Bippy.getReactWorkTagsForFiber(trees[iteration].fibers[size - 1]),
+        (iteration) => Bippy.getReactWorkTagsForFiber(tagTrees[iteration].fibers[size - 1]),
         equals(workTags),
         {
           prepare: (iterations) => {
-            trees = Array.from({ length: iterations }, () => createTree(size, "deep"));
-            for (const tree of trees) Bippy.setReactWorkTagsForFiber(tree.root.current, renderer);
+            tagTrees = Array.from({ length: iterations }, () => createTree(size, "deep"));
+            for (const tree of tagTrees)
+              Bippy.setReactWorkTagsForFiber(tree.root.current, renderer);
           },
           maxIterations: 16,
           units: size,
         },
       ),
     );
+    let mountTrees: FiberTree[] = [];
     cases.push(
       benchmarkCase(
         `traverseRenderedFibers/wide-${size}-mount`,
         ["bippy#traverseRenderedFibers"],
         (iteration) => {
-          let visited = 0;
-          Bippy.traverseRenderedFibers(trees[iteration].root, (_fiber, phase) => {
-            if (phase === "mount") visited++;
+          let visitedFiberCount = 0;
+          Bippy.traverseRenderedFibers(mountTrees[iteration].root, (_fiber, phase) => {
+            if (phase === "mount") visitedFiberCount++;
           });
-          return visited;
+          return visitedFiberCount;
         },
         equals(size + 1),
         {
           prepare: (iterations) => {
-            trees = Array.from({ length: iterations }, () => createTree(size, "wide"));
+            mountTrees = Array.from({ length: iterations }, () => createTree(size, "wide"));
           },
           maxIterations: 16,
           units: size + 1,
@@ -334,47 +332,71 @@ export const createCoreBenchmarks = ({
 
   const target: ReactDevToolsTarget = {};
   const hook = Bippy.getRDTHook(undefined, target);
-  const rendererId = hook.inject(renderer);
-  const tracked = createTree(1000, "deep");
-  hook.getFiberRoots?.(rendererId).add(tracked.root);
-  Bippy.getRenderer(tracked.fibers[999], target);
+  const trackedTree = createTree(1000, "deep");
+  let rendererId: number | undefined;
   cases.push(
     benchmarkCase(
       "getRenderer/deep-1000-warm",
       ["bippy#getRenderer"],
-      () => Bippy.getRenderer(tracked.fibers[999], target),
+      () => Bippy.getRenderer(trackedTree.fibers[999], target),
       equals(renderer),
       {
+        prepare: () => {
+          if (rendererId !== undefined) return;
+          rendererId = hook.inject(renderer);
+          hook.getFiberRoots?.(rendererId).add(trackedTree.root);
+          Bippy.getRenderer(trackedTree.fibers[999], target);
+        },
         cleanup: () => {
-          Bippy._fiberRoots.delete(tracked.root);
+          if (rendererId !== undefined) {
+            hook.getFiberRoots?.(rendererId).delete(trackedTree.root);
+            hook.renderers.delete(rendererId);
+          }
+          Bippy._fiberRoots.delete(trackedTree.root);
           Bippy._renderers.delete(renderer);
+          rendererId = undefined;
         },
       },
     ),
   );
-  const container = document.createElement("div");
-  document.body.appendChild(container);
-  const domRoot = ReactDOMClient.createRoot(container);
-  ReactDOM.flushSync(() => domRoot.render(React.createElement("span")));
-  const domFiber = Bippy.getFiber(container.firstChild);
-  assert.ok(domFiber);
-  const domRenderer = Bippy.getRenderer(domFiber);
-  assert.ok(domRenderer);
-  add("getFiber", "live-dom", () => Bippy.getFiber(container.firstChild), equals(domFiber));
-  cases.push(
-    benchmarkCase(
-      "getRenderer/live-dom-warm",
-      ["bippy#getRenderer"],
-      () => Bippy.getRenderer(domFiber),
-      equals(domRenderer),
-      {
-        cleanup: () => {
-          ReactDOM.flushSync(() => domRoot.unmount());
-          container.remove();
+  for (const name of ["getFiber", "getRenderer"]) {
+    let container: HTMLDivElement | undefined;
+    let domRoot: ReturnType<typeof ReactDOMClient.createRoot> | undefined;
+    let domFiber: Fiber | null = null;
+    let expected: Fiber | ReactRenderer | null = null;
+    cases.push(
+      benchmarkCase(
+        `${name}/live-dom`,
+        [`bippy#${name}`],
+        () => {
+          assert.ok(domFiber);
+          return name === "getFiber"
+            ? Bippy.getFiber(container?.firstChild)
+            : Bippy.getRenderer(domFiber);
         },
-      },
-    ),
-  );
+        (value) => assert.equal(value, expected),
+        {
+          prepare: () => {
+            if (domRoot) return;
+            container = document.createElement("div");
+            document.body.appendChild(container);
+            domRoot = ReactDOMClient.createRoot(container);
+            ReactDOM.flushSync(() => domRoot?.render(React.createElement("span")));
+            domFiber = Bippy.getFiber(container.firstChild);
+            assert.ok(domFiber);
+            expected = name === "getFiber" ? domFiber : Bippy.getRenderer(domFiber);
+            assert.ok(expected);
+          },
+          cleanup: () => {
+            ReactDOM.flushSync(() => domRoot?.unmount());
+            container?.remove();
+            domRoot = undefined;
+            domFiber = null;
+          },
+        },
+      ),
+    );
+  }
   for (const size of [100, 1000]) {
     const nativeTarget: ReactDevToolsTarget = {};
     const nativeHook = Bippy.getRDTHook(undefined, nativeTarget);

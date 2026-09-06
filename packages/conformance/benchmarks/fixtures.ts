@@ -33,15 +33,15 @@ export const createTree = (size: number, shape: "deep" | "wide"): FiberTree => {
   return { root, fibers };
 };
 
-export const pairTrees = (previous: FiberTree, next: FiberTree): void => {
-  previous.root.current.alternate = next.root.current;
-  next.root.current.alternate = previous.root.current;
-  previous.fibers.forEach((fiber, index) => {
-    fiber.alternate = next.fibers[index];
-    next.fibers[index].alternate = fiber;
+export const pairTrees = (previousTree: FiberTree, nextTree: FiberTree): void => {
+  previousTree.root.current.alternate = nextTree.root.current;
+  nextTree.root.current.alternate = previousTree.root.current;
+  previousTree.fibers.forEach((fiber, index) => {
+    fiber.alternate = nextTree.fibers[index];
+    nextTree.fibers[index].alternate = fiber;
   });
-  previous.root.current.stateNode = next.root;
-  next.root.current.stateNode = next.root;
+  previousTree.root.current.stateNode = nextTree.root;
+  nextTree.root.current.stateNode = nextTree.root;
 };
 
 export const createDebugStack = (depth = 1): Error => {

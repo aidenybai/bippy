@@ -44,7 +44,7 @@ it("awaits async work and validates every batch result", async () => {
         return "complete";
       },
       verify,
-      { async: true, cleanup },
+      { isAsync: true, cleanup },
     ),
     { samples: 2, targetMs: 0, maxIterations: 1 },
   );

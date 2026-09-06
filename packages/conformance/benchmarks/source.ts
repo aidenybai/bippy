@@ -2,29 +2,24 @@ import assert from "node:assert/strict";
 import { encode, type SourceMapSegment } from "@jridgewell/sourcemap-codec";
 import type { Fiber } from "bippy";
 import type { HooksTree, SourceFetch, SourceMap, StackFrame } from "bippy/source";
-import { benchmarkCase, type BenchmarkCase, type BenchmarkContext } from "./harness.js";
+import {
+  benchmarkCase,
+  createBenchmarkSuite,
+  type BenchmarkCase,
+  type BenchmarkContext,
+} from "./harness.js";
 import { Component, createDebugStack, createFiber, createTree, linkChildren } from "./fixtures.js";
 
 const assertFrame = (value: unknown): void => {
   assert.ok(value && typeof value === "object");
-  assert.equal(typeof Reflect.get(value, "fileName"), "string");
+  assert.ok("fileName" in value && typeof value.fileName === "string");
 };
 const assertFrames = (value: unknown): void => assert.ok(Array.isArray(value) && value.length > 0);
 
-export const createSourceBenchmarks = ({ Source }: BenchmarkContext): BenchmarkCase[] => {
-  const cases: BenchmarkCase[] = [];
-  const add = (
-    name: string,
-    scenario: string,
-    run: BenchmarkCase["run"],
-    verify: BenchmarkCase["verify"],
-    isAsync = false,
-  ) =>
-    cases.push(
-      benchmarkCase(`${name}/${scenario}`, [`bippy/source#${name}`], run, verify, {
-        async: isAsync,
-      }),
-    );
+export const createSourceBenchmarks = ({
+  Source,
+}: Pick<BenchmarkContext, "Source">): BenchmarkCase[] => {
+  const { cases, add } = createBenchmarkSuite("bippy/source");
   const bundleUrl = "https://bench.example/bundle.js";
   const sourceContent =
     "export const MappedComponent = () => {\nconst [count, setCount] = useState(0);\nreturn count;\n};";
@@ -64,7 +59,8 @@ export const createSourceBenchmarks = ({ Source }: BenchmarkContext): BenchmarkC
     () => Source.getSource(child, true, sourceFetch),
     (value) => {
       assert.ok(value && typeof value === "object");
-      assert.equal(Reflect.get(value, "fileName"), "src/component.tsx");
+      assert.ok("fileName" in value);
+      assert.equal(value.fileName, "src/component.tsx");
     },
     true,
   );
@@ -207,15 +203,27 @@ export const createSourceBenchmarks = ({ Source }: BenchmarkContext): BenchmarkC
       "getSourceFromSourceMap",
       `lines-${size}`,
       () => Source.getSourceFromSourceMap(sourceMap, size, 0),
-      assertFrame,
+      (value) =>
+        assert.deepEqual(value, {
+          columnNumber: 0,
+          fileName: "src/component.tsx",
+          functionName: "last",
+          isIgnoreListed: false,
+          lineNumber: size,
+        }),
     );
     add(
       "getSourceFromSourceMapByFunctionName",
       `tail-${size}`,
       () => Source.getSourceFromSourceMapByFunctionName(sourceMap, "last"),
       (value) => {
-        assertFrame(value);
-        assert.equal(Reflect.get(Object(value), "lineNumber"), size);
+        assert.deepEqual(value, {
+          columnNumber: 0,
+          fileName: "src/component.tsx",
+          functionName: "last",
+          isIgnoreListed: false,
+          lineNumber: size,
+        });
       },
     );
     const segmented: SourceMap = {
@@ -226,18 +234,25 @@ export const createSourceBenchmarks = ({ Source }: BenchmarkContext): BenchmarkC
       "getSourceFromSourceMap",
       `segments-${size}`,
       () => Source.getSourceFromSourceMap(segmented, 1, size - 1),
-      assertFrame,
+      (value) =>
+        assert.deepEqual(value, {
+          columnNumber: size - 1,
+          fileName: "src/component.tsx",
+          functionName: undefined,
+          isIgnoreListed: false,
+          lineNumber: 1,
+        }),
     );
     const contentMap: SourceMap = {
       ...sourceMap,
       sources: Array.from({ length: size }, (_, index) => `source${index}.tsx`),
-      sourcesContent: Array.from({ length: size }, () => sourceContent),
+      sourcesContent: Array.from({ length: size }, (_, index) => `export const value = ${index};`),
     };
     add(
       "getSourceContentFromSourceMap",
       `tail-${size}`,
       () => Source.getSourceContentFromSourceMap(contentMap, `source${size - 1}.tsx`),
-      (value) => assert.equal(value, sourceContent),
+      (value) => assert.equal(value, `export const value = ${size - 1};`),
     );
   }
   for (const hasApplicationSource of [false, true]) {
@@ -282,7 +297,8 @@ export const createSourceBenchmarks = ({ Source }: BenchmarkContext): BenchmarkC
   );
   const assertMap = (value: unknown): void => {
     assert.ok(value && typeof value === "object");
-    const decodedMappings: unknown = Reflect.get(value, "mappings");
+    assert.ok("mappings" in value);
+    const decodedMappings = value.mappings;
     assert.ok(Array.isArray(decodedMappings) && decodedMappings.length === 1001);
   };
   add(
