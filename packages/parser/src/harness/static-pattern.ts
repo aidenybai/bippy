@@ -40,6 +40,8 @@ export interface PatternOpaque extends PatternNodeBase {
   name: string;
   key: string | null;
   reason: string;
+  /** Children the application passed to the external component; matched somewhere inside its runtime subtree. */
+  passedChildren: PatternNode[];
 }
 
 export interface PatternWildcard extends PatternNodeBase {
@@ -90,6 +92,7 @@ export const toPattern = (fiber: StaticFiber): PatternNode => {
         name: fiber.displayName,
         key: fiber.key,
         reason: fiber.reason,
+        passedChildren: collectChildren(fiber.passedChildren).map(toPattern),
         location: fiber.location,
       };
     case "unknown":
@@ -97,13 +100,54 @@ export const toPattern = (fiber: StaticFiber): PatternNode => {
   }
 };
 
+const flattenPatternNode = (
+  node: PatternNode,
+  transparent: ReadonlySet<string>,
+): PatternNode[] => {
+  switch (node.kind) {
+    case "fiber": {
+      const children = flattenPatternFibers(node.children, transparent);
+      if (node.name !== null && transparent.has(node.name)) return children;
+      return [{ ...node, children }];
+    }
+    case "branch":
+      return [
+        {
+          ...node,
+          alternatives: node.alternatives.map((alternative) =>
+            flattenPatternFibers(alternative, transparent),
+          ),
+        },
+      ];
+    case "repeat":
+      return [{ ...node, children: flattenPatternFibers(node.children, transparent) }];
+    case "opaque":
+      return [{ ...node, passedChildren: flattenPatternFibers(node.passedChildren, transparent) }];
+    case "text":
+    case "wildcard":
+      return [node];
+  }
+};
+
+/** Splices out fibers named in `transparent`, promoting their children; used for framework wrappers synthesized on the static side. */
+export const flattenPatternFibers = (
+  nodes: PatternNode[],
+  transparent: ReadonlySet<string>,
+): PatternNode[] => {
+  if (transparent.size === 0) return nodes;
+  const result: PatternNode[] = [];
+  for (const node of nodes) result.push(...flattenPatternNode(node, transparent));
+  return result;
+};
+
 export const countPatternFibers = (node: PatternNode): number => {
   switch (node.kind) {
     case "fiber":
       return 1 + node.children.reduce((sum, child) => sum + countPatternFibers(child), 0);
     case "text":
-    case "opaque":
       return 1;
+    case "opaque":
+      return 1 + node.passedChildren.reduce((sum, child) => sum + countPatternFibers(child), 0);
     case "branch":
       return Math.max(
         0,

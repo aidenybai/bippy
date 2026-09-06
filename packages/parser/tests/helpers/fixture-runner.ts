@@ -1,6 +1,12 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { formatFiber, createStaticRenderer, type StaticRenderResult } from "../../src/index.js";
+import { formatFiber, type StaticRenderResult } from "../../src/index.js";
+import {
+  flattenTransparentFibers,
+  getFrameworkProfile,
+  renderFrameworkTarget,
+  type FrameworkKind,
+} from "../../src/frameworks/index.js";
 import {
   compareStaticToRuntime,
   createCommitRecorder,
@@ -16,6 +22,9 @@ export interface FixtureManifest {
   entry: string;
   expectedStatus: ComparisonStatus;
   minCoverage: number;
+  framework: FrameworkKind;
+  /** URL pathname for routed frameworks; the runtime side navigates here before mounting. */
+  route?: string;
   anchor?: string;
   externalPackages?: string[];
   skipRuntime?: boolean;
@@ -39,6 +48,7 @@ const DEFAULT_MANIFEST: FixtureManifest = {
   entry: "src/main.tsx",
   expectedStatus: "exact",
   minCoverage: 1,
+  framework: "spa",
 };
 const SETTLE_ROUNDS = 5;
 
@@ -65,6 +75,7 @@ const flushMacrotasks = async (rounds: number): Promise<void> => {
 };
 
 const mountFixture = async (fixture: FixtureCase): Promise<RuntimeSnapshot> => {
+  if (fixture.manifest.route) window.history.replaceState(null, "", fixture.manifest.route);
   document.body.innerHTML = "";
   const container = document.createElement("div");
   container.id = "root";
@@ -84,18 +95,26 @@ const mountFixture = async (fixture: FixtureCase): Promise<RuntimeSnapshot> => {
 };
 
 export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult> => {
-  const renderer = createStaticRenderer({
-    rootDirectory: fixture.directory,
-    tsconfigPath: existsSync(join(fixture.directory, "tsconfig.json"))
-      ? join(fixture.directory, "tsconfig.json")
-      : undefined,
-    externalPackageAllowList: fixture.manifest.externalPackages,
-  });
-  const staticResult = renderer.renderEntry(join(fixture.directory, fixture.manifest.entry));
+  const profile = getFrameworkProfile(fixture.manifest.framework);
+  const staticResult = renderFrameworkTarget(
+    {
+      framework: fixture.manifest.framework,
+      entry: join(fixture.directory, fixture.manifest.entry),
+      route: fixture.manifest.route,
+    },
+    {
+      rootDirectory: fixture.directory,
+      tsconfigPath: existsSync(join(fixture.directory, "tsconfig.json"))
+        ? join(fixture.directory, "tsconfig.json")
+        : undefined,
+      externalPackageAllowList: fixture.manifest.externalPackages,
+    },
+  );
   if (fixture.manifest.skipRuntime) return { staticResult, runtime: null, comparison: null };
   const runtime = await mountFixture(fixture);
-  const comparison = compareStaticToRuntime(staticResult, runtime, {
-    anchor: fixture.manifest.anchor,
+  const comparison = compareStaticToRuntime(staticResult, flattenTransparentFibers(runtime, profile), {
+    anchor: fixture.manifest.anchor ?? profile.defaultAnchor ?? undefined,
+    transparentStaticFibers: profile.transparentStaticFibers,
   });
   return { staticResult, runtime, comparison };
 };

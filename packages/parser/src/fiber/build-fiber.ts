@@ -12,6 +12,8 @@ import {
 import type {
   ComponentDefinition,
   ContextDefinition,
+  ModuleRecord,
+  RenderEnvironment,
   SourceLocation,
   StaticElementFiber,
   StaticElementType,
@@ -62,7 +64,15 @@ export interface FiberBuilderOptions {
   maxFiberCount?: number;
   maxRecursionPerComponent?: number;
   supportsSingletons?: boolean;
+  /**
+   * React Server Components: function components created by server code and
+   * defined outside `"use client"` modules render on the server, so the client
+   * receives only their output and creates no fiber for them.
+   */
+  serverComponents?: boolean;
 }
+
+const USE_CLIENT_DIRECTIVE = "use client";
 
 const DEFAULT_MAX_COMPONENT_DEPTH = 64;
 const DEFAULT_MAX_FIBER_COUNT = 50_000;
@@ -78,7 +88,11 @@ interface BuildContext {
   contextFrame: ContextFrame | null;
   componentStack: ComponentDefinition["node"][];
   suspenseScope: SuspenseScope | null;
+  environment: RenderEnvironment | null;
 }
+
+const isClientModule = (module: ModuleRecord): boolean =>
+  module.directives.includes(USE_CLIENT_DIRECTIVE);
 
 const isClassNode = (node: ComponentDefinition["node"]): node is Class =>
   node.type === "ClassDeclaration" || node.type === "ClassExpression";
@@ -110,6 +124,7 @@ export class FiberBuilder {
   private readonly maxFiberCount: number;
   private readonly maxRecursionPerComponent: number;
   private readonly supportsSingletons: boolean;
+  private readonly serverComponents: boolean;
   private budgetExhausted = false;
 
   constructor(interpreter: Interpreter, options: FiberBuilderOptions = {}) {
@@ -119,6 +134,7 @@ export class FiberBuilder {
     this.maxRecursionPerComponent =
       options.maxRecursionPerComponent ?? DEFAULT_MAX_RECURSION_PER_COMPONENT;
     this.supportsSingletons = options.supportsSingletons ?? true;
+    this.serverComponents = options.serverComponents ?? false;
   }
 
   buildRoot(rootValue: StaticValue, location: SourceLocation | null): StaticElementFiber {
@@ -136,6 +152,7 @@ export class FiberBuilder {
       contextFrame: null,
       componentStack: [],
       suspenseScope: null,
+      environment: this.serverComponents ? "server" : null,
     };
     root.child = this.reconcileChildren(root, rootValue, context);
     return root;
@@ -271,6 +288,23 @@ export class FiberBuilder {
       case "element":
         if (isTopLevel && value.type.kind === "fragment" && value.key === null) {
           this.appendChildFibers(getObjectProperty(value.props, "children"), context, out, true);
+          return;
+        }
+        if (value.type.kind === "function" && this.isServerComponentElement(value, context)) {
+          const component = value.type.component;
+          const server = this.evaluateComposite(
+            component,
+            context,
+            value.location,
+            null,
+            (componentContext) =>
+              this.interpreter.callFunction(
+                this.toFunctionValue(component),
+                [value.props],
+                componentContext,
+              ),
+          );
+          this.appendChildFibers(server.rendered, server.childContext, out, isTopLevel);
           return;
         }
         out.push(this.createFiberFromElement(value, context));
@@ -712,6 +746,24 @@ export class FiberBuilder {
         opaque.passedChildren = this.reconcileChildren(opaque, children, context);
         return opaque;
       }
+      case "stub": {
+        const fiber = this.createElementFiber(
+          type.stub.tag ?? FunctionComponentTag,
+          type,
+          elementType,
+          type.stub.displayName,
+          null,
+          props,
+          location,
+        );
+        fiber.key = this.keyToString(key, fiber);
+        fiber.notes.push(`${type.stub.displayName} is modeled by the harness, not analyzed`);
+        const rendered = type.stub.render(props, {
+          readContext: (definition) => this.lookupContext(definition, context),
+        });
+        fiber.child = this.reconcileChildren(fiber, rendered, this.descend(context));
+        return fiber;
+      }
       case "unknown":
         return this.createUnknownFiber(
           `${type.displayName ? `<${type.displayName}>` : "element"}: ${type.reason}`,
@@ -917,13 +969,40 @@ export class FiberBuilder {
     return fiber;
   }
 
-  private renderComposite(
-    fiber: StaticElementFiber,
+  /**
+   * Under RSC a function component created by server code renders on the server
+   * unless its module (or the module that created the element) opted into the
+   * client bundle with `"use client"`.
+   */
+  private isServerComponentElement(element: StaticElementValue, context: BuildContext): boolean {
+    if (!this.serverComponents || element.type.kind !== "function") return false;
+    const createdIn = element.environment ?? context.environment;
+    return createdIn !== "client" && !isClientModule(element.type.component.module);
+  }
+
+  private componentEnvironment(
     component: ComponentDefinition,
     context: BuildContext,
+  ): RenderEnvironment | null {
+    if (!this.serverComponents) return null;
+    if (context.environment === "client" || isClientModule(component.module)) return "client";
+    return isClassNode(component.node) ? "client" : "server";
+  }
+
+  private evaluateComposite(
+    component: ComponentDefinition,
+    context: BuildContext,
+    location: SourceLocation | null,
+    notes: string[] | null,
     render: (componentContext: ReturnType<Interpreter["createModuleContext"]>) => StaticValue,
-  ): void {
-    const location = fiber.location;
+  ): { rendered: StaticValue; childContext: BuildContext } {
+    const environment = this.componentEnvironment(component, context);
+    const childContext: BuildContext = {
+      ...context,
+      depth: context.depth + 1,
+      componentStack: [...context.componentStack, component.node],
+      environment,
+    };
     if (context.depth >= this.maxComponentDepth) {
       this.interpreter.report(
         "max-component-depth",
@@ -931,32 +1010,40 @@ export class FiberBuilder {
         location,
         "warning",
       );
-      fiber.child = this.link(fiber, [
-        this.createUnknownFiber("component depth exceeded", location),
-      ]);
-      return;
+      return { rendered: unknownValue("component depth exceeded", location), childContext };
     }
     let occurrences = 0;
     for (const node of context.componentStack) if (node === component.node) occurrences++;
     if (occurrences >= this.maxRecursionPerComponent) {
-      fiber.notes.push(
-        `recursive render of ${describeComponent(component)} truncated after ${occurrences} levels`,
-      );
-      fiber.child = this.link(fiber, [
-        this.createUnknownFiber(`recursive ${describeComponent(component)}`, location, context),
-      ]);
-      return;
+      const note = `recursive render of ${describeComponent(component)} truncated after ${occurrences} levels`;
+      if (notes) notes.push(note);
+      else this.interpreter.report("max-recursion", note, location, "warning");
+      return {
+        rendered: unknownValue(`recursive ${describeComponent(component)}`, location),
+        childContext,
+      };
     }
     const componentContext = this.interpreter.createModuleContext(
       component.module,
       context.contextFrame,
+      environment,
     );
-    const rendered = render(componentContext);
-    const childContext: BuildContext = {
-      ...context,
-      depth: context.depth + 1,
-      componentStack: [...context.componentStack, component.node],
-    };
+    return { rendered: render(componentContext), childContext };
+  }
+
+  private renderComposite(
+    fiber: StaticElementFiber,
+    component: ComponentDefinition,
+    context: BuildContext,
+    render: (componentContext: ReturnType<Interpreter["createModuleContext"]>) => StaticValue,
+  ): void {
+    const { rendered, childContext } = this.evaluateComposite(
+      component,
+      context,
+      fiber.location,
+      fiber.notes,
+      render,
+    );
     fiber.child = this.reconcileChildren(fiber, rendered, childContext);
   }
 
@@ -1000,10 +1087,7 @@ export class FiberBuilder {
       fiber.notes.push(`context ${definition.name} has no displayName`);
   }
 
-  private lookupContext(
-    definition: NonNullable<Extract<StaticElementType, { kind: "context-consumer" }>["context"]>,
-    context: BuildContext,
-  ): StaticValue {
+  private lookupContext(definition: ContextDefinition, context: BuildContext): StaticValue {
     let frame = context.contextFrame;
     while (frame) {
       if (frame.context === definition) return frame.value;

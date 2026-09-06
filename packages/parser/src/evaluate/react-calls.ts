@@ -172,6 +172,7 @@ export const evaluateReactApiCall = (
         args.slice(2),
         location,
         nameHint,
+        context,
       );
     }
     case "jsx":
@@ -181,7 +182,15 @@ export const evaluateReactApiCall = (
       const { entries } = propsFromValue(second, false);
       const key =
         third && !(third.kind === "primitive" && third.value === undefined) ? third : null;
-      return interpreter.createElement(first, objectValue(entries), key, [], location, nameHint);
+      return interpreter.createElement(
+        first,
+        objectValue(entries),
+        key,
+        [],
+        location,
+        nameHint,
+        context,
+      );
     }
     case "cloneElement": {
       if (first?.kind !== "element")
@@ -202,6 +211,7 @@ export const evaluateReactApiCall = (
         key: key ?? first.key,
         props: merged,
         location: first.location,
+        environment: first.environment,
       };
     }
     case "isValidElement":
@@ -324,7 +334,14 @@ export const evaluateReactApiCall = (
       return listValue([second ?? UNDEFINED_VALUE, unknownValue("form action"), FALSE_VALUE]);
     case "createPortal": {
       const props = objectValue(first ? [{ kind: "property", key: "children", value: first }] : []);
-      return { kind: "element", type: { kind: "portal" }, key: third ?? null, props, location };
+      return {
+        kind: "element",
+        type: { kind: "portal" },
+        key: third ?? null,
+        props,
+        location,
+        environment: context.environment,
+      };
     }
     case "flushSync":
       return first?.kind === "function"

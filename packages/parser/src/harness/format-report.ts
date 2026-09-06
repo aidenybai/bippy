@@ -6,7 +6,7 @@ export const formatComparisonReport = (report: ComparisonReport): string => {
   const lines = [
     `status: ${report.status}`,
     `coverage: ${percent(report.coverage)} (${report.matchedFibers} fibers + ${report.matchedText} text of ${report.runtimeFibers} runtime nodes; ${report.staticFibers} static)`,
-    `uncertainty: branches=${report.branchesResolved} repeats=${report.repeatIterations} opaque=${report.opaqueSubtrees} (${report.opaqueSkippedFibers} skipped) wildcard=${report.wildcardAbsorbedFibers}`,
+    `uncertainty: branches=${report.branchesResolved} repeats=${report.repeatIterations} opaque=${report.opaqueSubtrees} (${report.opaqueSkippedFibers} skipped, slots ${report.slotsMatched} matched/${report.slotsUnmatched} unmatched) wildcard=${report.wildcardAbsorbedFibers}`,
     `steps: ${report.stepsUsed}${report.budgetExhausted ? " (budget exhausted)" : ""}`,
   ];
   if (report.divergence) {

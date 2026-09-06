@@ -2,6 +2,7 @@ import type {
   ContextDefinition,
   FunctionLikeNode,
   ModuleRecord,
+  RenderEnvironment,
   Scope,
   StaticValue,
 } from "../types.js";
@@ -20,6 +21,7 @@ export interface EvaluationContext {
   callStack: FunctionLikeNode[];
   uncertainDepth: number;
   forkDepth: number;
+  environment: RenderEnvironment | null;
 }
 
 export const withScope = (context: EvaluationContext, scope: Scope): EvaluationContext => ({

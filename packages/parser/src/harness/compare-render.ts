@@ -5,11 +5,18 @@ import {
   type ComparisonReport,
 } from "./compare.js";
 import { findSnapshotFiber, type RuntimeFiberSnapshot, type RuntimeSnapshot } from "./snapshot.js";
-import { toPattern, type PatternFiber, type PatternNode } from "./static-pattern.js";
+import {
+  flattenPatternFibers,
+  toPattern,
+  type PatternFiber,
+  type PatternNode,
+} from "./static-pattern.js";
 
 export interface CompareRenderOptions extends ComparisonOptions {
   anchor?: string;
   rootIndex?: number;
+  /** Static fibers to splice out before matching (framework wrappers synthesized by a route adapter). */
+  transparentStaticFibers?: ReadonlySet<string>;
 }
 
 export interface CompareRenderResult {
@@ -68,6 +75,8 @@ const skipped = (
     matchedText: 0,
     opaqueSubtrees: 0,
     opaqueSkippedFibers: 0,
+    slotsMatched: 0,
+    slotsUnmatched: 0,
     wildcardAbsorbedFibers: 0,
     branchesResolved: 0,
     repeatIterations: 0,
@@ -90,7 +99,10 @@ export const compareStaticToRuntime = (
   options: CompareRenderOptions = {},
 ): CompareRenderResult => {
   const rootPattern = toPattern(staticResult.root);
-  const staticChildren = rootPattern.kind === "fiber" ? rootPattern.children : [rootPattern];
+  const staticChildren = flattenPatternFibers(
+    rootPattern.kind === "fiber" ? rootPattern.children : [rootPattern],
+    options.transparentStaticFibers ?? new Set(),
+  );
   if (isStaticRootUnresolved(staticResult.root)) {
     return skipped(
       staticChildren,

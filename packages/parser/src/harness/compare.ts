@@ -28,6 +28,10 @@ export interface ComparisonTally {
   matchedText: number;
   opaqueSubtrees: number;
   opaqueSkippedFibers: number;
+  /** Opaque subtrees whose passed children were located and matched inside the library's runtime output. */
+  slotsMatched: number;
+  /** Opaque subtrees whose passed children could not be located; the whole subtree was skipped. */
+  slotsUnmatched: number;
   wildcardAbsorbedFibers: number;
   branchesResolved: number;
   repeatIterations: number;
@@ -44,12 +48,17 @@ export interface ComparisonReport extends ComparisonTally {
 }
 
 const DEFAULT_MAX_STEPS = 200_000;
+// Providers and routers typically render their children within a few wrapper
+// layers; deeper slot searches would start matching unrelated subtrees.
+const MAX_SLOT_SEARCH_DEPTH = 12;
 
 const EMPTY_TALLY: ComparisonTally = {
   matchedFibers: 0,
   matchedText: 0,
   opaqueSubtrees: 0,
   opaqueSkippedFibers: 0,
+  slotsMatched: 0,
+  slotsUnmatched: 0,
   wildcardAbsorbedFibers: 0,
   branchesResolved: 0,
   repeatIterations: 0,
@@ -60,6 +69,8 @@ const addTally = (left: ComparisonTally, right: Partial<ComparisonTally>): Compa
   matchedText: left.matchedText + (right.matchedText ?? 0),
   opaqueSubtrees: left.opaqueSubtrees + (right.opaqueSubtrees ?? 0),
   opaqueSkippedFibers: left.opaqueSkippedFibers + (right.opaqueSkippedFibers ?? 0),
+  slotsMatched: left.slotsMatched + (right.slotsMatched ?? 0),
+  slotsUnmatched: left.slotsUnmatched + (right.slotsUnmatched ?? 0),
   wildcardAbsorbedFibers: left.wildcardAbsorbedFibers + (right.wildcardAbsorbedFibers ?? 0),
   branchesResolved: left.branchesResolved + (right.branchesResolved ?? 0),
   repeatIterations: left.repeatIterations + (right.repeatIterations ?? 0),
@@ -109,6 +120,7 @@ const tagsCompatible = (expected: string, actual: string): boolean =>
 
 class Matcher {
   private steps = 0;
+  private slotSearchDepth = 0;
   private furthest: { depth: number; index: number; divergence: ComparisonDivergence } | null =
     null;
   private readonly compareKeys: boolean;
@@ -139,6 +151,7 @@ class Matcher {
   ): void {
     const depth = path.length;
     if (
+      this.slotSearchDepth > 0 ||
       this.furthest &&
       (this.furthest.depth > depth ||
         (this.furthest.depth === depth && this.furthest.index >= index))
@@ -214,11 +227,24 @@ class Matcher {
       case "opaque": {
         if (actual && this.opaqueHeadMatches(pattern, actual)) {
           const rest = continuation(runtimeIndex + 1);
-          if (rest)
+          if (rest) {
+            const slot =
+              pattern.passedChildren.length > 0
+                ? this.matchSlot(pattern, actual, [...path, describePatternNode(pattern)])
+                : null;
+            if (slot) {
+              return addTally(addTally(rest, slot.tally), {
+                opaqueSubtrees: 1,
+                slotsMatched: 1,
+                opaqueSkippedFibers: countSnapshotFibers(actual) - slot.consumedFibers,
+              });
+            }
             return addTally(rest, {
               opaqueSubtrees: 1,
+              slotsUnmatched: pattern.passedChildren.length > 0 ? 1 : 0,
               opaqueSkippedFibers: countSnapshotFibers(actual),
             });
+          }
         }
         const skipped = continuation(runtimeIndex);
         if (skipped) return addTally(skipped, { opaqueSubtrees: 1 });
@@ -296,6 +322,55 @@ class Matcher {
     )
       return false;
     return actual.name === null || actual.name === pattern.name;
+  }
+
+  // Searches the library's runtime subtree for the place where it rendered the
+  // children the application passed in. Libraries may render siblings around the
+  // slot, so the passed children only need to appear as a contiguous run.
+  private matchSlot(
+    pattern: PatternOpaque,
+    actual: RuntimeFiberSnapshot,
+    path: string[],
+  ): { tally: ComparisonTally; consumedFibers: number } | null {
+    const queue: { fiber: RuntimeFiberSnapshot; depth: number }[] = [{ fiber: actual, depth: 0 }];
+    this.slotSearchDepth++;
+    try {
+      return this.searchSlot(pattern, queue, path);
+    } finally {
+      this.slotSearchDepth--;
+    }
+  }
+
+  private searchSlot(
+    pattern: PatternOpaque,
+    queue: { fiber: RuntimeFiberSnapshot; depth: number }[],
+    path: string[],
+  ): { tally: ComparisonTally; consumedFibers: number } | null {
+    for (let queueIndex = 0; queueIndex < queue.length; queueIndex++) {
+      const { fiber, depth } = queue[queueIndex];
+      for (let start = 0; start < fiber.children.length; start++) {
+        let consumedFibers = 0;
+        const tally = this.matchList(
+          pattern.passedChildren,
+          0,
+          fiber.children,
+          start,
+          path,
+          (nextIndex) => {
+            if (nextIndex === start) return null;
+            for (let index = start; index < nextIndex; index++) {
+              consumedFibers += countSnapshotFibers(fiber.children[index]);
+            }
+            return EMPTY_TALLY;
+          },
+        );
+        if (tally) return { tally, consumedFibers };
+      }
+      if (depth < MAX_SLOT_SEARCH_DEPTH) {
+        for (const child of fiber.children) queue.push({ fiber: child, depth: depth + 1 });
+      }
+    }
+    return null;
   }
 
   private matchChildren(

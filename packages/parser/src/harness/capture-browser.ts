@@ -1,10 +1,11 @@
+import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 import { chromium, type Browser, type Page } from "playwright";
 import type { HarnessGlobals } from "./browser-inject.js";
-import type { RuntimeSnapshot } from "./snapshot.js";
+import { parseSnapshot, type RuntimeSnapshot } from "./snapshot.js";
 
 export interface BrowserCaptureOptions {
   url: string;
@@ -31,8 +32,22 @@ const requireFromHere = createRequire(import.meta.url);
 
 let injectBundlePromise: Promise<string> | null = null;
 
-const bippySourceEntry = (): string =>
-  resolve(dirname(requireFromHere.resolve("bippy/package.json")), "src/index.ts");
+const bippyPackageDirectory = (): string =>
+  dirname(requireFromHere.resolve("bippy/package.json"));
+
+const bippySourceEntry = (): string => resolve(bippyPackageDirectory(), "src/index.ts");
+
+const bippyVersion = (): string => {
+  const manifest: unknown = JSON.parse(
+    readFileSync(resolve(bippyPackageDirectory(), "package.json"), "utf8"),
+  );
+  return typeof manifest === "object" &&
+    manifest !== null &&
+    "version" in manifest &&
+    typeof manifest.version === "string"
+    ? manifest.version
+    : "0.0.0";
+};
 
 export const buildInjectBundle = (): Promise<string> => {
   injectBundlePromise ??= build({
@@ -43,7 +58,10 @@ export const buildInjectBundle = (): Promise<string> => {
     platform: "browser",
     target: "es2020",
     alias: { bippy: bippySourceEntry() },
-    define: { "process.env.NODE_ENV": JSON.stringify("development") },
+    define: {
+      "process.env.NODE_ENV": JSON.stringify("development"),
+      "process.env.VERSION": JSON.stringify(bippyVersion()),
+    },
     logLevel: "silent",
   }).then((result) => {
     const [output] = result.outputFiles;
@@ -62,12 +80,16 @@ const readCommitCount = (page: Page): Promise<number> =>
     return read ? read() : 0;
   });
 
-const readSnapshot = (page: Page): Promise<RuntimeSnapshot | null> =>
-  page.evaluate(() => {
+// Playwright's structured serializer rejects deeply nested objects; the page
+// serializes the snapshot to a string and Node parses it back.
+const readSnapshot = async (page: Page): Promise<RuntimeSnapshot | null> => {
+  const json = await page.evaluate(() => {
     const globals: Partial<HarnessGlobals> = Object(globalThis);
     const read = globals.__BIPPY_PARSER_SNAPSHOT__;
-    return read ? read() : null;
+    return read ? JSON.stringify(read()) : null;
   });
+  return json === null ? null : parseSnapshot(json);
+};
 
 const sleep = (ms: number): Promise<void> =>
   new Promise((resolveSleep) => setTimeout(resolveSleep, ms));

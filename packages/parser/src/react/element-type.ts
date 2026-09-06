@@ -92,6 +92,7 @@ export const toElementType = (value: StaticValue, nameHint: string | null): Stat
     case "namespace":
     case "global":
     case "method":
+    case "native-function":
       return {
         kind: "unknown",
         displayName: nameHint,

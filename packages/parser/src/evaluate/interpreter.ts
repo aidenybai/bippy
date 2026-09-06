@@ -33,8 +33,10 @@ import { toElementType } from "../react/element-type.js";
 import { resolveReactApi, resolveReactApiMember } from "../react/react-api.js";
 import type {
   Diagnostic,
+  ExternalValueProvider,
   FunctionLikeNode,
   ModuleRecord,
+  RenderEnvironment,
   ResolvedSymbol,
   Scope,
   SourceLocation,
@@ -47,7 +49,7 @@ import type {
 } from "../types.js";
 import { evaluateBuiltinCall, getBuiltinGlobal, isPromiseMethodName } from "./builtin-calls.js";
 import type { ContextFrame, EvaluationContext } from "./context.js";
-import { withScope } from "./context.js";
+import { lookupContextValue, withScope } from "./context.js";
 import { decodeJsxEntities } from "./jsx-entities.js";
 import { cleanJsxText } from "./jsx-text.js";
 import { evaluateLoop } from "./loops.js";
@@ -80,6 +82,7 @@ export interface InterpreterOptions {
   maxRecursionPerFunction?: number;
   maxForkDepth?: number;
   maxSteps?: number;
+  externalValues?: ExternalValueProvider;
 }
 
 const DEFAULT_MAX_CALL_DEPTH = 32;
@@ -145,6 +148,7 @@ export class Interpreter {
   private readonly maxCallDepth: number;
   private readonly maxRecursionPerFunction: number;
   private readonly maxForkDepth: number;
+  private readonly externalValues: ExternalValueProvider | null;
   private remainingSteps: number;
   private readonly moduleScopes = new Map<string, Scope>();
   private readonly moduleValues = new Map<string, Map<string, StaticValue | typeof IN_PROGRESS>>();
@@ -157,6 +161,7 @@ export class Interpreter {
       options.maxRecursionPerFunction ?? DEFAULT_MAX_RECURSION_PER_FUNCTION;
     this.maxForkDepth = options.maxForkDepth ?? DEFAULT_MAX_FORK_DEPTH;
     this.remainingSteps = options.maxSteps ?? DEFAULT_MAX_STEPS;
+    this.externalValues = options.externalValues ?? null;
   }
 
   report(
@@ -178,6 +183,7 @@ export class Interpreter {
   createModuleContext(
     module: ModuleRecord,
     contextFrame: ContextFrame | null = null,
+    environment: RenderEnvironment | null = null,
   ): EvaluationContext {
     return {
       module,
@@ -187,6 +193,7 @@ export class Interpreter {
       callStack: [],
       uncertainDepth: 0,
       forkDepth: 0,
+      environment,
     };
   }
 
@@ -247,6 +254,10 @@ export class Interpreter {
         if (symbol.imported.kind === "named") {
           const api = resolveReactApi(symbol.packageName, symbol.imported.name);
           if (api) return { kind: "react-api", api };
+        }
+        if (this.externalValues) {
+          const provided = this.externalValues(symbol.packageName, importedName);
+          if (provided) return provided;
         }
         if (symbol.imported.kind === "namespace" || symbol.imported.kind === "default") {
           const api = resolveReactApi(symbol.packageName, "*");
@@ -948,6 +959,8 @@ export class Interpreter {
         return { kind: "method", receiver: object, name: key };
       case "method":
         return unknownValue(`property "${key}" of a method`, location);
+      case "native-function":
+        return unknownValue(`property "${key}" of ${object.name}`, location);
       case "unknown":
         return unknownValue(object.reason, location);
     }
@@ -1052,6 +1065,11 @@ export class Interpreter {
           packageName: callee.packageName,
           importedName: `${callee.importedName}()`,
         };
+      case "native-function":
+        return callee.call(args, {
+          readContext: (definition) =>
+            lookupContextValue(context.contextFrame, definition) ?? definition.defaultValue,
+        });
       case "class":
         return unknownValue(`class ${callee.name ?? ""} called without new`, location);
       case "unknown":
@@ -1095,7 +1113,9 @@ export class Interpreter {
     if (occurrences >= this.maxRecursionPerFunction) {
       return unknownValue(`recursive call of ${fn.name ?? "anonymous function"}`, location);
     }
-    if (fn.node.async || fn.node.generator) {
+    // Server components may be async; React awaits them before rendering, so
+    // evaluating the body synchronously (with `await x` as `x`) models the result.
+    if (fn.node.generator || (fn.node.async && context.environment !== "server")) {
       return unknownValue(`${fn.node.async ? "async" : "generator"} function result`, location);
     }
     const scope = createScope(fn.scope);
@@ -1109,6 +1129,7 @@ export class Interpreter {
       callStack: [...callStack, fn.node],
       uncertainDepth: context.uncertainDepth,
       forkDepth: context.forkDepth,
+      environment: context.environment,
     };
     this.bindParameters(fn.node.params, args, scope, callContext);
     const body = fn.node.body;
@@ -1607,13 +1628,21 @@ export class Interpreter {
     children: StaticValue[],
     location: SourceLocation | null,
     nameHint: string | null,
+    context: EvaluationContext,
   ): StaticElementValue {
     if (children.length === 1) {
       props.entries.push({ kind: "property", key: "children", value: children[0] });
     } else if (children.length > 1) {
       props.entries.push({ kind: "property", key: "children", value: listValue(children) });
     }
-    return { kind: "element", type: toElementType(type, nameHint), key, props, location };
+    return {
+      kind: "element",
+      type: toElementType(type, nameHint),
+      key,
+      props,
+      location,
+      environment: context.environment,
+    };
   }
 
   private evaluateJsxElement(node: JSXElement, context: EvaluationContext): StaticValue {
@@ -1627,6 +1656,7 @@ export class Interpreter {
       children,
       this.locate(context.module, node),
       this.describeJsxName(node.openingElement.name),
+      context,
     );
   }
 
@@ -1639,6 +1669,7 @@ export class Interpreter {
       children,
       this.locate(context.module, node),
       "Fragment",
+      context,
     );
   }
 }

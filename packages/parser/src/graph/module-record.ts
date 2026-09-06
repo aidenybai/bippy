@@ -266,12 +266,14 @@ export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
   const exports: ExportEntry[] = [];
   const bindings = new Map<string, TopLevelBinding>();
   const memberAssignments: MemberAssignment[] = [];
+  const directives: string[] = [];
   for (const statement of file.program.body) {
     if (
       statement.type === "ExpressionStatement" &&
       "directive" in statement &&
-      statement.directive
+      typeof statement.directive === "string"
     ) {
+      directives.push(statement.directive);
       continue;
     }
     collectStatement(statement, imports, exports, bindings);
@@ -286,5 +288,13 @@ export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
       span: importBinding.span,
     });
   }
-  return { filePath: file.filePath, file, imports, exports, bindings, memberAssignments };
+  return {
+    filePath: file.filePath,
+    file,
+    directives,
+    imports,
+    exports,
+    bindings,
+    memberAssignments,
+  };
 };

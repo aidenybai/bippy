@@ -189,6 +189,7 @@ export const getTruthiness = (value: StaticValue): boolean | null => {
     case "namespace":
     case "global":
     case "method":
+    case "native-function":
       return true;
   }
 };
@@ -282,6 +283,8 @@ export const describeValue = (value: StaticValue): string => {
       return `global ${value.name}`;
     case "method":
       return `${describeValue(value.receiver)}.${value.name}`;
+    case "native-function":
+      return `native ${value.name}`;
     case "unknown":
       return `unknown(${value.reason})`;
   }
@@ -322,6 +325,8 @@ export const describeElementType = (type: StaticElementType): string => {
       return "Portal";
     case "external":
       return type.displayName;
+    case "stub":
+      return type.stub.displayName;
     case "unknown":
       return type.displayName ?? "unknown";
   }

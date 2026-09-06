@@ -132,6 +132,8 @@ export const getElementDisplayName = (type: StaticElementType): string | null =>
       return "Portal";
     case "external":
       return type.displayName;
+    case "stub":
+      return type.stub.displayName;
     case "unknown":
       return type.displayName;
   }

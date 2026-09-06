@@ -34,6 +34,98 @@ export interface RuntimeSnapshot {
   capturedAt: string;
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const isPropValue = (value: unknown): value is SnapshotPropValue =>
+  value === null ||
+  typeof value === "string" ||
+  typeof value === "number" ||
+  typeof value === "boolean";
+
+const readNullableString = (value: unknown, path: string): string | null => {
+  if (value === null || typeof value === "string") return value;
+  throw new Error(`snapshot ${path}: expected string | null`);
+};
+
+const readFiber = (value: unknown, path: string): RuntimeFiberSnapshot => {
+  if (!isRecord(value)) throw new Error(`snapshot ${path}: expected a fiber object`);
+  if (typeof value.tag !== "string") throw new Error(`snapshot ${path}.tag: expected a string`);
+  if (!isRecord(value.props)) throw new Error(`snapshot ${path}.props: expected an object`);
+  if (!Array.isArray(value.children)) {
+    throw new Error(`snapshot ${path}.children: expected an array`);
+  }
+  const props: Record<string, SnapshotPropValue> = {};
+  for (const [name, prop] of Object.entries(value.props)) {
+    if (!isPropValue(prop)) throw new Error(`snapshot ${path}.props.${name}: unsupported value`);
+    props[name] = prop;
+  }
+  // The recorder writes tag names from the same union; an unfamiliar tag from a
+  // newer React degrades to "Unknown" rather than failing the whole capture.
+  const tag: SnapshotWorkTag = isKnownTag(value.tag) ? value.tag : "Unknown";
+  return {
+    tag,
+    name: readNullableString(value.name, `${path}.name`),
+    key: readNullableString(value.key, `${path}.key`),
+    text: readNullableString(value.text, `${path}.text`),
+    props,
+    children: value.children.map((child, index) => readFiber(child, `${path}.children[${index}]`)),
+  };
+};
+
+const KNOWN_TAGS: ReadonlySet<string> = new Set<SnapshotWorkTag>([
+  "FunctionComponent",
+  "ClassComponent",
+  "HostRoot",
+  "HostPortal",
+  "HostComponent",
+  "HostText",
+  "Fragment",
+  "Mode",
+  "ContextConsumer",
+  "ContextProvider",
+  "ForwardRef",
+  "Profiler",
+  "SuspenseComponent",
+  "MemoComponent",
+  "SimpleMemoComponent",
+  "LazyComponent",
+  "SuspenseListComponent",
+  "OffscreenComponent",
+  "HostHoistable",
+  "HostSingleton",
+  "ViewTransitionComponent",
+  "ActivityComponent",
+  "CacheComponent",
+  "TracingMarkerComponent",
+  "LegacyHiddenComponent",
+  "ScopeComponent",
+  "DehydratedSuspenseComponent",
+  "IncompleteClassComponent",
+  "IncompleteFunctionComponent",
+  "Unknown",
+]);
+
+const isKnownTag = (tag: string): tag is SnapshotWorkTag => KNOWN_TAGS.has(tag);
+
+export const parseSnapshot = (json: string): RuntimeSnapshot => {
+  const value: unknown = JSON.parse(json);
+  if (!isRecord(value) || !Array.isArray(value.roots)) {
+    throw new Error("snapshot: expected { roots: [...] }");
+  }
+  const buildType =
+    value.buildType === "development" || value.buildType === "production"
+      ? value.buildType
+      : null;
+  return {
+    reactVersion: readNullableString(value.reactVersion ?? null, "reactVersion"),
+    rendererName: readNullableString(value.rendererName ?? null, "rendererName"),
+    buildType,
+    roots: value.roots.map((root, index) => readFiber(root, `roots[${index}]`)),
+    capturedAt: typeof value.capturedAt === "string" ? value.capturedAt : new Date().toISOString(),
+  };
+};
+
 export const countSnapshotFibers = (fiber: RuntimeFiberSnapshot): number => {
   let count = 1;
   for (const child of fiber.children) count += countSnapshotFibers(child);

@@ -105,6 +105,8 @@ export interface MemberAssignment {
 export interface ModuleRecord {
   filePath: string;
   file: ParsedSourceFile;
+  /** Leading string directives such as `"use client"` or `"use strict"`. */
+  directives: string[];
   imports: ImportBinding[];
   exports: ExportEntry[];
   bindings: Map<string, TopLevelBinding>;
@@ -161,7 +163,31 @@ export type StaticElementType =
   | { kind: "context-consumer"; context: ContextDefinition | null; displayName: string | null }
   | { kind: "portal" }
   | { kind: "external"; packageName: string; importedName: string; displayName: string }
+  | { kind: "stub"; stub: StubComponent }
   | { kind: "unknown"; displayName: string | null; reason: string };
+
+/**
+ * A library component modeled by the harness rather than analyzed from source
+ * (e.g. a router's `Outlet` yielding the matched child route). It renders as a
+ * function-component fiber whose children are whatever `render` returns.
+ */
+export interface StubComponent {
+  displayName: string;
+  /** Work tag of the real component (e.g. `ForwardRef` for `Link`); defaults to a function component. */
+  tag?: WorkTag;
+  render: (props: StaticObjectValue, tools: StubRenderTools) => StaticValue;
+}
+
+export interface StubRenderTools {
+  /** Reads a context value as `useContext` would from the stub's position in the tree. */
+  readContext: (context: ContextDefinition) => StaticValue;
+}
+
+/** Supplies static values for named imports from external packages; return null to keep the import opaque. */
+export type ExternalValueProvider = (
+  packageName: string,
+  importedName: string,
+) => StaticValue | null;
 
 export type StaticPrimitive = string | number | boolean | null | undefined | bigint;
 
@@ -174,12 +200,21 @@ export interface StaticObjectValue {
   entries: StaticObjectEntry[];
 }
 
+/**
+ * Where an element was created under React Server Components. Server-created
+ * elements whose type is a server component render on the server and produce no
+ * client fiber; null when the program is not analyzed with RSC semantics or the
+ * element was created at module scope.
+ */
+export type RenderEnvironment = "server" | "client";
+
 export interface StaticElementValue {
   kind: "element";
   type: StaticElementType;
   key: StaticValue | null;
   props: StaticObjectValue;
   location: SourceLocation | null;
+  environment: RenderEnvironment | null;
 }
 
 export interface StaticPrimitiveValue {
@@ -276,6 +311,17 @@ export interface StaticUnknownValue {
   location: SourceLocation | null;
 }
 
+/**
+ * A function modeled by the analyzer itself (framework hooks, router
+ * factories). `call` receives the statically evaluated arguments and the same
+ * context tools a stub component gets, so modeled hooks can read providers.
+ */
+export interface StaticNativeFunctionValue {
+  kind: "native-function";
+  name: string;
+  call: (args: StaticValue[], tools: StubRenderTools) => StaticValue;
+}
+
 export type StaticValue =
   | StaticElementValue
   | StaticPrimitiveValue
@@ -293,6 +339,7 @@ export type StaticValue =
   | StaticNamespaceValue
   | StaticGlobalValue
   | StaticMethodValue
+  | StaticNativeFunctionValue
   | StaticUnknownValue;
 
 export type ReactApi =
@@ -444,4 +491,7 @@ export interface StaticRendererOptions {
   resolveExternalPackages?: boolean;
   externalPackageAllowList?: string[];
   supportsSingletons?: boolean;
+  /** Apply React Server Components semantics: components outside `"use client"` modules render without a fiber. */
+  serverComponents?: boolean;
+  externalValues?: ExternalValueProvider;
 }

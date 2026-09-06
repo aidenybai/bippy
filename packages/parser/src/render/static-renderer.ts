@@ -52,6 +52,7 @@ export class StaticRenderer {
     return new Interpreter(this.graph, {
       maxCallDepth: this.options.maxCallDepth,
       maxSteps: this.options.maxSteps,
+      externalValues: this.options.externalValues,
     });
   }
 
@@ -61,6 +62,7 @@ export class StaticRenderer {
       maxFiberCount: this.options.maxFiberCount,
       maxRecursionPerComponent: this.options.maxRecursionPerComponent,
       supportsSingletons: this.options.supportsSingletons,
+      serverComponents: this.options.serverComponents,
     });
   }
 
@@ -108,6 +110,7 @@ export class StaticRenderer {
       key: null,
       props: options.props ?? objectValue([]),
       location: null,
+      environment: null,
     };
     return this.finish(interpreter, builder, element, null);
   }
