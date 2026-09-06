@@ -11,7 +11,13 @@ import type {
   TryStatement,
   VariableDeclarator,
 } from "@oxc-project/types";
-import { isAnonymousFunctionDefinition, isNodeOfType, walk } from "../module/ast.js";
+import {
+  collectAssignedNames,
+  collectIdentifierNames,
+  isAnonymousFunctionDefinition,
+  isNodeOfType,
+  walk,
+} from "../module/ast.js";
 import { getIterationItem } from "./access.js";
 import { classifyClass } from "./components.js";
 import { evaluateEnum } from "./enums.js";
@@ -308,12 +314,6 @@ const BREAK_TARGETS = new Set<string>([
   "SwitchStatement",
 ]);
 
-const collectIdentifierNames = (root: object, names: Set<string>): void => {
-  walk(root, (node) => {
-    if (isNodeOfType(node, "Identifier")) names.add(node.name);
-  });
-};
-
 const contains = (outer: Span, inner: Span): boolean =>
   outer.start <= inner.start && inner.end <= outer.end;
 
@@ -322,21 +322,16 @@ const contains = (outer: Span, inner: Span): boolean =>
  * unrolled model cannot express; `continue` only ends the current iteration.
  */
 const collectLoopBodyFacts = (body: Statement): LoopBodyFacts => {
-  const assignedNames = new Set<string>();
   const breaks: { label: object | null; span: Span }[] = [];
   const nestedTargets: Span[] = [];
   walk(body, (node) => {
-    if (isNodeOfType(node, "AssignmentExpression"))
-      collectIdentifierNames(node.left, assignedNames);
-    else if (isNodeOfType(node, "UpdateExpression"))
-      collectIdentifierNames(node.argument, assignedNames);
-    else if (isNodeOfType(node, "BreakStatement")) breaks.push({ label: node.label, span: node });
+    if (isNodeOfType(node, "BreakStatement")) breaks.push({ label: node.label, span: node });
     else if (BREAK_TARGETS.has(node.type)) nestedTargets.push(node);
   });
   const hasBreak = breaks.some(
     (jump) => jump.label !== null || !nestedTargets.some((target) => contains(target, jump.span)),
   );
-  return { assignedNames, hasBreak };
+  return { assignedNames: collectAssignedNames(body), hasBreak };
 };
 
 /**

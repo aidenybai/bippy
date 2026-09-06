@@ -233,6 +233,25 @@ export const isAnonymousFunctionDefinition = (
   return false;
 };
 
+export const collectIdentifierNames = (root: object, names: Set<string>): void => {
+  walk(root, (node) => {
+    if (isNodeOfType(node, "Identifier")) names.add(node.name);
+  });
+};
+
+/**
+ * Identifiers written by assignments and updates anywhere under `root`,
+ * nested closures included; a member target counts its object as written.
+ */
+export const collectAssignedNames = (root: object): Set<string> => {
+  const names = new Set<string>();
+  walk(root, (node) => {
+    if (isNodeOfType(node, "AssignmentExpression")) collectIdentifierNames(node.left, names);
+    else if (isNodeOfType(node, "UpdateExpression")) collectIdentifierNames(node.argument, names);
+  });
+  return names;
+};
+
 /**
  * Depth-first traversal. Return `false` from the visitor to skip a subtree.
  */

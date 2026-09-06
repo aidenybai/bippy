@@ -31,6 +31,16 @@ export const createScope = (parent: Scope | null = null, kind: ScopeKind = "lexi
 
 export const isModuleScope = (scope: Scope): boolean => scope.parent === null;
 
+/** Whether `ancestor` is `scope` itself or one of the scopes it is nested in. */
+export const isEnclosingScope = (ancestor: Scope, scope: Scope): boolean => {
+  let current: Scope | null = scope;
+  while (current) {
+    if (current === ancestor) return true;
+    current = current.parent;
+  }
+  return false;
+};
+
 export const lookupVariable = (scope: Scope, name: string): StaticValue | undefined => {
   let current: Scope | null = scope;
   while (current) {

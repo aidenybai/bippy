@@ -1,6 +1,7 @@
 import type { Argument, CallExpression, Expression } from "@oxc-project/types";
 import { getReactApiReference } from "../link/react-api.js";
 import {
+  collectAssignedNames,
   getMemberChain,
   isOptionalSpine,
   isStringLiteral,
@@ -14,7 +15,13 @@ import { type EvaluationContext, getReturnValue, type Interpreter } from "./inte
 import { isHookCallee, isHookName } from "./naming.js";
 import { bindParameters } from "./patterns.js";
 import { type CallbackInvoker, evaluateReactCall } from "./react-calls.js";
-import { createScope, hasLocalBinding } from "./scope.js";
+import {
+  assignVariable,
+  createScope,
+  hasLocalBinding,
+  isEnclosingScope,
+  lookupVariable,
+} from "./scope.js";
 import { evaluateRegExpMethod, evaluateStringMethod } from "./strings.js";
 import {
   conditional,
@@ -98,6 +105,25 @@ const evaluateHookCall = (
   return unknown(`${displayName}()`);
 };
 
+/**
+ * A callee that cannot be followed may run the closures it is given before
+ * returning (`reaction.track(() => { result = render(); })`), so whatever
+ * they assign in the scopes enclosing the call is no longer known.
+ */
+const releaseCallbackWrites = (
+  callArguments: StaticValue[],
+  description: string,
+  context: EvaluationContext,
+): void => {
+  for (const argument of callArguments) {
+    if (argument.kind !== "function" || !isEnclosingScope(argument.scope, context.scope)) continue;
+    for (const name of collectAssignedNames(argument.fn)) {
+      if (lookupVariable(argument.scope, name) === undefined) continue;
+      assignVariable(context.scope, name, unknown(`${name} after ${description}`));
+    }
+  }
+};
+
 const invokeValue = (
   interpreter: Interpreter,
   callee: StaticValue,
@@ -118,9 +144,12 @@ const invokeValue = (
         call,
         context,
       );
-      return modelled ?? unknown(`${callee.name ?? callee.importedName}()`);
+      if (modelled) return modelled;
+      releaseCallbackWrites(callArguments, description, context);
+      return unknown(`${callee.name ?? callee.importedName}()`);
     }
     default:
+      releaseCallbackWrites(callArguments, description, context);
       return unknown(description);
   }
 };

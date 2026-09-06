@@ -502,4 +502,19 @@ describe("interpreter: functions and modules", () => {
       ),
     ).toBe("[false, true, true, fn(anonymous)]");
   });
+
+  it("forgets what a closure assigns once it is handed to a call that cannot be followed", () => {
+    expect(
+      run(`let result = 0;
+           let untouched = 1;
+           declare const reaction: { track: (fn: () => void) => void };
+           reaction.track(() => { result = 2; });
+           return [result, untouched];`),
+    ).toBe("[unknown(result after reaction.track()), 1]");
+    expect(
+      run(`let result = 0;
+           [1].forEach(() => { result = 2; });
+           return result;`),
+    ).toBe("2");
+  });
 });
