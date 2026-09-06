@@ -91,7 +91,13 @@
       "static": {
         "rootDirectory": ".",
         "entry": "excalidraw-app/index.tsx",
-        "externalPackageAllowList": ["@excalidraw/excalidraw", "@excalidraw/common", "@excalidraw/element", "@excalidraw/math", "@excalidraw/utils"],
+        "externalPackageAllowList": [
+          "@excalidraw/excalidraw",
+          "@excalidraw/common",
+          "@excalidraw/element",
+          "@excalidraw/math",
+          "@excalidraw/utils"
+        ],
         "maxFiberCount": 20000
       }
     },

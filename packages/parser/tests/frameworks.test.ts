@@ -9,7 +9,7 @@ import { formatFiber } from "../src/index.js";
 
 const FIXTURES = join(import.meta.dirname, "framework-fixtures");
 
-const render = (fixture: string, target: Omit<FrameworkRenderTarget, "entry">) => {
+const render = (fixture: string, target: FrameworkRenderTarget) => {
   const rootDirectory = join(FIXTURES, fixture);
   const result = renderFrameworkTarget(target, {
     rootDirectory,
@@ -98,11 +98,16 @@ describe("react router framework mode with react-router-auto-routes", () => {
   const target = (route: string) =>
     render("react-router-auto", { framework: "react-router", route, entry: "app/routes.ts" });
 
-  it("composes root Layout/App around the matched file route", () => {
+  it("mounts the client entry's <HydratedRouter> and composes root Layout/App around the match", () => {
     const { tree, errors } = target("/");
     expect(errors).toEqual([]);
-    expect(tree).toMatch(/<Layout>\n\s+<html>/);
-    expect(tree).toMatch(/<App>\n\s+<div>\n\s+<Outlet>\n\s+<\?>\n\s+<RenderedRoute>\n\s+<Route>\n\s+<Home>\n\s+<main>/);
+    expect(tree).toMatch(
+      /<HostRoot>\n\s+<HydratedRouter>\n\s+<RouterProvider>\n\s+<RenderedRoute>\n\s+<Route>\n\s+<Layout>\n\s+<html>/,
+    );
+    expect(tree).toMatch(/<ScrollRestoration>\n\s+<script>\n\s+<Scripts>/);
+    expect(tree).toMatch(
+      /<App>\n\s+<div>\n\s+<Outlet>\n\s+<\?>\n\s+<RenderedRoute>\n\s+<Route>\n\s+<Home>\n\s+<main>/,
+    );
   });
 
   it("drops pathless `_group` folders from the URL", () => {
@@ -111,7 +116,9 @@ describe("react router framework mode with react-router-auto-routes", () => {
   });
 
   it("nests only under `_layout` files and resolves `$param` segments", () => {
-    expect(target("/blog").tree).toMatch(/<BlogLayout>\n\s+<section>\n\s+<Outlet>\n\s+<\?>\n\s+<RenderedRoute>\n\s+<Route>\n\s+<BlogIndex>/);
+    expect(target("/blog").tree).toMatch(
+      /<BlogLayout>\n\s+<section>\n\s+<Outlet>\n\s+<\?>\n\s+<RenderedRoute>\n\s+<Route>\n\s+<BlogIndex>/,
+    );
     const post = target("/blog/hello").tree;
     expect(post).toMatch(/<BlogLayout>[\s\S]*<BlogPost>\n\s+<h1>\n\s+"Post "\n\s+"hello"/);
   });
@@ -126,6 +133,22 @@ describe("react router framework mode with react-router-auto-routes", () => {
     expect(errors).toEqual([]);
     expect(tree).toContain("<NotFound>");
     expect(tree).not.toContain("profile.css");
+  });
+
+  it("renders <Meta> from the leaf route's meta() and <Links> from every match, deduped", () => {
+    const home = target("/").tree;
+    expect(home).toMatch(/<Meta>\n\s+<title> key="title"\n\s+<meta> key="charSet"\n\s+<Links>/);
+    const post = target("/blog/hello").tree;
+    expect(post).toMatch(
+      /<Meta>\n\s+<title> key="title"\n\s+<meta> key="\{\\"name\\":\\"description\\",\\"content\\":\\"A post\\"\}"\n\s+<link> key="\{\\"rel\\":\\"alternate\\",\\"href\\":\\"\/feed.xml\\"\}"/,
+    );
+    const links = lines(post).filter((line) => line.startsWith("<link>"));
+    expect(links).toEqual([
+      '<link> key="{\\"rel\\":\\"alternate\\",\\"href\\":\\"/feed.xml\\"}"',
+      '<link> key="{\\"href\\":\\"https://fonts.example\\",\\"rel\\":\\"preconnect\\"}"',
+      '<link> key="{\\"href\\":\\"/app.css\\",\\"rel\\":\\"stylesheet\\"}"',
+      '<link> key="{\\"href\\":\\"/blog\\",\\"rel\\":\\"canonical\\"}"',
+    ]);
   });
 
   it("renders resource routes as empty outlets", () => {

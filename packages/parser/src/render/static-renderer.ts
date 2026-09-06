@@ -121,20 +121,35 @@ export class StaticRenderer {
     if (!module) return this.missingModuleResult(absolutePath, `could not parse ${absolutePath}`);
     const interpreter = this.createInterpreter();
     const builder = this.createBuilder(interpreter);
+    const entry = this.evaluateEntryElement(interpreter, module);
+    if (!entry) return this.finish(interpreter, builder, unknownValue("no root render call"), null);
+    return this.finish(interpreter, builder, entry.value, entry.location);
+  }
+
+  /**
+   * Evaluates the element handed to the root render call of an entry module
+   * (`createRoot().render(<App />)`, `hydrateRoot(document, <App />)`), together
+   * with the statements that lead up to it. Null (with a diagnostic) when the
+   * module has no such call.
+   */
+  evaluateEntryElement(
+    interpreter: Interpreter,
+    module: ModuleRecord,
+  ): { value: StaticValue; location: SourceLocation | null } | null {
     const rootCalls = findRootRenderCalls(module);
     if (rootCalls.length === 0) {
       interpreter.report(
         "no-root-render",
-        `no createRoot().render / hydrateRoot / ReactDOM.render call found in ${absolutePath}`,
+        `no createRoot().render / hydrateRoot / ReactDOM.render call found in ${module.filePath}`,
         null,
         "error",
       );
-      return this.finish(interpreter, builder, unknownValue("no root render call"), null);
+      return null;
     }
     if (rootCalls.length > 1) {
       interpreter.report(
         "multiple-root-renders",
-        `${rootCalls.length} root render calls found in ${absolutePath}; using the first`,
+        `${rootCalls.length} root render calls found in ${module.filePath}; using the first`,
         null,
         "warning",
       );
@@ -145,8 +160,10 @@ export class StaticRenderer {
     for (const statements of rootCall.enclosingStatements) {
       interpreter.evaluateBlock(statements, context, false);
     }
-    const rootValue = interpreter.evaluateExpression(rootCall.element, context);
-    return this.finish(interpreter, builder, rootValue, interpreter.locate(module, rootCall.call));
+    return {
+      value: interpreter.evaluateExpression(rootCall.element, context),
+      location: interpreter.locate(module, rootCall.call),
+    };
   }
 
   renderWith(produce: (interpreter: Interpreter) => StaticValue): StaticRenderResult {

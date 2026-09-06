@@ -81,17 +81,18 @@ export const formatCorpusMarkdown = (results: CorpusResult[]): string => {
   const header = "| entry | framework | outcome | static | runtime | comparison |";
   const divider = "| --- | --- | --- | --- | --- | --- |";
   const escape = (cell: string): string => cell.replace(/\|/g, "\\|");
-  const rows = results.map((result) =>
-    `| ${[
-      result.id,
-      result.framework,
-      outcome(result),
-      describeStatic(result),
-      describeRuntime(result),
-      describeComparison(result),
-    ]
-      .map(escape)
-      .join(" | ")} |`,
+  const rows = results.map(
+    (result) =>
+      `| ${[
+        result.id,
+        result.framework,
+        outcome(result),
+        describeStatic(result),
+        describeRuntime(result),
+        describeComparison(result),
+      ]
+        .map(escape)
+        .join(" | ")} |`,
   );
   return [header, divider, ...rows].join("\n");
 };

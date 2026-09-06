@@ -9,15 +9,24 @@ import {
   objectFromRecord,
   objectValue,
   primitiveValue,
+  unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
 import { toElementType } from "../react/element-type.js";
 import { findRootRenderCalls } from "../render/find-root-elements.js";
 import { AUTO_ROUTES_PACKAGE, readAutoRoutes } from "./react-router-auto-routes.js";
+import {
+  type FrameworkDocument,
+  dedupeLinkDescriptors,
+  renderLinkDescriptors,
+  renderMetaDescriptors,
+} from "./react-router-document.js";
+import type { Interpreter } from "../evaluate/interpreter.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
 import type {
   ContextDefinition,
   ExternalValueProvider,
+  ModuleRecord,
   StaticElementValue,
   StaticObjectValue,
   StaticRenderResult,
@@ -27,7 +36,16 @@ import type {
 } from "../types.js";
 import { ForwardRefTag } from "../work-tags.js";
 import { splitPathname } from "./route-files.js";
-import { element, emptyStub, nativeFunction, passthroughStub, stubValue } from "./stubs.js";
+import {
+  element,
+  emptyStub,
+  nativeFunction,
+  omitProps,
+  passthroughStub,
+  stubValue,
+} from "./stubs.js";
+
+const SCROLL_RESTORATION_PROPS: ReadonlySet<string> = new Set(["getKey", "storageKey"]);
 
 export interface ReactRouterRouteOptions {
   /**
@@ -46,7 +64,35 @@ export interface ReactRouterRouteOptions {
 export interface ReactRouterModel {
   pathname: string;
   externalValues: ExternalValueProvider;
+  /**
+   * Filled in by the framework-mode renderer once routes are matched; the
+   * `HydratedRouter`, `Meta` and `Links` stubs read from it. Stays empty for
+   * SPA entries, where those components render nothing statically knowable.
+   */
+  framework: FrameworkState;
+  /** `HydratedRouter` from `react-router/dom`, for the default client entry. */
+  hydratedRouter: StubComponent;
 }
+
+interface FrameworkState extends FrameworkDocument {
+  /** The matched route tree `HydratedRouter` mounts (root `RenderedRoute` inwards). */
+  routeTree: StaticValue | null;
+  /** `ssr` from `react-router.config.ts`; `false` is SPA mode. Null outside framework mode. */
+  ssr: StaticValue | null;
+}
+
+const CLIENT_ENTRY_NAMES = [
+  "entry.client.tsx",
+  "entry.client.jsx",
+  "entry.client.ts",
+  "entry.client.js",
+];
+const ROOT_MODULE_NAMES = ["root.tsx", "root.jsx", "root.ts", "root.js"];
+const CONFIG_MODULE_NAMES = [
+  "react-router.config.ts",
+  "react-router.config.js",
+  "react-router.config.mjs",
+];
 
 const ROUTER_PACKAGES = new Set([
   "react-router",
@@ -545,6 +591,69 @@ const routeConfigValue = (name: string): StaticValue | null => {
 };
 
 export const createReactRouterModel = (pathname: string): ReactRouterModel => {
+  const framework: FrameworkState = { routeTree: null, meta: null, links: null, ssr: null };
+  // `RouterProvider$1` from `react-router/dom` wraps the core `RouterProvider`;
+  // only the latter is kept as a fiber so SPA and framework trees line up.
+  const routerProviderShell: StubComponent = {
+    displayName: "RouterProvider",
+    render: (props) => getObjectProperty(props, "children"),
+  };
+  const hydratedRouterStub: StubComponent = {
+    displayName: "HydratedRouter",
+    render: () => {
+      if (!framework.routeTree) {
+        return unknownValue(
+          "react-router: HydratedRouter mounts routes only known to framework mode",
+        );
+      }
+      return element(
+        { kind: "fragment" },
+        objectFromRecord({
+          children: listValue([
+            element(
+              { kind: "stub", stub: routerProviderShell },
+              objectFromRecord({ children: framework.routeTree }),
+            ),
+            element({ kind: "fragment" }, objectValue()),
+          ]),
+        }),
+      );
+    },
+  };
+  const metaStub: StubComponent = {
+    displayName: "Meta",
+    render: () => (framework.meta ? renderMetaDescriptors(framework.meta) : NULL_VALUE),
+  };
+  const linksStub: StubComponent = {
+    displayName: "Links",
+    render: () => (framework.links ? renderLinkDescriptors(framework.links) : NULL_VALUE),
+  };
+  // Server-rendered framework apps inline a scroll-restoring `<script>`; SPA
+  // mode (and plain data routers) render nothing.
+  const scrollRestorationStub: StubComponent = {
+    displayName: "ScrollRestoration",
+    render: (props) => {
+      if (!framework.ssr) return NULL_VALUE;
+      const isSpaMode = getTruthiness(framework.ssr);
+      if (isSpaMode === false) return NULL_VALUE;
+      const script = element(
+        { kind: "host", tagName: "script" },
+        objectValue([
+          { kind: "spread", value: omitProps(props, SCROLL_RESTORATION_PROPS) },
+          { kind: "property", key: "suppressHydrationWarning", value: primitiveValue(true) },
+          {
+            kind: "property",
+            key: "dangerouslySetInnerHTML",
+            value: objectFromRecord({
+              __html: unknownPrimitiveValue("string", "inline scroll restoration script"),
+            }),
+          },
+        ]),
+      );
+      if (isSpaMode === true) return script;
+      return branchValue([script, NULL_VALUE], "react-router.config `ssr` is not static", null);
+    },
+  };
   const routerProviderStub: StubComponent = {
     displayName: "RouterProvider",
     render: (props, tools) => {
@@ -597,11 +706,16 @@ export const createReactRouterModel = (pathname: string): ReactRouterModel => {
       case "Router":
       case "unstable_HistoryRouter":
         return stubValue(passthroughStub(importedName));
-      case "Navigate":
-      case "ScrollRestoration":
-      case "Scripts":
-      case "Links":
+      case "HydratedRouter":
+        return stubValue(hydratedRouterStub);
       case "Meta":
+        return stubValue(metaStub);
+      case "Links":
+        return stubValue(linksStub);
+      case "ScrollRestoration":
+        return stubValue(scrollRestorationStub);
+      case "Navigate":
+      case "Scripts":
       case "PrefetchPageLinks":
         return stubValue(emptyStub(importedName));
       default:
@@ -611,6 +725,8 @@ export const createReactRouterModel = (pathname: string): ReactRouterModel => {
 
   return {
     pathname,
+    framework,
+    hydratedRouter: hydratedRouterStub,
     externalValues: (specifier, importedName) => {
       if (ROUTER_PACKAGES.has(specifier)) return routerValue(importedName);
       if (specifier === ROUTE_CONFIG_PACKAGE) return routeConfigValue(importedName);
@@ -624,6 +740,16 @@ export const createReactRouterModel = (pathname: string): ReactRouterModel => {
  * file; `app/root.tsx` is the implicit root route whose optional `Layout` export
  * wraps everything. Each route module's default export is its component.
  */
+/** `ssr` from the framework config; defaults to `true` like `@react-router/dev`. */
+const readSsrFlag = (interpreter: Interpreter, configModule: ModuleRecord | null): StaticValue => {
+  if (!configModule) return primitiveValue(true);
+  const config = interpreter.evaluateModuleExport(configModule, "default");
+  if (config.kind !== "object")
+    return unknownValue("react-router.config default export is not a static object");
+  const ssr = getObjectProperty(config, "ssr");
+  return isDefined(ssr) ? ssr : primitiveValue(true);
+};
+
 const renderFrameworkRoutes = (
   renderer: StaticRenderer,
   model: ReactRouterModel,
@@ -631,10 +757,18 @@ const renderFrameworkRoutes = (
   routes: RouteRecord[],
 ): StaticRenderResult => {
   const appDirectory = path.dirname(routesModulePath);
-  const rootPath = ["root.tsx", "root.jsx", "root.ts", "root.js"]
-    .map((name) => path.join(appDirectory, name))
-    .find((candidate) => renderer.loadModule(candidate) !== null);
-  const rootModule = rootPath ? renderer.loadModule(rootPath) : null;
+  const findModule = (names: string[]): ModuleRecord | null => {
+    for (const name of names) {
+      const module = renderer.loadModule(path.join(appDirectory, name));
+      if (module) return module;
+    }
+    return null;
+  };
+  const rootModule = findModule(ROOT_MODULE_NAMES);
+  const clientEntry = findModule(CLIENT_ENTRY_NAMES);
+  const configModule = CONFIG_MODULE_NAMES.map((name) =>
+    renderer.loadModule(path.join(appDirectory, "..", name)),
+  ).find((module) => module !== null);
 
   return renderer.renderWith((interpreter) => {
     const chain = bestMatch(routes, model.pathname);
@@ -654,13 +788,20 @@ const renderFrameworkRoutes = (
         matches: unknownValue("route matches are only known at request time"),
       });
     const leafParams = chain[chain.length - 1].params;
+    const routeModules = new Map<RouteRecord, ModuleRecord>();
+    const loadRouteModule = (route: RouteRecord): ModuleRecord | null => {
+      if (!route.file) return null;
+      const cached = routeModules.get(route);
+      if (cached) return cached;
+      const module = renderer.loadModule(path.join(appDirectory, route.file));
+      if (module) routeModules.set(route, module);
+      else interpreter.report("react-router-parse", `could not parse ${route.file}`, null, "error");
+      return module;
+    };
     const renderRoute = (route: RouteRecord, outlet: StaticValue): StaticValue => {
       if (!route.file) return outlet;
-      const module = renderer.loadModule(path.join(appDirectory, route.file));
-      if (!module) {
-        interpreter.report("react-router-parse", `could not parse ${route.file}`, null, "error");
-        return unknownValue(`unparsable route module ${route.file}`);
-      }
+      const module = loadRouteModule(route);
+      if (!module) return unknownValue(`unparsable route module ${route.file}`);
       // Resource routes (loader/action only) render nothing of their own.
       if (!interpreter.graph.listExportNames(module).includes("default")) return outlet;
       const component = interpreter.evaluateModuleExport(module, "default");
@@ -673,15 +814,61 @@ const renderFrameworkRoutes = (
     const matched = composeChain(chain, renderRoute);
     if (!rootModule) return matched;
 
-    const rootComponent = interpreter.evaluateModuleExport(rootModule, "default");
-    const app = renderedRoute(
-      matched,
-      {},
-      element(toElementType(rootComponent, "App"), routeProps({})),
+    // `meta`/`links` see every match root-first, exactly as `<Meta>`/`<Links>` do.
+    const matchedModules = [
+      { module: rootModule, params: {} as RouteParams },
+      ...chain.flatMap((match) => {
+        const module = loadRouteModule(match.route);
+        return module ? [{ module, params: match.params }] : [];
+      }),
+    ];
+    const callExport = (
+      module: ModuleRecord,
+      name: string,
+      args: StaticValue[],
+    ): StaticValue | null => {
+      if (!interpreter.graph.listExportNames(module).includes(name)) return null;
+      const exported = interpreter.evaluateModuleExport(module, name);
+      if (exported.kind === "list") return exported;
+      return interpreter.callValue(exported, args, interpreter.createModuleContext(module), null);
+    };
+    let leafMeta: StaticValue | null = null;
+    for (const { module, params } of matchedModules) {
+      const metaArgs = objectFromRecord({
+        loaderData: unknownValue("loader data is only known at request time"),
+        params: paramsValue(params),
+        location: objectFromRecord({ pathname: primitiveValue(model.pathname) }),
+        matches: unknownValue("route matches are only known at request time"),
+        error: NULL_VALUE,
+      });
+      leafMeta = callExport(module, "meta", [metaArgs]) ?? leafMeta;
+    }
+    model.framework.ssr = readSsrFlag(interpreter, configModule ?? null);
+    model.framework.meta = leafMeta ?? listValue([]);
+    model.framework.links = dedupeLinkDescriptors(
+      matchedModules.flatMap(({ module }) => callExport(module, "links", []) ?? []),
     );
+
+    const rootComponent = interpreter.evaluateModuleExport(rootModule, "default");
+    const app = element(toElementType(rootComponent, "App"), routeProps({}));
     const layout = interpreter.evaluateModuleExport(rootModule, "Layout");
-    if (!isDefined(layout)) return app;
-    return element(toElementType(layout, "Layout"), objectFromRecord({ children: app }));
+    const rootElement = isDefined(layout)
+      ? element(toElementType(layout, "Layout"), objectFromRecord({ children: app }))
+      : app;
+    model.framework.routeTree = renderedRoute(matched, {}, rootElement);
+
+    // The client entry decides what wraps `<HydratedRouter />` (StrictMode, providers);
+    // without one, `@react-router/dev` uses `<StrictMode><HydratedRouter /></StrictMode>`.
+    if (clientEntry) {
+      const entry = renderer.evaluateEntryElement(interpreter, clientEntry);
+      if (entry) return entry.value;
+    }
+    return element(
+      { kind: "strict-mode" },
+      objectFromRecord({
+        children: element({ kind: "stub", stub: model.hydratedRouter }, objectValue()),
+      }),
+    );
   });
 };
 

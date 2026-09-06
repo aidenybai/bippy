@@ -325,24 +325,50 @@
       "id": "react-router-templates",
       "revision": "b68be71489a22315c7a734a86a18347745b393d2",
       "framework": "react-router",
-      "capturedAt": "2026-09-06T03:42:28.672Z",
-      "durationMs": 3,
-      "runtime": null,
+      "capturedAt": "2026-09-06T04:00:59.001Z",
+      "durationMs": 6618,
+      "runtime": {
+        "reactVersion": "19.2.7",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 65,
+        "commits": 2,
+        "pageErrors": [],
+        "title": "New React Router App"
+      },
       "static": {
         "stats": {
-          "fiberCount": 38,
+          "fiberCount": 49,
           "textCount": 2,
           "branchCount": 0,
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 4
+          "modulesLoaded": 5
         },
         "diagnostics": []
       },
-      "report": null,
+      "report": {
+        "matchedFibers": 48,
+        "matchedText": 2,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "wildcardAbsorbedFibers": 0,
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "status": "exact",
+        "runtimeFibers": 50,
+        "staticFibers": 50,
+        "coverage": 1,
+        "divergence": null,
+        "stepsUsed": 50,
+        "budgetExhausted": false
+      },
       "anchor": null,
-      "note": "static only",
+      "note": null,
       "failure": null
     },
     {

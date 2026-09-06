@@ -96,9 +96,14 @@ const REACT_ROUTER_RUNTIME_WRAPPERS = [
   "Location",
   "RouteError",
   "AwaitContextProvider",
-  // framework mode (`@react-router/dev`)
-  "HydratedRouter",
+  // framework mode (`@react-router/dev`); `HydratedRouter` and the core
+  // `RouterProvider` stay as fibers because the static side renders them.
+  "RouterProvider$1",
   "FrameworkContext",
+  "RemixErrorBoundary",
+  "WithComponentProps",
+  "WithHydrateFallbackProps",
+  "WithErrorBoundaryProps",
   "RSCRouterContext",
   "RSCRouterGlobalErrorBoundary",
 ];
