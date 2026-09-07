@@ -123,6 +123,8 @@ The example includes:
 
 Tree dataflow uses bounded curved links, independently routed for each projection. Only relevant paths appear, and opposing subscription/notification links use separate lanes. Arrows leave a clear gap before detail text. Node connections retain their 3px arrow clearance.
 
+Callable labels use `ƒ` at the same 10px size. Hooks and callbacks receive it automatically; set `isCallable` for function-valued props, store methods, or known function components. The flag does not change node kind or imply an update edge. Plain values and components of unknown implementation stay unmarked. The symbol is hidden from assistive technology; descriptions identify functions and names/typeahead remain unchanged.
+
 Callback edges describe invocation back to an updater, not a second prop-value transfer. Boundary scopes describe render-time containment, not error handling for event callbacks or external-store operations.
 
 `DataflowDiagram` remains available for explicitly positioned graphs. It supports `waypoints`, `fromOffset`, `toOffset`, and `labelPosition` for custom routing.

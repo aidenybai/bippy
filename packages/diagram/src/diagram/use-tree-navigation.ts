@@ -123,6 +123,7 @@ export const useTreeNavigation = ({
           ...row.node,
           label:
             elementById.get(row.node.id)?.dataset.textValue ??
+            elementById.get(row.node.id)?.querySelector("text")?.getAttribute("data-text-value") ??
             elementById.get(row.node.id)?.querySelector("text")?.textContent ??
             row.node.label,
         },

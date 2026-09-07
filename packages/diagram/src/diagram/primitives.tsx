@@ -11,6 +11,7 @@ import { getNodeDescription, getNodeName } from "./accessibility";
 import { composeEventHandlers, mergeClassNames } from "./dom-props";
 import { colors } from "./tokens.stylex";
 import { drawing } from "./drawing.stylex";
+import { getIsCallableNode } from "./node-kind";
 import type { TreeNode } from "./tree-model";
 import {
   DiagramInteractionContext,
@@ -183,6 +184,7 @@ export const DiagramNode = ({
     kind === "suspense" ||
     (kind === "boundary" && diagramInteraction?.activeId !== node.id);
   const isDetail = variant === "detail";
+  const isCallable = getIsCallableNode(node);
   const fontSize = diagramMetrics.fontSize;
   const labelOffset = isDetail ? 0 : diagramMetrics.labelOffset;
   const characterWidth = fontSize * 0.61;
@@ -190,7 +192,10 @@ export const DiagramNode = ({
   const characterCount =
     maxWidth === undefined
       ? characters.length
-      : Math.max(0, Math.floor((maxWidth - labelOffset - 4) / characterWidth));
+      : Math.max(
+          0,
+          Math.floor((maxWidth - labelOffset - 4) / characterWidth) - (isCallable ? 2 : 0),
+        );
   const label =
     characters.length > characterCount
       ? `${characters.slice(0, Math.max(0, characterCount - 1)).join("")}${characterCount > 0 ? "…" : ""}`
@@ -207,8 +212,8 @@ export const DiagramNode = ({
     isDisabled && styles.disabled,
   );
   const context = useMemo(
-    () => ({ labelId, descriptionId, label, annotation, labelOffset }),
-    [labelId, descriptionId, label, annotation, labelOffset],
+    () => ({ labelId, descriptionId, label, annotation, labelOffset, isCallable }),
+    [labelId, descriptionId, label, annotation, labelOffset, isCallable],
   );
   return (
     <NodeContext value={context}>
@@ -293,7 +298,7 @@ export const DiagramNode = ({
             24,
             Math.min(
               maxWidth === undefined ? Infinity : maxWidth + 6,
-              getLabelWidth({ label, annotation, fontSize, labelOffset }) + 12,
+              getLabelWidth({ label, annotation, fontSize, labelOffset, isCallable }) + 12,
             ),
           )}
           height={hitHeight}
@@ -330,7 +335,7 @@ export const DiagramNode = ({
           <path
             data-focus-ring
             aria-hidden="true"
-            d={`M ${labelOffset} ${fontSize / 2 + 3} h ${Math.max(24, getLabelWidth({ label, annotation, fontSize, labelOffset }) - labelOffset)}`}
+            d={`M ${labelOffset} ${fontSize / 2 + 3} h ${Math.max(24, getLabelWidth({ label, annotation, fontSize, labelOffset, isCallable }) - labelOffset)}`}
             {...stylex.props(styles.focusRing)}
           />
         )}

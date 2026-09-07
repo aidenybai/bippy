@@ -63,7 +63,7 @@ test("screen-reader descriptions explain metadata, ownership, and directed relat
   ]);
   assert.match(
     descriptions.get("detail") ?? "",
-    /Component detail: hook\. Details of Branch\. Outgoing renders: Leaf\./,
+    /Component detail: hook, function\. Details of Branch\. Outgoing renders: Leaf\./,
   );
   assert.match(descriptions.get("leaf") ?? "", /Incoming renders: Branch: useState\./);
   assert.match(descriptions.get("branch") ?? "", /Parent: Root\. Owner: Root\./);

@@ -1,4 +1,5 @@
 import type { TreeNode, TreeRow } from "./tree-model";
+import { getIsCallableNode } from "./node-kind";
 interface AccessibleEdge {
   from: string;
   to: string;
@@ -13,7 +14,7 @@ export const getNodeName = (node: TreeNode) =>
   `${node.label}${node.annotation ? `, ${node.annotation}` : ""}`;
 
 export const getNodeDescription = (node: TreeNode) =>
-  `${node.componentId ? "Component detail: " : ""}${node.kind ?? "component"}${node.isPortalTarget ? ", portal target" : ""}.`;
+  `${node.componentId ? "Component detail: " : ""}${node.kind ?? "component"}${getIsCallableNode(node) ? ", function" : ""}${node.isPortalTarget ? ", portal target" : ""}.`;
 
 export const getTreeDescriptions = (
   nodes: readonly TreeNode[],

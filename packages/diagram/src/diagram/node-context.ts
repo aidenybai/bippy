@@ -7,6 +7,7 @@ export interface NodeContextValue {
   descriptionId: string;
   label: string;
   annotation?: string;
+  isCallable: boolean;
   labelOffset: number;
 }
 

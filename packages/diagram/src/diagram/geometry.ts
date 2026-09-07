@@ -1,3 +1,6 @@
+import { getIsCallableNode } from "./node-kind";
+import type { TreeNode } from "./tree-model";
+
 export const diagramMetrics = {
   rowHeight: 24,
   indent: 20,
@@ -10,7 +13,7 @@ export const diagramMetrics = {
   arrowGap: 3,
 };
 
-interface DiagramLabel {
+interface DiagramLabel extends Pick<TreeNode, "kind" | "isCallable"> {
   label: string;
   annotation?: string;
   fontSize?: number;
@@ -20,10 +23,12 @@ interface DiagramLabel {
 export const getLabelWidth = ({
   label,
   annotation,
+  kind,
+  isCallable,
   fontSize = diagramMetrics.fontSize,
   labelOffset = diagramMetrics.labelOffset,
 }: DiagramLabel) =>
-  Array.from(label).length * fontSize * 0.61 +
+  (Array.from(label).length + (getIsCallableNode({ kind, isCallable }) ? 2 : 0)) * fontSize * 0.61 +
   labelOffset +
   (annotation ? Array.from(annotation).length * fontSize * 0.61 + 4 : 0);
 

@@ -19,6 +19,7 @@ export const DiagramLabel = ({ children, ...props }: DiagramLabelProps) => {
           x: context.labelOffset,
           dy: "0.32em",
           "data-slot": "diagram-label",
+          "data-text-value": children === undefined ? context.label : undefined,
           ...stylex.props(drawing.label),
         },
         props,
@@ -26,6 +27,11 @@ export const DiagramLabel = ({ children, ...props }: DiagramLabelProps) => {
     >
       {children ?? (
         <>
+          {context.isCallable && (
+            <tspan data-function-symbol="" aria-hidden="true">
+              {"ƒ "}
+            </tspan>
+          )}
           {context.label}
           {context.annotation && (
             <tspan dx={4} {...stylex.props(drawing.annotation)}>

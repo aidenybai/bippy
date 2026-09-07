@@ -20,6 +20,7 @@ export interface TreeNode {
     | "callback"
     | "store";
   isPortalTarget?: boolean;
+  isCallable?: boolean;
   annotation?: string;
 }
 
