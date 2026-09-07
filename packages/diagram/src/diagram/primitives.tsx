@@ -183,7 +183,7 @@ export const DiagramNode = ({
     kind === "suspense" ||
     (kind === "boundary" && diagramInteraction?.activeId !== node.id);
   const isDetail = variant === "detail";
-  const fontSize = isDetail ? diagramMetrics.detailFontSize : diagramMetrics.fontSize;
+  const fontSize = diagramMetrics.fontSize;
   const labelOffset = isDetail ? 0 : diagramMetrics.labelOffset;
   const characterWidth = fontSize * 0.61;
   const characters = Array.from(node.label);
@@ -207,8 +207,8 @@ export const DiagramNode = ({
     isDisabled && styles.disabled,
   );
   const context = useMemo(
-    () => ({ labelId, descriptionId, label, annotation, isDetail, labelOffset }),
-    [labelId, descriptionId, label, annotation, isDetail, labelOffset],
+    () => ({ labelId, descriptionId, label, annotation, labelOffset }),
+    [labelId, descriptionId, label, annotation, labelOffset],
   );
   return (
     <NodeContext value={context}>

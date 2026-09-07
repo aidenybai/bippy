@@ -59,9 +59,7 @@ test("keeps inline data neutral, uses one active accent, and preserves arrow cle
     const positions = await parent
       .locator('[data-edge-id="store-subscribe"] > text, [data-edge-id="snapshot-changed"] > text')
       .evaluateAll((elements) => elements.map((element) => Number(element.getAttribute("y"))));
-    expect(Math.abs(positions[0] - positions[1])).toBeGreaterThan(
-      diagramMetrics.annotationFontSize,
-    );
+    expect(Math.abs(positions[0] - positions[1])).toBeGreaterThan(diagramMetrics.fontSize);
     await page
       .locator("#parent-tree")
       .screenshot({ path: `test-results/tree-dataflow-${theme}.png` });

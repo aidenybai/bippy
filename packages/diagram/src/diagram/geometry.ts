@@ -3,10 +3,8 @@ export const diagramMetrics = {
   indent: 20,
   nodeRadius: 3,
   fontSize: 10,
-  detailFontSize: 8,
   detailRowHeight: 24,
   detailPortGap: 4,
-  annotationFontSize: 6,
   labelOffset: 7,
   strokeWidth: 0.5,
   arrowGap: 3,
@@ -27,7 +25,7 @@ export const getLabelWidth = ({
 }: DiagramLabel) =>
   Array.from(label).length * fontSize * 0.61 +
   labelOffset +
-  (annotation ? Array.from(annotation).length * diagramMetrics.annotationFontSize * 0.61 + 4 : 0);
+  (annotation ? Array.from(annotation).length * fontSize * 0.61 + 4 : 0);
 
 export interface Point {
   x: number;

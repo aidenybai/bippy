@@ -39,13 +39,11 @@ test("keeps SVG typography and geometry at native size", async ({ page }) => {
     expect(size.height).toBe(size.expectedHeight);
   }
   const fontSizes = await page
-    .locator('[data-node-variant="node"] > text')
+    .locator(
+      "[data-node-id] text, [data-node-id] tspan, [data-edge-from] text, [data-scope-kind] text",
+    )
     .evaluateAll((elements) => elements.map((element) => getComputedStyle(element).fontSize));
   expect(new Set(fontSizes)).toEqual(new Set([`${diagramMetrics.fontSize}px`]));
-  const detailSizes = await page
-    .locator('[data-node-variant="detail"] > text')
-    .evaluateAll((elements) => elements.map((element) => getComputedStyle(element).fontSize));
-  expect(new Set(detailSizes)).toEqual(new Set([`${diagramMetrics.detailFontSize}px`]));
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(
     false,
@@ -182,9 +180,7 @@ test("shares compact node, text, connector, and arc rules throughout the system"
   for (const style of styles) {
     expect(style.paintOrder).toBe("stroke");
     expect(style.strokeWidth).toBe("2px");
-    expect([`${diagramMetrics.fontSize}px`, `${diagramMetrics.detailFontSize}px`]).toContain(
-      style.fontSize,
-    );
+    expect(style.fontSize).toBe(`${diagramMetrics.fontSize}px`);
   }
   const staticConnector = page.locator("#edge-parent [data-edge-from] > path");
   const virtualConnector = page.locator("#deep-tree [data-connector]").first();

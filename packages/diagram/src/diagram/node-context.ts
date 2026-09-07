@@ -7,7 +7,6 @@ export interface NodeContextValue {
   descriptionId: string;
   label: string;
   annotation?: string;
-  isDetail: boolean;
   labelOffset: number;
 }
 

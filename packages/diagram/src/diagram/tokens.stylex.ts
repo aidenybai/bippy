@@ -40,6 +40,4 @@ export const darkTheme = stylex.createTheme(colors, {
 
 export const typography = stylex.defineConsts({
   label: "10px",
-  detail: "8px",
-  annotation: "6px",
 });

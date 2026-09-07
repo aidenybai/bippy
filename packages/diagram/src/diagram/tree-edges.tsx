@@ -122,7 +122,7 @@ export const TreeEdges = (props: TreeEdgesProps) => {
                 }
                 labelPosition={{
                   ...labelPosition,
-                  y: labelPosition.y + lane * (diagramMetrics.annotationFontSize * 2 + 2),
+                  y: labelPosition.y + lane * (diagramMetrics.fontSize * 2 + 2),
                 }}
               />
             );

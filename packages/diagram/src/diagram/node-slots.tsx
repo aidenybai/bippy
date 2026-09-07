@@ -19,7 +19,7 @@ export const DiagramLabel = ({ children, ...props }: DiagramLabelProps) => {
           x: context.labelOffset,
           dy: "0.32em",
           "data-slot": "diagram-label",
-          ...stylex.props(drawing.label, context.isDetail && drawing.detail),
+          ...stylex.props(drawing.label),
         },
         props,
       )}

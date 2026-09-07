@@ -18,10 +18,9 @@ export const drawing = stylex.create({
     strokeWidth: 2,
     paintOrder: "stroke",
   },
-  detail: { fontSize: typography.detail },
   annotation: {
     fontFamily: fonts.mono,
-    fontSize: typography.annotation,
+    fontSize: typography.label,
     fill: colors.muted,
     stroke: colors.surface,
     strokeWidth: 2,
