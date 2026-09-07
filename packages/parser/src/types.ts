@@ -221,7 +221,26 @@ export interface StubComponent {
   /** Statics the library hangs on the component (`Styled.withComponent`). */
   properties?: ReadonlyMap<string, StaticValue>;
   render: (props: StaticObjectValue, tools: StubRenderTools) => StaticValue;
+  /**
+   * For build-time macros (Lingui's `<Trans>`): the props of the element the
+   * transform emits for `<Stub {...props}>children</Stub>`, given the children
+   * as written. The element's `children` are what the macro produces, not `props`.
+   */
+  expandJsx?: (props: StaticObjectValue, children: MacroJsxChild[]) => StaticObjectValue;
 }
+
+/** A JSX child as a build-time macro sees it: its value together with how it was written. */
+export interface MacroJsxChild {
+  value: StaticValue;
+  source: MacroJsxChildSource;
+}
+
+export type MacroJsxChildSource =
+  | { kind: "text" }
+  | { kind: "identifier"; name: string }
+  /** `children` is null when the element's children could not be paired with their source. */
+  | { kind: "element"; children: MacroJsxChild[] | null }
+  | { kind: "expression" };
 
 export interface StubRenderTools {
   /** Reads a context value as `useContext` would from the stub's position in the tree. */
@@ -231,6 +250,8 @@ export interface StubRenderTools {
   call: (callee: StaticValue, args: StaticValue[]) => StaticValue;
   /** Binding the call's result is assigned to, as build-time labelers (Emotion's babel/swc plugin) see it. */
   nameHint: string | null;
+  /** For tagged templates, the identifier each `${expression}` is (null when not a bare identifier); null for other calls. */
+  templateArgumentNames: Array<string | null> | null;
 }
 
 /**
@@ -248,6 +269,10 @@ export interface ProjectContext {
   findQuery: (queryHash: string) => CapturedQuery | null;
   /** Captured mutations for a mutation key hash (`null` for keyless mutations); `null` when the mutation cache was not recorded. */
   findMutations: (mutationHash: string | null) => CapturedMutation[] | null;
+  /** The Lingui catalog the page had active; `null` when no `I18nProvider` was recorded. */
+  linguiCatalog: CapturedLinguiCatalog | null;
+  /** The data-router state the page settled on; `null` when no React Router data router was recorded. */
+  routerState: CapturedRouterState | null;
 }
 
 export type LibraryValueProvider = (
@@ -309,6 +334,39 @@ export interface CapturedQueryCaches {
   mutations: CapturedMutation[];
 }
 
+/** The compiled catalog of the active locale, as `i18n.messages` of the mounted Lingui `I18nProvider`. */
+export interface CapturedLinguiCatalog {
+  locale: string;
+  messages: Record<string, CapturedValue>;
+}
+
+export interface CapturedRouteMatch {
+  id: string;
+  pathname: string;
+  params: Record<string, string>;
+}
+
+export interface CapturedLocation {
+  pathname: string;
+  search: string;
+  hash: string;
+}
+
+/** React Router's `DataRouterStateContext` value once the page settled. */
+export interface CapturedRouterState {
+  location: CapturedLocation;
+  matches: CapturedRouteMatch[];
+  loaderData: Record<string, CapturedValue>;
+  navigationState: "idle" | "loading" | "submitting";
+  revalidationState: "idle" | "loading";
+}
+
+/** What the harness reads off the live roots besides the fiber tree: library state the page's code reads at render. */
+export interface RootObservations extends CapturedQueryCaches {
+  lingui?: CapturedLinguiCatalog;
+  router?: CapturedRouterState;
+}
+
 /** What the running page held that its code reads at render: inputs the static render takes as given. */
 export interface RuntimeObservations {
   /** `window` properties recorded whole (bootstrap payloads); nested objects are complete, so unlisted keys are `undefined`. */
@@ -316,6 +374,8 @@ export interface RuntimeObservations {
   queries: CapturedQuery[];
   /** Absent in captures that predate mutation recording, which then stays uncertain. */
   mutations?: CapturedMutation[];
+  lingui?: CapturedLinguiCatalog;
+  router?: CapturedRouterState;
 }
 
 export type StaticPrimitive = string | number | boolean | null | undefined | bigint;

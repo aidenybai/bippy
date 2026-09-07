@@ -1,10 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import type {
-  CapturedQueryCaches,
-  RuntimeObservations,
-  StaticRenderResult,
-} from "../../src/index.js";
+import type { RootObservations, RuntimeObservations, StaticRenderResult } from "../../src/index.js";
 import {
   flattenTransparentFibers,
   getFrameworkProfile,
@@ -50,13 +46,14 @@ export interface FixtureCase {
 export interface FixtureRunResult {
   staticResult: StaticRenderResult;
   runtime: RuntimeSnapshot | null;
-  capturedCaches: CapturedQueryCaches;
+  /** What the harness read off the fixture's own runtime render. */
+  observed: RootObservations;
   comparison: CompareRenderResult | null;
 }
 
 interface MountResult {
   snapshot: RuntimeSnapshot;
-  caches: CapturedQueryCaches;
+  observed: RootObservations;
 }
 
 const FIXTURES_DIRECTORY = resolve(import.meta.dirname, "../fixtures");
@@ -124,7 +121,7 @@ const mountFixture = async (fixture: FixtureCase): Promise<MountResult> => {
     await import(/* @vite-ignore */ join(fixture.directory, fixture.manifest.entry));
     await commit;
     await settleCommits(recorder);
-    return { snapshot: recorder.snapshot(), caches: recorder.queryCaches() };
+    return { snapshot: recorder.snapshot(), observed: recorder.observations() };
   } finally {
     recorder.dispose();
   }
@@ -151,11 +148,11 @@ export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult
     return {
       staticResult,
       runtime: null,
-      capturedCaches: { queries: [], mutations: [] },
+      observed: { queries: [], mutations: [] },
       comparison: null,
     };
   }
-  const { snapshot: runtime, caches: capturedCaches } = await mountFixture(fixture);
+  const { snapshot: runtime, observed } = await mountFixture(fixture);
   const comparison = compareStaticToRuntime(
     staticResult,
     flattenTransparentFibers(runtime, profile),
@@ -164,7 +161,7 @@ export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult
       transparentStaticFibers: profile.transparentStaticFibers,
     },
   );
-  return { staticResult, runtime, capturedCaches, comparison };
+  return { staticResult, runtime, observed, comparison };
 };
 
 export const describeFixtureRun = (fixture: FixtureCase, run: FixtureRunResult): string => {

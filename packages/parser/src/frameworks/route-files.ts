@@ -3,6 +3,9 @@ import path from "node:path";
 
 export const ROUTE_FILE_EXTENSIONS = [".tsx", ".ts", ".jsx", ".js", ".mjs", ".mts"] as const;
 
+/** `createRouteId` in `@react-router/dev`: the route file relative to the app directory, minus its extension. */
+export const routeIdFromFile = (file: string): string => file.replace(/\.[a-z0-9]+$/i, "");
+
 /** Resolves `directory/baseName.<ext>` for the first extension that exists. */
 export const findRouteFile = (directory: string, baseName: string): string | null => {
   for (const extension of ROUTE_FILE_EXTENSIONS) {

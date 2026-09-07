@@ -1,4 +1,5 @@
 import { useContext } from "react";
+import { Scoped } from "./scoped";
 import { DensityContext, ThemeContext } from "./theme";
 
 const ThemedButton = () => {
@@ -19,5 +20,6 @@ export const App = () => (
       <Consumerish />
     </DensityContext>
     <ThemedButton />
+    <Scoped />
   </ThemeContext.Provider>
 );

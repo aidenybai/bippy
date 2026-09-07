@@ -63,7 +63,10 @@ export const renderFrameworkTarget = (
       });
     }
     case "react-router": {
-      const model = createReactRouterModel(requireField(target, "route"));
+      const model = createReactRouterModel(
+        requireField(target, "route"),
+        options.observations?.router ?? null,
+      );
       const renderer = createStaticRenderer({ ...options, externalValues: model.externalValues });
       return renderReactRouterRoute(renderer, model, { routesModule: target.entry });
     }
@@ -80,7 +83,10 @@ const renderRootComponent = (
     case "spa":
       return createStaticRenderer(options).renderComponent(entry, { exportName });
     case "react-router": {
-      const model = createReactRouterModel(requireField(target, "route"));
+      const model = createReactRouterModel(
+        requireField(target, "route"),
+        options.observations?.router ?? null,
+      );
       const renderer = createStaticRenderer({ ...options, externalValues: model.externalValues });
       return renderer.renderComponent(entry, { exportName });
     }

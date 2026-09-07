@@ -98,11 +98,10 @@ const readSnapshot = async (page: Page): Promise<RuntimeSnapshot | null> => {
 const readObservations = async (page: Page, names: string[]): Promise<RuntimeObservations> => {
   const json = await page.evaluate((globalNames) => {
     const globals: Partial<HarnessGlobals> = Object(globalThis);
-    const caches = globals.__BIPPY_PARSER_QUERY_CACHES__?.();
     const observed: RuntimeObservations = {
+      queries: [],
+      ...globals.__BIPPY_PARSER_OBSERVATIONS__?.(),
       globals: globals.__BIPPY_PARSER_GLOBALS__?.(globalNames) ?? {},
-      queries: caches?.queries ?? [],
-      ...(caches ? { mutations: caches.mutations } : {}),
     };
     return JSON.stringify(observed);
   }, names);

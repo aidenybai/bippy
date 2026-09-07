@@ -1,0 +1,24 @@
+{
+  "framework": "react-router",
+  "route": "/posts/hello",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "Data router with loaders. The static side cannot run loaders, so the captured router state (loaderData keyed by route id, matches, navigation/revalidation state, location) is replayed into useLoaderData/useRouteLoaderData/useMatches/useNavigation/useRevalidator/useSearchParams/useLocation. The observations below must equal what the runtime capture records.",
+  "observations": {
+    "globals": {},
+    "queries": [],
+    "router": {
+      "location": { "pathname": "/posts/hello", "search": "", "hash": "" },
+      "matches": [
+        { "id": "shell", "pathname": "/", "params": { "slug": "hello" } },
+        { "id": "0-0", "pathname": "/posts/hello", "params": { "slug": "hello" } }
+      ],
+      "loaderData": {
+        "shell": { "user": { "name": "Ada", "plan": "pro" }, "unreadCount": 3 },
+        "0-0": { "title": "Post hello", "tags": ["react", "router"], "publishedAt": null }
+      },
+      "navigationState": "idle",
+      "revalidationState": "idle"
+    }
+  }
+}

@@ -390,6 +390,18 @@ const areElementTypesEquivalent = (left: StaticElementType, right: StaticElement
   }
 };
 
+/** Alternatives analysis could never tell apart, so a branch keeps only one of them. */
+const isInterchangeable = (left: StaticValue, right: StaticValue): boolean => {
+  if (isSameValue(left, right)) return true;
+  if (left.kind === "unknown" && right.kind === "unknown")
+    return (left.isThrown ?? false) === (right.isThrown ?? false);
+  return (
+    left.kind === "unknown-primitive" &&
+    right.kind === "unknown-primitive" &&
+    left.primitiveType === right.primitiveType
+  );
+};
+
 export const branchValue = (
   alternatives: StaticValue[],
   reason: string,
@@ -399,7 +411,7 @@ export const branchValue = (
   const flattened: StaticValue[] = [];
   let resolvedPreferred = 0;
   const add = (value: StaticValue): number => {
-    const existing = flattened.findIndex((candidate) => isSameValue(candidate, value));
+    const existing = flattened.findIndex((candidate) => isInterchangeable(candidate, value));
     if (existing !== -1) return existing;
     flattened.push(value);
     return flattened.length - 1;
@@ -634,22 +646,26 @@ export const getListItem = (
   return branchValue(candidates, `item ${index} of a filtered list`, location);
 };
 
-export const describeValue = (value: StaticValue): string => {
+const MAX_DESCRIPTION_DEPTH = 3;
+
+export const describeValue = (value: StaticValue, depth = 0): string => {
+  if (depth >= MAX_DESCRIPTION_DEPTH) return "…";
+  const describeNested = (nested: StaticValue): string => describeValue(nested, depth + 1);
   switch (value.kind) {
     case "primitive":
       return typeof value.value === "string" ? JSON.stringify(value.value) : String(value.value);
     case "unknown-primitive":
-      return `<${value.primitiveType}>`;
+      return depth === 0 ? `<${value.primitiveType}: ${value.reason}>` : `<${value.primitiveType}>`;
     case "element":
       return `<${describeElementType(value.type)}>`;
     case "list":
-      return `[${value.items.map(describeValue).join(", ")}]`;
+      return `[${value.items.map(describeNested).join(", ")}]`;
     case "repeat":
-      return `repeat(${describeValue(value.item)})`;
+      return `repeat(${describeNested(value.item)})`;
     case "branch":
-      return `branch(${value.alternatives.map(describeValue).join(" | ")})`;
+      return `branch(${value.alternatives.map(describeNested).join(" | ")})`;
     case "optional":
-      return `optional(${describeValue(value.value)})`;
+      return `optional(${describeNested(value.value)})`;
     case "regexp":
       return `/${value.pattern}/${value.flags}`;
     case "symbol":
@@ -675,13 +691,13 @@ export const describeValue = (value: StaticValue): string => {
     case "host-node":
       return `<${value.tagName}> node`;
     case "method":
-      return `${describeValue(value.receiver)}.${value.name}`;
+      return `${describeNested(value.receiver)}.${value.name}`;
     case "native-function":
       return `native ${value.name}`;
     case "proxy":
-      return `proxy of ${describeValue(value.target)}`;
+      return `proxy of ${describeNested(value.target)}`;
     case "unknown":
-      return `unknown(${value.reason})`;
+      return depth === 0 ? `unknown(${value.reason})` : "unknown";
   }
 };
 

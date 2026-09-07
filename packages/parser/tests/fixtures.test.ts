@@ -29,18 +29,20 @@ describe("synthetic fixtures: static fiber tree vs react-dom", () => {
         STATUS_RANK[fixture.manifest.expectedStatus],
       );
       expect(report.coverage, detail).toBeGreaterThanOrEqual(fixture.manifest.minCoverage);
-      for (const observed of fixture.manifest.observations?.queries ?? []) {
-        const captured = run.capturedCaches.queries.find(
+      const replayed = fixture.manifest.observations;
+      for (const observed of replayed?.queries ?? []) {
+        const captured = run.observed.queries.find(
           (query) => query.queryHash === observed.queryHash,
         );
         expect(withoutTimestamps(captured), detail).toEqual(withoutTimestamps(observed));
       }
-      const observedMutations = fixture.manifest.observations?.mutations;
-      if (observedMutations) {
-        expect(run.capturedCaches.mutations.map(withoutSubmittedAt), detail).toEqual(
-          observedMutations.map(withoutSubmittedAt),
+      if (replayed?.mutations) {
+        expect(run.observed.mutations.map(withoutSubmittedAt), detail).toEqual(
+          replayed.mutations.map(withoutSubmittedAt),
         );
       }
+      if (replayed?.lingui) expect(run.observed.lingui, detail).toEqual(replayed.lingui);
+      if (replayed?.router) expect(run.observed.router, detail).toEqual(replayed.router);
     });
   }
 });

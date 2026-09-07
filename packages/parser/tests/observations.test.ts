@@ -98,7 +98,12 @@ describe("runtime observations", () => {
     }
   });
 
-  for (const name of ["tanstack-query-observed", "tanstack-mutation-observed"]) {
+  for (const name of [
+    "tanstack-query-observed",
+    "tanstack-mutation-observed",
+    "lingui-catalog-observed",
+    "react-router-observed",
+  ]) {
     it(`leaves the ${name} outcome uncertain without observations`, async () => {
       const fixture = listFixtures().find((candidate) => candidate.name === name);
       if (!fixture) throw new Error(`missing ${name} fixture`);
@@ -110,6 +115,25 @@ describe("runtime observations", () => {
       expect(run.staticResult.stats.branchCount, detail).toBeGreaterThan(0);
     });
   }
+
+  it("ignores router state captured for another url", async () => {
+    const fixture = listFixtures().find((candidate) => candidate.name === "react-router-observed");
+    if (!fixture?.manifest.observations?.router) throw new Error("missing router fixture");
+    const { router } = fixture.manifest.observations;
+    const run = await runFixture({
+      ...fixture,
+      manifest: {
+        ...fixture.manifest,
+        observations: {
+          ...fixture.manifest.observations,
+          router: { ...router, location: { ...router.location, pathname: "/posts/other" } },
+        },
+        skipRuntime: true,
+      },
+    });
+    const detail = describeFixtureRun(fixture, run);
+    expect(run.staticResult.stats.branchCount, detail).toBeGreaterThan(0);
+  });
 
   it("keeps a mutation uncertain when captures predate mutation recording", async () => {
     const fixture = listFixtures().find(

@@ -1,6 +1,9 @@
 import type {
+  CapturedLinguiCatalog,
   CapturedMutation,
   CapturedQuery,
+  CapturedRouteMatch,
+  CapturedRouterState,
   CapturedValue,
   RuntimeObservations,
 } from "./types.js";
@@ -75,6 +78,35 @@ const isCapturedMutation = (value: unknown): value is CapturedMutation =>
   typeof value.isPaused === "boolean" &&
   typeof value.submittedAt === "number";
 
+const isCapturedValueRecord = (value: unknown): value is Record<string, CapturedValue> =>
+  isRecord(value) && Object.values(value).every(isCapturedValue);
+
+const isStringRecord = (value: unknown): value is Record<string, string> =>
+  isRecord(value) && Object.values(value).every((item) => typeof item === "string");
+
+const isCapturedLinguiCatalog = (value: unknown): value is CapturedLinguiCatalog =>
+  isRecord(value) && typeof value.locale === "string" && isCapturedValueRecord(value.messages);
+
+const isCapturedRouteMatch = (value: unknown): value is CapturedRouteMatch =>
+  isRecord(value) &&
+  typeof value.id === "string" &&
+  typeof value.pathname === "string" &&
+  isStringRecord(value.params);
+
+const isCapturedRouterState = (value: unknown): value is CapturedRouterState =>
+  isRecord(value) &&
+  isStringRecord(value.location) &&
+  typeof value.location.pathname === "string" &&
+  typeof value.location.search === "string" &&
+  typeof value.location.hash === "string" &&
+  Array.isArray(value.matches) &&
+  value.matches.every(isCapturedRouteMatch) &&
+  isCapturedValueRecord(value.loaderData) &&
+  (value.navigationState === "idle" ||
+    value.navigationState === "loading" ||
+    value.navigationState === "submitting") &&
+  (value.revalidationState === "idle" || value.revalidationState === "loading");
+
 /** Reads observations back from JSON (a page's serialized result or a saved capture), dropping malformed parts. */
 export const readObservationsJson = (value: unknown): RuntimeObservations => {
   if (!isRecord(value)) return EMPTY_OBSERVATIONS;
@@ -84,10 +116,16 @@ export const readObservationsJson = (value: unknown): RuntimeObservations => {
       if (isCapturedValue(item)) globals[name] = item;
     }
   }
-  const queries = Array.isArray(value.queries) ? value.queries.filter(isCapturedQuery) : [];
-  return Array.isArray(value.mutations)
-    ? { globals, queries, mutations: value.mutations.filter(isCapturedMutation) }
-    : { globals, queries };
+  const observations: RuntimeObservations = {
+    globals,
+    queries: Array.isArray(value.queries) ? value.queries.filter(isCapturedQuery) : [],
+  };
+  if (Array.isArray(value.mutations)) {
+    observations.mutations = value.mutations.filter(isCapturedMutation);
+  }
+  if (isCapturedLinguiCatalog(value.lingui)) observations.lingui = value.lingui;
+  if (isCapturedRouterState(value.router)) observations.router = value.router;
+  return observations;
 };
 
 export const opaqueCapture = (description: string): CapturedValue => ({

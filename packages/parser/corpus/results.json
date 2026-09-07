@@ -174,6 +174,74 @@
       "failure": null
     },
     {
+      "id": "documenso",
+      "revision": "2cac63a000e22422bdea449f68b8025e709aa73a",
+      "framework": "react-router",
+      "capturedAt": "2026-09-07T00:50:14.730Z",
+      "durationMs": 42595,
+      "runtime": {
+        "reactVersion": "19.2.8",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 219,
+        "commits": 4,
+        "pageErrors": [],
+        "title": "Sign In - Documenso"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 204,
+          "textCount": 8,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 77
+        },
+        "diagnostics": [
+          {
+            "code": "max-call-depth",
+            "count": 12
+          },
+          {
+            "code": "dynamic-key",
+            "count": 1
+          },
+          {
+            "code": "dynamic-props",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 195,
+        "matchedText": 8,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "exact",
+        "runtimeFibers": 203,
+        "staticFibers": 203,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 203,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": null,
+      "failure": null
+    },
+    {
       "id": "epic-stack",
       "revision": "8473afd804b66dba6a23f317908dc35d1535e90d",
       "framework": "react-router",

@@ -84,6 +84,7 @@ import type { CallFrame, ContextReader, EvaluationContext } from "./context.js";
 import { NO_PROVIDERS, withScope } from "./context.js";
 import { decodeJsxEntities } from "./jsx-entities.js";
 import { cleanJsxText } from "./jsx-text.js";
+import { describeMacroJsxChildren, getStubExpandJsx } from "./macro-jsx.js";
 import { markEscapedSetters } from "./hooks.js";
 import { evaluateLoop } from "./loops.js";
 import { applyNarrowing, narrowTest, withNarrowedBinding } from "./narrowing.js";
@@ -135,10 +136,18 @@ export interface InterpreterOptions {
   project?: ProjectContext;
 }
 
+interface CallValueOptions {
+  thisValue?: StaticValue | null;
+  nameHint?: string | null;
+  templateArgumentNames?: Array<string | null>;
+}
+
 const UNKNOWN_PROJECT: ProjectContext = {
   hasDeclaredDependency: () => false,
   findQuery: () => null,
   findMutations: () => null,
+  linguiCatalog: null,
+  routerState: null,
 };
 
 const DEFAULT_MAX_CALL_DEPTH = 32;
@@ -306,6 +315,8 @@ export class Interpreter {
   private remainingSteps: number;
   private readonly moduleScopes = new Map<string, Scope>();
   private readonly moduleValues = new Map<string, Map<string, StaticValue | typeof IN_PROGRESS>>();
+  /** One evaluation per destructuring declarator, shared by every name it binds. */
+  private readonly destructuredInitValues = new WeakMap<Expression, StaticValue>();
   private readonly diagnosticKeys = new Set<string>();
 
   constructor(graph: ModuleGraph, options: InterpreterOptions = {}) {
@@ -610,13 +621,21 @@ export class Interpreter {
         );
       case "destructured": {
         const initValue = binding.init
-          ? this.evaluateExpression(binding.init, context, null)
+          ? this.evaluateDestructuredInit(binding.init, context)
           : UNDEFINED_VALUE;
         const scratch = createScope(null);
         this.bindPattern(binding.pattern, initValue, scratch, context);
         return scratch.bindings.get(binding.name) ?? UNDEFINED_VALUE;
       }
     }
+  }
+
+  private evaluateDestructuredInit(init: Expression, context: EvaluationContext): StaticValue {
+    const cached = this.destructuredInitValues.get(init);
+    if (cached) return cached;
+    const value = this.evaluateExpression(init, context, null);
+    this.destructuredInitValues.set(init, value);
+    return value;
   }
 
   createFunctionValue(
@@ -829,7 +848,13 @@ export class Interpreter {
         const values = node.quasi.expressions.map((expression) =>
           this.evaluateExpression(expression, context),
         );
-        return this.callValue(tag, [strings, ...values], context, location, { nameHint });
+        const templateArgumentNames = node.quasi.expressions.map((expression) =>
+          expression.type === "Identifier" ? expression.name : null,
+        );
+        return this.callValue(tag, [strings, ...values], context, location, {
+          nameHint,
+          templateArgumentNames,
+        });
       }
       case "MetaProperty":
         return unknownValue(`${node.meta.name}.${node.property.name}`, location);
@@ -1555,7 +1580,7 @@ export class Interpreter {
     args: StaticValue[],
     context: EvaluationContext,
     location: SourceLocation | null,
-    options: { thisValue?: StaticValue | null; nameHint?: string | null } = {},
+    options: CallValueOptions = {},
   ): StaticValue {
     switch (callee.kind) {
       case "branch":
@@ -1595,6 +1620,7 @@ export class Interpreter {
           callAwaited: (fn, fnArgs) => this.callAwaited(fn, fnArgs, context, location),
           call: (fn, fnArgs) => this.callValue(fn, fnArgs, context, location),
           nameHint: options.nameHint ?? null,
+          templateArgumentNames: options.templateArgumentNames ?? null,
         });
       case "class":
         return unknownValue(`class ${callee.name ?? ""} called without new`, location);
@@ -2321,11 +2347,12 @@ export class Interpreter {
       this.getStyledJsxType(node.openingElement.name, props) ??
       this.evaluateJsxName(node.openingElement.name, context);
     const children = this.evaluateJsxChildren(node.children, context);
+    const expandJsx = getStubExpandJsx(type);
     return this.createElement(
       type,
-      props,
+      expandJsx ? expandJsx(props, describeMacroJsxChildren(node.children, children)) : props,
       key,
-      children,
+      expandJsx ? [] : children,
       this.locate(context.module, node),
       this.describeJsxName(node.openingElement.name),
       context,

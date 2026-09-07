@@ -1,13 +1,13 @@
 import { _fiberRoots, getRDTHook, instrument, type FiberRoot, type ReactRenderer } from "bippy";
-import type { CapturedQueryCaches } from "../types.js";
-import { readQueryCaches } from "./query-cache.js";
+import type { RootObservations } from "../types.js";
+import { readRootObservations } from "./provider-state.js";
 import { createRuntimeSnapshot } from "./runtime-snapshot.js";
 import type { RuntimeSnapshot } from "./snapshot.js";
 
 export interface CommitRecorder {
   snapshot: () => RuntimeSnapshot;
-  /** The TanStack Query caches the live roots hold, as the page's code reads them. */
-  queryCaches: () => CapturedQueryCaches;
+  /** Library state held by providers in the live roots, as the page's code reads it. */
+  observations: () => RootObservations;
   commitCount: () => number;
   waitForCommit: (timeoutMs?: number) => Promise<void>;
   dispose: () => void;
@@ -49,7 +49,7 @@ export const createCommitRecorder = ({
   const liveRoots = (): FiberRoot[] => [...roots].filter((root) => _fiberRoots.has(root));
   return {
     snapshot: () => createRuntimeSnapshot({ roots: liveRoots(), renderer }),
-    queryCaches: () => readQueryCaches(liveRoots()),
+    observations: () => readRootObservations(liveRoots()),
     commitCount: () => commits,
     waitForCommit: (timeoutMs = DEFAULT_COMMIT_TIMEOUT_MS) =>
       new Promise<void>((resolve, reject) => {

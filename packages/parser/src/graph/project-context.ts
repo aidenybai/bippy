@@ -44,5 +44,7 @@ export const createProjectContext = (
     findQuery: (queryHash) => queries.get(queryHash) ?? null,
     findMutations: (mutationHash) =>
       mutations?.filter((mutation) => mutation.mutationHash === mutationHash) ?? null,
+    linguiCatalog: observations.lingui ?? null,
+    routerState: observations.router ?? null,
   };
 };

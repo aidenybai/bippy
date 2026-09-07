@@ -361,27 +361,39 @@ const toNumberValue = (value: StaticValue): StaticValue => {
   return unknownPrimitiveValue("number", `Number(${describeValue(value)})`);
 };
 
+/**
+ * Accessor descriptors are read once, when defined: the value a getter
+ * produces on the render this code runs in is the value the property holds
+ * (`getProxyFormState` in react-hook-form tracks which keys were read that way).
+ */
 const readDescriptorValue = (
+  interpreter: Interpreter,
+  target: StaticValue,
   descriptor: StaticObjectValue,
   key: string,
+  context: EvaluationContext,
   location: SourceLocation | null,
 ): StaticValue => {
   const keys = getKnownObjectKeys(descriptor);
   if (keys?.includes("value")) return getObjectProperty(descriptor, "value");
   if (keys?.includes("get")) {
-    return unknownValue(`accessor property "${key}" defined with a getter`, location);
+    return interpreter.callValue(getObjectProperty(descriptor, "get"), [], context, location, {
+      thisValue: target,
+    });
   }
   return unknownValue(`property "${key}" defined with a dynamic descriptor`, location);
 };
 
-/** `Object.defineProperty` with a data descriptor; a function's `name` is what fibers display. */
+/** `Object.defineProperty`; a function's `name` is what fibers display. */
 const defineOwnProperty = (
+  interpreter: Interpreter,
   target: StaticValue,
   key: string,
   descriptor: StaticObjectValue,
+  context: EvaluationContext,
   location: SourceLocation | null,
 ): void => {
-  const value = readDescriptorValue(descriptor, key, location);
+  const value = readDescriptorValue(interpreter, target, descriptor, key, context, location);
   switch (target.kind) {
     case "object":
       target.entries.push({ kind: "property", key, value });
@@ -507,7 +519,7 @@ const callGlobal = (
         return first ?? unknownValue("Object.defineProperty on a dynamic target", location);
       }
       if (first.kind === "object") interpreter.recordHeapMutation(first);
-      defineOwnProperty(first, String(second.value), descriptor, location);
+      defineOwnProperty(interpreter, first, String(second.value), descriptor, context, location);
       return first;
     }
     case "Object.defineProperties": {
@@ -516,7 +528,9 @@ const callGlobal = (
       }
       for (const key of getKnownObjectKeys(second) ?? []) {
         const descriptor = getObjectProperty(second, key);
-        if (descriptor.kind === "object") defineOwnProperty(first, key, descriptor, location);
+        if (descriptor.kind === "object") {
+          defineOwnProperty(interpreter, first, key, descriptor, context, location);
+        }
       }
       return first;
     }

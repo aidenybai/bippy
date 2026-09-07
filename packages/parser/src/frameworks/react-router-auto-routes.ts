@@ -1,6 +1,7 @@
 import { readdirSync } from "node:fs";
 import path from "node:path";
 import type { RouteRecord } from "./react-router.js";
+import { routeIdFromFile } from "./route-files.js";
 
 // File-convention routes as `react-router-auto-routes` (the React Router v7
 // successor of remix-flat-routes) derives them from `app/routes`:
@@ -138,6 +139,7 @@ const toRecord = (node: RouteNode, parentSegments: string[]): RouteRecord => {
   const ownUrl = toUrlPath(node.file.segments).slice(toUrlPath(parentSegments).length);
   const isIndex = node.file.kind === "index";
   return {
+    id: routeIdFromFile(node.file.file),
     path: ownUrl.length === 0 ? null : ownUrl.join("/"),
     index: isIndex,
     element: null,

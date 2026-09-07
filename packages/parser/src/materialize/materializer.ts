@@ -1111,6 +1111,7 @@ export class Materializer {
         return unknownValue(`call of ${describeValue(callee)}`, location);
       },
       nameHint: null,
+      templateArgumentNames: null,
     };
     const rendered = stub.render(props, tools);
     return this.finishRender(rendered, { ...context, depth: context.depth + 1 }, input);

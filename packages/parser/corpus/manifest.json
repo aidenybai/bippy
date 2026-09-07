@@ -418,6 +418,7 @@
       "url": "http://localhost:3000/signin",
       "readyTimeoutMs": 900000,
       "settleMs": 10000,
+      "capturedGlobals": ["__ENV__"],
       "static": {
         "rootDirectory": "apps/remix",
         "entry": "app/routes.ts",

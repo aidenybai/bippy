@@ -1,6 +1,7 @@
 import { readdirSync } from "node:fs";
 import path from "node:path";
 import type { RouteRecord } from "./react-router.js";
+import { routeIdFromFile } from "./route-files.js";
 
 // File-convention routes as `remix-flat-routes` (hybrid mode) derives them from
 // `app/routes`, mirroring its `getRouteSegments`/`findParentRouteId`:
@@ -51,8 +52,6 @@ const isRouteModuleFile = (file: string): boolean => {
   if (!file.includes("/")) return ROUTE_MODULE_EXTENSIONS.has(path.extname(file));
   return NESTED_ROUTE_FILE_PATTERN.test(file) && !SERVER_FILE_PATTERN.test(file);
 };
-
-const stripExtension = (file: string): string => file.replace(/\.[a-z0-9]+$/i, "");
 
 const isPathSeparator = (character: string): boolean => /[/\\.]/.test(character);
 
@@ -140,6 +139,7 @@ const toRecords = (routes: FlatRouteInfo[], parentId: string | undefined): Route
       let ownPath = route.path?.slice(parentPath.length) ?? "";
       if (ownPath.startsWith("/")) ownPath = ownPath.slice(1);
       return {
+        id: route.id,
         path: ownPath.length === 0 ? null : ownPath,
         index: route.index,
         element: null,
@@ -167,7 +167,7 @@ export const readFlatRoutes = (
   const byName = new Map<string, FlatRouteInfo>();
   for (const file of files.sort()) {
     if (IGNORED_FILE_PATTERN.test(file) || !isRouteModuleFile(file)) continue;
-    const routeName = stripExtension(file);
+    const routeName = routeIdFromFile(file);
     const isIndex = INDEX_ROUTE_PATTERN.test(routeName);
     const segments = getRouteSegments(routeName, isIndex);
     const route: FlatRouteInfo = {
