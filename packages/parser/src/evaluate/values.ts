@@ -547,7 +547,7 @@ const MAX_EQUIVALENCE_DEPTH = 6;
 export const areValuesEquivalent = (left: StaticValue, right: StaticValue, depth = 0): boolean => {
   if (isSameValue(left, right)) return true;
   if (left.kind !== right.kind) return false;
-  if (depth >= MAX_EQUIVALENCE_DEPTH) return true;
+  if (depth >= MAX_EQUIVALENCE_DEPTH) return false;
   switch (left.kind) {
     case "unknown":
     case "unknown-primitive":

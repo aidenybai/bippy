@@ -1,4 +1,5 @@
 import type { StaticValue } from "../types.js";
+import { rangedNumberValue } from "./primitive-shapes.js";
 import { primitiveValue, unknownPrimitiveValue } from "./values.js";
 
 /**
@@ -10,11 +11,15 @@ import { primitiveValue, unknownPrimitiveValue } from "./values.js";
  * assignment of the returned handle) runs first, as it does in the event loop.
  * An interval's ticks are evaluated at that quiescent point, where any clock
  * reading is later than every earlier reading by an unbounded amount, until
- * the interval clears itself or a tick changes nothing.
+ * the interval clears itself or a tick changes nothing. Readings taken in
+ * evaluation order never decrease, and two readings taken by the same task
+ * (no timer round between them) are less than a second apart.
  */
 export class TimerQueue {
   private tasks: (() => void)[] = [];
   private readonly clearedHandles = new WeakSet<StaticValue>();
+  private clockSequence = 0;
+  private clockTask = 0;
   isClockSettled = false;
   isFlushing = false;
 
@@ -42,7 +47,10 @@ export class TimerQueue {
     this.tasks = [];
     this.isFlushing = true;
     try {
-      for (const task of tasks) task();
+      for (const task of tasks) {
+        this.clockTask += 1;
+        task();
+      }
     } finally {
       this.isFlushing = false;
     }
@@ -53,7 +61,11 @@ export class TimerQueue {
       kind: "unknown-primitive",
       primitiveType: "number",
       reason: `${name}()`,
-      clock: this.isClockSettled ? "settled" : "reading",
+      clock: {
+        ordering: this.isClockSettled ? "settled" : "reading",
+        sequence: ++this.clockSequence,
+        task: this.clockTask,
+      },
     };
   }
 }
@@ -62,11 +74,31 @@ const UNBOUNDED_ELAPSED: StaticValue = {
   kind: "unknown-primitive",
   primitiveType: "number",
   reason: "time elapsed until the interval settled",
-  clock: "unbounded",
+  clock: { ordering: "unbounded", sequence: 0, task: 0 },
 };
 
+const SAME_TASK_ELAPSED_BOUND_MS = 1000;
+
 const isUnbounded = (value: StaticValue): boolean =>
-  value.kind === "unknown-primitive" && value.clock === "unbounded";
+  value.kind === "unknown-primitive" && value.clock?.ordering === "unbounded";
+
+/** `later - earlier` for two clock readings; null unless both are readings. */
+const subtractReadings = (left: StaticValue, right: StaticValue): StaticValue | null => {
+  if (left.kind !== "unknown-primitive" || right.kind !== "unknown-primitive") return null;
+  const leftClock = left.clock;
+  const rightClock = right.clock;
+  if (!leftClock || !rightClock) return null;
+  if (leftClock.ordering === "settled" && rightClock.ordering === "reading") {
+    return UNBOUNDED_ELAPSED;
+  }
+  if (leftClock.ordering === "unbounded" || rightClock.ordering === "unbounded") return null;
+  if (leftClock.ordering !== rightClock.ordering) return null;
+  const bound =
+    leftClock.task === rightClock.task ? SAME_TASK_ELAPSED_BOUND_MS : Number.POSITIVE_INFINITY;
+  return leftClock.sequence >= rightClock.sequence
+    ? rangedNumberValue("time elapsed between clock readings", { min: 0, max: bound })
+    : rangedNumberValue("time elapsed between clock readings", { min: -bound, max: 0 });
+};
 
 const isFiniteNumber = (value: StaticValue): boolean =>
   value.kind === "primitive" && typeof value.value === "number" && Number.isFinite(value.value);
@@ -77,14 +109,9 @@ export const applyClockOperator = (
   left: StaticValue,
   right: StaticValue,
 ): StaticValue | null => {
-  if (
-    operator === "-" &&
-    left.kind === "unknown-primitive" &&
-    right.kind === "unknown-primitive" &&
-    left.clock === "settled" &&
-    right.clock === "reading"
-  ) {
-    return UNBOUNDED_ELAPSED;
+  if (operator === "-") {
+    const elapsed = subtractReadings(left, right);
+    if (elapsed) return elapsed;
   }
   if (isUnbounded(left) && isFiniteNumber(right)) {
     const isPositiveScale = right.kind === "primitive" && Number(right.value) > 0;

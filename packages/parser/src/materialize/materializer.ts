@@ -538,6 +538,7 @@ export class Materializer {
             toFunctionValue(component),
             [element.props],
             componentContext,
+            { awaited: true },
           ),
       );
       return this.toNode(server.rendered, server.childContext, isTopLevel);
@@ -1096,6 +1097,7 @@ export class Materializer {
       },
       captured: (captured, name) => this.interpreter.captured(captured, name),
       markEscaped: (value) => this.interpreter.markEscaped(value),
+      setProperty: (object, key, value) => this.interpreter.assignOwnProperty(object, key, value),
       nameHint: null,
       templateArgumentNames: null,
     };
@@ -1130,6 +1132,7 @@ export class Materializer {
               toFunctionValue(component),
               secondArgument ? [props, secondArgument] : [props],
               componentContext,
+              { awaited: true },
             ),
         ),
     );

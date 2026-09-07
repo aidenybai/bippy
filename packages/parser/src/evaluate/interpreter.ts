@@ -147,6 +147,7 @@ import { cleanJsxText } from "./jsx-text.js";
 import { describeMacroJsxChildren, getStubExpandJsx } from "./macro-jsx.js";
 import { forEachEscapedCallable, getMutatedIdentifiers } from "./escapes.js";
 import { EVENT_LISTENER_METHODS } from "./event-listeners.js";
+import { awaitedValue, getModeledPromise, resolvedPromiseValue } from "./promises.js";
 import { applyClockOperator, TimerQueue } from "./timers.js";
 import { evaluateLoop } from "./loops.js";
 import { applyNarrowing, narrowTest, withNarrowedBinding } from "./narrowing.js";
@@ -266,13 +267,19 @@ const PRIMITIVE_PROTOTYPES: Record<UnknownPrimitiveType, object | null> = {
   any: null,
 };
 
+const FUNCTION_INSTANCE_KEYS = new Set(["length", "prototype", "arguments", "caller"]);
+
+/** Names a function has without the analyzed code assigning them; any other name reads `undefined`. */
+const isFunctionOwnOrInheritedKey = (key: string): boolean =>
+  isSymbolPropertyKey(key) || FUNCTION_INSTANCE_KEYS.has(key) || key in Function.prototype;
+
 /** A member read on a value whose prototype chain is fully known: absent names are `undefined`. */
 const prototypeMember = (
   receiver: StaticValue,
   prototype: object | null,
   key: string,
 ): StaticValue =>
-  prototype === null || key in prototype || isPromiseMethodName(key)
+  prototype === null || key in prototype
     ? { kind: "method", receiver, name: key }
     : UNDEFINED_VALUE;
 
@@ -747,8 +754,7 @@ export class Interpreter {
           }
           return target;
         }
-        this.recordHeapMutation(target);
-        target.entries.push({ kind: "property", key: propertyName, value });
+        this.assignOwnProperty(target, propertyName, value);
         return target;
       }
       case "list": {
@@ -1049,7 +1055,10 @@ export class Interpreter {
         return this.evaluateExpression(node.expressions[lastIndex], context, nameHint);
       }
       case "AwaitExpression": {
-        const awaited = this.evaluateExpression(node.argument, context, nameHint);
+        const awaited = awaitedValue(
+          this.evaluateExpression(node.argument, context, nameHint),
+          this.locate(context.module, node),
+        );
         if (context.hooks && (awaited.kind === "unknown" || awaited.kind === "external"))
           context.hooks.isDeferred = true;
         return awaited;
@@ -1098,7 +1107,7 @@ export class Interpreter {
         if (node.source.type !== "Literal" || typeof node.source.value !== "string") {
           return unknownValue("dynamic import with non-literal specifier", location);
         }
-        return this.importModule(node.source.value, context, location, false);
+        return resolvedPromiseValue(this.importModule(node.source.value, context, location, false));
       }
       case "TaggedTemplateExpression": {
         const tag = this.evaluateExpression(node.tag, context);
@@ -1512,6 +1521,11 @@ export class Interpreter {
     if (object.kind === "object") this.assignDynamicEntry(object, key, value);
   }
 
+  assignOwnProperty(target: StaticObjectValue, key: string, value: StaticValue): void {
+    this.recordHeapMutation(target);
+    target.entries.push({ kind: "property", key, value });
+  }
+
   private assignDynamicEntry(
     target: StaticObjectValue,
     key: StaticValue,
@@ -1661,7 +1675,8 @@ export class Interpreter {
           property.kind === "primitive" &&
           property.value === undefined &&
           !object.hasNullPrototype &&
-          (OBJECT_PROTOTYPE_METHODS.has(key) || isPromiseMethodName(key))
+          (OBJECT_PROTOTYPE_METHODS.has(key) ||
+            (isPromiseMethodName(key) && getModeledPromise(object)))
         )
           return { kind: "method", receiver: object, name: key };
         return property;
@@ -1762,7 +1777,6 @@ export class Interpreter {
       case "native-object":
         return getNativeObjectMember(object, key);
       case "namespace":
-        if (isPromiseMethodName(key)) return { kind: "method", receiver: object, name: key };
         if (key === "__esModule") {
           if (!object.module.isCommonJs) return TRUE_VALUE;
           if (!hasExportedName(object.module, key)) return UNDEFINED_VALUE;
@@ -1814,6 +1828,7 @@ export class Interpreter {
         }
         if (key === "displayName") return UNDEFINED_VALUE;
         if (key === "name") return object.name ? primitiveValue(object.name) : primitiveValue("");
+        if (object.kind === "function" && !isFunctionOwnOrInheritedKey(key)) return UNDEFINED_VALUE;
         return unknownValue(`${describeValue(object)}.${key}`, location);
       }
       case "component-reference":
@@ -1845,8 +1860,7 @@ export class Interpreter {
         return unknownValue(`property "${key}" of <${object.tagName}> node`, location);
       case "unknown":
         if (object === CHAIN_SHORT_CIRCUIT) return object;
-        if (!object.thrown) return unknownValue(object.reason, location);
-        return isPromiseMethodName(key) ? { kind: "method", receiver: object, name: key } : object;
+        return object.thrown ? object : unknownValue(object.reason, location);
     }
   }
 
@@ -2009,6 +2023,7 @@ export class Interpreter {
           call: (callee, calleeArgs) => this.callValue(callee, calleeArgs, context, location),
           captured: (captured, name) => this.captured(captured, name),
           markEscaped: (value) => this.markEscaped(value),
+          setProperty: (object, key, value) => this.assignOwnProperty(object, key, value),
           nameHint: options.nameHint ?? null,
           templateArgumentNames: options.templateArgumentNames ?? null,
         });
@@ -2196,11 +2211,13 @@ export class Interpreter {
     // An async body runs synchronously up to its first `await` of an unknown
     // promise; only a framework-awaited call (server components, route `lazy`)
     // lets what follows count as settled before the captured commit.
-    if (frame && functionValue.node.async && !options.awaited && frame.isDeferred && !wasDeferred) {
+    if (options.awaited) return awaitedValue(result, location);
+    if (!functionValue.node.async) return result;
+    if (frame && frame.isDeferred && !wasDeferred) {
       frame.isDeferred = wasDeferred;
       return unknownValue("promise settled asynchronously", location);
     }
-    return result;
+    return resolvedPromiseValue(result);
   }
 
   private evaluateFunctionBody(

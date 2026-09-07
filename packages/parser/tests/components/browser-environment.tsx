@@ -55,6 +55,42 @@ const ObjectRef = () => {
   return <span ref={ref}>{tag === "span" ? <strong>attached</strong> : <em>detached</em>}</span>;
 };
 
+const describeAbort = (controller: AbortController): string => {
+  const events: string[] = [];
+  const onAbort = () => events.push("listener");
+  controller.signal.addEventListener("abort", onAbort);
+  controller.signal.addEventListener("abort", onAbort);
+  controller.signal.addEventListener("abort", () => events.push("second"));
+  controller.signal.onabort = (event) => events.push(`handler:${event.type}`);
+  const before = controller.signal.aborted;
+  controller.abort("done");
+  controller.abort("again");
+  return `${before},${controller.signal.aborted},${String(controller.signal.reason)},${events.join("+")}`;
+};
+
+const Aborts = () => {
+  const idle = new AbortController();
+  const escaped = new AbortController();
+  window.setTimeout(() => escaped.abort(), 0);
+  let thrown = "none";
+  const aborted = new AbortController();
+  aborted.abort(new Error("stop"));
+  try {
+    aborted.signal.throwIfAborted();
+  } catch (error) {
+    thrown = error instanceof Error ? error.message : "other";
+  }
+  return (
+    <dl>
+      <dd>{describeAbort(new AbortController())}.</dd>
+      <dd>{idle.signal.aborted ? "aborted" : "idle"}.</dd>
+      <dd>{escaped.signal.aborted ? "aborted" : "idle"}.</dd>
+      <dd>{thrown}.</dd>
+      <dd>{aborted.signal instanceof AbortSignal ? "signal" : "other"}.</dd>
+    </dl>
+  );
+};
+
 export default function BrowserEnvironment() {
   return (
     <main>
@@ -65,6 +101,7 @@ export default function BrowserEnvironment() {
       </CallbackRefPortal>
       <LayoutEffectContainer />
       <ObjectRef />
+      <Aborts />
     </main>
   );
 }

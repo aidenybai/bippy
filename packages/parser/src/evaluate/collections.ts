@@ -9,7 +9,6 @@ import {
   TRUE_VALUE,
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
-  thrownValue,
   unknownValue,
 } from "./values.js";
 
@@ -260,27 +259,4 @@ export const createCollectionValue = (
   }
   collectionsByValue.set(self, collection);
   return self;
-};
-
-/**
- * Promises are transparent: `then`/`await`/`use` read through to the settled
- * value, so `Promise.resolve(x)` is `x` and `new Promise(executor)` is whatever
- * the executor resolves synchronously (or unknown when it defers).
- */
-export const createPromiseValue = (
-  executor: StaticValue | undefined,
-  callExecutor: (functionValue: StaticValue, args: StaticValue[]) => void,
-  location: SourceLocation | null,
-): StaticValue => {
-  let settled: StaticValue | null = null;
-  const resolve = nativeMethod("resolve", (args) => {
-    settled ??= args[0] ?? UNDEFINED_VALUE;
-    return UNDEFINED_VALUE;
-  });
-  const reject = nativeMethod("reject", (args) => {
-    settled ??= thrownValue("rejected promise", args[0] ?? UNDEFINED_VALUE, location);
-    return UNDEFINED_VALUE;
-  });
-  if (executor) callExecutor(executor, [resolve, reject]);
-  return settled ?? unknownValue("promise settled asynchronously", location);
 };

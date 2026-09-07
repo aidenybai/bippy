@@ -1,6 +1,8 @@
 import type { StaticClassValue, StaticValue } from "../types.js";
+import { getAbortWitness } from "./abort-controller.js";
 import { getCollectionKind } from "./collections.js";
 import { getErrorWitness } from "./errors.js";
+import { getModeledPromise } from "./promises.js";
 import { isSearchParamsValue } from "./url-search-params.js";
 import { isUrlValue } from "./url.js";
 import { getObjectProperty } from "./values.js";
@@ -94,6 +96,9 @@ export const getPrototypeWitness = (value: StaticValue): object | null => {
       if (isUrlValue(value)) return new URL("http://witness.invalid");
       const errorWitness = getErrorWitness(value);
       if (errorWitness) return errorWitness;
+      const abortWitness = getAbortWitness(value);
+      if (abortWitness) return abortWitness;
+      if (getModeledPromise(value)) return Promise.resolve();
       return value.entries.every(
         (entry) => entry.kind === "property" && entry.value.kind !== "native-function",
       )

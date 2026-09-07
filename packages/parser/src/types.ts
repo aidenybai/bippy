@@ -257,6 +257,8 @@ export interface StubRenderTools {
   captured: (captured: CapturedValue, name: string) => StaticValue;
   /** Records that `value` reached code the analysis cannot see, so its later mutations are uncertain. */
   markEscaped: (value: StaticValue) => void;
+  /** Assigns an own property of a modeled object, undone on the other paths of an enclosing fork like any heap write. */
+  setProperty: (object: StaticObjectValue, key: string, value: StaticValue) => void;
   /** Binding the call's result is assigned to, as build-time labelers (Emotion's babel/swc plugin) see it. */
   nameHint: string | null;
   /** For tagged templates, the identifier each `${expression}` is (null when not a bare identifier); null for other calls. */
@@ -487,6 +489,13 @@ export type UnknownPrimitiveType = "string" | "number" | "boolean" | "any";
 /** Ordering a clock-derived number carries; see `evaluate/timers.ts`. */
 export type ClockOrdering = "reading" | "settled" | "unbounded";
 
+/** A clock reading's place among the readings the analysis took, and the timer task that took it. */
+export interface ClockReading {
+  ordering: ClockOrdering;
+  sequence: number;
+  task: number;
+}
+
 /** Leading characters of an unknown string and, when fixed, its length; see `evaluate/primitive-shapes.ts`. */
 export interface StringShape {
   prefix: string;
@@ -503,7 +512,7 @@ export interface StaticUnknownPrimitiveValue {
   kind: "unknown-primitive";
   primitiveType: UnknownPrimitiveType;
   reason: string;
-  clock?: ClockOrdering;
+  clock?: ClockReading;
   stringShape?: StringShape;
   numberRange?: NumberRange;
 }

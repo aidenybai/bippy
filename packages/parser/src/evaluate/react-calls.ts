@@ -13,6 +13,7 @@ import type {
 import { callUncertainCallback } from "./builtin-calls.js";
 import type { EvaluationContext } from "./context.js";
 import { nextMemoCell, nextStateCell, queueStateUpdate } from "./hooks.js";
+import { awaitedValue } from "./promises.js";
 import type { Interpreter } from "./interpreter.js";
 import {
   branchValue,
@@ -373,7 +374,7 @@ export const evaluateReactApiCall = (
           properties: new Map(),
         });
       }
-      const resolved = interpreter.callFunction(first, [], context);
+      const resolved = interpreter.callFunction(first, [], context, { awaited: true });
       return componentReference({
         kind: "lazy",
         inner: resolveLazyTarget(interpreter, resolved),
@@ -436,7 +437,9 @@ export const evaluateReactApiCall = (
         : unknownValue("useContext without a context", location);
     case "use":
       if (first?.kind === "context") return readContextValue(interpreter, first, context, location);
-      return first ?? unknownValue("use() without an argument", location);
+      return first
+        ? awaitedValue(first, location)
+        : unknownValue("use() without an argument", location);
     case "useEffect":
     case "useLayoutEffect":
     case "useInsertionEffect":

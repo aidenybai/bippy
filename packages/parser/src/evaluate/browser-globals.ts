@@ -161,6 +161,8 @@ export const isBrowserGlobalName = (name: string): boolean => name in BROWSER_GL
 
 export const isWindowAlias = (name: string): boolean => WINDOW_MEMBERS[name] === "window";
 
+export const isWindowMember = (name: string): boolean => name in WINDOW_MEMBERS;
+
 const LOCATION_MEMBER_NAME =
   /^(?:(?:window|globalThis|document)\.)?location\.(pathname|search|hash|origin|protocol|host|hostname|port|href)$/;
 const WINDOW_ORIGIN_NAME = /^(?:(?:window|globalThis|self)\.)?origin$/;

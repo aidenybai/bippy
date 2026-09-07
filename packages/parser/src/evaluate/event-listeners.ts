@@ -49,6 +49,9 @@ const USER_GESTURE_EVENTS = new Set([
   "paste",
 ]);
 
+/** Events the browser dispatches only when the page is being left, after any snapshot. */
+const PAGE_UNLOAD_EVENTS = new Set(["pagehide", "beforeunload", "unload"]);
+
 const EVENT_TARGET_GLOBALS = new Set(["window", "globalThis", "document", "MediaQueryList"]);
 
 export const EVENT_LISTENER_METHODS = new Set([
@@ -62,10 +65,10 @@ export const isEventTarget = (receiver: StaticValue): boolean =>
   receiver.kind === "host-node" ||
   (receiver.kind === "global" && EVENT_TARGET_GLOBALS.has(receiver.name));
 
-const isUserGestureEvent = (type: StaticValue | undefined): boolean =>
-  type?.kind === "primitive" &&
-  typeof type.value === "string" &&
-  USER_GESTURE_EVENTS.has(type.value);
+const isEventBeforeCapture = (type: StaticValue | undefined): boolean =>
+  type?.kind !== "primitive" ||
+  typeof type.value !== "string" ||
+  !(USER_GESTURE_EVENTS.has(type.value) || PAGE_UNLOAD_EVENTS.has(type.value));
 
 /** Listener registration on `window`/`document`/DOM nodes/`MediaQueryList`; only listeners that may fire before capture escape. */
 export const callEventTargetMethod = (
@@ -78,7 +81,7 @@ export const callEventTargetMethod = (
   const [type, listener] = args;
   const isRegistration = name === "addEventListener" || name === "addListener";
   const isStaticViewport = receiver.kind === "global" && receiver.name === "MediaQueryList";
-  if (isRegistration && listener && !isUserGestureEvent(type) && !isStaticViewport) {
+  if (isRegistration && listener && isEventBeforeCapture(type) && !isStaticViewport) {
     interpreter.markEscaped(listener);
   }
   return UNDEFINED_VALUE;

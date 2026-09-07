@@ -25,6 +25,7 @@ import {
   TANSTACK_QUERY_PACKAGES,
   tanstackQueryValue,
 } from "./tanstack-query.js";
+import { TANSTACK_STORE_PACKAGES, tanstackStoreValue } from "./tanstack-store.js";
 import {
   USE_SYNC_EXTERNAL_STORE_PACKAGES,
   useSyncExternalStoreValue,
@@ -67,6 +68,7 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     getValue: tanstackQueryValue,
     modeledExports: TANSTACK_QUERY_MODELED_EXPORTS,
   },
+  { packages: TANSTACK_STORE_PACKAGES, getValue: tanstackStoreValue },
   { packages: USE_SYNC_EXTERNAL_STORE_PACKAGES, getValue: useSyncExternalStoreValue },
 ];
 

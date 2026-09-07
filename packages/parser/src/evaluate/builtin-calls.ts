@@ -18,13 +18,14 @@ import {
   MemoComponentTag,
   SimpleMemoComponentTag,
 } from "../work-tags.js";
-import { getBrowserGlobalMember, isBrowserGlobalName } from "./browser-globals.js";
+import { getBrowserGlobalMember, isBrowserGlobalName, isWindowMember } from "./browser-globals.js";
 import {
   type EnvironmentLookup,
   callHotModuleMethod,
   getBundlerGlobal,
   isEnvironmentObject,
 } from "./bundler-globals.js";
+import { createAbortController } from "./abort-controller.js";
 import { createErrorValue, ERROR_CONSTRUCTOR_NAMES, isErrorConstructorName } from "./errors.js";
 import { constructNativeDate } from "./native-values.js";
 import { callEventTargetMethod } from "./event-listeners.js";
@@ -35,7 +36,17 @@ import { getObjectTag } from "./object-tag.js";
 import { callHistoryMethod, isHistoryName } from "./session-history.js";
 import { callStorageMethod, getStorageAreaName } from "./web-storage.js";
 import type { EvaluationContext } from "./context.js";
-import { createCollectionValue, createPromiseValue, getCollectionItems } from "./collections.js";
+import { createCollectionValue, getCollectionItems } from "./collections.js";
+import {
+  chainPromise,
+  combinePromises,
+  createPromiseValue,
+  getModeledPromise,
+  isThrownOutcome,
+  resolvedPromiseValue,
+  type PromiseHandlers,
+  type PromiseTools,
+} from "./promises.js";
 import { callShapedPrimitiveMethod, rangedNumberValue } from "./primitive-shapes.js";
 import { createSearchParamsValue } from "./url-search-params.js";
 import { createUrlValue } from "./url.js";
@@ -397,7 +408,11 @@ export const getBuiltinGlobal = (
     if (constant === "E") return primitiveValue(Math.E);
   }
   const root = name.split(".")[0];
-  if (!GLOBAL_NAMES.has(root)) return null;
+  if (!GLOBAL_NAMES.has(root)) {
+    return root === name && isWindowMember(name)
+      ? getBrowserGlobalMember("window", name, getBuiltinGlobal)
+      : null;
+  }
   if (root !== name && isBrowserGlobalName(root)) {
     const member = name.slice(root.length + 1);
     if ((root === "window" || root === "globalThis") && GLOBAL_NAMES.has(member))
@@ -656,6 +671,9 @@ const callGlobal = (
       return createSearchParamsValue(first, { location });
     case "URL":
       return createUrlValue(args, location);
+    case "AbortController":
+      if (isConstructor) return createAbortController(interpreter, location);
+      break;
     case "RegExp": {
       if (second !== undefined && second.kind !== "primitive")
         return unknownValue("RegExp with dynamic flags", location);
@@ -673,22 +691,21 @@ const callGlobal = (
         ? { kind: "proxy", target: first, handler: second }
         : unknownValue("Proxy without a static handler", location);
     case "Promise":
-      return createPromiseValue(
-        first,
-        (executor, executorArgs) =>
-          interpreter.callValue(executor, executorArgs, context, location),
-        location,
-      );
+      return createPromiseValue(first, promiseTools(interpreter, context, location), location);
     case "Symbol.for":
       return first?.kind === "primitive" && typeof first.value === "string"
         ? { kind: "symbol", key: first.value }
         : unknownValue("Symbol.for with a dynamic key", location);
     case "Promise.resolve":
-      return first ?? UNDEFINED_VALUE;
+      return resolvedPromiseValue(first ?? UNDEFINED_VALUE);
     case "Promise.reject":
-      return thrownValue("rejected promise", first ?? UNDEFINED_VALUE, location);
+      return resolvedPromiseValue(
+        thrownValue("rejected promise", first ?? UNDEFINED_VALUE, location),
+      );
     case "Promise.all":
-      return first?.kind === "list" ? first : unknownValue("Promise.all", location);
+      return first?.kind === "list"
+        ? combinePromises(first.items, promiseTools(interpreter, context, location), location)
+        : unknownValue("Promise.all", location);
     case "Array.isArray":
       if (!first) return FALSE_VALUE;
       if (first.kind === "list" || first.kind === "repeat") return TRUE_VALUE;
@@ -1341,6 +1358,55 @@ const fallbackMethodResult = (
   return unknownValue(`${describeValue(receiver)}.${name}()`, location);
 };
 
+const promiseTools = (
+  interpreter: Interpreter,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): PromiseTools => ({
+  call: (callee, callArgs) => interpreter.callValue(callee, callArgs, context, location),
+  markEscaped: (value) => interpreter.markEscaped(value),
+});
+
+/**
+ * `then`/`catch`/`finally`. Handlers on a modeled promise run at its
+ * settlement (now, when it already settled); on a value the analysis cannot
+ * follow they are continuations that land after the captured commit; any other
+ * receiver is treated as an already-fulfilled thenable.
+ */
+const callPromiseMethod = (
+  interpreter: Interpreter,
+  receiver: StaticValue,
+  name: string,
+  args: StaticValue[],
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): StaticValue => {
+  const [first, second] = args;
+  const handlers: PromiseHandlers = {
+    onFulfilled: name === "then" && isCallable(first) ? first : null,
+    onRejected:
+      name === "catch" ? (isCallable(first) ? first : null) : isCallable(second) ? second : null,
+    onFinally: name === "finally" && isCallable(first) ? first : null,
+  };
+  const modeled = getModeledPromise(receiver);
+  if (modeled) return chainPromise(modeled, handlers, promiseTools(interpreter, context, location));
+  if (receiver.kind === "unknown" || receiver.kind === "external") {
+    if (handlers.onFulfilled?.kind === "function")
+      return interpreter.callDeferred(handlers.onFulfilled, [receiver], context);
+    for (const handler of [handlers.onFulfilled, handlers.onRejected, handlers.onFinally]) {
+      if (handler) interpreter.markEscaped(handler);
+    }
+    return receiver;
+  }
+  if (handlers.onFulfilled)
+    return interpreter.callValue(handlers.onFulfilled, [receiver], context, location);
+  if (handlers.onFinally) {
+    const result = interpreter.callValue(handlers.onFinally, [], context, location);
+    if (isThrownOutcome(result)) return result;
+  }
+  return receiver;
+};
+
 export const evaluateBuiltinCall = (
   interpreter: Interpreter,
   callee: Extract<StaticValue, { kind: "method" | "global" }>,
@@ -1354,22 +1420,8 @@ export const evaluateBuiltinCall = (
   const { receiver, name } = callee;
   const [first, second] = args;
 
-  if (isPromiseMethodName(name)) {
-    const rejectionHandler = name === "catch" ? first : name === "then" ? second : undefined;
-    if (receiver.kind === "unknown" && receiver.thrown && rejectionHandler?.kind === "function")
-      return interpreter.callFunction(rejectionHandler, [receiver.thrown], context);
-    if (name === "then" && first?.kind === "function") {
-      const isSettled = receiver.kind !== "unknown" && receiver.kind !== "external";
-      return isSettled
-        ? interpreter.callFunction(first, [receiver], context)
-        : interpreter.callDeferred(first, [receiver], context);
-    }
-    if (!isCallable(first) && !isCallable(second)) return receiver;
-    if (receiver.kind === "unknown" || receiver.kind === "external") {
-      for (const callback of args) interpreter.markEscaped(callback);
-    }
-    return receiver;
-  }
+  if (isPromiseMethodName(name))
+    return callPromiseMethod(interpreter, receiver, name, args, context, location);
 
   if (receiver.kind === "function") {
     if (name === "bind") {
