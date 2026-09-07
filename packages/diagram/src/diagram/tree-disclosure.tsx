@@ -13,7 +13,10 @@ export interface TreeDisclosureProps {
   onToggle: (event: MouseEvent<SVGGElement>, isFocusDriven: boolean) => void;
 }
 
-const styles = stylex.create({ toggle: { cursor: "pointer", color: colors.muted } });
+const styles = stylex.create({
+  toggle: { cursor: "pointer", color: colors.muted },
+  chevron: { opacity: { default: 0, [stylex.when.ancestor(":hover")]: 1 } },
+});
 
 export const TreeDisclosure = ({
   nodeId,
@@ -44,6 +47,7 @@ export const TreeDisclosure = ({
     >
       <rect x={-12} y={-height / 2} width={24} height={height} fill="transparent" />
       <path
+        {...stylex.props(styles.chevron)}
         d={isExpanded ? "M-4 -2 0 2 4-2" : "M-2 -4 2 0-2 4"}
         fill="none"
         stroke="currentColor"

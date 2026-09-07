@@ -1,6 +1,32 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
+test("chevrons appear only on the hovered row in static and virtual trees", async ({ page }) => {
+  await page.goto("/");
+  const parent = page.getByRole("tree", { name: "Parent tree", exact: true });
+  const owner = page.getByRole("tree", { name: "Owner tree", exact: true });
+  const item = parent.locator('[data-node-id="app"]');
+  const chevron = item.locator("[data-tree-toggle] path");
+  await page.mouse.move(0, 0);
+  await item.focus();
+  await expect(chevron).toHaveCSS("opacity", "0");
+  await item.hover();
+  await expect(chevron).toHaveCSS("opacity", "1");
+  await expect(owner.locator('[data-disclosure-for="app"] path')).toHaveCSS("opacity", "0");
+  await page.mouse.move(0, 0);
+  await expect(chevron).toHaveCSS("opacity", "0");
+  const row = page
+    .getByRole("tree", { name: "Deep tree", exact: true })
+    .getByRole("treeitem")
+    .first();
+  const virtualChevron = row.locator("[data-tree-toggle] path");
+  await expect(virtualChevron).toHaveCSS("opacity", "0");
+  await row.hover();
+  await expect(virtualChevron).toHaveCSS("opacity", "1");
+  await page.mouse.move(0, 0);
+  await expect(virtualChevron).toHaveCSS("opacity", "0");
+});
+
 test("static disclosure, search, reveal, and bulk expansion preserve per-view state", async ({
   page,
 }) => {

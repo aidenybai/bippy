@@ -358,6 +358,7 @@ export const VirtualTree = ({
               return (
                 <g
                   key={row.node.id}
+                  {...stylex.props(stylex.defaultMarker())}
                   id={itemId}
                   role="treeitem"
                   aria-label={getNodeName(row.node)}

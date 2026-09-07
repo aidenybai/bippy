@@ -12,7 +12,7 @@ import {
   type DiagramLabelProps,
   type DiagramDescriptionProps,
 } from "./node-slots";
-import { composeEventHandlers } from "./dom-props";
+import { composeEventHandlers, mergeClassNames } from "./dom-props";
 import { useTreeRoot, useTreeView } from "./tree-context";
 import type { TreeNode } from "./tree-model";
 
@@ -76,6 +76,7 @@ const TreeRowItem = ({
         .filter(Boolean)
         .join(" ")}
       {...props}
+      className={mergeClassNames(stylex.props(stylex.defaultMarker()).className, props.className)}
       ref={mergedRef}
       data-tree-item=""
       data-text-value={textValue}
