@@ -48,6 +48,17 @@ export const listComponentFixtures = (): ComponentFixture[] =>
     .map((entry) => ({ name: entry.name, filePath: join(COMPONENTS_DIRECTORY, entry.name) }))
     .sort((left, right) => left.name.localeCompare(right.name));
 
+/** A dev server runs from the project root, which is what the static side takes `process.cwd()` to be. */
+const runFromProjectRoot = async <T>(run: () => Promise<T>): Promise<T> => {
+  const previousDirectory = process.cwd();
+  process.chdir(COMPONENTS_DIRECTORY);
+  try {
+    return await run();
+  } finally {
+    process.chdir(previousDirectory);
+  }
+};
+
 const isComponentModule = (value: unknown): value is ComponentFixtureModule =>
   typeof value === "object" &&
   value !== null &&
@@ -83,7 +94,9 @@ const mountComponent = async (Component: ComponentType): Promise<RuntimeSnapshot
 export const runComponentFixture = async (
   fixture: ComponentFixture,
 ): Promise<ComponentRunResult> => {
-  const loaded: unknown = await import(/* @vite-ignore */ pathToFileURL(fixture.filePath).href);
+  const loaded: unknown = await runFromProjectRoot(
+    () => import(/* @vite-ignore */ pathToFileURL(fixture.filePath).href),
+  );
   if (!isComponentModule(loaded)) {
     throw new Error(`${fixture.name} has no default export component`);
   }
@@ -92,7 +105,7 @@ export const runComponentFixture = async (
     tsconfigPath: join(COMPONENTS_DIRECTORY, "tsconfig.json"),
   });
   const staticResult = await renderer.renderComponent(fixture.filePath);
-  const runtime = await mountComponent(loaded.default);
+  const runtime = await runFromProjectRoot(() => mountComponent(loaded.default));
   const comparison = compareStaticToRuntime(staticResult, runtime);
   return { staticResult, runtime, comparison, minCoverage: loaded.minCoverage ?? 1 };
 };
