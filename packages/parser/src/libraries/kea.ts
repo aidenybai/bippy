@@ -69,7 +69,9 @@ interface KeaLogicBuild {
   value: StaticValue;
 }
 
-type KeaBuilder = (build: KeaLogicBuild, tools: StubRenderTools) => void;
+interface KeaBuilder {
+  (build: KeaLogicBuild, tools: StubRenderTools): void;
+}
 
 const WRAPPERS = new WeakMap<StaticValue, KeaWrapper>();
 const BUILDS = new WeakMap<StaticValue, KeaLogicBuild>();

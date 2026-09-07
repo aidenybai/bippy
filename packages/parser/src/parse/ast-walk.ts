@@ -1,5 +1,10 @@
+import { visitorKeys } from "oxc-parser";
 import type { Expression, Node, Statement, StringLiteral } from "oxc-parser";
 import type { FunctionLikeNode } from "../types.js";
+
+export interface ChildNodeVisitor {
+  (child: Node, key: string, index: number): void;
+}
 
 export const isAstNode = (value: unknown): value is Node =>
   typeof value === "object" && value !== null && "type" in value && typeof value.type === "string";
@@ -11,13 +16,16 @@ export const isFunctionLikeNode = (node: Node): boolean =>
   node.type === "ClassDeclaration" ||
   node.type === "ClassExpression";
 
-export const forEachChildNode = (node: Node, visit: (child: Node) => void): void => {
+export const forEachChildNode = (node: Node, visit: ChildNodeVisitor): void => {
+  const childKeys = visitorKeys[node.type] ?? [];
   for (const [key, child] of Object.entries(node)) {
-    if (key === "parent") continue;
+    if (!childKeys.includes(key)) continue;
     if (Array.isArray(child)) {
-      for (const item of child) if (isAstNode(item)) visit(item);
+      child.forEach((item, index) => {
+        if (isAstNode(item)) visit(item, key, index);
+      });
     } else if (isAstNode(child)) {
-      visit(child);
+      visit(child, key, 0);
     }
   }
 };

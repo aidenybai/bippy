@@ -150,6 +150,11 @@ export interface InterpreterOptions {
   project?: ProjectContext;
 }
 
+interface JsxAttributeValues {
+  props: StaticObjectValue;
+  key: StaticValue | null;
+}
+
 interface CallValueOptions {
   thisValue?: StaticValue | null;
   nameHint?: string | null;
@@ -291,13 +296,13 @@ export const mergeOutcomes = (
  */
 const isNonProgressingRecursion = (
   callStack: CallFrame[],
-  fn: StaticFunctionValue,
+  functionValue: StaticFunctionValue,
   args: StaticValue[],
 ): boolean =>
   callStack.some(
     (frame) =>
-      frame.node === fn.node &&
-      frame.scope === fn.scope &&
+      frame.node === functionValue.node &&
+      frame.scope === functionValue.scope &&
       frame.args.length === args.length &&
       frame.args.every((argument, index) => areValuesEquivalent(argument, args[index])),
   );
@@ -755,9 +760,13 @@ export class Interpreter {
         );
         continue;
       }
-      const fn = this.createFunctionValue(member.fn, staticContext, member.key);
-      if (fn.kind !== "function") continue;
-      const bound: StaticFunctionValue = { ...fn, thisValue: classValue };
+      const functionValue = this.createFunctionValue(
+        member.functionNode,
+        staticContext,
+        member.key,
+      );
+      if (functionValue.kind !== "function") continue;
+      const bound: StaticFunctionValue = { ...functionValue, thisValue: classValue };
       classValue.properties.set(
         member.key,
         member.kind === "getter"
@@ -1745,8 +1754,9 @@ export class Interpreter {
       case "native-function":
         return callee.call(args, {
           readContext: (definition) => context.readContext(definition) ?? definition.defaultValue,
-          callAwaited: (fn, fnArgs) => this.callAwaited(fn, fnArgs, context, location),
-          call: (fn, fnArgs) => this.callValue(fn, fnArgs, context, location),
+          callAwaited: (callee, calleeArgs) =>
+            this.callAwaited(callee, calleeArgs, context, location),
+          call: (callee, calleeArgs) => this.callValue(callee, calleeArgs, context, location),
           captured: (captured, name) => this.captured(captured, name),
           nameHint: options.nameHint ?? null,
           templateArgumentNames: options.templateArgumentNames ?? null,
@@ -1809,16 +1819,16 @@ export class Interpreter {
 
   /** Calls a promise continuation: updates it queues land after the captured commit. */
   callDeferred(
-    fn: Extract<StaticValue, { kind: "function" }>,
+    functionValue: Extract<StaticValue, { kind: "function" }>,
     args: StaticValue[],
     context: EvaluationContext,
   ): StaticValue {
     const frame = context.hooks;
-    if (!frame) return this.callFunction(fn, args, context);
+    if (!frame) return this.callFunction(functionValue, args, context);
     const wasDeferred = frame.isDeferred;
     frame.isDeferred = true;
     try {
-      return this.callFunction(fn, args, context);
+      return this.callFunction(functionValue, args, context);
     } finally {
       frame.isDeferred = wasDeferred;
     }
@@ -1838,13 +1848,13 @@ export class Interpreter {
   }
 
   callFunction(
-    fn: Extract<StaticValue, { kind: "function" }>,
+    functionValue: Extract<StaticValue, { kind: "function" }>,
     args: StaticValue[],
     context: EvaluationContext,
     options: CallOptions = {},
   ): StaticValue {
     const callStack = options.callStack ?? context.callStack;
-    const location = this.locate(fn.module, fn.node);
+    const location = this.locate(functionValue.module, functionValue.node);
     if (callStack.length >= this.maxCallDepth) {
       this.report(
         "max-call-depth",
@@ -1854,17 +1864,20 @@ export class Interpreter {
       );
       return unknownValue("call depth exceeded", location);
     }
-    if (isNonProgressingRecursion(callStack, fn, args)) {
-      return unknownValue(`recursive call of ${fn.name ?? "anonymous function"}`, location);
+    if (isNonProgressingRecursion(callStack, functionValue, args)) {
+      return unknownValue(
+        `recursive call of ${functionValue.name ?? "anonymous function"}`,
+        location,
+      );
     }
-    if (fn.node.generator) return unknownValue("generator function result", location);
+    if (functionValue.node.generator) return unknownValue("generator function result", location);
     const frame = context.hooks;
     const wasDeferred = frame?.isDeferred ?? false;
-    const result = this.evaluateFunctionBody(fn, args, context, options);
+    const result = this.evaluateFunctionBody(functionValue, args, context, options);
     // An async body runs synchronously up to its first `await` of an unknown
     // promise; only a framework-awaited call (server components, route `lazy`)
     // lets what follows count as settled before the captured commit.
-    if (frame && fn.node.async && !options.awaited && frame.isDeferred && !wasDeferred) {
+    if (frame && functionValue.node.async && !options.awaited && frame.isDeferred && !wasDeferred) {
       frame.isDeferred = wasDeferred;
       return unknownValue("promise settled asynchronously", location);
     }
@@ -1872,31 +1885,33 @@ export class Interpreter {
   }
 
   private evaluateFunctionBody(
-    fn: Extract<StaticValue, { kind: "function" }>,
+    functionValue: Extract<StaticValue, { kind: "function" }>,
     args: StaticValue[],
     context: EvaluationContext,
     options: CallOptions,
   ): StaticValue {
-    const location = this.locate(fn.module, fn.node);
+    const location = this.locate(functionValue.module, functionValue.node);
     const callStack = options.callStack ?? context.callStack;
-    const scope = createScope(fn.scope);
+    const scope = createScope(functionValue.scope);
     const callContext: EvaluationContext = {
-      module: fn.module,
+      module: functionValue.module,
       scope,
       thisValue:
-        fn.node.type === "ArrowFunctionExpression" ? fn.thisValue : (options.thisValue ?? null),
+        functionValue.node.type === "ArrowFunctionExpression"
+          ? functionValue.thisValue
+          : (options.thisValue ?? null),
       readContext: context.readContext,
-      callStack: [...callStack, { node: fn.node, scope: fn.scope, args }],
+      callStack: [...callStack, { node: functionValue.node, scope: functionValue.scope, args }],
       uncertainDepth: context.uncertainDepth,
       forkDepth: context.forkDepth,
       environment: context.environment,
       hooks: context.hooks,
     };
-    this.bindParameters(fn.node.params, args, scope, callContext);
-    if (fn.node.type !== "ArrowFunctionExpression") {
+    this.bindParameters(functionValue.node.params, args, scope, callContext);
+    if (functionValue.node.type !== "ArrowFunctionExpression") {
       declareInScope(scope, "arguments", listValue(args));
     }
-    const body = fn.node.body;
+    const body = functionValue.node.body;
     if (!body) return UNDEFINED_VALUE;
     if (body.type !== "BlockStatement") {
       return this.evaluateExpression(body, callContext);
@@ -2377,7 +2392,7 @@ export class Interpreter {
   private evaluateJsxAttributes(
     attributes: JSXAttributeItem[],
     context: EvaluationContext,
-  ): { props: StaticObjectValue; key: StaticValue | null } {
+  ): JsxAttributeValues {
     const entries: StaticObjectEntry[] = [];
     let key: StaticValue | null = null;
     for (const attribute of attributes) {

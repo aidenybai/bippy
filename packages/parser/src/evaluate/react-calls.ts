@@ -63,10 +63,12 @@ const stateHook = (
   return listValue([cell.current, cell.setter]);
 };
 
-const propsFromValue = (
-  value: StaticValue | undefined,
-  omitKey: boolean,
-): { entries: StaticObjectEntry[]; key: StaticValue | null } => {
+interface SplitProps {
+  entries: StaticObjectEntry[];
+  key: StaticValue | null;
+}
+
+const propsFromValue = (value: StaticValue | undefined, omitKey: boolean): SplitProps => {
   if (
     !value ||
     (value.kind === "primitive" && (value.value === null || value.value === undefined))

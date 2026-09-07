@@ -167,12 +167,12 @@ const collectIdentifiers = (node: Node, names: Set<string>): void => {
   forEachChildNode(node, (child) => collectIdentifiers(child, names));
 };
 
-const getFreeIdentifiers = (fn: FunctionLikeNode): Set<string> => {
-  const cached = freeIdentifiersCache.get(fn);
+const getFreeIdentifiers = (functionNode: FunctionLikeNode): Set<string> => {
+  const cached = freeIdentifiersCache.get(functionNode);
   if (cached) return cached;
   const names = new Set<string>();
-  collectIdentifiers(fn, names);
-  freeIdentifiersCache.set(fn, names);
+  collectIdentifiers(functionNode, names);
+  freeIdentifiersCache.set(functionNode, names);
   return names;
 };
 

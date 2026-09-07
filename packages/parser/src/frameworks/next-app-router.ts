@@ -135,11 +135,16 @@ const stringRecordValue = (record: Record<string, string>): StaticValue =>
     Object.fromEntries(Object.entries(record).map(([key, value]) => [key, primitiveValue(value)])),
   );
 
+interface LoadedDefaultExport {
+  module: ModuleRecord;
+  component: StaticValue;
+}
+
 const loadDefaultExport = (
   renderer: StaticRenderer,
   interpreter: Interpreter,
   filePath: string,
-): { module: ModuleRecord; component: StaticValue } | null => {
+): LoadedDefaultExport | null => {
   const module = renderer.loadModule(filePath);
   if (!module) {
     interpreter.report("next-app-parse", `could not parse ${filePath}`, null, "error");

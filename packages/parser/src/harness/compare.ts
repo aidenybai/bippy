@@ -129,7 +129,9 @@ const addTally = (left: ComparisonTally, right: Partial<ComparisonTally>): Compa
   repeatIterations: left.repeatIterations + (right.repeatIterations ?? 0),
 });
 
-type Continuation = (runtimeIndex: number) => ComparisonTally | null;
+interface Continuation {
+  (runtimeIndex: number): ComparisonTally | null;
+}
 
 interface FurthestFailure {
   position: number;
@@ -139,6 +141,31 @@ interface FurthestFailure {
 interface SlotMatch {
   tally: ComparisonTally;
   consumedFibers: number;
+}
+
+interface Attempt<Result> {
+  result: Result;
+  failure: FurthestFailure | null;
+}
+
+interface RankedAlternative {
+  tally: ComparisonTally;
+  index: number;
+}
+
+interface SlotSearchResult {
+  match: SlotMatch | null;
+  divergence: ComparisonDivergence | null;
+}
+
+interface SlotSearchFrame {
+  fiber: RuntimeFiberSnapshot;
+  depth: number;
+}
+
+interface FurthestSlotDivergence {
+  progress: number;
+  divergence: ComparisonDivergence;
 }
 
 class BudgetExceeded extends Error {}
@@ -264,7 +291,7 @@ class Matcher {
     if (this.steps > this.maxSteps) throw new BudgetExceeded();
   }
 
-  private attempt<Result>(run: () => Result): { result: Result; failure: FurthestFailure | null } {
+  private attempt<Result>(run: () => Result): Attempt<Result> {
     this.furthest.push(null);
     try {
       const result = run();
@@ -420,7 +447,7 @@ class Matcher {
           });
         // Alternatives are tried in preference order, but one that explains the
         // runtime without leaning on wildcards beats an earlier one that does.
-        let best: { tally: ComparisonTally; index: number } | null = null;
+        let best: RankedAlternative | null = null;
         for (const alternativeIndex of order) {
           const alternative = pattern.alternatives[alternativeIndex];
           const run = (): ComparisonTally | null =>
@@ -496,9 +523,9 @@ class Matcher {
     pattern: PatternOpaque,
     actual: RuntimeFiberSnapshot,
     path: string[],
-  ): { match: SlotMatch | null; divergence: ComparisonDivergence | null } {
-    const queue: { fiber: RuntimeFiberSnapshot; depth: number }[] = [{ fiber: actual, depth: 0 }];
-    let best: { progress: number; divergence: ComparisonDivergence } | null = null;
+  ): SlotSearchResult {
+    const queue: SlotSearchFrame[] = [{ fiber: actual, depth: 0 }];
+    let best: FurthestSlotDivergence | null = null;
     for (let queueIndex = 0; queueIndex < queue.length; queueIndex++) {
       const { fiber, depth } = queue[queueIndex];
       for (let start = 0; start < fiber.children.length; start++) {

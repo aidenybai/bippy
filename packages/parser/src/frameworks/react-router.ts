@@ -167,7 +167,9 @@ const uncertainRoute = (uncertainty: string): RouteRecord => ({
 });
 
 /** Evaluates a route's `lazy` function as the router does when it awaits the route module; null when unavailable. */
-type LazyResolver = ((lazy: StaticValue) => StaticValue) | null;
+interface LazyResolver {
+  (lazy: StaticValue): StaticValue;
+}
 
 interface RouteContent {
   element: StaticValue | null;
@@ -179,7 +181,7 @@ interface RouteContent {
 const readRouteContent = (
   fields: StaticObjectValue,
   lazy: StaticValue,
-  resolveLazy: LazyResolver,
+  resolveLazy: LazyResolver | null,
 ): RouteContent => {
   const own = {
     element: getObjectProperty(fields, "element"),
@@ -217,7 +219,7 @@ const readRouteId = (fields: StaticObjectValue, treePath: number[]): string => {
 
 const readRouteObject = (
   value: StaticValue,
-  resolveLazy: LazyResolver,
+  resolveLazy: LazyResolver | null,
   treePath: number[],
 ): RouteRecord => {
   if (value.kind !== "object") return uncertainRoute(`route is ${value.kind}`);
@@ -237,7 +239,7 @@ const readRouteObject = (
 
 const readRouteList = (
   value: StaticValue,
-  resolveLazy: LazyResolver,
+  resolveLazy: LazyResolver | null,
   parentPath: number[] = [],
 ): RouteRecord[] => {
   if (value.kind === "list") {
@@ -252,7 +254,7 @@ const readRouteList = (
 /** `<Route path element>` elements nested under `<Routes>` are routes too (`createRoutesFromChildren`). */
 const readRouteElements = (
   value: StaticValue,
-  resolveLazy: LazyResolver,
+  resolveLazy: LazyResolver | null,
   parentPath: number[] = [],
 ): RouteRecord[] => {
   const elements = value.kind === "list" ? value.items : [value];
@@ -284,6 +286,12 @@ const readRouteElements = (
 };
 
 type RouteParams = Record<string, string>;
+
+interface MatchedRouteModule {
+  module: ModuleRecord;
+  params: RouteParams;
+  routeId: string;
+}
 
 interface RouteMatch {
   route: RouteRecord;
@@ -933,8 +941,8 @@ const renderFrameworkRoutes = (
     if (!rootModule) return matched;
 
     // `meta`/`links` see every match root-first, exactly as `<Meta>`/`<Links>` do.
-    const matchedModules = [
-      { module: rootModule, params: {} as RouteParams, routeId: ROOT_ROUTE_ID },
+    const matchedModules: MatchedRouteModule[] = [
+      { module: rootModule, params: {}, routeId: ROOT_ROUTE_ID },
       ...chain.flatMap((match) => {
         const module = loadRouteModule(match.route);
         const routeId = match.route.id;
@@ -1018,27 +1026,27 @@ export const renderReactRouterRoute = async (
   }
   if (findRootRenderCalls(module).length > 0) return renderer.renderEntry(modulePath);
 
-  const probed: { routes: RouteRecord[] | null } = { routes: null };
+  let probedRoutes: RouteRecord[] | null = null;
   const probe = await renderer.renderWith((interpreter) => {
     const config = interpreter.evaluateModuleExport(module, "default");
-    if (config.kind === "list") probed.routes = readRouteList(config, null);
+    if (config.kind === "list") probedRoutes = readRouteList(config, null);
     else if (
       config.kind === "external" &&
       config.packageName === AUTO_ROUTES_PACKAGE &&
       config.importedName === "autoRoutes()"
     ) {
-      probed.routes = readAutoRoutes(path.dirname(modulePath));
+      probedRoutes = readAutoRoutes(path.dirname(modulePath));
     } else if (
       config.kind === "external" &&
       config.packageName === ROUTES_OPTION_ADAPTER_PACKAGE &&
       config.importedName === "remixRoutesOptionAdapter()" &&
       module.imports.some((binding) => binding.specifier === FLAT_ROUTES_PACKAGE)
     ) {
-      probed.routes = readFlatRoutes(path.dirname(modulePath));
+      probedRoutes = readFlatRoutes(path.dirname(modulePath));
     }
     return NULL_VALUE;
   });
-  if (probed.routes === null) {
+  if (probedRoutes === null) {
     return renderer.renderWith((interpreter) => {
       interpreter.report(
         "react-router-unrecognized-entry",
@@ -1057,5 +1065,5 @@ export const renderReactRouterRoute = async (
       return unknownValue("unrecognized react-router entry");
     });
   }
-  return renderFrameworkRoutes(renderer, model, modulePath, probed.routes);
+  return renderFrameworkRoutes(renderer, model, modulePath, probedRoutes);
 };

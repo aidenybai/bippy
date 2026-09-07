@@ -214,7 +214,7 @@ export const createCollectionValue = (
  */
 export const createPromiseValue = (
   executor: StaticValue | undefined,
-  callExecutor: (fn: StaticValue, args: StaticValue[]) => void,
+  callExecutor: (functionValue: StaticValue, args: StaticValue[]) => void,
   location: SourceLocation | null,
 ): StaticValue => {
   let settled: StaticValue | null = null;

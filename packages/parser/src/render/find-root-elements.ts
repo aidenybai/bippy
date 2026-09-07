@@ -1,4 +1,5 @@
 import type { CallExpression, Expression, Node, Statement } from "oxc-parser";
+import { forEachChildNode, unwrapExpression } from "../parse/ast-walk.js";
 import type { ModuleRecord } from "../types.js";
 
 export interface RootRenderCall {
@@ -14,20 +15,7 @@ export interface RootRenderCall {
   enclosingStatements: Statement[][];
 }
 
-const isRootFactory = (callee: Expression): boolean => {
-  if (callee.type === "Identifier")
-    return callee.name === "createRoot" || callee.name === "hydrateRoot";
-  if (
-    callee.type === "MemberExpression" &&
-    !callee.computed &&
-    callee.property.type === "Identifier"
-  ) {
-    return callee.property.name === "createRoot" || callee.property.name === "hydrateRoot";
-  }
-  return false;
-};
-
-const calleeName = (callee: Expression): string | null => {
+const getCalleeName = (callee: Expression): string | null => {
   if (callee.type === "Identifier") return callee.name;
   if (
     callee.type === "MemberExpression" &&
@@ -39,16 +27,9 @@ const calleeName = (callee: Expression): string | null => {
   return null;
 };
 
-const unwrapCallee = (callee: Expression): Expression => {
-  let current = callee;
-  while (
-    current.type === "TSNonNullExpression" ||
-    current.type === "TSAsExpression" ||
-    current.type === "ParenthesizedExpression"
-  ) {
-    current = current.expression;
-  }
-  return current;
+const isRootFactory = (callee: Expression): boolean => {
+  const name = getCalleeName(callee);
+  return name === "createRoot" || name === "hydrateRoot";
 };
 
 const collectCall = (
@@ -56,14 +37,14 @@ const collectCall = (
   enclosingStatements: Statement[][],
   out: RootRenderCall[],
 ): void => {
-  const callee = unwrapCallee(call.callee);
-  const name = calleeName(callee);
+  const callee = unwrapExpression(call.callee);
+  const name = getCalleeName(callee);
   if (!name) return;
   const firstArgument = call.arguments[0];
   const secondArgument = call.arguments[1];
   if (name === "render" && callee.type === "MemberExpression") {
-    const receiver = unwrapCallee(callee.object);
-    if (receiver.type === "CallExpression" && isRootFactory(unwrapCallee(receiver.callee))) {
+    const receiver = unwrapExpression(callee.object);
+    if (receiver.type === "CallExpression" && isRootFactory(unwrapExpression(receiver.callee))) {
       if (firstArgument && firstArgument.type !== "SpreadElement") {
         out.push({ element: firstArgument, api: "createRoot", call, enclosingStatements });
       }
@@ -104,27 +85,11 @@ const walk = (
   visit: (node: Node, enclosingStatements: Statement[][]) => void,
 ): void => {
   visit(node, enclosingStatements);
-  for (const key of Object.keys(node)) {
-    if (key === "parent" || key === "type" || key === "start" || key === "end") continue;
-    const child: unknown = node[key as keyof Node];
-    if (Array.isArray(child)) {
-      child.forEach((item, index) => {
-        if (!isNode(item)) return;
-        const preceding = statementsBefore(node, key, index);
-        const nested = preceding ? [...enclosingStatements, preceding] : enclosingStatements;
-        walk(item, nested, visit);
-      });
-    } else if (isNode(child)) {
-      walk(child, enclosingStatements, visit);
-    }
-  }
+  forEachChildNode(node, (child, key, index) => {
+    const preceding = statementsBefore(node, key, index);
+    walk(child, preceding ? [...enclosingStatements, preceding] : enclosingStatements, visit);
+  });
 };
-
-const isNode = (value: unknown): value is Node =>
-  typeof value === "object" &&
-  value !== null &&
-  "type" in value &&
-  typeof (value as { type: unknown }).type === "string";
 
 export const findRootRenderCalls = (module: ModuleRecord): RootRenderCall[] => {
   const calls: RootRenderCall[] = [];

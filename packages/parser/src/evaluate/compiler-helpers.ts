@@ -18,7 +18,9 @@ import {
  * Runtime helpers emitted by Babel (`@babel/runtime/helpers/*`), TypeScript
  * (`tslib`) and SWC (`@swc/helpers`) into compiled package output.
  */
-type HelperImplementation = (args: StaticValue[], tools: StubRenderTools) => StaticValue;
+interface HelperImplementation {
+  (args: StaticValue[], tools: StubRenderTools): StaticValue;
+}
 
 /** Whether a module namespace behaves as an ES module to interop helpers. */
 const isEsModuleLike = (value: StaticValue): boolean => {

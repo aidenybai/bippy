@@ -141,11 +141,15 @@ const waitForQuietCommits = async (
   return lastCount;
 };
 
+export interface BrowserCapturerOptions {
+  headless?: boolean;
+}
+
 export class BrowserCapturer {
   private browserPromise: Promise<Browser> | null = null;
   private readonly headless: boolean;
 
-  constructor(options: { headless?: boolean } = {}) {
+  constructor(options: BrowserCapturerOptions = {}) {
     this.headless = options.headless ?? true;
   }
 

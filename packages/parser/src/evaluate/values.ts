@@ -78,7 +78,9 @@ export const partialJsonValue = (json: JsonValue, name: string): StaticValue => 
 };
 
 /** Evaluates the module export a captured node referenced; null when the module is not part of the analyzed project. */
-export type CapturedExportResolver = (reference: CapturedExportReference) => StaticValue | null;
+export interface CapturedExportResolver {
+  (reference: CapturedExportReference): StaticValue | null;
+}
 
 const NO_EXPORTS: CapturedExportResolver = () => null;
 

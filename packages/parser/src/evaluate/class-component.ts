@@ -43,7 +43,7 @@ export const collectClassMembers = (node: Class): ClassMember[] => {
     if (element.type === "MethodDefinition" || element.type === "TSAbstractMethodDefinition") {
       if (element.kind === "set") continue;
       const kind = element.kind === "get" ? "getter" : element.kind;
-      members.push({ key, isStatic: element.static, kind, fn: element.value });
+      members.push({ key, isStatic: element.static, kind, functionNode: element.value });
     } else if (
       element.type === "PropertyDefinition" ||
       element.type === "TSAbstractPropertyDefinition"
@@ -55,7 +55,7 @@ export const collectClassMembers = (node: Class): ClassMember[] => {
 };
 
 const memberNode = (member: ClassMember): Node | null =>
-  member.kind === "field" ? member.value : member.fn;
+  member.kind === "field" ? member.value : member.functionNode;
 
 /**
  * A class whose body never calls `this.setState` (or derives state from props)
@@ -101,10 +101,15 @@ const collectClassChain = (classValue: StaticClassValue): StaticClassValue[] => 
   return chain;
 };
 
+interface InstanceGetter {
+  key: string;
+  functionValue: StaticFunctionValue;
+}
+
 interface InstanceMembers {
   constructor: StaticFunctionValue | null;
   fields: ClassMember[];
-  getters: Array<{ key: string; fn: StaticFunctionValue }>;
+  getters: InstanceGetter[];
 }
 
 const bindMethods = (
@@ -118,8 +123,12 @@ const bindMethods = (
   for (const member of classValue.body.members) {
     if (member.isStatic) continue;
     if (member.kind === "constructor") {
-      const fn = interpreter.createFunctionValue(member.fn, methodContext, "constructor");
-      if (fn.kind === "function") members.constructor = fn;
+      const constructorValue = interpreter.createFunctionValue(
+        member.functionNode,
+        methodContext,
+        "constructor",
+      );
+      if (constructorValue.kind === "function") members.constructor = constructorValue;
       continue;
     }
     if (seen.has(member.key)) continue;
@@ -128,11 +137,18 @@ const bindMethods = (
       members.fields.push(member);
       continue;
     }
-    const fn = interpreter.createFunctionValue(member.fn, methodContext, member.key);
-    if (fn.kind !== "function") continue;
-    const bound: StaticFunctionValue = { ...fn, thisValue: instance };
-    if (member.kind === "getter") members.getters.push({ key: member.key, fn: bound });
-    else instance.entries.push({ kind: "property", key: member.key, value: bound });
+    const methodValue = interpreter.createFunctionValue(
+      member.functionNode,
+      methodContext,
+      member.key,
+    );
+    if (methodValue.kind !== "function") continue;
+    const boundMethod: StaticFunctionValue = { ...methodValue, thisValue: instance };
+    if (member.kind === "getter") {
+      members.getters.push({ key: member.key, functionValue: boundMethod });
+    } else {
+      instance.entries.push({ kind: "property", key: member.key, value: boundMethod });
+    }
   }
   return members;
 };
@@ -283,7 +299,9 @@ const initializeInstance = (
       instance.entries.push({
         kind: "property",
         key: getter.key,
-        value: interpreter.callFunction(getter.fn, [], methodContext, { thisValue: instance }),
+        value: interpreter.callFunction(getter.functionValue, [], methodContext, {
+          thisValue: instance,
+        }),
       });
     }
   }

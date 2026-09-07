@@ -11,6 +11,11 @@ import { isCompilerHelperPackage } from "./helper-packages.js";
 import { createModuleRecord } from "./module-record.js";
 import { ModuleResolver } from "./module-resolver.js";
 
+export interface ExportNameSet {
+  names: string[];
+  complete: boolean;
+}
+
 export interface ModuleGraphOptions {
   resolver: ModuleResolver;
   sourceFileCache?: SourceFileCache;
@@ -118,10 +123,7 @@ export class ModuleGraph {
   }
 
   /** Export names plus whether an `export *` from an unanalyzed module may add more. */
-  collectExportNames(
-    module: ModuleRecord,
-    visited = new Set<string>(),
-  ): { names: string[]; complete: boolean } {
+  collectExportNames(module: ModuleRecord, visited = new Set<string>()): ExportNameSet {
     if (visited.has(module.filePath)) return { names: [], complete: true };
     visited.add(module.filePath);
     const names = new Set<string>();

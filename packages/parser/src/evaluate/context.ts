@@ -9,7 +9,9 @@ import type {
 import type { HookFrame } from "./hooks.js";
 
 /** The value the nearest provider of a context supplies at the position being evaluated, or null without one. */
-export type ContextReader = (context: ContextDefinition) => StaticValue | null;
+export interface ContextReader {
+  (context: ContextDefinition): StaticValue | null;
+}
 
 export const NO_PROVIDERS: ContextReader = () => null;
 

@@ -57,10 +57,10 @@ const getReturnedName = (statements: Statement[]): string | null => {
 const toMember = (target: MemberTarget, descriptor: PropertyDescriptor): ClassMember => {
   const { key, isStatic } = target;
   if (isFunctionLikeExpression(descriptor.getter)) {
-    return { key, isStatic, kind: "getter", fn: descriptor.getter };
+    return { key, isStatic, kind: "getter", functionNode: descriptor.getter };
   }
   if (isFunctionLikeExpression(descriptor.value)) {
-    return { key, isStatic, kind: "method", fn: descriptor.value };
+    return { key, isStatic, kind: "method", functionNode: descriptor.value };
   }
   return { key, isStatic, kind: "field", value: descriptor.value };
 };
@@ -178,18 +178,26 @@ export const getCompiledClass = (call: CallExpression): CompiledClass | null => 
   if (!statements) return null;
   const name = getReturnedName(statements);
   if (name === null) return null;
-  const constructorFn = statements.find(
+  const constructorDeclaration = statements.find(
     (statement) => statement.type === "FunctionDeclaration" && statement.id?.name === name,
   );
-  if (constructorFn?.type !== "FunctionDeclaration") return null;
+  if (constructorDeclaration?.type !== "FunctionDeclaration") return null;
   const collector: MemberCollector = {
     className: name,
     prototypeAliases: new Set(),
-    members: [{ key: "constructor", isStatic: false, kind: "constructor", fn: constructorFn }],
+    members: [
+      {
+        key: "constructor",
+        isStatic: false,
+        kind: "constructor",
+        functionNode: constructorDeclaration,
+      },
+    ],
   };
   const setup: Statement[] = [];
   for (const statement of statements.slice(0, -1)) {
-    if (statement === constructorFn || collectMemberStatement(statement, collector)) continue;
+    if (statement === constructorDeclaration || collectMemberStatement(statement, collector))
+      continue;
     setup.push(statement);
   }
   if (collector.members.length === 1) return null;

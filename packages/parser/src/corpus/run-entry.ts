@@ -12,7 +12,12 @@ import { formatPattern, getRenderPattern } from "../harness/static-pattern.js";
 import { readObservationsJson } from "../observations.js";
 import type { Diagnostic, StaticRenderResult } from "../types.js";
 import { DevServer, runCommand } from "./dev-server.js";
-import type { CorpusEntry, CorpusResult, CorpusRuntimeSummary } from "./manifest.js";
+import type {
+  CorpusEntry,
+  CorpusResult,
+  CorpusRuntimeSummary,
+  DiagnosticCount,
+} from "./manifest.js";
 
 export interface RunEntryOptions {
   corpusDirectory: string;
@@ -121,7 +126,7 @@ const startServices = async (
 export const installLogPath = (corpusDirectory: string, entry: CorpusEntry): string =>
   path.join(corpusDirectory, ".logs", `${entry.id}.log`);
 
-const summarizeDiagnostics = (diagnostics: Diagnostic[]): { code: string; count: number }[] => {
+const summarizeDiagnostics = (diagnostics: Diagnostic[]): DiagnosticCount[] => {
   const counts = new Map<string, number>();
   for (const diagnostic of diagnostics) {
     counts.set(diagnostic.code, (counts.get(diagnostic.code) ?? 0) + 1);

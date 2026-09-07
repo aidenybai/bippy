@@ -8,8 +8,12 @@ export interface ReduxStoreLike {
   getState: () => unknown;
 }
 
-type StoreEnhancer = (createStore: StoreCreator) => StoreCreator;
-type StoreCreator = (...args: unknown[]) => unknown;
+interface StoreCreator {
+  (...args: unknown[]): unknown;
+}
+interface StoreEnhancer {
+  (createStore: StoreCreator): StoreCreator;
+}
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;

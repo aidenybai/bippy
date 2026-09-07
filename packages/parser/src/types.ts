@@ -161,7 +161,7 @@ export interface ClassMemberBase {
 
 export interface ClassFunctionMember extends ClassMemberBase {
   kind: "constructor" | "method" | "getter";
-  fn: FunctionLikeNode;
+  functionNode: FunctionLikeNode;
 }
 
 export interface ClassFieldMember extends ClassMemberBase {
@@ -271,7 +271,9 @@ export interface StubRenderTools {
  * the binding (`default`, `*`, or the named export). Return null to keep the
  * import opaque.
  */
-export type ExternalValueProvider = (specifier: string, importedName: string) => StaticValue | null;
+export interface ExternalValueProvider {
+  (specifier: string, importedName: string): StaticValue | null;
+}
 
 /** What a library model may learn about the analyzed project: which transforms shaped the runtime, and what the running page held. */
 export interface ProjectContext {
@@ -288,11 +290,9 @@ export interface ProjectContext {
   storeStates: readonly CapturedValue[] | null;
 }
 
-export type LibraryValueProvider = (
-  specifier: string,
-  importedName: string,
-  project: ProjectContext,
-) => StaticValue | null;
+export interface LibraryValueProvider {
+  (specifier: string, importedName: string, project: ProjectContext): StaticValue | null;
+}
 
 export type JsonValue =
   | string

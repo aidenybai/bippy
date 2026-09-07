@@ -71,9 +71,14 @@ export interface CorpusRuntimeSummary {
   title: string;
 }
 
+export interface DiagnosticCount {
+  code: string;
+  count: number;
+}
+
 export interface CorpusStaticSummary {
   stats: StaticRenderStats;
-  diagnostics: { code: string; count: number }[];
+  diagnostics: DiagnosticCount[];
 }
 
 export interface CorpusResult {
