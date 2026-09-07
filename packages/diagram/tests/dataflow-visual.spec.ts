@@ -21,11 +21,19 @@ test("keeps inline data neutral, uses one active accent, and preserves arrow cle
     if (theme === "dark") await page.getByRole("button", { name: "Switch to dark mode" }).click();
     await page.mouse.move(0, 0);
     const colors = await parent
-      .locator(
-        '[data-node-kind="hook"], [data-node-kind="value"], [data-node-kind="callback"], [data-node-kind="store"]',
-      )
+      .locator('[data-node-variant="detail"]')
       .evaluateAll((elements) => elements.map((element) => getComputedStyle(element).color));
     expect(new Set(colors).size).toBe(1);
+    await expect(parent.locator('[data-node-variant="detail"] circle')).toHaveCount(0);
+    await expect(
+      parent.locator('[data-edge-kind="parent"][data-edge-to="stats-count"]'),
+    ).toHaveCount(0);
+    await expect(
+      parent.locator('[data-edge-kind="parent"][data-edge-to="theme-hook"]'),
+    ).toHaveCount(0);
+    await expect(parent.locator('[data-edge-kind="parent"][data-edge-to="section"]')).toHaveCount(
+      1,
+    );
     await parent.locator('[data-node-id="cart-hook"]').hover();
     await expect(
       parent.locator('[data-edge-kind="parent"][data-edge-to="stats-count"]'),
@@ -46,9 +54,7 @@ test("keeps inline data neutral, uses one active accent, and preserves arrow cle
       const point = path.getPointAtLength(path.getTotalLength());
       return { gap: transform.e - point.x, verticalOffset: transform.f - point.y };
     });
-    expect(endpoint.gap).toBeCloseTo(
-      diagramMetrics.nodeRadius + diagramMetrics.strokeWidth / 2 + diagramMetrics.arrowGap,
-    );
+    expect(endpoint.gap).toBeCloseTo(diagramMetrics.detailPortGap);
     expect(endpoint.verticalOffset).toBeCloseTo(0);
     const positions = await parent
       .locator('[data-edge-id="store-subscribe"] > text, [data-edge-id="snapshot-changed"] > text')

@@ -22,7 +22,7 @@ The board follows `millionco/million-ui`'s square-cell layout: 325px white cells
 - `DataflowDiagram`: directed hook, value, prop, callback, context, and external-store graphs.
 - `VirtualTree`: fixed-row windowing, adaptive indentation, collapse/expand, and keyboard navigation.
 
-All diagrams use the same compact 20px row grid, 20px maximum indent, 10px labels, 3px node radius, 0.5px node outlines, and 1px connectors. The virtualized tree renders the same SVG node component rather than a separate HTML row design. Parent and owner compositions are derived from one model.
+Component rows share a 20px grid, 20px maximum indent, 10px labels, 3px node radius, 0.5px node outlines, and 1px connectors. Data details use 14px rows and muted 8px text, aligned with their component label rather than another tree level. The virtualized tree renders the same SVG node component rather than a separate HTML row design. Parent and owner compositions are derived from one model.
 
 Hover and keyboard focus emphasize the relevant nodes and connections, fading unrelated elements to 20%. In linked trees, owner focus shows direct creations in the parent view and the ownership subtree in the owner view. Boundary focus shows catch regions, including nested boundary nodes but excluding their contents. Blue context scopes only appear while their provider is active. Pointer exit restores the diagram. Virtual rows have continuous full-height, full-width hitboxes: the label, node, whitespace, and expand control share one hover target. There are no selection boxes or persistent row backgrounds.
 
@@ -53,7 +53,7 @@ This private workspace package exports TypeScript source. Consumers must transpi
 
 Dataflow is embedded in the parent/owner comparison; there is no standalone dataflow specimen. Hooks, values, and props appear directly beneath their component in both projections. Set `componentId` on these metadata rows and attach them with `parentId`/`ownerId`; they are not additional React fibers. Pass ID-based `dataflowEdges` to `TreeComparison` or `TreeDiagram`.
 
-The model is illustrative, not automatic runtime instrumentation. Hook and prop rows are neutral at rest. Hover or keyboard-focus a metadata row to reveal its dependency paths in one accent color across both views. Owner links appear when an owner is active; context/error scopes appear when their provider/boundary is active. Prop ports are hollow, including callback props; callable operations such as `setQuery` and `dispatch` are filled.
+The model is illustrative, not automatic runtime instrumentation. Hook and prop rows are neutral at rest. Hover or keyboard-focus a metadata row to reveal its dependency paths in one accent color across both views. Owner links appear when an owner is active; context/error scopes appear when their provider/boundary is active. Data details have no circles or tree branches. Only components and external-resource roots are drawn as nodes; props, hooks, and callable operations remain secondary text.
 
 Hover follows incoming and outgoing dependency paths independently. It does not spread through every sibling hook merely because they share a component. Component focus preserves ownership emphasis; focusing a derived value reveals all its inputs. Cycles such as store subscription/notification loops terminate safely.
 
@@ -64,7 +64,7 @@ The example includes:
 - `useSyncExternalStore` → snapshots → rendered count, including `getSnapshot`, effect subscription/cleanup, notifications, and external writes.
 - Provider value → Stats' `useContext` → host styles.
 
-Tree dataflow uses bounded curved links, independently routed for each projection. Only relevant paths appear, and opposing subscription/notification links use separate lanes. Arrow tips stop 3px before node outlines; outgoing wires remain attached.
+Tree dataflow uses bounded curved links, independently routed for each projection. Only relevant paths appear, and opposing subscription/notification links use separate lanes. Arrows leave a clear gap before detail text. Node connections retain their 3px arrow clearance.
 
 Callback edges describe invocation back to an updater, not a second prop-value transfer. Boundary scopes describe render-time containment, not error handling for event callbacks or external-store operations.
 

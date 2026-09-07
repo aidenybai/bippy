@@ -32,6 +32,7 @@ export interface DiagramCanvasProps {
 
 export interface DiagramNodeProps extends Point {
   node: TreeNode;
+  variant?: "node" | "detail";
   maxWidth?: number;
   hitHeight?: number;
   isInteractive?: boolean;
@@ -58,6 +59,7 @@ export interface DiagramScopeProps extends Point {
 const styles = stylex.create({
   canvas: { display: "block", flexShrink: 0, overflow: "hidden" },
   node: { color: colors.text, outline: "none" },
+  detail: { color: colors.muted },
   interactive: { cursor: "pointer" },
   component: { color: colors.text },
   host: { color: colors.text },
@@ -118,6 +120,7 @@ export const DiagramCanvas = ({ width, height, label, children }: DiagramCanvasP
 
 export const DiagramNode = ({
   node,
+  variant = "node",
   x,
   y,
   maxWidth,
@@ -135,12 +138,15 @@ export const DiagramNode = ({
     kind === "special" ||
     kind === "suspense" ||
     (kind === "boundary" && diagramInteraction?.activeId !== node.id);
-  const characterWidth = diagramMetrics.fontSize * 0.61;
+  const isDetail = variant === "detail";
+  const fontSize = isDetail ? diagramMetrics.detailFontSize : diagramMetrics.fontSize;
+  const labelOffset = isDetail ? 0 : diagramMetrics.labelOffset;
+  const characterWidth = fontSize * 0.61;
   const characters = Array.from(node.label);
   const characterCount =
     maxWidth === undefined
       ? characters.length
-      : Math.max(0, Math.floor((maxWidth - diagramMetrics.labelOffset - 4) / characterWidth));
+      : Math.max(0, Math.floor((maxWidth - labelOffset - 4) / characterWidth));
   const label =
     characters.length > characterCount
       ? `${characters.slice(0, Math.max(0, characterCount - 1)).join("")}${characterCount > 0 ? "…" : ""}`
@@ -154,6 +160,7 @@ export const DiagramNode = ({
         styles[kind],
         isInteractive && onSelect && styles.interactive,
         node.tone && styles[node.tone],
+        isDetail && styles.detail,
         diagramInteraction?.mode === "flow" &&
           diagramInteraction.activeId === node.id &&
           styles.blue,
@@ -164,6 +171,7 @@ export const DiagramNode = ({
       tabIndex={isInteractive ? tabIndex : -1}
       data-node-id={node.id}
       data-node-kind={kind}
+      data-node-variant={variant}
       data-emphasis={isDimmed ? "dimmed" : "normal"}
       aria-label={`${node.label}${node.annotation ? `, ${node.annotation}` : ""}`}
       onPointerEnter={() => interaction?.setHoveredId(node.id)}
@@ -203,21 +211,23 @@ export const DiagramNode = ({
           1,
           Math.min(
             maxWidth === undefined ? Infinity : maxWidth + 6,
-            getLabelWidth({ label, annotation }) + 12,
+            getLabelWidth({ label, annotation, fontSize, labelOffset }) + 12,
           ),
         )}
         height={hitHeight}
         fill="transparent"
       />
-      {diagramInteraction?.mode === "owner" && diagramInteraction.activeId === node.id && (
-        <circle
-          r={diagramMetrics.nodeRadius + 2}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={diagramMetrics.strokeWidth}
-        />
-      )}
-      {(kind === "portal" || node.isPortalTarget) && (
+      {!isDetail &&
+        diagramInteraction?.mode === "owner" &&
+        diagramInteraction.activeId === node.id && (
+          <circle
+            r={diagramMetrics.nodeRadius + 2}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={diagramMetrics.strokeWidth}
+          />
+        )}
+      {!isDetail && (kind === "portal" || node.isPortalTarget) && (
         <circle
           r={diagramMetrics.nodeRadius + 2}
           fill="none"
@@ -225,13 +235,19 @@ export const DiagramNode = ({
           strokeWidth={diagramMetrics.strokeWidth}
         />
       )}
-      <circle
-        r={diagramMetrics.nodeRadius}
-        fill={isHollow ? colors.surface : "currentColor"}
-        stroke="currentColor"
-        strokeWidth={diagramMetrics.strokeWidth}
-      />
-      <text x={diagramMetrics.labelOffset} dy="0.32em" {...stylex.props(drawing.label)}>
+      {!isDetail && (
+        <circle
+          r={diagramMetrics.nodeRadius}
+          fill={isHollow ? colors.surface : "currentColor"}
+          stroke="currentColor"
+          strokeWidth={diagramMetrics.strokeWidth}
+        />
+      )}
+      <text
+        x={labelOffset}
+        dy="0.32em"
+        {...stylex.props(drawing.label, isDetail && drawing.detail)}
+      >
         {label}
         {annotation && (
           <tspan dx={4} {...stylex.props(drawing.annotation)}>

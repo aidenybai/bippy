@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { DiagramCanvas, DiagramEdge, DiagramNode, DiagramScope } from "./primitives";
 import { getTreeRows, type TreeNode } from "./tree-model";
+import { getTreeLayout } from "./tree-layout";
 import { getOwnerNodes, getTreeHighlightIndex } from "./tree-highlight";
 import {
   DiagramInteractionContext,
@@ -76,10 +77,10 @@ export const TreeDiagram = ({
         : baseInteraction,
     [baseInteraction, flow],
   );
-  const positions = rows.map((row, index) => ({
-    x: diagramMetrics.indent * 2 + row.depth * indent,
-    y: rowHeight / 2 + index * rowHeight,
-  }));
+  const { positions, offsets } = useMemo(
+    () => getTreeLayout(rows, rowHeight, indent),
+    [rows, rowHeight, indent],
+  );
   const indexById = new Map(rows.map((row, index) => [row.node.id, index]));
   const hasOwnerArcs = showOwners && relationship === "parent" && interaction.mode === "owner";
   const scopeIndex =
@@ -91,15 +92,15 @@ export const TreeDiagram = ({
     <DiagramInteractionContext value={interaction}>
       <DiagramCanvas
         width={width}
-        height={Math.max(rowHeight * 4, rows.length * rowHeight + rowHeight / 2)}
+        height={Math.max(rowHeight * 4, offsets[rows.length] + rowHeight / 2)}
         label={label}
       >
         {scopePosition && scopeIndex !== undefined && (
           <DiagramScope
             x={scopePosition.x - 12}
-            y={scopePosition.y - rowHeight / 2}
+            y={offsets[scopeIndex]}
             width={width - scopePosition.x + 4}
-            height={(rows[scopeIndex].subtreeEnd - scopeIndex) * rowHeight}
+            height={offsets[rows[scopeIndex].subtreeEnd] - offsets[scopeIndex]}
             label={scopeLabel}
             nodeId={scopeId}
           />
@@ -110,9 +111,9 @@ export const TreeDiagram = ({
               key={range.start}
               kind="boundary"
               x={positions[range.start].x - 12}
-              y={positions[range.start].y - rowHeight / 2}
+              y={offsets[range.start]}
               width={width - positions[range.start].x + 4}
-              height={(range.end - range.start) * rowHeight}
+              height={offsets[range.end] - offsets[range.start]}
               label={
                 index === 0
                   ? `catches: ${activeNode?.label ?? ""} ${activeNode?.annotation ?? ""}`
@@ -121,7 +122,7 @@ export const TreeDiagram = ({
             />
           ))}
         {rows.map((row, index) =>
-          row.parentIndex < 0 || (flow && row.node.componentId !== undefined) ? null : (
+          row.parentIndex < 0 || row.node.componentId !== undefined ? null : (
             <DiagramEdge
               key={row.node.id}
               from={positions[row.parentIndex]}
@@ -172,7 +173,20 @@ export const TreeDiagram = ({
                 throw new Error(`Missing endpoint for edge ${edge.id}`);
               const fromNode = { ...rows[fromIndex].node, ...positions[fromIndex] };
               const toNode = { ...rows[toIndex].node, ...positions[toIndex] };
-              const offsets = getDataflowOffsets({ ...edge, shape: "curve" }, fromNode, toNode);
+              const portOffsets = getDataflowOffsets(
+                {
+                  ...edge,
+                  shape: "curve",
+                  fromOffset:
+                    edge.fromOffset ??
+                    (fromNode.componentId ? { x: -diagramMetrics.detailPortGap, y: 0 } : undefined),
+                  toOffset:
+                    edge.toOffset ??
+                    (toNode.componentId ? { x: -diagramMetrics.detailPortGap, y: 0 } : undefined),
+                },
+                fromNode,
+                toNode,
+              );
               const lane = dataflowEdges
                 .filter(
                   (other) =>
@@ -186,10 +200,10 @@ export const TreeDiagram = ({
                 side: edge.side,
                 bend: diagramMetrics.indent * (2 + lane),
                 from: {
-                  x: fromNode.x + offsets.fromOffset.x,
-                  y: fromNode.y + offsets.fromOffset.y,
+                  x: fromNode.x + portOffsets.fromOffset.x,
+                  y: fromNode.y + portOffsets.fromOffset.y,
                 },
-                to: { x: toNode.x + offsets.toOffset.x, y: toNode.y + offsets.toOffset.y },
+                to: { x: toNode.x + portOffsets.toOffset.x, y: toNode.y + portOffsets.toOffset.y },
               };
               const labelPosition = getEdgeLabelPosition(geometry);
               return (
@@ -216,6 +230,8 @@ export const TreeDiagram = ({
           <DiagramNode
             key={row.node.id}
             node={row.node}
+            variant={row.node.componentId ? "detail" : "node"}
+            hitHeight={offsets[index + 1] - offsets[index]}
             {...positions[index]}
             onSelect={onSelect}
           />
