@@ -177,24 +177,27 @@ commands, URL, static target and notes; `corpus/results.json` holds the latest m
 Clones and captures live under the ignored `.corpus/`. Every entry renders statically; runtime
 capture runs where a dev server can start in this environment.
 
-Live-verified so far: `react-router-templates`, `sonner`, `documenso`, `sentry`, `posthog`
-(exact); `nextjs-examples` and `cal-diy` (partial at 100% strict coverage — every runtime fiber
-is matched by a concrete static fiber, but branches or repeats were consumed; cal-diy's single
-remaining branch is the login page's `redirect("/auth/setup")` when `prisma.user.findFirst()`
-finds no user, a database fact the static side cannot know);
-`bulletproof-react`, `puck`, `redux-toolkit`, `lexical`, `tanstack-query`, `graphiql`,
+Live-verified so far: `react-router-templates`, `sonner`, `documenso`, `sentry`, `posthog`,
+`nextjs-examples`, `tanstack-query`, `redux-toolkit` (exact); `cal-diy` (partial at 100% strict
+coverage — every runtime fiber is matched by a concrete static fiber, but one branch was consumed:
+the login page's `redirect("/auth/setup")` when `prisma.user.findFirst()` finds no user, a
+database fact the static side cannot know); `bulletproof-react`, `puck`, `lexical`, `graphiql`,
 `react-admin`, `tanstack-router` (partial — opaque third-party providers or dynamic data cut
-the static tree short). `corpus/scripts/` holds the setup used for the heavy entries: a
-throwaway Postgres (`postgres.sh`) with seeded databases for `cal-diy` and `documenso`, a
-Node-version wrapper (`with-node.sh`), and a stand-in for PostHog's Django boot page
-(`posthog-app-server.ts`) that serves the globals, preflight and API responses Vite alone does
-not provide. Results are recorded as they are; profiles and normalization are only widened when
-the difference is demonstrably framework machinery.
+the static tree short). Provider packages become exact by listing them in an entry's
+`externalPackageAllowList` (their source is interpreted like application code, as `react-redux`
+and `@tanstack/react-query` are) or through a library model (`src/libraries`, as Redux Toolkit's
+`configureStore`/`createApi` are, reading the recorded store state).
+`corpus/scripts/` holds the setup used for the heavy entries: a throwaway Postgres
+(`postgres.sh`) with seeded databases for `cal-diy` and `documenso`, a Node-version wrapper
+(`with-node.sh`), and a stand-in for PostHog's Django boot page (`posthog-app-server.ts`) that
+serves the globals, preflight and API responses Vite alone does not provide. Results are
+recorded as they are; profiles and normalization are only widened when the difference is
+demonstrably framework machinery.
 
 ## Limitations
 
-- Dynamic data (fetches, loaders, query caches, stores) is unknown; lists over it are `repeat`
-  nodes and their contents are opaque to comparison.
+- Dynamic data (fetches, loaders, query caches, stores) is unknown unless a capture recorded it;
+  lists over it are `repeat` nodes and their contents are opaque to comparison.
 - Third-party components are opaque unless modeled. `react-admin`'s `<Admin>` and TanStack
   Router's `<RouterProvider>` end the static tree.
 - Refs, event handlers and anything behind a user interaction are not simulated; only effects that

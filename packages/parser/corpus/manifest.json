@@ -313,7 +313,8 @@
       "settleMs": 6000,
       "static": {
         "rootDirectory": "examples/query/react/basic",
-        "entry": "src/index.tsx"
+        "entry": "src/index.tsx",
+        "externalPackageAllowList": ["react-redux"]
       }
     },
     {
@@ -367,9 +368,16 @@
       "settleMs": 6000,
       "static": {
         "rootDirectory": "examples/react/basic",
-        "entry": "src/index.tsx"
+        "entry": "src/index.tsx",
+        "externalPackageAllowList": [
+          "@tanstack/react-query",
+          "@tanstack/react-query-persist-client",
+          "@tanstack/query-persist-client-core",
+          "@tanstack/query-async-storage-persister",
+          "@tanstack/react-query-devtools"
+        ]
       },
-      "notes": "Workspace packages must be built before Vite can resolve @tanstack/react-query; the install builds the example's dependency closure. Query results are remote data, so the post list is an opaque slot (partial)."
+      "notes": "Workspace packages must be built before Vite can resolve @tanstack/react-query; the install builds the example's dependency closure. Query results are remote data; the static render rebuilds them from the captured query cache."
     },
     {
       "id": "tanstack-router",

@@ -13,6 +13,7 @@ import type {
   StaticOptionalValue,
   StaticPrimitive,
   StaticPrimitiveValue,
+  StaticSymbolValue,
   StaticUnknownPrimitiveValue,
   StaticUnknownValue,
   StaticValue,
@@ -295,12 +296,25 @@ export const getInstancePrototype = (
       })),
   ]);
 
+/** Symbol-keyed properties are stored under an `@@` key; enumeration skips them like `Object.keys` does. */
+export const getSymbolPropertyKey = (symbol: StaticSymbolValue): string => `@@${symbol.key}`;
+
+export const isSymbolPropertyKey = (key: string): boolean => key.startsWith("@@");
+
+/** The property name a computed key denotes, or `null` when the key is not statically known. */
+export const getPropertyName = (key: StaticValue): string | null => {
+  if (key.kind === "primitive") return String(key.value);
+  return key.kind === "symbol" ? getSymbolPropertyKey(key) : null;
+};
+
 export const getKnownObjectKeys = (object: StaticObjectValue): string[] | null => {
   const keys: string[] = [];
   for (const entry of object.entries) {
     const entryKeys = entry.kind === "property" ? [entry.key] : getKnownSpreadKeys(entry.value);
     if (!entryKeys) return null;
-    for (const key of entryKeys) if (!keys.includes(key)) keys.push(key);
+    for (const key of entryKeys) {
+      if (!isSymbolPropertyKey(key) && !keys.includes(key)) keys.push(key);
+    }
   }
   return keys;
 };

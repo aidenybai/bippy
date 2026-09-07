@@ -71,6 +71,27 @@ const listProxyKeys = (): string => {
   return keys.join(",");
 };
 
+const REGISTRY_KEY = Symbol.for("fixture.registry");
+
+interface Registry {
+  [REGISTRY_KEY]?: Map<string, string>;
+}
+
+const describeSymbolKeys = (): string => {
+  const tagged: Registry & { visible: number } = { visible: 1 };
+  const registry = (tagged[REGISTRY_KEY] ??= new Map());
+  registry.set("entry", "stored");
+  const shared = ((globalThis as Registry)[REGISTRY_KEY] ??= new Map());
+  shared.set("global", "once");
+  const again = (globalThis as Registry)[REGISTRY_KEY]!;
+  return [
+    Object.keys(tagged).join("+"),
+    tagged[REGISTRY_KEY]?.get("entry"),
+    again === shared ? "same" : "different",
+    again.get("global"),
+  ].join(",");
+};
+
 const Row = ({ text }: { text: string }) => (
   <li>
     {text}
@@ -91,6 +112,7 @@ export default function ThrowsAndNatives() {
       <Row text={seen.has(keyObject) ? "seen" : "unseen"} />
       <Row text={cache.has({}) ? "hit" : "miss"} />
       <Row text={listProxyKeys()} />
+      <Row text={describeSymbolKeys()} />
     </ul>
   );
 }

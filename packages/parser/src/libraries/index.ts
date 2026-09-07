@@ -17,6 +17,7 @@ import {
   REACT_INLINESVG_PACKAGES,
   reactInlineSvgValue,
 } from "./react-inlinesvg.js";
+import { REDUX_TOOLKIT_PACKAGES, reduxToolkitValue } from "./redux-toolkit.js";
 import { REFLUX_PACKAGES, refluxValue } from "./reflux.js";
 import { SENTRY_PACKAGES, sentryValue } from "./sentry.js";
 import {
@@ -58,6 +59,7 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     getValue: reactInlineSvgValue,
     modeledExports: REACT_INLINESVG_MODELED_EXPORTS,
   },
+  { packages: REDUX_TOOLKIT_PACKAGES, getValue: reduxToolkitValue },
   { packages: REFLUX_PACKAGES, getValue: refluxValue },
   { packages: SENTRY_PACKAGES, getValue: sentryValue },
   {

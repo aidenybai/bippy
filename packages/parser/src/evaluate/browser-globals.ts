@@ -156,6 +156,8 @@ const BROWSER_GLOBAL_MEMBERS: Record<string, Record<string, BrowserMember>> = {
 
 export const isBrowserGlobalName = (name: string): boolean => name in BROWSER_GLOBAL_MEMBERS;
 
+export const isWindowAlias = (name: string): boolean => WINDOW_MEMBERS[name] === "window";
+
 const LOCATION_MEMBER_NAME =
   /^(?:(?:window|globalThis|document)\.)?location\.(pathname|search|hash|origin|protocol|host|hostname|port|href)$/;
 const DOCUMENT_URL_NAME = /^(?:(?:window|globalThis)\.)?document\.(?:URL|documentURI)$/;

@@ -93,7 +93,7 @@ import {
 } from "./builtin-calls.js";
 import { collectClassMembers, constructClassInstance, getSuperObject } from "./class-component.js";
 import { getCollectionItems, markCollectionExternallyMutable } from "./collections.js";
-import { getPageLocationMember } from "./browser-globals.js";
+import { getPageLocationMember, isWindowAlias } from "./browser-globals.js";
 import { isEnvironmentVariableName } from "./bundler-globals.js";
 import { hasProperty, OBJECT_PROTOTYPE_METHODS } from "./has-property.js";
 import { isInstanceOf } from "./instance-of.js";
@@ -152,8 +152,10 @@ import {
   getObjectAccessor,
   getObjectProperty,
   getPreferredTruthiness,
+  getPropertyName,
   getTruthiness,
   isNullish,
+  isSymbolPropertyKey,
   listValue,
   mapValue,
   NULL_VALUE,
@@ -718,7 +720,7 @@ export class Interpreter {
         target.properties.set(propertyName, value);
         return target;
       case "global":
-        if (target.name === "window") {
+        if (isWindowAlias(target.name)) {
           this.windowGlobals.set(
             propertyName,
             this.withUncertainAssignment(
@@ -1422,8 +1424,9 @@ export class Interpreter {
       this.assignMember(target.object, target.property.name, value, context);
     } else if (target.type === "MemberExpression" && target.computed) {
       const key = this.evaluateExpression(target.property, context);
-      if (key.kind === "primitive") {
-        this.assignMember(target.object, String(key.value), value, context);
+      const propertyName = getPropertyName(key);
+      if (propertyName !== null) {
+        this.assignMember(target.object, propertyName, value, context);
       } else {
         this.assignDynamicMember(target.object, key, value, context);
       }
@@ -1519,8 +1522,9 @@ export class Interpreter {
       return this.getProperty(object, node.property.name, context, location, node.optional);
     }
     const key = this.evaluateExpression(node.property, context);
-    if (key.kind === "primitive") {
-      return this.getProperty(object, String(key.value), context, location, node.optional);
+    const propertyName = getPropertyName(key);
+    if (propertyName !== null) {
+      return this.getProperty(object, propertyName, context, location, node.optional);
     }
     if (object === CHAIN_SHORT_CIRCUIT) return object;
     if (object.kind === "list") {
@@ -1723,8 +1727,12 @@ export class Interpreter {
             ? getStorageLength(this.storageAreas[storageAreaName], storageAreaName)
             : { kind: "method", receiver: object, name: key };
         }
+        if (isWindowAlias(object.name)) {
+          const windowGlobal = this.windowGlobals.get(key);
+          if (windowGlobal) return windowGlobal;
+          if (isSymbolPropertyKey(key)) return UNDEFINED_VALUE;
+        }
         return (
-          (object.name === "window" ? this.windowGlobals.get(key) : undefined) ??
           this.getGlobal(`${object.name}.${key}`, context.environment) ?? {
             kind: "method",
             receiver: object,

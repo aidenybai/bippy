@@ -64,7 +64,6 @@ const DEFAULT_MANIFEST: FixtureManifest = {
   minCoverage: 1,
   framework: "spa",
 };
-const readReduxStores = installReduxStoreHook(window);
 const SETTLE_QUIET_MS = 50;
 const SETTLE_TIMEOUT_MS = 2_000;
 
@@ -117,7 +116,7 @@ const mountFixture = async (fixture: FixtureCase): Promise<MountResult> => {
   document.body.appendChild(container);
   const recorder = createCommitRecorder({
     rootFilter: (root) => getRootContainer(root) === container,
-    reduxStores: readReduxStores,
+    reduxStores: installReduxStoreHook(window),
   });
   try {
     const commit = recorder.waitForCommit();
