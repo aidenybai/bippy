@@ -109,6 +109,7 @@ const rendererOptionsForEntry = (
     externalPackageAllowList: entry.static.externalPackageAllowList,
     bootstrap: entry.static.bootstrap,
     globals: entry.static.globals,
+    defines: entry.static.defines,
     observations,
     maxFiberCount: entry.static.maxFiberCount,
     maxComponentDepth: entry.static.maxComponentDepth,

@@ -5,6 +5,7 @@ import type {
   ReactApi,
   SourceLocation,
   StaticElementType,
+  StaticNativeFunctionValue,
   StaticObjectEntry,
   StaticValue,
   StubRenderTools,
@@ -61,6 +62,52 @@ const stateHook = (
     },
   };
   return listValue([cell.current, cell.setter]);
+};
+
+/**
+ * Mirrors `mountSyncExternalStore`: the snapshot is read on every render, and a
+ * passive effect subscribes and re-checks it (`updateStoreInstance`), so a store
+ * mutated between render and commit re-renders with the latest value. The
+ * listener does the same for store changes triggered during evaluation.
+ */
+const externalStoreHook = (
+  interpreter: Interpreter,
+  context: EvaluationContext,
+  subscribe: StaticValue | undefined,
+  getSnapshot: StaticValue | undefined,
+  location: SourceLocation | null,
+): StaticValue => {
+  const readSnapshot = (): StaticValue =>
+    getSnapshot
+      ? interpreter.callValue(getSnapshot, [], context, location)
+      : unknownValue("external store snapshot", location);
+  const snapshot = readSnapshot();
+  const frame = context.hooks;
+  if (!frame) return snapshot;
+  const cell = nextStateCell(frame, "useSyncExternalStore", snapshot);
+  cell.current = snapshot;
+  if (!frame.isRendering || !subscribe) return snapshot;
+  const handleStoreChange: StaticNativeFunctionValue = {
+    kind: "native-function",
+    name: "handleStoreChange",
+    call: () => {
+      queueStateUpdate(frame, cell, readSnapshot());
+      return UNDEFINED_VALUE;
+    },
+  };
+  frame.effects.push({
+    isLayout: false,
+    callback: {
+      kind: "native-function",
+      name: "subscribeToStore",
+      call: (_args, tools) => {
+        tools.call(subscribe, [handleStoreChange]);
+        return handleStoreChange.call([], tools);
+      },
+    },
+    deps: listValue([subscribe]),
+  });
+  return snapshot;
 };
 
 interface SplitProps {
@@ -422,9 +469,7 @@ export const evaluateReactApiCall = (
     case "useDeferredValue":
       return first ?? UNDEFINED_VALUE;
     case "useSyncExternalStore":
-      return second
-        ? interpreter.callValue(second, [], context, location)
-        : unknownValue("external store snapshot", location);
+      return externalStoreHook(interpreter, context, first, second, location);
     case "useOptimistic":
       return listValue([first ?? UNDEFINED_VALUE, unknownValue("optimistic setter")]);
     case "useActionState":

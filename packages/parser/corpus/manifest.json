@@ -478,6 +478,12 @@
           "static/gsApp/registerOverrides.tsx#registerGsAppOverrides",
           "static/app/bootstrap/commonInitialization.tsx#commonInitialization(__initialData)"
         ],
+        "defines": {
+          "process.env.USE_TANSTACK_DEVTOOL": false,
+          "process.env.IS_ACCEPTANCE_TEST": false,
+          "process.env.ENABLE_SENTRY_TOOLBAR": false,
+          "process.env.EXPERIMENTAL_SPA": false
+        },
         "maxFiberCount": 20000
       },
       "notes": "index.tsx boots asynchronously: in SaaS mode it registers the getsentry overrides, loads the /api/client-config/ payload (window.__initialData, captured from the live page) into ConfigStore and then calls renderDom(Main), so the static side runs the same bootstrap before rendering the exported Main component. UI-only mode serves the SPA over a self-signed https certificate; the login page fetches from sentry.io and logs 403s for unauthenticated endpoints."

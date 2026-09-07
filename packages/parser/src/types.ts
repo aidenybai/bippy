@@ -6,6 +6,7 @@ import type {
   Function as FunctionNode,
   Program,
   Span,
+  Statement,
 } from "oxc-parser";
 import type { TypeScriptDeclaration } from "./evaluate/typescript-declarations.js";
 import type { RuntimeSnapshot } from "./harness/snapshot.js";
@@ -98,20 +99,6 @@ export type TopLevelBinding =
       span: Span;
     };
 
-/** Guard of the enclosing module-level `if`/`else` (`if (process.env.NODE_ENV !== "production") X.displayName = ...`). */
-export interface MemberAssignmentGuard {
-  test: Expression;
-  whenTruthy: boolean;
-}
-
-export interface MemberAssignment {
-  objectName: string;
-  propertyName: string;
-  value: Expression;
-  guard: MemberAssignmentGuard | null;
-  span: Span;
-}
-
 export interface ModuleRecord {
   filePath: string;
   file: ParsedSourceFile;
@@ -120,9 +107,10 @@ export interface ModuleRecord {
   imports: ImportBinding[];
   exports: ExportEntry[];
   bindings: Map<string, TopLevelBinding>;
-  memberAssignments: MemberAssignment[];
-  /** Top-level bindings mutated (`x.set(...)`, `x.prop = ...`) from inside a function body. */
-  deferredMutations: Set<string>;
+  /** Specifiers of static `import`/`export ... from` declarations, in source order. */
+  dependencies: string[];
+  /** Top-level statements that run when the module is evaluated (`X.displayName = ...`, `registry.set(...)`). */
+  sideEffectStatements: Statement[];
   /** Exports were collected from `exports.x = ` / `module.exports` assignments rather than ESM syntax. */
   isCommonJs: boolean;
   /** `module.exports = value` replaced the exports object, so `require()` yields the `default` export. */
@@ -179,6 +167,14 @@ export type ClassMember = ClassFunctionMember | ClassFieldMember;
 export interface ClassBody {
   members: ClassMember[];
   superValue: StaticValue | null;
+}
+
+/** What `super` refers to inside a class member. */
+export interface SuperBinding {
+  /** `super(...)` inside a derived constructor; null elsewhere. */
+  construct: ((args: StaticValue[]) => void) | null;
+  /** The class `super.member` reads from; null for a base class. */
+  parent: StaticValue | null;
 }
 
 export interface ContextDefinition {
@@ -390,6 +386,13 @@ export interface RootObservations extends CapturedQueryCaches {
   stores?: CapturedValue[];
 }
 
+/** The origin's persisted state (`document.cookie`, Web Storage) as the settled page held it. */
+export interface CapturedPageState {
+  cookie: string;
+  localStorage: Record<string, string>;
+  sessionStorage: Record<string, string>;
+}
+
 /** What the running page held that its code reads at render: inputs the static render takes as given. */
 export interface RuntimeObservations {
   /** `window` properties recorded whole (bootstrap payloads); nested objects are complete, so unlisted keys are `undefined`. */
@@ -400,6 +403,8 @@ export interface RuntimeObservations {
   lingui?: CapturedLinguiCatalog;
   router?: CapturedRouterState;
   stores?: CapturedValue[];
+  /** Absent in captures that predate page-state recording, which then assume a fresh profile. */
+  page?: CapturedPageState;
 }
 
 export type StaticPrimitive = string | number | boolean | null | undefined | bigint;
@@ -437,10 +442,14 @@ export interface StaticPrimitiveValue {
 
 export type UnknownPrimitiveType = "string" | "number" | "boolean" | "any";
 
+/** Ordering a clock-derived number carries; see `evaluate/timers.ts`. */
+export type ClockOrdering = "reading" | "settled" | "unbounded";
+
 export interface StaticUnknownPrimitiveValue {
   kind: "unknown-primitive";
   primitiveType: UnknownPrimitiveType;
   reason: string;
+  clock?: ClockOrdering;
 }
 
 export interface StaticListValue {
@@ -470,6 +479,7 @@ export interface StaticFunctionValue {
   scope: Scope;
   module: ModuleRecord;
   thisValue: StaticValue | null;
+  superBinding: SuperBinding | null;
   name: string | null;
   properties: Map<string, StaticValue>;
 }
@@ -704,6 +714,8 @@ export interface StaticRendererOptions {
   bootstrap?: string[];
   /** `window` properties the served page defines (server-injected config); nested objects are partial, so unlisted keys stay unknown. */
   globals?: Record<string, JsonValue>;
+  /** Expressions the bundler inlines at build time (`DefinePlugin`, Vite `define`), keyed by source text such as `process.env.FLAG`. */
+  defines?: Record<string, JsonValue>;
   /** URL path (pathname, search, hash) the page is rendered at; `location` reads it. */
   route?: string;
   /** What a running page was observed to hold; the render takes these as its runtime inputs. */

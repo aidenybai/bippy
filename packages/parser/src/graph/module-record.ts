@@ -1,12 +1,10 @@
 import type {
-  BindingPattern,
   CallExpression,
   ExportDefaultDeclaration,
   ExportNamedDeclaration,
   Expression,
   ImportDeclaration,
   ModuleExportName,
-  Node,
   ObjectExpression,
   PropertyKey,
   Statement,
@@ -16,13 +14,11 @@ import {
   getTypeScriptDeclarationName,
   type TypeScriptDeclaration,
 } from "../evaluate/typescript-declarations.js";
-import { forEachChildNode, isFunctionLikeNode } from "../parse/ast-walk.js";
+import { getPatternNames } from "../parse/ast-walk.js";
 import type {
   ExportEntry,
   ImportBinding,
   ImportedName,
-  MemberAssignment,
-  MemberAssignmentGuard,
   ModuleRecord,
   ParsedSourceFile,
   ReExportAll,
@@ -31,30 +27,6 @@ import type {
 
 const getModuleExportName = (name: ModuleExportName): string =>
   name.type === "Literal" ? name.value : name.name;
-
-const collectPatternNames = (pattern: BindingPattern, names: string[]): void => {
-  switch (pattern.type) {
-    case "Identifier":
-      names.push(pattern.name);
-      return;
-    case "ObjectPattern":
-      for (const property of pattern.properties) {
-        if (property.type === "RestElement") collectPatternNames(property.argument, names);
-        else collectPatternNames(property.value, names);
-      }
-      return;
-    case "ArrayPattern":
-      for (const element of pattern.elements) {
-        if (!element) continue;
-        if (element.type === "RestElement") collectPatternNames(element.argument, names);
-        else collectPatternNames(element, names);
-      }
-      return;
-    case "AssignmentPattern":
-      collectPatternNames(pattern.left, names);
-      return;
-  }
-};
 
 const collectVariableBindings = (
   declaration: VariableDeclaration,
@@ -73,9 +45,7 @@ const collectVariableBindings = (
       declaredNames.push(declarator.id.name);
       continue;
     }
-    const names: string[] = [];
-    collectPatternNames(declarator.id, names);
-    for (const name of names) {
+    for (const name of getPatternNames(declarator.id)) {
       bindings.set(name, {
         kind: "destructured",
         name,
@@ -212,17 +182,62 @@ const collectDefaultExport = (
   exports.push({ kind: "expression", exportedName: "default", expression: declared });
 };
 
+const isCommonJsExportStatement = (statement: Statement): boolean => {
+  if (statement.type !== "ExpressionStatement") return false;
+  const { expression } = statement;
+  if (expression.type === "AssignmentExpression") {
+    const target = expression.left;
+    return (
+      (target.type === "Identifier" || target.type === "MemberExpression") &&
+      (isExportsObject(target) || getExportedMemberName(target) !== null)
+    );
+  }
+  return (
+    expression.type === "CallExpression" &&
+    expression.arguments.some(
+      (argument) => argument.type !== "SpreadElement" && isExportsObject(argument),
+    )
+  );
+};
+
+const DECLARATION_STATEMENT_TYPES = new Set<Statement["type"]>([
+  "ImportDeclaration",
+  "ExportNamedDeclaration",
+  "ExportDefaultDeclaration",
+  "ExportAllDeclaration",
+  "VariableDeclaration",
+  "FunctionDeclaration",
+  "ClassDeclaration",
+  "TSEnumDeclaration",
+  "TSModuleDeclaration",
+  "TSInterfaceDeclaration",
+  "TSTypeAliasDeclaration",
+  "TSDeclareFunction",
+  "TSImportEqualsDeclaration",
+  "TSExportAssignment",
+  "TSNamespaceExportDeclaration",
+  "EmptyStatement",
+]);
+
+const isSideEffectStatement = (statement: Statement): boolean =>
+  !DECLARATION_STATEMENT_TYPES.has(statement.type) && !isCommonJsExportStatement(statement);
+
 const collectStatement = (
   statement: Statement,
   imports: ImportBinding[],
   exports: ExportEntry[],
   bindings: Map<string, TopLevelBinding>,
+  dependencies: string[],
 ): void => {
   switch (statement.type) {
     case "ImportDeclaration":
+      if (statement.importKind !== "type") dependencies.push(statement.source.value);
       collectImports(statement, imports);
       return;
     case "ExportNamedDeclaration":
+      if (statement.source && statement.exportKind !== "type") {
+        dependencies.push(statement.source.value);
+      }
       collectNamedExports(statement, bindings, exports);
       return;
     case "ExportDefaultDeclaration":
@@ -230,6 +245,7 @@ const collectStatement = (
       return;
     case "ExportAllDeclaration":
       if (statement.exportKind === "type") return;
+      dependencies.push(statement.source.value);
       if (statement.exported) {
         exports.push({
           kind: "re-export",
@@ -275,117 +291,6 @@ const collectStatement = (
 
 const getBranchBody = (statement: Statement): Statement[] =>
   statement.type === "BlockStatement" ? statement.body : [statement];
-
-const collectMemberAssignment = (
-  statement: Statement,
-  memberAssignments: MemberAssignment[],
-  guard: MemberAssignmentGuard | null = null,
-): void => {
-  if (statement.type === "IfStatement" && guard === null) {
-    const { test, consequent, alternate } = statement;
-    for (const inner of getBranchBody(consequent)) {
-      collectMemberAssignment(inner, memberAssignments, { test, whenTruthy: true });
-    }
-    if (alternate) {
-      for (const inner of getBranchBody(alternate)) {
-        collectMemberAssignment(inner, memberAssignments, { test, whenTruthy: false });
-      }
-    }
-    return;
-  }
-  if (statement.type !== "ExpressionStatement") return;
-  const expression = statement.expression;
-  if (isObjectAssignCall(expression)) {
-    const [target, source] = expression.arguments;
-    if (target.type !== "Identifier" || source?.type !== "ObjectExpression") return;
-    for (const property of source.properties) {
-      if (property.type !== "Property" || property.kind !== "init") continue;
-      const propertyName = getStaticPropertyName(property.key, property.computed);
-      if (propertyName === null) continue;
-      memberAssignments.push({
-        objectName: target.name,
-        propertyName,
-        value: property.value,
-        guard,
-        span: statement,
-      });
-    }
-    return;
-  }
-  if (expression.type !== "AssignmentExpression" || expression.operator !== "=") return;
-  const target = expression.left;
-  if (target.type !== "MemberExpression" || target.computed) return;
-  if (target.object.type !== "Identifier" || target.property.type !== "Identifier") return;
-  memberAssignments.push({
-    objectName: target.object.name,
-    propertyName: target.property.name,
-    value: expression.right,
-    guard,
-    span: statement,
-  });
-};
-
-const MUTATING_METHODS = new Set([
-  "set",
-  "add",
-  "delete",
-  "clear",
-  "push",
-  "pop",
-  "shift",
-  "unshift",
-  "splice",
-  "sort",
-  "reverse",
-  "fill",
-  "copyWithin",
-]);
-
-const getMutatedObjectName = (node: Node): string | null => {
-  switch (node.type) {
-    case "CallExpression": {
-      const callee = node.callee;
-      if (callee.type !== "MemberExpression" || callee.object.type !== "Identifier") return null;
-      const method = callee.computed ? null : callee.property;
-      return method?.type === "Identifier" && MUTATING_METHODS.has(method.name)
-        ? callee.object.name
-        : null;
-    }
-    case "AssignmentExpression":
-    case "UpdateExpression": {
-      const target = node.type === "AssignmentExpression" ? node.left : node.argument;
-      return target.type === "MemberExpression" && target.object.type === "Identifier"
-        ? target.object.name
-        : null;
-    }
-    case "UnaryExpression":
-      return node.operator === "delete" &&
-        node.argument.type === "MemberExpression" &&
-        node.argument.object.type === "Identifier"
-        ? node.argument.object.name
-        : null;
-    default:
-      return null;
-  }
-};
-
-/**
- * Module-level containers mutated from inside a function may be filled in by
- * code the interpreter never sees run (other modules calling an exported
- * `register`, effects, event handlers), so their contents are not exact.
- */
-const collectDeferredMutations = (
-  node: Node,
-  isInsideFunction: boolean,
-  names: Set<string>,
-): void => {
-  if (isInsideFunction) {
-    const name = getMutatedObjectName(node);
-    if (name !== null) names.add(name);
-  }
-  const isEnteringFunction = isInsideFunction || isFunctionLikeNode(node);
-  forEachChildNode(node, (child) => collectDeferredMutations(child, isEnteringFunction, names));
-};
 
 const getStaticPropertyName = (property: PropertyKey, computed: boolean): string | null => {
   if (!computed && property.type === "Identifier") return property.name;
@@ -723,8 +628,8 @@ export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
   const imports: ImportBinding[] = [];
   const exports: ExportEntry[] = [];
   const bindings = new Map<string, TopLevelBinding>();
-  const memberAssignments: MemberAssignment[] = [];
-  const deferredMutations = new Set<string>();
+  const dependencies: string[] = [];
+  const sideEffectStatements: Statement[] = [];
   const directives: string[] = [];
   const statements = getModuleStatements(file.program.body);
   for (const statement of statements) {
@@ -736,9 +641,8 @@ export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
       directives.push(statement.directive);
       continue;
     }
-    collectStatement(statement, imports, exports, bindings);
-    collectMemberAssignment(statement, memberAssignments);
-    collectDeferredMutations(statement, false, deferredMutations);
+    collectStatement(statement, imports, exports, bindings, dependencies);
+    if (isSideEffectStatement(statement)) sideEffectStatements.push(statement);
   }
   for (const importBinding of imports) {
     if (importBinding.isTypeOnly) continue;
@@ -760,8 +664,8 @@ export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
     imports,
     exports,
     bindings,
-    memberAssignments,
-    deferredMutations,
+    dependencies,
+    sideEffectStatements,
     isCommonJs: commonJs !== null,
     replacesModuleExports: commonJs?.replacesModuleExports ?? false,
   };

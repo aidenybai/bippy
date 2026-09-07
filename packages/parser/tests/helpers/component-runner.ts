@@ -35,7 +35,9 @@ export interface ComponentRunResult {
 
 export const COMPONENTS_DIRECTORY = resolve(import.meta.dirname, "../components");
 const FIXTURE_EXTENSIONS = [".tsx", ".jsx", ".js"];
-const SETTLE_ROUNDS = 8;
+/** Like the browser capture, the snapshot is taken once commits have been quiet for a while. */
+const QUIET_COMMIT_MS = 100;
+const MAX_SETTLE_MS = 3_000;
 
 export const listComponentFixtures = (): ComponentFixture[] =>
   readdirSync(COMPONENTS_DIRECTORY, { withFileTypes: true })
@@ -62,9 +64,12 @@ const mountComponent = async (Component: ComponentType): Promise<RuntimeSnapshot
   const root = createRoot(container);
   try {
     await act(async () => root.render(createElement(Component)));
-    for (let round = 0; round < SETTLE_ROUNDS; round++) {
+    const startedAt = Date.now();
+    let quietCommits = -1;
+    while (quietCommits !== recorder.commitCount() && Date.now() - startedAt < MAX_SETTLE_MS) {
+      quietCommits = recorder.commitCount();
       await act(async () => {
-        await new Promise<void>((resolveTick) => setTimeout(resolveTick, 0));
+        await new Promise<void>((resolveQuiet) => setTimeout(resolveQuiet, QUIET_COMMIT_MS));
       });
     }
     return recorder.snapshot();

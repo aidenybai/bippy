@@ -102,6 +102,7 @@ const readObservations = async (page: Page, names: string[]): Promise<RuntimeObs
       queries: [],
       ...(await globals.__BIPPY_PARSER_OBSERVATIONS__?.()),
       globals: (await globals.__BIPPY_PARSER_GLOBALS__?.(globalNames)) ?? {},
+      page: globals.__BIPPY_PARSER_PAGE__?.(),
     };
     return JSON.stringify(observed);
   }, names);

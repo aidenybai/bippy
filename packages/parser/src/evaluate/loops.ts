@@ -9,6 +9,7 @@ import type {
 } from "oxc-parser";
 import type { SourceLocation, StaticValue } from "../types.js";
 import type { EvaluationContext } from "./context.js";
+import { getCollectionItems } from "./collections.js";
 import { withScope } from "./context.js";
 import {
   COMPLETES,
@@ -54,7 +55,7 @@ const bindLoopLeft = (
 ): void => {
   if (left.type === "VariableDeclaration") {
     for (const declarator of left.declarations)
-      interpreter.bindPattern(declarator.id, value, context.scope, context);
+      interpreter.bindDeclarator(left.kind, declarator.id, value, context);
     return;
   }
   interpreter.assignTarget(left, value, context);
@@ -67,7 +68,8 @@ const iterationValues = (
 ): StaticValue[] | null => {
   const right = interpreter.evaluateExpression(statement.right, context);
   if (statement.type === "ForOfStatement") {
-    if (isKnownList(right)) return right.items;
+    const iterated = getCollectionItems(right) ?? right;
+    if (isKnownList(iterated)) return iterated.items;
     if (right.kind === "primitive" && typeof right.value === "string")
       return [...right.value].map(primitiveValue);
     return null;
@@ -137,10 +139,7 @@ const unrollConditional = (
   if (statement.type === "ForStatement" && statement.init) {
     if (statement.init.type === "VariableDeclaration") {
       for (const declarator of statement.init.declarations) {
-        const value = declarator.init
-          ? interpreter.evaluateExpression(declarator.init, loopContext)
-          : unknownValue("uninitialized loop variable");
-        interpreter.bindPattern(declarator.id, value, loopContext.scope, loopContext);
+        interpreter.evaluateDeclarator(statement.init, declarator, loopContext);
       }
     } else {
       interpreter.evaluateExpression(statement.init, loopContext);
@@ -189,10 +188,10 @@ const evaluateUncertainTail = (
     bindLoopLeft(interpreter, statement.left, value, loopContext);
   } else if (statement.type === "ForStatement" && statement.init?.type === "VariableDeclaration") {
     for (const declarator of statement.init.declarations) {
-      interpreter.bindPattern(
+      interpreter.bindDeclarator(
+        statement.init.kind,
         declarator.id,
         unknownPrimitiveValue("number", "loop counter"),
-        loopContext.scope,
         loopContext,
       );
     }

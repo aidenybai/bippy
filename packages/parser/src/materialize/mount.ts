@@ -15,11 +15,15 @@ export interface MountResult {
 }
 
 /**
- * Mounts a React element in a fresh root, lets effects, state updates and lazy
- * resolutions settle under `act`, and returns the committed fiber tree as
- * bippy observed it.
+ * Mounts a React element in a fresh root, lets effects, state updates, lazy
+ * resolutions and the static timer queue (`runTimers`, once per settle round)
+ * settle under `act`, and returns the committed fiber tree as bippy observed it.
  */
-export const mountNode = async (runtime: ReactRuntime, node: ReactNode): Promise<MountResult> => {
+export const mountNode = async (
+  runtime: ReactRuntime,
+  node: ReactNode,
+  runTimers: () => void,
+): Promise<MountResult> => {
   const container = document.createElement("div");
   document.body.appendChild(container);
   const recorder = createCommitRecorder({
@@ -43,6 +47,7 @@ export const mountNode = async (runtime: ReactRuntime, node: ReactNode): Promise
       await runtime.act(async () => root.render(node));
       for (let round = 0; round < SETTLE_ROUNDS; round++) {
         await runtime.act(async () => {
+          runTimers();
           await new Promise<void>((resolveTick) => setTimeout(resolveTick, 0));
         });
       }

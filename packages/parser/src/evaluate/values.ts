@@ -4,6 +4,7 @@ import type {
   CapturedValue,
   JsonValue,
   SourceLocation,
+  StaticClassValue,
   StaticElementType,
   StaticListValue,
   StaticObjectEntry,
@@ -49,6 +50,12 @@ export const unknownPrimitiveValue = (
 
 export const listValue = (items: StaticValue[]): StaticListValue => ({ kind: "list", items });
 
+/** `Class.__proto__` / `Object.getPrototypeOf(Class)`: the parent class, or `Function.prototype` for a base class. */
+export const getClassPrototype = (
+  classValue: StaticClassValue,
+  location: SourceLocation | null,
+): StaticValue => classValue.body.superValue ?? unknownValue("Function.prototype", location);
+
 export const objectValue = (entries: StaticObjectEntry[] = []): StaticObjectValue => ({
   kind: "object",
   entries,
@@ -56,6 +63,19 @@ export const objectValue = (entries: StaticObjectEntry[] = []): StaticObjectValu
 
 export const objectFromRecord = (record: Record<string, StaticValue>): StaticObjectValue =>
   objectValue(Object.entries(record).map(([key, value]) => ({ kind: "property", key, value })));
+
+/** A value known whole, as a bundler inlines a `define` replacement. */
+export const jsonValue = (json: JsonValue): StaticValue => {
+  if (json === null || typeof json !== "object") return primitiveValue(json);
+  if (Array.isArray(json)) return listValue(json.map(jsonValue));
+  return objectValue(
+    Object.entries(json).map(([key, item]): StaticObjectEntry => ({
+      kind: "property",
+      key,
+      value: jsonValue(item),
+    })),
+  );
+};
 
 /**
  * A value the served page defines (e.g. on `window`). Only the configured keys
@@ -159,6 +179,23 @@ export const toJsonValue = (value: StaticValue): JsonValue | undefined => {
   }
 };
 
+/** Overwrites the own property `key` when nothing spread after it could shadow the write. */
+export const setObjectProperty = (
+  object: StaticObjectValue,
+  key: string,
+  value: StaticValue,
+): void => {
+  for (let index = object.entries.length - 1; index >= 0; index--) {
+    const entry = object.entries[index];
+    if (entry.kind === "spread") break;
+    if (entry.key === key) {
+      object.entries[index] = { kind: "property", key, value };
+      return;
+    }
+  }
+  object.entries.push({ kind: "property", key, value });
+};
+
 export const getObjectProperty = (object: StaticObjectValue, key: string): StaticValue => {
   for (let index = object.entries.length - 1; index >= 0; index--) {
     const entry = object.entries[index];
@@ -198,20 +235,102 @@ export const getObjectProperty = (object: StaticObjectValue, key: string): Stati
 export const getKnownObjectKeys = (object: StaticObjectValue): string[] | null => {
   const keys: string[] = [];
   for (const entry of object.entries) {
-    if (entry.kind === "property") {
-      if (!keys.includes(entry.key)) keys.push(entry.key);
-      continue;
-    }
-    if (entry.value.kind === "object") {
-      const nested = getKnownObjectKeys(entry.value);
-      if (!nested) return null;
-      for (const key of nested) if (!keys.includes(key)) keys.push(key);
-      continue;
-    }
-    if (entry.value.kind === "primitive") continue;
-    return null;
+    const entryKeys = entry.kind === "property" ? [entry.key] : getKnownSpreadKeys(entry.value);
+    if (!entryKeys) return null;
+    for (const key of entryKeys) if (!keys.includes(key)) keys.push(key);
   }
   return keys;
+};
+
+const getKnownSpreadKeys = (spread: StaticValue): string[] | null => {
+  switch (spread.kind) {
+    case "object":
+      return getKnownObjectKeys(spread);
+    case "primitive":
+      return [];
+    case "branch": {
+      const keys: string[] = [];
+      for (const alternative of spread.alternatives) {
+        const alternativeKeys = getKnownSpreadKeys(alternative);
+        if (!alternativeKeys) return null;
+        for (const key of alternativeKeys) if (!keys.includes(key)) keys.push(key);
+      }
+      return keys;
+    }
+    default:
+      return null;
+  }
+};
+
+const getOwnPropertyValue = (entries: StaticObjectEntry[], key: string): StaticValue | null => {
+  for (let index = entries.length - 1; index >= 0; index--) {
+    const entry = entries[index];
+    if (entry.kind === "property" && entry.key === key) return entry.value;
+  }
+  return null;
+};
+
+/**
+ * Copies a closed spread source into one property per key, so `{ ...source }`
+ * snapshots the source instead of aliasing its later mutations and a branch
+ * source becomes per-key branches rather than a nested spread whose depth
+ * every following `{ ...state, key }` would double.
+ */
+export const getSpreadEntries = (spread: StaticValue): StaticObjectEntry[] | null => {
+  if (spread.kind !== "object" && spread.kind !== "branch") return null;
+  const keys = getKnownSpreadKeys(spread);
+  if (!keys) return null;
+  const holder = objectValue([{ kind: "spread", value: spread }]);
+  return keys.map((key) => ({ kind: "property", key, value: getObjectProperty(holder, key) }));
+};
+
+/**
+ * Joins the entry lists paths left on one object. Paths that only assigned
+ * properties join per key (a path that skipped a key keeps the entry value);
+ * anything else keeps whole alternatives behind one spread.
+ */
+export const joinObjectEntries = (
+  original: StaticObjectEntry[],
+  pathEntries: StaticObjectEntry[][],
+  reason: string,
+  location: SourceLocation | null,
+  preferredIndex: number,
+): StaticObjectEntry[] => {
+  const isExtension = (entries: StaticObjectEntry[]): boolean =>
+    entries.length >= original.length && original.every((entry, index) => entries[index] === entry);
+  const appended = pathEntries.map((entries) =>
+    isExtension(entries) ? entries.slice(original.length) : null,
+  );
+  const keys = new Set<string>();
+  for (const entries of appended) {
+    if (!entries || entries.some((entry) => entry.kind === "spread")) {
+      const alternatives = pathEntries.map((entries, index) =>
+        objectValue(appended[index] ?? entries),
+      );
+      return [
+        ...original,
+        { kind: "spread", value: branchValue(alternatives, reason, location, preferredIndex) },
+      ];
+    }
+    for (const entry of entries) if (entry.kind === "property") keys.add(entry.key);
+  }
+  const entryObject = objectValue(original);
+  return [
+    ...original,
+    ...[...keys].map((key): StaticObjectEntry => ({
+      kind: "property",
+      key,
+      value: branchValue(
+        appended.map(
+          (entries) =>
+            getOwnPropertyValue(entries ?? [], key) ?? getObjectProperty(entryObject, key),
+        ),
+        reason,
+        location,
+        preferredIndex,
+      ),
+    })),
+  ];
 };
 
 export const omitObjectKeys = (object: StaticObjectValue, omitted: Set<string>): StaticValue => {

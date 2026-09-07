@@ -9,7 +9,7 @@ import {
   createHookFrame,
   effectsToRun,
   giveUpOnHookPass,
-  markEscapedSetters,
+  restartHookPass,
   type HookFrame,
 } from "../evaluate/hooks.js";
 import type { Interpreter } from "../evaluate/interpreter.js";
@@ -58,6 +58,7 @@ const DEFAULT_MAX_COMPONENT_DEPTH = 512;
 const DEFAULT_MAX_ELEMENT_COUNT = 50_000;
 const DEFAULT_MAX_RECURSION_PER_COMPONENT = 16;
 const MAX_RENDER_PASSES = 8;
+const MAX_RENDER_PHASE_UPDATES = 25;
 // Every alternative of a branch is materialized, so nested branches multiply the
 // work; deviations from the preferred path deeper than this become wildcards.
 const MAX_ALTERNATIVE_DEPTH = 2;
@@ -138,6 +139,31 @@ export interface ProxyProps {
 interface ErrorBoundaryState {
   caught: StaticThrowError | null;
 }
+
+/** Per-instance bookkeeping a proxy keeps across React renders. */
+interface ProxyInstance {
+  frame: HookFrame;
+  passCount: number;
+  isCommitScheduled: boolean;
+}
+
+interface StatefulRender {
+  node: ReactNode;
+  runEffects: (isLayout: boolean) => void;
+}
+
+/** How a class proxy instance hands its persistent state and commit hooks to the materializer. */
+interface ClassProxyHost {
+  getInstance: (caughtError: boolean) => ProxyInstance;
+  rerender: () => void;
+  queueCommitWork: (work: () => void) => void;
+}
+
+const createProxyInstance = (): ProxyInstance => ({
+  frame: createHookFrame(),
+  passCount: 0,
+  isCommitScheduled: false,
+});
 
 interface CompositeEvaluation {
   rendered: StaticValue;
@@ -329,6 +355,7 @@ const toFunctionValue = (component: ComponentDefinition): StaticFunctionValue =>
     scope: component.scope,
     module: component.module,
     thisValue: null,
+    superBinding: null,
     name: component.name,
     properties: component.properties,
   };
@@ -710,7 +737,7 @@ export class Materializer {
         );
       case "external": {
         this.markMaySuspend(context);
-        markEscapedSetters(props);
+        this.interpreter.markEscaped(props);
         return createElement(OpaqueMarker, {
           key: reactKey,
           displayName: type.displayName,
@@ -954,15 +981,47 @@ export class Materializer {
     let proxy = this.classProxies.get(component);
     if (!proxy) {
       const classValue = toClassValue(component);
-      const renderProxy = (input: ProxyInput, caught: StaticThrowError | null): ReactNode =>
+      const renderProxy = (
+        input: ProxyInput,
+        caught: StaticThrowError | null,
+        host: ClassProxyHost,
+      ): ReactNode =>
         this.renderInsideComponent(() =>
-          this.renderClassProxy(input, component, classValue, caught),
+          this.renderClassProxy(input, component, classValue, caught, host),
         );
       class ClassProxy extends this.runtime.react.Component<ProxyProps, ErrorBoundaryState> {
         state: ErrorBoundaryState = { caught: null };
+        private readonly instances = new Map<boolean, ProxyInstance>();
+        private commitWork: (() => void)[] = [];
+        private readonly host: ClassProxyHost = {
+          getInstance: (caughtError) => {
+            let instance = this.instances.get(caughtError);
+            if (!instance) {
+              instance = createProxyInstance();
+              this.instances.set(caughtError, instance);
+            }
+            return instance;
+          },
+          rerender: () => this.forceUpdate(),
+          queueCommitWork: (work) => this.commitWork.push(work),
+        };
 
         render(): ReactNode {
-          return renderProxy(this.props.input, this.state.caught);
+          return renderProxy(this.props.input, this.state.caught, this.host);
+        }
+
+        componentDidMount(): void {
+          this.flushCommitWork();
+        }
+
+        componentDidUpdate(): void {
+          this.flushCommitWork();
+        }
+
+        private flushCommitWork(): void {
+          const work = this.commitWork;
+          this.commitWork = [];
+          for (const run of work) run();
         }
       }
       class ErrorBoundaryProxy extends ClassProxy {
@@ -1115,38 +1174,66 @@ export class Materializer {
     return this.finishRender(rendered, { ...context, depth: context.depth + 1 }, input);
   }
 
-  /**
-   * One React render of a function component proxy: the interpreter evaluates
-   * the body against a hook frame kept in React state, React's effects run the
-   * static effects whose deps changed, and committed state changes schedule the
-   * next pass, as the real hooks would.
-   */
   renderFunctionProxy(
     input: ProxyInput,
     component: ComponentDefinition,
     secondArgument: StaticValue | null,
   ): ReactNode {
     const { useRef, useState, useEffect, useLayoutEffect } = this.runtime.react;
-    const frameRef = useRef<HookFrame | null>(null);
-    frameRef.current ??= createHookFrame();
-    const frame = frameRef.current;
-    const passRef = useRef(0);
+    const instanceRef = useRef<ProxyInstance | null>(null);
+    instanceRef.current ??= createProxyInstance();
     const [, setPass] = useState(0);
     const props = applyDefaultProps(component, input.props);
-    beginHookPass(frame);
-    const evaluation = this.evaluateComposite(
+    const { node, runEffects } = this.renderStateful(
+      input,
       component,
-      props,
-      input.context,
-      input.location,
-      frame,
-      (componentContext) =>
-        this.interpreter.callFunction(
-          toFunctionValue(component),
-          secondArgument ? [props, secondArgument] : [props],
-          componentContext,
+      instanceRef.current,
+      () => setPass((pass) => pass + 1),
+      (frame) =>
+        this.evaluateComposite(
+          component,
+          props,
+          input.context,
+          input.location,
+          frame,
+          (componentContext) =>
+            this.interpreter.callFunction(
+              toFunctionValue(component),
+              secondArgument ? [props, secondArgument] : [props],
+              componentContext,
+            ),
         ),
     );
+    useLayoutEffect(() => runEffects(true));
+    useEffect(() => runEffects(false));
+    return node;
+  }
+
+  /**
+   * One React render of a stateful proxy: the interpreter evaluates the
+   * component against the instance's hook frame, the host runs the static
+   * effects whose deps changed after the commit, and state updates queued
+   * outside the render are committed after the current React commit, as the
+   * real hooks would.
+   */
+  private renderStateful(
+    input: ProxyInput,
+    component: ComponentDefinition,
+    instance: ProxyInstance,
+    rerender: () => void,
+    evaluate: (frame: HookFrame) => CompositeEvaluation,
+  ): StatefulRender {
+    const { frame } = instance;
+    beginHookPass(frame);
+    let evaluation = evaluate(frame);
+    for (
+      let renderPhaseUpdates = 0;
+      renderPhaseUpdates < MAX_RENDER_PHASE_UPDATES && commitHookPass(frame).length > 0;
+      renderPhaseUpdates++
+    ) {
+      restartHookPass(frame);
+      evaluation = evaluate(frame);
+    }
     frame.isRendering = false;
     const runEffects = (isLayout: boolean): void => {
       if (!evaluation.componentContext) return;
@@ -1160,13 +1247,12 @@ export class Materializer {
         );
       }
     };
-    useLayoutEffect(() => runEffects(true));
-    useEffect(() => {
-      runEffects(false);
+    const commitPass = (): void => {
+      instance.isCommitScheduled = false;
       const changedCells = commitHookPass(frame);
       if (changedCells.length === 0) return;
-      passRef.current++;
-      if (passRef.current >= MAX_RENDER_PASSES) {
+      instance.passCount++;
+      if (instance.passCount >= MAX_RENDER_PASSES) {
         this.interpreter.report(
           "unsettled-state",
           `${describeComponent(component)} state did not settle after ${MAX_RENDER_PASSES} render passes: ${changedCells
@@ -1177,9 +1263,23 @@ export class Materializer {
         );
         giveUpOnHookPass(frame, changedCells);
       }
-      setPass((pass) => pass + 1);
-    });
-    return this.finishRender(evaluation.rendered, evaluation.childContext, input);
+      rerender();
+    };
+    // Updates from refs, effects and store listeners are flushed after the commit
+    // that raised them, as `flushSyncWorkOnAllRoots` does at the end of `commitRoot`;
+    // like `nestedUpdateCount`, only those chains count toward the limit, so a
+    // timer task starts a new one.
+    frame.requestRender = () => {
+      this.interpreter.changeCount++;
+      if (this.interpreter.timers.isFlushing) instance.passCount = 0;
+      if (instance.isCommitScheduled) return;
+      instance.isCommitScheduled = true;
+      queueMicrotask(commitPass);
+    };
+    return {
+      node: this.finishRender(evaluation.rendered, evaluation.childContext, input),
+      runEffects,
+    };
   }
 
   renderClassProxy(
@@ -1187,6 +1287,7 @@ export class Materializer {
     component: ComponentDefinition,
     classValue: StaticClassValue,
     caught: StaticThrowError | null,
+    host: ClassProxyHost,
   ): ReactNode {
     const props = applyDefaultProps(component, input.props);
     const isBoundary = isErrorBoundaryClass(classValue.body);
@@ -1197,16 +1298,33 @@ export class Materializer {
       caughtError: boolean,
       boundaryContext: MaterializeContext,
     ): ReactNode => {
-      const evaluation = this.evaluateComposite(
+      const { node, runEffects } = this.renderStateful(
+        input,
         component,
-        props,
-        boundaryContext,
-        input.location,
-        null,
-        (componentContext) =>
-          renderClassComponent(this.interpreter, classValue, props, componentContext, caughtError),
+        host.getInstance(caughtError),
+        host.rerender,
+        (frame) =>
+          this.evaluateComposite(
+            component,
+            props,
+            boundaryContext,
+            input.location,
+            frame,
+            (componentContext) =>
+              renderClassComponent(
+                this.interpreter,
+                classValue,
+                props,
+                componentContext,
+                caughtError,
+              ),
+          ),
       );
-      return this.finishRender(evaluation.rendered, evaluation.childContext, input);
+      host.queueCommitWork(() => {
+        runEffects(true);
+        runEffects(false);
+      });
+      return node;
     };
     if (caught?.isMaybe) {
       return this.branchNode(

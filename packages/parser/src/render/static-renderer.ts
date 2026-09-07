@@ -93,8 +93,10 @@ export class StaticRenderer {
       maxSteps: this.options.maxSteps,
       externalValues: this.options.externalValues,
       globals: this.options.globals,
+      defines: this.options.defines,
       capturedGlobals: this.options.observations?.globals,
       route: this.options.route,
+      page: this.options.observations?.page,
       servedRootDirectory: this.options.rootDirectory,
       assumeOuterProviders,
       reactVersion: this.reactVersion,
@@ -145,7 +147,9 @@ export class StaticRenderer {
       maxRecursionPerComponent: this.options.maxRecursionPerComponent,
       serverComponents: this.options.serverComponents,
     });
-    const mounted = await mountNode(runtime, materializer.toRootNode(rootValue));
+    const mounted = await mountNode(runtime, materializer.toRootNode(rootValue), () =>
+      interpreter.timers.flush(),
+    );
     for (const error of mounted.uncaughtErrors) {
       interpreter.report(
         "render-error",
@@ -235,6 +239,10 @@ export class StaticRenderer {
       );
     }
     const rootCall = rootCalls[0];
+    interpreter.initializeModule(
+      module,
+      module.sideEffectStatements.filter((statement) => statement.end <= rootCall.call.start),
+    );
     const moduleContext = interpreter.createModuleContext(module);
     const context = { ...moduleContext, scope: createScope(moduleContext.scope) };
     for (const statements of rootCall.enclosingStatements) {

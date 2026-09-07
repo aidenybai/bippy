@@ -1,10 +1,10 @@
-import type { SourceLocation, StaticValue } from "../types.js";
+import type { CapturedPageState, SourceLocation, StaticValue } from "../types.js";
 import { NULL_VALUE, UNDEFINED_VALUE, primitiveValue, unknownValue } from "./values.js";
 
 /**
- * Web Storage as seen by a fresh browser profile: the runtime harness captures
- * with an empty origin, so every area starts empty and only writes performed
- * by the interpreted code are observable.
+ * Web Storage as the captured page held it once settled; without a capture,
+ * as a fresh browser profile holds it (empty), so only writes performed by the
+ * interpreted code are observable.
  */
 export interface StorageArea {
   readonly entries: Map<string, string>;
@@ -26,11 +26,14 @@ export const getStorageAreaName = (globalName: string): StorageAreaName | null =
   return isStorageAreaName(areaName) ? areaName : null;
 };
 
-const createStorageArea = (): StorageArea => ({ entries: new Map(), hasUnknownWrites: false });
+const createStorageArea = (entries: Record<string, string> = {}): StorageArea => ({
+  entries: new Map(Object.entries(entries)),
+  hasUnknownWrites: false,
+});
 
-export const createStorageAreas = (): StorageAreas => ({
-  localStorage: createStorageArea(),
-  sessionStorage: createStorageArea(),
+export const createStorageAreas = (page: CapturedPageState | null): StorageAreas => ({
+  localStorage: createStorageArea(page?.localStorage),
+  sessionStorage: createStorageArea(page?.sessionStorage),
 });
 
 const toStorageString = (value: StaticValue | undefined): string | null =>

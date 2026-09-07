@@ -26,11 +26,14 @@ import type {
   TemplateLiteral,
   UnaryExpression,
   UpdateExpression,
+  VariableDeclaration,
+  VariableDeclarator,
 } from "oxc-parser";
 import path from "node:path";
-import type { ModuleGraph } from "../graph/module-graph.js";
+import { isModuleRecord, type ModuleGraph } from "../graph/module-graph.js";
 import { hasExportedName } from "../graph/module-record.js";
 import { getLibraryValue } from "../libraries/index.js";
+import { getHoistedVarNames, getPatternNames } from "../parse/ast-walk.js";
 import { getSourceLocation } from "../parse/source-location.js";
 import {
   FUNCTION_OWN_KEYS,
@@ -42,6 +45,7 @@ import {
 import { toElementType } from "../react/element-type.js";
 import {
   getExternalMember,
+  isReactLikePackage,
   REACT_MEMO_CACHE_SENTINEL_KEY,
   resolveReactApi,
   resolveReactApiMember,
@@ -53,6 +57,7 @@ import type {
   ExternalValueProvider,
   FunctionLikeNode,
   CapturedExportReference,
+  CapturedPageState,
   CapturedValue,
   JsonValue,
   ModuleRecord,
@@ -79,18 +84,25 @@ import {
   isModeledOpaqueMethodName,
   isPromiseMethodName,
 } from "./builtin-calls.js";
-import { collectClassMembers, constructClassInstance } from "./class-component.js";
-import { markCollectionExternallyMutable } from "./collections.js";
+import { collectClassMembers, constructClassInstance, getSuperObject } from "./class-component.js";
+import { getCollectionItems, markCollectionExternallyMutable } from "./collections.js";
 import { getRouteLocationMember } from "./browser-globals.js";
 import { HeapJournal, type MutableHeapValue } from "./heap-journal.js";
-import { createStorageAreas, getStorageAreaName, getStorageLength } from "./web-storage.js";
+import {
+  type StorageAreas,
+  createStorageAreas,
+  getStorageAreaName,
+  getStorageLength,
+} from "./web-storage.js";
 import { type CompiledClass, getCompiledClass } from "./compiled-class.js";
 import type { CallFrame, ContextReader, EvaluationContext } from "./context.js";
 import { NO_PROVIDERS, withScope } from "./context.js";
 import { decodeJsxEntities } from "./jsx-entities.js";
 import { cleanJsxText } from "./jsx-text.js";
 import { describeMacroJsxChildren, getStubExpandJsx } from "./macro-jsx.js";
-import { markEscapedSetters } from "./hooks.js";
+import { forEachEscapedCallable, getMutatedIdentifiers } from "./escapes.js";
+import { EVENT_LISTENER_METHODS } from "./event-listeners.js";
+import { applyClockOperator, TimerQueue } from "./timers.js";
 import { evaluateLoop } from "./loops.js";
 import { applyNarrowing, narrowTest, withNarrowedBinding } from "./narrowing.js";
 import { evaluateReactApiCall } from "./react-calls.js";
@@ -107,26 +119,31 @@ import {
   describeValue,
   FALSE_VALUE,
   falsyCounterpart,
+  getClassPrototype,
   getKnownObjectKeys,
+  getSpreadEntries,
   getListItem,
   getListLength,
   getObjectProperty,
   getPreferredTruthiness,
   getTruthiness,
+  hasDefiniteItems,
+  isIndefiniteItem,
   isNullish,
   listValue,
   mapValue,
   NULL_VALUE,
   capturedValue,
+  jsonValue,
   objectFromRecord,
   objectValue,
   omitObjectKeys,
   partialJsonValue,
   primitiveValue,
+  spreadListItems,
   TRUE_VALUE,
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
-  spreadListItems,
   unknownValue,
 } from "./values.js";
 
@@ -137,10 +154,14 @@ export interface InterpreterOptions {
   externalValues?: ExternalValueProvider;
   /** `window` properties the served page defines; objects are partial (see `partialJsonValue`). */
   globals?: Record<string, JsonValue>;
+  /** Expressions the bundler replaces at build time (`DefinePlugin`, Vite `define`), e.g. `process.env.FLAG`. */
+  defines?: Record<string, JsonValue>;
   /** `window` properties recorded whole from a running page (see `capturedValue`). */
   capturedGlobals?: Record<string, CapturedValue>;
   /** URL path the page is rendered at; `location.pathname`/`search`/`hash` read it. */
   route?: string;
+  /** Cookies and Web Storage the running page held; a fresh profile (empty) when absent. */
+  page?: CapturedPageState;
   /** Directory the page's dev server served `/` from; captured module-export references resolve against it. */
   servedRootDirectory?: string;
   /** The rendered tree may be mounted under providers that are not part of the analysis, so unprovided contexts are uncertain. */
@@ -176,6 +197,8 @@ const DEFAULT_MAX_STEPS = 2_000_000;
 export const STYLED_JSX_SPECIFIER = "styled-jsx/style";
 
 const IN_PROGRESS = Symbol("in-progress");
+
+const MAX_INTERVAL_TICKS = 1_000;
 const FS_URL_PREFIX = "/@fs/";
 
 const OBJECT_PROTOTYPE_METHODS = new Set([
@@ -307,6 +330,9 @@ const isNonProgressingRecursion = (
       frame.args.every((argument, index) => areValuesEquivalent(argument, args[index])),
   );
 
+const describeEscapedMutation = (name: string): string =>
+  `"${name}" is mutated by code the analysis did not run`;
+
 const markExternallyMutable = (value: StaticValue, reason: string): void => {
   if (value.kind !== "object" || markCollectionExternallyMutable(value)) return;
   value.entries.push({ kind: "spread", value: unknownValue(reason) });
@@ -330,14 +356,23 @@ export class Interpreter {
   private readonly route: string | null;
   private readonly servedRootDirectory: string | null;
   private readonly windowGlobals = new Map<string, StaticValue>();
-  readonly storageAreas = createStorageAreas();
+  private readonly defines = new Map<string, StaticValue>();
+  private readonly pageState: CapturedPageState | null;
+  readonly storageAreas: StorageAreas;
+  readonly timers = new TimerQueue();
+  /** Observable changes (state commits, heap mutations) so far; a timer tick that adds none is steady state. */
+  changeCount = 0;
   private readonly heapJournals: HeapJournal[] = [];
   private readonly heapEpochs = new WeakMap<MutableHeapValue, number>();
   private heapEpoch = 0;
   private readonly elementSymbolKey: string;
+  private readonly reactVersion: string | null;
   private remainingSteps: number;
   private readonly moduleScopes = new Map<string, Scope>();
   private readonly moduleValues = new Map<string, Map<string, StaticValue | typeof IN_PROGRESS>>();
+  private readonly initializedModules = new Set<string>();
+  /** Module bindings mutated by closures that escaped before the binding was evaluated. */
+  private readonly escapedMutations = new Map<string, Set<string>>();
   private readonly exportExpressionValues = new WeakMap<
     Expression,
     StaticValue | typeof IN_PROGRESS
@@ -354,6 +389,8 @@ export class Interpreter {
     this.externalValues = options.externalValues ?? null;
     this.project = options.project ?? UNKNOWN_PROJECT;
     this.route = options.route ?? null;
+    this.pageState = options.page ?? null;
+    this.storageAreas = createStorageAreas(this.pageState);
     this.servedRootDirectory = options.servedRootDirectory ?? null;
     for (const [name, json] of Object.entries(options.globals ?? {})) {
       this.windowGlobals.set(name, partialJsonValue(json, `window.${name}`));
@@ -361,7 +398,11 @@ export class Interpreter {
     for (const [name, captured] of Object.entries(options.capturedGlobals ?? {})) {
       this.windowGlobals.set(name, this.captured(captured, `window.${name}`));
     }
-    this.elementSymbolKey = getReactElementSymbolKey(options.reactVersion ?? null);
+    for (const [name, json] of Object.entries(options.defines ?? {})) {
+      this.defines.set(name, jsonValue(json));
+    }
+    this.reactVersion = options.reactVersion ?? null;
+    this.elementSymbolKey = getReactElementSymbolKey(this.reactVersion);
     this.assumeOuterProviders = options.assumeOuterProviders ?? false;
   }
 
@@ -383,6 +424,11 @@ export class Interpreter {
 
   getWindowGlobal(name: string): StaticValue {
     return this.windowGlobals.get(name) ?? unknownValue(`window.${name}`);
+  }
+
+  private getReactVersionExport(packageName: string, exportedName: string): StaticValue | null {
+    if (exportedName !== "version" || this.reactVersion === null) return null;
+    return isReactLikePackage(packageName) ? primitiveValue(this.reactVersion) : null;
   }
 
   report(
@@ -410,6 +456,7 @@ export class Interpreter {
       module,
       scope: this.getModuleScope(module),
       thisValue: module.isCommonJs ? objectValue() : UNDEFINED_VALUE,
+      superBinding: null,
       readContext,
       callStack: [],
       uncertainDepth: 0,
@@ -459,6 +506,7 @@ export class Interpreter {
   evaluateModuleBinding(module: ModuleRecord, name: string): StaticValue | null {
     const binding = module.bindings.get(name);
     if (!binding) return null;
+    this.initializeModule(module);
     const values = this.getModuleValues(module);
     const cached = values.get(name);
     if (cached === IN_PROGRESS) {
@@ -469,15 +517,40 @@ export class Interpreter {
     }
     if (cached) return cached;
     values.set(name, IN_PROGRESS);
-    const context = this.createModuleContext(module);
-    const value = this.evaluateTopLevelBindingValue(module, binding, context);
+    const value = this.evaluateTopLevelBindingValue(
+      module,
+      binding,
+      this.createModuleContext(module),
+    );
     values.set(name, value);
-    const result = this.applyMemberAssignments(module, name, value, context);
-    if (binding.kind === "variable" && module.deferredMutations.has(name)) {
-      markExternallyMutable(result, `"${name}" is mutated outside the rendered code`);
+    if (this.escapedMutations.get(module.filePath)?.has(name)) {
+      markExternallyMutable(value, describeEscapedMutation(name));
     }
-    values.set(name, result);
-    return result;
+    return value;
+  }
+
+  /**
+   * Runs a module's top-level statements once, after those of its static
+   * imports, in ESM evaluation order: `X.displayName = ...`, registry
+   * registrations and polyfills land before anything reads their targets.
+   */
+  initializeModule(
+    module: ModuleRecord,
+    sideEffectStatements: Statement[] = module.sideEffectStatements,
+  ): void {
+    if (this.initializedModules.has(module.filePath)) return;
+    this.initializedModules.add(module.filePath);
+    this.initializeDependencies(module);
+    if (sideEffectStatements.length > 0) {
+      this.evaluateBlock(sideEffectStatements, this.createModuleContext(module), false);
+    }
+  }
+
+  private initializeDependencies(module: ModuleRecord): void {
+    for (const specifier of module.dependencies) {
+      const target = this.graph.resolveImportedModule(specifier, module);
+      if (isModuleRecord(target)) this.initializeModule(target);
+    }
   }
 
   resolvedSymbolToValue(symbol: ResolvedSymbol, nameHint: string | null): StaticValue {
@@ -500,6 +573,8 @@ export class Interpreter {
         if (symbol.imported.kind === "named") {
           const api = resolveReactApi(symbol.packageName, symbol.imported.name, symbol.specifier);
           if (api) return { kind: "react-api", api };
+          const version = this.getReactVersionExport(symbol.packageName, symbol.imported.name);
+          if (version) return version;
         }
         const provided =
           this.externalValues?.(symbol.specifier, importedName) ??
@@ -534,24 +609,6 @@ export class Interpreter {
     const value = this.evaluateExpression(expression, this.createModuleContext(module), nameHint);
     this.exportExpressionValues.set(expression, value);
     return value;
-  }
-
-  private applyMemberAssignments(
-    module: ModuleRecord,
-    name: string,
-    value: StaticValue,
-    context: EvaluationContext,
-  ): StaticValue {
-    let result = value;
-    for (const assignment of module.memberAssignments) {
-      if (assignment.objectName !== name) continue;
-      const { guard } = assignment;
-      if (guard && getTruthiness(this.evaluateExpression(guard.test, context)) !== guard.whenTruthy)
-        continue;
-      const assigned = this.evaluateExpression(assignment.value, context, assignment.propertyName);
-      result = this.assignProperty(result, assignment.propertyName, assigned, context);
-    }
-    return result;
   }
 
   /** What React does with a `ref` on commit: call a callback ref or set `current` on a ref object. */
@@ -711,6 +768,7 @@ export class Interpreter {
       scope: context.scope,
       module: context.module,
       thisValue: node.type === "ArrowFunctionExpression" ? context.thisValue : null,
+      superBinding: node.type === "ArrowFunctionExpression" ? context.superBinding : null,
       name: explicitName ?? nameHint,
       properties: new Map(),
     };
@@ -766,7 +824,11 @@ export class Interpreter {
         member.key,
       );
       if (functionValue.kind !== "function") continue;
-      const bound: StaticFunctionValue = { ...functionValue, thisValue: classValue };
+      const bound: StaticFunctionValue = {
+        ...functionValue,
+        thisValue: classValue,
+        superBinding: { construct: null, parent: body.superValue },
+      };
       classValue.properties.set(
         member.key,
         member.kind === "getter"
@@ -782,17 +844,18 @@ export class Interpreter {
     if (scoped) return scoped;
     const moduleValue = this.evaluateModuleBinding(context.module, name);
     if (moduleValue) return moduleValue;
-    const builtin = this.getGlobal(name);
-    if (builtin) return builtin;
     if (context.module.isCommonJs) {
       const exportsValue: StaticValue = { kind: "namespace", module: context.module };
       if (name === "exports") return exportsValue;
       if (name === "module") return objectFromRecord({ exports: exportsValue });
     }
-    return unknownValue(`unbound identifier "${name}"`);
+    return this.getGlobal(name) ?? unknownValue(`unbound identifier "${name}"`);
   }
 
   private getGlobal(name: string): StaticValue | null {
+    const defined = this.defines.get(name);
+    if (defined) return defined;
+    if (name === "document.cookie" && this.pageState) return primitiveValue(this.pageState.cookie);
     return getRouteLocationMember(this.route, name) ?? getBuiltinGlobal(name);
   }
 
@@ -853,12 +916,13 @@ export class Interpreter {
         return this.evaluateExpression(node.expression, context, nameHint);
       case "ChainExpression":
         return this.evaluateExpression(node.expression, context, nameHint);
-      case "SequenceExpression":
-        return this.evaluateExpression(
-          node.expressions[node.expressions.length - 1],
-          context,
-          nameHint,
-        );
+      case "SequenceExpression": {
+        const lastIndex = node.expressions.length - 1;
+        for (const expression of node.expressions.slice(0, lastIndex)) {
+          this.evaluateExpression(expression, context);
+        }
+        return this.evaluateExpression(node.expressions[lastIndex], context, nameHint);
+      }
       case "AwaitExpression": {
         const awaited = this.evaluateExpression(node.argument, context, nameHint);
         if (context.hooks && (awaited.kind === "unknown" || awaited.kind === "external"))
@@ -930,10 +994,13 @@ export class Interpreter {
           templateArgumentNames,
         });
       }
-      case "MetaProperty":
-        return unknownValue(`${node.meta.name}.${node.property.name}`, location);
-      case "YieldExpression":
+      case "MetaProperty": {
+        const name = `${node.meta.name}.${node.property.name}`;
+        return this.getGlobal(name) ?? unknownValue(name, location);
+      }
       case "Super":
+        return getSuperObject(this, context, location);
+      case "YieldExpression":
       case "V8IntrinsicExpression":
         return unknownValue(`unsupported expression ${node.type}`, location);
     }
@@ -967,7 +1034,12 @@ export class Interpreter {
       }
       if (element.type === "SpreadElement") {
         const spread = this.evaluateExpression(element.argument, context);
-        items.push(...spreadListItems(spread, this.locate(context.module, element)));
+        items.push(
+          ...spreadListItems(
+            getCollectionItems(spread) ?? spread,
+            this.locate(context.module, element),
+          ),
+        );
         continue;
       }
       items.push(this.evaluateExpression(element, context));
@@ -982,6 +1054,7 @@ export class Interpreter {
 
   /** Mutating a value that predates an enclosing fork must be undone for the fork's other paths. */
   recordHeapMutation(target: MutableHeapValue): void {
+    this.changeCount++;
     const epoch = this.heapEpochs.get(target) ?? 0;
     for (let index = this.heapJournals.length - 1; index >= 0; index--) {
       const journal = this.heapJournals[index];
@@ -1014,6 +1087,11 @@ export class Interpreter {
     for (const property of node.properties) {
       if (property.type === "SpreadElement") {
         const spread = this.evaluateExpression(property.argument, context);
+        const copied = getSpreadEntries(spread);
+        if (copied) {
+          entries.push(...copied);
+          continue;
+        }
         entries.push({
           kind: "spread",
           value: spread.kind === "namespace" ? this.materializeNamespace(spread.module) : spread,
@@ -1534,6 +1612,10 @@ export class Interpreter {
         }
         if (object.derived && isModeledOpaqueMethodName(key))
           return { kind: "method", receiver: object, name: key };
+        if (object.importedName === "*" || object.importedName === "default") {
+          const version = this.getReactVersionExport(object.packageName, key);
+          if (version) return version;
+        }
         return getExternalMember(object, key);
       case "namespace":
         if (isPromiseMethodName(key)) return { kind: "method", receiver: object, name: key };
@@ -1569,6 +1651,8 @@ export class Interpreter {
       case "class": {
         const property = object.properties.get(key);
         if (property) return property;
+        if (key === "__proto__" && object.kind === "class")
+          return getClassPrototype(object, location);
         if (key === "displayName") return UNDEFINED_VALUE;
         if (key === "name") return object.name ? primitiveValue(object.name) : primitiveValue("");
         return unknownValue(`${describeValue(object)}.${key}`, location);
@@ -1595,6 +1679,7 @@ export class Interpreter {
           return primitiveValue(object.tagName.toUpperCase());
         if (key === "localName") return primitiveValue(object.tagName);
         if (key === "nodeType") return primitiveValue(1);
+        if (EVENT_LISTENER_METHODS.has(key)) return { kind: "method", receiver: object, name: key };
         return unknownValue(`property "${key}" of <${object.tagName}> node`, location);
       case "unknown":
         return unknownValue(object.reason, location);
@@ -1605,7 +1690,8 @@ export class Interpreter {
     const values: StaticValue[] = [];
     for (const argument of args) {
       if (argument.type === "SpreadElement") {
-        const spread = this.evaluateExpression(argument.argument, context);
+        const evaluated = this.evaluateExpression(argument.argument, context);
+        const spread = getCollectionItems(evaluated) ?? evaluated;
         if (spread.kind === "list" && spread.items.every((item) => item.kind !== "repeat")) {
           values.push(...spread.items);
         } else {
@@ -1629,7 +1715,7 @@ export class Interpreter {
     isRequire: boolean,
   ): StaticValue {
     const target = this.graph.resolveImportedModule(specifier, context.module);
-    if ("bindings" in target) {
+    if (isModuleRecord(target)) {
       if (isRequire && target.replacesModuleExports) {
         return this.evaluateModuleExport(target, "default");
       }
@@ -1670,11 +1756,15 @@ export class Interpreter {
     const requiredSpecifier = this.getRequireSpecifier(node, context);
     if (requiredSpecifier !== null)
       return this.importModule(requiredSpecifier, context, location, true);
+    if (node.callee.type === "Super") {
+      context.superBinding?.construct?.(this.evaluateArguments(node.arguments, context));
+      return UNDEFINED_VALUE;
+    }
     let callee: StaticValue;
     let thisValue: StaticValue | null = null;
     if (node.callee.type === "MemberExpression") {
       const receiver = this.evaluateExpression(node.callee.object, context);
-      thisValue = receiver;
+      thisValue = node.callee.object.type === "Super" ? context.thisValue : receiver;
       if (node.callee.property.type === "PrivateIdentifier") {
         callee = this.getProperty(
           receiver,
@@ -1786,7 +1876,42 @@ export class Interpreter {
   }
 
   private markEscapes(args: StaticValue[]): void {
-    for (const argument of args) markEscapedSetters(argument);
+    for (const argument of args) this.markEscaped(argument);
+  }
+
+  /**
+   * `value` flows into code the evaluator does not follow (external calls,
+   * timers, opaque props): setters it reaches may fire after mount and the
+   * containers its closures mutate may hold entries the analysis never saw.
+   */
+  markEscaped(value: StaticValue): void {
+    forEachEscapedCallable(value, (callable) => {
+      if (callable.kind === "native-function") callable.onEscape?.();
+      else this.markEscapedMutations(callable);
+    });
+  }
+
+  private markEscapedMutations(functionValue: StaticFunctionValue): void {
+    const { module } = functionValue;
+    for (const name of getMutatedIdentifiers(functionValue.node)) {
+      const scoped = lookupScope(functionValue.scope, name);
+      if (scoped) {
+        markExternallyMutable(scoped, describeEscapedMutation(name));
+        continue;
+      }
+      if (module.bindings.get(name)?.kind !== "variable") continue;
+      const evaluated = this.getModuleValues(module).get(name);
+      if (evaluated && evaluated !== IN_PROGRESS) {
+        markExternallyMutable(evaluated, describeEscapedMutation(name));
+        continue;
+      }
+      let names = this.escapedMutations.get(module.filePath);
+      if (!names) {
+        names = new Set();
+        this.escapedMutations.set(module.filePath, names);
+      }
+      names.add(name);
+    }
   }
 
   private evaluateNewExpression(node: NewExpression, context: EvaluationContext): StaticValue {
@@ -1815,6 +1940,31 @@ export class Interpreter {
     }
     this.markEscapes(args);
     return unknownValue(`new ${describeValue(callee)}`, location);
+  }
+
+  /**
+   * Ticks a repeating interval at the quiescent point the snapshot is taken
+   * until it clears itself or a tick changes nothing; an interval still making
+   * changes after that leaves the state it touches uncertain.
+   */
+  runIntervalTicks(
+    callback: StaticValue,
+    handle: StaticValue,
+    context: EvaluationContext,
+    location: SourceLocation | null,
+  ): void {
+    const wasSettled = this.timers.isClockSettled;
+    this.timers.isClockSettled = true;
+    try {
+      for (let tick = 0; tick < MAX_INTERVAL_TICKS; tick++) {
+        const changesBefore = this.changeCount;
+        this.callValue(callback, [], context, location);
+        if (this.timers.isCleared(handle) || this.changeCount === changesBefore) return;
+      }
+    } finally {
+      this.timers.isClockSettled = wasSettled;
+    }
+    this.markEscaped(callback);
   }
 
   /** Calls a promise continuation: updates it queues land after the captured commit. */
@@ -1900,6 +2050,7 @@ export class Interpreter {
         functionValue.node.type === "ArrowFunctionExpression"
           ? functionValue.thisValue
           : (options.thisValue ?? null),
+      superBinding: functionValue.superBinding,
       readContext: context.readContext,
       callStack: [...callStack, { node: functionValue.node, scope: functionValue.scope, args }],
       uncertainDepth: context.uncertainDepth,
@@ -1915,6 +2066,9 @@ export class Interpreter {
     if (!body) return UNDEFINED_VALUE;
     if (body.type !== "BlockStatement") {
       return this.evaluateExpression(body, callContext);
+    }
+    for (const name of getHoistedVarNames(body.body)) {
+      if (!scope.bindings.has(name)) declareInScope(scope, name, UNDEFINED_VALUE);
     }
     const outcome = this.evaluateBlock(body.body, callContext, false);
     return outcomeToReturnValue(outcome, location);
@@ -1959,6 +2113,50 @@ export class Interpreter {
       const pattern = param.type === "TSParameterProperty" ? param.parameter : param;
       this.bindPattern(pattern, args[index] ?? UNDEFINED_VALUE, scope, context);
     });
+  }
+
+  /** `var` bindings live in the hoisted function scope; `let`/`const` in the current block. */
+  bindDeclarator(
+    kind: VariableDeclaration["kind"],
+    pattern: BindingPattern,
+    value: StaticValue,
+    context: EvaluationContext,
+  ): void {
+    this.bindPattern(
+      pattern,
+      value,
+      this.getDeclarationScope(kind, pattern, context.scope),
+      context,
+    );
+  }
+
+  evaluateDeclarator(
+    declaration: VariableDeclaration,
+    declarator: VariableDeclarator,
+    context: EvaluationContext,
+  ): void {
+    const nameHint = declarator.id.type === "Identifier" ? declarator.id.name : null;
+    const scope = this.getDeclarationScope(declaration.kind, declarator.id, context.scope);
+    if (declarator.init) {
+      this.bindPattern(
+        declarator.id,
+        this.evaluateExpression(declarator.init, context, nameHint),
+        scope,
+        context,
+      );
+    } else if (declaration.kind !== "var" || scope === context.scope) {
+      this.bindPattern(declarator.id, UNDEFINED_VALUE, scope, context);
+    }
+  }
+
+  private getDeclarationScope(
+    kind: VariableDeclaration["kind"],
+    pattern: BindingPattern,
+    scope: Scope,
+  ): Scope {
+    if (kind !== "var") return scope;
+    const [firstName] = getPatternNames(pattern);
+    return (firstName === undefined ? null : findOwningScope(scope, firstName)) ?? scope;
   }
 
   bindPattern(
@@ -2125,11 +2323,7 @@ export class Interpreter {
           return jumpOutcome("continue", statement.label?.name ?? null);
         case "VariableDeclaration":
           for (const declarator of statement.declarations) {
-            const nameHint = declarator.id.type === "Identifier" ? declarator.id.name : null;
-            const value = declarator.init
-              ? this.evaluateExpression(declarator.init, context, nameHint)
-              : UNDEFINED_VALUE;
-            this.bindPattern(declarator.id, value, context.scope, context);
+            this.evaluateDeclarator(statement, declarator, context);
           }
           break;
         case "FunctionDeclaration":
@@ -2601,6 +2795,14 @@ const hasProperty = (key: StaticValue, target: StaticValue): StaticValue | null 
       if (keys?.includes(name)) return TRUE_VALUE;
       return keys && !OBJECT_PROTOTYPE_METHODS.has(name) ? FALSE_VALUE : null;
     }
+    case "list": {
+      if (name in Array.prototype) return TRUE_VALUE;
+      const index = Number(name);
+      if (!Number.isInteger(index) || index < 0) return FALSE_VALUE;
+      const isReachable = target.items.slice(0, index + 1).every((item) => !isIndefiniteItem(item));
+      if (index < target.items.length && isReachable) return TRUE_VALUE;
+      return hasDefiniteItems(target) ? FALSE_VALUE : null;
+    }
     case "component-reference":
       return hasComponentProperty(target.type, name);
     case "primitive":
@@ -2661,6 +2863,8 @@ const applyBinaryOperator = (
   }
   const equality = compareEquality(operator, left, right);
   if (equality) return equality;
+  const timed = applyClockOperator(operator, left, right);
+  if (timed) return timed;
   switch (operator) {
     case "==":
     case "!=":

@@ -177,8 +177,8 @@ commands, URL, static target and notes; `corpus/results.json` holds the latest m
 Clones and captures live under the ignored `.corpus/`. Every entry renders statically; runtime
 capture runs where a dev server can start in this environment.
 
-Live-verified so far: `react-router-templates`, `sonner`, `documenso` (exact); `sentry`,
-`posthog`, `nextjs-examples` (partial at 100% strict coverage — every runtime fiber is matched
+Live-verified so far: `react-router-templates`, `sonner`, `documenso`, `sentry`, `posthog`
+(exact); `nextjs-examples` (partial at 100% strict coverage — every runtime fiber is matched
 by a concrete static fiber, but branches or repeats were consumed); `cal-diy`,
 `bulletproof-react`, `puck`, `redux-toolkit`, `lexical`, `tanstack-query`, `graphiql`,
 `react-admin`, `tanstack-router` (partial — opaque third-party providers or dynamic data cut

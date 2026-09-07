@@ -17,16 +17,18 @@ import {
   SimpleMemoComponentTag,
 } from "../work-tags.js";
 import { getBrowserGlobalMember, isBrowserGlobalName } from "./browser-globals.js";
+import { callHotModuleMethod, getBundlerGlobal, isEnvironmentObject } from "./bundler-globals.js";
+import { callEventTargetMethod } from "./event-listeners.js";
 import { mediaQueryListValue } from "./media-query.js";
 import { callStorageMethod, getStorageAreaName } from "./web-storage.js";
 import type { EvaluationContext } from "./context.js";
-import { createCollectionValue, createPromiseValue } from "./collections.js";
-import { markEscapedSetters } from "./hooks.js";
+import { createCollectionValue, createPromiseValue, getCollectionItems } from "./collections.js";
 import type { Interpreter } from "./interpreter.js";
 import {
   branchValue,
   describeValue,
   FALSE_VALUE,
+  getClassPrototype,
   getKnownObjectKeys,
   getListLength,
   getObjectProperty,
@@ -98,6 +100,7 @@ const GLOBAL_NAMES = new Set([
   "localStorage",
   "sessionStorage",
   "process",
+  "performance",
   "parseInt",
   "parseFloat",
   "isNaN",
@@ -113,6 +116,8 @@ const GLOBAL_NAMES = new Set([
   "setImmediate",
   "requestAnimationFrame",
   "requestIdleCallback",
+  "cancelAnimationFrame",
+  "cancelIdleCallback",
   "fetch",
   "structuredClone",
   "queueMicrotask",
@@ -148,9 +153,6 @@ const STRING_RESULT_METHODS = new Set([
   "toDateString",
   "format",
 ]);
-
-/** Static output is compared against dev servers and test renderers, which both bundle with a development `NODE_ENV`. */
-const DEV_SERVER_NODE_ENV = "development";
 
 const BOOLEAN_RESULT_METHODS = new Set([
   "includes",
@@ -234,7 +236,7 @@ export const getGlobalTypeof = (
   if (BROWSER_GLOBALS.has(name)) return environment === "server" ? "undefined" : "object";
   if (CONSTRUCTOR_GLOBALS.has(name)) return "function";
   if (name === "Math" || name === "JSON" || name === "Intl" || name === "Reflect") return "object";
-  if (name === "globalThis" || name === "console") return "object";
+  if (name === "globalThis" || name === "console" || name === "module") return "object";
   return null;
 };
 
@@ -294,7 +296,7 @@ export const getTypeofValue = (
       const componentTypeof = getComponentTypeof(value.type);
       return componentTypeof
         ? primitiveValue(componentTypeof)
-        : unknownPrimitiveValue("string", "typeof unknown");
+        : unknownPrimitiveValue("string", `typeof ${describeValue(value)}`);
     }
     case "proxy":
       return getTypeofValue(value.target, environment);
@@ -311,29 +313,23 @@ export const getTypeofValue = (
     case "external":
       return value.importedName === "*" && !value.derived
         ? primitiveValue("object")
-        : unknownPrimitiveValue("string", "typeof unknown");
+        : unknownPrimitiveValue("string", `typeof ${describeValue(value)}`);
     case "global": {
       const globalType = getGlobalTypeof(value.name, environment);
       return globalType
         ? primitiveValue(globalType)
-        : unknownPrimitiveValue("string", "typeof unknown");
+        : unknownPrimitiveValue("string", `typeof ${describeValue(value)}`);
     }
     default:
-      return unknownPrimitiveValue("string", "typeof unknown");
+      return unknownPrimitiveValue("string", `typeof ${describeValue(value)}`);
   }
 };
 
 export const getBuiltinGlobal = (name: string): StaticValue | null => {
   if (name === "NaN") return primitiveValue(Number.NaN);
   if (name === "Infinity") return primitiveValue(Number.POSITIVE_INFINITY);
-  if (name === "process.env.NODE_ENV") return primitiveValue(DEV_SERVER_NODE_ENV);
-  if (name === "process.env") return { kind: "global", name };
-  if (name.startsWith("process.env.")) {
-    // Bundlers inline what the build environment set; an arbitrary variable is
-    // usually unset, so `undefined` is the preferred alternative.
-    const reason = `environment variable ${name.slice("process.env.".length)}`;
-    return branchValue([UNDEFINED_VALUE, unknownPrimitiveValue("string", reason)], reason, null);
-  }
+  const bundlerGlobal = getBundlerGlobal(name);
+  if (bundlerGlobal) return bundlerGlobal;
   if (name.startsWith("Math.") && name !== "Math.max" && name !== "Math.min") {
     const constant = name.slice("Math.".length);
     if (constant === "PI") return primitiveValue(Math.PI);
@@ -522,7 +518,8 @@ const callGlobal = (
       }
       return FALSE_VALUE;
     case "Array.from": {
-      const source = first?.kind === "object" ? arrayLikeToList(first) : first;
+      const source =
+        first?.kind === "object" ? (getCollectionItems(first) ?? arrayLikeToList(first)) : first;
       if (source?.kind === "list" || source?.kind === "repeat") {
         if (isCallable(second)) return mapList(interpreter, source, second, context);
         return source;
@@ -558,7 +555,12 @@ const callGlobal = (
       return objectValue(args.map((argument) => ({ kind: "spread", value: argument })));
     case "Object.freeze":
     case "Object.seal":
+    case "Object.setPrototypeOf":
       return first ?? UNDEFINED_VALUE;
+    case "Object.getPrototypeOf":
+      return first?.kind === "class"
+        ? getClassPrototype(first, location)
+        : unknownValue("Object.getPrototypeOf on a dynamic target", location);
     case "Object.defineProperty": {
       const descriptor = args[2];
       if (!first || second?.kind !== "primitive" || descriptor?.kind !== "object") {
@@ -609,16 +611,36 @@ const callGlobal = (
     case "setImmediate":
     case "queueMicrotask":
     case "requestAnimationFrame":
-    case "requestIdleCallback":
+    case "requestIdleCallback": {
       // The runtime snapshot is taken once short timers settled; longer or dynamic delays may not have fired.
+      const handle = interpreter.timers.createHandle(name);
       if (first) {
-        if (isSettledDelay(second)) interpreter.callValue(first, [], context, location);
-        else markEscapedSetters(first);
+        if (isSettledDelay(second)) {
+          interpreter.timers.schedule(handle, () =>
+            interpreter.callValue(first, [], context, location),
+          );
+        } else interpreter.markEscaped(first);
       }
-      return unknownValue(`${name} handle`, location);
-    case "setInterval":
-      if (first) markEscapedSetters(first);
-      return unknownValue(`${name} handle`, location);
+      return handle;
+    }
+    case "setInterval": {
+      const handle = interpreter.timers.createHandle(name);
+      if (first) {
+        interpreter.timers.schedule(handle, () =>
+          interpreter.runIntervalTicks(first, handle, context, location),
+        );
+      }
+      return handle;
+    }
+    case "clearTimeout":
+    case "clearInterval":
+    case "cancelAnimationFrame":
+    case "cancelIdleCallback":
+      interpreter.timers.clear(first);
+      return UNDEFINED_VALUE;
+    case "Date.now":
+    case "performance.now":
+      return interpreter.timers.readClock(name);
     case "console.log":
     case "console.warn":
     case "console.error":
@@ -1045,7 +1067,7 @@ export const evaluateBuiltinCall = (
     }
     if (!isCallable(first) && !isCallable(second)) return receiver;
     if (receiver.kind === "unknown" || receiver.kind === "external") {
-      for (const callback of args) markEscapedSetters(callback);
+      for (const callback of args) interpreter.markEscaped(callback);
     }
     return receiver;
   }
@@ -1078,9 +1100,14 @@ export const evaluateBuiltinCall = (
       : unknownPrimitiveValue("boolean", `${name} of an object with dynamic spreads`);
   }
 
+  const listened = callEventTargetMethod(interpreter, receiver, name, args);
+  if (listened) return listened;
+
   if (receiver.kind === "global") {
     if ((receiver.name === "window" || receiver.name === "globalThis") && name === "matchMedia")
       return mediaQueryListValue(first);
+    const hotModuleResult = callHotModuleMethod(receiver, name);
+    if (hotModuleResult) return hotModuleResult;
     const storageAreaName = getStorageAreaName(receiver.name);
     if (storageAreaName !== null) {
       const stored = callStorageMethod(
@@ -1136,8 +1163,8 @@ export const evaluateBuiltinCall = (
 
   if (receiver.kind === "regexp") return callRegExpMethod(receiver, name, args, location);
 
-  if (receiver.kind === "global" && receiver.name === "process.env") {
-    return unknownPrimitiveValue("string", "process.env access");
+  if (receiver.kind === "global" && isEnvironmentObject(receiver.name)) {
+    return unknownPrimitiveValue("string", `${receiver.name} access`);
   }
 
   if (name === "map" && isCallable(first)) return mapList(interpreter, receiver, first, context);

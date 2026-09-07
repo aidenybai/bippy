@@ -112,18 +112,30 @@ class StaticCollection {
     this.hasDynamicKeys = false;
   }
 
+  /** Entries in insertion order; code the analysis did not see may have appended more. */
   project(select: (entry: CollectionEntry) => StaticValue): StaticValue {
-    if (this.isExternallyMutable)
-      return unknownValue(`${this.kind} mutated outside the rendered code`, this.location);
     if (this.hasDynamicKeys) return unknownValue(`${this.kind} with dynamic keys`, this.location);
-    return listValue(this.entries.map(select));
+    const items = this.entries.map(select);
+    if (this.isExternallyMutable) {
+      items.push({
+        kind: "repeat",
+        item: unknownValue(`${this.kind} mutated outside the rendered code`, this.location),
+        location: this.location,
+      });
+    }
+    return listValue(items);
+  }
+
+  iterate(): StaticValue {
+    return this.project((entry) =>
+      this.kind === "Map" ? listValue([entry.key, entry.value]) : entry.value,
+    );
   }
 
   size(): StaticValue {
-    const values = this.project((entry) => entry.value);
-    return values.kind === "list"
-      ? getListLength(values)
-      : unknownPrimitiveValue("number", `${this.kind}.size`);
+    return this.hasDynamicKeys || this.isExternallyMutable
+      ? unknownPrimitiveValue("number", `${this.kind}.size`)
+      : getListLength(listValue(this.entries.map((entry) => entry.value)));
   }
 }
 
@@ -137,8 +149,9 @@ const seedCollection = (
     (initial.kind === "primitive" && (initial.value === null || initial.value === undefined))
   )
     return true;
-  if (initial.kind !== "list") return false;
-  for (const item of initial.items) {
+  const items = getCollectionItems(initial) ?? initial;
+  if (items.kind !== "list") return false;
+  for (const item of items.items) {
     if (kind === "Set") {
       collection.set(item, item);
       continue;
@@ -150,6 +163,10 @@ const seedCollection = (
 };
 
 const collectionsByValue = new WeakMap<StaticObjectValue, StaticCollection>();
+
+/** What `for..of`, spread and `Array.from` see: `[key, value]` pairs for a `Map`, values for a `Set`; null for other values. */
+export const getCollectionItems = (value: StaticValue): StaticValue | null =>
+  (value.kind === "object" && collectionsByValue.get(value)?.iterate()) || null;
 
 export const markCollectionExternallyMutable = (value: StaticObjectValue): boolean => {
   const collection = collectionsByValue.get(value);
@@ -191,7 +208,20 @@ export const createCollectionValue = (
     entries: nativeMethod("entries", () =>
       collection.project((entry) => listValue([entry.key, entry.value])),
     ),
-    forEach: nativeMethod("forEach", () => unknownValue(`${kind}.forEach()`, location)),
+    forEach: {
+      kind: "native-function",
+      name: "forEach",
+      call: ([callback], tools) => {
+        const entries = collection.project((entry) => listValue([entry.value, entry.key, self]));
+        if (entries.kind !== "list" || !callback)
+          return unknownValue(`${kind}.forEach()`, location);
+        for (const entry of entries.items) {
+          if (entry.kind === "list") tools.call(callback, entry.items);
+          else tools.call(callback, [unknownValue(`${kind}.forEach() entry`, location), self]);
+        }
+        return UNDEFINED_VALUE;
+      },
+    },
   };
   methods[kind === "Map" ? "set" : "add"] = withSizeRefresh(
     kind === "Map" ? "set" : "add",

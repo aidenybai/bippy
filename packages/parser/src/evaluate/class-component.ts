@@ -1,23 +1,35 @@
-import type { Class, ClassElement, Node } from "oxc-parser";
-import { someNode } from "../parse/ast-walk.js";
+import type { Class, ClassElement } from "oxc-parser";
 import type {
   ClassBody,
+  ClassFunctionMember,
   ClassMember,
+  SourceLocation,
   StaticClassValue,
   StaticFunctionValue,
+  StaticNativeFunctionValue,
   StaticObjectValue,
   StaticValue,
+  SuperBinding,
 } from "../types.js";
 import type { EvaluationContext } from "./context.js";
+import {
+  applyPendingState,
+  createHookFrame,
+  type HookFrame,
+  nextStateCell,
+  queueStateUpdate,
+  type StateCell,
+} from "./hooks.js";
 import type { Interpreter } from "./interpreter.js";
 import { createScope } from "./scope.js";
 import {
-  branchValue,
   describeValue,
   getObjectProperty,
+  isNullish,
   NULL_VALUE,
   objectFromRecord,
   objectValue,
+  setObjectProperty,
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
   unknownValue,
@@ -54,33 +66,6 @@ export const collectClassMembers = (node: Class): ClassMember[] => {
   return members;
 };
 
-const memberNode = (member: ClassMember): Node | null =>
-  member.kind === "field" ? member.value : member.functionNode;
-
-/**
- * A class whose body never calls `this.setState` (or derives state from props)
- * renders with exactly the state its constructor/fields produced.
- */
-const mayUpdateState = (chain: StaticClassValue[]): boolean =>
-  chain.some((current) =>
-    current.body.members.some((member) => {
-      if (member.isStatic) return member.key === "getDerivedStateFromProps";
-      if (member.key === "componentDidCatch") return false;
-      const node = memberNode(member);
-      return (
-        node !== null &&
-        someNode(
-          node,
-          (candidate) =>
-            candidate.type === "MemberExpression" &&
-            candidate.object.type === "ThisExpression" &&
-            candidate.property.type === "Identifier" &&
-            (candidate.property.name === "setState" || candidate.property.name === "forceUpdate"),
-        )
-      );
-    }),
-  );
-
 export const isErrorBoundaryClass = (body: ClassBody): boolean =>
   body.members.some(
     (member) =>
@@ -112,23 +97,41 @@ interface InstanceMembers {
   getters: InstanceGetter[];
 }
 
+const methodContextFor = (
+  classValue: StaticClassValue,
+  context: EvaluationContext,
+  thisValue: StaticValue,
+): EvaluationContext => ({
+  ...context,
+  module: classValue.module,
+  scope: classValue.scope,
+  thisValue,
+  superBinding: { construct: null, parent: classValue.body.superValue },
+});
+
+/** Binds `classValue`'s own prototype members onto `target` with `this` as the receiver. */
 const bindMethods = (
   interpreter: Interpreter,
   classValue: StaticClassValue,
-  instance: StaticObjectValue,
+  target: StaticObjectValue,
   methodContext: EvaluationContext,
   seen: Set<string>,
 ): InstanceMembers => {
   const members: InstanceMembers = { constructor: null, fields: [], getters: [] };
+  const bind = (member: ClassFunctionMember, name: string): StaticFunctionValue | null => {
+    const functionValue = interpreter.createFunctionValue(member.functionNode, methodContext, name);
+    return functionValue.kind === "function"
+      ? {
+          ...functionValue,
+          thisValue: methodContext.thisValue,
+          superBinding: methodContext.superBinding,
+        }
+      : null;
+  };
   for (const member of classValue.body.members) {
     if (member.isStatic) continue;
     if (member.kind === "constructor") {
-      const constructorValue = interpreter.createFunctionValue(
-        member.functionNode,
-        methodContext,
-        "constructor",
-      );
-      if (constructorValue.kind === "function") members.constructor = constructorValue;
+      members.constructor = bind(member, "constructor");
       continue;
     }
     if (seen.has(member.key)) continue;
@@ -137,20 +140,44 @@ const bindMethods = (
       members.fields.push(member);
       continue;
     }
-    const methodValue = interpreter.createFunctionValue(
-      member.functionNode,
-      methodContext,
-      member.key,
-    );
-    if (methodValue.kind !== "function") continue;
-    const boundMethod: StaticFunctionValue = { ...methodValue, thisValue: instance };
+    const boundMethod = bind(member, member.key);
+    if (!boundMethod) continue;
     if (member.kind === "getter") {
       members.getters.push({ key: member.key, functionValue: boundMethod });
     } else {
-      instance.entries.push({ kind: "property", key: member.key, value: boundMethod });
+      target.entries.push({ kind: "property", key: member.key, value: boundMethod });
     }
   }
   return members;
+};
+
+/**
+ * `super` as a value: in a static member the parent class itself, in an instance
+ * member the parent's prototype methods bound to the current `this`.
+ */
+export const getSuperObject = (
+  interpreter: Interpreter,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): StaticValue => {
+  const parent = context.superBinding?.parent;
+  if (!parent) return unknownValue("super outside a derived class", location);
+  const thisValue = context.thisValue;
+  if (parent.kind !== "class" || !thisValue || thisValue.kind === "class") return parent;
+  const prototype = objectFromRecord({});
+  const seen = new Set<string>();
+  for (const current of collectClassChain(parent)) {
+    const methodContext = methodContextFor(current, context, thisValue);
+    const members = bindMethods(interpreter, current, prototype, methodContext, seen);
+    for (const getter of members.getters) {
+      prototype.entries.push({
+        kind: "property",
+        key: getter.key,
+        value: interpreter.callFunction(getter.functionValue, [], methodContext, { thisValue }),
+      });
+    }
+  }
+  return prototype;
 };
 
 const caughtErrorValue = (): StaticValue =>
@@ -160,33 +187,147 @@ const caughtErrorValue = (): StaticValue =>
     stack: unknownPrimitiveValue("string", "caught error stack"),
   });
 
-/**
- * `static getDerivedStateFromError(error)` from the nearest class in the chain
- * that defines it; null when the boundary only has `componentDidCatch`.
- */
-const deriveStateFromError = (
-  interpreter: Interpreter,
-  chain: StaticClassValue[],
-  context: EvaluationContext,
-): StaticValue | null => {
+/** The nearest static method of `name` up the class chain. */
+const getStaticMethod = (chain: StaticClassValue[], name: string): StaticFunctionValue | null => {
   for (const current of chain) {
-    const derive = current.properties.get("getDerivedStateFromError");
-    if (derive?.kind === "function") {
-      return interpreter.callFunction(derive, [caughtErrorValue()], context, {
-        thisValue: current,
-      });
-    }
+    const method = current.properties.get(name);
+    if (method?.kind === "function") return method;
   }
   return null;
 };
 
+const getInstanceMethod = (
+  instance: StaticObjectValue,
+  name: string,
+): StaticFunctionValue | null => {
+  const method = getObjectProperty(instance, name);
+  return method.kind === "function" ? method : null;
+};
+
+/** `assign({}, prevState, partialState)` of `getStateFromUpdate`; null and undefined leave the state as is. */
+const mergeState = (state: StaticValue, partialState: StaticValue): StaticValue =>
+  isNullish(partialState) === true
+    ? state
+    : objectValue([
+        { kind: "spread", value: state },
+        { kind: "spread", value: partialState },
+      ]);
+
+export interface ClassInstanceRecord {
+  instance: StaticObjectValue;
+  chain: StaticClassValue[];
+  stateCell: StateCell;
+  isMounted: boolean;
+  committedProps: StaticValue;
+  committedState: StaticValue;
+  pendingCallbacks: StaticValue[];
+}
+
+const classInstances = new WeakMap<HookFrame, ClassInstanceRecord>();
+
 /**
- * Builds the `this` a class component instance observes in `render()`: props,
- * fields and methods from the base classes down, then whatever the constructors
- * assigned. With `caughtError` the instance renders as React re-renders an
- * error boundary: with `getDerivedStateFromError` merged into state, or with
- * null children when the class only defines `componentDidCatch`
- * (`finishClassComponent`).
+ * `constructClassInstance` + `adoptClassInstance`: builds the `this` a class
+ * component observes (props, fields and methods from the base classes down,
+ * then whatever the constructors assigned) and installs the updater methods.
+ * `setState` queues a merge into the instance's single state cell, so an
+ * update from a lifecycle, a store listener or an escaped handler re-renders
+ * exactly like a hook update would.
+ */
+const mountClassInstance = (
+  interpreter: Interpreter,
+  classValue: StaticClassValue,
+  props: StaticValue,
+  context: EvaluationContext,
+  frame: HookFrame,
+): ClassInstanceRecord => {
+  const instance = objectFromRecord({
+    props,
+    state: UNDEFINED_VALUE,
+    context: unknownValue("legacy class context"),
+    refs: objectFromRecord({}),
+  });
+  const chain = initializeInstance(interpreter, classValue, instance, [props], context);
+  const initialState = getObjectProperty(instance, "state");
+  const stateCell = nextStateCell(frame, `${classValue.name ?? "class"} state`, initialState);
+  const record: ClassInstanceRecord = {
+    instance,
+    chain,
+    stateCell,
+    isMounted: false,
+    committedProps: props,
+    committedState: initialState,
+    pendingCallbacks: [],
+  };
+  const setState: StaticNativeFunctionValue = {
+    kind: "native-function",
+    name: "setState",
+    call: ([partialState, callback], tools) => {
+      const previousState = stateCell.next ?? stateCell.current;
+      const resolvedPartial =
+        partialState?.kind === "function" || partialState?.kind === "native-function"
+          ? tools.call(partialState, [previousState, getObjectProperty(instance, "props")])
+          : (partialState ?? UNDEFINED_VALUE);
+      if (callback) record.pendingCallbacks.push(callback);
+      queueStateUpdate(frame, stateCell, mergeState(previousState, resolvedPartial));
+      return UNDEFINED_VALUE;
+    },
+    onEscape: () => {
+      stateCell.isEscaped = true;
+    },
+  };
+  setObjectProperty(instance, "setState", setState);
+  setObjectProperty(instance, "forceUpdate", {
+    kind: "native-function",
+    name: "forceUpdate",
+    call: ([callback]) => {
+      if (callback) record.pendingCallbacks.push(callback);
+      return UNDEFINED_VALUE;
+    },
+  });
+  return record;
+};
+
+/**
+ * `commitClassLayoutLifecycles` for the pass that just committed:
+ * `componentDidMount` on the first commit, `componentDidUpdate(prevProps,
+ * prevState)` afterwards, then the `setState` callbacks in order.
+ */
+const lifecycleEffect = (
+  record: ClassInstanceRecord,
+  props: StaticValue,
+  state: StaticValue,
+): StaticNativeFunctionValue => ({
+  kind: "native-function",
+  name: "commitClassLayoutLifecycles",
+  call: (_args, tools) => {
+    const { instance } = record;
+    const previousProps = record.committedProps;
+    const previousState = record.committedState;
+    record.committedProps = props;
+    record.committedState = state;
+    if (!record.isMounted) {
+      record.isMounted = true;
+      const didMount = getInstanceMethod(instance, "componentDidMount");
+      if (didMount) tools.call(didMount, []);
+    } else {
+      const didUpdate = getInstanceMethod(instance, "componentDidUpdate");
+      if (didUpdate) tools.call(didUpdate, [previousProps, previousState]);
+    }
+    const callbacks = record.pendingCallbacks;
+    record.pendingCallbacks = [];
+    for (const callback of callbacks) tools.call(callback, []);
+    return UNDEFINED_VALUE;
+  },
+});
+
+/**
+ * One render of a class component as `updateClassComponent` performs it: the
+ * instance is created once per hook frame and reused, `getDerivedStateFromProps`
+ * (or, without it, `componentWillMount` on mount) adjusts the state before
+ * `render()`, and the layout lifecycles are queued as an effect of the pass.
+ * With `caughtError` the instance renders as React re-renders an error
+ * boundary: with `getDerivedStateFromError` merged into state, or with null
+ * children when the class only defines `componentDidCatch` (`finishClassComponent`).
  */
 export const renderClassComponent = (
   interpreter: Interpreter,
@@ -195,40 +336,55 @@ export const renderClassComponent = (
   context: EvaluationContext,
   caughtError = false,
 ): StaticValue => {
-  const instance = objectFromRecord({
-    props,
-    state: UNDEFINED_VALUE,
-    context: unknownValue("legacy class context"),
-    refs: objectFromRecord({}),
-  });
-  const chain = initializeInstance(interpreter, classValue, instance, [props], context);
-  if (caughtError) {
-    const derived = deriveStateFromError(interpreter, chain, context);
-    if (!derived) return NULL_VALUE;
-    instance.entries.push({
-      kind: "property",
-      key: "state",
-      value: objectValue([
-        { kind: "spread", value: getObjectProperty(instance, "state") },
-        { kind: "spread", value: derived },
-      ]),
-    });
-  } else if (mayUpdateState(chain)) {
-    instance.entries.push({
-      kind: "property",
-      key: "state",
-      value: branchValue(
-        [
-          getObjectProperty(instance, "state"),
-          unknownValue(`updated state of ${classValue.name ?? "class component"}`),
-        ],
-        "class state may change after mount",
-        null,
-      ),
-    });
+  const frame = context.hooks ?? createHookFrame();
+  let record = classInstances.get(frame);
+  if (record) {
+    nextStateCell(frame, record.stateCell.name, record.stateCell.initial);
+  } else {
+    record = mountClassInstance(interpreter, classValue, props, context, frame);
+    classInstances.set(frame, record);
   }
-  const render = getObjectProperty(instance, "render");
-  if (render.kind !== "function") {
+  const { instance, chain, stateCell } = record;
+  setObjectProperty(instance, "props", props);
+  let state = stateCell.current;
+  const deriveStateFromProps = getStaticMethod(chain, "getDerivedStateFromProps");
+  if (deriveStateFromProps) {
+    state = mergeState(
+      state,
+      interpreter.callFunction(deriveStateFromProps, [props, state], context, {
+        thisValue: classValue,
+      }),
+    );
+  } else if (!record.isMounted && !getInstanceMethod(instance, "getSnapshotBeforeUpdate")) {
+    const willMount =
+      getInstanceMethod(instance, "UNSAFE_componentWillMount") ??
+      getInstanceMethod(instance, "componentWillMount");
+    if (willMount) {
+      setObjectProperty(instance, "state", state);
+      interpreter.callFunction(willMount, [], context, { thisValue: instance });
+      applyPendingState(stateCell);
+      state = stateCell.current;
+    }
+  }
+  if (caughtError) {
+    const deriveStateFromError = getStaticMethod(chain, "getDerivedStateFromError");
+    if (!deriveStateFromError) return NULL_VALUE;
+    state = mergeState(
+      state,
+      interpreter.callFunction(deriveStateFromError, [caughtErrorValue()], context, {
+        thisValue: classValue,
+      }),
+    );
+  }
+  stateCell.current = state;
+  setObjectProperty(instance, "state", state);
+  frame.effects.push({
+    isLayout: true,
+    callback: lifecycleEffect(record, props, state),
+    deps: null,
+  });
+  const render = getInstanceMethod(instance, "render");
+  if (!render) {
     return unknownValue(`class ${classValue.name ?? "component"} has no static render method`);
   }
   return interpreter.callFunction(render, [], context, { thisValue: instance });
@@ -253,6 +409,70 @@ export const constructClassInstance = (
   return instance;
 };
 
+interface ClassLayer {
+  current: StaticClassValue;
+  methodContext: EvaluationContext;
+  members: InstanceMembers;
+}
+
+const initializeFields = (
+  interpreter: Interpreter,
+  layer: ClassLayer,
+  instance: StaticObjectValue,
+): void => {
+  for (const field of layer.members.fields) {
+    const fieldContext: EvaluationContext = {
+      ...layer.methodContext,
+      scope: createScope(layer.current.scope),
+    };
+    const value =
+      field.kind === "field" && field.value
+        ? interpreter.evaluateExpression(field.value, fieldContext, field.key)
+        : UNDEFINED_VALUE;
+    instance.entries.push({ kind: "property", key: field.key, value });
+  }
+};
+
+/**
+ * Runs the constructors as `new` does: a base class initializes its fields and
+ * then runs its body; a derived class runs its body, and its fields initialize
+ * when `super(...)` returns. A derived constructor whose `super(...)` the
+ * interpreter never reached still gets its parent built and fields set
+ * afterwards, so the instance never lacks members it definitely has.
+ */
+const constructLayer = (
+  interpreter: Interpreter,
+  layers: ClassLayer[],
+  index: number,
+  args: StaticValue[],
+  instance: StaticObjectValue,
+): void => {
+  const layer = layers[index];
+  if (!layer) return;
+  const isDerived = layer.current.body.superValue !== null;
+  let hasConstructedParent = false;
+  const constructParent = (superArgs: StaticValue[]): void => {
+    if (hasConstructedParent) return;
+    hasConstructedParent = true;
+    constructLayer(interpreter, layers, index + 1, superArgs, instance);
+    initializeFields(interpreter, layer, instance);
+  };
+  if (!isDerived) initializeFields(interpreter, layer, instance);
+  if (layer.members.constructor) {
+    const superBinding: SuperBinding = {
+      construct: isDerived ? constructParent : null,
+      parent: layer.current.body.superValue,
+    };
+    interpreter.callFunction(
+      { ...layer.members.constructor, superBinding },
+      args,
+      { ...layer.methodContext, superBinding },
+      { thisValue: instance },
+    );
+  }
+  if (isDerived) constructParent(args);
+};
+
 const initializeInstance = (
   interpreter: Interpreter,
   classValue: StaticClassValue,
@@ -262,39 +482,16 @@ const initializeInstance = (
 ): StaticClassValue[] => {
   const chain = collectClassChain(classValue);
   const seen = new Set<string>();
-  const perClass = chain.map((current) => {
-    const methodContext: EvaluationContext = {
-      ...context,
-      module: current.module,
-      scope: current.scope,
-      thisValue: instance,
-    };
+  const layers: ClassLayer[] = chain.map((current) => {
+    const methodContext = methodContextFor(current, context, instance);
     return {
       current,
       methodContext,
       members: bindMethods(interpreter, current, instance, methodContext, seen),
     };
   });
-  for (const { current, methodContext, members } of [...perClass].reverse()) {
-    for (const field of members.fields) {
-      const fieldContext: EvaluationContext = {
-        ...methodContext,
-        scope: createScope(current.scope),
-        thisValue: instance,
-      };
-      const value =
-        field.kind === "field" && field.value
-          ? interpreter.evaluateExpression(field.value, fieldContext, field.key)
-          : UNDEFINED_VALUE;
-      instance.entries.push({ kind: "property", key: field.key, value });
-    }
-    if (members.constructor) {
-      interpreter.callFunction(members.constructor, args, methodContext, {
-        thisValue: instance,
-      });
-    }
-  }
-  for (const { methodContext, members } of perClass) {
+  constructLayer(interpreter, layers, 0, args, instance);
+  for (const { methodContext, members } of layers) {
     for (const getter of members.getters) {
       instance.entries.push({
         kind: "property",

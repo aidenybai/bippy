@@ -25,6 +25,8 @@ export interface CorpusStaticTarget {
   bootstrap?: string[];
   /** `window` properties the served page defines (server-injected config); objects are partial. */
   globals?: Record<string, JsonValue>;
+  /** Expressions the dev build inlines (`DefinePlugin`, Vite `define`), keyed by source text. */
+  defines?: Record<string, JsonValue>;
   maxFiberCount?: number;
   maxComponentDepth?: number;
 }
@@ -231,6 +233,7 @@ const readStaticTarget = (reader: ManifestReader): CorpusStaticTarget => ({
   externalPackageAllowList: reader.optionalStringList("externalPackageAllowList"),
   bootstrap: reader.optionalStringList("bootstrap"),
   globals: reader.optionalJsonRecord("globals"),
+  defines: reader.optionalJsonRecord("defines"),
   maxFiberCount: reader.optionalNumber("maxFiberCount"),
   maxComponentDepth: reader.optionalNumber("maxComponentDepth"),
 });

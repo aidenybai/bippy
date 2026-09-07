@@ -2,6 +2,7 @@ import type {
   CapturedExportReference,
   CapturedLinguiCatalog,
   CapturedMutation,
+  CapturedPageState,
   CapturedQuery,
   CapturedRouteMatch,
   CapturedRouterState,
@@ -109,6 +110,12 @@ const isCapturedRouterState = (value: unknown): value is CapturedRouterState =>
     value.navigationState === "submitting") &&
   (value.revalidationState === "idle" || value.revalidationState === "loading");
 
+const isCapturedPageState = (value: unknown): value is CapturedPageState =>
+  isRecord(value) &&
+  typeof value.cookie === "string" &&
+  isStringRecord(value.localStorage) &&
+  isStringRecord(value.sessionStorage);
+
 /** Reads observations back from JSON (a page's serialized result or a saved capture), dropping malformed parts. */
 export const readObservationsJson = (value: unknown): RuntimeObservations => {
   if (!isRecord(value)) return EMPTY_OBSERVATIONS;
@@ -128,6 +135,7 @@ export const readObservationsJson = (value: unknown): RuntimeObservations => {
   if (isCapturedLinguiCatalog(value.lingui)) observations.lingui = value.lingui;
   if (isCapturedRouterState(value.router)) observations.router = value.router;
   if (Array.isArray(value.stores)) observations.stores = value.stores.filter(isCapturedValue);
+  if (isCapturedPageState(value.page)) observations.page = value.page;
   return observations;
 };
 

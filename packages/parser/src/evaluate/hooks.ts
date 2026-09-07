@@ -1,7 +1,4 @@
-import type { Node } from "oxc-parser";
-import type { FunctionLikeNode, StaticNativeFunctionValue, StaticValue } from "../types.js";
-import { forEachChildNode } from "../parse/ast-walk.js";
-import { lookupScope } from "./scope.js";
+import type { StaticNativeFunctionValue, StaticValue } from "../types.js";
 import { areValuesEquivalent, branchValue, unknownValue } from "./values.js";
 
 export interface StateCell {
@@ -31,6 +28,9 @@ export interface EffectRecord {
  * captured commit, so they are treated as escaped rather than applied.
  * `isFrozen` is set once the state failed to settle: the cells that kept
  * changing hold unknown values and further updates no longer schedule passes.
+ * `requestRender` is the owner's `scheduleUpdateOnFiber`: an update queued
+ * outside its render (from another component's effect, a store listener) must
+ * still produce a pass.
  */
 export interface HookFrame {
   cells: StateCell[];
@@ -42,6 +42,7 @@ export interface HookFrame {
   isRendering: boolean;
   isDeferred: boolean;
   isFrozen: boolean;
+  requestRender: (() => void) | null;
 }
 
 export const createHookFrame = (): HookFrame => ({
@@ -54,12 +55,18 @@ export const createHookFrame = (): HookFrame => ({
   isRendering: false,
   isDeferred: false,
   isFrozen: false,
+  requestRender: null,
 });
 
 export const beginHookPass = (frame: HookFrame): void => {
+  frame.previousEffects = frame.effects;
+  restartHookPass(frame);
+};
+
+/** A render-phase update re-runs the body against the same committed effects, as `renderWithHooksAgain` does. */
+export const restartHookPass = (frame: HookFrame): void => {
   frame.cursor = 0;
   frame.memoCursor = 0;
-  frame.previousEffects = frame.effects;
   frame.effects = [];
   frame.isRendering = true;
 };
@@ -98,9 +105,15 @@ export const nextMemoCell = (
   return cell.value;
 };
 
+/** Mirrors `dispatchSetState`: with nothing pending, an update that leaves the cell unchanged is dropped eagerly. */
 export const queueStateUpdate = (frame: HookFrame, cell: StateCell, value: StaticValue): void => {
-  if (frame.isDeferred) cell.isEscaped = true;
-  else cell.next = value;
+  if (frame.isDeferred) {
+    cell.isEscaped = true;
+  } else {
+    if (cell.next === null && areValuesEquivalent(value, cell.current)) return;
+    cell.next = value;
+  }
+  if (!frame.isRendering) frame.requestRender?.();
 };
 
 export const escapedStateValue = (cell: StateCell): StaticValue =>
@@ -110,22 +123,19 @@ export const escapedStateValue = (cell: StateCell): StaticValue =>
     null,
   );
 
-/**
- * Mirrors `dispatchSetState`'s eager bailout: a queued update only schedules
- * another pass when it changes its cell. Returns the cells that changed.
- */
+/** `processUpdateQueue` for one cell: true when its committed value changed. */
+export const applyPendingState = (cell: StateCell, isFrozen = false): boolean => {
+  const next = cell.isEscaped ? escapedStateValue(cell) : cell.next;
+  cell.next = null;
+  if (next === null || isFrozen || areValuesEquivalent(next, cell.current)) return false;
+  cell.current = next;
+  return true;
+};
+
+/** Applies the queued updates and returns the cells whose value changed. */
 export const commitHookPass = (frame: HookFrame): StateCell[] => {
   frame.isRendering = false;
-  const changedCells: StateCell[] = [];
-  for (const cell of frame.cells) {
-    const next = cell.isEscaped ? escapedStateValue(cell) : cell.next;
-    if (next !== null && !frame.isFrozen && !areValuesEquivalent(next, cell.current)) {
-      cell.current = next;
-      changedCells.push(cell);
-    }
-    cell.next = null;
-  }
-  return changedCells;
+  return frame.cells.filter((cell) => applyPendingState(cell, frame.isFrozen));
 };
 
 export const giveUpOnHookPass = (frame: HookFrame, cells: StateCell[]): void => {
@@ -146,73 +156,3 @@ export const effectsToRun = (frame: HookFrame): EffectRecord[] =>
   frame.effects.filter(
     (effect, index) => !areDepsEqual(effect.deps, frame.previousEffects[index]?.deps ?? null),
   );
-
-const MAX_ESCAPE_SCAN_DEPTH = 4;
-
-const freeIdentifiersCache = new WeakMap<FunctionLikeNode, Set<string>>();
-
-const collectIdentifiers = (node: Node, names: Set<string>): void => {
-  if (node.type === "Identifier") {
-    names.add(node.name);
-    return;
-  }
-  if (node.type === "MemberExpression" && !node.computed) {
-    collectIdentifiers(node.object, names);
-    return;
-  }
-  if (node.type === "Property" && !node.computed && node.key.type === "Identifier") {
-    collectIdentifiers(node.value, names);
-    return;
-  }
-  forEachChildNode(node, (child) => collectIdentifiers(child, names));
-};
-
-const getFreeIdentifiers = (functionNode: FunctionLikeNode): Set<string> => {
-  const cached = freeIdentifiersCache.get(functionNode);
-  if (cached) return cached;
-  const names = new Set<string>();
-  collectIdentifiers(functionNode, names);
-  freeIdentifiersCache.set(functionNode, names);
-  return names;
-};
-
-/**
- * Marks state setters reachable from `value` as escaped: the value flows into
- * code the evaluator cannot follow, so the setter may run at any time after
- * mount. Closures are scanned for the setters they close over.
- */
-export const markEscapedSetters = (
-  value: StaticValue,
-  visited: Set<StaticValue> = new Set(),
-  depth = 0,
-): void => {
-  if (depth > MAX_ESCAPE_SCAN_DEPTH || visited.has(value)) return;
-  visited.add(value);
-  switch (value.kind) {
-    case "native-function":
-      value.onEscape?.();
-      return;
-    case "function":
-      for (const name of getFreeIdentifiers(value.node)) {
-        const bound = lookupScope(value.scope, name);
-        if (bound) markEscapedSetters(bound, visited, depth + 1);
-      }
-      return;
-    case "object":
-      for (const entry of value.entries) markEscapedSetters(entry.value, visited, depth + 1);
-      return;
-    case "list":
-      for (const item of value.items) markEscapedSetters(item, visited, depth + 1);
-      return;
-    case "branch":
-      for (const alternative of value.alternatives)
-        markEscapedSetters(alternative, visited, depth + 1);
-      return;
-    case "optional":
-    case "repeat":
-      markEscapedSetters(value.kind === "optional" ? value.value : value.item, visited, depth + 1);
-      return;
-    default:
-      return;
-  }
-};

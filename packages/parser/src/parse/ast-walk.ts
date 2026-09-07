@@ -1,5 +1,5 @@
 import { visitorKeys } from "oxc-parser";
-import type { Expression, Node, Statement, StringLiteral } from "oxc-parser";
+import type { BindingPattern, Expression, Node, Statement, StringLiteral } from "oxc-parser";
 import type { FunctionLikeNode } from "../types.js";
 
 export interface ChildNodeVisitor {
@@ -46,6 +46,36 @@ export const someNode = (
     if (!found) found = someNode(child, predicate, enter);
   });
   return found;
+};
+
+export const getPatternNames = (pattern: BindingPattern): string[] => {
+  switch (pattern.type) {
+    case "Identifier":
+      return [pattern.name];
+    case "ObjectPattern":
+      return pattern.properties.flatMap((property) =>
+        getPatternNames(property.type === "RestElement" ? property.argument : property.value),
+      );
+    case "ArrayPattern":
+      return pattern.elements.flatMap((element) =>
+        element ? getPatternNames(element.type === "RestElement" ? element.argument : element) : [],
+      );
+    case "AssignmentPattern":
+      return getPatternNames(pattern.left);
+  }
+};
+
+/** Names `var` declares anywhere in a function body (nested functions excluded); they belong to the function scope. */
+export const getHoistedVarNames = (statements: Statement[]): string[] => {
+  const names: string[] = [];
+  const visit = (node: Node): void => {
+    if (node.type === "VariableDeclaration" && node.kind === "var") {
+      for (const declarator of node.declarations) names.push(...getPatternNames(declarator.id));
+    }
+    if (!isFunctionLikeNode(node)) forEachChildNode(node, visit);
+  };
+  statements.forEach(visit);
+  return names;
 };
 
 /** Strips parentheses and TypeScript-only wrappers that do not change the runtime value. */

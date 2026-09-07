@@ -4,18 +4,18 @@
       "id": "actual",
       "revision": "8867158f0a2e101467fb191c9e253f47c75a9e2d",
       "framework": "spa",
-      "capturedAt": "2026-09-07T03:27:11.185Z",
-      "durationMs": 584,
+      "capturedAt": "2026-09-07T07:06:45.629Z",
+      "durationMs": 756,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 1599,
-          "textCount": 30,
-          "branchCount": 100,
+          "fiberCount": 1612,
+          "textCount": 32,
+          "branchCount": 102,
           "repeatCount": 4,
           "opaqueCount": 623,
-          "unknownCount": 172,
-          "modulesLoaded": 270
+          "unknownCount": 173,
+          "modulesLoaded": 491
         },
         "diagnostics": [
           {
@@ -33,8 +33,8 @@
       "id": "bulletproof-react",
       "revision": "9506629ed003a561c6627735480cce4994244bb4",
       "framework": "react-router",
-      "capturedAt": "2026-09-07T03:27:11.774Z",
-      "durationMs": 88,
+      "capturedAt": "2026-09-07T07:06:46.395Z",
+      "durationMs": 103,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -47,13 +47,13 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 83,
+          "fiberCount": 80,
           "textCount": 0,
-          "branchCount": 3,
+          "branchCount": 2,
           "repeatCount": 1,
           "opaqueCount": 11,
           "unknownCount": 2,
-          "modulesLoaded": 29
+          "modulesLoaded": 91
         },
         "diagnostics": [
           {
@@ -85,7 +85,7 @@
         ],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
-        "branchesResolved": 2,
+        "branchesResolved": 1,
         "branchDeviations": [],
         "repeatIterations": 0,
         "status": "partial",
@@ -94,7 +94,7 @@
         "coverage": 1,
         "strictCoverage": 0.7608695652173914,
         "divergence": null,
-        "stepsUsed": 59,
+        "stepsUsed": 52,
         "budgetExhausted": false
       },
       "anchor": null,
@@ -105,8 +105,8 @@
       "id": "cal-diy",
       "revision": "abffde336e744e15cf69626c10e436d6172bc406",
       "framework": "next-app",
-      "capturedAt": "2026-09-07T03:27:11.867Z",
-      "durationMs": 610,
+      "capturedAt": "2026-09-07T07:06:46.499Z",
+      "durationMs": 623,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
@@ -119,22 +119,18 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 511,
+          "fiberCount": 508,
           "textCount": 0,
           "branchCount": 27,
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 49,
-          "modulesLoaded": 182
+          "modulesLoaded": 2123
         },
         "diagnostics": [
           {
             "code": "dynamic-props",
-            "count": 18
-          },
-          {
-            "code": "max-call-depth",
-            "count": 12
+            "count": 2
           },
           {
             "code": "dynamic-key",
@@ -227,7 +223,7 @@
         "coverage": 1,
         "strictCoverage": 0.3230277185501066,
         "divergence": null,
-        "stepsUsed": 335,
+        "stepsUsed": 338,
         "budgetExhausted": false
       },
       "anchor": "body",
@@ -238,8 +234,8 @@
       "id": "documenso",
       "revision": "2cac63a000e22422bdea449f68b8025e709aa73a",
       "framework": "react-router",
-      "capturedAt": "2026-09-07T03:27:15.204Z",
-      "durationMs": 1377,
+      "capturedAt": "2026-09-07T07:06:50.012Z",
+      "durationMs": 626,
       "runtime": {
         "reactVersion": "19.2.8",
         "rendererName": "react-dom",
@@ -258,7 +254,7 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 77
+          "modulesLoaded": 1904
         },
         "diagnostics": [
           {
@@ -306,8 +302,8 @@
       "id": "epic-stack",
       "revision": "8473afd804b66dba6a23f317908dc35d1535e90d",
       "framework": "react-router",
-      "capturedAt": "2026-09-07T03:27:12.479Z",
-      "durationMs": 151,
+      "capturedAt": "2026-09-07T07:06:47.124Z",
+      "durationMs": 119,
       "runtime": null,
       "static": {
         "stats": {
@@ -317,7 +313,7 @@
           "repeatCount": 0,
           "opaqueCount": 101,
           "unknownCount": 2,
-          "modulesLoaded": 24
+          "modulesLoaded": 44
         },
         "diagnostics": [
           {
@@ -335,18 +331,18 @@
       "id": "excalidraw",
       "revision": "214cd6e6e8ac3ad6b68486aa7aa7241abdf9445f",
       "framework": "spa",
-      "capturedAt": "2026-09-07T03:27:12.631Z",
-      "durationMs": 180,
+      "capturedAt": "2026-09-07T07:06:47.244Z",
+      "durationMs": 404,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 32,
+          "fiberCount": 15,
           "textCount": 0,
-          "branchCount": 2,
+          "branchCount": 1,
           "repeatCount": 0,
-          "opaqueCount": 2,
-          "unknownCount": 2,
-          "modulesLoaded": 50
+          "opaqueCount": 1,
+          "unknownCount": 0,
+          "modulesLoaded": 454
         },
         "diagnostics": []
       },
@@ -359,8 +355,8 @@
       "id": "graphiql",
       "revision": "fd32cea3e191eb6eb41b785e157403308d787b12",
       "framework": "spa",
-      "capturedAt": "2026-09-07T03:27:12.811Z",
-      "durationMs": 170,
+      "capturedAt": "2026-09-07T07:06:47.649Z",
+      "durationMs": 176,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -379,7 +375,7 @@
           "repeatCount": 2,
           "opaqueCount": 61,
           "unknownCount": 2,
-          "modulesLoaded": 46
+          "modulesLoaded": 80
         },
         "diagnostics": [
           {
@@ -435,18 +431,18 @@
       "id": "invoify",
       "revision": "3859b3cbae28ca4ec559db5ef87e41b798740340",
       "framework": "next-app",
-      "capturedAt": "2026-09-07T03:27:12.981Z",
-      "durationMs": 330,
+      "capturedAt": "2026-09-07T07:06:47.826Z",
+      "durationMs": 355,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 2959,
-          "textCount": 109,
-          "branchCount": 164,
+          "fiberCount": 2822,
+          "textCount": 90,
+          "branchCount": 146,
           "repeatCount": 3,
-          "opaqueCount": 553,
-          "unknownCount": 293,
-          "modulesLoaded": 101
+          "opaqueCount": 535,
+          "unknownCount": 278,
+          "modulesLoaded": 110
         },
         "diagnostics": [
           {
@@ -468,8 +464,8 @@
       "id": "lexical",
       "revision": "c3b629dcf6b5111811bb9ca5a3db0665099b2856",
       "framework": "spa",
-      "capturedAt": "2026-09-07T03:27:13.316Z",
-      "durationMs": 493,
+      "capturedAt": "2026-09-07T07:06:48.186Z",
+      "durationMs": 406,
       "runtime": {
         "reactVersion": "19.2.5",
         "rendererName": "react-dom",
@@ -488,7 +484,7 @@
           "repeatCount": 0,
           "opaqueCount": 2,
           "unknownCount": 1,
-          "modulesLoaded": 222
+          "modulesLoaded": 415
         },
         "diagnostics": []
       },
@@ -532,8 +528,8 @@
       "id": "nextjs-boilerplate",
       "revision": "1dffa39a32450300c8b01d8cfd3819f9b6e95842",
       "framework": "next-app",
-      "capturedAt": "2026-09-07T03:27:13.809Z",
-      "durationMs": 97,
+      "capturedAt": "2026-09-07T07:06:48.593Z",
+      "durationMs": 64,
       "runtime": null,
       "static": {
         "stats": {
@@ -561,8 +557,8 @@
       "id": "nextjs-examples",
       "revision": "4fed8eaf197aaa60fd85371352482199a4c2107f",
       "framework": "next-app",
-      "capturedAt": "2026-09-07T03:27:13.906Z",
-      "durationMs": 65,
+      "capturedAt": "2026-09-07T07:06:48.658Z",
+      "durationMs": 68,
       "runtime": {
         "reactVersion": "19.3.0-canary-cbb046ab-20260731",
         "rendererName": "react-dom",
@@ -581,7 +577,7 @@
           "repeatCount": 1,
           "opaqueCount": 0,
           "unknownCount": 8,
-          "modulesLoaded": 14
+          "modulesLoaded": 16
         },
         "diagnostics": []
       },
@@ -616,8 +612,8 @@
       "id": "posthog",
       "revision": "09c5fbd37b2714276d4206debd3aeb253ce0e43a",
       "framework": "spa",
-      "capturedAt": "2026-09-07T03:54:50.576Z",
-      "durationMs": 238741,
+      "capturedAt": "2026-09-07T07:06:54.121Z",
+      "durationMs": 2270,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -633,30 +629,18 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 750,
-          "textCount": 10,
-          "branchCount": 66,
-          "repeatCount": 1,
+          "fiberCount": 193,
+          "textCount": 7,
+          "branchCount": 0,
+          "repeatCount": 0,
           "opaqueCount": 0,
-          "unknownCount": 87,
-          "modulesLoaded": 297
+          "unknownCount": 0,
+          "modulesLoaded": 3008
         },
         "diagnostics": [
           {
             "code": "dynamic-props",
-            "count": 9
-          },
-          {
-            "code": "dynamic-key",
-            "count": 3
-          },
-          {
-            "code": "max-recursion",
             "count": 2
-          },
-          {
-            "code": "unsupported-assignment",
-            "count": 1
           }
         ]
       },
@@ -671,117 +655,28 @@
         "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
-        "branchesResolved": 13,
-        "branchDeviations": [
-          {
-            "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Typewriter> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent]",
-            "reason": "&& on <boolean: === on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Typewriter> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent][1]",
-              "expected": "<span> [HostComponent]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <AuthSceneCard> [FunctionComponent] > <div> [HostComponent] > <Form> [FunctionComponent] > <ContextProvider> [ContextProvider] > <form> [HostComponent] > <LemonField> [FunctionComponent] > <Field> [FunctionComponent] > <LemonPureField> [FunctionComponent] > <div> [HostComponent]",
-            "reason": "conditional on <boolean: === on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <AuthSceneCard> [FunctionComponent] > <div> [HostComponent] > <Form> [FunctionComponent] > <ContextProvider> [ContextProvider] > <form> [HostComponent] > <LemonField> [FunctionComponent] > <Field> [FunctionComponent] > <LemonPureField> [FunctionComponent] > <div> [HostComponent][2]",
-              "expected": "<LemonFieldError> [FunctionComponent]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <AuthSceneCard> [FunctionComponent] > <div> [HostComponent] > <Form> [FunctionComponent] > <ContextProvider> [ContextProvider] > <form> [HostComponent] > <LemonField> [FunctionComponent] > <Field> [FunctionComponent] > <LemonPureField> [FunctionComponent] > <div> [HostComponent] > <LemonInput> [ForwardRef] > <Tooltip> [FunctionComponent] > <span> [HostComponent] > <LemonButton> [ForwardRef] > <Tooltip> [FunctionComponent] > <TooltipRoot> [FunctionComponent] > <TooltipRootContext> [ContextProvider]",
-            "reason": "&& on branch(unknown | false)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <AuthSceneCard> [FunctionComponent] > <div> [HostComponent] > <Form> [FunctionComponent] > <ContextProvider> [ContextProvider] > <form> [HostComponent] > <LemonField> [FunctionComponent] > <Field> [FunctionComponent] > <LemonPureField> [FunctionComponent] > <div> [HostComponent] > <LemonInput> [ForwardRef] > <Tooltip> [FunctionComponent] > <span> [HostComponent] > <LemonButton> [ForwardRef] > <Tooltip> [FunctionComponent] > <TooltipRoot> [FunctionComponent] > <TooltipRootContext> [ContextProvider][0]",
-              "expected": "<TooltipInteractions> [FunctionComponent]",
-              "actual": "<Fragment> [Fragment]"
-            }
-          },
-          {
-            "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <AuthSceneCard> [FunctionComponent] > <div> [HostComponent] > <Form> [FunctionComponent] > <ContextProvider> [ContextProvider] > <form> [HostComponent] > <LemonField> [FunctionComponent] > <Field> [FunctionComponent] > <LemonPureField> [FunctionComponent] > <div> [HostComponent]",
-            "reason": "conditional on <boolean: === on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <AuthSceneCard> [FunctionComponent] > <div> [HostComponent] > <Form> [FunctionComponent] > <ContextProvider> [ContextProvider] > <form> [HostComponent] > <LemonField> [FunctionComponent] > <Field> [FunctionComponent] > <LemonPureField> [FunctionComponent] > <div> [HostComponent][2]",
-              "expected": "<LemonFieldError> [FunctionComponent]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <AuthSceneCard> [FunctionComponent] > <div> [HostComponent] > <Form> [FunctionComponent] > <ContextProvider> [ContextProvider] > <form> [HostComponent] > <LemonButton> [ForwardRef] > <button> [HostComponent] > <span> [HostComponent]",
-            "reason": "conditional on branch(<Spinner> | undefined)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <AuthSceneCard> [FunctionComponent] > <div> [HostComponent] > <Form> [FunctionComponent] > <ContextProvider> [ContextProvider] > <form> [HostComponent] > <LemonButton> [ForwardRef] > <button> [HostComponent] > <span> [HostComponent] > <span> [HostComponent][0]",
-              "expected": "<Spinner> [FunctionComponent]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <AuthSceneCard> [FunctionComponent] > <div> [HostComponent] > <SocialLoginButtons> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <PasskeyLoginButton> [FunctionComponent] > <div> [HostComponent] > <LemonButton> [ForwardRef] > <Tooltip> [FunctionComponent] > <TooltipRoot> [FunctionComponent] > <TooltipRootContext> [ContextProvider]",
-            "reason": "&& on branch(unknown | false)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <AuthSceneCard> [FunctionComponent] > <div> [HostComponent] > <SocialLoginButtons> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <PasskeyLoginButton> [FunctionComponent] > <div> [HostComponent] > <LemonButton> [ForwardRef] > <Tooltip> [FunctionComponent] > <TooltipRoot> [FunctionComponent] > <TooltipRootContext> [ContextProvider][0]",
-              "expected": "<TooltipInteractions> [FunctionComponent]",
-              "actual": "<Fragment> [Fragment]"
-            }
-          },
-          {
-            "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <AuthSceneCard> [FunctionComponent] > <div> [HostComponent] > <SocialLoginButtons> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <PasskeyLoginButton> [FunctionComponent] > <div> [HostComponent]",
-            "reason": "&& on branch(<boolean> | false)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <AuthSceneCard> [FunctionComponent] > <div> [HostComponent] > <SocialLoginButtons> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <PasskeyLoginButton> [FunctionComponent] > <div> [HostComponent][1]",
-              "expected": "<LemonTag> [ForwardRef]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <DevLoginPanel> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <LemonButton> [ForwardRef] > <Tooltip> [FunctionComponent] > <TooltipRoot> [FunctionComponent] > <TooltipRootContext> [ContextProvider]",
-            "reason": "&& on branch(unknown | false)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <DevLoginPanel> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <LemonButton> [ForwardRef] > <Tooltip> [FunctionComponent] > <TooltipRoot> [FunctionComponent] > <TooltipRootContext> [ContextProvider][0]",
-              "expected": "<TooltipInteractions> [FunctionComponent]",
-              "actual": "<Fragment> [Fragment]"
-            }
-          }
-        ],
-        "repeatIterations": 2,
-        "status": "partial",
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "exact",
         "runtimeFibers": 191,
-        "staticFibers": 365,
+        "staticFibers": 191,
         "coverage": 1,
         "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 218,
+        "stepsUsed": 191,
         "budgetExhausted": false
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-07T03:19:46.873Z",
+      "note": "runtime replayed from 2026-09-07T05:44:44.473Z",
       "failure": null
     },
     {
       "id": "puck",
       "revision": "74a42c74db2b52da13ce1fc49087a07a6653dac8",
       "framework": "next-app",
-      "capturedAt": "2026-09-07T03:27:13.972Z",
-      "durationMs": 123,
+      "capturedAt": "2026-09-07T07:06:48.726Z",
+      "durationMs": 242,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
@@ -800,7 +695,7 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 1,
-          "modulesLoaded": 76
+          "modulesLoaded": 313
         },
         "diagnostics": []
       },
@@ -867,8 +762,8 @@
       "id": "react-admin",
       "revision": "fa7ede4a25d36917b41f9b9e9936e9e7ab8fa8ab",
       "framework": "spa",
-      "capturedAt": "2026-09-07T03:27:14.096Z",
-      "durationMs": 272,
+      "capturedAt": "2026-09-07T07:06:48.968Z",
+      "durationMs": 275,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -887,7 +782,7 @@
           "repeatCount": 0,
           "opaqueCount": 12,
           "unknownCount": 0,
-          "modulesLoaded": 30
+          "modulesLoaded": 40
         },
         "diagnostics": []
       },
@@ -934,18 +829,18 @@
       "id": "react-email",
       "revision": "0f0cb94e1f15581131a2d50b80f8daa13dd1c9fc",
       "framework": "next-app",
-      "capturedAt": "2026-09-07T03:27:14.369Z",
-      "durationMs": 165,
+      "capturedAt": "2026-09-07T07:06:49.244Z",
+      "durationMs": 133,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 882,
+          "fiberCount": 833,
           "textCount": 41,
-          "branchCount": 12,
+          "branchCount": 4,
           "repeatCount": 0,
           "opaqueCount": 82,
           "unknownCount": 14,
-          "modulesLoaded": 36
+          "modulesLoaded": 37
         },
         "diagnostics": []
       },
@@ -958,7 +853,7 @@
       "id": "react-router-templates",
       "revision": "b68be71489a22315c7a734a86a18347745b393d2",
       "framework": "react-router",
-      "capturedAt": "2026-09-07T03:27:14.535Z",
+      "capturedAt": "2026-09-07T07:06:49.378Z",
       "durationMs": 69,
       "runtime": {
         "reactVersion": "19.2.7",
@@ -1013,7 +908,7 @@
       "id": "redux-toolkit",
       "revision": "e99fe6135188219f031c5028f653fb82e671de24",
       "framework": "spa",
-      "capturedAt": "2026-09-07T03:27:14.605Z",
+      "capturedAt": "2026-09-07T07:06:49.448Z",
       "durationMs": 52,
       "runtime": {
         "reactVersion": "19.2.4",
@@ -1080,8 +975,8 @@
       "id": "sentry",
       "revision": "a7b4a8a2a78a666418e527d812e81528147789da",
       "framework": "react-router",
-      "capturedAt": "2026-09-07T03:27:16.582Z",
-      "durationMs": 769,
+      "capturedAt": "2026-09-07T07:06:50.639Z",
+      "durationMs": 3479,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -1101,13 +996,13 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 834,
-          "textCount": 19,
-          "branchCount": 15,
+          "fiberCount": 569,
+          "textCount": 8,
+          "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 1,
-          "unknownCount": 8,
-          "modulesLoaded": 662
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 6584
         },
         "diagnostics": [
           {
@@ -1127,16 +1022,16 @@
         "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
-        "branchesResolved": 7,
+        "branchesResolved": 0,
         "branchDeviations": [],
         "repeatIterations": 0,
-        "status": "partial",
+        "status": "exact",
         "runtimeFibers": 566,
-        "staticFibers": 608,
+        "staticFibers": 566,
         "coverage": 1,
         "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 573,
+        "stepsUsed": 566,
         "budgetExhausted": false
       },
       "anchor": null,
@@ -1147,23 +1042,23 @@
       "id": "shadcn-ui",
       "revision": "7c9eaba1c0a6404c990c144a654792e3313c650d",
       "framework": "next-app",
-      "capturedAt": "2026-09-07T03:27:14.658Z",
-      "durationMs": 289,
+      "capturedAt": "2026-09-07T07:06:49.500Z",
+      "durationMs": 266,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 2162,
-          "textCount": 232,
-          "branchCount": 54,
-          "repeatCount": 26,
-          "opaqueCount": 1020,
-          "unknownCount": 19,
-          "modulesLoaded": 94
+          "fiberCount": 2068,
+          "textCount": 213,
+          "branchCount": 46,
+          "repeatCount": 27,
+          "opaqueCount": 977,
+          "unknownCount": 20,
+          "modulesLoaded": 103
         },
         "diagnostics": [
           {
             "code": "dynamic-key",
-            "count": 7
+            "count": 8
           }
         ]
       },
@@ -1176,8 +1071,8 @@
       "id": "sonner",
       "revision": "8e4662b39255120b62138312058f5d77c0139a5e",
       "framework": "next-app",
-      "capturedAt": "2026-09-07T03:27:14.954Z",
-      "durationMs": 67,
+      "capturedAt": "2026-09-07T07:06:49.771Z",
+      "durationMs": 65,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
@@ -1190,13 +1085,13 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 48,
+          "fiberCount": 46,
           "textCount": 0,
           "branchCount": 0,
           "repeatCount": 0,
           "opaqueCount": 0,
-          "unknownCount": 2,
-          "modulesLoaded": 3
+          "unknownCount": 0,
+          "modulesLoaded": 4
         },
         "diagnostics": []
       },
@@ -1220,7 +1115,7 @@
         "coverage": 1,
         "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 46,
+        "stepsUsed": 44,
         "budgetExhausted": false
       },
       "anchor": "body",
@@ -1231,8 +1126,8 @@
       "id": "tanstack-query",
       "revision": "1893a965d219032207cbe147880d0e9f757a5a56",
       "framework": "spa",
-      "capturedAt": "2026-09-07T03:27:15.021Z",
-      "durationMs": 56,
+      "capturedAt": "2026-09-07T07:06:49.836Z",
+      "durationMs": 53,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -1245,12 +1140,12 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 43,
-          "textCount": 5,
-          "branchCount": 3,
+          "fiberCount": 21,
+          "textCount": 3,
+          "branchCount": 1,
           "repeatCount": 0,
           "opaqueCount": 2,
-          "unknownCount": 5,
+          "unknownCount": 2,
           "modulesLoaded": 1
         },
         "diagnostics": []
@@ -1374,16 +1269,16 @@
             ]
           }
         ],
-        "branchesResolved": 2,
+        "branchesResolved": 1,
         "branchDeviations": [],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 217,
-        "staticFibers": 16,
+        "staticFibers": 13,
         "coverage": 1,
         "strictCoverage": 0.05069124423963134,
         "divergence": null,
-        "stepsUsed": 21,
+        "stepsUsed": 19,
         "budgetExhausted": false
       },
       "anchor": null,
@@ -1394,8 +1289,8 @@
       "id": "tanstack-router",
       "revision": "cf166d160e6397007a979bfc7065b45ff69ea543",
       "framework": "spa",
-      "capturedAt": "2026-09-07T03:27:15.077Z",
-      "durationMs": 46,
+      "capturedAt": "2026-09-07T07:06:49.889Z",
+      "durationMs": 48,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -1414,7 +1309,7 @@
           "repeatCount": 0,
           "opaqueCount": 1,
           "unknownCount": 0,
-          "modulesLoaded": 1
+          "modulesLoaded": 2
         },
         "diagnostics": []
       },
@@ -1449,8 +1344,8 @@
       "id": "tldraw",
       "revision": "e8f61acedcbf2dc69693ea1e1f612a7f635fb4b5",
       "framework": "react-router",
-      "capturedAt": "2026-09-07T03:27:15.124Z",
-      "durationMs": 79,
+      "capturedAt": "2026-09-07T07:06:49.938Z",
+      "durationMs": 73,
       "runtime": null,
       "static": {
         "stats": {
@@ -1460,7 +1355,7 @@
           "repeatCount": 0,
           "opaqueCount": 3,
           "unknownCount": 14,
-          "modulesLoaded": 6
+          "modulesLoaded": 11
         },
         "diagnostics": []
       },

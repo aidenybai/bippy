@@ -5,6 +5,7 @@ import type {
   RenderEnvironment,
   Scope,
   StaticValue,
+  SuperBinding,
 } from "../types.js";
 import type { HookFrame } from "./hooks.js";
 
@@ -25,6 +26,7 @@ export interface EvaluationContext {
   module: ModuleRecord;
   scope: Scope;
   thisValue: StaticValue | null;
+  superBinding: SuperBinding | null;
   readContext: ContextReader;
   callStack: CallFrame[];
   uncertainDepth: number;

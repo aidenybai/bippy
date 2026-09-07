@@ -5,7 +5,7 @@ import type {
   StaticObjectValue,
   StaticValue,
 } from "../types.js";
-import { branchValue, objectValue } from "./values.js";
+import { branchValue, joinObjectEntries } from "./values.js";
 
 export type MutableHeapValue = StaticObjectValue | StaticListValue;
 
@@ -59,13 +59,7 @@ export class HeapJournal {
     for (const [object, original] of this.objects) {
       const pathEntries = this.paths.map((path) => path.objects.get(object) ?? original);
       if (isUnchanged(pathEntries, original)) continue;
-      const alternatives = pathEntries.map((entries) =>
-        objectValue(isExtensionOf(entries, original) ? entries.slice(original.length) : entries),
-      );
-      object.entries = [
-        ...original,
-        { kind: "spread", value: branchValue(alternatives, reason, location, preferredPath) },
-      ];
+      object.entries = joinObjectEntries(original, pathEntries, reason, location, preferredPath);
     }
     for (const [list, original] of this.lists) {
       const pathItems = this.paths.map((path) => path.lists.get(list) ?? original);
