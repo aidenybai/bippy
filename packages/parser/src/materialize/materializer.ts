@@ -1167,6 +1167,7 @@ export class Materializer {
         return unknownValue(`call of ${describeValue(callee)}`, location);
       },
       captured: (captured, name) => this.interpreter.captured(captured, name),
+      markEscaped: (value) => this.interpreter.markEscaped(value),
       nameHint: null,
       templateArgumentNames: null,
     };

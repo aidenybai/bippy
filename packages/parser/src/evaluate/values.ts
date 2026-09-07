@@ -617,6 +617,7 @@ export const getTruthiness = (value: StaticValue): boolean | null => {
     case "host-node":
     case "method":
     case "native-function":
+    case "native-object":
     case "proxy":
       return true;
   }
@@ -836,6 +837,8 @@ export const describeValue = (value: StaticValue, depth = 0): string => {
       return `${describeNested(value.receiver)}.${value.name}`;
     case "native-function":
       return `native ${value.name}`;
+    case "native-object":
+      return `native ${value.value.constructor.name}`;
     case "proxy":
       return `proxy of ${describeNested(value.target)}`;
     case "unknown":

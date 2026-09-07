@@ -97,7 +97,6 @@ export class StaticRenderer {
       capturedGlobals: this.options.observations?.globals,
       route: this.options.route,
       page: this.options.observations?.page,
-      servedRootDirectory: this.options.rootDirectory,
       assumeOuterProviders,
       reactVersion: this.reactVersion,
       project: this.project,

@@ -32,7 +32,9 @@ import type {
 import path from "node:path";
 import { isModuleRecord, type ModuleGraph } from "../graph/module-graph.js";
 import { hasExportedName } from "../graph/module-record.js";
+import { nativeFunction } from "../frameworks/stubs.js";
 import { getLibraryValue } from "../libraries/index.js";
+import { PurePackages } from "../libraries/pure-packages.js";
 import { getHoistedVarNames, getPatternNames } from "../parse/ast-walk.js";
 import { getSourceLocation } from "../parse/source-location.js";
 import {
@@ -87,6 +89,7 @@ import {
 import { collectClassMembers, constructClassInstance, getSuperObject } from "./class-component.js";
 import { getCollectionItems, markCollectionExternallyMutable } from "./collections.js";
 import { getRouteLocationMember } from "./browser-globals.js";
+import { getNativeObjectMember } from "./native-values.js";
 import { HeapJournal, type MutableHeapValue } from "./heap-journal.js";
 import {
   type StorageAreas,
@@ -162,8 +165,6 @@ export interface InterpreterOptions {
   route?: string;
   /** Cookies and Web Storage the running page held; a fresh profile (empty) when absent. */
   page?: CapturedPageState;
-  /** Directory the page's dev server served `/` from; captured module-export references resolve against it. */
-  servedRootDirectory?: string;
   /** The rendered tree may be mounted under providers that are not part of the analysis, so unprovided contexts are uncertain. */
   assumeOuterProviders?: boolean;
   /** The analyzed app's React version; decides which `$$typeof` symbol tags elements. */
@@ -183,6 +184,7 @@ interface CallValueOptions {
 }
 
 const UNKNOWN_PROJECT: ProjectContext = {
+  rootDirectory: null,
   hasDeclaredDependency: () => false,
   findQuery: () => null,
   findMutations: () => null,
@@ -354,7 +356,7 @@ export class Interpreter {
   private readonly externalValues: ExternalValueProvider | null;
   private readonly project: ProjectContext;
   private readonly route: string | null;
-  private readonly servedRootDirectory: string | null;
+  private readonly purePackages: PurePackages | null;
   private readonly windowGlobals = new Map<string, StaticValue>();
   private readonly defines = new Map<string, StaticValue>();
   private readonly pageState: CapturedPageState | null;
@@ -391,7 +393,8 @@ export class Interpreter {
     this.route = options.route ?? null;
     this.pageState = options.page ?? null;
     this.storageAreas = createStorageAreas(this.pageState);
-    this.servedRootDirectory = options.servedRootDirectory ?? null;
+    this.purePackages =
+      this.project.rootDirectory === null ? null : new PurePackages(this.project.rootDirectory);
     for (const [name, json] of Object.entries(options.globals ?? {})) {
       this.windowGlobals.set(name, partialJsonValue(json, `window.${name}`));
     }
@@ -414,10 +417,10 @@ export class Interpreter {
   // Dev servers address a module by its path under the served root, or under
   // `/@fs/` when it lies outside (Vite; a linked workspace package).
   private resolveCapturedExport(reference: CapturedExportReference): StaticValue | null {
-    if (this.servedRootDirectory === null) return null;
+    if (this.project.rootDirectory === null) return null;
     const filePath = reference.module.startsWith(FS_URL_PREFIX)
       ? reference.module.slice(FS_URL_PREFIX.length - 1)
-      : path.join(this.servedRootDirectory, reference.module);
+      : path.join(this.project.rootDirectory, reference.module);
     const module = this.graph.getModule(filePath);
     return module && this.evaluateModuleExport(module, reference.name);
   }
@@ -576,9 +579,7 @@ export class Interpreter {
           const version = this.getReactVersionExport(symbol.packageName, symbol.imported.name);
           if (version) return version;
         }
-        const provided =
-          this.externalValues?.(symbol.specifier, importedName) ??
-          getLibraryValue(symbol.specifier, importedName, this.project);
+        const provided = this.getModeledExternal(symbol.specifier, importedName);
         if (provided) return provided;
         if (symbol.imported.kind === "namespace" || symbol.imported.kind === "default") {
           const api = resolveReactApi(symbol.packageName, "*");
@@ -589,6 +590,15 @@ export class Interpreter {
       case "unresolved":
         return unknownValue(symbol.reason);
     }
+  }
+
+  private getModeledExternal(specifier: string, importedName: string): StaticValue | null {
+    return (
+      this.externalValues?.(specifier, importedName) ??
+      getLibraryValue(specifier, importedName, this.project) ??
+      this.purePackages?.getExport(specifier, importedName) ??
+      null
+    );
   }
 
   /** `export default expr` / `exports.name = expr` evaluate once so the exported identity is stable. */
@@ -856,6 +866,10 @@ export class Interpreter {
     const defined = this.defines.get(name);
     if (defined) return defined;
     if (name === "document.cookie" && this.pageState) return primitiveValue(this.pageState.cookie);
+    if (name === "process.cwd" && this.project.rootDirectory !== null) {
+      const rootDirectory = this.project.rootDirectory;
+      return nativeFunction(name, () => primitiveValue(rootDirectory));
+    }
     return getRouteLocationMember(this.route, name) ?? getBuiltinGlobal(name);
   }
 
@@ -1612,11 +1626,17 @@ export class Interpreter {
         }
         if (object.derived && isModeledOpaqueMethodName(key))
           return { kind: "method", receiver: object, name: key };
+        if (object.importedName === "default" && !object.derived) {
+          const modeled = this.getModeledExternal(object.packageName, key);
+          if (modeled) return modeled;
+        }
         if (object.importedName === "*" || object.importedName === "default") {
           const version = this.getReactVersionExport(object.packageName, key);
           if (version) return version;
         }
         return getExternalMember(object, key);
+      case "native-object":
+        return getNativeObjectMember(object, key);
       case "namespace":
         if (isPromiseMethodName(key)) return { kind: "method", receiver: object, name: key };
         if (key === "__esModule") {
@@ -1848,6 +1868,7 @@ export class Interpreter {
             this.callAwaited(callee, calleeArgs, context, location),
           call: (callee, calleeArgs) => this.callValue(callee, calleeArgs, context, location),
           captured: (captured, name) => this.captured(captured, name),
+          markEscaped: (value) => this.markEscaped(value),
           nameHint: options.nameHint ?? null,
           templateArgumentNames: options.templateArgumentNames ?? null,
         });
@@ -2863,6 +2884,10 @@ const applyBinaryOperator = (
   }
   const equality = compareEquality(operator, left, right);
   if (equality) return equality;
+  if (operator === "in") {
+    const hasKey = hasOwnKnownKey(left, right);
+    if (hasKey !== null) return primitiveValue(hasKey);
+  }
   const timed = applyClockOperator(operator, left, right);
   if (timed) return timed;
   switch (operator) {
@@ -2897,6 +2922,21 @@ const mayCoerce = (value: StaticValue): boolean =>
   value.kind === "primitive"
     ? value.value !== null && value.value !== undefined
     : value.kind !== "symbol";
+
+/** `key in target` for a plain object or array whose keys are all known; null otherwise. */
+const hasOwnKnownKey = (key: StaticValue, target: StaticValue): boolean | null => {
+  if (key.kind !== "primitive" || (typeof key.value !== "string" && typeof key.value !== "number"))
+    return null;
+  const keyName = String(key.value);
+  if (target.kind === "object") {
+    const keys = getKnownObjectKeys(target);
+    return keys === null ? null : keys.includes(keyName) || keyName in {};
+  }
+  if (hasDefiniteItems(target)) {
+    return keyName in Array.from({ length: target.items.length });
+  }
+  return null;
+};
 
 /**
  * React's memo cache sentinel never reaches application values, so comparing

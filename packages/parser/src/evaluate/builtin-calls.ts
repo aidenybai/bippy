@@ -18,6 +18,7 @@ import {
 } from "../work-tags.js";
 import { getBrowserGlobalMember, isBrowserGlobalName } from "./browser-globals.js";
 import { callHotModuleMethod, getBundlerGlobal, isEnvironmentObject } from "./bundler-globals.js";
+import { constructNativeDate } from "./native-values.js";
 import { callEventTargetMethod } from "./event-listeners.js";
 import { mediaQueryListValue } from "./media-query.js";
 import { callStorageMethod, getStorageAreaName } from "./web-storage.js";
@@ -36,9 +37,11 @@ import {
   compareIdentity,
   hasDefiniteItems,
   isKnownList,
+  jsonValue,
   listValue,
   mapValue,
   toBooleanValue,
+  toJsonValue,
   NULL_VALUE,
   objectValue,
   optionalValue,
@@ -464,6 +467,11 @@ const callGlobal = (
   if (invoked) return invoked;
   const [first, second] = args;
   switch (name) {
+    case "Date": {
+      const date = isConstructor ? constructNativeDate(args) : null;
+      if (date) return date;
+      break;
+    }
     case "String":
       return first ? toStringValue(first) : primitiveValue("");
     case "Number":
@@ -603,9 +611,20 @@ const callGlobal = (
         );
       }
       return unknownPrimitiveValue("number", name);
-    case "JSON.stringify":
-      return unknownPrimitiveValue("string", "JSON.stringify");
+    case "JSON.stringify": {
+      const json = first && args.length === 1 ? toJsonValue(first) : undefined;
+      return json === undefined
+        ? unknownPrimitiveValue("string", "JSON.stringify")
+        : primitiveValue(JSON.stringify(json));
+    }
     case "JSON.parse":
+      if (first?.kind === "primitive" && typeof first.value === "string" && args.length === 1) {
+        try {
+          return jsonValue(JSON.parse(first.value));
+        } catch {
+          return unknownValue("JSON.parse threw", location);
+        }
+      }
       return unknownValue("JSON.parse", location);
     case "setTimeout":
     case "setImmediate":

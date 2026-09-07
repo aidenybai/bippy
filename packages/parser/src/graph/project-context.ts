@@ -40,6 +40,7 @@ export const createProjectContext = (
   const queries = new Map(observations.queries.map((query) => [query.queryHash, query]));
   const { mutations, stores } = observations;
   return {
+    rootDirectory,
     hasDeclaredDependency: (packageName) => declared.has(packageName),
     findQuery: (queryHash) => queries.get(queryHash) ?? null,
     findMutations: (mutationHash) =>

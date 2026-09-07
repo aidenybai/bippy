@@ -11,6 +11,7 @@ import { JED_PACKAGES, jedValue } from "./jed.js";
 import { KEA_PACKAGES, keaValue } from "./kea.js";
 import { LINGUI_PACKAGES, linguiValue } from "./lingui.js";
 import { LODASH_PACKAGES, lodashValue } from "./lodash.js";
+import { NODE_FS_PACKAGES, nodeFsValue } from "./node-fs.js";
 import { REFLUX_PACKAGES, refluxValue } from "./reflux.js";
 import { SENTRY_PACKAGES, sentryValue } from "./sentry.js";
 import {
@@ -46,6 +47,7 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
   { packages: KEA_PACKAGES, getValue: keaValue },
   { packages: LINGUI_PACKAGES, getValue: linguiValue },
   { packages: LODASH_PACKAGES, getValue: lodashValue },
+  { packages: NODE_FS_PACKAGES, getValue: nodeFsValue },
   { packages: REFLUX_PACKAGES, getValue: refluxValue },
   { packages: SENTRY_PACKAGES, getValue: sentryValue },
   {

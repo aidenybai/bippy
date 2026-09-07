@@ -97,6 +97,7 @@ export const toElementType = (value: StaticValue, nameHint: string | null): Stat
     case "host-node":
     case "method":
     case "native-function":
+    case "native-object":
     case "proxy":
       return {
         kind: "unknown",

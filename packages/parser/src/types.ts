@@ -255,6 +255,8 @@ export interface StubRenderTools {
   call: (callee: StaticValue, args: StaticValue[]) => StaticValue;
   /** A value recorded from the running page, with references to the project's module exports evaluated. */
   captured: (captured: CapturedValue, name: string) => StaticValue;
+  /** Records that `value` reached code the analysis cannot see, so its later mutations are uncertain. */
+  markEscaped: (value: StaticValue) => void;
   /** Binding the call's result is assigned to, as build-time labelers (Emotion's babel/swc plugin) see it. */
   nameHint: string | null;
   /** For tagged templates, the identifier each `${expression}` is (null when not a bare identifier); null for other calls. */
@@ -273,6 +275,8 @@ export interface ExternalValueProvider {
 
 /** What a library model may learn about the analyzed project: which transforms shaped the runtime, and what the running page held. */
 export interface ProjectContext {
+  /** Directory the analyzed app is served from (`process.cwd()` of its dev server); `null` when analyzing loose modules. */
+  rootDirectory: string | null;
   hasDeclaredDependency: (packageName: string) => boolean;
   /** The captured TanStack Query cache entry for a query hash (`hashKey(queryKey)`), if the page held one. */
   findQuery: (queryHash: string) => CapturedQuery | null;
@@ -558,6 +562,12 @@ export interface StaticHostNodeValue {
   tagName: string;
 }
 
+/** A `Date` (or similar immutable-by-convention instance) produced by native code from wholly known inputs; its pure methods run natively. */
+export interface StaticNativeObjectValue {
+  kind: "native-object";
+  value: object;
+}
+
 export interface StaticMethodValue {
   kind: "method";
   receiver: StaticValue;
@@ -612,6 +622,7 @@ export type StaticValue =
   | StaticNamespaceValue
   | StaticGlobalValue
   | StaticHostNodeValue
+  | StaticNativeObjectValue
   | StaticMethodValue
   | StaticNativeFunctionValue
   | StaticProxyValue
