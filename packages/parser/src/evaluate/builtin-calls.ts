@@ -412,6 +412,48 @@ const defineOwnProperty = (
   }
 };
 
+const FUNCTION_INVOCATION_METHODS = new Set(["call", "apply", "bind"]);
+
+const PROTOTYPE_SEGMENT = ".prototype.";
+
+/** A builtin invoked through `Function.prototype`, as compiled helpers do: `Object.assign.apply(this, args)`, `Object.prototype.hasOwnProperty.call(o, k)`. */
+const callInvokedGlobal = (
+  interpreter: Interpreter,
+  name: string,
+  args: StaticValue[],
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): StaticValue | null => {
+  const separator = name.lastIndexOf(".");
+  const invocation = name.slice(separator + 1);
+  if (separator === -1 || !FUNCTION_INVOCATION_METHODS.has(invocation)) return null;
+  const target = name.slice(0, separator);
+  const prototypeIndex = target.indexOf(PROTOTYPE_SEGMENT);
+  const callee: StaticValue =
+    prototypeIndex === -1
+      ? { kind: "global", name: target }
+      : {
+          kind: "method",
+          receiver: args[0] ?? UNDEFINED_VALUE,
+          name: target.slice(prototypeIndex + PROTOTYPE_SEGMENT.length),
+        };
+  if (invocation === "bind") {
+    return callee.kind === "global" && args.length <= 1
+      ? callee
+      : unknownValue(`${name}()`, location);
+  }
+  const [, second] = args;
+  const calleeArgs =
+    invocation === "call"
+      ? args.slice(1)
+      : second === undefined
+        ? []
+        : second.kind === "list"
+          ? second.items
+          : [unknownValue("apply arguments", location)];
+  return interpreter.callValue(callee, calleeArgs, context, location);
+};
+
 const callGlobal = (
   interpreter: Interpreter,
   name: string,
@@ -420,6 +462,10 @@ const callGlobal = (
   location: SourceLocation | null,
   isConstructor: boolean,
 ): StaticValue => {
+  const invoked = isConstructor
+    ? null
+    : callInvokedGlobal(interpreter, name, args, context, location);
+  if (invoked) return invoked;
   const [first, second] = args;
   switch (name) {
     case "String":
@@ -762,6 +808,11 @@ const toPattern = (value: StaticValue): string | RegExp | null => {
 const listOfStrings = (parts: (string | undefined)[]): StaticListValue =>
   listValue(parts.map((part) => (part === undefined ? UNDEFINED_VALUE : primitiveValue(part))));
 
+const dynamicSplitResult = (location: SourceLocation | null): StaticListValue =>
+  listValue([
+    { kind: "repeat", item: unknownPrimitiveValue("string", "split of dynamic string"), location },
+  ]);
+
 /** `String.prototype.replace` with a callback needs the callback to produce a known string on every match. */
 const replaceWithCallback = (
   interpreter: Interpreter,
@@ -952,12 +1003,17 @@ const fallbackMethodResult = (
   if (STRING_RESULT_METHODS.has(name)) return unknownPrimitiveValue("string", `${name}()`);
   if (BOOLEAN_RESULT_METHODS.has(name)) return unknownPrimitiveValue("boolean", `${name}()`);
   if (NUMBER_RESULT_METHODS.has(name)) return unknownPrimitiveValue("number", `${name}()`);
+  if (name === "split") return dynamicSplitResult(location);
   if (
     LIST_PRESERVING_METHODS.has(name) &&
     (receiver.kind === "unknown" || receiver.kind === "repeat")
   ) {
     return receiver;
   }
+  const isStringReceiver =
+    (receiver.kind === "primitive" && typeof receiver.value === "string") ||
+    (receiver.kind === "unknown-primitive" && receiver.primitiveType === "string");
+  if (isStringReceiver && name === "slice") return unknownPrimitiveValue("string", "slice()");
   return unknownValue(`${describeValue(receiver)}.${name}()`, location);
 };
 
@@ -1030,19 +1086,8 @@ export const evaluateBuiltinCall = (
       );
       if (stored) return stored;
     }
-    if (name === "bind") return receiver;
-    if (name === "call")
-      return callGlobal(interpreter, receiver.name, args.slice(1), context, location, false);
-    if (name === "apply") {
-      return callGlobal(
-        interpreter,
-        receiver.name,
-        second?.kind === "list" ? second.items : [unknownValue("apply arguments")],
-        context,
-        location,
-        false,
-      );
-    }
+    if (FUNCTION_INVOCATION_METHODS.has(name))
+      return callGlobal(interpreter, `${receiver.name}.${name}`, args, context, location, false);
   }
 
   if (
@@ -1054,7 +1099,11 @@ export const evaluateBuiltinCall = (
     return UNDEFINED_VALUE;
   }
 
-  if (receiver.kind === "react-api" || receiver.kind === "native-function") {
+  if (
+    receiver.kind === "react-api" ||
+    receiver.kind === "native-function" ||
+    receiver.kind === "method"
+  ) {
     if (name === "call") return interpreter.callValue(receiver, args.slice(1), context, location);
     if (name === "apply") {
       return interpreter.callValue(

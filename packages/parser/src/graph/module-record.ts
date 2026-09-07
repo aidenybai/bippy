@@ -12,12 +12,17 @@ import type {
   Statement,
   VariableDeclaration,
 } from "oxc-parser";
+import {
+  getTypeScriptDeclarationName,
+  type TypeScriptDeclaration,
+} from "../evaluate/typescript-declarations.js";
 import { forEachChildNode, isFunctionLikeNode } from "../parse/ast-walk.js";
 import type {
   ExportEntry,
   ImportBinding,
   ImportedName,
   MemberAssignment,
+  MemberAssignmentGuard,
   ModuleRecord,
   ParsedSourceFile,
   ReExportAll,
@@ -84,6 +89,17 @@ const collectVariableBindings = (
   return declaredNames;
 };
 
+const collectTypeScriptBinding = (
+  declaration: TypeScriptDeclaration,
+  bindings: Map<string, TopLevelBinding>,
+): string | null => {
+  const name = getTypeScriptDeclarationName(declaration);
+  if (name !== null) {
+    bindings.set(name, { kind: "typescript", name, node: declaration, span: declaration });
+  }
+  return name;
+};
+
 const collectImports = (declaration: ImportDeclaration, imports: ImportBinding[]): void => {
   const isTypeOnlyDeclaration = declaration.importKind === "type";
   for (const specifier of declaration.specifiers) {
@@ -139,6 +155,9 @@ const collectNamedExports = (
         span: declared,
       });
       exports.push({ kind: "local", exportedName: declared.id.name, localName: declared.id.name });
+    } else if (declared.type === "TSEnumDeclaration" || declared.type === "TSModuleDeclaration") {
+      const name = collectTypeScriptBinding(declared, bindings);
+      if (name !== null) exports.push({ kind: "local", exportedName: name, localName: name });
     }
     return;
   }
@@ -245,22 +264,33 @@ const collectStatement = (
         });
       }
       return;
+    case "TSEnumDeclaration":
+    case "TSModuleDeclaration":
+      collectTypeScriptBinding(statement, bindings);
+      return;
     default:
       return;
   }
 };
 
+const getBranchBody = (statement: Statement): Statement[] =>
+  statement.type === "BlockStatement" ? statement.body : [statement];
+
 const collectMemberAssignment = (
   statement: Statement,
   memberAssignments: MemberAssignment[],
-  condition: Expression | null = null,
+  guard: MemberAssignmentGuard | null = null,
 ): void => {
-  if (statement.type === "IfStatement" && !statement.alternate && condition === null) {
-    const body =
-      statement.consequent.type === "BlockStatement"
-        ? statement.consequent.body
-        : [statement.consequent];
-    for (const inner of body) collectMemberAssignment(inner, memberAssignments, statement.test);
+  if (statement.type === "IfStatement" && guard === null) {
+    const { test, consequent, alternate } = statement;
+    for (const inner of getBranchBody(consequent)) {
+      collectMemberAssignment(inner, memberAssignments, { test, whenTruthy: true });
+    }
+    if (alternate) {
+      for (const inner of getBranchBody(alternate)) {
+        collectMemberAssignment(inner, memberAssignments, { test, whenTruthy: false });
+      }
+    }
     return;
   }
   if (statement.type !== "ExpressionStatement") return;
@@ -276,7 +306,7 @@ const collectMemberAssignment = (
         objectName: target.name,
         propertyName,
         value: property.value,
-        condition,
+        guard,
         span: statement,
       });
     }
@@ -290,7 +320,7 @@ const collectMemberAssignment = (
     objectName: target.object.name,
     propertyName: target.property.name,
     value: expression.right,
-    condition,
+    guard,
     span: statement,
   });
 };
@@ -417,6 +447,34 @@ const getWrappedRequiredSpecifier = (node: Expression): string | null => {
 const isVoidZero = (node: Expression): boolean =>
   node.type === "UnaryExpression" && node.operator === "void";
 
+/** The body of a parameterless IIFE such as `(function () { ... })()` or `!function () { ... }()`. */
+const getModuleWrapperBody = (statement: Statement): Statement[] | null => {
+  if (statement.type !== "ExpressionStatement") return null;
+  let { expression } = statement;
+  while (expression.type === "UnaryExpression") expression = expression.argument;
+  if (expression.type !== "CallExpression" || expression.arguments.length !== 0) return null;
+  const callee = unwrapParentheses(expression.callee);
+  if (
+    (callee.type !== "FunctionExpression" && callee.type !== "ArrowFunctionExpression") ||
+    callee.params.length !== 0 ||
+    !callee.body ||
+    callee.body.type !== "BlockStatement"
+  ) {
+    return null;
+  }
+  return callee.body.body;
+};
+
+const unwrapParentheses = (node: Expression): Expression =>
+  node.type === "ParenthesizedExpression" ? unwrapParentheses(node.expression) : node;
+
+/** Module-level statements, with UMD/IIFE wrappers flattened so their declarations become module bindings. */
+const getModuleStatements = (statements: Statement[]): Statement[] =>
+  statements.flatMap((statement) => {
+    const body = getModuleWrapperBody(statement);
+    return body ? getModuleStatements(body) : [statement];
+  });
+
 /** Return expression of a `get() { return x; }` accessor or `() => x`. */
 const getGetterExpression = (node: Expression): Expression | null => {
   if (node.type !== "FunctionExpression" && node.type !== "ArrowFunctionExpression") return null;
@@ -431,6 +489,7 @@ class CommonJsCollector {
   readonly exports = new Map<string, ExportEntry>();
   readonly reExportAll: string[] = [];
   isCommonJs = false;
+  replacesModuleExports = false;
 
   constructor(private readonly requiredBindings: Map<string, string>) {}
 
@@ -457,6 +516,7 @@ class CommonJsCollector {
 
   /** `module.exports = value` exposes `value` as default and its literal members as named exports. */
   private setModuleExports(value: Expression): void {
+    this.replacesModuleExports = true;
     const specifier = getRequiredSpecifier(value);
     if (specifier !== null) {
       this.addReExportAll(specifier);
@@ -466,6 +526,12 @@ class CommonJsCollector {
         imported: { kind: "default" },
         specifier,
       });
+      return;
+    }
+    const aliasedName = getExportedMemberName(value);
+    const aliased = aliasedName === null ? undefined : this.exports.get(aliasedName);
+    if (aliased && aliased.kind !== "re-export-all") {
+      this.exports.set("default", { ...aliased, exportedName: "default" });
       return;
     }
     this.setExpression("default", value);
@@ -521,6 +587,10 @@ class CommonJsCollector {
         isExportsObject(args[0])
       ) {
         this.collectDefineProperty(args[1], args[2]);
+        return;
+      }
+      if (isObjectAssignCall(call) && args.length === 2 && isExportsObject(args[0])) {
+        if (args[1].type === "ObjectExpression") this.collectObjectMembers(args[1]);
         return;
       }
       if (method === "forEach" && args.length === 1) {
@@ -583,6 +653,13 @@ class CommonJsCollector {
   }
 
   collectStatement(statement: Statement): void {
+    if (statement.type === "IfStatement") {
+      for (const branch of getBranchBody(statement.consequent)) this.collectStatement(branch);
+      if (statement.alternate) {
+        for (const branch of getBranchBody(statement.alternate)) this.collectStatement(branch);
+      }
+      return;
+    }
     if (statement.type === "ExpressionStatement") {
       const { expression } = statement;
       if (expression.type === "AssignmentExpression") this.collectAssignment(expression, null);
@@ -616,10 +693,10 @@ const collectCommonJsExports = (
   statements: Statement[],
   bindings: Map<string, TopLevelBinding>,
   exports: ExportEntry[],
-): boolean => {
+): CommonJsCollector | null => {
   const collector = new CommonJsCollector(collectRequiredBindings(statements));
   for (const statement of statements) collector.collectStatement(statement);
-  if (!collector.isCommonJs) return false;
+  if (!collector.isCommonJs) return null;
   for (const entry of collector.exports.values()) {
     if (
       entry.kind === "expression" &&
@@ -636,8 +713,11 @@ const collectCommonJsExports = (
     exports.push(entry);
   }
   for (const specifier of collector.reExportAll) exports.push({ kind: "re-export-all", specifier });
-  return true;
+  return collector;
 };
+
+export const hasExportedName = (module: ModuleRecord, exportedName: string): boolean =>
+  module.exports.some((entry) => "exportedName" in entry && entry.exportedName === exportedName);
 
 export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
   const imports: ImportBinding[] = [];
@@ -646,7 +726,8 @@ export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
   const memberAssignments: MemberAssignment[] = [];
   const deferredMutations = new Set<string>();
   const directives: string[] = [];
-  for (const statement of file.program.body) {
+  const statements = getModuleStatements(file.program.body);
+  for (const statement of statements) {
     if (
       statement.type === "ExpressionStatement" &&
       "directive" in statement &&
@@ -668,10 +749,10 @@ export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
       span: importBinding.span,
     });
   }
-  const isCommonJs =
-    imports.length === 0 &&
-    exports.length === 0 &&
-    collectCommonJsExports(file.program.body, bindings, exports);
+  const commonJs =
+    imports.length === 0 && exports.length === 0
+      ? collectCommonJsExports(statements, bindings, exports)
+      : null;
   return {
     filePath: file.filePath,
     file,
@@ -681,6 +762,7 @@ export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
     bindings,
     memberAssignments,
     deferredMutations,
-    isCommonJs,
+    isCommonJs: commonJs !== null,
+    replacesModuleExports: commonJs?.replacesModuleExports ?? false,
   };
 };

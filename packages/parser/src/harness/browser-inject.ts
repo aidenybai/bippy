@@ -2,26 +2,40 @@
 // script runs so the DevTools hook exists when React initializes.
 import type { CapturedValue, RootObservations } from "../types.js";
 import { createCommitRecorder } from "./commit-recorder.js";
+import { readKeaStores } from "./kea-store.js";
+import { readModuleExports } from "./module-exports.js";
 import { toCapturedValue } from "./query-cache.js";
+import { installReduxStoreHook } from "./redux-store.js";
 import type { RuntimeSnapshot } from "./snapshot.js";
 
 export interface HarnessGlobals {
   __BIPPY_PARSER_SNAPSHOT__: () => RuntimeSnapshot;
-  __BIPPY_PARSER_OBSERVATIONS__: () => RootObservations;
-  __BIPPY_PARSER_GLOBALS__: (names: string[]) => Record<string, CapturedValue>;
+  __BIPPY_PARSER_OBSERVATIONS__: () => Promise<RootObservations>;
+  __BIPPY_PARSER_GLOBALS__: (names: string[]) => Promise<Record<string, CapturedValue>>;
   __BIPPY_PARSER_COMMITS__: () => number;
 }
 
-const readWindowGlobals = (names: string[]): Record<string, CapturedValue> => {
+const RESOURCE_TIMING_BUFFER_SIZE = 100_000;
+
+const readWindowGlobals = async (names: string[]): Promise<Record<string, CapturedValue>> => {
+  const exports = await readModuleExports();
   const values: Record<string, CapturedValue> = {};
   for (const name of names) {
-    const captured = toCapturedValue(Object(globalThis)[name]);
+    const captured = toCapturedValue(Object(globalThis)[name], exports);
     if (captured !== undefined) values[name] = captured;
   }
   return values;
 };
 
-const recorder = createCommitRecorder();
+// The default resource timing buffer (250 entries) holds a fraction of a dev
+// server's per-file module loads, and the loaded-module list is how the
+// harness finds the page's stores and exports.
+performance.setResourceTimingBufferSize(RESOURCE_TIMING_BUFFER_SIZE);
+const readHookedStores = installReduxStoreHook(globalThis);
+const recorder = createCommitRecorder({
+  reduxStores: async () => [...readHookedStores(), ...(await readKeaStores())],
+  moduleExports: readModuleExports,
+});
 const target: Partial<HarnessGlobals> = Object(globalThis);
 target.__BIPPY_PARSER_SNAPSHOT__ = recorder.snapshot;
 target.__BIPPY_PARSER_OBSERVATIONS__ = recorder.observations;

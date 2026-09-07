@@ -1,3 +1,5 @@
+import { objectValue, UNDEFINED_VALUE } from "../evaluate/values.js";
+import { lazyProperties } from "../frameworks/stubs.js";
 import type { LibraryValueProvider } from "../types.js";
 import { EMOTION_PACKAGES, emotionValue } from "./emotion.js";
 import {
@@ -6,6 +8,7 @@ import {
   framerMotionValue,
 } from "./framer-motion.js";
 import { JED_PACKAGES, jedValue } from "./jed.js";
+import { KEA_PACKAGES, keaValue } from "./kea.js";
 import { LINGUI_PACKAGES, linguiValue } from "./lingui.js";
 import { LODASH_PACKAGES, lodashValue } from "./lodash.js";
 import { REFLUX_PACKAGES, refluxValue } from "./reflux.js";
@@ -15,6 +18,10 @@ import {
   TANSTACK_QUERY_PACKAGES,
   tanstackQueryValue,
 } from "./tanstack-query.js";
+import {
+  USE_SYNC_EXTERNAL_STORE_PACKAGES,
+  useSyncExternalStoreValue,
+} from "./use-sync-external-store.js";
 
 // Libraries the harness models instead of analyzing: their runtime output
 // depends on a build-time transform (macros) or on data only present at runtime,
@@ -36,6 +43,7 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     modeledExports: FRAMER_MOTION_MODELED_EXPORTS,
   },
   { packages: JED_PACKAGES, getValue: jedValue },
+  { packages: KEA_PACKAGES, getValue: keaValue },
   { packages: LINGUI_PACKAGES, getValue: linguiValue },
   { packages: LODASH_PACKAGES, getValue: lodashValue },
   { packages: REFLUX_PACKAGES, getValue: refluxValue },
@@ -45,6 +53,7 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     getValue: tanstackQueryValue,
     modeledExports: TANSTACK_QUERY_MODELED_EXPORTS,
   },
+  { packages: USE_SYNC_EXTERNAL_STORE_PACKAGES, getValue: useSyncExternalStoreValue },
 ];
 
 const MODELED_PACKAGES: ReadonlySet<string> = new Set(
@@ -74,5 +83,10 @@ export const getLibraryValue: LibraryValueProvider = (specifier, importedName, p
     const value = model.getValue(specifier, importedName, project);
     if (value) return value;
   }
-  return null;
+  return importedName === "*" && MODELED_PACKAGES.has(specifier)
+    ? lazyProperties(
+        objectValue(),
+        (key) => getLibraryValue(specifier, key, project) ?? UNDEFINED_VALUE,
+      )
+    : null;
 };

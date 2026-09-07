@@ -7,6 +7,7 @@ import type {
   Program,
   Span,
 } from "oxc-parser";
+import type { TypeScriptDeclaration } from "./evaluate/typescript-declarations.js";
 import type { RuntimeSnapshot } from "./harness/snapshot.js";
 import type { WorkTag } from "./work-tags.js";
 
@@ -87,6 +88,7 @@ export type TopLevelBinding =
     }
   | { kind: "function"; name: string; node: FunctionNode; span: Span }
   | { kind: "class"; name: string; node: Class; span: Span }
+  | { kind: "typescript"; name: string; node: TypeScriptDeclaration; span: Span }
   | { kind: "import"; name: string; binding: ImportBinding; span: Span }
   | {
       kind: "destructured";
@@ -96,12 +98,17 @@ export type TopLevelBinding =
       span: Span;
     };
 
+/** Guard of the enclosing module-level `if`/`else` (`if (process.env.NODE_ENV !== "production") X.displayName = ...`). */
+export interface MemberAssignmentGuard {
+  test: Expression;
+  whenTruthy: boolean;
+}
+
 export interface MemberAssignment {
   objectName: string;
   propertyName: string;
   value: Expression;
-  /** Guard of the enclosing module-level `if` (`if (process.env.NODE_ENV !== "production") X.displayName = ...`). */
-  condition: Expression | null;
+  guard: MemberAssignmentGuard | null;
   span: Span;
 }
 
@@ -118,6 +125,8 @@ export interface ModuleRecord {
   deferredMutations: Set<string>;
   /** Exports were collected from `exports.x = ` / `module.exports` assignments rather than ESM syntax. */
   isCommonJs: boolean;
+  /** `module.exports = value` replaced the exports object, so `require()` yields the `default` export. */
+  replacesModuleExports: boolean;
 }
 
 export type ModuleResolution =
@@ -248,6 +257,8 @@ export interface StubRenderTools {
   /** Calls a function whose promise the framework awaits (route `lazy`), with `await x` read as `x`. */
   callAwaited: (callee: StaticValue, args: StaticValue[]) => StaticValue;
   call: (callee: StaticValue, args: StaticValue[]) => StaticValue;
+  /** A value recorded from the running page, with references to the project's module exports evaluated. */
+  captured: (captured: CapturedValue, name: string) => StaticValue;
   /** Binding the call's result is assigned to, as build-time labelers (Emotion's babel/swc plugin) see it. */
   nameHint: string | null;
   /** For tagged templates, the identifier each `${expression}` is (null when not a bare identifier); null for other calls. */
@@ -273,6 +284,8 @@ export interface ProjectContext {
   linguiCatalog: CapturedLinguiCatalog | null;
   /** The data-router state the page settled on; `null` when no React Router data router was recorded. */
   routerState: CapturedRouterState | null;
+  /** The state of each Redux store the page created; `null` when no store was recorded. */
+  storeStates: readonly CapturedValue[] | null;
 }
 
 export type LibraryValueProvider = (
@@ -292,9 +305,17 @@ export type JsonValue =
 /**
  * A runtime value serialized from the page: JSON, except that nodes JSON cannot
  * carry are replaced by an opaque marker object (see `observations.ts`) so the
- * rest of the structure stays known. Absent (`undefined`) values are omitted.
+ * rest of the structure stays known, and nodes identical to a loaded module's
+ * export are replaced by a reference to that export. Absent (`undefined`)
+ * values are omitted.
  */
 export type CapturedValue = JsonValue;
+
+/** A module export the page held: `module` is the URL path the dev server served the module at. */
+export interface CapturedExportReference {
+  module: string;
+  name: string;
+}
 
 /** One entry of a TanStack Query cache (`Query.state`) as it stood when the page was captured. */
 export interface CapturedQuery {
@@ -365,6 +386,8 @@ export interface CapturedRouterState {
 export interface RootObservations extends CapturedQueryCaches {
   lingui?: CapturedLinguiCatalog;
   router?: CapturedRouterState;
+  /** `getState()` of every Redux store the page created (react-redux providers, kea's store), once settled. */
+  stores?: CapturedValue[];
 }
 
 /** What the running page held that its code reads at render: inputs the static render takes as given. */
@@ -376,6 +399,7 @@ export interface RuntimeObservations {
   mutations?: CapturedMutation[];
   lingui?: CapturedLinguiCatalog;
   router?: CapturedRouterState;
+  stores?: CapturedValue[];
 }
 
 export type StaticPrimitive = string | number | boolean | null | undefined | bigint;
@@ -680,6 +704,8 @@ export interface StaticRendererOptions {
   bootstrap?: string[];
   /** `window` properties the served page defines (server-injected config); nested objects are partial, so unlisted keys stay unknown. */
   globals?: Record<string, JsonValue>;
+  /** URL path (pathname, search, hash) the page is rendered at; `location` reads it. */
+  route?: string;
   /** What a running page was observed to hold; the render takes these as its runtime inputs. */
   observations?: RuntimeObservations;
   externalValues?: ExternalValueProvider;

@@ -637,10 +637,7 @@ export class Materializer {
           input: {
             ...input,
             props: renderProps.kind === "object" ? renderProps : props,
-            ref:
-              ref.kind === "primitive" && ref.value === undefined
-                ? unknownValue("forwarded ref")
-                : ref,
+            ref: ref.kind === "primitive" && ref.value === undefined ? NULL_VALUE : ref,
           },
         });
       }
@@ -1110,6 +1107,7 @@ export class Materializer {
         if (callee.kind === "native-function") return callee.call(args, tools);
         return unknownValue(`call of ${describeValue(callee)}`, location);
       },
+      captured: (captured, name) => this.interpreter.captured(captured, name),
       nameHint: null,
       templateArgumentNames: null,
     };

@@ -4,31 +4,23 @@
       "id": "actual",
       "revision": "8867158f0a2e101467fb191c9e253f47c75a9e2d",
       "framework": "spa",
-      "capturedAt": "2026-09-06T17:49:45.536Z",
-      "durationMs": 1605,
+      "capturedAt": "2026-09-07T03:27:11.185Z",
+      "durationMs": 584,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 7432,
-          "textCount": 90,
-          "branchCount": 275,
-          "repeatCount": 27,
-          "opaqueCount": 3626,
-          "unknownCount": 968,
-          "modulesLoaded": 268
+          "fiberCount": 1599,
+          "textCount": 30,
+          "branchCount": 100,
+          "repeatCount": 4,
+          "opaqueCount": 623,
+          "unknownCount": 172,
+          "modulesLoaded": 270
         },
         "diagnostics": [
           {
             "code": "dynamic-key",
-            "count": 89
-          },
-          {
-            "code": "budget-exhausted",
-            "count": 9
-          },
-          {
-            "code": "unsettled-state",
-            "count": 1
+            "count": 85
           }
         ]
       },
@@ -41,8 +33,8 @@
       "id": "bulletproof-react",
       "revision": "9506629ed003a561c6627735480cce4994244bb4",
       "framework": "react-router",
-      "capturedAt": "2026-09-06T17:49:47.153Z",
-      "durationMs": 96,
+      "capturedAt": "2026-09-07T03:27:11.774Z",
+      "durationMs": 88,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -55,12 +47,12 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 322,
+          "fiberCount": 83,
           "textCount": 0,
-          "branchCount": 14,
-          "repeatCount": 4,
-          "opaqueCount": 54,
-          "unknownCount": 8,
+          "branchCount": 3,
+          "repeatCount": 1,
+          "opaqueCount": 11,
+          "unknownCount": 2,
           "modulesLoaded": 29
         },
         "diagnostics": [
@@ -77,9 +69,24 @@
         "opaqueSkippedFibers": 11,
         "slotsMatched": 4,
         "slotsUnmatched": 1,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <AppProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <ErrorBoundary> (opaque) > <HelmetProvider> (opaque) > <QueryClientProvider> (opaque) > <AuthLoader> (opaque) > <AppRouter> [FunctionComponent] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <LandingRoute> [FunctionComponent] > <Head> [FunctionComponent] > <Helmet> (opaque)",
+            "reason": "Helmet from react-helmet-async is not analyzed",
+            "head": "<_a2> [ClassComponent]",
+            "skippedFibers": 2,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <AppProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <ErrorBoundary> (opaque) > <HelmetProvider> (opaque) > <QueryClientProvider> (opaque) > <AuthLoader> (opaque) > <AppRouter> [FunctionComponent] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <LandingRoute> [FunctionComponent] > <Head> [FunctionComponent] > <Helmet> (opaque)[0]",
+              "expected": "<meta> [HostComponent]",
+              "actual": "<HelmetDispatcher> [ClassComponent]"
+            }
+          }
+        ],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 2,
+        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 46,
@@ -87,7 +94,7 @@
         "coverage": 1,
         "strictCoverage": 0.7608695652173914,
         "divergence": null,
-        "stepsUsed": 60,
+        "stepsUsed": 59,
         "budgetExhausted": false
       },
       "anchor": null,
@@ -98,8 +105,8 @@
       "id": "cal-diy",
       "revision": "abffde336e744e15cf69626c10e436d6172bc406",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T17:49:47.250Z",
-      "durationMs": 1742,
+      "capturedAt": "2026-09-07T03:27:11.867Z",
+      "durationMs": 610,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
@@ -112,61 +119,115 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 20029,
+          "fiberCount": 511,
           "textCount": 0,
-          "branchCount": 518,
+          "branchCount": 27,
           "repeatCount": 0,
           "opaqueCount": 0,
-          "unknownCount": 5544,
-          "modulesLoaded": 167
+          "unknownCount": 49,
+          "modulesLoaded": 182
         },
         "diagnostics": [
           {
-            "code": "dynamic-key",
-            "count": 1
+            "code": "dynamic-props",
+            "count": 18
           },
           {
-            "code": "max-fiber-count",
+            "code": "max-call-depth",
+            "count": 12
+          },
+          {
+            "code": "dynamic-key",
             "count": 1
           }
         ]
       },
       "report": {
-        "matchedFibers": 297,
+        "matchedFibers": 303,
         "matchedText": 0,
         "opaqueSubtrees": 0,
         "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
-        "wildcardAbsorbedFibers": 641,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 635,
         "wildcards": [
           {
             "path": "root > <body> [HostComponent] > <InlineSVG> [FunctionComponent] > <ReactInlineSVG> [FunctionComponent]",
-            "reason": "cloneElement of branch(null | unknown(updated state of useReducer))",
+            "reason": "cloneElement of unknown(updated state of useReducer)",
             "absorbedFibers": 635,
             "heads": [
               "<svg> key=\"0-0\" [HostComponent]"
             ]
-          },
-          {
-            "path": "root > <body> [HostComponent] > <Providers> [FunctionComponent] > <GeoProvider> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <TrpcProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <Toasts> [FunctionComponent] > <FloatingPortalLite> [ForwardRef]",
-            "reason": "element budget exhausted",
-            "absorbedFibers": 6,
-            "heads": [
-              "<Portal> [HostPortal]",
-              "<Portal> [HostPortal]"
-            ]
           }
         ],
-        "branchesResolved": 20,
+        "branchesResolved": 22,
+        "branchDeviations": [
+          {
+            "path": "root > <body> [HostComponent] > <InlineSVG> [FunctionComponent] > <ReactInlineSVG> [FunctionComponent]",
+            "reason": "if (branch(null | unknown))",
+            "preferredIndex": 1,
+            "chosenIndex": 0,
+            "divergence": {
+              "path": "root > <body> [HostComponent] > <InlineSVG> [FunctionComponent] > <ReactInlineSVG> [FunctionComponent][0]",
+              "expected": "<end of children>",
+              "actual": "<svg> key=\"0-0\" [HostComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostComponent] > <Providers> [FunctionComponent] > <GeoProvider> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <TrpcProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <CacheProvider> [FunctionComponent] > <WebPushProvider> [FunctionComponent] > <AppRouterI18nProvider> [FunctionComponent] > <PageWrapper> [FunctionComponent] > <AppProviders> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <CalcomThemeProvider> [FunctionComponent] > <y> [FunctionComponent] > <$> [FunctionComponent] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <FeatureFlagsProvider> [FunctionComponent] > <FeatureProvider> [FunctionComponent] > <OrgBrandProvider> [FunctionComponent] > <Login> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <FormProvider> [FunctionComponent] > <form> [HostComponent] > <div> [HostComponent] > <Field> [FunctionComponent] > <FieldRoot> [ForwardRef] > <LabelableProvider> [FunctionComponent] > <LabelableContext> [ContextProvider] > <FieldRootInner> [ForwardRef] > <FieldRootContext> [ContextProvider] > <div> [HostComponent]",
+            "reason": "&& on unknown(property \"email\" of undefined)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostComponent] > <Providers> [FunctionComponent] > <GeoProvider> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <TrpcProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <CacheProvider> [FunctionComponent] > <WebPushProvider> [FunctionComponent] > <AppRouterI18nProvider> [FunctionComponent] > <PageWrapper> [FunctionComponent] > <AppProviders> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <CalcomThemeProvider> [FunctionComponent] > <y> [FunctionComponent] > <$> [FunctionComponent] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <FeatureFlagsProvider> [FunctionComponent] > <FeatureProvider> [FunctionComponent] > <OrgBrandProvider> [FunctionComponent] > <Login> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <FormProvider> [FunctionComponent] > <form> [HostComponent] > <div> [HostComponent] > <Field> [FunctionComponent] > <FieldRoot> [ForwardRef] > <LabelableProvider> [FunctionComponent] > <LabelableContext> [ContextProvider] > <FieldRootInner> [ForwardRef] > <FieldRootContext> [ContextProvider] > <div> [HostComponent][2]",
+              "expected": "<p> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostComponent] > <Providers> [FunctionComponent] > <GeoProvider> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <TrpcProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <CacheProvider> [FunctionComponent] > <WebPushProvider> [FunctionComponent] > <AppRouterI18nProvider> [FunctionComponent] > <PageWrapper> [FunctionComponent] > <AppProviders> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <CalcomThemeProvider> [FunctionComponent] > <y> [FunctionComponent] > <$> [FunctionComponent] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <FeatureFlagsProvider> [FunctionComponent] > <FeatureProvider> [FunctionComponent] > <OrgBrandProvider> [FunctionComponent] > <Login> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <FormProvider> [FunctionComponent] > <form> [HostComponent] > <div> [HostComponent] > <Field> [FunctionComponent] > <FieldRoot> [ForwardRef] > <LabelableProvider> [FunctionComponent] > <LabelableContext> [ContextProvider] > <FieldRootInner> [ForwardRef] > <FieldRootContext> [ContextProvider] > <div> [HostComponent]",
+            "reason": "&& on unknown(property \"password\" of undefined)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostComponent] > <Providers> [FunctionComponent] > <GeoProvider> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <TrpcProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <CacheProvider> [FunctionComponent] > <WebPushProvider> [FunctionComponent] > <AppRouterI18nProvider> [FunctionComponent] > <PageWrapper> [FunctionComponent] > <AppProviders> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <CalcomThemeProvider> [FunctionComponent] > <y> [FunctionComponent] > <$> [FunctionComponent] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <FeatureFlagsProvider> [FunctionComponent] > <FeatureProvider> [FunctionComponent] > <OrgBrandProvider> [FunctionComponent] > <Login> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <FormProvider> [FunctionComponent] > <form> [HostComponent] > <div> [HostComponent] > <Field> [FunctionComponent] > <FieldRoot> [ForwardRef] > <LabelableProvider> [FunctionComponent] > <LabelableContext> [ContextProvider] > <FieldRootInner> [ForwardRef] > <FieldRootContext> [ContextProvider] > <div> [HostComponent][2]",
+              "expected": "<p> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostComponent] > <Providers> [FunctionComponent] > <GeoProvider> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <TrpcProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <CacheProvider> [FunctionComponent] > <WebPushProvider> [FunctionComponent] > <AppRouterI18nProvider> [FunctionComponent] > <PageWrapper> [FunctionComponent] > <AppProviders> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <CalcomThemeProvider> [FunctionComponent] > <y> [FunctionComponent] > <$> [FunctionComponent] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <FeatureFlagsProvider> [FunctionComponent] > <FeatureProvider> [FunctionComponent] > <OrgBrandProvider> [FunctionComponent]",
+            "reason": "uncertain filter",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostComponent] > <Providers> [FunctionComponent] > <GeoProvider> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <TrpcProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <CacheProvider> [FunctionComponent] > <WebPushProvider> [FunctionComponent] > <AppRouterI18nProvider> [FunctionComponent] > <PageWrapper> [FunctionComponent] > <AppProviders> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <CalcomThemeProvider> [FunctionComponent] > <y> [FunctionComponent] > <$> [FunctionComponent] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <FeatureFlagsProvider> [FunctionComponent] > <FeatureProvider> [FunctionComponent] > <OrgBrandProvider> [FunctionComponent][1]",
+              "expected": "<Script> key=\"injected-head-script\" [FunctionComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostComponent] > <Providers> [FunctionComponent] > <GeoProvider> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <TrpcProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <CacheProvider> [FunctionComponent] > <WebPushProvider> [FunctionComponent] > <AppRouterI18nProvider> [FunctionComponent] > <PageWrapper> [FunctionComponent] > <AppProviders> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <CalcomThemeProvider> [FunctionComponent] > <y> [FunctionComponent] > <$> [FunctionComponent] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <FeatureFlagsProvider> [FunctionComponent] > <FeatureProvider> [FunctionComponent] > <OrgBrandProvider> [FunctionComponent]",
+            "reason": "uncertain filter",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostComponent] > <Providers> [FunctionComponent] > <GeoProvider> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <TrpcProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <CacheProvider> [FunctionComponent] > <WebPushProvider> [FunctionComponent] > <AppRouterI18nProvider> [FunctionComponent] > <PageWrapper> [FunctionComponent] > <AppProviders> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <CalcomThemeProvider> [FunctionComponent] > <y> [FunctionComponent] > <$> [FunctionComponent] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <FeatureFlagsProvider> [FunctionComponent] > <FeatureProvider> [FunctionComponent] > <OrgBrandProvider> [FunctionComponent][1]",
+              "expected": "<Script> key=\"injected-body-script\" [FunctionComponent]",
+              "actual": "<end of children>"
+            }
+          }
+        ],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 938,
-        "staticFibers": 324,
+        "staticFibers": 328,
         "coverage": 1,
-        "strictCoverage": 0.31663113006396587,
+        "strictCoverage": 0.3230277185501066,
         "divergence": null,
-        "stepsUsed": 375,
+        "stepsUsed": 335,
         "budgetExhausted": false
       },
       "anchor": "body",
@@ -177,8 +238,8 @@
       "id": "documenso",
       "revision": "2cac63a000e22422bdea449f68b8025e709aa73a",
       "framework": "react-router",
-      "capturedAt": "2026-09-07T00:50:14.730Z",
-      "durationMs": 42595,
+      "capturedAt": "2026-09-07T03:27:15.204Z",
+      "durationMs": 1377,
       "runtime": {
         "reactVersion": "19.2.8",
         "rendererName": "react-dom",
@@ -238,29 +299,29 @@
         "budgetExhausted": false
       },
       "anchor": null,
-      "note": null,
+      "note": "runtime replayed from 2026-09-07T00:50:55.867Z",
       "failure": null
     },
     {
       "id": "epic-stack",
       "revision": "8473afd804b66dba6a23f317908dc35d1535e90d",
       "framework": "react-router",
-      "capturedAt": "2026-09-06T14:53:49.691Z",
-      "durationMs": 60,
+      "capturedAt": "2026-09-07T03:27:12.479Z",
+      "durationMs": 151,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 49,
-          "textCount": 0,
-          "branchCount": 2,
+          "fiberCount": 480,
+          "textCount": 30,
+          "branchCount": 7,
           "repeatCount": 0,
-          "opaqueCount": 0,
-          "unknownCount": 0,
-          "modulesLoaded": 10
+          "opaqueCount": 101,
+          "unknownCount": 2,
+          "modulesLoaded": 24
         },
         "diagnostics": [
           {
-            "code": "render-error",
+            "code": "dynamic-key",
             "count": 1
           }
         ]
@@ -274,18 +335,18 @@
       "id": "excalidraw",
       "revision": "214cd6e6e8ac3ad6b68486aa7aa7241abdf9445f",
       "framework": "spa",
-      "capturedAt": "2026-09-06T14:53:49.751Z",
-      "durationMs": 140,
+      "capturedAt": "2026-09-07T03:27:12.631Z",
+      "durationMs": 180,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 126,
+          "fiberCount": 32,
           "textCount": 0,
-          "branchCount": 12,
+          "branchCount": 2,
           "repeatCount": 0,
-          "opaqueCount": 4,
-          "unknownCount": 8,
-          "modulesLoaded": 51
+          "opaqueCount": 2,
+          "unknownCount": 2,
+          "modulesLoaded": 50
         },
         "diagnostics": []
       },
@@ -298,59 +359,102 @@
       "id": "graphiql",
       "revision": "fd32cea3e191eb6eb41b785e157403308d787b12",
       "framework": "spa",
-      "capturedAt": "2026-09-06T14:53:49.891Z",
-      "durationMs": 596,
-      "runtime": null,
+      "capturedAt": "2026-09-07T03:27:12.811Z",
+      "durationMs": 170,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 379,
+        "commits": 13,
+        "pageErrors": [],
+        "title": "GraphiQL"
+      },
       "static": {
         "stats": {
-          "fiberCount": 1936,
-          "textCount": 0,
-          "branchCount": 196,
-          "repeatCount": 0,
-          "opaqueCount": 192,
-          "unknownCount": 334,
-          "modulesLoaded": 30
+          "fiberCount": 267,
+          "textCount": 19,
+          "branchCount": 10,
+          "repeatCount": 2,
+          "opaqueCount": 61,
+          "unknownCount": 2,
+          "modulesLoaded": 46
         },
         "diagnostics": [
           {
-            "code": "budget-exhausted",
-            "count": 13
+            "code": "dynamic-key",
+            "count": 2
+          },
+          {
+            "code": "unsupported-assignment",
+            "count": 2
           }
         ]
       },
-      "report": null,
+      "report": {
+        "matchedFibers": 7,
+        "matchedText": 0,
+        "opaqueSubtrees": 3,
+        "opaqueSkippedFibers": 371,
+        "slotsMatched": 2,
+        "slotsUnmatched": 1,
+        "opaqueRenamed": 1,
+        "unmatchedSlots": [
+          {
+            "path": "root > <App> [FunctionComponent] > <StrictMode> [Mode] > <GraphiQL_> [FunctionComponent] > <GraphiQLProvider> [FunctionComponent] > <InnerGraphiQLProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HistoryToUse> (opaque) > <DocExplorerToUse> (opaque) > <GraphiQLInterface> [FunctionComponent] > <Tooltip.Provider> (opaque)",
+            "reason": "Provider from @radix-ui/react-tooltip is not analyzed",
+            "head": "<TooltipProvider> [FunctionComponent]",
+            "skippedFibers": 369,
+            "divergence": {
+              "path": "root > <App> [FunctionComponent] > <StrictMode> [Mode] > <GraphiQL_> [FunctionComponent] > <GraphiQLProvider> [FunctionComponent] > <InnerGraphiQLProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HistoryToUse> (opaque) > <DocExplorerToUse> (opaque) > <GraphiQLInterface> [FunctionComponent] > <Tooltip.Provider> (opaque) > <div> [HostComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent][0]",
+              "expected": "<TooltipRoot> [FunctionComponent]",
+              "actual": "<Fragment> [Fragment]"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 378,
+        "staticFibers": 198,
+        "coverage": 1,
+        "strictCoverage": 0.018518518518518517,
+        "divergence": null,
+        "stepsUsed": 160,
+        "budgetExhausted": false
+      },
       "anchor": null,
-      "note": "static only",
+      "note": "runtime replayed from 2026-09-06T15:16:55.594Z",
       "failure": null
     },
     {
       "id": "invoify",
       "revision": "3859b3cbae28ca4ec559db5ef87e41b798740340",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T14:53:50.488Z",
-      "durationMs": 361,
+      "capturedAt": "2026-09-07T03:27:12.981Z",
+      "durationMs": 330,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 14113,
-          "textCount": 253,
-          "branchCount": 1061,
-          "repeatCount": 8,
-          "opaqueCount": 2190,
-          "unknownCount": 1216,
-          "modulesLoaded": 102
+          "fiberCount": 2959,
+          "textCount": 109,
+          "branchCount": 164,
+          "repeatCount": 3,
+          "opaqueCount": 553,
+          "unknownCount": 293,
+          "modulesLoaded": 101
         },
         "diagnostics": [
           {
             "code": "dynamic-key",
-            "count": 5
+            "count": 4
           },
           {
             "code": "dynamic-props",
-            "count": 2
-          },
-          {
-            "code": "unsettled-state",
             "count": 2
           }
         ]
@@ -364,8 +468,8 @@
       "id": "lexical",
       "revision": "c3b629dcf6b5111811bb9ca5a3db0665099b2856",
       "framework": "spa",
-      "capturedAt": "2026-09-06T14:53:50.861Z",
-      "durationMs": 189,
+      "capturedAt": "2026-09-07T03:27:13.316Z",
+      "durationMs": 493,
       "runtime": {
         "reactVersion": "19.2.5",
         "rendererName": "react-dom",
@@ -378,13 +482,13 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 36,
+          "fiberCount": 19,
           "textCount": 0,
           "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 4,
-          "unknownCount": 2,
-          "modulesLoaded": 182
+          "opaqueCount": 2,
+          "unknownCount": 1,
+          "modulesLoaded": 222
         },
         "diagnostics": []
       },
@@ -395,8 +499,21 @@
         "opaqueSkippedFibers": 2,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 208,
+        "wildcards": [
+          {
+            "path": "root > <StrictMode> [Mode] > <PlaygroundApp> [FunctionComponent] > <SettingsContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FlashMessageContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <LexicalCollaboration> [FunctionComponent] > <ContextProvider> [ContextProvider] > <LexicalExtensionComposer> [FunctionComponent]",
+            "reason": "<Component>: call of call of dynamic key into an unknown object",
+            "absorbedFibers": 208,
+            "heads": [
+              "<EditorComponent> [FunctionComponent]"
+            ]
+          }
+        ],
         "branchesResolved": 0,
+        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 225,
@@ -415,17 +532,17 @@
       "id": "nextjs-boilerplate",
       "revision": "1dffa39a32450300c8b01d8cfd3819f9b6e95842",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T14:53:51.050Z",
-      "durationMs": 71,
+      "capturedAt": "2026-09-07T03:27:13.809Z",
+      "durationMs": 97,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 279,
-          "textCount": 44,
-          "branchCount": 1,
-          "repeatCount": 2,
-          "opaqueCount": 16,
-          "unknownCount": 20,
+          "fiberCount": 158,
+          "textCount": 22,
+          "branchCount": 0,
+          "repeatCount": 1,
+          "opaqueCount": 8,
+          "unknownCount": 10,
           "modulesLoaded": 11
         },
         "diagnostics": [
@@ -444,8 +561,8 @@
       "id": "nextjs-examples",
       "revision": "4fed8eaf197aaa60fd85371352482199a4c2107f",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T14:53:51.122Z",
-      "durationMs": 67,
+      "capturedAt": "2026-09-07T03:27:13.906Z",
+      "durationMs": 65,
       "runtime": {
         "reactVersion": "19.3.0-canary-cbb046ab-20260731",
         "rendererName": "react-dom",
@@ -458,7 +575,7 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 102,
+          "fiberCount": 107,
           "textCount": 6,
           "branchCount": 3,
           "repeatCount": 1,
@@ -475,8 +592,12 @@
         "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
         "branchesResolved": 4,
+        "branchDeviations": [],
         "repeatIterations": 2,
         "status": "partial",
         "runtimeFibers": 83,
@@ -492,11 +613,175 @@
       "failure": null
     },
     {
+      "id": "posthog",
+      "revision": "09c5fbd37b2714276d4206debd3aeb253ce0e43a",
+      "framework": "spa",
+      "capturedAt": "2026-09-07T03:27:17.355Z",
+      "durationMs": 309549,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 192,
+        "commits": 54,
+        "pageErrors": [
+          "Failed to load resource: the server responded with a status of 404 ()",
+          "Failed to load resource: the server responded with a status of 404 ()"
+        ],
+        "title": "PostHog"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 821,
+          "textCount": 10,
+          "branchCount": 75,
+          "repeatCount": 1,
+          "opaqueCount": 0,
+          "unknownCount": 113,
+          "modulesLoaded": 297
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-props",
+            "count": 23
+          },
+          {
+            "code": "dynamic-key",
+            "count": 3
+          },
+          {
+            "code": "max-recursion",
+            "count": 2
+          },
+          {
+            "code": "unsupported-assignment",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 184,
+        "matchedText": 7,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 16,
+        "branchDeviations": [
+          {
+            "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Typewriter> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent]",
+            "reason": "&& on <boolean: === on dynamic values>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Typewriter> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent][1]",
+              "expected": "<span> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <AuthSceneCard> [FunctionComponent] > <div> [HostComponent] > <Form> [FunctionComponent] > <ContextProvider> [ContextProvider] > <form> [HostComponent] > <LemonField> [FunctionComponent] > <Field> [FunctionComponent] > <LemonPureField> [FunctionComponent] > <div> [HostComponent]",
+            "reason": "conditional on <boolean: === on dynamic values>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <AuthSceneCard> [FunctionComponent] > <div> [HostComponent] > <Form> [FunctionComponent] > <ContextProvider> [ContextProvider] > <form> [HostComponent] > <LemonField> [FunctionComponent] > <Field> [FunctionComponent] > <LemonPureField> [FunctionComponent] > <div> [HostComponent][2]",
+              "expected": "<LemonFieldError> [FunctionComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <AuthSceneCard> [FunctionComponent] > <div> [HostComponent] > <Form> [FunctionComponent] > <ContextProvider> [ContextProvider] > <form> [HostComponent] > <LemonField> [FunctionComponent] > <Field> [FunctionComponent] > <LemonPureField> [FunctionComponent] > <div> [HostComponent] > <LemonInput> [ForwardRef] > <Tooltip> [FunctionComponent] > <span> [HostComponent] > <LemonButton> [ForwardRef] > <Tooltip> [FunctionComponent] > <TooltipRoot> [FunctionComponent] > <TooltipRootContext> [ContextProvider]",
+            "reason": "&& on branch(unknown | false)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <AuthSceneCard> [FunctionComponent] > <div> [HostComponent] > <Form> [FunctionComponent] > <ContextProvider> [ContextProvider] > <form> [HostComponent] > <LemonField> [FunctionComponent] > <Field> [FunctionComponent] > <LemonPureField> [FunctionComponent] > <div> [HostComponent] > <LemonInput> [ForwardRef] > <Tooltip> [FunctionComponent] > <span> [HostComponent] > <LemonButton> [ForwardRef] > <Tooltip> [FunctionComponent] > <TooltipRoot> [FunctionComponent] > <TooltipRootContext> [ContextProvider][0]",
+              "expected": "<TooltipInteractions> [FunctionComponent]",
+              "actual": "<Fragment> [Fragment]"
+            }
+          },
+          {
+            "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <AuthSceneCard> [FunctionComponent] > <div> [HostComponent] > <Form> [FunctionComponent] > <ContextProvider> [ContextProvider] > <form> [HostComponent] > <LemonField> [FunctionComponent] > <Field> [FunctionComponent] > <LemonPureField> [FunctionComponent] > <div> [HostComponent]",
+            "reason": "conditional on <boolean: === on dynamic values>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <AuthSceneCard> [FunctionComponent] > <div> [HostComponent] > <Form> [FunctionComponent] > <ContextProvider> [ContextProvider] > <form> [HostComponent] > <LemonField> [FunctionComponent] > <Field> [FunctionComponent] > <LemonPureField> [FunctionComponent] > <div> [HostComponent][2]",
+              "expected": "<LemonFieldError> [FunctionComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <AuthSceneCard> [FunctionComponent] > <div> [HostComponent] > <Form> [FunctionComponent] > <ContextProvider> [ContextProvider] > <form> [HostComponent] > <LemonButton> [ForwardRef] > <button> [HostComponent] > <span> [HostComponent]",
+            "reason": "conditional on branch(<Spinner> | undefined)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <AuthSceneCard> [FunctionComponent] > <div> [HostComponent] > <Form> [FunctionComponent] > <ContextProvider> [ContextProvider] > <form> [HostComponent] > <LemonButton> [ForwardRef] > <button> [HostComponent] > <span> [HostComponent] > <span> [HostComponent][0]",
+              "expected": "<Spinner> [FunctionComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <AuthSceneCard> [FunctionComponent] > <div> [HostComponent] > <SocialLoginButtons> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <PasskeyLoginButton> [FunctionComponent] > <div> [HostComponent] > <LemonButton> [ForwardRef] > <Tooltip> [FunctionComponent] > <TooltipRoot> [FunctionComponent] > <TooltipRootContext> [ContextProvider]",
+            "reason": "&& on branch(unknown | false)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <AuthSceneCard> [FunctionComponent] > <div> [HostComponent] > <SocialLoginButtons> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <PasskeyLoginButton> [FunctionComponent] > <div> [HostComponent] > <LemonButton> [ForwardRef] > <Tooltip> [FunctionComponent] > <TooltipRoot> [FunctionComponent] > <TooltipRootContext> [ContextProvider][0]",
+              "expected": "<TooltipInteractions> [FunctionComponent]",
+              "actual": "<Fragment> [Fragment]"
+            }
+          },
+          {
+            "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <AuthSceneCard> [FunctionComponent] > <div> [HostComponent] > <SocialLoginButtons> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <PasskeyLoginButton> [FunctionComponent] > <div> [HostComponent]",
+            "reason": "&& on branch(<boolean> | false)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <AuthSceneCard> [FunctionComponent] > <div> [HostComponent] > <SocialLoginButtons> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <PasskeyLoginButton> [FunctionComponent] > <div> [HostComponent][1]",
+              "expected": "<LemonTag> [ForwardRef]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <DevLoginPanel> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <LemonButton> [ForwardRef] > <Tooltip> [FunctionComponent] > <TooltipRoot> [FunctionComponent] > <TooltipRootContext> [ContextProvider]",
+            "reason": "&& on branch(unknown | false)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <DevLoginPanel> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <LemonButton> [ForwardRef] > <Tooltip> [FunctionComponent] > <TooltipRoot> [FunctionComponent] > <TooltipRootContext> [ContextProvider][0]",
+              "expected": "<TooltipInteractions> [FunctionComponent]",
+              "actual": "<Fragment> [Fragment]"
+            }
+          }
+        ],
+        "repeatIterations": 2,
+        "status": "partial",
+        "runtimeFibers": 191,
+        "staticFibers": 365,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 221,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-07T03:19:46.873Z",
+      "failure": null
+    },
+    {
       "id": "puck",
       "revision": "74a42c74db2b52da13ce1fc49087a07a6653dac8",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T14:55:04.899Z",
-      "durationMs": 177,
+      "capturedAt": "2026-09-07T03:27:13.972Z",
+      "durationMs": 123,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
@@ -509,12 +794,12 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 133,
+          "fiberCount": 123,
           "textCount": 2,
-          "branchCount": 6,
+          "branchCount": 5,
           "repeatCount": 0,
           "opaqueCount": 0,
-          "unknownCount": 4,
+          "unknownCount": 1,
           "modulesLoaded": 76
         },
         "diagnostics": []
@@ -526,8 +811,44 @@
         "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 356,
-        "branchesResolved": 5,
+        "wildcards": [
+          {
+            "path": "root > <body> [HostSingleton] > <div> [HostComponent] > <Client> [FunctionComponent] > <Render> [FunctionComponent] > <DropZoneProvider> [FunctionComponent] > <render> [FunctionComponent] > <div> [HostComponent]",
+            "reason": "<DropZone>: property \"puck\" may come from a spread of unknown(call of call of Promise.all)",
+            "absorbedFibers": 356,
+            "heads": [
+              "<DropZonePure> [FunctionComponent]"
+            ]
+          }
+        ],
+        "branchesResolved": 4,
+        "branchDeviations": [
+          {
+            "path": "root > <body> [HostSingleton] > <div> [HostComponent] > <Client> [FunctionComponent] > <Render> [FunctionComponent] > <DropZoneProvider> [FunctionComponent] > <render> [FunctionComponent] > <div> [HostComponent] > <Header> [FunctionComponent] > <div> [HostComponent] > <header> [HostComponent] > <nav> [HostComponent] > <NavItem> [FunctionComponent]",
+            "reason": "conditional on branch(\"\" | \"/pricing\")",
+            "preferredIndex": 1,
+            "chosenIndex": 0,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <div> [HostComponent] > <Client> [FunctionComponent] > <Render> [FunctionComponent] > <DropZoneProvider> [FunctionComponent] > <render> [FunctionComponent] > <div> [HostComponent] > <Header> [FunctionComponent] > <div> [HostComponent] > <header> [HostComponent] > <nav> [HostComponent] > <NavItem> [FunctionComponent][0]",
+              "expected": "<span> [HostComponent]",
+              "actual": "<a> [HostComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <div> [HostComponent] > <Client> [FunctionComponent] > <Render> [FunctionComponent] > <DropZoneProvider> [FunctionComponent] > <render> [FunctionComponent] > <div> [HostComponent] > <Header> [FunctionComponent] > <div> [HostComponent] > <header> [HostComponent] > <nav> [HostComponent] > <NavItem> [FunctionComponent]",
+            "reason": "conditional on branch(\"\" | \"/about\")",
+            "preferredIndex": 1,
+            "chosenIndex": 0,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <div> [HostComponent] > <Client> [FunctionComponent] > <Render> [FunctionComponent] > <DropZoneProvider> [FunctionComponent] > <render> [FunctionComponent] > <div> [HostComponent] > <Header> [FunctionComponent] > <div> [HostComponent] > <header> [HostComponent] > <nav> [HostComponent] > <NavItem> [FunctionComponent][0]",
+              "expected": "<span> [HostComponent]",
+              "actual": "<a> [HostComponent]"
+            }
+          }
+        ],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 450,
@@ -535,7 +856,7 @@
         "coverage": 1,
         "strictCoverage": 0.2088888888888889,
         "divergence": null,
-        "stepsUsed": 101,
+        "stepsUsed": 103,
         "budgetExhausted": false
       },
       "anchor": "body",
@@ -546,8 +867,8 @@
       "id": "react-admin",
       "revision": "fa7ede4a25d36917b41f9b9e9936e9e7ab8fa8ab",
       "framework": "spa",
-      "capturedAt": "2026-09-06T14:53:51.310Z",
-      "durationMs": 269,
+      "capturedAt": "2026-09-07T03:27:14.096Z",
+      "durationMs": 272,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -560,7 +881,7 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 13,
+          "fiberCount": 14,
           "textCount": 0,
           "branchCount": 0,
           "repeatCount": 0,
@@ -573,12 +894,28 @@
       "report": {
         "matchedFibers": 1,
         "matchedText": 0,
-        "opaqueSubtrees": 8,
+        "opaqueSubtrees": 1,
         "opaqueSkippedFibers": 5579,
-        "slotsMatched": 1,
-        "slotsUnmatched": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 1,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [
+          {
+            "path": "root > <StrictMode> [Mode] > <Admin> (opaque)",
+            "reason": "Admin from react-admin is not analyzed",
+            "head": "<Admin> [FunctionComponent]",
+            "skippedFibers": 5579,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <Admin> (opaque)[1]",
+              "expected": "<Resource> (opaque)",
+              "actual": "<end of children>"
+            }
+          }
+        ],
         "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
         "branchesResolved": 0,
+        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 5580,
@@ -586,7 +923,7 @@
         "coverage": 1,
         "strictCoverage": 0.00017921146953405018,
         "divergence": null,
-        "stepsUsed": 51,
+        "stepsUsed": 29,
         "budgetExhausted": false
       },
       "anchor": null,
@@ -597,25 +934,20 @@
       "id": "react-email",
       "revision": "0f0cb94e1f15581131a2d50b80f8daa13dd1c9fc",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T14:53:51.580Z",
-      "durationMs": 144,
+      "capturedAt": "2026-09-07T03:27:14.369Z",
+      "durationMs": 165,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 1400,
-          "textCount": 61,
-          "branchCount": 49,
+          "fiberCount": 882,
+          "textCount": 41,
+          "branchCount": 12,
           "repeatCount": 0,
-          "opaqueCount": 227,
-          "unknownCount": 16,
+          "opaqueCount": 82,
+          "unknownCount": 14,
           "modulesLoaded": 36
         },
-        "diagnostics": [
-          {
-            "code": "unsettled-state",
-            "count": 1
-          }
-        ]
+        "diagnostics": []
       },
       "report": null,
       "anchor": null,
@@ -626,8 +958,8 @@
       "id": "react-router-templates",
       "revision": "b68be71489a22315c7a734a86a18347745b393d2",
       "framework": "react-router",
-      "capturedAt": "2026-09-06T14:53:51.725Z",
-      "durationMs": 70,
+      "capturedAt": "2026-09-07T03:27:14.535Z",
+      "durationMs": 69,
       "runtime": {
         "reactVersion": "19.2.7",
         "rendererName": "react-dom",
@@ -640,8 +972,8 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 96,
-          "textCount": 4,
+          "fiberCount": 51,
+          "textCount": 2,
           "branchCount": 0,
           "repeatCount": 0,
           "opaqueCount": 0,
@@ -657,8 +989,12 @@
         "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
         "branchesResolved": 0,
+        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 50,
@@ -677,7 +1013,7 @@
       "id": "redux-toolkit",
       "revision": "e99fe6135188219f031c5028f653fb82e671de24",
       "framework": "spa",
-      "capturedAt": "2026-09-06T14:53:51.795Z",
+      "capturedAt": "2026-09-07T03:27:14.605Z",
       "durationMs": 52,
       "runtime": {
         "reactVersion": "19.2.4",
@@ -708,8 +1044,24 @@
         "opaqueSkippedFibers": 2,
         "slotsMatched": 1,
         "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
         "branchesResolved": 1,
+        "branchDeviations": [
+          {
+            "path": "root > <Provider> (opaque) > <App> [FunctionComponent] > <div> [HostComponent]",
+            "reason": "conditional on @reduxjs/toolkit#createApi().useGetPokemonByNameQuery().error",
+            "preferredIndex": 0,
+            "chosenIndex": 2,
+            "divergence": {
+              "path": "root > <Provider> (opaque) > <App> [FunctionComponent] > <div> [HostComponent][0]",
+              "expected": "\"Oh no, there was an error\"",
+              "actual": "<h3> [HostComponent]"
+            }
+          }
+        ],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 6,
@@ -728,8 +1080,8 @@
       "id": "sentry",
       "revision": "a7b4a8a2a78a666418e527d812e81528147789da",
       "framework": "react-router",
-      "capturedAt": "2026-09-06T23:25:22.011Z",
-      "durationMs": 14971,
+      "capturedAt": "2026-09-07T03:27:16.582Z",
+      "durationMs": 769,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -749,22 +1101,18 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 2261,
-          "textCount": 55,
-          "branchCount": 54,
-          "repeatCount": 12,
-          "opaqueCount": 19,
-          "unknownCount": 56,
-          "modulesLoaded": 702
+          "fiberCount": 834,
+          "textCount": 19,
+          "branchCount": 15,
+          "repeatCount": 0,
+          "opaqueCount": 1,
+          "unknownCount": 8,
+          "modulesLoaded": 662
         },
         "diagnostics": [
           {
             "code": "dynamic-key",
-            "count": 9
-          },
-          {
-            "code": "dynamic-props",
-            "count": 1
+            "count": 4
           }
         ]
       },
@@ -779,43 +1127,43 @@
         "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
-        "branchesResolved": 9,
+        "branchesResolved": 7,
         "branchDeviations": [],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 566,
-        "staticFibers": 655,
+        "staticFibers": 608,
         "coverage": 1,
         "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 583,
+        "stepsUsed": 573,
         "budgetExhausted": false
       },
       "anchor": null,
-      "note": null,
+      "note": "runtime replayed from 2026-09-06T23:25:35.602Z",
       "failure": null
     },
     {
       "id": "shadcn-ui",
       "revision": "7c9eaba1c0a6404c990c144a654792e3313c650d",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T14:53:51.847Z",
-      "durationMs": 228,
+      "capturedAt": "2026-09-07T03:27:14.658Z",
+      "durationMs": 289,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 2826,
-          "textCount": 378,
-          "branchCount": 104,
-          "repeatCount": 11,
-          "opaqueCount": 1418,
-          "unknownCount": 31,
+          "fiberCount": 2162,
+          "textCount": 232,
+          "branchCount": 54,
+          "repeatCount": 26,
+          "opaqueCount": 1020,
+          "unknownCount": 19,
           "modulesLoaded": 94
         },
         "diagnostics": [
           {
             "code": "dynamic-key",
-            "count": 8
+            "count": 7
           }
         ]
       },
@@ -828,8 +1176,8 @@
       "id": "sonner",
       "revision": "8e4662b39255120b62138312058f5d77c0139a5e",
       "framework": "next-app",
-      "capturedAt": "2026-09-06T14:53:52.080Z",
-      "durationMs": 62,
+      "capturedAt": "2026-09-07T03:27:14.954Z",
+      "durationMs": 67,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
@@ -842,12 +1190,12 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 52,
+          "fiberCount": 48,
           "textCount": 0,
           "branchCount": 0,
           "repeatCount": 0,
           "opaqueCount": 0,
-          "unknownCount": 4,
+          "unknownCount": 2,
           "modulesLoaded": 3
         },
         "diagnostics": []
@@ -859,8 +1207,12 @@
         "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
         "branchesResolved": 0,
+        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 44,
@@ -879,8 +1231,8 @@
       "id": "tanstack-query",
       "revision": "1893a965d219032207cbe147880d0e9f757a5a56",
       "framework": "spa",
-      "capturedAt": "2026-09-06T14:53:52.143Z",
-      "durationMs": 51,
+      "capturedAt": "2026-09-07T03:27:15.021Z",
+      "durationMs": 56,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -893,38 +1245,145 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 22,
-          "textCount": 3,
-          "branchCount": 1,
-          "repeatCount": 1,
+          "fiberCount": 43,
+          "textCount": 5,
+          "branchCount": 3,
+          "repeatCount": 0,
           "opaqueCount": 2,
-          "unknownCount": 2,
+          "unknownCount": 5,
           "modulesLoaded": 1
         },
-        "diagnostics": [
-          {
-            "code": "dynamic-key",
-            "count": 1
-          }
-        ]
+        "diagnostics": []
       },
       "report": {
-        "matchedFibers": 209,
+        "matchedFibers": 9,
         "matchedText": 2,
         "opaqueSubtrees": 2,
         "opaqueSkippedFibers": 6,
         "slotsMatched": 1,
         "slotsUnmatched": 0,
-        "wildcardAbsorbedFibers": 0,
-        "branchesResolved": 1,
-        "repeatIterations": 100,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 200,
+        "wildcards": [
+          {
+            "path": "root > <App> [FunctionComponent] > <PersistQueryClientProvider> (opaque) > <Posts> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent]",
+            "reason": "call of data fetched by the query at runtime",
+            "absorbedFibers": 200,
+            "heads": [
+              "<p> key=\"1\" [HostComponent]",
+              "<p> key=\"2\" [HostComponent]",
+              "<p> key=\"3\" [HostComponent]",
+              "<p> key=\"4\" [HostComponent]",
+              "<p> key=\"5\" [HostComponent]",
+              "<p> key=\"6\" [HostComponent]",
+              "<p> key=\"7\" [HostComponent]",
+              "<p> key=\"8\" [HostComponent]",
+              "<p> key=\"9\" [HostComponent]",
+              "<p> key=\"10\" [HostComponent]",
+              "<p> key=\"11\" [HostComponent]",
+              "<p> key=\"12\" [HostComponent]",
+              "<p> key=\"13\" [HostComponent]",
+              "<p> key=\"14\" [HostComponent]",
+              "<p> key=\"15\" [HostComponent]",
+              "<p> key=\"16\" [HostComponent]",
+              "<p> key=\"17\" [HostComponent]",
+              "<p> key=\"18\" [HostComponent]",
+              "<p> key=\"19\" [HostComponent]",
+              "<p> key=\"20\" [HostComponent]",
+              "<p> key=\"21\" [HostComponent]",
+              "<p> key=\"22\" [HostComponent]",
+              "<p> key=\"23\" [HostComponent]",
+              "<p> key=\"24\" [HostComponent]",
+              "<p> key=\"25\" [HostComponent]",
+              "<p> key=\"26\" [HostComponent]",
+              "<p> key=\"27\" [HostComponent]",
+              "<p> key=\"28\" [HostComponent]",
+              "<p> key=\"29\" [HostComponent]",
+              "<p> key=\"30\" [HostComponent]",
+              "<p> key=\"31\" [HostComponent]",
+              "<p> key=\"32\" [HostComponent]",
+              "<p> key=\"33\" [HostComponent]",
+              "<p> key=\"34\" [HostComponent]",
+              "<p> key=\"35\" [HostComponent]",
+              "<p> key=\"36\" [HostComponent]",
+              "<p> key=\"37\" [HostComponent]",
+              "<p> key=\"38\" [HostComponent]",
+              "<p> key=\"39\" [HostComponent]",
+              "<p> key=\"40\" [HostComponent]",
+              "<p> key=\"41\" [HostComponent]",
+              "<p> key=\"42\" [HostComponent]",
+              "<p> key=\"43\" [HostComponent]",
+              "<p> key=\"44\" [HostComponent]",
+              "<p> key=\"45\" [HostComponent]",
+              "<p> key=\"46\" [HostComponent]",
+              "<p> key=\"47\" [HostComponent]",
+              "<p> key=\"48\" [HostComponent]",
+              "<p> key=\"49\" [HostComponent]",
+              "<p> key=\"50\" [HostComponent]",
+              "<p> key=\"51\" [HostComponent]",
+              "<p> key=\"52\" [HostComponent]",
+              "<p> key=\"53\" [HostComponent]",
+              "<p> key=\"54\" [HostComponent]",
+              "<p> key=\"55\" [HostComponent]",
+              "<p> key=\"56\" [HostComponent]",
+              "<p> key=\"57\" [HostComponent]",
+              "<p> key=\"58\" [HostComponent]",
+              "<p> key=\"59\" [HostComponent]",
+              "<p> key=\"60\" [HostComponent]",
+              "<p> key=\"61\" [HostComponent]",
+              "<p> key=\"62\" [HostComponent]",
+              "<p> key=\"63\" [HostComponent]",
+              "<p> key=\"64\" [HostComponent]",
+              "<p> key=\"65\" [HostComponent]",
+              "<p> key=\"66\" [HostComponent]",
+              "<p> key=\"67\" [HostComponent]",
+              "<p> key=\"68\" [HostComponent]",
+              "<p> key=\"69\" [HostComponent]",
+              "<p> key=\"70\" [HostComponent]",
+              "<p> key=\"71\" [HostComponent]",
+              "<p> key=\"72\" [HostComponent]",
+              "<p> key=\"73\" [HostComponent]",
+              "<p> key=\"74\" [HostComponent]",
+              "<p> key=\"75\" [HostComponent]",
+              "<p> key=\"76\" [HostComponent]",
+              "<p> key=\"77\" [HostComponent]",
+              "<p> key=\"78\" [HostComponent]",
+              "<p> key=\"79\" [HostComponent]",
+              "<p> key=\"80\" [HostComponent]",
+              "<p> key=\"81\" [HostComponent]",
+              "<p> key=\"82\" [HostComponent]",
+              "<p> key=\"83\" [HostComponent]",
+              "<p> key=\"84\" [HostComponent]",
+              "<p> key=\"85\" [HostComponent]",
+              "<p> key=\"86\" [HostComponent]",
+              "<p> key=\"87\" [HostComponent]",
+              "<p> key=\"88\" [HostComponent]",
+              "<p> key=\"89\" [HostComponent]",
+              "<p> key=\"90\" [HostComponent]",
+              "<p> key=\"91\" [HostComponent]",
+              "<p> key=\"92\" [HostComponent]",
+              "<p> key=\"93\" [HostComponent]",
+              "<p> key=\"94\" [HostComponent]",
+              "<p> key=\"95\" [HostComponent]",
+              "<p> key=\"96\" [HostComponent]",
+              "<p> key=\"97\" [HostComponent]",
+              "<p> key=\"98\" [HostComponent]",
+              "<p> key=\"99\" [HostComponent]",
+              "<p> key=\"100\" [HostComponent]"
+            ]
+          }
+        ],
+        "branchesResolved": 2,
+        "branchDeviations": [],
+        "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 217,
-        "staticFibers": 15,
+        "staticFibers": 16,
         "coverage": 1,
-        "strictCoverage": 0.9723502304147466,
+        "strictCoverage": 0.05069124423963134,
         "divergence": null,
-        "stepsUsed": 320,
+        "stepsUsed": 21,
         "budgetExhausted": false
       },
       "anchor": null,
@@ -935,8 +1394,8 @@
       "id": "tanstack-router",
       "revision": "cf166d160e6397007a979bfc7065b45ff69ea543",
       "framework": "spa",
-      "capturedAt": "2026-09-06T14:55:05.082Z",
-      "durationMs": 52,
+      "capturedAt": "2026-09-07T03:27:15.077Z",
+      "durationMs": 46,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -949,7 +1408,7 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 1,
+          "fiberCount": 2,
           "textCount": 0,
           "branchCount": 0,
           "repeatCount": 0,
@@ -966,8 +1425,12 @@
         "opaqueSkippedFibers": 48,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
         "branchesResolved": 0,
+        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 48,
@@ -986,17 +1449,17 @@
       "id": "tldraw",
       "revision": "e8f61acedcbf2dc69693ea1e1f612a7f635fb4b5",
       "framework": "react-router",
-      "capturedAt": "2026-09-06T14:53:52.240Z",
-      "durationMs": 77,
+      "capturedAt": "2026-09-07T03:27:15.124Z",
+      "durationMs": 79,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 1010,
-          "textCount": 4,
-          "branchCount": 34,
+          "fiberCount": 142,
+          "textCount": 1,
+          "branchCount": 5,
           "repeatCount": 0,
           "opaqueCount": 3,
-          "unknownCount": 337,
+          "unknownCount": 14,
           "modulesLoaded": 6
         },
         "diagnostics": []

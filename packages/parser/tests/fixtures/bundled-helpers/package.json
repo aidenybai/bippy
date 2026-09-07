@@ -1,0 +1,5 @@
+{
+  "name": "fixture-bundled-helpers",
+  "private": true,
+  "type": "module"
+}

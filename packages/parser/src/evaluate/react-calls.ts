@@ -419,16 +419,10 @@ export const evaluateReactApiCall = (
       ]);
     case "useDeferredValue":
       return first ?? UNDEFINED_VALUE;
-    case "useSyncExternalStore": {
-      const snapshot = second
+    case "useSyncExternalStore":
+      return second
         ? interpreter.callValue(second, [], context, location)
-        : unknownValue("external store snapshot");
-      return branchValue(
-        [snapshot, unknownValue("external store snapshot may change")],
-        "external store",
-        location,
-      );
-    }
+        : unknownValue("external store snapshot", location);
     case "useOptimistic":
       return listValue([first ?? UNDEFINED_VALUE, unknownValue("optimistic setter")]);
     case "useActionState":

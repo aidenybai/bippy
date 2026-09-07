@@ -38,7 +38,7 @@ export const createProjectContext = (
     if (path.dirname(directory) === directory) break;
   }
   const queries = new Map(observations.queries.map((query) => [query.queryHash, query]));
-  const { mutations } = observations;
+  const { mutations, stores } = observations;
   return {
     hasDeclaredDependency: (packageName) => declared.has(packageName),
     findQuery: (queryHash) => queries.get(queryHash) ?? null,
@@ -46,5 +46,6 @@ export const createProjectContext = (
       mutations?.filter((mutation) => mutation.mutationHash === mutationHash) ?? null,
     linguiCatalog: observations.lingui ?? null,
     routerState: observations.router ?? null,
+    storeStates: stores ?? null,
   };
 };

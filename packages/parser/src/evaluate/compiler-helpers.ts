@@ -1,5 +1,6 @@
 import type { StaticNativeFunctionValue, StaticValue, StubRenderTools } from "../types.js";
 import { isCompilerHelperPackage } from "../graph/helper-packages.js";
+import { hasExportedName } from "../graph/module-record.js";
 import { getBuiltinGlobal, getTypeofValue } from "./builtin-calls.js";
 import {
   getObjectProperty,
@@ -21,7 +22,9 @@ type HelperImplementation = (args: StaticValue[], tools: StubRenderTools) => Sta
 
 /** Whether a module namespace behaves as an ES module to interop helpers. */
 const isEsModuleLike = (value: StaticValue): boolean => {
-  if (value.kind === "namespace") return !value.module.isCommonJs;
+  if (value.kind === "namespace") {
+    return !value.module.isCommonJs || hasExportedName(value.module, "__esModule");
+  }
   if (value.kind === "external") return true;
   if (value.kind === "object")
     return getTruthiness(getObjectProperty(value, "__esModule")) === true;

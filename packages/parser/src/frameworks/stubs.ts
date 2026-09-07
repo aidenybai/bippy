@@ -1,4 +1,9 @@
-import { NULL_VALUE, getObjectProperty, objectFromRecord } from "../evaluate/values.js";
+import {
+  NULL_VALUE,
+  UNDEFINED_VALUE,
+  getObjectProperty,
+  objectFromRecord,
+} from "../evaluate/values.js";
 import type {
   StaticElementType,
   StaticElementValue,
@@ -43,6 +48,22 @@ export const nativeFunction = (
   name: string,
   call: (args: StaticValue[], tools: StubRenderTools) => StaticValue,
 ): StaticValue => ({ kind: "native-function", name, call });
+
+/** `target` with properties computed on access (a store's `values`), as `new Proxy(target, { get })` would. */
+export const lazyProperties = (
+  target: StaticValue,
+  getProperty: (key: string, tools: StubRenderTools) => StaticValue,
+): StaticValue => ({
+  kind: "proxy",
+  target,
+  handler: objectFromRecord({
+    get: nativeFunction("get", ([, key], tools) =>
+      key?.kind === "primitive" && typeof key.value === "string"
+        ? getProperty(key.value, tools)
+        : UNDEFINED_VALUE,
+    ),
+  }),
+});
 
 /** A component that renders exactly its children (context/state wrappers with no host output). */
 export const passthroughStub = (displayName: string): StubComponent => ({

@@ -37,8 +37,9 @@ const requireField = (target: FrameworkRenderTarget, field: "entry" | "route"): 
  */
 export const renderFrameworkTarget = (
   target: FrameworkRenderTarget,
-  options: StaticRendererOptions,
+  rendererOptions: StaticRendererOptions,
 ): Promise<StaticRenderResult> => {
+  const options: StaticRendererOptions = { ...rendererOptions, route: target.route };
   if (target.rootComponent !== undefined) return renderRootComponent(target, options);
   switch (target.framework) {
     case "spa":

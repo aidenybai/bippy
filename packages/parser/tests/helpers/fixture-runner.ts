@@ -21,6 +21,7 @@ import {
   type RuntimeFiberSnapshot,
   type RuntimeSnapshot,
 } from "../../src/harness/index.js";
+import { installReduxStoreHook } from "../../src/harness/redux-store.js";
 
 export interface FixtureManifest {
   entry: string;
@@ -63,6 +64,7 @@ const DEFAULT_MANIFEST: FixtureManifest = {
   minCoverage: 1,
   framework: "spa",
 };
+const readReduxStores = installReduxStoreHook(window);
 const SETTLE_QUIET_MS = 50;
 const SETTLE_TIMEOUT_MS = 2_000;
 
@@ -115,13 +117,14 @@ const mountFixture = async (fixture: FixtureCase): Promise<MountResult> => {
   document.body.appendChild(container);
   const recorder = createCommitRecorder({
     rootFilter: (root) => getRootContainer(root) === container,
+    reduxStores: readReduxStores,
   });
   try {
     const commit = recorder.waitForCommit();
     await import(/* @vite-ignore */ join(fixture.directory, fixture.manifest.entry));
     await commit;
     await settleCommits(recorder);
-    return { snapshot: recorder.snapshot(), observed: recorder.observations() };
+    return { snapshot: recorder.snapshot(), observed: await recorder.observations() };
   } finally {
     recorder.dispose();
   }

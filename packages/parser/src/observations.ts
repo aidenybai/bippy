@@ -1,4 +1,5 @@
 import type {
+  CapturedExportReference,
   CapturedLinguiCatalog,
   CapturedMutation,
   CapturedQuery,
@@ -9,6 +10,7 @@ import type {
 } from "./types.js";
 
 export const OPAQUE_CAPTURE_KEY = "$bippyOpaque";
+export const EXPORT_CAPTURE_KEY = "$bippyExport";
 
 export const EMPTY_OBSERVATIONS: RuntimeObservations = { globals: {}, queries: [] };
 
@@ -125,6 +127,7 @@ export const readObservationsJson = (value: unknown): RuntimeObservations => {
   }
   if (isCapturedLinguiCatalog(value.lingui)) observations.lingui = value.lingui;
   if (isCapturedRouterState(value.router)) observations.router = value.router;
+  if (Array.isArray(value.stores)) observations.stores = value.stores.filter(isCapturedValue);
   return observations;
 };
 
@@ -137,4 +140,19 @@ export const getOpaqueCaptureDescription = (value: CapturedValue): string | null
   if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
   const description = value[OPAQUE_CAPTURE_KEY];
   return Object.keys(value).length === 1 && typeof description === "string" ? description : null;
+};
+
+export const exportCapture = (reference: CapturedExportReference): CapturedValue => ({
+  [EXPORT_CAPTURE_KEY]: { module: reference.module, name: reference.name },
+});
+
+/** The module export a captured node is identical to, or null for a value serialized by content. */
+export const getCapturedExportReference = (
+  value: CapturedValue,
+): CapturedExportReference | null => {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+  const reference = value[EXPORT_CAPTURE_KEY];
+  if (Object.keys(value).length !== 1 || !isRecord(reference)) return null;
+  const { module, name } = reference;
+  return typeof module === "string" && typeof name === "string" ? { module, name } : null;
 };

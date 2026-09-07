@@ -151,6 +151,10 @@ framework internals; application mismatches are never hidden this way.
   isolated per fixture and React 19 resource/preload fibers are allowed to settle.
 - `BrowserCapturer` bundles `browser-inject.ts` with esbuild and installs it via Playwright
   `addInitScript` before any application script, so live dev servers are captured unchanged.
+  Alongside fibers it records `RuntimeObservations` (`observations.ts`): globals, query-cache
+  entries, Redux/Kea store state, Lingui catalogs, router location and the identity of exported
+  values (`module-exports.ts`). A saved capture replays with `--static-only`, and the static render
+  takes the observations as inputs so dynamic data the page actually had is not guessed.
 - `compareStaticToRuntime` reads the materialized fiber tree back into a pattern (`static-pattern.ts`:
   marker fibers become branch/repeat/opaque/wildcard nodes, everything else is a concrete fiber)
   and matches it against the runtime tree: hierarchy, tags, names, keys, host elements, text.
@@ -168,17 +172,22 @@ largest root.
 
 ## Corpus
 
-`corpus/manifest.json` pins 20 real repositories by revision with framework, install/setup/dev
+`corpus/manifest.json` pins 23 real repositories by revision with framework, install/setup/dev
 commands, URL, static target and notes; `corpus/results.json` holds the latest merged results.
 Clones and captures live under the ignored `.corpus/`. Every entry renders statically; runtime
 capture runs where a dev server can start in this environment.
 
-Live-verified so far: `react-router-templates` (exact), `nextjs-examples`, `sonner`,
-`tanstack-query`, `bulletproof-react` (partial — dynamic data or lazy routes remain uncertain,
-normalized coverage 100%). Entries whose dev server needs external services (`cal-diy`:
-Postgres and app-store env) are recorded as blocked rather than approximated. Results are
-recorded as they are; profiles and normalization are only widened when the difference is
-demonstrably framework machinery.
+Live-verified so far: `react-router-templates`, `sonner`, `documenso` (exact); `sentry`,
+`posthog`, `nextjs-examples` (partial at 100% strict coverage — every runtime fiber is matched
+by a concrete static fiber, but branches or repeats were consumed); `cal-diy`,
+`bulletproof-react`, `puck`, `redux-toolkit`, `lexical`, `tanstack-query`, `graphiql`,
+`react-admin`, `tanstack-router` (partial — opaque third-party providers or dynamic data cut
+the static tree short). `corpus/scripts/` holds the setup used for the heavy entries: a
+throwaway Postgres (`postgres.sh`) with seeded databases for `cal-diy` and `documenso`, a
+Node-version wrapper (`with-node.sh`), and a stand-in for PostHog's Django boot page
+(`posthog-app-server.ts`) that serves the globals, preflight and API responses Vite alone does
+not provide. Results are recorded as they are; profiles and normalization are only widened when
+the difference is demonstrably framework machinery.
 
 ## Limitations
 

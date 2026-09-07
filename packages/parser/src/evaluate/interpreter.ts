@@ -27,7 +27,9 @@ import type {
   UnaryExpression,
   UpdateExpression,
 } from "oxc-parser";
+import path from "node:path";
 import type { ModuleGraph } from "../graph/module-graph.js";
+import { hasExportedName } from "../graph/module-record.js";
 import { getLibraryValue } from "../libraries/index.js";
 import { getSourceLocation } from "../parse/source-location.js";
 import {
@@ -35,6 +37,7 @@ import {
   REACT_ELEMENT_OWN_KEYS,
   WRAPPER_OWN_KEYS,
   getReactElementSymbolKey,
+  REACT_ELEMENT_SYMBOL_KEYS,
 } from "../react/element-shape.js";
 import { toElementType } from "../react/element-type.js";
 import {
@@ -49,6 +52,7 @@ import type {
   Diagnostic,
   ExternalValueProvider,
   FunctionLikeNode,
+  CapturedExportReference,
   CapturedValue,
   JsonValue,
   ModuleRecord,
@@ -77,6 +81,7 @@ import {
 } from "./builtin-calls.js";
 import { collectClassMembers, constructClassInstance } from "./class-component.js";
 import { markCollectionExternallyMutable } from "./collections.js";
+import { getRouteLocationMember } from "./browser-globals.js";
 import { HeapJournal, type MutableHeapValue } from "./heap-journal.js";
 import { createStorageAreas, getStorageAreaName, getStorageLength } from "./web-storage.js";
 import { type CompiledClass, getCompiledClass } from "./compiled-class.js";
@@ -90,6 +95,10 @@ import { evaluateLoop } from "./loops.js";
 import { applyNarrowing, narrowTest, withNarrowedBinding } from "./narrowing.js";
 import { evaluateReactApiCall } from "./react-calls.js";
 import { createScope, declareInScope, findOwningScope, lookupScope } from "./scope.js";
+import {
+  evaluateTypeScriptDeclaration,
+  getTypeScriptDeclarationName,
+} from "./typescript-declarations.js";
 import {
   areValuesEquivalent,
   branchValue,
@@ -109,6 +118,7 @@ import {
   mapValue,
   NULL_VALUE,
   capturedValue,
+  objectFromRecord,
   objectValue,
   omitObjectKeys,
   partialJsonValue,
@@ -129,6 +139,10 @@ export interface InterpreterOptions {
   globals?: Record<string, JsonValue>;
   /** `window` properties recorded whole from a running page (see `capturedValue`). */
   capturedGlobals?: Record<string, CapturedValue>;
+  /** URL path the page is rendered at; `location.pathname`/`search`/`hash` read it. */
+  route?: string;
+  /** Directory the page's dev server served `/` from; captured module-export references resolve against it. */
+  servedRootDirectory?: string;
   /** The rendered tree may be mounted under providers that are not part of the analysis, so unprovided contexts are uncertain. */
   assumeOuterProviders?: boolean;
   /** The analyzed app's React version; decides which `$$typeof` symbol tags elements. */
@@ -148,6 +162,7 @@ const UNKNOWN_PROJECT: ProjectContext = {
   findMutations: () => null,
   linguiCatalog: null,
   routerState: null,
+  storeStates: null,
 };
 
 const DEFAULT_MAX_CALL_DEPTH = 32;
@@ -156,6 +171,7 @@ const DEFAULT_MAX_STEPS = 2_000_000;
 export const STYLED_JSX_SPECIFIER = "styled-jsx/style";
 
 const IN_PROGRESS = Symbol("in-progress");
+const FS_URL_PREFIX = "/@fs/";
 
 const OBJECT_PROTOTYPE_METHODS = new Set([
   "hasOwnProperty",
@@ -179,7 +195,7 @@ const prototypeMember = (
   prototype: object | null,
   key: string,
 ): StaticValue =>
-  prototype === null || key in prototype
+  prototype === null || key in prototype || isPromiseMethodName(key)
     ? { kind: "method", receiver, name: key }
     : UNDEFINED_VALUE;
 
@@ -306,6 +322,8 @@ export class Interpreter {
   private readonly maxForkDepth: number;
   private readonly externalValues: ExternalValueProvider | null;
   private readonly project: ProjectContext;
+  private readonly route: string | null;
+  private readonly servedRootDirectory: string | null;
   private readonly windowGlobals = new Map<string, StaticValue>();
   readonly storageAreas = createStorageAreas();
   private readonly heapJournals: HeapJournal[] = [];
@@ -315,6 +333,10 @@ export class Interpreter {
   private remainingSteps: number;
   private readonly moduleScopes = new Map<string, Scope>();
   private readonly moduleValues = new Map<string, Map<string, StaticValue | typeof IN_PROGRESS>>();
+  private readonly exportExpressionValues = new WeakMap<
+    Expression,
+    StaticValue | typeof IN_PROGRESS
+  >();
   /** One evaluation per destructuring declarator, shared by every name it binds. */
   private readonly destructuredInitValues = new WeakMap<Expression, StaticValue>();
   private readonly diagnosticKeys = new Set<string>();
@@ -326,14 +348,32 @@ export class Interpreter {
     this.remainingSteps = options.maxSteps ?? DEFAULT_MAX_STEPS;
     this.externalValues = options.externalValues ?? null;
     this.project = options.project ?? UNKNOWN_PROJECT;
+    this.route = options.route ?? null;
+    this.servedRootDirectory = options.servedRootDirectory ?? null;
     for (const [name, json] of Object.entries(options.globals ?? {})) {
       this.windowGlobals.set(name, partialJsonValue(json, `window.${name}`));
     }
     for (const [name, captured] of Object.entries(options.capturedGlobals ?? {})) {
-      this.windowGlobals.set(name, capturedValue(captured, `window.${name}`));
+      this.windowGlobals.set(name, this.captured(captured, `window.${name}`));
     }
     this.elementSymbolKey = getReactElementSymbolKey(options.reactVersion ?? null);
     this.assumeOuterProviders = options.assumeOuterProviders ?? false;
+  }
+
+  /** A value recorded from the running page, with references to the project's own module exports evaluated. */
+  captured(captured: CapturedValue, name: string): StaticValue {
+    return capturedValue(captured, name, (reference) => this.resolveCapturedExport(reference));
+  }
+
+  // Dev servers address a module by its path under the served root, or under
+  // `/@fs/` when it lies outside (Vite; a linked workspace package).
+  private resolveCapturedExport(reference: CapturedExportReference): StaticValue | null {
+    if (this.servedRootDirectory === null) return null;
+    const filePath = reference.module.startsWith(FS_URL_PREFIX)
+      ? reference.module.slice(FS_URL_PREFIX.length - 1)
+      : path.join(this.servedRootDirectory, reference.module);
+    const module = this.graph.getModule(filePath);
+    return module && this.evaluateModuleExport(module, reference.name);
   }
 
   getWindowGlobal(name: string): StaticValue {
@@ -440,11 +480,7 @@ export class Interpreter {
       case "binding":
         return this.evaluateModuleBinding(symbol.module, symbol.binding.name) ?? UNDEFINED_VALUE;
       case "expression":
-        return this.evaluateExpression(
-          symbol.expression,
-          this.createModuleContext(symbol.module),
-          nameHint,
-        );
+        return this.evaluateExportExpression(symbol.module, symbol.expression, nameHint);
       case "namespace":
         return { kind: "namespace", module: symbol.module };
       case "external": {
@@ -475,6 +511,26 @@ export class Interpreter {
     }
   }
 
+  /** `export default expr` / `exports.name = expr` evaluate once so the exported identity is stable. */
+  private evaluateExportExpression(
+    module: ModuleRecord,
+    expression: Expression,
+    nameHint: string | null,
+  ): StaticValue {
+    const cached = this.exportExpressionValues.get(expression);
+    if (cached === IN_PROGRESS) {
+      return unknownValue(
+        "cyclic module-level evaluation of an export",
+        this.locate(module, expression),
+      );
+    }
+    if (cached) return cached;
+    this.exportExpressionValues.set(expression, IN_PROGRESS);
+    const value = this.evaluateExpression(expression, this.createModuleContext(module), nameHint);
+    this.exportExpressionValues.set(expression, value);
+    return value;
+  }
+
   private applyMemberAssignments(
     module: ModuleRecord,
     name: string,
@@ -484,10 +540,8 @@ export class Interpreter {
     let result = value;
     for (const assignment of module.memberAssignments) {
       if (assignment.objectName !== name) continue;
-      if (
-        assignment.condition &&
-        getTruthiness(this.evaluateExpression(assignment.condition, context)) !== true
-      )
+      const { guard } = assignment;
+      if (guard && getTruthiness(this.evaluateExpression(guard.test, context)) !== guard.whenTruthy)
         continue;
       const assigned = this.evaluateExpression(assignment.value, context, assignment.propertyName);
       result = this.assignProperty(result, assignment.propertyName, assigned, context);
@@ -614,6 +668,8 @@ export class Interpreter {
         );
       case "class":
         return this.createClassValue(binding.node, context, binding.name);
+      case "typescript":
+        return evaluateTypeScriptDeclaration(this, binding.node, context);
       case "import":
         return this.resolvedSymbolToValue(
           this.graph.resolveImport(binding.binding, module),
@@ -717,9 +773,18 @@ export class Interpreter {
     if (scoped) return scoped;
     const moduleValue = this.evaluateModuleBinding(context.module, name);
     if (moduleValue) return moduleValue;
-    const builtin = getBuiltinGlobal(name);
+    const builtin = this.getGlobal(name);
     if (builtin) return builtin;
+    if (context.module.isCommonJs) {
+      const exportsValue: StaticValue = { kind: "namespace", module: context.module };
+      if (name === "exports") return exportsValue;
+      if (name === "module") return objectFromRecord({ exports: exportsValue });
+    }
     return unknownValue(`unbound identifier "${name}"`);
+  }
+
+  private getGlobal(name: string): StaticValue | null {
+    return getRouteLocationMember(this.route, name) ?? getBuiltinGlobal(name);
   }
 
   private consumeStep(location: SourceLocation | null): boolean {
@@ -958,7 +1023,43 @@ export class Interpreter {
         value: this.evaluateExpression(property.value, context, key),
       });
     }
-    return this.stampHeapValue(objectValue(entries));
+    const object = objectValue(entries);
+    return (
+      this.reactElementFromObject(object, this.locate(context.module, node), context) ??
+      this.stampHeapValue(object)
+    );
+  }
+
+  /** A bundled `jsx-runtime` builds elements as plain `{ $$typeof, type, key, ref, props }` literals. */
+  private reactElementFromObject(
+    object: StaticObjectValue,
+    location: SourceLocation | null,
+    context: EvaluationContext,
+  ): StaticValue | null {
+    if (object.entries.some((entry) => entry.kind === "spread")) return null;
+    const tag = getObjectProperty(object, "$$typeof");
+    if (tag.kind !== "symbol" || !REACT_ELEMENT_SYMBOL_KEYS.has(tag.key)) return null;
+    const type = getObjectProperty(object, "type");
+    const props = getObjectProperty(object, "props");
+    if (type.kind === "primitive" && type.value === undefined) return null;
+    const key = getObjectProperty(object, "key");
+    const ref = getObjectProperty(object, "ref");
+    const elementProps =
+      props.kind === "object"
+        ? objectValue([...props.entries])
+        : objectValue([{ kind: "spread", value: props }]);
+    if (isNullish(ref) !== true) {
+      elementProps.entries.push({ kind: "property", key: "ref", value: ref });
+    }
+    return this.createElement(
+      type,
+      elementProps,
+      isNullish(key) === true ? null : key,
+      [],
+      location,
+      null,
+      context,
+    );
   }
 
   private evaluateLogicalExpression(
@@ -1164,6 +1265,8 @@ export class Interpreter {
       const key = this.evaluateExpression(target.property, context);
       if (key.kind === "primitive") {
         this.assignMember(target.object, String(key.value), value, context);
+      } else {
+        this.assignDynamicMember(target.object, key, value, context);
       }
     } else if (target.type === "ObjectPattern" || target.type === "ArrayPattern") {
       this.report(
@@ -1185,6 +1288,34 @@ export class Interpreter {
     if (reassigned !== object && objectNode.type === "Identifier") {
       this.assignIdentifier(objectNode.name, reassigned, context);
     }
+  }
+
+  private assignDynamicMember(
+    objectNode: Expression,
+    key: StaticValue,
+    value: StaticValue,
+    context: EvaluationContext,
+  ): void {
+    const object = this.evaluateExpression(objectNode, context);
+    if (object.kind === "branch") {
+      for (const alternative of object.alternatives) {
+        if (alternative.kind === "object") this.assignDynamicEntry(alternative, key, value);
+      }
+      return;
+    }
+    if (object.kind === "object") this.assignDynamicEntry(object, key, value);
+  }
+
+  private assignDynamicEntry(
+    target: StaticObjectValue,
+    key: StaticValue,
+    value: StaticValue,
+  ): void {
+    this.recordHeapMutation(target);
+    target.entries.push({
+      kind: "spread",
+      value: unknownValue(`property ${describeValue(key)} set to ${describeValue(value)}`),
+    });
   }
 
   private assignIdentifier(name: string, value: StaticValue, context: EvaluationContext): void {
@@ -1312,7 +1443,7 @@ export class Interpreter {
         if (
           property.kind === "primitive" &&
           property.value === undefined &&
-          OBJECT_PROTOTYPE_METHODS.has(key)
+          (OBJECT_PROTOTYPE_METHODS.has(key) || isPromiseMethodName(key))
         )
           return { kind: "method", receiver: object, name: key };
         return property;
@@ -1382,24 +1513,25 @@ export class Interpreter {
       case "external":
         if (object.importedName === "*" && !object.derived) {
           if (key === "__esModule") return TRUE_VALUE;
-          if (key === "default") {
-            return this.resolvedSymbolToValue(
-              {
-                kind: "external",
-                packageName: object.packageName,
-                imported: { kind: "default" },
-                specifier: object.packageName,
-              },
-              null,
-            );
-          }
+          return this.resolvedSymbolToValue(
+            {
+              kind: "external",
+              packageName: object.packageName,
+              imported: key === "default" ? { kind: "default" } : { kind: "named", name: key },
+              specifier: object.packageName,
+            },
+            null,
+          );
         }
         if (object.derived && isModeledOpaqueMethodName(key))
           return { kind: "method", receiver: object, name: key };
         return getExternalMember(object, key);
       case "namespace":
         if (isPromiseMethodName(key)) return { kind: "method", receiver: object, name: key };
-        if (key === "__esModule" && !object.module.isCommonJs) return TRUE_VALUE;
+        if (key === "__esModule") {
+          if (!object.module.isCommonJs) return TRUE_VALUE;
+          if (!hasExportedName(object.module, key)) return UNDEFINED_VALUE;
+        }
         return this.evaluateModuleExport(object.module, key);
       case "global": {
         const storageAreaName = getStorageAreaName(object.name);
@@ -1410,7 +1542,7 @@ export class Interpreter {
         }
         return (
           (object.name === "window" ? this.windowGlobals.get(key) : undefined) ??
-          getBuiltinGlobal(`${object.name}.${key}`) ?? {
+          this.getGlobal(`${object.name}.${key}`) ?? {
             kind: "method",
             receiver: object,
             name: key,
@@ -1489,11 +1621,7 @@ export class Interpreter {
   ): StaticValue {
     const target = this.graph.resolveImportedModule(specifier, context.module);
     if ("bindings" in target) {
-      if (
-        isRequire &&
-        target.isCommonJs &&
-        target.exports.some((entry) => "exportedName" in entry && entry.exportedName === "default")
-      ) {
+      if (isRequire && target.replacesModuleExports) {
         return this.evaluateModuleExport(target, "default");
       }
       return { kind: "namespace", module: target };
@@ -1619,6 +1747,7 @@ export class Interpreter {
           readContext: (definition) => context.readContext(definition) ?? definition.defaultValue,
           callAwaited: (fn, fnArgs) => this.callAwaited(fn, fnArgs, context, location),
           call: (fn, fnArgs) => this.callValue(fn, fnArgs, context, location),
+          captured: (captured, name) => this.captured(captured, name),
           nameHint: options.nameHint ?? null,
           templateArgumentNames: options.templateArgumentNames ?? null,
         });
@@ -1999,6 +2128,18 @@ export class Interpreter {
             );
           }
           break;
+        case "TSEnumDeclaration":
+        case "TSModuleDeclaration": {
+          const name = getTypeScriptDeclarationName(statement);
+          if (name !== null) {
+            declareInScope(
+              context.scope,
+              name,
+              evaluateTypeScriptDeclaration(this, statement, context),
+            );
+          }
+          break;
+        }
         case "ExpressionStatement":
           this.evaluateExpression(statement.expression, context);
           break;

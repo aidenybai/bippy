@@ -1,5 +1,6 @@
-import { getOpaqueCaptureDescription } from "../observations.js";
+import { getCapturedExportReference, getOpaqueCaptureDescription } from "../observations.js";
 import type {
+  CapturedExportReference,
   CapturedValue,
   JsonValue,
   SourceLocation,
@@ -76,19 +77,39 @@ export const partialJsonValue = (json: JsonValue, name: string): StaticValue => 
   ]);
 };
 
+/** Evaluates the module export a captured node referenced; null when the module is not part of the analyzed project. */
+export type CapturedExportResolver = (reference: CapturedExportReference) => StaticValue | null;
+
+const NO_EXPORTS: CapturedExportResolver = () => null;
+
 /** A value serialized whole from a running page: every key is known, and nodes JSON could not carry stay unknown. */
-export const capturedValue = (captured: CapturedValue, name: string): StaticValue => {
+export const capturedValue = (
+  captured: CapturedValue,
+  name: string,
+  resolveExport: CapturedExportResolver = NO_EXPORTS,
+): StaticValue => {
   if (captured === null || typeof captured !== "object") return primitiveValue(captured);
   if (Array.isArray(captured)) {
-    return listValue(captured.map((item, index) => capturedValue(item, `${name}[${index}]`)));
+    return listValue(
+      captured.map((item, index) => capturedValue(item, `${name}[${index}]`, resolveExport)),
+    );
   }
   const opaque = getOpaqueCaptureDescription(captured);
   if (opaque !== null) return unknownValue(`${name}: ${opaque} recorded from the page`);
+  const reference = getCapturedExportReference(captured);
+  if (reference !== null) {
+    return (
+      resolveExport(reference) ??
+      unknownValue(
+        `${name}: export "${reference.name}" of ${reference.module} recorded from the page`,
+      )
+    );
+  }
   return objectValue(
     Object.entries(captured).map(([key, item]): StaticObjectEntry => ({
       kind: "property",
       key,
-      value: capturedValue(item, `${name}.${key}`),
+      value: capturedValue(item, `${name}.${key}`, resolveExport),
     })),
   );
 };
@@ -367,7 +388,7 @@ export const areValuesEquivalent = (left: StaticValue, right: StaticValue, depth
       return (
         right.kind === "external" &&
         left.packageName === right.packageName &&
-        left.importedName === right.importedName
+        (left.importedName === right.importedName || (left.derived && right.derived))
       );
     default:
       return false;

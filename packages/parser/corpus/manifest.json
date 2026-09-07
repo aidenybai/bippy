@@ -481,6 +481,43 @@
         "maxFiberCount": 20000
       },
       "notes": "index.tsx boots asynchronously: in SaaS mode it registers the getsentry overrides, loads the /api/client-config/ payload (window.__initialData, captured from the live page) into ConfigStore and then calls renderDom(Main), so the static side runs the same bootstrap before rendering the exported Main component. UI-only mode serves the SPA over a self-signed https certificate; the login page fetches from sentry.io and logs 403s for unauthenticated endpoints."
+    },
+    {
+      "id": "posthog",
+      "repository": "https://github.com/PostHog/posthog",
+      "revision": "09c5fbd37b2714276d4206debd3aeb253ce0e43a",
+      "description": "PostHog login scene (React 18 SPA on kea + kea-router, Vite dev server behind a stand-in for the Django app server that renders the boot HTML)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.29.3 install --frozen-lockfile",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/posthog-dev.sh\"",
+      "url": "http://localhost:8000/login",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "capturedGlobals": ["POSTHOG_APP_CONTEXT", "JS_URL", "JS_CAPTURE_TIME_TO_SEE_DATA"],
+      "static": {
+        "rootDirectory": "frontend",
+        "entry": "src/index.tsx",
+        "route": "/login",
+        "externalPackageAllowList": [
+          "@posthog/*",
+          "@floating-ui/*",
+          "kea-router",
+          "kea-forms",
+          "kea-loaders",
+          "kea-subscriptions",
+          "kea-waitfor",
+          "kea-window-values",
+          "kea-localstorage",
+          "kea-test-utils",
+          "@base-ui/*",
+          "react-modal",
+          "exenv",
+          "react-toastify"
+        ],
+        "maxFiberCount": 20000
+      },
+      "notes": "Django normally renders index.html with window.POSTHOG_APP_CONTEXT and points the module scripts at the Vite dev server; corpus/scripts/posthog-app-server.ts stands in for it with an anonymous app context and the checked-in _preflight fixture, answering the API calls the login scene makes. The kea store the page builds is captured through the Redux DevTools compose hook and replayed into the static render; the app server's stand-in API returns 404 for the endpoints it does not model, which the page logs."
     }
   ]
 }

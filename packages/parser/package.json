@@ -35,11 +35,14 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "happy-dom": "^20.11.6",
+    "kea": "3.1.7",
+    "kea-loaders": "3.1.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router": "8.3.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
+    "use-sync-external-store": "1.6.0",
     "vite-plus": "latest"
   }
 }

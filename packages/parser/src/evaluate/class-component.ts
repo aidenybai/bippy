@@ -65,6 +65,7 @@ const mayUpdateState = (chain: StaticClassValue[]): boolean =>
   chain.some((current) =>
     current.body.members.some((member) => {
       if (member.isStatic) return member.key === "getDerivedStateFromProps";
+      if (member.key === "componentDidCatch") return false;
       const node = memberNode(member);
       return (
         node !== null &&

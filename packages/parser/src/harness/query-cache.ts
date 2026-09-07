@@ -1,6 +1,7 @@
 import type { Fiber, FiberRoot } from "bippy";
 import { traverseFiber } from "bippy";
 import { hashKey, isPlainObject, opaqueCapture } from "../observations.js";
+import { type ExportIndex, NO_EXPORTS } from "./module-exports.js";
 import type {
   CapturedMutation,
   CapturedQuery,
@@ -33,9 +34,13 @@ const describeOpaque = (value: unknown): string => {
   return typeof value;
 };
 
-/** Serializes what JSON can carry and marks the rest opaque; `undefined` is returned for absent values so callers omit them. */
+/**
+ * Serializes what JSON can carry, names nodes that are a loaded module's export,
+ * and marks the rest opaque; `undefined` is returned for absent values so callers omit them.
+ */
 export const toCapturedValue = (
   value: unknown,
+  exports: ExportIndex = NO_EXPORTS,
   seen: Set<object> = new Set(),
 ): CapturedValue | undefined => {
   if (value === undefined) return undefined;
@@ -43,22 +48,28 @@ export const toCapturedValue = (
   if (typeof value === "string" || typeof value === "boolean") return value;
   if (typeof value === "number")
     return Number.isFinite(value) ? value : opaqueCapture(String(value));
+  if (typeof value === "function" || isRecord(value)) {
+    const reference = exports.find(value);
+    if (reference !== undefined) return reference;
+  }
   if (!isRecord(value)) return opaqueCapture(describeOpaque(value));
   if (seen.has(value)) return opaqueCapture("cycle");
   seen.add(value);
   if (value instanceof Error) {
     const entries: Record<string, CapturedValue> = { name: value.name, message: value.message };
     for (const [key, item] of Object.entries(value)) {
-      const captured = toCapturedValue(item, seen);
+      const captured = toCapturedValue(item, exports, seen);
       if (captured !== undefined) entries[key] = captured;
     }
     return entries;
   }
-  if (Array.isArray(value)) return value.map((item) => toCapturedValue(item, seen) ?? null);
+  if (Array.isArray(value)) {
+    return value.map((item) => toCapturedValue(item, exports, seen) ?? null);
+  }
   if (!isPlainObject(value)) return opaqueCapture(describeOpaque(value));
   const entries: Record<string, CapturedValue> = {};
   for (const [key, item] of Object.entries(value)) {
-    const captured = toCapturedValue(item, seen);
+    const captured = toCapturedValue(item, exports, seen);
     if (captured !== undefined) entries[key] = captured;
   }
   return entries;

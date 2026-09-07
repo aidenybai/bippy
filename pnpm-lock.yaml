@@ -1253,6 +1253,12 @@ importers:
       happy-dom:
         specifier: ^20.11.6
         version: 20.11.6
+      kea:
+        specifier: 3.1.7
+        version: 3.1.7(react@19.2.8)
+      kea-loaders:
+        specifier: 3.1.1
+        version: 3.1.1(kea@3.1.7(react@19.2.8))
       react:
         specifier: ^19.2.4
         version: 19.2.8
@@ -1268,6 +1274,9 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      use-sync-external-store:
+        specifier: 1.6.0
+        version: 1.6.0(react@19.2.8)
       vite-plus:
         specifier: latest
         version: 0.3.0(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(vite@8.2.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))(yaml@2.9.0)
@@ -9151,6 +9160,16 @@ packages:
   jsonfile@6.2.1:
     resolution: {integrity: sha512-zwOTdL3rFQ/lRdBnntKVOX6k5cKJwEc1HdilT71BWEu7J41gXIB2MRp+vxduPSwZJPWBxEzv4yH1wYLJGUHX4Q==}
 
+  kea-loaders@3.1.1:
+    resolution: {integrity: sha512-FZcOh5PSTIh5+Of5kZno7bXENmY4rCcRYnTB4e709Mbkc7KzriEZ6b/mIWvYx2vkDEgilIsvibUsGOADZ6wqPw==}
+    peerDependencies:
+      kea: '>= 3'
+
+  kea@3.1.7:
+    resolution: {integrity: sha512-BN9bS4NMI57TwJRANL55H5Cl2Px0ciyv58wtnzzfwH7d2R9fEmcuRREpLfp3blglSrgfGUWM4b+Pz6CwxJxjzQ==}
+    peerDependencies:
+      react: ^19.2.4
+
   kleur@3.0.3:
     resolution: {integrity: sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==}
     engines: {node: '>=6'}
@@ -11348,6 +11367,9 @@ packages:
   requireg@0.2.2:
     resolution: {integrity: sha512-nYzyjnFcPNGR3lx9lwPPPnuQxv6JWEZd2Ci0u9opN7N5zUEPIhY/GbL3vMGOr2UXwEg9WwSyV9X9Y/kLFgPsOg==}
     engines: {node: '>= 4.0.0'}
+
+  reselect@4.1.8:
+    resolution: {integrity: sha512-ab9EmR80F/zQTMNeneUr4cv+jSwPJgIlvEmVwLerwrWVbpLlBuls9XHzIeTFy4cegU2NHBp3va0LKOzU5qFEYQ==}
 
   reselect@5.2.0:
     resolution: {integrity: sha512-AgZ3UOZm3YndfrJ4OYjgrT7bmCm/1iqkjvEfH/oYjzh6PD2qw4QuT3jjnXIrpdt4MTpMXclMT3lXbmRY+XRakw==}
@@ -22103,6 +22125,17 @@ snapshots:
     optionalDependencies:
       graceful-fs: 4.2.11
 
+  kea-loaders@3.1.1(kea@3.1.7(react@19.2.8)):
+    dependencies:
+      kea: 3.1.7(react@19.2.8)
+
+  kea@3.1.7(react@19.2.8):
+    dependencies:
+      react: 19.2.8
+      redux: 4.2.1
+      reselect: 4.1.8
+      use-sync-external-store: 1.6.0(react@19.2.8)
+
   kleur@3.0.3: {}
 
   kleur@4.1.5: {}
@@ -25083,6 +25116,8 @@ snapshots:
       nested-error-stacks: 2.0.1
       rc: 1.2.8
       resolve: 1.7.1
+
+  reselect@4.1.8: {}
 
   reselect@5.2.0: {}
 

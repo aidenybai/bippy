@@ -182,15 +182,11 @@ const evaluateUncertainTail = (
     uncertainDepth: context.uncertainDepth + 1,
   };
   if (statement.type === "ForOfStatement" || statement.type === "ForInStatement") {
-    if (statement.left.type === "VariableDeclaration") {
-      const value =
-        statement.type === "ForInStatement"
-          ? unknownPrimitiveValue("string", "loop key")
-          : unknownValue("loop variable");
-      for (const declarator of statement.left.declarations) {
-        interpreter.bindPattern(declarator.id, value, loopContext.scope, loopContext);
-      }
-    }
+    const value =
+      statement.type === "ForInStatement"
+        ? unknownPrimitiveValue("string", "loop key")
+        : unknownValue("loop variable");
+    bindLoopLeft(interpreter, statement.left, value, loopContext);
   } else if (statement.type === "ForStatement" && statement.init?.type === "VariableDeclaration") {
     for (const declarator of statement.init.declarations) {
       interpreter.bindPattern(

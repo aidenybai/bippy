@@ -33,7 +33,9 @@ export const FUNCTION_OWN_KEYS = new Set([
   "contextTypes",
 ]);
 
-/** `Symbol.for` key React tags elements with; renamed in 19 (shared/ReactSymbols.js). */
+/** `Symbol.for` keys React tags elements with; renamed in 19 (shared/ReactSymbols.js). */
+export const REACT_ELEMENT_SYMBOL_KEYS = new Set(["react.element", "react.transitional.element"]);
+
 export const getReactElementSymbolKey = (reactVersion: string | null): string =>
   reactVersion && Number(reactVersion.split(".")[0]) < 19
     ? "react.element"
