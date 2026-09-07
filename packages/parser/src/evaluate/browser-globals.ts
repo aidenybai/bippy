@@ -15,10 +15,13 @@ type BrowserMember =
   | "number"
   | "boolean";
 
+/** Members of the analyzed page's `window`; the page is a top-level browsing context, so `top` and `parent` are the window itself. */
 const WINDOW_MEMBERS: Record<string, BrowserMember> = {
   window: "window",
   self: "window",
   globalThis: "window",
+  top: "window",
+  parent: "window",
   document: "document",
   navigator: "navigator",
   location: "location",
@@ -160,6 +163,7 @@ export const isWindowAlias = (name: string): boolean => WINDOW_MEMBERS[name] ===
 
 const LOCATION_MEMBER_NAME =
   /^(?:(?:window|globalThis|document)\.)?location\.(pathname|search|hash|origin|protocol|host|hostname|port|href)$/;
+const WINDOW_ORIGIN_NAME = /^(?:(?:window|globalThis|self)\.)?origin$/;
 const DOCUMENT_URL_NAME = /^(?:(?:window|globalThis)\.)?document\.(?:URL|documentURI)$/;
 
 const ROUTE_LOCATION_MEMBERS = new Set(["pathname", "search", "hash"]);
@@ -171,7 +175,11 @@ export const getPageLocationMember = (
   route: string | null,
   name: string,
 ): StaticValue | null => {
-  const member = DOCUMENT_URL_NAME.test(name) ? "href" : LOCATION_MEMBER_NAME.exec(name)?.[1];
+  const member = DOCUMENT_URL_NAME.test(name)
+    ? "href"
+    : WINDOW_ORIGIN_NAME.test(name)
+      ? "origin"
+      : LOCATION_MEMBER_NAME.exec(name)?.[1];
   if (member === undefined) return null;
   if (route === null && !ORIGIN_LOCATION_MEMBERS.has(member)) return null;
   if (origin === null && !ROUTE_LOCATION_MEMBERS.has(member)) return null;

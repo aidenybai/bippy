@@ -13,7 +13,7 @@ export interface FrameworkRenderTarget {
   framework: FrameworkKind;
   /** Entry module (SPA root, or the react-router routes/entry module); absolute or root-relative. */
   entry?: string;
-  /** URL pathname to render for routed frameworks. */
+  /** Page route (pathname, query and fragment) the browser is at; routed frameworks render it. */
   route?: string;
   /** Next: the `app/` or `pages/` directory when it is not directly under the renderer root. */
   appDirectory?: string;
@@ -124,6 +124,11 @@ const rendererOptionsForEntry = (
   };
 };
 
+const getPageRoute = (url: string): string => {
+  const { pathname, search, hash } = new URL(url);
+  return `${pathname}${search}${hash}`;
+};
+
 export const createRendererForEntry = (
   entry: CorpusEntry,
   cloneDirectory: string,
@@ -138,7 +143,7 @@ export const renderFramework = (
     {
       framework: entry.framework,
       entry: entry.static.entry,
-      route: entry.static.route,
+      route: entry.static.route ?? getPageRoute(entry.url),
       appDirectory: entry.static.appDirectory,
       rootComponent: entry.static.rootComponent,
     },

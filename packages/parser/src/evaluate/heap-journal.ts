@@ -9,9 +9,17 @@ import { branchValue, joinObjectEntries } from "./values.js";
 
 export type MutableHeapValue = StaticObjectValue | StaticListValue;
 
+export const IN_PROGRESS = Symbol("in-progress");
+
+/** A module's evaluated top-level bindings, filled lazily and reassigned by `name = value`. */
+export type ModuleValues = Map<string, StaticValue | typeof IN_PROGRESS>;
+
+type ModuleBindingStates = Map<ModuleValues, Map<string, StaticValue>>;
+
 interface HeapPath {
   objects: Map<StaticObjectValue, StaticObjectEntry[]>;
   lists: Map<StaticListValue, StaticValue[]>;
+  bindings: ModuleBindingStates;
 }
 
 const isExtensionOf = <Item>(items: Item[], prefix: Item[]): boolean =>
@@ -29,14 +37,16 @@ const getAgreedState = <Item>(paths: Item[][]): Item[] | null =>
 
 /**
  * Scope bindings are restored and joined around every fork, but objects and
- * lists reached through them live on the heap and would keep the mutations of
- * whichever path ran last. The journal snapshots every pre-existing value a
- * path mutates so the next path starts from the fork's entry state, and the
- * join leaves each mutated value with one alternative per path.
+ * lists reached through them live on the heap, and module-level variables in
+ * their module's value table, so both would keep the mutations of whichever
+ * path ran last. The journal snapshots every pre-existing value a path mutates
+ * so the next path starts from the fork's entry state, and the join leaves
+ * each mutated value with one alternative per path.
  */
 export class HeapJournal {
   private readonly objects = new Map<StaticObjectValue, StaticObjectEntry[]>();
   private readonly lists = new Map<StaticListValue, StaticValue[]>();
+  private readonly bindings: ModuleBindingStates = new Map();
   private readonly paths: HeapPath[] = [];
 
   constructor(readonly entryEpoch: number) {}
@@ -49,8 +59,17 @@ export class HeapJournal {
     }
   }
 
+  recordModuleBinding(values: ModuleValues, name: string, current: StaticValue): void {
+    let originals = this.bindings.get(values);
+    if (!originals) {
+      originals = new Map();
+      this.bindings.set(values, originals);
+    }
+    if (!originals.has(name)) originals.set(name, current);
+  }
+
   endPath(): void {
-    const path: HeapPath = { objects: new Map(), lists: new Map() };
+    const path: HeapPath = { objects: new Map(), lists: new Map(), bindings: new Map() };
     for (const [object, original] of this.objects) {
       path.objects.set(object, object.entries);
       object.entries = [...original];
@@ -59,10 +78,32 @@ export class HeapJournal {
       path.lists.set(list, list.items);
       list.items = [...original];
     }
+    for (const [values, originals] of this.bindings) {
+      const pathValues = new Map<string, StaticValue>();
+      for (const [name, original] of originals) {
+        const current = values.get(name);
+        pathValues.set(name, current === undefined || current === IN_PROGRESS ? original : current);
+        values.set(name, original);
+      }
+      path.bindings.set(values, pathValues);
+    }
     this.paths.push(path);
   }
 
   join(reason: string, location: SourceLocation | null, preferredPath: number): void {
+    for (const [values, originals] of this.bindings) {
+      for (const [name, original] of originals) {
+        const pathValues = this.paths.map(
+          (path) => path.bindings.get(values)?.get(name) ?? original,
+        );
+        values.set(
+          name,
+          pathValues.every((value) => value === pathValues[0])
+            ? pathValues[0]
+            : branchValue(pathValues, reason, location, preferredPath),
+        );
+      }
+    }
     for (const [object, original] of this.objects) {
       const pathEntries = this.paths.map((path) => path.objects.get(object) ?? original);
       if (isUnchanged(pathEntries, original)) continue;

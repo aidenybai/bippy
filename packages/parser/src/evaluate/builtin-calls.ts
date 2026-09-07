@@ -28,14 +28,18 @@ import {
 import { createErrorValue, ERROR_CONSTRUCTOR_NAMES, isErrorConstructorName } from "./errors.js";
 import { constructNativeDate } from "./native-values.js";
 import { callEventTargetMethod } from "./event-listeners.js";
-import { hasProperty } from "./has-property.js";
+import { hasProperty, isIntrinsicFunctionKey } from "./has-property.js";
+import { getBuiltinPrototype, isTypedArrayName, TYPED_ARRAY_NAMES } from "./instance-of.js";
 import { mediaQueryListValue } from "./media-query.js";
+import { getObjectTag } from "./object-tag.js";
+import { callHistoryMethod, isHistoryName } from "./session-history.js";
 import { callStorageMethod, getStorageAreaName } from "./web-storage.js";
 import type { EvaluationContext } from "./context.js";
 import { createCollectionValue, createPromiseValue, getCollectionItems } from "./collections.js";
 import { callShapedPrimitiveMethod, rangedNumberValue } from "./primitive-shapes.js";
 import { createSearchParamsValue } from "./url-search-params.js";
 import { createUrlValue } from "./url.js";
+import { getClassPrototypeObject } from "./class-component.js";
 import type { Interpreter } from "./interpreter.js";
 import {
   accessorEntry,
@@ -43,12 +47,15 @@ import {
   describeValue,
   FALSE_VALUE,
   getClassPrototype,
-  getInstancePrototype,
   getKnownObjectKeys,
+  getKnownObjectSymbols,
   getListLength,
   getObjectProperty,
+  getPropertyName,
+  getSymbolPropertyKey,
   getTruthiness,
   compareIdentity,
+  isSymbolPropertyKey,
   hasDefiniteItems,
   isIndefiniteItem,
   isKnownList,
@@ -125,6 +132,7 @@ const GLOBAL_NAMES = new Set([
   "location",
   "localStorage",
   "sessionStorage",
+  "history",
   "process",
   "performance",
   "parseInt",
@@ -162,7 +170,7 @@ const GLOBAL_NAMES = new Set([
   "TextDecoder",
   "ArrayBuffer",
   "DataView",
-  "Uint8Array",
+  ...TYPED_ARRAY_NAMES,
   "Infinity",
   "NaN",
 ]);
@@ -248,6 +256,7 @@ const BROWSER_GLOBALS = new Set([
   "location",
   "localStorage",
   "sessionStorage",
+  "history",
 ]);
 const CONSTRUCTOR_GLOBALS = new Set([
   "Object",
@@ -265,6 +274,7 @@ const CONSTRUCTOR_GLOBALS = new Set([
   ...ERROR_CONSTRUCTOR_NAMES,
   "RegExp",
   "Proxy",
+  ...TYPED_ARRAY_NAMES,
 ]);
 
 /** `typeof <global>` as observed by the rendering environment; null when it depends on the host. */
@@ -365,12 +375,20 @@ export const getTypeofValue = (
   }
 };
 
+const WELL_KNOWN_SYMBOL_NAMES = new Set(
+  Object.getOwnPropertyNames(Symbol).filter(
+    (name) => typeof Object.getOwnPropertyDescriptor(Symbol, name)?.value === "symbol",
+  ),
+);
+
 export const getBuiltinGlobal = (
   name: string,
   environment?: EnvironmentLookup,
 ): StaticValue | null => {
   if (name === "NaN") return primitiveValue(Number.NaN);
   if (name === "Infinity") return primitiveValue(Number.POSITIVE_INFINITY);
+  if (name.startsWith("Symbol.") && WELL_KNOWN_SYMBOL_NAMES.has(name.slice("Symbol.".length)))
+    return { kind: "symbol", key: name };
   const bundlerGlobal = getBundlerGlobal(name, environment);
   if (bundlerGlobal) return bundlerGlobal;
   if (name.startsWith("Math.") && name !== "Math.max" && name !== "Math.min") {
@@ -467,6 +485,93 @@ const defineOwnProperty = (
   }
 };
 
+const defineOwnProperties = (
+  interpreter: Interpreter,
+  target: StaticValue,
+  descriptors: StaticObjectValue,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): void => {
+  for (const key of getKnownObjectKeys(descriptors) ?? []) {
+    const descriptor = getObjectProperty(descriptors, key);
+    if (descriptor.kind === "object") {
+      defineOwnProperty(interpreter, target, key, descriptor, context, location);
+    }
+  }
+};
+
+/** Own enumerable string-keyed entries in `Object.keys` order; null when the shape is not fully known. */
+const getOwnEnumerableEntries = (
+  target: StaticValue,
+): [key: string, value: StaticValue][] | null => {
+  if (target.kind === "object") {
+    return getKnownObjectKeys(target)?.map((key) => [key, getObjectProperty(target, key)]) ?? null;
+  }
+  if (!hasDefiniteItems(target)) return null;
+  return [
+    ...target.items.map((item, index): [string, StaticValue] => [String(index), item]),
+    ...(target.properties ?? []),
+  ];
+};
+
+/** `Object.assign(target, source)`: copies known own keys (strings then symbols), else records the source as a spread. */
+const assignOwnEntries = (target: StaticObjectValue, source: StaticValue): void => {
+  if (source.kind === "primitive") return;
+  const stringKeys = source.kind === "object" ? getKnownObjectKeys(source) : null;
+  const symbolKeys = source.kind === "object" ? getKnownObjectSymbols(source) : null;
+  if (source.kind !== "object" || !stringKeys || !symbolKeys) {
+    target.entries.push({ kind: "spread", value: source });
+    return;
+  }
+  for (const key of [...stringKeys, ...symbolKeys.map(getSymbolPropertyKey)]) {
+    target.entries.push({ kind: "property", key, value: getObjectProperty(source, key) });
+  }
+};
+
+/** `receiver.hasOwnProperty(key)` / `propertyIsEnumerable(key)`; null when the receiver's own keys are not modeled. */
+const hasOwnProperty = (
+  receiver: StaticValue,
+  key: StaticValue,
+  name: string,
+): StaticValue | null => {
+  const propertyName = getPropertyName(key);
+  if (propertyName === null) return null;
+  if (receiver.kind === "object" || receiver.kind === "list") {
+    if (receiver.kind === "list" && propertyName === "length")
+      return primitiveValue(name === "hasOwnProperty");
+    const ownKeys =
+      receiver.kind === "object" && isSymbolPropertyKey(propertyName)
+        ? getKnownObjectSymbols(receiver)?.map(getSymbolPropertyKey)
+        : getOwnEnumerableEntries(receiver)?.map(([ownKey]) => ownKey);
+    return ownKeys
+      ? primitiveValue(ownKeys.includes(propertyName))
+      : unknownPrimitiveValue("boolean", `${name} of a partially known target`);
+  }
+  if (receiver.kind === "function" || receiver.kind === "class") {
+    if (receiver.properties.has(propertyName)) {
+      const isClassMember =
+        receiver.kind === "class" &&
+        receiver.body.members.some(
+          (member) => member.isStatic && member.kind !== "field" && member.key === propertyName,
+        );
+      return primitiveValue(name === "hasOwnProperty" || !isClassMember);
+    }
+    return primitiveValue(
+      name === "hasOwnProperty" && isIntrinsicFunctionKey(receiver, propertyName),
+    );
+  }
+  if (receiver.kind === "global") {
+    const builtinPrototype = getBuiltinPrototype(receiver.name);
+    if (!builtinPrototype || isSymbolPropertyKey(propertyName)) return null;
+    return primitiveValue(
+      name === "hasOwnProperty"
+        ? Object.hasOwn(builtinPrototype, propertyName)
+        : Object.prototype.propertyIsEnumerable.call(builtinPrototype, propertyName),
+    );
+  }
+  return null;
+};
+
 const FUNCTION_INVOCATION_METHODS = new Set(["call", "apply", "bind"]);
 
 const PROTOTYPE_SEGMENT = ".prototype.";
@@ -483,6 +588,8 @@ const callInvokedGlobal = (
   const invocation = name.slice(separator + 1);
   if (separator === -1 || !FUNCTION_INVOCATION_METHODS.has(invocation)) return null;
   const target = name.slice(0, separator);
+  if (target === "Object.prototype.toString" && invocation !== "bind")
+    return getObjectTag(args[0] ?? UNDEFINED_VALUE);
   const prototypeIndex = target.indexOf(PROTOTYPE_SEGMENT);
   const callee: StaticValue =
     prototypeIndex === -1
@@ -523,6 +630,7 @@ const callGlobal = (
   if (invoked) return invoked;
   if (isErrorConstructorName(name)) return createErrorValue(name, args, location);
   const [first, second] = args;
+  if (isConstructor && isTypedArrayName(name)) return constructTypedArray(name, first, location);
   switch (name) {
     case "Date": {
       const date = isConstructor ? constructNativeDate(args) : null;
@@ -600,16 +708,12 @@ const callGlobal = (
     case "Object.keys":
     case "Object.values":
     case "Object.entries": {
-      if (first?.kind !== "object")
+      const ownEntries = first ? getOwnEnumerableEntries(first) : null;
+      if (!ownEntries)
         return unknownValue(`${name} of ${first ? describeValue(first) : "nothing"}`, location);
-      const keys = getKnownObjectKeys(first);
-      if (!keys) return unknownValue(`${name} of an object with dynamic spreads`, location);
-      if (name === "Object.keys") return listValue(keys.map((key) => primitiveValue(key)));
-      if (name === "Object.values")
-        return listValue(keys.map((key) => getObjectProperty(first, key)));
-      return listValue(
-        keys.map((key) => listValue([primitiveValue(key), getObjectProperty(first, key)])),
-      );
+      if (name === "Object.keys") return listValue(ownEntries.map(([key]) => primitiveValue(key)));
+      if (name === "Object.values") return listValue(ownEntries.map(([, value]) => value));
+      return listValue(ownEntries.map(([key, value]) => listValue([primitiveValue(key), value])));
     }
     case "Object.assign":
       if (first?.kind === "function" || first?.kind === "class") {
@@ -621,8 +725,12 @@ const callGlobal = (
         }
         return first;
       }
-      if (first && first.kind !== "object" && first.kind !== "unknown" && first.kind !== "branch")
+      if (first?.kind === "object") {
+        interpreter.recordHeapMutation(first);
+        for (const source of args.slice(1)) assignOwnEntries(first, source);
         return first;
+      }
+      if (first && first.kind !== "unknown" && first.kind !== "branch") return first;
       return objectValue(args.map((argument) => ({ kind: "spread", value: argument })));
     case "Object.freeze":
     case "Object.seal":
@@ -632,14 +740,34 @@ const callGlobal = (
     case "Reflect.getPrototypeOf":
       if (first?.kind === "class") return getClassPrototype(first, location);
       if (first?.kind === "object" && first.constructedBy)
-        return getInstancePrototype(first, first.constructedBy);
+        return getClassPrototypeObject(interpreter, first.constructedBy, context);
       return unknownValue(`${name} on a dynamic target`, location);
     case "Object.getOwnPropertyNames":
+    case "Object.getOwnPropertySymbols":
     case "Reflect.ownKeys": {
-      const ownKeys = first?.kind === "object" ? getKnownObjectKeys(first) : null;
-      return ownKeys
-        ? listValue(ownKeys.map((key) => primitiveValue(key)))
-        : unknownValue(`${name} on a dynamic target`, location);
+      if (first?.kind !== "object" && first?.kind !== "list")
+        return unknownValue(`${name} on a dynamic target`, location);
+      const ownNames =
+        name === "Object.getOwnPropertySymbols"
+          ? []
+          : (getOwnEnumerableEntries(first)
+              ?.map(([key]) => key)
+              .concat(first.kind === "list" ? ["length"] : []) ?? null);
+      const ownSymbols =
+        name === "Object.getOwnPropertyNames" || first.kind === "list"
+          ? []
+          : getKnownObjectSymbols(first);
+      return ownNames && ownSymbols
+        ? listValue([...ownNames.map((key) => primitiveValue(key)), ...ownSymbols])
+        : unknownValue(`${name} on an object with dynamic spreads`, location);
+    }
+    case "Object.create": {
+      if (first?.kind !== "primitive" || first.value !== null) break;
+      const created: StaticObjectValue = { ...objectValue(), hasNullPrototype: true };
+      if (second?.kind === "object") {
+        defineOwnProperties(interpreter, created, second, context, location);
+      }
+      return created;
     }
     case "Reflect.get":
       return first && second?.kind === "primitive"
@@ -676,12 +804,7 @@ const callGlobal = (
       if (!first || second?.kind !== "object") {
         return first ?? unknownValue("Object.defineProperties on a dynamic target", location);
       }
-      for (const key of getKnownObjectKeys(second) ?? []) {
-        const descriptor = getObjectProperty(second, key);
-        if (descriptor.kind === "object") {
-          defineOwnProperty(interpreter, first, key, descriptor, context, location);
-        }
-      }
+      defineOwnProperties(interpreter, first, second, context, location);
       return first;
     }
     case "Object.fromEntries":
@@ -838,6 +961,23 @@ const arrayOfLength = (length: StaticValue, location: SourceLocation | null): St
   if (length.value > MAX_ARRAY_LIKE_LENGTH)
     return { kind: "repeat", item: UNDEFINED_VALUE, location };
   return listValue(Array.from({ length: length.value }, () => UNDEFINED_VALUE));
+};
+
+/** `new Uint16Array(length | array)`: a zero-filled or copied list; element coercion is not modeled. */
+const constructTypedArray = (
+  name: string,
+  source: StaticValue | undefined,
+  location: SourceLocation | null,
+): StaticValue => {
+  if (source === undefined) return listValue([]);
+  if (source.kind === "list") return listValue([...source.items]);
+  if (source.kind === "primitive" && typeof source.value === "number") {
+    const zeroFilled = arrayOfLength(source, location);
+    return zeroFilled.kind === "list"
+      ? listValue(zeroFilled.items.map(() => primitiveValue(0)))
+      : zeroFilled;
+  }
+  return unknownValue(`new ${name}() from ${describeValue(source)}`, location);
 };
 
 // `{ length: n }` (and sparse array-likes) as consumed by `Array.from`.
@@ -1062,6 +1202,7 @@ const callStringMethod = (
     return matched ? listOfStrings([...matched]) : NULL_VALUE;
   }
   if (!allKnown) return null;
+  const position = primitiveArgs[1] === undefined ? undefined : Number(primitiveArgs[1]);
   switch (name) {
     case "toUpperCase":
       return primitiveValue(receiver.toUpperCase());
@@ -1074,14 +1215,12 @@ const callStringMethod = (
     case "trimEnd":
       return primitiveValue(receiver.trimEnd());
     case "slice":
-    case "substring": {
-      const end = primitiveArgs[1] === undefined ? undefined : Number(primitiveArgs[1]);
+    case "substring":
       return primitiveValue(
         name === "slice"
-          ? receiver.slice(Number(primitiveArgs[0] ?? 0), end)
-          : receiver.substring(Number(primitiveArgs[0] ?? 0), end),
+          ? receiver.slice(Number(primitiveArgs[0] ?? 0), position)
+          : receiver.substring(Number(primitiveArgs[0] ?? 0), position),
       );
-    }
     case "charAt":
       return primitiveValue(receiver.charAt(Number(primitiveArgs[0] ?? 0)));
     case "charCodeAt":
@@ -1095,9 +1234,9 @@ const callStringMethod = (
       return character === undefined ? UNDEFINED_VALUE : primitiveValue(character);
     }
     case "indexOf":
-      return primitiveValue(receiver.indexOf(String(primitiveArgs[0])));
+      return primitiveValue(receiver.indexOf(String(primitiveArgs[0]), position));
     case "lastIndexOf":
-      return primitiveValue(receiver.lastIndexOf(String(primitiveArgs[0])));
+      return primitiveValue(receiver.lastIndexOf(String(primitiveArgs[0]), position));
     case "padStart":
       return primitiveValue(
         receiver.padStart(Number(primitiveArgs[0] ?? 0), String(primitiveArgs[1] ?? " ")),
@@ -1107,11 +1246,11 @@ const callStringMethod = (
         receiver.padEnd(Number(primitiveArgs[0] ?? 0), String(primitiveArgs[1] ?? " ")),
       );
     case "includes":
-      return primitiveValue(receiver.includes(String(primitiveArgs[0])));
+      return primitiveValue(receiver.includes(String(primitiveArgs[0]), position));
     case "startsWith":
-      return primitiveValue(receiver.startsWith(String(primitiveArgs[0])));
+      return primitiveValue(receiver.startsWith(String(primitiveArgs[0]), position));
     case "endsWith":
-      return primitiveValue(receiver.endsWith(String(primitiveArgs[0])));
+      return primitiveValue(receiver.endsWith(String(primitiveArgs[0]), position));
     case "toString":
     case "valueOf":
       return primitiveValue(receiver);
@@ -1236,7 +1375,7 @@ export const evaluateBuiltinCall = (
     if (name === "bind") {
       return {
         ...receiver,
-        thisValue: first ?? receiver.thisValue,
+        boundThis: receiver.boundThis ?? first ?? UNDEFINED_VALUE,
         boundArgs: [...(receiver.boundArgs ?? []), ...args.slice(1)],
       };
     }
@@ -1255,15 +1394,9 @@ export const evaluateBuiltinCall = (
     return unknownValue(`function.${name}()`, location);
   }
 
-  if (
-    receiver.kind === "object" &&
-    (name === "hasOwnProperty" || name === "propertyIsEnumerable") &&
-    first?.kind === "primitive"
-  ) {
-    const keys = getKnownObjectKeys(receiver);
-    return keys
-      ? primitiveValue(keys.includes(String(first.value)))
-      : unknownPrimitiveValue("boolean", `${name} of an object with dynamic spreads`);
+  if ((name === "hasOwnProperty" || name === "propertyIsEnumerable") && first !== undefined) {
+    const ownProperty = hasOwnProperty(receiver, first, name);
+    if (ownProperty) return ownProperty;
   }
 
   const listened = callEventTargetMethod(interpreter, receiver, name, args);
@@ -1274,6 +1407,16 @@ export const evaluateBuiltinCall = (
       return mediaQueryListValue(first);
     const hotModuleResult = callHotModuleMethod(receiver, name);
     if (hotModuleResult) return hotModuleResult;
+    if (isHistoryName(receiver.name)) {
+      const navigated = callHistoryMethod(
+        interpreter.history,
+        interpreter.origin,
+        name,
+        args,
+        location,
+      );
+      if (navigated) return navigated;
+    }
     const storageAreaName = getStorageAreaName(receiver.name);
     if (storageAreaName !== null) {
       const stored = callStorageMethod(
@@ -1449,13 +1592,24 @@ export const evaluateBuiltinCall = (
       case "includes":
       case "indexOf": {
         if (!first || !hasDefiniteItems(receiver)) break;
-        const verdicts = receiver.items.map((item) => compareIdentity(item, first));
+        if (
+          second !== undefined &&
+          (second.kind !== "primitive" || typeof second.value !== "number")
+        )
+          break;
+        const fromIndex =
+          second?.kind === "primitive" && typeof second.value === "number"
+            ? Math.max(0, second.value < 0 ? receiver.items.length + second.value : second.value)
+            : 0;
+        const verdicts = receiver.items
+          .slice(fromIndex)
+          .map((item) => compareIdentity(item, first));
         const foundIndex = verdicts.indexOf(true);
         if (
           foundIndex !== -1 &&
           verdicts.slice(0, foundIndex).every((verdict) => verdict === false)
         ) {
-          return name === "includes" ? TRUE_VALUE : primitiveValue(foundIndex);
+          return name === "includes" ? TRUE_VALUE : primitiveValue(foundIndex + fromIndex);
         }
         if (verdicts.every((verdict) => verdict === false)) {
           return name === "includes" ? FALSE_VALUE : primitiveValue(-1);

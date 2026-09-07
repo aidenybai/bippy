@@ -19,6 +19,8 @@ const nativeGetter = (name: string, read: () => StaticValue): StaticValue => ({
   call: read,
 });
 
+export const isUrlValue = (value: StaticObjectValue): boolean => hrefReaders.has(value);
+
 const toUrlString = (value: StaticValue): string | null => {
   if (value.kind === "primitive") return String(value.value);
   const readHref = value.kind === "object" ? hrefReaders.get(value) : undefined;

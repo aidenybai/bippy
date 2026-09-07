@@ -2,9 +2,27 @@ import type { StaticClassValue, StaticValue } from "../types.js";
 import { getCollectionKind } from "./collections.js";
 import { getErrorWitness } from "./errors.js";
 import { isSearchParamsValue } from "./url-search-params.js";
+import { isUrlValue } from "./url.js";
 import { getObjectProperty } from "./values.js";
 
 type BuiltinConstructor = abstract new (...args: never[]) => unknown;
+
+export const TYPED_ARRAY_CONSTRUCTORS = {
+  Int8Array,
+  Uint8Array,
+  Uint8ClampedArray,
+  Int16Array,
+  Uint16Array,
+  Int32Array,
+  Uint32Array,
+  Float32Array,
+  Float64Array,
+};
+
+export const TYPED_ARRAY_NAMES = Object.keys(TYPED_ARRAY_CONSTRUCTORS);
+
+export const isTypedArrayName = (name: string): name is keyof typeof TYPED_ARRAY_CONSTRUCTORS =>
+  Object.hasOwn(TYPED_ARRAY_CONSTRUCTORS, name);
 
 const BUILTIN_CONSTRUCTORS: Record<string, BuiltinConstructor> = {
   Object,
@@ -42,7 +60,14 @@ const BUILTIN_CONSTRUCTORS: Record<string, BuiltinConstructor> = {
   TextDecoder,
   ArrayBuffer,
   DataView,
-  Uint8Array,
+  ...TYPED_ARRAY_CONSTRUCTORS,
+};
+
+/** The native prototype object a `<Constructor>.prototype` global denotes, or null for other names. */
+export const getBuiltinPrototype = (globalName: string): object | null => {
+  const [constructorName, member, ...rest] = globalName.split(".");
+  if (member !== "prototype" || rest.length > 0 || constructorName === undefined) return null;
+  return BUILTIN_CONSTRUCTORS[constructorName]?.prototype ?? null;
 };
 
 const COLLECTION_WITNESSES: Record<string, object> = {
@@ -57,14 +82,16 @@ const COLLECTION_WITNESSES: Record<string, object> = {
  * when the chain is not known (class instances with unresolved bases, proxies
  * trapping `getPrototypeOf`, values the analysis cannot see).
  */
-const getPrototypeWitness = (value: StaticValue): object | null => {
+export const getPrototypeWitness = (value: StaticValue): object | null => {
   switch (value.kind) {
     case "list":
       return [];
     case "object": {
+      if (value.hasNullPrototype) return Object.create(null);
       const collectionKind = getCollectionKind(value);
       if (collectionKind !== null) return COLLECTION_WITNESSES[collectionKind];
       if (isSearchParamsValue(value)) return new URLSearchParams();
+      if (isUrlValue(value)) return new URL("http://witness.invalid");
       const errorWitness = getErrorWitness(value);
       if (errorWitness) return errorWitness;
       return value.entries.every(
@@ -84,6 +111,8 @@ const getPrototypeWitness = (value: StaticValue): object | null => {
     case "native-function":
     case "method":
       return () => undefined;
+    case "global":
+      return getBuiltinPrototype(value.name) ?? BUILTIN_CONSTRUCTORS[value.name] ?? null;
     case "proxy": {
       const trap = getObjectProperty(value.handler, "getPrototypeOf");
       return trap.kind === "primitive" && trap.value === undefined

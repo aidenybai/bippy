@@ -7,6 +7,7 @@ import type {
   StaticAccessor,
   StaticClassValue,
   StaticElementType,
+  StaticFunctionValue,
   StaticListValue,
   StaticObjectEntry,
   StaticObjectValue,
@@ -69,7 +70,12 @@ export const unknownPrimitiveValue = (
   reason: string,
 ): StaticUnknownPrimitiveValue => ({ kind: "unknown-primitive", primitiveType, reason });
 
-export const listValue = (items: StaticValue[]): StaticListValue => ({ kind: "list", items });
+/** A newly allocated array: `===` to no other value analysis constructs. */
+export const listValue = (items: StaticValue[]): StaticListValue => ({
+  kind: "list",
+  items,
+  allocation: Symbol(),
+});
 
 /** `Class.__proto__` / `Object.getPrototypeOf(Class)`: the parent class, or `Function.prototype` for a base class. */
 export const getClassPrototype = (
@@ -77,9 +83,11 @@ export const getClassPrototype = (
   location: SourceLocation | null,
 ): StaticValue => classValue.body.superValue ?? unknownValue("Function.prototype", location);
 
+/** A newly allocated object: `===` to no other value analysis constructs. */
 export const objectValue = (entries: StaticObjectEntry[] = []): StaticObjectValue => ({
   kind: "object",
   entries,
+  allocation: Symbol(),
 });
 
 export const objectFromRecord = (record: Record<string, StaticValue>): StaticObjectValue =>
@@ -278,24 +286,6 @@ export const getObjectProperty = (object: StaticObjectValue, key: string): Stati
   return UNDEFINED_VALUE;
 };
 
-/** `Object.getPrototypeOf(instance)`: the class's own prototype members, as the instance sees them. */
-export const getInstancePrototype = (
-  instance: StaticObjectValue,
-  classValue: StaticClassValue,
-): StaticObjectValue =>
-  objectValue([
-    { kind: "property", key: "constructor", value: classValue },
-    ...classValue.body.members
-      .filter(
-        (member) => !member.isStatic && member.kind !== "field" && member.kind !== "constructor",
-      )
-      .map((member): StaticObjectEntry => ({
-        kind: "property",
-        key: member.key,
-        value: getObjectProperty(instance, member.key),
-      })),
-  ]);
-
 /** Symbol-keyed properties are stored under an `@@` key; enumeration skips them like `Object.keys` does. */
 export const getSymbolPropertyKey = (symbol: StaticSymbolValue): string => `@@${symbol.key}`;
 
@@ -307,22 +297,35 @@ export const getPropertyName = (key: StaticValue): string | null => {
   return key.kind === "symbol" ? getSymbolPropertyKey(key) : null;
 };
 
-export const getKnownObjectKeys = (object: StaticObjectValue): string[] | null => {
+const getKnownOwnKeys = (
+  object: StaticObjectValue,
+  isIncluded: (key: string) => boolean,
+): string[] | null => {
   const keys: string[] = [];
   for (const entry of object.entries) {
     const entryKeys = entry.kind === "property" ? [entry.key] : getKnownSpreadKeys(entry.value);
     if (!entryKeys) return null;
     for (const key of entryKeys) {
-      if (!isSymbolPropertyKey(key) && !keys.includes(key)) keys.push(key);
+      if (isIncluded(key) && !keys.includes(key)) keys.push(key);
     }
   }
   return keys;
 };
 
+export const getKnownObjectKeys = (object: StaticObjectValue): string[] | null =>
+  getKnownOwnKeys(object, (key) => !isSymbolPropertyKey(key));
+
+/** The symbols keying own properties, as `Object.getOwnPropertySymbols` lists them. */
+export const getKnownObjectSymbols = (object: StaticObjectValue): StaticSymbolValue[] | null =>
+  getKnownOwnKeys(object, isSymbolPropertyKey)?.map((key) => ({
+    kind: "symbol",
+    key: key.slice("@@".length),
+  })) ?? null;
+
 const getKnownSpreadKeys = (spread: StaticValue): string[] | null => {
   switch (spread.kind) {
     case "object":
-      return getKnownObjectKeys(spread);
+      return getKnownOwnKeys(spread, () => true);
     case "primitive":
       return [];
     case "branch": {
@@ -493,6 +496,13 @@ const getIdentityClass = (value: StaticValue): "scalar" | "symbol" | "reference"
   }
 };
 
+const isHeapValue = (value: StaticValue): value is StaticObjectValue | StaticListValue =>
+  value.kind === "object" || value.kind === "list";
+
+/** Two closures or classes created from different source nodes are never the same object. */
+const isCallableValue = (value: StaticValue): value is StaticFunctionValue | StaticClassValue =>
+  value.kind === "function" || value.kind === "class";
+
 /**
  * `===` between two values, or null when analysis cannot decide. Import
  * bindings of the same external export are the same object; a primitive can
@@ -501,7 +511,11 @@ const getIdentityClass = (value: StaticValue): "scalar" | "symbol" | "reference"
 export const compareIdentity = (left: StaticValue, right: StaticValue): boolean | null => {
   if (left.kind === "primitive" && right.kind === "primitive") return left.value === right.value;
   if (left === right) return true;
+  if (isHeapValue(left) && isHeapValue(right) && left.allocation && right.allocation) {
+    return left.allocation === right.allocation;
+  }
   if (left.kind === "symbol" && right.kind === "symbol") return left.key === right.key;
+  if (left.kind === "global" && right.kind === "global" && left.name === right.name) return true;
   if (left.kind === "react-api" && right.kind === "react-api") return left.api === right.api;
   const hostTagName = (value: StaticValue): string | null =>
     value.kind === "component-reference" && value.type.kind === "host" ? value.type.tagName : null;
@@ -516,6 +530,7 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
       ? true
       : null;
   }
+  if (isCallableValue(left) && isCallableValue(right) && left.node !== right.node) return false;
   const leftClass = getIdentityClass(left);
   const rightClass = getIdentityClass(right);
   if (leftClass && rightClass && leftClass !== rightClass) return false;
@@ -902,7 +917,9 @@ export const describeValue = (value: StaticValue, depth = 0): string => {
     case "regexp":
       return `/${value.pattern}/${value.flags}`;
     case "symbol":
-      return `Symbol.for(${JSON.stringify(value.key)})`;
+      return value.key.startsWith("Symbol.")
+        ? value.key
+        : `Symbol.for(${JSON.stringify(value.key)})`;
     case "object":
       return `{${value.entries.map((entry) => (entry.kind === "property" ? entry.key : "...")).join(", ")}}`;
     case "function":

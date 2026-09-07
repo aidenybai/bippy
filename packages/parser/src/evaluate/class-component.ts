@@ -54,7 +54,7 @@ export const collectClassMembers = (node: Class): ClassMember[] => {
     const key = getElementName(element);
     if (key === null) continue;
     if (element.type === "MethodDefinition" || element.type === "TSAbstractMethodDefinition") {
-      if (element.kind === "set") continue;
+      if (element.kind === "set" || element.value.body === null) continue;
       const kind = element.kind === "get" ? "getter" : element.kind;
       members.push({ key, isStatic: element.static, kind, functionNode: element.value });
     } else if (
@@ -181,6 +181,61 @@ export const getSuperObject = (
   return prototype;
 };
 
+const classPrototypes = new WeakMap<StaticClassValue, StaticObjectValue>();
+
+/**
+ * `Class.prototype`: the chain's methods and accessors with the prototype as
+ * their receiver, inheriting like an instance of the parent class does.
+ */
+export const getClassPrototypeObject = (
+  interpreter: Interpreter,
+  classValue: StaticClassValue,
+  context: EvaluationContext,
+): StaticObjectValue => {
+  const cached = classPrototypes.get(classValue);
+  if (cached) return cached;
+  const superValue = classValue.body.superValue;
+  const prototype = objectFromRecord({ constructor: classValue });
+  if (superValue?.kind === "class") prototype.constructedBy = superValue;
+  classPrototypes.set(classValue, prototype);
+  const seen = new Set<string>();
+  for (const current of collectClassChain(classValue)) {
+    const methodContext = methodContextFor(current, context, prototype);
+    const members = bindMethods(interpreter, current, prototype, methodContext, seen);
+    for (const getter of members.getters) {
+      prototype.entries.push(
+        accessorEntry(getter.key, { get: getter.functionValue, set: null }, null),
+      );
+    }
+  }
+  return prototype;
+};
+
+/** `Class.length`: the constructor's leading parameters without defaults; 0 without a constructor. */
+export const getClassLength = (classValue: StaticClassValue): number => {
+  const constructor = classValue.body.members.find(
+    (member) => member.kind === "constructor" && !member.isStatic,
+  );
+  if (constructor?.kind !== "constructor") return 0;
+  const parameters = constructor.functionNode.params;
+  const optionalIndex = parameters.findIndex(
+    (parameter) => parameter.type === "AssignmentPattern" || parameter.type === "RestElement",
+  );
+  return optionalIndex === -1 ? parameters.length : optionalIndex;
+};
+
+/** The class's own or inherited static property, or null when no class in the chain defines it. */
+export const getStaticProperty = (
+  classValue: StaticClassValue,
+  key: string,
+): StaticValue | null => {
+  for (const current of collectClassChain(classValue)) {
+    const property = current.properties.get(key);
+    if (property) return property;
+  }
+  return null;
+};
+
 const caughtErrorValue = (): StaticValue =>
   objectFromRecord({
     name: unknownPrimitiveValue("string", "caught error name"),
@@ -188,13 +243,12 @@ const caughtErrorValue = (): StaticValue =>
     stack: unknownPrimitiveValue("string", "caught error stack"),
   });
 
-/** The nearest static method of `name` up the class chain. */
-const getStaticMethod = (chain: StaticClassValue[], name: string): StaticFunctionValue | null => {
-  for (const current of chain) {
-    const method = current.properties.get(name);
-    if (method?.kind === "function") return method;
-  }
-  return null;
+const getStaticMethod = (
+  classValue: StaticClassValue,
+  name: string,
+): StaticFunctionValue | null => {
+  const property = getStaticProperty(classValue, name);
+  return property?.kind === "function" ? property : null;
 };
 
 const getInstanceMethod = (
@@ -216,7 +270,6 @@ const mergeState = (state: StaticValue, partialState: StaticValue): StaticValue 
 
 export interface ClassInstanceRecord {
   instance: StaticObjectValue;
-  chain: StaticClassValue[];
   stateCell: StateCell;
   isMounted: boolean;
   committedProps: StaticValue;
@@ -247,12 +300,11 @@ const mountClassInstance = (
     context: unknownValue("legacy class context"),
     refs: objectFromRecord({}),
   });
-  const chain = initializeInstance(interpreter, classValue, instance, [props], context);
+  initializeInstance(interpreter, classValue, instance, [props], context);
   const initialState = getObjectProperty(instance, "state");
   const stateCell = nextStateCell(frame, `${classValue.name ?? "class"} state`, initialState);
   const record: ClassInstanceRecord = {
     instance,
-    chain,
     stateCell,
     isMounted: false,
     committedProps: props,
@@ -345,10 +397,10 @@ export const renderClassComponent = (
     record = mountClassInstance(interpreter, classValue, props, context, frame);
     classInstances.set(frame, record);
   }
-  const { instance, chain, stateCell } = record;
+  const { instance, stateCell } = record;
   setObjectProperty(instance, "props", props);
   let state = stateCell.current;
-  const deriveStateFromProps = getStaticMethod(chain, "getDerivedStateFromProps");
+  const deriveStateFromProps = getStaticMethod(classValue, "getDerivedStateFromProps");
   if (deriveStateFromProps) {
     state = mergeState(
       state,
@@ -368,7 +420,7 @@ export const renderClassComponent = (
     }
   }
   if (caughtError) {
-    const deriveStateFromError = getStaticMethod(chain, "getDerivedStateFromError");
+    const deriveStateFromError = getStaticMethod(classValue, "getDerivedStateFromError");
     if (!deriveStateFromError) return NULL_VALUE;
     state = mergeState(
       state,

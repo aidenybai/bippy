@@ -13,6 +13,12 @@ var __spreadArray =
     return to.concat(ar || Array.prototype.slice.call(from));
   };
 
+var FieldKind = /* @__PURE__ */ ((FieldKind2) => {
+  FieldKind2[(FieldKind2["Text"] = 0)] = "Text";
+  FieldKind2[(FieldKind2["Number"] = 1)] = "Number";
+  return FieldKind2;
+})(FieldKind || {});
+
 function splitPathKey(key) {
   if (Array.isArray(key)) {
     return key;
@@ -55,6 +61,7 @@ function Field(_a) {
     "div",
     null,
     React.createElement("span", null, namePath.join(".")),
+    React.createElement("i", null, FieldKind[FieldKind.Number]),
     typeof error === "string" ? React.createElement("em", null, error) : null,
   );
 }

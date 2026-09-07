@@ -55,6 +55,33 @@ const Early = ({ mode }: { mode: string }) => {
   }
 };
 
+const parsePair = (text: string): [string, number] => {
+  const [name, count] = text.split(":");
+  return [name!, Number(count)];
+};
+
+const Reassigned = ({ spec }: { spec: string }) => {
+  let name: string;
+  let count: number;
+  let fallback = "none";
+  const box = { label: "" };
+  try {
+    [name, count] = parsePair(spec);
+  } catch {
+    return <span>invalid</span>;
+  }
+  ({ label: box.label, missing: fallback = "filled" } = { label: name.toUpperCase() });
+  let first: string;
+  let second: string;
+  [first, second] = [count > 1 ? "many" : "one", fallback];
+  [first, second] = [second, first];
+  return (
+    <span>
+      {box.label}:{count}:{first}/{second}
+    </span>
+  );
+};
+
 export default function ControlFlow() {
   return (
     <div>
@@ -70,6 +97,8 @@ export default function ControlFlow() {
       />
       <Early mode="a" />
       <Early mode="z" />
+      <Reassigned spec="apples:3" />
+      <Reassigned spec="pear:1" />
     </div>
   );
 }

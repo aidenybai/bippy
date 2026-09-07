@@ -4,17 +4,17 @@
       "id": "actual",
       "revision": "8867158f0a2e101467fb191c9e253f47c75a9e2d",
       "framework": "spa",
-      "capturedAt": "2026-09-07T11:47:44.185Z",
-      "durationMs": 825,
+      "capturedAt": "2026-09-07T15:57:08.037Z",
+      "durationMs": 826,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 1652,
+          "fiberCount": 1650,
           "textCount": 50,
           "branchCount": 102,
           "repeatCount": 4,
           "opaqueCount": 623,
-          "unknownCount": 181,
+          "unknownCount": 180,
           "modulesLoaded": 492
         },
         "diagnostics": [
@@ -33,7 +33,7 @@
       "id": "bulletproof-react",
       "revision": "9506629ed003a561c6627735480cce4994244bb4",
       "framework": "react-router",
-      "capturedAt": "2026-09-07T11:47:45.021Z",
+      "capturedAt": "2026-09-07T15:57:08.873Z",
       "durationMs": 110,
       "runtime": {
         "reactVersion": "18.3.1",
@@ -105,8 +105,8 @@
       "id": "cal-diy",
       "revision": "abffde336e744e15cf69626c10e436d6172bc406",
       "framework": "next-app",
-      "capturedAt": "2026-09-07T11:47:45.132Z",
-      "durationMs": 776,
+      "capturedAt": "2026-09-07T15:57:08.983Z",
+      "durationMs": 911,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
@@ -160,7 +160,7 @@
       "id": "documenso",
       "revision": "2cac63a000e22422bdea449f68b8025e709aa73a",
       "framework": "react-router",
-      "capturedAt": "2026-09-07T11:47:48.936Z",
+      "capturedAt": "2026-09-07T15:58:38.059Z",
       "durationMs": 482,
       "runtime": {
         "reactVersion": "19.2.8",
@@ -228,8 +228,8 @@
       "id": "epic-stack",
       "revision": "8473afd804b66dba6a23f317908dc35d1535e90d",
       "framework": "react-router",
-      "capturedAt": "2026-09-07T11:47:45.910Z",
-      "durationMs": 126,
+      "capturedAt": "2026-09-07T15:57:09.897Z",
+      "durationMs": 123,
       "runtime": null,
       "static": {
         "stats": {
@@ -257,16 +257,16 @@
       "id": "excalidraw",
       "revision": "214cd6e6e8ac3ad6b68486aa7aa7241abdf9445f",
       "framework": "spa",
-      "capturedAt": "2026-09-07T11:47:46.037Z",
-      "durationMs": 407,
+      "capturedAt": "2026-09-07T15:57:10.022Z",
+      "durationMs": 416,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 15,
+          "fiberCount": 22,
           "textCount": 0,
-          "branchCount": 1,
+          "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 1,
+          "opaqueCount": 2,
           "unknownCount": 0,
           "modulesLoaded": 456
         },
@@ -281,8 +281,8 @@
       "id": "graphiql",
       "revision": "fd32cea3e191eb6eb41b785e157403308d787b12",
       "framework": "spa",
-      "capturedAt": "2026-09-07T11:47:46.445Z",
-      "durationMs": 175,
+      "capturedAt": "2026-09-07T15:57:10.439Z",
+      "durationMs": 186,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -295,22 +295,18 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 289,
-          "textCount": 25,
-          "branchCount": 14,
-          "repeatCount": 2,
-          "opaqueCount": 61,
-          "unknownCount": 2,
+          "fiberCount": 492,
+          "textCount": 58,
+          "branchCount": 19,
+          "repeatCount": 3,
+          "opaqueCount": 72,
+          "unknownCount": 5,
           "modulesLoaded": 80
         },
         "diagnostics": [
           {
             "code": "dynamic-key",
-            "count": 2
-          },
-          {
-            "code": "unsupported-assignment",
-            "count": 2
+            "count": 3
           }
         ]
       },
@@ -342,7 +338,7 @@
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 378,
-        "staticFibers": 198,
+        "staticFibers": 364,
         "coverage": 1,
         "strictCoverage": 0.018518518518518517,
         "divergence": null,
@@ -357,8 +353,8 @@
       "id": "invoify",
       "revision": "3859b3cbae28ca4ec559db5ef87e41b798740340",
       "framework": "next-app",
-      "capturedAt": "2026-09-07T11:47:46.621Z",
-      "durationMs": 306,
+      "capturedAt": "2026-09-07T15:57:10.627Z",
+      "durationMs": 327,
       "runtime": null,
       "static": {
         "stats": {
@@ -386,8 +382,8 @@
       "id": "lexical",
       "revision": "c3b629dcf6b5111811bb9ca5a3db0665099b2856",
       "framework": "spa",
-      "capturedAt": "2026-09-07T11:47:46.931Z",
-      "durationMs": 407,
+      "capturedAt": "2026-09-07T15:57:10.961Z",
+      "durationMs": 45329,
       "runtime": {
         "reactVersion": "19.2.5",
         "rendererName": "react-dom",
@@ -408,7 +404,12 @@
           "unknownCount": 1,
           "modulesLoaded": 416
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "budget-exhausted",
+            "count": 44
+          }
+        ]
       },
       "report": {
         "matchedFibers": 15,
@@ -423,7 +424,7 @@
         "wildcards": [
           {
             "path": "root > <StrictMode> [Mode] > <PlaygroundApp> [FunctionComponent] > <SettingsContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FlashMessageContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <LexicalCollaboration> [FunctionComponent] > <ContextProvider> [ContextProvider] > <LexicalExtensionComposer> [FunctionComponent]",
-            "reason": "<Component>: call of call of dynamic key into an unknown object",
+            "reason": "step budget exhausted",
             "absorbedFibers": 208,
             "heads": [
               "<EditorComponent> [FunctionComponent]"
@@ -450,8 +451,8 @@
       "id": "nextjs-boilerplate",
       "revision": "1dffa39a32450300c8b01d8cfd3819f9b6e95842",
       "framework": "next-app",
-      "capturedAt": "2026-09-07T11:47:47.339Z",
-      "durationMs": 76,
+      "capturedAt": "2026-09-07T15:57:56.290Z",
+      "durationMs": 69,
       "runtime": null,
       "static": {
         "stats": {
@@ -479,8 +480,8 @@
       "id": "nextjs-examples",
       "revision": "4fed8eaf197aaa60fd85371352482199a4c2107f",
       "framework": "next-app",
-      "capturedAt": "2026-09-07T11:47:47.416Z",
-      "durationMs": 140,
+      "capturedAt": "2026-09-07T15:57:56.359Z",
+      "durationMs": 128,
       "runtime": {
         "reactVersion": "19.3.0-canary-cbb046ab-20260731",
         "rendererName": "react-dom",
@@ -534,8 +535,8 @@
       "id": "posthog",
       "revision": "09c5fbd37b2714276d4206debd3aeb253ce0e43a",
       "framework": "spa",
-      "capturedAt": "2026-09-07T11:47:52.946Z",
-      "durationMs": 2437,
+      "capturedAt": "2026-09-07T15:58:42.042Z",
+      "durationMs": 2360,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -562,7 +563,7 @@
         "diagnostics": [
           {
             "code": "dynamic-props",
-            "count": 2
+            "count": 1
           }
         ]
       },
@@ -597,8 +598,8 @@
       "id": "puck",
       "revision": "74a42c74db2b52da13ce1fc49087a07a6653dac8",
       "framework": "next-app",
-      "capturedAt": "2026-09-07T11:47:47.556Z",
-      "durationMs": 273,
+      "capturedAt": "2026-09-07T15:57:56.488Z",
+      "durationMs": 261,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
@@ -695,8 +696,8 @@
       "id": "react-admin",
       "revision": "fa7ede4a25d36917b41f9b9e9936e9e7ab8fa8ab",
       "framework": "spa",
-      "capturedAt": "2026-09-07T11:47:47.830Z",
-      "durationMs": 304,
+      "capturedAt": "2026-09-07T15:57:56.750Z",
+      "durationMs": 298,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -762,8 +763,8 @@
       "id": "react-email",
       "revision": "0f0cb94e1f15581131a2d50b80f8daa13dd1c9fc",
       "framework": "next-app",
-      "capturedAt": "2026-09-07T11:47:48.135Z",
-      "durationMs": 152,
+      "capturedAt": "2026-09-07T15:57:57.049Z",
+      "durationMs": 174,
       "runtime": null,
       "static": {
         "stats": {
@@ -786,8 +787,8 @@
       "id": "react-router-templates",
       "revision": "b68be71489a22315c7a734a86a18347745b393d2",
       "framework": "react-router",
-      "capturedAt": "2026-09-07T11:47:48.289Z",
-      "durationMs": 69,
+      "capturedAt": "2026-09-07T15:57:57.224Z",
+      "durationMs": 77,
       "runtime": {
         "reactVersion": "19.2.7",
         "rendererName": "react-dom",
@@ -841,8 +842,8 @@
       "id": "redux-toolkit",
       "revision": "e99fe6135188219f031c5028f653fb82e671de24",
       "framework": "spa",
-      "capturedAt": "2026-09-07T12:34:10.361Z",
-      "durationMs": 111,
+      "capturedAt": "2026-09-07T15:57:57.301Z",
+      "durationMs": 79,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -896,8 +897,8 @@
       "id": "sentry",
       "revision": "a7b4a8a2a78a666418e527d812e81528147789da",
       "framework": "react-router",
-      "capturedAt": "2026-09-07T11:47:49.419Z",
-      "durationMs": 3525,
+      "capturedAt": "2026-09-07T15:58:38.542Z",
+      "durationMs": 3496,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -963,8 +964,8 @@
       "id": "shadcn-ui",
       "revision": "7c9eaba1c0a6404c990c144a654792e3313c650d",
       "framework": "next-app",
-      "capturedAt": "2026-09-07T11:47:48.415Z",
-      "durationMs": 280,
+      "capturedAt": "2026-09-07T15:57:57.381Z",
+      "durationMs": 324,
       "runtime": null,
       "static": {
         "stats": {
@@ -992,8 +993,8 @@
       "id": "sonner",
       "revision": "8e4662b39255120b62138312058f5d77c0139a5e",
       "framework": "next-app",
-      "capturedAt": "2026-09-07T11:47:48.700Z",
-      "durationMs": 63,
+      "capturedAt": "2026-09-07T15:57:57.708Z",
+      "durationMs": 69,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
@@ -1047,8 +1048,8 @@
       "id": "tanstack-query",
       "revision": "1893a965d219032207cbe147880d0e9f757a5a56",
       "framework": "spa",
-      "capturedAt": "2026-09-07T12:34:10.478Z",
-      "durationMs": 87,
+      "capturedAt": "2026-09-07T15:57:57.777Z",
+      "durationMs": 74,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -1102,8 +1103,8 @@
       "id": "tanstack-router",
       "revision": "cf166d160e6397007a979bfc7065b45ff69ea543",
       "framework": "spa",
-      "capturedAt": "2026-09-07T11:47:48.820Z",
-      "durationMs": 48,
+      "capturedAt": "2026-09-07T15:57:57.852Z",
+      "durationMs": 40138,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -1116,48 +1117,62 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 2,
+          "fiberCount": 3,
           "textCount": 0,
           "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 1,
-          "unknownCount": 0,
-          "modulesLoaded": 2
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 83
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "budget-exhausted",
+            "count": 33
+          }
+        ]
       },
       "report": {
-        "matchedFibers": 0,
+        "matchedFibers": 1,
         "matchedText": 0,
-        "opaqueSubtrees": 1,
-        "opaqueSkippedFibers": 48,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "wildcardAbsorbedFibers": 0,
-        "wildcards": [],
+        "wildcardAbsorbedFibers": 47,
+        "wildcards": [
+          {
+            "path": "root > <RouterProvider> [FunctionComponent]",
+            "reason": "step budget exhausted",
+            "absorbedFibers": 47,
+            "heads": [
+              "<RouterContextProvider> [FunctionComponent]"
+            ]
+          }
+        ],
         "branchesResolved": 0,
         "branchDeviations": [],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 48,
         "staticFibers": 1,
-        "coverage": 0,
-        "strictCoverage": 0,
+        "coverage": 1,
+        "strictCoverage": 0.020833333333333332,
         "divergence": null,
-        "stepsUsed": 1,
+        "stepsUsed": 2,
         "budgetExhausted": false
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-06T14:42:26.770Z",
+      "note": "runtime replayed from 2026-09-07T13:00:25.894Z",
       "failure": null
     },
     {
       "id": "tldraw",
       "revision": "e8f61acedcbf2dc69693ea1e1f612a7f635fb4b5",
       "framework": "react-router",
-      "capturedAt": "2026-09-07T11:47:48.869Z",
+      "capturedAt": "2026-09-07T15:58:37.991Z",
       "durationMs": 67,
       "runtime": null,
       "static": {

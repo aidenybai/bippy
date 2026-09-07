@@ -101,8 +101,10 @@ const runBody = (
 
 /**
  * Runs one concrete iteration. A definite `continue` or completion moves on, a
- * definite `break` ends the loop, a definite return ends the function; anything
- * that only happens on some paths leaves the remaining iterations uncertain.
+ * definite `break` ends the loop, a definite return ends the function. A return
+ * (or throw) on only some paths leaves the function on those paths while the
+ * others carry on with the next iteration; only a `break` that may or may not
+ * happen leaves the remaining iterations uncertain.
  */
 const runIteration = (
   interpreter: Interpreter,
@@ -112,19 +114,17 @@ const runIteration = (
 ): "next" | UnrollResult => {
   const outcome = runBody(interpreter, body, context);
   const isDefinite = !outcome.mayComplete && outcome.returned === null;
-  if (outcome.jump === "continue" && isDefinite) return "next";
   if (outcome.jump === "break" && isDefinite) return exactCompletion(outcomes);
-  if (outcome.jump === null) {
-    if (outcome.returned === null) return "next";
-    if (!outcome.mayComplete) {
-      return {
-        kind: "exact",
-        outcome: mergeOutcomes([...outcomes, outcome], "return inside a loop", null),
-      };
-    }
+  if (outcome.returned !== null && !outcome.mayComplete && outcome.jump === null) {
+    return {
+      kind: "exact",
+      outcome: mergeOutcomes([...outcomes, outcome], "return inside a loop", null),
+    };
   }
   if (outcome.returned) outcomes.push(returnOutcome(outcome.returned));
-  return { kind: "partial", outcomes };
+  return outcome.jump === null || outcome.jump === "continue"
+    ? "next"
+    : { kind: "partial", outcomes };
 };
 
 const unrollForEach = (

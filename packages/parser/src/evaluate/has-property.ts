@@ -3,14 +3,24 @@ import {
   REACT_ELEMENT_OWN_KEYS,
   WRAPPER_OWN_KEYS,
 } from "../react/element-shape.js";
-import type { StaticElementType, StaticValue } from "../types.js";
+import type {
+  StaticClassValue,
+  StaticElementType,
+  StaticFunctionValue,
+  StaticValue,
+} from "../types.js";
+import { getStaticProperty } from "./class-component.js";
 import { createErrorValue } from "./errors.js";
 import {
   branchValue,
   FALSE_VALUE,
   getKnownObjectKeys,
+  getKnownObjectSymbols,
+  getPropertyName,
+  getSymbolPropertyKey,
   hasDefiniteItems,
   isIndefiniteItem,
+  isSymbolPropertyKey,
   TRUE_VALUE,
   primitiveValue,
   thrownValue,
@@ -24,6 +34,15 @@ export const OBJECT_PROTOTYPE_METHODS = new Set([
   "toLocaleString",
   "valueOf",
 ]);
+
+/** Own keys every function object has without source assigning them; arrows have no `prototype`. */
+export const isIntrinsicFunctionKey = (
+  callable: StaticFunctionValue | StaticClassValue,
+  key: string,
+): boolean =>
+  key === "length" ||
+  key === "name" ||
+  (key === "prototype" && callable.node.type !== "ArrowFunctionExpression");
 
 const hasComponentProperty = (type: StaticElementType, name: string): StaticValue | null => {
   switch (type.kind) {
@@ -59,9 +78,21 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
     case "element":
       return REACT_ELEMENT_OWN_KEYS.has(name) ? TRUE_VALUE : FALSE_VALUE;
     case "object": {
-      const keys = getKnownObjectKeys(target);
-      if (keys === null) return null;
+      const keys = isSymbolPropertyKey(name)
+        ? getKnownObjectSymbols(target)?.map(getSymbolPropertyKey)
+        : getKnownObjectKeys(target);
+      if (!keys) return null;
       return keys.includes(name) || name in {} ? TRUE_VALUE : FALSE_VALUE;
+    }
+    case "function":
+    case "class": {
+      const isOwn =
+        target.kind === "class"
+          ? getStaticProperty(target, name) !== null
+          : target.properties.has(name);
+      return isOwn || isIntrinsicFunctionKey(target, name) || name in Function.prototype
+        ? TRUE_VALUE
+        : FALSE_VALUE;
     }
     case "list": {
       if (name in Array.prototype) return TRUE_VALUE;
@@ -93,5 +124,7 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
   }
 };
 
-export const hasProperty = (key: StaticValue, target: StaticValue): StaticValue | null =>
-  key.kind === "primitive" ? hasNamedProperty(String(key.value), target) : null;
+export const hasProperty = (key: StaticValue, target: StaticValue): StaticValue | null => {
+  const name = getPropertyName(key);
+  return name === null ? null : hasNamedProperty(name, target);
+};

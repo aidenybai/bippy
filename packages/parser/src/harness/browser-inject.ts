@@ -38,9 +38,12 @@ const readStorageArea = (area: Storage): Record<string, string> => {
   return entries;
 };
 
+const initialHistoryState = toCapturedValue(history.state) ?? null;
+
 const readPageState = (): CapturedPageState => ({
   cookie: document.cookie,
   name: window.name,
+  historyState: initialHistoryState,
   localStorage: readStorageArea(localStorage),
   sessionStorage: readStorageArea(sessionStorage),
 });

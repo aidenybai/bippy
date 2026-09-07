@@ -30,13 +30,21 @@ const nativeMethod = (name: string, call: (args: StaticValue[]) => StaticValue):
 
 const isSameKey = (left: StaticValue, right: StaticValue): boolean =>
   left === right ||
-  (left.kind === "primitive" && right.kind === "primitive" && Object.is(left.value, right.value));
+  (left.kind === "primitive" && right.kind === "primitive" && Object.is(left.value, right.value)) ||
+  (left.kind === "symbol" && right.kind === "symbol" && left.key === right.key) ||
+  (left.kind === "context" && right.kind === "context" && left.context === right.context);
 
+/** Values with a stable identity (or value equality) across the analysis, so a key lookup is exact. */
 const isDefiniteKey = (key: StaticValue): boolean =>
   key.kind === "primitive" ||
+  key.kind === "symbol" ||
   key.kind === "object" ||
   key.kind === "list" ||
-  key.kind === "function";
+  key.kind === "function" ||
+  key.kind === "class" ||
+  key.kind === "context" ||
+  key.kind === "host-node" ||
+  key.kind === "element";
 
 /**
  * Module-level `Map`/`Set` caches are common in data-fetching helpers, so

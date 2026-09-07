@@ -396,9 +396,17 @@
       "settleMs": 6000,
       "static": {
         "rootDirectory": "examples/react/basic",
-        "entry": "src/main.tsx"
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": [
+          "@tanstack/react-router",
+          "@tanstack/router-core",
+          "@tanstack/history",
+          "@tanstack/react-store",
+          "@tanstack/store",
+          "@tanstack/react-router-devtools"
+        ]
       },
-      "notes": "TanStack Router is not modeled; <RouterProvider> is an opaque dependency and the static tree ends there."
+      "notes": "Workspace packages must be built before Vite can resolve @tanstack/react-router; the setup builds the example's dependency closure."
     },
     {
       "id": "tldraw",

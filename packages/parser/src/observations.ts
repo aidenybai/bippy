@@ -118,6 +118,7 @@ const isCapturedPageState = (value: unknown): value is CapturedPageState =>
   isRecord(value) &&
   typeof value.cookie === "string" &&
   (value.name === undefined || typeof value.name === "string") &&
+  isOptionalCapturedValue(value.historyState) &&
   isStringRecord(value.localStorage) &&
   isStringRecord(value.sessionStorage);
 

@@ -1,5 +1,5 @@
 import type { SourceLocation, StaticUnknownValue, StaticValue } from "../types.js";
-import { branchValue, unknownValue } from "./values.js";
+import { branchValue, getObjectProperty, unknownValue } from "./values.js";
 
 export type ThrowCertainty = "never" | "maybe" | "always";
 
@@ -89,11 +89,19 @@ export const getCaughtValue = (
   return caught.length === 1 ? caught[0] : branchValue(caught, "caught error", location);
 };
 
+const describeThrownValue = (thrown: StaticValue | undefined): string => {
+  if (!thrown) return "";
+  const message = thrown.kind === "object" ? getObjectProperty(thrown, "message") : thrown;
+  return message.kind === "primitive" && typeof message.value === "string"
+    ? ` (${JSON.stringify(message.value)})`
+    : "";
+};
+
 export const describeThrow = (value: StaticValue): string => {
   const thrown = findThrown(value);
   if (!thrown) return "component throws";
   const where = thrown.location ? ` at ${thrown.location.filePath}:${thrown.location.line}` : "";
-  return `${thrown.reason}${where}`;
+  return `${thrown.reason}${where}${describeThrownValue(thrown.thrown)}`;
 };
 
 /** `value` restricted to the paths that do not throw; a lone thrown path becomes a plain unknown. */
@@ -104,10 +112,17 @@ export const withoutThrows = (value: StaticValue): StaticValue => {
     case "list":
       return { ...value, items: value.items.map(withoutThrows) };
     case "branch": {
-      const alternatives = value.alternatives
-        .filter((alternative) => getThrowCertainty(alternative) !== "always")
-        .map(withoutThrows);
-      return alternatives.length === 1 ? alternatives[0] : { ...value, alternatives };
+      const surviving = value.alternatives.filter(
+        (alternative) => getThrowCertainty(alternative) !== "always",
+      );
+      if (surviving.length === 0) return unknownValue("thrown render", value.location);
+      const preferred = value.alternatives[value.preferredIndex];
+      return branchValue(
+        surviving.map(withoutThrows),
+        value.reason,
+        value.location,
+        Math.max(0, surviving.indexOf(preferred)),
+      );
     }
     case "optional":
       return { ...value, value: withoutThrows(value.value) };

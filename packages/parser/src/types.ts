@@ -402,6 +402,8 @@ export interface CapturedPageState {
   cookie: string;
   /** `window.name`; absent in captures taken before it was recorded. */
   name?: string;
+  /** `history.state` before the page's first script ran; absent in captures taken before it was recorded. */
+  historyState?: CapturedValue;
   localStorage: Record<string, string>;
   sessionStorage: Record<string, string>;
 }
@@ -451,7 +453,11 @@ export type StaticObjectEntry =
 export interface StaticObjectValue {
   kind: "object";
   entries: StaticObjectEntry[];
+  /** Identifies the allocation; values constructed without one have undecidable identity. */
+  allocation?: symbol;
   constructedBy?: StaticClassValue;
+  /** Created with `Object.create(null)`: no inherited `constructor` or `Object.prototype` methods. */
+  hasNullPrototype?: boolean;
 }
 
 /**
@@ -505,6 +511,7 @@ export interface StaticUnknownPrimitiveValue {
 export interface StaticListValue {
   kind: "list";
   items: StaticValue[];
+  allocation?: symbol;
   /** Named properties an array carries besides its indices, like `index` on a match. */
   properties?: ReadonlyMap<string, StaticValue>;
 }
@@ -533,6 +540,7 @@ export interface StaticFunctionValue {
   name: string | null;
   properties: Map<string, StaticValue>;
   boundArgs?: StaticValue[];
+  boundThis?: StaticValue;
 }
 
 export interface StaticClassValue {
