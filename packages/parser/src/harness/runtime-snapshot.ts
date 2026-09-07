@@ -1,0 +1,152 @@
+import { type Fiber, getDisplayName, getReactWorkTagsForFiber, type ReactWorkTagMap } from "bippy";
+import type { WorkTagName } from "../fiber/types.js";
+import type { FiberSnapshot } from "../snapshot/types.js";
+
+const WORK_TAG_NAMES: ReadonlySet<string> = new Set<WorkTagName>([
+  "FunctionComponent",
+  "ClassComponent",
+  "HostRoot",
+  "HostPortal",
+  "HostComponent",
+  "HostText",
+  "Fragment",
+  "Mode",
+  "ContextConsumer",
+  "ContextProvider",
+  "ForwardRef",
+  "Profiler",
+  "SuspenseComponent",
+  "MemoComponent",
+  "SimpleMemoComponent",
+  "SuspenseListComponent",
+  "OffscreenComponent",
+  "HostHoistable",
+  "HostSingleton",
+  "ViewTransitionComponent",
+  "ActivityComponent",
+]);
+
+const isWorkTagName = (name: string): name is WorkTagName => WORK_TAG_NAMES.has(name);
+
+const HOOK_BEARING_TAGS = new Set<WorkTagName | null>([
+  "FunctionComponent",
+  "ForwardRef",
+  "SimpleMemoComponent",
+]);
+
+export const getWorkTagName = (fiber: Fiber): WorkTagName | null => {
+  const workTags: ReactWorkTagMap = getReactWorkTagsForFiber(fiber);
+  for (const [name, value] of Object.entries(workTags)) {
+    if (value === fiber.tag && isWorkTagName(name)) return name;
+  }
+  return null;
+};
+
+/** Length of the hook state list (`memoizedState`) on a function-like fiber. */
+const countHooks = (fiber: Fiber, tag: WorkTagName | null): number | null => {
+  if (!HOOK_BEARING_TAGS.has(tag)) return null;
+  let count = 0;
+  let node: unknown = fiber.memoizedState;
+  while (node && typeof node === "object" && "queue" in node && "next" in node) {
+    count++;
+    node = node.next;
+  }
+  return count;
+};
+
+const getRuntimeText = (fiber: Fiber, tag: WorkTagName | null): string | null => {
+  if (tag !== "HostText") return null;
+  const props: unknown = fiber.memoizedProps;
+  return typeof props === "string" ? props : String(props);
+};
+
+const getRuntimeKey = (fiber: Fiber): string | null =>
+  typeof fiber.key === "string" ? fiber.key : null;
+
+/** Names React DevTools gives built-in fibers (`getDisplayNameForFiber`), plus the ones it hides. */
+const BUILTIN_NAMES: Partial<Record<WorkTagName, string>> = {
+  Fragment: "Fragment",
+  SuspenseComponent: "Suspense",
+  SuspenseListComponent: "SuspenseList",
+  OffscreenComponent: "Offscreen",
+  ActivityComponent: "Activity",
+  ViewTransitionComponent: "ViewTransition",
+  Profiler: "Profiler",
+  HostPortal: "Portal",
+};
+
+const STRICT_MODE_TYPE = Symbol.for("react.strict_mode");
+
+/** esbuild names a class it lowers `_a`, `_a2`, …; the source name is gone, so the fiber counts as unnamed. */
+const BUNDLER_TEMPORARY = /^_[a-z]\d*$/;
+
+const getTypeName = (type: unknown): string | null => {
+  const name = getDisplayName(type);
+  return name !== null && BUNDLER_TEMPORARY.test(name) ? null : name;
+};
+
+const getContextName = (type: unknown): string => {
+  const context: unknown =
+    typeof type === "object" && type !== null && "_context" in type ? type._context : type;
+  const displayName: unknown =
+    typeof context === "object" && context !== null && "displayName" in context
+      ? context.displayName
+      : null;
+  return typeof displayName === "string" && displayName ? displayName : "Context";
+};
+
+const getRuntimeName = (fiber: Fiber, tag: WorkTagName | null): string | null => {
+  switch (tag) {
+    case "HostText":
+    case "HostRoot":
+      return null;
+    case "Mode":
+      return fiber.type === STRICT_MODE_TYPE ? "StrictMode" : "Mode";
+    case "ContextProvider":
+      return `${getContextName(fiber.type)}.Provider`;
+    case "ContextConsumer":
+      return `${getContextName(fiber.type)}.Consumer`;
+    default:
+      return (tag && BUILTIN_NAMES[tag]) ?? getTypeName(fiber.type);
+  }
+};
+
+interface RuntimeSnapshotState {
+  nextId: number;
+  /** Fibers and their alternates, since `_debugOwner` may point at either version. */
+  ids: Map<object, number>;
+}
+
+const getOwnerId = (fiber: Fiber, state: RuntimeSnapshotState): number | null => {
+  const owner: unknown = fiber._debugOwner;
+  if (!owner || typeof owner !== "object" || !("tag" in owner)) return null;
+  return state.ids.get(owner) ?? null;
+};
+
+const snapshotFiber = (fiber: Fiber, state: RuntimeSnapshotState): FiberSnapshot => {
+  const id = state.nextId++;
+  state.ids.set(fiber, id);
+  if (fiber.alternate) state.ids.set(fiber.alternate, id);
+  const tag = getWorkTagName(fiber);
+  const children: FiberSnapshot[] = [];
+  for (let child = fiber.child; child; child = child.sibling)
+    children.push(snapshotFiber(child, state));
+  return {
+    kind: "fiber",
+    id,
+    owner: getOwnerId(fiber, state),
+    tag,
+    name: getRuntimeName(fiber, tag),
+    key: getRuntimeKey(fiber),
+    text: getRuntimeText(fiber, tag),
+    children,
+    hooks: countHooks(fiber, tag),
+    annotations: [],
+    fallback: null,
+    location: null,
+  };
+};
+
+/** Snapshot of a committed fiber tree, starting at the `HostRoot` fiber. */
+export const snapshotRuntimeFiber = (root: Fiber): FiberSnapshot =>
+  snapshotFiber(root, { nextId: 0, ids: new Map() });

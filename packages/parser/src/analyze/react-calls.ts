@@ -1,0 +1,213 @@
+import type { Span } from "@oxc-project/types";
+import { getReactApiReference, REACT_BASE_CLASSES } from "../link/react-api.js";
+import { evaluateChildrenApi } from "./children.js";
+import type { EvaluationContext, Interpreter } from "./interpreter.js";
+import { createElementValue } from "./jsx.js";
+import {
+  array,
+  builtin,
+  cloneObject,
+  component,
+  type ExternalValue,
+  FALSE,
+  isNullish,
+  mapConditional,
+  mergeObjects,
+  NULL,
+  object,
+  type ObjectValue,
+  type StaticValue,
+  TRUE,
+  UNDEFINED,
+  unknown,
+} from "./values.js";
+
+export type CallbackInvoker = (callback: StaticValue, callArguments: StaticValue[]) => StaticValue;
+
+const isNullishValue = (value: StaticValue | undefined): boolean =>
+  value === undefined || (value.kind === "literal" && isNullish(value.value));
+
+const childrenProp = (children: StaticValue[]): StaticValue | null => {
+  if (children.length === 0) return null;
+  return children.length === 1 ? children[0] : array(children);
+};
+
+/** `createElement(type, config, ...children)`: config minus `key`/`ref`, children appended. */
+const createElementFromCall = (
+  interpreter: Interpreter,
+  callArguments: StaticValue[],
+  span: Span,
+  context: EvaluationContext,
+): StaticValue => {
+  const [type, config, ...children] = callArguments;
+  if (!type) return unknown("createElement without type");
+  const props: ObjectValue = config?.kind === "object" ? cloneObject(config) : object();
+  if (config && config.kind !== "object" && !isNullishValue(config)) props.hasUnknownSpread = true;
+  const key = props.properties.get("key") ?? null;
+  props.properties.delete("key");
+  const childrenValue = childrenProp(children);
+  if (childrenValue) props.properties.set("children", childrenValue);
+  return createElementValue(interpreter, type, props, key, span, context);
+};
+
+/** `jsx(type, props, key)` from the automatic runtime: children already live in props. */
+const createElementFromJsxRuntime = (
+  interpreter: Interpreter,
+  callArguments: StaticValue[],
+  span: Span,
+  context: EvaluationContext,
+): StaticValue => {
+  const [type, config, key] = callArguments;
+  if (!type) return unknown("jsx without type");
+  const props = config?.kind === "object" ? cloneObject(config) : object([], config !== undefined);
+  return createElementValue(
+    interpreter,
+    type,
+    props,
+    isNullishValue(key) ? null : (key ?? null),
+    span,
+    context,
+  );
+};
+
+/** `cloneElement(element, config, ...children)`, on each element a conditional may hold. */
+const cloneElement = (
+  interpreter: Interpreter,
+  callArguments: StaticValue[],
+  span: Span,
+  context: EvaluationContext,
+): StaticValue => {
+  const [element = UNDEFINED, config, ...children] = callArguments;
+  return mapConditional(element, (arm) => {
+    if (arm.kind !== "element") return unknown("cloneElement of non-element");
+    const props = cloneObject(arm.props);
+    let key = arm.key;
+    if (config?.kind === "object") {
+      mergeObjects(props, config);
+      const configKey = config.properties.get("key");
+      if (configKey) key = configKey;
+      props.properties.delete("key");
+    } else if (config && !isNullishValue(config)) props.hasUnknownSpread = true;
+    const childrenValue = childrenProp(children);
+    if (childrenValue) props.properties.set("children", childrenValue);
+    return {
+      ...createElementValue(interpreter, arm.type, props, key, span, context),
+      owner: arm.owner,
+    };
+  });
+};
+
+const resolveLazyTarget = (interpreter: Interpreter, loaded: StaticValue): StaticValue => {
+  switch (loaded.kind) {
+    case "namespace":
+      return interpreter.getModuleExport(loaded.module, "default");
+    case "object":
+      return loaded.properties.get("default") ?? unknown("lazy module without default export");
+    default:
+      return loaded.kind === "unknown" ? loaded : unknown("lazy loader result");
+  }
+};
+
+/**
+ * `_Component.call(this, props)` in a lowered class: React's base
+ * constructors assign to `this` and return nothing, so `|| this` keeps
+ * the instance.
+ */
+const isBaseConstructorCall = (callee: ExternalValue, path: string[]): boolean =>
+  callee.specifier === "react" &&
+  path.length >= 2 &&
+  REACT_BASE_CLASSES.has(path[path.length - 2]) &&
+  (path[path.length - 1] === "call" || path[path.length - 1] === "apply");
+
+/**
+ * Models calls into React's own API surface. Returns `null` for references
+ * that are not React's, so the caller can fall back to opaque handling.
+ */
+export const evaluateReactCall = (
+  interpreter: Interpreter,
+  callee: ExternalValue,
+  callArguments: StaticValue[],
+  invoke: CallbackInvoker,
+  span: Span,
+  context: EvaluationContext,
+): StaticValue | null => {
+  const path = [callee.importedName, ...callee.memberPath];
+  const description = `${callee.name ?? path.join(".")}()`;
+  const childrenIndex = path.indexOf("Children");
+  if (callee.specifier === "react" && childrenIndex !== -1 && childrenIndex === path.length - 2) {
+    return evaluateChildrenApi(path[childrenIndex + 1], callArguments, invoke, description);
+  }
+  if (isBaseConstructorCall(callee, path)) return UNDEFINED;
+  const reference = getReactApiReference(callee);
+  if (!reference) return null;
+  const [first, second] = callArguments;
+  const spanOf = (): Span => ({ start: span.start, end: span.end });
+  switch (reference.api) {
+    case "memo":
+      return component({
+        kind: "memo",
+        name: null,
+        inner: first ?? unknown("memo without component"),
+        hasCompare: second !== undefined && !isNullishValue(second),
+        span: spanOf(),
+      });
+    case "forwardRef":
+      return component({
+        kind: "forwardRef",
+        name: null,
+        render: first?.kind === "function" ? first : null,
+        span: spanOf(),
+      });
+    case "lazy": {
+      const loaded = first ? invoke(first, []) : unknown("lazy without loader");
+      return component({
+        kind: "lazy",
+        name: null,
+        inner: resolveLazyTarget(interpreter, loaded),
+        span: spanOf(),
+      });
+    }
+    case "createContext":
+      return component({
+        kind: "context",
+        name: null,
+        role: "provider",
+        defaultValue: first ?? UNDEFINED,
+        module: context.module,
+        span: spanOf(),
+      });
+    case "createElement":
+      return createElementFromCall(interpreter, callArguments, span, context);
+    case "jsx":
+    case "jsxs":
+    case "jsxDEV":
+      return createElementFromJsxRuntime(interpreter, callArguments, span, context);
+    case "cloneElement":
+      return cloneElement(interpreter, callArguments, span, context);
+    case "createPortal":
+      return createElementValue(
+        interpreter,
+        builtin("Portal"),
+        object([["children", first ?? NULL]]),
+        callArguments[2] ?? null,
+        span,
+        context,
+      );
+    case "isValidElement":
+      return mapConditional(first ?? UNDEFINED, (arm) => {
+        if (arm.kind === "unknown" || arm.kind === "external") return unknown(description);
+        return arm.kind === "element" ? TRUE : FALSE;
+      });
+    case "createRef":
+      return object([["current", NULL]]);
+    case "startTransition":
+    case "flushSync":
+    case "act":
+      return first ? invoke(first, []) : UNDEFINED;
+    case "cache":
+    case "memoize":
+      return first ?? unknown(description);
+    default:
+      return unknown(description);
+  }
+};

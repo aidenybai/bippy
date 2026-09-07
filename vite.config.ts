@@ -1,14 +1,19 @@
 import { defineConfig } from "vite-plus";
 import { conformanceTestConfig } from "./packages/conformance/vite.config.js";
+import { parserTestProject } from "./packages/parser/vite.config.js";
 
 const reactDevToolsHookSources =
   "packages/conformance/fixtures/react-devtools-headless/fixtures/hook-sources/**";
+const compiledParserFixtures = "packages/parser/tests/fixtures/compiled-*.js";
 
 export default defineConfig({
   staged: {
     "*.{js,ts,tsx}": "vp check --fix",
   },
-  test: conformanceTestConfig,
+  test: {
+    ...conformanceTestConfig,
+    projects: [...(conformanceTestConfig.projects ?? []), parserTestProject],
+  },
   fmt: {
     ignorePatterns: [
       "**/routeTree.gen.ts",
@@ -37,6 +42,7 @@ export default defineConfig({
       "coverage",
       "pnpm-lock.yaml",
       reactDevToolsHookSources,
+      compiledParserFixtures,
     ],
   },
 });

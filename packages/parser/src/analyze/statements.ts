@@ -1,0 +1,753 @@
+import type {
+  Expression,
+  ForInStatement,
+  ForOfStatement,
+  ForStatement,
+  ForStatementLeft,
+  IfStatement,
+  Span,
+  Statement,
+  SwitchStatement,
+  TryStatement,
+  VariableDeclarator,
+} from "@oxc-project/types";
+import {
+  collectAssignedNames,
+  collectIdentifierNames,
+  isAnonymousFunctionDefinition,
+  isNodeOfType,
+  walk,
+} from "../module/ast.js";
+import { getIterationItem } from "./access.js";
+import { classifyClass } from "./components.js";
+import { evaluateEnum } from "./enums.js";
+import {
+  BREAK_COMPLETION,
+  type Completion,
+  CONTINUE_COMPLETION,
+  enterUndecided,
+  type EvaluationContext,
+  type Interpreter,
+  type JumpKind,
+  NORMAL_COMPLETION,
+  returnCompletion,
+  THROW_COMPLETION,
+} from "./interpreter.js";
+import {
+  collectCaseNarrowings,
+  collectNarrowings,
+  type Narrowing,
+  narrowScope,
+} from "./narrowing.js";
+import { assignToTarget, bindPattern } from "./patterns.js";
+import {
+  assignVariable,
+  createScope,
+  declareVariable,
+  forkScope,
+  lookupVariable,
+  mergeBranchScopes,
+  type Scope,
+} from "./scope.js";
+import {
+  conditional,
+  getTruthiness,
+  literal,
+  nameValue,
+  type StaticValue,
+  UNDEFINED,
+  unknown,
+} from "./values.js";
+
+interface Arm {
+  test: string;
+  scope: Scope;
+  completion: Completion;
+  /** What holds for the statements after the branch when this arm leaves the function. */
+  exitNarrowings: Narrowing[];
+}
+
+/** Outcome of a control-flow statement whose direction is unknown statically. */
+interface ArmSet {
+  kind: "arms";
+  arms: Arm[];
+  /** The `else` / `default` / `catch` arm; `null` when the statement may be skipped entirely. */
+  fallback: Arm | null;
+}
+
+const toStatements = (statement: Statement): Statement[] =>
+  statement.type === "BlockStatement" ? statement.body : [statement];
+
+const evaluateInScope = (
+  interpreter: Interpreter,
+  statements: Statement[],
+  scope: Scope,
+  context: EvaluationContext,
+): Completion => interpreter.evaluateStatements(statements, { ...context, scope });
+
+/** Variables refined by a test's outcome inside the arm, and by the opposite outcome after it. */
+interface ArmNarrowings {
+  inside: Narrowing[];
+  exit: Narrowing[];
+}
+
+const NO_NARROWINGS: ArmNarrowings = { inside: [], exit: [] };
+
+const testNarrowings = (
+  interpreter: Interpreter,
+  test: Expression,
+  outcome: boolean,
+  context: EvaluationContext,
+): ArmNarrowings => {
+  const describe = (expression: Expression): string =>
+    interpreter.getSource(context.module, expression);
+  return {
+    inside: collectNarrowings(test, outcome, describe),
+    exit: collectNarrowings(test, !outcome, describe),
+  };
+};
+
+const evaluateArm = (
+  interpreter: Interpreter,
+  test: string,
+  statements: Statement[],
+  context: EvaluationContext,
+  narrowings: ArmNarrowings = NO_NARROWINGS,
+): Arm => {
+  const scope = forkScope(narrowScope(context.scope, narrowings.inside));
+  return {
+    test,
+    scope,
+    completion: interpreter.evaluateStatements(statements, enterUndecided(context, test, scope)),
+    exitNarrowings: narrowings.exit,
+  };
+};
+
+const LOOP_JUMPS: JumpKind[] = ["break", "continue"];
+const SWITCH_JUMPS: JumpKind[] = ["break"];
+
+/** Jumps end a switch case or loop iteration, not the enclosing function. */
+const absorbJumps = (arm: Arm, jumps: JumpKind[]): Arm =>
+  jumps.some((jump) => jump === arm.completion.kind)
+    ? { ...arm, completion: NORMAL_COMPLETION }
+    : arm;
+
+const hoistFunctionDeclarations = (statements: Statement[], context: EvaluationContext): void => {
+  for (const statement of statements) {
+    if (statement.type !== "FunctionDeclaration" || !statement.id) continue;
+    declareVariable(context.scope, statement.id.name, {
+      kind: "function",
+      fn: statement,
+      module: context.module,
+      scope: context.scope,
+      thisValue: null,
+      name: statement.id.name,
+      statics: new Map(),
+      hasUnknownStatics: false,
+    });
+  }
+};
+
+const evaluateIf = (
+  interpreter: Interpreter,
+  statement: IfStatement,
+  context: EvaluationContext,
+): Completion | ArmSet => {
+  const truthiness = getTruthiness(interpreter.evaluateExpression(statement.test, context));
+  if (truthiness === true) {
+    return evaluateInScope(
+      interpreter,
+      toStatements(statement.consequent),
+      createScope(context.scope),
+      context,
+    );
+  }
+  if (truthiness === false) {
+    return statement.alternate
+      ? evaluateInScope(
+          interpreter,
+          toStatements(statement.alternate),
+          createScope(context.scope),
+          context,
+        )
+      : NORMAL_COMPLETION;
+  }
+  const test = interpreter.getSource(context.module, statement.test);
+  return {
+    kind: "arms",
+    arms: [
+      evaluateArm(
+        interpreter,
+        test,
+        toStatements(statement.consequent),
+        context,
+        testNarrowings(interpreter, statement.test, true, context),
+      ),
+    ],
+    fallback: statement.alternate
+      ? evaluateArm(
+          interpreter,
+          `!(${test})`,
+          toStatements(statement.alternate),
+          context,
+          testNarrowings(interpreter, statement.test, false, context),
+        )
+      : null,
+  };
+};
+
+interface CaseGroup {
+  tests: Expression[];
+  isDefault: boolean;
+  statements: Statement[];
+}
+
+/** Cases with empty bodies fall through into the next non-empty case. */
+const groupSwitchCases = (statement: SwitchStatement): CaseGroup[] => {
+  const groups: CaseGroup[] = [];
+  let pending: CaseGroup = { tests: [], isDefault: false, statements: [] };
+  for (const switchCase of statement.cases) {
+    if (switchCase.test) pending.tests.push(switchCase.test);
+    else pending.isDefault = true;
+    if (switchCase.consequent.length === 0) continue;
+    pending.statements = switchCase.consequent;
+    groups.push(pending);
+    pending = { tests: [], isDefault: false, statements: [] };
+  }
+  if (pending.tests.length > 0 || pending.isDefault) groups.push(pending);
+  return groups;
+};
+
+const evaluateSwitch = (
+  interpreter: Interpreter,
+  statement: SwitchStatement,
+  context: EvaluationContext,
+): Completion | ArmSet => {
+  const discriminant = interpreter.evaluateExpression(statement.discriminant, context);
+  const testValues = statement.cases.map((switchCase) =>
+    switchCase.test ? interpreter.evaluateExpression(switchCase.test, context) : null,
+  );
+  const isDecidable =
+    discriminant.kind === "literal" &&
+    testValues.every((testValue) => testValue === null || testValue.kind === "literal");
+  if (isDecidable) {
+    const matchIndex = testValues.findIndex(
+      (testValue) => testValue?.kind === "literal" && testValue.value === discriminant.value,
+    );
+    const startIndex = matchIndex === -1 ? testValues.indexOf(null) : matchIndex;
+    if (startIndex === -1) return NORMAL_COMPLETION;
+    const statements = statement.cases
+      .slice(startIndex)
+      .flatMap((switchCase) => switchCase.consequent);
+    const completion = evaluateInScope(
+      interpreter,
+      statements,
+      createScope(context.scope),
+      context,
+    );
+    return completion.kind === "break" ? NORMAL_COMPLETION : completion;
+  }
+  const discriminantSource = interpreter.getSource(context.module, statement.discriminant);
+  const groups = groupSwitchCases(statement);
+  const allTests = groups.flatMap((group) => group.tests);
+  const arms: Arm[] = [];
+  let fallback: Arm | null = null;
+  for (const group of groups) {
+    const test = group.tests
+      .map(
+        (caseTest) =>
+          `${discriminantSource} === ${interpreter.getSource(context.module, caseTest)}`,
+      )
+      .join(" || ");
+    /** The default case is reached once no other case matched. */
+    const narrowings: ArmNarrowings = group.isDefault
+      ? {
+          inside:
+            group.tests.length === 0
+              ? collectCaseNarrowings(statement.discriminant, allTests, false)
+              : [],
+          exit: [],
+        }
+      : {
+          inside: collectCaseNarrowings(statement.discriminant, group.tests, true),
+          exit: collectCaseNarrowings(statement.discriminant, group.tests, false),
+        };
+    const arm = absorbJumps(
+      evaluateArm(interpreter, test || "default", group.statements, context, narrowings),
+      SWITCH_JUMPS,
+    );
+    if (group.isDefault && group.tests.length === 0) fallback = arm;
+    else arms.push(arm);
+  }
+  return { kind: "arms", arms, fallback };
+};
+
+const bindLoopVariable = (
+  interpreter: Interpreter,
+  left: ForStatementLeft,
+  value: StaticValue,
+  context: EvaluationContext,
+): void => {
+  if (left.type === "VariableDeclaration") {
+    for (const declarator of left.declarations)
+      bindPattern(interpreter, declarator.id, value, context);
+    return;
+  }
+  assignToTarget(interpreter, left, value, context);
+};
+
+/** `for (let index = 0; …)` counters differ per iteration, so the body sees them as unknown. */
+const forgetLoopCounters = (declarations: VariableDeclarator[], scope: Scope): void => {
+  for (const declarator of declarations) {
+    if (declarator.id.type !== "Identifier") continue;
+    declareVariable(scope, declarator.id.name, unknown(`loop counter ${declarator.id.name}`));
+  }
+};
+
+const MAX_UNROLLED_ITERATIONS = 100;
+
+/** Binds one iteration's variables into the scope the body will run in. */
+type IterationBinding = (context: EvaluationContext) => void;
+
+interface LoopBodyFacts {
+  /** Identifiers assigned or updated anywhere in the body, nested closures included. */
+  assignedNames: Set<string>;
+  /** A `break` that leaves this loop rather than a nested loop or switch. */
+  hasBreak: boolean;
+}
+
+const BREAK_TARGETS = new Set<string>([
+  "ForStatement",
+  "ForInStatement",
+  "ForOfStatement",
+  "WhileStatement",
+  "DoWhileStatement",
+  "SwitchStatement",
+]);
+
+const contains = (outer: Span, inner: Span): boolean =>
+  outer.start <= inner.start && inner.end <= outer.end;
+
+/**
+ * A conditional `break` would make later iterations conditional, which the
+ * unrolled model cannot express; `continue` only ends the current iteration.
+ */
+const collectLoopBodyFacts = (body: Statement): LoopBodyFacts => {
+  const breaks: { label: object | null; span: Span }[] = [];
+  const nestedTargets: Span[] = [];
+  walk(body, (node) => {
+    if (isNodeOfType(node, "BreakStatement")) breaks.push({ label: node.label, span: node });
+    else if (BREAK_TARGETS.has(node.type)) nestedTargets.push(node);
+  });
+  const hasBreak = breaks.some(
+    (jump) => jump.label !== null || !nestedTargets.some((target) => contains(target, jump.span)),
+  );
+  return { assignedNames: collectAssignedNames(body), hasBreak };
+};
+
+/** The identifiers a `for` header initialises, whether it declares them or assigns outer ones. */
+const getForCounters = (init: NonNullable<ForStatement["init"]>): string[] | null => {
+  if (init.type === "VariableDeclaration") {
+    const names = init.declarations.flatMap((declarator) =>
+      declarator.id.type === "Identifier" ? [declarator.id.name] : [],
+    );
+    return names.length === init.declarations.length ? names : null;
+  }
+  const assignments = init.type === "SequenceExpression" ? init.expressions : [init];
+  const names = assignments.flatMap((expression) =>
+    expression.type === "AssignmentExpression" &&
+    expression.operator === "=" &&
+    expression.left.type === "Identifier"
+      ? [expression.left.name]
+      : [],
+  );
+  return names.length === assignments.length ? names : null;
+};
+
+/**
+ * Simulates a `for` header without the body: iterations are known when the
+ * test stays decidable, the body never breaks and never assigns anything the
+ * header reads. Counters the header assigns rather than declares keep their
+ * final value once the loop is done.
+ */
+const planForIterations = (
+  interpreter: Interpreter,
+  statement: ForStatement,
+  context: EvaluationContext,
+): IterationBinding[] | null => {
+  const { init, test, update } = statement;
+  if (!init || !test) return null;
+  const counters = getForCounters(init);
+  if (counters === null) return null;
+  const facts = collectLoopBodyFacts(statement.body);
+  if (facts.hasBreak) return null;
+  const headerNames = new Set<string>();
+  collectIdentifierNames(test, headerNames);
+  if (update) collectIdentifierNames(update, headerNames);
+  if ([...headerNames].some((name) => facts.assignedNames.has(name))) return null;
+  const scratchContext: EvaluationContext = { ...context, scope: forkScope(context.scope) };
+  if (init.type === "VariableDeclaration") evaluateStatement(interpreter, init, scratchContext);
+  else interpreter.evaluateExpression(init, scratchContext);
+  const iterations: IterationBinding[] = [];
+  while (iterations.length <= MAX_UNROLLED_ITERATIONS) {
+    const truthiness = getTruthiness(interpreter.evaluateExpression(test, scratchContext));
+    if (truthiness === null) return null;
+    if (truthiness === false) {
+      if (init.type !== "VariableDeclaration") {
+        for (const name of counters) {
+          assignVariable(
+            context.scope,
+            name,
+            lookupVariable(scratchContext.scope, name) ?? UNDEFINED,
+          );
+        }
+      }
+      return iterations;
+    }
+    const values = counters.map((name): [string, StaticValue] => [
+      name,
+      lookupVariable(scratchContext.scope, name) ?? UNDEFINED,
+    ]);
+    iterations.push((iterationContext) => {
+      for (const [name, value] of values) declareVariable(iterationContext.scope, name, value);
+    });
+    if (update) interpreter.evaluateExpression(update, scratchContext);
+  }
+  return null;
+};
+
+const planForOfIterations = (
+  interpreter: Interpreter,
+  statement: ForOfStatement | ForInStatement,
+  context: EvaluationContext,
+): IterationBinding[] | null => {
+  if (collectLoopBodyFacts(statement.body).hasBreak) return null;
+  const subject = interpreter.evaluateExpression(statement.right, context);
+  const values =
+    statement.type === "ForOfStatement"
+      ? subject.kind === "array" && subject.items.every((item) => item.kind !== "optional")
+        ? subject.items
+        : null
+      : subject.kind === "object" && !subject.hasUnknownSpread
+        ? [...subject.properties.keys()].map((key) => literal(key))
+        : null;
+  if (values === null || values.length > MAX_UNROLLED_ITERATIONS) return null;
+  return values.map(
+    (value): IterationBinding =>
+      (iterationContext) =>
+        bindLoopVariable(interpreter, statement.left, value, iterationContext),
+  );
+};
+
+/** Runs every planned iteration in order, chaining early returns like a statement sequence. */
+const runIterations = (
+  interpreter: Interpreter,
+  iterations: IterationBinding[],
+  body: Statement,
+  context: EvaluationContext,
+  index = 0,
+): Completion => {
+  if (index >= iterations.length) return NORMAL_COMPLETION;
+  const iterationContext: EvaluationContext = { ...context, scope: createScope(context.scope) };
+  iterations[index](iterationContext);
+  const completion = interpreter.evaluateStatements(toStatements(body), iterationContext);
+  if (completion.kind === "return" || completion.kind === "throw") return completion;
+  if (completion.kind === "break") return NORMAL_COMPLETION;
+  const rest = (): Completion => runIterations(interpreter, iterations, body, context, index + 1);
+  return completion.kind === "partial" ? continuePartial(completion.complete, rest()) : rest();
+};
+
+/**
+ * Loops with a statically known trip count run iteration by iteration. Any
+ * other loop body runs once under an undecided frame: zero iterations is
+ * always possible, and repeated side effects become lists.
+ */
+const evaluateLoop = (
+  interpreter: Interpreter,
+  statement: Statement,
+  context: EvaluationContext,
+): Completion | ArmSet | null => {
+  let body: Statement;
+  let iterations: IterationBinding[] | null = null;
+  switch (statement.type) {
+    case "ForStatement":
+      iterations = planForIterations(interpreter, statement, context);
+      body = statement.body;
+      break;
+    case "ForOfStatement":
+    case "ForInStatement":
+      iterations = planForOfIterations(interpreter, statement, context);
+      body = statement.body;
+      break;
+    case "WhileStatement":
+    case "DoWhileStatement":
+      body = statement.body;
+      break;
+    default:
+      return null;
+  }
+  if (iterations) return runIterations(interpreter, iterations, body, context);
+  const header = interpreter.getSource(context.module, { start: statement.start, end: body.start });
+  const scope = forkScope(context.scope);
+  const loopContext = enterUndecided(context, header, scope);
+  switch (statement.type) {
+    case "ForStatement":
+      if (statement.init?.type === "VariableDeclaration") {
+        evaluateStatement(interpreter, statement.init, loopContext);
+        forgetLoopCounters(statement.init.declarations, scope);
+      } else if (statement.init) interpreter.evaluateExpression(statement.init, loopContext);
+      break;
+    case "ForOfStatement": {
+      const iterable = interpreter.evaluateExpression(statement.right, loopContext);
+      const description = interpreter.getSource(context.module, statement.right);
+      bindLoopVariable(
+        interpreter,
+        statement.left,
+        getIterationItem(iterable, description),
+        loopContext,
+      );
+      break;
+    }
+    case "ForInStatement":
+      bindLoopVariable(interpreter, statement.left, unknown("enumerated key"), loopContext);
+      break;
+  }
+  const completion = evaluateInScope(interpreter, toStatements(body), scope, loopContext);
+  return {
+    kind: "arms",
+    arms: [absorbJumps({ test: header, scope, completion, exitNarrowings: [] }, LOOP_JUMPS)],
+    fallback: null,
+  };
+};
+
+/**
+ * A `catch` handler is one more arm, since any call in the block may throw
+ * at runtime; it is the only arm once the block itself is known to throw.
+ */
+const evaluateTry = (
+  interpreter: Interpreter,
+  statement: TryStatement,
+  context: EvaluationContext,
+): Completion | ArmSet => {
+  const tryArm = evaluateArm(interpreter, "try", statement.block.body, context);
+  const isThrowing = tryArm.completion.kind === "throw";
+  let fallback: Arm | null = null;
+  if (statement.handler) {
+    const scope = forkScope(context.scope);
+    const handlerContext = enterUndecided(context, "catch", scope);
+    if (statement.handler.param) {
+      bindPattern(interpreter, statement.handler.param, unknown("caught error"), handlerContext);
+    }
+    fallback = {
+      test: "catch",
+      scope,
+      completion: interpreter.evaluateStatements(statement.handler.body.body, handlerContext),
+      exitNarrowings: [],
+    };
+  }
+  if (statement.finalizer) interpreter.evaluateStatements(statement.finalizer.body, context);
+  if (isThrowing && fallback === null) return THROW_COMPLETION;
+  return { kind: "arms", arms: isThrowing ? [] : [tryArm], fallback };
+};
+
+const evaluateStatement = (
+  interpreter: Interpreter,
+  statement: Statement,
+  context: EvaluationContext,
+): Completion | ArmSet => {
+  switch (statement.type) {
+    case "IfStatement":
+      return evaluateIf(interpreter, statement, context);
+    case "SwitchStatement":
+      return evaluateSwitch(interpreter, statement, context);
+    case "TryStatement":
+      return evaluateTry(interpreter, statement, context);
+    case "ForStatement":
+    case "ForInStatement":
+    case "ForOfStatement":
+    case "WhileStatement":
+    case "DoWhileStatement":
+      return evaluateLoop(interpreter, statement, context) ?? NORMAL_COMPLETION;
+    case "LabeledStatement":
+      return evaluateStatement(interpreter, statement.body, context);
+    case "BlockStatement":
+      return evaluateInScope(interpreter, statement.body, createScope(context.scope), context);
+    case "VariableDeclaration":
+      for (const declarator of statement.declarations) {
+        const nameHint = declarator.id.type === "Identifier" ? declarator.id.name : null;
+        const value = declarator.init
+          ? nameValue(
+              interpreter.evaluateExpression(declarator.init, context),
+              nameHint,
+              isAnonymousFunctionDefinition(declarator.init),
+            )
+          : UNDEFINED;
+        bindPattern(interpreter, declarator.id, value, context);
+      }
+      return NORMAL_COMPLETION;
+    case "ClassDeclaration":
+      if (statement.id) {
+        const classValue = classifyClass(
+          interpreter,
+          statement,
+          context.module,
+          context.scope,
+          statement.id.name,
+          context,
+        );
+        declareVariable(context.scope, statement.id.name, classValue);
+      }
+      return NORMAL_COMPLETION;
+    case "TSEnumDeclaration":
+      declareVariable(
+        context.scope,
+        statement.id.name,
+        evaluateEnum(interpreter, statement, context),
+      );
+      return NORMAL_COMPLETION;
+    case "ReturnStatement":
+      return returnCompletion(
+        statement.argument
+          ? interpreter.evaluateExpression(statement.argument, context)
+          : UNDEFINED,
+      );
+    case "ExpressionStatement":
+      interpreter.evaluateExpression(statement.expression, context);
+      return NORMAL_COMPLETION;
+    case "ThrowStatement":
+      return THROW_COMPLETION;
+    case "BreakStatement":
+      return BREAK_COMPLETION;
+    case "ContinueStatement":
+      return CONTINUE_COMPLETION;
+    default:
+      return NORMAL_COMPLETION;
+  }
+};
+
+const isReturning = (completion: Completion): boolean =>
+  completion.kind === "return" || completion.kind === "partial";
+
+const valueOf = (arm: Arm, restValue: StaticValue): StaticValue => {
+  switch (arm.completion.kind) {
+    case "return":
+      return arm.completion.value;
+    case "partial":
+      return arm.completion.complete(restValue);
+    default:
+      return restValue;
+  }
+};
+
+const isLive = (arm: Arm): boolean => arm.completion.kind !== "throw";
+
+/**
+ * Joins the arms of a branch. Arms that throw leave the render path and are
+ * dropped. Every live arm returning gives a conditional over their values;
+ * otherwise the result stays partial and is completed with whatever the
+ * statements after the branch evaluate to.
+ */
+const combineArms = (armSet: ArmSet, context: EvaluationContext): Completion => {
+  const arms = armSet.arms.filter(isLive);
+  const fallback = armSet.fallback && isLive(armSet.fallback) ? armSet.fallback : null;
+  /** Control reaches the next statement without entering any arm. */
+  const isSkippable = armSet.fallback === null;
+  const liveArms = fallback ? [...arms, fallback] : arms;
+  if (liveArms.length === 0) return isSkippable ? NORMAL_COMPLETION : THROW_COMPLETION;
+  const returningArms = liveArms.filter((arm) => isReturning(arm.completion));
+  const continuingArms = arms.filter((arm) => !isReturning(arm.completion));
+  const continuingFallback = fallback && !isReturning(fallback.completion) ? fallback.scope : null;
+  mergeBranchScopes(context.scope, continuingArms, continuingFallback);
+  if (returningArms.length === 0) {
+    const [first] = liveArms;
+    const isSharedJump =
+      !isSkippable &&
+      LOOP_JUMPS.some((jump) => jump === first.completion.kind) &&
+      liveArms.every((arm) => arm.completion.kind === first.completion.kind);
+    return isSharedJump ? first.completion : NORMAL_COMPLETION;
+  }
+  /** The last live arm needs no test once every other path is dead or tested. */
+  const testedArms = isSkippable ? liveArms : liveArms.slice(0, -1);
+  const complete = (restValue: StaticValue): StaticValue => {
+    let merged = isSkippable ? restValue : valueOf(liveArms[liveArms.length - 1], restValue);
+    for (let index = testedArms.length - 1; index >= 0; index--) {
+      const arm = testedArms[index];
+      merged = conditional(arm.test, valueOf(arm, restValue), merged);
+    }
+    return merged;
+  };
+  const everyPathReturns =
+    !isSkippable && liveArms.every((arm) => arm.completion.kind === "return");
+  return everyPathReturns ? returnCompletion(complete(UNDEFINED)) : { kind: "partial", complete };
+};
+
+/** Chains a partial completion with what the remaining statements produced. */
+const continuePartial = (
+  partial: (restValue: StaticValue) => StaticValue,
+  rest: Completion,
+): Completion => {
+  switch (rest.kind) {
+    case "return":
+      return returnCompletion(partial(rest.value));
+    case "partial":
+      return { kind: "partial", complete: (restValue) => partial(rest.complete(restValue)) };
+    default:
+      return { kind: "partial", complete: partial };
+  }
+};
+
+const leavesFunction = (arm: Arm): boolean =>
+  arm.completion.kind === "return" || arm.completion.kind === "throw";
+
+/**
+ * The statements after a branch only run on paths through arms that did not
+ * leave. Variables those paths narrow are refined; when some arm returned,
+ * the rest is also undecided control flow, so what it does to values shared
+ * with the returning paths stays conditional.
+ */
+const narrowAfterBranch = (armSet: ArmSet, context: EvaluationContext): EvaluationContext => {
+  const allArms = [...armSet.arms, ...(armSet.fallback ? [armSet.fallback] : [])];
+  const scope = narrowScope(
+    context.scope,
+    allArms.filter(leavesFunction).flatMap((arm) => arm.exitNarrowings),
+  );
+  const returningTests = allArms
+    .filter((arm) => isReturning(arm.completion))
+    .map((arm) => `!(${arm.test})`);
+  if (returningTests.length > 0) return enterUndecided(context, returningTests.join(" && "), scope);
+  return scope === context.scope ? context : { ...context, scope };
+};
+
+const evaluateSequence = (
+  interpreter: Interpreter,
+  statements: Statement[],
+  startIndex: number,
+  initialContext: EvaluationContext,
+): Completion => {
+  let context = initialContext;
+  for (let index = startIndex; index < statements.length; index++) {
+    const outcome = evaluateStatement(interpreter, statements[index], context);
+    if (outcome.kind !== "arms") {
+      if (outcome.kind === "normal") continue;
+      return outcome;
+    }
+    const completion = combineArms(outcome, context);
+    context = narrowAfterBranch(outcome, context);
+    if (completion.kind === "normal") continue;
+    if (completion.kind !== "partial") return completion;
+    return continuePartial(
+      completion.complete,
+      evaluateSequence(interpreter, statements, index + 1, context),
+    );
+  }
+  return NORMAL_COMPLETION;
+};
+
+export const evaluateStatements = (
+  interpreter: Interpreter,
+  statements: Statement[],
+  context: EvaluationContext,
+): Completion => {
+  hoistFunctionDeclarations(statements, context);
+  return evaluateSequence(interpreter, statements, 0, context);
+};
