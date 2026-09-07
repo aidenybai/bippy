@@ -1,7 +1,7 @@
 "use client";
 
 import * as stylex from "@stylexjs/stylex";
-import { useId, type ReactNode } from "react";
+import { useId, type ReactNode, type ComponentPropsWithRef, type SyntheticEvent } from "react";
 import { colors } from "./tokens.stylex";
 import { drawing } from "./drawing.stylex";
 import type { TreeNode } from "./tree-model";
@@ -23,15 +23,30 @@ import {
 
 export type { Point } from "./geometry";
 
-export interface DiagramCanvasProps {
+const mergeClassNames = (...classNames: (string | undefined)[]) =>
+  classNames.filter(Boolean).join(" ");
+
+const composeEventHandlers =
+  <Event extends SyntheticEvent>(
+    external: ((event: Event) => void) | undefined,
+    internal: (event: Event) => void,
+  ) =>
+  (event: Event) => {
+    external?.(event);
+    if (!event.defaultPrevented) internal(event);
+  };
+
+export interface DiagramCanvasProps extends Omit<ComponentPropsWithRef<"svg">, "children"> {
   width: number;
   height: number;
   label: string;
   children: ReactNode;
 }
 
-export interface DiagramNodeProps extends Point {
+export interface DiagramNodeProps
+  extends Point, Omit<ComponentPropsWithRef<"g">, "x" | "y" | "onSelect" | "children"> {
   node: TreeNode;
+  children?: ReactNode;
   variant?: "node" | "detail";
   maxWidth?: number;
   hitHeight?: number;
@@ -40,7 +55,8 @@ export interface DiagramNodeProps extends Point {
   onSelect?: (nodeId: string) => void;
 }
 
-export interface DiagramEdgeProps extends EdgeGeometry {
+export interface DiagramEdgeProps
+  extends EdgeGeometry, Omit<ComponentPropsWithRef<"g">, "from" | "to" | "children"> {
   id?: string;
   directed?: boolean;
   label?: string;
@@ -48,7 +64,8 @@ export interface DiagramEdgeProps extends EdgeGeometry {
   toId?: string;
 }
 
-export interface DiagramScopeProps extends Point {
+export interface DiagramScopeProps
+  extends Point, Omit<ComponentPropsWithRef<"g">, "x" | "y" | "children"> {
   nodeId?: string;
   kind?: "context" | "boundary";
   width: number;
@@ -97,19 +114,32 @@ const styles = stylex.create({
   scopeLabel: { fill: colors.blue, fontStyle: "italic" },
 });
 
-export const DiagramCanvas = ({ width, height, label, children }: DiagramCanvasProps) => {
+export const DiagramCanvas = ({
+  width,
+  height,
+  label,
+  children,
+  className,
+  ...props
+}: DiagramCanvasProps) => {
   const interaction = useDiagramInteractionState();
+  const canvasStyles = stylex.props(styles.canvas);
   return (
     <DiagramInteractionContext value={interaction}>
       <svg
-        {...stylex.props(styles.canvas)}
+        {...canvasStyles}
+        data-slot="diagram-canvas"
+        {...props}
+        className={mergeClassNames(canvasStyles.className, className)}
         width={width}
         height={height}
         viewBox={`0 0 ${width} ${height}`}
         textRendering="geometricPrecision"
-        role="group"
-        aria-label={label}
-        onPointerLeave={() => interaction.setHoveredId(null)}
+        role={props.role ?? "group"}
+        aria-label={props["aria-label"] ?? label}
+        onPointerLeave={composeEventHandlers(props.onPointerLeave, () =>
+          interaction.setHoveredId(null),
+        )}
       >
         <title>{label}</title>
         {children}
@@ -128,6 +158,9 @@ export const DiagramNode = ({
   isInteractive = true,
   tabIndex = 0,
   onSelect,
+  className,
+  children,
+  ...props
 }: DiagramNodeProps) => {
   const diagramInteraction = useDiagramInteraction();
   const interaction = isInteractive ? diagramInteraction : null;
@@ -153,55 +186,62 @@ export const DiagramNode = ({
       : node.label;
   const annotation = maxWidth === undefined ? node.annotation : undefined;
   const isDimmed = !getIsNodeHighlighted(diagramInteraction, node.id);
+  const nodeStyles = stylex.props(
+    styles.node,
+    styles[kind],
+    isInteractive && onSelect && styles.interactive,
+    node.tone && styles[node.tone],
+    isDetail && styles.detail,
+    diagramInteraction?.mode === "flow" && diagramInteraction.activeId === node.id && styles.blue,
+    isDimmed && drawing.dimmed,
+  );
   return (
     <g
-      {...stylex.props(
-        styles.node,
-        styles[kind],
-        isInteractive && onSelect && styles.interactive,
-        node.tone && styles[node.tone],
-        isDetail && styles.detail,
-        diagramInteraction?.mode === "flow" &&
-          diagramInteraction.activeId === node.id &&
-          styles.blue,
-        isDimmed && drawing.dimmed,
-      )}
+      {...nodeStyles}
+      data-slot={isDetail ? "diagram-detail" : "diagram-node"}
+      {...props}
+      className={mergeClassNames(nodeStyles.className, className)}
       transform={`translate(${x} ${y})`}
-      role={isInteractive && onSelect ? "button" : undefined}
+      role={props.role ?? (isInteractive && onSelect ? "button" : undefined)}
       tabIndex={isInteractive ? tabIndex : -1}
       data-node-id={node.id}
       data-node-kind={kind}
       data-node-variant={variant}
       data-emphasis={isDimmed ? "dimmed" : "normal"}
-      aria-label={`${node.label}${node.annotation ? `, ${node.annotation}` : ""}`}
-      onPointerEnter={() => interaction?.setHoveredId(node.id)}
-      onPointerMove={() => {
+      data-active={diagramInteraction?.activeId === node.id || undefined}
+      aria-label={
+        props["aria-label"] ?? `${node.label}${node.annotation ? `, ${node.annotation}` : ""}`
+      }
+      onPointerEnter={composeEventHandlers(props.onPointerEnter, () =>
+        interaction?.setHoveredId(node.id),
+      )}
+      onPointerMove={composeEventHandlers(props.onPointerMove, () => {
         interaction?.setIsKeyboardNavigation(false);
         interaction?.setHoveredId(node.id);
-      }}
-      onPointerLeave={() => interaction?.setHoveredId(null)}
-      onPointerDown={() => {
+      })}
+      onPointerLeave={composeEventHandlers(props.onPointerLeave, () =>
+        interaction?.setHoveredId(null),
+      )}
+      onPointerDown={composeEventHandlers(props.onPointerDown, () => {
         interaction?.setIsKeyboardNavigation(false);
         interaction?.setFocusedId(null);
-      }}
-      onFocus={(event) => {
+      })}
+      onFocus={composeEventHandlers(props.onFocus, (event) => {
         if (event.currentTarget.matches(":focus-visible")) {
           interaction?.setFocusedId(node.id);
           interaction?.setIsKeyboardNavigation(true);
         }
-      }}
-      onBlur={() => interaction?.setFocusedId(null)}
-      onClick={isInteractive && onSelect ? () => onSelect(node.id) : undefined}
-      onKeyDown={
-        isInteractive && onSelect
-          ? (event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                onSelect(node.id);
-              }
-            }
-          : undefined
-      }
+      })}
+      onBlur={composeEventHandlers(props.onBlur, () => interaction?.setFocusedId(null))}
+      onClick={composeEventHandlers(props.onClick, () => {
+        if (isInteractive) onSelect?.(node.id);
+      })}
+      onKeyDown={composeEventHandlers(props.onKeyDown, (event) => {
+        if (isInteractive && onSelect && (event.key === "Enter" || event.key === " ")) {
+          event.preventDefault();
+          onSelect(node.id);
+        }
+      })}
     >
       <title>{`${node.label}${node.annotation ? ` · ${node.annotation}` : ""}`}</title>
       <rect
@@ -243,36 +283,68 @@ export const DiagramNode = ({
           strokeWidth={diagramMetrics.strokeWidth}
         />
       )}
-      <text
-        x={labelOffset}
-        dy="0.32em"
-        {...stylex.props(drawing.label, isDetail && drawing.detail)}
-      >
-        {label}
-        {annotation && (
-          <tspan dx={4} {...stylex.props(drawing.annotation)}>
-            {annotation}
-          </tspan>
-        )}
-      </text>
+      {children ?? (
+        <text
+          x={labelOffset}
+          dy="0.32em"
+          {...stylex.props(drawing.label, isDetail && drawing.detail)}
+        >
+          {label}
+          {annotation && (
+            <tspan dx={4} {...stylex.props(drawing.annotation)}>
+              {annotation}
+            </tspan>
+          )}
+        </text>
+      )}
     </g>
   );
 };
 
 export const DiagramEdge = (props: DiagramEdgeProps) => {
-  const { kind = "parent", label, directed } = props;
+  const {
+    kind = "parent",
+    label,
+    directed,
+    id,
+    fromId,
+    toId,
+    className,
+    from,
+    to,
+    bend,
+    side,
+    labelPosition: explicitLabelPosition,
+    waypoints,
+    shape,
+    ...groupProps
+  } = props;
+  const geometry: EdgeGeometry = {
+    kind,
+    from,
+    to,
+    bend,
+    side,
+    labelPosition: explicitLabelPosition,
+    waypoints,
+    shape,
+  };
   const markerId = useId();
-  const labelPosition = getEdgeLabelPosition(props);
+  const labelPosition = getEdgeLabelPosition(geometry);
   const interaction = useDiagramInteraction();
-  const isDimmed = !getIsEdgeHighlighted(interaction, props.fromId, props.toId, props.id);
+  const isDimmed = !getIsEdgeHighlighted(interaction, fromId, toId, id);
+  const edgeStyles = stylex.props(isDimmed && drawing.dimmed);
   return (
     <g
+      {...edgeStyles}
+      data-slot="diagram-edge"
+      {...groupProps}
+      className={mergeClassNames(edgeStyles.className, className)}
       aria-hidden="true"
-      data-edge-id={props.id}
+      data-edge-id={id}
       data-edge-kind={kind}
-      data-edge-from={props.fromId}
-      data-edge-to={props.toId}
-      {...stylex.props(isDimmed && drawing.dimmed)}
+      data-edge-from={fromId}
+      data-edge-to={toId}
     >
       {directed && (
         <defs>
@@ -296,7 +368,7 @@ export const DiagramEdge = (props: DiagramEdgeProps) => {
         </defs>
       )}
       <path
-        d={getEdgePath(props)}
+        d={getEdgePath(geometry)}
         markerEnd={directed ? `url(#${markerId})` : undefined}
         {...stylex.props(
           drawing.connector,
@@ -330,19 +402,25 @@ export const DiagramScope = ({
   label,
   kind = "context",
   nodeId,
+  className,
+  ...props
 }: DiagramScopeProps) => {
   const interaction = useDiagramInteraction();
+  const scopeStyles = stylex.props(
+    interaction !== null &&
+      interaction.activeId !== null &&
+      interaction.mode !== "boundary" &&
+      interaction.activeId !== nodeId &&
+      drawing.dimmed,
+  );
   return (
     <g
-      aria-label={`${label} ${kind} scope`}
+      {...scopeStyles}
+      data-slot="diagram-scope"
+      {...props}
+      className={mergeClassNames(scopeStyles.className, className)}
+      aria-label={props["aria-label"] ?? `${label} ${kind} scope`}
       data-scope-kind={kind}
-      {...stylex.props(
-        interaction !== null &&
-          interaction.activeId !== null &&
-          interaction.mode !== "boundary" &&
-          interaction.activeId !== nodeId &&
-          drawing.dimmed,
-      )}
     >
       <rect
         x={x}

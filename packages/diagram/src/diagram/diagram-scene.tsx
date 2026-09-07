@@ -58,7 +58,7 @@ export const DiagramScene = ({
         <DiagramScope key={`${scope.label}-${scope.x}`} {...scope} />
       ))}
       {children}
-      {edges.map((edge) => {
+      {edges.map(({ fromOffset, toOffset, ...edge }) => {
         const from = nodeById.get(edge.from);
         const to = nodeById.get(edge.to);
         if (!from || !to) throw new Error(`Missing endpoint for edge ${edge.id}`);
@@ -66,12 +66,8 @@ export const DiagramScene = ({
           <DiagramEdge
             key={edge.id}
             {...edge}
-            from={
-              edge.fromOffset
-                ? { x: from.x + edge.fromOffset.x, y: from.y + edge.fromOffset.y }
-                : from
-            }
-            to={edge.toOffset ? { x: to.x + edge.toOffset.x, y: to.y + edge.toOffset.y } : to}
+            from={fromOffset ? { x: from.x + fromOffset.x, y: from.y + fromOffset.y } : from}
+            to={toOffset ? { x: to.x + toOffset.x, y: to.y + toOffset.y } : to}
             fromId={edge.from}
             toId={edge.to}
           />

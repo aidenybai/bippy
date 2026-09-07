@@ -2,15 +2,11 @@
 
 import * as stylex from "@stylexjs/stylex";
 import { colors } from "./tokens.stylex";
-import { DiagramInteractionContext, useDiagramInteractionState } from "./interaction";
-import { TreeDiagram, type TreeDiagramProps } from "./tree-diagram";
+import { Tree, type TreeRootProps } from "./tree";
 
-export interface TreeComparisonProps {
-  nodes: TreeDiagramProps["nodes"];
-  dataflowEdges?: TreeDiagramProps["dataflowEdges"];
+export interface TreeComparisonProps extends Omit<TreeRootProps, "children"> {
   scopeId?: string;
   scopeLabel?: string;
-  onSelect?: TreeDiagramProps["onSelect"];
 }
 
 const styles = stylex.create({
@@ -18,42 +14,30 @@ const styles = stylex.create({
   title: { margin: 0, marginBottom: 12, fontSize: 12, fontWeight: 400, color: colors.muted },
 });
 
-export const TreeComparison = ({
-  nodes,
-  dataflowEdges,
-  scopeId,
-  scopeLabel,
-  onSelect,
-}: TreeComparisonProps) => {
-  const interaction = useDiagramInteractionState();
-  return (
-    <DiagramInteractionContext value={interaction}>
-      <div {...stylex.props(styles.root)}>
-        <div data-tree-relationship="parent">
-          <h3 {...stylex.props(styles.title)}>Parent tree</h3>
-          <TreeDiagram
-            nodes={nodes}
-            label="Parent tree"
-            dataflowEdges={dataflowEdges}
-            width={460}
-            showOwners
-            scopeId={scopeId}
-            scopeLabel={scopeLabel}
-            onSelect={onSelect}
-          />
-        </div>
-        <div data-tree-relationship="owner">
-          <h3 {...stylex.props(styles.title)}>Owner tree</h3>
-          <TreeDiagram
-            nodes={nodes}
-            label="Owner tree"
-            dataflowEdges={dataflowEdges}
-            width={260}
-            relationship="owner"
-            onSelect={onSelect}
-          />
-        </div>
+export const TreeComparison = ({ scopeId, scopeLabel, ...props }: TreeComparisonProps) => (
+  <Tree.Root {...props}>
+    <div {...stylex.props(styles.root)}>
+      <div data-tree-relationship="parent">
+        <h3 {...stylex.props(styles.title)}>Parent tree</h3>
+        <Tree.View
+          label="Parent tree"
+          width={460}
+          showOwners
+          scopeId={scopeId}
+          scopeLabel={scopeLabel}
+        >
+          <Tree.Scopes />
+          <Tree.Edges />
+          <Tree.Items />
+        </Tree.View>
       </div>
-    </DiagramInteractionContext>
-  );
-};
+      <div data-tree-relationship="owner">
+        <h3 {...stylex.props(styles.title)}>Owner tree</h3>
+        <Tree.View label="Owner tree" width={260} relationship="owner">
+          <Tree.Edges />
+          <Tree.Items />
+        </Tree.View>
+      </div>
+    </div>
+  </Tree.Root>
+);

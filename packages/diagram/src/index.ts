@@ -1,3 +1,23 @@
+export { Diagram, DiagramRoot, DiagramDetail } from "./diagram/diagram";
+export type { DiagramRootProps, DiagramDetailProps } from "./diagram/diagram";
+export {
+  Tree,
+  TreeRoot,
+  TreeView,
+  TreeScopes,
+  TreeEdges,
+  TreeItems,
+  TreeItem,
+  TreeDetail,
+} from "./diagram/tree";
+export type {
+  TreeRootProps,
+  TreeViewProps,
+  TreeScopesProps,
+  TreeEdgesProps,
+  TreeItemsProps,
+  TreeItemProps,
+} from "./diagram/tree";
 export { DiagramCanvas, DiagramNode, DiagramEdge, DiagramScope } from "./diagram/primitives";
 export type {
   DiagramCanvasProps,

@@ -1,7 +1,7 @@
 import { diagramMetrics, type Point } from "./geometry";
 import type { TreeRow } from "./tree-model";
 
-interface TreeLayout {
+export interface TreeLayout {
   positions: readonly Point[];
   offsets: readonly number[];
 }

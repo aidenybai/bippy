@@ -10,6 +10,48 @@ Open [localhost:3100](http://localhost:3100).
 
 The board follows `millionco/million-ui`'s square-cell layout: 325px white cells, 16px gaps, small labels, and centered specimens on a gray background. No header, navigation, badges, or explanatory chrome. Larger compositions use the same cells with spans.
 
+## Composition
+
+The API follows cmdk/shadcn's compound-component pattern: scoped state, composable parts, and thin presets. Styling stays in StyleX.
+
+```tsx
+"use client";
+
+import { Tree, type TreeNode, type DataflowEdge } from "diagram";
+
+interface ComparisonProps {
+  nodes: readonly TreeNode[];
+  dataflowEdges: readonly DataflowEdge[];
+}
+
+export const Comparison = ({ nodes, dataflowEdges }: ComparisonProps) => (
+  <Tree.Root nodes={nodes} dataflowEdges={dataflowEdges}>
+    <Tree.View label="Parent tree" relationship="parent" width={360}>
+      <Tree.Scopes />
+      <Tree.Edges />
+      <Tree.Items>
+        {(node) => (node.componentId ? <Tree.Detail id={node.id} /> : <Tree.Item id={node.id} />)}
+      </Tree.Items>
+    </Tree.View>
+    <Tree.View label="Owner tree" relationship="owner" width={260}>
+      <Tree.Edges />
+      <Tree.Items />
+    </Tree.View>
+  </Tree.Root>
+);
+```
+
+- `Tree.Root` owns the shared model and interaction state without adding DOM. Use `activeId` / `onActiveIdChange` for controlled state, or `defaultActiveId` for an initial value. `onSelect` handles activation separately from hover/focus.
+- `Tree.View` computes a parent or owner projection and its layout. Views under one root share the active ID; nested roots are independent.
+- `Tree.Scopes`, `Tree.Edges`, and `Tree.Items` are separate SVG layers. Compose or omit them explicitly. `Tree.Items` accepts a render callback; its default renders components as `Tree.Item` and metadata as `Tree.Detail`.
+- `Tree.Item` and `Tree.Detail` accept native SVG group props and React 19 refs. SVG children replace their label content; placement and hitboxes still come from the model. Consumer event handlers run before internal handlers and can cancel them with `preventDefault()`.
+
+Parts expose `data-slot`; rows also expose `data-active` and `data-emphasis`. Named exports such as `TreeRoot` and `TreeItem` are available alongside the namespace API.
+
+For positioned SVG compositions, use `Diagram.Root`, `Diagram.Canvas`, `Diagram.Node`, `Diagram.Detail`, `Diagram.Edge`, and `Diagram.Scope`. Canvas, node, edge, and scope parts forward native SVG props and refs. `TreeDiagram` and `TreeComparison` are presets built from the tree parts, not separate renderers.
+
+Model indexing, highlighting, and geometry remain pure TypeScript modules. `tree-root.tsx` owns shared state; `tree-view.tsx` owns projection state; rendering layers consume their scoped contexts.
+
 ## Components
 
 - `DiagramCanvas`: native-size SVG canvas. It does not scale text, nodes, or strokes to fit a card; the specimen scrolls when needed.
@@ -51,7 +93,7 @@ This private workspace package exports TypeScript source. Consumers must transpi
 
 ## Dataflow
 
-Dataflow is embedded in the parent/owner comparison; there is no standalone dataflow specimen. Hooks, values, and props appear directly beneath their component in both projections. Set `componentId` on these metadata rows and attach them with `parentId`/`ownerId`; they are not additional React fibers. Pass ID-based `dataflowEdges` to `TreeComparison` or `TreeDiagram`.
+Dataflow is embedded in the parent/owner comparison; there is no standalone dataflow specimen. Hooks, values, and props appear directly beneath their component in both projections. Set `componentId` on these metadata rows and attach them with `parentId`/`ownerId`; they are not additional React fibers. Pass ID-based `dataflowEdges` to `Tree.Root`, `TreeComparison`, or `TreeDiagram`.
 
 The model is illustrative, not automatic runtime instrumentation. Hook and prop rows are neutral at rest. Hover or keyboard-focus a metadata row to reveal its dependency paths in one accent color across both views. Owner links appear when an owner is active; context/error scopes appear when their provider/boundary is active. Data details have no circles or tree branches. Only components and external-resource roots are drawn as nodes; props, hooks, and callable operations remain secondary text.
 
@@ -90,10 +132,11 @@ pnpm --filter diagram exec playwright install chromium
 pnpm --filter diagram test:browser
 ```
 
-Browser tests start a dev server if port 3100 is free. Screenshots go to `test-results/`.
+Browser tests start a dev server if port 3100 is free. Screenshots go to `test-results/`. The `/fixtures/compound` route tests controlled state, nested roots, custom SVG content, DOM props, refs, and event composition.
 
 ## Sources
 
 - Board: `millionco/million-ui`, `32f775f`, `src/board/board.candidate.tsx`; translated from Tailwind to StyleX.
+- Compound architecture: `pacocoursey/cmdk`, `cmdk/src/index.tsx`, and `shadcn-ui/ui`, `apps/v4/registry/new-york-v4/ui/command.tsx`.
 - Adaptive indentation: `aidenybai-website/src/components/fiber-tree/fiber-tree-list.tsx`.
-- React source inspected locally: `ReactInternalTypes.js`, `ReactFiber.js`, `ReactChildFiber.js`, `ReactFiberCommitHostEffects.js`, `ReactFiberThrow.js`, `ReactFiberHooks.js`, `ReactFiberNewContext.js`, DevTools `Components/Tree.js`, and `ReactFizzConfigDOM.js`.
+- React source inspected locally: `ReactInternalTypes.js`, `ReactFiber.js`, `ReactChildFiber.js`, `ReactFiberCommitHostEffects.js`, `ReactFiberThrow.js`, `ReactFiberHooks.js`, `ReactFiberNewContext.js`, `ReactContext.js`, `ReactJSXElement.js`, DevTools `Components/Tree.js`, and `ReactFizzConfigDOM.js`.
