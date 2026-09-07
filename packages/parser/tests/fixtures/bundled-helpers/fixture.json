@@ -1,4 +1,4 @@
 {
   "externalPackages": ["bundle-kit"],
-  "notes": "A bundled dependency in the shape PostHog ships: tslib `__assign`/`__rest` over `arguments` with `Object.prototype.hasOwnProperty.call`, `Math.max.apply`, `Array.prototype.slice.call`/`Object.prototype.toString.call`, an inlined dev `jsx` runtime that builds element object literals, `exports.Ctx` reused across exports, `Object.assign(exports, ...)`, `if/else` display-name guards, and `use-sync-external-store` shims."
+  "notes": "A bundled dependency in the shape PostHog ships: tslib `__assign`/`__rest` over `arguments` with `Object.prototype.hasOwnProperty.call`, `Math.max.apply`, `Array.prototype.slice.call`/`Object.prototype.toString.call`, an inlined dev `jsx` runtime that builds element object literals, `exports.Ctx` reused across exports, `Object.assign(exports, ...)`, `if/else` display-name guards, base-ui style `charCodeAt` event-handler detection, and `use-sync-external-store` shims."
 }

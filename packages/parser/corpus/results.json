@@ -616,8 +616,8 @@
       "id": "posthog",
       "revision": "09c5fbd37b2714276d4206debd3aeb253ce0e43a",
       "framework": "spa",
-      "capturedAt": "2026-09-07T03:27:17.355Z",
-      "durationMs": 309549,
+      "capturedAt": "2026-09-07T03:54:50.576Z",
+      "durationMs": 238741,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -633,18 +633,18 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 821,
+          "fiberCount": 750,
           "textCount": 10,
-          "branchCount": 75,
+          "branchCount": 66,
           "repeatCount": 1,
           "opaqueCount": 0,
-          "unknownCount": 113,
+          "unknownCount": 87,
           "modulesLoaded": 297
         },
         "diagnostics": [
           {
             "code": "dynamic-props",
-            "count": 23
+            "count": 9
           },
           {
             "code": "dynamic-key",
@@ -671,7 +671,7 @@
         "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
-        "branchesResolved": 16,
+        "branchesResolved": 13,
         "branchDeviations": [
           {
             "path": "root > <RootErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <App> [FunctionComponent] > <ErrorBoundary> [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <PostHogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <AppScene> [FunctionComponent] > <ErrorBoundary> key=\"error-Login\" [FunctionComponent] > <PostHogErrorBoundary> [ClassComponent] > <ChunkLoadErrorBoundary> [ClassComponent] > <BindLogic> key=\"bind-Login\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <SceneAnimationRoot> key=\"scene-Login\" [FunctionComponent] > <div> [HostComponent] > <Login> [FunctionComponent] > <LoginForm> [FunctionComponent] > <AuthScene> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Typewriter> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent]",
@@ -769,7 +769,7 @@
         "coverage": 1,
         "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 221,
+        "stepsUsed": 218,
         "budgetExhausted": false
       },
       "anchor": null,

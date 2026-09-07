@@ -905,6 +905,12 @@ const callStringMethod = (
     }
     case "charAt":
       return primitiveValue(receiver.charAt(Number(primitiveArgs[0] ?? 0)));
+    case "charCodeAt":
+      return primitiveValue(receiver.charCodeAt(Number(primitiveArgs[0] ?? 0)));
+    case "codePointAt": {
+      const codePoint = receiver.codePointAt(Number(primitiveArgs[0] ?? 0));
+      return codePoint === undefined ? UNDEFINED_VALUE : primitiveValue(codePoint);
+    }
     case "at": {
       const character = receiver.at(Number(primitiveArgs[0] ?? 0));
       return character === undefined ? UNDEFINED_VALUE : primitiveValue(character);
