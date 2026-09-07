@@ -1,23 +1,65 @@
 # diagram
 
-React + StyleX + SVG diagram components on a minimal Next.js specimen board, using [aidenybai/tailwind-stylex](https://github.com/aidenybai/tailwind-stylex) for colors, fonts, and spacing.
+Private Next.js / StyleX specimen board for reusable React tree and dataflow diagrams. Uses React 19 and `aidenybai/tailwind-stylex`.
 
 ```sh
 pnpm --filter diagram dev
 ```
 
-Open [localhost:3100](http://localhost:3100).
+Open http://localhost:3100. The sidebar searches the component index; Ctrl/Cmd+K focuses it. Board and preview modes share the same specimens. Preview selection is addressable through `?component=parent-tree`; browser history and board anchors work normally.
 
-The board follows `millionco/million-ui`'s square-cell layout: 325px white cells, 16px gaps, small labels, and centered specimens on a gray background. No header, navigation, badges, or explanatory chrome. Larger compositions use the same cells with spans.
+## UI system
 
-## Composition
+The sidebar, board/preview arrangement, and selected controls are adapted from `millionco/million-ui`. Only the pieces needed here are included:
 
-The API follows cmdk/shadcn's compound-component pattern: scoped state, composable parts, and thin presets. Styling stays in StyleX.
+- `components/ui/button.tsx`: Base UI button, default/ghost variants, regular and icon sizes.
+- `components/ui/input.tsx`: Base UI input, regular and compact density.
+- `components/ui/tooltip.tsx`: Base UI tooltip with persistent accessible descriptions, hover/focus behavior, and Escape dismissal.
+- `components/ui/scroll-area.tsx`: Base UI viewport and scrollbars.
+- `components/ui/tree.tsx`: the normal tree component and composable tree parts.
+
+Controls use shadcn-style named exports, `data-slot`, native props/React 19 refs, and StyleX `css` overrides. There is no second control stylesheet or imported component registry. The board retains plain 325px specimens, 16px gaps, small titles, and bounded tree frames. The theme switch persists the selected mode and initially follows the system preference.
+
+## Tree
+
+Virtualization is built into the normal tree. There is no separate `VirtualTree` component or opt-in flag.
 
 ```tsx
-"use client";
+import { Tree } from "@/components/ui/tree";
+import type { TreeNode } from "diagram";
 
-import { Tree, type TreeNode, type DataflowEdge } from "diagram";
+const nodes: TreeNode[] = [
+  { id: "app", label: "App", componentType: "function" },
+  { id: "frame", label: "Frame", componentType: "forward-ref", parentId: "app", ownerId: "app" },
+  { id: "div", label: "div", parentId: "frame", kind: "host" },
+];
+
+export const Example = () => (
+  <Tree nodes={nodes} label="Component tree" width={400} height={396} controls />
+);
+```
+
+The local `@/*` alias points to `src/*`. Package consumers can import `diagram/ui/tree` instead. The package also exports `TreeDiagram` as the preset and the existing `Tree.*` compound namespace.
+
+Small trees render in full. Above 100 expanded rows, the same `Tree.View` mounts the viewport window, five overscan rows on either side, and the current roving-focus row when it is outside that window. Native DOM focus stays on that item during manual scrolling. Keyboard navigation and search can reach the complete model, mounting destinations before focusing them. Structural connectors are windowed too.
+
+Indentation adapts to the available width. Deep windows rebase against visible ancestry while `aria-level` and `data-depth` retain absolute depth. Long labels truncate without changing their accessible names. `height` bounds the view including its default controls; short trees shrink to their contents. `data-tree-viewport` identifies the scroll container and exposes separate total, visible, and mounted counts.
+
+The two 10,000-node fixtures use this same component. They are synthetic models, not a live React inspector.
+
+### Composable views
+
+```tsx
+import {
+  TreeRoot,
+  TreeView,
+  TreeScopes,
+  TreeEdges,
+  TreeItems,
+  TreeItem,
+  TreeDetail,
+} from "@/components/ui/tree";
+import type { TreeNode, DataflowEdge } from "diagram";
 
 interface ComparisonProps {
   nodes: readonly TreeNode[];
@@ -25,168 +67,99 @@ interface ComparisonProps {
 }
 
 export const Comparison = ({ nodes, dataflowEdges }: ComparisonProps) => (
-  <Tree.Root nodes={nodes} dataflowEdges={dataflowEdges}>
-    <Tree.View label="Parent tree" relationship="parent" width={360}>
-      <Tree.Scopes />
-      <Tree.Edges />
-      <Tree.Items>
-        {(node) => (node.componentId ? <Tree.Detail id={node.id} /> : <Tree.Item id={node.id} />)}
-      </Tree.Items>
-    </Tree.View>
-    <Tree.View label="Owner tree" relationship="owner" width={260}>
-      <Tree.Edges />
-      <Tree.Items />
-    </Tree.View>
-  </Tree.Root>
+  <TreeRoot nodes={nodes} dataflowEdges={dataflowEdges}>
+    <TreeView label="Parent tree" relationship="parent" controls />
+    <TreeView label="Owner tree" relationship="owner" controls>
+      <TreeScopes />
+      <TreeEdges />
+      <TreeItems>
+        {(node) => (node.componentId ? <TreeDetail id={node.id} /> : <TreeItem id={node.id} />)}
+      </TreeItems>
+    </TreeView>
+  </TreeRoot>
 );
 ```
 
-- `Tree.Root` owns the shared model and interaction state without adding DOM. Use `activeId` / `onActiveIdChange` for controlled state, or `defaultActiveId` for an initial value. `onSelect` handles activation separately from hover/focus.
-- `Tree.View` owns its projection, layout, collapse state, and roving keyboard focus. Views under one root share the active ID, not DOM focus or expansion. Nested roots reset view, interaction, and label contexts.
-- `Tree.Scopes`, `Tree.Edges`, and `Tree.Items` are separate SVG layers. Compose or omit them explicitly. `Tree.Items` accepts a render callback; its default renders components as `Tree.Item` and metadata as `Tree.Detail`.
-- `Tree.Item` and `Tree.Detail` accept native SVG group props and React 19 refs. SVG children replace their label content; placement and hitboxes still come from the model. Consumer event handlers run before internal handlers and can cancel them with `preventDefault()`.
+- `TreeRoot` owns shared model and activation without adding DOM. Use `activeId` / `onActiveIdChange` for controlled state or `defaultActiveId` for an initial value. `onSelect` is separate from hover/focus.
+- `TreeView` owns projection, expansion, scrolling, windowing, and roving focus. Its ref and native props target the SVG. Omitting children supplies the default scopes, edges, and items.
+- Views share activation, not DOM focus or expansion. Nested roots reset model, view, interaction, and label contexts.
+- `TreeScopes`, `TreeEdges`, and `TreeItems` are independent layers. `TreeItems` invokes its callback for mounted rows; custom items must preserve their model ID.
+- `TreeItem` and `TreeDetail` forward native SVG group props and React 19 refs. Consumer handlers run before internal handlers and can cancel them with `preventDefault()`.
 
-Parts expose `data-slot`; rows also expose `data-active`, `data-emphasis`, and `data-focus-visible`. Named exports such as `TreeRoot` and `TreeItem` are available alongside the namespace API.
+IDs must be unique. Missing parents and parent cycles are rejected. Input order determines sibling order; `ownerId` is independent of `parentId`.
+
+### Controls and disclosure
+
+`controls` adds the default search and action row. `controls={<TreeControls />}` composes it explicitly within the view provider. `TreeComparison` includes controls by default; `controls={false}` omits them.
+
+Search matches labels, annotations, and IDs across the complete model without filtering hierarchy. Enter expands ancestors, scrolls to the match, and focuses it when available. ↑/↓ and the previous/next buttons cycle matches without moving focus into the tree. Escape clears the query. The reveal action restores the last active node; expand/collapse-all affects only that view. Results are announced through a live status, and icon actions have tooltips.
+
+Disclosure chevrons appear only while their row is hovered. Their 24px targets remain present. Disclosure clicks toggle without selecting; an item's `onClickCapture` can cancel them. Disclosures remain inside their native item and inherit its visibility and styling.
 
 ### Label and description slots
 
 ```tsx
-<Tree.Item id="app" textValue="App">
-  <Tree.Label>App</Tree.Label>
-  <Tree.Description>The application entry point.</Tree.Description>
-</Tree.Item>
+<TreeItem id="app" textValue="App">
+  <TreeLabel>App</TreeLabel>
+  <TreeDescription>The application entry point.</TreeDescription>
+</TreeItem>
 ```
 
-`Diagram.Label` / `Tree.Label` render SVG text; `Diagram.Description` / `Tree.Description` render an SVG description. They receive scoped placement and generated IDs, merge native props and refs, and wire accessible names/descriptions automatically. Explicit slot IDs are supported. Conditional slot removal removes stale ARIA references; the model name is the fallback when a label slot is absent. Descriptions supplement the model's relationship descriptions.
+Import `TreeLabel` and `TreeDescription` from `components/ui/tree`. The namespace equivalents are `Tree.Label` and `Tree.Description`; positioned diagrams provide `Diagram.Label` and `Diagram.Description`.
 
-Use one label and one optional description per item. Slots must be inside a node/detail, not directly inside a canvas. They accept noninteractive SVG content, not nested buttons or links. There is no `asChild` or arbitrary named-slot dispatch: each part preserves its SVG element and semantic contract. `Tree.Item`'s `id` identifies a model node, not a document-wide DOM ID, so linked projections do not duplicate IDs.
+These slots render SVG text/descriptions with scoped placement, generated/custom IDs, native props, and refs. Conditional removal cleans up ARIA references. The model name remains the fallback; custom descriptions supplement model relationships. Use one label and one optional description per item, containing noninteractive SVG content rather than nested buttons or links.
 
-The model remains authoritative for layout. Keep model labels consistent with custom content; use `textValue` for nontext typeahead content and an explicit `aria-label` when custom graphics or truncation need a complete accessible name. Consumer styling and event cancellation must preserve keyboard behavior, contrast, and target sizes.
+Model labels remain authoritative for geometry. Keep them consistent with custom content; use `textValue` for nontext typeahead content and `aria-label` when graphics need a complete accessible name. `TreeItem.id` is a model ID, not a document-wide DOM ID.
 
-For positioned SVG compositions, use `Diagram.Root`, `Diagram.Canvas`, `Diagram.Node`, `Diagram.Detail`, `Diagram.Edge`, and `Diagram.Scope`. Canvas, node, edge, and scope parts forward native SVG props and refs. `TreeDiagram` and `TreeComparison` are presets built from the tree parts, not separate renderers.
+## Drawing and dataflow
 
-Model indexing, highlighting, and geometry remain pure TypeScript modules. `tree-root.tsx` owns shared state; `tree-view.tsx` owns projection state; rendering layers consume their scoped contexts.
+`Diagram.Root`, `Canvas`, `Node`, `Detail`, `Label`, `Description`, `Edge`, and `Scope` provide positioned SVG compositions. `DiagramScene` adds ID-based edges; `DataflowDiagram` remains available for explicit graphs with waypoints, port offsets, and label positions.
 
-## Components
+Shared geometry uses 24px rows/targets, up to 20px indentation, 3px node radius, 0.5px node outlines, and 1px connectors. Node labels, details, annotations, and edge labels all use 10px text. Details remain secondary through color and layout, without extra component glyphs or hierarchy branches. Numeric instance annotations are omitted; meaningful annotations such as `visible` remain.
 
-- `DiagramCanvas`: native-size SVG canvas. It does not scale text, nodes, or strokes to fit a card; the specimen scrolls when needed.
-- `DiagramNode`: component, host, provider, boundary, suspense, special, portal, hook, value, callback, and store nodes. `isPortalTarget` adds a ring without changing node kind.
-- `DiagramEdge`: structural, reference, context, portal, data, update, and subscription connections. Optional arrowheads, waypoints, and explicit label positions support directed flows.
-- `DiagramScope`: labeled context or error-boundary region.
-- `DiagramScene`: positioned nodes and ID-based edges.
-- `TreeDiagram`: parent or owner layout, owner arcs, provider-hover context scopes, and boundary-hover catch regions.
-- `TreeComparison`: linked parent/owner views with inline hook/prop rows and hover-driven dataflow.
-- `DataflowDiagram`: directed hook, value, prop, callback, context, and external-store graphs.
-- `VirtualTree`: fixed-row windowing, adaptive indentation, collapse/expand, and keyboard navigation.
+Semantic colors complement—not replace—shapes and patterns:
 
-Component rows share a 24px grid, 20px maximum indent, 10px labels, 3px node radius, 0.5px node outlines, and 1px connectors. Labels, details, annotations, and edge labels use the same 10px text size. Data details retain 24px targets, muted color, and alignment with their component label rather than another tree level. The virtualized tree renders the same SVG node component rather than a separate HTML row design. Parent and owner compositions are derived from one model.
+- Teal: providers, external stores, context paths, and subscriptions.
+- Rose: error boundaries and catch scopes.
+- Amber: suspense.
+- Violet: portals, wrapper glyphs, ownership/reference paths, and update calls.
+- Blue: data paths and the default active-node/focus accent.
 
-Hover and keyboard focus emphasize relevant nodes and connections in blue. Unrelated elements remain neutral and fully opaque rather than losing contrast. In linked trees, owner focus shows direct creations in the parent view and the ownership subtree in the owner view. Boundary focus shows catch regions, including nested boundary nodes but excluding their contents. Blue context scopes only appear while their provider is active. Pointer exit restores the diagram. Virtual rows have continuous full-height, full-width hitboxes: the label, node, whitespace, and expand control share one hover target. There are no selection boxes or persistent row backgrounds.
+Unrelated elements remain readable neutral colors rather than fading. Keyboard focus has an underline. There are no persistent row backgrounds or selection boxes.
 
-The supplied SVG's circular arcs, thin connectors, geometric text rendering, and stroke-masked labels are implemented in the shared primitives. There is no separate SVG references specimen. Shared drawing styles live in `drawing.stylex.ts`; shared geometry lives in `geometry.ts`.
+Callable labels use `ƒ`. Hooks and callbacks receive it automatically; `isCallable` marks known function-valued props and store methods without changing node kind or inventing update edges. `componentType` distinguishes known function components, classes, memo, and forward-ref wrappers. Classes use squares; wrappers use diamonds. Names alone never determine implementation. Symbols are hidden from assistive technology; names/typeahead remain unchanged and descriptions carry the distinctions.
 
-```tsx
-import { TreeDiagram, VirtualTree, type TreeNode } from "diagram";
+Pass ID-based `dataflowEdges` to a tree root or preset. Hook/prop rows attach through `componentId` and parent/owner IDs; they are metadata, not extra React fibers. Incoming and outgoing tracing are independent and cycle-safe. Bounded lanes and surface-colored crossing halos separate overlapping paths. Arrows keep 3px clearance from component glyphs and 4px from detail text.
 
-const nodes: TreeNode[] = [
-  { id: "app", label: "App" },
-  { id: "frame", label: "Frame", parentId: "app", ownerId: "app" },
-  { id: "div", label: "div", parentId: "frame", kind: "host" },
-];
+Owner inspection shows direct creations in the parent projection and the ownership subtree in the owner projection. Boundary scopes include nested boundary nodes but exclude their handled descendants. Provider scopes appear only while the provider is active. Callback edges represent invocation back to an updater, not another prop-value transfer. Boundary regions describe render-time containment, not event-handler or external-store error handling.
 
-export const Example = () => (
-  <>
-    <TreeDiagram nodes={nodes} label="Parent tree" showOwners />
-    <VirtualTree nodes={nodes} label="Component tree" height={400} />
-  </>
-);
-```
+## Accessibility and verification
 
-### Tree controls
+All trees use `tree` / `treeitem` semantics, explicit hierarchy metadata, textual relationships, and one roving tab stop. Windowing pins the focused item rather than introducing a different focus model. Empty views become named focusable groups.
 
-Use `<Tree.View controls>` for the default toolbar, or pass `controls={<Tree.Controls />}` to compose it within the view provider. `TreeComparison` includes it by default; set `controls={false}` to omit it. `VirtualTree` opts in with `controls`.
+Arrows navigate and expand/collapse, Home/End jump, locale-aware typeahead searches labels, and Enter/Space activates or toggles a branch when no selection callback is supplied. Focus and activation are separate. Removed, disabled, or hidden mounted items receive focus repair without moving focus into another widget.
 
-Search matches labels, annotations, and IDs across the complete model without filtering the hierarchy. Enter expands ancestors, scrolls to the match, and focuses it. ↑/↓ or the previous/next buttons cycle and reveal matches without moving focus into the tree. Escape clears the query. The reveal button restores the last active node; expand/collapse-all affects only that view. Match results are announced through a live status. Static and virtual branches share disclosure chevrons shown only while their row is hovered, with persistent 24px targets. Disclosure clicks toggle without selecting; an item's `onClickCapture` can cancel them. Static disclosures remain inside the native item, inheriting its visibility and styling.
+Base UI supplies the HTML controls, tooltips, and scrolling primitives. The custom SVG tree retains React Aria's press, focus-visibility, locale, and slot utilities; Base UI does not supply an SVG tree primitive.
 
-IDs must be unique. Missing parents and parent cycles are rejected. Input order determines sibling order. `ownerId` is independent of `parentId`.
-
-This private workspace package exports TypeScript source. Consumers must transpile it and compile its StyleX styles, including `tailwind-stylex`; see `next.config.ts`.
-
-## Dataflow
-
-Dataflow is embedded in the parent/owner comparison; there is no standalone dataflow specimen. Hooks, values, and props appear directly beneath their component in both projections. Set `componentId` on these metadata rows and attach them with `parentId`/`ownerId`; they are not additional React fibers. Pass ID-based `dataflowEdges` to `Tree.Root`, `TreeComparison`, or `TreeDiagram`.
-
-The model is illustrative, not automatic runtime instrumentation. Hook and prop rows are neutral at rest. Hover or keyboard-focus a metadata row to reveal its dependency paths in one accent color across both views. Owner links appear when an owner is active; context/error scopes appear when their provider/boundary is active. Data details have no circles or tree branches. Only components and external-resource roots are drawn as nodes; props, hooks, and callable operations remain secondary text.
-
-Hover follows incoming and outgoing dependency paths independently. It does not spread through every sibling hook merely because they share a component. Component focus preserves ownership emphasis; focusing a derived value reveals all its inputs. Cycles such as store subscription/notification loops terminate safely.
-
-The example includes:
-
-- `useState` + `useReducer` → `visibleTodos` → Feed/Post props → host content.
-- Host callbacks → component callback props → `setQuery` or `dispatch`.
-- `useSyncExternalStore` → snapshots → rendered count, including `getSnapshot`, effect subscription/cleanup, notifications, and external writes.
-- Provider value → Stats' `useContext` → host styles.
-
-Tree dataflow uses bounded curved links, independently routed for each projection. Only relevant paths appear. Overlapping row intervals and opposing links receive separate lanes; surface-colored halos separate crossings without adding accent colors. Arrows leave a clear gap before detail text. Node connections retain their 3px arrow clearance.
-
-Callable labels use `ƒ` at the same 10px size. Hooks and callbacks receive it automatically; set `isCallable` for function-valued props, store methods, or known function components. The flag does not change node kind or imply an update edge. Plain values and components of unknown implementation stay unmarked. The symbol is hidden from assistive technology; descriptions identify functions and names/typeahead remain unchanged.
-
-Set `componentType` when the implementation is known: `function` adds `ƒ`, `class` uses a square, and `memo`/`forward-ref` use diamonds. Wrapper descriptions identify which wrapper is present. Unknown implementations retain the default circle; names alone never determine component type. The specimen omits numeric instance annotations while retaining meaningful annotations such as `visible`.
-
-Callback edges describe invocation back to an updater, not a second prop-value transfer. Boundary scopes describe render-time containment, not error handling for event callbacks or external-store operations.
-
-`DataflowDiagram` remains available for explicitly positioned graphs. It supports `waypoints`, `fromOffset`, `toOffset`, and `labelPosition` for custom routing.
-
-## Themes
-
-The icon-only sun/moon switch saves the chosen theme locally and initially follows the system preference. Diagrams are neutral at rest. Blue is the only accent, reserved for active nodes, connections, and scopes; shapes, labels, and line patterns distinguish node and edge kinds. Diagram colors, label masks, surfaces, and scopes use shared StyleX variables. `darkTheme` is available from `diagram/tokens` for consumers.
-
-## Virtualization
-
-The model is indexed without recursion. The viewport plus five overscan rows on either side is mounted, along with the focused row if it falls outside that window. The pinned row keeps `aria-activedescendant` valid without forcing the viewport to jump during manual scrolling. Indentation rebases against visible ancestry, keeps two levels of context, and fits into at most 42% of the viewport width. Absolute depth remains in `aria-level` and `data-depth`; it is not shown as a badge. Visible, mounted, and total counts are separate data attributes, not ambiguous footer stats.
-
-The two 10,000-node specimens are synthetic fixtures, not a live React inspector.
-
-## Accessibility
-
-Trees expose standard `tree` / `treeitem` roles, explicit hierarchy metadata, names, and descriptions for ownership, component details, dependencies, and boundary exclusions. Empty views are named groups. Static trees use one roving tab stop; virtual trees keep DOM focus on the viewport and use `aria-activedescendant`. Standalone interactive diagram nodes are buttons.
-
-- Tab enters/leaves a tree. ↑/↓ moves focus; Home/End jumps to the first/last item.
-- ←/→ collapses/expands or moves to parent/child, respecting locale direction.
-- Typing searches labels using locale-aware collation; repeated characters cycle matches.
-- Enter/Space invokes `onSelect`. Without a callback, a branch toggles. Arrow navigation never invokes selection callbacks.
-- Escape clears interaction emphasis without moving focus.
-- Touch and assistive-technology activation retain inspection emphasis after the pointer leaves. Keyboard-visible focus is a separate underline, not just a color change.
-
-React Aria supplies press normalization, focus visibility, locale utilities, and slot-ID/prop merging. This is not a wrapper around React Aria's Tree: its current implementation uses a single-column treegrid, whereas these SVG views use tree semantics. Focus repair handles removed, disabled, and hidden items without moving focus into another view.
-
-Automated checks cover axe rules, SVG paint contrast, 24px targets, touch activation, forced colors, and 200% CSS zoom. They do not establish full WCAG conformance or screen-reader compatibility. See [accessibility verification](docs/accessibility.md) for engine coverage and pending manual checks.
-
-## Checks
+Automated Chromium, Firefox, and WebKit checks cover keyboard/touch interaction, controlled state, slots, focus retention, windowing, sidebar navigation, tooltips, and axe rules. SVG paint checks cover both themes, including colored glyphs. Forced-colors emulation and the combined CSS-zoom check remain Chromium-only. This does not establish full WCAG conformance or screen-reader compatibility. See [manual checks and limits](docs/accessibility.md).
 
 ```sh
 pnpm --filter diagram typecheck
 pnpm --filter diagram test
 pnpm --filter diagram build
-pnpm --filter diagram exec playwright install chromium
-pnpm --filter diagram test:browser
-```
-
-Browser tests start a dev server if port 3100 is free. Screenshots go to `test-results/`. The `/fixtures/compound` route tests controlled state, nested roots, label/description slots, DOM props, refs, event composition, empty data, and focus recovery.
-
-For the cross-engine accessibility suite:
-
-```sh
 pnpm --filter diagram exec playwright install chromium firefox webkit
+pnpm --filter diagram test:browser
 pnpm --filter diagram test:accessibility
 ```
 
-Use `--project=chromium`, `--project=firefox`, or `--project=webkit` to select an engine. Forced-colors emulation and the combined CSS-zoom check are Chromium-only; manual screen-reader, platform high-contrast, browser zoom, and text-scaling checks remain pending.
+Browser tests start a dev server if port 3100 is free. Screenshots go to `test-results/`; committed PR images live in `docs/screenshots/`. `/fixtures/compound` exercises controlled/shared/isolated state, native props, slots, refs, event cancellation, empty data, and focus recovery.
+
+This package exports TypeScript source. Consumers must transpile it and compile its StyleX styles, including `tailwind-stylex`; see `next.config.ts`.
 
 ## Sources
 
-- Board: `millionco/million-ui`, `32f775f`, `src/board/board.candidate.tsx`; translated from Tailwind to StyleX.
-- Compound architecture: `pacocoursey/cmdk`, `cmdk/src/index.tsx`, and `shadcn-ui/ui`, `apps/v4/registry/new-york-v4/ui/command.tsx`.
-- React Aria: `adobe/react-spectrum`, `react-aria-components/src/utils.tsx`, and `react-aria/src/{tree,selection,interactions,focus,utils}`; [Tree](https://react-spectrum.adobe.com/react-aria/Tree.html), [usePress](https://react-spectrum.adobe.com/react-aria/usePress.html), and [useFocusRing](https://react-spectrum.adobe.com/react-aria/useFocusRing.html).
-- Adaptive indentation: `aidenybai-website/src/components/fiber-tree/fiber-tree-list.tsx`.
-- React source inspected locally: `ReactInternalTypes.js`, `ReactFiber.js`, `ReactChildFiber.js`, `ReactFiberCommitHostEffects.js`, `ReactFiberThrow.js`, `ReactFiberHooks.js`, `ReactFiberNewContext.js`, `ReactContext.js`, `ReactJSXElement.js`, DevTools `Components/Tree.js`, and `ReactFizzConfigDOM.js`.
+- Sidebar, board layout, and selected Base UI/shadcn patterns: `millionco/million-ui` at `fd7308c`, `src/board/board.tsx` and `src/components/ui/{button,input,tooltip,scroll-area}.tsx`. Adapted to this package's scoped tokens; registry demos, inspection panels, git-history tooling, and unrelated controls are not copied.
+- Base UI source inspected locally: button, input, tooltip, and scroll-area primitives in `mui/base-ui`.
+- React Aria: tree/collection, press, focus, locale, and slot implementations in `adobe/react-spectrum`.
+- Compound architecture: `pacocoursey/cmdk` and `shadcn-ui/ui` command components.
+- React source inspected locally: fiber classification, hooks/context, throw/commit logic, DOM selection restoration, event enter/leave handling, and DevTools component trees in `facebook/react`.

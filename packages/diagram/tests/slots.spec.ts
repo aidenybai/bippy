@@ -71,6 +71,8 @@ test("reactivates controlled focus and repairs disabled or hidden DOM items", as
   await expect(child).toHaveAttribute("tabindex", "0");
   await page.keyboard.press("F2");
   await expect(page.getByTestId("active")).toHaveText("count");
+  await child.dispatchEvent("focusin");
+  await expect(page.getByTestId("active")).toHaveText("count");
   await page.keyboard.press("Enter");
   await expect(page.getByTestId("active")).toHaveText("child");
   await expect(page.getByTestId("activation-count")).toHaveText("1");

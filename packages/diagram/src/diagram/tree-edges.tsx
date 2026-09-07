@@ -13,6 +13,7 @@ export const TreeEdges = (props: TreeEdgesProps) => {
   const { dataflowEdges } = useTreeRoot();
   const {
     rows,
+    mountedRows,
     positions,
     indexById,
     interaction,
@@ -33,25 +34,25 @@ export const TreeEdges = (props: TreeEdgesProps) => {
   );
   return (
     <g data-slot="tree-edges" {...props}>
-      {rows.map((row, index) =>
+      {mountedRows.map((row) =>
         row.parentIndex < 0 || row.node.componentId !== undefined ? null : (
           <DiagramEdge
             key={row.node.id}
             from={positions[row.parentIndex]}
-            to={positions[index]}
+            to={positions[indexById.get(row.node.id) ?? 0]}
             fromId={row.node.parentId}
             toId={row.node.id}
           />
         ),
       )}
       {scopeIndex !== undefined &&
-        rows.map((row, index) =>
+        mountedRows.map((row) =>
           row.node.contextProviderIds?.includes(scopeId ?? "") ? (
             <DiagramEdge
               key={`context-${row.node.id}`}
               kind="context"
               from={positions[scopeIndex]}
-              to={positions[index]}
+              to={positions[indexById.get(row.node.id) ?? 0]}
               fromId={scopeId}
               toId={row.node.id}
             />
@@ -60,7 +61,7 @@ export const TreeEdges = (props: TreeEdgesProps) => {
       {showOwners &&
         relationship === "parent" &&
         interaction.mode === "owner" &&
-        rows.map((row, index) => {
+        mountedRows.map((row) => {
           const ownerIndex =
             row.node.ownerId === interaction.activeId && row.node.ownerId !== row.node.parentId
               ? indexById.get(row.node.ownerId)
@@ -69,7 +70,7 @@ export const TreeEdges = (props: TreeEdgesProps) => {
             <DiagramEdge
               key={`owner-${row.node.id}`}
               from={positions[ownerIndex]}
-              to={positions[index]}
+              to={positions[indexById.get(row.node.id) ?? 0]}
               fromId={row.node.ownerId}
               toId={row.node.id}
               kind="owner"

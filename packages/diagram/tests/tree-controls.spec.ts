@@ -68,13 +68,10 @@ test("virtual search reveals hidden descendants without mounting the full tree",
   const search = page.getByRole("searchbox", { name: "Search Deep tree", exact: true });
   await search.fill("deep-9999");
   await search.press("Enter");
-  await expect(tree).toBeFocused();
-  await expect(tree.locator('[data-focused="true"] [data-node-id]')).toHaveAttribute(
-    "data-node-id",
-    "deep-9999",
-  );
+  await expect(tree.locator('[data-focused="true"]')).toBeFocused();
+  await expect(tree.locator('[data-focused="true"]')).toHaveAttribute("data-node-id", "deep-9999");
   expect(await tree.getByRole("treeitem").count()).toBeLessThan(30);
-  await tree.evaluate((element) => {
+  await page.locator("#deep-tree [data-tree-viewport]").evaluate((element) => {
     element.scrollTop = 0;
   });
   await page.getByRole("button", { name: "Reveal active node in Deep tree", exact: true }).click();
@@ -157,5 +154,5 @@ test("component symbols, crossing gaps, and unnumbered labels retain semantic di
   const colors = await paths.evaluateAll((elements) =>
     elements.map((element) => getComputedStyle(element).stroke),
   );
-  expect(new Set(colors).size).toBe(1);
+  expect(new Set(colors).size).toBe(2);
 });

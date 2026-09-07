@@ -3,6 +3,8 @@
 import * as stylex from "@stylexjs/stylex";
 import { useEffect, useState, type ReactNode } from "react";
 import { Moon, Sun } from "lucide-react";
+import { Button } from "../components/ui/button";
+import { TooltipProvider } from "../components/ui/tooltip";
 import { colors, darkTheme } from "../diagram/tokens.stylex";
 
 interface ThemeProviderProps {
@@ -52,11 +54,13 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
       data-theme={isDark ? "dark" : "light"}
       {...stylex.props(styles.root, isDark && darkTheme, isDark && styles.dark)}
     >
-      {children}
-      <button
+      <TooltipProvider>{children}</TooltipProvider>
+      <Button
         type="button"
         aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
-        {...stylex.props(styles.toggle)}
+        variant="ghost"
+        size="icon"
+        css={styles.toggle}
         onClick={() => {
           const nextIsDark = !isDark;
           setIsDark(nextIsDark);
@@ -72,7 +76,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
         ) : (
           <Moon size={16} strokeWidth={1.5} aria-hidden />
         )}
-      </button>
+      </Button>
     </div>
   );
 };

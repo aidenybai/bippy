@@ -4,14 +4,14 @@ import * as stylex from "@stylexjs/stylex";
 import { fonts, fontSizes, spacing } from "tailwind-stylex/tokens.stylex";
 import { DiagramCanvas, DiagramNode, type DiagramEdgeProps } from "../diagram/primitives";
 import { DiagramScene } from "../diagram/diagram-scene";
-import { TreeDiagram } from "../diagram/tree-diagram";
+import { Tree } from "../components/ui/tree";
 import { TreeComparison } from "../diagram/tree-comparison";
-import { VirtualTree } from "../diagram/virtual-tree";
 import { diagramMetrics } from "../diagram/geometry";
 import { colors } from "../diagram/tokens.stylex";
 import type { TreeNode } from "../diagram/tree-model";
 import { branchingNodes, deepNodes, relationshipEdges, relationshipNodes } from "./fixtures";
 import { Specimen } from "./specimen";
+import { BoardShell, type BoardItem } from "./board-shell";
 import { treeDataflowNodes, treeDataflowEdges } from "./tree-dataflow-fixture";
 
 interface NodeSpecimen {
@@ -74,16 +74,17 @@ const scopeNodes: TreeNode[] = [
   { id: "scope-second", label: "Child", parentId: "scope-provider" },
 ];
 
+const boardItems: readonly BoardItem[] = [
+  ...nodeSpecimens.map(({ node, name }) => ({ id: node.id, name })),
+  ...edgeSpecimens.map(({ kind, name }) => ({ id: `edge-${kind}`, name })),
+  { id: "scope", name: "Scope" },
+  { id: "relationships", name: "Parent / Owner / DOM" },
+  { id: "parent-tree", name: "Parent / owner" },
+  { id: "deep-tree", name: "Tree / Deep" },
+  { id: "branching-tree", name: "Tree / Branching" },
+];
+
 const styles = stylex.create({
-  page: {
-    minHeight: "100vh",
-    padding: spacing[6],
-    boxSizing: "border-box",
-    backgroundColor: colors.canvas,
-    color: colors.text,
-    fontFamily: fonts.sans,
-    WebkitFontSmoothing: "antialiased",
-  },
   grid: {
     maxWidth: 1007,
     marginInline: "auto",
@@ -98,11 +99,11 @@ const styles = stylex.create({
   },
   columnLabel: { fill: colors.muted, fontFamily: fonts.sans, fontSize: fontSizes.xs },
   divider: { stroke: colors.border, strokeWidth: 1, strokeDasharray: "3 2" },
-  virtual: { width: { default: 293, "@media (max-width: 372px)": "calc(100vw - 80px)" } },
+  tree: { width: { default: 293, "@media (max-width: 372px)": "calc(100vw - 80px)" } },
 });
 
 export const Board = () => (
-  <main {...stylex.props(styles.page)} aria-label="Diagram component board">
+  <BoardShell items={boardItems}>
     <div {...stylex.props(styles.grid)}>
       {nodeSpecimens.map(({ name, node }) => (
         <Specimen key={node.id} id={node.id} name={name}>
@@ -151,7 +152,7 @@ export const Board = () => (
         </Specimen>
       ))}
       <Specimen id="scope" name="Scope">
-        <TreeDiagram
+        <Tree
           nodes={scopeNodes}
           label="Context scope"
           width={225}
@@ -200,9 +201,10 @@ export const Board = () => (
           scopeLabel="ThemeContext"
         />
       </Specimen>
-      <Specimen id="deep-tree" name="Virtualized / Deep">
-        <div {...stylex.props(styles.virtual)}>
-          <VirtualTree
+      <Specimen id="deep-tree" name="Tree / Deep">
+        <div {...stylex.props(styles.tree)}>
+          <Tree
+            width={293}
             nodes={deepNodes}
             label="Deep tree"
             height={diagramMetrics.rowHeight * 11}
@@ -210,9 +212,10 @@ export const Board = () => (
           />
         </div>
       </Specimen>
-      <Specimen id="branching-tree" name="Virtualized / Branching">
-        <div {...stylex.props(styles.virtual)}>
-          <VirtualTree
+      <Specimen id="branching-tree" name="Tree / Branching">
+        <div {...stylex.props(styles.tree)}>
+          <Tree
+            width={293}
             nodes={branchingNodes}
             label="Branching tree"
             controls
@@ -221,5 +224,5 @@ export const Board = () => (
         </div>
       </Specimen>
     </div>
-  </main>
+  </BoardShell>
 );

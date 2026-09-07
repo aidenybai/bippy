@@ -57,8 +57,6 @@ export { TreeComparison } from "./diagram/tree-comparison";
 export type { TreeComparisonProps } from "./diagram/tree-comparison";
 export { TreeDiagram } from "./diagram/tree-diagram";
 export type { TreeDiagramProps } from "./diagram/tree-diagram";
-export { VirtualTree, useVirtualViewport } from "./diagram/virtual-tree";
-export type { VirtualTreeProps, VirtualViewportProps } from "./diagram/virtual-tree";
 export {
   getTreeRows,
   getExpandedRows,

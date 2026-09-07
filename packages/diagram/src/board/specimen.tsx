@@ -1,3 +1,6 @@
+"use client";
+
+import { useSpecimenFilter } from "./board-shell";
 import * as stylex from "@stylexjs/stylex";
 import type { ReactNode } from "react";
 import { spacing, fontSizes } from "tailwind-stylex/tokens.stylex";
@@ -53,21 +56,25 @@ const styles = stylex.create({
   },
 });
 
-export const Specimen = ({ id, name, children, size = "single" }: SpecimenProps) => (
-  <section
-    id={id}
-    aria-labelledby={`${id}-title`}
-    {...stylex.props(
-      styles.cell,
-      size === "double" && styles.double,
-      size === "full" && styles.full,
-    )}
-  >
-    <h2 id={`${id}-title`} {...stylex.props(styles.title)}>
-      {name}
-    </h2>
-    <div {...stylex.props(styles.body)}>
-      <div {...stylex.props(styles.content)}>{children}</div>
-    </div>
-  </section>
-);
+export const Specimen = ({ id, name, children, size = "single" }: SpecimenProps) => {
+  const selectedId = useSpecimenFilter();
+  if (selectedId !== null && selectedId !== id) return null;
+  return (
+    <section
+      id={id}
+      aria-labelledby={`${id}-title`}
+      {...stylex.props(
+        styles.cell,
+        size === "double" && styles.double,
+        size === "full" && styles.full,
+      )}
+    >
+      <h2 id={`${id}-title`} {...stylex.props(styles.title)}>
+        {name}
+      </h2>
+      <div {...stylex.props(styles.body)}>
+        <div {...stylex.props(styles.content)}>{children}</div>
+      </div>
+    </section>
+  );
+};

@@ -1,17 +1,23 @@
 "use client";
 
+import * as stylex from "@stylexjs/stylex";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { TreeControls } from "./tree-controls";
-import { getCollapsedTreeIds, getRevealedTreeIds, type TreeRevealRequest } from "./tree-expansion";
 import { mergeRefs } from "@react-aria/utils";
+import { ScrollArea } from "../components/ui/scroll-area";
+import { TreeControls } from "./tree-controls";
+import { TreeItems } from "./tree-items";
+import { TreeScopes } from "./tree-scopes";
+import { TreeEdges } from "./tree-edges";
+import { getCollapsedTreeIds, getRevealedTreeIds, type TreeRevealRequest } from "./tree-expansion";
 import { DiagramCanvas, type DiagramCanvasProps } from "./primitives";
 import { useTreeRoot, TreeViewContext } from "./tree-context";
 import { DiagramInteractionContext, type DiagramInteraction } from "./interaction";
-import { getTreeRows } from "./tree-model";
+import { getTreeRows, getIndentation } from "./tree-model";
 import { getOwnerNodes, getTreeHighlight, getTreeHighlightIndex } from "./tree-highlight";
 import { getDataflowHighlight } from "./dataflow-model";
 import { getTreeLayout } from "./tree-layout";
 import { getVisibleTreeRows } from "./tree-visible-rows";
+import { getTreeWindow } from "./tree-window";
 import { useTreeNavigation } from "./use-tree-navigation";
 import { treeInstructions } from "./accessibility";
 import { composeEventHandlers } from "./dom-props";
@@ -24,6 +30,7 @@ export interface TreeViewProps extends Omit<
   controls?: ReactNode;
   relationship?: "parent" | "owner";
   width?: number;
+  height?: number;
   rowHeight?: number;
   indent?: number;
   showOwners?: boolean;
@@ -31,10 +38,16 @@ export interface TreeViewProps extends Omit<
   scopeLabel?: string;
 }
 
+const styles = stylex.create({
+  frame: (width: number) => ({ width, maxWidth: "100%" }),
+  viewport: (height: number) => ({ height, width: "100%" }),
+});
+
 export const TreeView = ({
   controls,
   relationship = "parent",
-  width = 400,
+  width: requestedWidth = 400,
+  height = 396,
   rowHeight = diagramMetrics.rowHeight,
   indent = diagramMetrics.indent,
   showOwners = false,
@@ -48,7 +61,10 @@ export const TreeView = ({
 }: TreeViewProps) => {
   const root = useTreeRoot();
   const containerRef = useRef<SVGSVGElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
   const mergedRef = useMemo(() => mergeRefs(containerRef, ref), [ref]);
+  const [width, setWidth] = useState(requestedWidth);
+  const [scrollTop, setScrollTop] = useState(0);
   const [collapsedIds, setCollapsedIds] = useState<ReadonlySet<string>>(() => new Set());
   const toggle = useCallback(
     (nodeId: string) =>
@@ -75,7 +91,44 @@ export const TreeView = ({
   const expandAll = useCallback(() => setCollapsedIds(new Set()), []);
   const collapseAll = useCallback(() => setCollapsedIds(getCollapsedTreeIds(model)), [model]);
   const rows = useMemo(() => getVisibleTreeRows(model, collapsedIds), [model, collapsedIds]);
-  const layout = useMemo(() => getTreeLayout(rows, rowHeight, indent), [rows, rowHeight, indent]);
+  const baseLayout = useMemo(
+    () => getTreeLayout(rows, rowHeight, indent),
+    [rows, rowHeight, indent],
+  );
+  const contentHeight = Math.max(rowHeight * 4, baseLayout.offsets[rows.length] + rowHeight / 2);
+  const viewportHeight = Math.min(contentHeight, Math.max(rowHeight, height - (controls ? 32 : 0)));
+  const range = useMemo(
+    () => getTreeWindow(baseLayout.offsets, scrollTop, viewportHeight),
+    [baseLayout, scrollTop, viewportHeight],
+  );
+  const isWindowed = rows.length > 100;
+  const windowRows = useMemo(
+    () => (isWindowed ? rows.slice(range.start, range.end) : rows),
+    [isWindowed, rows, range.start, range.end],
+  );
+  const layout = useMemo(() => {
+    const indentation = getIndentation(windowRows, width);
+    return getTreeLayout(rows, rowHeight, indent, {
+      indentation: { ...indentation, size: Math.min(indent, indentation.size) },
+      maxOffset: 40 + width * 0.42,
+    });
+  }, [rows, rowHeight, indent, windowRows, width]);
+  useLayoutEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const measure = () => setWidth(viewport.clientWidth || requestedWidth);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(viewport);
+    return () => observer.disconnect();
+  }, [requestedWidth]);
+  useLayoutEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const nextTop = Math.min(viewport.scrollTop, Math.max(0, contentHeight - viewportHeight));
+    viewport.scrollTop = nextTop;
+    setScrollTop(nextTop);
+  }, [contentHeight, viewportHeight]);
   const indexById = useMemo(() => new Map(rows.map((row, index) => [row.node.id, index])), [rows]);
   const visibleHighlight = useMemo(() => getTreeHighlightIndex(rows), [rows]);
   const activeNode =
@@ -104,26 +157,29 @@ export const TreeView = ({
     }
     return next;
   }, [root.interaction, root.highlightIndex, relationship, visibleHighlight, flow]);
-  const navigation = useTreeNavigation({ rows, containerRef, collapsedIds, toggle, interaction });
-  const { focusedId, setFocusedId } = navigation;
+  const navigation = useTreeNavigation({
+    rows,
+    windowRows,
+    containerRef,
+    collapsedIds,
+    toggle,
+    interaction,
+  });
+  const { focusedId, setFocusedId, reveal: revealItem } = navigation;
+  const mountedRows = useMemo(() => {
+    const focusedRow = rows.find((row) => row.node.id === focusedId);
+    return focusedRow && !windowRows.includes(focusedRow)
+      ? [...windowRows, focusedRow].sort(
+          (first, second) =>
+            (indexById.get(first.node.id) ?? 0) - (indexById.get(second.node.id) ?? 0),
+        )
+      : windowRows;
+  }, [rows, windowRows, focusedId, indexById]);
   useLayoutEffect(() => {
     if (!revealRequest) return;
-    const element = [
-      ...(containerRef.current?.querySelectorAll<SVGGElement>("[data-tree-item]") ?? []),
-    ].find(
-      (item) =>
-        item.dataset.nodeId === revealRequest.nodeId &&
-        item.closest("[data-tree-view]") === containerRef.current &&
-        item.getAttribute("aria-disabled") !== "true",
-    );
-    if (element) {
-      setFocusedId(revealRequest.nodeId);
-      if (revealRequest.shouldFocus) element.focus({ preventScroll: true });
-      element.scrollIntoView({ block: "nearest", inline: "nearest" });
-      interaction.setFocusedId(revealRequest.nodeId, true);
-    }
+    revealItem(revealRequest.nodeId, revealRequest.shouldFocus);
     setRevealRequest(null);
-  }, [revealRequest, rows, setFocusedId, interaction]);
+  }, [revealRequest, revealItem]);
   const scopeIndex =
     scopeId && relationship === "parent" && interaction.activeId === scopeId
       ? indexById.get(scopeId)
@@ -137,6 +193,7 @@ export const TreeView = ({
       expandAll,
       collapseAll,
       rows,
+      mountedRows,
       indexById,
       interaction,
       activeNode,
@@ -160,6 +217,7 @@ export const TreeView = ({
       expandAll,
       collapseAll,
       rows,
+      mountedRows,
       indexById,
       interaction,
       activeNode,
@@ -179,34 +237,56 @@ export const TreeView = ({
   return (
     <TreeViewContext value={context}>
       <DiagramInteractionContext value={interaction}>
-        {controls && (controls === true ? <TreeControls /> : controls)}
-        <DiagramCanvas
-          data-slot="tree-view"
-          {...props}
-          data-tree-view=""
-          ref={mergedRef}
-          role={navigation.hasItems ? "tree" : "group"}
-          tabIndex={focusedId === null ? 0 : -1}
-          width={width}
-          height={Math.max(rowHeight * 4, layout.offsets[rows.length] + rowHeight / 2)}
-          label={label}
-          description={[
-            treeInstructions,
-            !navigation.hasItems
-              ? "No nodes to display."
-              : focusedId === null
-                ? "No available nodes."
-                : "",
-            description,
-          ]
-            .filter(Boolean)
-            .join(" ")}
-          onKeyDown={composeEventHandlers(props.onKeyDown, navigation.onKeyDown)}
-          onFocusCapture={composeEventHandlers(props.onFocusCapture, navigation.onFocusCapture)}
-          onBlurCapture={composeEventHandlers(props.onBlurCapture, navigation.onBlurCapture)}
-        >
-          {children}
-        </DiagramCanvas>
+        <div {...stylex.props(styles.frame(requestedWidth))}>
+          {controls && (controls === true ? <TreeControls /> : controls)}
+          <ScrollArea
+            css={styles.viewport(viewportHeight)}
+            viewportProps={{
+              ref: viewportRef,
+              tabIndex: -1,
+              onScroll: (event) => setScrollTop(event.currentTarget.scrollTop),
+              "data-tree-viewport": "",
+              "data-total-count": root.nodes.length,
+              "data-visible-count": range.lastVisible - range.firstVisible,
+              "data-mounted-count": mountedRows.length,
+              "data-first-visible-index": range.firstVisible,
+            }}
+          >
+            <DiagramCanvas
+              data-slot="tree-view"
+              {...props}
+              data-tree-view=""
+              ref={mergedRef}
+              role={navigation.hasItems ? "tree" : "group"}
+              tabIndex={focusedId === null ? 0 : -1}
+              width={width}
+              height={contentHeight}
+              label={label}
+              description={[
+                treeInstructions,
+                !navigation.hasItems
+                  ? "No nodes to display."
+                  : focusedId === null
+                    ? "No available nodes."
+                    : "",
+                description,
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              onKeyDown={composeEventHandlers(props.onKeyDown, navigation.onKeyDown)}
+              onFocusCapture={composeEventHandlers(props.onFocusCapture, navigation.onFocusCapture)}
+              onBlurCapture={composeEventHandlers(props.onBlurCapture, navigation.onBlurCapture)}
+            >
+              {children ?? (
+                <>
+                  <TreeScopes />
+                  <TreeEdges />
+                  <TreeItems />
+                </>
+              )}
+            </DiagramCanvas>
+          </ScrollArea>
+        </div>
       </DiagramInteractionContext>
     </TreeViewContext>
   );

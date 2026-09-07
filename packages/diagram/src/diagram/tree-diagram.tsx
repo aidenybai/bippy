@@ -26,14 +26,6 @@ export const TreeDiagram = ({
     defaultActiveId={defaultActiveId}
     onActiveIdChange={onActiveIdChange}
   >
-    <Tree.View {...viewProps}>
-      {children ?? (
-        <>
-          <Tree.Scopes />
-          <Tree.Edges />
-          <Tree.Items />
-        </>
-      )}
-    </Tree.View>
+    <Tree.View {...viewProps}>{children}</Tree.View>
   </Tree.Root>
 );

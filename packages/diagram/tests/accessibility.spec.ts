@@ -64,29 +64,21 @@ test("uses one tab stop per tree with arrow navigation, typeahead, collapse, and
   ).toBeFocused();
 });
 
-test("keeps a virtual active descendant mounted during scrolling and recovers on keyboard navigation", async ({
+test("keeps native row focus mounted during automatic windowing and recovers on keyboard navigation", async ({
   page,
 }) => {
   await page.goto("/");
   const tree = page.getByRole("tree", { name: "Deep tree", exact: true });
   await page.getByRole("button", { name: "Collapse all in Deep tree", exact: true }).focus();
   await page.keyboard.press("Tab");
-  await expect(tree).toBeFocused();
-  await expect(tree.locator('[data-focused="true"]')).toHaveCount(1);
-  const firstId = await tree.getAttribute("aria-activedescendant");
-  expect(firstId).toBeTruthy();
-  await tree.evaluate((element) => {
+  const first = tree.locator('[data-node-id="deep-0"]');
+  await expect(first).toBeFocused();
+  const viewport = page.locator("#deep-tree [data-tree-viewport]");
+  await viewport.evaluate((element) => {
     element.scrollTop = 30000;
   });
-  await expect
-    .poll(() =>
-      tree.evaluate((element) => {
-        const id = element.getAttribute("aria-activedescendant");
-        return Boolean(id && element.ownerDocument.getElementById(id));
-      }),
-    )
-    .toBe(true);
-  expect(await tree.getAttribute("aria-activedescendant")).toBe(firstId);
+  await expect(viewport).toHaveAttribute("data-first-visible-index", "1250");
+  await expect(first).toBeFocused();
   expect(await tree.getByRole("treeitem").count()).toBeLessThan(30);
   await page.keyboard.press("End");
   await expect(tree.locator('[data-focused="true"]')).toHaveAttribute("aria-level", "10000");
@@ -96,8 +88,9 @@ test("keeps a virtual active descendant mounted during scrolling and recovers on
   await expect(tree.locator('[data-focused="true"]')).toHaveAttribute("aria-level", "1");
   await page.keyboard.down("Space");
   await page.keyboard.down("Space");
-  await expect(tree.locator('[data-focused="true"]')).toHaveAttribute("aria-expanded", "false");
+  await expect(tree.locator('[data-focused="true"]')).toHaveAttribute("aria-expanded", "true");
   await page.keyboard.up("Space");
+  await expect(tree.locator('[data-focused="true"]')).toHaveAttribute("aria-expanded", "false");
   await page.keyboard.press("Space");
   await expect(tree.locator('[data-focused="true"]')).toHaveAttribute("aria-expanded", "true");
 });

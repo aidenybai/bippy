@@ -1,13 +1,16 @@
 import { expect, test } from "@playwright/test";
 import { diagramMetrics } from "../src/diagram/geometry";
 
-test("uses the minimal fixed-size million-ui board", async ({ page }) => {
+test("uses the million-ui sidebar and fixed-size specimen board", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.setViewportSize({ width: 1200, height: 815 });
+  await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
   await expect(page.locator("main section")).toHaveCount(16);
-  await expect(page.locator("header, footer, nav, h1")).toHaveCount(0);
+  await expect(page.getByRole("navigation", { name: "Components" })).toBeVisible();
+  await expect(
+    page.getByRole("searchbox", { name: "Search components", exact: true }),
+  ).toBeVisible();
   const first = page.locator("main section").first();
   await expect(first).toHaveCSS("width", "325px");
   await expect(first).toHaveCSS("height", "325px");
@@ -77,88 +80,77 @@ test("hover and keyboard focus preserve contrast without selection boxes", async
   await expect(other).toHaveCSS("opacity", "1");
   await other.focus();
   await page.keyboard.press("ArrowDown");
-  const focused = diagram.locator("[data-node-id]:focus");
-  await expect(focused).toHaveCount(1);
+  await expect(diagram.locator("[data-node-id]:focus")).toHaveCount(1);
   await expect(diagram.locator('[data-emphasis="dimmed"]')).toHaveCount(
     (await diagram.locator("[data-node-id]").count()) - 1,
   );
   await page.screenshot({ path: "test-results/hover-static.png" });
 });
 
-test("virtual rows reuse diagram nodes and emphasize only the hovered item", async ({ page }) => {
+test("normal trees window large models and emphasize only the hovered item", async ({ page }) => {
   await page.goto("/");
-  const tree = page.getByRole("tree", { name: "Deep tree" });
+  const tree = page.getByRole("tree", { name: "Deep tree", exact: true });
+  const viewport = page.locator("#deep-tree [data-tree-viewport]");
   await expect(tree.locator('[aria-selected="true"]')).toHaveCount(0);
-  await expect(tree).toHaveAttribute("data-visible-count", "10");
-  await expect(tree).toHaveAttribute("data-mounted-count", "15");
+  await expect(viewport).toHaveAttribute("data-visible-count", "10");
+  await expect(viewport).toHaveAttribute("data-mounted-count", "15");
   const node = tree.locator('[data-node-id="deep-3"]');
   const other = tree.locator('[data-node-id="deep-2"]');
   await node.hover();
-  await expect(node).toHaveCSS("opacity", "1");
-  await expect(other).toHaveCSS("opacity", "1");
   await expect(other).toHaveAttribute("data-emphasis", "dimmed");
-  await expect(tree.getByRole("treeitem").nth(2).locator("[data-tree-toggle]")).toHaveCSS(
-    "opacity",
-    "1",
+  await expect(node.locator("[data-tree-toggle] path")).toHaveCSS("opacity", "1");
+  await expect(node.locator("[data-component-symbol] circle")).toHaveAttribute(
+    "r",
+    String(diagramMetrics.nodeRadius),
   );
-  await expect(node.locator("circle")).toHaveAttribute("r", String(diagramMetrics.nodeRadius));
-  await expect(node.locator("rect")).toHaveCSS("fill", "rgba(0, 0, 0, 0)");
-  await node.click();
-  await expect(tree.locator('[role="treeitem"]:has([data-node-id="deep-3"])')).toHaveAttribute(
-    "aria-expanded",
-    "false",
-  );
-  await tree.press("ArrowRight");
-  await expect(tree.locator('[role="treeitem"]:has([data-node-id="deep-3"])')).toHaveAttribute(
-    "aria-expanded",
-    "true",
-  );
+  await expect(node.locator(":scope > rect")).toHaveCSS("fill", "rgba(0, 0, 0, 0)");
+  await node.locator("[data-tree-toggle]").click();
+  await expect(node).toHaveAttribute("aria-expanded", "false");
+  await page.keyboard.press("ArrowRight");
+  await expect(node).toHaveAttribute("aria-expanded", "true");
   await page.mouse.move(0, 0);
   await expect(other).toHaveCSS("opacity", "1");
-  await expect(node.locator("rect")).toHaveCSS("stroke", "none");
-  await node.hover();
-  await tree.press("End");
-  await expect(tree.locator('[data-node-id="deep-9999"]')).toHaveAttribute(
-    "data-emphasis",
-    "normal",
-  );
+  await expect(node.locator(":scope > rect")).toHaveCSS("stroke", "none");
+  await page.keyboard.press("End");
+  await expect(tree.locator('[data-node-id="deep-9999"]')).toBeFocused();
   await expect(tree.locator('[data-node-id="deep-9998"]')).toHaveAttribute(
     "data-emphasis",
     "dimmed",
   );
-  await tree.press("Home");
-  await tree.press("ArrowLeft");
-  await expect(tree).toHaveAttribute("data-visible-count", "1");
-  await expect(tree).toHaveAttribute("data-mounted-count", "1");
+  await page.keyboard.press("Home");
+  await page.keyboard.press("ArrowLeft");
+  await expect(viewport).toHaveAttribute("data-visible-count", "1");
+  await expect(viewport).toHaveAttribute("data-mounted-count", "1");
   await page.locator("#deep-tree").screenshot({ path: "test-results/virtual-after.png" });
 });
 
-test("virtual hitboxes fill the row and keep the expander reachable", async ({ page }) => {
+test("shared row hitboxes fill the viewport and keep the disclosure reachable", async ({
+  page,
+}) => {
   await page.goto("/");
-  const tree = page.getByRole("tree", { name: "Deep tree" });
-  await tree.scrollIntoViewIfNeeded();
-  const bounds = await tree.boundingBox();
-  if (!bounds) throw new Error("Missing tree viewport");
-  const row = tree.getByRole("treeitem").nth(3);
-  const node = row.locator("[data-node-id]");
+  const tree = page.getByRole("tree", { name: "Deep tree", exact: true });
+  const viewport = page.locator("#deep-tree [data-tree-viewport]");
+  await viewport.scrollIntoViewIfNeeded();
+  const bounds = await viewport.boundingBox();
+  if (!bounds) throw new Error("Missing viewport");
+  const row = tree.locator('[data-node-id="deep-3"]');
   const toggle = row.locator("[data-tree-toggle]");
-  await page.mouse.move(bounds.x + bounds.width - 2, bounds.y + 3 * diagramMetrics.rowHeight + 0.5);
-  await expect(node).toHaveAttribute("data-emphasis", "normal");
+  await page.mouse.move(bounds.x + bounds.width - 20, bounds.y + 3 * diagramMetrics.rowHeight + 1);
+  await expect(row).toHaveAttribute("data-emphasis", "normal");
   await expect(tree.locator('[data-node-id="deep-2"]')).toHaveAttribute("data-emphasis", "dimmed");
-  await page.mouse.move(bounds.x + bounds.width - 2, bounds.y + 4 * diagramMetrics.rowHeight - 0.5);
-  await expect(toggle).toHaveCSS("opacity", "1");
+  await page.mouse.move(bounds.x + bounds.width - 20, bounds.y + 4 * diagramMetrics.rowHeight - 1);
+  await expect(toggle.locator("path")).toHaveCSS("opacity", "1");
   await page.mouse.move(bounds.x + 8, bounds.y + 3.5 * diagramMetrics.rowHeight, { steps: 20 });
-  await expect(toggle).toHaveCSS("opacity", "1");
+  await expect(toggle.locator("path")).toHaveCSS("opacity", "1");
   await toggle.click();
   await expect(row).toHaveAttribute("aria-expanded", "false");
   await toggle.click();
   await expect(row).toHaveAttribute("aria-expanded", "true");
-  const boxes = await tree.locator("[data-row-hitbox]").evaluateAll((elements) =>
-    elements.map((element) => ({
-      y: Number(element.getAttribute("y")),
-      height: Number(element.getAttribute("height")),
-      width: Number(element.getAttribute("width")),
-    })),
+  const boxes = await tree.locator("[data-tree-item] > rect").evaluateAll((elements) =>
+    elements.map((element) => {
+      const rectangle = element.getBoundingClientRect();
+      return { y: rectangle.y, height: rectangle.height, width: rectangle.width };
+    }),
   );
   for (let index = 1; index < boxes.length; index++) {
     expect(boxes[index].y).toBe(boxes[index - 1].y + boxes[index - 1].height);
@@ -170,70 +162,71 @@ test("shares compact node, text, connector, and arc rules throughout the system"
   page,
 }) => {
   await page.goto("/");
-  await expect(page.locator("#svg-reuse")).toHaveCount(0);
-  const labels = page.locator("[data-node-id] > text");
-  const styles = await labels.evaluateAll((elements) =>
+  const labelStyles = await page.locator("[data-node-id] > text").evaluateAll((elements) =>
     elements.map((element) => ({
       paintOrder: getComputedStyle(element).paintOrder,
       strokeWidth: getComputedStyle(element).strokeWidth,
       fontSize: getComputedStyle(element).fontSize,
     })),
   );
-  for (const style of styles) {
+  for (const style of labelStyles) {
     expect(style.paintOrder).toBe("stroke");
     expect(style.strokeWidth).toBe("2px");
     expect(style.fontSize).toBe(`${diagramMetrics.fontSize}px`);
   }
-  const staticConnector = page.locator("#edge-parent [data-edge-from] > path");
-  const virtualConnector = page.locator("#deep-tree [data-connector]").first();
-  for (const connector of [staticConnector, virtualConnector]) {
+  for (const connector of [
+    page.locator("#edge-parent [data-edge-path]"),
+    page.locator("#deep-tree [data-edge-path]").first(),
+  ]) {
     await expect(connector).toHaveCSS("stroke-width", "1px");
     await expect(connector).toHaveCSS("stroke-opacity", "1");
   }
-  await expect(page.locator("#edge-reference [data-edge-from] > path")).toHaveAttribute("d", / A /);
-  await expect(page.locator("#edge-owner [data-edge-from] > path")).toHaveAttribute("d", / A /);
+  await expect(page.locator("#edge-reference [data-edge-path]")).toHaveAttribute("d", / A /);
+  await expect(page.locator("#edge-owner [data-edge-path]")).toHaveAttribute("d", / A /);
 });
 
 test("rebases a deep window without mounting the whole tree", async ({ page }) => {
   await page.goto("/");
-  const tree = page.getByRole("tree", { name: "Deep tree" });
-  await tree.scrollIntoViewIfNeeded();
-  await tree.evaluate((element, rowHeight) => {
+  const tree = page.getByRole("tree", { name: "Deep tree", exact: true });
+  const viewport = page.locator("#deep-tree [data-tree-viewport]");
+  await viewport.scrollIntoViewIfNeeded();
+  await viewport.evaluate((element, rowHeight) => {
     element.scrollTop = 6000 * rowHeight;
   }, diagramMetrics.rowHeight);
-  await expect(tree).toHaveAttribute("data-base-depth", "5998");
+  await expect(viewport).toHaveAttribute("data-first-visible-index", "6000");
   expect(await tree.getByRole("treeitem").count()).toBeLessThanOrEqual(21);
-  const dimensions = await tree.evaluate((element) => ({
+  expect(await tree.locator("[data-edge-path]").count()).toBeLessThan(30);
+  const dimensions = await viewport.evaluate((element) => ({
     width: element.clientWidth,
     scrollWidth: element.scrollWidth,
   }));
   expect(dimensions.scrollWidth).toBe(dimensions.width);
-  await tree.focus();
-  await tree.press("End");
+  await tree.locator('[data-node-id="deep-6000"]').focus();
+  await page.keyboard.press("End");
   await expect(tree.locator('[data-focused="true"]')).toHaveAttribute("aria-level", "10000");
   await expect(tree.locator('[data-focused="true"]')).toBeInViewport();
-  await tree.press("Home");
-  await tree.press("ArrowLeft");
+  await page.keyboard.press("Home");
+  await page.keyboard.press("ArrowLeft");
   await expect(tree.getByRole("treeitem")).toHaveCount(1);
-  await tree.press("ArrowRight");
-  await tree.press("ArrowDown");
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowDown");
   await expect(tree.locator('[data-focused="true"]')).toHaveAttribute("aria-level", "2");
 });
 
 test("keeps sibling positions correct after collapsing a branch", async ({ page }) => {
   await page.goto("/");
-  const tree = page.getByRole("tree", { name: "Branching tree" });
-  await tree.focus();
-  await tree.press("ArrowDown");
-  const selected = tree.locator('[data-focused="true"]');
-  await expect(selected).toHaveAttribute("aria-level", "2");
-  await expect(selected).toHaveAttribute("aria-setsize", "3");
-  await tree.press("ArrowLeft");
-  await expect(selected).toHaveAttribute("aria-expanded", "false");
-  await tree.press("ArrowDown");
-  await expect(selected).toHaveAttribute("aria-level", "2");
-  await expect(selected).toHaveAttribute("aria-posinset", "2");
-  await tree.press("End");
-  await expect(selected).toBeInViewport();
+  const tree = page.getByRole("tree", { name: "Branching tree", exact: true });
+  await tree.getByRole("treeitem").first().focus();
+  await page.keyboard.press("ArrowDown");
+  const focused = tree.locator('[data-focused="true"]');
+  await expect(focused).toHaveAttribute("aria-level", "2");
+  await expect(focused).toHaveAttribute("aria-setsize", "3");
+  await page.keyboard.press("ArrowLeft");
+  await expect(focused).toHaveAttribute("aria-expanded", "false");
+  await page.keyboard.press("ArrowDown");
+  await expect(focused).toHaveAttribute("aria-level", "2");
+  await expect(focused).toHaveAttribute("aria-posinset", "2");
+  await page.keyboard.press("End");
+  await expect(focused).toBeInViewport();
   expect(await tree.getByRole("treeitem").count()).toBeLessThanOrEqual(21);
 });

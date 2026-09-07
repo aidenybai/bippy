@@ -3,7 +3,7 @@ import { diagramMetrics } from "../src/diagram/geometry";
 
 test.use({ deviceScaleFactor: 2, viewport: { width: 1200, height: 1200 } });
 
-test("keeps inline data neutral, uses one active accent, and preserves arrow clearance", async ({
+test("keeps inline data neutral, distinguishes flow kinds, and preserves arrow clearance", async ({
   page,
 }) => {
   await page.goto("/");
@@ -41,7 +41,7 @@ test("keeps inline data neutral, uses one active accent, and preserves arrow cle
     const strokes = await parent
       .locator("[data-edge-id] > [data-edge-path]")
       .evaluateAll((elements) => elements.map((element) => getComputedStyle(element).stroke));
-    expect(new Set(strokes).size).toBe(1);
+    expect(new Set(strokes).size).toBe(3);
     const marker = parent.locator('[data-edge-id="snapshot-prop"] marker');
     await expect(marker).toHaveAttribute("refX", "4");
     const endpoint = await parent.evaluate((element) => {

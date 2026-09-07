@@ -49,6 +49,7 @@ export interface DiagramNodeProps
   maxWidth?: number;
   hitHeight?: number;
   hitLeft?: number;
+  hitWidth?: number;
   isInteractive?: boolean;
   tabIndex?: number;
   onSelect?: (nodeId: string) => void;
@@ -93,6 +94,15 @@ const styles = stylex.create({
   activeEdge: { stroke: colors.blue, strokeOpacity: 1 },
   edgeHalo: { stroke: colors.surface, strokeWidth: 3, fill: "none", pointerEvents: "none" },
   activeNode: { color: colors.blue },
+  contextNode: { color: colors.context },
+  boundaryNode: { color: colors.boundary },
+  suspenseNode: { color: colors.suspense },
+  updateNode: { color: colors.update },
+  contextEdge: { stroke: colors.context },
+  updateEdge: { stroke: colors.update },
+  contextLabel: { fill: colors.context },
+  boundaryLabel: { fill: colors.boundary },
+  updateLabel: { fill: colors.update },
   owner: { strokeOpacity: 1, strokeDasharray: "3 2" },
   reference: { strokeOpacity: 1, strokeDasharray: "3 2" },
   context: { strokeOpacity: 1 },
@@ -104,7 +114,8 @@ const styles = stylex.create({
     strokeWidth: 1,
     strokeOpacity: 1,
   },
-  activeScope: { fill: colors.activeScope, stroke: colors.blue },
+  activeScope: { fill: colors.activeScope, stroke: colors.context },
+  boundaryScope: { fill: colors.boundaryScope, stroke: colors.boundary },
   scopeLabel: { fontStyle: "italic" },
 });
 
@@ -157,6 +168,7 @@ export const DiagramNode = ({
   maxWidth,
   hitHeight = diagramMetrics.rowHeight,
   hitLeft = -6,
+  hitWidth,
   isInteractive = true,
   isFocusVisible: externalFocusVisible,
   description,
@@ -204,7 +216,11 @@ export const DiagramNode = ({
     characters.length > characterCount
       ? `${characters.slice(0, Math.max(0, characterCount - 1)).join("")}${characterCount > 0 ? "…" : ""}`
       : node.label;
-  const annotation = maxWidth === undefined ? node.annotation : undefined;
+  const annotation =
+    maxWidth === undefined ||
+    getLabelWidth({ ...node, fontSize, labelOffset, isCallable }) <= maxWidth
+      ? node.annotation
+      : undefined;
   const isDimmed = !getIsNodeHighlighted(diagramInteraction, node.id);
   const nodeStyles = stylex.props(
     styles.node,
@@ -212,6 +228,13 @@ export const DiagramNode = ({
     isInteractive && !isDisabled && onSelect && styles.interactive,
     isDetail && styles.detail,
     diagramInteraction?.activeId === node.id && styles.activeNode,
+    !isDetail && (kind === "provider" || kind === "store") && styles.contextNode,
+    kind === "boundary" && styles.boundaryNode,
+    kind === "suspense" && styles.suspenseNode,
+    (kind === "portal" ||
+      node.isPortalTarget ||
+      (diagramInteraction?.activeId === node.id && isDetail && isCallable && kind !== "hook")) &&
+      styles.updateNode,
     isDimmed && styles.inactive,
     isDisabled && styles.disabled,
   );
@@ -277,7 +300,7 @@ export const DiagramNode = ({
         onFocus={composeEventHandlers(props.onFocus, (event) => {
           if (event.target !== event.currentTarget) return;
           focusProps.onFocus?.(event);
-          interaction?.setFocusedId(node.id, getIsFocusVisible());
+          interaction?.setFocusedId(node.id, getIsFocusVisible(), false);
         })}
         onBlur={composeEventHandlers(props.onBlur, (event) => {
           if (event.target !== event.currentTarget) return;
@@ -298,13 +321,18 @@ export const DiagramNode = ({
         <rect
           x={hitLeft}
           y={-hitHeight / 2}
-          width={Math.max(
-            24,
-            Math.min(
-              maxWidth === undefined ? Infinity : maxWidth - hitLeft,
-              getLabelWidth({ label, annotation, fontSize, labelOffset, isCallable }) + 6 - hitLeft,
-            ),
-          )}
+          width={
+            hitWidth ??
+            Math.max(
+              24,
+              Math.min(
+                maxWidth === undefined ? Infinity : maxWidth - hitLeft,
+                getLabelWidth({ label, annotation, fontSize, labelOffset, isCallable }) +
+                  6 -
+                  hitLeft,
+              ),
+            )
+          }
           height={hitHeight}
           fill="transparent"
         />
@@ -329,6 +357,12 @@ export const DiagramNode = ({
         {!isDetail && (
           <g
             data-component-symbol={node.componentType ?? "unknown"}
+            {...stylex.props(
+              !isDimmed &&
+                !isDisabled &&
+                (node.componentType === "memo" || node.componentType === "forward-ref") &&
+                styles.updateNode,
+            )}
             aria-hidden="true"
             fill={isHollow ? colors.surface : "currentColor"}
             stroke="currentColor"
@@ -396,6 +430,9 @@ export const DiagramEdge = (props: DiagramEdgeProps) => {
     interaction.mode !== "boundary" &&
     kind !== "parent" &&
     !isDimmed;
+  const isContext = kind === "context" || kind === "subscription";
+  const isUpdate =
+    kind === "update" || kind === "owner" || kind === "reference" || kind === "portal";
   return (
     <g
       data-slot="diagram-edge"
@@ -439,13 +476,20 @@ export const DiagramEdge = (props: DiagramEdgeProps) => {
           drawing.connector,
           kind !== "parent" && (kind === "portal" ? styles.portalEdge : styles[kind]),
           isActive && styles.activeEdge,
+          isActive && isContext && styles.contextEdge,
+          isActive && isUpdate && styles.updateEdge,
         )}
       />
       {label && (
         <text
           x={labelPosition.x}
           y={labelPosition.y}
-          {...stylex.props(drawing.annotation, isActive && styles.activeLabel)}
+          {...stylex.props(
+            drawing.annotation,
+            isActive && styles.activeLabel,
+            isActive && isContext && styles.contextLabel,
+            isActive && isUpdate && styles.updateLabel,
+          )}
         >
           {label}
         </text>
@@ -484,13 +528,21 @@ export const DiagramScope = ({
         width={width}
         height={height}
         rx={2}
-        {...stylex.props(styles.scope, isActive && styles.activeScope)}
+        {...stylex.props(
+          styles.scope,
+          isActive && styles.activeScope,
+          isActive && kind === "boundary" && styles.boundaryScope,
+        )}
       />
       <text
         x={x + width - 8}
         y={y + 8}
         textAnchor="end"
-        {...stylex.props(drawing.annotation, styles.scopeLabel, isActive && styles.activeLabel)}
+        {...stylex.props(
+          drawing.annotation,
+          styles.scopeLabel,
+          isActive && (kind === "boundary" ? styles.boundaryLabel : styles.contextLabel),
+        )}
       >
         {label}
       </text>

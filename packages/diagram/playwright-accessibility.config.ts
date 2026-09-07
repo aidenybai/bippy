@@ -7,6 +7,7 @@ export default defineConfig(config, {
     "**/slots.spec.ts",
     "**/tree-controls.spec.ts",
     "**/function-symbol.spec.ts",
+    "**/board-shell.spec.ts",
   ],
   projects: [
     { name: "chromium", use: { browserName: "chromium" } },

@@ -45,6 +45,7 @@ const TreeRowItem = ({
   const mergedRef = useMemo(() => mergeRefs(nodeRef, ref), [ref]);
   const {
     rows,
+    width,
     positions,
     offsets,
     indexById,
@@ -69,6 +70,8 @@ const TreeRowItem = ({
       {...positions[index]}
       hitHeight={offsets[index + 1] - offsets[index]}
       hitLeft={-positions[index].x}
+      hitWidth={width}
+      maxWidth={Math.max(24, width - positions[index].x - 20)}
       description={[
         descriptions.get(id),
         id === scopeId ? `Context scope: ${scopeLabel}.` : undefined,
@@ -79,6 +82,8 @@ const TreeRowItem = ({
       className={mergeClassNames(stylex.props(stylex.defaultMarker()).className, props.className)}
       ref={mergedRef}
       data-tree-item=""
+      data-focused={id === focusedId || undefined}
+      data-depth={row.depth}
       data-text-value={textValue}
       role="treeitem"
       aria-level={row.depth + 1}
@@ -128,7 +133,7 @@ export const TreeDescription = (props: DiagramDescriptionProps) => (
 );
 
 export const TreeItems = ({ children, ...props }: TreeItemsProps) => {
-  const { rows } = useTreeView();
+  const { mountedRows: rows } = useTreeView();
   return (
     <g data-slot="tree-items" {...props} role="presentation">
       {rows.length === 0 && (

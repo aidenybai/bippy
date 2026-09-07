@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Diagram, Tree, VirtualTree, type TreeNode, type DataflowEdge } from "../../../index";
+import { Diagram, Tree, TreeDiagram, type TreeNode, type DataflowEdge } from "../../../index";
 
 const nodes: TreeNode[] = [
   { id: "app", label: "App" },
@@ -145,11 +145,11 @@ const CompoundFixture = () => {
           </Diagram.Canvas>
         </Diagram.Root>
       </Tree.Root>
-      <VirtualTree
+      <TreeDiagram
         nodes={isEmpty ? [] : nodes}
         label="Compound virtual"
         height={100}
-        onSelect={(node) => setVirtualSelectedId(node.id)}
+        onSelect={setVirtualSelectedId}
       />
     </main>
   );

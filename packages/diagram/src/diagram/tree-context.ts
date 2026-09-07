@@ -25,6 +25,7 @@ export interface TreeViewContextValue extends TreeLayout {
   expandAll: () => void;
   collapseAll: () => void;
   rows: readonly TreeRow[];
+  mountedRows: readonly TreeRow[];
   indexById: ReadonlyMap<string, number>;
   interaction: DiagramInteraction;
   activeNode?: TreeNode;

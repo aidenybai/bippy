@@ -7,7 +7,7 @@ export interface DiagramInteraction extends TreeHighlight {
   highlightedEdgeIds?: ReadonlySet<string>;
   activeId: string | null;
   setHoveredId: (nodeId: string | null, isPointerActive?: boolean) => void;
-  setFocusedId: (nodeId: string | null, isFocusDriven?: boolean) => void;
+  setFocusedId: (nodeId: string | null, isFocusDriven?: boolean, shouldRequest?: boolean) => void;
 }
 
 export const DiagramInteractionContext = createContext<DiagramInteraction | null>(null);
@@ -74,10 +74,10 @@ export const useDiagramInteractionState = (
     [updateInput],
   );
   const setFocusedId = useCallback(
-    (nodeId: string | null, isFocusDriven?: boolean) =>
+    (nodeId: string | null, isFocusDriven?: boolean, shouldRequest = true) =>
       updateInput(
         { focusedId: nodeId, ...(isFocusDriven === undefined ? {} : { isFocusDriven }) },
-        nodeId !== null && isFocusDriven !== undefined,
+        shouldRequest && nodeId !== null && isFocusDriven !== undefined,
       ),
     [updateInput],
   );
