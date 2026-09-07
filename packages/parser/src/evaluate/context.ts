@@ -20,6 +20,8 @@ export interface CallFrame {
   node: FunctionLikeNode;
   scope: Scope;
   args: StaticValue[];
+  /** `Interpreter.changeCount` when the activation began. */
+  changeCount: number;
 }
 
 export interface EvaluationContext {

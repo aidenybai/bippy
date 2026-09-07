@@ -181,18 +181,19 @@ const unrollConditional = (
 
 /**
  * Evaluates the body once with every loop-controlled binding unknown. Used when
- * the iteration count is not statically known; assignments inside become
- * branches and pushed items become repeats via `uncertainDepth`.
+ * the iteration count is not statically known: the body's effects are joined
+ * with the state in which it never ran, so assignments become branches and
+ * pushed items become repeats.
  */
 const evaluateUncertainTail = (
   interpreter: Interpreter,
   statement: LoopStatement,
   context: EvaluationContext,
+  location: SourceLocation,
 ): StatementOutcome => {
   const loopContext: EvaluationContext = {
     ...context,
     scope: createScope(context.scope),
-    uncertainDepth: context.uncertainDepth + 1,
   };
   if (statement.type === "ForOfStatement" || statement.type === "ForInStatement") {
     const value =
@@ -210,7 +211,12 @@ const evaluateUncertainTail = (
       );
     }
   }
-  const outcome = runBody(interpreter, statement.body, loopContext);
+  const outcome = interpreter.runMaybe(
+    context.scope,
+    () => runBody(interpreter, statement.body, loopContext),
+    "loop iterations are uncertain",
+    location,
+  );
   return { returned: outcome.returned, mayComplete: true, jump: null };
 };
 
@@ -231,6 +237,6 @@ export const evaluateLoop = (
       ? unrollForEach(interpreter, statement, context)
       : unrollConditional(interpreter, statement, context);
   if (unrolled?.kind === "exact") return unrolled.outcome;
-  const tail = evaluateUncertainTail(interpreter, statement, context);
+  const tail = evaluateUncertainTail(interpreter, statement, context, location);
   return mergeOutcomes([...(unrolled?.outcomes ?? []), tail], "return inside a loop", location);
 };

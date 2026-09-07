@@ -1,16 +1,23 @@
 import type { Class } from "oxc-parser";
 import type { ComponentClass, ComponentType, Context, ExoticComponent, ReactNode } from "react";
-import { isErrorBoundaryClass, renderClassComponent } from "../evaluate/class-component.js";
+import {
+  isErrorBoundaryClass,
+  renderClassComponent,
+  unmountClassInstance,
+} from "../evaluate/class-component.js";
 import type { ContextReader, EvaluationContext } from "../evaluate/context.js";
 import { providedContextValue } from "../evaluate/react-calls.js";
 import {
   beginHookPass,
+  commitEffects,
   commitHookPass,
   createHookFrame,
-  effectsToRun,
+  type EffectCall,
   giveUpOnHookPass,
-  restartHookPass,
   type HookFrame,
+  mountAllEffects,
+  runChangedEffects,
+  unmountAllEffects,
 } from "../evaluate/hooks.js";
 import type { Interpreter } from "../evaluate/interpreter.js";
 import { describeThrow, getThrowCertainty, withoutThrows } from "../evaluate/thrown.js";
@@ -23,6 +30,8 @@ import {
   omitObjectKeys,
   unknownValue,
 } from "../evaluate/values.js";
+import { nativeObjectValue } from "../evaluate/native-values.js";
+import { formatSourceLocation } from "../parse/source-location.js";
 import type {
   ComponentDefinition,
   ContextDefinition,
@@ -34,7 +43,6 @@ import type {
   StaticElementType,
   StaticElementValue,
   StaticFunctionValue,
-  StaticHostNodeValue,
   StaticObjectValue,
   StaticValue,
   StubComponent,
@@ -122,6 +130,8 @@ export interface MaterializeContext {
   alternativeDepth: number;
   /** The component whose render produced this position; host refs are committed into it. */
   owner: EvaluationContext | null;
+  /** Inside a `<StrictMode>` subtree, where development React double-invokes hook factories. */
+  isStrictMode: boolean;
 }
 
 /** The static element a proxy component stands for, handed to it as its only prop. */
@@ -141,28 +151,37 @@ interface ErrorBoundaryState {
 }
 
 /** Per-instance bookkeeping a proxy keeps across React renders. */
+/**
+ * `isRenderedSinceCommit` tells the proxy's own effects apart: after a render
+ * they commit the changed static effects; without one they are Strict Mode's
+ * `doubleInvokeEffectsOnFiber` or a deletion, which unmount and remount them all.
+ */
 interface ProxyInstance {
   frame: HookFrame;
   passCount: number;
-  isCommitScheduled: boolean;
+  isRenderedSinceCommit: boolean;
 }
 
-interface StatefulRender {
+interface EffectPhaseWork {
+  mount: (isLayout: boolean) => void;
+  unmount: (isLayout: boolean) => void;
+}
+
+interface StatefulRender extends EffectPhaseWork {
   node: ReactNode;
-  runEffects: (isLayout: boolean) => void;
 }
 
 /** How a class proxy instance hands its persistent state and commit hooks to the materializer. */
 interface ClassProxyHost {
   getInstance: (caughtError: boolean) => ProxyInstance;
   rerender: () => void;
-  queueCommitWork: (work: () => void) => void;
+  queueCommitWork: (work: EffectPhaseWork) => void;
 }
 
-const createProxyInstance = (): ProxyInstance => ({
-  frame: createHookFrame(),
+const createProxyInstance = (context: MaterializeContext): ProxyInstance => ({
+  frame: createHookFrame(context.isStrictMode),
   passCount: 0,
-  isCommitScheduled: false,
+  isRenderedSinceCommit: false,
 });
 
 interface CompositeEvaluation {
@@ -175,6 +194,13 @@ interface MaterializedElement {
   context: MaterializeContext;
   isTopLevel: boolean;
   node: ReactNode;
+}
+
+/** The callback React sees for one static ref; its identity is what decides whether React re-attaches. */
+interface HostRefBinding {
+  owner: EvaluationContext;
+  location: SourceLocation | null;
+  callback: (node: Element | null) => void;
 }
 
 const isSameFrame = (first: CompositeFrame, second: CompositeFrame): boolean =>
@@ -336,6 +362,12 @@ export class Materializer {
   private readonly maxRecursionPerComponent: number;
   private readonly serverComponents: boolean;
   private isBudgetExhausted = false;
+  /** Set by the first layout effect of a commit, cleared by its first passive effect. */
+  private isPassivePhasePending = false;
+  /** A state update was raised in the layout phase, so React renders it synchronously. */
+  private isSyncRenderScheduled = false;
+  /** The current commit was rendered synchronously, so React flushes its passive effects in the same task. */
+  private isSyncCommit = false;
   private readonly functionProxies = new ComponentCache<ComponentType<ProxyProps>>();
   private readonly classProxies = new ComponentCache<ComponentClass<ProxyProps>>();
   private readonly forwardRefProxies = new ComponentCache<Map<string, ComponentType<ProxyProps>>>();
@@ -354,7 +386,7 @@ export class Materializer {
   private readonly stubProxies = new WeakMap<StubComponent, ComponentType<ProxyProps>>();
   private readonly suspenseBoundaryProxy: ComponentType<ProxyProps>;
   private portalContainer: Element | null = null;
-  private readonly hostNodes = new WeakMap<Element, StaticHostNodeValue>();
+  private readonly hostRefs = new WeakMap<StaticValue, HostRefBinding>();
   private readonly materializedElements = new WeakMap<StaticElementValue, MaterializedElement[]>();
 
   constructor(interpreter: Interpreter, runtime: ReactRuntime, options: MaterializerOptions = {}) {
@@ -382,6 +414,7 @@ export class Materializer {
       ignoresMaybeThrows: false,
       alternativeDepth: 0,
       owner: null,
+      isStrictMode: false,
     };
   }
 
@@ -426,6 +459,7 @@ export class Materializer {
           value.reason,
           value.preferredIndex,
           isTopLevel,
+          value.location,
         );
       case "optional":
         return this.branchNode(
@@ -433,6 +467,7 @@ export class Materializer {
           value.reason,
           0,
           isTopLevel,
+          value.location,
         );
       case "unknown":
         return this.unknownNode(value.reason);
@@ -470,10 +505,12 @@ export class Materializer {
     reason: string,
     preferredIndex: number | null,
     isTopLevel: boolean,
+    location: SourceLocation | null = null,
   ): ReactNode {
     const { createElement } = this.runtime.react;
     return createElement(BranchMarker, {
       reason,
+      location: location && formatSourceLocation(location),
       preferredIndex,
       children: alternatives.map((node, index) =>
         createElement(AlternativeMarker, { key: index, children: isTopLevel ? node : [node] }),
@@ -619,7 +656,7 @@ export class Materializer {
         return createElement(
           this.runtime.react.StrictMode,
           { key: reactKey },
-          this.toNode(children, context, true),
+          this.toNode(children, { ...context, isStrictMode: true }, true),
         );
       case "profiler": {
         const id = this.toAttribute("id", getObjectProperty(props, "id"), context);
@@ -867,23 +904,26 @@ export class Materializer {
   ): ((node: Element | null) => void) | undefined {
     const owner = context.owner;
     if (!owner || !isNonNullish(ref)) return undefined;
-    return (node) => {
-      this.interpreter.assignRef(
-        ref,
-        node ? this.hostNodeValue(node) : NULL_VALUE,
-        owner,
-        location,
-      );
-    };
-  }
-
-  private hostNodeValue(node: Element): StaticHostNodeValue {
-    let value = this.hostNodes.get(node);
-    if (!value) {
-      value = { kind: "host-node", tagName: node.tagName.toLowerCase() };
-      this.hostNodes.set(node, value);
+    const existing = this.hostRefs.get(ref);
+    if (existing) {
+      existing.owner = owner;
+      existing.location = location;
+      return existing.callback;
     }
-    return value;
+    const binding: HostRefBinding = {
+      owner,
+      location,
+      callback: (node) => {
+        this.interpreter.assignRef(
+          ref,
+          node ? nativeObjectValue(node) : NULL_VALUE,
+          binding.owner,
+          binding.location,
+        );
+      },
+    };
+    this.hostRefs.set(ref, binding);
+    return binding.callback;
   }
 
   private getPortalContainer(): Element {
@@ -910,6 +950,7 @@ export class Materializer {
     let proxy = this.classProxies.get(component);
     if (!proxy) {
       const classValue = toClassValue(component);
+      const beginLayoutPhase = (): void => this.beginLayoutPhase();
       const renderProxy = (
         input: ProxyInput,
         caught: StaticThrowError | null,
@@ -921,36 +962,52 @@ export class Materializer {
       class ClassProxy extends this.runtime.react.Component<ProxyProps, ErrorBoundaryState> {
         state: ErrorBoundaryState = { caught: null };
         private readonly instances = new Map<boolean, ProxyInstance>();
-        private commitWork: (() => void)[] = [];
+        private pendingWork: EffectPhaseWork[] = [];
+        private committedWork: EffectPhaseWork[] = [];
         private readonly host: ClassProxyHost = {
           getInstance: (caughtError) => {
             let instance = this.instances.get(caughtError);
             if (!instance) {
-              instance = createProxyInstance();
+              instance = createProxyInstance(this.props.input.context);
               this.instances.set(caughtError, instance);
             }
             return instance;
           },
           rerender: () => this.forceUpdate(),
-          queueCommitWork: (work) => this.commitWork.push(work),
+          queueCommitWork: (work) => this.pendingWork.push(work),
         };
 
         render(): ReactNode {
+          this.pendingWork = [];
           return renderProxy(this.props.input, this.state.caught, this.host);
         }
 
         componentDidMount(): void {
-          this.flushCommitWork();
+          this.mountCommittedWork();
         }
 
         componentDidUpdate(): void {
-          this.flushCommitWork();
+          this.mountCommittedWork();
         }
 
-        private flushCommitWork(): void {
-          const work = this.commitWork;
-          this.commitWork = [];
-          for (const run of work) run();
+        componentWillUnmount(): void {
+          for (const work of this.committedWork) {
+            work.unmount(true);
+            work.unmount(false);
+          }
+        }
+
+        /** Strict Mode calls `componentDidMount` again without a render, so the committed work repeats. */
+        private mountCommittedWork(): void {
+          if (this.pendingWork.length > 0) {
+            this.committedWork = this.pendingWork;
+            this.pendingWork = [];
+          }
+          for (const work of this.committedWork) {
+            beginLayoutPhase();
+            work.mount(true);
+            work.mount(false);
+          }
         }
       }
       class ErrorBoundaryProxy extends ClassProxy {
@@ -1097,6 +1154,7 @@ export class Materializer {
       },
       captured: (captured, name) => this.interpreter.captured(captured, name),
       markEscaped: (value) => this.interpreter.markEscaped(value),
+      queueMicrotask: (task) => this.interpreter.timers.queueMicrotask(task),
       setProperty: (object, key, value) => this.interpreter.assignOwnProperty(object, key, value),
       nameHint: null,
       templateArgumentNames: null,
@@ -1112,10 +1170,10 @@ export class Materializer {
   ): ReactNode {
     const { useRef, useState, useEffect, useLayoutEffect } = this.runtime.react;
     const instanceRef = useRef<ProxyInstance | null>(null);
-    instanceRef.current ??= createProxyInstance();
+    instanceRef.current ??= createProxyInstance(input.context);
     const [, setPass] = useState(0);
     const props = applyDefaultProps(component, input.props);
-    const { node, runEffects } = this.renderStateful(
+    const { node, mount, unmount } = this.renderStateful(
       input,
       component,
       instanceRef.current,
@@ -1136,17 +1194,46 @@ export class Materializer {
             ),
         ),
     );
-    useLayoutEffect(() => runEffects(true));
-    useEffect(() => runEffects(false));
+    useLayoutEffect(() => {
+      this.beginLayoutPhase();
+      mount(true);
+      return () => unmount(true);
+    });
+    useEffect(() => {
+      this.beginPassivePhase();
+      mount(false);
+      return () => unmount(false);
+    });
     return node;
+  }
+
+  private beginLayoutPhase(): void {
+    if (this.isPassivePhasePending) return;
+    this.isPassivePhasePending = true;
+    this.isSyncCommit = this.isSyncRenderScheduled;
+    this.isSyncRenderScheduled = false;
+  }
+
+  /**
+   * Passive effects run in a later task unless the commit was synchronous or
+   * its layout phase scheduled synchronous work (`flushSyncWorkOnAllRoots` at
+   * the end of `commitRoot` flushes them first); only in the later task have
+   * the microtasks queued while rendering, committing and running layout
+   * effects landed.
+   */
+  private beginPassivePhase(): void {
+    if (!this.isPassivePhasePending) return;
+    this.isPassivePhasePending = false;
+    if (this.isSyncCommit || this.isSyncRenderScheduled) return;
+    this.interpreter.timers.drainMicrotasks();
   }
 
   /**
    * One React render of a stateful proxy: the interpreter evaluates the
-   * component against the instance's hook frame, the host runs the static
-   * effects whose deps changed after the commit, and state updates queued
-   * outside the render are committed after the current React commit, as the
-   * real hooks would.
+   * component against the instance's hook frame, the host mounts and unmounts
+   * the static effects when React does the same to the proxy's own, and state
+   * updates queued outside the render are committed after the current React
+   * commit, as the real hooks would.
    */
   private renderStateful(
     input: ProxyInput,
@@ -1156,33 +1243,8 @@ export class Materializer {
     evaluate: (frame: HookFrame) => CompositeEvaluation,
   ): StatefulRender {
     const { frame } = instance;
-    beginHookPass(frame);
-    let evaluation = evaluate(frame);
-    for (
-      let renderPhaseUpdates = 0;
-      renderPhaseUpdates < MAX_RENDER_PHASE_UPDATES && commitHookPass(frame).length > 0;
-      renderPhaseUpdates++
-    ) {
-      restartHookPass(frame);
-      evaluation = evaluate(frame);
-    }
-    frame.isRendering = false;
-    const runEffects = (isLayout: boolean): void => {
-      if (!evaluation.componentContext) return;
-      for (const effect of effectsToRun(frame)) {
-        if (effect.isLayout !== isLayout) continue;
-        this.interpreter.callValue(
-          effect.callback,
-          [],
-          evaluation.componentContext,
-          input.location,
-        );
-      }
-    };
-    const commitPass = (): void => {
-      instance.isCommitScheduled = false;
-      const changedCells = commitHookPass(frame);
-      if (changedCells.length === 0) return;
+    const changedCells = commitHookPass(frame);
+    if (changedCells.length > 0) {
       instance.passCount++;
       if (instance.passCount >= MAX_RENDER_PASSES) {
         this.interpreter.report(
@@ -1195,22 +1257,52 @@ export class Materializer {
         );
         giveUpOnHookPass(frame, changedCells);
       }
-      rerender();
+    }
+    beginHookPass(frame);
+    let evaluation = evaluate(frame);
+    for (
+      let renderPhaseUpdates = 0;
+      renderPhaseUpdates < MAX_RENDER_PHASE_UPDATES && commitHookPass(frame).length > 0;
+      renderPhaseUpdates++
+    ) {
+      beginHookPass(frame);
+      evaluation = evaluate(frame);
+    }
+    frame.isRendering = false;
+    instance.isRenderedSinceCommit = true;
+    const withEffectCall = (run: (call: EffectCall) => void): void => {
+      const { componentContext } = evaluation;
+      if (!componentContext) return;
+      run((callback) => this.interpreter.callValue(callback, [], componentContext, input.location));
     };
-    // Updates from refs, effects and store listeners are flushed after the commit
-    // that raised them, as `flushSyncWorkOnAllRoots` does at the end of `commitRoot`;
-    // like `nestedUpdateCount`, only those chains count toward the limit, so a
-    // timer task starts a new one.
+    const mount = (isLayout: boolean): void =>
+      withEffectCall((call) => {
+        if (instance.isRenderedSinceCommit) runChangedEffects(frame, isLayout, call);
+        else mountAllEffects(frame, isLayout, call);
+        if (isLayout) return;
+        commitEffects(frame);
+        instance.isRenderedSinceCommit = false;
+      });
+    const unmount = (isLayout: boolean): void =>
+      withEffectCall((call) => {
+        if (instance.isRenderedSinceCommit) return;
+        if (isLayout) unmountClassInstance(frame, call);
+        unmountAllEffects(frame, isLayout, call);
+      });
+    // The update reaches React at once, which picks its lane from the phase that
+    // raised it: synchronous from the layout phase, default otherwise. Like
+    // `nestedUpdateCount`, only chains of such updates count toward the limit,
+    // so a timer task starts a new one.
     frame.requestRender = () => {
       this.interpreter.changeCount++;
       if (this.interpreter.timers.isFlushing) instance.passCount = 0;
-      if (instance.isCommitScheduled) return;
-      instance.isCommitScheduled = true;
-      queueMicrotask(commitPass);
+      if (this.isPassivePhasePending) this.isSyncRenderScheduled = true;
+      rerender();
     };
     return {
       node: this.finishRender(evaluation.rendered, evaluation.childContext, input),
-      runEffects,
+      mount,
+      unmount,
     };
   }
 
@@ -1230,7 +1322,7 @@ export class Materializer {
       caughtError: boolean,
       boundaryContext: MaterializeContext,
     ): ReactNode => {
-      const { node, runEffects } = this.renderStateful(
+      const { node, mount, unmount } = this.renderStateful(
         input,
         component,
         host.getInstance(caughtError),
@@ -1252,10 +1344,7 @@ export class Materializer {
               ),
           ),
       );
-      host.queueCommitWork(() => {
-        runEffects(true);
-        runEffects(false);
-      });
+      host.queueCommitWork({ mount, unmount });
       return node;
     };
     if (caught?.isMaybe) {

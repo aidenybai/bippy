@@ -10,7 +10,7 @@ import {
 import { JED_PACKAGES, jedValue } from "./jed.js";
 import { KEA_PACKAGES, keaValue } from "./kea.js";
 import { LINGUI_PACKAGES, linguiValue } from "./lingui.js";
-import { LODASH_PACKAGES, lodashValue } from "./lodash.js";
+import { LODASH_MODELED_EXPORTS, LODASH_PACKAGES, lodashValue } from "./lodash.js";
 import { NODE_FS_PACKAGES, nodeFsValue } from "./node-fs.js";
 import {
   REACT_INLINESVG_MODELED_EXPORTS,
@@ -53,7 +53,11 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
   { packages: JED_PACKAGES, getValue: jedValue },
   { packages: KEA_PACKAGES, getValue: keaValue },
   { packages: LINGUI_PACKAGES, getValue: linguiValue },
-  { packages: LODASH_PACKAGES, getValue: lodashValue },
+  {
+    packages: LODASH_PACKAGES,
+    getValue: lodashValue,
+    modeledExports: LODASH_MODELED_EXPORTS,
+  },
   { packages: NODE_FS_PACKAGES, getValue: nodeFsValue },
   {
     packages: REACT_INLINESVG_PACKAGES,

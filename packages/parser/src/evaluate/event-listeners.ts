@@ -1,4 +1,5 @@
 import type { StaticValue } from "../types.js";
+import { isWindowAlias } from "./browser-globals.js";
 import type { Interpreter } from "./interpreter.js";
 import { UNDEFINED_VALUE } from "./values.js";
 
@@ -52,7 +53,17 @@ const USER_GESTURE_EVENTS = new Set([
 /** Events the browser dispatches only when the page is being left, after any snapshot. */
 const PAGE_UNLOAD_EVENTS = new Set(["pagehide", "beforeunload", "unload"]);
 
+/** The capture viewport never changes, so `window` never fires these before the snapshot. */
+const VIEWPORT_EVENTS = new Set(["resize", "orientationchange"]);
+
 const EVENT_TARGET_GLOBALS = new Set(["window", "globalThis", "document", "MediaQueryList"]);
+
+const getNativeEventTarget = (receiver: StaticValue): EventTarget | null =>
+  receiver.kind === "native-object" &&
+  typeof EventTarget !== "undefined" &&
+  receiver.value instanceof EventTarget
+    ? receiver.value
+    : null;
 
 export const EVENT_LISTENER_METHODS = new Set([
   "addEventListener",
@@ -62,13 +73,21 @@ export const EVENT_LISTENER_METHODS = new Set([
 ]);
 
 export const isEventTarget = (receiver: StaticValue): boolean =>
-  receiver.kind === "host-node" ||
+  getNativeEventTarget(receiver) !== null ||
   (receiver.kind === "global" && EVENT_TARGET_GLOBALS.has(receiver.name));
 
-const isEventBeforeCapture = (type: StaticValue | undefined): boolean =>
-  type?.kind !== "primitive" ||
-  typeof type.value !== "string" ||
-  !(USER_GESTURE_EVENTS.has(type.value) || PAGE_UNLOAD_EVENTS.has(type.value));
+const isEventBeforeCapture = (receiver: StaticValue, type: StaticValue | undefined): boolean => {
+  if (receiver.kind === "global" && receiver.name === "MediaQueryList") return false;
+  if (type?.kind !== "primitive" || typeof type.value !== "string") return true;
+  if (
+    receiver.kind === "global" &&
+    isWindowAlias(receiver.name) &&
+    VIEWPORT_EVENTS.has(type.value)
+  ) {
+    return false;
+  }
+  return !(USER_GESTURE_EVENTS.has(type.value) || PAGE_UNLOAD_EVENTS.has(type.value));
+};
 
 /** Listener registration on `window`/`document`/DOM nodes/`MediaQueryList`; only listeners that may fire before capture escape. */
 export const callEventTargetMethod = (
@@ -80,8 +99,7 @@ export const callEventTargetMethod = (
   if (!EVENT_LISTENER_METHODS.has(name) || !isEventTarget(receiver)) return null;
   const [type, listener] = args;
   const isRegistration = name === "addEventListener" || name === "addListener";
-  const isStaticViewport = receiver.kind === "global" && receiver.name === "MediaQueryList";
-  if (isRegistration && listener && isEventBeforeCapture(type) && !isStaticViewport) {
+  if (isRegistration && listener && isEventBeforeCapture(receiver, type)) {
     interpreter.markEscaped(listener);
   }
   return UNDEFINED_VALUE;

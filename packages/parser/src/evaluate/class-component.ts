@@ -15,6 +15,7 @@ import type { EvaluationContext } from "./context.js";
 import {
   applyPendingState,
   createHookFrame,
+  type EffectCall,
   type HookFrame,
   nextStateCell,
   queueStateUpdate,
@@ -182,6 +183,13 @@ export const getSuperObject = (
 };
 
 const classPrototypes = new WeakMap<StaticClassValue, StaticObjectValue>();
+const prototypeOwners = new WeakMap<StaticObjectValue, StaticClassValue>();
+
+/** `Object.getPrototypeOf(Base.prototype)` is `Object.prototype` when `Base` has no `extends` clause. */
+export const isBaseClassPrototype = (value: StaticObjectValue): boolean => {
+  const owner = prototypeOwners.get(value);
+  return owner !== undefined && owner.body.superValue === null;
+};
 
 /**
  * `Class.prototype`: the chain's methods and accessors with the prototype as
@@ -198,6 +206,7 @@ export const getClassPrototypeObject = (
   const prototype = objectFromRecord({ constructor: classValue });
   if (superValue?.kind === "class") prototype.constructedBy = superValue;
   classPrototypes.set(classValue, prototype);
+  prototypeOwners.set(prototype, classValue);
   const seen = new Set<string>();
   for (const current of collectClassChain(classValue)) {
     const methodContext = methodContextFor(current, context, prototype);
@@ -302,7 +311,7 @@ const mountClassInstance = (
   });
   initializeInstance(interpreter, classValue, instance, [props], context);
   const initialState = getObjectProperty(instance, "state");
-  const stateCell = nextStateCell(frame, `${classValue.name ?? "class"} state`, initialState);
+  const stateCell = nextStateCell(frame, `${classValue.name ?? "class"} state`, () => initialState);
   const record: ClassInstanceRecord = {
     instance,
     stateCell,
@@ -374,6 +383,19 @@ const lifecycleEffect = (
 });
 
 /**
+ * `safelyCallComponentWillUnmount` for the instance rendered against `frame`;
+ * the next lifecycle effect then mounts it again, as after a Strict Mode
+ * `disappearLayoutEffects`/`reappearLayoutEffects` pair.
+ */
+export const unmountClassInstance = (frame: HookFrame, call: EffectCall): void => {
+  const record = classInstances.get(frame);
+  if (!record?.isMounted) return;
+  record.isMounted = false;
+  const willUnmount = getInstanceMethod(record.instance, "componentWillUnmount");
+  if (willUnmount) call(willUnmount);
+};
+
+/**
  * One render of a class component as `updateClassComponent` performs it: the
  * instance is created once per hook frame and reused, `getDerivedStateFromProps`
  * (or, without it, `componentWillMount` on mount) adjusts the state before
@@ -392,7 +414,8 @@ export const renderClassComponent = (
   const frame = context.hooks ?? createHookFrame();
   let record = classInstances.get(frame);
   if (record) {
-    nextStateCell(frame, record.stateCell.name, record.stateCell.initial);
+    const { stateCell } = record;
+    nextStateCell(frame, stateCell.name, () => stateCell.initial);
   } else {
     record = mountClassInstance(interpreter, classValue, props, context, frame);
     classInstances.set(frame, record);
@@ -435,6 +458,7 @@ export const renderClassComponent = (
     isLayout: true,
     callback: lifecycleEffect(record, props, state),
     deps: null,
+    cleanup: null,
   });
   const render = getInstanceMethod(instance, "render");
   if (!render) {

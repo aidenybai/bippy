@@ -5,7 +5,7 @@ import type {
   StaticObjectValue,
   StaticValue,
 } from "../types.js";
-import { branchValue, joinObjectEntries } from "./values.js";
+import { branchValue, getAllocationCount, joinObjectEntries } from "./values.js";
 
 export type MutableHeapValue = StaticObjectValue | StaticListValue;
 
@@ -41,15 +41,20 @@ const getAgreedState = <Item>(paths: Item[][]): Item[] | null =>
  * their module's value table, so both would keep the mutations of whichever
  * path ran last. The journal snapshots every pre-existing value a path mutates
  * so the next path starts from the fork's entry state, and the join leaves
- * each mutated value with one alternative per path.
+ * each mutated value with one alternative per path. Values allocated after the
+ * fork began exist on one path only and are left alone.
  */
 export class HeapJournal {
   private readonly objects = new Map<StaticObjectValue, StaticObjectEntry[]>();
   private readonly lists = new Map<StaticListValue, StaticValue[]>();
   private readonly bindings: ModuleBindingStates = new Map();
   private readonly paths: HeapPath[] = [];
+  private readonly entryAllocation = getAllocationCount();
 
-  constructor(readonly entryEpoch: number) {}
+  /** Whether `target` predates the fork, so its mutations must be journaled. */
+  isPreexisting(target: MutableHeapValue): boolean {
+    return (target.allocation ?? 0) <= this.entryAllocation;
+  }
 
   record(target: MutableHeapValue): void {
     if (target.kind === "object") {

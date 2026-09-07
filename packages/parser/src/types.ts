@@ -257,6 +257,8 @@ export interface StubRenderTools {
   captured: (captured: CapturedValue, name: string) => StaticValue;
   /** Records that `value` reached code the analysis cannot see, so its later mutations are uncertain. */
   markEscaped: (value: StaticValue) => void;
+  /** Runs `task` once the current task's synchronous work ends, as `queueMicrotask` would. */
+  queueMicrotask: (task: () => void) => void;
   /** Assigns an own property of a modeled object, undone on the other paths of an enclosing fork like any heap write. */
   setProperty: (object: StaticObjectValue, key: string, value: StaticValue) => void;
   /** Binding the call's result is assigned to, as build-time labelers (Emotion's babel/swc plugin) see it. */
@@ -406,6 +408,8 @@ export interface CapturedPageState {
   name?: string;
   /** `history.state` before the page's first script ran; absent in captures taken before it was recorded. */
   historyState?: CapturedValue;
+  /** Every name `in window` before the page's first script ran (feature detection); absent in older captures. */
+  windowKeys?: string[];
   localStorage: Record<string, string>;
   sessionStorage: Record<string, string>;
 }
@@ -455,11 +459,15 @@ export type StaticObjectEntry =
 export interface StaticObjectValue {
   kind: "object";
   entries: StaticObjectEntry[];
-  /** Identifies the allocation; values constructed without one have undecidable identity. */
-  allocation?: symbol;
+  /** Allocation ordinal (see `getAllocationCount`); values constructed without one have undecidable identity. */
+  allocation?: number;
   constructedBy?: StaticClassValue;
   /** Created with `Object.create(null)`: no inherited `constructor` or `Object.prototype` methods. */
   hasNullPrototype?: boolean;
+  /** The object `Object.create(object)` or `new` on a constructor function inherits from. */
+  prototype?: StaticObjectValue;
+  /** Passed to `Object.freeze`, so writes no longer land and `Object.isFrozen` answers true. */
+  isFrozen?: boolean;
 }
 
 /**
@@ -520,9 +528,10 @@ export interface StaticUnknownPrimitiveValue {
 export interface StaticListValue {
   kind: "list";
   items: StaticValue[];
-  allocation?: symbol;
+  allocation?: number;
   /** Named properties an array carries besides its indices, like `index` on a match. */
   properties?: ReadonlyMap<string, StaticValue>;
+  isFrozen?: boolean;
 }
 
 export interface StaticRepeatValue {
@@ -577,10 +586,15 @@ export interface StaticRegExpValue {
   lastIndex: number;
 }
 
-/** A `Symbol.for(key)` registry symbol; unregistered symbols stay unknown. */
+/**
+ * A symbol, identified by its `Symbol.for` registry key, its well-known name
+ * (`Symbol.iterator`), or a per-allocation id for `Symbol(description)`.
+ */
 export interface StaticSymbolValue {
   kind: "symbol";
   key: string;
+  /** Set only for unregistered symbols, whose `key` is an allocation id rather than a name. */
+  description?: string;
 }
 
 export interface StaticComponentReferenceValue {
@@ -620,13 +634,12 @@ export interface StaticGlobalValue {
   name: string;
 }
 
-/** A DOM node handed to a ref once React committed the host element; one value per node so identity comparisons hold. */
-export interface StaticHostNodeValue {
-  kind: "host-node";
-  tagName: string;
-}
-
-/** A `Date` (or similar immutable-by-convention instance) produced by native code from wholly known inputs; its pure methods run natively. */
+/**
+ * An object native code owns: a `Date` built from known parts, or a node,
+ * selection or range of the happy-dom document React renders into. Its members
+ * run natively once their arguments are known; one value per object so identity
+ * comparisons hold.
+ */
 export interface StaticNativeObjectValue {
   kind: "native-object";
   value: object;
@@ -646,11 +659,6 @@ export interface StaticUnknownValue {
   thrown?: StaticValue;
 }
 
-/**
- * A function modeled by the analyzer itself (framework hooks, router
- * factories). `call` receives the statically evaluated arguments and the same
- * context tools a stub component gets, so modeled hooks can read providers.
- */
 /** `new Proxy(target, handler)`: traps run through the interpreter on access, call, and construction. */
 export interface StaticProxyValue {
   kind: "proxy";
@@ -658,6 +666,11 @@ export interface StaticProxyValue {
   handler: StaticObjectValue;
 }
 
+/**
+ * A function modeled by the analyzer itself (framework hooks, router
+ * factories). `call` receives the statically evaluated arguments and the same
+ * context tools a stub component gets, so modeled hooks can read providers.
+ */
 export interface StaticNativeFunctionValue {
   kind: "native-function";
   name: string;
@@ -685,7 +698,6 @@ export type StaticValue =
   | StaticExternalValue
   | StaticNamespaceValue
   | StaticGlobalValue
-  | StaticHostNodeValue
   | StaticNativeObjectValue
   | StaticMethodValue
   | StaticNativeFunctionValue

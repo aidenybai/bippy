@@ -40,10 +40,20 @@ const readStorageArea = (area: Storage): Record<string, string> => {
 
 const initialHistoryState = toCapturedValue(history.state) ?? null;
 
+const readWindowKeys = (): string[] => {
+  const names = new Set<string>();
+  for (let object: unknown = globalThis; object; object = Object.getPrototypeOf(object)) {
+    for (const name of Object.getOwnPropertyNames(object)) names.add(name);
+  }
+  return [...names];
+};
+const initialWindowKeys = readWindowKeys();
+
 const readPageState = (): CapturedPageState => ({
   cookie: document.cookie,
   name: window.name,
   historyState: initialHistoryState,
+  windowKeys: initialWindowKeys,
   localStorage: readStorageArea(localStorage),
   sessionStorage: readStorageArea(sessionStorage),
 });

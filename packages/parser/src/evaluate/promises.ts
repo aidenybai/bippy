@@ -7,7 +7,7 @@ import type {
 } from "../types.js";
 import { listValue, objectValue, thrownValue, UNDEFINED_VALUE, unknownValue } from "./values.js";
 
-export type PromiseTools = Pick<StubRenderTools, "call" | "markEscaped">;
+export type PromiseTools = Pick<StubRenderTools, "call" | "markEscaped" | "queueMicrotask">;
 
 export interface PromiseReaction {
   run: (outcome: StaticValue, tools: PromiseTools) => void;
@@ -16,9 +16,10 @@ export interface PromiseReaction {
 
 /**
  * A promise the analysis saw created. Its outcome is a value, a rejection being
- * a thrown value; `then`/`await` read through to it once settled. Reactions on
- * a pending promise wait until `resolve`/`reject` runs, and once either flows
- * into code the analysis does not follow the promise may settle at any time.
+ * a thrown value; `then`/`await` read through to it once settled. Reactions run
+ * as microtasks once the promise settles, or wait until `resolve`/`reject`
+ * runs, and once either flows into code the analysis does not follow the
+ * promise may settle at any time.
  */
 export interface ModeledPromise {
   value: StaticObjectValue;
@@ -56,10 +57,20 @@ export const resolvedPromiseValue = (outcome: StaticValue): StaticValue => {
   return promise.value;
 };
 
-/** `await value`: the outcome of a settled promise; unknown while it is pending. */
-export const awaitedValue = (value: StaticValue, location: SourceLocation | null): StaticValue => {
+/**
+ * `await value`: the outcome of a settled promise; unknown while it is pending.
+ * The continuation of an `await` is itself a microtask, so a promise that only
+ * awaits queued reactions (`await fetchThing().then(transform)`) settles once
+ * the queue drains, which happens before the continuation would run.
+ */
+export const awaitedValue = (
+  value: StaticValue,
+  location: SourceLocation | null,
+  drainMicrotasks: () => void,
+): StaticValue => {
   const promise = getModeledPromise(value);
   if (!promise) return value;
+  if (!promise.settled && !promise.isEscaped) drainMicrotasks();
   return promise.settled ?? unknownValue("promise settled asynchronously", location);
 };
 
@@ -84,7 +95,9 @@ const settlePromise = (
     return;
   }
   promise.settled = outcome;
-  for (const reaction of promise.reactions.splice(0)) reaction.run(outcome, tools);
+  for (const reaction of promise.reactions.splice(0)) {
+    tools.queueMicrotask(() => reaction.run(outcome, tools));
+  }
 };
 
 const forwardTo = (target: ModeledPromise): PromiseReaction => ({
@@ -97,7 +110,8 @@ const subscribe = (
   reaction: PromiseReaction,
   tools: PromiseTools,
 ): void => {
-  if (promise.settled) reaction.run(promise.settled, tools);
+  const settled = promise.settled;
+  if (settled) tools.queueMicrotask(() => reaction.run(settled, tools));
   else if (promise.isEscaped) reaction.escape(tools.markEscaped);
   else promise.reactions.push(reaction);
 };

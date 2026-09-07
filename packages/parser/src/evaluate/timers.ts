@@ -9,6 +9,9 @@ import { primitiveValue, unknownPrimitiveValue } from "./values.js";
  * Timer callbacks are queued as tasks and flushed between settle rounds of the
  * materialized mount, so the code following `setTimeout` (including the
  * assignment of the returned handle) runs first, as it does in the event loop.
+ * Microtasks (`queueMicrotask`, promise reactions) run once the current task's
+ * synchronous work ends: the host drains them before each timer task and at
+ * the points of a React commit where the event loop would run them.
  * An interval's ticks are evaluated at that quiescent point, where any clock
  * reading is later than every earlier reading by an unbounded amount, until
  * the interval clears itself or a tick changes nothing. Readings taken in
@@ -17,6 +20,7 @@ import { primitiveValue, unknownPrimitiveValue } from "./values.js";
  */
 export class TimerQueue {
   private tasks: (() => void)[] = [];
+  private microtasks: (() => void)[] = [];
   private readonly clearedHandles = new WeakSet<StaticValue>();
   private clockSequence = 0;
   private clockTask = 0;
@@ -41,15 +45,30 @@ export class TimerQueue {
     return this.clearedHandles.has(handle);
   }
 
+  queueMicrotask(task: () => void): void {
+    this.microtasks.push(task);
+  }
+
+  hasMicrotasks(): boolean {
+    return this.microtasks.length > 0;
+  }
+
+  /** Runs microtasks until none remain, including those they queue. */
+  drainMicrotasks(): void {
+    for (let task = this.microtasks.shift(); task; task = this.microtasks.shift()) task();
+  }
+
   /** Runs the tasks queued so far; tasks they queue wait for the next round. */
   flush(): void {
     const tasks = this.tasks;
     this.tasks = [];
     this.isFlushing = true;
     try {
+      this.drainMicrotasks();
       for (const task of tasks) {
         this.clockTask += 1;
         task();
+        this.drainMicrotasks();
       }
     } finally {
       this.isFlushing = false;

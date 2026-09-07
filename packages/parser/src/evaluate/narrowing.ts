@@ -70,10 +70,50 @@ const negate = (narrowing: TestNarrowing | null): TestNarrowing | null =>
     whenFalse: narrowing.whenTrue,
   };
 
+const intersect = (
+  left: StaticValue | null,
+  right: StaticValue | null,
+  reason: string,
+): StaticValue | null => {
+  if (left === null || right === null) return null;
+  const rightAlternatives = alternativesOf(right);
+  const shared = alternativesOf(left).filter((alternative) =>
+    rightAlternatives.includes(alternative),
+  );
+  return shared.length === 0 ? null : branchValue(shared, reason);
+};
+
+/**
+ * `a || b` fails only when both operands fail and `a && b` holds only when both
+ * hold, so that side combines the operands' narrowings; the other side keeps
+ * the binding as it was.
+ */
+const narrowLogical = (
+  operator: "||" | "&&",
+  left: TestNarrowing | null,
+  right: TestNarrowing | null,
+  lookup: (name: string) => StaticValue | undefined,
+): TestNarrowing | null => {
+  const primary = left ?? right;
+  if (!primary) return null;
+  const original = lookup(primary.name);
+  if (!original) return null;
+  const isOr = operator === "||";
+  const sideOf = (narrowing: TestNarrowing): StaticValue | null =>
+    isOr ? narrowing.whenFalse : narrowing.whenTrue;
+  const combined =
+    left && right && left.name === right.name
+      ? intersect(sideOf(left), sideOf(right), `${primary.name} narrowed by ${operator}`)
+      : sideOf(primary);
+  return isOr
+    ? { name: primary.name, whenTrue: original, whenFalse: combined }
+    : { name: primary.name, whenTrue: combined, whenFalse: original };
+};
+
 /**
  * Derives what a branch-valued identifier must be on each side of a test.
- * Handles `x`, `!x`, `"key" in x`, `x == null` / `x === undefined` (and their negations),
- * mirroring the narrowing TypeScript applies to the same expressions.
+ * Handles `x`, `!x`, `"key" in x`, `x == null` / `x === undefined` (and their negations)
+ * and `||` / `&&` of those, mirroring the narrowing TypeScript applies to the same expressions.
  */
 export const narrowTest = (
   test: Expression,
@@ -86,6 +126,15 @@ export const narrowTest = (
       return test.operator === "!" ? negate(narrowTest(test.argument, lookup)) : null;
     case "ParenthesizedExpression":
       return narrowTest(test.expression, lookup);
+    case "LogicalExpression":
+      return test.operator === "??"
+        ? null
+        : narrowLogical(
+            test.operator,
+            narrowTest(test.left, lookup),
+            narrowTest(test.right, lookup),
+            lookup,
+          );
     case "BinaryExpression": {
       if (test.operator === "in") {
         if (test.right.type !== "Identifier" || test.left.type !== "Literal") return null;

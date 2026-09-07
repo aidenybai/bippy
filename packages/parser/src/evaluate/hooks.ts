@@ -1,5 +1,5 @@
 import type { StaticNativeFunctionValue, StaticValue } from "../types.js";
-import { areValuesEquivalent, branchValue, unknownValue } from "./values.js";
+import { areValuesEquivalent, branchValue, compareIdentity, unknownValue } from "./values.js";
 
 export interface StateCell {
   name: string;
@@ -19,6 +19,11 @@ export interface EffectRecord {
   isLayout: boolean;
   callback: StaticValue;
   deps: StaticValue | null;
+  cleanup: StaticValue | null;
+}
+
+export interface EffectCall {
+  (callback: StaticValue): StaticValue;
 }
 
 /**
@@ -42,10 +47,11 @@ export interface HookFrame {
   isRendering: boolean;
   isDeferred: boolean;
   isFrozen: boolean;
+  isStrictMode: boolean;
   requestRender: (() => void) | null;
 }
 
-export const createHookFrame = (): HookFrame => ({
+export const createHookFrame = (isStrictMode = false): HookFrame => ({
   cells: [],
   cursor: 0,
   memoCells: [],
@@ -55,26 +61,44 @@ export const createHookFrame = (): HookFrame => ({
   isRendering: false,
   isDeferred: false,
   isFrozen: false,
+  isStrictMode,
   requestRender: null,
 });
 
-export const beginHookPass = (frame: HookFrame): void => {
-  frame.previousEffects = frame.effects;
-  restartHookPass(frame);
+/**
+ * Runs a hook's user function (`useState`/`useReducer` initializer, `useMemo`
+ * factory) as `shouldDoubleInvokeUserFnsInHooksDEV` does: under Strict Mode the
+ * function runs twice and the first result is kept.
+ */
+export const invokeHookFactory = (
+  frame: HookFrame | null,
+  compute: () => StaticValue,
+): StaticValue => {
+  const value = compute();
+  if (frame?.isStrictMode) compute();
+  return value;
 };
 
-/** A render-phase update re-runs the body against the same committed effects, as `renderWithHooksAgain` does. */
-export const restartHookPass = (frame: HookFrame): void => {
+/**
+ * Starts a render pass; a render-phase update or a Strict Mode double render
+ * re-runs the body against the same committed effects, as `renderWithHooksAgain` does.
+ */
+export const beginHookPass = (frame: HookFrame): void => {
   frame.cursor = 0;
   frame.memoCursor = 0;
   frame.effects = [];
   frame.isRendering = true;
 };
 
-export const nextStateCell = (frame: HookFrame, name: string, initial: StaticValue): StateCell => {
+export const nextStateCell = (
+  frame: HookFrame,
+  name: string,
+  computeInitial: () => StaticValue,
+): StateCell => {
   const index = frame.cursor++;
   const existing = frame.cells[index];
   if (existing) return existing;
+  const initial = computeInitial();
   const cell: StateCell = {
     name,
     initial,
@@ -105,12 +129,16 @@ export const nextMemoCell = (
   return cell.value;
 };
 
+/** `Object.is` on hook values: decided identity, else values analysis cannot tell apart count as the same. */
+const isSameHookValue = (left: StaticValue, right: StaticValue): boolean =>
+  compareIdentity(left, right) ?? areValuesEquivalent(left, right);
+
 /** Mirrors `dispatchSetState`: with nothing pending, an update that leaves the cell unchanged is dropped eagerly. */
 export const queueStateUpdate = (frame: HookFrame, cell: StateCell, value: StaticValue): void => {
   if (frame.isDeferred) {
     cell.isEscaped = true;
   } else {
-    if (cell.next === null && areValuesEquivalent(value, cell.current)) return;
+    if (cell.next === null && isSameHookValue(value, cell.current)) return;
     cell.next = value;
   }
   if (!frame.isRendering) frame.requestRender?.();
@@ -127,7 +155,7 @@ export const escapedStateValue = (cell: StateCell): StaticValue =>
 export const applyPendingState = (cell: StateCell, isFrozen = false): boolean => {
   const next = cell.isEscaped ? escapedStateValue(cell) : cell.next;
   cell.next = null;
-  if (next === null || isFrozen || areValuesEquivalent(next, cell.current)) return false;
+  if (next === null || isFrozen || isSameHookValue(next, cell.current)) return false;
   cell.current = next;
   return true;
 };
@@ -149,10 +177,58 @@ const areDepsEqual = (left: StaticValue | null, right: StaticValue | null): bool
   left.kind === "list" &&
   right.kind === "list" &&
   left.items.length === right.items.length &&
-  left.items.every((item, index) => areValuesEquivalent(item, right.items[index]));
+  left.items.every((item, index) => isSameHookValue(item, right.items[index]));
 
-/** Effects whose dependency list is unchanged from the previous pass are skipped, as in `updateEffectImpl`. */
-export const effectsToRun = (frame: HookFrame): EffectRecord[] =>
-  frame.effects.filter(
-    (effect, index) => !areDepsEqual(effect.deps, frame.previousEffects[index]?.deps ?? null),
-  );
+const CALLABLE_CLEANUP_KINDS = new Set<StaticValue["kind"]>([
+  "function",
+  "native-function",
+  "branch",
+  "unknown",
+]);
+
+/** `commitHookEffectListUnmount` for one effect; React only warns about a non-function return. */
+const runCleanup = (effect: EffectRecord | undefined, call: EffectCall): void => {
+  if (effect?.cleanup && CALLABLE_CLEANUP_KINDS.has(effect.cleanup.kind)) call(effect.cleanup);
+};
+
+/**
+ * The commit's effects of one phase: those whose dependency list changed since
+ * the last commit clean up and run again, the others keep their cleanup, as
+ * `updateEffectImpl` decides. Cleanups run before any effect, as React unmounts
+ * the whole phase before mounting it.
+ */
+export const runChangedEffects = (frame: HookFrame, isLayout: boolean, call: EffectCall): void => {
+  const changed: EffectRecord[] = [];
+  frame.effects.forEach((effect, index) => {
+    if (effect.isLayout !== isLayout) return;
+    const previous = frame.previousEffects[index];
+    if (previous && areDepsEqual(effect.deps, previous.deps)) {
+      effect.cleanup = previous.cleanup;
+      return;
+    }
+    runCleanup(previous, call);
+    changed.push(effect);
+  });
+  for (const effect of changed) effect.cleanup = call(effect.callback);
+};
+
+/** `reappearLayoutEffects`/`reconnectPassiveEffects`: every effect of the phase mounts again. */
+export const mountAllEffects = (frame: HookFrame, isLayout: boolean, call: EffectCall): void => {
+  for (const effect of frame.effects) {
+    if (effect.isLayout === isLayout) effect.cleanup = call(effect.callback);
+  }
+};
+
+/** `disappearLayoutEffects`/`disconnectPassiveEffects` and deletion: every cleanup of the phase runs. */
+export const unmountAllEffects = (frame: HookFrame, isLayout: boolean, call: EffectCall): void => {
+  for (const effect of frame.effects) {
+    if (effect.isLayout !== isLayout) continue;
+    runCleanup(effect, call);
+    effect.cleanup = null;
+  }
+};
+
+/** The effects of the pass that reached the commit become the baseline later passes diff against. */
+export const commitEffects = (frame: HookFrame): void => {
+  frame.previousEffects = frame.effects;
+};

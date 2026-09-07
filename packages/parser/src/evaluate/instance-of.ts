@@ -1,7 +1,8 @@
-import type { StaticClassValue, StaticValue } from "../types.js";
+import type { StaticClassValue, StaticFunctionValue, StaticValue } from "../types.js";
 import { getAbortWitness } from "./abort-controller.js";
 import { getCollectionKind } from "./collections.js";
 import { getErrorWitness } from "./errors.js";
+import { isNativeInstanceOf } from "./native-values.js";
 import { getModeledPromise } from "./promises.js";
 import { isSearchParamsValue } from "./url-search-params.js";
 import { isUrlValue } from "./url.js";
@@ -149,12 +150,27 @@ const isInstanceOfClass = (left: StaticValue, classValue: StaticClassValue): boo
   return null;
 };
 
+/** Whether `fn.prototype` is on `left`'s explicit prototype chain; null once the chain reaches an object the analysis did not create. */
+const isInstanceOfFunction = (left: StaticValue, fn: StaticFunctionValue): boolean | null => {
+  if (isPrimitiveLike(left)) return false;
+  if (left.kind !== "object") return getPrototypeWitness(left) === null ? null : false;
+  const prototype = fn.properties.get("prototype");
+  let current = left;
+  while (current.prototype) {
+    if (current.prototype === prototype) return true;
+    current = current.prototype;
+  }
+  return current.constructedBy || getPrototypeWitness(current) === null ? null : false;
+};
+
 /** `left instanceof right` for a built-in or analyzed constructor; null when it depends on values the analysis cannot see. */
 export const isInstanceOf = (left: StaticValue, right: StaticValue): boolean | null => {
   if (right.kind === "class") return isInstanceOfClass(left, right);
+  if (right.kind === "function") return isInstanceOfFunction(left, right);
   if (right.kind !== "global") return null;
   const constructor = BUILTIN_CONSTRUCTORS[right.name];
-  if (!constructor) return null;
+  if (!constructor)
+    return left.kind === "native-object" ? isNativeInstanceOf(left, right.name) : null;
   if (isPrimitiveLike(left)) return false;
   const witness = getPrototypeWitness(left);
   return witness === null ? null : witness instanceof constructor;

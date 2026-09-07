@@ -26,7 +26,9 @@ import {
   isEnvironmentObject,
 } from "./bundler-globals.js";
 import { createAbortController } from "./abort-controller.js";
+import { createDomObserver, isDomObserverName } from "./dom-observers.js";
 import { createErrorValue, ERROR_CONSTRUCTOR_NAMES, isErrorConstructorName } from "./errors.js";
+import { nativeFunction } from "../frameworks/stubs.js";
 import { constructNativeDate } from "./native-values.js";
 import { callEventTargetMethod } from "./event-listeners.js";
 import { hasProperty, isIntrinsicFunctionKey } from "./has-property.js";
@@ -50,11 +52,12 @@ import {
 import { callShapedPrimitiveMethod, rangedNumberValue } from "./primitive-shapes.js";
 import { createSearchParamsValue } from "./url-search-params.js";
 import { createUrlValue } from "./url.js";
-import { getClassPrototypeObject } from "./class-component.js";
+import { getClassPrototypeObject, isBaseClassPrototype } from "./class-component.js";
 import type { Interpreter } from "./interpreter.js";
 import {
   accessorEntry,
   branchValue,
+  createSymbolValue,
   describeValue,
   FALSE_VALUE,
   getClassPrototype,
@@ -117,6 +120,7 @@ export const isModeledOpaqueMethodName = (name: string): boolean =>
 
 const GLOBAL_NAMES = new Set([
   "Object",
+  "Function",
   "Array",
   "Math",
   "JSON",
@@ -175,6 +179,10 @@ const GLOBAL_NAMES = new Set([
   "Blob",
   "AbortController",
   "AbortSignal",
+  "MutationObserver",
+  "ResizeObserver",
+  "IntersectionObserver",
+  "PerformanceObserver",
   "Event",
   "EventTarget",
   "TextEncoder",
@@ -269,8 +277,51 @@ const BROWSER_GLOBALS = new Set([
   "sessionStorage",
   "history",
 ]);
+/** Function-valued globals every rendering environment (browser or Node) provides. */
+const UNIVERSAL_FUNCTION_GLOBALS = new Set([
+  "parseInt",
+  "parseFloat",
+  "isNaN",
+  "isFinite",
+  "encodeURIComponent",
+  "decodeURIComponent",
+  "encodeURI",
+  "decodeURI",
+  "setTimeout",
+  "clearTimeout",
+  "setInterval",
+  "clearInterval",
+  "queueMicrotask",
+  "structuredClone",
+  "fetch",
+  "URL",
+  "URLSearchParams",
+  "Headers",
+  "Request",
+  "Response",
+  "FormData",
+  "Blob",
+  "AbortController",
+  "AbortSignal",
+  "Event",
+  "EventTarget",
+  "TextEncoder",
+  "TextDecoder",
+  "ArrayBuffer",
+  "DataView",
+  "PerformanceObserver",
+]);
+/** Function-valued globals only browsers provide. */
+const BROWSER_FUNCTION_GLOBALS = new Set([
+  "requestAnimationFrame",
+  "cancelAnimationFrame",
+  "MutationObserver",
+  "ResizeObserver",
+  "IntersectionObserver",
+]);
 const CONSTRUCTOR_GLOBALS = new Set([
   "Object",
+  "Function",
   "Array",
   "String",
   "Number",
@@ -293,9 +344,15 @@ export const getGlobalTypeof = (
   name: string,
   environment: RenderEnvironment | null,
 ): string | null => {
+  if (name.endsWith(".prototype") && CONSTRUCTOR_GLOBALS.has(name.slice(0, -".prototype".length)))
+    return name === "Function.prototype" ? "function" : "object";
   if (name.includes(".")) return null;
   if (BROWSER_GLOBALS.has(name)) return environment === "server" ? "undefined" : "object";
-  if (CONSTRUCTOR_GLOBALS.has(name)) return "function";
+  if (BROWSER_FUNCTION_GLOBALS.has(name))
+    return environment === "server" ? "undefined" : "function";
+  if (CONSTRUCTOR_GLOBALS.has(name) || UNIVERSAL_FUNCTION_GLOBALS.has(name)) return "function";
+  if (name === "performance") return "object";
+  if (name === "Infinity" || name === "NaN") return "number";
   if (name === "Math" || name === "JSON" || name === "Intl" || name === "Reflect") return "object";
   if (name === "globalThis" || name === "console" || name === "module") return "object";
   return null;
@@ -361,7 +418,7 @@ export const getTypeofValue = (
     }
     case "proxy":
       return getTypeofValue(value.target, environment);
-    case "host-node":
+    case "native-object":
       return primitiveValue("object");
     case "symbol":
       return primitiveValue("symbol");
@@ -408,6 +465,8 @@ export const getBuiltinGlobal = (
     if (constant === "E") return primitiveValue(Math.E);
   }
   const root = name.split(".")[0];
+  if (name === `${root}.prototype.constructor` && CONSTRUCTOR_GLOBALS.has(root))
+    return { kind: "global", name: root };
   if (!GLOBAL_NAMES.has(root)) {
     return root === name && isWindowMember(name)
       ? getBrowserGlobalMember("window", name, getBuiltinGlobal)
@@ -646,6 +705,8 @@ const callGlobal = (
   if (isErrorConstructorName(name)) return createErrorValue(name, args, location);
   const [first, second] = args;
   if (isConstructor && isTypedArrayName(name)) return constructTypedArray(name, first, location);
+  if (isConstructor && isDomObserverName(name))
+    return createDomObserver(interpreter, name, first, location);
   switch (name) {
     case "Date": {
       const date = isConstructor ? constructNativeDate(args) : null;
@@ -692,6 +753,13 @@ const callGlobal = (
         : unknownValue("Proxy without a static handler", location);
     case "Promise":
       return createPromiseValue(first, promiseTools(interpreter, context, location), location);
+    case "Symbol":
+      if (isConstructor) break;
+      if (!first || (first.kind === "primitive" && first.value === undefined))
+        return createSymbolValue(undefined);
+      return first.kind === "primitive"
+        ? createSymbolValue(String(first.value))
+        : unknownValue("Symbol with a dynamic description", location);
     case "Symbol.for":
       return first?.kind === "primitive" && typeof first.value === "string"
         ? { kind: "symbol", key: first.value }
@@ -750,14 +818,25 @@ const callGlobal = (
       if (first && first.kind !== "unknown" && first.kind !== "branch") return first;
       return objectValue(args.map((argument) => ({ kind: "spread", value: argument })));
     case "Object.freeze":
+      if (first?.kind === "object" || first?.kind === "list") first.isFrozen = true;
+      return first ?? UNDEFINED_VALUE;
+    case "Object.isFrozen":
+      if (first?.kind === "object" || first?.kind === "list")
+        return primitiveValue(first.isFrozen === true);
+      if (first?.kind === "primitive") return TRUE_VALUE;
+      return unknownPrimitiveValue("boolean", `${name} on a dynamic target`);
     case "Object.seal":
     case "Object.setPrototypeOf":
       return first ?? UNDEFINED_VALUE;
     case "Object.getPrototypeOf":
     case "Reflect.getPrototypeOf":
-      if (first?.kind === "class") return getClassPrototype(first, location);
+      if (first?.kind === "class") return getClassPrototype(first);
+      if (first?.kind === "object" && first.prototype) return first.prototype;
+      if (first?.kind === "object" && first.hasNullPrototype) return NULL_VALUE;
       if (first?.kind === "object" && first.constructedBy)
         return getClassPrototypeObject(interpreter, first.constructedBy, context);
+      if (first?.kind === "object" && isBaseClassPrototype(first))
+        return { kind: "global", name: "Object.prototype" };
       return unknownValue(`${name} on a dynamic target`, location);
     case "Object.getOwnPropertyNames":
     case "Object.getOwnPropertySymbols":
@@ -779,12 +858,20 @@ const callGlobal = (
         : unknownValue(`${name} on an object with dynamic spreads`, location);
     }
     case "Object.create": {
-      if (first?.kind !== "primitive" || first.value !== null) break;
-      const created: StaticObjectValue = { ...objectValue(), hasNullPrototype: true };
-      if (second?.kind === "object") {
-        defineOwnProperties(interpreter, created, second, context, location);
-      }
-      return created;
+      if (!first) break;
+      return mapValue(first, (prototype) => {
+        const isNull = prototype.kind === "primitive" && prototype.value === null;
+        if (!isNull && prototype.kind !== "object")
+          return unknownValue(`Object.create with ${describeValue(prototype)}`, location);
+        const created: StaticObjectValue =
+          prototype.kind === "object"
+            ? { ...objectValue(), prototype }
+            : { ...objectValue(), hasNullPrototype: true };
+        if (second?.kind === "object") {
+          defineOwnProperties(interpreter, created, second, context, location);
+        }
+        return created;
+      });
     }
     case "Reflect.get":
       return first && second?.kind === "primitive"
@@ -884,9 +971,15 @@ const callGlobal = (
         }
       }
       return unknownValue("JSON.parse", location);
+    case "queueMicrotask":
+      if (first) {
+        interpreter.timers.queueMicrotask(() =>
+          interpreter.callValue(first, [], context, location),
+        );
+      }
+      return UNDEFINED_VALUE;
     case "setTimeout":
     case "setImmediate":
-    case "queueMicrotask":
     case "requestAnimationFrame":
     case "requestIdleCallback": {
       // The runtime snapshot is taken once short timers settled; longer or dynamic delays may not have fired.
@@ -1052,10 +1145,12 @@ export const callUncertainCallback = (
   args: StaticValue[],
   context: EvaluationContext,
 ): StaticValue =>
-  callCallback(interpreter, callback, args, {
-    ...context,
-    uncertainDepth: context.uncertainDepth + 1,
-  });
+  interpreter.runMaybe(
+    callback.kind === "function" ? callback.scope : context.scope,
+    () => callCallback(interpreter, callback, args, context),
+    "callback for an item that may not occur",
+    null,
+  );
 
 const mapList = (
   interpreter: Interpreter,
@@ -1365,13 +1460,14 @@ const promiseTools = (
 ): PromiseTools => ({
   call: (callee, callArgs) => interpreter.callValue(callee, callArgs, context, location),
   markEscaped: (value) => interpreter.markEscaped(value),
+  queueMicrotask: (task) => interpreter.timers.queueMicrotask(task),
 });
 
 /**
- * `then`/`catch`/`finally`. Handlers on a modeled promise run at its
- * settlement (now, when it already settled); on a value the analysis cannot
- * follow they are continuations that land after the captured commit; any other
- * receiver is treated as an already-fulfilled thenable.
+ * `then`/`catch`/`finally`. Handlers on a modeled promise run as microtasks
+ * once it settles; on a value the analysis cannot follow they are
+ * continuations that land after the captured commit; any other receiver is
+ * treated as an already-fulfilled thenable.
  */
 const callPromiseMethod = (
   interpreter: Interpreter,
@@ -1507,7 +1603,13 @@ export const evaluateBuiltinCall = (
         location,
       );
     }
-    if (name === "bind") return receiver;
+    if (name === "bind") {
+      if (receiver.kind !== "method") return receiver;
+      const boundArgs = args.slice(1);
+      return nativeFunction(`bound ${receiver.name}`, (callArgs, tools) =>
+        tools.call(receiver, [...boundArgs, ...callArgs]),
+      );
+    }
   }
 
   if (receiver.kind === "primitive") {

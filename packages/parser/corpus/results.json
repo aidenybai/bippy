@@ -105,8 +105,8 @@
       "id": "cal-diy",
       "revision": "abffde336e744e15cf69626c10e436d6172bc406",
       "framework": "next-app",
-      "capturedAt": "2026-09-07T17:38:19.033Z",
-      "durationMs": 909,
+      "capturedAt": "2026-09-07T23:04:47.936Z",
+      "durationMs": 972,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
@@ -382,8 +382,8 @@
       "id": "lexical",
       "revision": "c3b629dcf6b5111811bb9ca5a3db0665099b2856",
       "framework": "spa",
-      "capturedAt": "2026-09-07T17:38:20.965Z",
-      "durationMs": 45076,
+      "capturedAt": "2026-09-07T23:02:54.963Z",
+      "durationMs": 11735,
       "runtime": {
         "reactVersion": "19.2.5",
         "rendererName": "react-dom",
@@ -396,55 +396,46 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 19,
+          "fiberCount": 228,
           "textCount": 0,
           "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 2,
-          "unknownCount": 1,
-          "modulesLoaded": 416
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1059
         },
         "diagnostics": [
           {
-            "code": "budget-exhausted",
-            "count": 42
+            "code": "dynamic-props",
+            "count": 1
           }
         ]
       },
       "report": {
-        "matchedFibers": 15,
+        "matchedFibers": 225,
         "matchedText": 0,
-        "opaqueSubtrees": 2,
-        "opaqueSkippedFibers": 2,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "wildcardAbsorbedFibers": 208,
-        "wildcards": [
-          {
-            "path": "root > <StrictMode> [Mode] > <PlaygroundApp> [FunctionComponent] > <SettingsContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FlashMessageContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <LexicalCollaboration> [FunctionComponent] > <ContextProvider> [ContextProvider] > <LexicalExtensionComposer> [FunctionComponent]",
-            "reason": "step budget exhausted",
-            "absorbedFibers": 208,
-            "heads": [
-              "<EditorComponent> [FunctionComponent]"
-            ]
-          }
-        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
         "branchesResolved": 0,
         "branchDeviations": [],
         "repeatIterations": 0,
-        "status": "partial",
+        "status": "exact",
         "runtimeFibers": 225,
-        "staticFibers": 17,
+        "staticFibers": 225,
         "coverage": 1,
-        "strictCoverage": 0.06666666666666667,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 18,
+        "stepsUsed": 225,
         "budgetExhausted": false
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-06T14:41:44.154Z",
+      "note": null,
       "failure": null
     },
     {
@@ -535,8 +526,8 @@
       "id": "posthog",
       "revision": "09c5fbd37b2714276d4206debd3aeb253ce0e43a",
       "framework": "spa",
-      "capturedAt": "2026-09-07T17:39:11.770Z",
-      "durationMs": 2530,
+      "capturedAt": "2026-09-07T23:03:15.547Z",
+      "durationMs": 2462,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -897,8 +888,8 @@
       "id": "sentry",
       "revision": "a7b4a8a2a78a666418e527d812e81528147789da",
       "framework": "react-router",
-      "capturedAt": "2026-09-07T17:39:08.338Z",
-      "durationMs": 3428,
+      "capturedAt": "2026-09-07T23:03:19.072Z",
+      "durationMs": 3546,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",

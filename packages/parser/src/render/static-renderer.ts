@@ -92,6 +92,7 @@ export class StaticRenderer {
   }
 
   private createInterpreter(assumeOuterProviders = false): Interpreter {
+    ensureDomGlobals();
     const interpreter = new Interpreter(this.graph, {
       maxCallDepth: this.options.maxCallDepth,
       maxSteps: this.options.maxSteps,
@@ -152,9 +153,9 @@ export class StaticRenderer {
       maxRecursionPerComponent: this.options.maxRecursionPerComponent,
       serverComponents: this.options.serverComponents,
     });
-    const mounted = await mountNode(runtime, materializer.toRootNode(rootValue), () =>
-      interpreter.timers.flush(),
-    );
+    const rootNode = materializer.toRootNode(rootValue);
+    interpreter.timers.drainMicrotasks();
+    const mounted = await mountNode(runtime, rootNode, () => interpreter.timers.flush());
     for (const error of mounted.uncaughtErrors) {
       interpreter.report(
         "render-error",

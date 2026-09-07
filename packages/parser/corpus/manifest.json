@@ -182,8 +182,20 @@
       "static": {
         "rootDirectory": ".",
         "entry": "packages/lexical-playground/src/index.tsx",
+        "defines": {
+          "__DEV__": true,
+          "process.env.IS_PREACT": null,
+          "process.env.LEXICAL_VERSION": "0.50.0+git"
+        },
+        "externalPackageAllowList": [
+          "@preact/signals-core",
+          "@vercel/analytics",
+          "@vercel/speed-insights",
+          "lodash-es"
+        ],
         "maxFiberCount": 20000
-      }
+      },
+      "notes": "`scripts/vite/lexicalMonorepoPlugin.ts` defines `__DEV__`, `process.env.IS_PREACT` (unset) and `process.env.LEXICAL_VERSION` from the root package version."
     },
     {
       "id": "nextjs-boilerplate",

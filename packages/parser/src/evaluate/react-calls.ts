@@ -12,7 +12,7 @@ import type {
 } from "../types.js";
 import { callUncertainCallback } from "./builtin-calls.js";
 import type { EvaluationContext } from "./context.js";
-import { nextMemoCell, nextStateCell, queueStateUpdate } from "./hooks.js";
+import { invokeHookFactory, nextMemoCell, nextStateCell, queueStateUpdate } from "./hooks.js";
 import { awaitedValue } from "./promises.js";
 import type { Interpreter } from "./interpreter.js";
 import {
@@ -33,10 +33,11 @@ import {
   unknownValue,
 } from "./values.js";
 
+/** `mountState`/`mountReducer`: the initializer runs on mount only, twice under Strict Mode. */
 const stateHook = (
   context: EvaluationContext,
   name: string,
-  initial: StaticValue,
+  computeInitial: () => StaticValue,
   reduce: (
     action: StaticValue | undefined,
     current: StaticValue,
@@ -46,11 +47,15 @@ const stateHook = (
   const frame = context.hooks;
   if (!frame) {
     return listValue([
-      branchValue([initial, unknownValue(`updated state of ${name}`)], "state may change", null),
+      branchValue(
+        [computeInitial(), unknownValue(`updated state of ${name}`)],
+        "state may change",
+        null,
+      ),
       unknownValue("state setter"),
     ]);
   }
-  const cell = nextStateCell(frame, name, initial);
+  const cell = nextStateCell(frame, name, () => invokeHookFactory(frame, computeInitial));
   cell.setter ??= {
     kind: "native-function",
     name: `set ${name}`,
@@ -85,7 +90,7 @@ const externalStoreHook = (
   const snapshot = readSnapshot();
   const frame = context.hooks;
   if (!frame) return snapshot;
-  const cell = nextStateCell(frame, "useSyncExternalStore", snapshot);
+  const cell = nextStateCell(frame, "useSyncExternalStore", () => snapshot);
   cell.current = snapshot;
   if (!frame.isRendering || !subscribe) return snapshot;
   const handleStoreChange: StaticNativeFunctionValue = {
@@ -102,11 +107,13 @@ const externalStoreHook = (
       kind: "native-function",
       name: "subscribeToStore",
       call: (_args, tools) => {
-        tools.call(subscribe, [handleStoreChange]);
-        return handleStoreChange.call([], tools);
+        const unsubscribe = tools.call(subscribe, [handleStoreChange]);
+        handleStoreChange.call([], tools);
+        return unsubscribe;
       },
     },
     deps: listValue([subscribe]),
+    cleanup: null,
   });
   return snapshot;
 };
@@ -393,30 +400,36 @@ export const evaluateReactApiCall = (
         },
       };
     case "useState": {
-      const initial =
+      const computeInitial = (): StaticValue =>
         first?.kind === "function"
           ? interpreter.callFunction(first, [], context)
           : (first ?? UNDEFINED_VALUE);
-      return stateHook(context, nameHint ?? "useState", initial, (action, current, tools) =>
+      return stateHook(context, nameHint ?? "useState", computeInitial, (action, current, tools) =>
         action?.kind === "function" ? tools.call(action, [current]) : (action ?? UNDEFINED_VALUE),
       );
     }
     case "useReducer": {
-      const initial =
+      const computeInitial = (): StaticValue =>
         third?.kind === "function"
           ? interpreter.callFunction(third, [second ?? UNDEFINED_VALUE], context)
           : (second ?? UNDEFINED_VALUE);
-      return stateHook(context, nameHint ?? "useReducer", initial, (action, current, tools) =>
-        first && action
-          ? tools.call(first, [current, action])
-          : unknownValue("reducer state after dispatch"),
+      return stateHook(
+        context,
+        nameHint ?? "useReducer",
+        computeInitial,
+        (action, current, tools) =>
+          first && action
+            ? tools.call(first, [current, action])
+            : unknownValue("reducer state after dispatch"),
       );
     }
     case "useMemo": {
       const compute = (): StaticValue =>
-        first?.kind === "function"
-          ? interpreter.callFunction(first, [], context)
-          : unknownValue("useMemo factory", location);
+        invokeHookFactory(context.hooks, () =>
+          first?.kind === "function"
+            ? interpreter.callFunction(first, [], context)
+            : unknownValue("useMemo factory", location),
+        );
       return context.hooks && second?.kind === "list"
         ? nextMemoCell(context.hooks, second, compute)
         : compute();
@@ -438,7 +451,7 @@ export const evaluateReactApiCall = (
     case "use":
       if (first?.kind === "context") return readContextValue(interpreter, first, context, location);
       return first
-        ? awaitedValue(first, location)
+        ? awaitedValue(first, location, () => interpreter.timers.drainMicrotasks())
         : unknownValue("use() without an argument", location);
     case "useEffect":
     case "useLayoutEffect":
@@ -448,6 +461,7 @@ export const evaluateReactApiCall = (
           isLayout: api !== "useEffect",
           callback: first,
           deps: second ?? null,
+          cleanup: null,
         });
       }
       return UNDEFINED_VALUE;

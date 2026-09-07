@@ -21,6 +21,8 @@ export interface PatternText {
 export interface PatternBranch {
   kind: "branch";
   reason: string;
+  /** Where the source branched (`file:line:column`); null for branches the materializer introduces. */
+  location: string | null;
   preferredIndex: number | null;
   alternatives: PatternNode[][];
 }
@@ -82,6 +84,7 @@ const toPatternNode = (fiber: RuntimeFiberSnapshot): PatternNode[] => {
         {
           kind: "branch",
           reason: readString(fiber.props, "reason") ?? "",
+          location: readString(fiber.props, "location"),
           preferredIndex: readNumber(fiber.props, "preferredIndex"),
           alternatives: fiber.children.map((alternative) =>
             snapshotToPattern(alternative.children),
@@ -212,7 +215,7 @@ const formatPatternNode = (node: PatternNode, depth: number): string[] => {
       return [`${indent}${node.text === null ? "#text(?)" : JSON.stringify(node.text)}`];
     case "branch":
       return [
-        `${indent}?branch(${node.reason})`,
+        `${indent}?branch(${node.reason})${node.location === null ? "" : ` @ ${node.location}`}`,
         ...node.alternatives.flatMap((alternative, index) => [
           `${indent}  |${index}${node.preferredIndex === index ? " (preferred)" : ""}`,
           ...alternative.flatMap((child) => formatPatternNode(child, depth + 2)),

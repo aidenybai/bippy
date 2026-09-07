@@ -11,6 +11,7 @@ import type {
 } from "../types.js";
 import { getStaticProperty } from "./class-component.js";
 import { createErrorValue } from "./errors.js";
+import { hasNativeObjectMember } from "./native-values.js";
 import {
   branchValue,
   FALSE_VALUE,
@@ -82,7 +83,9 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
         ? getKnownObjectSymbols(target)?.map(getSymbolPropertyKey)
         : getKnownObjectKeys(target);
       if (!keys) return null;
-      return keys.includes(name) || name in {} ? TRUE_VALUE : FALSE_VALUE;
+      if (keys.includes(name)) return TRUE_VALUE;
+      if (target.prototype) return hasNamedProperty(name, target.prototype);
+      return name in {} && !target.hasNullPrototype ? TRUE_VALUE : FALSE_VALUE;
     }
     case "function":
     case "class": {
@@ -94,6 +97,8 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
         ? TRUE_VALUE
         : FALSE_VALUE;
     }
+    case "native-object":
+      return hasNativeObjectMember(target, name) ? TRUE_VALUE : FALSE_VALUE;
     case "list": {
       if (name in Array.prototype) return TRUE_VALUE;
       const index = Number(name);

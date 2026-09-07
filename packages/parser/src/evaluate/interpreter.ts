@@ -91,6 +91,7 @@ import type {
 import {
   evaluateBuiltinCall,
   getBuiltinGlobal,
+  getGlobalTypeof,
   getTypeofValue,
   isModeledOpaqueMethodName,
   isPromiseMethodName,
@@ -104,6 +105,7 @@ import {
   getSuperObject,
 } from "./class-component.js";
 import { getCollectionItems, markCollectionExternallyMutable } from "./collections.js";
+import { createGeneratorValue } from "./generators.js";
 import { getPageLocationMember, isWindowAlias } from "./browser-globals.js";
 import {
   type SessionHistory,
@@ -126,7 +128,11 @@ import {
   getThrownPaths,
   withoutThrows,
 } from "./thrown.js";
-import { getNativeObjectMember } from "./native-values.js";
+import {
+  deleteNativeObjectMember,
+  getNativeObjectMember,
+  setNativeObjectMember,
+} from "./native-values.js";
 import {
   HeapJournal,
   IN_PROGRESS,
@@ -146,7 +152,6 @@ import { decodeJsxEntities } from "./jsx-entities.js";
 import { cleanJsxText } from "./jsx-text.js";
 import { describeMacroJsxChildren, getStubExpandJsx } from "./macro-jsx.js";
 import { forEachEscapedCallable, getMutatedIdentifiers } from "./escapes.js";
-import { EVENT_LISTENER_METHODS } from "./event-listeners.js";
 import { awaitedValue, getModeledPromise, resolvedPromiseValue } from "./promises.js";
 import { applyClockOperator, TimerQueue } from "./timers.js";
 import { evaluateLoop } from "./loops.js";
@@ -170,8 +175,10 @@ import {
   falsyCounterpart,
   getClassPrototype,
   getSpreadEntries,
+  getSymbolDescription,
   getListItem,
   getListLength,
+  getFunctionPrototype,
   getObjectAccessor,
   getObjectProperty,
   getPreferredTruthiness,
@@ -251,7 +258,7 @@ const UNKNOWN_PROJECT: ProjectContext = {
   storeStates: null,
 };
 
-const DEFAULT_MAX_CALL_DEPTH = 32;
+const DEFAULT_MAX_CALL_DEPTH = 128;
 const DEFAULT_MAX_FORK_DEPTH = 5;
 const DEFAULT_MAX_STEPS = 2_000_000;
 export const STYLED_JSX_SPECIFIER = "styled-jsx/style";
@@ -387,17 +394,19 @@ const isSameTypePrimitive = (previous: StaticValue, next: StaticValue): boolean 
 
 /**
  * A recursive call whose arguments are equivalent to those of an activation
- * already on the stack would never bottom out (dynamic values never become
- * more precise). Nor would one that only threads unknowns forward with a
- * changing counter (`walk(node.child, depth + 1)` over an unknown `node`):
- * every level sees the same unknown data, so the result is unknown either
- * way. A call that makes progress over known data (walking a tree) is
- * followed until the call-depth limit.
+ * already on the stack, with nothing written since that activation began,
+ * would never bottom out (dynamic values never become more precise). Nor
+ * would one that only threads unknowns forward with a changing counter
+ * (`walk(node.child, depth + 1)` over an unknown `node`): every level sees
+ * the same unknown data, so the result is unknown either way. A call that
+ * makes progress over known data (walking a tree, re-entering a batch
+ * flush after a counter changed) is followed until the call-depth limit.
  */
 const isNonProgressingRecursion = (
   callStack: CallFrame[],
   functionValue: StaticFunctionValue,
   args: StaticValue[],
+  changeCount: number,
 ): boolean => {
   const hasUnknownArgument = args.some((argument) => argument.kind === "unknown");
   return callStack.some(
@@ -405,6 +414,7 @@ const isNonProgressingRecursion = (
       frame.node === functionValue.node &&
       frame.scope === functionValue.scope &&
       frame.args.length === args.length &&
+      (hasUnknownArgument || frame.changeCount === changeCount) &&
       frame.args.every(
         (argument, index) =>
           areValuesEquivalent(argument, args[index]) ||
@@ -450,8 +460,7 @@ export class Interpreter {
   /** Observable changes (state commits, heap mutations) so far; a timer tick that adds none is steady state. */
   changeCount = 0;
   private readonly heapJournals: HeapJournal[] = [];
-  private readonly heapEpochs = new WeakMap<MutableHeapValue, number>();
-  private heapEpoch = 0;
+  private readonly generatorYields: StaticValue[][] = [];
   private readonly elementSymbolKey: string;
   private readonly reactVersion: string | null;
   private remainingSteps: number;
@@ -759,7 +768,12 @@ export class Interpreter {
       }
       case "list": {
         const index = Number(propertyName);
-        if (Number.isInteger(index) && index >= 0 && index < target.items.length) {
+        if (
+          !target.isFrozen &&
+          Number.isInteger(index) &&
+          index >= 0 &&
+          index < target.items.length
+        ) {
           this.recordHeapMutation(target);
           target.items[index] = value;
         }
@@ -787,6 +801,9 @@ export class Interpreter {
           target.lastIndex =
             value.kind === "primitive" && typeof value.value === "number" ? value.value : 0;
         }
+        return target;
+      case "native-object":
+        setNativeObjectMember(target, propertyName, value);
         return target;
       case "proxy": {
         const trap = getObjectProperty(target.handler, "set");
@@ -1058,6 +1075,7 @@ export class Interpreter {
         const awaited = awaitedValue(
           this.evaluateExpression(node.argument, context, nameHint),
           this.locate(context.module, node),
+          () => this.timers.drainMicrotasks(),
         );
         if (context.hooks && (awaited.kind === "unknown" || awaited.kind === "external"))
           context.hooks.isDeferred = true;
@@ -1134,7 +1152,17 @@ export class Interpreter {
       }
       case "Super":
         return getSuperObject(this, context, location);
-      case "YieldExpression":
+      case "YieldExpression": {
+        const yields = this.generatorYields.at(-1);
+        const argument = node.argument
+          ? this.evaluateExpression(node.argument, context)
+          : UNDEFINED_VALUE;
+        if (yields === undefined) return unknownValue("yield outside a generator", location);
+        if (node.delegate)
+          yields.push(...spreadListItems(getCollectionItems(argument) ?? argument, location));
+        else yields.push(argument);
+        return unknownValue("value sent to the generator", location);
+      }
       case "V8IntrinsicExpression":
         return unknownValue(`unsupported expression ${node.type}`, location);
     }
@@ -1170,21 +1198,15 @@ export class Interpreter {
       }
       items.push(this.evaluateExpression(element, context));
     }
-    return this.stampHeapValue(listValue(items));
-  }
-
-  private stampHeapValue<Value extends MutableHeapValue>(value: Value): Value {
-    this.heapEpochs.set(value, this.heapEpoch);
-    return value;
+    return listValue(items);
   }
 
   /** Mutating a value that predates an enclosing fork must be undone for the fork's other paths. */
   recordHeapMutation(target: MutableHeapValue): void {
     this.changeCount++;
-    const epoch = this.heapEpochs.get(target) ?? 0;
     for (let index = this.heapJournals.length - 1; index >= 0; index--) {
       const journal = this.heapJournals[index];
-      if (epoch >= journal.entryEpoch) return;
+      if (!journal.isPreexisting(target)) return;
       journal.record(target);
     }
   }
@@ -1240,8 +1262,7 @@ export class Interpreter {
     }
     const object = objectValue(entries);
     return (
-      this.reactElementFromObject(object, this.locate(context.module, node), context) ??
-      this.stampHeapValue(object)
+      this.reactElementFromObject(object, this.locate(context.module, node), context) ?? object
     );
   }
 
@@ -1375,19 +1396,33 @@ export class Interpreter {
   }
 
   private evaluateUnaryExpression(node: UnaryExpression, context: EvaluationContext): StaticValue {
+    if (node.operator === "delete") return this.evaluateDelete(node.argument, context);
     const argument = this.evaluateExpression(node.argument, context);
     switch (node.operator) {
       case "typeof":
         return getTypeofValue(argument, context.environment);
       case "void":
         return getThrownOperand([argument]) ?? UNDEFINED_VALUE;
-      case "delete":
-        return getThrownOperand([argument]) ?? TRUE_VALUE;
       default: {
         const operator = node.operator;
         return mapValue(argument, (alternative) => applyUnaryOperator(operator, alternative));
       }
     }
+  }
+
+  private evaluateDelete(argument: Expression, context: EvaluationContext): StaticValue {
+    const target = unwrapExpression(argument);
+    if (target.type !== "MemberExpression") {
+      return getThrownOperand([this.evaluateExpression(argument, context)]) ?? TRUE_VALUE;
+    }
+    const object = this.evaluateExpression(target.object, context);
+    const key = target.computed
+      ? getPropertyName(this.evaluateExpression(target.property, context))
+      : target.property.type === "Identifier"
+        ? target.property.name
+        : null;
+    if (object.kind === "native-object" && key !== null) deleteNativeObjectMember(object, key);
+    return getThrownOperand([object]) ?? TRUE_VALUE;
   }
 
   private evaluateBinaryExpression(
@@ -1398,9 +1433,24 @@ export class Interpreter {
       return unknownPrimitiveValue("boolean", "private in");
     const left = this.evaluateExpression(node.left, context);
     const right = this.evaluateExpression(node.right, context);
-    if (node.operator === "in")
-      return hasProperty(left, right) ?? applyBinaryOperator("in", left, right);
-    return applyBinaryOperator(node.operator, left, right);
+    if (node.operator === "in") {
+      return (
+        hasProperty(left, right) ??
+        this.hasWindowProperty(left, right) ??
+        applyBinaryOperator("in", left, right)
+      );
+    }
+    return applyBinaryOperator(node.operator, left, right, context.environment);
+  }
+
+  /** `name in window`: a name the page assigned, or one the captured browser exposed; null without a capture. */
+  private hasWindowProperty(key: StaticValue, target: StaticValue): StaticValue | null {
+    if (target.kind !== "global" || !isWindowAlias(target.name)) return null;
+    const name = getPropertyName(key);
+    if (name === null) return null;
+    if (this.windowGlobals.has(name)) return TRUE_VALUE;
+    const windowKeys = this.pageState?.windowKeys;
+    return windowKeys ? primitiveValue(windowKeys.includes(name)) : null;
   }
 
   private evaluateUpdateExpression(
@@ -1522,6 +1572,7 @@ export class Interpreter {
   }
 
   assignOwnProperty(target: StaticObjectValue, key: string, value: StaticValue): void {
+    if (target.isFrozen) return;
     this.recordHeapMutation(target);
     target.entries.push({ kind: "property", key, value });
   }
@@ -1531,6 +1582,7 @@ export class Interpreter {
     key: StaticValue,
     value: StaticValue,
   ): void {
+    if (target.isFrozen) return;
     this.recordHeapMutation(target);
     target.entries.push({
       kind: "spread",
@@ -1541,6 +1593,7 @@ export class Interpreter {
   private assignIdentifier(name: string, value: StaticValue, context: EvaluationContext): void {
     const owner = findOwningScope(context.scope, name);
     if (owner) {
+      this.changeCount++;
       owner.bindings.set(
         name,
         this.withUncertainAssignment(owner.bindings.get(name), value, name, context),
@@ -1705,7 +1758,7 @@ export class Interpreter {
         if (key === "lastIndex") return primitiveValue(object.lastIndex);
         return prototypeMember(object, RegExp.prototype, key);
       case "symbol":
-        if (key === "description") return primitiveValue(object.key);
+        if (key === "description") return primitiveValue(getSymbolDescription(object));
         return prototypeMember(object, Symbol.prototype, key);
       case "primitive":
         if (object.value === null || object.value === undefined) {
@@ -1823,9 +1876,9 @@ export class Interpreter {
           return { kind: "method", receiver: object, name: key };
         if (object.kind === "class") {
           if (key === "prototype") return getClassPrototypeObject(this, object, context);
-          if (key === "__proto__") return getClassPrototype(object, location);
+          if (key === "__proto__") return getClassPrototype(object);
           if (key === "length") return primitiveValue(getClassLength(object));
-        }
+        } else if (key === "prototype") return getFunctionPrototype(object);
         if (key === "displayName") return UNDEFINED_VALUE;
         if (key === "name") return object.name ? primitiveValue(object.name) : primitiveValue("");
         if (object.kind === "function" && !isFunctionOwnOrInheritedKey(key)) return UNDEFINED_VALUE;
@@ -1837,27 +1890,16 @@ export class Interpreter {
         if (key === "length") return unknownPrimitiveValue("number", "length of a repeated list");
         return { kind: "method", receiver: object, name: key };
       case "method":
-        return unknownValue(`property "${key}" of a method`, location);
       case "native-function":
         if (key === "call" || key === "apply" || key === "bind")
           return { kind: "method", receiver: object, name: key };
-        return unknownValue(`property "${key}" of ${object.name}`, location);
+        return unknownValue(`property "${key}" of ${describeValue(object)}`, location);
       case "proxy": {
         const trap = getObjectProperty(object.handler, "get");
         return trap.kind === "primitive" && trap.value === undefined
           ? this.getProperty(object.target, key, context, location, optional)
           : this.callValue(trap, [object.target, primitiveValue(key), object], context, location);
       }
-      case "host-node":
-        if (key === "tagName" || key === "nodeName")
-          return primitiveValue(object.tagName.toUpperCase());
-        if (key === "localName") return primitiveValue(object.tagName);
-        if (key === "nodeType") return primitiveValue(1);
-        if (key === "isConnected") return primitiveValue(true);
-        if (key === "ownerDocument")
-          return this.getGlobal("document", context.environment) ?? unknownValue(key, location);
-        if (EVENT_LISTENER_METHODS.has(key)) return { kind: "method", receiver: object, name: key };
-        return unknownValue(`property "${key}" of <${object.tagName}> node`, location);
       case "unknown":
         if (object === CHAIN_SHORT_CIRCUIT) return object;
         return object.thrown ? object : unknownValue(object.reason, location);
@@ -2023,6 +2065,7 @@ export class Interpreter {
           call: (callee, calleeArgs) => this.callValue(callee, calleeArgs, context, location),
           captured: (captured, name) => this.captured(captured, name),
           markEscaped: (value) => this.markEscaped(value),
+          queueMicrotask: (task) => this.timers.queueMicrotask(task),
           setProperty: (object, key, value) => this.assignOwnProperty(object, key, value),
           nameHint: options.nameHint ?? null,
           templateArgumentNames: options.templateArgumentNames ?? null,
@@ -2108,6 +2151,8 @@ export class Interpreter {
     }
     if (callee.kind === "native-function") return this.callValue(callee, args, context, location);
     if (callee.kind === "class") return constructClassInstance(this, callee, args, context);
+    if (callee.kind === "function")
+      return this.constructWithFunction(callee, args, context, location);
     if (callee.kind === "proxy") {
       const trap = getObjectProperty(callee.handler, "construct");
       return trap.kind === "primitive" && trap.value === undefined
@@ -2116,6 +2161,33 @@ export class Interpreter {
     }
     this.markEscapes(args);
     return unknownValue(`new ${describeValue(callee)}`, location);
+  }
+
+  /** `new fn(...)` on a constructor function: `this` is a fresh object inheriting from `fn.prototype`. */
+  private constructWithFunction(
+    callee: StaticFunctionValue,
+    args: StaticValue[],
+    context: EvaluationContext,
+    location: SourceLocation | null,
+  ): StaticValue {
+    const prototype = getFunctionPrototype(callee);
+    if (prototype.kind !== "object") {
+      this.markEscapes(args);
+      return unknownValue(`new ${describeValue(callee)}`, location);
+    }
+    const instance: StaticObjectValue = { ...objectValue(), prototype };
+    const returned = this.callFunction(callee, args, context, { thisValue: instance });
+    if (returned.kind === "unknown") {
+      return returned.thrown
+        ? returned
+        : unknownValue(
+            `new ${describeValue(callee)} whose constructor ${returned.reason}`,
+            location,
+          );
+    }
+    return returned.kind === "object" || returned.kind === "function" || returned.kind === "list"
+      ? returned
+      : instance;
   }
 
   /**
@@ -2198,26 +2270,51 @@ export class Interpreter {
       );
       return unknownValue("call depth exceeded", location);
     }
-    if (isNonProgressingRecursion(callStack, functionValue, args)) {
+    if (isNonProgressingRecursion(callStack, functionValue, args, this.changeCount)) {
       return unknownValue(
         `recursive call of ${functionValue.name ?? "anonymous function"}`,
         location,
       );
     }
-    if (functionValue.node.generator) return unknownValue("generator function result", location);
+    if (functionValue.node.generator) {
+      if (functionValue.node.async) return unknownValue("async generator result", location);
+      return this.callGenerator(functionValue, args, context, options);
+    }
     const frame = context.hooks;
     const wasDeferred = frame?.isDeferred ?? false;
     const result = this.evaluateFunctionBody(functionValue, args, context, options);
     // An async body runs synchronously up to its first `await` of an unknown
     // promise; only a framework-awaited call (server components, route `lazy`)
     // lets what follows count as settled before the captured commit.
-    if (options.awaited) return awaitedValue(result, location);
+    if (options.awaited) return awaitedValue(result, location, () => this.timers.drainMicrotasks());
     if (!functionValue.node.async) return result;
     if (frame && frame.isDeferred && !wasDeferred) {
       frame.isDeferred = wasDeferred;
       return unknownValue("promise settled asynchronously", location);
     }
     return resolvedPromiseValue(result);
+  }
+
+  /**
+   * A generator body runs eagerly at the call, collecting its `yield`s for the
+   * iterator to replay; a throw it would raise on some `next()` surfaces here.
+   */
+  private callGenerator(
+    functionValue: Extract<StaticValue, { kind: "function" }>,
+    args: StaticValue[],
+    context: EvaluationContext,
+    options: CallOptions,
+  ): StaticValue {
+    const yields: StaticValue[] = [];
+    this.generatorYields.push(yields);
+    try {
+      const returned = this.evaluateFunctionBody(functionValue, args, context, options);
+      return getThrowCertainty(returned) === "always"
+        ? returned
+        : createGeneratorValue(yields, withoutThrows(returned));
+    } finally {
+      this.generatorYields.pop();
+    }
   }
 
   private evaluateFunctionBody(
@@ -2238,7 +2335,15 @@ export class Interpreter {
           : (options.thisValue ?? null),
       superBinding: functionValue.superBinding,
       readContext: context.readContext,
-      callStack: [...callStack, { node: functionValue.node, scope: functionValue.scope, args }],
+      callStack: [
+        ...callStack,
+        {
+          node: functionValue.node,
+          scope: functionValue.scope,
+          args,
+          changeCount: this.changeCount,
+        },
+      ],
       uncertainDepth: context.uncertainDepth,
       forkDepth: context.forkDepth,
       environment: context.environment,
@@ -2606,8 +2711,13 @@ export class Interpreter {
           if (!outcome.mayComplete) return outcome;
           if (!outcome.returned) break;
           // Loop bodies are not in continuation style: a return on some
-          // iterations leaves the rest of the function uncertain.
-          const rest = proceed({ ...context, uncertainDepth: context.uncertainDepth + 1 });
+          // iterations means the rest of the function may not run.
+          const rest = this.runMaybe(
+            context.scope,
+            () => proceed(context),
+            "return inside a loop",
+            location,
+          );
           return mergeOutcomes(
             [{ returned: outcome.returned, mayComplete: false, jump: null }, rest],
             "return inside a loop",
@@ -2652,11 +2762,21 @@ export class Interpreter {
     const finish: StatementContinuation = finalizer
       ? (pathContext) => this.evaluateBlock(finalizer.body, pathContext, true, proceed)
       : proceed;
+    const finishExit = (
+      outcome: StatementOutcome,
+      pathContext: EvaluationContext,
+    ): StatementOutcome => {
+      if (!finalizer || outcome.mayComplete) return outcome;
+      const exit = this.evaluateBlock(finalizer.body, pathContext, true);
+      if (!exit.mayComplete) return exit;
+      if (exit.returned === null && exit.jump === null) return outcome;
+      return mergeOutcomes([outcome, { ...exit, mayComplete: false }], "finally", location);
+    };
     const handler = statement.handler;
     const outcome = this.evaluateBlock(statement.block.body, context, true);
     const thrown = outcome.returned && handler ? getThrownPaths(outcome.returned) : null;
     if (thrown === null || !handler) {
-      if (!outcome.mayComplete) return outcome;
+      if (!outcome.mayComplete) return finishExit(outcome, context);
       return mergeOutcomes(
         [{ ...outcome, mayComplete: false }, finish(context)],
         "try",
@@ -2681,16 +2801,47 @@ export class Interpreter {
           handlerContext,
         );
       }
-      return this.evaluateBlock(handler.body.body, handlerContext, false);
+      return finishExit(
+        this.evaluateBlock(handler.body.body, handlerContext, false),
+        handlerContext,
+      );
     };
     const isPassFeasible = passes.mayComplete || passes.returned !== null || passes.jump !== null;
     return this.forkPaths(
-      isPassFeasible ? [() => passes, catches] : [catches],
+      isPassFeasible ? [(pathContext) => finishExit(passes, pathContext), catches] : [catches],
       context,
       finish,
       `${describeValue(thrown)} caught`,
       location,
     );
+  }
+
+  /**
+   * Runs `run` as code that may or may not execute from the current state (an
+   * iteration of a loop whose count is unknown, a callback for an item that
+   * may not exist). Reads inside see its own writes; afterwards every binding,
+   * object and list it changed holds both the changed and the untouched state.
+   */
+  runMaybe<Result>(
+    scope: Scope,
+    run: () => Result,
+    reason: string,
+    location: SourceLocation | null,
+  ): Result {
+    const entrySnapshot = snapshotScopes(scope);
+    const journal = new HeapJournal();
+    this.heapJournals.push(journal);
+    try {
+      return run();
+    } finally {
+      const ranSnapshot = snapshotScopes(scope);
+      journal.endPath();
+      restoreScopes(entrySnapshot);
+      journal.endPath();
+      this.heapJournals.pop();
+      journal.join(reason, location, 0);
+      joinScopes([ranSnapshot, entrySnapshot], reason, location);
+    }
   }
 
   /**
@@ -2718,7 +2869,7 @@ export class Interpreter {
     const hookCursor = context.hooks?.cursor ?? 0;
     const joinedSnapshots: ScopeSnapshot[][] = [];
     let completedHookCursor = hookCursor;
-    const journal = new HeapJournal(++this.heapEpoch);
+    const journal = new HeapJournal();
     this.heapJournals.push(journal);
     const outcomes = branches.map((branch, branchIndex) => {
       if (branchIndex > 0) {
@@ -3020,7 +3171,11 @@ const restoreScopes = (snapshots: ScopeSnapshot[]): void => {
   }
 };
 
-const joinScopes = (paths: ScopeSnapshot[][], reason: string, location: SourceLocation): void => {
+const joinScopes = (
+  paths: ScopeSnapshot[][],
+  reason: string,
+  location: SourceLocation | null,
+): void => {
   const [firstPath, ...otherPaths] = paths;
   firstPath.forEach((snapshot, scopeIndex) => {
     const siblings = otherPaths.map((path) => path[scopeIndex].bindings);
@@ -3079,13 +3234,18 @@ const applyBinaryOperator = (
   operator: string,
   left: StaticValue,
   right: StaticValue,
+  environment: RenderEnvironment | null = null,
 ): StaticValue => {
   if (countAlternatives(left) * countAlternatives(right) <= MAX_DISTRIBUTED_ALTERNATIVES) {
     if (left.kind === "branch") {
-      return mapValue(left, (alternative) => applyBinaryOperator(operator, alternative, right));
+      return mapValue(left, (alternative) =>
+        applyBinaryOperator(operator, alternative, right, environment),
+      );
     }
     if (right.kind === "branch") {
-      return mapValue(right, (alternative) => applyBinaryOperator(operator, left, alternative));
+      return mapValue(right, (alternative) =>
+        applyBinaryOperator(operator, left, alternative, environment),
+      );
     }
   }
   const thrownOperand = getThrownOperand([left, right]);
@@ -3094,7 +3254,7 @@ const applyBinaryOperator = (
     const computed = computeBinary(operator, left.value, right.value);
     if (computed !== undefined) return computed;
   }
-  const equality = compareEquality(operator, left, right);
+  const equality = compareEquality(operator, left, right, environment);
   if (equality) return equality;
   if (operator === "instanceof") {
     const isInstance = isInstanceOf(left, right);
@@ -3143,14 +3303,31 @@ const mayCoerce = (value: StaticValue): boolean =>
  * React's memo cache sentinel never reaches application values, so comparing
  * it against anything the interpreter cannot see is still a definite answer.
  */
+/** Whether a host global equals `undefined`/`null`, once the rendering environment fixes its `typeof`. */
+const compareGlobalToNullish = (
+  global: StaticValue,
+  other: StaticValue,
+  environment: RenderEnvironment | null,
+): boolean | null => {
+  if (global.kind !== "global" || other.kind !== "primitive") return null;
+  if (other.value !== undefined && other.value !== null) return null;
+  const globalTypeof = getGlobalTypeof(global.name, environment);
+  if (globalTypeof === null) return null;
+  return globalTypeof === "undefined" ? other.value === undefined : false;
+};
+
 const compareEquality = (
   operator: string,
   left: StaticValue,
   right: StaticValue,
+  environment: RenderEnvironment | null,
 ): StaticValue | null => {
   if (!EQUALITY_OPERATORS.has(operator)) return null;
   const isStrict = operator === "===" || operator === "!==";
-  let isEqual = compareIdentity(left, right);
+  let isEqual =
+    compareIdentity(left, right) ??
+    compareGlobalToNullish(left, right, environment) ??
+    compareGlobalToNullish(right, left, environment);
   if (isEqual === false && !isStrict && mayCoerce(left) && mayCoerce(right)) isEqual = null;
   if (isEqual === null) {
     const isSentinel = (value: StaticValue): boolean =>
@@ -3221,6 +3398,18 @@ const computeBinary = (
       return primitiveValue(leftNumber > rightNumber);
     case ">=":
       return primitiveValue(leftNumber >= rightNumber);
+    case "&":
+      return primitiveValue(leftNumber & rightNumber);
+    case "|":
+      return primitiveValue(leftNumber | rightNumber);
+    case "^":
+      return primitiveValue(leftNumber ^ rightNumber);
+    case "<<":
+      return primitiveValue(leftNumber << rightNumber);
+    case ">>":
+      return primitiveValue(leftNumber >> rightNumber);
+    case ">>>":
+      return primitiveValue(leftNumber >>> rightNumber);
     default:
       return undefined;
   }

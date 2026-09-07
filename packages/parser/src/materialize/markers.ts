@@ -29,6 +29,7 @@ export interface MarkerChildrenProps {
 
 export interface BranchMarkerProps extends MarkerChildrenProps {
   reason: string;
+  location: string | null;
   preferredIndex: number | null;
 }
 

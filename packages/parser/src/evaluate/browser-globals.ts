@@ -1,14 +1,14 @@
-import type { StaticHostNodeValue, StaticValue } from "../types.js";
-import { primitiveValue, unknownPrimitiveValue, unknownValue } from "./values.js";
+import type { StaticValue } from "../types.js";
+import { getDomGlobalMember } from "./native-values.js";
+import { UNDEFINED_VALUE, primitiveValue, unknownPrimitiveValue, unknownValue } from "./values.js";
 
+/** `undefined` members hold a value only while a listener runs, which analysis never does (listeners escape instead). */
 type BrowserMember =
+  | "undefined"
   | "window"
   | "document"
   | "navigator"
   | "location"
-  | "body"
-  | "html"
-  | "head"
   | "function"
   | "object"
   | "string"
@@ -49,6 +49,7 @@ const WINDOW_MEMBERS: Record<string, BrowserMember> = {
   screenY: "number",
   isSecureContext: "boolean",
   closed: "boolean",
+  event: "undefined",
   matchMedia: "function",
   addEventListener: "function",
   removeEventListener: "function",
@@ -74,9 +75,10 @@ const WINDOW_MEMBERS: Record<string, BrowserMember> = {
 const DOCUMENT_MEMBERS: Record<string, BrowserMember> = {
   defaultView: "window",
   location: "location",
-  body: "body",
-  documentElement: "html",
-  head: "head",
+  body: "object",
+  documentElement: "object",
+  head: "object",
+  activeElement: "object",
   fonts: "object",
   styleSheets: "object",
   cookie: "string",
@@ -200,36 +202,25 @@ export const getPageLocationMember = (
   return primitiveValue(members[member] ?? "");
 };
 
-const documentNodes = new Map<string, StaticHostNodeValue>();
-
-const getDocumentNode = (tagName: string): StaticHostNodeValue => {
-  let node = documentNodes.get(tagName);
-  if (!node) {
-    node = { kind: "host-node", tagName };
-    documentNodes.set(tagName, node);
-  }
-  return node;
-};
-
 export const getBrowserGlobalMember = (
   objectName: string,
   member: string,
   resolveGlobal: (name: string) => StaticValue | null,
 ): StaticValue => {
+  const native = getDomGlobalMember(objectName, member);
+  if (native) return native;
   const memberKind = BROWSER_GLOBAL_MEMBERS[objectName]?.[member];
   const description = `${objectName}.${member}`;
   switch (memberKind) {
     case undefined:
       return unknownValue(description);
+    case "undefined":
+      return UNDEFINED_VALUE;
     case "window":
     case "document":
     case "navigator":
     case "location":
       return resolveGlobal(memberKind) ?? unknownValue(description);
-    case "body":
-    case "html":
-    case "head":
-      return getDocumentNode(memberKind);
     case "function":
       return { kind: "method", receiver: { kind: "global", name: objectName }, name: member };
     case "object":

@@ -1,4 +1,6 @@
 import type { SourceLocation, StaticObjectValue, StaticValue } from "../types.js";
+import { getGeneratorItems } from "./generators.js";
+import { getNativeIterableItems } from "./native-values.js";
 import { getSearchParamsItems } from "./url-search-params.js";
 import {
   branchValue,
@@ -31,7 +33,8 @@ const isSameKey = (left: StaticValue, right: StaticValue): boolean =>
   left === right ||
   (left.kind === "primitive" && right.kind === "primitive" && Object.is(left.value, right.value)) ||
   (left.kind === "symbol" && right.kind === "symbol" && left.key === right.key) ||
-  (left.kind === "context" && right.kind === "context" && left.context === right.context);
+  (left.kind === "context" && right.kind === "context" && left.context === right.context) ||
+  (left.kind === "global" && right.kind === "global" && left.name === right.name);
 
 /** Values with a stable identity (or value equality) across the analysis, so a key lookup is exact. */
 const isDefiniteKey = (key: StaticValue): boolean =>
@@ -40,9 +43,11 @@ const isDefiniteKey = (key: StaticValue): boolean =>
   key.kind === "object" ||
   key.kind === "list" ||
   key.kind === "function" ||
+  key.kind === "native-function" ||
   key.kind === "class" ||
   key.kind === "context" ||
-  key.kind === "host-node" ||
+  key.kind === "global" ||
+  key.kind === "native-object" ||
   key.kind === "element";
 
 /**
@@ -178,7 +183,8 @@ const collectionsByValue = new WeakMap<StaticObjectValue, StaticCollection>();
 /** What `for..of`, spread and `Array.from` see: `[key, value]` pairs for a `Map` or `URLSearchParams`, values for a `Set`; null for other values. */
 export const getCollectionItems = (value: StaticValue): StaticValue | null => {
   const collection = value.kind === "object" ? collectionsByValue.get(value) : undefined;
-  if (!collection) return getSearchParamsItems(value);
+  if (value.kind === "native-object") return getNativeIterableItems(value);
+  if (!collection) return getSearchParamsItems(value) ?? getGeneratorItems(value);
   if (collection.kind === "WeakMap" || collection.kind === "WeakSet") return null;
   return collection.iterate();
 };

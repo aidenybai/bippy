@@ -70,24 +70,27 @@ export const unknownPrimitiveValue = (
   reason: string,
 ): StaticUnknownPrimitiveValue => ({ kind: "unknown-primitive", primitiveType, reason });
 
+let allocationCount = 0;
+
+/** Ordinal of the most recent heap allocation; later allocations get larger ordinals. */
+export const getAllocationCount = (): number => allocationCount;
+
 /** A newly allocated array: `===` to no other value analysis constructs. */
 export const listValue = (items: StaticValue[]): StaticListValue => ({
   kind: "list",
   items,
-  allocation: Symbol(),
+  allocation: ++allocationCount,
 });
 
 /** `Class.__proto__` / `Object.getPrototypeOf(Class)`: the parent class, or `Function.prototype` for a base class. */
-export const getClassPrototype = (
-  classValue: StaticClassValue,
-  location: SourceLocation | null,
-): StaticValue => classValue.body.superValue ?? unknownValue("Function.prototype", location);
+export const getClassPrototype = (classValue: StaticClassValue): StaticValue =>
+  classValue.body.superValue ?? { kind: "global", name: "Function.prototype" };
 
 /** A newly allocated object: `===` to no other value analysis constructs. */
 export const objectValue = (entries: StaticObjectEntry[] = []): StaticObjectValue => ({
   kind: "object",
   entries,
-  allocation: Symbol(),
+  allocation: ++allocationCount,
 });
 
 export const objectFromRecord = (record: Record<string, StaticValue>): StaticObjectValue =>
@@ -235,7 +238,7 @@ export const getObjectAccessor = (
     if (entry.kind === "spread") return null;
     if (entry.key === key) return entry.accessor ?? null;
   }
-  return null;
+  return object.prototype ? getObjectAccessor(object.prototype, key) : null;
 };
 
 export const accessorEntry = (
@@ -283,8 +286,31 @@ export const getObjectProperty = (object: StaticObjectValue, key: string): Stati
     return unknownValue(`property "${key}" may come from a spread of ${describeValue(spread)}`);
   }
   if (key === "constructor" && object.constructedBy) return object.constructedBy;
-  return UNDEFINED_VALUE;
+  return object.prototype ? getObjectProperty(object.prototype, key) : UNDEFINED_VALUE;
 };
+
+/** `fn.prototype` of a constructor function, created on first access like engines do. */
+export const getFunctionPrototype = (fn: StaticFunctionValue): StaticValue => {
+  if (fn.node.type === "ArrowFunctionExpression") return UNDEFINED_VALUE;
+  const existing = fn.properties.get("prototype");
+  if (existing) return existing;
+  const prototype = objectFromRecord({ constructor: fn });
+  fn.properties.set("prototype", prototype);
+  return prototype;
+};
+
+const unregisteredSymbols = new Map<string, StaticSymbolValue>();
+
+/** `Symbol(description)`: identical only to itself, unlike `Symbol.for` registry symbols. */
+export const createSymbolValue = (description: string | undefined): StaticSymbolValue => {
+  const symbol: StaticSymbolValue = { kind: "symbol", key: `#${++allocationCount}` };
+  if (description !== undefined) symbol.description = description;
+  unregisteredSymbols.set(symbol.key, symbol);
+  return symbol;
+};
+
+export const getSymbolDescription = (symbol: StaticSymbolValue): string | undefined =>
+  unregisteredSymbols.has(symbol.key) ? symbol.description : symbol.key;
 
 /** Symbol-keyed properties are stored under an `@@` key; enumeration skips them like `Object.keys` does. */
 export const getSymbolPropertyKey = (symbol: StaticSymbolValue): string => `@@${symbol.key}`;
@@ -317,10 +343,10 @@ export const getKnownObjectKeys = (object: StaticObjectValue): string[] | null =
 
 /** The symbols keying own properties, as `Object.getOwnPropertySymbols` lists them. */
 export const getKnownObjectSymbols = (object: StaticObjectValue): StaticSymbolValue[] | null =>
-  getKnownOwnKeys(object, isSymbolPropertyKey)?.map((key) => ({
-    kind: "symbol",
-    key: key.slice("@@".length),
-  })) ?? null;
+  getKnownOwnKeys(object, isSymbolPropertyKey)?.map((propertyKey) => {
+    const key = propertyKey.slice("@@".length);
+    return unregisteredSymbols.get(key) ?? { kind: "symbol", key };
+  }) ?? null;
 
 const getKnownSpreadKeys = (spread: StaticValue): string[] | null => {
   switch (spread.kind) {
@@ -461,7 +487,7 @@ const REFERENCE_KINDS = new Set<StaticValue["kind"]>([
   "context",
   "native-function",
   "proxy",
-  "host-node",
+  "native-object",
   "method",
   "react-api",
   "component-reference",
@@ -503,6 +529,19 @@ const isHeapValue = (value: StaticValue): value is StaticObjectValue | StaticLis
 const isCallableValue = (value: StaticValue): value is StaticFunctionValue | StaticClassValue =>
   value.kind === "function" || value.kind === "class";
 
+/** Values the analyzed program itself creates, so never a host intrinsic such as `Function.prototype`. */
+const isProgramAllocated = (value: StaticValue): boolean =>
+  isHeapValue(value) || isCallableValue(value) || value.kind === "element";
+
+/**
+ * A host global is an object or function, or absent in environments without it
+ * (`window` on a server), so it only ever equals `undefined`.
+ */
+const compareGlobalToPrimitive = (global: StaticValue, other: StaticValue): boolean | null => {
+  if (global.kind !== "global" || other.kind !== "primitive") return null;
+  return other.value === undefined ? null : false;
+};
+
 /**
  * `===` between two values, or null when analysis cannot decide. Import
  * bindings of the same external export are the same object; a primitive can
@@ -516,6 +555,14 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
   }
   if (left.kind === "symbol" && right.kind === "symbol") return left.key === right.key;
   if (left.kind === "global" && right.kind === "global" && left.name === right.name) return true;
+  if (
+    (left.kind === "global" && isProgramAllocated(right)) ||
+    (right.kind === "global" && isProgramAllocated(left))
+  )
+    return false;
+  const globalVersusPrimitive =
+    compareGlobalToPrimitive(left, right) ?? compareGlobalToPrimitive(right, left);
+  if (globalVersusPrimitive !== null) return globalVersusPrimitive;
   if (left.kind === "react-api" && right.kind === "react-api") return left.api === right.api;
   const hostTagName = (value: StaticValue): string | null =>
     value.kind === "component-reference" && value.type.kind === "host" ? value.type.tagName : null;
@@ -633,13 +680,55 @@ const haveSameShape = (
   left.numberRange?.min === right.numberRange?.min &&
   left.numberRange?.max === right.numberRange?.max;
 
+const isSameLocation = (left: SourceLocation | null, right: SourceLocation | null): boolean =>
+  left === right ||
+  (left !== null &&
+    right !== null &&
+    left.filePath === right.filePath &&
+    left.line === right.line &&
+    left.column === right.column);
+
+/**
+ * Two objects a single `throw` site allocates on different paths, whose own
+ * properties are all indistinguishable scalars: nothing in the program can
+ * tell which one it caught, so they share one alternative.
+ */
+const areInterchangeableThrownObjects = (
+  left: StaticObjectValue,
+  right: StaticObjectValue,
+): boolean =>
+  left.constructedBy === right.constructedBy &&
+  left.hasNullPrototype === right.hasNullPrototype &&
+  left.prototype === right.prototype &&
+  left.entries.length === right.entries.length &&
+  left.entries.every((entry, index) => {
+    const other = right.entries[index];
+    return (
+      entry.kind === "property" &&
+      other.kind === "property" &&
+      entry.key === other.key &&
+      entry.accessor === undefined &&
+      other.accessor === undefined &&
+      entry.value.kind !== "object" &&
+      entry.value.kind !== "list" &&
+      isInterchangeable(entry.value, other.value)
+    );
+  });
+
 /** Alternatives analysis could never tell apart, so a branch keeps only one of them. */
 const isInterchangeable = (left: StaticValue, right: StaticValue): boolean => {
   if (isSameValue(left, right)) return true;
   if (left.kind === "unknown" && right.kind === "unknown") {
     if (left.thrown === undefined || right.thrown === undefined)
       return left.thrown === right.thrown;
-    return isInterchangeable(left.thrown, right.thrown);
+    if (isInterchangeable(left.thrown, right.thrown)) return true;
+    return (
+      left.thrown.kind === "object" &&
+      right.thrown.kind === "object" &&
+      left.reason === right.reason &&
+      isSameLocation(left.location, right.location) &&
+      areInterchangeableThrownObjects(left.thrown, right.thrown)
+    );
   }
   return (
     left.kind === "unknown-primitive" &&
@@ -719,7 +808,6 @@ export const getTruthiness = (value: StaticValue): boolean | null => {
     case "react-api":
     case "namespace":
     case "global":
-    case "host-node":
     case "method":
     case "native-function":
     case "native-object":
@@ -917,6 +1005,8 @@ export const describeValue = (value: StaticValue, depth = 0): string => {
     case "regexp":
       return `/${value.pattern}/${value.flags}`;
     case "symbol":
+      if (unregisteredSymbols.has(value.key))
+        return `Symbol(${value.description === undefined ? "" : JSON.stringify(value.description)})`;
       return value.key.startsWith("Symbol.")
         ? value.key
         : `Symbol.for(${JSON.stringify(value.key)})`;
@@ -938,8 +1028,6 @@ export const describeValue = (value: StaticValue, depth = 0): string => {
       return `namespace ${value.module.filePath}`;
     case "global":
       return `global ${value.name}`;
-    case "host-node":
-      return `<${value.tagName}> node`;
     case "method":
       return `${describeNested(value.receiver)}.${value.name}`;
     case "native-function":
