@@ -78,40 +78,25 @@ const styles = stylex.create({
   node: { color: colors.text, outline: "none" },
   detail: { color: colors.muted },
   interactive: { cursor: "pointer" },
-  component: { color: colors.text },
-  host: { color: colors.text },
-  provider: { color: colors.blue },
-  boundary: { color: colors.red },
   special: { color: colors.muted, fontStyle: "italic" },
-  suspense: { color: colors.teal },
-  hook: { color: colors.text },
-  value: { color: colors.text },
-  callback: { color: colors.text },
-  store: { color: colors.text },
   data: { strokeOpacity: 0.7 },
   update: { strokeOpacity: 0.7, strokeDasharray: "3 2" },
   subscription: { strokeOpacity: 0.7, strokeDasharray: "2 2" },
-  activeFlow: { stroke: colors.blue, strokeOpacity: 1 },
-  portal: { color: colors.yellow },
-  blue: { color: colors.blue },
-  violet: { color: colors.violet },
-  orange: { color: colors.orange },
+  activeEdge: { stroke: colors.blue, strokeOpacity: 1 },
+  activeNode: { color: colors.blue },
   owner: { strokeOpacity: 1, strokeDasharray: "3 2" },
   reference: { strokeOpacity: 1, strokeDasharray: "3 2" },
-  context: { stroke: colors.blue, strokeOpacity: 1 },
-  portalEdge: { stroke: colors.orange, strokeOpacity: 1, strokeDasharray: "3 2" },
-  referenceLabel: { fill: colors.pink },
-  contextLabel: { fill: colors.blue },
-  portalLabel: { fill: colors.orange },
+  context: { strokeOpacity: 1 },
+  portalEdge: { strokeOpacity: 1, strokeDasharray: "3 2" },
+  activeLabel: { fill: colors.blue },
   scope: {
     fill: colors.scope,
-    stroke: colors.blue,
+    stroke: colors.line,
     strokeWidth: 1,
     strokeOpacity: 0.25,
   },
-  boundaryScope: { fill: colors.boundaryScope, stroke: colors.red },
-  boundaryLabel: { fill: colors.red },
-  scopeLabel: { fill: colors.blue, fontStyle: "italic" },
+  activeScope: { fill: colors.activeScope, stroke: colors.blue },
+  scopeLabel: { fontStyle: "italic" },
 });
 
 export const DiagramCanvas = ({
@@ -188,11 +173,10 @@ export const DiagramNode = ({
   const isDimmed = !getIsNodeHighlighted(diagramInteraction, node.id);
   const nodeStyles = stylex.props(
     styles.node,
-    styles[kind],
+    kind === "special" && styles.special,
     isInteractive && onSelect && styles.interactive,
-    node.tone && styles[node.tone],
     isDetail && styles.detail,
-    diagramInteraction?.mode === "flow" && diagramInteraction.activeId === node.id && styles.blue,
+    diagramInteraction?.activeId === node.id && styles.activeNode,
     isDimmed && drawing.dimmed,
   );
   return (
@@ -271,7 +255,7 @@ export const DiagramNode = ({
         <circle
           r={diagramMetrics.nodeRadius + 2}
           fill="none"
-          stroke={colors.yellow}
+          stroke="currentColor"
           strokeWidth={diagramMetrics.strokeWidth}
         />
       )}
@@ -333,6 +317,12 @@ export const DiagramEdge = (props: DiagramEdgeProps) => {
   const labelPosition = getEdgeLabelPosition(geometry);
   const interaction = useDiagramInteraction();
   const isDimmed = !getIsEdgeHighlighted(interaction, fromId, toId, id);
+  const isActive =
+    interaction !== null &&
+    interaction.activeId !== null &&
+    interaction.mode !== "boundary" &&
+    kind !== "parent" &&
+    !isDimmed;
   const edgeStyles = stylex.props(isDimmed && drawing.dimmed);
   return (
     <g
@@ -373,19 +363,14 @@ export const DiagramEdge = (props: DiagramEdgeProps) => {
         {...stylex.props(
           drawing.connector,
           kind !== "parent" && (kind === "portal" ? styles.portalEdge : styles[kind]),
-          interaction?.mode === "flow" && kind !== "parent" && !isDimmed && styles.activeFlow,
+          isActive && styles.activeEdge,
         )}
       />
       {label && (
         <text
           x={labelPosition.x}
           y={labelPosition.y}
-          {...stylex.props(
-            drawing.annotation,
-            kind === "reference" && styles.referenceLabel,
-            kind === "context" && styles.contextLabel,
-            kind === "portal" && styles.portalLabel,
-          )}
+          {...stylex.props(drawing.annotation, isActive && styles.activeLabel)}
         >
           {label}
         </text>
@@ -406,6 +391,10 @@ export const DiagramScope = ({
   ...props
 }: DiagramScopeProps) => {
   const interaction = useDiagramInteraction();
+  const isActive =
+    interaction !== null &&
+    interaction.activeId !== null &&
+    ((kind === "boundary" && interaction.mode === "boundary") || interaction.activeId === nodeId);
   const scopeStyles = stylex.props(
     interaction !== null &&
       interaction.activeId !== null &&
@@ -428,17 +417,13 @@ export const DiagramScope = ({
         width={width}
         height={height}
         rx={2}
-        {...stylex.props(styles.scope, kind === "boundary" && styles.boundaryScope)}
+        {...stylex.props(styles.scope, isActive && styles.activeScope)}
       />
       <text
         x={x + width - 8}
         y={y + 8}
         textAnchor="end"
-        {...stylex.props(
-          drawing.annotation,
-          styles.scopeLabel,
-          kind === "boundary" && styles.boundaryLabel,
-        )}
+        {...stylex.props(drawing.annotation, styles.scopeLabel, isActive && styles.activeLabel)}
       >
         {label}
       </text>

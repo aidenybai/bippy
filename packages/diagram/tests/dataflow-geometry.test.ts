@@ -62,7 +62,6 @@ test("preserves explicit offsets and handles coincident endpoints", () => {
 test("callback props are value ports, not updater operations", () => {
   for (const node of dataflowNodes.filter((node) => node.label.startsWith("on"))) {
     assert.equal(node.kind, "value");
-    assert.equal(node.tone, "orange");
   }
   for (const nodeId of ["set-query", "dispatch", "store-add"])
     assert.equal(dataflowNodes.find((node) => node.id === nodeId)?.kind, "callback");

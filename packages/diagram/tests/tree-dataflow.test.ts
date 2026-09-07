@@ -5,11 +5,7 @@ import { getOwnerNodes } from "../src/diagram/tree-highlight";
 import { getDataflowIndex, getDataflowHighlight } from "../src/diagram/dataflow-model";
 import { getDataflowOffsets } from "../src/diagram/dataflow-geometry";
 import { diagramMetrics, getEdgePath } from "../src/diagram/geometry";
-import {
-  treeDataflowNodes,
-  treeDataflowEdges,
-  treeDataflowPorts,
-} from "../src/board/tree-dataflow-fixture";
+import { treeDataflowNodes, treeDataflowEdges } from "../src/board/tree-dataflow-fixture";
 
 test("keeps metadata rows under their components in parent and owner projections", () => {
   for (const nodes of [treeDataflowNodes, getOwnerNodes(treeDataflowNodes)]) {
@@ -31,7 +27,6 @@ test("traces the inline model without turning component membership into data dep
   const derived = getDataflowHighlight(index, "visible-todos");
   assert.ok(derived.nodeIds.has("query-state"));
   assert.ok(derived.nodeIds.has("todos-reducer"));
-  for (const port of treeDataflowPorts) assert.equal(port.tone, undefined);
 });
 
 test("bounds long connections horizontally and preserves arrow clearance on curved links", () => {

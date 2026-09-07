@@ -55,7 +55,7 @@ Model indexing, highlighting, and geometry remain pure TypeScript modules. `tree
 ## Components
 
 - `DiagramCanvas`: native-size SVG canvas. It does not scale text, nodes, or strokes to fit a card; the specimen scrolls when needed.
-- `DiagramNode`: component, host, provider, boundary, suspense, special, portal, hook, value, callback, and store nodes. `tone` is independent of node kind; a blue SVG element is still a hollow host node. `isPortalTarget` adds a ring without changing node kind.
+- `DiagramNode`: component, host, provider, boundary, suspense, special, portal, hook, value, callback, and store nodes. `isPortalTarget` adds a ring without changing node kind.
 - `DiagramEdge`: structural, reference, context, portal, data, update, and subscription connections. Optional arrowheads, waypoints, and explicit label positions support directed flows.
 - `DiagramScope`: labeled context or error-boundary region.
 - `DiagramScene`: positioned nodes and ID-based edges.
@@ -114,7 +114,7 @@ Callback edges describe invocation back to an updater, not a second prop-value t
 
 ## Themes
 
-The icon-only sun/moon switch saves the chosen theme locally and initially follows the system preference. Diagram colors, label masks, surfaces, and scopes use shared StyleX variables. `darkTheme` is available from `diagram/tokens` for consumers.
+The icon-only sun/moon switch saves the chosen theme locally and initially follows the system preference. Diagrams are neutral at rest. Blue is the only accent, reserved for active nodes, connections, and scopes; shapes, labels, and line patterns distinguish node and edge kinds. Diagram colors, label masks, surfaces, and scopes use shared StyleX variables. `darkTheme` is available from `diagram/tokens` for consumers.
 
 ## Virtualization
 

@@ -10,14 +10,8 @@ interface DiagramColors {
   border: string;
   line: string;
   blue: string;
-  violet: string;
-  pink: string;
-  orange: string;
-  yellow: string;
-  red: string;
-  teal: string;
-  boundaryScope: string;
   scope: string;
+  activeScope: string;
 }
 
 export const colors = stylex.defineVars<DiagramColors>({
@@ -28,14 +22,8 @@ export const colors = stylex.defineVars<DiagramColors>({
   border: tailwindColors.neutral200,
   line: tailwindColors.neutral400,
   blue: tailwindColors.blue600,
-  violet: tailwindColors.violet600,
-  pink: tailwindColors.fuchsia600,
-  orange: tailwindColors.orange600,
-  yellow: tailwindColors.amber500,
-  red: tailwindColors.red600,
-  teal: tailwindColors.teal600,
-  boundaryScope: `color-mix(in srgb, ${tailwindColors.red500} 6%, transparent)`,
-  scope: `color-mix(in srgb, ${tailwindColors.blue500} 5%, transparent)`,
+  scope: `color-mix(in srgb, ${tailwindColors.neutral500} 5%, transparent)`,
+  activeScope: `color-mix(in srgb, ${tailwindColors.blue500} 5%, transparent)`,
 });
 
 export const darkTheme = stylex.createTheme(colors, {
@@ -46,14 +34,8 @@ export const darkTheme = stylex.createTheme(colors, {
   border: tailwindColors.neutral700,
   line: tailwindColors.neutral500,
   blue: tailwindColors.blue400,
-  violet: tailwindColors.violet400,
-  pink: tailwindColors.fuchsia400,
-  orange: tailwindColors.orange400,
-  yellow: tailwindColors.amber400,
-  red: tailwindColors.red400,
-  teal: tailwindColors.teal400,
-  boundaryScope: `color-mix(in srgb, ${tailwindColors.red400} 10%, transparent)`,
-  scope: `color-mix(in srgb, ${tailwindColors.blue400} 8%, transparent)`,
+  scope: `color-mix(in srgb, ${tailwindColors.neutral500} 8%, transparent)`,
+  activeScope: `color-mix(in srgb, ${tailwindColors.blue400} 8%, transparent)`,
 });
 
 export const typography = stylex.defineConsts({

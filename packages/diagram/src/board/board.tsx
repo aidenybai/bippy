@@ -173,6 +173,7 @@ export const Board = () => (
               width: 235,
               height: diagramMetrics.rowHeight * 7,
               label: "DefsContext",
+              nodeId: "parent-provider",
             },
           ]}
         >
