@@ -102,6 +102,12 @@ export const Example = () => (
 );
 ```
 
+### Tree controls
+
+Use `<Tree.View controls>` for the default toolbar, or pass `controls={<Tree.Controls />}` to compose it within the view provider. `TreeComparison` includes it by default; set `controls={false}` to omit it. `VirtualTree` opts in with `controls`.
+
+Search matches labels, annotations, and IDs across the complete model without filtering the hierarchy. Enter expands ancestors, scrolls to the match, and focuses it. ↑/↓ or the previous/next buttons cycle and reveal matches without moving focus into the tree. Escape clears the query. The reveal button restores the last active node; expand/collapse-all affects only that view. Match results are announced through a live status. Static and virtual branches share always-visible disclosure chevrons with 24px targets. Disclosure clicks toggle without selecting; an item's `onClickCapture` can cancel them. Static disclosures remain inside the native item, inheriting its visibility and styling.
+
 IDs must be unique. Missing parents and parent cycles are rejected. Input order determines sibling order. `ownerId` is independent of `parentId`.
 
 This private workspace package exports TypeScript source. Consumers must transpile it and compile its StyleX styles, including `tailwind-stylex`; see `next.config.ts`.
@@ -121,9 +127,11 @@ The example includes:
 - `useSyncExternalStore` → snapshots → rendered count, including `getSnapshot`, effect subscription/cleanup, notifications, and external writes.
 - Provider value → Stats' `useContext` → host styles.
 
-Tree dataflow uses bounded curved links, independently routed for each projection. Only relevant paths appear, and opposing subscription/notification links use separate lanes. Arrows leave a clear gap before detail text. Node connections retain their 3px arrow clearance.
+Tree dataflow uses bounded curved links, independently routed for each projection. Only relevant paths appear. Overlapping row intervals and opposing links receive separate lanes; surface-colored halos separate crossings without adding accent colors. Arrows leave a clear gap before detail text. Node connections retain their 3px arrow clearance.
 
 Callable labels use `ƒ` at the same 10px size. Hooks and callbacks receive it automatically; set `isCallable` for function-valued props, store methods, or known function components. The flag does not change node kind or imply an update edge. Plain values and components of unknown implementation stay unmarked. The symbol is hidden from assistive technology; descriptions identify functions and names/typeahead remain unchanged.
+
+Set `componentType` when the implementation is known: `function` adds `ƒ`, `class` uses a square, and `memo`/`forward-ref` use diamonds. Wrapper descriptions identify which wrapper is present. Unknown implementations retain the default circle; names alone never determine component type. The specimen omits numeric instance annotations while retaining meaningful annotations such as `visible`.
 
 Callback edges describe invocation back to an updater, not a second prop-value transfer. Boundary scopes describe render-time containment, not error handling for event callbacks or external-store operations.
 
@@ -152,7 +160,7 @@ Trees expose standard `tree` / `treeitem` roles, explicit hierarchy metadata, na
 
 React Aria supplies press normalization, focus visibility, locale utilities, and slot-ID/prop merging. This is not a wrapper around React Aria's Tree: its current implementation uses a single-column treegrid, whereas these SVG views use tree semantics. Focus repair handles removed, disabled, and hidden items without moving focus into another view.
 
-Automated checks cover axe rules, SVG paint contrast, 24px targets, touch activation, forced colors, and 200% CSS zoom. They do not establish full WCAG conformance or screen-reader compatibility. See [accessibility verification](docs/accessibility.md) for pending browser and manual checks.
+Automated checks cover axe rules, SVG paint contrast, 24px targets, touch activation, forced colors, and 200% CSS zoom. They do not establish full WCAG conformance or screen-reader compatibility. See [accessibility verification](docs/accessibility.md) for engine coverage and pending manual checks.
 
 ## Checks
 
@@ -173,7 +181,7 @@ pnpm --filter diagram exec playwright install chromium firefox webkit
 pnpm --filter diagram test:accessibility
 ```
 
-Use `pnpm --filter diagram test:accessibility --project=chromium` to run only the verified engine. Firefox/WebKit installation was blocked by a Firefox download timeout during this implementation; those engine runs remain pending.
+Use `--project=chromium`, `--project=firefox`, or `--project=webkit` to select an engine. Forced-colors emulation and the combined CSS-zoom check are Chromium-only; manual screen-reader, platform high-contrast, browser zoom, and text-scaling checks remain pending.
 
 ## Sources
 

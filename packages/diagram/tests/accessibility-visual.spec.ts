@@ -17,7 +17,7 @@ for (const { theme } of themes) {
     const getContrast = () =>
       page
         .locator(
-          "main svg text, main svg tspan, main svg circle, main svg [data-edge-from] > path, main svg [data-connector], main svg [data-scope-kind] > rect, main svg [data-focus-ring]",
+          "main svg text, main svg tspan, main svg circle, main svg [data-edge-from] > [data-edge-path], main svg [data-connector], main svg [data-scope-kind] > rect, main svg [data-focus-ring]",
         )
         .evaluateAll((elements) => {
           const context = document

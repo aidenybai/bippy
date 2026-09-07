@@ -46,10 +46,12 @@ test("recovers focus after item removal and skips disabled items without activat
   const tree = page.getByRole("tree", { name: "Compound parent", exact: true });
   const child = tree.locator('[data-node-id="child"]');
   await child.focus();
+  await expect(child).toHaveAttribute("tabindex", "0");
   await page.keyboard.press("Delete");
   await expect(child).toHaveCount(0);
   await expect(tree.locator('[data-node-id="app"]')).toBeFocused();
-  await page.getByRole("button", { name: "Toggle child", exact: true }).click();
+  await page.getByRole("button", { name: "Toggle child", exact: true }).focus();
+  await page.keyboard.press("Enter");
   await expect(page.getByRole("button", { name: "Toggle child", exact: true })).toBeFocused();
   await page.getByRole("button", { name: "Toggle disabled child", exact: true }).click();
   await tree.locator('[data-node-id="app"]').focus();
@@ -66,6 +68,7 @@ test("reactivates controlled focus and repairs disabled or hidden DOM items", as
   const tree = page.getByRole("tree", { name: "Compound parent", exact: true });
   const child = tree.locator('[data-node-id="child"]');
   await child.focus();
+  await expect(child).toHaveAttribute("tabindex", "0");
   await page.keyboard.press("F2");
   await expect(page.getByTestId("active")).toHaveText("count");
   await page.keyboard.press("Enter");

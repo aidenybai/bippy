@@ -15,6 +15,7 @@ export {
   Tree,
   TreeRoot,
   TreeView,
+  TreeControls,
   TreeScopes,
   TreeEdges,
   TreeItems,

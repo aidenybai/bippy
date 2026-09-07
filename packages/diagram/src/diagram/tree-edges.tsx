@@ -1,6 +1,7 @@
 "use client";
 
-import type { ComponentPropsWithRef } from "react";
+import { useMemo, type ComponentPropsWithRef } from "react";
+import { getTreeFlowLanes } from "./tree-flow-lanes";
 import { DiagramEdge } from "./primitives";
 import { useTreeRoot, useTreeView } from "./tree-context";
 import { getDataflowOffsets } from "./dataflow-geometry";
@@ -22,6 +23,14 @@ export const TreeEdges = (props: TreeEdgesProps) => {
     scopeIndex,
     scopeId,
   } = useTreeView();
+  const visibleEdges = useMemo(
+    () => dataflowEdges.filter((edge) => flow?.edgeIds.has(edge.id)),
+    [dataflowEdges, flow],
+  );
+  const flowLanes = useMemo(
+    () => getTreeFlowLanes(visibleEdges, indexById),
+    [visibleEdges, indexById],
+  );
   return (
     <g data-slot="tree-edges" {...props}>
       {rows.map((row, index) =>
@@ -69,64 +78,61 @@ export const TreeEdges = (props: TreeEdgesProps) => {
           );
         })}
       {flow &&
-        dataflowEdges
-          .filter((edge) => flow.edgeIds.has(edge.id))
-          .map((edge) => {
-            const fromIndex = indexById.get(edge.from);
-            const toIndex = indexById.get(edge.to);
-            if (fromIndex === undefined || toIndex === undefined) return null;
-            const fromNode = { ...rows[fromIndex].node, ...positions[fromIndex] };
-            const toNode = { ...rows[toIndex].node, ...positions[toIndex] };
-            const offsets = getDataflowOffsets(
-              {
-                ...edge,
-                shape: "curve",
-                fromOffset:
-                  edge.fromOffset ??
-                  (fromNode.componentId ? { x: -diagramMetrics.detailPortGap, y: 0 } : undefined),
-                toOffset:
-                  edge.toOffset ??
-                  (toNode.componentId ? { x: -diagramMetrics.detailPortGap, y: 0 } : undefined),
-              },
-              fromNode,
-              toNode,
-            );
-            const lane = dataflowEdges
-              .filter(
-                (other) =>
-                  (other.from === edge.from && other.to === edge.to) ||
-                  (other.from === edge.to && other.to === edge.from),
-              )
-              .findIndex((other) => other.id === edge.id);
-            const geometry: EdgeGeometry = {
-              kind: edge.kind,
+        visibleEdges.map((edge) => {
+          const fromIndex = indexById.get(edge.from);
+          const toIndex = indexById.get(edge.to);
+          if (fromIndex === undefined || toIndex === undefined) return null;
+          const fromNode = { ...rows[fromIndex].node, ...positions[fromIndex] };
+          const toNode = { ...rows[toIndex].node, ...positions[toIndex] };
+          const offsets = getDataflowOffsets(
+            {
+              ...edge,
               shape: "curve",
-              side: edge.side,
-              bend: diagramMetrics.indent * (2 + lane),
-              from: { x: fromNode.x + offsets.fromOffset.x, y: fromNode.y + offsets.fromOffset.y },
-              to: { x: toNode.x + offsets.toOffset.x, y: toNode.y + offsets.toOffset.y },
-            };
-            const labelPosition = getEdgeLabelPosition(geometry);
-            return (
-              <DiagramEdge
-                key={edge.id}
-                id={edge.id}
-                {...geometry}
-                directed
-                fromId={edge.from}
-                toId={edge.to}
-                label={
-                  edge.from === activeNode?.id || edge.to === activeNode?.id
-                    ? edge.label
-                    : undefined
-                }
-                labelPosition={{
-                  ...labelPosition,
-                  y: labelPosition.y + lane * (diagramMetrics.fontSize * 2 + 2),
-                }}
-              />
-            );
-          })}
+              fromOffset:
+                edge.fromOffset ??
+                (fromNode.componentId ? { x: -diagramMetrics.detailPortGap, y: 0 } : undefined),
+              toOffset:
+                edge.toOffset ??
+                (toNode.componentId ? { x: -diagramMetrics.detailPortGap, y: 0 } : undefined),
+            },
+            fromNode,
+            toNode,
+          );
+          const lane = flowLanes.lanes.get(edge.id) ?? 0;
+          const maximumBend = Math.max(
+            8,
+            ((Math.min(fromNode.x + offsets.fromOffset.x, toNode.x + offsets.toOffset.x) - 28) *
+              4) /
+              3,
+          );
+          const geometry: EdgeGeometry = {
+            kind: edge.kind,
+            shape: "curve",
+            side: edge.side,
+            bend: 8 + ((Math.min(64, maximumBend) - 8) * lane) / Math.max(1, flowLanes.count - 1),
+            from: { x: fromNode.x + offsets.fromOffset.x, y: fromNode.y + offsets.fromOffset.y },
+            to: { x: toNode.x + offsets.toOffset.x, y: toNode.y + offsets.toOffset.y },
+          };
+          const labelPosition = getEdgeLabelPosition(geometry);
+          return (
+            <DiagramEdge
+              key={edge.id}
+              id={edge.id}
+              {...geometry}
+              directed
+              isSeparated
+              fromId={edge.from}
+              toId={edge.to}
+              label={
+                edge.from === activeNode?.id || edge.to === activeNode?.id ? edge.label : undefined
+              }
+              labelPosition={{
+                ...labelPosition,
+                y: labelPosition.y + lane * (diagramMetrics.fontSize * 2 + 2),
+              }}
+            />
+          );
+        })}
     </g>
   );
 };

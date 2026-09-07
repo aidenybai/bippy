@@ -9,15 +9,14 @@ test("shows catch regions for the hovered boundary and synchronizes the owner vi
   await expect(parent.locator("[data-scope-kind]")).toHaveCount(0);
   await parent.locator('[data-node-id="error"]').hover();
   await expect(parent.locator('[data-scope-kind="boundary"]')).toHaveCount(2);
-  await expect(parent.getByLabel("catches: ErrorBoundary (5) boundary scope")).toBeVisible();
-  await expect(owner.locator('[data-node-id="error"] > circle')).not.toHaveCSS(
-    "fill",
-    "rgb(255, 255, 255)",
-  );
+  await expect(parent.getByLabel("catches: ErrorBoundary boundary scope")).toBeVisible();
+  await expect(
+    owner.locator('[data-node-id="error"] [data-component-symbol="class"]'),
+  ).not.toHaveCSS("fill", "rgb(255, 255, 255)");
   await parent.screenshot({ path: "test-results/outer-boundary.png" });
   await owner.locator('[data-node-id="feed-error"]').hover();
   await expect(parent.locator('[data-scope-kind="boundary"]')).toHaveCount(1);
-  await expect(parent.getByLabel("catches: ErrorBoundary (16) boundary scope")).toBeVisible();
+  await expect(parent.getByLabel("catches: ErrorBoundary boundary scope")).toBeVisible();
   await parent.screenshot({ path: "test-results/inner-boundary.png" });
   await page.mouse.move(0, 0);
   await expect(parent.locator("[data-scope-kind]")).toHaveCount(0);

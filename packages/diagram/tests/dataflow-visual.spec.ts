@@ -39,13 +39,13 @@ test("keeps inline data neutral, uses one active accent, and preserves arrow cle
       parent.locator('[data-edge-kind="parent"][data-edge-to="stats-count"]'),
     ).toHaveCount(0);
     const strokes = await parent
-      .locator("[data-edge-id] > path")
+      .locator("[data-edge-id] > [data-edge-path]")
       .evaluateAll((elements) => elements.map((element) => getComputedStyle(element).stroke));
     expect(new Set(strokes).size).toBe(1);
     const marker = parent.locator('[data-edge-id="snapshot-prop"] marker');
     await expect(marker).toHaveAttribute("refX", "4");
     const endpoint = await parent.evaluate((element) => {
-      const path = element.querySelector('[data-edge-id="snapshot-prop"] > path');
+      const path = element.querySelector('[data-edge-id="snapshot-prop"] > [data-edge-path]');
       const node = element.querySelector('[data-node-id="stats-count"]');
       if (!(path instanceof SVGPathElement) || !(node instanceof SVGGElement))
         throw new Error("Missing connection");

@@ -60,7 +60,7 @@ test("uses one tab stop per tree with arrow navigation, typeahead, collapse, and
   await expect(parent.locator('[data-tree-item][tabindex="0"]')).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(
-    page.getByRole("tree", { name: "Owner tree", exact: true }).locator('[tabindex="0"]'),
+    page.getByRole("searchbox", { name: "Search Owner tree", exact: true }),
   ).toBeFocused();
 });
 
@@ -69,7 +69,10 @@ test("keeps a virtual active descendant mounted during scrolling and recovers on
 }) => {
   await page.goto("/");
   const tree = page.getByRole("tree", { name: "Deep tree", exact: true });
-  await tree.focus();
+  await page.getByRole("button", { name: "Collapse all in Deep tree", exact: true }).focus();
+  await page.keyboard.press("Tab");
+  await expect(tree).toBeFocused();
+  await expect(tree.locator('[data-focused="true"]')).toHaveCount(1);
   const firstId = await tree.getAttribute("aria-activedescendant");
   expect(firstId).toBeTruthy();
   await tree.evaluate((element) => {

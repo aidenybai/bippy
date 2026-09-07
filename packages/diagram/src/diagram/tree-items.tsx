@@ -2,7 +2,9 @@
 
 import * as stylex from "@stylexjs/stylex";
 import { drawing } from "./drawing.stylex";
-import { Fragment, type ComponentPropsWithRef, type ReactNode } from "react";
+import { Fragment, useMemo, useRef, type ComponentPropsWithRef, type ReactNode } from "react";
+import { mergeRefs } from "@react-aria/utils";
+import { TreeDisclosure } from "./tree-disclosure";
 import { DiagramNode, type DiagramNodeProps } from "./primitives";
 import {
   DiagramLabel,
@@ -35,9 +37,12 @@ const TreeRowItem = ({
   variant,
   textValue,
   onSelect: onItemSelect,
+  ref,
   ...props
 }: TreeRowItemProps) => {
   const { onSelect, descriptions } = useTreeRoot();
+  const nodeRef = useRef<SVGGElement>(null);
+  const mergedRef = useMemo(() => mergeRefs(nodeRef, ref), [ref]);
   const {
     rows,
     positions,
@@ -49,6 +54,7 @@ const TreeRowItem = ({
     toggle,
     scopeId,
     scopeLabel,
+    interaction,
   } = useTreeView();
   const index = indexById.get(id);
   if (index === undefined) {
@@ -62,6 +68,7 @@ const TreeRowItem = ({
       node={row.node}
       {...positions[index]}
       hitHeight={offsets[index + 1] - offsets[index]}
+      hitLeft={-positions[index].x}
       description={[
         descriptions.get(id),
         id === scopeId ? `Context scope: ${scopeLabel}.` : undefined,
@@ -69,6 +76,7 @@ const TreeRowItem = ({
         .filter(Boolean)
         .join(" ")}
       {...props}
+      ref={mergedRef}
       data-tree-item=""
       data-text-value={textValue}
       role="treeitem"
@@ -86,7 +94,26 @@ const TreeRowItem = ({
         else if (row.hasChildren) toggle(nodeId);
       }}
       variant={variant}
-    />
+    >
+      {props.children ?? <DiagramLabel />}
+      {row.hasChildren &&
+        props.isInteractive !== false &&
+        props["aria-disabled"] !== true &&
+        props["aria-disabled"] !== "true" && (
+          <TreeDisclosure
+            nodeId={id}
+            x={12 - positions[index].x}
+            y={0}
+            height={offsets[index + 1] - offsets[index]}
+            isExpanded={!collapsedIds.has(id)}
+            onToggle={(_event, isFocusDriven) => {
+              toggle(id);
+              nodeRef.current?.focus({ preventScroll: true });
+              interaction.setFocusedId(id, isFocusDriven);
+            }}
+          />
+        )}
+    </DiagramNode>
   );
 };
 

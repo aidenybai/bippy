@@ -58,8 +58,8 @@ export const useDiagramInteractionState = (
       const currentActiveId =
         options.activeId !== undefined ? options.activeId : getActiveId(previous);
       if (
-        (shouldRequest || getActiveId(previous) !== nextActiveId) &&
-        currentActiveId !== nextActiveId
+        getActiveId(previous) !== nextActiveId ||
+        (shouldRequest && currentActiveId !== nextActiveId)
       )
         options.onActiveIdChange?.(nextActiveId);
     },

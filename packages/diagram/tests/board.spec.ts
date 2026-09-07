@@ -60,8 +60,10 @@ test("hover and keyboard focus preserve contrast without selection boxes", async
   await expect(node).toHaveCSS("opacity", "1");
   await expect(other).toHaveCSS("opacity", "1");
   await expect(other).toHaveAttribute("data-emphasis", "dimmed");
-  await expect(node.locator("rect")).toHaveCSS("fill", "rgba(0, 0, 0, 0)");
-  await expect(node.locator("rect")).toHaveCSS("stroke", "none");
+  for (const hitbox of await node.locator("rect").all()) {
+    await expect(hitbox).toHaveCSS("fill", "rgba(0, 0, 0, 0)");
+    await expect(hitbox).toHaveCSS("stroke", "none");
+  }
   await expect(diagram.locator('[data-edge-from="div"][data-edge-to="main"]')).toHaveCSS(
     "opacity",
     "1",
@@ -87,8 +89,8 @@ test("virtual rows reuse diagram nodes and emphasize only the hovered item", asy
   await page.goto("/");
   const tree = page.getByRole("tree", { name: "Deep tree" });
   await expect(tree.locator('[aria-selected="true"]')).toHaveCount(0);
-  await expect(tree).toHaveAttribute("data-visible-count", "11");
-  await expect(tree).toHaveAttribute("data-mounted-count", "16");
+  await expect(tree).toHaveAttribute("data-visible-count", "10");
+  await expect(tree).toHaveAttribute("data-mounted-count", "15");
   const node = tree.locator('[data-node-id="deep-3"]');
   const other = tree.locator('[data-node-id="deep-2"]');
   await node.hover();
@@ -97,7 +99,7 @@ test("virtual rows reuse diagram nodes and emphasize only the hovered item", asy
   await expect(other).toHaveAttribute("data-emphasis", "dimmed");
   await expect(tree.getByRole("treeitem").nth(2).locator("[data-tree-toggle]")).toHaveCSS(
     "opacity",
-    "0",
+    "1",
   );
   await expect(node.locator("circle")).toHaveAttribute("r", String(diagramMetrics.nodeRadius));
   await expect(node.locator("rect")).toHaveCSS("fill", "rgba(0, 0, 0, 0)");

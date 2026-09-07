@@ -35,7 +35,10 @@ test("embeds hooks and props in both trees and traces the same flow across them"
         "data-emphasis",
         "dimmed",
       );
-    await expect(tree.locator('[data-edge-id="items-prop"] > path')).toHaveAttribute("d", / C /);
+    await expect(tree.locator('[data-edge-id="items-prop"] > [data-edge-path]')).toHaveAttribute(
+      "d",
+      / C /,
+    );
     await expect(tree.locator('[data-edge-kind="owner"]')).toHaveCount(0);
   }
   await page.locator("#parent-tree").screenshot({ path: "test-results/tree-dataflow-query.png" });

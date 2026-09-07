@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { TreeControls } from "./tree-controls";
+import { getCollapsedTreeIds, getRevealedTreeIds, type TreeRevealRequest } from "./tree-expansion";
 import { mergeRefs } from "@react-aria/utils";
 import { DiagramCanvas, type DiagramCanvasProps } from "./primitives";
 import { useTreeRoot, TreeViewContext } from "./tree-context";
@@ -19,6 +21,7 @@ export interface TreeViewProps extends Omit<
   DiagramCanvasProps,
   "width" | "height" | "onSelect" | "role"
 > {
+  controls?: ReactNode;
   relationship?: "parent" | "owner";
   width?: number;
   rowHeight?: number;
@@ -29,6 +32,7 @@ export interface TreeViewProps extends Omit<
 }
 
 export const TreeView = ({
+  controls,
   relationship = "parent",
   width = 400,
   rowHeight = diagramMetrics.rowHeight,
@@ -60,6 +64,16 @@ export const TreeView = ({
     () => (relationship === "owner" ? getTreeRows(getOwnerNodes(root.nodes)) : root.rows),
     [root.nodes, root.rows, relationship],
   );
+  const [revealRequest, setRevealRequest] = useState<TreeRevealRequest | null>(null);
+  const reveal = useCallback(
+    (nodeId: string, shouldFocus: boolean) => {
+      setCollapsedIds((previous) => getRevealedTreeIds(model, nodeId, previous));
+      setRevealRequest({ nodeId, shouldFocus });
+    },
+    [model],
+  );
+  const expandAll = useCallback(() => setCollapsedIds(new Set()), []);
+  const collapseAll = useCallback(() => setCollapsedIds(getCollapsedTreeIds(model)), [model]);
   const rows = useMemo(() => getVisibleTreeRows(model, collapsedIds), [model, collapsedIds]);
   const layout = useMemo(() => getTreeLayout(rows, rowHeight, indent), [rows, rowHeight, indent]);
   const indexById = useMemo(() => new Map(rows.map((row, index) => [row.node.id, index])), [rows]);
@@ -92,6 +106,24 @@ export const TreeView = ({
   }, [root.interaction, root.highlightIndex, relationship, visibleHighlight, flow]);
   const navigation = useTreeNavigation({ rows, containerRef, collapsedIds, toggle, interaction });
   const { focusedId, setFocusedId } = navigation;
+  useLayoutEffect(() => {
+    if (!revealRequest) return;
+    const element = [
+      ...(containerRef.current?.querySelectorAll<SVGGElement>("[data-tree-item]") ?? []),
+    ].find(
+      (item) =>
+        item.dataset.nodeId === revealRequest.nodeId &&
+        item.closest("[data-tree-view]") === containerRef.current &&
+        item.getAttribute("aria-disabled") !== "true",
+    );
+    if (element) {
+      setFocusedId(revealRequest.nodeId);
+      if (revealRequest.shouldFocus) element.focus({ preventScroll: true });
+      element.scrollIntoView({ block: "nearest", inline: "nearest" });
+      interaction.setFocusedId(revealRequest.nodeId, true);
+    }
+    setRevealRequest(null);
+  }, [revealRequest, rows, setFocusedId, interaction]);
   const scopeIndex =
     scopeId && relationship === "parent" && interaction.activeId === scopeId
       ? indexById.get(scopeId)
@@ -99,6 +131,11 @@ export const TreeView = ({
   const context = useMemo(
     () => ({
       ...layout,
+      label,
+      model,
+      reveal,
+      expandAll,
+      collapseAll,
       rows,
       indexById,
       interaction,
@@ -117,6 +154,11 @@ export const TreeView = ({
     }),
     [
       layout,
+      label,
+      model,
+      reveal,
+      expandAll,
+      collapseAll,
       rows,
       indexById,
       interaction,
@@ -137,6 +179,7 @@ export const TreeView = ({
   return (
     <TreeViewContext value={context}>
       <DiagramInteractionContext value={interaction}>
+        {controls && (controls === true ? <TreeControls /> : controls)}
         <DiagramCanvas
           data-slot="tree-view"
           {...props}

@@ -92,12 +92,11 @@ export const relationshipEdges: SceneEdge[] = [
 ];
 
 export const parentNodes: TreeNode[] = [
-  { id: "strict", label: "StrictMode", annotation: "(1)", kind: "special" },
-  { id: "app", label: "DemoApp", annotation: "(2)", parentId: "strict" },
+  { id: "strict", label: "StrictMode", kind: "special" },
+  { id: "app", label: "DemoApp", parentId: "strict", componentType: "function" },
   {
     id: "theme",
     label: "ThemeContext.Provider",
-    annotation: "(3)",
     parentId: "app",
     ownerId: "app",
     kind: "provider",
@@ -105,17 +104,22 @@ export const parentNodes: TreeNode[] = [
   {
     id: "error",
     label: "ErrorBoundary",
-    annotation: "(5)",
+    componentType: "class",
     parentId: "theme",
     ownerId: "app",
     kind: "boundary",
   },
-  { id: "frame", label: "Frame", annotation: "(6)", parentId: "error", ownerId: "app" },
-  { id: "div", label: "div", annotation: "(7)", parentId: "frame", ownerId: "frame", kind: "host" },
+  {
+    id: "frame",
+    label: "Frame",
+    parentId: "error",
+    ownerId: "app",
+    componentType: "forward-ref",
+  },
+  { id: "div", label: "div", parentId: "frame", ownerId: "frame", kind: "host" },
   {
     id: "aside",
     label: "aside",
-    annotation: "(8)",
     parentId: "div",
     ownerId: "frame",
     kind: "host",
@@ -123,7 +127,6 @@ export const parentNodes: TreeNode[] = [
   {
     id: "suspense",
     label: "Suspense",
-    annotation: "(9)",
     parentId: "aside",
     ownerId: "app",
     kind: "suspense",
@@ -131,7 +134,6 @@ export const parentNodes: TreeNode[] = [
   {
     id: "profiler",
     label: "Profiler",
-    annotation: "(10)",
     parentId: "suspense",
     ownerId: "app",
     kind: "special",
@@ -139,7 +141,7 @@ export const parentNodes: TreeNode[] = [
   {
     id: "stats",
     label: "Stats",
-    annotation: "(11)",
+    componentType: "function",
     parentId: "profiler",
     ownerId: "app",
     contextProviderIds: ["theme"],
@@ -147,7 +149,6 @@ export const parentNodes: TreeNode[] = [
   {
     id: "section",
     label: "section",
-    annotation: "(12)",
     parentId: "stats",
     ownerId: "stats",
     kind: "host",
@@ -155,7 +156,6 @@ export const parentNodes: TreeNode[] = [
   {
     id: "strong",
     label: "strong",
-    annotation: "(13)",
     parentId: "section",
     ownerId: "stats",
     kind: "host",
@@ -163,7 +163,6 @@ export const parentNodes: TreeNode[] = [
   {
     id: "main",
     label: "main",
-    annotation: "(14)",
     parentId: "div",
     ownerId: "frame",
     kind: "host",
@@ -171,24 +170,30 @@ export const parentNodes: TreeNode[] = [
   {
     id: "activity",
     label: "Activity",
-    annotation: "visible (15)",
+    annotation: "visible",
     parentId: "main",
     ownerId: "app",
   },
   {
     id: "feed-error",
     label: "ErrorBoundary",
-    annotation: "(16)",
+    componentType: "class",
     parentId: "activity",
     ownerId: "app",
     kind: "boundary",
   },
-  { id: "feed", label: "Feed", annotation: "(17)", parentId: "feed-error", ownerId: "app" },
-  { id: "list", label: "ul", annotation: "(18)", parentId: "feed", ownerId: "feed", kind: "host" },
+  {
+    id: "feed",
+    label: "Feed",
+    parentId: "feed-error",
+    ownerId: "app",
+    componentType: "function",
+  },
+  { id: "list", label: "ul", parentId: "feed", ownerId: "feed", kind: "host" },
   {
     id: "post-1",
     label: "Post",
-    annotation: "(19)",
+    componentType: "function",
     parentId: "list",
     ownerId: "app",
     contextProviderIds: ["theme"],
@@ -196,7 +201,6 @@ export const parentNodes: TreeNode[] = [
   {
     id: "item-1",
     label: "li",
-    annotation: "(20)",
     parentId: "post-1",
     ownerId: "post-1",
     kind: "host",
@@ -204,7 +208,7 @@ export const parentNodes: TreeNode[] = [
   {
     id: "post-2",
     label: "Post",
-    annotation: "(21)",
+    componentType: "memo",
     parentId: "list",
     ownerId: "app",
     contextProviderIds: ["theme"],
@@ -212,7 +216,6 @@ export const parentNodes: TreeNode[] = [
   {
     id: "item-2",
     label: "li",
-    annotation: "(22)",
     parentId: "post-2",
     ownerId: "post-2",
     kind: "host",
@@ -220,7 +223,6 @@ export const parentNodes: TreeNode[] = [
   {
     id: "fragment",
     label: "Fragment",
-    annotation: "(23)",
     parentId: "main",
     ownerId: "app",
     kind: "special",
@@ -228,7 +230,6 @@ export const parentNodes: TreeNode[] = [
   {
     id: "button",
     label: "button",
-    annotation: "(24)",
     parentId: "fragment",
     ownerId: "app",
     kind: "host",
@@ -236,7 +237,6 @@ export const parentNodes: TreeNode[] = [
   {
     id: "button-2",
     label: "button",
-    annotation: "(25)",
     parentId: "fragment",
     ownerId: "app",
     kind: "host",

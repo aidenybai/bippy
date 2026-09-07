@@ -202,7 +202,12 @@ export const Board = () => (
       </Specimen>
       <Specimen id="deep-tree" name="Virtualized / Deep">
         <div {...stylex.props(styles.virtual)}>
-          <VirtualTree nodes={deepNodes} label="Deep tree" height={diagramMetrics.rowHeight * 11} />
+          <VirtualTree
+            nodes={deepNodes}
+            label="Deep tree"
+            height={diagramMetrics.rowHeight * 11}
+            controls
+          />
         </div>
       </Specimen>
       <Specimen id="branching-tree" name="Virtualized / Branching">
@@ -210,6 +215,7 @@ export const Board = () => (
           <VirtualTree
             nodes={branchingNodes}
             label="Branching tree"
+            controls
             height={diagramMetrics.rowHeight * 11}
           />
         </div>

@@ -13,7 +13,7 @@ export const diagramMetrics = {
   arrowGap: 3,
 };
 
-interface DiagramLabel extends Pick<TreeNode, "kind" | "isCallable"> {
+interface DiagramLabel extends Pick<TreeNode, "kind" | "isCallable" | "componentType"> {
   label: string;
   annotation?: string;
   fontSize?: number;
@@ -25,10 +25,13 @@ export const getLabelWidth = ({
   annotation,
   kind,
   isCallable,
+  componentType,
   fontSize = diagramMetrics.fontSize,
   labelOffset = diagramMetrics.labelOffset,
 }: DiagramLabel) =>
-  (Array.from(label).length + (getIsCallableNode({ kind, isCallable }) ? 2 : 0)) * fontSize * 0.61 +
+  (Array.from(label).length + (getIsCallableNode({ kind, isCallable, componentType }) ? 2 : 0)) *
+    fontSize *
+    0.61 +
   labelOffset +
   (annotation ? Array.from(annotation).length * fontSize * 0.61 + 4 : 0);
 

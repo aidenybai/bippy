@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 test("uses the function symbol for callable details in both projections", async ({ page }) => {
   await page.goto("/");
   for (const nodeId of [
+    "app",
     "query-state",
     "set-query",
     "dispatch",
@@ -23,7 +24,7 @@ test("uses the function symbol for callable details in both projections", async 
       await expect(symbol).toHaveCSS("font-size", "10px");
     }
   }
-  for (const nodeId of ["visible-todos", "stats-count", "feed-items", "cart-store", "app"]) {
+  for (const nodeId of ["visible-todos", "stats-count", "feed-items", "cart-store"]) {
     await expect(
       page.locator(`[data-tree-relationship] [data-node-id="${nodeId}"] [data-function-symbol]`),
     ).toHaveCount(0);

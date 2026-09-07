@@ -14,7 +14,7 @@ export const getNodeName = (node: TreeNode) =>
   `${node.label}${node.annotation ? `, ${node.annotation}` : ""}`;
 
 export const getNodeDescription = (node: TreeNode) =>
-  `${node.componentId ? "Component detail: " : ""}${node.kind ?? "component"}${getIsCallableNode(node) ? ", function" : ""}${node.isPortalTarget ? ", portal target" : ""}.`;
+  `${node.componentId ? "Component detail: " : ""}${node.kind ?? "component"}${getIsCallableNode(node) ? ", function" : ""}${node.componentType && node.componentType !== "function" ? `, ${node.componentType} ${node.componentType === "class" ? "component" : "wrapper"}` : ""}${node.isPortalTarget ? ", portal target" : ""}.`;
 
 export const getTreeDescriptions = (
   nodes: readonly TreeNode[],

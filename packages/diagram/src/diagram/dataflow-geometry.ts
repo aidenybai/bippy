@@ -12,7 +12,16 @@ const getPortOffset = (node: DataflowNode, adjacent: Point, nodeGap = 0): Point 
   if (verticalDistance === 0 && horizontalDistance > 0) return { x: getLabelWidth(node) + 4, y: 0 };
   const distance = Math.hypot(horizontalDistance, verticalDistance);
   if (distance === 0) return { x: 0, y: 0 };
-  const radius = diagramMetrics.nodeRadius + diagramMetrics.strokeWidth / 2 + nodeGap;
+  const strokeRadius = diagramMetrics.strokeWidth / 2;
+  const shapeRadius =
+    node.componentType === "class"
+      ? ((diagramMetrics.nodeRadius + strokeRadius) * distance) /
+        Math.max(Math.abs(horizontalDistance), Math.abs(verticalDistance))
+      : node.componentType === "memo" || node.componentType === "forward-ref"
+        ? ((diagramMetrics.nodeRadius + strokeRadius * Math.SQRT2) * distance) /
+          (Math.abs(horizontalDistance) + Math.abs(verticalDistance))
+        : diagramMetrics.nodeRadius + strokeRadius;
+  const radius = shapeRadius + nodeGap;
   return { x: (horizontalDistance / distance) * radius, y: (verticalDistance / distance) * radius };
 };
 

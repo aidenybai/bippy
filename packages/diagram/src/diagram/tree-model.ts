@@ -21,6 +21,7 @@ export interface TreeNode {
     | "store";
   isPortalTarget?: boolean;
   isCallable?: boolean;
+  componentType?: "function" | "class" | "memo" | "forward-ref";
   annotation?: string;
 }
 

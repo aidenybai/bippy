@@ -19,6 +19,11 @@ export interface TreeRootContextValue {
 }
 
 export interface TreeViewContextValue extends TreeLayout {
+  label: string;
+  model: readonly TreeRow[];
+  reveal: (nodeId: string, shouldFocus: boolean) => void;
+  expandAll: () => void;
+  collapseAll: () => void;
   rows: readonly TreeRow[];
   indexById: ReadonlyMap<string, number>;
   interaction: DiagramInteraction;

@@ -2,7 +2,7 @@
 
 ## Verified automatically
 
-The Chromium suite checks:
+The automated Chromium, Firefox, and WebKit suites cover:
 
 - axe WCAG 2 A/AA, 2.1 AA, and 2.2 AA rules in light and dark themes.
 - Declared SVG text paints at 4.5:1 and meaningful strokes at 3:1 against the specimen surface, including active and muted states.
@@ -12,9 +12,11 @@ The Chromium suite checks:
 - Focus recovery when items disappear, become disabled, or are hidden.
 - Focus retention when virtual rows scroll offscreen, with a mounted active descendant.
 - Touch activation without duplicate callbacks or disappearing inspection traces.
-- Keyboard focus under Chromium forced-colors emulation and 200% CSS zoom.
+- Search/reveal through collapsed ancestors, per-view bulk expansion, shared activation, and bounded virtual mounting.
+- Component glyphs and callable descriptions without polluting accessible names.
+- Keyboard focus under Chromium-only forced-colors emulation and 200% CSS zoom.
 
-The cross-engine configuration is `playwright-accessibility.config.ts`. A Firefox download timeout prevented the requested Firefox/WebKit installation; neither engine has been verified here. Forced-colors emulation is intentionally Chromium-only.
+The cross-engine configuration is `playwright-accessibility.config.ts`. Direct installer downloads failed; the official Firefox and WebKit archives were retrieved with `curl` and installed through Playwright using a local archive server. Engine versions: Firefox 155 and WebKit 26.6. WebKit automation is not a substitute for Safari with VoiceOver.
 
 These checks are not a WCAG certification. axe does not cover all criteria, SVG paint checks do not assess every antialiased pixel, and CSS zoom is not a substitute for testing browser zoom, text scaling, and assistive technology.
 
@@ -29,6 +31,7 @@ Run these with VoiceOver + Safari and NVDA + Firefox or Chrome. Include JAWS + C
 5. Change or remove focused content in `/fixtures/compound`. Check empty views, disabled items, conditional label/description slots, nested roots, and controlled activation. Focus must not move out of another widget.
 6. Use browser zoom at 200% and 400%, OS text scaling, and narrow viewports. Diagrams may scroll as two-dimensional content, but focused labels and controls must remain reachable without overlap or lost information.
 7. Test Windows High Contrast and keyboard-only navigation. Focus must remain visible without relying on blue alone.
-8. Test iOS VoiceOver and Android TalkBack activation, touch scrolling, and cancellation. A tap must activate once; dragging to scroll must not activate a row.
+8. Search for hidden descendants, cycle matches, reveal the active node in the other projection, and expand/collapse all. Check status announcements and confirm focus moves only when requested.
+9. Test iOS VoiceOver and Android TalkBack activation, touch scrolling, and cancellation. A tap must activate once; dragging to scroll must not activate a row.
 
 Consumers must repeat these checks after changing labels, geometry, colors, focusability, or event behavior. Content slots are noninteractive SVG content; put additional controls outside the treeitem rather than introducing nested tab stops.

@@ -48,6 +48,7 @@ export interface DiagramNodeProps
   variant?: "node" | "detail";
   maxWidth?: number;
   hitHeight?: number;
+  hitLeft?: number;
   isInteractive?: boolean;
   tabIndex?: number;
   onSelect?: (nodeId: string) => void;
@@ -57,6 +58,7 @@ export interface DiagramEdgeProps
   extends EdgeGeometry, Omit<ComponentPropsWithRef<"g">, "from" | "to" | "children"> {
   id?: string;
   directed?: boolean;
+  isSeparated?: boolean;
   label?: string;
   fromId?: string;
   toId?: string;
@@ -89,6 +91,7 @@ const styles = stylex.create({
   update: { strokeOpacity: 1, strokeDasharray: "3 2" },
   subscription: { strokeOpacity: 1, strokeDasharray: "2 2" },
   activeEdge: { stroke: colors.blue, strokeOpacity: 1 },
+  edgeHalo: { stroke: colors.surface, strokeWidth: 3, fill: "none", pointerEvents: "none" },
   activeNode: { color: colors.blue },
   owner: { strokeOpacity: 1, strokeDasharray: "3 2" },
   reference: { strokeOpacity: 1, strokeDasharray: "3 2" },
@@ -153,6 +156,7 @@ export const DiagramNode = ({
   y,
   maxWidth,
   hitHeight = diagramMetrics.rowHeight,
+  hitLeft = -6,
   isInteractive = true,
   isFocusVisible: externalFocusVisible,
   description,
@@ -292,13 +296,13 @@ export const DiagramNode = ({
         <title>{getNodeName(node)}</title>
         <desc id={modelDescriptionId}>{description ?? getNodeDescription(node)}</desc>
         <rect
-          x={-6}
+          x={hitLeft}
           y={-hitHeight / 2}
           width={Math.max(
             24,
             Math.min(
-              maxWidth === undefined ? Infinity : maxWidth + 6,
-              getLabelWidth({ label, annotation, fontSize, labelOffset, isCallable }) + 12,
+              maxWidth === undefined ? Infinity : maxWidth - hitLeft,
+              getLabelWidth({ label, annotation, fontSize, labelOffset, isCallable }) + 6 - hitLeft,
             ),
           )}
           height={hitHeight}
@@ -323,12 +327,21 @@ export const DiagramNode = ({
           />
         )}
         {!isDetail && (
-          <circle
-            r={diagramMetrics.nodeRadius}
+          <g
+            data-component-symbol={node.componentType ?? "unknown"}
+            aria-hidden="true"
             fill={isHollow ? colors.surface : "currentColor"}
             stroke="currentColor"
             strokeWidth={diagramMetrics.strokeWidth}
-          />
+          >
+            {node.componentType === "class" ? (
+              <rect x={-3} y={-3} width={6} height={6} />
+            ) : node.componentType === "memo" || node.componentType === "forward-ref" ? (
+              <path d="M0 -3 3 0 0 3 -3 0Z" />
+            ) : (
+              <circle r={diagramMetrics.nodeRadius} />
+            )}
+          </g>
         )}
         {children ?? <DiagramLabel />}
         {(externalFocusVisible ?? isFocusVisible) && (
@@ -360,6 +373,7 @@ export const DiagramEdge = (props: DiagramEdgeProps) => {
     labelPosition: explicitLabelPosition,
     waypoints,
     shape,
+    isSeparated,
     ...groupProps
   } = props;
   const geometry: EdgeGeometry = {
@@ -414,7 +428,11 @@ export const DiagramEdge = (props: DiagramEdgeProps) => {
           </marker>
         </defs>
       )}
+      {isSeparated && (
+        <path data-edge-halo="" d={getEdgePath(geometry)} {...stylex.props(styles.edgeHalo)} />
+      )}
       <path
+        data-edge-path=""
         d={getEdgePath(geometry)}
         markerEnd={directed ? `url(#${markerId})` : undefined}
         {...stylex.props(

@@ -42,7 +42,7 @@ export const TreeScopes = (props: TreeScopesProps) => {
             height={offsets[range.end] - offsets[range.start]}
             label={
               index === 0
-                ? `catches: ${activeNode?.label ?? ""} ${activeNode?.annotation ?? ""}`
+                ? `catches: ${[activeNode?.label, activeNode?.annotation].filter(Boolean).join(" ")}`
                 : ""
             }
           />

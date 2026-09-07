@@ -18,6 +18,9 @@ import {
   treeInstructions,
 } from "./accessibility";
 import { useTypeahead } from "./use-typeahead";
+import { TreeDisclosure } from "./tree-disclosure";
+import { TreeTools } from "./tree-controls";
+import { getCollapsedTreeIds, getRevealedTreeIds, type TreeRevealRequest } from "./tree-expansion";
 import {
   getExpandedRows,
   getIndentation,
@@ -33,6 +36,7 @@ export interface VirtualTreeProps {
   height?: number;
   rowHeight?: number;
   onSelect?: (node: TreeNode) => void;
+  controls?: boolean;
 }
 
 export interface VirtualViewportProps {
@@ -59,8 +63,6 @@ const styles = stylex.create({
     display: "block",
     overflow: "hidden",
   }),
-  toggle: { cursor: "pointer", color: colors.muted },
-  hidden: { opacity: 0, pointerEvents: "none" },
   empty: {
     padding: spacing[4],
     fontFamily: fonts.sans,
@@ -117,7 +119,10 @@ export const VirtualTree = ({
   height = 396,
   rowHeight = diagramMetrics.rowHeight,
   onSelect,
+  controls = false,
 }: VirtualTreeProps) => {
+  const viewportHeight = Math.max(rowHeight, height - (controls ? 32 : 0));
+  const [revealRequest, setRevealRequest] = useState<TreeRevealRequest | null>(null);
   const treeId = useId();
   const interaction = useDiagramInteractionState(undefined, "parent", { inherit: false });
   const { focusProps, isFocused, isFocusVisible } = useFocusRing();
@@ -144,7 +149,7 @@ export const VirtualTree = ({
   const { viewportRef, width, setScrollTop, range } = useVirtualViewport({
     count: rows.length,
     rowHeight,
-    height,
+    height: viewportHeight,
   });
   const focusedIndex = Math.max(0, focusedId === null ? 0 : (indexById.get(focusedId) ?? 0));
   const activeRow = rows[focusedIndex];
@@ -182,8 +187,8 @@ export const VirtualTree = ({
     if (shouldScroll && element) {
       const top = index * rowHeight;
       if (top < element.scrollTop) element.scrollTop = top;
-      else if (top + rowHeight > element.scrollTop + height)
-        element.scrollTop = top + rowHeight - height;
+      else if (top + rowHeight > element.scrollTop + viewportHeight)
+        element.scrollTop = top + rowHeight - viewportHeight;
       setScrollTop(element.scrollTop);
     }
   };
@@ -192,6 +197,16 @@ export const VirtualTree = ({
     if (isFocused && activeRow && focusedRef.current !== activeRow.node.id)
       focusRow(focusedIndex, true);
   });
+
+  useLayoutEffect(() => {
+    if (!revealRequest) return;
+    const index = indexById.get(revealRequest.nodeId);
+    if (index !== undefined) {
+      focusRow(index, true);
+      if (revealRequest.shouldFocus) viewportRef.current?.focus({ preventScroll: true });
+    }
+    setRevealRequest(null);
+  }, [revealRequest, rows]);
 
   const toggleRow = (node: TreeNode) => {
     if (!collapsedIds.has(node.id) && focusedRef.current !== null) {
@@ -251,9 +266,25 @@ export const VirtualTree = ({
 
   return (
     <DiagramInteractionContext value={interaction}>
+      {controls && (
+        <TreeTools
+          label={label}
+          model={model}
+          activeId={interaction.activeId}
+          reveal={(nodeId, shouldFocus) => {
+            setCollapsedIds((previous) => getRevealedTreeIds(model, nodeId, previous));
+            setRevealRequest({ nodeId, shouldFocus });
+          }}
+          expandAll={() => setCollapsedIds(new Set())}
+          collapseAll={() => setCollapsedIds(getCollapsedTreeIds(model))}
+        />
+      )}
       <div
         ref={viewportRef}
-        {...stylex.props(styles.viewport(height), isFocusVisible && !activeRow && styles.focus)}
+        {...stylex.props(
+          styles.viewport(viewportHeight),
+          isFocusVisible && !activeRow && styles.focus,
+        )}
         role={rows.length ? "tree" : "group"}
         aria-label={label}
         aria-describedby={`${treeId}-instructions`}
@@ -323,7 +354,6 @@ export const VirtualTree = ({
                 getNodeOffset(isDetail ? Math.max(0, row.depth - 1) : row.depth, indentation) +
                 (isDetail ? diagramMetrics.labelOffset : 0);
               const centerY = localIndex * rowHeight + rowHeight / 2;
-              const isHighlighted = interaction.activeId === row.node.id;
               const itemId = getItemId(row.node.id);
               return (
                 <g
@@ -378,39 +408,19 @@ export const VirtualTree = ({
                     maxWidth={width - offset - 8}
                   />
                   {row.hasChildren && (
-                    <g
-                      data-tree-toggle
-                      aria-hidden="true"
-                      transform={`translate(12 ${centerY})`}
-                      {...stylex.props(
-                        styles.toggle,
-                        !isHighlighted && !collapsedIds.has(row.node.id) && styles.hidden,
-                      )}
-                      onClick={(event) => {
-                        event.stopPropagation();
+                    <TreeDisclosure
+                      nodeId={row.node.id}
+                      x={12}
+                      y={centerY}
+                      height={rowHeight}
+                      isExpanded={!collapsedIds.has(row.node.id)}
+                      onToggle={(_event, isFocusDriven) => {
                         focusRow(index);
                         toggleRow(row.node);
                         viewportRef.current?.focus({ preventScroll: true });
-                        interaction.setFocusedId(
-                          row.node.id,
-                          event.detail === 0 || pointerType.current !== "mouse",
-                        );
+                        interaction.setFocusedId(row.node.id, isFocusDriven);
                       }}
-                    >
-                      <rect
-                        x={-12}
-                        y={-rowHeight / 2}
-                        width={24}
-                        height={rowHeight}
-                        fill="transparent"
-                      />
-                      <path
-                        d={collapsedIds.has(row.node.id) ? "M-2 -4 2 0-2 4" : "M-4 -2 0 2 4-2"}
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={1}
-                      />
-                    </g>
+                    />
                   )}
                 </g>
               );

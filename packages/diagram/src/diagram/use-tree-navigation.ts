@@ -67,6 +67,15 @@ export const useTreeNavigation = ({
     if (!container) return;
     const repairFocus = () => {
       const elements = getElements();
+      const focusedElement = elements.find(
+        (element) => element === container.ownerDocument.activeElement,
+      );
+      if (focusedElement || container.ownerDocument.activeElement === container) {
+        hasFocus.current = true;
+        lastElement.current = focusedElement ?? container;
+        if (focusedElement?.dataset.nodeId && focusedElement.dataset.nodeId !== focusedRef.current)
+          setFocusedId(focusedElement.dataset.nodeId);
+      }
       setHasItems(getRenderedElements().length > 0);
       const getParentId = (nodeId: string | null) =>
         (
@@ -107,6 +116,8 @@ export const useTreeNavigation = ({
   const onKeyDown = (event: KeyboardEvent<SVGSVGElement>) => {
     if (
       event.defaultPrevented ||
+      !(event.target instanceof Element) ||
+      event.target.closest("[data-tree-view]") !== event.currentTarget ||
       event.altKey ||
       event.ctrlKey ||
       event.metaKey ||
@@ -114,6 +125,15 @@ export const useTreeNavigation = ({
     )
       return;
     const elements = getElements();
+    const focusedElement = elements.find(
+      (element) => element === containerRef.current?.ownerDocument.activeElement,
+    );
+    const currentId = focusedElement?.dataset.nodeId ?? focusedRef.current;
+    if (focusedElement) {
+      hasFocus.current = true;
+      lastElement.current = focusedElement;
+      if (currentId !== focusedRef.current) setFocusedId(currentId);
+    }
     const elementById = new Map(elements.map((element) => [element.dataset.nodeId, element]));
     const availableRows = rows
       .filter((row) => elementById.has(row.node.id))
@@ -128,18 +148,12 @@ export const useTreeNavigation = ({
             row.node.label,
         },
       }));
-    const action = getTreeKeyAction(
-      availableRows,
-      focusedRef.current,
-      event.key,
-      collapsedIds,
-      direction,
-    );
+    const action = getTreeKeyAction(availableRows, currentId, event.key, collapsedIds, direction);
     if (action?.activate) return;
     const nextId =
       action?.focusId ??
       (!action && [...event.key].length === 1
-        ? findMatch(availableRows, focusedRef.current, event.key)
+        ? findMatch(availableRows, currentId, event.key)
         : undefined);
     if (!action && !nextId) return;
     event.preventDefault();
