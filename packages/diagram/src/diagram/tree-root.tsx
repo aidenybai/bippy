@@ -6,7 +6,9 @@ import { DiagramInteractionContext, useDiagramInteractionState } from "./interac
 import { getTreeRows, type TreeNode } from "./tree-model";
 import { getTreeHighlightIndex } from "./tree-highlight";
 import { getDataflowIndex, type DataflowEdge } from "./dataflow-model";
-import { TreeRootContext } from "./tree-context";
+import { getTreeDescriptions } from "./accessibility";
+import { NodeContext } from "./node-context";
+import { TreeRootContext, TreeViewContext } from "./tree-context";
 
 export interface TreeRootProps extends DiagramRootProps {
   nodes: readonly TreeNode[];
@@ -29,6 +31,10 @@ export const TreeRoot = ({
     () => (dataflowEdges ? getDataflowIndex(nodes, dataflowEdges) : undefined),
     [nodes, dataflowEdges],
   );
+  const descriptions = useMemo(
+    () => getTreeDescriptions(nodes, dataflowEdges ?? emptyEdges),
+    [nodes, dataflowEdges],
+  );
   const interaction = useDiagramInteractionState(undefined, "parent", {
     ...options,
     inherit: false,
@@ -40,14 +46,19 @@ export const TreeRoot = ({
       highlightIndex,
       flowIndex,
       dataflowEdges: dataflowEdges ?? emptyEdges,
+      descriptions,
       interaction,
       onSelect,
     }),
-    [nodes, rows, highlightIndex, flowIndex, dataflowEdges, interaction, onSelect],
+    [nodes, rows, highlightIndex, flowIndex, dataflowEdges, descriptions, interaction, onSelect],
   );
   return (
     <TreeRootContext value={context}>
-      <DiagramInteractionContext value={interaction}>{children}</DiagramInteractionContext>
+      <TreeViewContext value={null}>
+        <NodeContext value={null}>
+          <DiagramInteractionContext value={interaction}>{children}</DiagramInteractionContext>
+        </NodeContext>
+      </TreeViewContext>
     </TreeRootContext>
   );
 };

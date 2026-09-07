@@ -13,6 +13,7 @@ export interface TreeRootContextValue {
   highlightIndex: TreeHighlightIndex;
   flowIndex?: DataflowIndex<TreeNode>;
   dataflowEdges: readonly DataflowEdge[];
+  descriptions: ReadonlyMap<string, string>;
   interaction: DiagramInteraction;
   onSelect?: (nodeId: string) => void;
 }
@@ -28,6 +29,10 @@ export interface TreeViewContextValue extends TreeLayout {
   showOwners: boolean;
   scopeId?: string;
   scopeIndex?: number;
+  focusedId: string | null;
+  setFocusedId: (nodeId: string) => void;
+  collapsedIds: ReadonlySet<string>;
+  toggle: (nodeId: string) => void;
   scopeLabel: string;
 }
 

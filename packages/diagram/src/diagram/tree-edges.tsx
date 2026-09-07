@@ -74,8 +74,7 @@ export const TreeEdges = (props: TreeEdgesProps) => {
           .map((edge) => {
             const fromIndex = indexById.get(edge.from);
             const toIndex = indexById.get(edge.to);
-            if (fromIndex === undefined || toIndex === undefined)
-              throw new Error(`Missing endpoint for edge ${edge.id}`);
+            if (fromIndex === undefined || toIndex === undefined) return null;
             const fromNode = { ...rows[fromIndex].node, ...positions[fromIndex] };
             const toNode = { ...rows[toIndex].node, ...positions[toIndex] };
             const offsets = getDataflowOffsets(

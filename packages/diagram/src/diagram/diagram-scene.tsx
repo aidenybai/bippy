@@ -10,9 +10,12 @@ import {
   type Point,
 } from "./primitives";
 import type { TreeNode } from "./tree-model";
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
+import { getTreeDescriptions } from "./accessibility";
 
-export interface SceneNode extends TreeNode, Point {}
+export interface SceneNode extends TreeNode, Point {
+  description?: string;
+}
 
 export interface SceneEdge {
   id: string;
@@ -52,6 +55,7 @@ export const DiagramScene = ({
   children,
 }: DiagramSceneProps) => {
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
+  const descriptions = useMemo(() => getTreeDescriptions(nodes, edges), [nodes, edges]);
   return (
     <DiagramCanvas width={width} height={height} label={label}>
       {scopes.map((scope) => (
@@ -74,7 +78,22 @@ export const DiagramScene = ({
         );
       })}
       {nodes.map((node) => (
-        <DiagramNode key={node.id} node={node} x={node.x} y={node.y} onSelect={onSelect} />
+        <DiagramNode
+          key={node.id}
+          node={node}
+          description={[
+            node.description,
+            descriptions.get(node.id),
+            ...scopes
+              .filter((scope) => scope.nodeId === node.id)
+              .map((scope) => `${scope.kind ?? "context"} scope: ${scope.label}.`),
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          x={node.x}
+          y={node.y}
+          onSelect={onSelect}
+        />
       ))}
     </DiagramCanvas>
   );

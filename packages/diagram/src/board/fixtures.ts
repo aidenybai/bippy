@@ -32,6 +32,9 @@ const getSceneTree = ({ nodes, prefix, left }: SceneTreeOptions) => {
   const sceneNodes: SceneNode[] = rows.map((row, index) => ({
     ...row.node,
     id: `${prefix}-${row.node.id}`,
+    description: `${prefix === "dom" ? "DOM" : prefix} tree.`,
+    parentId: row.node.parentId ? `${prefix}-${row.node.parentId}` : undefined,
+    ownerId: row.node.ownerId ? `${prefix}-${row.node.ownerId}` : undefined,
     x: left + row.depth * diagramMetrics.indent,
     y: 40 + index * diagramMetrics.rowHeight,
   }));

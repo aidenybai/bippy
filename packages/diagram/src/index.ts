@@ -1,5 +1,16 @@
-export { Diagram, DiagramRoot, DiagramDetail } from "./diagram/diagram";
-export type { DiagramRootProps, DiagramDetailProps } from "./diagram/diagram";
+export {
+  Diagram,
+  DiagramRoot,
+  DiagramDetail,
+  DiagramLabel,
+  DiagramDescription,
+} from "./diagram/diagram";
+export type {
+  DiagramRootProps,
+  DiagramDetailProps,
+  DiagramLabelProps,
+  DiagramDescriptionProps,
+} from "./diagram/diagram";
 export {
   Tree,
   TreeRoot,
@@ -9,6 +20,8 @@ export {
   TreeItems,
   TreeItem,
   TreeDetail,
+  TreeLabel,
+  TreeDescription,
 } from "./diagram/tree";
 export type {
   TreeRootProps,

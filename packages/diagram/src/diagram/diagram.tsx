@@ -1,5 +1,6 @@
 "use client";
 
+import { DiagramLabel, DiagramDescription } from "./node-slots";
 import { DiagramRoot } from "./diagram-root";
 import {
   DiagramCanvas,
@@ -21,6 +22,9 @@ export const Diagram = {
   Detail: DiagramDetail,
   Edge: DiagramEdge,
   Scope: DiagramScope,
+  Label: DiagramLabel,
+  Description: DiagramDescription,
 };
-export { DiagramRoot };
+export { DiagramRoot, DiagramLabel, DiagramDescription };
+export type { DiagramLabelProps, DiagramDescriptionProps } from "./node-slots";
 export type { DiagramRootProps } from "./diagram-root";

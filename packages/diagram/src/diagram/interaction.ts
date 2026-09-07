@@ -6,9 +6,8 @@ import { getTreeHighlight, type TreeHighlight, type TreeHighlightIndex } from ".
 export interface DiagramInteraction extends TreeHighlight {
   highlightedEdgeIds?: ReadonlySet<string>;
   activeId: string | null;
-  setHoveredId: (nodeId: string | null) => void;
-  setFocusedId: (nodeId: string | null) => void;
-  setIsKeyboardNavigation: (isKeyboardNavigation: boolean) => void;
+  setHoveredId: (nodeId: string | null, isPointerActive?: boolean) => void;
+  setFocusedId: (nodeId: string | null, isFocusDriven?: boolean) => void;
 }
 
 export const DiagramInteractionContext = createContext<DiagramInteraction | null>(null);
@@ -24,11 +23,11 @@ export interface DiagramInteractionOptions {
 interface DiagramInputState {
   hoveredId: string | null;
   focusedId: string | null;
-  isKeyboardNavigation: boolean;
+  isFocusDriven: boolean;
 }
 
 const getActiveId = (state: DiagramInputState) =>
-  state.isKeyboardNavigation ? state.focusedId : state.hoveredId;
+  state.isFocusDriven ? state.focusedId : state.hoveredId;
 
 export const useDiagramInteractionState = (
   index?: TreeHighlightIndex,
@@ -40,36 +39,46 @@ export const useDiagramInteractionState = (
   const [input, setInput] = useState<DiagramInputState>(() => ({
     hoveredId: options.defaultActiveId ?? options.activeId ?? null,
     focusedId: null,
-    isKeyboardNavigation: false,
+    isFocusDriven: false,
   }));
   const inputRef = useRef(input);
   const updateInput = useCallback(
-    (patch: Partial<DiagramInputState>) => {
+    (patch: Partial<DiagramInputState>, shouldRequest = false) => {
       const previous = inputRef.current;
       const next = { ...previous, ...patch };
       if (
-        previous.hoveredId === next.hoveredId &&
-        previous.focusedId === next.focusedId &&
-        previous.isKeyboardNavigation === next.isKeyboardNavigation
+        previous.hoveredId !== next.hoveredId ||
+        previous.focusedId !== next.focusedId ||
+        previous.isFocusDriven !== next.isFocusDriven
+      ) {
+        inputRef.current = next;
+        setInput(next);
+      }
+      const nextActiveId = getActiveId(next);
+      const currentActiveId =
+        options.activeId !== undefined ? options.activeId : getActiveId(previous);
+      if (
+        (shouldRequest || getActiveId(previous) !== nextActiveId) &&
+        currentActiveId !== nextActiveId
       )
-        return;
-      inputRef.current = next;
-      setInput(next);
-      if (getActiveId(previous) !== getActiveId(next))
-        options.onActiveIdChange?.(getActiveId(next));
+        options.onActiveIdChange?.(nextActiveId);
     },
-    [options.onActiveIdChange],
+    [options.onActiveIdChange, options.activeId],
   );
   const setHoveredId = useCallback(
-    (nodeId: string | null) => updateInput({ hoveredId: nodeId }),
+    (nodeId: string | null, isPointerActive = false) =>
+      updateInput(
+        { hoveredId: nodeId, ...(isPointerActive ? { isFocusDriven: false } : {}) },
+        isPointerActive,
+      ),
     [updateInput],
   );
   const setFocusedId = useCallback(
-    (nodeId: string | null) => updateInput({ focusedId: nodeId }),
-    [updateInput],
-  );
-  const setIsKeyboardNavigation = useCallback(
-    (isKeyboardNavigation: boolean) => updateInput({ isKeyboardNavigation }),
+    (nodeId: string | null, isFocusDriven?: boolean) =>
+      updateInput(
+        { focusedId: nodeId, ...(isFocusDriven === undefined ? {} : { isFocusDriven }) },
+        nodeId !== null && isFocusDriven !== undefined,
+      ),
     [updateInput],
   );
   const activeId =
@@ -88,17 +97,8 @@ export const useDiagramInteractionState = (
       activeId,
       setHoveredId: inherited?.setHoveredId ?? setHoveredId,
       setFocusedId: inherited?.setFocusedId ?? setFocusedId,
-      setIsKeyboardNavigation: inherited?.setIsKeyboardNavigation ?? setIsKeyboardNavigation,
     };
-  }, [
-    activeId,
-    inherited,
-    index,
-    relationship,
-    setHoveredId,
-    setFocusedId,
-    setIsKeyboardNavigation,
-  ]);
+  }, [activeId, inherited, index, relationship, setHoveredId, setFocusedId]);
 };
 
 export const getIsNodeHighlighted = (interaction: DiagramInteraction | null, nodeId: string) =>

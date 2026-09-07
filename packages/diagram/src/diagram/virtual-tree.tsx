@@ -2,12 +2,22 @@
 
 import * as stylex from "@stylexjs/stylex";
 import { useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useFocusRing } from "@react-aria/focus";
+import { isFocusVisible as getIsFocusVisible } from "@react-aria/interactions";
+import { useLocale } from "@react-aria/i18n";
 import { fonts, fontSizes, spacing } from "tailwind-stylex/tokens.stylex";
 import { colors } from "./tokens.stylex";
 import { diagramMetrics } from "./geometry";
 import { DiagramNode } from "./primitives";
 import { drawing } from "./drawing.stylex";
 import { DiagramInteractionContext, useDiagramInteractionState } from "./interaction";
+import {
+  getNodeName,
+  getTreeDescriptions,
+  getTreeKeyAction,
+  treeInstructions,
+} from "./accessibility";
+import { useTypeahead } from "./use-typeahead";
 import {
   getExpandedRows,
   getIndentation,
@@ -49,13 +59,28 @@ const styles = stylex.create({
     display: "block",
     overflow: "hidden",
   }),
-  toggle: { cursor: "pointer", color: colors.muted, outline: "none" },
+  toggle: { cursor: "pointer", color: colors.muted },
   hidden: { opacity: 0, pointerEvents: "none" },
   empty: {
     padding: spacing[4],
     fontFamily: fonts.sans,
     fontSize: fontSizes.xs,
     color: colors.muted,
+  },
+  focus: {
+    outline: `2px solid ${colors.blue}`,
+    outlineOffset: -2,
+    "@media (forced-colors: active)": { outlineColor: "Highlight" },
+  },
+  description: {
+    position: "absolute",
+    width: 1,
+    height: 1,
+    padding: 0,
+    borderWidth: 0,
+    overflow: "hidden",
+    clipPath: "inset(50%)",
+    whiteSpace: "nowrap",
   },
 });
 
@@ -94,14 +119,26 @@ export const VirtualTree = ({
   onSelect,
 }: VirtualTreeProps) => {
   const treeId = useId();
-  const interaction = useDiagramInteractionState();
+  const interaction = useDiagramInteractionState(undefined, "parent", { inherit: false });
+  const { focusProps, isFocused, isFocusVisible } = useFocusRing();
+  const { direction } = useLocale();
+  const findMatch = useTypeahead();
   const model = useMemo(() => getTreeRows(nodes), [nodes]);
   const modelIndexById = useMemo(
     () => new Map(model.map((row, index) => [row.node.id, index])),
     [model],
   );
+  const descriptions = useMemo(() => getTreeDescriptions(nodes, []), [nodes]);
+  const lastComponentChild = useMemo(() => {
+    const children = new Map<string, string>();
+    for (const row of model)
+      if (row.node.parentId && !row.node.componentId) children.set(row.node.parentId, row.node.id);
+    return children;
+  }, [model]);
   const [collapsedIds, setCollapsedIds] = useState<ReadonlySet<string>>(() => new Set());
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [focusedId, setFocusedId] = useState<string | null>(null);
+  const focusedRef = useRef<string | null>(null);
+  const pointerType = useRef("mouse");
   const rows = useMemo(() => getExpandedRows(model, collapsedIds), [model, collapsedIds]);
   const indexById = useMemo(() => new Map(rows.map((row, index) => [row.node.id, index])), [rows]);
   const { viewportRef, width, setScrollTop, range } = useVirtualViewport({
@@ -109,17 +146,22 @@ export const VirtualTree = ({
     rowHeight,
     height,
   });
-  const renderedRows = rows.slice(range.start, range.end);
+  const focusedIndex = Math.max(0, focusedId === null ? 0 : (indexById.get(focusedId) ?? 0));
+  const activeRow = rows[focusedIndex];
+  const focusedIsRendered = focusedIndex >= range.start && focusedIndex < range.end;
+  const windowRows = rows.slice(range.start, range.end);
+  const renderedRows =
+    isFocused && activeRow && !focusedIsRendered ? [...windowRows, activeRow] : windowRows;
   const indentation = getIndentation(rows.slice(range.firstVisible, range.lastVisible), width);
-  const branchRows = [...renderedRows];
-  let ancestorIndex = renderedRows[0]?.parentIndex ?? -1;
+  const branchRows = [...windowRows];
+  let ancestorIndex = windowRows[0]?.parentIndex ?? -1;
   while (ancestorIndex >= 0) {
     const ancestor = model[ancestorIndex];
     branchRows.push(ancestor);
     if (ancestor.depth <= indentation.baseDepth) break;
     ancestorIndex = ancestor.parentIndex;
   }
-  const windowHeight = renderedRows.length * rowHeight;
+  const windowHeight = windowRows.length * rowHeight;
   const getConnectorY = (nodeId: string) =>
     Math.max(
       -rowHeight,
@@ -128,19 +170,14 @@ export const VirtualTree = ({
         (indexById.get(nodeId) ?? 0) * rowHeight + rowHeight / 2 - range.offset,
       ),
     );
-  const selectedIndex = selectedId === null ? -1 : (indexById.get(selectedId) ?? -1);
-  const activeRow = rows[Math.max(0, selectedIndex)];
-  const selectedIsRendered = selectedIndex >= range.start && selectedIndex < range.end;
-  const highlightedIndex =
-    interaction.activeId === null ? undefined : modelIndexById.get(interaction.activeId);
-  const highlightedRow = highlightedIndex === undefined ? undefined : model[highlightedIndex];
+  const getItemId = (nodeId: string) => `${treeId}-${encodeURIComponent(nodeId)}`;
 
-  const selectRow = (index: number, shouldScroll = false) => {
+  const focusRow = (index: number, shouldScroll = false) => {
     const row = rows[index];
     if (!row) return;
-    setSelectedId(row.node.id);
-    onSelect?.(row.node);
-    if (shouldScroll) interaction.setFocusedId(row.node.id);
+    focusedRef.current = row.node.id;
+    setFocusedId(row.node.id);
+    if (shouldScroll) interaction.setFocusedId(row.node.id, true);
     const element = viewportRef.current;
     if (shouldScroll && element) {
       const top = index * rowHeight;
@@ -151,20 +188,22 @@ export const VirtualTree = ({
     }
   };
 
+  useLayoutEffect(() => {
+    if (isFocused && activeRow && focusedRef.current !== activeRow.node.id)
+      focusRow(focusedIndex, true);
+  });
+
   const toggleRow = (node: TreeNode) => {
-    if (!collapsedIds.has(node.id) && selectedId !== null) {
+    if (!collapsedIds.has(node.id) && focusedRef.current !== null) {
       const rowIndex = modelIndexById.get(node.id);
-      const currentIndex = modelIndexById.get(selectedId);
+      const currentIndex = modelIndexById.get(focusedRef.current);
       if (
         rowIndex !== undefined &&
         currentIndex !== undefined &&
         currentIndex > rowIndex &&
         currentIndex < model[rowIndex].subtreeEnd
-      ) {
-        setSelectedId(node.id);
-        interaction.setFocusedId(node.id);
-        onSelect?.(node);
-      }
+      )
+        focusRow(indexById.get(node.id) ?? 0, true);
     }
     setCollapsedIds((previous) => {
       const next = new Set(previous);
@@ -174,64 +213,78 @@ export const VirtualTree = ({
     });
   };
 
+  const activateNode = (node: TreeNode) => {
+    if (onSelect) onSelect(node);
+    else if (model[modelIndexById.get(node.id) ?? -1]?.hasChildren) toggleRow(node);
+  };
+
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (
       !activeRow ||
-      !["ArrowDown", "ArrowUp", "ArrowRight", "ArrowLeft", "Home", "End", "Enter", " "].includes(
-        event.key,
-      )
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.nativeEvent.isComposing
     )
       return;
+    const action = getTreeKeyAction(rows, activeRow.node.id, event.key, collapsedIds, direction);
+    const nextId =
+      action?.focusId ??
+      (!action && [...event.key].length === 1
+        ? findMatch(rows, activeRow.node.id, event.key)
+        : undefined);
+    if (!action && !nextId) return;
     event.preventDefault();
     interaction.setHoveredId(null);
-    interaction.setFocusedId(activeRow.node.id);
-    interaction.setIsKeyboardNavigation(true);
-    const currentIndex = Math.max(0, selectedIndex);
-    if (event.key === "ArrowDown") selectRow(Math.min(rows.length - 1, selectedIndex + 1), true);
-    if (event.key === "ArrowUp") selectRow(Math.max(0, selectedIndex - 1), true);
-    if (event.key === "Home") selectRow(0, true);
-    if (event.key === "End") selectRow(rows.length - 1, true);
-    if (event.key === "Enter" || event.key === " ") selectRow(currentIndex, true);
-    if (event.key === "ArrowRight" && activeRow.hasChildren) {
-      if (collapsedIds.has(activeRow.node.id)) toggleRow(activeRow.node);
-      else selectRow(currentIndex + 1, true);
+    if (action?.clear) {
+      interaction.setFocusedId(null);
+      return;
     }
-    if (event.key === "ArrowLeft") {
-      if (activeRow.hasChildren && !collapsedIds.has(activeRow.node.id)) toggleRow(activeRow.node);
-      else
-        selectRow(
-          activeRow.node.parentId === undefined
-            ? -1
-            : (indexById.get(activeRow.node.parentId) ?? -1),
-          true,
-        );
+    interaction.setFocusedId(activeRow.node.id, true);
+    if (nextId) focusRow(indexById.get(nextId) ?? focusedIndex, true);
+    if (action?.toggleId) {
+      const row = rows[indexById.get(action.toggleId) ?? -1];
+      if (row) toggleRow(row.node);
     }
+    if (action?.activate && !event.repeat) activateNode(activeRow.node);
   };
 
   return (
     <DiagramInteractionContext value={interaction}>
       <div
         ref={viewportRef}
-        {...stylex.props(styles.viewport(height))}
-        role="tree"
+        {...stylex.props(styles.viewport(height), isFocusVisible && !activeRow && styles.focus)}
+        role={rows.length ? "tree" : "group"}
         aria-label={label}
+        aria-describedby={`${treeId}-instructions`}
         tabIndex={0}
         aria-activedescendant={
-          selectedId !== null && selectedIsRendered ? `${treeId}-${selectedId}` : undefined
+          activeRow && (focusedIsRendered || isFocused) ? getItemId(activeRow.node.id) : undefined
         }
         onKeyDown={handleKeyDown}
+        onFocus={(event) => {
+          focusProps.onFocus?.(event);
+          const index = focusedRef.current === null ? 0 : (indexById.get(focusedRef.current) ?? 0);
+          focusRow(index, getIsFocusVisible());
+        }}
         onScroll={(event) => {
           interaction.setHoveredId(null);
           setScrollTop(event.currentTarget.scrollTop);
         }}
         onPointerLeave={() => interaction.setHoveredId(null)}
-        onBlur={() => interaction.setFocusedId(null)}
+        onBlur={(event) => {
+          focusProps.onBlur?.(event);
+          interaction.setFocusedId(null);
+        }}
         data-base-depth={indentation.baseDepth}
         data-indent-size={indentation.size}
         data-visible-count={range.lastVisible - range.firstVisible}
         data-mounted-count={renderedRows.length}
         data-total-count={nodes.length}
       >
+        <span id={`${treeId}-instructions`} {...stylex.props(styles.description)}>
+          {treeInstructions}
+        </span>
         <div {...stylex.props(styles.spacer(range.totalHeight))} role="presentation">
           <svg
             width={width}
@@ -240,70 +293,71 @@ export const VirtualTree = ({
             {...stylex.props(styles.window(range.offset))}
             role="presentation"
           >
-            {branchRows.map((row) => {
-              if (!row.hasChildren || collapsedIds.has(row.node.id)) return null;
-              const isDimmed =
-                interaction.activeId !== null &&
-                interaction.activeId !== row.node.id &&
-                highlightedRow?.node.parentId !== row.node.id;
-              return (
+            {branchRows.map((row) =>
+              !lastComponentChild.has(row.node.id) || collapsedIds.has(row.node.id) ? null : (
                 <path
                   key={`trunk-${row.node.id}`}
+                  aria-hidden="true"
                   data-connector="trunk"
-                  {...stylex.props(drawing.connector, isDimmed && drawing.dimmed)}
-                  d={`M ${getNodeOffset(row.depth, indentation)} ${getConnectorY(row.node.id)} V ${getConnectorY(model[row.lastChildIndex].node.id)}`}
+                  {...stylex.props(drawing.connector)}
+                  d={`M ${getNodeOffset(row.depth, indentation)} ${getConnectorY(row.node.id)} V ${getConnectorY(lastComponentChild.get(row.node.id) ?? row.node.id)}`}
                 />
-              );
-            })}
-            {renderedRows.map((row) =>
-              row.depth === 0 ? null : (
+              ),
+            )}
+            {windowRows.map((row) =>
+              row.depth === 0 || row.node.componentId !== undefined ? null : (
                 <path
                   key={`branch-${row.node.id}`}
+                  aria-hidden="true"
                   data-connector="branch"
-                  {...stylex.props(
-                    drawing.connector,
-                    interaction.activeId !== null &&
-                      interaction.activeId !== row.node.id &&
-                      interaction.activeId !== row.node.parentId &&
-                      drawing.dimmed,
-                  )}
+                  {...stylex.props(drawing.connector)}
                   d={`M ${getNodeOffset(row.depth - 1, indentation)} ${getConnectorY(row.node.id)} H ${getNodeOffset(row.depth, indentation)}`}
                 />
               ),
             )}
-            {renderedRows.map((row, localIndex) => {
-              const index = range.start + localIndex;
-              const offset = getNodeOffset(row.depth, indentation);
+            {renderedRows.map((row) => {
+              const index = indexById.get(row.node.id) ?? 0;
+              const localIndex = index - range.start;
+              const isDetail = row.node.componentId !== undefined;
+              const offset =
+                getNodeOffset(isDetail ? Math.max(0, row.depth - 1) : row.depth, indentation) +
+                (isDetail ? diagramMetrics.labelOffset : 0);
               const centerY = localIndex * rowHeight + rowHeight / 2;
               const isHighlighted = interaction.activeId === row.node.id;
+              const itemId = getItemId(row.node.id);
               return (
                 <g
                   key={row.node.id}
-                  id={`${treeId}-${row.node.id}`}
+                  id={itemId}
                   role="treeitem"
-                  aria-label={row.node.label}
+                  aria-label={getNodeName(row.node)}
+                  aria-describedby={`${itemId}-description`}
                   aria-level={row.depth + 1}
                   aria-posinset={row.position}
                   aria-setsize={row.siblingCount}
                   aria-expanded={row.hasChildren ? !collapsedIds.has(row.node.id) : undefined}
-                  aria-selected={row.node.id === selectedId}
+                  data-focused={(isFocused && activeRow?.node.id === row.node.id) || undefined}
                   data-depth={row.depth}
                   onPointerEnter={() => interaction.setHoveredId(row.node.id)}
                   onPointerMove={() => {
-                    interaction.setIsKeyboardNavigation(false);
-                    interaction.setHoveredId(row.node.id);
+                    interaction.setHoveredId(row.node.id, true);
                   }}
                   onPointerLeave={() => interaction.setHoveredId(null)}
-                  onPointerDown={() => {
-                    interaction.setIsKeyboardNavigation(false);
-                    interaction.setFocusedId(null);
+                  onPointerDown={(event) => {
+                    pointerType.current = event.pointerType;
+                    interaction.setFocusedId(null, false);
                   }}
-                  onClick={() => {
-                    selectRow(index);
-                    interaction.setIsKeyboardNavigation(false);
+                  onClick={(event) => {
+                    focusRow(index);
+                    activateNode(row.node);
                     viewportRef.current?.focus({ preventScroll: true });
+                    interaction.setFocusedId(
+                      row.node.id,
+                      event.detail === 0 || pointerType.current !== "mouse",
+                    );
                   }}
                 >
+                  <desc id={`${itemId}-description`}>{descriptions.get(row.node.id)}</desc>
                   <rect
                     data-row-hitbox
                     x={0}
@@ -314,37 +368,39 @@ export const VirtualTree = ({
                   />
                   <DiagramNode
                     isInteractive={false}
+                    variant={isDetail ? "detail" : "node"}
+                    aria-hidden="true"
+                    isFocusVisible={isFocusVisible && activeRow?.node.id === row.node.id}
                     hitHeight={rowHeight}
                     node={row.node}
                     x={offset}
                     y={centerY}
                     maxWidth={width - offset - 8}
-                    tabIndex={-1}
                   />
                   {row.hasChildren && (
                     <g
-                      role="button"
-                      tabIndex={-1}
-                      aria-label={`${collapsedIds.has(row.node.id) ? "Expand" : "Collapse"} ${row.node.label}`}
-                      transform={`translate(8 ${centerY})`}
+                      data-tree-toggle
+                      aria-hidden="true"
+                      transform={`translate(12 ${centerY})`}
                       {...stylex.props(
                         styles.toggle,
                         !isHighlighted && !collapsedIds.has(row.node.id) && styles.hidden,
-                        interaction.activeId !== null &&
-                          !isHighlighted &&
-                          collapsedIds.has(row.node.id) &&
-                          drawing.dimmed,
                       )}
                       onClick={(event) => {
                         event.stopPropagation();
+                        focusRow(index);
                         toggleRow(row.node);
                         viewportRef.current?.focus({ preventScroll: true });
+                        interaction.setFocusedId(
+                          row.node.id,
+                          event.detail === 0 || pointerType.current !== "mouse",
+                        );
                       }}
                     >
                       <rect
-                        x={-8}
+                        x={-12}
                         y={-rowHeight / 2}
-                        width={16}
+                        width={24}
                         height={rowHeight}
                         fill="transparent"
                       />

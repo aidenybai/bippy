@@ -4,8 +4,8 @@ test("supports controlled state, shared views, and isolated nested roots", async
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/fixtures/compound");
-  const parent = page.getByRole("group", { name: "Compound parent" });
-  const owner = page.getByRole("group", { name: "Compound owner" });
+  const parent = page.getByRole("tree", { name: "Compound parent" });
+  const owner = page.getByRole("tree", { name: "Compound owner" });
   const isolated = page.getByRole("group", { name: "Isolated diagram" });
   await expect(page.getByTestId("active")).toHaveText("none");
   await expect(isolated.locator('[data-node-id="isolated-first"]')).toHaveAttribute(
@@ -35,7 +35,7 @@ test("forwards refs and DOM props while composing consumer handlers with selecti
   page,
 }) => {
   await page.goto("/fixtures/compound");
-  const parent = page.getByRole("group", { name: "Compound parent" });
+  const parent = page.getByRole("tree", { name: "Compound parent" });
   const item = parent.locator('[data-node-id="child"]');
   await expect(parent).toHaveClass(/consumer-view/);
   await expect(item).toHaveClass(/consumer-item/);

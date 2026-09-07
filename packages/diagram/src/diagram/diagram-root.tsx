@@ -1,5 +1,6 @@
 "use client";
 
+import { NodeContext } from "./node-context";
 import type { ReactNode } from "react";
 import {
   DiagramInteractionContext,
@@ -16,5 +17,9 @@ export const DiagramRoot = ({ children, ...options }: DiagramRootProps) => {
     ...options,
     inherit: false,
   });
-  return <DiagramInteractionContext value={interaction}>{children}</DiagramInteractionContext>;
+  return (
+    <NodeContext value={null}>
+      <DiagramInteractionContext value={interaction}>{children}</DiagramInteractionContext>
+    </NodeContext>
+  );
 };

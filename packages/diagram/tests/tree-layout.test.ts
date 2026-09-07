@@ -34,8 +34,8 @@ test("preserves the regular grid for component-only trees and empty inputs", () 
     { id: "child", label: "Child", parentId: "root" },
   ]);
   assert.deepEqual(getTreeLayout(components).positions, [
-    { x: 40, y: 10 },
-    { x: 60, y: 30 },
+    { x: 40, y: 12 },
+    { x: 60, y: 36 },
   ]);
   assert.deepEqual(getTreeLayout([]), { positions: [], offsets: [0] });
 });

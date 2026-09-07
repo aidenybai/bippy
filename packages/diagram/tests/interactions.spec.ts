@@ -42,9 +42,11 @@ test("shows direct creations in the parent tree and the subtree in the owner tre
   const owner = page.locator('[data-tree-relationship="owner"]');
   await parent.locator('[data-node-id="app"]').hover();
   await expect(parent.locator('[data-node-id="frame"]')).toHaveCSS("opacity", "1");
-  await expect(parent.locator('[data-node-id="div"]')).toHaveCSS("opacity", "0.2");
+  await expect(parent.locator('[data-node-id="div"]')).toHaveCSS("opacity", "1");
+  await expect(parent.locator('[data-node-id="div"]')).toHaveAttribute("data-emphasis", "dimmed");
   await expect(owner.locator('[data-node-id="div"]')).toHaveCSS("opacity", "1");
-  await expect(owner.locator('[data-node-id="strict"]')).toHaveCSS("opacity", "0.2");
+  await expect(owner.locator('[data-node-id="strict"]')).toHaveCSS("opacity", "1");
+  await expect(owner.locator('[data-node-id="strict"]')).toHaveAttribute("data-emphasis", "dimmed");
   await page.locator("#parent-tree").screenshot({ path: "test-results/linked-owner.png" });
 });
 

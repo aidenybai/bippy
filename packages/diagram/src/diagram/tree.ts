@@ -4,7 +4,7 @@ import { TreeRoot } from "./tree-root";
 import { TreeView } from "./tree-view";
 import { TreeScopes } from "./tree-scopes";
 import { TreeEdges } from "./tree-edges";
-import { TreeItems, TreeItem, TreeDetail } from "./tree-items";
+import { TreeItems, TreeItem, TreeDetail, TreeLabel, TreeDescription } from "./tree-items";
 
 export const Tree = {
   Root: TreeRoot,
@@ -14,8 +14,20 @@ export const Tree = {
   Items: TreeItems,
   Item: TreeItem,
   Detail: TreeDetail,
+  Label: TreeLabel,
+  Description: TreeDescription,
 };
-export { TreeRoot, TreeView, TreeScopes, TreeEdges, TreeItems, TreeItem, TreeDetail };
+export {
+  TreeRoot,
+  TreeView,
+  TreeScopes,
+  TreeEdges,
+  TreeItems,
+  TreeItem,
+  TreeDetail,
+  TreeLabel,
+  TreeDescription,
+};
 export type { TreeRootProps } from "./tree-root";
 export type { TreeViewProps } from "./tree-view";
 export type { TreeScopesProps } from "./tree-scopes";

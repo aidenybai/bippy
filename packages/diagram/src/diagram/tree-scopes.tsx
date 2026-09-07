@@ -20,7 +20,7 @@ export const TreeScopes = (props: TreeScopesProps) => {
     scopeLabel,
   } = useTreeView();
   return (
-    <g data-slot="tree-scopes" {...props}>
+    <g data-slot="tree-scopes" {...props} aria-hidden="true">
       {scopeIndex !== undefined && (
         <DiagramScope
           x={positions[scopeIndex].x - 12}

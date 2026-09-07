@@ -1,10 +1,10 @@
 export const diagramMetrics = {
-  rowHeight: 20,
+  rowHeight: 24,
   indent: 20,
   nodeRadius: 3,
   fontSize: 10,
   detailFontSize: 8,
-  detailRowHeight: 14,
+  detailRowHeight: 24,
   detailPortGap: 4,
   annotationFontSize: 6,
   labelOffset: 7,

@@ -3,11 +3,10 @@ import { fonts } from "tailwind-stylex/tokens.stylex";
 import { colors, typography } from "./tokens.stylex";
 
 export const drawing = stylex.create({
-  dimmed: { opacity: 0.2 },
   connector: {
     fill: "none",
-    stroke: colors.text,
-    strokeOpacity: 0.25,
+    stroke: colors.line,
+    strokeOpacity: 1,
     strokeWidth: 1,
     pointerEvents: "none",
   },

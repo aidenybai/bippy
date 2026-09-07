@@ -42,11 +42,26 @@ export const Comparison = ({ nodes, dataflowEdges }: ComparisonProps) => (
 ```
 
 - `Tree.Root` owns the shared model and interaction state without adding DOM. Use `activeId` / `onActiveIdChange` for controlled state, or `defaultActiveId` for an initial value. `onSelect` handles activation separately from hover/focus.
-- `Tree.View` computes a parent or owner projection and its layout. Views under one root share the active ID; nested roots are independent.
+- `Tree.View` owns its projection, layout, collapse state, and roving keyboard focus. Views under one root share the active ID, not DOM focus or expansion. Nested roots reset view, interaction, and label contexts.
 - `Tree.Scopes`, `Tree.Edges`, and `Tree.Items` are separate SVG layers. Compose or omit them explicitly. `Tree.Items` accepts a render callback; its default renders components as `Tree.Item` and metadata as `Tree.Detail`.
 - `Tree.Item` and `Tree.Detail` accept native SVG group props and React 19 refs. SVG children replace their label content; placement and hitboxes still come from the model. Consumer event handlers run before internal handlers and can cancel them with `preventDefault()`.
 
-Parts expose `data-slot`; rows also expose `data-active` and `data-emphasis`. Named exports such as `TreeRoot` and `TreeItem` are available alongside the namespace API.
+Parts expose `data-slot`; rows also expose `data-active`, `data-emphasis`, and `data-focus-visible`. Named exports such as `TreeRoot` and `TreeItem` are available alongside the namespace API.
+
+### Label and description slots
+
+```tsx
+<Tree.Item id="app" textValue="App">
+  <Tree.Label>App</Tree.Label>
+  <Tree.Description>The application entry point.</Tree.Description>
+</Tree.Item>
+```
+
+`Diagram.Label` / `Tree.Label` render SVG text; `Diagram.Description` / `Tree.Description` render an SVG description. They receive scoped placement and generated IDs, merge native props and refs, and wire accessible names/descriptions automatically. Explicit slot IDs are supported. Conditional slot removal removes stale ARIA references; the model name is the fallback when a label slot is absent. Descriptions supplement the model's relationship descriptions.
+
+Use one label and one optional description per item. Slots must be inside a node/detail, not directly inside a canvas. They accept noninteractive SVG content, not nested buttons or links. There is no `asChild` or arbitrary named-slot dispatch: each part preserves its SVG element and semantic contract. `Tree.Item`'s `id` identifies a model node, not a document-wide DOM ID, so linked projections do not duplicate IDs.
+
+The model remains authoritative for layout. Keep model labels consistent with custom content; use `textValue` for nontext typeahead content and an explicit `aria-label` when custom graphics or truncation need a complete accessible name. Consumer styling and event cancellation must preserve keyboard behavior, contrast, and target sizes.
 
 For positioned SVG compositions, use `Diagram.Root`, `Diagram.Canvas`, `Diagram.Node`, `Diagram.Detail`, `Diagram.Edge`, and `Diagram.Scope`. Canvas, node, edge, and scope parts forward native SVG props and refs. `TreeDiagram` and `TreeComparison` are presets built from the tree parts, not separate renderers.
 
@@ -64,9 +79,9 @@ Model indexing, highlighting, and geometry remain pure TypeScript modules. `tree
 - `DataflowDiagram`: directed hook, value, prop, callback, context, and external-store graphs.
 - `VirtualTree`: fixed-row windowing, adaptive indentation, collapse/expand, and keyboard navigation.
 
-Component rows share a 20px grid, 20px maximum indent, 10px labels, 3px node radius, 0.5px node outlines, and 1px connectors. Data details use 14px rows and muted 8px text, aligned with their component label rather than another tree level. The virtualized tree renders the same SVG node component rather than a separate HTML row design. Parent and owner compositions are derived from one model.
+Component rows share a 24px grid, 20px maximum indent, 10px labels, 3px node radius, 0.5px node outlines, and 1px connectors. Data details also use 24px targets, with muted 8px text aligned with their component label rather than another tree level. The virtualized tree renders the same SVG node component rather than a separate HTML row design. Parent and owner compositions are derived from one model.
 
-Hover and keyboard focus emphasize the relevant nodes and connections, fading unrelated elements to 20%. In linked trees, owner focus shows direct creations in the parent view and the ownership subtree in the owner view. Boundary focus shows catch regions, including nested boundary nodes but excluding their contents. Blue context scopes only appear while their provider is active. Pointer exit restores the diagram. Virtual rows have continuous full-height, full-width hitboxes: the label, node, whitespace, and expand control share one hover target. There are no selection boxes or persistent row backgrounds.
+Hover and keyboard focus emphasize relevant nodes and connections in blue. Unrelated elements remain neutral and fully opaque rather than losing contrast. In linked trees, owner focus shows direct creations in the parent view and the ownership subtree in the owner view. Boundary focus shows catch regions, including nested boundary nodes but excluding their contents. Blue context scopes only appear while their provider is active. Pointer exit restores the diagram. Virtual rows have continuous full-height, full-width hitboxes: the label, node, whitespace, and expand control share one hover target. There are no selection boxes or persistent row backgrounds.
 
 The supplied SVG's circular arcs, thin connectors, geometric text rendering, and stroke-masked labels are implemented in the shared primitives. There is no separate SVG references specimen. Shared drawing styles live in `drawing.stylex.ts`; shared geometry lives in `geometry.ts`.
 
@@ -118,9 +133,24 @@ The icon-only sun/moon switch saves the chosen theme locally and initially follo
 
 ## Virtualization
 
-The model is indexed without recursion. Only the viewport plus five overscan rows on either side is mounted. Indentation rebases against visible ancestry, keeps two levels of context, and fits into at most 42% of the viewport width. Absolute depth remains in `aria-level` and `data-depth`; it is not shown as a badge. Visible, mounted, and total counts are separate data attributes, not ambiguous footer stats.
+The model is indexed without recursion. The viewport plus five overscan rows on either side is mounted, along with the focused row if it falls outside that window. The pinned row keeps `aria-activedescendant` valid without forcing the viewport to jump during manual scrolling. Indentation rebases against visible ancestry, keeps two levels of context, and fits into at most 42% of the viewport width. Absolute depth remains in `aria-level` and `data-depth`; it is not shown as a badge. Visible, mounted, and total counts are separate data attributes, not ambiguous footer stats.
 
-Use ↑/↓ to navigate, ←/→ to collapse/expand or move to parent/child, Home/End to jump, and Enter/Space to select. The two 10,000-node specimens are synthetic fixtures, not a live React inspector.
+The two 10,000-node specimens are synthetic fixtures, not a live React inspector.
+
+## Accessibility
+
+Trees expose standard `tree` / `treeitem` roles, explicit hierarchy metadata, names, and descriptions for ownership, component details, dependencies, and boundary exclusions. Empty views are named groups. Static trees use one roving tab stop; virtual trees keep DOM focus on the viewport and use `aria-activedescendant`. Standalone interactive diagram nodes are buttons.
+
+- Tab enters/leaves a tree. ↑/↓ moves focus; Home/End jumps to the first/last item.
+- ←/→ collapses/expands or moves to parent/child, respecting locale direction.
+- Typing searches labels using locale-aware collation; repeated characters cycle matches.
+- Enter/Space invokes `onSelect`. Without a callback, a branch toggles. Arrow navigation never invokes selection callbacks.
+- Escape clears interaction emphasis without moving focus.
+- Touch and assistive-technology activation retain inspection emphasis after the pointer leaves. Keyboard-visible focus is a separate underline, not just a color change.
+
+React Aria supplies press normalization, focus visibility, locale utilities, and slot-ID/prop merging. This is not a wrapper around React Aria's Tree: its current implementation uses a single-column treegrid, whereas these SVG views use tree semantics. Focus repair handles removed, disabled, and hidden items without moving focus into another view.
+
+Automated checks cover axe rules, SVG paint contrast, 24px targets, touch activation, forced colors, and 200% CSS zoom. They do not establish full WCAG conformance or screen-reader compatibility. See [accessibility verification](docs/accessibility.md) for pending browser and manual checks.
 
 ## Checks
 
@@ -132,11 +162,21 @@ pnpm --filter diagram exec playwright install chromium
 pnpm --filter diagram test:browser
 ```
 
-Browser tests start a dev server if port 3100 is free. Screenshots go to `test-results/`. The `/fixtures/compound` route tests controlled state, nested roots, custom SVG content, DOM props, refs, and event composition.
+Browser tests start a dev server if port 3100 is free. Screenshots go to `test-results/`. The `/fixtures/compound` route tests controlled state, nested roots, label/description slots, DOM props, refs, event composition, empty data, and focus recovery.
+
+For the cross-engine accessibility suite:
+
+```sh
+pnpm --filter diagram exec playwright install chromium firefox webkit
+pnpm --filter diagram test:accessibility
+```
+
+Use `pnpm --filter diagram test:accessibility --project=chromium` to run only the verified engine. Firefox/WebKit installation was blocked by a Firefox download timeout during this implementation; those engine runs remain pending.
 
 ## Sources
 
 - Board: `millionco/million-ui`, `32f775f`, `src/board/board.candidate.tsx`; translated from Tailwind to StyleX.
 - Compound architecture: `pacocoursey/cmdk`, `cmdk/src/index.tsx`, and `shadcn-ui/ui`, `apps/v4/registry/new-york-v4/ui/command.tsx`.
+- React Aria: `adobe/react-spectrum`, `react-aria-components/src/utils.tsx`, and `react-aria/src/{tree,selection,interactions,focus,utils}`; [Tree](https://react-spectrum.adobe.com/react-aria/Tree.html), [usePress](https://react-spectrum.adobe.com/react-aria/usePress.html), and [useFocusRing](https://react-spectrum.adobe.com/react-aria/useFocusRing.html).
 - Adaptive indentation: `aidenybai-website/src/components/fiber-tree/fiber-tree-list.tsx`.
 - React source inspected locally: `ReactInternalTypes.js`, `ReactFiber.js`, `ReactChildFiber.js`, `ReactFiberCommitHostEffects.js`, `ReactFiberThrow.js`, `ReactFiberHooks.js`, `ReactFiberNewContext.js`, `ReactContext.js`, `ReactJSXElement.js`, DevTools `Components/Tree.js`, and `ReactFizzConfigDOM.js`.

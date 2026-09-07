@@ -53,14 +53,15 @@ test("keeps SVG typography and geometry at native size", async ({ page }) => {
   await page.screenshot({ path: "test-results/diagram-mobile.png" });
 });
 
-test("hover and keyboard focus fade other nodes without selection boxes", async ({ page }) => {
+test("hover and keyboard focus preserve contrast without selection boxes", async ({ page }) => {
   await page.goto("/");
   const diagram = page.locator('#parent-tree [data-tree-relationship="parent"]');
   const node = diagram.locator('[data-node-id="main"]');
   const other = diagram.locator('[data-node-id="frame"]');
   await node.hover();
   await expect(node).toHaveCSS("opacity", "1");
-  await expect(other).toHaveCSS("opacity", "0.2");
+  await expect(other).toHaveCSS("opacity", "1");
+  await expect(other).toHaveAttribute("data-emphasis", "dimmed");
   await expect(node.locator("rect")).toHaveCSS("fill", "rgba(0, 0, 0, 0)");
   await expect(node.locator("rect")).toHaveCSS("stroke", "none");
   await expect(diagram.locator('[data-edge-from="div"][data-edge-to="main"]')).toHaveCSS(
@@ -69,12 +70,13 @@ test("hover and keyboard focus fade other nodes without selection boxes", async 
   );
   await expect(diagram.locator('[data-edge-from="strict"][data-edge-to="app"]')).toHaveCSS(
     "opacity",
-    "0.2",
+    "1",
   );
   await node.click();
   await page.mouse.move(0, 0);
   await expect(other).toHaveCSS("opacity", "1");
-  await page.keyboard.press("Tab");
+  await other.focus();
+  await page.keyboard.press("ArrowDown");
   const focused = diagram.locator("[data-node-id]:focus");
   await expect(focused).toHaveCount(1);
   await expect(diagram.locator('[data-emphasis="dimmed"]')).toHaveCount(
@@ -93,11 +95,24 @@ test("virtual rows reuse diagram nodes and emphasize only the hovered item", asy
   const other = tree.locator('[data-node-id="deep-2"]');
   await node.hover();
   await expect(node).toHaveCSS("opacity", "1");
-  await expect(other).toHaveCSS("opacity", "0.2");
-  await expect(tree.getByRole("treeitem").nth(2).getByRole("button")).toHaveCSS("opacity", "0");
+  await expect(other).toHaveCSS("opacity", "1");
+  await expect(other).toHaveAttribute("data-emphasis", "dimmed");
+  await expect(tree.getByRole("treeitem").nth(2).locator("[data-tree-toggle]")).toHaveCSS(
+    "opacity",
+    "0",
+  );
   await expect(node.locator("circle")).toHaveAttribute("r", String(diagramMetrics.nodeRadius));
   await expect(node.locator("rect")).toHaveCSS("fill", "rgba(0, 0, 0, 0)");
   await node.click();
+  await expect(tree.locator('[role="treeitem"]:has([data-node-id="deep-3"])')).toHaveAttribute(
+    "aria-expanded",
+    "false",
+  );
+  await tree.press("ArrowRight");
+  await expect(tree.locator('[role="treeitem"]:has([data-node-id="deep-3"])')).toHaveAttribute(
+    "aria-expanded",
+    "true",
+  );
   await page.mouse.move(0, 0);
   await expect(other).toHaveCSS("opacity", "1");
   await expect(node.locator("rect")).toHaveCSS("stroke", "none");
@@ -126,7 +141,7 @@ test("virtual hitboxes fill the row and keep the expander reachable", async ({ p
   if (!bounds) throw new Error("Missing tree viewport");
   const row = tree.getByRole("treeitem").nth(3);
   const node = row.locator("[data-node-id]");
-  const toggle = row.getByRole("button");
+  const toggle = row.locator("[data-tree-toggle]");
   await page.mouse.move(bounds.x + bounds.width - 2, bounds.y + 3 * diagramMetrics.rowHeight + 0.5);
   await expect(node).toHaveAttribute("data-emphasis", "normal");
   await expect(tree.locator('[data-node-id="deep-2"]')).toHaveAttribute("data-emphasis", "dimmed");
@@ -175,7 +190,7 @@ test("shares compact node, text, connector, and arc rules throughout the system"
   const virtualConnector = page.locator("#deep-tree [data-connector]").first();
   for (const connector of [staticConnector, virtualConnector]) {
     await expect(connector).toHaveCSS("stroke-width", "1px");
-    await expect(connector).toHaveCSS("stroke-opacity", "0.25");
+    await expect(connector).toHaveCSS("stroke-opacity", "1");
   }
   await expect(page.locator("#edge-reference [data-edge-from] > path")).toHaveAttribute("d", / A /);
   await expect(page.locator("#edge-owner [data-edge-from] > path")).toHaveAttribute("d", / A /);
@@ -197,14 +212,14 @@ test("rebases a deep window without mounting the whole tree", async ({ page }) =
   expect(dimensions.scrollWidth).toBe(dimensions.width);
   await tree.focus();
   await tree.press("End");
-  await expect(tree.locator('[aria-selected="true"]')).toHaveAttribute("aria-level", "10000");
-  await expect(tree.locator('[aria-selected="true"]')).toBeInViewport();
+  await expect(tree.locator('[data-focused="true"]')).toHaveAttribute("aria-level", "10000");
+  await expect(tree.locator('[data-focused="true"]')).toBeInViewport();
   await tree.press("Home");
   await tree.press("ArrowLeft");
   await expect(tree.getByRole("treeitem")).toHaveCount(1);
   await tree.press("ArrowRight");
   await tree.press("ArrowDown");
-  await expect(tree.locator('[aria-selected="true"]')).toHaveAttribute("aria-level", "2");
+  await expect(tree.locator('[data-focused="true"]')).toHaveAttribute("aria-level", "2");
 });
 
 test("keeps sibling positions correct after collapsing a branch", async ({ page }) => {
@@ -212,8 +227,7 @@ test("keeps sibling positions correct after collapsing a branch", async ({ page 
   const tree = page.getByRole("tree", { name: "Branching tree" });
   await tree.focus();
   await tree.press("ArrowDown");
-  await tree.press("ArrowDown");
-  const selected = tree.locator('[aria-selected="true"]');
+  const selected = tree.locator('[data-focused="true"]');
   await expect(selected).toHaveAttribute("aria-level", "2");
   await expect(selected).toHaveAttribute("aria-setsize", "3");
   await tree.press("ArrowLeft");
