@@ -1,5 +1,6 @@
 import type { Expression } from "oxc-parser";
 import type { Scope, StaticValue } from "../types.js";
+import { hasNamedProperty } from "./has-property.js";
 import { findOwningScope } from "./scope.js";
 import { branchValue, getTruthiness, isNullish } from "./values.js";
 
@@ -71,7 +72,7 @@ const negate = (narrowing: TestNarrowing | null): TestNarrowing | null =>
 
 /**
  * Derives what a branch-valued identifier must be on each side of a test.
- * Handles `x`, `!x`, `x == null` / `x === undefined` (and their negations),
+ * Handles `x`, `!x`, `"key" in x`, `x == null` / `x === undefined` (and their negations),
  * mirroring the narrowing TypeScript applies to the same expressions.
  */
 export const narrowTest = (
@@ -86,6 +87,19 @@ export const narrowTest = (
     case "ParenthesizedExpression":
       return narrowTest(test.expression, lookup);
     case "BinaryExpression": {
+      if (test.operator === "in") {
+        if (test.right.type !== "Identifier" || test.left.type !== "Literal") return null;
+        const key = String(test.left.value);
+        return narrowIdentifier(
+          test.right.name,
+          lookup,
+          (value) => {
+            const presence = hasNamedProperty(key, value);
+            return presence === null ? null : getTruthiness(presence);
+          },
+          `"${key}" in ${test.right.name}`,
+        );
+      }
       const isEquality = test.operator === "==" || test.operator === "===";
       const isInequality = test.operator === "!=" || test.operator === "!==";
       if (!isEquality && !isInequality) return null;

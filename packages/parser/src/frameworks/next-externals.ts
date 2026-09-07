@@ -1,4 +1,5 @@
 import { STYLED_JSX_SPECIFIER } from "../evaluate/interpreter.js";
+import { createSearchParamsValue } from "../evaluate/url-search-params.js";
 import {
   NULL_VALUE,
   UNDEFINED_VALUE,
@@ -6,9 +7,11 @@ import {
   isKnownString,
   objectFromRecord,
   primitiveValue,
+  thrownValue,
   unknownValue,
 } from "../evaluate/values.js";
 import type {
+  CapturedRequest,
   ContextDefinition,
   ExternalValueProvider,
   StaticObjectValue,
@@ -17,6 +20,7 @@ import type {
 } from "../types.js";
 import { ForwardRefTag } from "../work-tags.js";
 import type { FrameworkKind } from "./framework-profile.js";
+import { nextRequestValue } from "./next-request.js";
 import {
   element,
   emptyStub,
@@ -209,22 +213,6 @@ const fontLoader = (name: string): StaticValue =>
     }),
   );
 
-const searchParamsValue = (url: URL): StaticValue =>
-  objectFromRecord({
-    get: nativeFunction("get", (args) => {
-      const [key] = args;
-      if (!isKnownString(key)) return unknownValue("search param key is dynamic");
-      const value = url.searchParams.get(String(key.value));
-      return value === null ? NULL_VALUE : primitiveValue(value);
-    }),
-    has: nativeFunction("has", (args) => {
-      const [key] = args;
-      if (!isKnownString(key)) return unknownValue("search param key is dynamic");
-      return primitiveValue(url.searchParams.has(String(key.value)));
-    }),
-    toString: nativeFunction("toString", () => primitiveValue(url.searchParams.toString())),
-  });
-
 const appNavigationValue = (
   importedName: string,
   url: URL,
@@ -242,7 +230,13 @@ const appNavigationValue = (
     case "usePathname":
       return nativeFunction(importedName, () => primitiveValue(url.pathname));
     case "useSearchParams":
-      return nativeFunction(importedName, () => searchParamsValue(url));
+      return nativeFunction(importedName, () =>
+        createSearchParamsValue(primitiveValue(url.search), { isReadonly: true }),
+      );
+    case "ReadonlyURLSearchParams":
+      return nativeFunction(importedName, ([initial]) =>
+        createSearchParamsValue(initial, { isReadonly: true }),
+      );
     case "useParams":
       return nativeFunction(importedName, () =>
         objectFromRecord(
@@ -262,7 +256,10 @@ const appNavigationValue = (
     case "forbidden":
     case "unauthorized":
       return nativeFunction(importedName, () =>
-        unknownValue(`${importedName}() interrupts rendering with a control-flow throw`),
+        thrownValue(
+          `${importedName}() interrupts rendering with a control-flow throw`,
+          unknownValue(`${importedName}() error`),
+        ),
       );
     default:
       return null;
@@ -302,10 +299,14 @@ export interface NextModelOptions {
   kind: NextRouterKind;
   /** The URL being rendered (pathname plus search). */
   route: string;
+  /** Origin the dev server serves from; `http://static.invalid` when unknown. */
+  origin?: string;
+  /** The document request the server rendered, when captured. */
+  request?: CapturedRequest;
 }
 
 export const createNextModel = (options: NextModelOptions): NextModel => {
-  const url = new URL(options.route, "http://static.invalid");
+  const url = new URL(options.route, options.origin ?? "http://static.invalid");
   const params: Record<string, string> = {};
   const externalValues: ExternalValueProvider = (packageName, importedName) => {
     switch (packageName) {
@@ -331,6 +332,8 @@ export const createNextModel = (options: NextModelOptions): NextModel => {
         return fontLoader(importedName);
       case "next/navigation":
         return appNavigationValue(importedName, url, params);
+      case "next/headers":
+        return nextRequestValue(importedName, options.request ?? null, options.origin ?? null);
       case "next/router":
         return pagesRouterValue(importedName, url, params);
       case STYLED_JSX_SPECIFIER:

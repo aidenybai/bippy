@@ -12,7 +12,7 @@ import type { TypeScriptDeclaration } from "./evaluate/typescript-declarations.j
 import type { RuntimeSnapshot } from "./harness/snapshot.js";
 import type { WorkTag } from "./work-tags.js";
 
-export type SourceLanguage = "js" | "jsx" | "ts" | "tsx";
+export type SourceLanguage = "js" | "jsx" | "ts" | "tsx" | "json";
 
 export interface SourceLocation {
   filePath: string;
@@ -278,6 +278,8 @@ export interface ProjectContext {
   /** Directory the analyzed app is served from (`process.cwd()` of its dev server); `null` when analyzing loose modules. */
   rootDirectory: string | null;
   hasDeclaredDependency: (packageName: string) => boolean;
+  /** The text the dev server serves for a same-origin or root-relative URL from the project's static directory; `null` when it serves none. */
+  readServedAsset: (url: string) => string | null;
   /** The captured TanStack Query cache entry for a query hash (`hashKey(queryKey)`), if the page held one. */
   findQuery: (queryHash: string) => CapturedQuery | null;
   /** Captured mutations for a mutation key hash (`null` for keyless mutations); `null` when the mutation cache was not recorded. */
@@ -292,6 +294,11 @@ export interface ProjectContext {
 
 export interface LibraryValueProvider {
   (specifier: string, importedName: string, project: ProjectContext): StaticValue | null;
+}
+
+/** Export names a library model covers, keyed by the import specifier they are imported from. */
+export interface ModeledExports {
+  readonly [specifier: string]: readonly string[];
 }
 
 export type JsonValue =
@@ -393,8 +400,22 @@ export interface RootObservations extends CapturedQueryCaches {
 /** The origin's persisted state (`document.cookie`, Web Storage) as the settled page held it. */
 export interface CapturedPageState {
   cookie: string;
+  /** `window.name`; absent in captures taken before it was recorded. */
+  name?: string;
   localStorage: Record<string, string>;
   sessionStorage: Record<string, string>;
+}
+
+/** The environment the server process ran with, whole: unlisted variables are unset. */
+export interface ProcessEnvironment {
+  variables: Record<string, string>;
+  /** Prefix of the variables client bundles inline; the rest read `undefined` in the browser. */
+  clientPrefix: string | null;
+}
+
+/** The document request the server rendered for, as the browser sent it. */
+export interface CapturedRequest {
+  headers: Record<string, string>;
 }
 
 /** What the running page held that its code reads at render: inputs the static render takes as given. */
@@ -409,17 +430,28 @@ export interface RuntimeObservations {
   stores?: CapturedValue[];
   /** Absent in captures that predate page-state recording, which then assume a fresh profile. */
   page?: CapturedPageState;
+  /** Absent in captures that predate request recording, which then leave request headers uncertain. */
+  request?: CapturedRequest;
 }
 
 export type StaticPrimitive = string | number | boolean | null | undefined | bigint;
 
+/** A `get`/`set` pair; a read runs the getter and an assignment runs the setter. */
+export interface StaticAccessor {
+  get: StaticValue | null;
+  set: StaticValue | null;
+}
+
+/** An accessor entry's `value` is the uncertain stand-in helpers see without calling the getter. */
 export type StaticObjectEntry =
-  | { kind: "property"; key: string; value: StaticValue }
+  | { kind: "property"; key: string; value: StaticValue; accessor?: StaticAccessor }
   | { kind: "spread"; value: StaticValue };
 
+/** `constructedBy` is the class whose `new` produced the object, so `instanceof` and its prototype resolve. */
 export interface StaticObjectValue {
   kind: "object";
   entries: StaticObjectEntry[];
+  constructedBy?: StaticClassValue;
 }
 
 /**
@@ -449,11 +481,25 @@ export type UnknownPrimitiveType = "string" | "number" | "boolean" | "any";
 /** Ordering a clock-derived number carries; see `evaluate/timers.ts`. */
 export type ClockOrdering = "reading" | "settled" | "unbounded";
 
+/** Leading characters of an unknown string and, when fixed, its length; see `evaluate/primitive-shapes.ts`. */
+export interface StringShape {
+  prefix: string;
+  length: number | null;
+}
+
+/** Inclusive bounds of an unknown number. */
+export interface NumberRange {
+  min: number;
+  max: number;
+}
+
 export interface StaticUnknownPrimitiveValue {
   kind: "unknown-primitive";
   primitiveType: UnknownPrimitiveType;
   reason: string;
   clock?: ClockOrdering;
+  stringShape?: StringShape;
+  numberRange?: NumberRange;
 }
 
 export interface StaticListValue {
@@ -486,6 +532,7 @@ export interface StaticFunctionValue {
   superBinding: SuperBinding | null;
   name: string | null;
   properties: Map<string, StaticValue>;
+  boundArgs?: StaticValue[];
 }
 
 export interface StaticClassValue {
@@ -578,8 +625,8 @@ export interface StaticUnknownValue {
   kind: "unknown";
   reason: string;
   location: SourceLocation | null;
-  /** The value stands for a `throw` on this path, which an error boundary above may catch. */
-  isThrown?: boolean;
+  /** The path throws this value, which a `catch` or an error boundary above may receive. */
+  thrown?: StaticValue;
 }
 
 /**
@@ -725,10 +772,14 @@ export interface StaticRendererOptions {
   bootstrap?: string[];
   /** `window` properties the served page defines (server-injected config); nested objects are partial, so unlisted keys stay unknown. */
   globals?: Record<string, JsonValue>;
-  /** Expressions the bundler inlines at build time (`DefinePlugin`, Vite `define`), keyed by source text such as `process.env.FLAG`. */
+  /** Expressions the bundler inlines at build time (`DefinePlugin`, Vite `define`), keyed by source text such as `process.env.FLAG`; an environment variable given `null` is unset. */
   defines?: Record<string, JsonValue>;
+  /** The server process's environment, whole; unlisted variables are unset. */
+  environment?: ProcessEnvironment;
   /** URL path (pathname, search, hash) the page is rendered at; `location` reads it. */
   route?: string;
+  /** Origin (`http://localhost:3000`) the dev server serves the page from; `location` reads it and same-origin asset URLs resolve to its static files. */
+  origin?: string;
   /** What a running page was observed to hold; the render takes these as its runtime inputs. */
   observations?: RuntimeObservations;
   externalValues?: ExternalValueProvider;

@@ -23,6 +23,7 @@ import {
 import type { Interpreter } from "./interpreter.js";
 import { createScope } from "./scope.js";
 import {
+  accessorEntry,
   describeValue,
   getObjectProperty,
   isNullish,
@@ -480,6 +481,7 @@ const initializeInstance = (
   args: StaticValue[],
   context: EvaluationContext,
 ): StaticClassValue[] => {
+  instance.constructedBy = classValue;
   const chain = collectClassChain(classValue);
   const seen = new Set<string>();
   const layers: ClassLayer[] = chain.map((current) => {
@@ -490,17 +492,13 @@ const initializeInstance = (
       members: bindMethods(interpreter, current, instance, methodContext, seen),
     };
   });
-  constructLayer(interpreter, layers, 0, args, instance);
-  for (const { methodContext, members } of layers) {
+  for (const { members } of layers) {
     for (const getter of members.getters) {
-      instance.entries.push({
-        kind: "property",
-        key: getter.key,
-        value: interpreter.callFunction(getter.functionValue, [], methodContext, {
-          thisValue: instance,
-        }),
-      });
+      instance.entries.push(
+        accessorEntry(getter.key, { get: getter.functionValue, set: null }, null),
+      );
     }
   }
+  constructLayer(interpreter, layers, 0, args, instance);
   return chain;
 };

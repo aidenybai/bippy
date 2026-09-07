@@ -157,17 +157,33 @@ const BROWSER_GLOBAL_MEMBERS: Record<string, Record<string, BrowserMember>> = {
 export const isBrowserGlobalName = (name: string): boolean => name in BROWSER_GLOBAL_MEMBERS;
 
 const LOCATION_MEMBER_NAME =
-  /^(?:(?:window|globalThis|document)\.)?location\.(pathname|search|hash)$/;
+  /^(?:(?:window|globalThis|document)\.)?location\.(pathname|search|hash|origin|protocol|host|hostname|port|href)$/;
+const DOCUMENT_URL_NAME = /^(?:(?:window|globalThis)\.)?document\.(?:URL|documentURI)$/;
 
-/** The `location` members a route (path, query, fragment) determines; the origin stays unknown. */
-export const getRouteLocationMember = (route: string | null, name: string): StaticValue | null => {
-  const member = LOCATION_MEMBER_NAME.exec(name)?.[1];
-  if (route === null || member === undefined) return null;
-  const url = new URL(route, "http://route.invalid");
+const ROUTE_LOCATION_MEMBERS = new Set(["pathname", "search", "hash"]);
+const ORIGIN_LOCATION_MEMBERS = new Set(["origin", "protocol", "host", "hostname", "port"]);
+
+/** The `location` members the page's origin and route (path, query, fragment) determine; unknown while the part they read is. */
+export const getPageLocationMember = (
+  origin: string | null,
+  route: string | null,
+  name: string,
+): StaticValue | null => {
+  const member = DOCUMENT_URL_NAME.test(name) ? "href" : LOCATION_MEMBER_NAME.exec(name)?.[1];
+  if (member === undefined) return null;
+  if (route === null && !ORIGIN_LOCATION_MEMBERS.has(member)) return null;
+  if (origin === null && !ROUTE_LOCATION_MEMBERS.has(member)) return null;
+  const url = new URL(route ?? "", origin ?? "http://origin.invalid");
   const members: Record<string, string> = {
     pathname: url.pathname,
     search: url.search,
     hash: url.hash,
+    origin: url.origin,
+    protocol: url.protocol,
+    host: url.host,
+    hostname: url.hostname,
+    port: url.port,
+    href: url.href,
   };
   return primitiveValue(members[member] ?? "");
 };

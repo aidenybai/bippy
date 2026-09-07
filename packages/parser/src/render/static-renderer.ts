@@ -69,7 +69,11 @@ export class StaticRenderer {
       rootDirectory: this.options.rootDirectory,
     });
     this.reactVersion = readReactVersion(this.resolver, this.options.rootDirectory);
-    this.project = createProjectContext(this.options.rootDirectory, this.options.observations);
+    this.project = createProjectContext(
+      this.options.rootDirectory,
+      this.options.observations,
+      this.options.origin ?? null,
+    );
     this.graph = new ModuleGraph({
       resolver: this.resolver,
       resolveExternalPackages: options.resolveExternalPackages,
@@ -94,8 +98,10 @@ export class StaticRenderer {
       externalValues: this.options.externalValues,
       globals: this.options.globals,
       defines: this.options.defines,
+      environment: this.options.environment,
       capturedGlobals: this.options.observations?.globals,
       route: this.options.route,
+      origin: this.options.origin,
       page: this.options.observations?.page,
       assumeOuterProviders,
       reactVersion: this.reactVersion,

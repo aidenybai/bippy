@@ -17,6 +17,7 @@ import { toElementType } from "../react/element-type.js";
 import type {
   ContextDefinition,
   LibraryValueProvider,
+  ModeledExports,
   StaticElementType,
   StaticObjectEntry,
   StaticObjectValue,
@@ -51,7 +52,7 @@ const MOTION_VALUE_HOOKS = [
   "useMotionTemplate",
 ];
 
-export const FRAMER_MOTION_MODELED_EXPORTS = [
+const MODELED_EXPORT_NAMES = [
   "motion",
   "m",
   "useReducedMotion",
@@ -64,6 +65,10 @@ export const FRAMER_MOTION_MODELED_EXPORTS = [
   "useDragControls",
   ...MOTION_VALUE_HOOKS,
 ];
+
+export const FRAMER_MOTION_MODELED_EXPORTS: ModeledExports = Object.fromEntries(
+  [...FRAMER_MOTION_SPECIFIERS].map((specifier) => [specifier, MODELED_EXPORT_NAMES]),
+);
 
 const MOTION_CONTEXT: ContextDefinition = {
   name: "MotionContext",

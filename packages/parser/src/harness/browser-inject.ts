@@ -40,6 +40,7 @@ const readStorageArea = (area: Storage): Record<string, string> => {
 
 const readPageState = (): CapturedPageState => ({
   cookie: document.cookie,
+  name: window.name,
   localStorage: readStorageArea(localStorage),
   sessionStorage: readStorageArea(sessionStorage),
 });

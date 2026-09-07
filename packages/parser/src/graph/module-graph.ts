@@ -165,8 +165,8 @@ export class ModuleGraph {
     const resolution = this.resolveSpecifier(specifier, fromModule);
     if (
       resolution.kind === "external" &&
-      imported.kind === "named" &&
-      isModeledLibraryExport(resolution.packageName, imported.name)
+      imported.kind !== "namespace" &&
+      isModeledLibraryExport(specifier, describeImportedName(imported))
     ) {
       return { kind: "external", packageName: resolution.packageName, imported, specifier };
     }

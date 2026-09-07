@@ -13,6 +13,7 @@ import {
   type HookFrame,
 } from "../evaluate/hooks.js";
 import type { Interpreter } from "../evaluate/interpreter.js";
+import { describeThrow, getThrowCertainty, withoutThrows } from "../evaluate/thrown.js";
 import {
   areValuesEquivalent,
   describeValue,
@@ -35,7 +36,6 @@ import type {
   StaticFunctionValue,
   StaticHostNodeValue,
   StaticObjectValue,
-  StaticUnknownValue,
   StaticValue,
   StubComponent,
   StubRenderTools,
@@ -201,78 +201,6 @@ export class StaticThrowError extends Error {
     this.isMaybe = isMaybe;
   }
 }
-
-type ThrowCertainty = "never" | "maybe" | "always";
-
-const combineSiblings = (left: ThrowCertainty, right: ThrowCertainty): ThrowCertainty =>
-  left === "always" || right === "always"
-    ? "always"
-    : left === "maybe" || right === "maybe"
-      ? "maybe"
-      : "never";
-
-/** Whether placing `value` as children throws; elements throw from their own proxies. */
-const getThrowCertainty = (value: StaticValue): ThrowCertainty => {
-  switch (value.kind) {
-    case "unknown":
-      return value.isThrown ? "always" : "never";
-    case "list":
-      return value.items.map(getThrowCertainty).reduce(combineSiblings, "never");
-    case "branch": {
-      const outcomes = value.alternatives.map(getThrowCertainty);
-      if (outcomes.every((outcome) => outcome === "always")) return "always";
-      return outcomes.every((outcome) => outcome === "never") ? "never" : "maybe";
-    }
-    case "optional":
-    case "repeat":
-      return getThrowCertainty(value.kind === "optional" ? value.value : value.item) === "never"
-        ? "never"
-        : "maybe";
-    default:
-      return "never";
-  }
-};
-
-const findThrown = (value: StaticValue): StaticUnknownValue | null => {
-  switch (value.kind) {
-    case "unknown":
-      return value.isThrown ? value : null;
-    case "list":
-      return value.items.map(findThrown).find((thrown) => thrown !== null) ?? null;
-    case "branch":
-      return value.alternatives.map(findThrown).find((thrown) => thrown !== null) ?? null;
-    default:
-      return null;
-  }
-};
-
-const describeThrow = (value: StaticValue): string => {
-  const thrown = findThrown(value);
-  if (!thrown) return "component throws";
-  const where = thrown.location ? ` at ${thrown.location.filePath}:${thrown.location.line}` : "";
-  return `${thrown.reason}${where}`;
-};
-
-const withoutThrows = (value: StaticValue): StaticValue => {
-  switch (value.kind) {
-    case "unknown":
-      return value.isThrown ? unknownValue("thrown render", value.location) : value;
-    case "list":
-      return { ...value, items: value.items.map(withoutThrows) };
-    case "branch": {
-      const alternatives = value.alternatives
-        .filter((alternative) => getThrowCertainty(alternative) !== "always")
-        .map(withoutThrows);
-      return alternatives.length === 1 ? alternatives[0] : { ...value, alternatives };
-    }
-    case "optional":
-      return { ...value, value: withoutThrows(value.value) };
-    case "repeat":
-      return { ...value, item: withoutThrows(value.item) };
-    default:
-      return value;
-  }
-};
 
 const isClientModule = (module: ModuleRecord): boolean =>
   module.directives.includes(USE_CLIENT_DIRECTIVE);

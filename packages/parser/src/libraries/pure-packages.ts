@@ -1,8 +1,11 @@
-import { createRequire } from "node:module";
-import path from "node:path";
 import { fromNativeValue, pureNativeFunction } from "../evaluate/native-values.js";
 import { getPackageNameFromSpecifier } from "../graph/module-resolver.js";
 import type { StaticValue } from "../types.js";
+import {
+  getDefaultExport,
+  getInstalledModules,
+  type InstalledModules,
+} from "./installed-modules.js";
 
 // Packages whose exports are pure functions of their arguments (formatting,
 // parsing, class-name joining): the project's own installed copy runs on known
@@ -19,20 +22,11 @@ const PURE_PACKAGES: ReadonlySet<string> = new Set([
   "tailwind-merge",
 ]);
 
-const isModuleNamespace = (module: object): boolean =>
-  Object.prototype.toString.call(module) === "[object Module]";
-
-const getDefaultExport = (module: object): unknown =>
-  isModuleNamespace(module) || Reflect.get(module, "__esModule") === true
-    ? Reflect.get(module, "default")
-    : module;
-
 export class PurePackages {
-  private readonly requireFromRoot: NodeJS.Require;
-  private readonly modules = new Map<string, object | null>();
+  private readonly installed: InstalledModules;
 
   constructor(rootDirectory: string) {
-    this.requireFromRoot = createRequire(path.join(rootDirectory, "package.json"));
+    this.installed = getInstalledModules(rootDirectory);
   }
 
   getExport(specifier: string, importedName: string): StaticValue | null {
@@ -40,7 +34,7 @@ export class PurePackages {
     if (packageName === null || !PURE_PACKAGES.has(packageName) || importedName === "*") {
       return null;
     }
-    const module = this.load(specifier);
+    const module = this.installed.load(specifier);
     if (module === null) return null;
     const exported =
       importedName === "default" ? getDefaultExport(module) : Reflect.get(module, importedName);
@@ -54,21 +48,5 @@ export class PurePackages {
           derived: true,
         }))
       : fromNativeValue(exported, name);
-  }
-
-  private load(specifier: string): object | null {
-    const cached = this.modules.get(specifier);
-    if (cached !== undefined) return cached;
-    let module: object | null = null;
-    try {
-      const loaded: unknown = this.requireFromRoot(specifier);
-      if ((typeof loaded === "object" && loaded !== null) || typeof loaded === "function") {
-        module = loaded;
-      }
-    } catch {
-      module = null;
-    }
-    this.modules.set(specifier, module);
-    return module;
   }
 }

@@ -3,6 +3,7 @@ import type {
   CapturedLinguiCatalog,
   CapturedMutation,
   CapturedPageState,
+  CapturedRequest,
   CapturedQuery,
   CapturedRouteMatch,
   CapturedRouterState,
@@ -110,9 +111,13 @@ const isCapturedRouterState = (value: unknown): value is CapturedRouterState =>
     value.navigationState === "submitting") &&
   (value.revalidationState === "idle" || value.revalidationState === "loading");
 
+const isCapturedRequest = (value: unknown): value is CapturedRequest =>
+  isRecord(value) && isStringRecord(value.headers);
+
 const isCapturedPageState = (value: unknown): value is CapturedPageState =>
   isRecord(value) &&
   typeof value.cookie === "string" &&
+  (value.name === undefined || typeof value.name === "string") &&
   isStringRecord(value.localStorage) &&
   isStringRecord(value.sessionStorage);
 
@@ -136,6 +141,7 @@ export const readObservationsJson = (value: unknown): RuntimeObservations => {
   if (isCapturedRouterState(value.router)) observations.router = value.router;
   if (Array.isArray(value.stores)) observations.stores = value.stores.filter(isCapturedValue);
   if (isCapturedPageState(value.page)) observations.page = value.page;
+  if (isCapturedRequest(value.request)) observations.request = value.request;
   return observations;
 };
 

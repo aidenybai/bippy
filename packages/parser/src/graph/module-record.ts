@@ -396,7 +396,10 @@ class CommonJsCollector {
   isCommonJs = false;
   replacesModuleExports = false;
 
-  constructor(private readonly requiredBindings: Map<string, string>) {}
+  constructor(
+    private readonly requiredBindings: Map<string, string>,
+    private readonly bindings: Map<string, TopLevelBinding>,
+  ) {}
 
   private setExport(entry: Exclude<ExportEntry, ReExportAll>): void {
     this.isCommonJs = true;
@@ -440,7 +443,20 @@ class CommonJsCollector {
       return;
     }
     this.setExpression("default", value);
-    if (value.type === "ObjectExpression") this.collectObjectMembers(value);
+    const object = this.getConstantObject(value);
+    if (object) this.collectObjectMembers(object);
+  }
+
+  /** The literal behind `module.exports = value`: the expression itself or the `const` it names. */
+  private getConstantObject(value: Expression): ObjectExpression | null {
+    if (value.type === "ObjectExpression") return value;
+    if (value.type !== "Identifier") return null;
+    const binding = this.bindings.get(value.name);
+    return binding?.kind === "variable" &&
+      binding.declarationKind === "const" &&
+      binding.init?.type === "ObjectExpression"
+      ? binding.init
+      : null;
   }
 
   private collectObjectMembers(object: ObjectExpression): void {
@@ -599,7 +615,7 @@ const collectCommonJsExports = (
   bindings: Map<string, TopLevelBinding>,
   exports: ExportEntry[],
 ): CommonJsCollector | null => {
-  const collector = new CommonJsCollector(collectRequiredBindings(statements));
+  const collector = new CommonJsCollector(collectRequiredBindings(statements), bindings);
   for (const statement of statements) collector.collectStatement(statement);
   if (!collector.isCommonJs) return null;
   for (const entry of collector.exports.values()) {

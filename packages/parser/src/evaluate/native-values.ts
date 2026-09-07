@@ -1,5 +1,6 @@
 import type { StaticNativeObjectValue, StaticObjectEntry, StaticValue } from "../types.js";
-import { nativeFunction } from "../frameworks/stubs.js";
+import { element, nativeFunction } from "../frameworks/stubs.js";
+import { REACT_ELEMENT_SYMBOL_KEYS } from "../react/element-shape.js";
 import {
   getKnownObjectKeys,
   getObjectProperty,
@@ -11,8 +12,6 @@ import {
 } from "./values.js";
 
 const UNCERTAIN = Symbol("uncertain");
-
-const MAX_LIFT_DEPTH = 8;
 
 /** Native objects a mutator was called on with arguments the analysis could not see. */
 const uncertainNativeObjects = new WeakSet<object>();
@@ -99,28 +98,52 @@ export const pureNativeFunction = (
     }
   });
 
-const liftObject = (value: object, name: string, depth: number): StaticValue => {
-  if (depth > MAX_LIFT_DEPTH) return unknownValue(`${name}: native value nested too deeply`);
+const isReactElementTag = (tag: unknown): boolean =>
+  typeof tag === "symbol" &&
+  tag.description !== undefined &&
+  REACT_ELEMENT_SYMBOL_KEYS.has(tag.description);
+
+const liftProperties = (
+  value: object,
+  name: string,
+  ancestors: ReadonlySet<object>,
+): StaticObjectEntry[] =>
+  Object.entries(value).map(([key, item]): StaticObjectEntry => ({
+    kind: "property",
+    key,
+    value: liftValue(item, `${name}.${key}`, ancestors),
+  }));
+
+const liftObject = (value: object, name: string, ancestors: ReadonlySet<object>): StaticValue => {
+  if (ancestors.has(value)) return unknownValue(`${name}: cyclic native value`);
+  const path = new Set(ancestors).add(value);
   if (Array.isArray(value)) {
-    return listValue(value.map((item, index) => liftValue(item, `${name}[${index}]`, depth + 1)));
+    return listValue(value.map((item, index) => liftValue(item, `${name}[${index}]`, path)));
   }
   if (value instanceof Date) return { kind: "native-object", value };
   if (value instanceof RegExp) {
     return { kind: "regexp", pattern: value.source, flags: value.flags, lastIndex: 0 };
   }
-  if (isPlainObject(value)) {
-    return objectValue(
-      Object.entries(value).map(([key, item]): StaticObjectEntry => ({
-        kind: "property",
-        key,
-        value: liftValue(item, `${name}.${key}`, depth + 1),
-      })),
+  if (!isPlainObject(value)) {
+    return unknownValue(`${name}: ${value.constructor.name} from native code`);
+  }
+  if (isReactElementTag(Reflect.get(value, "$$typeof"))) {
+    const type: unknown = Reflect.get(value, "type");
+    const key: unknown = Reflect.get(value, "key");
+    const props: unknown = Reflect.get(value, "props");
+    if (typeof type !== "string" || typeof props !== "object" || props === null) {
+      return unknownValue(`${name}: React element of a non-host type from native code`);
+    }
+    return element(
+      { kind: "host", tagName: type },
+      objectValue(liftProperties(props, `${name}.props`, path)),
+      typeof key === "string" ? primitiveValue(key) : null,
     );
   }
-  return unknownValue(`${name}: ${value.constructor.name} from native code`);
+  return objectValue(liftProperties(value, name, path));
 };
 
-const liftValue = (value: unknown, name: string, depth: number): StaticValue => {
+const liftValue = (value: unknown, name: string, ancestors: ReadonlySet<object>): StaticValue => {
   switch (typeof value) {
     case "string":
     case "number":
@@ -135,13 +158,13 @@ const liftValue = (value: unknown, name: string, depth: number): StaticValue => 
         unknownValue(`${name}() on dynamic arguments`),
       );
     case "object":
-      return value === null ? primitiveValue(null) : liftObject(value, name, depth);
+      return value === null ? primitiveValue(null) : liftObject(value, name, ancestors);
   }
 };
 
 /** `value`, as native code produced it, in the interpreter's terms. */
 export const fromNativeValue = (value: unknown, name: string): StaticValue =>
-  liftValue(value, name, 0);
+  liftValue(value, name, new Set());
 
 const isMutatorName = (key: string): boolean => key.startsWith("set");
 

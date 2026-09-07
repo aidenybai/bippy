@@ -4,18 +4,18 @@
       "id": "actual",
       "revision": "8867158f0a2e101467fb191c9e253f47c75a9e2d",
       "framework": "spa",
-      "capturedAt": "2026-09-07T07:06:45.629Z",
-      "durationMs": 756,
+      "capturedAt": "2026-09-07T11:47:44.185Z",
+      "durationMs": 825,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 1612,
-          "textCount": 32,
+          "fiberCount": 1652,
+          "textCount": 50,
           "branchCount": 102,
           "repeatCount": 4,
           "opaqueCount": 623,
-          "unknownCount": 173,
-          "modulesLoaded": 491
+          "unknownCount": 181,
+          "modulesLoaded": 492
         },
         "diagnostics": [
           {
@@ -33,8 +33,8 @@
       "id": "bulletproof-react",
       "revision": "9506629ed003a561c6627735480cce4994244bb4",
       "framework": "react-router",
-      "capturedAt": "2026-09-07T07:06:46.395Z",
-      "durationMs": 103,
+      "capturedAt": "2026-09-07T11:47:45.021Z",
+      "durationMs": 110,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -105,41 +105,32 @@
       "id": "cal-diy",
       "revision": "abffde336e744e15cf69626c10e436d6172bc406",
       "framework": "next-app",
-      "capturedAt": "2026-09-07T07:06:46.499Z",
-      "durationMs": 623,
+      "capturedAt": "2026-09-07T11:47:45.132Z",
+      "durationMs": 776,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
         "buildType": "production",
         "roots": 2,
-        "fibers": 1195,
-        "commits": 23,
+        "fibers": 1194,
+        "commits": 16,
         "pageErrors": [],
         "title": "Login | Cal.diy"
       },
       "static": {
         "stats": {
-          "fiberCount": 508,
+          "fiberCount": 966,
           "textCount": 0,
-          "branchCount": 27,
+          "branchCount": 1,
           "repeatCount": 0,
           "opaqueCount": 0,
-          "unknownCount": 49,
-          "modulesLoaded": 2123
+          "unknownCount": 1,
+          "modulesLoaded": 2128
         },
-        "diagnostics": [
-          {
-            "code": "dynamic-props",
-            "count": 2
-          },
-          {
-            "code": "dynamic-key",
-            "count": 1
-          }
-        ]
+        "diagnostics": []
       },
       "report": {
-        "matchedFibers": 303,
+        "matchedFibers": 938,
         "matchedText": 0,
         "opaqueSubtrees": 0,
         "opaqueSkippedFibers": 0,
@@ -147,95 +138,30 @@
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "wildcardAbsorbedFibers": 635,
-        "wildcards": [
-          {
-            "path": "root > <body> [HostComponent] > <InlineSVG> [FunctionComponent] > <ReactInlineSVG> [FunctionComponent]",
-            "reason": "cloneElement of unknown(updated state of useReducer)",
-            "absorbedFibers": 635,
-            "heads": [
-              "<svg> key=\"0-0\" [HostComponent]"
-            ]
-          }
-        ],
-        "branchesResolved": 22,
-        "branchDeviations": [
-          {
-            "path": "root > <body> [HostComponent] > <InlineSVG> [FunctionComponent] > <ReactInlineSVG> [FunctionComponent]",
-            "reason": "if (branch(null | unknown))",
-            "preferredIndex": 1,
-            "chosenIndex": 0,
-            "divergence": {
-              "path": "root > <body> [HostComponent] > <InlineSVG> [FunctionComponent] > <ReactInlineSVG> [FunctionComponent][0]",
-              "expected": "<end of children>",
-              "actual": "<svg> key=\"0-0\" [HostComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostComponent] > <Providers> [FunctionComponent] > <GeoProvider> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <TrpcProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <CacheProvider> [FunctionComponent] > <WebPushProvider> [FunctionComponent] > <AppRouterI18nProvider> [FunctionComponent] > <PageWrapper> [FunctionComponent] > <AppProviders> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <CalcomThemeProvider> [FunctionComponent] > <y> [FunctionComponent] > <$> [FunctionComponent] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <FeatureFlagsProvider> [FunctionComponent] > <FeatureProvider> [FunctionComponent] > <OrgBrandProvider> [FunctionComponent] > <Login> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <FormProvider> [FunctionComponent] > <form> [HostComponent] > <div> [HostComponent] > <Field> [FunctionComponent] > <FieldRoot> [ForwardRef] > <LabelableProvider> [FunctionComponent] > <LabelableContext> [ContextProvider] > <FieldRootInner> [ForwardRef] > <FieldRootContext> [ContextProvider] > <div> [HostComponent]",
-            "reason": "&& on unknown(property \"email\" of undefined)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostComponent] > <Providers> [FunctionComponent] > <GeoProvider> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <TrpcProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <CacheProvider> [FunctionComponent] > <WebPushProvider> [FunctionComponent] > <AppRouterI18nProvider> [FunctionComponent] > <PageWrapper> [FunctionComponent] > <AppProviders> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <CalcomThemeProvider> [FunctionComponent] > <y> [FunctionComponent] > <$> [FunctionComponent] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <FeatureFlagsProvider> [FunctionComponent] > <FeatureProvider> [FunctionComponent] > <OrgBrandProvider> [FunctionComponent] > <Login> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <FormProvider> [FunctionComponent] > <form> [HostComponent] > <div> [HostComponent] > <Field> [FunctionComponent] > <FieldRoot> [ForwardRef] > <LabelableProvider> [FunctionComponent] > <LabelableContext> [ContextProvider] > <FieldRootInner> [ForwardRef] > <FieldRootContext> [ContextProvider] > <div> [HostComponent][2]",
-              "expected": "<p> [HostComponent]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <body> [HostComponent] > <Providers> [FunctionComponent] > <GeoProvider> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <TrpcProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <CacheProvider> [FunctionComponent] > <WebPushProvider> [FunctionComponent] > <AppRouterI18nProvider> [FunctionComponent] > <PageWrapper> [FunctionComponent] > <AppProviders> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <CalcomThemeProvider> [FunctionComponent] > <y> [FunctionComponent] > <$> [FunctionComponent] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <FeatureFlagsProvider> [FunctionComponent] > <FeatureProvider> [FunctionComponent] > <OrgBrandProvider> [FunctionComponent] > <Login> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <FormProvider> [FunctionComponent] > <form> [HostComponent] > <div> [HostComponent] > <Field> [FunctionComponent] > <FieldRoot> [ForwardRef] > <LabelableProvider> [FunctionComponent] > <LabelableContext> [ContextProvider] > <FieldRootInner> [ForwardRef] > <FieldRootContext> [ContextProvider] > <div> [HostComponent]",
-            "reason": "&& on unknown(property \"password\" of undefined)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostComponent] > <Providers> [FunctionComponent] > <GeoProvider> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <TrpcProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <CacheProvider> [FunctionComponent] > <WebPushProvider> [FunctionComponent] > <AppRouterI18nProvider> [FunctionComponent] > <PageWrapper> [FunctionComponent] > <AppProviders> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <CalcomThemeProvider> [FunctionComponent] > <y> [FunctionComponent] > <$> [FunctionComponent] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <FeatureFlagsProvider> [FunctionComponent] > <FeatureProvider> [FunctionComponent] > <OrgBrandProvider> [FunctionComponent] > <Login> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <FormProvider> [FunctionComponent] > <form> [HostComponent] > <div> [HostComponent] > <Field> [FunctionComponent] > <FieldRoot> [ForwardRef] > <LabelableProvider> [FunctionComponent] > <LabelableContext> [ContextProvider] > <FieldRootInner> [ForwardRef] > <FieldRootContext> [ContextProvider] > <div> [HostComponent][2]",
-              "expected": "<p> [HostComponent]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <body> [HostComponent] > <Providers> [FunctionComponent] > <GeoProvider> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <TrpcProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <CacheProvider> [FunctionComponent] > <WebPushProvider> [FunctionComponent] > <AppRouterI18nProvider> [FunctionComponent] > <PageWrapper> [FunctionComponent] > <AppProviders> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <CalcomThemeProvider> [FunctionComponent] > <y> [FunctionComponent] > <$> [FunctionComponent] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <FeatureFlagsProvider> [FunctionComponent] > <FeatureProvider> [FunctionComponent] > <OrgBrandProvider> [FunctionComponent]",
-            "reason": "uncertain filter",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostComponent] > <Providers> [FunctionComponent] > <GeoProvider> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <TrpcProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <CacheProvider> [FunctionComponent] > <WebPushProvider> [FunctionComponent] > <AppRouterI18nProvider> [FunctionComponent] > <PageWrapper> [FunctionComponent] > <AppProviders> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <CalcomThemeProvider> [FunctionComponent] > <y> [FunctionComponent] > <$> [FunctionComponent] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <FeatureFlagsProvider> [FunctionComponent] > <FeatureProvider> [FunctionComponent] > <OrgBrandProvider> [FunctionComponent][1]",
-              "expected": "<Script> key=\"injected-head-script\" [FunctionComponent]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <body> [HostComponent] > <Providers> [FunctionComponent] > <GeoProvider> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <TrpcProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <CacheProvider> [FunctionComponent] > <WebPushProvider> [FunctionComponent] > <AppRouterI18nProvider> [FunctionComponent] > <PageWrapper> [FunctionComponent] > <AppProviders> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <CalcomThemeProvider> [FunctionComponent] > <y> [FunctionComponent] > <$> [FunctionComponent] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <FeatureFlagsProvider> [FunctionComponent] > <FeatureProvider> [FunctionComponent] > <OrgBrandProvider> [FunctionComponent]",
-            "reason": "uncertain filter",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostComponent] > <Providers> [FunctionComponent] > <GeoProvider> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <TrpcProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <CacheProvider> [FunctionComponent] > <WebPushProvider> [FunctionComponent] > <AppRouterI18nProvider> [FunctionComponent] > <PageWrapper> [FunctionComponent] > <AppProviders> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <CalcomThemeProvider> [FunctionComponent] > <y> [FunctionComponent] > <$> [FunctionComponent] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <FeatureFlagsProvider> [FunctionComponent] > <FeatureProvider> [FunctionComponent] > <OrgBrandProvider> [FunctionComponent][1]",
-              "expected": "<Script> key=\"injected-body-script\" [FunctionComponent]",
-              "actual": "<end of children>"
-            }
-          }
-        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 938,
-        "staticFibers": 328,
+        "staticFibers": 938,
         "coverage": 1,
-        "strictCoverage": 0.3230277185501066,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 338,
+        "stepsUsed": 939,
         "budgetExhausted": false
       },
       "anchor": "body",
-      "note": "runtime replayed from 2026-09-06T15:26:30.199Z",
+      "note": "runtime replayed from 2026-09-07T11:40:39.987Z",
       "failure": null
     },
     {
       "id": "documenso",
       "revision": "2cac63a000e22422bdea449f68b8025e709aa73a",
       "framework": "react-router",
-      "capturedAt": "2026-09-07T07:06:50.012Z",
-      "durationMs": 626,
+      "capturedAt": "2026-09-07T11:47:48.936Z",
+      "durationMs": 482,
       "runtime": {
         "reactVersion": "19.2.8",
         "rendererName": "react-dom",
@@ -302,8 +228,8 @@
       "id": "epic-stack",
       "revision": "8473afd804b66dba6a23f317908dc35d1535e90d",
       "framework": "react-router",
-      "capturedAt": "2026-09-07T07:06:47.124Z",
-      "durationMs": 119,
+      "capturedAt": "2026-09-07T11:47:45.910Z",
+      "durationMs": 126,
       "runtime": null,
       "static": {
         "stats": {
@@ -331,8 +257,8 @@
       "id": "excalidraw",
       "revision": "214cd6e6e8ac3ad6b68486aa7aa7241abdf9445f",
       "framework": "spa",
-      "capturedAt": "2026-09-07T07:06:47.244Z",
-      "durationMs": 404,
+      "capturedAt": "2026-09-07T11:47:46.037Z",
+      "durationMs": 407,
       "runtime": null,
       "static": {
         "stats": {
@@ -342,7 +268,7 @@
           "repeatCount": 0,
           "opaqueCount": 1,
           "unknownCount": 0,
-          "modulesLoaded": 454
+          "modulesLoaded": 456
         },
         "diagnostics": []
       },
@@ -355,8 +281,8 @@
       "id": "graphiql",
       "revision": "fd32cea3e191eb6eb41b785e157403308d787b12",
       "framework": "spa",
-      "capturedAt": "2026-09-07T07:06:47.649Z",
-      "durationMs": 176,
+      "capturedAt": "2026-09-07T11:47:46.445Z",
+      "durationMs": 175,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -369,9 +295,9 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 267,
-          "textCount": 19,
-          "branchCount": 10,
+          "fiberCount": 289,
+          "textCount": 25,
+          "branchCount": 14,
           "repeatCount": 2,
           "opaqueCount": 61,
           "unknownCount": 2,
@@ -431,26 +357,22 @@
       "id": "invoify",
       "revision": "3859b3cbae28ca4ec559db5ef87e41b798740340",
       "framework": "next-app",
-      "capturedAt": "2026-09-07T07:06:47.826Z",
-      "durationMs": 355,
+      "capturedAt": "2026-09-07T11:47:46.621Z",
+      "durationMs": 306,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 2822,
-          "textCount": 90,
-          "branchCount": 146,
-          "repeatCount": 3,
-          "opaqueCount": 535,
-          "unknownCount": 278,
-          "modulesLoaded": 110
+          "fiberCount": 1920,
+          "textCount": 62,
+          "branchCount": 87,
+          "repeatCount": 2,
+          "opaqueCount": 380,
+          "unknownCount": 158,
+          "modulesLoaded": 112
         },
         "diagnostics": [
           {
             "code": "dynamic-key",
-            "count": 4
-          },
-          {
-            "code": "dynamic-props",
             "count": 2
           }
         ]
@@ -464,8 +386,8 @@
       "id": "lexical",
       "revision": "c3b629dcf6b5111811bb9ca5a3db0665099b2856",
       "framework": "spa",
-      "capturedAt": "2026-09-07T07:06:48.186Z",
-      "durationMs": 406,
+      "capturedAt": "2026-09-07T11:47:46.931Z",
+      "durationMs": 407,
       "runtime": {
         "reactVersion": "19.2.5",
         "rendererName": "react-dom",
@@ -484,7 +406,7 @@
           "repeatCount": 0,
           "opaqueCount": 2,
           "unknownCount": 1,
-          "modulesLoaded": 415
+          "modulesLoaded": 416
         },
         "diagnostics": []
       },
@@ -528,17 +450,17 @@
       "id": "nextjs-boilerplate",
       "revision": "1dffa39a32450300c8b01d8cfd3819f9b6e95842",
       "framework": "next-app",
-      "capturedAt": "2026-09-07T07:06:48.593Z",
-      "durationMs": 64,
+      "capturedAt": "2026-09-07T11:47:47.339Z",
+      "durationMs": 76,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 158,
+          "fiberCount": 162,
           "textCount": 22,
-          "branchCount": 0,
+          "branchCount": 1,
           "repeatCount": 1,
           "opaqueCount": 8,
-          "unknownCount": 10,
+          "unknownCount": 11,
           "modulesLoaded": 11
         },
         "diagnostics": [
@@ -557,8 +479,8 @@
       "id": "nextjs-examples",
       "revision": "4fed8eaf197aaa60fd85371352482199a4c2107f",
       "framework": "next-app",
-      "capturedAt": "2026-09-07T07:34:59.598Z",
-      "durationMs": 189,
+      "capturedAt": "2026-09-07T11:47:47.416Z",
+      "durationMs": 140,
       "runtime": {
         "reactVersion": "19.3.0-canary-cbb046ab-20260731",
         "rendererName": "react-dom",
@@ -612,8 +534,8 @@
       "id": "posthog",
       "revision": "09c5fbd37b2714276d4206debd3aeb253ce0e43a",
       "framework": "spa",
-      "capturedAt": "2026-09-07T07:06:54.121Z",
-      "durationMs": 2270,
+      "capturedAt": "2026-09-07T11:47:52.946Z",
+      "durationMs": 2437,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -635,7 +557,7 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 3008
+          "modulesLoaded": 3013
         },
         "diagnostics": [
           {
@@ -675,8 +597,8 @@
       "id": "puck",
       "revision": "74a42c74db2b52da13ce1fc49087a07a6653dac8",
       "framework": "next-app",
-      "capturedAt": "2026-09-07T07:06:48.726Z",
-      "durationMs": 242,
+      "capturedAt": "2026-09-07T11:47:47.556Z",
+      "durationMs": 273,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
@@ -723,6 +645,17 @@
         "branchDeviations": [
           {
             "path": "root > <body> [HostSingleton] > <div> [HostComponent] > <Client> [FunctionComponent] > <Render> [FunctionComponent] > <DropZoneProvider> [FunctionComponent] > <render> [FunctionComponent] > <div> [HostComponent] > <Header> [FunctionComponent] > <div> [HostComponent] > <header> [HostComponent] > <nav> [HostComponent] > <NavItem> [FunctionComponent]",
+            "reason": "conditional on branch(\"\" | \"/\")",
+            "preferredIndex": 1,
+            "chosenIndex": 0,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <div> [HostComponent] > <Client> [FunctionComponent] > <Render> [FunctionComponent] > <DropZoneProvider> [FunctionComponent] > <render> [FunctionComponent] > <div> [HostComponent] > <Header> [FunctionComponent] > <div> [HostComponent] > <header> [HostComponent] > <nav> [HostComponent] > <NavItem> [FunctionComponent][0]",
+              "expected": "<span> [HostComponent]",
+              "actual": "<a> [HostComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <div> [HostComponent] > <Client> [FunctionComponent] > <Render> [FunctionComponent] > <DropZoneProvider> [FunctionComponent] > <render> [FunctionComponent] > <div> [HostComponent] > <Header> [FunctionComponent] > <div> [HostComponent] > <header> [HostComponent] > <nav> [HostComponent] > <NavItem> [FunctionComponent]",
             "reason": "conditional on branch(\"\" | \"/pricing\")",
             "preferredIndex": 1,
             "chosenIndex": 0,
@@ -751,7 +684,7 @@
         "coverage": 1,
         "strictCoverage": 0.2088888888888889,
         "divergence": null,
-        "stepsUsed": 103,
+        "stepsUsed": 104,
         "budgetExhausted": false
       },
       "anchor": "body",
@@ -762,8 +695,8 @@
       "id": "react-admin",
       "revision": "fa7ede4a25d36917b41f9b9e9936e9e7ab8fa8ab",
       "framework": "spa",
-      "capturedAt": "2026-09-07T07:06:48.968Z",
-      "durationMs": 275,
+      "capturedAt": "2026-09-07T11:47:47.830Z",
+      "durationMs": 304,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -829,8 +762,8 @@
       "id": "react-email",
       "revision": "0f0cb94e1f15581131a2d50b80f8daa13dd1c9fc",
       "framework": "next-app",
-      "capturedAt": "2026-09-07T07:06:49.244Z",
-      "durationMs": 133,
+      "capturedAt": "2026-09-07T11:47:48.135Z",
+      "durationMs": 152,
       "runtime": null,
       "static": {
         "stats": {
@@ -853,7 +786,7 @@
       "id": "react-router-templates",
       "revision": "b68be71489a22315c7a734a86a18347745b393d2",
       "framework": "react-router",
-      "capturedAt": "2026-09-07T07:06:49.378Z",
+      "capturedAt": "2026-09-07T11:47:48.289Z",
       "durationMs": 69,
       "runtime": {
         "reactVersion": "19.2.7",
@@ -908,8 +841,8 @@
       "id": "redux-toolkit",
       "revision": "e99fe6135188219f031c5028f653fb82e671de24",
       "framework": "spa",
-      "capturedAt": "2026-09-07T07:06:49.448Z",
-      "durationMs": 52,
+      "capturedAt": "2026-09-07T11:47:48.359Z",
+      "durationMs": 55,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -975,8 +908,8 @@
       "id": "sentry",
       "revision": "a7b4a8a2a78a666418e527d812e81528147789da",
       "framework": "react-router",
-      "capturedAt": "2026-09-07T07:06:50.639Z",
-      "durationMs": 3479,
+      "capturedAt": "2026-09-07T11:47:49.419Z",
+      "durationMs": 3525,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -1042,8 +975,8 @@
       "id": "shadcn-ui",
       "revision": "7c9eaba1c0a6404c990c144a654792e3313c650d",
       "framework": "next-app",
-      "capturedAt": "2026-09-07T07:06:49.500Z",
-      "durationMs": 266,
+      "capturedAt": "2026-09-07T11:47:48.415Z",
+      "durationMs": 280,
       "runtime": null,
       "static": {
         "stats": {
@@ -1053,7 +986,7 @@
           "repeatCount": 27,
           "opaqueCount": 977,
           "unknownCount": 20,
-          "modulesLoaded": 103
+          "modulesLoaded": 118
         },
         "diagnostics": [
           {
@@ -1071,8 +1004,8 @@
       "id": "sonner",
       "revision": "8e4662b39255120b62138312058f5d77c0139a5e",
       "framework": "next-app",
-      "capturedAt": "2026-09-07T07:06:49.771Z",
-      "durationMs": 65,
+      "capturedAt": "2026-09-07T11:47:48.700Z",
+      "durationMs": 63,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
@@ -1126,8 +1059,8 @@
       "id": "tanstack-query",
       "revision": "1893a965d219032207cbe147880d0e9f757a5a56",
       "framework": "spa",
-      "capturedAt": "2026-09-07T07:06:49.836Z",
-      "durationMs": 53,
+      "capturedAt": "2026-09-07T11:47:48.764Z",
+      "durationMs": 55,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -1289,7 +1222,7 @@
       "id": "tanstack-router",
       "revision": "cf166d160e6397007a979bfc7065b45ff69ea543",
       "framework": "spa",
-      "capturedAt": "2026-09-07T07:06:49.889Z",
+      "capturedAt": "2026-09-07T11:47:48.820Z",
       "durationMs": 48,
       "runtime": {
         "reactVersion": "19.2.3",
@@ -1344,14 +1277,14 @@
       "id": "tldraw",
       "revision": "e8f61acedcbf2dc69693ea1e1f612a7f635fb4b5",
       "framework": "react-router",
-      "capturedAt": "2026-09-07T07:06:49.938Z",
-      "durationMs": 73,
+      "capturedAt": "2026-09-07T11:47:48.869Z",
+      "durationMs": 67,
       "runtime": null,
       "static": {
         "stats": {
-          "fiberCount": 142,
+          "fiberCount": 125,
           "textCount": 1,
-          "branchCount": 5,
+          "branchCount": 2,
           "repeatCount": 0,
           "opaqueCount": 3,
           "unknownCount": 14,

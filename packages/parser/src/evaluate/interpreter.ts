@@ -17,6 +17,7 @@ import type {
   MemberExpression,
   NewExpression,
   ObjectExpression,
+  ObjectProperty,
   ParamPattern,
   PrivateInExpression,
   PropertyKey,
@@ -24,7 +25,9 @@ import type {
   Statement,
   SwitchStatement,
   TemplateLiteral,
+  TryStatement,
   UnaryExpression,
+  UnaryOperator,
   UpdateExpression,
   VariableDeclaration,
   VariableDeclarator,
@@ -64,6 +67,7 @@ import type {
   JsonValue,
   ModuleRecord,
   ProjectContext,
+  ProcessEnvironment,
   RenderEnvironment,
   ResolvedSymbol,
   Scope,
@@ -72,6 +76,7 @@ import type {
   StaticElementType,
   StaticElementValue,
   StaticFunctionValue,
+  StaticAccessor,
   StaticObjectEntry,
   StaticObjectValue,
   StaticPrimitive,
@@ -88,7 +93,22 @@ import {
 } from "./builtin-calls.js";
 import { collectClassMembers, constructClassInstance, getSuperObject } from "./class-component.js";
 import { getCollectionItems, markCollectionExternallyMutable } from "./collections.js";
-import { getRouteLocationMember } from "./browser-globals.js";
+import { getPageLocationMember } from "./browser-globals.js";
+import { isEnvironmentVariableName } from "./bundler-globals.js";
+import { hasProperty, OBJECT_PROTOTYPE_METHODS } from "./has-property.js";
+import { isInstanceOf } from "./instance-of.js";
+import {
+  compareNumberRanges,
+  concatenateStrings,
+  getShapedStringLength,
+} from "./primitive-shapes.js";
+import {
+  getCaughtValue,
+  getThrowCertainty,
+  getThrownOperand,
+  getThrownPaths,
+  withoutThrows,
+} from "./thrown.js";
 import { getNativeObjectMember } from "./native-values.js";
 import { HeapJournal, type MutableHeapValue } from "./heap-journal.js";
 import {
@@ -115,23 +135,24 @@ import {
   getTypeScriptDeclarationName,
 } from "./typescript-declarations.js";
 import {
+  accessorEntry,
   areValuesEquivalent,
   branchValue,
+  CHAIN_SHORT_CIRCUIT,
   compareIdentity,
+  completeChain,
   componentReference,
   describeValue,
   FALSE_VALUE,
   falsyCounterpart,
   getClassPrototype,
-  getKnownObjectKeys,
   getSpreadEntries,
   getListItem,
   getListLength,
+  getObjectAccessor,
   getObjectProperty,
   getPreferredTruthiness,
   getTruthiness,
-  hasDefiniteItems,
-  isIndefiniteItem,
   isNullish,
   listValue,
   mapValue,
@@ -147,6 +168,7 @@ import {
   TRUE_VALUE,
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
+  thrownValue,
   unknownValue,
 } from "./values.js";
 
@@ -163,8 +185,12 @@ export interface InterpreterOptions {
   capturedGlobals?: Record<string, CapturedValue>;
   /** URL path the page is rendered at; `location.pathname`/`search`/`hash` read it. */
   route?: string;
+  /** Origin the page is served from; `location.origin`/`host`/`href` read it. */
+  origin?: string;
   /** Cookies and Web Storage the running page held; a fresh profile (empty) when absent. */
   page?: CapturedPageState;
+  /** The server process's environment, whole; unlisted variables are unset. */
+  environment?: ProcessEnvironment;
   /** The rendered tree may be mounted under providers that are not part of the analysis, so unprovided contexts are uncertain. */
   assumeOuterProviders?: boolean;
   /** The analyzed app's React version; decides which `$$typeof` symbol tags elements. */
@@ -186,6 +212,7 @@ interface CallValueOptions {
 const UNKNOWN_PROJECT: ProjectContext = {
   rootDirectory: null,
   hasDeclaredDependency: () => false,
+  readServedAsset: () => null,
   findQuery: () => null,
   findMutations: () => null,
   linguiCatalog: null,
@@ -201,16 +228,8 @@ export const STYLED_JSX_SPECIFIER = "styled-jsx/style";
 const IN_PROGRESS = Symbol("in-progress");
 
 const MAX_INTERVAL_TICKS = 1_000;
+const WINDOW_NAME = /^(?:window|globalThis)\.name$/;
 const FS_URL_PREFIX = "/@fs/";
-
-const OBJECT_PROTOTYPE_METHODS = new Set([
-  "hasOwnProperty",
-  "propertyIsEnumerable",
-  "isPrototypeOf",
-  "toString",
-  "toLocaleString",
-  "valueOf",
-]);
 
 const PRIMITIVE_PROTOTYPES: Record<UnknownPrimitiveType, object | null> = {
   string: String.prototype,
@@ -282,8 +301,19 @@ export const outcomeToReturnValue = (
   );
 };
 
+const isThrowingOutcome = (outcome: StatementOutcome): boolean =>
+  outcome.returned !== null && getThrowCertainty(outcome.returned) === "always";
+
+/** A path that certainly throws is never what a rendered tree took; prefer the first path that may produce a value. */
+const getPreferredOutcome = (outcomes: StatementOutcome[], preferredOutcome: number): number => {
+  const preferred = outcomes[preferredOutcome];
+  if (!preferred || !isThrowingOutcome(preferred)) return preferredOutcome;
+  const survivor = outcomes.findIndex((outcome) => !isThrowingOutcome(outcome));
+  return survivor === -1 ? preferredOutcome : survivor;
+};
+
 /**
- * `preferredOutcome` is the index of the outcome the code is expected to take;
+ * `preferredBranch` is the index of the outcome the code is expected to take;
  * when that path completes without returning, the fall-through (last) outcome
  * is what it would return.
  */
@@ -291,10 +321,11 @@ export const mergeOutcomes = (
   outcomes: StatementOutcome[],
   reason: string,
   location: SourceLocation | null,
-  preferredOutcome = 0,
+  preferredBranch = 0,
 ): StatementOutcome => {
   const returnedValues: StaticValue[] = [];
   let preferredIndex = 0;
+  const preferredOutcome = getPreferredOutcome(outcomes, preferredBranch);
   const isFallThroughPreferred = !outcomes[preferredOutcome]?.returned;
   outcomes.forEach((outcome, index) => {
     if (!outcome.returned) return;
@@ -356,10 +387,12 @@ export class Interpreter {
   private readonly externalValues: ExternalValueProvider | null;
   private readonly project: ProjectContext;
   private readonly route: string | null;
+  private readonly origin: string | null;
   private readonly purePackages: PurePackages | null;
   private readonly windowGlobals = new Map<string, StaticValue>();
   private readonly defines = new Map<string, StaticValue>();
   private readonly pageState: CapturedPageState | null;
+  private readonly processEnvironment: ProcessEnvironment | null;
   readonly storageAreas: StorageAreas;
   readonly timers = new TimerQueue();
   /** Observable changes (state commits, heap mutations) so far; a timer tick that adds none is steady state. */
@@ -391,7 +424,9 @@ export class Interpreter {
     this.externalValues = options.externalValues ?? null;
     this.project = options.project ?? UNKNOWN_PROJECT;
     this.route = options.route ?? null;
+    this.origin = options.origin ?? null;
     this.pageState = options.page ?? null;
+    this.processEnvironment = options.environment ?? null;
     this.storageAreas = createStorageAreas(this.pageState);
     this.purePackages =
       this.project.rootDirectory === null ? null : new PurePackages(this.project.rootDirectory);
@@ -402,7 +437,8 @@ export class Interpreter {
       this.windowGlobals.set(name, this.captured(captured, `window.${name}`));
     }
     for (const [name, json] of Object.entries(options.defines ?? {})) {
-      this.defines.set(name, jsonValue(json));
+      const isUnsetVariable = json === null && isEnvironmentVariableName(name);
+      this.defines.set(name, isUnsetVariable ? UNDEFINED_VALUE : jsonValue(json));
     }
     this.reactVersion = options.reactVersion ?? null;
     this.elementSymbolKey = getReactElementSymbolKey(this.reactVersion);
@@ -657,10 +693,18 @@ export class Interpreter {
     context: EvaluationContext,
   ): StaticValue {
     switch (target.kind) {
-      case "object":
+      case "object": {
+        const accessor = getObjectAccessor(target, propertyName);
+        if (accessor) {
+          if (accessor.set) {
+            this.callValue(accessor.set, [value], context, null, { thisValue: target });
+          }
+          return target;
+        }
         this.recordHeapMutation(target);
         target.entries.push({ kind: "property", key: propertyName, value });
         return target;
+      }
       case "list": {
         const index = Number(propertyName);
         if (Number.isInteger(index) && index >= 0 && index < target.items.length) {
@@ -672,6 +716,19 @@ export class Interpreter {
       case "function":
       case "class":
         target.properties.set(propertyName, value);
+        return target;
+      case "global":
+        if (target.name === "window") {
+          this.windowGlobals.set(
+            propertyName,
+            this.withUncertainAssignment(
+              this.windowGlobals.get(propertyName),
+              value,
+              `window.${propertyName}`,
+              context,
+            ),
+          );
+        }
         return target;
       case "regexp":
         if (propertyName === "lastIndex") {
@@ -859,18 +916,26 @@ export class Interpreter {
       if (name === "exports") return exportsValue;
       if (name === "module") return objectFromRecord({ exports: exportsValue });
     }
-    return this.getGlobal(name) ?? unknownValue(`unbound identifier "${name}"`);
+    return (
+      this.getGlobal(name, context.environment) ?? unknownValue(`unbound identifier "${name}"`)
+    );
   }
 
-  private getGlobal(name: string): StaticValue | null {
+  private getGlobal(name: string, renderEnvironment: RenderEnvironment | null): StaticValue | null {
     const defined = this.defines.get(name);
     if (defined) return defined;
     if (name === "document.cookie" && this.pageState) return primitiveValue(this.pageState.cookie);
+    if (WINDOW_NAME.test(name) && this.pageState?.name !== undefined) {
+      return primitiveValue(this.pageState.name);
+    }
     if (name === "process.cwd" && this.project.rootDirectory !== null) {
       const rootDirectory = this.project.rootDirectory;
       return nativeFunction(name, () => primitiveValue(rootDirectory));
     }
-    return getRouteLocationMember(this.route, name) ?? getBuiltinGlobal(name);
+    return (
+      getPageLocationMember(this.origin, this.route, name) ??
+      getBuiltinGlobal(name, { declared: this.processEnvironment, renderEnvironment })
+    );
   }
 
   private consumeStep(location: SourceLocation | null): boolean {
@@ -929,7 +994,7 @@ export class Interpreter {
       case "ParenthesizedExpression":
         return this.evaluateExpression(node.expression, context, nameHint);
       case "ChainExpression":
-        return this.evaluateExpression(node.expression, context, nameHint);
+        return completeChain(this.evaluateExpression(node.expression, context, nameHint));
       case "SequenceExpression": {
         const lastIndex = node.expressions.length - 1;
         for (const expression of node.expressions.slice(0, lastIndex)) {
@@ -1010,7 +1075,7 @@ export class Interpreter {
       }
       case "MetaProperty": {
         const name = `${node.meta.name}.${node.property.name}`;
-        return this.getGlobal(name) ?? unknownValue(name, location);
+        return this.getGlobal(name, context.environment) ?? unknownValue(name, location);
       }
       case "Super":
         return getSuperObject(this, context, location);
@@ -1021,22 +1086,14 @@ export class Interpreter {
   }
 
   private evaluateTemplateLiteral(node: TemplateLiteral, context: EvaluationContext): StaticValue {
-    let text = "";
-    let isKnown = true;
-    node.quasis.forEach((quasi, index) => {
-      text += quasi.value.cooked ?? quasi.value.raw;
-      if (index < node.expressions.length) {
-        const value = this.evaluateExpression(node.expressions[index], context);
-        if (value.kind === "primitive") {
-          text += String(value.value);
-        } else {
-          isKnown = false;
-        }
-      }
-    });
-    return isKnown
-      ? primitiveValue(text)
-      : unknownPrimitiveValue("string", "template literal with dynamic parts");
+    return node.quasis.reduce<StaticValue>((text, quasi, index) => {
+      const quasiText = primitiveValue(quasi.value.cooked ?? quasi.value.raw);
+      const withQuasi = applyBinaryOperator("+", text, quasiText);
+      const expression = node.expressions[index];
+      return expression
+        ? applyBinaryOperator("+", withQuasi, this.evaluateExpression(expression, context))
+        : withQuasi;
+    }, primitiveValue(""));
   }
 
   private evaluateArrayExpression(node: ArrayExpression, context: EvaluationContext): StaticValue {
@@ -1112,10 +1169,14 @@ export class Interpreter {
         });
         continue;
       }
-      if (property.kind !== "init") continue;
       const key = this.evaluatePropertyKey(property.key, property.computed, context);
       if (key === null) {
         entries.push({ kind: "spread", value: unknownValue("computed property key") });
+        continue;
+      }
+      if (property.kind !== "init") {
+        const accessor = this.getAccessorEntry(entries, key, context, property);
+        accessor[property.kind] = this.evaluateExpression(property.value, context, key);
         continue;
       }
       entries.push({
@@ -1129,6 +1190,19 @@ export class Interpreter {
       this.reactElementFromObject(object, this.locate(context.module, node), context) ??
       this.stampHeapValue(object)
     );
+  }
+
+  private getAccessorEntry(
+    entries: StaticObjectEntry[],
+    key: string,
+    context: EvaluationContext,
+    node: ObjectProperty,
+  ): StaticAccessor {
+    const existing = getObjectAccessor(objectValue(entries), key);
+    if (existing) return existing;
+    const accessor: StaticAccessor = { get: null, set: null };
+    entries.push(accessorEntry(key, accessor, this.locate(context.module, node)));
+    return accessor;
   }
 
   /** A bundled `jsx-runtime` builds elements as plain `{ $$typeof, type, key, ref, props }` literals. */
@@ -1214,11 +1288,15 @@ export class Interpreter {
         const nullish = isNullish(left);
         if (nullish === false) return left;
         if (nullish === true) return this.evaluateExpression(node.right, context, nameHint);
-        return branchValue(
-          [left, this.evaluateExpression(node.right, context, nameHint)],
-          `?? on ${describeValue(left)}`,
-          location,
-        );
+        let right: StaticValue | null = null;
+        const withRight = (alternative: StaticValue): StaticValue => {
+          if (isNullish(alternative) === false) return alternative;
+          right ??= this.evaluateExpression(node.right, context, nameHint);
+          return isNullish(alternative) === true
+            ? right
+            : branchValue([alternative, right], `?? on ${describeValue(alternative)}`, location);
+        };
+        return mapValue(left, withRight);
       }
     }
   }
@@ -1246,36 +1324,16 @@ export class Interpreter {
   private evaluateUnaryExpression(node: UnaryExpression, context: EvaluationContext): StaticValue {
     const argument = this.evaluateExpression(node.argument, context);
     switch (node.operator) {
-      case "!": {
-        const truthiness = getTruthiness(argument);
-        if (truthiness === null) {
-          return mapValue(argument, (alternative) => {
-            const inner = getTruthiness(alternative);
-            return inner === null
-              ? unknownPrimitiveValue("boolean", "negation of unknown")
-              : inner
-                ? FALSE_VALUE
-                : TRUE_VALUE;
-          });
-        }
-        return truthiness ? FALSE_VALUE : TRUE_VALUE;
-      }
       case "typeof":
         return getTypeofValue(argument, context.environment);
-      case "-":
-        if (argument.kind === "primitive" && typeof argument.value === "number")
-          return primitiveValue(-argument.value);
-        return unknownPrimitiveValue("number", "unary minus");
-      case "+":
-        if (argument.kind === "primitive" && typeof argument.value !== "bigint")
-          return primitiveValue(Number(argument.value));
-        return unknownPrimitiveValue("number", "unary plus");
       case "void":
-        return UNDEFINED_VALUE;
-      case "~":
-        return unknownPrimitiveValue("number", "bitwise not");
+        return getThrownOperand([argument]) ?? UNDEFINED_VALUE;
       case "delete":
-        return TRUE_VALUE;
+        return getThrownOperand([argument]) ?? TRUE_VALUE;
+      default: {
+        const operator = node.operator;
+        return mapValue(argument, (alternative) => applyUnaryOperator(operator, alternative));
+      }
     }
   }
 
@@ -1464,6 +1522,7 @@ export class Interpreter {
     if (key.kind === "primitive") {
       return this.getProperty(object, String(key.value), context, location, node.optional);
     }
+    if (object === CHAIN_SHORT_CIRCUIT) return object;
     if (object.kind === "list") {
       const candidates = object.items.filter((item) => item.kind !== "repeat");
       return candidates.length === 0
@@ -1540,6 +1599,12 @@ export class Interpreter {
           this.getProperty(alternative, key, context, location, optional),
         );
       case "object": {
+        const accessor = getObjectAccessor(object, key);
+        if (accessor) {
+          return accessor.get
+            ? this.callValue(accessor.get, [], context, location, { thisValue: object })
+            : UNDEFINED_VALUE;
+        }
         const property = getObjectProperty(object, key);
         if (
           property.kind === "primitive" &&
@@ -1559,7 +1624,10 @@ export class Interpreter {
       }
       case "optional":
         return branchValue(
-          [this.getProperty(object.value, key, context, location, optional), UNDEFINED_VALUE],
+          [
+            this.getProperty(object.value, key, context, location, optional),
+            optional ? CHAIN_SHORT_CIRCUIT : UNDEFINED_VALUE,
+          ],
           object.reason,
           object.location,
         );
@@ -1574,14 +1642,18 @@ export class Interpreter {
         return prototypeMember(object, Symbol.prototype, key);
       case "primitive":
         if (object.value === null || object.value === undefined) {
-          if (optional) return UNDEFINED_VALUE;
+          if (optional) return CHAIN_SHORT_CIRCUIT;
           return unknownValue(`property "${key}" of ${String(object.value)}`, location);
         }
         if (typeof object.value === "string" && key === "length")
           return primitiveValue(object.value.length);
         return prototypeMember(object, Object.getPrototypeOf(object.value), key);
       case "unknown-primitive":
-        if (key === "length") return unknownPrimitiveValue("number", "length of dynamic value");
+        if (key === "length") {
+          return object.primitiveType === "string"
+            ? getShapedStringLength(object)
+            : unknownPrimitiveValue("number", "length of dynamic value");
+        }
         return prototypeMember(object, PRIMITIVE_PROTOTYPES[object.primitiveType], key);
       case "context":
         if (key === "Provider") {
@@ -1653,7 +1725,7 @@ export class Interpreter {
         }
         return (
           (object.name === "window" ? this.windowGlobals.get(key) : undefined) ??
-          this.getGlobal(`${object.name}.${key}`) ?? {
+          this.getGlobal(`${object.name}.${key}`, context.environment) ?? {
             kind: "method",
             receiver: object,
             name: key,
@@ -1671,6 +1743,8 @@ export class Interpreter {
       case "class": {
         const property = object.properties.get(key);
         if (property) return property;
+        if (key === "call" || key === "apply" || key === "bind")
+          return { kind: "method", receiver: object, name: key };
         if (key === "__proto__" && object.kind === "class")
           return getClassPrototype(object, location);
         if (key === "displayName") return UNDEFINED_VALUE;
@@ -1702,7 +1776,9 @@ export class Interpreter {
         if (EVENT_LISTENER_METHODS.has(key)) return { kind: "method", receiver: object, name: key };
         return unknownValue(`property "${key}" of <${object.tagName}> node`, location);
       case "unknown":
-        return unknownValue(object.reason, location);
+        if (object === CHAIN_SHORT_CIRCUIT) return object;
+        if (!object.thrown) return unknownValue(object.reason, location);
+        return isPromiseMethodName(key) ? { kind: "method", receiver: object, name: key } : object;
     }
   }
 
@@ -1780,46 +1856,34 @@ export class Interpreter {
       context.superBinding?.construct?.(this.evaluateArguments(node.arguments, context));
       return UNDEFINED_VALUE;
     }
-    let callee: StaticValue;
-    let thisValue: StaticValue | null = null;
-    if (node.callee.type === "MemberExpression") {
-      const receiver = this.evaluateExpression(node.callee.object, context);
-      thisValue = node.callee.object.type === "Super" ? context.thisValue : receiver;
-      if (node.callee.property.type === "PrivateIdentifier") {
-        callee = this.getProperty(
-          receiver,
-          `#${node.callee.property.name}`,
-          context,
-          location,
-          node.callee.optional,
-        );
-      } else if (!node.callee.computed) {
-        callee = this.getProperty(
-          receiver,
-          node.callee.property.name,
-          context,
-          location,
-          node.callee.optional,
-        );
-      } else {
-        const key = this.evaluateExpression(node.callee.property, context);
-        callee =
-          key.kind === "primitive"
-            ? this.getProperty(receiver, String(key.value), context, location, node.callee.optional)
-            : unknownValue("computed method call", location);
-      }
-    } else {
-      callee = this.evaluateExpression(node.callee, context);
+    let args: StaticValue[] | null = null;
+    const callWith = (callee: StaticValue, thisValue: StaticValue | null): StaticValue => {
+      if (callee === CHAIN_SHORT_CIRCUIT) return callee;
+      if (node.optional && isNullish(callee) === true) return CHAIN_SHORT_CIRCUIT;
+      args ??= this.evaluateArguments(node.arguments, context);
+      return this.callValue(callee, args, context, location, { thisValue, nameHint });
+    };
+    if (node.callee.type !== "MemberExpression") {
+      return callWith(this.evaluateExpression(node.callee, context), null);
     }
-    if (
-      node.optional &&
-      callee.kind === "primitive" &&
-      (callee.value === null || callee.value === undefined)
-    ) {
-      return UNDEFINED_VALUE;
-    }
-    const args = this.evaluateArguments(node.arguments, context);
-    return this.callValue(callee, args, context, location, { thisValue, nameHint });
+    const member = node.callee;
+    const receiver = this.evaluateExpression(member.object, context);
+    const key =
+      member.property.type === "PrivateIdentifier"
+        ? primitiveValue(`#${member.property.name}`)
+        : member.computed
+          ? this.evaluateExpression(member.property, context)
+          : primitiveValue(member.property.name);
+    const callOn = (target: StaticValue): StaticValue => {
+      if (target === CHAIN_SHORT_CIRCUIT) return target;
+      if (member.optional && isNullish(target) === true) return CHAIN_SHORT_CIRCUIT;
+      const callee =
+        key.kind === "primitive"
+          ? this.getProperty(target, String(key.value), context, location, member.optional)
+          : unknownValue("computed method call", location);
+      return callWith(callee, member.object.type === "Super" ? context.thisValue : target);
+    };
+    return mapValue(receiver, callOn);
   }
 
   callValue(
@@ -1829,6 +1893,8 @@ export class Interpreter {
     location: SourceLocation | null,
     options: CallValueOptions = {},
   ): StaticValue {
+    const thrownArgument = getThrownOperand(args);
+    if (thrownArgument) return thrownArgument;
     switch (callee.kind) {
       case "branch":
         return mapValue(callee, (alternative) =>
@@ -2026,6 +2092,14 @@ export class Interpreter {
   ): StaticValue {
     const callStack = options.callStack ?? context.callStack;
     const location = this.locate(functionValue.module, functionValue.node);
+    if (functionValue.boundArgs) {
+      return this.callFunction(
+        { ...functionValue, boundArgs: undefined },
+        [...functionValue.boundArgs, ...args],
+        context,
+        options,
+      );
+    }
     if (callStack.length >= this.maxCallDepth) {
       this.report(
         "max-call-depth",
@@ -2151,23 +2225,29 @@ export class Interpreter {
     );
   }
 
+  /** Binds the declarator's non-throwing value; returns the initializer when some path of it throws. */
   evaluateDeclarator(
     declaration: VariableDeclaration,
     declarator: VariableDeclarator,
     context: EvaluationContext,
-  ): void {
+  ): StaticValue | null {
     const nameHint = declarator.id.type === "Identifier" ? declarator.id.name : null;
     const scope = this.getDeclarationScope(declaration.kind, declarator.id, context.scope);
     if (declarator.init) {
+      const initializer = this.evaluateExpression(declarator.init, context, nameHint);
+      const isThrowing = getThrowCertainty(initializer) !== "never";
       this.bindPattern(
         declarator.id,
-        this.evaluateExpression(declarator.init, context, nameHint),
+        isThrowing ? withoutThrows(initializer) : initializer,
         scope,
         context,
       );
-    } else if (declaration.kind !== "var" || scope === context.scope) {
+      return isThrowing ? initializer : null;
+    }
+    if (declaration.kind !== "var" || scope === context.scope) {
       this.bindPattern(declarator.id, UNDEFINED_VALUE, scope, context);
     }
+    return null;
   }
 
   private getDeclarationScope(
@@ -2337,16 +2417,29 @@ export class Interpreter {
               : UNDEFINED_VALUE,
           );
         case "ThrowStatement":
-          return returnOutcome({ ...unknownValue("component throws", location), isThrown: true });
+          return returnOutcome(
+            thrownValue(
+              "component throws",
+              this.evaluateExpression(statement.argument, context),
+              location,
+            ),
+          );
         case "BreakStatement":
           return jumpOutcome("break", statement.label?.name ?? null);
         case "ContinueStatement":
           return jumpOutcome("continue", statement.label?.name ?? null);
-        case "VariableDeclaration":
+        case "VariableDeclaration": {
+          let thrown: StaticValue | null = null;
           for (const declarator of statement.declarations) {
-            this.evaluateDeclarator(statement, declarator, context);
+            const initializer = this.evaluateDeclarator(statement, declarator, context);
+            const paths = initializer && getThrownPaths(initializer);
+            if (!initializer || !paths) continue;
+            thrown = thrown ? branchValue([thrown, paths], "declarations", location) : paths;
+            if (getThrowCertainty(initializer) === "always") return returnOutcome(thrown);
           }
+          if (thrown) return this.propagateThrow(thrown, context, proceed, location);
           break;
+        }
         case "FunctionDeclaration":
           break;
         case "ClassDeclaration":
@@ -2370,9 +2463,13 @@ export class Interpreter {
           }
           break;
         }
-        case "ExpressionStatement":
-          this.evaluateExpression(statement.expression, context);
+        case "ExpressionStatement": {
+          const value = this.evaluateExpression(statement.expression, context);
+          if (getThrowCertainty(value) === "always") return returnOutcome(value);
+          const thrown = getThrownPaths(value);
+          if (thrown) return this.propagateThrow(thrown, context, proceed, location);
           break;
+        }
         case "BlockStatement":
           return this.evaluateBlock(statement.body, context, true, proceed);
         case "IfStatement": {
@@ -2414,17 +2511,8 @@ export class Interpreter {
         }
         case "SwitchStatement":
           return this.evaluateSwitch(statement, context, proceed, location);
-        case "TryStatement": {
-          const finalizer = statement.finalizer;
-          return this.evaluateBlock(
-            statement.block.body,
-            context,
-            true,
-            finalizer
-              ? (pathContext) => this.evaluateBlock(finalizer.body, pathContext, true, proceed)
-              : proceed,
-          );
-        }
+        case "TryStatement":
+          return this.evaluateTry(statement, context, proceed, location);
         case "ForOfStatement":
         case "ForInStatement":
         case "ForStatement":
@@ -2449,6 +2537,76 @@ export class Interpreter {
       }
     }
     return continuation(context);
+  }
+
+  /** Ends the statement list on the paths that throw `thrown`; the others run the rest. */
+  private propagateThrow(
+    thrown: StaticValue,
+    context: EvaluationContext,
+    proceed: StatementContinuation,
+    location: SourceLocation,
+  ): StatementOutcome {
+    return mergeOutcomes(
+      [returnOutcome(thrown), proceed(context)],
+      `${describeValue(thrown)} may be thrown`,
+      location,
+      1,
+    );
+  }
+
+  /**
+   * Throws raised inside the `try` block run the handler instead of leaving the
+   * function; the paths that complete either block continue past the statement.
+   */
+  private evaluateTry(
+    statement: TryStatement,
+    context: EvaluationContext,
+    proceed: StatementContinuation,
+    location: SourceLocation,
+  ): StatementOutcome {
+    const finalizer = statement.finalizer;
+    const finish: StatementContinuation = finalizer
+      ? (pathContext) => this.evaluateBlock(finalizer.body, pathContext, true, proceed)
+      : proceed;
+    const handler = statement.handler;
+    const outcome = this.evaluateBlock(statement.block.body, context, true);
+    const thrown = outcome.returned && handler ? getThrownPaths(outcome.returned) : null;
+    if (thrown === null || !handler) {
+      if (!outcome.mayComplete) return outcome;
+      return mergeOutcomes(
+        [{ ...outcome, mayComplete: false }, finish(context)],
+        "try",
+        location,
+        1,
+      );
+    }
+    const passes: StatementOutcome = {
+      ...outcome,
+      returned:
+        outcome.returned && getThrowCertainty(outcome.returned) !== "always"
+          ? withoutThrows(outcome.returned)
+          : null,
+    };
+    const catches: StatementContinuation = (pathContext) => {
+      const handlerContext = withScope(pathContext, createScope(pathContext.scope));
+      if (handler.param) {
+        this.bindPattern(
+          handler.param,
+          getCaughtValue(thrown, location),
+          handlerContext.scope,
+          handlerContext,
+        );
+      }
+      return this.evaluateBlock(handler.body.body, handlerContext, false);
+    };
+    const isPassFeasible = passes.mayComplete || passes.returned !== null || passes.jump !== null;
+    return this.forkPaths(
+      isPassFeasible ? [() => passes, catches] : [catches],
+      context,
+      finish,
+      `${describeValue(thrown)} caught`,
+      location,
+    );
   }
 
   /**
@@ -2492,10 +2650,11 @@ export class Interpreter {
       return outcome;
     });
     this.heapJournals.pop();
-    journal.join(reason, location, preferredBranch);
+    const preferredOutcome = getPreferredOutcome(outcomes, preferredBranch);
+    journal.join(reason, location, preferredOutcome);
     if (joinedSnapshots.length > 0) joinScopes(joinedSnapshots, reason, location);
     if (!outcomes.some((outcome) => outcome.mayComplete)) {
-      return mergeOutcomes(outcomes, reason, location, preferredBranch);
+      return mergeOutcomes(outcomes, reason, location, preferredOutcome);
     }
     if (context.hooks) context.hooks.cursor = completedHookCursor;
     const rest = proceed(context);
@@ -2503,7 +2662,7 @@ export class Interpreter {
       [...outcomes.map((outcome) => ({ ...outcome, mayComplete: false })), rest],
       reason,
       location,
-      preferredBranch,
+      preferredOutcome,
     );
   }
 
@@ -2795,75 +2954,42 @@ const joinScopes = (paths: ScopeSnapshot[][], reason: string, location: SourceLo
   });
 };
 
-/** `key in target` when the target's own keys are known; null when it depends on runtime shape. */
-const hasProperty = (key: StaticValue, target: StaticValue): StaticValue | null => {
-  if (key.kind !== "primitive") return null;
-  const name = String(key.value);
-  switch (target.kind) {
-    case "branch": {
-      const results: StaticValue[] = [];
-      for (const alternative of target.alternatives) {
-        const result = hasProperty(key, alternative);
-        if (!result) return null;
-        results.push(result);
-      }
-      return branchValue(results, target.reason, target.location, target.preferredIndex);
-    }
-    case "element":
-      return REACT_ELEMENT_OWN_KEYS.has(name) ? TRUE_VALUE : FALSE_VALUE;
-    case "object": {
-      const keys = getKnownObjectKeys(target);
-      if (keys?.includes(name)) return TRUE_VALUE;
-      return keys && !OBJECT_PROTOTYPE_METHODS.has(name) ? FALSE_VALUE : null;
-    }
-    case "list": {
-      if (name in Array.prototype) return TRUE_VALUE;
-      const index = Number(name);
-      if (!Number.isInteger(index) || index < 0) return FALSE_VALUE;
-      const isReachable = target.items.slice(0, index + 1).every((item) => !isIndefiniteItem(item));
-      if (index < target.items.length && isReachable) return TRUE_VALUE;
-      return hasDefiniteItems(target) ? FALSE_VALUE : null;
-    }
-    case "component-reference":
-      return hasComponentProperty(target.type, name);
-    case "primitive":
-      return target.value === null || target.value === undefined
-        ? { ...unknownValue(`"${name}" in ${String(target.value)}`), isThrown: true }
-        : null;
-    default:
-      return null;
-  }
-};
-
 const WRAPPER_SYMBOL_KEYS = {
   memo: "react.memo",
   "forward-ref": "react.forward_ref",
   lazy: "react.lazy",
 } as const;
 
-const hasComponentProperty = (type: StaticElementType, name: string): StaticValue | null => {
-  switch (type.kind) {
-    case "function":
-    case "class":
-      if (type.component.properties.has(name)) return TRUE_VALUE;
-      return type.kind === "function" && !FUNCTION_OWN_KEYS.has(name) ? FALSE_VALUE : null;
-    case "memo":
-    case "forward-ref":
-    case "lazy":
-      return WRAPPER_OWN_KEYS[type.kind].has(name) ||
-        type.properties.has(name) ||
-        (name === "displayName" && type.displayName !== null)
-        ? TRUE_VALUE
-        : FALSE_VALUE;
-    default:
-      return null;
-  }
-};
-
 const MAX_DISTRIBUTED_ALTERNATIVES = 16;
 
 const countAlternatives = (value: StaticValue): number =>
   value.kind === "branch" ? value.alternatives.length : 1;
+
+const applyUnaryOperator = (
+  operator: Exclude<UnaryOperator, "typeof" | "void" | "delete">,
+  argument: StaticValue,
+): StaticValue => {
+  if (getThrownOperand([argument])) return argument;
+  switch (operator) {
+    case "!": {
+      const truthiness = getTruthiness(argument);
+      if (truthiness === null) return unknownPrimitiveValue("boolean", "negation of unknown");
+      return truthiness ? FALSE_VALUE : TRUE_VALUE;
+    }
+    case "-":
+      if (argument.kind === "primitive" && typeof argument.value === "number")
+        return primitiveValue(-argument.value);
+      return unknownPrimitiveValue("number", "unary minus");
+    case "+":
+      if (argument.kind === "primitive" && typeof argument.value !== "bigint")
+        return primitiveValue(Number(argument.value));
+      return unknownPrimitiveValue("number", "unary plus");
+    case "~":
+      if (argument.kind === "primitive" && typeof argument.value === "number")
+        return primitiveValue(~argument.value);
+      return unknownPrimitiveValue("number", "bitwise not");
+  }
+};
 
 const applyBinaryOperator = (
   operator: string,
@@ -2878,18 +3004,22 @@ const applyBinaryOperator = (
       return mapValue(right, (alternative) => applyBinaryOperator(operator, left, alternative));
     }
   }
+  const thrownOperand = getThrownOperand([left, right]);
+  if (thrownOperand) return thrownOperand;
   if (left.kind === "primitive" && right.kind === "primitive") {
     const computed = computeBinary(operator, left.value, right.value);
     if (computed !== undefined) return computed;
   }
   const equality = compareEquality(operator, left, right);
   if (equality) return equality;
-  if (operator === "in") {
-    const hasKey = hasOwnKnownKey(left, right);
-    if (hasKey !== null) return primitiveValue(hasKey);
+  if (operator === "instanceof") {
+    const isInstance = isInstanceOf(left, right);
+    if (isInstance !== null) return primitiveValue(isInstance);
   }
   const timed = applyClockOperator(operator, left, right);
   if (timed) return timed;
+  const ordered = compareNumberRanges(operator, left, right);
+  if (ordered) return ordered;
   switch (operator) {
     case "==":
     case "!=":
@@ -2908,7 +3038,9 @@ const applyBinaryOperator = (
         (right.kind === "primitive" && typeof right.value === "string") ||
         (left.kind === "unknown-primitive" && left.primitiveType === "string") ||
         (right.kind === "unknown-primitive" && right.primitiveType === "string");
-      return unknownPrimitiveValue(isString ? "string" : "any", "+ on dynamic values");
+      return isString
+        ? concatenateStrings(left, right)
+        : unknownPrimitiveValue("any", "+ on dynamic values");
     }
     default:
       return unknownPrimitiveValue("number", `${operator} on dynamic values`);
@@ -2922,21 +3054,6 @@ const mayCoerce = (value: StaticValue): boolean =>
   value.kind === "primitive"
     ? value.value !== null && value.value !== undefined
     : value.kind !== "symbol";
-
-/** `key in target` for a plain object or array whose keys are all known; null otherwise. */
-const hasOwnKnownKey = (key: StaticValue, target: StaticValue): boolean | null => {
-  if (key.kind !== "primitive" || (typeof key.value !== "string" && typeof key.value !== "number"))
-    return null;
-  const keyName = String(key.value);
-  if (target.kind === "object") {
-    const keys = getKnownObjectKeys(target);
-    return keys === null ? null : keys.includes(keyName) || keyName in {};
-  }
-  if (hasDefiniteItems(target)) {
-    return keyName in Array.from({ length: target.items.length });
-  }
-  return null;
-};
 
 /**
  * React's memo cache sentinel never reaches application values, so comparing

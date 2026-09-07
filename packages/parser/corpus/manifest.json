@@ -67,11 +67,18 @@
           "nuqs",
           "react-hook-form",
           "framer-motion",
-          "lucide-react"
+          "lucide-react",
+          "i18next",
+          "bcp-47-match",
+          "accept-language-parser"
         ],
+        "defines": {
+          "process.env.NEXT_PUBLIC_CALCOM_VERSION": "6.2.0"
+        },
+        "envFiles": ["../../.env"],
         "maxFiberCount": 20000
       },
-      "notes": "The seeded database comes from cal.diy's own `db-seed`; `/` redirects unauthenticated visitors to the login page, which is captured directly."
+      "notes": "`next.config.ts` loads the repository `.env` (written by the setup script) and sets `NEXT_PUBLIC_CALCOM_VERSION` from the root package version, which is the one define. The seeded database comes from cal.diy's own `db-seed`; `/` redirects unauthenticated visitors to the login page, which is captured directly."
     },
     {
       "id": "epic-stack",

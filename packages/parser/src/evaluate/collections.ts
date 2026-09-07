@@ -1,4 +1,5 @@
 import type { SourceLocation, StaticObjectValue, StaticValue } from "../types.js";
+import { getSearchParamsItems } from "./url-search-params.js";
 import {
   branchValue,
   FALSE_VALUE,
@@ -8,6 +9,7 @@ import {
   TRUE_VALUE,
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
+  thrownValue,
   unknownValue,
 } from "./values.js";
 
@@ -16,7 +18,9 @@ interface CollectionEntry {
   value: StaticValue;
 }
 
-type CollectionKind = "Map" | "Set";
+export type CollectionKind = "Map" | "Set" | "WeakMap" | "WeakSet";
+
+const isKeyed = (kind: CollectionKind): boolean => kind === "Map" || kind === "WeakMap";
 
 const nativeMethod = (name: string, call: (args: StaticValue[]) => StaticValue): StaticValue => ({
   kind: "native-function",
@@ -45,7 +49,7 @@ class StaticCollection {
   private isExternallyMutable = false;
 
   constructor(
-    private readonly kind: CollectionKind,
+    readonly kind: CollectionKind,
     private readonly location: SourceLocation | null,
   ) {}
 
@@ -128,7 +132,7 @@ class StaticCollection {
 
   iterate(): StaticValue {
     return this.project((entry) =>
-      this.kind === "Map" ? listValue([entry.key, entry.value]) : entry.value,
+      isKeyed(this.kind) ? listValue([entry.key, entry.value]) : entry.value,
     );
   }
 
@@ -152,7 +156,7 @@ const seedCollection = (
   const items = getCollectionItems(initial) ?? initial;
   if (items.kind !== "list") return false;
   for (const item of items.items) {
-    if (kind === "Set") {
+    if (!isKeyed(kind)) {
       collection.set(item, item);
       continue;
     }
@@ -164,16 +168,25 @@ const seedCollection = (
 
 const collectionsByValue = new WeakMap<StaticObjectValue, StaticCollection>();
 
-/** What `for..of`, spread and `Array.from` see: `[key, value]` pairs for a `Map`, values for a `Set`; null for other values. */
-export const getCollectionItems = (value: StaticValue): StaticValue | null =>
-  (value.kind === "object" && collectionsByValue.get(value)?.iterate()) || null;
+/** What `for..of`, spread and `Array.from` see: `[key, value]` pairs for a `Map` or `URLSearchParams`, values for a `Set`; null for other values. */
+export const getCollectionItems = (value: StaticValue): StaticValue | null => {
+  const collection = value.kind === "object" ? collectionsByValue.get(value) : undefined;
+  if (!collection) return getSearchParamsItems(value);
+  if (collection.kind === "WeakMap" || collection.kind === "WeakSet") return null;
+  return collection.iterate();
+};
+
+export const getCollectionKind = (value: StaticObjectValue): CollectionKind | null =>
+  collectionsByValue.get(value)?.kind ?? null;
 
 export const markCollectionExternallyMutable = (value: StaticObjectValue): boolean => {
   const collection = collectionsByValue.get(value);
   if (!collection) return false;
   collection.markExternallyMutable();
-  const sizeEntry = value.entries[0];
-  if (sizeEntry.kind === "property") sizeEntry.value = collection.size();
+  const sizeEntry = value.entries.find(
+    (entry) => entry.kind === "property" && entry.key === "size",
+  );
+  if (sizeEntry?.kind === "property") sizeEntry.value = collection.size();
   return true;
 };
 
@@ -187,18 +200,21 @@ export const createCollectionValue = (
     return unknownValue(`new ${kind}() from a dynamic iterable`, location);
   }
   const keyOf = (args: StaticValue[]): StaticValue => args[0] ?? UNDEFINED_VALUE;
-  const self: StaticObjectValue = objectFromRecord({ size: collection.size() });
-  const sizeEntry = self.entries[0];
+  const isWeak = kind === "WeakMap" || kind === "WeakSet";
+  const self: StaticObjectValue = objectFromRecord(isWeak ? {} : { size: collection.size() });
+  const sizeEntry = isWeak ? null : self.entries[0];
   const withSizeRefresh = (name: string, call: (args: StaticValue[]) => StaticValue): StaticValue =>
     nativeMethod(name, (args) => {
       const result = call(args);
-      if (sizeEntry.kind === "property") sizeEntry.value = collection.size();
+      if (sizeEntry?.kind === "property") sizeEntry.value = collection.size();
       return result;
     });
   const methods: Record<string, StaticValue> = {
     get: nativeMethod("get", (args) => collection.get(keyOf(args))),
     has: nativeMethod("has", (args) => collection.has(keyOf(args))),
     delete: withSizeRefresh("delete", (args) => collection.delete(keyOf(args))),
+  };
+  const iterationMethods: Record<string, StaticValue> = {
     clear: withSizeRefresh("clear", () => {
       collection.clear();
       return UNDEFINED_VALUE;
@@ -223,14 +239,15 @@ export const createCollectionValue = (
       },
     },
   };
-  methods[kind === "Map" ? "set" : "add"] = withSizeRefresh(
-    kind === "Map" ? "set" : "add",
+  methods[isKeyed(kind) ? "set" : "add"] = withSizeRefresh(
+    isKeyed(kind) ? "set" : "add",
     (args) => {
-      collection.set(keyOf(args), kind === "Map" ? (args[1] ?? UNDEFINED_VALUE) : keyOf(args));
+      collection.set(keyOf(args), isKeyed(kind) ? (args[1] ?? UNDEFINED_VALUE) : keyOf(args));
       return self;
     },
   );
-  for (const [key, value] of Object.entries(methods)) {
+  const members = isWeak ? methods : { ...methods, ...iterationMethods };
+  for (const [key, value] of Object.entries(members)) {
     self.entries.push({ kind: "property", key, value });
   }
   collectionsByValue.set(self, collection);
@@ -252,8 +269,8 @@ export const createPromiseValue = (
     settled ??= args[0] ?? UNDEFINED_VALUE;
     return UNDEFINED_VALUE;
   });
-  const reject = nativeMethod("reject", () => {
-    settled ??= { ...unknownValue("rejected promise", location), isThrown: true };
+  const reject = nativeMethod("reject", (args) => {
+    settled ??= thrownValue("rejected promise", args[0] ?? UNDEFINED_VALUE, location);
     return UNDEFINED_VALUE;
   });
   if (executor) callExecutor(executor, [resolve, reject]);

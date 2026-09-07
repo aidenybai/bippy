@@ -173,7 +173,11 @@ export class BrowserCapturer {
         if (message.type() === "error") pageErrors.push(message.text());
         options.onConsole?.(message.type(), message.text());
       });
-      await page.goto(options.url, { waitUntil: "domcontentloaded", timeout: timeoutMs });
+      const response = await page.goto(options.url, {
+        waitUntil: "domcontentloaded",
+        timeout: timeoutMs,
+      });
+      const requestHeaders = (await response?.request().allHeaders()) ?? null;
       if (options.waitForSelector) {
         await page.waitForSelector(options.waitForSelector, { timeout: timeoutMs });
       }
@@ -187,6 +191,7 @@ export class BrowserCapturer {
         if (overlay) pageErrors.push(overlay);
       }
       const observations = await readObservations(page, options.globals ?? []);
+      if (requestHeaders) observations.request = { headers: requestHeaders };
       return { snapshot, commits, pageErrors, title: await page.title(), observations };
     } finally {
       await context.close();

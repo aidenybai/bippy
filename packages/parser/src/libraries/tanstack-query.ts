@@ -25,6 +25,7 @@ import type {
   CapturedQuery,
   CapturedValue,
   LibraryValueProvider,
+  ModeledExports,
   ProjectContext,
   StaticObjectValue,
   StaticSymbolValue,
@@ -462,7 +463,7 @@ export const tanstackQueryValue: LibraryValueProvider = (specifier, importedName
   }
 };
 
-export const TANSTACK_QUERY_MODELED_EXPORTS: readonly string[] = [
+const MODELED_EXPORT_NAMES: readonly string[] = [
   "skipToken",
   ...QUERY_HOOKS,
   "useQueries",
@@ -474,3 +475,7 @@ export const TANSTACK_QUERY_MODELED_EXPORTS: readonly string[] = [
   "usePrefetchQuery",
   "usePrefetchInfiniteQuery",
 ];
+
+export const TANSTACK_QUERY_MODELED_EXPORTS: ModeledExports = Object.fromEntries(
+  TANSTACK_QUERY_PACKAGES.map((specifier) => [specifier, MODELED_EXPORT_NAMES]),
+);

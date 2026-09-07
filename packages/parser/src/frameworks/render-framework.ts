@@ -1,5 +1,6 @@
 import path from "node:path";
 import type { CorpusEntry } from "../corpus/manifest.js";
+import { readProcessEnvironment } from "../corpus/process-environment.js";
 import { createStaticRenderer, type StaticRenderer } from "../render/static-renderer.js";
 import type { RuntimeObservations, StaticRenderResult, StaticRendererOptions } from "../types.js";
 import type { FrameworkKind } from "./framework-profile.js";
@@ -46,7 +47,12 @@ export const renderFrameworkTarget = (
       return createStaticRenderer(options).renderEntry(requireField(target, "entry"));
     case "next-app": {
       const route = requireField(target, "route");
-      const model = createNextModel({ kind: "next-app", route });
+      const model = createNextModel({
+        kind: "next-app",
+        route,
+        origin: options.origin,
+        request: options.observations?.request,
+      });
       const renderer = createStaticRenderer({
         ...options,
         serverComponents: true,
@@ -56,7 +62,7 @@ export const renderFrameworkTarget = (
     }
     case "next-pages": {
       const route = requireField(target, "route");
-      const model = createNextModel({ kind: "next-pages", route });
+      const model = createNextModel({ kind: "next-pages", route, origin: options.origin });
       const renderer = createStaticRenderer({ ...options, externalValues: model.externalValues });
       return renderNextPagesRoute(renderer, model, {
         route,
@@ -110,6 +116,8 @@ const rendererOptionsForEntry = (
     bootstrap: entry.static.bootstrap,
     globals: entry.static.globals,
     defines: entry.static.defines,
+    environment: readProcessEnvironment(entry, rootDirectory),
+    origin: new URL(entry.url).origin,
     observations,
     maxFiberCount: entry.static.maxFiberCount,
     maxComponentDepth: entry.static.maxComponentDepth,

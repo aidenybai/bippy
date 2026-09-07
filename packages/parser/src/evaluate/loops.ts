@@ -21,6 +21,7 @@ import {
 import { createScope } from "./scope.js";
 import {
   getKnownObjectKeys,
+  getObjectProperty,
   getTruthiness,
   isKnownList,
   primitiveValue,
@@ -61,6 +62,18 @@ const bindLoopLeft = (
   interpreter.assignTarget(left, value, context);
 };
 
+const ENUMERATION_TRAPS = ["ownKeys", "getOwnPropertyDescriptor"];
+
+/** `for..in` enumerates through a proxy's target unless its handler traps key enumeration. */
+const getEnumerationTarget = (value: StaticValue): StaticValue => {
+  if (value.kind !== "proxy") return value;
+  const isTrapped = ENUMERATION_TRAPS.some((trap) => {
+    const handler = getObjectProperty(value.handler, trap);
+    return handler.kind !== "primitive" || handler.value !== undefined;
+  });
+  return isTrapped ? value : getEnumerationTarget(value.target);
+};
+
 const iterationValues = (
   interpreter: Interpreter,
   statement: ForOfStatement | ForInStatement,
@@ -74,8 +87,9 @@ const iterationValues = (
       return [...right.value].map(primitiveValue);
     return null;
   }
-  if (right.kind !== "object") return null;
-  const keys = getKnownObjectKeys(right);
+  const enumerated = getEnumerationTarget(right);
+  if (enumerated.kind !== "object") return null;
+  const keys = getKnownObjectKeys(enumerated);
   return keys ? keys.map(primitiveValue) : null;
 };
 

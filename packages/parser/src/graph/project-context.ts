@@ -5,6 +5,27 @@ import type { ProjectContext, RuntimeObservations } from "../types.js";
 
 const DEPENDENCY_FIELDS = ["dependencies", "devDependencies", "optionalDependencies"];
 
+/** Where Next, Vite and CRA dev servers serve static files from, at the URL root. */
+const PUBLIC_DIRECTORY = "public";
+
+const readServedAsset = (
+  rootDirectory: string,
+  origin: string | null,
+  url: string,
+): string | null => {
+  if (origin === null && !url.startsWith("/")) return null;
+  try {
+    const parsed = new URL(url, origin ?? "http://origin.invalid");
+    if (origin !== null && parsed.origin !== origin) return null;
+    const publicDirectory = path.join(rootDirectory, PUBLIC_DIRECTORY);
+    const assetPath = path.join(publicDirectory, decodeURIComponent(parsed.pathname));
+    if (!assetPath.startsWith(publicDirectory + path.sep)) return null;
+    return readFileSync(assetPath, "utf8");
+  } catch {
+    return null;
+  }
+};
+
 const readDeclaredDependencies = (manifestPath: string): Set<string> | null => {
   let manifest: unknown;
   try {
@@ -30,6 +51,7 @@ const readDeclaredDependencies = (manifestPath: string): Set<string> | null => {
 export const createProjectContext = (
   rootDirectory: string,
   observations: RuntimeObservations = EMPTY_OBSERVATIONS,
+  origin: string | null = null,
 ): ProjectContext => {
   const declared = new Set<string>();
   for (let directory = rootDirectory; ; directory = path.dirname(directory)) {
@@ -42,6 +64,7 @@ export const createProjectContext = (
   return {
     rootDirectory,
     hasDeclaredDependency: (packageName) => declared.has(packageName),
+    readServedAsset: (url) => readServedAsset(rootDirectory, origin, url),
     findQuery: (queryHash) => queries.get(queryHash) ?? null,
     findMutations: (mutationHash) =>
       mutations?.filter((mutation) => mutation.mutationHash === mutationHash) ?? null,

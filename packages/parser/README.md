@@ -178,8 +178,10 @@ Clones and captures live under the ignored `.corpus/`. Every entry renders stati
 capture runs where a dev server can start in this environment.
 
 Live-verified so far: `react-router-templates`, `sonner`, `documenso`, `sentry`, `posthog`
-(exact); `nextjs-examples` (partial at 100% strict coverage — every runtime fiber is matched
-by a concrete static fiber, but branches or repeats were consumed); `cal-diy`,
+(exact); `nextjs-examples` and `cal-diy` (partial at 100% strict coverage — every runtime fiber
+is matched by a concrete static fiber, but branches or repeats were consumed; cal-diy's single
+remaining branch is the login page's `redirect("/auth/setup")` when `prisma.user.findFirst()`
+finds no user, a database fact the static side cannot know);
 `bulletproof-react`, `puck`, `redux-toolkit`, `lexical`, `tanstack-query`, `graphiql`,
 `react-admin`, `tanstack-router` (partial — opaque third-party providers or dynamic data cut
 the static tree short). `corpus/scripts/` holds the setup used for the heavy entries: a

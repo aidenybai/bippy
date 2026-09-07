@@ -27,6 +27,8 @@ export interface CorpusStaticTarget {
   globals?: Record<string, JsonValue>;
   /** Expressions the dev build inlines (`DefinePlugin`, Vite `define`), keyed by source text. */
   defines?: Record<string, JsonValue>;
+  /** dotenv files the server loads, relative to `rootDirectory`; with them the environment is whole and other variables are unset. */
+  envFiles?: string[];
   maxFiberCount?: number;
   maxComponentDepth?: number;
 }
@@ -234,6 +236,7 @@ const readStaticTarget = (reader: ManifestReader): CorpusStaticTarget => ({
   bootstrap: reader.optionalStringList("bootstrap"),
   globals: reader.optionalJsonRecord("globals"),
   defines: reader.optionalJsonRecord("defines"),
+  envFiles: reader.optionalStringList("envFiles"),
   maxFiberCount: reader.optionalNumber("maxFiberCount"),
   maxComponentDepth: reader.optionalNumber("maxComponentDepth"),
 });

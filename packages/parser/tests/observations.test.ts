@@ -84,6 +84,19 @@ describe("runtime observations", () => {
         mutations: [mutation, { ...mutation, mutationHash: 1 }, { ...mutation, status: "loading" }],
       }),
     ).toEqual({ globals: {}, queries: [], mutations: [mutation] });
+    const page = { cookie: "", localStorage: {}, sessionStorage: {} };
+    expect(readObservationsJson({ globals: {}, queries: [], page })).toEqual({
+      globals: {},
+      queries: [],
+      page,
+    });
+    expect(
+      readObservationsJson({ globals: {}, queries: [], page: { ...page, name: "cal-embed=x" } }),
+    ).toEqual({ globals: {}, queries: [], page: { ...page, name: "cal-embed=x" } });
+    expect(readObservationsJson({ globals: {}, queries: [], page: { ...page, name: 1 } })).toEqual({
+      globals: {},
+      queries: [],
+    });
   });
 
   it("hashes query keys exactly like @tanstack/query-core", () => {

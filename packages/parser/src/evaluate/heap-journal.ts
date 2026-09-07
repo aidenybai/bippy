@@ -17,8 +17,15 @@ interface HeapPath {
 const isExtensionOf = <Item>(items: Item[], prefix: Item[]): boolean =>
   items.length >= prefix.length && prefix.every((item, index) => items[index] === item);
 
+const isSameState = <Item>(items: Item[], other: Item[]): boolean =>
+  items.length === other.length && isExtensionOf(items, other);
+
 const isUnchanged = <Item>(paths: Item[][], original: Item[]): boolean =>
-  paths.every((items) => items.length === original.length && isExtensionOf(items, original));
+  paths.every((items) => isSameState(items, original));
+
+/** The state every path left, when the paths agree on it. */
+const getAgreedState = <Item>(paths: Item[][]): Item[] | null =>
+  paths.every((items) => isSameState(items, paths[0])) ? paths[0] : null;
 
 /**
  * Scope bindings are restored and joined around every fork, but objects and
@@ -59,11 +66,18 @@ export class HeapJournal {
     for (const [object, original] of this.objects) {
       const pathEntries = this.paths.map((path) => path.objects.get(object) ?? original);
       if (isUnchanged(pathEntries, original)) continue;
-      object.entries = joinObjectEntries(original, pathEntries, reason, location, preferredPath);
+      object.entries =
+        getAgreedState(pathEntries) ??
+        joinObjectEntries(original, pathEntries, reason, location, preferredPath);
     }
     for (const [list, original] of this.lists) {
       const pathItems = this.paths.map((path) => path.lists.get(list) ?? original);
       if (isUnchanged(pathItems, original)) continue;
+      const agreedItems = getAgreedState(pathItems);
+      if (agreedItems) {
+        list.items = agreedItems;
+        continue;
+      }
       const isEveryPathAppending = pathItems.every((items) => isExtensionOf(items, original));
       const uncertainItems = isEveryPathAppending
         ? pathItems.flatMap((items) => items.slice(original.length))

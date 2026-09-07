@@ -12,7 +12,13 @@ const EXTENSION_TO_LANG: Record<string, SourceLanguage> = {
   ".cjs": "js",
   ".mts": "ts",
   ".cts": "ts",
+  ".json": "json",
 };
+
+// A JSON module is a CommonJS module whose `module.exports` is the document
+// (Node, webpack, Vite and Next agree), so the default and top-level keys
+// become its exports.
+const JSON_MODULE_PREFIX = "module.exports = ";
 
 export const SUPPORTED_SOURCE_EXTENSIONS = Object.keys(EXTENSION_TO_LANG);
 
@@ -36,8 +42,9 @@ export const parseSourceText = (
   sourceText: string,
   lang: SourceLanguage,
 ): ParsedSourceFile => {
-  const result = parseSync(filePath, sourceText, {
-    lang,
+  const programText = lang === "json" ? `${JSON_MODULE_PREFIX}${sourceText};` : sourceText;
+  const result = parseSync(filePath, programText, {
+    lang: lang === "json" ? "js" : lang,
     sourceType: "module",
     astType: lang === "ts" || lang === "tsx" ? "ts" : "js",
     preserveParens: false,
@@ -45,9 +52,9 @@ export const parseSourceText = (
   return {
     filePath,
     lang,
-    sourceText,
+    sourceText: programText,
     program: result.program,
-    lineStarts: buildLineStarts(sourceText),
+    lineStarts: buildLineStarts(programText),
     errors: result.errors
       .filter((error) => error.severity === "Error")
       .map((error) => error.message),

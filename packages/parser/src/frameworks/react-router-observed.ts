@@ -7,8 +7,8 @@ import {
   primitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
+import { createSearchParamsValue } from "../evaluate/url-search-params.js";
 import type { CapturedRouterState, StaticValue } from "../types.js";
-import { nativeFunction } from "./stubs.js";
 
 /**
  * The data router's state as the page had it, replayed into the hooks that
@@ -45,41 +45,6 @@ const stringRecordValue = (record: Record<string, string>): StaticValue =>
     Object.fromEntries(Object.entries(record).map(([key, value]) => [key, primitiveValue(value)])),
   );
 
-const stringOrNull = (value: string | null | undefined): StaticValue =>
-  value === null || value === undefined ? NULL_VALUE : primitiveValue(value);
-
-/** A `URLSearchParams` over a known query string, read-only as `useSearchParams` hands it out. */
-const searchParamsValue = (search: string): StaticValue => {
-  const params = new URLSearchParams(search);
-  const readKey = (args: StaticValue[]): string | null => {
-    const [key] = args;
-    return key?.kind === "primitive" && typeof key.value === "string" ? key.value : null;
-  };
-  const withKey = (name: string, read: (key: string) => StaticValue): StaticValue =>
-    nativeFunction(name, (args) => {
-      const key = readKey(args);
-      return key === null
-        ? unknownValue(`URLSearchParams.${name}() with a dynamic key`)
-        : read(key);
-    });
-  return objectFromRecord({
-    get: withKey("get", (key) => stringOrNull(params.get(key))),
-    getAll: withKey("getAll", (key) => listValue(params.getAll(key).map(primitiveValue))),
-    has: withKey("has", (key) => primitiveValue(params.has(key))),
-    size: primitiveValue(params.size),
-    toString: nativeFunction("toString", () => primitiveValue(params.toString())),
-    entries: nativeFunction("entries", () =>
-      listValue(
-        [...params.entries()].map(([key, value]) =>
-          listValue([primitiveValue(key), primitiveValue(value)]),
-        ),
-      ),
-    ),
-    keys: nativeFunction("keys", () => listValue([...params.keys()].map(primitiveValue))),
-    values: nativeFunction("values", () => listValue([...params.values()].map(primitiveValue))),
-  });
-};
-
 export const observeRouterState = (
   state: CapturedRouterState | null,
   pathname: string,
@@ -102,7 +67,7 @@ export const observeRouterState = (
         ? idleNavigation()
         : unknownValue(`react-router navigation is ${state.navigationState}`),
     revalidation: primitiveValue(state.revalidationState),
-    searchParams: searchParamsValue(state.location.search),
+    searchParams: createSearchParamsValue(primitiveValue(state.location.search)),
     matches: listValue(
       state.matches.map((match) =>
         objectFromRecord({

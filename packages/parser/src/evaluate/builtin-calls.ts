@@ -1,10 +1,12 @@
 import type {
   RenderEnvironment,
   SourceLocation,
+  StaticAccessor,
   StaticElementType,
   StaticFunctionValue,
   StaticListValue,
   StaticObjectValue,
+  StaticPrimitive,
   StaticRegExpValue,
   StaticValue,
 } from "../types.js";
@@ -17,25 +19,38 @@ import {
   SimpleMemoComponentTag,
 } from "../work-tags.js";
 import { getBrowserGlobalMember, isBrowserGlobalName } from "./browser-globals.js";
-import { callHotModuleMethod, getBundlerGlobal, isEnvironmentObject } from "./bundler-globals.js";
+import {
+  type EnvironmentLookup,
+  callHotModuleMethod,
+  getBundlerGlobal,
+  isEnvironmentObject,
+} from "./bundler-globals.js";
+import { createErrorValue, ERROR_CONSTRUCTOR_NAMES, isErrorConstructorName } from "./errors.js";
 import { constructNativeDate } from "./native-values.js";
 import { callEventTargetMethod } from "./event-listeners.js";
+import { hasProperty } from "./has-property.js";
 import { mediaQueryListValue } from "./media-query.js";
 import { callStorageMethod, getStorageAreaName } from "./web-storage.js";
 import type { EvaluationContext } from "./context.js";
 import { createCollectionValue, createPromiseValue, getCollectionItems } from "./collections.js";
+import { callShapedPrimitiveMethod, rangedNumberValue } from "./primitive-shapes.js";
+import { createSearchParamsValue } from "./url-search-params.js";
+import { createUrlValue } from "./url.js";
 import type { Interpreter } from "./interpreter.js";
 import {
+  accessorEntry,
   branchValue,
   describeValue,
   FALSE_VALUE,
   getClassPrototype,
+  getInstancePrototype,
   getKnownObjectKeys,
   getListLength,
   getObjectProperty,
   getTruthiness,
   compareIdentity,
   hasDefiniteItems,
+  isIndefiniteItem,
   isKnownList,
   jsonValue,
   listValue,
@@ -50,10 +65,18 @@ import {
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
   spreadListItems,
+  thrownValue,
   unknownValue,
 } from "./values.js";
 
 const PROMISE_METHOD_NAMES = new Set(["then", "catch", "finally"]);
+
+const NUMBER_PREDICATES: Record<string, (value: StaticPrimitive) => boolean> = {
+  "Number.isNaN": Number.isNaN,
+  "Number.isFinite": Number.isFinite,
+  "Number.isInteger": Number.isInteger,
+  "Number.isSafeInteger": Number.isSafeInteger,
+};
 
 export const isPromiseMethodName = (name: string): boolean => PROMISE_METHOD_NAMES.has(name);
 
@@ -89,7 +112,7 @@ const GLOBAL_NAMES = new Set([
   "WeakSet",
   "Promise",
   "Symbol",
-  "Error",
+  ...ERROR_CONSTRUCTOR_NAMES,
   "RegExp",
   "Intl",
   "Reflect",
@@ -126,6 +149,20 @@ const GLOBAL_NAMES = new Set([
   "queueMicrotask",
   "URL",
   "URLSearchParams",
+  "Headers",
+  "Request",
+  "Response",
+  "FormData",
+  "Blob",
+  "AbortController",
+  "AbortSignal",
+  "Event",
+  "EventTarget",
+  "TextEncoder",
+  "TextDecoder",
+  "ArrayBuffer",
+  "DataView",
+  "Uint8Array",
   "Infinity",
   "NaN",
 ]);
@@ -225,7 +262,7 @@ const CONSTRUCTOR_GLOBALS = new Set([
   "WeakSet",
   "Promise",
   "Symbol",
-  "Error",
+  ...ERROR_CONSTRUCTOR_NAMES,
   "RegExp",
   "Proxy",
 ]);
@@ -328,10 +365,13 @@ export const getTypeofValue = (
   }
 };
 
-export const getBuiltinGlobal = (name: string): StaticValue | null => {
+export const getBuiltinGlobal = (
+  name: string,
+  environment?: EnvironmentLookup,
+): StaticValue | null => {
   if (name === "NaN") return primitiveValue(Number.NaN);
   if (name === "Infinity") return primitiveValue(Number.POSITIVE_INFINITY);
-  const bundlerGlobal = getBundlerGlobal(name);
+  const bundlerGlobal = getBundlerGlobal(name, environment);
   if (bundlerGlobal) return bundlerGlobal;
   if (name.startsWith("Math.") && name !== "Math.max" && name !== "Math.min") {
     const constant = name.slice("Math.".length);
@@ -360,11 +400,17 @@ const toNumberValue = (value: StaticValue): StaticValue => {
   return unknownPrimitiveValue("number", `Number(${describeValue(value)})`);
 };
 
-/**
- * Accessor descriptors are read once, when defined: the value a getter
- * produces on the render this code runs in is the value the property holds
- * (`getProxyFormState` in react-hook-form tracks which keys were read that way).
- */
+const getDescriptorAccessor = (descriptor: StaticObjectValue): StaticAccessor | null => {
+  const keys = getKnownObjectKeys(descriptor);
+  if (!keys || keys.includes("value") || !(keys.includes("get") || keys.includes("set")))
+    return null;
+  return {
+    get: keys.includes("get") ? getObjectProperty(descriptor, "get") : null,
+    set: keys.includes("set") ? getObjectProperty(descriptor, "set") : null,
+  };
+};
+
+/** Function properties hold values only, so an accessor defined on one is read once. */
 const readDescriptorValue = (
   interpreter: Interpreter,
   target: StaticValue,
@@ -392,11 +438,21 @@ const defineOwnProperty = (
   context: EvaluationContext,
   location: SourceLocation | null,
 ): void => {
+  if (target.kind === "object") {
+    const accessor = getDescriptorAccessor(descriptor);
+    target.entries.push(
+      accessor
+        ? accessorEntry(key, accessor, location)
+        : {
+            kind: "property",
+            key,
+            value: readDescriptorValue(interpreter, target, descriptor, key, context, location),
+          },
+    );
+    return;
+  }
   const value = readDescriptorValue(interpreter, target, descriptor, key, context, location);
   switch (target.kind) {
-    case "object":
-      target.entries.push({ kind: "property", key, value });
-      return;
     case "function":
     case "class":
       if (key === "name") {
@@ -465,6 +521,7 @@ const callGlobal = (
     ? null
     : callInvokedGlobal(interpreter, name, args, context, location);
   if (invoked) return invoked;
+  if (isErrorConstructorName(name)) return createErrorValue(name, args, location);
   const [first, second] = args;
   switch (name) {
     case "Date": {
@@ -479,12 +536,18 @@ const callGlobal = (
     case "Boolean":
       return first ? toBooleanValue(first) : FALSE_VALUE;
     case "Array":
-      return isConstructor || args.length !== 1
-        ? listValue(args)
-        : unknownValue("Array(length)", location);
+      return args.length === 1 && first !== undefined
+        ? arrayOfLength(first, location)
+        : listValue(args);
     case "Map":
     case "Set":
+    case "WeakMap":
+    case "WeakSet":
       return createCollectionValue(name, first, location);
+    case "URLSearchParams":
+      return createSearchParamsValue(first, { location });
+    case "URL":
+      return createUrlValue(args, location);
     case "RegExp": {
       if (second !== undefined && second.kind !== "primitive")
         return unknownValue("RegExp with dynamic flags", location);
@@ -515,7 +578,7 @@ const callGlobal = (
     case "Promise.resolve":
       return first ?? UNDEFINED_VALUE;
     case "Promise.reject":
-      return { ...unknownValue("rejected promise", location), isThrown: true };
+      return thrownValue("rejected promise", first ?? UNDEFINED_VALUE, location);
     case "Promise.all":
       return first?.kind === "list" ? first : unknownValue("Promise.all", location);
     case "Array.isArray":
@@ -566,9 +629,40 @@ const callGlobal = (
     case "Object.setPrototypeOf":
       return first ?? UNDEFINED_VALUE;
     case "Object.getPrototypeOf":
-      return first?.kind === "class"
-        ? getClassPrototype(first, location)
-        : unknownValue("Object.getPrototypeOf on a dynamic target", location);
+    case "Reflect.getPrototypeOf":
+      if (first?.kind === "class") return getClassPrototype(first, location);
+      if (first?.kind === "object" && first.constructedBy)
+        return getInstancePrototype(first, first.constructedBy);
+      return unknownValue(`${name} on a dynamic target`, location);
+    case "Object.getOwnPropertyNames":
+    case "Reflect.ownKeys": {
+      const ownKeys = first?.kind === "object" ? getKnownObjectKeys(first) : null;
+      return ownKeys
+        ? listValue(ownKeys.map((key) => primitiveValue(key)))
+        : unknownValue(`${name} on a dynamic target`, location);
+    }
+    case "Reflect.get":
+      return first && second?.kind === "primitive"
+        ? interpreter.getProperty(first, String(second.value), context, location)
+        : unknownValue("Reflect.get with a dynamic key", location);
+    case "Reflect.has":
+      return (
+        (first && second && hasProperty(second, first)) ??
+        unknownValue("Reflect.has on a dynamic target", location)
+      );
+    case "Reflect.apply": {
+      const applied = args[2];
+      if (!first || !applied) return unknownValue("Reflect.apply without arguments", location);
+      const appliedArguments =
+        applied.kind === "list" && applied.items.every((item) => item.kind !== "repeat")
+          ? applied.items
+          : null;
+      return appliedArguments
+        ? interpreter.callValue(first, appliedArguments, context, location, {
+            thisValue: second ?? null,
+          })
+        : unknownValue("Reflect.apply with dynamic arguments", location);
+    }
     case "Object.defineProperty": {
       const descriptor = args[2];
       if (!first || second?.kind !== "primitive" || descriptor?.kind !== "object") {
@@ -604,13 +698,37 @@ const callGlobal = (
       }
       return unknownValue("Object.fromEntries of dynamic entries", location);
     case "parseInt":
-    case "parseFloat":
-      if (first?.kind === "primitive" && typeof first.value === "string") {
-        return primitiveValue(
-          name === "parseInt" ? Number.parseInt(first.value, 10) : Number.parseFloat(first.value),
-        );
+    case "Number.parseInt":
+      if (
+        first?.kind === "primitive" &&
+        typeof first.value !== "symbol" &&
+        (second === undefined || second.kind === "primitive")
+      ) {
+        return primitiveValue(Number.parseInt(String(first.value), Number(second?.value ?? 10)));
       }
       return unknownPrimitiveValue("number", name);
+    case "parseFloat":
+    case "Number.parseFloat":
+      if (first?.kind === "primitive" && typeof first.value !== "symbol")
+        return primitiveValue(Number.parseFloat(String(first.value)));
+      return unknownPrimitiveValue("number", name);
+    case "isNaN":
+    case "isFinite":
+      if (first?.kind === "primitive" && typeof first.value !== "symbol") {
+        const number = Number(first.value);
+        return primitiveValue(name === "isNaN" ? Number.isNaN(number) : Number.isFinite(number));
+      }
+      return unknownPrimitiveValue("boolean", name);
+    case "Number.isNaN":
+    case "Number.isFinite":
+    case "Number.isInteger":
+    case "Number.isSafeInteger": {
+      if (first === undefined) return FALSE_VALUE;
+      if (first.kind === "primitive") return primitiveValue(NUMBER_PREDICATES[name](first.value));
+      const typeofFirst = getTypeofValue(first, context.environment);
+      if (typeofFirst.kind === "primitive" && typeofFirst.value !== "number") return FALSE_VALUE;
+      return unknownPrimitiveValue("boolean", name);
+    }
     case "JSON.stringify": {
       const json = first && args.length === 1 ? toJsonValue(first) : undefined;
       return json === undefined
@@ -690,6 +808,8 @@ const callGlobal = (
           return primitiveValue(Math.round(numbers[0]));
         case "abs":
           return primitiveValue(Math.abs(numbers[0]));
+        case "random":
+          return rangedNumberValue(name, { min: 0, max: 1 });
         default:
           break;
       }
@@ -701,6 +821,24 @@ const callGlobal = (
 };
 
 const MAX_ARRAY_LIKE_LENGTH = 1_000;
+
+const arrayOfLength = (length: StaticValue, location: SourceLocation | null): StaticValue => {
+  if (length.kind === "unknown-primitive" && length.primitiveType === "number")
+    return { kind: "repeat", item: UNDEFINED_VALUE, location };
+  if (length.kind === "unknown" || length.kind === "branch")
+    return unknownValue("Array() with a dynamic length", location);
+  if (length.kind !== "primitive" || typeof length.value !== "number") return listValue([length]);
+  if (!Number.isInteger(length.value) || length.value < 0) {
+    return thrownValue(
+      "Array() with an invalid length",
+      createErrorValue("RangeError", [primitiveValue("Invalid array length")], location),
+      location,
+    );
+  }
+  if (length.value > MAX_ARRAY_LIKE_LENGTH)
+    return { kind: "repeat", item: UNDEFINED_VALUE, location };
+  return listValue(Array.from({ length: length.value }, () => UNDEFINED_VALUE));
+};
 
 // `{ length: n }` (and sparse array-likes) as consumed by `Array.from`.
 const arrayLikeToList = (value: Extract<StaticValue, { kind: "object" }>): StaticValue => {
@@ -1078,6 +1216,9 @@ export const evaluateBuiltinCall = (
   const [first, second] = args;
 
   if (isPromiseMethodName(name)) {
+    const rejectionHandler = name === "catch" ? first : name === "then" ? second : undefined;
+    if (receiver.kind === "unknown" && receiver.thrown && rejectionHandler?.kind === "function")
+      return interpreter.callFunction(rejectionHandler, [receiver.thrown], context);
     if (name === "then" && first?.kind === "function") {
       const isSettled = receiver.kind !== "unknown" && receiver.kind !== "external";
       return isSettled
@@ -1092,7 +1233,13 @@ export const evaluateBuiltinCall = (
   }
 
   if (receiver.kind === "function") {
-    if (name === "bind") return { ...receiver, thisValue: first ?? receiver.thisValue };
+    if (name === "bind") {
+      return {
+        ...receiver,
+        thisValue: first ?? receiver.thisValue,
+        boundArgs: [...(receiver.boundArgs ?? []), ...args.slice(1)],
+      };
+    }
     if (name === "call")
       return interpreter.callFunction(receiver, args.slice(1), context, {
         thisValue: first ?? null,
@@ -1182,6 +1329,11 @@ export const evaluateBuiltinCall = (
 
   if (receiver.kind === "regexp") return callRegExpMethod(receiver, name, args, location);
 
+  if (receiver.kind === "unknown-primitive") {
+    const shaped = callShapedPrimitiveMethod(receiver, name, args);
+    if (shaped) return shaped;
+  }
+
   if (receiver.kind === "global" && isEnvironmentObject(receiver.name)) {
     return unknownPrimitiveValue("string", `${receiver.name} access`);
   }
@@ -1253,6 +1405,17 @@ export const evaluateBuiltinCall = (
         ]);
       }
       case "reverse":
+        interpreter.recordHeapMutation(receiver);
+        receiver.items.reverse();
+        return receiver;
+      case "fill": {
+        if (!isKnownList(receiver) || first === undefined) return receiver;
+        if (second !== undefined || args.length > 2)
+          return unknownValue("fill with a range", location);
+        interpreter.recordHeapMutation(receiver);
+        receiver.items.fill(first);
+        return receiver;
+      }
       case "toReversed":
         return listValue([...receiver.items].reverse());
       case "sort":
@@ -1364,6 +1527,45 @@ export const evaluateBuiltinCall = (
         if (name === "push") receiver.items.push(...pushed);
         else receiver.items.unshift(...pushed);
         return getListLength(receiver);
+      }
+      case "pop":
+      case "shift": {
+        interpreter.recordHeapMutation(receiver);
+        if (hasDefiniteItems(receiver) && context.uncertainDepth === 0) {
+          const removed = name === "pop" ? receiver.items.pop() : receiver.items.shift();
+          return removed ?? UNDEFINED_VALUE;
+        }
+        receiver.items = receiver.items.map((item) =>
+          isIndefiniteItem(item) ? item : optionalValue(item, `uncertain ${name}()`, location),
+        );
+        return unknownValue(`${name}() of an uncertain list`, location);
+      }
+      case "splice": {
+        interpreter.recordHeapMutation(receiver);
+        const start = first?.kind === "primitive" ? Number(first.value) : Number.NaN;
+        const deleteCount =
+          second === undefined
+            ? receiver.items.length
+            : second.kind === "primitive"
+              ? Number(second.value)
+              : Number.NaN;
+        if (
+          hasDefiniteItems(receiver) &&
+          context.uncertainDepth === 0 &&
+          Number.isInteger(start) &&
+          Number.isInteger(deleteCount)
+        ) {
+          return listValue(receiver.items.splice(start, deleteCount, ...args.slice(2)));
+        }
+        receiver.items = [
+          ...receiver.items.map((item) =>
+            isIndefiniteItem(item) ? item : optionalValue(item, "uncertain splice()", location),
+          ),
+          ...args
+            .slice(2)
+            .map((inserted): StaticValue => ({ kind: "repeat", item: inserted, location })),
+        ];
+        return unknownValue("splice() of an uncertain list", location);
       }
       default:
         break;

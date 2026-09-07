@@ -4,6 +4,7 @@ import type {
   CapturedValue,
   JsonValue,
   SourceLocation,
+  StaticAccessor,
   StaticClassValue,
   StaticElementType,
   StaticListValue,
@@ -42,6 +43,25 @@ export const unknownValue = (
   reason,
   location,
 });
+
+/**
+ * A nullish `?.` receiver skips every remaining link of its chain, so the
+ * links after it pass this marker through; the enclosing `ChainExpression`
+ * turns it into `undefined`.
+ */
+export const CHAIN_SHORT_CIRCUIT: StaticUnknownValue = unknownValue("optional chain short-circuit");
+
+export const completeChain = (value: StaticValue): StaticValue =>
+  mapValue(value, (alternative) =>
+    alternative === CHAIN_SHORT_CIRCUIT ? UNDEFINED_VALUE : alternative,
+  );
+
+/** The outcome of a path that throws `thrown`; `reason` names the throw for reports. */
+export const thrownValue = (
+  reason: string,
+  thrown: StaticValue,
+  location: SourceLocation | null = null,
+): StaticUnknownValue => ({ ...unknownValue(reason, location), thrown });
 
 export const unknownPrimitiveValue = (
   primitiveType: UnknownPrimitiveType,
@@ -196,6 +216,30 @@ export const setObjectProperty = (
   object.entries.push({ kind: "property", key, value });
 };
 
+/** The accessor owning `key`, unless a later spread could shadow it. */
+export const getObjectAccessor = (
+  object: StaticObjectValue,
+  key: string,
+): StaticAccessor | null => {
+  for (let index = object.entries.length - 1; index >= 0; index--) {
+    const entry = object.entries[index];
+    if (entry.kind === "spread") return null;
+    if (entry.key === key) return entry.accessor ?? null;
+  }
+  return null;
+};
+
+export const accessorEntry = (
+  key: string,
+  accessor: StaticAccessor,
+  location: SourceLocation | null,
+): StaticObjectEntry => ({
+  kind: "property",
+  key,
+  value: unknownValue(`accessor property "${key}"`, location),
+  accessor,
+});
+
 export const getObjectProperty = (object: StaticObjectValue, key: string): StaticValue => {
   for (let index = object.entries.length - 1; index >= 0; index--) {
     const entry = object.entries[index];
@@ -229,8 +273,27 @@ export const getObjectProperty = (object: StaticObjectValue, key: string): Stati
     }
     return unknownValue(`property "${key}" may come from a spread of ${describeValue(spread)}`);
   }
+  if (key === "constructor" && object.constructedBy) return object.constructedBy;
   return UNDEFINED_VALUE;
 };
+
+/** `Object.getPrototypeOf(instance)`: the class's own prototype members, as the instance sees them. */
+export const getInstancePrototype = (
+  instance: StaticObjectValue,
+  classValue: StaticClassValue,
+): StaticObjectValue =>
+  objectValue([
+    { kind: "property", key: "constructor", value: classValue },
+    ...classValue.body.members
+      .filter(
+        (member) => !member.isStatic && member.kind !== "field" && member.kind !== "constructor",
+      )
+      .map((member): StaticObjectEntry => ({
+        kind: "property",
+        key: member.key,
+        value: getObjectProperty(instance, member.key),
+      })),
+  ]);
 
 export const getKnownObjectKeys = (object: StaticObjectValue): string[] | null => {
   const keys: string[] = [];
@@ -532,15 +595,28 @@ const areElementTypesEquivalent = (left: StaticElementType, right: StaticElement
   }
 };
 
+const haveSameShape = (
+  left: StaticUnknownPrimitiveValue,
+  right: StaticUnknownPrimitiveValue,
+): boolean =>
+  left.stringShape?.prefix === right.stringShape?.prefix &&
+  left.stringShape?.length === right.stringShape?.length &&
+  left.numberRange?.min === right.numberRange?.min &&
+  left.numberRange?.max === right.numberRange?.max;
+
 /** Alternatives analysis could never tell apart, so a branch keeps only one of them. */
 const isInterchangeable = (left: StaticValue, right: StaticValue): boolean => {
   if (isSameValue(left, right)) return true;
-  if (left.kind === "unknown" && right.kind === "unknown")
-    return (left.isThrown ?? false) === (right.isThrown ?? false);
+  if (left.kind === "unknown" && right.kind === "unknown") {
+    if (left.thrown === undefined || right.thrown === undefined)
+      return left.thrown === right.thrown;
+    return isInterchangeable(left.thrown, right.thrown);
+  }
   return (
     left.kind === "unknown-primitive" &&
     right.kind === "unknown-primitive" &&
-    left.primitiveType === right.primitiveType
+    left.primitiveType === right.primitiveType &&
+    haveSameShape(left, right)
   );
 };
 
