@@ -256,6 +256,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 46,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -268,7 +269,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 46,
         "staticFibers": 46,
         "coverage": 1,
@@ -319,6 +319,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 938,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -331,7 +332,6 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 938,
         "staticFibers": 938,
         "coverage": 1,
@@ -718,8 +718,8 @@
       "id": "documenso",
       "revision": "2cac63a000e22422bdea449f68b8025e709aa73a",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:45:42.402Z",
-      "durationMs": 577,
+      "capturedAt": "2026-09-08T23:57:12.527Z",
+      "durationMs": 43513,
       "runtime": {
         "reactVersion": "19.2.8",
         "rendererName": "react-dom",
@@ -738,7 +738,7 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 1904
+          "modulesLoaded": 1905
         },
         "diagnostics": [
           {
@@ -789,15 +789,15 @@
         "omitted": null
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-08T11:49:10.139Z",
+      "note": null,
       "failure": null
     },
     {
       "id": "elysia-react-router",
       "revision": "3c6321cd125bae03b7d848965f7dfd576672b284",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:18:22.200Z",
-      "durationMs": 375,
+      "capturedAt": "2026-09-08T23:51:47.897Z",
+      "durationMs": 533,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -895,6 +895,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 689,
         "matchedText": 4,
         "opaqueSubtrees": 0,
@@ -907,7 +908,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 693,
         "staticFibers": 693,
         "coverage": 1,
@@ -1103,8 +1103,8 @@
       "id": "gcn-nasa-gov",
       "revision": "5dd03d9d919d080d051ad9e06f8d382913a7dbe7",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:18:32.928Z",
-      "durationMs": 781,
+      "capturedAt": "2026-09-08T23:51:52.860Z",
+      "durationMs": 694,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -1304,6 +1304,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 376,
         "matchedText": 2,
         "opaqueSubtrees": 0,
@@ -1316,7 +1317,6 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 378,
         "staticFibers": 405,
         "coverage": 1,
@@ -1449,6 +1449,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 1093,
         "matchedText": 51,
         "opaqueSubtrees": 0,
@@ -1461,7 +1462,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 1144,
         "staticFibers": 1144,
         "coverage": 1,
@@ -1663,6 +1663,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 225,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -1675,7 +1676,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 225,
         "staticFibers": 225,
         "coverage": 1,
@@ -3240,6 +3240,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 139,
         "matchedText": 23,
         "opaqueSubtrees": 0,
@@ -3252,7 +3253,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 162,
         "staticFibers": 162,
         "coverage": 1,
@@ -3303,6 +3303,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 77,
         "matchedText": 6,
         "opaqueSubtrees": 0,
@@ -3315,7 +3316,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 83,
         "staticFibers": 83,
         "coverage": 1,
@@ -3895,6 +3895,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 184,
         "matchedText": 7,
         "opaqueSubtrees": 0,
@@ -3907,7 +3908,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 191,
         "staticFibers": 191,
         "coverage": 1,
@@ -3964,6 +3964,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 444,
         "matchedText": 6,
         "opaqueSubtrees": 0,
@@ -3976,7 +3977,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 450,
         "staticFibers": 450,
         "coverage": 1,
@@ -4042,6 +4042,7 @@
         ]
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 33,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -4063,7 +4064,6 @@
         ],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 5571,
         "staticFibers": 33,
         "coverage": 1,
@@ -4290,8 +4290,8 @@
       "id": "react-router-better-auth",
       "revision": "c5aa2949a4090d7706eae7c5907f6ccfad46df64",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:18:18.827Z",
-      "durationMs": 770,
+      "capturedAt": "2026-09-08T23:51:44.250Z",
+      "durationMs": 940,
       "runtime": {
         "reactVersion": "19.2.5",
         "rendererName": "react-dom",
@@ -4359,8 +4359,8 @@
       "id": "react-router-templates",
       "revision": "b68be71489a22315c7a734a86a18347745b393d2",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:45:41.667Z",
-      "durationMs": 136,
+      "capturedAt": "2026-09-08T23:52:01.693Z",
+      "durationMs": 10162,
       "runtime": {
         "reactVersion": "19.2.7",
         "rendererName": "react-dom",
@@ -4379,11 +4379,12 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 5
+          "modulesLoaded": 8
         },
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 48,
         "matchedText": 2,
         "opaqueSubtrees": 0,
@@ -4396,7 +4397,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 50,
         "staticFibers": 50,
         "coverage": 1,
@@ -4421,7 +4421,7 @@
         "omitted": null
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-08T11:39:09.076Z",
+      "note": null,
       "failure": null
     },
     {
@@ -4593,6 +4593,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 6,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -4605,7 +4606,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 6,
         "staticFibers": 6,
         "coverage": 1,
@@ -4631,8 +4631,8 @@
       "id": "remix-blocks",
       "revision": "14e622c2a3f029ab0c81a6e20d1d423da9a20c9c",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:18:29.801Z",
-      "durationMs": 506,
+      "capturedAt": "2026-09-08T23:51:49.564Z",
+      "durationMs": 532,
       "runtime": {
         "reactVersion": "17.0.2",
         "rendererName": "react-dom",
@@ -22307,8 +22307,8 @@
       "id": "remix-fastify",
       "revision": "c69fe3491774b636dd148b409c916006588e37e7",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:18:31.401Z",
-      "durationMs": 392,
+      "capturedAt": "2026-09-08T23:51:51.171Z",
+      "durationMs": 564,
       "runtime": {
         "reactVersion": "19.2.0",
         "rendererName": "react-dom",
@@ -22393,8 +22393,8 @@
       "id": "remix-shadcn",
       "revision": "cf1652b60fe33a89ef77d6341894b02533cd3a15",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:18:17.325Z",
-      "durationMs": 428,
+      "capturedAt": "2026-09-08T23:51:42.714Z",
+      "durationMs": 453,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -22904,6 +22904,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 558,
         "matchedText": 8,
         "opaqueSubtrees": 0,
@@ -22916,7 +22917,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 566,
         "staticFibers": 566,
         "coverage": 1,
@@ -23303,8 +23303,8 @@
       "id": "sonner",
       "revision": "8e4662b39255120b62138312058f5d77c0139a5e",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:45:42.040Z",
-      "durationMs": 73,
+      "capturedAt": "2026-09-08T23:52:22.083Z",
+      "durationMs": 17028,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
@@ -23328,6 +23328,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 44,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -23340,7 +23341,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 44,
         "staticFibers": 44,
         "coverage": 1,
@@ -23359,15 +23359,15 @@
         "omitted": null
       },
       "anchor": "body",
-      "note": "runtime replayed from 2026-09-08T11:14:51.057Z",
+      "note": null,
       "failure": null
     },
     {
       "id": "start-ui-web",
       "revision": "61623ea2fd0ef5f2287190a072ec250956cae65b",
       "framework": "spa",
-      "capturedAt": "2026-09-08T23:18:34.883Z",
-      "durationMs": 334,
+      "capturedAt": "2026-09-08T23:51:54.639Z",
+      "durationMs": 443,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -23386,7 +23386,7 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 1,
-          "modulesLoaded": 1
+          "modulesLoaded": 274
         },
         "diagnostics": [
           {
@@ -23456,6 +23456,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 215,
         "matchedText": 2,
         "opaqueSubtrees": 0,
@@ -23468,7 +23469,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 217,
         "staticFibers": 217,
         "coverage": 1,
@@ -23519,6 +23519,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 45,
         "matchedText": 3,
         "opaqueSubtrees": 0,
@@ -23531,7 +23532,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 48,
         "staticFibers": 48,
         "coverage": 1,
@@ -23563,8 +23563,8 @@
       "id": "tanstarter",
       "revision": "6f4f91831afee00019104248b88a1a2d1b457c40",
       "framework": "spa",
-      "capturedAt": "2026-09-08T23:18:20.680Z",
-      "durationMs": 315,
+      "capturedAt": "2026-09-08T23:51:46.337Z",
+      "durationMs": 399,
       "runtime": {
         "reactVersion": "19.2.8",
         "rendererName": "react-dom",
@@ -23586,7 +23586,7 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 1,
-          "modulesLoaded": 1
+          "modulesLoaded": 34
         },
         "diagnostics": [
           {
