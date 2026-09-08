@@ -14,6 +14,16 @@ const BUNDLER_PLACEHOLDER_NAME = /^_[a-z]\d*$/;
 
 const isBundlerPlaceholderName = (name: string): boolean => BUNDLER_PLACEHOLDER_NAME.test(name);
 
+// When esbuild pre-bundles a package whose modules reuse a minified top-level
+// name, its renamer keeps the first `Ae` and emits the others as `Ae$1`, `Ae$2`, …
+const isBundlerDedupedName = (sourceName: string, runtimeName: string): boolean =>
+  runtimeName.length > sourceName.length + 1 &&
+  runtimeName.startsWith(`${sourceName}$`) &&
+  /^\d+$/.test(runtimeName.slice(sourceName.length + 1));
+
+const runtimeNameAgrees = (sourceName: string, runtimeName: string): boolean =>
+  sourceName === runtimeName || isBundlerDedupedName(sourceName, runtimeName);
+
 export interface ComparisonOptions {
   compareKeys?: boolean;
   compareTags?: boolean;
@@ -496,7 +506,8 @@ class Matcher {
       pattern.key !== actual.key
     )
       return false;
-    if (pattern.name === null || actual.name === null || pattern.name === actual.name) return true;
+    if (pattern.name === null || actual.name === null) return true;
+    if (runtimeNameAgrees(pattern.name, actual.name)) return true;
     return isClassTag(actual.tag) && isBundlerPlaceholderName(actual.name);
   }
 
@@ -513,8 +524,12 @@ class Matcher {
   }
 
   private opaqueNameAgrees(pattern: PatternOpaque, actual: RuntimeFiberSnapshot): boolean {
-    if (actual.name === null || isBundlerPlaceholderName(actual.name)) return true;
-    return pattern.runtimeNames === null || pattern.runtimeNames.includes(actual.name);
+    const runtimeName = actual.name;
+    if (runtimeName === null || isBundlerPlaceholderName(runtimeName)) return true;
+    return (
+      pattern.runtimeNames === null ||
+      pattern.runtimeNames.some((name) => runtimeNameAgrees(name, runtimeName))
+    );
   }
 
   // Searches the library's runtime subtree for the place where it rendered the

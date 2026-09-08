@@ -208,6 +208,61 @@
       "failure": null
     },
     {
+      "id": "ephe",
+      "revision": "4ba31e6cd198491dbf4834050ae804178fb412b3",
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T09:58:13.045Z",
+      "durationMs": 919,
+      "runtime": {
+        "reactVersion": "19.2.6",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 148,
+        "commits": 3,
+        "pageErrors": [],
+        "title": "Ephe - Ephemeral Markdown Paper"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 147,
+          "textCount": 2,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 5215
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 142,
+        "matchedText": 2,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "exact",
+        "runtimeFibers": 144,
+        "staticFibers": 144,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 145,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T09:46:31.766Z",
+      "failure": null
+    },
+    {
       "id": "epic-stack",
       "revision": "8473afd804b66dba6a23f317908dc35d1535e90d",
       "framework": "react-router",

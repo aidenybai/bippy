@@ -729,8 +729,8 @@
           "jotai-immer",
           "nanoid",
           "react-i18next",
-        "i18next-http-backend",
-        "i18next-browser-languagedetector",
+          "i18next-http-backend",
+          "i18next-browser-languagedetector",
           "i18next",
           "react-use",
           "usehooks-ts",
@@ -741,6 +741,43 @@
         ]
       },
       "notes": "vite.config.ts aliases `tailwind.config` to tailwind.config.ts and defines SENTRY_DSN from an unset env var; the app reads import.meta.env.SENTRY_DSN (no VITE_ prefix, so undefined). Translations load from public/locales through i18next-http-backend at runtime."
+    },
+    {
+      "id": "ephe",
+      "repository": "https://github.com/unvalley/ephe",
+      "revision": "4ba31e6cd198491dbf4834050ae804178fb412b3",
+      "description": "Ephe markdown paper (Vite 8 SPA, React 19 with React Compiler, react-router-dom 7 declarative routes, jotai + jotai/utils storage atoms, headlessui, cmdk, sonner, CodeMirror 6)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "dev": "pnpm dev --port 3000 --strictPort",
+      "url": "http://localhost:3000/",
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "route": "/",
+        "externalPackageAllowList": [
+          "jotai",
+          "jotai/*",
+          "@headlessui/react",
+          "@react-aria/*",
+          "react-aria",
+          "@react-stately/*",
+          "@floating-ui/*",
+          "@tanstack/react-virtual",
+          "@tanstack/virtual-core",
+          "cmdk",
+          "@radix-ui/*",
+          "sonner",
+          "motion",
+          "framer-motion",
+          "motion-dom",
+          "motion-utils",
+          "use-debounce",
+          "@phosphor-icons/react"
+        ]
+      },
+      "notes": "`pnpm dev` first copies the dprint markdown WASM into public/wasm (node --experimental-strip-types, Node >= 22.6). The editor body is CodeMirror 6 (plain DOM under one host node); document state lives in jotai/utils atomWithStorage atoms backed by localStorage."
     }
   ]
 }

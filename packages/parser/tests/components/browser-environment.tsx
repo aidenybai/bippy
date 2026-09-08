@@ -21,6 +21,38 @@ const Responsive = () => {
   );
 };
 
+const Viewport = () => {
+  const isMobile = window.innerWidth < 768;
+  const isShort = globalThis.innerHeight < 600;
+  const isRetina = window.devicePixelRatio > 1;
+  return (
+    <header>
+      {isMobile ? <menu>mobile</menu> : <ul>desktop</ul>}
+      {isShort ? <small>short</small> : <big>tall</big>}
+      {isRetina ? <b>retina</b> : <i>standard</i>}
+    </header>
+  );
+};
+
+const readStoredMode = (raw: string | null): string => {
+  if (raw === null) return "unset";
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return typeof parsed === "string" ? parsed : "invalid";
+  } catch (error) {
+    return error instanceof SyntaxError ? "syntax-error" : "other-error";
+  }
+};
+
+const StoredModes = () => (
+  <ol>
+    <li>{readStoredMode('"multi"') === "multi" ? <b>multi</b> : <i>other</i>}</li>
+    <li>{readStoredMode("") === "syntax-error" ? <b>threw</b> : <i>parsed</i>}</li>
+    <li>{readStoredMode("{oops") === "syntax-error" ? <b>threw</b> : <i>parsed</i>}</li>
+    <li>{readStoredMode(null)}</li>
+  </ol>
+);
+
 const CallbackRefPortal = ({ children }: { children: React.ReactNode }) => {
   const [portalNode, setPortalNode] = useState<HTMLElement | null>(null);
   const handleRef = useCallback((node: HTMLDivElement | null) => {
@@ -96,6 +128,8 @@ export default function BrowserEnvironment() {
     <main>
       <AddToHomescreen />
       <Responsive />
+      <Viewport />
+      <StoredModes />
       <CallbackRefPortal>
         <section>portaled</section>
       </CallbackRefPortal>

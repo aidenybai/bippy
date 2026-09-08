@@ -1,4 +1,5 @@
 import type { StaticValue } from "../types.js";
+import { DEFAULT_BROWSER_ENVIRONMENT } from "./media-query.js";
 import { getDomGlobalMember } from "./native-values.js";
 import { UNDEFINED_VALUE, primitiveValue, unknownPrimitiveValue, unknownValue } from "./values.js";
 
@@ -165,6 +166,20 @@ export const isWindowAlias = (name: string): boolean => WINDOW_MEMBERS[name] ===
 
 export const isWindowMember = (name: string): boolean => name in WINDOW_MEMBERS;
 
+/** The viewport metrics the modeled browser holds, matching the `matchMedia` model and the capture context. */
+const getWindowViewportMember = (member: string): number | null => {
+  switch (member) {
+    case "innerWidth":
+      return DEFAULT_BROWSER_ENVIRONMENT.viewportWidth;
+    case "innerHeight":
+      return DEFAULT_BROWSER_ENVIRONMENT.viewportHeight;
+    case "devicePixelRatio":
+      return DEFAULT_BROWSER_ENVIRONMENT.devicePixelRatio;
+    default:
+      return null;
+  }
+};
+
 const LOCATION_MEMBER_NAME =
   /^(?:(?:window|globalThis|document)\.)?location\.(pathname|search|hash|origin|protocol|host|hostname|port|href)$/;
 const WINDOW_ORIGIN_NAME = /^(?:(?:window|globalThis|self)\.)?origin$/;
@@ -211,6 +226,8 @@ export const getBrowserGlobalMember = (
   if (native) return native;
   const memberKind = BROWSER_GLOBAL_MEMBERS[objectName]?.[member];
   const description = `${objectName}.${member}`;
+  const viewportMember = isWindowAlias(objectName) ? getWindowViewportMember(member) : null;
+  if (viewportMember !== null) return primitiveValue(viewportMember);
   switch (memberKind) {
     case undefined:
       return unknownValue(description);

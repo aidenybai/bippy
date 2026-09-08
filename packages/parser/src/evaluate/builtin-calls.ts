@@ -1156,11 +1156,23 @@ const callGlobal = (
         : primitiveValue(JSON.stringify(json));
     }
     case "JSON.parse":
-      if (first?.kind === "primitive" && typeof first.value === "string" && args.length === 1) {
+      if (
+        first?.kind === "primitive" &&
+        typeof first.value === "string" &&
+        (second === undefined || (second.kind === "primitive" && second.value === undefined))
+      ) {
         try {
           return jsonValue(JSON.parse(first.value));
-        } catch {
-          return unknownValue("JSON.parse threw", location);
+        } catch (error) {
+          return thrownValue(
+            "JSON.parse of invalid JSON",
+            createErrorValue(
+              "SyntaxError",
+              [primitiveValue(error instanceof Error ? error.message : String(error))],
+              location,
+            ),
+            location,
+          );
         }
       }
       return unknownValue("JSON.parse", location);
