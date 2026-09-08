@@ -133,23 +133,28 @@ export const nextMemoCell = (
 const isSameHookValue = (left: StaticValue, right: StaticValue): boolean =>
   compareIdentity(left, right) ?? areValuesEquivalent(left, right);
 
-/** Mirrors `dispatchSetState`: with nothing pending, an update that leaves the cell unchanged is dropped eagerly. */
-export const queueStateUpdate = (frame: HookFrame, cell: StateCell, value: StaticValue): void => {
-  if (frame.isDeferred) {
-    cell.isEscaped = true;
-  } else {
-    if (cell.next === null && isSameHookValue(value, cell.current)) return;
-    cell.next = value;
-  }
-  if (!frame.isRendering) frame.requestRender?.();
-};
-
 export const escapedStateValue = (cell: StateCell): StaticValue =>
   branchValue(
     [cell.initial, unknownValue(`updated state of ${cell.name}`)],
     "state setter escapes to code that is not evaluated",
     null,
   );
+
+/**
+ * Mirrors `dispatchSetState`: with nothing pending, an update that leaves the
+ * cell unchanged is dropped eagerly. An escaped cell already commits to every
+ * value it may take, so further updates cannot change it either.
+ */
+export const queueStateUpdate = (frame: HookFrame, cell: StateCell, value: StaticValue): void => {
+  if (frame.isDeferred) {
+    cell.isEscaped = true;
+  } else {
+    if (cell.next === null && isSameHookValue(value, cell.current)) return;
+    if (!cell.isEscaped) cell.next = value;
+  }
+  if (cell.isEscaped && isSameHookValue(escapedStateValue(cell), cell.current)) return;
+  if (!frame.isRendering) frame.requestRender?.();
+};
 
 /** `processUpdateQueue` for one cell: true when its committed value changed. */
 export const applyPendingState = (cell: StateCell, isFrozen = false): boolean => {

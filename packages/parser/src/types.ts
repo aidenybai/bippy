@@ -119,9 +119,20 @@ export interface ModuleRecord {
 
 export type ModuleResolution =
   | { kind: "internal"; filePath: string }
-  | { kind: "external"; packageName: string; filePath: string | null }
-  | { kind: "builtin"; specifier: string }
+  | ExternalModuleResolution
+  | BuiltinModuleResolution
   | { kind: "unresolved"; specifier: string; error: string };
+
+export interface ExternalModuleResolution {
+  kind: "external";
+  packageName: string;
+  filePath: string | null;
+}
+
+export interface BuiltinModuleResolution {
+  kind: "builtin";
+  specifier: string;
+}
 
 export type ResolvedSymbol =
   | { kind: "binding"; module: ModuleRecord; binding: TopLevelBinding }
@@ -617,12 +628,14 @@ export interface StaticExternalValue {
   packageName: string;
   importedName: string;
   /**
-   * True when the value was produced by calling or reading a member of an
-   * external binding (`useQuery()`, `api.error`); such values have unknown
-   * truthiness, whereas the import binding itself is defined.
+   * `binding` is the import itself, `instance` a `new` of one (an object, so
+   * defined, but without identity), `derived` the result of calling or reading a
+   * member of one (`useQuery()`, `api.error`), whose truthiness is unknown.
    */
-  derived: boolean;
+  origin: ExternalValueOrigin;
 }
+
+export type ExternalValueOrigin = "binding" | "instance" | "derived";
 
 export interface StaticNamespaceValue {
   kind: "namespace";

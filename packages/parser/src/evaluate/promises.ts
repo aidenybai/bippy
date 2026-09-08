@@ -28,6 +28,21 @@ export interface ModeledPromise {
   reactions: PromiseReaction[];
 }
 
+/** An async function activation; `result` is the promise it returned, created once its body suspends at an `await`. */
+export interface AsyncCall {
+  result: ModeledPromise | null;
+}
+
+/**
+ * The rest of an async body after an `await`, run with the awaited outcome once
+ * the promise settles. `isEscaped` is set when it will settle outside the
+ * analysis, so the outcome is unknown and the updates the rest makes are deferred.
+ * Returns the body's eventual return value, or null when it suspended again.
+ */
+export interface AwaitResumption {
+  (outcome: StaticValue, isEscaped: boolean): StaticValue | null;
+}
+
 const promisesByValue = new WeakMap<StaticObjectValue, ModeledPromise>();
 
 export const getModeledPromise = (value: StaticValue): ModeledPromise | null =>
@@ -72,6 +87,52 @@ export const awaitedValue = (
   if (!promise) return value;
   if (!promise.settled && !promise.isEscaped) drainMicrotasks();
   return promise.settled ?? unknownValue("promise settled asynchronously", location);
+};
+
+/**
+ * `await` of a value the analysis cannot see settle (an external promise, a
+ * value it does not know): the continuation runs at an unknown time, so the
+ * updates it makes are deferred. A promise the analysis saw settle, whatever
+ * its outcome, resumes the continuation like any other.
+ */
+export const isAwaitDeferred = (operand: StaticValue, awaited: StaticValue): boolean =>
+  !getModeledPromise(operand)?.settled &&
+  ((awaited.kind === "unknown" && !isThrownOutcome(awaited)) || awaited.kind === "external");
+
+/**
+ * `await` on a promise that will not settle before the continuation would run:
+ * pending, not escaped, even once the reactions queued so far have run (the
+ * continuation is itself a microtask).
+ */
+export const getPendingPromise = (
+  value: StaticValue,
+  drainMicrotasks: () => void,
+): ModeledPromise | null => {
+  const promise = getModeledPromise(value);
+  if (!promise || promise.settled || promise.isEscaped) return null;
+  drainMicrotasks();
+  return promise.settled || promise.isEscaped ? null : promise;
+};
+
+/** Suspends the async `call` on the pending `promise`; the value `resume` returns settles the call's result. */
+export const suspendOnPromise = (
+  call: AsyncCall,
+  promise: ModeledPromise,
+  resume: AwaitResumption,
+  location: SourceLocation | null,
+): void => {
+  const result = call.result ?? createPendingPromise();
+  call.result = result;
+  promise.reactions.push({
+    run: (outcome, tools) => {
+      const returned = resume(outcome, false);
+      if (returned) settlePromise(result, returned, tools);
+    },
+    escape: (markEscaped) => {
+      resume(unknownValue("promise settled outside the analysis", location), true);
+      escapePromise(result, markEscaped);
+    },
+  });
 };
 
 export const escapePromise = (

@@ -45,7 +45,7 @@ export class PurePackages {
           kind: "external",
           packageName,
           importedName: `${importedName}()`,
-          derived: true,
+          origin: "derived",
         }))
       : fromNativeValue(exported, name);
   }

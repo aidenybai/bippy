@@ -267,7 +267,7 @@ export const getObjectProperty = (object: StaticObjectValue, key: string): Stati
     }
     if (spread.kind === "primitive" || spread.kind === "function" || spread.kind === "class")
       continue;
-    if (spread.kind === "external" && spread.importedName === "*" && !spread.derived)
+    if (spread.kind === "external" && spread.importedName === "*" && spread.origin === "binding")
       return getExternalMember(spread, key);
     if (spread.kind === "branch") {
       let fromEarlier: StaticValue | null = null;
@@ -340,6 +340,32 @@ const getKnownOwnKeys = (
 
 export const getKnownObjectKeys = (object: StaticObjectValue): string[] | null =>
   getKnownOwnKeys(object, (key) => !isSymbolPropertyKey(key));
+
+/** `Object.getOwnPropertyDescriptor(object, key)`, or null when a dynamic spread could own `key`. */
+export const getOwnPropertyDescriptor = (
+  object: StaticObjectValue,
+  key: string,
+): StaticValue | null => {
+  const ownKeys = getKnownOwnKeys(object, () => true);
+  if (!ownKeys) return null;
+  if (!ownKeys.includes(key)) return UNDEFINED_VALUE;
+  const isConfigurable = primitiveValue(object.isFrozen !== true);
+  const accessor = getObjectAccessor(object, key);
+  if (accessor) {
+    return objectFromRecord({
+      get: accessor.get ?? UNDEFINED_VALUE,
+      set: accessor.set ?? UNDEFINED_VALUE,
+      enumerable: TRUE_VALUE,
+      configurable: isConfigurable,
+    });
+  }
+  return objectFromRecord({
+    value: getObjectProperty(object, key),
+    writable: isConfigurable,
+    enumerable: TRUE_VALUE,
+    configurable: isConfigurable,
+  });
+};
 
 /** The symbols keying own properties, as `Object.getOwnPropertySymbols` lists them. */
 export const getKnownObjectSymbols = (object: StaticObjectValue): StaticSymbolValue[] | null =>
@@ -464,6 +490,18 @@ export const omitObjectKeys = (object: StaticObjectValue, omitted: Set<string>):
   return objectValue(entries);
 };
 
+/** `delete object[key]`: an own property vanishes; one a dynamic spread may hold stays as uncertain as that spread. */
+export const deleteObjectProperty = (object: StaticObjectValue, key: string): void => {
+  const remaining = omitObjectKeys(object, new Set([key]));
+  object.entries.splice(
+    0,
+    object.entries.length,
+    ...(remaining.kind === "object"
+      ? remaining.entries
+      : object.entries.filter((entry) => entry.kind === "spread" || entry.key !== key)),
+  );
+};
+
 export const componentReference = (type: StaticElementType): StaticValue => ({
   kind: "component-reference",
   type,
@@ -572,7 +610,12 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
     return hostTagName(left) === right.value;
   if (hostTagName(right) !== null && left.kind === "primitive")
     return hostTagName(right) === left.value;
-  if (left.kind === "external" && right.kind === "external" && !left.derived && !right.derived) {
+  if (
+    left.kind === "external" &&
+    right.kind === "external" &&
+    left.origin === "binding" &&
+    right.origin === "binding"
+  ) {
     return left.packageName === right.packageName && left.importedName === right.importedName
       ? true
       : null;
@@ -648,7 +691,8 @@ export const areValuesEquivalent = (left: StaticValue, right: StaticValue, depth
       return (
         right.kind === "external" &&
         left.packageName === right.packageName &&
-        (left.importedName === right.importedName || (left.derived && right.derived))
+        (left.importedName === right.importedName ||
+          (left.origin !== "binding" && right.origin !== "binding"))
       );
     default:
       return false;
@@ -794,7 +838,7 @@ export const getTruthiness = (value: StaticValue): boolean | null => {
     case "optional":
       return null;
     case "external":
-      return value.derived ? null : true;
+      return value.origin === "derived" ? null : true;
     case "element":
     case "list":
     case "repeat":

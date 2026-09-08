@@ -1,5 +1,7 @@
 import { getSourceLanguage, SourceFileCache } from "../parse/parse-source-file.js";
 import type {
+  BuiltinModuleResolution,
+  ExternalModuleResolution,
   ImportBinding,
   ImportedName,
   ModuleRecord,
@@ -177,9 +179,8 @@ export class ModuleGraph {
     }
     switch (target.kind) {
       case "external":
-        return { kind: "external", packageName: target.packageName, imported, specifier };
       case "builtin":
-        return { kind: "external", packageName: target.specifier, imported, specifier };
+        return externalSymbol(target, imported, specifier);
       case "internal":
         return { kind: "unresolved", reason: `unsupported module ${target.filePath}` };
       case "unresolved":
@@ -242,12 +243,27 @@ export class ModuleGraph {
       }
     }
     if (exportedName !== "default") {
+      const externalSources: ResolvedSymbol[] = [];
       for (const entry of module.exports) {
         if (entry.kind !== "re-export-all") continue;
         const target = this.resolveImportedModule(entry.specifier, module);
-        if (!isModuleRecord(target)) continue;
+        if (!isModuleRecord(target)) {
+          if (target.kind === "external" || target.kind === "builtin") {
+            externalSources.push(
+              externalSymbol(target, { kind: "named", name: exportedName }, entry.specifier),
+            );
+          }
+          continue;
+        }
         const resolved = this.resolveExportWithVisited(target, exportedName, visited);
         if (resolved.kind !== "unresolved") return resolved;
+      }
+      if (externalSources.length === 1) return externalSources[0];
+      if (externalSources.length > 1) {
+        return {
+          kind: "unresolved",
+          reason: `"${exportedName}" may come from several external re-exports in ${module.filePath}`,
+        };
       }
     }
     return { kind: "unresolved", reason: `no export "${exportedName}" in ${module.filePath}` };
@@ -256,3 +272,14 @@ export class ModuleGraph {
 
 export const isModuleRecord = (value: ModuleRecord | ModuleResolution): value is ModuleRecord =>
   "bindings" in value;
+
+const externalSymbol = (
+  target: ExternalModuleResolution | BuiltinModuleResolution,
+  imported: ImportedName,
+  specifier: string,
+): ResolvedSymbol => ({
+  kind: "external",
+  packageName: target.kind === "external" ? target.packageName : target.specifier,
+  imported,
+  specifier,
+});

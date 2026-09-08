@@ -3,6 +3,7 @@ import type {
   SourceLocation,
   StaticAccessor,
   StaticElementType,
+  StaticElementValue,
   StaticFunctionValue,
   StaticListValue,
   StaticObjectValue,
@@ -62,6 +63,7 @@ import {
   FALSE_VALUE,
   getClassPrototype,
   getKnownObjectKeys,
+  getOwnPropertyDescriptor,
   getKnownObjectSymbols,
   getListLength,
   getObjectProperty,
@@ -75,10 +77,12 @@ import {
   isKnownList,
   jsonValue,
   listValue,
+  isNullish,
   mapValue,
   toBooleanValue,
   toJsonValue,
   NULL_VALUE,
+  objectFromRecord,
   objectValue,
   optionalValue,
   primitiveValue,
@@ -429,7 +433,8 @@ export const getTypeofValue = (
     case "context":
       return primitiveValue("object");
     case "external":
-      return value.importedName === "*" && !value.derived
+      return (value.importedName === "*" && value.origin === "binding") ||
+        value.origin === "instance"
         ? primitiveValue("object")
         : unknownPrimitiveValue("string", `typeof ${describeValue(value)}`);
     case "global": {
@@ -500,6 +505,39 @@ const getDescriptorAccessor = (descriptor: StaticObjectValue): StaticAccessor | 
     get: keys.includes("get") ? getObjectProperty(descriptor, "get") : null,
     set: keys.includes("set") ? getObjectProperty(descriptor, "set") : null,
   };
+};
+
+/**
+ * Development builds define `element.ref` as a deprecation-warning getter only
+ * when a ref was given (react/src/jsx/ReactJSXElement.js).
+ */
+const getElementRefDescriptor = (
+  element: StaticElementValue,
+  location: SourceLocation | null,
+): StaticValue => {
+  const ref = getObjectProperty(element.props, "ref");
+  const descriptor = objectFromRecord({
+    get: nativeFunction("elementRefGetterWithDeprecationWarning", () =>
+      mapValue(ref, (alternative) =>
+        alternative.kind === "primitive" && alternative.value === undefined
+          ? NULL_VALUE
+          : alternative,
+      ),
+    ),
+    set: UNDEFINED_VALUE,
+    enumerable: FALSE_VALUE,
+    configurable: FALSE_VALUE,
+  });
+  return mapValue(ref, (alternative) => {
+    switch (isNullish(alternative)) {
+      case true:
+        return UNDEFINED_VALUE;
+      case false:
+        return descriptor;
+      default:
+        return branchValue([UNDEFINED_VALUE, descriptor], "ref prop may be absent", location);
+    }
+  });
 };
 
 /** Function properties hold values only, so an accessor defined on one is read once. */
@@ -856,6 +894,17 @@ const callGlobal = (
       return ownNames && ownSymbols
         ? listValue([...ownNames.map((key) => primitiveValue(key)), ...ownSymbols])
         : unknownValue(`${name} on an object with dynamic spreads`, location);
+    }
+    case "Object.getOwnPropertyDescriptor": {
+      const key = second ? getPropertyName(second) : null;
+      if (first?.kind === "element" && key === "ref")
+        return getElementRefDescriptor(first, location);
+      if (first?.kind !== "object" || key === null)
+        return unknownValue(`${name} on a dynamic target`, location);
+      return (
+        getOwnPropertyDescriptor(first, key) ??
+        unknownValue(`${name} on an object with dynamic spreads`, location)
+      );
     }
     case "Object.create": {
       if (!first) break;

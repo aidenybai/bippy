@@ -99,6 +99,8 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
     }
     case "native-object":
       return hasNativeObjectMember(target, name) ? TRUE_VALUE : FALSE_VALUE;
+    case "native-function":
+      return name in Function.prototype ? TRUE_VALUE : FALSE_VALUE;
     case "list": {
       if (name in Array.prototype) return TRUE_VALUE;
       const index = Number(name);

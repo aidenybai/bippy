@@ -33,7 +33,16 @@
       "static": {
         "rootDirectory": "apps/react-vite",
         "entry": "src/main.tsx",
-        "route": "/"
+        "route": "/",
+        "externalPackageAllowList": [
+          "react-helmet-async",
+          "react-error-boundary",
+          "@tanstack/react-query",
+          "@tanstack/react-query-devtools",
+          "lucide-react",
+          "zustand",
+          "react-query-auth"
+        ]
       },
       "notes": "Routes are `lazy: () => import(...).then(convert)`; the static side awaits the import and materializes the module namespace through `convert`'s rest spread. QueryClientProvider, HelmetProvider, react-error-boundary and react-query-auth's AuthLoader are opaque with slotted children; Helmet's <meta> is a side effect, not a fiber, so that slot stays unmatched."
     },
@@ -144,7 +153,11 @@
       "static": {
         "rootDirectory": "packages/graphiql",
         "entry": "src/e2e.ts",
-        "externalPackageAllowList": ["@graphiql/react", "@graphiql/plugin-explorer"],
+        "externalPackageAllowList": [
+          "@graphiql/react",
+          "@graphiql/plugin-explorer",
+          "@radix-ui/react-tooltip"
+        ],
         "maxFiberCount": 20000
       },
       "notes": "The dev page renders the prebuilt UMD bundle, so runtime fibers come from compiled output while the static side reads sources."

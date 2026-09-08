@@ -4,6 +4,7 @@ import type {
   AssignmentExpression,
   AssignmentTarget,
   AssignmentTargetMaybeDefault,
+  AwaitExpression,
   BinaryExpression,
   BindingIdentifier,
   BindingPattern,
@@ -147,12 +148,21 @@ import {
 } from "./web-storage.js";
 import { type CompiledClass, getCompiledClass } from "./compiled-class.js";
 import type { CallFrame, ContextReader, EvaluationContext } from "./context.js";
-import { NO_PROVIDERS, withScope } from "./context.js";
+import type { HookFrame } from "./hooks.js";
+import { NO_PROVIDERS, withOutcomeHandler, withScope, withoutSuspension } from "./context.js";
 import { decodeJsxEntities } from "./jsx-entities.js";
 import { cleanJsxText } from "./jsx-text.js";
 import { describeMacroJsxChildren, getStubExpandJsx } from "./macro-jsx.js";
 import { forEachEscapedCallable, getMutatedIdentifiers } from "./escapes.js";
-import { awaitedValue, getModeledPromise, resolvedPromiseValue } from "./promises.js";
+import {
+  type AsyncCall,
+  awaitedValue,
+  getModeledPromise,
+  getPendingPromise,
+  isAwaitDeferred,
+  resolvedPromiseValue,
+  suspendOnPromise,
+} from "./promises.js";
 import { applyClockOperator, TimerQueue } from "./timers.js";
 import { evaluateLoop } from "./loops.js";
 import { applyNarrowing, narrowTest, withNarrowedBinding } from "./narrowing.js";
@@ -193,6 +203,7 @@ import {
   jsonValue,
   objectFromRecord,
   objectValue,
+  deleteObjectProperty,
   omitObjectKeys,
   partialJsonValue,
   primitiveValue,
@@ -302,14 +313,29 @@ export interface StatementOutcome {
   mayComplete: boolean;
   /** Set when some path left the enclosing loop early; labeled jumps are `uncertain`. */
   jump: LoopJump | "uncertain" | null;
+  /** The list stopped at an `await` of a pending promise; its rest runs once that settles. */
+  isSuspended: boolean;
 }
 
-export const COMPLETES: StatementOutcome = { returned: null, mayComplete: true, jump: null };
+export const COMPLETES: StatementOutcome = {
+  returned: null,
+  mayComplete: true,
+  jump: null,
+  isSuspended: false,
+};
+
+const SUSPENDED: StatementOutcome = {
+  returned: null,
+  mayComplete: false,
+  jump: null,
+  isSuspended: true,
+};
 
 const jumpOutcome = (jump: LoopJump, label: string | null): StatementOutcome => ({
   returned: null,
   mayComplete: false,
   jump: label === null ? jump : "uncertain",
+  isSuspended: false,
 });
 
 const mergeJumps = (outcomes: StatementOutcome[]): StatementOutcome["jump"] => {
@@ -328,6 +354,7 @@ export const returnOutcome = (value: StaticValue): StatementOutcome => ({
   returned: value,
   mayComplete: false,
   jump: null,
+  isSuspended: false,
 });
 
 export const outcomeToReturnValue = (
@@ -383,7 +410,36 @@ export const mergeOutcomes = (
         : null,
     mayComplete: outcomes.some((outcome) => outcome.mayComplete),
     jump: mergeJumps(outcomes),
+    isSuspended: outcomes.some((outcome) => outcome.isSuspended),
   };
+};
+
+/**
+ * The `await` a statement evaluates before anything else, so the statement can
+ * be left at it and re-evaluated with the outcome once the promise settles.
+ */
+const getLeadingAwait = (statement: Statement): AwaitExpression | null => {
+  const leading = (expression: Expression | null | undefined): AwaitExpression | null => {
+    const unwrapped = expression ? unwrapExpression(expression) : null;
+    return unwrapped?.type === "AwaitExpression" ? unwrapped : null;
+  };
+  switch (statement.type) {
+    case "ExpressionStatement": {
+      const expression = statement.expression;
+      if (expression.type === "AssignmentExpression" && expression.operator === "=") {
+        return leading(expression.right);
+      }
+      return leading(expression);
+    }
+    case "VariableDeclaration":
+      return leading(statement.declarations[0]?.init);
+    case "ReturnStatement":
+      return leading(statement.argument);
+    case "IfStatement":
+      return leading(statement.test);
+    default:
+      return null;
+  }
 };
 
 /** A counter or flag threaded through a recursion; it only bounds a walk whose data the analysis cannot see. */
@@ -408,7 +464,7 @@ const isNonProgressingRecursion = (
   args: StaticValue[],
   changeCount: number,
 ): boolean => {
-  const hasUnknownArgument = args.some((argument) => argument.kind === "unknown");
+  const hasUnknownArgument = args.some(mayBeUnknown);
   return callStack.some(
     (frame) =>
       frame.node === functionValue.node &&
@@ -419,11 +475,15 @@ const isNonProgressingRecursion = (
         (argument, index) =>
           areValuesEquivalent(argument, args[index]) ||
           (hasUnknownArgument &&
-            ((argument.kind === "unknown" && args[index].kind === "unknown") ||
+            ((mayBeUnknown(argument) && mayBeUnknown(args[index])) ||
               isSameTypePrimitive(argument, args[index]))),
       ),
   );
 };
+
+/** An unknown, or a branch one of whose paths is: `paths.slice(0, -1)` of such a value is no more precise. */
+const mayBeUnknown = (value: StaticValue): boolean =>
+  value.kind === "unknown" || (value.kind === "branch" && value.alternatives.some(mayBeUnknown));
 
 const describeEscapedMutation = (name: string): string =>
   `"${name}" is mutated by code the analysis did not run`;
@@ -460,6 +520,8 @@ export class Interpreter {
   /** Observable changes (state commits, heap mutations) so far; a timer tick that adds none is steady state. */
   changeCount = 0;
   private readonly heapJournals: HeapJournal[] = [];
+  /** The outcome of the `await` a statement is being (re-)evaluated with, consumed by that `await`. */
+  private resolvedAwait: { node: AwaitExpression; value: StaticValue } | null = null;
   private readonly generatorYields: StaticValue[][] = [];
   private readonly elementSymbolKey: string;
   private readonly reactVersion: string | null;
@@ -563,6 +625,7 @@ export class Interpreter {
       forkDepth: 0,
       environment,
       hooks: null,
+      suspension: null,
     };
   }
 
@@ -683,7 +746,12 @@ export class Interpreter {
           const api = resolveReactApi(symbol.packageName, "*");
           if (api) return { kind: "react-api", api };
         }
-        return { kind: "external", packageName: symbol.packageName, importedName, derived: false };
+        return {
+          kind: "external",
+          packageName: symbol.packageName,
+          importedName,
+          origin: "binding",
+        };
       }
       case "unresolved":
         return unknownValue(symbol.reason);
@@ -844,6 +912,16 @@ export class Interpreter {
         type.properties.set(propertyName, value);
         return target;
       }
+      case "branch":
+        for (const alternative of target.alternatives) {
+          this.assignProperty(alternative, propertyName, value, context);
+        }
+        return target;
+      case "unknown":
+      case "unknown-primitive":
+      case "external":
+        this.markEscaped(value);
+        return target;
       default:
         return target;
     }
@@ -1072,13 +1150,11 @@ export class Interpreter {
         return this.evaluateExpression(node.expressions[lastIndex], context, nameHint);
       }
       case "AwaitExpression": {
-        const awaited = awaitedValue(
-          this.evaluateExpression(node.argument, context, nameHint),
-          this.locate(context.module, node),
-          () => this.timers.drainMicrotasks(),
-        );
-        if (context.hooks && (awaited.kind === "unknown" || awaited.kind === "external"))
-          context.hooks.isDeferred = true;
+        const resolved = this.takeResolvedAwait(node);
+        if (resolved) return resolved;
+        const operand = this.evaluateExpression(node.argument, context, nameHint);
+        const awaited = awaitedValue(operand, location, () => this.timers.drainMicrotasks());
+        if (context.hooks && isAwaitDeferred(operand, awaited)) context.hooks.isDeferred = true;
         return awaited;
       }
       case "MemberExpression":
@@ -1121,16 +1197,18 @@ export class Interpreter {
         return this.evaluateJsxElement(node, context);
       case "JSXFragment":
         return this.evaluateJsxFragment(node, context);
-      case "ImportExpression": {
-        if (node.source.type !== "Literal" || typeof node.source.value !== "string") {
-          return unknownValue("dynamic import with non-literal specifier", location);
-        }
-        return resolvedPromiseValue(this.importModule(node.source.value, context, location, false));
-      }
+      case "ImportExpression":
+        return resolvedPromiseValue(
+          mapValue(this.evaluateExpression(node.source, context), (specifier) =>
+            specifier.kind === "primitive" && typeof specifier.value === "string"
+              ? this.importModule(specifier.value, context, location, false)
+              : unknownValue(`dynamic import with specifier ${describeValue(specifier)}`, location),
+          ),
+        );
       case "TaggedTemplateExpression": {
         const tag = this.evaluateExpression(node.tag, context);
         if (tag.kind === "external") {
-          return { ...tag, importedName: `${tag.importedName}\`\``, derived: true };
+          return { ...tag, importedName: `${tag.importedName}\`\``, origin: "derived" };
         }
         const strings = listValue(
           node.quasi.quasis.map((quasi) => primitiveValue(quasi.value.cooked ?? quasi.value.raw)),
@@ -1417,12 +1495,45 @@ export class Interpreter {
     }
     const object = this.evaluateExpression(target.object, context);
     const key = target.computed
-      ? getPropertyName(this.evaluateExpression(target.property, context))
-      : target.property.type === "Identifier"
-        ? target.property.name
-        : null;
-    if (object.kind === "native-object" && key !== null) deleteNativeObjectMember(object, key);
-    return getThrownOperand([object]) ?? TRUE_VALUE;
+      ? this.evaluateExpression(target.property, context)
+      : primitiveValue(target.property.type === "Identifier" ? target.property.name : null);
+    const thrown = getThrownOperand([object, key]);
+    if (thrown) return thrown;
+    for (const alternative of object.kind === "branch" ? object.alternatives : [object]) {
+      this.deleteProperty(alternative, key);
+    }
+    return TRUE_VALUE;
+  }
+
+  private deleteProperty(target: StaticValue, key: StaticValue): void {
+    const name = getPropertyName(key);
+    switch (target.kind) {
+      case "native-object":
+        if (name !== null) deleteNativeObjectMember(target, name);
+        return;
+      case "object":
+        if (target.isFrozen) return;
+        this.recordHeapMutation(target);
+        if (name !== null) deleteObjectProperty(target, name);
+        else
+          target.entries.push({
+            kind: "spread",
+            value: unknownValue(`property ${describeValue(key)} deleted`),
+          });
+        return;
+      case "list": {
+        if (target.isFrozen) return;
+        const index = name === null ? null : Number(name);
+        if (index === null || !Number.isInteger(index)) return;
+        if (index >= 0 && index < target.items.length) {
+          this.recordHeapMutation(target);
+          target.items[index] = UNDEFINED_VALUE;
+        }
+        return;
+      }
+      default:
+        return;
+    }
   }
 
   private evaluateBinaryExpression(
@@ -1562,13 +1673,11 @@ export class Interpreter {
     context: EvaluationContext,
   ): void {
     const object = this.evaluateExpression(objectNode, context);
-    if (object.kind === "branch") {
-      for (const alternative of object.alternatives) {
-        if (alternative.kind === "object") this.assignDynamicEntry(alternative, key, value);
-      }
-      return;
+    for (const alternative of object.kind === "branch" ? object.alternatives : [object]) {
+      if (alternative.kind === "object") this.assignDynamicEntry(alternative, key, value);
+      else if (alternative.kind === "unknown" || alternative.kind === "external")
+        this.markEscaped(value);
     }
-    if (object.kind === "object") this.assignDynamicEntry(object, key, value);
   }
 
   assignOwnProperty(target: StaticObjectValue, key: string, value: StaticValue): void {
@@ -1804,7 +1913,7 @@ export class Interpreter {
         return unknownValue(`React.${object.api}.${key}`, location);
       }
       case "external":
-        if (object.importedName === "*" && !object.derived) {
+        if (object.importedName === "*" && object.origin === "binding") {
           if (key === "__esModule") return TRUE_VALUE;
           return this.resolvedSymbolToValue(
             {
@@ -1816,9 +1925,9 @@ export class Interpreter {
             null,
           );
         }
-        if (object.derived && isModeledOpaqueMethodName(key))
+        if (object.origin !== "binding" && isModeledOpaqueMethodName(key))
           return { kind: "method", receiver: object, name: key };
-        if (object.importedName === "default" && !object.derived) {
+        if (object.importedName === "default" && object.origin === "binding") {
           const modeled = this.getModeledExternal(object.packageName, key);
           if (modeled) return modeled;
         }
@@ -2055,7 +2164,7 @@ export class Interpreter {
           kind: "external",
           packageName: callee.packageName,
           importedName: `${callee.importedName}()`,
-          derived: true,
+          origin: "derived",
         };
       case "native-function":
         return callee.call(args, {
@@ -2160,6 +2269,14 @@ export class Interpreter {
         : this.callValue(trap, [callee.target, listValue(args), callee], context, location);
     }
     this.markEscapes(args);
+    if (callee.kind === "external") {
+      return {
+        kind: "external",
+        packageName: callee.packageName,
+        importedName: `new ${callee.importedName}`,
+        origin: "instance",
+      };
+    }
     return unknownValue(`new ${describeValue(callee)}`, location);
   }
 
@@ -2221,15 +2338,69 @@ export class Interpreter {
     args: StaticValue[],
     context: EvaluationContext,
   ): StaticValue {
-    const frame = context.hooks;
-    if (!frame) return this.callFunction(functionValue, args, context);
+    return this.runDeferred(context.hooks, () => this.callFunction(functionValue, args, context));
+  }
+
+  private runDeferred<Result>(frame: HookFrame | null, run: () => Result): Result {
+    if (!frame) return run();
     const wasDeferred = frame.isDeferred;
     frame.isDeferred = true;
     try {
-      return this.callFunction(functionValue, args, context);
+      return run();
     } finally {
       frame.isDeferred = wasDeferred;
     }
+  }
+
+  private takeResolvedAwait(node: AwaitExpression): StaticValue | null {
+    const resolved = this.resolvedAwait;
+    if (resolved?.node !== node) return null;
+    this.resolvedAwait = null;
+    return resolved.value;
+  }
+
+  /**
+   * Evaluates the `await` a statement starts with. On a promise that is still
+   * pending the async body suspends: the statement is re-evaluated with the
+   * outcome once the promise settles, and the rest of the list follows, its
+   * outcome passing through the enclosing `try` statements before it settles
+   * the call's result. Otherwise the outcome is left for the statement's own
+   * evaluation to pick up.
+   */
+  private suspendOnLeadingAwait(
+    statement: Statement,
+    context: EvaluationContext,
+    resumeStatement: () => StatementOutcome,
+  ): boolean {
+    const suspension = context.suspension;
+    const node = suspension && getLeadingAwait(statement);
+    if (!node || this.resolvedAwait?.node === node) return false;
+    const location = this.locate(context.module, node);
+    const value = this.evaluateExpression(node.argument, context);
+    const pending = getPendingPromise(value, () => this.timers.drainMicrotasks());
+    if (!pending) {
+      const awaited = awaitedValue(value, location, () => this.timers.drainMicrotasks());
+      if (context.hooks && isAwaitDeferred(value, awaited)) context.hooks.isDeferred = true;
+      this.resolvedAwait = { node, value: awaited };
+      return false;
+    }
+    suspendOnPromise(
+      suspension.call,
+      pending,
+      (outcome, isEscaped) => {
+        this.resolvedAwait = { node, value: outcome };
+        let resumed = isEscaped
+          ? this.runDeferred(context.hooks, resumeStatement)
+          : resumeStatement();
+        for (const handler of suspension.outcomeHandlers.toReversed()) {
+          if (resumed.isSuspended) return null;
+          resumed = handler(resumed);
+        }
+        return resumed.isSuspended ? null : outcomeToReturnValue(resumed, location);
+      },
+      location,
+    );
+    return true;
   }
 
   /** Calls `callee` as a framework does when it awaits the returned promise. */
@@ -2282,12 +2453,15 @@ export class Interpreter {
     }
     const frame = context.hooks;
     const wasDeferred = frame?.isDeferred ?? false;
-    const result = this.evaluateFunctionBody(functionValue, args, context, options);
-    // An async body runs synchronously up to its first `await` of an unknown
-    // promise; only a framework-awaited call (server components, route `lazy`)
-    // lets what follows count as settled before the captured commit.
+    const asyncCall: AsyncCall | null = functionValue.node.async ? { result: null } : null;
+    const returned = this.evaluateFunctionBody(functionValue, args, context, options, asyncCall);
+    const result = asyncCall?.result ? asyncCall.result.value : returned;
+    // An async body runs synchronously up to its first `await` of a pending
+    // promise; a modeled one resumes it when that settles, an unknown one
+    // defers whatever follows. Only a framework-awaited call (server components,
+    // route `lazy`) lets what follows count as settled before the captured commit.
     if (options.awaited) return awaitedValue(result, location, () => this.timers.drainMicrotasks());
-    if (!functionValue.node.async) return result;
+    if (!asyncCall || asyncCall.result) return result;
     if (frame && frame.isDeferred && !wasDeferred) {
       frame.isDeferred = wasDeferred;
       return unknownValue("promise settled asynchronously", location);
@@ -2308,7 +2482,7 @@ export class Interpreter {
     const yields: StaticValue[] = [];
     this.generatorYields.push(yields);
     try {
-      const returned = this.evaluateFunctionBody(functionValue, args, context, options);
+      const returned = this.evaluateFunctionBody(functionValue, args, context, options, null);
       return getThrowCertainty(returned) === "always"
         ? returned
         : createGeneratorValue(yields, withoutThrows(returned));
@@ -2322,6 +2496,7 @@ export class Interpreter {
     args: StaticValue[],
     context: EvaluationContext,
     options: CallOptions,
+    asyncCall: AsyncCall | null,
   ): StaticValue {
     const location = this.locate(functionValue.module, functionValue.node);
     const callStack = options.callStack ?? context.callStack;
@@ -2348,6 +2523,7 @@ export class Interpreter {
       forkDepth: context.forkDepth,
       environment: context.environment,
       hooks: context.hooks,
+      suspension: asyncCall ? { call: asyncCall, outcomeHandlers: [] } : null,
     };
     this.bindParameters(functionValue.node.params, args, scope, callContext);
     if (functionValue.node.type !== "ArrowFunctionExpression") {
@@ -2602,6 +2778,13 @@ export class Interpreter {
           withScope(pathContext, context.scope),
           continuation,
         );
+      if (
+        this.suspendOnLeadingAwait(statement, context, () =>
+          this.evaluateStatements(statements, index, context, continuation),
+        )
+      ) {
+        return SUSPENDED;
+      }
       switch (statement.type) {
         case "ReturnStatement":
           return returnOutcome(
@@ -2707,19 +2890,19 @@ export class Interpreter {
         case "ForStatement":
         case "WhileStatement":
         case "DoWhileStatement": {
-          const outcome = evaluateLoop(this, statement, context, location);
+          const outcome = evaluateLoop(this, statement, withoutSuspension(context), location);
           if (!outcome.mayComplete) return outcome;
           if (!outcome.returned) break;
           // Loop bodies are not in continuation style: a return on some
           // iterations means the rest of the function may not run.
           const rest = this.runMaybe(
             context.scope,
-            () => proceed(context),
+            () => proceed(withoutSuspension(context)),
             "return inside a loop",
             location,
           );
           return mergeOutcomes(
-            [{ returned: outcome.returned, mayComplete: false, jump: null }, rest],
+            [returnOutcome(outcome.returned), rest],
             "return inside a loop",
             location,
           );
@@ -2741,7 +2924,7 @@ export class Interpreter {
     location: SourceLocation,
   ): StatementOutcome {
     return mergeOutcomes(
-      [returnOutcome(thrown), proceed(context)],
+      [returnOutcome(thrown), proceed(withoutSuspension(context))],
       `${describeValue(thrown)} may be thrown`,
       location,
       1,
@@ -2773,47 +2956,54 @@ export class Interpreter {
       return mergeOutcomes([outcome, { ...exit, mayComplete: false }], "finally", location);
     };
     const handler = statement.handler;
-    const outcome = this.evaluateBlock(statement.block.body, context, true);
-    const thrown = outcome.returned && handler ? getThrownPaths(outcome.returned) : null;
-    if (thrown === null || !handler) {
-      if (!outcome.mayComplete) return finishExit(outcome, context);
-      return mergeOutcomes(
-        [{ ...outcome, mayComplete: false }, finish(context)],
-        "try",
-        location,
-        1,
-      );
-    }
-    const passes: StatementOutcome = {
-      ...outcome,
-      returned:
-        outcome.returned && getThrowCertainty(outcome.returned) !== "always"
-          ? withoutThrows(outcome.returned)
-          : null,
-    };
-    const catches: StatementContinuation = (pathContext) => {
-      const handlerContext = withScope(pathContext, createScope(pathContext.scope));
-      if (handler.param) {
-        this.bindPattern(
-          handler.param,
-          getCaughtValue(thrown, location),
-          handlerContext.scope,
-          handlerContext,
+    const afterBody = (outcome: StatementOutcome): StatementOutcome => {
+      const thrown = outcome.returned && handler ? getThrownPaths(outcome.returned) : null;
+      if (thrown === null || !handler) {
+        if (!outcome.mayComplete) return finishExit(outcome, withoutSuspension(context));
+        return mergeOutcomes(
+          [{ ...outcome, mayComplete: false }, finish(withoutSuspension(context))],
+          "try",
+          location,
+          1,
         );
       }
-      return finishExit(
-        this.evaluateBlock(handler.body.body, handlerContext, false),
-        handlerContext,
+      const passes: StatementOutcome = {
+        ...outcome,
+        returned:
+          outcome.returned && getThrowCertainty(outcome.returned) !== "always"
+            ? withoutThrows(outcome.returned)
+            : null,
+      };
+      const catches: StatementContinuation = (pathContext) => {
+        const handlerContext = withScope(pathContext, createScope(pathContext.scope));
+        if (handler.param) {
+          this.bindPattern(
+            handler.param,
+            getCaughtValue(thrown, location),
+            handlerContext.scope,
+            handlerContext,
+          );
+        }
+        return finishExit(
+          this.evaluateBlock(handler.body.body, handlerContext, false),
+          handlerContext,
+        );
+      };
+      const isPassFeasible = passes.mayComplete || passes.returned !== null || passes.jump !== null;
+      return this.forkPaths(
+        isPassFeasible ? [(pathContext) => finishExit(passes, pathContext), catches] : [catches],
+        context,
+        finish,
+        `${describeValue(thrown)} caught`,
+        location,
       );
     };
-    const isPassFeasible = passes.mayComplete || passes.returned !== null || passes.jump !== null;
-    return this.forkPaths(
-      isPassFeasible ? [(pathContext) => finishExit(passes, pathContext), catches] : [catches],
-      context,
-      finish,
-      `${describeValue(thrown)} caught`,
-      location,
+    const outcome = this.evaluateBlock(
+      statement.block.body,
+      withOutcomeHandler(context, afterBody),
+      true,
     );
+    return outcome.isSuspended ? outcome : afterBody(outcome);
   }
 
   /**
@@ -2864,6 +3054,7 @@ export class Interpreter {
       ...context,
       forkDepth: context.forkDepth + 1,
       uncertainDepth: context.uncertainDepth + (isTooDeep ? 1 : 0),
+      suspension: null,
     };
     const entrySnapshot = snapshotScopes(context.scope);
     const hookCursor = context.hooks?.cursor ?? 0;
@@ -2925,7 +3116,7 @@ export class Interpreter {
       return outcome.jump === "break" ? { ...outcome, mayComplete: true, jump: null } : outcome;
     };
     const runThenProceed = (startCase: number): StatementOutcome => {
-      const outcome = runFrom(startCase, context);
+      const outcome = runFrom(startCase, withoutSuspension(context));
       if (!outcome.mayComplete) return outcome;
       const rest = proceed(context);
       return mergeOutcomes(

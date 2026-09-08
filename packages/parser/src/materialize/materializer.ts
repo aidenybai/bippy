@@ -101,9 +101,14 @@ export interface MaterializerOptions {
   serverComponents?: boolean;
 }
 
-/** Mutable per-Suspense-boundary record; set when something in the primary subtree can suspend. */
+/**
+ * Mutable per-Suspense-boundary record; `maySuspend` is set while materializing
+ * something in the primary subtree that can suspend, and `commit` tells the
+ * boundary so in the layout phase of whichever proxy rendered it.
+ */
 export interface SuspenseScope {
   maySuspend: boolean;
+  commit: () => void;
 }
 
 export interface CompositeFrame {
@@ -532,6 +537,10 @@ export class Materializer {
     if (context.suspenseScope) context.suspenseScope.maySuspend = true;
   }
 
+  private commitSuspenseScope(scope: SuspenseScope | null): void {
+    if (scope?.maySuspend) scope.commit();
+  }
+
   /**
    * React bails a child out of re-rendering only when it receives the very same
    * element object, so a static element materialized again at the same
@@ -950,7 +959,10 @@ export class Materializer {
     let proxy = this.classProxies.get(component);
     if (!proxy) {
       const classValue = toClassValue(component);
-      const beginLayoutPhase = (): void => this.beginLayoutPhase();
+      const beginLayoutPhase = (context: MaterializeContext): void => {
+        this.beginLayoutPhase();
+        this.commitSuspenseScope(context.suspenseScope);
+      };
       const renderProxy = (
         input: ProxyInput,
         caught: StaticThrowError | null,
@@ -1004,7 +1016,7 @@ export class Materializer {
             this.pendingWork = [];
           }
           for (const work of this.committedWork) {
-            beginLayoutPhase();
+            beginLayoutPhase(this.props.input.context);
             work.mount(true);
             work.mount(false);
           }
@@ -1196,6 +1208,7 @@ export class Materializer {
     );
     useLayoutEffect(() => {
       this.beginLayoutPhase();
+      this.commitSuspenseScope(input.context.suspenseScope);
       mount(true);
       return () => unmount(true);
     });
@@ -1294,6 +1307,7 @@ export class Materializer {
     // `nestedUpdateCount`, only chains of such updates count toward the limit,
     // so a timer task starts a new one.
     frame.requestRender = () => {
+      if (frame.isFrozen) return;
       this.interpreter.changeCount++;
       if (this.interpreter.timers.isFlushing) instance.passCount = 0;
       if (this.isPassivePhasePending) this.isSyncRenderScheduled = true;
@@ -1498,12 +1512,13 @@ export class Materializer {
   renderSuspenseBoundary(input: ProxyInput): ReactNode {
     const { useRef, useState, useLayoutEffect, createElement, Suspense } = this.runtime.react;
     const scopeRef = useRef<SuspenseScope | null>(null);
-    scopeRef.current ??= { maySuspend: false };
+    scopeRef.current ??= { maySuspend: false, commit: noop };
     const scope = scopeRef.current;
     const [isSuspendable, setSuspendable] = useState(false);
-    useLayoutEffect(() => {
-      if (scope.maySuspend && !isSuspendable) setSuspendable(true);
-    });
+    scope.commit = () => {
+      if (!isSuspendable) setSuspendable(true);
+    };
+    useLayoutEffect(() => this.commitSuspenseScope(scope));
     const { props, context } = input;
     const fallback = this.toNode(getObjectProperty(props, "fallback"), context, true);
     const primary = this.toNode(

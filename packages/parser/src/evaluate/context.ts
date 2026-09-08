@@ -8,6 +8,8 @@ import type {
   SuperBinding,
 } from "../types.js";
 import type { HookFrame } from "./hooks.js";
+import type { StatementOutcome } from "./interpreter.js";
+import type { AsyncCall } from "./promises.js";
 
 /** The value the nearest provider of a context supplies at the position being evaluated, or null without one. */
 export interface ContextReader {
@@ -24,6 +26,23 @@ export interface CallFrame {
   changeCount: number;
 }
 
+export interface OutcomeHandler {
+  (outcome: StatementOutcome): StatementOutcome;
+}
+
+/**
+ * Where a statement list of an async body can suspend on a pending `await`:
+ * `outcomeHandlers` are the enclosing `try` statements (innermost last) that
+ * the outcome of the resumed rest of the body still has to pass through before
+ * it settles `call`. Null where a statement's outcome is consumed by code that
+ * is not in continuation style (loops, forked paths, `switch` cases), so an
+ * `await` there evaluates to an unknown value instead.
+ */
+export interface SuspensionPoint {
+  call: AsyncCall;
+  outcomeHandlers: OutcomeHandler[];
+}
+
 export interface EvaluationContext {
   module: ModuleRecord;
   scope: Scope;
@@ -35,9 +54,27 @@ export interface EvaluationContext {
   forkDepth: number;
   environment: RenderEnvironment | null;
   hooks: HookFrame | null;
+  suspension: SuspensionPoint | null;
 }
 
 export const withScope = (context: EvaluationContext, scope: Scope): EvaluationContext => ({
   ...context,
   scope,
 });
+
+export const withoutSuspension = (context: EvaluationContext): EvaluationContext =>
+  context.suspension ? { ...context, suspension: null } : context;
+
+export const withOutcomeHandler = (
+  context: EvaluationContext,
+  handler: OutcomeHandler,
+): EvaluationContext =>
+  context.suspension
+    ? {
+        ...context,
+        suspension: {
+          call: context.suspension.call,
+          outcomeHandlers: [...context.suspension.outcomeHandlers, handler],
+        },
+      }
+    : context;

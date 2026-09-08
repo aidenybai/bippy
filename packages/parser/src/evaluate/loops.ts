@@ -217,7 +217,7 @@ const evaluateUncertainTail = (
     "loop iterations are uncertain",
     location,
   );
-  return { returned: outcome.returned, mayComplete: true, jump: null };
+  return { ...outcome, mayComplete: true, jump: null };
 };
 
 /**

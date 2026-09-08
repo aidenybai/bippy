@@ -209,6 +209,8 @@ const HOST_TAGS = new Set(["HostComponent", "HostSingleton", "HostHoistable", "H
 
 const isHostTag = (tag: string): boolean => HOST_TAGS.has(tag);
 
+const isClassTag = (tag: string): boolean => TAG_EQUIVALENTS.ClassComponent.includes(tag);
+
 const tagsCompatible = (expected: string, actual: string): boolean =>
   expected === actual || (TAG_EQUIVALENTS[expected]?.includes(actual) ?? false);
 
@@ -494,8 +496,8 @@ class Matcher {
       pattern.key !== actual.key
     )
       return false;
-    if (pattern.name !== null && actual.name !== null && pattern.name !== actual.name) return false;
-    return true;
+    if (pattern.name === null || actual.name === null || pattern.name === actual.name) return true;
+    return isClassTag(actual.tag) && isBundlerPlaceholderName(actual.name);
   }
 
   // An opaque component's runtime identity is whatever non-host fiber sits in its
