@@ -78,6 +78,26 @@ const isRetainedInput = (committed: ProxyInput, next: ProxyInput): boolean =>
       ? committed.ref === next.ref
       : compareIdentity(committed.ref, next.ref) === true));
 
+/**
+ * Whether a render evaluated under `committed` stands for one under `next`: the
+ * position is derived from the input each render, so it is compared field by
+ * field (an error boundary retrying with `ignoresMaybeThrows` must re-evaluate).
+ */
+const isSameMaterializeContext = (
+  committed: MaterializeContext,
+  next: MaterializeContext,
+): boolean =>
+  committed === next ||
+  (committed.depth === next.depth &&
+    committed.componentStack === next.componentStack &&
+    committed.suspenseScope === next.suspenseScope &&
+    committed.environment === next.environment &&
+    committed.errorBoundaryDepth === next.errorBoundaryDepth &&
+    committed.ignoresMaybeThrows === next.ignoresMaybeThrows &&
+    committed.alternativeDepth === next.alternativeDepth &&
+    committed.owner === next.owner &&
+    committed.isStrictMode === next.isStrictMode);
+
 const DEFAULT_MAX_COMPONENT_DEPTH = 512;
 const DEFAULT_MAX_ELEMENT_COUNT = 50_000;
 const DEFAULT_MAX_RECURSION_PER_COMPONENT = 16;
@@ -200,6 +220,7 @@ interface ContextRead {
 /** What a proxy last committed (its `current`), so an update that changes nothing bails out as React's would. */
 interface CommittedRender {
   input: ProxyInput;
+  context: MaterializeContext;
   node: ReactNode;
   contextReads: ContextRead[];
   componentContext: EvaluationContext | null;
@@ -1235,6 +1256,7 @@ export class Materializer {
     const props = applyDefaultProps(component, input.props);
     const { node, mount, unmount } = this.renderStateful(
       input,
+      input.context,
       component,
       instanceRef.current,
       () => setPass((pass) => pass + 1),
@@ -1298,6 +1320,7 @@ export class Materializer {
    */
   private renderStateful(
     input: ProxyInput,
+    context: MaterializeContext,
     component: ComponentDefinition,
     instance: ProxyInstance,
     rerender: () => void,
@@ -1310,6 +1333,7 @@ export class Materializer {
       changedCells.length === 0 &&
       previous &&
       isRetainedInput(previous.input, input) &&
+      isSameMaterializeContext(previous.context, context) &&
       previous.contextReads.every((read) => this.readContext(read.definition) === read.value)
     ) {
       return this.commitRender(instance, previous, input.location);
@@ -1362,6 +1386,7 @@ export class Materializer {
     const node = this.finishRender(evaluation.rendered, evaluation.childContext, input);
     instance.rendered = {
       input,
+      context,
       node,
       contextReads,
       componentContext: evaluation.componentContext,
@@ -1424,6 +1449,7 @@ export class Materializer {
     ): ReactNode => {
       const { node, mount, unmount } = this.renderStateful(
         input,
+        boundaryContext,
         component,
         host.getInstance(caughtError),
         host.rerender,
