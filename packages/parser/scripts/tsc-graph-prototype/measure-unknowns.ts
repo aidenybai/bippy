@@ -126,7 +126,7 @@ const recordUncertainResult = (
       recordSite(context, node, "unknown-primitive", `${value.primitiveType}: ${value.reason}`);
       return;
     case "external":
-      if (value.derived)
+      if (value.origin === "derived")
         recordSite(context, node, "external-derived", `${value.packageName}#${value.importedName}`);
       return;
     case "branch":
