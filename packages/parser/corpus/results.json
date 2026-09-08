@@ -694,24 +694,319 @@
       "id": "react-email",
       "revision": "0f0cb94e1f15581131a2d50b80f8daa13dd1c9fc",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T03:55:59.450Z",
-      "durationMs": 213,
-      "runtime": null,
+      "capturedAt": "2026-09-08T08:45:33.007Z",
+      "durationMs": 14621,
+      "runtime": {
+        "reactVersion": "9.6.0",
+        "rendererName": "@react-three/fiber",
+        "buildType": "development",
+        "roots": 3,
+        "fibers": 5522,
+        "commits": 18,
+        "pageErrors": [],
+        "title": "React Email"
+      },
       "static": {
         "stats": {
-          "fiberCount": 931,
-          "textCount": 41,
-          "branchCount": 12,
-          "repeatCount": 0,
-          "opaqueCount": 85,
-          "unknownCount": 7,
-          "modulesLoaded": 49
+          "fiberCount": 2066,
+          "textCount": 32,
+          "branchCount": 52,
+          "repeatCount": 40,
+          "opaqueCount": 18,
+          "unknownCount": 30,
+          "modulesLoaded": 1816
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 7
+          }
+        ]
       },
-      "report": null,
-      "anchor": null,
-      "note": "static only",
+      "report": {
+        "matchedFibers": 3127,
+        "matchedText": 30,
+        "opaqueSubtrees": 17,
+        "opaqueSkippedFibers": 91,
+        "slotsMatched": 7,
+        "slotsUnmatched": 4,
+        "opaqueRenamed": 4,
+        "unmatchedSlots": [
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <HeroSection> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <LoadableComponent> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <BailoutToCSR> [FunctionComponent] > <Tower> [FunctionComponent] > <View> [FunctionComponent] > <div> [HostComponent] > <Canvas> (opaque)",
+            "reason": "Canvas from @react-three/fiber is not analyzed",
+            "head": "<Canvas> [FunctionComponent]",
+            "skippedFibers": 7,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <HeroSection> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <LoadableComponent> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <BailoutToCSR> [FunctionComponent] > <Tower> [FunctionComponent] > <View> [FunctionComponent] > <div> [HostComponent] > <Canvas> (opaque)[0]",
+              "expected": "<Suspense> [SuspenseComponent]",
+              "actual": "<CanvasImpl> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <PlaygroundSection> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <TabsList> [ForwardRef] > <RovingFocusGroup> [ForwardRef] > <RovingFocusGroupCollectionProvider> [FunctionComponent] > <RovingFocusGroupCollectionProviderProvider> [FunctionComponent] > <RovingFocusGroupCollectionSlot> [ForwardRef] > <RovingFocusGroupCollectionSlot.Slot> [ForwardRef] > <RovingFocusGroupCollectionSlot.SlotClone> [ForwardRef] > <ForwardRef> [ForwardRef] > <RovingFocusGroupProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TabsTrigger> key=\"tailwind\" [ForwardRef] > <RovingFocusGroupItem> [ForwardRef] > <RovingFocusGroupCollectionItemSlot> [ForwardRef] > <RovingFocusGroupCollectionItemSlot.Slot> [ForwardRef] > <RovingFocusGroupCollectionItemSlot.SlotClone> [ForwardRef] > <Primitive.span> [ForwardRef] > <Primitive.span.Slot> [ForwardRef] > <Primitive.span.SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <button> [HostComponent] > <AnimatePresence> (opaque)",
+            "reason": "AnimatePresence from framer-motion is not analyzed",
+            "head": "<AnimatePresence> [FunctionComponent]",
+            "skippedFibers": 10,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <PlaygroundSection> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <TabsList> [ForwardRef] > <RovingFocusGroup> [ForwardRef] > <RovingFocusGroupCollectionProvider> [FunctionComponent] > <RovingFocusGroupCollectionProviderProvider> [FunctionComponent] > <RovingFocusGroupCollectionSlot> [ForwardRef] > <RovingFocusGroupCollectionSlot.Slot> [ForwardRef] > <RovingFocusGroupCollectionSlot.SlotClone> [ForwardRef] > <ForwardRef> [ForwardRef] > <RovingFocusGroupProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TabsTrigger> key=\"tailwind\" [ForwardRef] > <RovingFocusGroupItem> [ForwardRef] > <RovingFocusGroupCollectionItemSlot> [ForwardRef] > <RovingFocusGroupCollectionItemSlot.Slot> [ForwardRef] > <RovingFocusGroupCollectionItemSlot.SlotClone> [ForwardRef] > <Primitive.span> [ForwardRef] > <Primitive.span.Slot> [ForwardRef] > <Primitive.span.SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <button> [HostComponent] > <AnimatePresence> (opaque) > <motion.div> [ForwardRef] > <MeasureLayout> [FunctionComponent][0]",
+              "expected": "<MeasureLayoutWithContext> [FunctionComponent]",
+              "actual": "<MeasureLayoutWithContext> [ClassComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <InteractiveDemo> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <button> key=\"Linter\" [HostComponent] > <AnimatePresence> (opaque)",
+            "reason": "AnimatePresence from framer-motion is not analyzed",
+            "head": "<AnimatePresence> [FunctionComponent]",
+            "skippedFibers": 10,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <InteractiveDemo> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <button> key=\"Linter\" [HostComponent] > <AnimatePresence> (opaque) > <motion.div> [ForwardRef] > <MeasureLayout> [FunctionComponent][0]",
+              "expected": "<MeasureLayoutWithContext> [FunctionComponent]",
+              "actual": "<MeasureLayoutWithContext> [ClassComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <InteractiveDemo> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TabsList> [ForwardRef] > <RovingFocusGroup> [ForwardRef] > <RovingFocusGroupCollectionProvider> [FunctionComponent] > <RovingFocusGroupCollectionProviderProvider> [FunctionComponent] > <RovingFocusGroupCollectionSlot> [ForwardRef] > <RovingFocusGroupCollectionSlot.Slot> [ForwardRef] > <RovingFocusGroupCollectionSlot.SlotClone> [ForwardRef] > <ForwardRef> [ForwardRef] > <RovingFocusGroupProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TabsTrigger> key=\"Linter\" [ForwardRef] > <RovingFocusGroupItem> [ForwardRef] > <RovingFocusGroupCollectionItemSlot> [ForwardRef] > <RovingFocusGroupCollectionItemSlot.Slot> [ForwardRef] > <RovingFocusGroupCollectionItemSlot.SlotClone> [ForwardRef] > <Primitive.span> [ForwardRef] > <Primitive.span.Slot> [ForwardRef] > <Primitive.span.SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <button> [HostComponent] > <AnimatePresence> (opaque)",
+            "reason": "AnimatePresence from framer-motion is not analyzed",
+            "head": "<AnimatePresence> [FunctionComponent]",
+            "skippedFibers": 10,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <InteractiveDemo> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TabsList> [ForwardRef] > <RovingFocusGroup> [ForwardRef] > <RovingFocusGroupCollectionProvider> [FunctionComponent] > <RovingFocusGroupCollectionProviderProvider> [FunctionComponent] > <RovingFocusGroupCollectionSlot> [ForwardRef] > <RovingFocusGroupCollectionSlot.Slot> [ForwardRef] > <RovingFocusGroupCollectionSlot.SlotClone> [ForwardRef] > <ForwardRef> [ForwardRef] > <RovingFocusGroupProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TabsTrigger> key=\"Linter\" [ForwardRef] > <RovingFocusGroupItem> [ForwardRef] > <RovingFocusGroupCollectionItemSlot> [ForwardRef] > <RovingFocusGroupCollectionItemSlot.Slot> [ForwardRef] > <RovingFocusGroupCollectionItemSlot.SlotClone> [ForwardRef] > <Primitive.span> [ForwardRef] > <Primitive.span.Slot> [ForwardRef] > <Primitive.span.SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <button> [HostComponent] > <AnimatePresence> (opaque) > <motion.div> [ForwardRef] > <MeasureLayout> [FunctionComponent][0]",
+              "expected": "<MeasureLayoutWithContext> [FunctionComponent]",
+              "actual": "<MeasureLayoutWithContext> [ClassComponent]"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 32,
+        "wildcards": [
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <RootWithDefault> [FunctionComponent] > <Default> [FunctionComponent] > <Root> [FunctionComponent] > <EditorFocusScope> [FunctionComponent] > <children> (opaque) > <BubbleMenuNodeSelector> [FunctionComponent] > <NodeSelectorRoot> [FunctionComponent]",
+            "reason": "alternative nested 2 branches away from the preferred path",
+            "absorbedFibers": 25,
+            "heads": [
+              "<Popover> [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <RootWithDefault> [FunctionComponent] > <Default> [FunctionComponent] > <Root> [FunctionComponent] > <EditorFocusScope> [FunctionComponent] > <children> (opaque) > <BubbleMenuLinkSelector> [FunctionComponent]",
+            "reason": "alternative nested 2 branches away from the preferred path",
+            "absorbedFibers": 6,
+            "heads": [
+              "<div> [HostComponent]"
+            ]
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <EditorToolbar> [FunctionComponent] > <div> [HostComponent] > <NodeSelector> [FunctionComponent] > <Popover> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <PopoverProvider> [FunctionComponent] > <PopoverTrigger> [ForwardRef] > <PopperAnchor> [ForwardRef] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <Primitive.button.Slot> [ForwardRef] > <Primitive.button.SlotClone> [ForwardRef] > <button> [HostComponent]",
+            "reason": "value from @tiptap/react (useEditorState())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"Heading\""
+            ]
+          }
+        ],
+        "branchesResolved": 33,
+        "branchDeviations": [
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <HeroSection> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <LoadableComponent> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <BailoutToCSR> [FunctionComponent] > <Tower> [FunctionComponent]",
+            "reason": "if (branch(true | unknown))",
+            "preferredIndex": 0,
+            "chosenIndex": 2,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <HeroSection> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <LoadableComponent> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <BailoutToCSR> [FunctionComponent] > <Tower> [FunctionComponent][0]",
+              "expected": "<Loader> [FunctionComponent]",
+              "actual": "<View> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <PlaygroundSection> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <CodePreview> [FunctionComponent] > <div> [HostComponent] > <CodePreviewContent> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> key=\"tailwind\" [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <CodeBlock> key=\"tailwind\" [FunctionComponent] > <Highlight2> [FunctionComponent] > <Highlight> [FunctionComponent] > <pre> [HostComponent]",
+            "reason": "if (<boolean: == on dynamic values>)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <PlaygroundSection> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <CodePreview> [FunctionComponent] > <div> [HostComponent] > <CodePreviewContent> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> key=\"tailwind\" [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <CodeBlock> key=\"tailwind\" [FunctionComponent] > <Highlight2> [FunctionComponent] > <Highlight> [FunctionComponent] > <pre> [HostComponent] > <div> key=\"0\" [HostComponent][1]",
+              "expected": "<end of children>",
+              "actual": "<span> [HostComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <PlaygroundSection> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <CodePreview> [FunctionComponent] > <div> [HostComponent] > <CodePreviewContent> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> key=\"css\" [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent]",
+            "reason": "&& on <boolean: includes()>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <PlaygroundSection> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <CodePreview> [FunctionComponent] > <div> [HostComponent] > <CodePreviewContent> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> key=\"css\" [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent][0]",
+              "expected": "<CodeBlock> key=\"css\" [FunctionComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <PlaygroundSection> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <CodePreview> [FunctionComponent] > <div> [HostComponent] > <CodePreviewContent> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent]",
+            "reason": "&& on branch(null | unknown)",
+            "preferredIndex": 1,
+            "chosenIndex": 0,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <PlaygroundSection> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <CodePreview> [FunctionComponent] > <div> [HostComponent] > <CodePreviewContent> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent][0]",
+              "expected": "<end of children>",
+              "actual": "<iframe> [HostComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <InteractiveDemo> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TabsContent> key=\"Compatibility Checker\" [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent]",
+            "reason": "&& on <boolean: includes()>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <InteractiveDemo> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TabsContent> key=\"Compatibility Checker\" [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent][0]",
+              "expected": "<div> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <InteractiveDemo> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TabsContent> key=\"Spam Score\" [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent]",
+            "reason": "&& on <boolean: includes()>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <InteractiveDemo> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TabsContent> key=\"Spam Score\" [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent][0]",
+              "expected": "<div> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <RootWithDefault> [FunctionComponent] > <Default> [FunctionComponent] > <Root> [FunctionComponent]",
+            "reason": "if (<boolean: negation of unknown>)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <RootWithDefault> [FunctionComponent] > <Default> [FunctionComponent] > <Root> [FunctionComponent][0]",
+              "expected": "<end of children>",
+              "actual": "<EditorFocusScope> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <RootWithDefault> [FunctionComponent] > <Default> [FunctionComponent] > <Root> [FunctionComponent] > <EditorFocusScope> [FunctionComponent] > <children> (opaque)",
+            "reason": "if (<boolean: negation of unknown>)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <RootWithDefault> [FunctionComponent] > <Default> [FunctionComponent] > <Root> [FunctionComponent] > <EditorFocusScope> [FunctionComponent] > <children> (opaque)[1]",
+              "expected": "<BubbleMenuCode> [FunctionComponent]",
+              "actual": "<BubbleMenuLinkSelector> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <RootWithDefault> [FunctionComponent] > <Default> [FunctionComponent] > <Root> [FunctionComponent] > <EditorFocusScope> [FunctionComponent] > <children> (opaque) > <BubbleMenuNodeSelector> [FunctionComponent] > <NodeSelectorRoot> [FunctionComponent]",
+            "reason": "if (branch(<boolean> | false))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <RootWithDefault> [FunctionComponent] > <Default> [FunctionComponent] > <Root> [FunctionComponent] > <EditorFocusScope> [FunctionComponent] > <children> (opaque) > <BubbleMenuNodeSelector> [FunctionComponent] > <NodeSelectorRoot> [FunctionComponent][0]",
+              "expected": "<end of children>",
+              "actual": "<Popover> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <RootWithDefault> [FunctionComponent] > <Default> [FunctionComponent] > <Root> [FunctionComponent] > <EditorFocusScope> [FunctionComponent] > <children> (opaque) > <BubbleMenuLinkSelector> [FunctionComponent]",
+            "reason": "if (<boolean: negation of unknown>)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <RootWithDefault> [FunctionComponent] > <Default> [FunctionComponent] > <Root> [FunctionComponent] > <EditorFocusScope> [FunctionComponent] > <children> (opaque) > <BubbleMenuLinkSelector> [FunctionComponent][0]",
+              "expected": "<end of children>",
+              "actual": "<div> [HostComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <BubbleMenuLinkDefault> [FunctionComponent] > <RootWithDefault> [FunctionComponent] > <Root> [FunctionComponent]",
+            "reason": "if (<boolean: negation of unknown>)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <BubbleMenuLinkDefault> [FunctionComponent] > <RootWithDefault> [FunctionComponent] > <Root> [FunctionComponent][0]",
+              "expected": "<end of children>",
+              "actual": "<EditorFocusScope> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <BubbleMenuButtonDefault> [FunctionComponent] > <RootWithDefault> [FunctionComponent] > <Root> [FunctionComponent]",
+            "reason": "if (<boolean: negation of unknown>)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <BubbleMenuButtonDefault> [FunctionComponent] > <RootWithDefault> [FunctionComponent] > <Root> [FunctionComponent][0]",
+              "expected": "<end of children>",
+              "actual": "<EditorFocusScope> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <BubbleMenuButtonDefault> [FunctionComponent] > <RootWithDefault> [FunctionComponent] > <Root> [FunctionComponent] > <EditorFocusScope> [FunctionComponent] > <children> (opaque) > <BubbleMenuButtonDefaultInner> [FunctionComponent] > <BubbleMenuButtonToolbar> [FunctionComponent] > <div> [HostComponent]",
+            "reason": "&& on branch(<boolean> | false)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <BubbleMenuButtonDefault> [FunctionComponent] > <RootWithDefault> [FunctionComponent] > <Root> [FunctionComponent] > <EditorFocusScope> [FunctionComponent] > <children> (opaque) > <BubbleMenuButtonDefaultInner> [FunctionComponent] > <BubbleMenuButtonToolbar> [FunctionComponent] > <div> [HostComponent][1]",
+              "expected": "<BubbleMenuButtonUnlink> [FunctionComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <BubbleMenuImageDefault> [FunctionComponent] > <RootWithDefault> [FunctionComponent] > <Root> [FunctionComponent]",
+            "reason": "if (<boolean: negation of unknown>)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <BubbleMenuImageDefault> [FunctionComponent] > <RootWithDefault> [FunctionComponent] > <Root> [FunctionComponent][0]",
+              "expected": "<end of children>",
+              "actual": "<EditorFocusScope> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <BubbleMenuImageDefault> [FunctionComponent] > <RootWithDefault> [FunctionComponent] > <Root> [FunctionComponent] > <EditorFocusScope> [FunctionComponent] > <children> (opaque) > <BubbleMenuImageDefaultInner> [FunctionComponent] > <BubbleMenuImageToolbar> [FunctionComponent] > <div> [HostComponent]",
+            "reason": "&& on <boolean: !== on dynamic values>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <BubbleMenuImageDefault> [FunctionComponent] > <RootWithDefault> [FunctionComponent] > <Root> [FunctionComponent] > <EditorFocusScope> [FunctionComponent] > <children> (opaque) > <BubbleMenuImageDefaultInner> [FunctionComponent] > <BubbleMenuImageToolbar> [FunctionComponent] > <div> [HostComponent][1]",
+              "expected": "<BubbleMenuImageUnlink> [FunctionComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <EditorToolbar> [FunctionComponent]",
+            "reason": "if (<boolean: negation of unknown>)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <EditorToolbar> [FunctionComponent][0]",
+              "expected": "<end of children>",
+              "actual": "<div> [HostComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <EditorToolbar> [FunctionComponent] > <div> [HostComponent] > <LinkSelector> [FunctionComponent]",
+            "reason": "if (<boolean: negation of unknown>)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <EditorToolbar> [FunctionComponent] > <div> [HostComponent] > <LinkSelector> [FunctionComponent][0]",
+              "expected": "<end of children>",
+              "actual": "<Popover> [FunctionComponent]"
+            }
+          }
+        ],
+        "repeatIterations": 1956,
+        "transparentFibers": 1997,
+        "status": "partial",
+        "runtimeFibers": 3280,
+        "staticFibers": 1497,
+        "coverage": 1,
+        "strictCoverage": 0.9625,
+        "divergence": null,
+        "stepsUsed": 4087,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": null,
       "failure": null
     },
     {
@@ -895,29 +1190,92 @@
       "id": "shadcn-ui",
       "revision": "7c9eaba1c0a6404c990c144a654792e3313c650d",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T03:55:59.807Z",
-      "durationMs": 315,
-      "runtime": null,
+      "capturedAt": "2026-09-08T08:40:31.498Z",
+      "durationMs": 30137,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-28cd4bb0-20260723",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 2345,
+        "commits": 18,
+        "pageErrors": [],
+        "title": "shadcn/ui - The Foundation for your Design System"
+      },
       "static": {
         "stats": {
-          "fiberCount": 2160,
-          "textCount": 232,
-          "branchCount": 52,
-          "repeatCount": 27,
-          "opaqueCount": 1021,
-          "unknownCount": 19,
-          "modulesLoaded": 118
+          "fiberCount": 5093,
+          "textCount": 367,
+          "branchCount": 19,
+          "repeatCount": 4,
+          "opaqueCount": 0,
+          "unknownCount": 11,
+          "modulesLoaded": 12789
         },
         "diagnostics": [
           {
             "code": "dynamic-key",
-            "count": 8
+            "count": 5
+          },
+          {
+            "code": "dynamic-props",
+            "count": 1
+          },
+          {
+            "code": "unsettled-state",
+            "count": 1
           }
         ]
       },
-      "report": null,
-      "anchor": null,
-      "note": "static only",
+      "report": {
+        "matchedFibers": 2017,
+        "matchedText": 45,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 3,
+        "branchDeviations": [
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ActiveThemeProvider> [FunctionComponent] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <header> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <MobileNav> [FunctionComponent] > <Popover> [FunctionComponent] > <Popover> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <PopoverProvider> [FunctionComponent] > <PopoverContent> [FunctionComponent] > <PopoverPortal> [FunctionComponent] > <PopoverPortalProvider> [FunctionComponent] > <Presence> [FunctionComponent]",
+            "reason": "conditional on <boolean: includes()>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ActiveThemeProvider> [FunctionComponent] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <header> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <MobileNav> [FunctionComponent] > <Popover> [FunctionComponent] > <Popover> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <PopoverProvider> [FunctionComponent] > <PopoverContent> [FunctionComponent] > <PopoverPortal> [FunctionComponent] > <PopoverPortalProvider> [FunctionComponent] > <Presence> [FunctionComponent][0]",
+              "expected": "<Portal> [ForwardRef]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ActiveThemeProvider> [FunctionComponent] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <header> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <CommandMenu> [FunctionComponent] > <Dialog> [FunctionComponent] > <Dialog> [FunctionComponent] > <DialogProvider> [FunctionComponent] > <DialogContent> [FunctionComponent] > <DialogPortal> [FunctionComponent] > <DialogPortal> [FunctionComponent] > <DialogPortalProvider> [FunctionComponent] > <Presence> [FunctionComponent]",
+            "reason": "conditional on <boolean: includes()>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ActiveThemeProvider> [FunctionComponent] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <header> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <CommandMenu> [FunctionComponent] > <Dialog> [FunctionComponent] > <Dialog> [FunctionComponent] > <DialogProvider> [FunctionComponent] > <DialogContent> [FunctionComponent] > <DialogPortal> [FunctionComponent] > <DialogPortal> [FunctionComponent] > <DialogPortalProvider> [FunctionComponent] > <Presence> [FunctionComponent][0]",
+              "expected": "<Portal> [ForwardRef]",
+              "actual": "<end of children>"
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "transparentFibers": 139,
+        "status": "partial",
+        "runtimeFibers": 2062,
+        "staticFibers": 4884,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 2067,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": null,
       "failure": null
     },
     {
