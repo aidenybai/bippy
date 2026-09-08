@@ -19,6 +19,7 @@ The automated Chromium, Firefox, and WebKit suites cover:
 - Light/dark board and control palette parity with million-ui, with high-contrast keyboard outlines retained.
 - Controlled activation surviving repeated native SVG focus events, including WebKit restoration.
 - Keyboard focus under Chromium-only forced-colors emulation and 200% CSS zoom.
+- The live inspector's paired trees and controls under axe, plus real commit updates, pause/resume, reloads, portals, stable identities, and frame isolation in all three engines.
 
 The cross-engine configuration is `playwright-accessibility.config.ts`. Direct installer downloads failed; the official Firefox and WebKit archives were retrieved with `curl` and installed through Playwright using a local archive server. Engine versions: Firefox 155 and WebKit 26.6. WebKit automation is not a substitute for Safari with VoiceOver.
 
@@ -38,5 +39,6 @@ Run these with VoiceOver + Safari and NVDA + Firefox or Chrome. Include JAWS + C
 8. Search for hidden descendants, cycle matches, reveal the active node in the other projection, and expand/collapse all. Check status announcements and confirm focus moves only when requested.
 9. Navigate the sidebar and board/preview controls, including Ctrl/Cmd+K, back/forward, tooltip descriptions, and Escape dismissal. Verify that each scroll area remains operable and does not introduce unwanted tab stops.
 10. Test iOS VoiceOver and Android TalkBack activation, touch scrolling, and cancellation. A tap must activate once; dragging to scroll must not activate a row.
+11. Inspect a changing app at `/inspect`. Confirm updates do not produce repeated announcements or steal focus, pause/resume is understandable, and root switching, disconnection, and unavailable owner data are announced appropriately.
 
 Consumers must repeat these checks after changing labels, geometry, colors, focusability, or event behavior. Content slots are noninteractive SVG content; put additional controls outside the treeitem rather than introducing nested tab stops.

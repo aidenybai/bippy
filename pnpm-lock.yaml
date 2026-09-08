@@ -369,6 +369,9 @@ importers:
       '@stylexjs/stylex':
         specifier: ^0.19.0
         version: 0.19.0
+      bippy:
+        specifier: workspace:*
+        version: link:../bippy
       lucide-react:
         specifier: ^1.32.0
         version: 1.32.0(react@19.2.8)
@@ -406,12 +409,21 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.4
         version: 19.2.4(@types/react@19.2.18)
+      '@types/ws':
+        specifier: ^8.18.1
+        version: 8.18.1
+      esbuild:
+        specifier: ^0.25.12
+        version: 0.25.12
       tsx:
         specifier: ^4.20.0
         version: 4.23.12
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      ws:
+        specifier: ^8.21.3
+        version: 8.21.3
 
   packages/e2e:
     devDependencies:

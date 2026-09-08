@@ -198,7 +198,11 @@ export const BoardShell = ({ items, children }: BoardShellProps) => {
               )}
             </nav>
           </ScrollArea>
-          <footer {...stylex.props(styles.footer)}>diagram</footer>
+          <footer {...stylex.props(styles.footer)}>
+            <a href="/inspect" {...stylex.props(styles.link)}>
+              Live inspector
+            </a>
+          </footer>
         </aside>
         <main aria-label="Diagram component board" {...stylex.props(styles.preview)}>
           <header {...stylex.props(styles.toolbar)}>

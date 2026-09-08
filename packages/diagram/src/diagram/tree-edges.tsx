@@ -77,7 +77,11 @@ export const TreeEdges = (props: TreeEdgesProps) => {
             fromId: edge.from,
             toId: edge.to,
             label:
-              edge.from === activeNode?.id || edge.to === activeNode?.id ? edge.label : undefined,
+              activeNode?.componentType !== undefined ||
+              edge.from === activeNode?.id ||
+              edge.to === activeNode?.id
+                ? edge.label
+                : undefined,
           },
         ];
       }),

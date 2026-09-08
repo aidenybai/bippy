@@ -25,9 +25,11 @@ import { diagramMetrics } from "./geometry";
 
 export interface TreeViewProps extends Omit<
   DiagramCanvasProps,
-  "width" | "height" | "onSelect" | "role"
+  "width" | "height" | "onSelect" | "role" | "children"
 > {
+  children?: ReactNode;
   controls?: ReactNode;
+  traceComponents?: boolean;
   relationship?: "parent" | "owner";
   width?: number;
   height?: number;
@@ -45,6 +47,7 @@ const styles = stylex.create({
 
 export const TreeView = ({
   controls,
+  traceComponents = false,
   relationship = "parent",
   width: requestedWidth = 400,
   height = 396,
@@ -139,10 +142,10 @@ export const TreeView = ({
     () =>
       root.flowIndex &&
       activeNode &&
-      (activeNode.componentId !== undefined || activeNode.kind === "store")
+      (traceComponents || activeNode.componentId !== undefined || activeNode.kind === "store")
         ? getDataflowHighlight(root.flowIndex, activeNode.id)
         : undefined,
-    [root.flowIndex, activeNode],
+    [root.flowIndex, activeNode, traceComponents],
   );
   const interaction = useMemo<DiagramInteraction>(() => {
     const next = {

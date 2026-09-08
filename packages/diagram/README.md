@@ -22,6 +22,46 @@ Controls use shadcn-style named exports, `data-slot`, native props/React 19 refs
 
 Board chrome uses million-ui's light/dark neutral values, including its local `--board-canvas` override, input fills and hairlines, button edges, scrollbar thumbs, and fixed dark tooltip palette. These are separate from the diagram's semantic colors. Keyboard outlines remain high-contrast rather than adopting the upstream faint focus treatment.
 
+## Live app inspection
+
+Keep the diagram dev server running, then launch an isolated browser with the online shadcn/ui dashboard:
+
+```sh
+pnpm --filter diagram exec playwright install chromium
+pnpm --filter diagram inspect
+```
+
+The launcher opens the real app and `/inspect` in separate browser contexts. It prints a connected inspector URL that also works in another local browser. The board's **Live inspector** link shows the launch instructions. Pass a URL to inspect your own development app:
+
+```sh
+pnpm --filter diagram inspect http://localhost:3000
+```
+
+- bippy is injected at document start, before React, without modifying or proxying the app. The inspector context is never instrumented.
+- `instrument` collects committed roots; `getFiberSnapshot` walks their current child/sibling trees iteratively, uses bippy's renderer-version work tags, and preserves IDs across alternate swaps.
+- Parent links reflect the committed tree. Owner links require real client-fiber debug owners; unavailable production owners and server-only owner records are not replaced with guesses. Production function names may be minified.
+- Live snapshots feed the normal `TreeRoot` / `TreeView`, including automatic windowing, search, disclosure, keyboard navigation, and optional linked owner projection. The largest root is selected initially; root selection and pause/resume are independent of the app.
+- Dataflow is inline in the parent/owner trees, exactly like the board: component details appear beneath their fibers and wires trace real context dependencies, dispatch queues, store references, and same-reference props. There is no separate dataflow pane or selected-neighborhood model. Both projections share the complete captured graph. `TreeView.traceComponents` also traces a component's details when that component is active; metadata is not an extra React fiber.
+- Prop names and function/object identities are inspected in the app; values, keys, DOM text, and DOM nodes are not serialized. URLs omit query strings and fragments. Context providers are resolved by object identity and nearest committed ancestor, including shadowing. Reference links mean shared identity, not proven causality. Primitive equality, callback bodies, computed dependencies, memo-hook names, store mutations, and executed-call traces are not guessed. Getters, dispatchers, snapshot readers, and subscriptions are not invoked by capture.
+- Only frames on the target's origin are captured. A loopback-only, read-only WebSocket bridge requires both the inspector origin and a random session token. Reloads use new document identities; detached frames are removed. Closing the inspector or Ctrl+C releases the browser contexts and bridge.
+- Captures are coalesced over 100ms and limited to 50,000 fiber/detail records, with partial-capture notices. Each root has a 20,000-detail budget. All captured details and edges feed the normal windowed tree; there is no extra neighborhood limit. The deterministic tests use a local React app; the public dashboard is a separate online smoke check, not a CI network dependency.
+
+The adapter is also exported separately, so importing drawing components does not install bippy:
+
+```tsx
+import { instrument } from "bippy";
+import { getFiberSnapshot } from "diagram/fiber";
+
+const unsubscribe = instrument({
+  onCommitFiberRoot: (rendererId, root) => {
+    const { nodes, details, edges, truncated } = getFiberSnapshot(root.current);
+    console.log(rendererId, nodes, details, edges, truncated);
+  },
+});
+```
+
+Install bippy before the renderer and pass `nodes` into your structural tree. Combine `nodes` and `details` with `dataflowEdges={edges}` for a relationship tree. Detail records have `componentId` and are not additional React fibers. This is an experimental development tool: bippy relies on React internals and may affect the inspected app. The launcher uses a fresh browser context, not your signed-in browser profile. `--headless` is available for automation; `--viewer` changes the local inspector URL.
+
 ## Tree
 
 Virtualization is built into the normal tree. There is no separate `VirtualTree` component or opt-in flag.
@@ -47,7 +87,7 @@ Small trees render in full. Above 100 expanded rows, the same `Tree.View` mounts
 
 Indentation adapts to the available width. Deep windows rebase against visible ancestry while `aria-level` and `data-depth` retain absolute depth. Long labels truncate without changing their accessible names. `height` bounds the view including its default controls; short trees shrink to their contents. `data-tree-viewport` identifies the scroll container and exposes separate total, visible, and mounted counts.
 
-The two 10,000-node fixtures use this same component. They are synthetic models, not a live React inspector.
+The two 10,000-node board fixtures use this same component. They remain synthetic models; `/inspect` supplies real bippy captures instead.
 
 ### Composable views
 
@@ -154,7 +194,7 @@ pnpm --filter diagram test:browser
 pnpm --filter diagram test:accessibility
 ```
 
-Browser tests start a dev server if port 3100 is free. Screenshots go to `test-results/`; committed PR images live in `docs/screenshots/`. `/fixtures/compound` exercises controlled/shared/isolated state, native props, slots, refs, event cancellation, empty data, and focus recovery.
+Browser tests start a dev server if port 3100 is free. Screenshots go to `test-results/`; committed PR images live in `docs/screenshots/`. `/fixtures/compound` exercises controlled/shared/isolated state, native props, slots, refs, event cancellation, empty data, and focus recovery. `/fixtures/inspect-target` exercises real commit capture, alternate identity, ownership, portals, privacy exclusions, reloads, and frame isolation.
 
 This package exports TypeScript source. Consumers must transpile it and compile its StyleX styles, including `tailwind-stylex`; see `next.config.ts`.
 

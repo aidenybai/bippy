@@ -6,14 +6,16 @@
   "exports": {
     ".": "./src/index.ts",
     "./tokens": "./src/diagram/tokens.stylex.ts",
-    "./ui/*": "./src/components/ui/*.tsx"
+    "./ui/*": "./src/components/ui/*.tsx",
+    "./fiber": "./src/inspector/fiber-snapshot.ts"
   },
   "scripts": {
-    "dev": "next dev -p 3100",
-    "build": "next build",
+    "dev": "pnpm --filter bippy build && next dev -p 3100",
+    "build": "pnpm --filter bippy build && next build",
     "start": "next start -p 3100",
-    "typecheck": "tsc --noEmit",
-    "test": "tsx --test tests/*.test.ts",
+    "typecheck": "pnpm --filter bippy build && tsc --noEmit",
+    "test": "pnpm --filter bippy build && tsx --test tests/*.test.ts",
+    "inspect": "pnpm --filter bippy build && tsx scripts/inspect.ts",
     "test:browser": "playwright test",
     "test:accessibility": "playwright test --config playwright-accessibility.config.ts"
   },
@@ -24,6 +26,7 @@
     "@react-aria/interactions": "^3.28.1",
     "@react-aria/utils": "^3.34.1",
     "@stylexjs/stylex": "^0.19.0",
+    "bippy": "workspace:*",
     "lucide-react": "^1.32.0",
     "next": "15.5.18",
     "react": "^19.2.4",
@@ -38,7 +41,10 @@
     "@types/node": "^20.19.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
+    "@types/ws": "^8.18.1",
+    "esbuild": "^0.25.12",
     "tsx": "^4.20.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "ws": "^8.21.3"
   }
 }

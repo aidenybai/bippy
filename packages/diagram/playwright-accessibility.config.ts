@@ -10,6 +10,7 @@ export default defineConfig(config, {
     "**/board-shell.spec.ts",
     "**/theme-parity.spec.ts",
     "**/tree-overlap.spec.ts",
+    "**/live-inspector.spec.ts",
   ],
   projects: [
     { name: "chromium", use: { browserName: "chromium" } },
