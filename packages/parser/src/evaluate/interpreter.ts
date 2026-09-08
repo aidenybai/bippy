@@ -2202,13 +2202,15 @@ export class Interpreter {
             this.getGlobal(memberName, context.environment) ?? unknownValue(memberName, location)
           );
         }
-        return (
-          this.getGlobal(memberName, context.environment) ?? {
-            kind: "method",
-            receiver: object,
-            name: key,
-          }
-        );
+        const declaredMember = this.getGlobal(memberName, context.environment);
+        if (declaredMember) return declaredMember;
+        const isOpenMember =
+          !isCallableProtocolKey(key) &&
+          this.getRealm(context.environment).hasGlobal(object.name) &&
+          !isSymbolPropertyKey(key);
+        return isOpenMember
+          ? unknownValue(memberName, location)
+          : { kind: "method", receiver: object, name: key };
       }
       case "element":
         if (key === "props") return object.props;
