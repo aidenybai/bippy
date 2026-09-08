@@ -194,6 +194,157 @@
       "failure": null
     },
     {
+      "id": "copilotkit",
+      "revision": "fbe488869949f5b7300945ed54c88ef6b8b16df1",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T08:10:21.274Z",
+      "durationMs": 1292,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-f93b9fd4-20251217",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 2,
+        "fibers": 355,
+        "commits": 128,
+        "pageErrors": [],
+        "title": "Create Next App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 942,
+          "textCount": 0,
+          "branchCount": 35,
+          "repeatCount": 7,
+          "opaqueCount": 5,
+          "unknownCount": 18,
+          "modulesLoaded": 1723
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 8
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 162,
+        "matchedText": 0,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 2,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 15,
+        "wildcards": [
+          {
+            "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent] > <div> [HostComponent] > <Chat> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <CopilotChat> key=\"stateless\" [FunctionComponent] > <CopilotChatConfigurationProvider> [FunctionComponent] > <div> [HostComponent] > <MemoizedSlotWrapper> [MemoComponent] > <MemoizedSlotWrapper> [ForwardRef] > <CopilotChatView> [FunctionComponent] > <div> [HostComponent] > <MemoizedSlotWrapper> [MemoComponent] > <MemoizedSlotWrapper> [ForwardRef] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <MemoizedSlotWrapper> [MemoComponent] > <MemoizedSlotWrapper> [ForwardRef] > <CopilotChatSuggestionView> [ForwardRef] > <MemoizedSlotWrapper> [MemoComponent] > <MemoizedSlotWrapper> [ForwardRef] > <DefaultContainer> [ForwardRef] > <div> [HostComponent]",
+            "reason": "call of call of Object.values of {...}",
+            "absorbedFibers": 15,
+            "heads": [
+              "<MemoizedSlotWrapper> key=\"Generate a simple UI-0\" [MemoComponent]",
+              "<MemoizedSlotWrapper> key=\"Build an interactive form-1\" [MemoComponent]",
+              "<MemoizedSlotWrapper> key=\"Test the sayHello tool-2\" [MemoComponent]"
+            ]
+          }
+        ],
+        "branchesResolved": 12,
+        "branchDeviations": [
+          {
+            "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent] > <CopilotKitInspector> [FunctionComponent]",
+            "reason": "if (<boolean: negation of unknown>)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent] > <CopilotKitInspector> [FunctionComponent][0]",
+              "expected": "<end of children>",
+              "actual": "<WebInspectorElement> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent]",
+            "reason": "&& on branch(true | false)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent][4]",
+              "expected": "<LicenseWarningBanner> [FunctionComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent]",
+            "reason": "&& on <boolean: === on dynamic values>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent][4]",
+              "expected": "<LicenseWarningBanner> [FunctionComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent]",
+            "reason": "&& on <boolean: === on dynamic values>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent][4]",
+              "expected": "<LicenseWarningBanner> [FunctionComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent]",
+            "reason": "&& on <boolean: === on dynamic values>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent][4]",
+              "expected": "<LicenseWarningBanner> [FunctionComponent]",
+              "actual": "<end of children>"
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 179,
+        "staticFibers": 264,
+        "coverage": 1,
+        "strictCoverage": 0.9050279329608939,
+        "divergence": null,
+        "stepsUsed": 735,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T08:02:55.873Z",
+      "failure": null
+    },
+    {
+      "id": "craft-js",
+      "revision": "23f44f3208ebf78d1632ec4aa7094001f513eb41",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-08T08:11:27.601Z",
+      "durationMs": 1047,
+      "runtime": null,
+      "static": {
+        "stats": {
+          "fiberCount": 111,
+          "textCount": 1,
+          "branchCount": 4,
+          "repeatCount": 0,
+          "opaqueCount": 6,
+          "unknownCount": 9,
+          "modulesLoaded": 35
+        },
+        "diagnostics": []
+      },
+      "report": null,
+      "anchor": null,
+      "note": "static only",
+      "failure": null
+    },
+    {
       "id": "documenso",
       "revision": "2cac63a000e22422bdea449f68b8025e709aa73a",
       "framework": "react-router",
@@ -325,6 +476,83 @@
       "report": null,
       "anchor": null,
       "note": "static only",
+      "failure": null
+    },
+    {
+      "id": "foxel",
+      "revision": "d5a24c69e180711e55abeddb4e31ce06e60a456f",
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T08:12:02.275Z",
+      "durationMs": 8619,
+      "runtime": {
+        "reactVersion": "19.2.4",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 18,
+        "commits": 1,
+        "pageErrors": [
+          "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+          "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+          "Failed to check initialization status: TypeError: Failed to fetch\n    at request (http://localhost:5173/src/api/client.ts:25:22)\n    at status (http://localhost:5173/src/api/config.ts:18:10)\n    at checkInitialization (http://localhost:5173/src/App.tsx:62:34)\n    at http://localhost:5173/src/App.tsx:78:5\n    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/chunk-UTQ67KV7.js?v=7db57128:18567:20)\n    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/chunk-UTQ67KV7.js?v=7db57128:997:72)\n    at commitHookEffectListMount (http://localhost:5173/node_modules/.vite/deps/chunk-UTQ67KV7.js?v=7db57128:9411:163)\n    at commitHookPassiveMountEffects (http://localhost:5173/node_modules/.vite/deps/chunk-UTQ67KV7.js?v=7db57128:9465:60)\n    at commitPassiveMountOnFiber (http://localhost:5173/node_modules/.vite/deps/chunk-UTQ67KV7.js?v=7db57128:11040:29)\n    at recursivelyTraversePassiveMountEffects (http://localhost:5173/node_modules/.vite/deps/chunk-UTQ67KV7.js?v=7db57128:11010:13)"
+        ],
+        "title": "Foxel"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 12,
+          "textCount": 0,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 2,
+          "modulesLoaded": 2512
+        },
+        "diagnostics": [
+          {
+            "code": "budget-exhausted",
+            "count": 23
+          },
+          {
+            "code": "max-call-depth",
+            "count": 3
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 4,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 10,
+        "wildcards": [
+          {
+            "path": "root > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Spin> [FunctionComponent]",
+            "reason": "step budget exhausted",
+            "absorbedFibers": 10,
+            "heads": [
+              "<div> [HostComponent]"
+            ]
+          }
+        ],
+        "branchesResolved": 1,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 14,
+        "staticFibers": 4,
+        "coverage": 1,
+        "strictCoverage": 0.2857142857142857,
+        "divergence": null,
+        "stepsUsed": 7,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T07:24:29.116Z",
       "failure": null
     },
     {
@@ -476,6 +704,88 @@
       "failure": null
     },
     {
+      "id": "lobe-chat",
+      "revision": "36c4be46f07aa45a10d186871b6fd6265a2ecbf3",
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T08:12:12.356Z",
+      "durationMs": 8338,
+      "runtime": {
+        "reactVersion": "19.2.8",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 357,
+        "commits": 15,
+        "pageErrors": [
+          "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+          "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+          "TRPCClientError: Failed to execute 'json' on 'Response': Unexpected end of JSON input\n    at TRPCClientError.from (http://localhost:9878/node_modules/.vite/deps/dist-CoR6I6sU.js?v=319fa08a:1100:10)\n    at http://localhost:9878/node_modules/.vite/deps/dist-CoR6I6sU.js?v=319fa08a:1312:37",
+          "%o\n\n%s\n\n%s\n SyntaxError: The requested module '/node_modules/.vite/deps/@lobehub_editor_react.js?v=319fa08a' does not provide an export named 'FloatMenu' The above error occurred in one of your React components. React will try to recreate this component tree from scratch using the error boundary you provided, RenderErrorBoundary.",
+          "React Router caught the following error during render SyntaxError: The requested module '/node_modules/.vite/deps/@lobehub_editor_react.js?v=319fa08a' does not provide an export named 'FloatMenu'",
+          "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+          "TRPCClientError: Failed to execute 'json' on 'Response': Unexpected end of JSON input\n    at TRPCClientError.from (http://localhost:9878/node_modules/.vite/deps/dist-CoR6I6sU.js?v=319fa08a:1100:10)\n    at http://localhost:9878/node_modules/.vite/deps/dist-CoR6I6sU.js?v=319fa08a:1312:37",
+          "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+          "TRPCClientError: Failed to execute 'json' on 'Response': Unexpected end of JSON input\n    at TRPCClientError.from (http://localhost:9878/node_modules/.vite/deps/dist-CoR6I6sU.js?v=319fa08a:1100:10)\n    at http://localhost:9878/node_modules/.vite/deps/dist-CoR6I6sU.js?v=319fa08a:1312:37"
+        ],
+        "title": ""
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 0,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 8754
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 11
+          },
+          {
+            "code": "max-recursion",
+            "count": 4
+          },
+          {
+            "code": "dynamic-props",
+            "count": 1
+          },
+          {
+            "code": "render-error",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "status": "unresolved",
+        "matchedFibers": 0,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "branchDeviations": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "runtimeFibers": 0,
+        "staticFibers": 0,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": null,
+        "stepsUsed": 0,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "React failed to render the materialized tree; runtime replayed from 2026-09-08T07:20:29.476Z",
+      "failure": null
+    },
+    {
       "id": "nextjs-boilerplate",
       "revision": "1dffa39a32450300c8b01d8cfd3819f9b6e95842",
       "framework": "next-app",
@@ -557,6 +867,266 @@
       },
       "anchor": "body",
       "note": "runtime replayed from 2026-09-06T04:55:26.311Z",
+      "failure": null
+    },
+    {
+      "id": "nextjs-starter",
+      "revision": "c33149454f19f74651f73245d63b1cfab187f7d3",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T08:12:00.420Z",
+      "durationMs": 526,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-f93b9fd4-20251217",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 928,
+        "commits": 16,
+        "pageErrors": [],
+        "title": "Next.js Starter - Multilingual Next.js 16 Starter"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 2,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 1644
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "unresolved",
+        "matchedFibers": 0,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "branchDeviations": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "runtimeFibers": 0,
+        "staticFibers": 0,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": null,
+        "stepsUsed": 0,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "static render did not resolve to a component tree; runtime replayed from 2026-09-08T07:50:14.781Z",
+      "failure": null
+    },
+    {
+      "id": "openchakra",
+      "revision": "5605d412cb7570fb4b261655a88d2abb229352bb",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-08T08:11:19.594Z",
+      "durationMs": 6594,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 2010,
+        "commits": 13,
+        "pageErrors": [
+          "Warning: React does not recognize the `%s` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `%s` instead. If you accidentally passed it from a parent component, remove it from the DOM element.%s isExternal isexternal \n    at a\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at eval (webpack-internal:///./node_modules/@chakra-ui/menu/dist/index.esm.js:746:11)\n    at eval (webpack-internal:///./node_modules/@chakra-ui/menu/dist/index.esm.js:800:5)\n    at MenuItemLink\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at VisualElementHandler (webpack-internal:///./node_modules/framer-motion/dist/es/motion/utils/VisualElementHandler.mjs:8:1)\n    at MotionComponent (webpack-internal:///./node_modules/framer-motion/dist/es/motion/index.mjs:48:65)\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at eval (webpack-internal:///./node_modules/@chakra-ui/menu/dist/index.esm.js:859:11)\n    at LightMode (webpack-internal:///./node_modules/@chakra-ui/color-mode/dist/index.esm.js:227:65)\n    at DefaultPortal (webpack-internal:///./node_modules/@chakra-ui/portal/dist/index.esm.js:52:11)\n    at Portal (webpack-internal:///./node_modules/@chakra-ui/portal/dist/index.esm.js:117:11)\n    at Menu (webpack-internal:///./node_modules/@chakra-ui/menu/dist/index.esm.js:626:11)\n    at HeaderMenu\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at eval (webpack-internal:///./node_modules/@chakra-ui/layout/dist/index.esm.js:714:5)\n    at HStack\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at Flex2 (webpack-internal:///./node_modules/@chakra-ui/layout/dist/index.esm.js:273:11)\n    at header\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at Flex2 (webpack-internal:///./node_modules/@chakra-ui/layout/dist/index.esm.js:273:11)\n    at DarkMode (webpack-internal:///./node_modules/@chakra-ui/color-mode/dist/index.esm.js:215:65)\n    at Header (webpack-internal:///./src/components/Header.tsx:216:78)\n    at App (webpack-internal:///./src/pages/index.tsx:36:68)\n    at AppErrorBoundary (webpack-internal:///./src/components/errorBoundaries/AppErrorBoundary.tsx:36:90)\n    at EnvironmentProvider (webpack-internal:///./node_modules/@chakra-ui/react-env/dist/index.esm.js:121:11)\n    at ColorModeProvider (webpack-internal:///./node_modules/@chakra-ui/color-mode/dist/index.esm.js:158:5)\n    at ThemeProvider (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:96:64)\n    at ThemeProvider (webpack-internal:///./node_modules/@chakra-ui/system/dist/index.esm.js:112:11)\n    at ChakraProvider (webpack-internal:///./node_modules/@chakra-ui/provider/dist/index.esm.js:21:5)\n    at ChakraProvider (webpack-internal:///./node_modules/@chakra-ui/react/dist/index.esm.js:245:3)\n    at ErrorBoundary (webpack-internal:///./node_modules/@bugsnag/plugin-react/dist/bugsnag-react.js:22:34)\n    at Main (webpack-internal:///./src/pages/_app.tsx:28:27)\n    at Provider (webpack-internal:///./node_modules/react-redux/es/components/Provider.js:16:20)\n    at Wrapper (webpack-internal:///./node_modules/next-redux-wrapper/es6/index.js:184:35)\n    at ErrorBoundary (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/dist/client.js:8:20740)\n    at ReactDevOverlay (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/dist/client.js:8:23632)\n    at Container (webpack-internal:///./node_modules/next/dist/client/index.js:71:9)\n    at AppContainer (webpack-internal:///./node_modules/next/dist/client/index.js:592:26)\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:703:27)",
+          "Warning: Expected server HTML to contain a matching <%s> in <%s>.%s span div \n    at span\n    at DefaultPortal (webpack-internal:///./node_modules/@chakra-ui/portal/dist/index.esm.js:52:11)\n    at Portal (webpack-internal:///./node_modules/@chakra-ui/portal/dist/index.esm.js:117:11)\n    at Menu (webpack-internal:///./node_modules/@chakra-ui/menu/dist/index.esm.js:626:11)\n    at HeaderMenu\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at eval (webpack-internal:///./node_modules/@chakra-ui/layout/dist/index.esm.js:714:5)\n    at HStack\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at Flex2 (webpack-internal:///./node_modules/@chakra-ui/layout/dist/index.esm.js:273:11)\n    at header\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at Flex2 (webpack-internal:///./node_modules/@chakra-ui/layout/dist/index.esm.js:273:11)\n    at DarkMode (webpack-internal:///./node_modules/@chakra-ui/color-mode/dist/index.esm.js:215:65)\n    at Header (webpack-internal:///./src/components/Header.tsx:216:78)\n    at App (webpack-internal:///./src/pages/index.tsx:36:68)\n    at AppErrorBoundary (webpack-internal:///./src/components/errorBoundaries/AppErrorBoundary.tsx:36:90)\n    at EnvironmentProvider (webpack-internal:///./node_modules/@chakra-ui/react-env/dist/index.esm.js:121:11)\n    at ColorModeProvider (webpack-internal:///./node_modules/@chakra-ui/color-mode/dist/index.esm.js:158:5)\n    at ThemeProvider (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:96:64)\n    at ThemeProvider (webpack-internal:///./node_modules/@chakra-ui/system/dist/index.esm.js:112:11)\n    at ChakraProvider (webpack-internal:///./node_modules/@chakra-ui/provider/dist/index.esm.js:21:5)\n    at ChakraProvider (webpack-internal:///./node_modules/@chakra-ui/react/dist/index.esm.js:245:3)\n    at ErrorBoundary (webpack-internal:///./node_modules/@bugsnag/plugin-react/dist/bugsnag-react.js:22:34)\n    at Main (webpack-internal:///./src/pages/_app.tsx:28:27)\n    at Provider (webpack-internal:///./node_modules/react-redux/es/components/Provider.js:16:20)\n    at Wrapper (webpack-internal:///./node_modules/next-redux-wrapper/es6/index.js:184:35)\n    at ErrorBoundary (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/dist/client.js:8:20740)\n    at ReactDevOverlay (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/dist/client.js:8:23632)\n    at Container (webpack-internal:///./node_modules/next/dist/client/index.js:71:9)\n    at AppContainer (webpack-internal:///./node_modules/next/dist/client/index.js:592:26)\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:703:27)",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Warning: An error occurred during hydration. The server HTML was replaced with client content in <%s>. div \n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "There was an error while hydrating. Because the error happened outside of a Suspense boundary, the entire root will switch to client rendering.",
+          "Warning: React does not recognize the `%s` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `%s` instead. If you accidentally passed it from a parent component, remove it from the DOM element.%s isExternal isexternal \n    at a\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at eval (webpack-internal:///./node_modules/@chakra-ui/menu/dist/index.esm.js:746:11)\n    at eval (webpack-internal:///./node_modules/@chakra-ui/menu/dist/index.esm.js:800:5)\n    at MenuItemLink\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at VisualElementHandler (webpack-internal:///./node_modules/framer-motion/dist/es/motion/utils/VisualElementHandler.mjs:8:1)\n    at MotionComponent (webpack-internal:///./node_modules/framer-motion/dist/es/motion/index.mjs:48:65)\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at eval (webpack-internal:///./node_modules/@chakra-ui/menu/dist/index.esm.js:859:11)\n    at LightMode (webpack-internal:///./node_modules/@chakra-ui/color-mode/dist/index.esm.js:227:65)\n    at DefaultPortal (webpack-internal:///./node_modules/@chakra-ui/portal/dist/index.esm.js:52:11)\n    at Portal (webpack-internal:///./node_modules/@chakra-ui/portal/dist/index.esm.js:117:11)\n    at Menu (webpack-internal:///./node_modules/@chakra-ui/menu/dist/index.esm.js:626:11)\n    at HeaderMenu\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at eval (webpack-internal:///./node_modules/@chakra-ui/layout/dist/index.esm.js:714:5)\n    at HStack\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at Flex2 (webpack-internal:///./node_modules/@chakra-ui/layout/dist/index.esm.js:273:11)\n    at header\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at Flex2 (webpack-internal:///./node_modules/@chakra-ui/layout/dist/index.esm.js:273:11)\n    at DarkMode (webpack-internal:///./node_modules/@chakra-ui/color-mode/dist/index.esm.js:215:65)\n    at Header (webpack-internal:///./src/components/Header.tsx:216:78)\n    at App (webpack-internal:///./src/pages/index.tsx:36:68)\n    at AppErrorBoundary (webpack-internal:///./src/components/errorBoundaries/AppErrorBoundary.tsx:36:90)\n    at EnvironmentProvider (webpack-internal:///./node_modules/@chakra-ui/react-env/dist/index.esm.js:121:11)\n    at ColorModeProvider (webpack-internal:///./node_modules/@chakra-ui/color-mode/dist/index.esm.js:158:5)\n    at ThemeProvider (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:96:64)\n    at ThemeProvider (webpack-internal:///./node_modules/@chakra-ui/system/dist/index.esm.js:112:11)\n    at ChakraProvider (webpack-internal:///./node_modules/@chakra-ui/provider/dist/index.esm.js:21:5)\n    at ChakraProvider (webpack-internal:///./node_modules/@chakra-ui/react/dist/index.esm.js:245:3)\n    at ErrorBoundary (webpack-internal:///./node_modules/@bugsnag/plugin-react/dist/bugsnag-react.js:22:34)\n    at Main (webpack-internal:///./src/pages/_app.tsx:28:27)\n    at Provider (webpack-internal:///./node_modules/react-redux/es/components/Provider.js:16:20)\n    at Wrapper (webpack-internal:///./node_modules/next-redux-wrapper/es6/index.js:184:35)\n    at ErrorBoundary (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/dist/client.js:8:20740)\n    at ReactDevOverlay (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/dist/client.js:8:23632)\n    at Container (webpack-internal:///./node_modules/next/dist/client/index.js:71:9)\n    at AppContainer (webpack-internal:///./node_modules/next/dist/client/index.js:592:26)\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:703:27)"
+        ],
+        "title": "OpenChakra"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 3,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 334
+        },
+        "diagnostics": [
+          {
+            "code": "budget-exhausted",
+            "count": 32
+          },
+          {
+            "code": "dynamic-props",
+            "count": 2
+          },
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 1,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 1960,
+        "wildcards": [
+          {
+            "path": "root > <withRedux(Main)> [FunctionComponent]",
+            "reason": "step budget exhausted",
+            "absorbedFibers": 1960,
+            "heads": [
+              "<Provider> [FunctionComponent]"
+            ]
+          }
+        ],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 1961,
+        "staticFibers": 1,
+        "coverage": 1,
+        "strictCoverage": 0.0005099439061703213,
+        "divergence": null,
+        "stepsUsed": 2,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T07:23:05.031Z",
+      "failure": null
+    },
+    {
+      "id": "pdfme",
+      "revision": "5a6376a824fb8ab4f989841564b61cbb771100d2",
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T08:11:29.992Z",
+      "durationMs": 5618,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 1460,
+        "commits": 6,
+        "pageErrors": [
+          "Failed to load resource: the server responded with a status of 403 ()",
+          "Failed to load resource: the server responded with a status of 403 ()",
+          "Failed to load resource: the server responded with a status of 403 ()",
+          "Failed to load resource: the server responded with a status of 403 ()",
+          "Failed to load resource: the server responded with a status of 403 ()",
+          "Failed to load resource: the server responded with a status of 403 ()",
+          "Failed to load resource: the server responded with a status of 403 ()",
+          "Failed to load resource: the server responded with a status of 403 ()",
+          "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOrigin"
+        ],
+        "title": "pdfme Playground"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 134,
+          "textCount": 7,
+          "branchCount": 3,
+          "repeatCount": 1,
+          "opaqueCount": 0,
+          "unknownCount": 2,
+          "modulesLoaded": 1721
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 170,
+        "matchedText": 7,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 1279,
+        "wildcards": [
+          {
+            "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TemplatesApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <div> [HostComponent]",
+            "reason": "call of call of updated state of useState",
+            "absorbedFibers": 1279,
+            "heads": [
+              "<Fragment> [Fragment]"
+            ]
+          }
+        ],
+        "branchesResolved": 3,
+        "branchDeviations": [
+          {
+            "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Navigation> [FunctionComponent] > <div> [HostComponent] > <nav> [HostComponent] > <HelpModal> [FunctionComponent] > <$e> [ForwardRef] > <j> [FunctionComponent] > <ContextProvider> [ContextProvider]",
+            "reason": "&& on branch(true | <boolean>)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Navigation> [FunctionComponent] > <div> [HostComponent] > <nav> [HostComponent] > <HelpModal> [FunctionComponent] > <$e> [ForwardRef] > <j> [FunctionComponent] > <ContextProvider> [ContextProvider][1]",
+              "expected": "<l> [ForwardRef]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TemplatesApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <div> [HostComponent]",
+            "reason": "callback for an item that may not occur",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TemplatesApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <Fragment> [Fragment][0]",
+              "expected": "<end of children>",
+              "actual": "<Fragment> key=\"invoice\" [Fragment]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TemplatesApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <div> [HostComponent]",
+            "reason": "&& on branch(true | <boolean>)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TemplatesApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <div> [HostComponent][1]",
+              "expected": "<div> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          }
+        ],
+        "repeatIterations": 32,
+        "status": "partial",
+        "runtimeFibers": 1456,
+        "staticFibers": 119,
+        "coverage": 1,
+        "strictCoverage": 0.12156593406593406,
+        "divergence": null,
+        "stepsUsed": 220,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T07:35:03.692Z",
       "failure": null
     },
     {
@@ -824,6 +1394,146 @@
       "failure": null
     },
     {
+      "id": "react-starter-kit",
+      "revision": "3c5132eb3d0a02dc8090eb6248f8959744e18d12",
+      "framework": "spa",
+      "capturedAt": "2026-09-08T08:11:39.327Z",
+      "durationMs": 19783,
+      "runtime": {
+        "reactVersion": "19.2.4",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 41,
+        "commits": 4,
+        "pageErrors": [
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "%o\n\n%s\n\n%s\n {status: 500, statusText: Internal Server Error, routerCode: BEFORE_LOAD} The above error occurred in the <MatchInnerImpl> component. React will try to recreate this component tree from scratch using the error boundary you provided, m.",
+          "Uncaught error: {status: 500, statusText: Internal Server Error, routerCode: BEFORE_LOAD}"
+        ],
+        "title": "Acme Co."
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 23,
+          "textCount": 0,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 2,
+          "modulesLoaded": 1866
+        },
+        "diagnostics": [
+          {
+            "code": "budget-exhausted",
+            "count": 36
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 7,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 33,
+        "wildcards": [
+          {
+            "path": "root > <StrictMode> [Mode] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RouterProvider> [FunctionComponent] > <RouterContextProvider> [FunctionComponent]",
+            "reason": "<provider>: window.__TSR_ROUTER_CONTEXT__",
+            "absorbedFibers": 33,
+            "heads": [
+              "<ContextProvider> [ContextProvider]"
+            ]
+          }
+        ],
+        "branchesResolved": 1,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 40,
+        "staticFibers": 16,
+        "coverage": 1,
+        "strictCoverage": 0.175,
+        "divergence": null,
+        "stepsUsed": 19,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T07:23:55.274Z",
+      "failure": null
+    },
+    {
+      "id": "react-three-next",
+      "revision": "bb29a61949601e1c563688faf33a12d062ec3710",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T08:11:17.176Z",
+      "durationMs": 977,
+      "runtime": {
+        "reactVersion": "18.3.0-canary-178c267a4e-20241218",
+        "rendererName": "@react-three/fiber",
+        "buildType": "development",
+        "roots": 2,
+        "fibers": 249,
+        "commits": 19,
+        "pageErrors": [
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Warning: An error occurred during hydration. The server HTML was replaced with client content in <%s>. #document",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "There was an error while hydrating. Because the error happened outside of a Suspense boundary, the entire root will switch to client rendering.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error"
+        ],
+        "title": "Next.js + Three.js"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 62,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 171
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 54,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "exact",
+        "runtimeFibers": 54,
+        "staticFibers": 54,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 54,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T07:22:45.011Z",
+      "failure": null
+    },
+    {
       "id": "redux-toolkit",
       "revision": "e99fe6135188219f031c5028f653fb82e671de24",
       "framework": "spa",
@@ -972,6 +1682,76 @@
       "report": null,
       "anchor": null,
       "note": "static only",
+      "failure": null
+    },
+    {
+      "id": "socialecho",
+      "revision": "4dc6c7822bfff5c0b13e1b8098e8d7ae0084939a",
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T08:11:36.992Z",
+      "durationMs": 979,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 9,
+        "commits": 3,
+        "pageErrors": [
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+        ],
+        "title": "Sign In | SocialEcho"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 109,
+          "textCount": 0,
+          "branchCount": 6,
+          "repeatCount": 0,
+          "opaqueCount": 2,
+          "unknownCount": 5,
+          "modulesLoaded": 92
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 5,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 2,
+        "branchDeviations": [
+          {
+            "path": "root > <BrowserRouter> [FunctionComponent] > <AppContainer> [FunctionComponent] > <div> [HostComponent]",
+            "reason": "conditional on branch(true | unknown)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <BrowserRouter> [FunctionComponent] > <AppContainer> [FunctionComponent] > <div> [HostComponent][0]",
+              "expected": "<CommonLoading> [FunctionComponent]",
+              "actual": "<ErrorComponent> [FunctionComponent]"
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 5,
+        "staticFibers": 77,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 8,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T07:23:34.754Z",
       "failure": null
     },
     {

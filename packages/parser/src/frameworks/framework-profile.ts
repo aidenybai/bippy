@@ -7,10 +7,13 @@ export type FrameworkKind = "spa" | "next-app" | "next-pages" | "react-router";
 // application plus whatever the route adapter synthesizes; the profile names
 // the fibers to splice out on each side so both describe the same hierarchy.
 // Anonymous fibers are matched by their work tag name (e.g. "ContextProvider"
-// for a provider whose context has no displayName).
+// for a provider whose context has no displayName). Context providers are kept
+// apart from components because their displayNames (`Navigation`, `Location`,
+// `Router`) are common application component names.
 export interface FrameworkProfile {
   kind: FrameworkKind;
   transparentRuntimeFibers: ReadonlySet<string>;
+  transparentRuntimeProviders: ReadonlySet<string>;
   transparentStaticFibers: ReadonlySet<string>;
   /**
    * Runtime fibers (with their subtrees) the framework injects with no
@@ -21,13 +24,23 @@ export interface FrameworkProfile {
   defaultAnchor: string | null;
 }
 
+const isTransparentRuntimeFiber = (
+  fiber: RuntimeFiberSnapshot,
+  profile: FrameworkProfile,
+): boolean => {
+  const name = fiber.name ?? fiber.tag;
+  return fiber.tag === "ContextProvider"
+    ? profile.transparentRuntimeProviders.has(name)
+    : profile.transparentRuntimeFibers.has(name);
+};
+
 const flattenFiber = (
   fiber: RuntimeFiberSnapshot,
   profile: FrameworkProfile,
 ): RuntimeFiberSnapshot[] => {
   if (profile.isInjectedRuntimeFiber(fiber)) return [];
   const children = flattenList(fiber.children, profile);
-  if (profile.transparentRuntimeFibers.has(fiber.name ?? fiber.tag)) return children;
+  if (isTransparentRuntimeFiber(fiber, profile)) return children;
   return [{ ...fiber, children }];
 };
 
@@ -57,6 +70,7 @@ export const neverInjected = (): boolean => false;
 export const SPA_PROFILE: FrameworkProfile = {
   kind: "spa",
   transparentRuntimeFibers: new Set(),
+  transparentRuntimeProviders: new Set(),
   transparentStaticFibers: new Set(),
   isInjectedRuntimeFiber: neverInjected,
   defaultAnchor: null,

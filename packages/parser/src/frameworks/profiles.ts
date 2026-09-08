@@ -48,6 +48,10 @@ const NEXT_APP_RUNTIME_WRAPPERS = [
   "InnerScrollAndFocusHandler",
   "InnerScrollAndFocusHandlerOld",
   "LoadingBoundary",
+  "Fragment",
+];
+
+const NEXT_APP_RUNTIME_PROVIDERS = [
   "TemplateContext",
   "LayoutRouterContext",
   "GlobalLayoutRouterContext",
@@ -58,7 +62,6 @@ const NEXT_APP_RUNTIME_WRAPPERS = [
   "SearchParamsContext",
   "HeadManagerContext",
   "SegmentStateContext",
-  "Fragment",
   "ContextProvider",
 ];
 
@@ -87,6 +90,7 @@ const isNextAppInjectedFiber = (fiber: RuntimeFiberSnapshot): boolean =>
 export const NEXT_APP_PROFILE: FrameworkProfile = {
   kind: "next-app",
   transparentRuntimeFibers: new Set(NEXT_APP_RUNTIME_WRAPPERS),
+  transparentRuntimeProviders: new Set(NEXT_APP_RUNTIME_PROVIDERS),
   transparentStaticFibers: new Set(["Fragment", "ContextProvider"]),
   isInjectedRuntimeFiber: isNextAppInjectedFiber,
   defaultAnchor: "body",
@@ -97,13 +101,6 @@ const NEXT_PAGES_RUNTIME_WRAPPERS = [
   "AppContainer",
   "Container",
   "PathnameContextProviderAdapter",
-  "RouterContext",
-  "HeadManagerContext",
-  "ImageConfigContext",
-  "AppRouterContext",
-  "SearchParamsContext",
-  "PathnameContext",
-  "PathParamsContext",
   "ErrorBoundary",
   "HotReload",
   "ReactDevOverlay",
@@ -112,11 +109,32 @@ const NEXT_PAGES_RUNTIME_WRAPPERS = [
   "Fragment",
 ];
 
+const NEXT_PAGES_RUNTIME_PROVIDERS = [
+  "RouterContext",
+  "HeadManagerContext",
+  "ImageConfigContext",
+  "AppRouterContext",
+  "SearchParamsContext",
+  "PathnameContext",
+  "PathParamsContext",
+];
+
+// `next/dist/client/index.js` mounts a dummy `<Head callback>` (renders null,
+// times the head commit) and the route announcer portal next to `AppContainer`.
+const isNextPagesInjectedFiber = (fiber: RuntimeFiberSnapshot): boolean => {
+  if (fiber.tag !== "FunctionComponent") return false;
+  if (fiber.name === "Head") {
+    return fiber.children.length === 0 && Object.keys(fiber.props).join() === "callback";
+  }
+  return fiber.name === "Portal" && fiber.props.type === "next-route-announcer";
+};
+
 export const NEXT_PAGES_PROFILE: FrameworkProfile = {
   kind: "next-pages",
   transparentRuntimeFibers: new Set(NEXT_PAGES_RUNTIME_WRAPPERS),
+  transparentRuntimeProviders: new Set(NEXT_PAGES_RUNTIME_PROVIDERS),
   transparentStaticFibers: new Set(["Fragment"]),
-  isInjectedRuntimeFiber: neverInjected,
+  isInjectedRuntimeFiber: isNextPagesInjectedFiber,
   defaultAnchor: null,
 };
 
@@ -132,13 +150,6 @@ const REACT_ROUTER_RUNTIME_WRAPPERS = [
   "DataRoutes",
   "DataRoutes2",
   "RenderErrorBoundary",
-  "DataRouter",
-  "DataRouterState",
-  "Fetchers",
-  "ViewTransition",
-  "Navigation",
-  "Location",
-  "RouteError",
   "AwaitContextProvider",
   // framework mode (`@react-router/dev`); `HydratedRouter` and the core
   // `RouterProvider` stay as fibers because the static side renders them. The
@@ -146,7 +157,6 @@ const REACT_ROUTER_RUNTIME_WRAPPERS = [
   // esbuild (Vite dev pre-bundling).
   "RouterProvider$1",
   "RouterProvider2",
-  "FrameworkContext",
   "RemixErrorBoundary",
   "WithComponentProps",
   "WithComponentProps2",
@@ -154,13 +164,25 @@ const REACT_ROUTER_RUNTIME_WRAPPERS = [
   "WithHydrateFallbackProps2",
   "WithErrorBoundaryProps",
   "WithErrorBoundaryProps2",
-  "RSCRouterContext",
   "RSCRouterGlobalErrorBoundary",
+];
+
+const REACT_ROUTER_RUNTIME_PROVIDERS = [
+  "DataRouter",
+  "DataRouterState",
+  "Fetchers",
+  "ViewTransition",
+  "Navigation",
+  "Location",
+  "RouteError",
+  "FrameworkContext",
+  "RSCRouterContext",
 ];
 
 export const REACT_ROUTER_PROFILE: FrameworkProfile = {
   kind: "react-router",
   transparentRuntimeFibers: new Set(REACT_ROUTER_RUNTIME_WRAPPERS),
+  transparentRuntimeProviders: new Set(REACT_ROUTER_RUNTIME_PROVIDERS),
   transparentStaticFibers: new Set(["Location"]),
   isInjectedRuntimeFiber: neverInjected,
   defaultAnchor: null,

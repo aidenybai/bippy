@@ -661,6 +661,244 @@
         "maxFiberCount": 20000
       },
       "notes": "Django normally renders index.html with window.POSTHOG_APP_CONTEXT and points the module scripts at the Vite dev server; corpus/scripts/posthog-app-server.ts stands in for it with an anonymous app context and the checked-in _preflight fixture, answering the API calls the login scene makes. The kea store the page builds is captured through the Redux DevTools compose hook and replayed into the static render; the app server's stand-in API returns 404 for the endpoints it does not model, which the page logs."
+    },
+    {
+      "id": "lobe-chat",
+      "repository": "https://github.com/lobehub/lobe-chat",
+      "revision": "36c4be46f07aa45a10d186871b6fd6265a2ecbf3",
+      "description": "LobeChat SPA shell (Vite + react-router-dom data router, antd-style) served without its Next.js API backend",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "pnpm install",
+      "dev": "pnpm exec vite --port 9878",
+      "url": "http://localhost:9878/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/spa/entry.web.tsx",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@lobehub/*",
+          "@lobechat/*",
+          "antd-style",
+          "zustand",
+          "swr",
+          "react-i18next",
+          "i18next"
+        ],
+        "maxFiberCount": 20000
+      }
+    },
+    {
+      "id": "copilotkit",
+      "repository": "https://github.com/CopilotKit/CopilotKit",
+      "revision": "fbe488869949f5b7300945ed54c88ef6b8b16df1",
+      "description": "CopilotKit examples/v2/react/demo (Next 15 app router, CopilotKitProvider + CopilotChat from workspace packages)",
+      "framework": "next-app",
+      "workingDirectory": "examples/v2/react/demo",
+      "install": "pnpm install",
+      "setup": [
+        "cd ../../../.. && NODE_OPTIONS=--max-old-space-size=8192 NX_DAEMON=false pnpm nx run-many -t build --projects=@copilotkit/react-core,@copilotkit/runtime,@copilotkit/voice --parallel=2"
+      ],
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "examples/v2/react/demo",
+        "route": "/",
+        "externalPackageAllowList": ["@copilotkit/*", "@ag-ui/*", "@radix-ui/*", "lucide-react"]
+      }
+    },
+    {
+      "id": "react-three-next",
+      "repository": "https://github.com/pmndrs/react-three-next",
+      "revision": "bb29a61949601e1c563688faf33a12d062ec3710",
+      "description": "react-three-next starter (Next app router, @react-three/fiber canvas tunnel, dynamic() imports)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": ["@react-three/*", "its-fine", "tunnel-rat", "three"]
+      }
+    },
+    {
+      "id": "openchakra",
+      "repository": "https://github.com/premieroctet/openchakra",
+      "revision": "5605d412cb7570fb4b261655a88d2abb229352bb",
+      "description": "OpenChakra visual editor (Next pages router, Chakra UI v1, redux + redux-persist, react-dnd)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "yarn install",
+      "dev": "yarn dev",
+      "url": "http://localhost:3000/",
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@chakra-ui/*",
+          "@emotion/*",
+          "next-redux-wrapper",
+          "react-redux",
+          "redux",
+          "redux-undo",
+          "redux-persist",
+          "redux-persist/*",
+          "react-dnd",
+          "react-dnd-html5-backend",
+          "@rematch/*"
+        ]
+      }
+    },
+    {
+      "id": "craft-js",
+      "repository": "https://github.com/prevwong/craft.js",
+      "revision": "23f44f3208ebf78d1632ec4aa7094001f513eb41",
+      "description": "craft.js examples/landing (Next pages router, @craftjs/core Editor/Frame from workspace packages, MUI v4)",
+      "notes": "Cannot serve on Node 22: the Next 12 server bundle of examples/landing imports `@mui/utils/formatMuiErrorMessage` as an ESM directory import (ERR_UNSUPPORTED_DIR_IMPORT), so every page request 500s; `esmExternals: 'loose'` and `false` do not help. Recorded static-only.",
+      "framework": "next-pages",
+      "workingDirectory": "examples/landing",
+      "install": "yarn install && yarn build",
+      "dev": "yarn start",
+      "url": "http://localhost:3001/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "examples/landing",
+        "route": "/",
+        "externalPackageAllowList": ["@craftjs/*", "@material-ui/*", "styled-components"]
+      }
+    },
+    {
+      "id": "pdfme",
+      "repository": "https://github.com/pdfme/pdfme",
+      "revision": "5a6376a824fb8ab4f989841564b61cbb771100d2",
+      "description": "pdfme playground (Vite + react-router-dom declarative routes, @pdfme/ui Designer embedded via ref)",
+      "framework": "react-router",
+      "workingDirectory": "playground",
+      "install": "npm install && npm run build && cd playground && npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:5173/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "playground",
+        "entry": "src/index.tsx",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@pdfme/*",
+          "@headlessui/react",
+          "lucide-react",
+          "react-toastify",
+          "@sentry/react"
+        ]
+      }
+    },
+    {
+      "id": "socialecho",
+      "repository": "https://github.com/nz-m/SocialEcho",
+      "revision": "4dc6c7822bfff5c0b13e1b8098e8d7ae0084939a",
+      "description": "SocialEcho client sign-in page (CRA, react-router-dom v6 declarative routes, react-redux) without its Express backend",
+      "framework": "react-router",
+      "workingDirectory": "client",
+      "install": "cd client && npm install",
+      "dev": "npm start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3006"
+      },
+      "url": "http://localhost:3006/signin",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "client",
+        "entry": "src/index.jsx",
+        "route": "/signin",
+        "externalPackageAllowList": ["react-redux", "react-icons", "react-icons/*"]
+      }
+    },
+    {
+      "id": "react-starter-kit",
+      "repository": "https://github.com/kriasoft/react-starter-kit",
+      "revision": "3c5132eb3d0a02dc8090eb6248f8959744e18d12",
+      "description": "React Starter Kit apps/app (Vite SPA, TanStack Router file routes, TanStack Query, shadcn/ui) without its Hono API",
+      "framework": "spa",
+      "workingDirectory": "apps/app",
+      "install": "bun install",
+      "dev": "bun run dev",
+      "url": "http://localhost:5173/",
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "apps/app",
+        "entry": "index.tsx",
+        "externalPackageAllowList": [
+          "@tanstack/react-router",
+          "@tanstack/router-core",
+          "@tanstack/history",
+          "@tanstack/react-store",
+          "@tanstack/store",
+          "@tanstack/react-query",
+          "@tanstack/react-query-devtools",
+          "@radix-ui/*",
+          "lucide-react",
+          "better-auth",
+          "better-auth/*"
+        ]
+      }
+    },
+    {
+      "id": "nextjs-starter",
+      "repository": "https://github.com/weijunext/nextjs-starter",
+      "revision": "c33149454f19f74651f73245d63b1cfab187f7d3",
+      "description": "weijunext/nextjs-starter landing page (Next app router, next-themes, next-intl, shadcn/ui)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "setup": ["cp -n .env.example .env; true"],
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/en",
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/en",
+        "externalPackageAllowList": [
+          "next-themes",
+          "next-intl",
+          "next-intl/*",
+          "use-intl",
+          "use-intl/*",
+          "@radix-ui/*",
+          "lucide-react",
+          "react-icons",
+          "react-icons/*"
+        ],
+        "envFiles": [".env"]
+      }
+    },
+    {
+      "id": "foxel",
+      "repository": "https://github.com/DrizzleTime/Foxel",
+      "revision": "d5a24c69e180711e55abeddb4e31ce06e60a456f",
+      "description": "Foxel web client (Vite SPA, react-router v7 declarative routes, antd) without its FastAPI backend",
+      "framework": "react-router",
+      "workingDirectory": "web",
+      "install": "cd web && bun install",
+      "dev": "bun run dev",
+      "url": "http://localhost:5173/",
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "web",
+        "entry": "src/main.tsx",
+        "route": "/",
+        "externalPackageAllowList": ["antd", "@ant-design/*"]
+      }
     }
   ]
 }

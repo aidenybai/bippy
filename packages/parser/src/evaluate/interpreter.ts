@@ -1833,8 +1833,15 @@ export class Interpreter {
   ): void {
     const object = this.evaluateExpression(objectNode, context);
     const reassigned = this.assignProperty(object, key, value, context);
-    if (reassigned !== object && objectNode.type === "Identifier") {
+    if (reassigned === object) return;
+    if (objectNode.type === "Identifier") {
       this.assignIdentifier(objectNode.name, reassigned, context);
+    } else if (
+      objectNode.type === "MemberExpression" &&
+      !objectNode.computed &&
+      objectNode.property.type === "Identifier"
+    ) {
+      this.assignMember(objectNode.object, objectNode.property.name, reassigned, context);
     }
   }
 
