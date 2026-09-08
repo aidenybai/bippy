@@ -1184,16 +1184,11 @@ export class Interpreter {
       : null;
     return (
       pageLocationMember ??
-      getBuiltinGlobal(
-        hostName,
-        realm,
-        renderEnvironment === "server" ? null : this.hostDocument,
-        {
-          declared: this.processEnvironment,
-          renderEnvironment,
-          definedObjects: this.definedEnvironmentObjects,
-        },
-      )
+      getBuiltinGlobal(hostName, realm, renderEnvironment === "server" ? null : this.hostDocument, {
+        declared: this.processEnvironment,
+        renderEnvironment,
+        definedObjects: this.definedEnvironmentObjects,
+      })
     );
   }
 

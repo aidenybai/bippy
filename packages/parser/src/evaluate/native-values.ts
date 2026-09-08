@@ -221,9 +221,7 @@ const liftObject = (
   if (ancestors.has(value)) return unknownValue(`${name}: cyclic native value`);
   const path = new Set(ancestors).add(value);
   if (Array.isArray(value)) {
-    return listValue(
-      value.map((item, index) => liftValue(item, `${name}[${index}]`, host, path)),
-    );
+    return listValue(value.map((item, index) => liftValue(item, `${name}[${index}]`, host, path)));
   }
   if (value instanceof Date) return nativeObjectValue(value, null);
   if (host !== null) {
