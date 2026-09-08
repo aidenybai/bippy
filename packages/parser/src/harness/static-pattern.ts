@@ -1,9 +1,16 @@
 import { MARKER_NAMES } from "../materialize/markers.js";
 import type { StaticRenderResult } from "../types.js";
-import type { RuntimeFiberSnapshot, SnapshotPropValue, SnapshotWorkTag } from "./snapshot.js";
+import type {
+  RuntimeFiberSnapshot,
+  RuntimeSnapshot,
+  SnapshotPropValue,
+  SnapshotWorkTag,
+} from "./snapshot.js";
 
 // A pattern is the materialized fiber tree as the matcher consumes it:
 // concrete nodes, text, alternatives, repeats, opaque subtrees and wildcards.
+// Every branch and repeat is a decision variable; branches that share a
+// predicate share the variable and are therefore always decided together.
 
 export interface PatternFiber {
   kind: "fiber";
@@ -20,6 +27,7 @@ export interface PatternText {
 
 export interface PatternBranch {
   kind: "branch";
+  variable: string;
   reason: string;
   /** Where the source branched (`file:line:column`); null for branches the materializer introduces. */
   location: string | null;
@@ -27,8 +35,17 @@ export interface PatternBranch {
   alternatives: PatternNode[][];
 }
 
+export interface RepeatBounds {
+  min: number;
+  /** null when the interpreter does not know how many items there are. */
+  max: number | null;
+}
+
 export interface PatternRepeat {
   kind: "repeat";
+  variable: string;
+  location: string | null;
+  count: RepeatBounds;
   children: PatternNode[];
 }
 
@@ -46,6 +63,8 @@ export interface PatternOpaque {
 export interface PatternWildcard {
   kind: "wildcard";
   reason: string;
+  /** The materializer did not render this subtree, so its states are missing from the enumeration. */
+  isTruncated: boolean;
 }
 
 export type PatternNode =
@@ -89,86 +108,130 @@ const getSuspendedFallback = (fiber: RuntimeFiberSnapshot): RuntimeFiberSnapshot
   return primary.name === MARKER_NAMES.suspended ? primary : null;
 };
 
-const toFiberChildren = (fiber: RuntimeFiberSnapshot): PatternNode[] => {
-  const children = snapshotToPattern(fiber.children);
-  const suspendedFallback = getSuspendedFallback(fiber);
-  if (suspendedFallback) {
-    children.push({
-      kind: "fiber",
-      tag: "Fragment",
-      name: "Fragment",
-      key: null,
-      children: snapshotToPattern(suspendedFallback.children),
-    });
+const NEGATED_PREDICATE_PREFIX = "!";
+
+/** `!flag ? A : B` decides the same variable as `flag ? B : A`; both are read as the latter. */
+const normalizeNegatedBranch = (branch: PatternBranch): PatternBranch => {
+  if (!branch.variable.startsWith(NEGATED_PREDICATE_PREFIX) || branch.alternatives.length !== 2) {
+    return branch;
   }
-  return children;
+  return {
+    ...branch,
+    variable: branch.variable.slice(NEGATED_PREDICATE_PREFIX.length),
+    preferredIndex: branch.preferredIndex === null ? null : 1 - branch.preferredIndex,
+    alternatives: [branch.alternatives[1], branch.alternatives[0]],
+  };
 };
 
-const toPatternNode = (fiber: RuntimeFiberSnapshot): PatternNode[] => {
-  if (fiber.tag === "HostText") return [{ kind: "text", text: fiber.text }];
-  switch (fiber.name) {
-    case MARKER_NAMES.branch:
-      return [
-        {
-          kind: "branch",
-          reason: readString(fiber.props, "reason") ?? "",
-          location: readString(fiber.props, "location"),
-          preferredIndex: readNumber(fiber.props, "preferredIndex"),
-          alternatives: fiber.children.map((alternative) =>
-            snapshotToPattern(alternative.children),
-          ),
-        },
-      ];
-    case MARKER_NAMES.repeat:
-      return [{ kind: "repeat", children: snapshotToPattern(fiber.children) }];
-    case MARKER_NAMES.opaque:
-      return [
-        {
-          kind: "opaque",
-          name: readString(fiber.props, "displayName") ?? "",
-          runtimeNames: getOpaqueRuntimeNames(
-            readString(fiber.props, "displayName"),
-            readString(fiber.props, "importedName"),
-          ),
-          key: fiber.key,
-          reason: readString(fiber.props, "reason") ?? "",
-          passedChildren: snapshotToPattern(fiber.children),
-        },
-      ];
-    case MARKER_NAMES.unknown:
-      return [{ kind: "wildcard", reason: readString(fiber.props, "reason") ?? "" }];
-    case MARKER_NAMES.text:
-      return [{ kind: "text", text: null }];
-    case MARKER_NAMES.suspenseBoundary:
-      return snapshotToPattern(fiber.children);
-    case MARKER_NAMES.suspended:
-      return [];
-    default:
-      return [
-        {
-          kind: "fiber",
-          tag: fiber.tag,
-          name: fiber.name,
-          key: fiber.key,
-          children: toFiberChildren(fiber),
-        },
-      ];
+class PatternReader {
+  private anonymousDecisions = 0;
+
+  read(fibers: RuntimeFiberSnapshot[]): PatternNode[] {
+    return fibers.flatMap((fiber) => this.toPatternNode(fiber));
   }
-};
+
+  private readFiberChildren(fiber: RuntimeFiberSnapshot): PatternNode[] {
+    const children = this.read(fiber.children);
+    const suspendedFallback = getSuspendedFallback(fiber);
+    if (suspendedFallback) {
+      children.push({
+        kind: "fiber",
+        tag: "Fragment",
+        name: "Fragment",
+        key: null,
+        children: this.read(suspendedFallback.children),
+      });
+    }
+    return children;
+  }
+
+  private toPatternNode(fiber: RuntimeFiberSnapshot): PatternNode[] {
+    if (fiber.tag === "HostText") return [{ kind: "text", text: fiber.text }];
+    switch (fiber.name) {
+      case MARKER_NAMES.branch:
+        return [
+          normalizeNegatedBranch({
+            kind: "branch",
+            variable: readString(fiber.props, "predicate") ?? `branch#${++this.anonymousDecisions}`,
+            reason: readString(fiber.props, "reason") ?? "",
+            location: readString(fiber.props, "location"),
+            preferredIndex: readNumber(fiber.props, "preferredIndex"),
+            alternatives: fiber.children.map((alternative) => this.read(alternative.children)),
+          }),
+        ];
+      case MARKER_NAMES.repeat:
+        return [
+          {
+            kind: "repeat",
+            variable: `repeat#${++this.anonymousDecisions}`,
+            location: readString(fiber.props, "location"),
+            count: {
+              min: readNumber(fiber.props, "countMin") ?? 0,
+              max: readNumber(fiber.props, "countMax"),
+            },
+            children: this.read(fiber.children),
+          },
+        ];
+      case MARKER_NAMES.opaque:
+        return [
+          {
+            kind: "opaque",
+            name: readString(fiber.props, "displayName") ?? "",
+            runtimeNames: getOpaqueRuntimeNames(
+              readString(fiber.props, "displayName"),
+              readString(fiber.props, "importedName"),
+            ),
+            key: fiber.key,
+            reason: readString(fiber.props, "reason") ?? "",
+            passedChildren: this.read(fiber.children),
+          },
+        ];
+      case MARKER_NAMES.unknown:
+        return [
+          {
+            kind: "wildcard",
+            reason: readString(fiber.props, "reason") ?? "",
+            isTruncated: fiber.props.isTruncated === true,
+          },
+        ];
+      case MARKER_NAMES.text:
+        return [{ kind: "text", text: null }];
+      case MARKER_NAMES.suspenseBoundary:
+        return this.read(fiber.children);
+      case MARKER_NAMES.suspended:
+        return [];
+      default:
+        return [
+          {
+            kind: "fiber",
+            tag: fiber.tag,
+            name: fiber.name,
+            key: fiber.key,
+            children: this.readFiberChildren(fiber),
+          },
+        ];
+    }
+  }
+}
 
 /**
  * Reads the materialized fiber tree back into a pattern: marker components
  * become branches, repeats, opaque subtrees and wildcards; everything else is
  * a concrete fiber. A tree without markers is a fully concrete pattern.
+ * Decision variables are numbered in document order, so equal trees read to
+ * equal patterns.
  */
 export const snapshotToPattern = (fibers: RuntimeFiberSnapshot[]): PatternNode[] =>
-  fibers.flatMap(toPatternNode);
+  new PatternReader().read(fibers);
 
 export const getRenderPattern = (result: StaticRenderResult): PatternNode[] =>
   snapshotToPattern(result.snapshot.roots);
 
+export const getSnapshotRootChildren = (snapshot: RuntimeSnapshot): PatternNode[] =>
+  snapshotToPattern(snapshot.roots.flatMap((root) => root.children));
+
 export const getRenderRootChildren = (result: StaticRenderResult): PatternNode[] =>
-  snapshotToPattern(result.snapshot.roots.flatMap((root) => root.children));
+  getSnapshotRootChildren(result.snapshot);
 
 const flattenPatternNode = (node: PatternNode, transparent: ReadonlySet<string>): PatternNode[] => {
   switch (node.kind) {
@@ -207,6 +270,55 @@ export const flattenPatternFibers = (
   return result;
 };
 
+const decisionCache = new WeakMap<PatternNode, boolean>();
+
+/**
+ * Whether the subtree can match a runtime list in more than one way. A subtree
+ * of only fibers, text and opaque nodes cannot, so nothing needs to backtrack
+ * into it, enumerate it, or rescope it.
+ */
+export const hasPatternDecisions = (node: PatternNode): boolean => {
+  const known = decisionCache.get(node);
+  if (known !== undefined) return known;
+  const result =
+    node.kind === "fiber"
+      ? node.children.some(hasPatternDecisions)
+      : node.kind === "opaque"
+        ? node.passedChildren.some(hasPatternDecisions)
+        : node.kind !== "text";
+  decisionCache.set(node, result);
+  return result;
+};
+
+/** Renames every decision variable inside `nodes` into `scope`, so one repeat iteration decides independently of the next. */
+export const scopePatternVariables = (nodes: PatternNode[], scope: string): PatternNode[] =>
+  nodes.map((node) => {
+    if (!hasPatternDecisions(node)) return node;
+    switch (node.kind) {
+      case "fiber":
+        return { ...node, children: scopePatternVariables(node.children, scope) };
+      case "opaque":
+        return { ...node, passedChildren: scopePatternVariables(node.passedChildren, scope) };
+      case "branch":
+        return {
+          ...node,
+          variable: `${node.variable}@${scope}`,
+          alternatives: node.alternatives.map((alternative) =>
+            scopePatternVariables(alternative, scope),
+          ),
+        };
+      case "repeat":
+        return {
+          ...node,
+          variable: `${node.variable}@${scope}`,
+          children: scopePatternVariables(node.children, scope),
+        };
+      case "text":
+      case "wildcard":
+        return node;
+    }
+  });
+
 export const countPatternFibers = (node: PatternNode): number => {
   switch (node.kind) {
     case "fiber":
@@ -228,6 +340,9 @@ export const countPatternFibers = (node: PatternNode): number => {
       return 0;
   }
 };
+
+export const formatRepeatBounds = (count: RepeatBounds): string =>
+  count.max === null ? `${count.min}..` : `${count.min}..${count.max}`;
 
 const formatPatternNode = (node: PatternNode, depth: number): string[] => {
   const indent = "  ".repeat(depth);
@@ -251,7 +366,7 @@ const formatPatternNode = (node: PatternNode, depth: number): string[] => {
       ];
     case "repeat":
       return [
-        `${indent}*repeat`,
+        `${indent}*repeat(${formatRepeatBounds(node.count)})${node.location === null ? "" : ` @ ${node.location}`}`,
         ...node.children.flatMap((child) => formatPatternNode(child, depth + 1)),
       ];
     case "opaque": {

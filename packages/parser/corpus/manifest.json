@@ -242,6 +242,7 @@
           "process.env.LEXICAL_VERSION": "0.50.0+git"
         },
         "externalPackageAllowList": [
+          "@floating-ui/*",
           "@preact/signals-core",
           "@vercel/analytics",
           "@vercel/speed-insights",

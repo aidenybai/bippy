@@ -128,6 +128,8 @@ import {
   isKnownList,
   jsonValue,
   listValue,
+  type CallableValue,
+  isCallable,
   isNullish,
   mapValue,
   toBooleanValue,
@@ -936,7 +938,7 @@ const callGlobal = (
       const source =
         first?.kind === "object" ? (getCollectionItems(first) ?? arrayLikeToList(first)) : first;
       if (source?.kind === "list" || source?.kind === "repeat") {
-        if (isCallable(second)) return mapList(interpreter, source, second, context);
+        if (isCallable(second)) return mapList(interpreter, source, second, context, location);
         return source;
       }
       return unknownValue("Array.from of dynamic iterable", location);
@@ -953,7 +955,9 @@ const callGlobal = (
       const source =
         first?.kind === "object" ? (getCollectionItems(first) ?? arrayLikeToList(first)) : first;
       if (source?.kind !== "list") return unknownValue(`${name} of dynamic iterable`, location);
-      const mapped = isCallable(second) ? mapList(interpreter, source, second, context) : source;
+      const mapped = isCallable(second)
+        ? mapList(interpreter, source, second, context, location)
+        : source;
       return mapped.kind === "list"
         ? (binaryFromItems(name.slice(0, -".from".length), mapped.items) ?? mapped)
         : mapped;
@@ -1258,7 +1262,7 @@ const MAX_ARRAY_LIKE_LENGTH = 1_000;
 
 const arrayOfLength = (length: StaticValue, location: SourceLocation | null): StaticValue => {
   if (length.kind === "unknown-primitive" && length.primitiveType === "number")
-    return { kind: "repeat", item: UNDEFINED_VALUE, location };
+    return { kind: "repeat", item: UNDEFINED_VALUE, location, count: length.numberRange };
   if (length.kind === "unknown" || length.kind === "branch")
     return unknownValue("Array() with a dynamic length", location);
   if (length.kind !== "primitive" || typeof length.value !== "number") return listValue([length]);
@@ -1288,11 +1292,6 @@ const arrayLikeToList = (value: Extract<StaticValue, { kind: "object" }>): Stati
   );
 };
 
-export type CallableValue = Extract<
-  StaticValue,
-  { kind: "function" | "native-function" | "global" }
->;
-
 /** A task queued from a continuation of unknown timing runs at an unknown time too. */
 const scheduledTask = (
   interpreter: Interpreter,
@@ -1303,9 +1302,6 @@ const scheduledTask = (
   interpreter.timers.isDeferred
     ? () => interpreter.callDeferred(callback, [], context, location)
     : () => interpreter.callValue(callback, [], context, location);
-
-export const isCallable = (value: StaticValue | undefined): value is CallableValue =>
-  value?.kind === "function" || value?.kind === "native-function" || value?.kind === "global";
 
 interface ItemVerdict {
   verdict: boolean | null;
@@ -1448,6 +1444,7 @@ const mapList = (
   receiver: StaticValue,
   callback: CallableValue,
   context: EvaluationContext,
+  location: SourceLocation | null,
 ): StaticValue => {
   if (receiver.kind === "list") {
     return listValue(
@@ -1462,6 +1459,7 @@ const mapList = (
               context,
             ),
             location: item.location,
+            count: item.count,
           };
         }
         if (item.kind === "optional") {
@@ -1495,6 +1493,7 @@ const mapList = (
         context,
       ),
       location: receiver.location,
+      count: receiver.count,
     };
   }
   return {
@@ -1509,7 +1508,7 @@ const mapList = (
       ],
       context,
     ),
-    location: null,
+    location,
   };
 };
 
@@ -1940,7 +1939,9 @@ export const evaluateBuiltinCall = (
     if (shaped) return shaped;
   }
 
-  if (name === "map" && isCallable(first)) return mapList(interpreter, receiver, first, context);
+  if (name === "map" && isCallable(first)) {
+    return mapList(interpreter, receiver, first, context, location);
+  }
 
   if (name === "forEach" && isCallable(first)) {
     if (receiver.kind === "list") {
@@ -1970,7 +1971,7 @@ export const evaluateBuiltinCall = (
   }
 
   if (name === "flatMap" && isCallable(first)) {
-    const mapped = mapList(interpreter, receiver, first, context);
+    const mapped = mapList(interpreter, receiver, first, context, location);
     if (mapped.kind === "list") {
       return listValue(mapped.items.flatMap((item) => flattenOneLevel(item, location)));
     }

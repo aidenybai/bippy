@@ -1,29 +1,49 @@
 import type { StaticRenderResult } from "../types.js";
-import {
-  comparePatternToRuntime,
-  type ComparisonOptions,
-  type ComparisonReport,
-} from "./compare.js";
+import type { ComparisonOptions, ComparisonReport } from "./compare.js";
+import { formatComparisonReport } from "./format-report.js";
 import { findSnapshotFiber, type RuntimeFiberSnapshot, type RuntimeSnapshot } from "./snapshot.js";
 import {
+  DEFAULT_STATE_SPACE_BUDGET,
+  enumerateStateSpace,
+  matchStateSpace,
+  type ClosestState,
+  type MatchedState,
+  type StateSpaceBudget,
+  type StateSpaceSummary,
+  type StaticStateSpace,
+} from "./state-space.js";
+import {
   flattenPatternFibers,
-  getRenderRootChildren,
+  getSnapshotRootChildren,
   type PatternFiber,
   type PatternNode,
 } from "./static-pattern.js";
 
-export interface CompareRenderOptions extends ComparisonOptions {
+export interface StaticStateSpaceOptions {
   anchor?: string;
-  rootIndex?: number;
   /** Static fibers to splice out before matching (framework wrappers synthesized by a route adapter). */
   transparentStaticFibers?: ReadonlySet<string>;
+  budget?: Partial<StateSpaceBudget>;
+}
+
+export interface CompareRenderOptions extends ComparisonOptions {
+  rootIndex?: number;
+}
+
+export interface StaticRenderStateSpace extends StaticStateSpace {
+  /** The final commit's pattern after anchoring and flattening; what the states were expanded from last. */
+  staticPattern: PatternNode[];
+  anchor: string | null;
+  /** Why no state could be enumerated; `states` is empty then. */
+  unresolved: string | null;
 }
 
 export interface CompareRenderResult {
   report: ComparisonReport;
-  staticPattern: PatternNode[];
+  stateSpace: StaticRenderStateSpace;
+  matchedState: MatchedState | null;
+  closestState: ClosestState | null;
   runtimeSubtree: RuntimeFiberSnapshot[];
-  anchor: string | null;
   note: string | null;
 }
 
@@ -65,8 +85,77 @@ const didMaterializedRenderFail = (staticResult: StaticRenderResult): boolean =>
   staticResult.snapshot.roots.every((root) => root.children.length === 0) &&
   staticResult.diagnostics.some((diagnostic) => diagnostic.code === "render-error");
 
-const skipped = (
+const unresolvedStateSpace = (
   staticPattern: PatternNode[],
+  budget: StateSpaceBudget,
+  unresolved: string,
+): StaticRenderStateSpace => ({
+  states: [],
+  budget,
+  omitted: null,
+  commits: [],
+  staticPattern,
+  anchor: null,
+  unresolved,
+});
+
+/**
+ * Enumerates the concrete trees the static render can produce: every commit
+ * React made while the materialized tree settled, expanded over every
+ * assignment of its branch and repeat decisions within the budget.
+ */
+export const enumerateStaticStates = (
+  staticResult: StaticRenderResult,
+  options: StaticStateSpaceOptions = {},
+): StaticRenderStateSpace => {
+  const budget = { ...DEFAULT_STATE_SPACE_BUDGET, ...options.budget };
+  const transparent = options.transparentStaticFibers ?? new Set<string>();
+  const rootPattern = getSnapshotRootChildren(staticResult.snapshot);
+  const staticChildren = flattenPatternFibers(rootPattern, transparent);
+  if (isStaticRootUnresolved(rootPattern)) {
+    return unresolvedStateSpace(
+      staticChildren,
+      budget,
+      "static render did not resolve to a component tree",
+    );
+  }
+  if (didMaterializedRenderFail(staticResult)) {
+    return unresolvedStateSpace(
+      staticChildren,
+      budget,
+      "React failed to render the materialized tree",
+    );
+  }
+  const commits = (staticResult.commits.length > 0 ? staticResult.commits : [staticResult.snapshot])
+    .map((commit) => flattenPatternFibers(getSnapshotRootChildren(commit), transparent))
+    .filter((pattern) => pattern.length > 0);
+  const anchor = options.anchor ?? null;
+  const anchoredCommits =
+    anchor === null
+      ? commits
+      : commits.flatMap((pattern) => {
+          const staticAnchor = findPatternFiber(pattern, (fiber) => fiber.name === anchor);
+          return staticAnchor ? [[staticAnchor]] : [];
+        });
+  if (anchoredCommits.length === 0) {
+    return unresolvedStateSpace(
+      staticChildren,
+      budget,
+      anchor === null
+        ? "static render committed no fibers"
+        : `anchor <${anchor}> not found in static tree`,
+    );
+  }
+  return {
+    ...enumerateStateSpace(anchoredCommits, budget),
+    staticPattern: anchoredCommits[anchoredCommits.length - 1],
+    anchor,
+    unresolved: null,
+  };
+};
+
+const skipped = (
+  stateSpace: StaticRenderStateSpace,
   note: string,
   status: "unresolved" | "skipped",
 ): CompareRenderResult => ({
@@ -80,7 +169,6 @@ const skipped = (
     slotsUnmatched: 0,
     opaqueRenamed: 0,
     unmatchedSlots: [],
-    branchDeviations: [],
     wildcardAbsorbedFibers: 0,
     wildcards: [],
     branchesResolved: 0,
@@ -94,9 +182,10 @@ const skipped = (
     stepsUsed: 0,
     budgetExhausted: false,
   },
-  staticPattern,
+  stateSpace,
+  matchedState: null,
+  closestState: null,
   runtimeSubtree: [],
-  anchor: null,
   note,
 });
 
@@ -113,10 +202,10 @@ const countFibers = (fibers: RuntimeFiberSnapshot[]): number => {
  */
 const chooseRuntimeRoot = (
   runtime: RuntimeSnapshot,
+  anchor: string | null,
   options: CompareRenderOptions,
 ): RuntimeFiberSnapshot | null => {
   if (options.rootIndex !== undefined) return runtime.roots[options.rootIndex] ?? null;
-  const anchor = options.anchor;
   if (anchor) {
     const anchored = runtime.roots.find(
       (root) =>
@@ -137,55 +226,50 @@ const chooseRuntimeRoot = (
   return largest;
 };
 
+/** Checks the runtime tree for membership in the enumerated state space. */
 export const compareStaticToRuntime = (
-  staticResult: StaticRenderResult,
+  stateSpace: StaticRenderStateSpace,
   runtime: RuntimeSnapshot,
   options: CompareRenderOptions = {},
 ): CompareRenderResult => {
-  const rootPattern = getRenderRootChildren(staticResult);
-  const staticChildren = flattenPatternFibers(
-    rootPattern,
-    options.transparentStaticFibers ?? new Set(),
-  );
-  if (isStaticRootUnresolved(rootPattern)) {
-    return skipped(
-      staticChildren,
-      "static render did not resolve to a component tree",
-      "unresolved",
-    );
-  }
-  if (didMaterializedRenderFail(staticResult)) {
-    return skipped(staticChildren, "React failed to render the materialized tree", "unresolved");
-  }
-  const runtimeRoot = chooseRuntimeRoot(runtime, options);
+  if (stateSpace.unresolved !== null)
+    return skipped(stateSpace, stateSpace.unresolved, "unresolved");
+  const runtimeRoot = chooseRuntimeRoot(runtime, stateSpace.anchor, options);
   if (!runtimeRoot)
-    return skipped(staticChildren, "runtime snapshot has no committed roots", "skipped");
+    return skipped(stateSpace, "runtime snapshot has no committed roots", "skipped");
 
-  if (options.anchor) {
-    const anchor = options.anchor;
-    const staticAnchor = findPatternFiber(staticChildren, (fiber) => fiber.name === anchor);
+  let runtimeSubtree = runtimeRoot.children;
+  if (stateSpace.anchor !== null) {
+    const anchor = stateSpace.anchor;
     const runtimeAnchor = findSnapshotFiber(
       runtimeRoot,
       (fiber) => fiber.name === anchor && fiber.tag !== "HostText",
     );
-    if (!staticAnchor)
-      return skipped(staticChildren, `anchor <${anchor}> not found in static tree`, "unresolved");
     if (!runtimeAnchor)
-      return skipped(staticChildren, `anchor <${anchor}> not found in runtime tree`, "skipped");
-    return {
-      report: comparePatternToRuntime([staticAnchor], [runtimeAnchor], options),
-      staticPattern: [staticAnchor],
-      runtimeSubtree: [runtimeAnchor],
-      anchor,
-      note: null,
-    };
+      return skipped(stateSpace, `anchor <${anchor}> not found in runtime tree`, "skipped");
+    runtimeSubtree = [runtimeAnchor];
   }
-
+  const match = matchStateSpace(stateSpace, runtimeSubtree, options);
   return {
-    report: comparePatternToRuntime(staticChildren, runtimeRoot.children, options),
-    staticPattern: staticChildren,
-    runtimeSubtree: runtimeRoot.children,
-    anchor: null,
+    report: match.report,
+    stateSpace,
+    matchedState: match.matched,
+    closestState: match.closest,
+    runtimeSubtree,
     note: null,
   };
 };
+
+export const summarizeStateSpace = (comparison: CompareRenderResult): StateSpaceSummary => ({
+  states: comparison.stateSpace.states.length,
+  matchedState: comparison.matchedState,
+  closestState: comparison.closestState,
+  omitted: comparison.stateSpace.omitted,
+});
+
+export const formatCompareRenderResult = (comparison: CompareRenderResult): string =>
+  formatComparisonReport(
+    comparison.report,
+    summarizeStateSpace(comparison),
+    comparison.stateSpace.states,
+  );

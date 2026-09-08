@@ -1,0 +1,8 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "expectedStates": 2,
+  "expectOmitted": false,
+  "notes": "A mount effect flips a state cell, so two trees are committed within the settle window. Each commit is its own state; the runtime snapshot must equal the last one."
+}

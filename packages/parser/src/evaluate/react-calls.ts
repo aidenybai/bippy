@@ -10,7 +10,7 @@ import type {
   StaticValue,
   StubRenderTools,
 } from "../types.js";
-import { type CallableValue, callUncertainCallback, isCallable } from "./builtin-calls.js";
+import { callUncertainCallback } from "./builtin-calls.js";
 import { countChildrenExactly, mapChildrenExactly } from "./react-children.js";
 import type { EvaluationContext } from "./context.js";
 import {
@@ -29,6 +29,7 @@ import {
   FALSE_VALUE,
   getKnownObjectKeys,
   getObjectProperty,
+  isCallable,
   isNullish,
   listValue,
   mapValue,
@@ -40,6 +41,7 @@ import {
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
   unknownValue,
+  type CallableValue,
 } from "./values.js";
 
 const ELEMENT_TYPE_TAG_KEY = "$$typeof";
@@ -85,6 +87,7 @@ const stateHook = (
     current: StaticValue,
     tools: StubRenderTools,
   ) => StaticValue,
+  reduceEscaped: (action: StaticValue | undefined) => StaticValue | null,
 ): StaticValue => {
   const frame = context.hooks;
   if (!frame) {
@@ -110,7 +113,10 @@ const stateHook = (
       );
       return UNDEFINED_VALUE;
     },
-    onEscape: () => escapeStateCell(frame, cell),
+    onEscape: (argumentValues) => {
+      const action = argumentValues?.[0];
+      escapeStateCell(frame, cell, action === null ? null : reduceEscaped(action));
+    },
   };
   return listValue([cell.current, cell.setter]);
 };
@@ -455,8 +461,13 @@ export const evaluateReactApiCall = (
         first?.kind === "function"
           ? interpreter.callFunction(first, [], context)
           : (first ?? UNDEFINED_VALUE);
-      return stateHook(context, nameHint ?? "useState", computeInitial, (action, current, tools) =>
-        action?.kind === "function" ? tools.call(action, [current]) : (action ?? UNDEFINED_VALUE),
+      return stateHook(
+        context,
+        nameHint ?? "useState",
+        computeInitial,
+        (action, current, tools) =>
+          action?.kind === "function" ? tools.call(action, [current]) : (action ?? UNDEFINED_VALUE),
+        (action) => (isCallable(action) ? null : (action ?? UNDEFINED_VALUE)),
       );
     }
     case "useReducer": {
@@ -472,6 +483,7 @@ export const evaluateReactApiCall = (
           first && action
             ? tools.call(first, [current, action])
             : unknownValue("reducer state after dispatch"),
+        () => null,
       );
     }
     case "useMemo": {
@@ -495,6 +507,8 @@ export const evaluateReactApiCall = (
       const createRef = (): StaticValue => objectFromRecord({ current: first ?? UNDEFINED_VALUE });
       return context.hooks ? nextMemoCell(context.hooks, null, createRef) : createRef();
     }
+    case "createRef":
+      return objectFromRecord({ current: NULL_VALUE });
     case "useContext":
       return first
         ? readContextValue(interpreter, first, context, location)

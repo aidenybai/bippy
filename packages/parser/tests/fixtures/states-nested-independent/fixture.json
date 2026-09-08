@@ -1,0 +1,8 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "expectedStates": 4,
+  "expectOmitted": false,
+  "notes": "Two flags decided independently (one inside a child component) multiply: every combination is a reachable state, so the space has four members."
+}
