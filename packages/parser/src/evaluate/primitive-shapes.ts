@@ -4,7 +4,7 @@ import type {
   StaticValue,
   StringShape,
 } from "../types.js";
-import { primitiveValue, unknownPrimitiveValue, unknownValue } from "./values.js";
+import { distributeBinary, primitiveValue, unknownPrimitiveValue, unknownValue } from "./values.js";
 
 const UNKNOWN_STRING_SHAPE: StringShape = { prefix: "", length: null };
 
@@ -42,6 +42,25 @@ export const concatenateStrings = (left: StaticValue, right: StaticValue): Stati
         : leftShape.length + rightShape.length,
   });
 };
+
+/** `Array.prototype.join`: `null` and `undefined` items read as empty, every other item as its `+` coercion. */
+const toJoinedItem = (item: StaticValue): StaticValue =>
+  item.kind === "primitive" && (item.value === null || item.value === undefined)
+    ? primitiveValue("")
+    : item;
+
+const concatenateAlternatives = (left: StaticValue, right: StaticValue): StaticValue =>
+  distributeBinary(left, right, concatenateAlternatives) ?? concatenateStrings(left, right);
+
+export const joinStrings = (items: StaticValue[], separator: string): StaticValue =>
+  items.reduce<StaticValue>(
+    (joined, item, index) =>
+      concatenateAlternatives(
+        index === 0 ? joined : concatenateAlternatives(joined, primitiveValue(separator)),
+        toJoinedItem(item),
+      ),
+    primitiveValue(""),
+  );
 
 const toIndexArgument = (argument: StaticValue | undefined): number | null | undefined => {
   if (argument === undefined) return undefined;

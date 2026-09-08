@@ -20,6 +20,8 @@ export interface CorpusStaticTarget {
   route?: string;
   /** Next: `app/` or `pages/` directory relative to `rootDirectory` when it is not directly under it. */
   appDirectory?: string;
+  /** Directory the dev server serves at the URL root, relative to `rootDirectory`, when it is not `public`. */
+  publicDirectory?: string;
   /** Component name both trees are aligned on before matching. */
   anchor?: string;
   externalPackageAllowList?: string[];
@@ -234,6 +236,7 @@ const readStaticTarget = (reader: ManifestReader): CorpusStaticTarget => ({
   rootComponent: reader.optionalString("rootComponent"),
   route: reader.optionalString("route"),
   appDirectory: reader.optionalString("appDirectory"),
+  publicDirectory: reader.optionalString("publicDirectory"),
   anchor: reader.optionalString("anchor"),
   externalPackageAllowList: reader.optionalStringList("externalPackageAllowList"),
   bootstrap: reader.optionalStringList("bootstrap"),

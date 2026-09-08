@@ -78,7 +78,10 @@ const getRecord = (store: Store, atom: StaticObjectValue): AtomRecord | null => 
   if (!record) {
     record = {
       atom,
-      cell: objectFromRecord({ [VALUE_KEY]: UNDEFINED_VALUE, [IS_INITIALIZED_KEY]: UNDEFINED_VALUE }),
+      cell: objectFromRecord({
+        [VALUE_KEY]: UNDEFINED_VALUE,
+        [IS_INITIALIZED_KEY]: UNDEFINED_VALUE,
+      }),
       epoch: 0,
       dependencies: new Map(),
       mounted: null,
@@ -163,7 +166,8 @@ const readAtom = (
 const collectDependents = (record: AtomRecord, sorted: AtomRecord[], marked: Set<AtomRecord>) => {
   if (marked.has(record)) return;
   marked.add(record);
-  for (const dependent of record.mounted?.dependents ?? []) collectDependents(dependent, sorted, marked);
+  for (const dependent of record.mounted?.dependents ?? [])
+    collectDependents(dependent, sorted, marked);
   sorted.push(record);
 };
 

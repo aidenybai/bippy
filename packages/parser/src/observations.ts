@@ -114,14 +114,16 @@ const isCapturedRouterState = (value: unknown): value is CapturedRouterState =>
 const isCapturedRequest = (value: unknown): value is CapturedRequest =>
   isRecord(value) && isStringRecord(value.headers);
 
+const isOptionalStringList = (value: unknown): value is string[] | undefined =>
+  value === undefined || (Array.isArray(value) && value.every((item) => typeof item === "string"));
+
 const isCapturedPageState = (value: unknown): value is CapturedPageState =>
   isRecord(value) &&
   typeof value.cookie === "string" &&
   (value.name === undefined || typeof value.name === "string") &&
   isOptionalCapturedValue(value.historyState) &&
-  (value.windowKeys === undefined ||
-    (Array.isArray(value.windowKeys) &&
-      value.windowKeys.every((key) => typeof key === "string"))) &&
+  isOptionalStringList(value.windowKeys) &&
+  isOptionalStringList(value.windowFunctionKeys) &&
   (value.userAgent === undefined || typeof value.userAgent === "string") &&
   (value.language === undefined || typeof value.language === "string") &&
   isStringRecord(value.localStorage) &&

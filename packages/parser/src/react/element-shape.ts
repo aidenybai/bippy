@@ -37,4 +37,3 @@ export const getReactElementSymbolKey = (reactVersion: string | null): string =>
   reactVersion && Number(reactVersion.split(".")[0]) < 19
     ? "react.element"
     : "react.transitional.element";
-

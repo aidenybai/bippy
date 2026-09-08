@@ -61,11 +61,10 @@ const createDraft = (base: StaticValue, drafts: Map<Draftable, Draftable>): Stat
   const draft = objectValue();
   drafts.set(base, draft);
   draftBases.set(draft, base);
-  draft.entries = base.entries.map(
-    (entry): StaticObjectEntry =>
-      entry.kind === "property"
-        ? { ...entry, value: createDraft(entry.value, drafts) }
-        : { kind: "spread", value: createDraft(entry.value, drafts) },
+  draft.entries = base.entries.map((entry): StaticObjectEntry =>
+    entry.kind === "property"
+      ? { ...entry, value: createDraft(entry.value, drafts) }
+      : { kind: "spread", value: createDraft(entry.value, drafts) },
   );
   return draft;
 };
@@ -93,7 +92,10 @@ const finalize = (draft: StaticValue, drafts: Map<Draftable, Draftable>): Static
       ? base
       : draft;
   }
-  draft.entries = draft.entries.map((entry) => ({ ...entry, value: finalize(entry.value, drafts) }));
+  draft.entries = draft.entries.map((entry) => ({
+    ...entry,
+    value: finalize(entry.value, drafts),
+  }));
   return base.kind === "object" &&
     draft.entries.length === base.entries.length &&
     draft.entries.every((entry, index) => isSameEntry(entry, base.entries[index]))
@@ -101,7 +103,11 @@ const finalize = (draft: StaticValue, drafts: Map<Draftable, Draftable>): Static
     : draft;
 };
 
-const produceFrom = (base: StaticValue, recipe: StaticValue, tools: StubRenderTools): StaticValue => {
+const produceFrom = (
+  base: StaticValue,
+  recipe: StaticValue,
+  tools: StubRenderTools,
+): StaticValue => {
   if (!isDraftable(base)) {
     const returned = tools.call(recipe, [base]);
     if (isUndefined(returned)) return base;
@@ -133,7 +139,8 @@ const produce = ([base, recipe, ...rest]: StaticValue[], tools: StubRenderTools)
     );
   }
   if (!isCallable(recipe)) return unknownValue("Immer recipe that is not a function");
-  if (rest.length > 0 && !isUndefined(rest[0])) return unknownValue("state produced with a patch listener");
+  if (rest.length > 0 && !isUndefined(rest[0]))
+    return unknownValue("state produced with a patch listener");
   return mapValue(base, (alternative) => produceFrom(alternative, recipe, tools));
 };
 

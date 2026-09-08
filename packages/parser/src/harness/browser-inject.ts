@@ -40,12 +40,22 @@ const readStorageArea = (area: Storage): Record<string, string> => {
 
 const initialHistoryState = toCapturedValue(history.state) ?? null;
 
-const readWindowKeys = (): string[] => {
+interface WindowKeys {
+  all: string[];
+  functions: string[];
+}
+
+const readWindowKeys = (): WindowKeys => {
   const names = new Set<string>();
+  const functionNames = new Set<string>();
   for (let object: unknown = globalThis; object; object = Object.getPrototypeOf(object)) {
-    for (const name of Object.getOwnPropertyNames(object)) names.add(name);
+    for (const name of Object.getOwnPropertyNames(object)) {
+      names.add(name);
+      if (typeof Object.getOwnPropertyDescriptor(object, name)?.value === "function")
+        functionNames.add(name);
+    }
   }
-  return [...names];
+  return { all: [...names], functions: [...functionNames] };
 };
 const initialWindowKeys = readWindowKeys();
 
@@ -53,7 +63,8 @@ const readPageState = (): CapturedPageState => ({
   cookie: document.cookie,
   name: window.name,
   historyState: initialHistoryState,
-  windowKeys: initialWindowKeys,
+  windowKeys: initialWindowKeys.all,
+  windowFunctionKeys: initialWindowKeys.functions,
   userAgent: navigator.userAgent,
   language: navigator.language,
   localStorage: readStorageArea(localStorage),

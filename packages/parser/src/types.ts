@@ -425,6 +425,8 @@ export interface CapturedPageState {
   historyState?: CapturedValue;
   /** Every name `in window` before the page's first script ran (feature detection); absent in older captures. */
   windowKeys?: string[];
+  /** The `windowKeys` whose own value was a function (interface objects, global functions); absent in older captures. */
+  windowFunctionKeys?: string[];
   /** `navigator.userAgent` and `navigator.language`; absent in older captures. */
   userAgent?: string;
   language?: string;
@@ -831,6 +833,8 @@ export interface StaticRendererOptions {
   route?: string;
   /** Origin (`http://localhost:3000`) the dev server serves the page from; `location` reads it and same-origin asset URLs resolve to its static files. */
   origin?: string;
+  /** Directory the dev server serves at the URL root, relative to `rootDirectory`; `public` unless the bundler is configured otherwise. */
+  publicDirectory?: string;
   /** What a running page was observed to hold; the render takes these as its runtime inputs. */
   observations?: RuntimeObservations;
   externalValues?: ExternalValueProvider;

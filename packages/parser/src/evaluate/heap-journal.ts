@@ -5,6 +5,7 @@ import type {
   StaticObjectValue,
   StaticValue,
 } from "../types.js";
+import type { StateCell } from "./hooks.js";
 import { branchValue, getAllocationCount, joinObjectEntries, UNDEFINED_VALUE } from "./values.js";
 
 export type MutableHeapValue = StaticObjectValue | StaticListValue;
@@ -18,11 +19,14 @@ type ModuleBindingStates = Map<ModuleValues, Map<string, StaticValue>>;
 
 type ListProperties = ReadonlyMap<string, StaticValue> | undefined;
 
+type PendingStates = Map<StateCell, StaticValue | null>;
+
 interface HeapPath {
   objects: Map<StaticObjectValue, StaticObjectEntry[]>;
   lists: Map<StaticListValue, StaticValue[]>;
   listProperties: Map<StaticListValue, ListProperties>;
   bindings: ModuleBindingStates;
+  pendingStates: PendingStates;
 }
 
 const isExtensionOf = <Item>(items: Item[], prefix: Item[]): boolean =>
@@ -61,18 +65,21 @@ const joinListProperties = (
 
 /**
  * Scope bindings are restored and joined around every fork, but objects and
- * lists reached through them live on the heap, and module-level variables in
- * their module's value table, so both would keep the mutations of whichever
- * path ran last. The journal snapshots every pre-existing value a path mutates
- * so the next path starts from the fork's entry state, and the join leaves
- * each mutated value with one alternative per path. Values allocated after the
- * fork began exist on one path only and are left alone.
+ * lists reached through them live on the heap, module-level variables in
+ * their module's value table, and state updates in their hook cell, so all
+ * would keep the mutations of whichever path ran last. The journal snapshots
+ * every pre-existing value a path mutates so the next path starts from the
+ * fork's entry state, and the join leaves each mutated value with one
+ * alternative per path (a path that queued no update contributes the cell's
+ * committed value). Values allocated after the fork began exist on one path
+ * only and are left alone.
  */
 export class HeapJournal {
   private readonly objects = new Map<StaticObjectValue, StaticObjectEntry[]>();
   private readonly lists = new Map<StaticListValue, StaticValue[]>();
   private readonly listProperties = new Map<StaticListValue, ListProperties>();
   private readonly bindings: ModuleBindingStates = new Map();
+  private readonly pendingStates: PendingStates = new Map();
   private readonly paths: HeapPath[] = [];
   private readonly entryAllocation = getAllocationCount();
 
@@ -99,13 +106,22 @@ export class HeapJournal {
     if (!originals.has(name)) originals.set(name, current);
   }
 
+  recordStateUpdate(cell: StateCell): void {
+    if (!this.pendingStates.has(cell)) this.pendingStates.set(cell, cell.next);
+  }
+
   endPath(): void {
     const path: HeapPath = {
       objects: new Map(),
       lists: new Map(),
       listProperties: new Map(),
       bindings: new Map(),
+      pendingStates: new Map(),
     };
+    for (const [cell, original] of this.pendingStates) {
+      path.pendingStates.set(cell, cell.next);
+      cell.next = original;
+    }
     for (const [object, original] of this.objects) {
       path.objects.set(object, object.entries);
       object.entries = [...original];
@@ -129,6 +145,19 @@ export class HeapJournal {
   }
 
   join(reason: string, location: SourceLocation | null, preferredPath: number): void {
+    for (const [cell, original] of this.pendingStates) {
+      const pathValues = this.paths.map((path) =>
+        path.pendingStates.has(cell) ? (path.pendingStates.get(cell) ?? null) : original,
+      );
+      cell.next = pathValues.every((value) => value === pathValues[0])
+        ? pathValues[0]
+        : branchValue(
+            pathValues.map((value) => value ?? cell.current),
+            reason,
+            location,
+            preferredPath,
+          );
+    }
     for (const [values, originals] of this.bindings) {
       for (const [name, original] of originals) {
         const pathValues = this.paths.map(

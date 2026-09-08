@@ -14,12 +14,15 @@ const BUNDLER_PLACEHOLDER_NAME = /^_[a-z]\d*$/;
 
 const isBundlerPlaceholderName = (name: string): boolean => BUNDLER_PLACEHOLDER_NAME.test(name);
 
-// When esbuild pre-bundles a package whose modules reuse a minified top-level
-// name, its renamer keeps the first `Ae` and emits the others as `Ae$1`, `Ae$2`, …
+// Dependency pre-bundling renames a binding that collides in the merged chunk:
+// rolldown/rollup emit `Ae$1`, `Ae$2`, …, esbuild emits `Item2` (including the
+// name of a function expression assigned to a same-named variable).
+const BUNDLER_DEDUPE_SUFFIX = /^\$?\d+$/;
+
 const isBundlerDedupedName = (sourceName: string, runtimeName: string): boolean =>
-  runtimeName.length > sourceName.length + 1 &&
-  runtimeName.startsWith(`${sourceName}$`) &&
-  /^\d+$/.test(runtimeName.slice(sourceName.length + 1));
+  runtimeName.length > sourceName.length &&
+  runtimeName.startsWith(sourceName) &&
+  BUNDLER_DEDUPE_SUFFIX.test(runtimeName.slice(sourceName.length));
 
 const runtimeNameAgrees = (sourceName: string, runtimeName: string): boolean =>
   sourceName === runtimeName || isBundlerDedupedName(sourceName, runtimeName);

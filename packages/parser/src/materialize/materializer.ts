@@ -21,12 +21,7 @@ import {
 } from "../evaluate/hooks.js";
 import type { Interpreter } from "../evaluate/interpreter.js";
 import { getModeledPromise, type ModeledPromise, onPromiseSettled } from "../evaluate/promises.js";
-import {
-  describeThrow,
-  findThrown,
-  getThrowCertainty,
-  withoutThrows,
-} from "../evaluate/thrown.js";
+import { describeThrow, findThrown, getThrowCertainty, withoutThrows } from "../evaluate/thrown.js";
 import {
   areValuesEquivalent,
   compareIdentity,
@@ -1480,7 +1475,10 @@ export class Materializer {
   ): ReactNode {
     const certainty = getThrowCertainty(rendered);
     if (certainty === "always") {
-      throw this.getWakeable(rendered, input.context) ?? new StaticThrowError(describeThrow(rendered), false);
+      throw (
+        this.getWakeable(rendered, input.context) ??
+        new StaticThrowError(describeThrow(rendered), false)
+      );
     }
     if (certainty === "maybe") {
       if (input.context.errorBoundaryDepth > 0 && !input.context.ignoresMaybeThrows) {

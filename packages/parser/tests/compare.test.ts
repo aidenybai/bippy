@@ -33,17 +33,26 @@ const opaque = (runtimeNames: string[] | null): PatternOpaque => ({
 });
 
 /**
- * Vite/esbuild suffix a minified binding that repeats across chunks with
- * `$<n>` (`Ae` becomes `Ae$5`); the static tree keeps the source name.
+ * Dependency pre-bundling renames a binding that collides in the merged chunk
+ * (rolldown: `Ae` becomes `Ae$5`; esbuild: `TextareaAutosize` becomes
+ * `TextareaAutosize2`); the static tree keeps the source name.
  */
 describe("bundler-deduplicated component names", () => {
-  it("matches a source name against its `$<n>` suffixed runtime name", () => {
+  it("matches a source name against its rolldown `$<n>` suffixed runtime name", () => {
     const report = comparePatternToRuntime(
       [patternFiber("Ae", [patternFiber("Inner")])],
       [runtimeFiber("Ae$5", [runtimeFiber("Inner")])],
     );
     expect(report.status).toBe("exact");
     expect(report.matchedFibers).toBe(2);
+  });
+
+  it("matches a source name against its esbuild `<n>` suffixed runtime name", () => {
+    const report = comparePatternToRuntime(
+      [patternFiber("TextareaAutosize")],
+      [runtimeFiber("TextareaAutosize2")],
+    );
+    expect(report.status).toBe("exact");
   });
 
   it("accepts a deduplicated runtime name for an opaque component", () => {
@@ -53,7 +62,7 @@ describe("bundler-deduplicated component names", () => {
   });
 
   it("keeps rejecting names that merely share a prefix", () => {
-    for (const runtimeName of ["Ae$", "Ae$x", "AeX", "Ae5"]) {
+    for (const runtimeName of ["Ae$", "Ae$x", "AeX", "Ae2$1", "A"]) {
       const report = comparePatternToRuntime([patternFiber("Ae")], [runtimeFiber(runtimeName)]);
       expect(report.status, runtimeName).toBe("mismatch");
     }

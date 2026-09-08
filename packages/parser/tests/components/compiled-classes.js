@@ -120,6 +120,22 @@ var withBadge = function (e) {
     );
   })(React.Component);
 };
+/** Babel 7.23+: `_createClass` returns the constructor, so the wrapper returns its call directly. */
+var Ticker = /*#__PURE__*/ (function (_Component) {
+  _inheritsLoose(Ticker, _Component);
+  function Ticker() {
+    return _Component.apply(this, arguments) || this;
+  }
+  return _createClass(Ticker, [
+    {
+      key: "render",
+      value: function render() {
+        return React.createElement("time", null, "tick ", String(this.props.step));
+      },
+    },
+  ]);
+})(React.Component);
+
 var Label = function (props) {
   return React.createElement("span", null, props.label);
 };
@@ -132,5 +148,6 @@ export default function CompiledClasses() {
     React.createElement(Greeting, null),
     React.createElement(Counter, { count: 2 }),
     React.createElement(BadgedLabel, { label: "hi" }),
+    React.createElement(Ticker, { step: 3 }),
   );
 }

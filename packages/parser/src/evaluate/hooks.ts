@@ -1,4 +1,5 @@
 import type { StaticNativeFunctionValue, StaticValue } from "../types.js";
+import type { Interpreter } from "./interpreter.js";
 import { areValuesEquivalent, branchValue, compareIdentity, unknownValue } from "./values.js";
 
 export interface StateCell {
@@ -143,12 +144,20 @@ export const escapedStateValue = (cell: StateCell): StaticValue =>
 /**
  * Mirrors `dispatchSetState`: with nothing pending, an update that leaves the
  * cell unchanged is dropped eagerly. An escaped cell already commits to every
- * value it may take, so further updates cannot change it either.
+ * value it may take, so further updates cannot change it either. Queued from
+ * one path of a fork, the update is journaled like any heap write so the other
+ * paths keep the cell unchanged.
  */
-export const queueStateUpdate = (frame: HookFrame, cell: StateCell, value: StaticValue): void => {
+export const queueStateUpdate = (
+  interpreter: Interpreter,
+  frame: HookFrame,
+  cell: StateCell,
+  value: StaticValue,
+): void => {
   if (frame.isDeferred) return escapeStateCell(frame, cell);
   if (cell.isEscaped) return;
   if (cell.next === null && isSameHookValue(value, cell.current)) return;
+  interpreter.recordStateUpdate(cell);
   cell.next = value;
   if (!frame.isRendering) frame.requestRender?.();
 };

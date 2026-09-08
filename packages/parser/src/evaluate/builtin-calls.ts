@@ -35,6 +35,7 @@ import {
 import { createAbortController } from "./abort-controller.js";
 import { createDomObserver, isDomObserverName } from "./dom-observers.js";
 import { createErrorValue, ERROR_CONSTRUCTOR_NAMES, isErrorConstructorName } from "./errors.js";
+import { callFetch } from "./fetch.js";
 import { nativeFunction } from "../frameworks/stubs.js";
 import { constructNativeDate } from "./native-values.js";
 import { callEventTargetMethod } from "./event-listeners.js";
@@ -63,7 +64,7 @@ import {
   type PromiseHandlers,
   type PromiseTools,
 } from "./promises.js";
-import { callShapedPrimitiveMethod, rangedNumberValue } from "./primitive-shapes.js";
+import { callShapedPrimitiveMethod, joinStrings, rangedNumberValue } from "./primitive-shapes.js";
 import { createSearchParamsValue } from "./url-search-params.js";
 import {
   callStringCodec,
@@ -518,6 +519,10 @@ const WELL_KNOWN_SYMBOL_NAMES = new Set(
   ),
 );
 
+/** Whether the analysis has its own model of the global `name` (a builtin or a modeled `window` member). */
+export const isModeledGlobalName = (name: string): boolean =>
+  GLOBAL_NAMES.has(name) || isWindowMember(name);
+
 export const getBuiltinGlobal = (
   name: string,
   environment?: EnvironmentLookup,
@@ -853,7 +858,7 @@ const callGlobal = (
       break;
     }
     case "Object":
-      if (isConstructor || first === undefined) break;
+      if (first === undefined) return objectValue();
       return mapValue(first, (argument) => {
         if (isNullish(argument) === true) return objectValue();
         return argument.kind === "primitive" || argument.kind === "unknown-primitive"
@@ -882,6 +887,9 @@ const callGlobal = (
     case "AbortController":
       if (isConstructor) return createAbortController(interpreter, location);
       break;
+    case "fetch":
+      if (isConstructor) break;
+      return callFetch(interpreter.project, args, location);
     case "RegExp": {
       if (second !== undefined && second.kind !== "primitive")
         return unknownValue("RegExp with dynamic flags", location);
@@ -1082,7 +1090,8 @@ const callGlobal = (
         return unknownValue("Reflect.construct with dynamic arguments", location);
       }
       const superConstructed =
-        context.thisValue && interpreter.constructSuper(context.thisValue, first, constructArguments);
+        context.thisValue &&
+        interpreter.constructSuper(context.thisValue, first, constructArguments);
       if (superConstructed) return superConstructed;
       if (newTarget && newTarget !== first) {
         return unknownValue("Reflect.construct with a foreign new.target", location);
@@ -1961,16 +1970,18 @@ export const evaluateBuiltinCall = (
         }
         return listValue(items);
       }
-      case "join":
-        if (receiver.items.every((item) => item.kind === "primitive")) {
-          const separator = first?.kind === "primitive" ? String(first.value) : ",";
-          return primitiveValue(
-            receiver.items
-              .map((item) => (item.kind === "primitive" ? String(item.value ?? "") : ""))
-              .join(separator),
-          );
+      case "join": {
+        const separator =
+          first === undefined || (first.kind === "primitive" && first.value === undefined)
+            ? ","
+            : first.kind === "primitive"
+              ? String(first.value)
+              : null;
+        if (separator === null || !hasDefiniteItems(receiver)) {
+          return unknownPrimitiveValue("string", "join of dynamic list");
         }
-        return unknownPrimitiveValue("string", "join of dynamic list");
+        return joinStrings(receiver.items, separator);
+      }
       case "at": {
         if (first?.kind === "primitive" && isKnownList(receiver)) {
           const index = Number(first.value);

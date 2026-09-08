@@ -50,6 +50,8 @@ interface MemberCollector {
 interface ReturnedClass {
   name: string;
   trailing: Expression[];
+  /** `return _createClass(X, …)`: the call that must itself declare members for the wrapper to be a class. */
+  memberCall: CallExpression | null;
 }
 
 interface PropertyDescriptor {
@@ -64,7 +66,14 @@ const getReturnedClass = (statements: Statement[]): ReturnedClass | null => {
   const returned = unwrapExpression(last.argument);
   const sequence = returned.type === "SequenceExpression" ? returned.expressions : [returned];
   const named = unwrapExpression(sequence.at(-1) ?? returned);
-  return named.type === "Identifier" ? { name: named.name, trailing: sequence.slice(0, -1) } : null;
+  if (named.type === "Identifier") {
+    return { name: named.name, trailing: sequence.slice(0, -1), memberCall: null };
+  }
+  if (named.type !== "CallExpression") return null;
+  const [receiver] = named.arguments;
+  return receiver?.type === "Identifier"
+    ? { name: receiver.name, trailing: [...sequence.slice(0, -1), named], memberCall: named }
+    : null;
 };
 
 const toMember = (target: MemberTarget, descriptor: PropertyDescriptor): ClassMember => {
@@ -273,6 +282,8 @@ export const getCompiledClass = (call: CallExpression): CompiledClass | null => 
   for (const statement of body) {
     if (statement === constructorDeclaration || collectMemberStatement(statement, collector))
       continue;
+    if (statement.type === "ExpressionStatement" && statement.expression === returned.memberCall)
+      return null;
     setup.push(statement);
   }
   const hasPrototypeMembers = collector.members.some(

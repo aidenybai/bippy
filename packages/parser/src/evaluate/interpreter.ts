@@ -94,6 +94,7 @@ import {
   getBuiltinGlobal,
   getGlobalTypeof,
   getTypeofValue,
+  isModeledGlobalName,
   isModeledOpaqueMethodName,
   isPromiseMethodName,
 } from "./builtin-calls.js";
@@ -105,6 +106,7 @@ import {
   getClassPrototypeObject,
   getStaticProperty,
   getSuperObject,
+  hasKnownStaticChain,
 } from "./class-component.js";
 import { getCollectionItems, markCollectionExternallyMutable } from "./collections.js";
 import { createGeneratorValue } from "./generators.js";
@@ -150,7 +152,7 @@ import {
 } from "./web-storage.js";
 import { type CompiledClass, getCompiledClass } from "./compiled-class.js";
 import type { CallFrame, ContextReader, EvaluationContext } from "./context.js";
-import type { HookFrame } from "./hooks.js";
+import type { HookFrame, StateCell } from "./hooks.js";
 import { NO_PROVIDERS, withOutcomeHandler, withScope, withoutSuspension } from "./context.js";
 import { decodeJsxEntities } from "./jsx-entities.js";
 import { cleanJsxText } from "./jsx-text.js";
@@ -201,6 +203,7 @@ import {
   isSymbolPropertyKey,
   listValue,
   mapValue,
+  distributeBinary,
   NULL_VALUE,
   capturedValue,
   jsonValue,
@@ -488,9 +491,7 @@ const isNonProgressingRecursion = (
       frame.scope === functionValue.scope &&
       frame.args.length === args.length &&
       areValuesEquivalent(frame.thisValue ?? UNDEFINED_VALUE, thisValue ?? UNDEFINED_VALUE) &&
-      (hasUnknownArgument ||
-        frame.changeCount === changeCount ||
-        frame.forkDepth < forkDepth) &&
+      (hasUnknownArgument || frame.changeCount === changeCount || frame.forkDepth < forkDepth) &&
       frame.args.every(
         (argument, index) =>
           areValuesEquivalent(argument, args[index]) ||
@@ -1098,8 +1099,25 @@ export class Interpreter {
       if (name === "module") return objectFromRecord({ exports: exportsValue });
     }
     return (
-      this.getGlobal(name, context.environment) ?? unknownValue(`unbound identifier "${name}"`)
+      this.getGlobal(name, context.environment) ??
+      this.getCapturedWindowInterface(name) ??
+      unknownValue(`unbound identifier "${name}"`)
     );
+  }
+
+  /** An interface object the captured browser exposed on `window` that the analysis has no model of: callable, with results it never saw. */
+  private getCapturedWindowInterface(key: string): StaticValue | null {
+    return this.pageState?.windowFunctionKeys?.includes(key) && !isModeledGlobalName(key)
+      ? { kind: "method", receiver: { kind: "global", name: "window" }, name: key }
+      : null;
+  }
+
+  /** `window.key` from the capture: a name the browser did not expose is `undefined`; null when the analysis models it or the capture does not say. */
+  private getCapturedWindowMember(key: string): StaticValue | null {
+    const windowKeys = this.pageState?.windowKeys;
+    if (!windowKeys) return null;
+    if (!windowKeys.includes(key)) return UNDEFINED_VALUE;
+    return this.getCapturedWindowInterface(key);
   }
 
   private getGlobal(name: string, renderEnvironment: RenderEnvironment | null): StaticValue | null {
@@ -1316,6 +1334,11 @@ export class Interpreter {
       items.push(this.evaluateExpression(element, context));
     }
     return listValue(items);
+  }
+
+  recordStateUpdate(cell: StateCell): void {
+    this.changeCount++;
+    for (const journal of this.heapJournals) journal.recordStateUpdate(cell);
   }
 
   /** Mutating a value that predates an enclosing fork must be undone for the fork's other paths. */
@@ -2005,8 +2028,8 @@ export class Interpreter {
           const windowGlobal = this.windowGlobals.get(key);
           if (windowGlobal) return windowGlobal;
           if (isSymbolPropertyKey(key)) return UNDEFINED_VALUE;
-          const windowKeys = this.pageState?.windowKeys;
-          if (windowKeys && !windowKeys.includes(key)) return UNDEFINED_VALUE;
+          const captured = this.getCapturedWindowMember(key);
+          if (captured) return captured;
         }
         return (
           this.getGlobal(`${object.name}.${key}`, context.environment) ?? {
@@ -2041,7 +2064,11 @@ export class Interpreter {
           );
         if (key === "displayName") return UNDEFINED_VALUE;
         if (key === "name") return object.name ? primitiveValue(object.name) : primitiveValue("");
-        if (object.kind === "function" && !isFunctionOwnOrInheritedKey(key)) return UNDEFINED_VALUE;
+        if (
+          !isFunctionOwnOrInheritedKey(key) &&
+          (object.kind === "function" || hasKnownStaticChain(object))
+        )
+          return UNDEFINED_VALUE;
         return unknownValue(`${describeValue(object)}.${key}`, location);
       }
       case "component-reference":
@@ -2635,7 +2662,12 @@ export class Interpreter {
     const superValue = this.evaluateArguments(call.arguments, context)[0] ?? null;
     const scope = createScope(context.scope);
     const wrapperContext: EvaluationContext = { ...context, scope };
-    this.bindParameters(compiled.wrapper.params, superValue ? [superValue] : [], scope, wrapperContext);
+    this.bindParameters(
+      compiled.wrapper.params,
+      superValue ? [superValue] : [],
+      scope,
+      wrapperContext,
+    );
     const classValue = this.defineClass(
       compiled.wrapper,
       { members: compiled.members, superValue },
@@ -3471,11 +3503,6 @@ const WRAPPER_SYMBOL_KEYS = {
   lazy: "react.lazy",
 } as const;
 
-const MAX_DISTRIBUTED_ALTERNATIVES = 16;
-
-const countAlternatives = (value: StaticValue): number =>
-  value.kind === "branch" ? value.alternatives.length : 1;
-
 const applyUnaryOperator = (
   operator: Exclude<UnaryOperator, "typeof" | "void" | "delete">,
   argument: StaticValue,
@@ -3508,18 +3535,10 @@ const applyBinaryOperator = (
   right: StaticValue,
   environment: RenderEnvironment | null = null,
 ): StaticValue => {
-  if (countAlternatives(left) * countAlternatives(right) <= MAX_DISTRIBUTED_ALTERNATIVES) {
-    if (left.kind === "branch") {
-      return mapValue(left, (alternative) =>
-        applyBinaryOperator(operator, alternative, right, environment),
-      );
-    }
-    if (right.kind === "branch") {
-      return mapValue(right, (alternative) =>
-        applyBinaryOperator(operator, left, alternative, environment),
-      );
-    }
-  }
+  const distributed = distributeBinary(left, right, (leftAlternative, rightAlternative) =>
+    applyBinaryOperator(operator, leftAlternative, rightAlternative, environment),
+  );
+  if (distributed) return distributed;
   const thrownOperand = getThrownOperand([left, right]);
   if (thrownOperand) return thrownOperand;
   if (left.kind === "primitive" && right.kind === "primitive") {

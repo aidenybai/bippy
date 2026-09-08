@@ -57,6 +57,9 @@ const PAGE_UNLOAD_EVENTS = new Set(["pagehide", "beforeunload", "unload"]);
 /** The capture viewport never changes, so `window` never fires these before the snapshot. */
 const VIEWPORT_EVENTS = new Set(["resize", "orientationchange"]);
 
+/** `storage` fires only in *other* documents sharing the storage area; the capture is one document. */
+const CROSS_DOCUMENT_EVENTS = new Set(["storage"]);
+
 /** A freshly loaded page sits at its initial scroll offset until a user or script scrolls it. */
 const SCROLL_EVENTS = new Set(["scroll", "scrollend"]);
 
@@ -156,7 +159,7 @@ const isEventBeforeCapture = (receiver: StaticValue, type: StaticValue | undefin
   if (
     receiver.kind === "global" &&
     isWindowAlias(receiver.name) &&
-    VIEWPORT_EVENTS.has(type.value)
+    (VIEWPORT_EVENTS.has(type.value) || CROSS_DOCUMENT_EVENTS.has(type.value))
   ) {
     return false;
   }

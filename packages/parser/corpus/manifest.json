@@ -54,12 +54,8 @@
       "framework": "next-app",
       "workingDirectory": "apps/web",
       "install": "yarn install",
-      "setup": [
-        "bash \"$BIPPY_CORPUS_SCRIPTS/cal-diy-setup.sh\""
-      ],
-      "services": [
-        "bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-cal-pg 5450 calendso"
-      ],
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/cal-diy-setup.sh\""],
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-cal-pg 5450 calendso"],
       "dev": "yarn dev",
       "url": "http://localhost:3000/auth/login",
       "readyTimeoutMs": 900000,
@@ -89,9 +85,7 @@
         "defines": {
           "process.env.NEXT_PUBLIC_CALCOM_VERSION": "6.2.0"
         },
-        "envFiles": [
-          "../../.env"
-        ],
+        "envFiles": ["../../.env"],
         "maxFiberCount": 20000
       },
       "notes": "`next.config.ts` loads the repository `.env` (written by the setup script) and sets `NEXT_PUBLIC_CALCOM_VERSION` from the root package version, which is the one define. The seeded database comes from cal.diy's own `db-seed`; `/` redirects unauthenticated visitors to the login page, which is captured directly."
@@ -275,9 +269,7 @@
         "tsconfig": "apps/demo/tsconfig.json",
         "appDirectory": "apps/demo/app",
         "route": "/",
-        "externalPackageAllowList": [
-          "lucide-react"
-        ],
+        "externalPackageAllowList": ["lucide-react"],
         "maxFiberCount": 20000
       }
     },
@@ -421,9 +413,7 @@
       "static": {
         "rootDirectory": "examples/query/react/basic",
         "entry": "src/index.tsx",
-        "externalPackageAllowList": [
-          "react-redux"
-        ]
+        "externalPackageAllowList": ["react-redux"]
       }
     },
     {
@@ -459,9 +449,7 @@
       "static": {
         "rootDirectory": "test",
         "route": "/",
-        "externalPackageAllowList": [
-          "sonner"
-        ]
+        "externalPackageAllowList": ["sonner"]
       },
       "notes": "Live: Next 14 (React 18.3 canary). Same profile normalization as nextjs-examples; the toaster state is runtime-only (partial)."
     },
@@ -546,19 +534,13 @@
       "framework": "react-router",
       "workingDirectory": ".",
       "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npm install --no-audit --no-fund",
-      "setup": [
-        "bash \"$BIPPY_CORPUS_SCRIPTS/documenso-setup.sh\""
-      ],
-      "services": [
-        "docker compose -f docker/development/compose.yml up -d database redis"
-      ],
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/documenso-setup.sh\""],
+      "services": ["docker compose -f docker/development/compose.yml up -d database redis"],
       "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npm run dev:remix",
       "url": "http://localhost:3000/signin",
       "readyTimeoutMs": 900000,
       "settleMs": 10000,
-      "capturedGlobals": [
-        "__ENV__"
-      ],
+      "capturedGlobals": ["__ENV__"],
       "static": {
         "rootDirectory": "apps/remix",
         "entry": "app/routes.ts",
@@ -593,9 +575,7 @@
       "url": "https://localhost:7999/auth/login/",
       "readyTimeoutMs": 900000,
       "settleMs": 10000,
-      "capturedGlobals": [
-        "__initialData"
-      ],
+      "capturedGlobals": ["__initialData"],
       "static": {
         "rootDirectory": ".",
         "entry": "static/app/main.tsx",
@@ -642,11 +622,7 @@
       "url": "http://localhost:8000/login",
       "readyTimeoutMs": 900000,
       "settleMs": 10000,
-      "capturedGlobals": [
-        "POSTHOG_APP_CONTEXT",
-        "JS_URL",
-        "JS_CAPTURE_TIME_TO_SEE_DATA"
-      ],
+      "capturedGlobals": ["POSTHOG_APP_CONTEXT", "JS_URL", "JS_CAPTURE_TIME_TO_SEE_DATA"],
       "static": {
         "rootDirectory": "frontend",
         "entry": "src/index.tsx",
@@ -778,6 +754,56 @@
         ]
       },
       "notes": "`pnpm dev` first copies the dprint markdown WASM into public/wasm (node --experimental-strip-types, Node >= 22.6). The editor body is CodeMirror 6 (plain DOM under one host node); document state lives in jotai/utils atomWithStorage atoms backed by localStorage."
+    },
+    {
+      "id": "openai-translator",
+      "repository": "https://github.com/LanceMoe/openai-translator",
+      "revision": "3536d2869175a5211a88523a44183d9fc9136fda",
+      "description": "OpenAI Translator PWA (Vite 6 with root=src, React 19 + React Compiler, react-router-dom 7 nested routes with lazy pages, react-daisyui, zustand, @tanstack/react-query, react-i18next over HTTP backend with suspense)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "dev": "pnpm dev --port 5173 --strictPort --no-open",
+      "url": "http://localhost:5173/",
+      "static": {
+        "rootDirectory": ".",
+        "aliases": {
+          "@/": "src/"
+        },
+        "entry": "src/main.tsx",
+        "route": "/",
+        "publicDirectory": "src/public",
+        "envFiles": [],
+        "externalPackageAllowList": [
+          "@headlessui/react",
+          "@react-aria/*",
+          "react-aria",
+          "@react-stately/*",
+          "@floating-ui/*",
+          "@tanstack/react-virtual",
+          "@tanstack/virtual-core",
+          "@tanstack/react-query",
+          "@tanstack/query-core",
+          "@mantine/hooks",
+          "react-daisyui",
+          "react-hot-toast",
+          "goober",
+          "react-i18next",
+          "i18next-http-backend",
+          "i18next",
+          "react-icons",
+          "react-speech-recognition",
+          "react-string-replace",
+          "react-textarea-autosize",
+          "use-composed-ref",
+          "use-latest",
+          "use-isomorphic-layout-effect",
+          "tailwind-merge",
+          "clsx",
+          "zustand"
+        ]
+      },
+      "notes": "vite.config.ts sets `root: src` (index.html lives in src/), aliases `@/` to src/ (mirrored by tsconfig paths) and defines BUILD_TIME as `new Date().toISOString()` at dev-server start, which the Header prints as text; that timestamp differs per run so it stays unbound (one text wildcard) rather than a guessed define. No .env files exist so VITE_PUBLIC_PATH is unset and base stays `/`. Translations load from src/public/locales through i18next-http-backend with `useSuspense: true`."
     }
   ]
 }

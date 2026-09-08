@@ -251,6 +251,10 @@ export const getStaticProperty = (
   return null;
 };
 
+/** Whether every class up the `extends` chain is known, so a missing static is `undefined`. */
+export const hasKnownStaticChain = (classValue: StaticClassValue): boolean =>
+  collectClassChain(classValue).at(-1)?.body.superValue === null;
+
 const caughtErrorValue = (): StaticValue =>
   objectFromRecord({
     name: unknownPrimitiveValue("string", "caught error name"),
@@ -336,7 +340,7 @@ const mountClassInstance = (
           ? tools.call(partialState, [previousState, getObjectProperty(instance, "props")])
           : (partialState ?? UNDEFINED_VALUE);
       if (callback) record.pendingCallbacks.push(callback);
-      queueStateUpdate(frame, stateCell, mergeState(previousState, resolvedPartial));
+      queueStateUpdate(interpreter, frame, stateCell, mergeState(previousState, resolvedPartial));
       return UNDEFINED_VALUE;
     },
     onEscape: () => escapeStateCell(frame, stateCell),

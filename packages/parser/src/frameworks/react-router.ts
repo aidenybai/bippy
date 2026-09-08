@@ -12,10 +12,7 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
-import {
-  createSearchParamsValue,
-  getSearchParamsString,
-} from "../evaluate/url-search-params.js";
+import { createSearchParamsValue, getSearchParamsString } from "../evaluate/url-search-params.js";
 import { toElementType } from "../react/element-type.js";
 import { findRootRenderCalls } from "../render/find-root-elements.js";
 import { AUTO_ROUTES_PACKAGE, readAutoRoutes } from "./react-router-auto-routes.js";
@@ -400,7 +397,10 @@ const paramsValue = (params: RouteParams): StaticValue =>
     ),
   );
 
-const routeContextProvider = (routeContext: StaticValue, children: StaticValue): StaticElementValue =>
+const routeContextProvider = (
+  routeContext: StaticValue,
+  children: StaticValue,
+): StaticElementValue =>
   element(
     { kind: "context-provider", context: ROUTE_CONTEXT, displayName: ROUTE_CONTEXT.displayName },
     objectFromRecord({ value: routeContext, children }),
@@ -695,9 +695,7 @@ const createRouterHookValues = (
   /** `useSearchParams(defaultInit)`: the URL's query, with default keys the URL lacks appended after it. */
   const searchParamsValue = (defaultInit: StaticValue | undefined): StaticValue => {
     const defaultQuery =
-      defaultInit === undefined
-        ? ""
-        : getSearchParamsString(createSearchParamsValue(defaultInit));
+      defaultInit === undefined ? "" : getSearchParamsString(createSearchParamsValue(defaultInit));
     if (defaultQuery === null) {
       return unknownValue("react-router useSearchParams() with a dynamic default init");
     }

@@ -9,6 +9,7 @@ import type {
   StaticFunctionValue,
   StaticValue,
 } from "../types.js";
+import { isWindowAlias, isWindowMember } from "./browser-globals.js";
 import { getStaticProperty } from "./class-component.js";
 import { createErrorValue } from "./errors.js";
 import { getPrototypeWitness } from "./instance-of.js";
@@ -111,6 +112,7 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
     case "native-function":
       return name in Function.prototype ? TRUE_VALUE : FALSE_VALUE;
     case "global": {
+      if (isWindowAlias(target.name) && isWindowMember(name)) return TRUE_VALUE;
       const witness = getPrototypeWitness(target);
       if (witness === null) return null;
       return toRuntimePropertyKey(name) in witness ? TRUE_VALUE : FALSE_VALUE;

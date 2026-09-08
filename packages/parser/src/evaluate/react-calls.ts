@@ -41,6 +41,7 @@ import {
 
 /** `mountState`/`mountReducer`: the initializer runs on mount only, twice under Strict Mode. */
 const stateHook = (
+  interpreter: Interpreter,
   context: EvaluationContext,
   name: string,
   computeInitial: () => StaticValue,
@@ -66,7 +67,7 @@ const stateHook = (
     kind: "native-function",
     name: `set ${name}`,
     call: ([action], tools) => {
-      queueStateUpdate(frame, cell, reduce(action, cell.next ?? cell.current, tools));
+      queueStateUpdate(interpreter, frame, cell, reduce(action, cell.next ?? cell.current, tools));
       return UNDEFINED_VALUE;
     },
     onEscape: () => escapeStateCell(frame, cell),
@@ -101,7 +102,7 @@ const externalStoreHook = (
     kind: "native-function",
     name: "handleStoreChange",
     call: () => {
-      queueStateUpdate(frame, cell, readSnapshot());
+      queueStateUpdate(interpreter, frame, cell, readSnapshot());
       return UNDEFINED_VALUE;
     },
   };
@@ -408,8 +409,13 @@ export const evaluateReactApiCall = (
         first?.kind === "function"
           ? interpreter.callFunction(first, [], context)
           : (first ?? UNDEFINED_VALUE);
-      return stateHook(context, nameHint ?? "useState", computeInitial, (action, current, tools) =>
-        action?.kind === "function" ? tools.call(action, [current]) : (action ?? UNDEFINED_VALUE),
+      return stateHook(
+        interpreter,
+        context,
+        nameHint ?? "useState",
+        computeInitial,
+        (action, current, tools) =>
+          action?.kind === "function" ? tools.call(action, [current]) : (action ?? UNDEFINED_VALUE),
       );
     }
     case "useReducer": {
@@ -418,6 +424,7 @@ export const evaluateReactApiCall = (
           ? interpreter.callFunction(third, [second ?? UNDEFINED_VALUE], context)
           : (second ?? UNDEFINED_VALUE);
       return stateHook(
+        interpreter,
         context,
         nameHint ?? "useReducer",
         computeInitial,

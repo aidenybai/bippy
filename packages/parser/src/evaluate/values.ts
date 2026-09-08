@@ -325,7 +325,13 @@ const lookupObjectProperty = (object: StaticObjectValue, key: string): StaticVal
         spread.preferredIndex,
       );
     }
-    return unknownValue(`property "${key}" may come from a spread of ${describeValue(spread)}`);
+    const fromSpread = unknownValue(
+      `property "${key}" may come from a spread of ${describeValue(spread)}`,
+    );
+    const fromEarlier = getObjectProperty(objectValue(object.entries.slice(0, index)), key);
+    return isPresent(fromEarlier)
+      ? branchValue([fromEarlier, fromSpread], fromSpread.reason, null)
+      : fromSpread;
   }
   if (key === "constructor" && object.constructedBy) return object.constructedBy;
   return object.prototype ? getObjectProperty(object.prototype, key) : UNDEFINED_VALUE;
@@ -559,6 +565,8 @@ const isSameValue = (left: StaticValue, right: StaticValue): boolean => {
   if (left.kind === "primitive" && right.kind === "primitive") {
     return Object.is(left.value, right.value);
   }
+  if (left.kind === "global" && right.kind === "global") return left.name === right.name;
+  if (left.kind === "symbol" && right.kind === "symbol") return left.key === right.key;
   return false;
 };
 
@@ -948,9 +956,14 @@ export const getTruthiness = (value: StaticValue): boolean | null => {
   switch (value.kind) {
     case "primitive":
       return Boolean(value.value);
+    case "branch": {
+      const truthiness = getTruthiness(value.alternatives[0]);
+      return value.alternatives.every((alternative) => getTruthiness(alternative) === truthiness)
+        ? truthiness
+        : null;
+    }
     case "unknown-primitive":
     case "unknown":
-    case "branch":
     case "optional":
       return null;
     case "external":
@@ -1027,6 +1040,28 @@ export const mapValue = (
     value.location,
     value.preferredIndex,
   );
+};
+
+const MAX_DISTRIBUTED_ALTERNATIVES = 16;
+
+const countAlternatives = (value: StaticValue): number =>
+  value.kind === "branch" ? value.alternatives.length : 1;
+
+/** Applies a binary operation to every pair of alternatives while the product stays small; null when either operand is a branch too wide to distribute. */
+export const distributeBinary = (
+  left: StaticValue,
+  right: StaticValue,
+  operation: (leftAlternative: StaticValue, rightAlternative: StaticValue) => StaticValue,
+): StaticValue | null => {
+  if (countAlternatives(left) * countAlternatives(right) > MAX_DISTRIBUTED_ALTERNATIVES)
+    return null;
+  if (left.kind === "branch") {
+    return mapValue(left, (alternative) => operation(alternative, right));
+  }
+  if (right.kind === "branch") {
+    return mapValue(right, (alternative) => operation(left, alternative));
+  }
+  return null;
 };
 
 export const getStaticPrimitive = (value: StaticValue): StaticPrimitive | undefined =>

@@ -561,6 +561,93 @@
       "failure": null
     },
     {
+      "id": "openai-translator",
+      "revision": "3536d2869175a5211a88523a44183d9fc9136fda",
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T11:00:54.908Z",
+      "durationMs": 1458,
+      "runtime": {
+        "reactVersion": "19.2.3",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 499,
+        "commits": 3,
+        "pageErrors": [],
+        "title": "OpenAI Translator"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 547,
+          "textCount": 6,
+          "branchCount": 5,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 409
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 488,
+        "matchedText": 6,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 1,
+        "wildcards": [
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ReactQueryProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <GlobalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TabLayout> [FunctionComponent] > <ConfigDrawerLayout> [FunctionComponent] > <div> [HostComponent] > <Header> [FunctionComponent] > <AboutModal> [FunctionComponent] > <label> [HostComponent] > <label> [HostComponent] > <p> [HostComponent]",
+            "reason": "unbound identifier \"BUILD_TIME\"",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"2026-09-08T10:41:51.256Z\""
+            ]
+          }
+        ],
+        "branchesResolved": 4,
+        "branchDeviations": [
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ReactQueryProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <GlobalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TabLayout> [FunctionComponent] > <ConfigDrawerLayout> [FunctionComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TranslatorPage> [FunctionComponent] > <form> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent]",
+            "reason": "&& on <boolean: negation of unknown>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ReactQueryProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <GlobalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TabLayout> [FunctionComponent] > <ConfigDrawerLayout> [FunctionComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TranslatorPage> [FunctionComponent] > <form> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent][1]",
+              "expected": "<TTSButton> [FunctionComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ReactQueryProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <GlobalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TabLayout> [FunctionComponent] > <ConfigDrawerLayout> [FunctionComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TranslatorPage> [FunctionComponent] > <form> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent]",
+            "reason": "&& on <boolean: negation of unknown>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ReactQueryProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <GlobalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TabLayout> [FunctionComponent] > <ConfigDrawerLayout> [FunctionComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TranslatorPage> [FunctionComponent] > <form> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent][1]",
+              "expected": "<Button> [ForwardRef]",
+              "actual": "<end of children>"
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 495,
+        "staticFibers": 513,
+        "coverage": 1,
+        "strictCoverage": 0.997979797979798,
+        "divergence": null,
+        "stepsUsed": 501,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T10:41:56.415Z",
+      "failure": null
+    },
+    {
       "id": "posthog",
       "revision": "09c5fbd37b2714276d4206debd3aeb253ce0e43a",
       "framework": "spa",

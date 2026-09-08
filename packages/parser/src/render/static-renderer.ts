@@ -78,6 +78,7 @@ export class StaticRenderer {
       this.resolver,
       this.options.observations,
       this.options.origin ?? null,
+      this.options.publicDirectory,
     );
     this.reactVersion = this.project.readInstalledVersion("react");
     this.graph = new ModuleGraph({
