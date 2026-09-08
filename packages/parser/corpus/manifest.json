@@ -123,7 +123,7 @@
       "workingDirectory": "excalidraw-app",
       "install": "yarn install",
       "dev": "yarn vite",
-      "url": "http://localhost:3000/",
+      "url": "http://localhost:3001/",
       "readyTimeoutMs": 600000,
       "settleMs": 8000,
       "static": {
@@ -136,8 +136,10 @@
           "@excalidraw/math",
           "@excalidraw/utils"
         ],
+        "envFiles": [".env.development"],
         "maxFiberCount": 20000
-      }
+      },
+      "notes": "`excalidraw-app/vite.config.mts` sets `envDir: '../'`, so Vite loads the repository `.env.development` (there is no `.env`), whose `VITE_APP_PORT=3001` picks the dev server port."
     },
     {
       "id": "graphiql",

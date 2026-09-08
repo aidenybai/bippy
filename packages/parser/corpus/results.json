@@ -240,9 +240,18 @@
       "id": "excalidraw",
       "revision": "214cd6e6e8ac3ad6b68486aa7aa7241abdf9445f",
       "framework": "spa",
-      "capturedAt": "2026-09-08T03:55:40.589Z",
-      "durationMs": 4905,
-      "runtime": null,
+      "capturedAt": "2026-09-08T06:25:06.401Z",
+      "durationMs": 20763,
+      "runtime": {
+        "reactVersion": "19.0.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 510,
+        "commits": 8,
+        "pageErrors": [],
+        "title": "Excalidraw Whiteboard"
+      },
       "static": {
         "stats": {
           "fiberCount": 10,
@@ -256,21 +265,48 @@
         "diagnostics": [
           {
             "code": "budget-exhausted",
-            "count": 74
+            "count": 101
           },
           {
             "code": "dynamic-key",
-            "count": 1
-          },
-          {
-            "code": "max-fiber-count",
-            "count": 1
+            "count": 3
           }
         ]
       },
-      "report": null,
+      "report": {
+        "matchedFibers": 4,
+        "matchedText": 0,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 2,
+        "slotsMatched": 1,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 503,
+        "wildcards": [
+          {
+            "path": "root > <StrictMode> [Mode] > <ExcalidrawApp> [FunctionComponent] > <TopErrorBoundary> [ClassComponent] > <Provider> (opaque) > <ExcalidrawAPIProvider> [FunctionComponent]",
+            "reason": "step budget exhausted",
+            "absorbedFibers": 503,
+            "heads": [
+              "<ExcalidrawAPIContext> [ContextProvider]"
+            ]
+          }
+        ],
+        "branchesResolved": 1,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 509,
+        "staticFibers": 5,
+        "coverage": 1,
+        "strictCoverage": 0.007858546168958742,
+        "divergence": null,
+        "stepsUsed": 8,
+        "budgetExhausted": false
+      },
       "anchor": null,
-      "note": "static only",
+      "note": null,
       "failure": null
     },
     {
