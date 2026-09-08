@@ -675,6 +675,8 @@ export interface StaticRepeatValue {
   kind: "repeat";
   item: StaticValue;
   location: SourceLocation | null;
+  /** Inclusive bounds of the item count when the interpreter knows them. */
+  count?: NumberRange;
 }
 
 export interface StaticBranchValue {
@@ -683,6 +685,11 @@ export interface StaticBranchValue {
   preferredIndex: number;
   reason: string;
   location: SourceLocation | null;
+  /**
+   * Identity of the decision that selects an alternative. Branches sharing a
+   * predicate take the same alternative index in any one reachable state.
+   */
+  predicate: string | null;
 }
 
 export interface StaticFunctionValue {
@@ -925,6 +932,8 @@ export interface StaticRenderStats {
 export interface StaticRenderResult {
   /** The fiber tree React committed for the materialized element, as bippy observed it. */
   snapshot: RuntimeSnapshot;
+  /** Every tree committed while effects, state updates and timers settled, in commit order. */
+  commits: RuntimeSnapshot[];
   diagnostics: Diagnostic[];
   stats: StaticRenderStats;
 }

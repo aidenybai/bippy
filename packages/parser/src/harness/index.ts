@@ -16,4 +16,9 @@ export {
 export * from "./static-pattern.js";
 export * from "./compare.js";
 export * from "./compare-render.js";
-export { formatComparisonReport } from "./format-report.js";
+export * from "./state-space.js";
+export {
+  formatComparisonReport,
+  formatStateCondition,
+  formatStateConditions,
+} from "./format-report.js";
