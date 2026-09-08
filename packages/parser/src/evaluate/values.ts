@@ -323,8 +323,14 @@ const lookupObjectProperty = (object: StaticObjectValue, key: string): StaticVal
         spread.preferredIndex,
       );
     }
+    const inherited = getInheritedProperty(object, key);
+    if (isPresent(inherited)) return inherited;
     return unknownValue(`property "${key}" may come from a spread of ${describeValue(spread)}`);
   }
+  return getInheritedProperty(object, key);
+};
+
+const getInheritedProperty = (object: StaticObjectValue, key: string): StaticValue => {
   if (key === "constructor" && object.constructedBy) return object.constructedBy;
   return object.prototype ? getObjectProperty(object.prototype, key) : UNDEFINED_VALUE;
 };
@@ -1027,6 +1033,14 @@ export const getPreferredTruthiness = (value: StaticValue): boolean | null =>
   value.kind === "branch"
     ? getPreferredTruthiness(value.alternatives[value.preferredIndex])
     : getTruthiness(value);
+
+export type CallableValue = Extract<
+  StaticValue,
+  { kind: "function" | "native-function" | "global" }
+>;
+
+export const isCallable = (value: StaticValue | undefined): value is CallableValue =>
+  value?.kind === "function" || value?.kind === "native-function" || value?.kind === "global";
 
 export const isNullish = (value: StaticValue): boolean | null => {
   if (value.kind === "primitive") return value.value === null || value.value === undefined;

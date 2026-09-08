@@ -1,4 +1,5 @@
 import type {
+  JournaledState,
   SourceLocation,
   StaticListValue,
   StaticObjectEntry,
@@ -28,6 +29,7 @@ interface ListState {
 interface HeapPath {
   objects: Map<StaticObjectValue, StaticObjectEntry[]>;
   lists: Map<StaticListValue, ListState>;
+  states: Map<JournaledState<unknown>, unknown>;
   bindings: ModuleBindingStates;
   updates: PendingUpdates;
 }
@@ -90,13 +92,14 @@ const getAgreedState = <Item>(paths: Item[][]): Item[] | null =>
 export class HeapJournal {
   private readonly objects = new Map<StaticObjectValue, StaticObjectEntry[]>();
   private readonly lists = new Map<StaticListValue, ListState>();
+  private readonly states = new Map<JournaledState<unknown>, unknown>();
   private readonly bindings: ModuleBindingStates = new Map();
   private readonly updates: PendingUpdates = new Map();
   private readonly paths: HeapPath[] = [];
   private readonly entryAllocation = getAllocationCount();
 
   /** Whether `target` predates the fork, so its mutations must be journaled. */
-  isPreexisting(target: MutableHeapValue): boolean {
+  isPreexisting(target: MutableHeapValue | JournaledState<unknown>): boolean {
     return (target.allocation ?? 0) <= this.entryAllocation;
   }
 
@@ -106,6 +109,10 @@ export class HeapJournal {
     } else if (!this.lists.has(target)) {
       this.lists.set(target, copyListState(target));
     }
+  }
+
+  recordState(state: JournaledState<unknown>): void {
+    if (!this.states.has(state)) this.states.set(state, state.capture());
   }
 
   recordModuleBinding(values: ModuleValues, name: string, current: StaticValue): void {
@@ -125,6 +132,7 @@ export class HeapJournal {
     const path: HeapPath = {
       objects: new Map(),
       lists: new Map(),
+      states: new Map(),
       bindings: new Map(),
       updates: new Map(),
     };
@@ -135,6 +143,10 @@ export class HeapJournal {
     for (const [list, original] of this.lists) {
       path.lists.set(list, { items: list.items, properties: list.properties });
       restoreListState(list, original);
+    }
+    for (const [state, original] of this.states) {
+      path.states.set(state, state.capture());
+      state.restore(original);
     }
     for (const [values, originals] of this.bindings) {
       const pathValues = new Map<string, StaticValue>();
@@ -187,6 +199,14 @@ export class HeapJournal {
       object.entries =
         getAgreedState(pathEntries) ??
         joinObjectEntries(original, pathEntries, reason, location, preferredPath);
+    }
+    for (const [state, original] of this.states) {
+      state.join(
+        this.paths.map((path) => (path.states.has(state) ? path.states.get(state) : original)),
+        reason,
+        location,
+        preferredPath,
+      );
     }
     for (const [list, original] of this.lists) {
       const pathStates = this.paths.map((path) => path.lists.get(list) ?? original);

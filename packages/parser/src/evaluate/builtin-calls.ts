@@ -125,6 +125,8 @@ import {
   isKnownList,
   jsonValue,
   listValue,
+  type CallableValue,
+  isCallable,
   isNullish,
   mapValue,
   toBooleanValue,
@@ -1244,11 +1246,6 @@ const arrayLikeToList = (value: Extract<StaticValue, { kind: "object" }>): Stati
   );
 };
 
-export type CallableValue = Extract<
-  StaticValue,
-  { kind: "function" | "native-function" | "global" }
->;
-
 /** A task queued from a continuation of unknown timing runs at an unknown time too. */
 const scheduledTask = (
   interpreter: Interpreter,
@@ -1259,9 +1256,6 @@ const scheduledTask = (
   interpreter.timers.isDeferred
     ? () => interpreter.callDeferred(callback, [], context, location)
     : () => interpreter.callValue(callback, [], context, location);
-
-export const isCallable = (value: StaticValue | undefined): value is CallableValue =>
-  value?.kind === "function" || value?.kind === "native-function" || value?.kind === "global";
 
 interface ItemVerdict {
   verdict: boolean | null;
