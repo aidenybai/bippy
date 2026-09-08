@@ -23,16 +23,19 @@ export const createClassComponentDefinition = (
   scope: value.scope,
   classBody: value.body,
   properties: value.properties,
-  isClientReference: false,
+  isClientReference: value.isClientReference ?? false,
 });
 
 const toClientReferenceType = (type: StaticElementType): StaticElementType => {
   switch (type.kind) {
     case "function":
+    case "class":
     case "forward-ref":
       return { ...type, component: { ...type.component, isClientReference: true } };
     case "memo":
       return { ...type, inner: toClientReferenceType(type.inner) };
+    case "lazy":
+      return type.inner ? { ...type, inner: toClientReferenceType(type.inner) } : type;
     default:
       return type;
   }
@@ -42,6 +45,7 @@ const toClientReferenceType = (type: StaticElementType): StaticElementType => {
 export const toClientReference = (value: StaticValue): StaticValue => {
   switch (value.kind) {
     case "function":
+    case "class":
       return { ...value, isClientReference: true };
     case "component-reference":
       return { kind: "component-reference", type: toClientReferenceType(value.type) };

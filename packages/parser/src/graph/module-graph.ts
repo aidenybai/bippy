@@ -259,6 +259,9 @@ export class ModuleGraph {
           break;
         case "expression":
           if (entry.exportedName === exportedName) {
+            if (entry.expression === module.moduleExports) {
+              return { kind: "module-exports", module, exportedName, isClientReference: false };
+            }
             return {
               kind: "expression",
               module,
@@ -300,6 +303,9 @@ export class ModuleGraph {
         };
       }
     }
+    if (module.moduleExports) {
+      return { kind: "module-exports", module, exportedName, isClientReference: false };
+    }
     return { kind: "unresolved", reason: `no export "${exportedName}" in ${module.filePath}` };
   }
 }
@@ -308,7 +314,7 @@ export const isModuleRecord = (value: ModuleRecord | ModuleResolution): value is
   "bindings" in value;
 
 const toClientReferenceSymbol = (symbol: ResolvedSymbol): ResolvedSymbol =>
-  symbol.kind === "binding" || symbol.kind === "expression"
+  symbol.kind === "binding" || symbol.kind === "expression" || symbol.kind === "module-exports"
     ? { ...symbol, isClientReference: true }
     : symbol;
 
