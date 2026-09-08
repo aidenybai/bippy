@@ -944,10 +944,11 @@ export class Interpreter {
           type.component.properties.set(propertyName, value);
           return target;
         }
+        const displayName =
+          value.kind === "primitive" && typeof value.value === "string" ? value.value : null;
         if (type.kind === "stub") {
           if (propertyName === "displayName") {
-            type.stub.displayName =
-              value.kind === "primitive" && typeof value.value === "string" ? value.value : null;
+            type.stub.displayName = displayName;
           } else {
             type.stub.properties ??= new Map();
             type.stub.properties.set(propertyName, value);
@@ -957,9 +958,14 @@ export class Interpreter {
         if (type.kind !== "memo" && type.kind !== "forward-ref" && type.kind !== "lazy")
           return target;
         if (propertyName === "displayName") {
-          return value.kind === "primitive" && typeof value.value === "string"
-            ? componentReference({ ...type, displayName: value.value })
-            : target;
+          if (displayName === null) return target;
+          if (type.kind === "forward-ref") {
+            nameAnonymousInner(type.render, displayName);
+            type.component.name ??= type.render.name;
+          } else if (type.kind === "memo" && type.inner.kind === "function") {
+            nameAnonymousInner(type.inner.component, displayName);
+          }
+          return componentReference({ ...type, displayName });
         }
         type.properties.set(propertyName, value);
         return target;
@@ -1906,6 +1912,8 @@ export class Interpreter {
         if (key === "displayName")
           return type.displayName === null ? UNDEFINED_VALUE : primitiveValue(type.displayName);
         if (key === "$$typeof") return { kind: "symbol", key: WRAPPER_SYMBOL_KEYS[type.kind] };
+        if (type.kind === "forward-ref" && key === "render") return type.render;
+        if (type.kind === "memo" && key === "type") return componentReference(type.inner);
         if (WRAPPER_OWN_KEYS[type.kind].has(key))
           return unknownValue(`${type.kind}.${key}`, location);
         return UNDEFINED_VALUE;
@@ -3241,16 +3249,23 @@ export class Interpreter {
         location,
       );
     };
-    if (
-      discriminant.kind === "primitive" &&
-      caseValues.every((value) => value === null || value.kind === "primitive")
-    ) {
-      let matchIndex = caseValues.findIndex(
-        (value) =>
-          value !== null &&
-          value.kind === "primitive" &&
-          Object.is(value.value, discriminant.value),
+    let matchIndex = -1;
+    let isDecided = true;
+    for (const [caseIndex, caseValue] of caseValues.entries()) {
+      if (caseValue === null) continue;
+      const verdict = getTruthiness(
+        applyBinaryOperator("===", discriminant, caseValue, context.environment),
       );
+      if (verdict === true) {
+        matchIndex = caseIndex;
+        break;
+      }
+      if (verdict === null) {
+        isDecided = false;
+        break;
+      }
+    }
+    if (isDecided) {
       if (matchIndex === -1)
         matchIndex = statement.cases.findIndex((switchCase) => switchCase.test === null);
       return matchIndex === -1 ? proceed(context) : runThenProceed(matchIndex);
@@ -3596,6 +3611,16 @@ const applyBinaryOperator = (
     default:
       return unknownPrimitiveValue("number", `${operator} on dynamic values`);
   }
+};
+
+/** React's dev `displayName` setter on `memo`/`forwardRef` also names an anonymous inner function. */
+const nameAnonymousInner = (
+  inner: { name: string | null; properties: Map<string, StaticValue> },
+  displayName: string,
+): void => {
+  if (inner.name || inner.properties.has("displayName")) return;
+  inner.name = displayName;
+  inner.properties.set("displayName", primitiveValue(displayName));
 };
 
 const EQUALITY_OPERATORS = new Set(["===", "!==", "==", "!="]);

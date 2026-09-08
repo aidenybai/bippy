@@ -413,6 +413,7 @@ export const evaluateReactApiCall = (
       return componentReference({
         kind: "forward-ref",
         component: createFunctionComponentDefinition(first),
+        render: first,
         displayName: null,
         properties: new Map(),
       });

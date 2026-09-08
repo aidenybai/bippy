@@ -6,7 +6,9 @@ import {
   getObjectProperty,
   getTruthiness,
   isKnownList,
+  isNullish,
   listValue,
+  mapValue,
   objectValue,
   omitObjectKeys,
   primitiveValue,
@@ -68,17 +70,21 @@ const spreadArray: HelperImplementation = ([target, source]) => {
   return unknownValue("spread of an indefinite array");
 };
 
+/** `null == source` yields `{}`; the excluded keys must be a literal list for the rest to be known. */
 const objectWithoutProperties: HelperImplementation = ([source, excluded]) => {
   if (!source || !excluded) return source ?? UNDEFINED_VALUE;
-  if (source.kind !== "object" || !isKnownList(excluded)) {
-    return unknownValue("rest of a non-object");
-  }
+  if (!isKnownList(excluded)) return unknownValue("rest with dynamic excluded keys");
   const omitted = new Set<string>();
   for (const key of excluded.items) {
     if (key.kind !== "primitive") return unknownValue("rest with dynamic excluded keys");
     omitted.add(String(key.value));
   }
-  return omitObjectKeys(source, omitted);
+  return mapValue(source, (alternative) => {
+    if (isNullish(alternative) === true) return objectValue();
+    return alternative.kind === "object"
+      ? omitObjectKeys(alternative, omitted)
+      : unknownValue("rest of a non-object");
+  });
 };
 
 const defineProperty: HelperImplementation = ([target, key, value]) => {
