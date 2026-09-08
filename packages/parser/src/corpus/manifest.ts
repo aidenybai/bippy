@@ -32,7 +32,7 @@ export interface CorpusStaticTarget {
   globals?: Record<string, JsonValue>;
   /** Expressions the dev build inlines (`DefinePlugin`, Vite `define`), keyed by source text. */
   defines?: Record<string, JsonValue>;
-  /** dotenv files the server loads, relative to `rootDirectory`; with them the environment is whole and other variables are unset. */
+  /** dotenv files the server loads, relative to `rootDirectory`, highest precedence first; with them the environment is whole and other variables are unset. */
   envFiles?: string[];
   /** Interpreter step budget; large pages with many commits need more than the default. */
   maxSteps?: number;

@@ -6,6 +6,7 @@ import {
   unmountClassInstance,
 } from "../evaluate/class-component.js";
 import type { ContextReader, EvaluationContext } from "../evaluate/context.js";
+import { isUserDrivenEventHandlerProp } from "../evaluate/event-listeners.js";
 import { ComponentKindError } from "../errors.js";
 import { providedContextValue } from "../evaluate/react-calls.js";
 import {
@@ -800,7 +801,7 @@ export class Materializer {
         );
       case "external": {
         this.markMaySuspend(context);
-        this.interpreter.markEscaped(props);
+        this.markEscapedExternalProps(props);
         return createElement(OpaqueMarker, {
           key: reactKey,
           displayName: type.displayName,
@@ -1028,6 +1029,18 @@ export class Materializer {
     };
     this.hostRefs.set(ref, binding);
     return binding.callback;
+  }
+
+  /** Props of a component that is not analyzed may reach any code, except handlers only a user gesture fires. */
+  private markEscapedExternalProps(props: StaticValue): void {
+    if (props.kind !== "object") {
+      this.interpreter.markEscaped(props);
+      return;
+    }
+    for (const entry of props.entries) {
+      if (entry.kind === "spread") this.markEscapedExternalProps(entry.value);
+      else if (!isUserDrivenEventHandlerProp(entry.key)) this.interpreter.markEscaped(entry.value);
+    }
   }
 
   private getPortalContainer(): Element {
