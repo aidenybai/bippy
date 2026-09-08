@@ -2,6 +2,7 @@ import { countSnapshotFibers, type RuntimeFiberSnapshot } from "./snapshot.js";
 import {
   countPatternFibers,
   formatRepeatBounds,
+  hasPatternDecisions,
   scopePatternVariables,
   type PatternBranch,
   type PatternFiber,
@@ -344,6 +345,27 @@ class Matcher {
     );
   }
 
+  // Nothing backtracks into a decision-free subtree, so matching it eagerly
+  // keeps the continuation chain (and the call stack) proportional to the
+  // decisions rather than to the size of the tree.
+  private matchDecisionFreeList(
+    patterns: PatternNode[],
+    runtime: RuntimeFiberSnapshot[],
+    path: string[],
+  ): MatchTally | null {
+    let tally = EMPTY_TALLY;
+    for (const [index, pattern] of patterns.entries()) {
+      const nodeTally = this.matchNode(pattern, runtime, index, path, () => EMPTY_TALLY);
+      if (!nodeTally) return null;
+      tally = addTally(tally, nodeTally);
+    }
+    if (patterns.length !== runtime.length) {
+      this.recordFailure(path, runtime, patterns.length, null);
+      return null;
+    }
+    return tally;
+  }
+
   private matchNode(
     pattern: PatternNode,
     runtime: RuntimeFiberSnapshot[],
@@ -360,6 +382,12 @@ class Matcher {
           return null;
         }
         const childPath = [...path, describePatternNode(pattern)];
+        if (!hasPatternDecisions(pattern)) {
+          const children = this.matchDecisionFreeList(pattern.children, actual.children, childPath);
+          if (!children) return null;
+          const rest = continuation(runtimeIndex + 1);
+          return rest ? addTally(addTally(rest, children), { matchedFibers: 1 }) : null;
+        }
         const tally = this.matchList(
           pattern.children,
           0,

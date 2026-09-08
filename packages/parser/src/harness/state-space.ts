@@ -9,6 +9,7 @@ import {
 } from "./compare.js";
 import type { RuntimeFiberSnapshot } from "./snapshot.js";
 import {
+  hasPatternDecisions,
   scopePatternVariables,
   type PatternBranch,
   type PatternNode,
@@ -203,12 +204,17 @@ class StateEnumerator {
     emit: Emit,
   ): void {
     if (this.isExhausted) return;
-    if (index === nodes.length) {
-      emit(prefix, conditions);
+    const expanded = [...prefix];
+    let cursor = index;
+    while (cursor < nodes.length && !hasPatternDecisions(nodes[cursor])) {
+      expanded.push(nodes[cursor++]);
+    }
+    if (cursor === nodes.length) {
+      emit(expanded, conditions);
       return;
     }
-    this.expandNode(nodes[index], conditions, (expanded, next) =>
-      this.expandList(nodes, index + 1, [...prefix, ...expanded], next, emit),
+    this.expandNode(nodes[cursor], conditions, (expandedNode, next) =>
+      this.expandList(nodes, cursor + 1, [...expanded, ...expandedNode], next, emit),
     );
   }
 

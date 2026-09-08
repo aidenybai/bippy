@@ -242,9 +242,30 @@ export const flattenPatternFibers = (
   return result;
 };
 
+const decisionCache = new WeakMap<PatternNode, boolean>();
+
+/**
+ * Whether the subtree can match a runtime list in more than one way. A subtree
+ * of only fibers, text and opaque nodes cannot, so nothing needs to backtrack
+ * into it, enumerate it, or rescope it.
+ */
+export const hasPatternDecisions = (node: PatternNode): boolean => {
+  const known = decisionCache.get(node);
+  if (known !== undefined) return known;
+  const result =
+    node.kind === "fiber"
+      ? node.children.some(hasPatternDecisions)
+      : node.kind === "opaque"
+        ? node.passedChildren.some(hasPatternDecisions)
+        : node.kind !== "text";
+  decisionCache.set(node, result);
+  return result;
+};
+
 /** Renames every decision variable inside `nodes` into `scope`, so one repeat iteration decides independently of the next. */
 export const scopePatternVariables = (nodes: PatternNode[], scope: string): PatternNode[] =>
   nodes.map((node) => {
+    if (!hasPatternDecisions(node)) return node;
     switch (node.kind) {
       case "fiber":
         return { ...node, children: scopePatternVariables(node.children, scope) };

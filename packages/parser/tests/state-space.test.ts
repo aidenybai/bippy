@@ -223,6 +223,19 @@ describe("matchStateSpace", () => {
     expect(describeConditions(beyond.matched?.conditions ?? [])).toBe("r×4");
   });
 
+  it("handles trees far larger than the call stack when the decisions are few", () => {
+    const rows = Array.from({ length: 20_000 }, () => fiber("tr", [fiber("td", [fiber("span")])]));
+    const runtimeRows = Array.from({ length: 20_000 }, () =>
+      host("tr", [host("td", [host("span")])]),
+    );
+    const space = enumerateStateSpace([
+      [fiber("table", [branch("header", [fiber("thead")], []), fiber("tbody", rows)])],
+    ]);
+    const match = matchStateSpace(space, [host("table", [host("tbody", runtimeRows)])]);
+    expect(match.status).toBe("exact");
+    expect(describeConditions(match.matched?.conditions ?? [])).toBe("header=1");
+  });
+
   it("matches the runtime against the commit that produced it", () => {
     const commits = enumerateStateSpace([
       [fiber("main", [fiber("progress")])],
