@@ -2044,7 +2044,7 @@ export class Interpreter {
    * `import("x")` / `require("x")`. A `require` of a CommonJS module yields its
    * `module.exports` value; everything else yields the module namespace.
    */
-  private importModule(
+  importModule(
     specifier: string,
     context: EvaluationContext,
     location: SourceLocation | null,

@@ -1222,6 +1222,9 @@ importers:
       playwright:
         specifier: ^1.63.0
         version: 1.63.0
+      tinyglobby:
+        specifier: 0.2.17
+        version: 0.2.17
     devDependencies:
       '@babel/runtime':
         specifier: ^7.29.7

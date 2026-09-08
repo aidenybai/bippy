@@ -200,6 +200,7 @@ interface ContextRead {
 /** What a proxy last committed (its `current`), so an update that changes nothing bails out as React's would. */
 interface CommittedRender {
   input: ProxyInput;
+  ignoresMaybeThrows: boolean;
   node: ReactNode;
   contextReads: ContextRead[];
   componentContext: EvaluationContext | null;
@@ -281,22 +282,29 @@ const isClassNode = (node: ComponentDefinition["node"]): node is Class =>
 
 /**
  * A component's React identity is its closure: the same function node evaluated
- * in two scopes (e.g. a HOC applied twice) yields two distinct component types.
+ * in two scopes (e.g. a HOC applied twice) yields two distinct component types,
+ * as does each `bind` of the same function.
  */
+const getComponentIdentity = (component: ComponentDefinition): Scope | StaticValue[] =>
+  component.boundArgs ?? component.scope;
+
 class ComponentCache<T> {
-  private readonly byNode = new WeakMap<ComponentDefinition["node"], WeakMap<Scope, T>>();
+  private readonly byNode = new WeakMap<
+    ComponentDefinition["node"],
+    WeakMap<Scope | StaticValue[], T>
+  >();
 
   get(component: ComponentDefinition): T | undefined {
-    return this.byNode.get(component.node)?.get(component.scope);
+    return this.byNode.get(component.node)?.get(getComponentIdentity(component));
   }
 
   set(component: ComponentDefinition, value: T): void {
-    let byScope = this.byNode.get(component.node);
-    if (!byScope) {
-      byScope = new WeakMap();
-      this.byNode.set(component.node, byScope);
+    let byIdentity = this.byNode.get(component.node);
+    if (!byIdentity) {
+      byIdentity = new WeakMap();
+      this.byNode.set(component.node, byIdentity);
     }
-    byScope.set(component.scope, value);
+    byIdentity.set(getComponentIdentity(component), value);
   }
 }
 
@@ -357,6 +365,8 @@ const toFunctionValue = (component: ComponentDefinition): StaticFunctionValue =>
     superBinding: null,
     name: component.name,
     properties: component.properties,
+    boundArgs: component.boundArgs,
+    boundThis: component.boundThis,
   };
 };
 
@@ -1235,6 +1245,7 @@ export class Materializer {
     const props = applyDefaultProps(component, input.props);
     const { node, mount, unmount } = this.renderStateful(
       input,
+      input.context,
       component,
       instanceRef.current,
       () => setPass((pass) => pass + 1),
@@ -1298,6 +1309,7 @@ export class Materializer {
    */
   private renderStateful(
     input: ProxyInput,
+    context: MaterializeContext,
     component: ComponentDefinition,
     instance: ProxyInstance,
     rerender: () => void,
@@ -1309,6 +1321,7 @@ export class Materializer {
     if (
       changedCells.length === 0 &&
       previous &&
+      previous.ignoresMaybeThrows === context.ignoresMaybeThrows &&
       isRetainedInput(previous.input, input) &&
       previous.contextReads.every((read) => this.readContext(read.definition) === read.value)
     ) {
@@ -1362,6 +1375,7 @@ export class Materializer {
     const node = this.finishRender(evaluation.rendered, evaluation.childContext, input);
     instance.rendered = {
       input,
+      ignoresMaybeThrows: context.ignoresMaybeThrows,
       node,
       contextReads,
       componentContext: evaluation.componentContext,
@@ -1424,6 +1438,7 @@ export class Materializer {
     ): ReactNode => {
       const { node, mount, unmount } = this.renderStateful(
         input,
+        boundaryContext,
         component,
         host.getInstance(caughtError),
         host.rerender,

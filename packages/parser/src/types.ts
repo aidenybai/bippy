@@ -151,6 +151,9 @@ export interface ComponentDefinition {
   /** Present for class components. */
   classBody: ClassBody | null;
   properties: Map<string, StaticValue>;
+  /** Set when the component is a `bind` result; each `bind` call is a distinct component type. */
+  boundArgs?: StaticValue[];
+  boundThis?: StaticValue;
 }
 
 export interface ClassMemberBase {

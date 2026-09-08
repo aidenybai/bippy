@@ -31,6 +31,8 @@ export interface CorpusStaticTarget {
   defines?: Record<string, JsonValue>;
   /** dotenv files the server loads, relative to `rootDirectory`; with them the environment is whole and other variables are unset. */
   envFiles?: string[];
+  /** Bundler prefix of the variables the client bundle inlines (Vite `envPrefix`); defaults to the framework's. */
+  envPrefix?: string;
   maxFiberCount?: number;
   maxComponentDepth?: number;
 }
@@ -240,6 +242,7 @@ const readStaticTarget = (reader: ManifestReader): CorpusStaticTarget => ({
   globals: reader.optionalJsonRecord("globals"),
   defines: reader.optionalJsonRecord("defines"),
   envFiles: reader.optionalStringList("envFiles"),
+  envPrefix: reader.optionalString("envPrefix"),
   maxFiberCount: reader.optionalNumber("maxFiberCount"),
   maxComponentDepth: reader.optionalNumber("maxComponentDepth"),
 });

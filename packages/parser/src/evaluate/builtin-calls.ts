@@ -31,6 +31,7 @@ import { createAbortController } from "./abort-controller.js";
 import { createDomObserver, isDomObserverName } from "./dom-observers.js";
 import { createErrorValue, ERROR_CONSTRUCTOR_NAMES, isErrorConstructorName } from "./errors.js";
 import { nativeFunction } from "../frameworks/stubs.js";
+import { callImportMetaGlob } from "./import-glob.js";
 import { constructNativeDate } from "./native-values.js";
 import { callEventTargetMethod } from "./event-listeners.js";
 import { hasProperty, isIntrinsicFunctionKey } from "./has-property.js";
@@ -790,6 +791,7 @@ const callGlobal = (
     : callInvokedGlobal(interpreter, name, args, context, location);
   if (invoked) return invoked;
   if (isErrorConstructorName(name)) return createErrorValue(name, args, location);
+  if (name === "import.meta.glob") return callImportMetaGlob(interpreter, args, context, location);
   if (isStringCodecName(name)) return callStringCodec(name, args, location);
   if (name === "Buffer.from") return createBufferValue(args, location);
   if (name === "Buffer.byteLength") return getBufferByteLength(args);
@@ -1648,6 +1650,8 @@ export const evaluateBuiltinCall = (
     if (name === "bind") {
       return {
         ...receiver,
+        name: `bound ${receiver.name ?? ""}`,
+        properties: new Map(),
         boundThis: receiver.boundThis ?? first ?? UNDEFINED_VALUE,
         boundArgs: [...(receiver.boundArgs ?? []), ...args.slice(1)],
       };
