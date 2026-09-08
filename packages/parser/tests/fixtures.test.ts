@@ -1,8 +1,20 @@
 import { describe, expect, it } from "vite-plus/test";
 import type { CapturedMutation, CapturedQuery } from "../src/index.js";
+import type { ComparisonStatus } from "../src/harness/index.js";
 import { describeFixtureRun, listFixtures, runFixture } from "./helpers/fixture-runner.js";
 
-const STATUS_RANK = { exact: 3, partial: 2, mismatch: 0, unresolved: 0, skipped: 0 };
+const STATUS_RANK: Record<ComparisonStatus, number> = {
+  exact: 4,
+  truncated: 3,
+  partial: 2,
+  mismatch: 0,
+  unresolved: 0,
+  skipped: 0,
+};
+
+/** The runtime tree was one enumerated state, with every decision that selects it known. */
+const isMember = (status: ComparisonStatus): boolean =>
+  status === "exact" || status === "truncated";
 
 const withoutTimestamps = (query: CapturedQuery | undefined): CapturedQuery | undefined =>
   query && { ...query, dataUpdatedAt: 0, errorUpdatedAt: 0 };
@@ -25,12 +37,23 @@ describe("synthetic fixtures: static fiber tree vs react-dom", () => {
         detail,
       ).toEqual([]);
       if (!run.comparison) return;
-      const { report } = run.comparison;
+      const { report, stateSpace, matchedState } = run.comparison;
       expect(report.status, detail).not.toBe("mismatch");
       expect(STATUS_RANK[report.status], detail).toBeGreaterThanOrEqual(
         STATUS_RANK[fixture.manifest.expectedStatus],
       );
       expect(report.coverage, detail).toBeGreaterThanOrEqual(fixture.manifest.minCoverage);
+      if (isMember(report.status)) {
+        expect(matchedState, detail).not.toBeNull();
+        expect(stateSpace.states.length, detail).toBeGreaterThan(0);
+      }
+      if (report.status === "exact") expect(stateSpace.omitted, detail).toBeNull();
+      if (fixture.manifest.expectedStates !== undefined) {
+        expect(stateSpace.states.length, detail).toBe(fixture.manifest.expectedStates);
+      }
+      if (fixture.manifest.expectOmitted !== undefined) {
+        expect(stateSpace.omitted !== null, detail).toBe(fixture.manifest.expectOmitted);
+      }
       const replayed = fixture.manifest.observations;
       for (const observed of replayed?.queries ?? []) {
         const captured = run.observed.queries.find(

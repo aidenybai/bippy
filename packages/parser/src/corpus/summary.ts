@@ -1,4 +1,15 @@
-import type { CorpusResult } from "./manifest.js";
+import { readFileSync } from "node:fs";
+import { z } from "zod";
+import { parseWithSchema } from "../errors.js";
+import type { ComparisonDivergence, ComparisonReport } from "../harness/compare.js";
+import type { StateCondition, StateOmission, StateSpaceSummary } from "../harness/state-space.js";
+import type { StaticRenderStats } from "../types.js";
+import type {
+  CorpusResult,
+  CorpusRuntimeSummary,
+  CorpusStaticSummary,
+  DiagnosticCount,
+} from "./manifest.js";
 
 // Results are persisted per entry so partial corpus runs (one repository at a
 // time, static-only passes, browser passes days apart) accumulate into one
@@ -7,6 +18,151 @@ import type { CorpusResult } from "./manifest.js";
 export interface CorpusResultsFile {
   results: CorpusResult[];
 }
+
+const divergenceSchema: z.ZodType<ComparisonDivergence> = z.object({
+  path: z.string(),
+  expected: z.string(),
+  actual: z.string(),
+});
+
+const reportSchema: z.ZodType<ComparisonReport> = z.object({
+  status: z.enum(["exact", "truncated", "partial", "mismatch", "unresolved", "skipped"]),
+  matchedFibers: z.number(),
+  matchedText: z.number(),
+  opaqueSubtrees: z.number(),
+  opaqueSkippedFibers: z.number(),
+  slotsMatched: z.number(),
+  slotsUnmatched: z.number(),
+  opaqueRenamed: z.number(),
+  unmatchedSlots: z.array(
+    z.object({
+      path: z.string(),
+      reason: z.string(),
+      head: z.string(),
+      skippedFibers: z.number(),
+      divergence: divergenceSchema.nullable(),
+    }),
+  ),
+  wildcardAbsorbedFibers: z.number(),
+  wildcards: z.array(
+    z.object({
+      path: z.string(),
+      reason: z.string(),
+      absorbedFibers: z.number(),
+      heads: z.array(z.string()),
+    }),
+  ),
+  branchesResolved: z.number(),
+  repeatIterations: z.number(),
+  runtimeFibers: z.number(),
+  staticFibers: z.number(),
+  coverage: z.number(),
+  strictCoverage: z.number(),
+  divergence: divergenceSchema.nullable(),
+  stepsUsed: z.number(),
+  budgetExhausted: z.boolean(),
+});
+
+const stateConditionSchema: z.ZodType<StateCondition> = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.enum(["branch", "state-update"]),
+    variable: z.string(),
+    reason: z.string(),
+    location: z.string().nullable(),
+    alternativeIndex: z.number(),
+    alternativeCount: z.number(),
+  }),
+  z.object({
+    kind: z.literal("repeat"),
+    variable: z.string(),
+    location: z.string().nullable(),
+    count: z.number(),
+  }),
+  z.object({ kind: z.literal("transition"), commit: z.number(), commitCount: z.number() }),
+]);
+
+const stateOmissionSchema: z.ZodType<StateOmission> = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("branch"),
+    variable: z.string(),
+    reason: z.string(),
+    location: z.string().nullable(),
+    alternativeIndex: z.number(),
+    conditions: z.array(stateConditionSchema),
+  }),
+  z.object({
+    kind: z.literal("repeat"),
+    variable: z.string(),
+    location: z.string().nullable(),
+    countsAbove: z.number(),
+    max: z.number().nullable(),
+    conditions: z.array(stateConditionSchema),
+  }),
+  z.object({ kind: z.literal("state"), conditions: z.array(stateConditionSchema) }),
+  z.object({ kind: z.literal("subtree"), reason: z.string() }),
+]);
+
+const stateSpaceSummarySchema: z.ZodType<StateSpaceSummary> = z.object({
+  states: z.number(),
+  matchedState: z
+    .object({ index: z.number().nullable(), conditions: z.array(stateConditionSchema) })
+    .nullable(),
+  closestState: z.object({ index: z.number(), divergence: divergenceSchema }).nullable(),
+  omitted: z.object({ omissions: z.array(stateOmissionSchema) }).nullable(),
+});
+
+const runtimeSummarySchema: z.ZodType<CorpusRuntimeSummary> = z.object({
+  reactVersion: z.string().nullable(),
+  rendererName: z.string().nullable(),
+  buildType: z.enum(["development", "production"]).nullable(),
+  roots: z.number(),
+  fibers: z.number(),
+  commits: z.number(),
+  pageErrors: z.array(z.string()),
+  title: z.string(),
+});
+
+const statsSchema: z.ZodType<StaticRenderStats> = z.object({
+  fiberCount: z.number(),
+  textCount: z.number(),
+  branchCount: z.number(),
+  repeatCount: z.number(),
+  opaqueCount: z.number(),
+  unknownCount: z.number(),
+  modulesLoaded: z.number(),
+});
+
+const diagnosticCountSchema: z.ZodType<DiagnosticCount> = z.object({
+  code: z.string(),
+  count: z.number(),
+});
+
+const staticSummarySchema: z.ZodType<CorpusStaticSummary> = z.object({
+  stats: statsSchema,
+  diagnostics: z.array(diagnosticCountSchema),
+});
+
+const resultSchema: z.ZodType<CorpusResult> = z.object({
+  id: z.string(),
+  revision: z.string(),
+  framework: z.enum(["spa", "next-app", "next-pages", "react-router"]),
+  capturedAt: z.string(),
+  durationMs: z.number(),
+  runtime: runtimeSummarySchema.nullable(),
+  static: staticSummarySchema.nullable(),
+  report: reportSchema.nullable(),
+  stateSpace: stateSpaceSummarySchema.nullable(),
+  anchor: z.string().nullable(),
+  note: z.string().nullable(),
+  failure: z.string().nullable(),
+});
+
+const resultsFileSchema: z.ZodType<CorpusResultsFile> = z.object({
+  results: z.array(resultSchema),
+});
+
+export const readCorpusResults = (resultsPath: string): CorpusResultsFile =>
+  parseWithSchema(resultsFileSchema, JSON.parse(readFileSync(resultsPath, "utf8")), resultsPath);
 
 export const mergeCorpusResults = (
   previous: CorpusResult[],
@@ -24,6 +180,21 @@ const outcome = (result: CorpusResult): string => {
   if (result.report) return result.report.status;
   if (result.static) return result.note ?? "static only";
   return "no result";
+};
+
+const describeStateSpace = (stateSpace: StateSpaceSummary): string => {
+  const parts = [`${stateSpace.states} states${stateSpace.omitted ? " (incomplete)" : ""}`];
+  if (stateSpace.matchedState) {
+    parts.push(
+      stateSpace.matchedState.index === null
+        ? "matched outside the enumerated set"
+        : `matched #${stateSpace.matchedState.index + 1}`,
+    );
+  } else if (stateSpace.closestState) {
+    parts.push(`closest #${stateSpace.closestState.index + 1}`);
+  }
+  if (stateSpace.omitted) parts.push(`${stateSpace.omitted.omissions.length} omitted`);
+  return parts.join(", ");
 };
 
 const describeStatic = (result: CorpusResult): string => {
@@ -51,6 +222,7 @@ const describeComparison = (result: CorpusResult): string => {
     `coverage ${percent(report.coverage)} (strict ${percent(report.strictCoverage)})`,
     `${report.matchedFibers} matched`,
   ];
+  if (result.stateSpace) parts.push(describeStateSpace(result.stateSpace));
   if (report.opaqueSubtrees) {
     parts.push(
       `${report.opaqueSubtrees} opaque (${report.opaqueSkippedFibers} skipped, slots ${report.slotsMatched}/${report.slotsMatched + report.slotsUnmatched})`,

@@ -8,7 +8,8 @@ import { createStaticRenderer, type StaticRenderResult } from "../../src/index.j
 import {
   compareStaticToRuntime,
   createCommitRecorder,
-  formatComparisonReport,
+  enumerateStaticStates,
+  formatCompareRenderResult,
   formatPattern,
   formatRuntimeSnapshot,
   getRenderPattern,
@@ -111,7 +112,7 @@ export const runComponentFixture = async (
   });
   const staticResult = await renderer.renderComponent(fixture.filePath);
   const runtime = await runFromProjectRoot(() => mountComponent(loaded.default));
-  const comparison = compareStaticToRuntime(staticResult, runtime);
+  const comparison = compareStaticToRuntime(enumerateStaticStates(staticResult), runtime);
   return {
     staticResult,
     runtime,
@@ -126,7 +127,7 @@ export const describeComponentRun = (fixture: ComponentFixture, run: ComponentRu
     `fixture: ${fixture.name}`,
     `static:\n${formatPattern(getRenderPattern(run.staticResult))}`,
     `runtime:\n${run.runtime.roots.map((root) => formatRuntimeSnapshot(root)).join("\n")}`,
-    `comparison:\n${formatComparisonReport(run.comparison.report)}`,
+    `comparison:\n${formatCompareRenderResult(run.comparison)}`,
     ...(run.staticResult.diagnostics.length > 0
       ? [
           `diagnostics:\n${run.staticResult.diagnostics

@@ -1,4 +1,5 @@
 import type { StaticNativeFunctionValue, StaticValue } from "../types.js";
+import { getStatePredicate } from "./predicates.js";
 import { areValuesEquivalent, branchValue, compareIdentity, unknownValue } from "./values.js";
 
 export interface StateCell {
@@ -146,6 +147,8 @@ const escapedStateValue = (cell: StateCell): StaticValue =>
     [cell.initial, unknownValue(`updated state of ${cell.name}`)],
     "state setter escapes to code that is not evaluated",
     null,
+    0,
+    getStatePredicate(cell),
   );
 
 /**
@@ -160,6 +163,8 @@ const pendingStateValue = (cell: StateCell): StaticValue | null => {
     [cell.next ?? cell.current, ...cell.deferred],
     "state set by a continuation that may run after the commit",
     null,
+    0,
+    getStatePredicate(cell),
   );
 };
 
@@ -189,10 +194,19 @@ export const queueStateUpdate = (
 };
 
 /**
- * A setter handed to code the analysis does not follow may fire at any time, so
- * the cell commits to every value it may take and re-renders once to show them.
+ * A setter handed to code the analysis does not follow may fire at any time: a
+ * known `value` it sets is one more the cell may hold by the commit, an unknown
+ * one makes the cell commit to every value it may take.
  */
-export const escapeStateCell = (frame: HookFrame, cell: StateCell): void => {
+export const escapeStateCell = (
+  frame: HookFrame,
+  cell: StateCell,
+  value: StaticValue | null,
+): void => {
+  if (value) {
+    queueStateUpdate(frame, cell, value, true);
+    return;
+  }
   if (cell.isEscaped) return;
   cell.isEscaped = true;
   if (isSameHookValue(escapedStateValue(cell), cell.current)) return;
