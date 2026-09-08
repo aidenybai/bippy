@@ -165,6 +165,24 @@ export const isWindowAlias = (name: string): boolean => WINDOW_MEMBERS[name] ===
 
 export const isWindowMember = (name: string): boolean => name in WINDOW_MEMBERS;
 
+/** The `typeof` of a member of a browser global in a browser, or null for members not listed. */
+export const getBrowserMemberTypeof = (name: string): string | null => {
+  const [root, member, ...rest] = name.split(".");
+  if (root === undefined || member === undefined || rest.length > 0) return null;
+  const memberKind = BROWSER_GLOBAL_MEMBERS[root]?.[member];
+  switch (memberKind) {
+    case undefined:
+      return null;
+    case "window":
+    case "document":
+    case "navigator":
+    case "location":
+      return "object";
+    default:
+      return memberKind;
+  }
+};
+
 const LOCATION_MEMBER_NAME =
   /^(?:(?:window|globalThis|document)\.)?location\.(pathname|search|hash|origin|protocol|host|hostname|port|href)$/;
 const WINDOW_ORIGIN_NAME = /^(?:(?:window|globalThis|self)\.)?origin$/;

@@ -236,6 +236,8 @@ export interface StubComponent {
   tag?: WorkTag;
   /** Statics the library hangs on the component (`Styled.withComponent`). */
   properties?: ReadonlyMap<string, StaticValue>;
+  /** Under RSC, renders on the server (no fiber) when created outside a client boundary, like a component whose module lacks `"use client"`. */
+  isServerComponent?: boolean;
   render: (props: StaticObjectValue, tools: StubRenderTools) => StaticValue;
   /**
    * For build-time macros (Lingui's `<Trans>`): the props of the element the
@@ -264,18 +266,24 @@ export interface StubRenderTools {
   /** Calls a function whose promise the framework awaits (route `lazy`), with `await x` read as `x`. */
   callAwaited: (callee: StaticValue, args: StaticValue[]) => StaticValue;
   call: (callee: StaticValue, args: StaticValue[]) => StaticValue;
+  /** Calls a continuation of a promise that settles outside the analysis: it runs at an unknown time, so what it updates may or may not have changed by the captured commit. */
+  callDeferred: (callee: StaticValue, args: StaticValue[]) => StaticValue;
   /** A value recorded from the running page, with references to the project's module exports evaluated. */
   captured: (captured: CapturedValue, name: string) => StaticValue;
   /** Records that `value` reached code the analysis cannot see, so its later mutations are uncertain. */
   markEscaped: (value: StaticValue) => void;
   /** Runs `task` once the current task's synchronous work ends, as `queueMicrotask` would. */
   queueMicrotask: (task: () => void) => void;
+  /** True while the caller runs at an unknown time relative to the captured commit (past an `await` the analysis cannot see settle, or in such a promise's continuation): the state it updates escapes. */
+  isDeferred: () => boolean;
   /** Assigns an own property of a modeled object, undone on the other paths of an enclosing fork like any heap write. */
   setProperty: (object: StaticObjectValue, key: string, value: StaticValue) => void;
   /** Binding the call's result is assigned to, as build-time labelers (Emotion's babel/swc plugin) see it. */
   nameHint: string | null;
   /** For tagged templates, the identifier each `${expression}` is (null when not a bare identifier); null for other calls. */
   templateArgumentNames: Array<string | null> | null;
+  /** Where the call runs under RSC: `server` outside client boundaries, `client` inside; null when not rendering with server components. */
+  environment: RenderEnvironment | null;
 }
 
 /**
@@ -511,11 +519,17 @@ export type UnknownPrimitiveType = "string" | "number" | "boolean" | "any";
 /** Ordering a clock-derived number carries; see `evaluate/timers.ts`. */
 export type ClockOrdering = "reading" | "settled" | "unbounded";
 
+/** A timer task: the task that scheduled it and the delay it was scheduled with, so a reading it takes is at least that far after any reading of its scheduler. */
+export interface ClockTask {
+  scheduledBy: ClockTask | null;
+  delayMs: number;
+}
+
 /** A clock reading's place among the readings the analysis took, and the timer task that took it. */
 export interface ClockReading {
   ordering: ClockOrdering;
   sequence: number;
-  task: number;
+  task: ClockTask;
 }
 
 /** Leading characters of an unknown string and, when fixed, its length; see `evaluate/primitive-shapes.ts`. */
@@ -591,6 +605,8 @@ export interface StaticOptionalValue {
   value: StaticValue;
   reason: string;
   location: SourceLocation | null;
+  /** The analysis prefers the position to be empty, as when the preferred alternative of the item failed a filter. */
+  isAbsentPreferred?: boolean;
 }
 
 export interface StaticRegExpValue {
@@ -806,6 +822,8 @@ export interface StaticRendererOptions {
   maxRecursionPerComponent?: number;
   maxCallDepth?: number;
   maxSteps?: number;
+  /** Quiet window (no React commit) after which the runtime snapshot is taken; timers delayed at least this long have not fired by then. */
+  settleMs?: number;
   resolveExternalPackages?: boolean;
   /** Package names to analyze from source; `@scope/*` admits every package in a scope (monorepo workspaces). */
   externalPackageAllowList?: string[];

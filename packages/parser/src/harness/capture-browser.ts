@@ -4,6 +4,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build, stop as stopEsbuild } from "esbuild";
 import { chromium, type Browser, type Page } from "playwright";
+import { DEFAULT_SETTLE_MS } from "../evaluate/timers.js";
 import { readObservationsJson } from "../observations.js";
 import type { RuntimeObservations } from "../types.js";
 import type { HarnessGlobals } from "./browser-inject.js";
@@ -28,7 +29,6 @@ export interface BrowserCaptureResult {
   observations: RuntimeObservations;
 }
 
-const DEFAULT_SETTLE_MS = 1_500;
 const DEFAULT_TIMEOUT_MS = 60_000;
 const COMMIT_POLL_INTERVAL_MS = 100;
 

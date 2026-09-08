@@ -1,5 +1,5 @@
 import path from "node:path";
-import type { CorpusEntry } from "../corpus/manifest.js";
+import { getSettleMs, type CorpusEntry } from "../corpus/manifest.js";
 import { readProcessEnvironment } from "../corpus/process-environment.js";
 import { createStaticRenderer, type StaticRenderer } from "../render/static-renderer.js";
 import type { RuntimeObservations, StaticRenderResult, StaticRendererOptions } from "../types.js";
@@ -122,6 +122,7 @@ const rendererOptionsForEntry = (
     observations,
     maxFiberCount: entry.static.maxFiberCount,
     maxComponentDepth: entry.static.maxComponentDepth,
+    settleMs: getSettleMs(entry),
   };
 };
 

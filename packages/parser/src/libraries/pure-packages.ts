@@ -13,6 +13,7 @@ import {
 // uncertain argument stays opaque, exactly as an unmodeled external call.
 
 const PURE_PACKAGES: ReadonlySet<string> = new Set([
+  "class-variance-authority",
   "classnames",
   "clsx",
   "date-fns",

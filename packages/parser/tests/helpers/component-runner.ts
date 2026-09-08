@@ -103,6 +103,7 @@ export const runComponentFixture = async (
   const renderer = createStaticRenderer({
     rootDirectory: COMPONENTS_DIRECTORY,
     tsconfigPath: join(COMPONENTS_DIRECTORY, "tsconfig.json"),
+    settleMs: QUIET_COMMIT_MS,
   });
   const staticResult = await renderer.renderComponent(fixture.filePath);
   const runtime = await runFromProjectRoot(() => mountComponent(loaded.default));

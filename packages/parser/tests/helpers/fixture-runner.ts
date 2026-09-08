@@ -144,6 +144,7 @@ export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult
         : undefined,
       externalPackageAllowList: fixture.manifest.externalPackages,
       observations: fixture.manifest.observations,
+      settleMs: SETTLE_QUIET_MS,
     },
   );
   if (fixture.manifest.skipRuntime) {

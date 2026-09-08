@@ -66,7 +66,12 @@ const stateHook = (
     kind: "native-function",
     name: `set ${name}`,
     call: ([action], tools) => {
-      queueStateUpdate(frame, cell, reduce(action, cell.next ?? cell.current, tools));
+      queueStateUpdate(
+        frame,
+        cell,
+        reduce(action, cell.next ?? cell.current, tools),
+        tools.isDeferred(),
+      );
       return UNDEFINED_VALUE;
     },
     onEscape: () => escapeStateCell(frame, cell),
@@ -100,8 +105,8 @@ const externalStoreHook = (
   const handleStoreChange: StaticNativeFunctionValue = {
     kind: "native-function",
     name: "handleStoreChange",
-    call: () => {
-      queueStateUpdate(frame, cell, readSnapshot());
+    call: (_args, tools) => {
+      queueStateUpdate(frame, cell, readSnapshot(), tools.isDeferred());
       return UNDEFINED_VALUE;
     },
   };

@@ -183,6 +183,17 @@
       "static": {
         "rootDirectory": ".",
         "route": "/en",
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "@dnd-kit/*",
+          "@hookform/resolvers",
+          "@vercel/analytics",
+          "lucide-react",
+          "next-themes",
+          "react-day-picker",
+          "use-debounce",
+          "zod"
+        ],
         "maxFiberCount": 20000
       }
     },
