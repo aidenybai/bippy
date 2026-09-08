@@ -1,3 +1,4 @@
+import { nativeFunction } from "../frameworks/stubs.js";
 import { createFunctionComponentDefinition, toElementType } from "../react/element-type.js";
 import { REACT_MEMO_CACHE_SENTINEL_KEY } from "../react/react-api.js";
 import type {
@@ -365,6 +366,15 @@ const countChildren = (children: StaticValue): StaticValue => {
   return count === null ? unknownPrimitiveValue("number", "Children.count") : primitiveValue(count);
 };
 
+const createReactRoot = (interpreter: Interpreter): StaticValue =>
+  objectFromRecord({
+    render: nativeFunction("render", ([element]) => {
+      interpreter.rootRenders.push(element ?? UNDEFINED_VALUE);
+      return UNDEFINED_VALUE;
+    }),
+    unmount: nativeFunction("unmount", () => UNDEFINED_VALUE),
+  });
+
 const mapChildren = (
   interpreter: Interpreter,
   children: StaticValue | undefined,
@@ -603,9 +613,13 @@ export const evaluateReactApiCall = (
         ? interpreter.callFunction(first, [], context)
         : UNDEFINED_VALUE;
     case "createRoot":
+      return createReactRoot(interpreter);
     case "hydrateRoot":
+      interpreter.rootRenders.push(second ?? UNDEFINED_VALUE);
+      return createReactRoot(interpreter);
     case "render":
     case "hydrate":
+      interpreter.rootRenders.push(first ?? UNDEFINED_VALUE);
       return unknownValue(`${api}() root`, location);
     case "Children.map":
       return mapChildren(interpreter, first, second, third, context);

@@ -1,0 +1,5 @@
+{
+  "name": "fixture-embedded-mount",
+  "private": true,
+  "type": "module"
+}

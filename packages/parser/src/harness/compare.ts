@@ -194,6 +194,22 @@ interface FurthestSlotDivergence {
 
 class BudgetExceeded extends Error {}
 
+// Any non-host fiber passes an opaque head check, so a slot candidate that
+// merely leaves its own slots unmatched is only a fallback; the candidate
+// explaining the most runtime fibers is the library's real slot.
+const isSettledSlotMatch = ({ tally }: SlotMatch): boolean =>
+  tally.slotsUnmatched === 0 && tally.opaqueRenamed === 0;
+
+const isBetterSlotMatch = (candidate: SlotMatch, best: SlotMatch): boolean => {
+  const matched = candidate.tally.matchedFibers + candidate.tally.matchedText;
+  const bestMatched = best.tally.matchedFibers + best.tally.matchedText;
+  if (matched !== bestMatched) return matched > bestMatched;
+  if (candidate.tally.slotsUnmatched !== best.tally.slotsUnmatched) {
+    return candidate.tally.slotsUnmatched < best.tally.slotsUnmatched;
+  }
+  return candidate.tally.opaqueRenamed < best.tally.opaqueRenamed;
+};
+
 export const describeRuntimeFiber = (fiber: RuntimeFiberSnapshot | undefined): string => {
   if (!fiber) return "<end of children>";
   if (fiber.tag === "HostText") return JSON.stringify(fiber.text ?? "");
@@ -614,13 +630,18 @@ class Matcher {
   ): SlotSearchResult {
     const queue: SlotSearchFrame[] = [{ fiber: actual, depth: 0 }];
     let best: FurthestSlotDivergence | null = null;
+    let bestMatch: SlotMatch | null = null;
     for (let queueIndex = 0; queueIndex < queue.length; queueIndex++) {
       const { fiber, depth } = queue[queueIndex];
       for (let start = 0; start < fiber.children.length; start++) {
         const { result, failure } = this.attempt(() =>
           this.matchSlotAt(pattern, fiber.children, start, path),
         );
-        if (result) return { match: result, divergence: null };
+        if (result) {
+          if (isSettledSlotMatch(result)) return { match: result, divergence: null };
+          if (!bestMatch || isBetterSlotMatch(result, bestMatch)) bestMatch = result;
+          continue;
+        }
         const startPosition = this.positions.start.get(fiber.children[start]) ?? 0;
         if (failure && (!best || failure.position - startPosition > best.progress)) {
           best = { progress: failure.position - startPosition, divergence: failure.divergence };
@@ -630,6 +651,7 @@ class Matcher {
         for (const child of fiber.children) queue.push({ fiber: child, depth: depth + 1 });
       }
     }
+    if (bestMatch) return { match: bestMatch, divergence: null };
     // Passed children that evaluate to nothing (all-empty branches) leave no
     // runtime trace to find; they match against an empty sibling list.
     const empty = this.attempt(() => this.matchSlotAt(pattern, [], 0, path));

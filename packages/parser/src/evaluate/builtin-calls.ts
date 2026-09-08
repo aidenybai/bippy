@@ -44,6 +44,7 @@ import { nativeFunction } from "../frameworks/stubs.js";
 import {
   constructNativeObject,
   fromNativeValue,
+  getNativeOwnEntries,
   isNativeConstructorName,
   toNativeArguments,
 } from "./native-values.js";
@@ -540,6 +541,7 @@ const getOwnEnumerableEntries = (
   if (target.kind === "object") {
     return getKnownObjectKeys(target)?.map((key) => [key, getObjectProperty(target, key)]) ?? null;
   }
+  if (target.kind === "native-object") return getNativeOwnEntries(target);
   if (!hasDefiniteItems(target)) return null;
   return [
     ...target.items.map((item, index): [string, StaticValue] => [String(index), item]),

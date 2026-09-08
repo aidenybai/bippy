@@ -82,6 +82,7 @@ export const renderFrameworkTarget = (
     case "react-router": {
       const model = createReactRouterModel(
         requireField(target, "route"),
+        options.rootDirectory,
         options.observations?.router ?? null,
       );
       const renderer = createStaticRenderer({ ...options, externalValues: model.externalValues });
@@ -102,6 +103,7 @@ const renderRootComponent = (
     case "react-router": {
       const model = createReactRouterModel(
         requireField(target, "route"),
+        options.rootDirectory,
         options.observations?.router ?? null,
       );
       const renderer = createStaticRenderer({ ...options, externalValues: model.externalValues });

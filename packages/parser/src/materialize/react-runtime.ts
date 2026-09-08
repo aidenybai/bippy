@@ -50,7 +50,7 @@ const resolveFromApp = (
 ): string | null => {
   if (!resolver || !fromDirectory) return null;
   const resolution = resolver.resolve(specifier, `${fromDirectory}/index.js`);
-  return resolution.kind === "external" ? resolution.filePath : null;
+  return resolution.kind === "external" && resolution.filePath ? resolution.filePath : null;
 };
 
 const importResolved = async (
@@ -59,7 +59,9 @@ const importResolved = async (
   fromDirectory: string | null,
 ): Promise<unknown> => {
   const filePath = resolveFromApp(resolver, specifier, fromDirectory);
-  return unwrapModule(await import(filePath ? pathToFileURL(filePath).href : specifier));
+  return unwrapModule(
+    await (filePath === null ? import(specifier) : import(pathToFileURL(filePath).href)),
+  );
 };
 
 const hasAct = (
@@ -99,6 +101,7 @@ export const loadReactRuntime = ({
   return pending;
 };
 
+/** React < 18 has no `react-dom/client`; a clone nested under another project would resolve that project's. */
 const hasClientEntry = (resolver: ModuleResolver | null, rootDirectory: string | null): boolean => {
   const domPath = resolveFromApp(resolver, "react-dom", rootDirectory);
   const clientPath = resolveFromApp(resolver, "react-dom/client", rootDirectory);
