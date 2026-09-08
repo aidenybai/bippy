@@ -24,6 +24,7 @@ export interface ComponentFixture {
 export interface ComponentFixtureModule {
   default: ComponentType;
   minCoverage?: number;
+  isExact?: boolean;
 }
 
 export interface ComponentRunResult {
@@ -31,6 +32,7 @@ export interface ComponentRunResult {
   runtime: RuntimeSnapshot;
   comparison: CompareRenderResult;
   minCoverage: number;
+  isExact: boolean;
 }
 
 export const COMPONENTS_DIRECTORY = resolve(import.meta.dirname, "../components");
@@ -107,7 +109,13 @@ export const runComponentFixture = async (
   const staticResult = await renderer.renderComponent(fixture.filePath);
   const runtime = await runFromProjectRoot(() => mountComponent(loaded.default));
   const comparison = compareStaticToRuntime(staticResult, runtime);
-  return { staticResult, runtime, comparison, minCoverage: loaded.minCoverage ?? 1 };
+  return {
+    staticResult,
+    runtime,
+    comparison,
+    minCoverage: loaded.minCoverage ?? 1,
+    isExact: loaded.isExact ?? false,
+  };
 };
 
 export const describeComponentRun = (fixture: ComponentFixture, run: ComponentRunResult): string =>

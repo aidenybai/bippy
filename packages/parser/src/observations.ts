@@ -106,6 +106,9 @@ const isCapturedRouterState = (value: unknown): value is CapturedRouterState =>
   Array.isArray(value.matches) &&
   value.matches.every(isCapturedRouteMatch) &&
   isCapturedValueRecord(value.loaderData) &&
+  (value.actionData === undefined ||
+    value.actionData === null ||
+    isCapturedValueRecord(value.actionData)) &&
   (value.navigationState === "idle" ||
     value.navigationState === "loading" ||
     value.navigationState === "submitting") &&

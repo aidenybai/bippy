@@ -31,6 +31,7 @@ interface DataRouterStateLike {
   location: RouterLocationLike;
   matches: RouterMatchLike[];
   loaderData: Record<string, unknown>;
+  actionData: Record<string, unknown> | null;
   navigation: { state: CapturedRouterState["navigationState"] };
   revalidation: CapturedRouterState["revalidationState"];
 }
@@ -64,6 +65,7 @@ const isDataRouterState = (value: unknown): value is DataRouterStateLike =>
   Array.isArray(value.matches) &&
   value.matches.every(isRouteMatch) &&
   isRecord(value.loaderData) &&
+  (value.actionData === null || isRecord(value.actionData)) &&
   isRecord(value.navigation) &&
   (value.navigation.state === "idle" ||
     value.navigation.state === "loading" ||
@@ -103,6 +105,7 @@ const captureRouterState = (state: DataRouterStateLike): CapturedRouterState => 
   },
   matches: state.matches.map(captureMatch),
   loaderData: captureRecord(state.loaderData),
+  actionData: state.actionData === null ? null : captureRecord(state.actionData),
   navigationState: state.navigation.state,
   revalidationState: state.revalidation,
 });

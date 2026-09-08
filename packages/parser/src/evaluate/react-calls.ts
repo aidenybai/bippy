@@ -214,6 +214,30 @@ const readContextValue = (
   return unknownValue(`useContext on ${describeValue(contextValue)}`, location);
 };
 
+/** `Children.count`: top-level `null`/`undefined` count nothing, every other leaf (even `null` inside an array) counts once. */
+const countChildren = (value: StaticValue | undefined, isNested: boolean): number | null => {
+  if (!value) return 0;
+  switch (value.kind) {
+    case "primitive":
+      return !isNested && (value.value === null || value.value === undefined) ? 0 : 1;
+    case "unknown-primitive":
+      return value.primitiveType === "any" ? null : 1;
+    case "element":
+      return 1;
+    case "list": {
+      let total = 0;
+      for (const item of value.items) {
+        const count = countChildren(item, true);
+        if (count === null) return null;
+        total += count;
+      }
+      return total;
+    }
+    default:
+      return null;
+  }
+};
+
 const mapChildren = (
   interpreter: Interpreter,
   children: StaticValue | undefined,
@@ -534,10 +558,12 @@ export const evaluateReactApiCall = (
         return listValue([]);
       if (first.kind === "element" || first.kind === "primitive") return listValue([first]);
       return first;
-    case "Children.count":
-      if (first?.kind === "list" && first.items.every((item) => item.kind !== "repeat"))
-        return primitiveValue(first.items.length);
-      return unknownPrimitiveValue("number", "Children.count");
+    case "Children.count": {
+      const count = countChildren(first, false);
+      return count === null
+        ? unknownPrimitiveValue("number", "Children.count")
+        : primitiveValue(count);
+    }
     case "Children.only":
       return first ?? unknownValue("Children.only without children", location);
     case "Children":

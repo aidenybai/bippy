@@ -208,6 +208,61 @@
       "failure": null
     },
     {
+      "id": "elysia-react-router",
+      "revision": "3c6321cd125bae03b7d848965f7dfd576672b284",
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T08:50:38.228Z",
+      "durationMs": 111,
+      "runtime": {
+        "reactVersion": "19.2.4",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 73,
+        "commits": 3,
+        "pageErrors": [],
+        "title": "Elysia + React Router Example"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 60,
+          "textCount": 12,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 7
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 46,
+        "matchedText": 12,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "exact",
+        "runtimeFibers": 58,
+        "staticFibers": 58,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 58,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T07:56:10.450Z",
+      "failure": null
+    },
+    {
       "id": "epic-stack",
       "revision": "8473afd804b66dba6a23f317908dc35d1535e90d",
       "framework": "react-router",
@@ -271,6 +326,93 @@
       "report": null,
       "anchor": null,
       "note": "static only",
+      "failure": null
+    },
+    {
+      "id": "gcn-nasa-gov",
+      "revision": "5dd03d9d919d080d051ad9e06f8d382913a7dbe7",
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T08:50:39.316Z",
+      "durationMs": 322,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 361,
+        "commits": 5,
+        "pageErrors": [],
+        "title": "GCN - Contact Us"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 368,
+          "textCount": 47,
+          "branchCount": 2,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 26
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-props",
+            "count": 2
+          },
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 303,
+        "matchedText": 47,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 2,
+        "branchDeviations": [
+          {
+            "path": "root > <StrictMode> [Mode] > <RemixBrowser> [FunctionComponent] > <Remix> [ContextProvider] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Layout> [FunctionComponent] > <html> [HostComponent] > <body> [HostComponent] > <Progress> [FunctionComponent]",
+            "reason": "&& on spin-delay#useSpinDelay()",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <RemixBrowser> [FunctionComponent] > <Remix> [ContextProvider] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Layout> [FunctionComponent] > <html> [HostComponent] > <body> [HostComponent] > <Progress> [FunctionComponent][0]",
+              "expected": "<TopBar> [FunctionComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <RemixBrowser> [FunctionComponent] > <Remix> [ContextProvider] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Layout> [FunctionComponent] > <html> [HostComponent] > <body> [HostComponent] > <Scripts> [FunctionComponent]",
+            "reason": "remix: <Scripts> renders null once a router update re-renders it",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <RemixBrowser> [FunctionComponent] > <Remix> [ContextProvider] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Layout> [FunctionComponent] > <html> [HostComponent] > <body> [HostComponent] > <Scripts> [FunctionComponent][0]",
+              "expected": "<link> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 350,
+        "staticFibers": 359,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 354,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T08:40:06.031Z",
       "failure": null
     },
     {
@@ -715,6 +857,61 @@
       "failure": null
     },
     {
+      "id": "react-router-better-auth",
+      "revision": "c5aa2949a4090d7706eae7c5907f6ccfad46df64",
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T08:50:36.879Z",
+      "durationMs": 376,
+      "runtime": {
+        "reactVersion": "19.2.5",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 155,
+        "commits": 5,
+        "pageErrors": [],
+        "title": "React Router x Better Auth"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 141,
+          "textCount": 5,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1826
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 134,
+        "matchedText": 5,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "exact",
+        "runtimeFibers": 139,
+        "staticFibers": 139,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 139,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T07:43:25.515Z",
+      "failure": null
+    },
+    {
       "id": "react-router-templates",
       "revision": "b68be71489a22315c7a734a86a18347745b393d2",
       "framework": "react-router",
@@ -822,6 +1019,184 @@
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-07T12:12:03.185Z",
+      "failure": null
+    },
+    {
+      "id": "remix-blocks",
+      "revision": "14e622c2a3f029ab0c81a6e20d1d423da9a20c9c",
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T08:50:40.673Z",
+      "durationMs": 220,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 380,
+        "commits": 3,
+        "pageErrors": [],
+        "title": "UI Components | RemixBlocks Components - Buttons, Inputs..."
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 305,
+          "textCount": 2,
+          "branchCount": 5,
+          "repeatCount": 0,
+          "opaqueCount": 9,
+          "unknownCount": 35,
+          "modulesLoaded": 34
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 0,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "mismatch",
+        "runtimeFibers": 372,
+        "staticFibers": 253,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": {
+          "path": "root > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RemixBrowser> [FunctionComponent] > <Remix> [ContextProvider] > <RouterProvider> [FunctionComponent][0]",
+          "expected": "<RenderedRoute> [FunctionComponent]",
+          "actual": "<Routes> [FunctionComponent]"
+        },
+        "stepsUsed": 6,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T08:01:21.155Z",
+      "failure": null
+    },
+    {
+      "id": "remix-fastify",
+      "revision": "c69fe3491774b636dd148b409c916006588e37e7",
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T08:50:35.740Z",
+      "durationMs": 142,
+      "runtime": {
+        "reactVersion": "19.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 132,
+        "commits": 5,
+        "pageErrors": [],
+        "title": "Remix Starter with Fastify"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 123,
+          "textCount": 7,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 17
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 106,
+        "matchedText": 7,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 1,
+        "wildcards": [
+          {
+            "path": "root > <StrictMode> [Mode] > <HydratedRouter> [FunctionComponent] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <App> [FunctionComponent] > <html> [HostSingleton] > <body> [HostSingleton] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Layout> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Index> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Await> [FunctionComponent] > <Await> [ContextProvider] > <ResolveAwait> [FunctionComponent] > <h2> [HostComponent]",
+            "reason": "react-router: <Await> resolve settles only at runtime",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"Anonymous\""
+            ]
+          }
+        ],
+        "branchesResolved": 1,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 114,
+        "staticFibers": 113,
+        "coverage": 1,
+        "strictCoverage": 0.9912280701754386,
+        "divergence": null,
+        "stepsUsed": 117,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T08:05:41.562Z",
+      "failure": null
+    },
+    {
+      "id": "remix-shadcn",
+      "revision": "cf1652b60fe33a89ef77d6341894b02533cd3a15",
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T08:49:57.407Z",
+      "durationMs": 191,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 102,
+        "commits": 4,
+        "pageErrors": [],
+        "title": "remix-shadcn"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 97,
+          "textCount": 0,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 36
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 91,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 91,
+        "staticFibers": 91,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 93,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T07:17:29.820Z",
       "failure": null
     },
     {
@@ -976,6 +1351,66 @@
       "failure": null
     },
     {
+      "id": "start-ui-web",
+      "revision": "61623ea2fd0ef5f2287190a072ec250956cae65b",
+      "framework": "spa",
+      "capturedAt": "2026-09-08T08:53:55.176Z",
+      "durationMs": 18362,
+      "runtime": {
+        "reactVersion": "19.2.4",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 243,
+        "commits": 8,
+        "pageErrors": [],
+        "title": "🚧 Start UI"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 2,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 1
+        },
+        "diagnostics": [
+          {
+            "code": "no-root-render",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "status": "unresolved",
+        "matchedFibers": 0,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "branchDeviations": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "runtimeFibers": 0,
+        "staticFibers": 0,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": null,
+        "stepsUsed": 0,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "static render did not resolve to a component tree",
+      "failure": null
+    },
+    {
       "id": "tanstack-query",
       "revision": "1893a965d219032207cbe147880d0e9f757a5a56",
       "framework": "spa",
@@ -1083,6 +1518,69 @@
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-07T13:00:25.894Z",
+      "failure": null
+    },
+    {
+      "id": "tanstarter",
+      "revision": "6f4f91831afee00019104248b88a1a2d1b457c40",
+      "framework": "spa",
+      "capturedAt": "2026-09-08T08:52:06.329Z",
+      "durationMs": 11129,
+      "runtime": {
+        "reactVersion": "19.2.8",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 228,
+        "commits": 5,
+        "pageErrors": [
+          "Failed to load resource: the server responded with a status of 403 ()",
+          "Failed to load resource: the server responded with a status of 403 ()"
+        ],
+        "title": "TanStarter"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 2,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 1
+        },
+        "diagnostics": [
+          {
+            "code": "no-root-render",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "status": "unresolved",
+        "matchedFibers": 0,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "branchDeviations": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "runtimeFibers": 0,
+        "staticFibers": 0,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": null,
+        "stepsUsed": 0,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "static render did not resolve to a component tree",
       "failure": null
     },
     {

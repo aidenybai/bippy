@@ -87,8 +87,7 @@ const readCommitCount = (page: Page): Promise<number> =>
 const isNavigationError = (error: unknown): boolean =>
   error instanceof Error && /Execution context was destroyed|navigation/i.test(error.message);
 
-// Dev servers reload the page on their own (Vite re-optimizes dependencies on
-// first visit); the init script re-runs after the reload, so the counter restarts.
+// HACK: Vite reloads the page after re-optimizing dependencies; the init script re-runs, so the count restarts.
 const readCommitCountAcrossReloads = async (page: Page): Promise<number> => {
   try {
     return await readCommitCount(page);
@@ -196,7 +195,12 @@ export class BrowserCapturer {
       if (options.waitForSelector) {
         await page.waitForSelector(options.waitForSelector, { timeout: timeoutMs });
       }
-      const commits = await waitForQuietCommits(page, settleMs, timeoutMs);
+      let commits = await waitForQuietCommits(page, settleMs, timeoutMs);
+      if (commits === 0) {
+        // HACK: a cold Vite server can 504 ("Outdated Optimize Dep") the first visit and never mount.
+        await page.reload({ waitUntil: "domcontentloaded", timeout: timeoutMs });
+        commits = await waitForQuietCommits(page, settleMs, timeoutMs);
+      }
       const snapshot = await readSnapshot(page);
       if (!snapshot) {
         throw new Error(`harness globals missing on ${options.url}; the init script did not run`);

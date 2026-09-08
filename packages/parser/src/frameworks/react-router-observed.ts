@@ -21,7 +21,9 @@ export interface ObservedRouterState {
   revalidation: StaticValue;
   searchParams: StaticValue;
   matches: StaticValue;
+  isMatched: (routeId: string) => boolean;
   loaderData: (routeId: string) => StaticValue;
+  actionData: (routeId: string) => StaticValue;
 }
 
 const IDLE_NAVIGATION_FIELDS = [
@@ -54,6 +56,14 @@ export const observeRouterState = (
     routeId in state.loaderData
       ? capturedValue(state.loaderData[routeId], `loaderData[${routeId}]`)
       : UNDEFINED_VALUE;
+  const actionData = (routeId: string): StaticValue => {
+    if (state.actionData === undefined) {
+      return unknownValue("react-router actionData was not captured");
+    }
+    return state.actionData !== null && routeId in state.actionData
+      ? capturedValue(state.actionData[routeId], `actionData[${routeId}]`)
+      : UNDEFINED_VALUE;
+  };
   return {
     location: objectFromRecord({
       pathname: primitiveValue(pathname),
@@ -80,6 +90,8 @@ export const observeRouterState = (
         }),
       ),
     ),
+    isMatched: (routeId) => state.matches.some((match) => match.id === routeId),
     loaderData,
+    actionData,
   };
 };

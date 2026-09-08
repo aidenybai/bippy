@@ -400,6 +400,7 @@ export interface CapturedRouterState {
   location: CapturedLocation;
   matches: CapturedRouteMatch[];
   loaderData: Record<string, CapturedValue>;
+  actionData?: Record<string, CapturedValue> | null;
   navigationState: "idle" | "loading" | "submitting";
   revalidationState: "idle" | "loading";
 }

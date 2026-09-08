@@ -1,3 +1,4 @@
+import { isBundlerDedupedName } from "../harness/bundler-names.js";
 import type { RuntimeFiberSnapshot, RuntimeSnapshot } from "../harness/snapshot.js";
 
 export type FrameworkKind = "spa" | "next-app" | "next-pages" | "react-router";
@@ -21,6 +22,15 @@ export interface FrameworkProfile {
   defaultAnchor: string | null;
 }
 
+const isReExportWrapper = (
+  fiber: RuntimeFiberSnapshot,
+  children: RuntimeFiberSnapshot[],
+): boolean =>
+  fiber.name !== null &&
+  children.length === 1 &&
+  children[0].name !== null &&
+  isBundlerDedupedName(children[0].name, fiber.name);
+
 const flattenFiber = (
   fiber: RuntimeFiberSnapshot,
   profile: FrameworkProfile,
@@ -28,6 +38,7 @@ const flattenFiber = (
   if (profile.isInjectedRuntimeFiber(fiber)) return [];
   const children = flattenList(fiber.children, profile);
   if (profile.transparentRuntimeFibers.has(fiber.name ?? fiber.tag)) return children;
+  if (isReExportWrapper(fiber, children)) return children;
   return [{ ...fiber, children }];
 };
 

@@ -52,6 +52,34 @@ const importResolved = async (
   return unwrapModule(await import(specifier));
 };
 
+const REACT_MODULE_SPECIFIERS = ["react", "react-dom/client", "react-dom"];
+
+const resolveExternalFile = (
+  resolver: ModuleResolver,
+  specifier: string,
+  fromDirectory: string,
+): string | null => {
+  const resolution = resolver.resolve(specifier, `${fromDirectory}/index.js`);
+  return resolution.kind === "external" ? resolution.filePath : null;
+};
+
+const REACT_DOM_PACKAGE_DIRECTORY = /^.*[\\/]node_modules[\\/]react-dom(?=[\\/])/;
+
+const packageDirectoryOf = (filePath: string | null): string | null =>
+  filePath === null ? null : (REACT_DOM_PACKAGE_DIRECTORY.exec(filePath)?.[0] ?? null);
+
+const resolvesEveryReactModule = (
+  resolver: ModuleResolver | null,
+  fromDirectory: string | null,
+): boolean => {
+  if (resolver === null || fromDirectory === null) return false;
+  const [react, domClient, dom] = REACT_MODULE_SPECIFIERS.map((specifier) =>
+    resolveExternalFile(resolver, specifier, fromDirectory),
+  );
+  const domDirectory = packageDirectoryOf(dom);
+  return react !== null && domDirectory !== null && packageDirectoryOf(domClient) === domDirectory;
+};
+
 const hasAct = (
   value: unknown,
 ): value is { act: <T>(callback: () => T | Promise<T>) => Promise<T> } =>
@@ -90,17 +118,18 @@ export const loadReactRuntime = ({
 };
 
 const load = async (
-  resolver: ModuleResolver | null,
-  rootDirectory: string | null,
+  appResolver: ModuleResolver | null,
+  appRootDirectory: string | null,
 ): Promise<ReactRuntime> => {
   ensureDomGlobals();
   getRDTHook();
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-  const [react, domClient, dom] = await Promise.all([
-    importResolved(resolver, "react", rootDirectory),
-    importResolved(resolver, "react-dom/client", rootDirectory),
-    importResolved(resolver, "react-dom", rootDirectory),
-  ]);
+  const isAppReactUsable = resolvesEveryReactModule(appResolver, appRootDirectory);
+  const resolver = isAppReactUsable ? appResolver : null;
+  const rootDirectory = isAppReactUsable ? appRootDirectory : null;
+  const [react, domClient, dom] = await Promise.all(
+    REACT_MODULE_SPECIFIERS.map((specifier) => importResolved(resolver, specifier, rootDirectory)),
+  );
   if (!isReactModule(react)) throw new Error("could not load react");
   if (!isReactDomClientModule(domClient)) throw new Error("could not load react-dom/client");
   if (!isReactDomModule(dom)) throw new Error("could not load react-dom");

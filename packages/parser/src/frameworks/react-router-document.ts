@@ -1,7 +1,6 @@
 import {
   NULL_VALUE,
   UNDEFINED_VALUE,
-  branchValue,
   getKnownObjectKeys,
   getObjectProperty,
   isNullish,
@@ -133,6 +132,7 @@ const flattenDescriptors = (list: StaticValue): StaticValue[] | null => {
 
 /** What `<Meta>` renders: an unwrapped fragment, so the head elements are direct children. */
 export const renderMetaDescriptors = (meta: StaticValue): StaticValue => {
+  if (meta.kind === "unknown") return meta;
   const descriptors = flattenDescriptors(meta);
   if (!descriptors) return unknownValue("react-router: meta() result is not a static array");
   return listValue(descriptors.map(metaElement));
@@ -152,6 +152,7 @@ const linkElement = (descriptor: StaticValue): StaticValue => {
 };
 
 const mapLinkDescriptors = (links: StaticValue): StaticValue => {
+  if (links.kind === "unknown") return links;
   const descriptors = flattenDescriptors(links);
   return descriptors
     ? listValue(descriptors.map(linkElement))
@@ -171,10 +172,13 @@ export const renderLinkDescriptors = (links: StaticValue): StaticValue =>
 
 /**
  * Remix v2's `<Links>`: `<>{criticalCss ? <style /> : null} {links.map(...)}</>`.
- * The Vite dev server inlines the CSS of the matched modules and never clears
- * it after hydration, so whether the `<style>` exists is a dev-server fact.
+ * The Vite dev server inlines the stylesheets imported by the matched modules
+ * and never clears them after hydration.
  */
-export const renderRemixLinkDescriptors = (links: StaticValue): StaticValue => {
+export const renderRemixLinkDescriptors = (
+  links: StaticValue,
+  hasCriticalCss: boolean,
+): StaticValue => {
   const criticalStyle = hostElement(
     "style",
     objectFromRecord({
@@ -187,13 +191,7 @@ export const renderRemixLinkDescriptors = (links: StaticValue): StaticValue => {
   return element(
     { kind: "fragment" },
     objectFromRecord({
-      children: listValue([
-        branchValue(
-          [criticalStyle, NULL_VALUE],
-          "remix: critical css is collected by the Vite dev server",
-        ),
-        mapLinkDescriptors(links),
-      ]),
+      children: listValue([hasCriticalCss ? criticalStyle : NULL_VALUE, mapLinkDescriptors(links)]),
     }),
   );
 };

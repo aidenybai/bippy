@@ -1,3 +1,4 @@
+import { isBundledDefaultExportName, isBundlerDedupedName } from "./bundler-names.js";
 import { countSnapshotFibers, type RuntimeFiberSnapshot } from "./snapshot.js";
 import {
   countPatternFibers,
@@ -13,14 +14,6 @@ export type ComparisonStatus = "exact" | "partial" | "mismatch" | "unresolved" |
 const BUNDLER_PLACEHOLDER_NAME = /^_[a-z]\d*$/;
 
 const isBundlerPlaceholderName = (name: string): boolean => BUNDLER_PLACEHOLDER_NAME.test(name);
-
-// When a pre-bundled chunk holds two same-named declarations (react-router-dom
-// and @remix-run/react both export `ScrollRestoration`), esbuild renames the
-// later one `ScrollRestoration2` and rollup `ScrollRestoration$1`.
-const BUNDLER_DEDUPE_SUFFIX = /^(?:\$\d+|\d+)$/;
-
-const isBundlerDedupedName = (name: string, runtimeName: string): boolean =>
-  runtimeName.startsWith(name) && BUNDLER_DEDUPE_SUFFIX.test(runtimeName.slice(name.length));
 
 export interface ComparisonOptions {
   compareKeys?: boolean;
@@ -506,6 +499,7 @@ class Matcher {
       return false;
     if (pattern.name === null || actual.name === null || pattern.name === actual.name) return true;
     if (isBundlerDedupedName(pattern.name, actual.name)) return true;
+    if (isBundledDefaultExportName(pattern.name, actual.name)) return true;
     return isClassTag(actual.tag) && isBundlerPlaceholderName(actual.name);
   }
 

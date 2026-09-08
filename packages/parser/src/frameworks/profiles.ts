@@ -140,12 +140,9 @@ const REACT_ROUTER_RUNTIME_WRAPPERS = [
   "Location",
   "RouteError",
   "AwaitContextProvider",
-  // framework mode (`@react-router/dev`); `HydratedRouter` and the core
-  // `RouterProvider` stay as fibers because the static side renders them. The
-  // `react-router/dom` wrapper is renamed by the bundler: `$1` by rollup, `2` by
-  // esbuild (Vite dev pre-bundling).
-  "RouterProvider$1",
-  "RouterProvider2",
+  "AwaitErrorBoundary",
+  // framework mode (`@react-router/dev`); `HydratedRouter` and `RouterProvider`
+  // stay as fibers because the static side renders them.
   "FrameworkContext",
   "RemixErrorBoundary",
   "WithComponentProps",

@@ -2,20 +2,7 @@ import { existsSync, readdirSync } from "node:fs";
 import path from "node:path";
 import type { RouteRecord } from "./react-router.js";
 
-// File-convention routes as `@react-router/fs-routes` (and the Remix v2 flat
-// routes convention it inherited from `@remix-run/dev`) derives them from
-// `app/routes`, mirroring `flatRoutesUniversal`:
-//
-//   a.b.tsx                 dots split segments; `[.]` escapes
-//   folder/route.tsx        a folder is a route module when it holds `route.*`
-//   folder/index.tsx        (or `index.*`); other folders are ignored
-//   _index                  index route of the enclosing segment
-//   $param, $, ($param)     dynamic, splat, optional segments
-//   _group                  pathless layout segment
-//   name_                   trailing underscore opts out of the parent layout
-//
-// A route nests under the route whose id is its longest prefix followed by a
-// `.` or `/`; only the top level of the routes directory is scanned.
+// Mirrors `flatRoutesUniversal` from `@react-router/fs-routes` / `@remix-run/dev`.
 
 export const FS_ROUTES_PACKAGE = "@react-router/fs-routes";
 
@@ -154,7 +141,6 @@ const isPathlessLayout = (routeId: string, prefix: string): boolean => {
   return lastSegment.startsWith("_") && lastSegment !== INDEX_SUFFIX;
 };
 
-/** Nearest ancestor by id prefix: the longest other id followed by `.` or `/`. */
 const findParentId = (routeId: string, routeIds: string[]): string | null => {
   let parentId: string | null = null;
   for (const candidate of routeIds) {
@@ -179,11 +165,6 @@ const toRecords = (entries: FlatRouteEntry[], parentId: string | null): RouteRec
       uncertainty: null,
     }));
 
-/**
- * Reads the route tree `flatRoutes()` would generate for `appDirectory`. The
- * result is a list of top-level routes to nest under `root.tsx`; ids and files
- * are relative to the app directory like the framework's route manifest.
- */
 export const readFsRoutes = (
   appDirectory: string,
   routesDirectoryName = "routes",

@@ -10,7 +10,7 @@ import {
  * tree must be one of the trees the static analysis describes, and unless the
  * fixture exports `minCoverage` every runtime fiber must be explained by a
  * concrete static fiber: a match cannot be bought with wildcards or opaque
- * subtrees.
+ * subtrees. A fixture exporting `isExact` must leave no uncertainty at all.
  */
 describe("component fixtures: static fiber tree vs react-dom", () => {
   for (const fixture of listComponentFixtures()) {
@@ -23,6 +23,7 @@ describe("component fixtures: static fiber tree vs react-dom", () => {
       expect(report.status, detail).not.toBe("unresolved");
       expect(report.status, detail).not.toBe("skipped");
       expect(report.strictCoverage, detail).toBeGreaterThanOrEqual(run.minCoverage);
+      if (run.isExact) expect(report.status, detail).toBe("exact");
     });
   }
 });

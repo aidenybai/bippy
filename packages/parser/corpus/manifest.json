@@ -660,7 +660,8 @@
       "settleMs": 6000,
       "static": {
         "rootDirectory": ".",
-        "route": "/"
+        "route": "/",
+        "externalPackageAllowList": ["@radix-ui/*", "remix-utils"]
       }
     },
     {
@@ -675,7 +676,7 @@
         "test -f .env || cp .env.example .env",
         "test -f wrangler.jsonc || cp wrangler.jsonc.example wrangler.jsonc",
         "pnpm db:migrate:local",
-        "pnpm db:seed:local"
+        "pnpm db:seed:local || echo 'seed already applied (unique constraint)'"
       ],
       "dev": "pnpm dev",
       "url": "http://localhost:5173/",
@@ -684,7 +685,8 @@
       "static": {
         "rootDirectory": ".",
         "entry": "app/routes.ts",
-        "route": "/"
+        "route": "/",
+        "externalPackageAllowList": ["lucide-react", "radix-ui", "@radix-ui/*", "sonner"]
       },
       "notes": "The harness clones into the bippy monorepo, whose hoisted node_modules holds react-router-dom@6 for an e2e fixture; `@react-router/dev` pre-bundles `react-router-dom` whenever `require.resolve` finds one, and rolldown-vite (vite 8) fails the dependency optimizer on the v6 package's missing exports. Installing a matching react-router-dom@7 in the app shadows the hoisted copy; nothing else is patched."
     },
@@ -712,7 +714,8 @@
         "rootDirectory": ".",
         "entry": "src/router.tsx",
         "route": "/"
-      }
+      },
+      "notes": "TanStack Start has no client entry in the app (`@tanstack/react-start` supplies a default `StartClient`) and the router is built from `routeTree.gen.ts`; the static side has no TanStack Router adapter yet, so the runtime capture succeeds but the static render is unresolved."
     },
     {
       "id": "elysia-react-router",
@@ -745,7 +748,8 @@
       "settleMs": 6000,
       "static": {
         "rootDirectory": ".",
-        "route": "/components"
+        "route": "/components",
+        "externalPackageAllowList": ["react-i18next"]
       },
       "notes": "`metronome-sh` (a Remix metrics SDK listed in package.json but imported nowhere in the app) was unpublished from npm, so the install step drops it from package.json before `npm install`; nothing else is patched.",
       "env": {
@@ -761,15 +765,17 @@
       "description": "remix-fastify playground example (React Router v7 framework mode served by Fastify, pnpm workspace)",
       "framework": "react-router",
       "workingDirectory": "examples/playground",
-      "install": "pnpm install && pnpm --filter @mcansh/remix-fastify build",
+      "install": "pnpm install && pnpm --filter @mcansh/remix-fastify build && pnpm add \"react-router-dom@$(node -p \"require('react-router/package.json').version\")\"",
       "dev": "pnpm dev",
       "url": "http://localhost:3000/",
       "settleMs": 6000,
       "static": {
         "rootDirectory": "examples/playground",
         "entry": "app/routes.ts",
-        "route": "/"
-      }
+        "route": "/",
+        "externalPackageAllowList": ["@radix-ui/*"]
+      },
+      "notes": "The harness clones into the bippy monorepo, whose hoisted node_modules holds react-router-dom@6 for an e2e fixture; `@react-router/dev` pre-bundles `react-router-dom` whenever `require.resolve` finds one, and rolldown-vite (vite 8) fails the dependency optimizer on the v6 package's missing exports. Installing a matching react-router-dom@7 in the app shadows the hoisted copy; nothing else is patched."
     },
     {
       "id": "gcn-nasa-gov",
@@ -779,13 +785,15 @@
       "framework": "react-router",
       "workingDirectory": ".",
       "install": "npm ci --ignore-scripts",
+      "setup": ["npm run build:sass"],
       "dev": "npm run dev",
       "url": "http://localhost:3333/contact",
-      "readyTimeoutMs": 900000,
+      "readyTimeoutMs": 600000,
       "settleMs": 8000,
       "static": {
         "rootDirectory": ".",
-        "route": "/contact"
+        "route": "/contact",
+        "externalPackageAllowList": ["@trussworks/react-uswds", "react-topbar-progress-indicator"]
       }
     },
     {
@@ -810,7 +818,8 @@
         "rootDirectory": ".",
         "entry": "src/router.tsx",
         "route": "/"
-      }
+      },
+      "notes": "TanStack Start (default `StartClient` entry, `routeTree.gen.ts`); same TanStack Router adapter gap as tanstarter: runtime captured, static render unresolved."
     }
   ]
 }

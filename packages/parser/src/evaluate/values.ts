@@ -2,6 +2,7 @@ import { getCapturedExportReference, getOpaqueCaptureDescription } from "../obse
 import type {
   CapturedExportReference,
   CapturedValue,
+  ComponentDefinition,
   JsonValue,
   SourceLocation,
   StaticAccessor,
@@ -609,6 +610,64 @@ const isHeapValue = (value: StaticValue): value is StaticObjectValue | StaticLis
 const isCallableValue = (value: StaticValue): value is StaticFunctionValue | StaticClassValue =>
   value.kind === "function" || value.kind === "class";
 
+const PROGRAM_COMPONENT_KINDS = new Set<StaticElementType["kind"]>([
+  "function",
+  "class",
+  "forward-ref",
+  "memo",
+  "lazy",
+]);
+
+const isWrapperReference = (value: StaticValue): boolean =>
+  value.kind === "component-reference" &&
+  (value.type.kind === "forward-ref" || value.type.kind === "memo" || value.type.kind === "lazy");
+
+const getComponentDefinition = (value: StaticValue): ComponentDefinition | null => {
+  if (value.kind !== "component-reference") return null;
+  const { type } = value;
+  return type.kind === "function" || type.kind === "class" || type.kind === "forward-ref"
+    ? type.component
+    : null;
+};
+
+const getDefinitionNode = (value: StaticValue): ComponentDefinition["node"] | null =>
+  isCallableValue(value) ? value.node : (getComponentDefinition(value)?.node ?? null);
+
+/** Statics (`Component.displayName = ...`) live on one map per closure, which a `function` element type shares with the closure it was created from. */
+const getClosureStatics = (value: StaticValue): Map<string, StaticValue> | null => {
+  if (value.kind === "class") return value.properties;
+  if (value.kind === "function")
+    return value.boundArgs || value.boundThis ? null : value.properties;
+  if (value.kind !== "component-reference") return null;
+  return value.type.kind === "function" || value.type.kind === "class"
+    ? value.type.component.properties
+    : null;
+};
+
+/** `element.type === Component`: element types keep the identity of the function or wrapper object they were created from. */
+const compareComponentIdentity = (left: StaticValue, right: StaticValue): boolean | null => {
+  if (left.kind === "component-reference" && right.kind === "component-reference") {
+    if (left.type === right.type) return true;
+    if (
+      PROGRAM_COMPONENT_KINDS.has(left.type.kind) &&
+      PROGRAM_COMPONENT_KINDS.has(right.type.kind) &&
+      left.type.kind !== right.type.kind
+    )
+      return false;
+  }
+  if (
+    (isWrapperReference(left) && isCallableValue(right)) ||
+    (isWrapperReference(right) && isCallableValue(left))
+  )
+    return false;
+  const leftNode = getDefinitionNode(left);
+  const rightNode = getDefinitionNode(right);
+  if (!leftNode || !rightNode) return null;
+  if (leftNode !== rightNode) return false;
+  const leftStatics = getClosureStatics(left);
+  return leftStatics !== null && leftStatics === getClosureStatics(right) ? true : null;
+};
+
 /** Values the analyzed program itself creates, so never a host intrinsic such as `Function.prototype`. */
 const isProgramAllocated = (value: StaticValue): boolean =>
   isHeapValue(value) || isCallableValue(value) || value.kind === "element";
@@ -644,6 +703,11 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
   if (isHeapValue(left) && isHeapValue(right) && left.allocation && right.allocation) {
     return left.allocation === right.allocation;
   }
+  if (left.kind === "element" && right.kind === "element") {
+    return left.props.allocation && right.props.allocation
+      ? left.props.allocation === right.props.allocation
+      : null;
+  }
   if (left.kind === "symbol" && right.kind === "symbol") return left.key === right.key;
   if (left.kind === "global" && right.kind === "global" && left.name === right.name) return true;
   if (
@@ -673,7 +737,8 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
       ? true
       : null;
   }
-  if (isCallableValue(left) && isCallableValue(right) && left.node !== right.node) return false;
+  const componentIdentity = compareComponentIdentity(left, right);
+  if (componentIdentity !== null) return componentIdentity;
   const leftClass = getIdentityClass(left);
   const rightClass = getIdentityClass(right);
   if (leftClass && rightClass && leftClass !== rightClass) return false;
@@ -900,15 +965,21 @@ export const isRenderableValue = (value: StaticValue): boolean =>
   value.kind === "branch" ||
   value.kind === "unknown";
 
+const getAgreedTruthiness = (alternatives: StaticValue[]): boolean | null => {
+  const truthiness = alternatives.map(getTruthiness);
+  return truthiness.every((entry) => entry === truthiness[0]) ? (truthiness[0] ?? null) : null;
+};
+
 export const getTruthiness = (value: StaticValue): boolean | null => {
   switch (value.kind) {
     case "primitive":
       return Boolean(value.value);
     case "unknown-primitive":
     case "unknown":
-    case "branch":
     case "optional":
       return null;
+    case "branch":
+      return getAgreedTruthiness(value.alternatives);
     case "external":
       return value.origin === "derived" ? null : true;
     case "element":
