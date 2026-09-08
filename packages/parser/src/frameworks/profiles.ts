@@ -82,10 +82,13 @@ const isNextLayerAsset = (fiber: RuntimeFiberSnapshot): boolean => {
 const isNextAppInjectedFiber = (fiber: RuntimeFiberSnapshot): boolean =>
   (fiber.name !== null && NEXT_APP_INJECTED_FIBERS.has(fiber.name)) || isNextLayerAsset(fiber);
 
+const NEXT_SEGMENT_ACTIVITY_FIBERS: ReadonlySet<string> = new Set(["Activity", "Offscreen"]);
+
 export const NEXT_APP_PROFILE: FrameworkProfile = {
   kind: "next-app",
   transparentRuntimeFibers: new Set(NEXT_APP_RUNTIME_WRAPPERS),
   transparentRuntimeProviders: new Set(NEXT_APP_RUNTIME_PROVIDERS),
+  transparentRuntimeWrapperChildren: new Map([["OuterLayoutRouter", NEXT_SEGMENT_ACTIVITY_FIBERS]]),
   transparentStaticFibers: new Set(["Fragment", "ContextProvider"]),
   isInjectedRuntimeFiber: isNextAppInjectedFiber,
   defaultAnchor: "body",
@@ -134,6 +137,7 @@ export const NEXT_PAGES_PROFILE: FrameworkProfile = {
   kind: "next-pages",
   transparentRuntimeFibers: new Set(NEXT_PAGES_RUNTIME_WRAPPERS),
   transparentRuntimeProviders: new Set(NEXT_PAGES_RUNTIME_PROVIDERS),
+  transparentRuntimeWrapperChildren: new Map(),
   transparentStaticFibers: new Set(["Fragment"]),
   isInjectedRuntimeFiber: isNextPagesInjectedFiber,
   defaultAnchor: null,
@@ -193,6 +197,7 @@ export const REACT_ROUTER_PROFILE: FrameworkProfile = {
   kind: "react-router",
   transparentRuntimeFibers: new Set(REACT_ROUTER_RUNTIME_WRAPPERS),
   transparentRuntimeProviders: new Set(REACT_ROUTER_RUNTIME_PROVIDERS),
+  transparentRuntimeWrapperChildren: new Map(),
   transparentStaticFibers: new Set(["Location", "DataRouterState", "FrameworkContext"]),
   isInjectedRuntimeFiber: isReactRouterInjectedFiber,
   defaultAnchor: null,

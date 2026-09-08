@@ -1,7 +1,10 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
 import { renderFrameworkTarget, type FrameworkRenderTarget } from "../src/frameworks/index.js";
+import { createNextModel } from "../src/frameworks/next-externals.js";
 import { formatPattern, getRenderPattern, getRenderRootChildren } from "../src/harness/index.js";
+import { readInstalledVersion } from "../src/libraries/installed-version.js";
+import { ForwardRefTag } from "../src/work-tags.js";
 
 // Next.js cannot mount inside happy-dom, so its adapters are checked
 // structurally here; reality checks for Next run through the corpus (browser
@@ -48,6 +51,44 @@ describe("next app router", () => {
   it("models next/link as LinkComponent -> anonymous provider -> <a>", async () => {
     const { tree } = await render("next-app", { framework: "next-app", route: "/" });
     expect(tree).toMatch(/<LinkComponent>\n\s+<ContextProvider>\n\s+<a>\n\s+<LinkComponent>/);
+  });
+
+  it("models next/form as Form -> <form> in the App Router and a forwardRef in the Pages Router", async () => {
+    const { tree } = await render("next-app", { framework: "next-app", route: "/" });
+    expect(tree).toMatch(/<nav>\n\s+<Form>\n\s+<form>\n\s+<input>\n\s+<LinkComponent>/);
+    const pagesForm = createNextModel({
+      kind: "next-pages",
+      route: "/",
+      version: null,
+    }).externalValues("next/form", "default");
+    expect(
+      pagesForm?.kind === "component-reference" && pagesForm.type.kind === "stub"
+        ? pagesForm.type.stub.tag
+        : null,
+    ).toBe(ForwardRefTag);
+  });
+
+  it("resolves useLinkStatus to the idle LinkStatusContext default", async () => {
+    const { tree, errors } = await render("next-app", { framework: "next-app", route: "/" });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<a>\n\s+"Notes"\n\s+<PendingDot>\n\s+<main>/);
+    expect(tree).not.toContain("useLinkStatus");
+  });
+
+  it("decides `key in Link` from the stub's statics and work tag", async () => {
+    const { tree } = await render("next-app", { framework: "next-app", route: "/" });
+    expect(tree).not.toContain("?branch");
+    expect(tree).not.toContain("<mark>");
+    expect(tree).not.toContain("<s>");
+  });
+
+  it("keeps an .mdx page's body as an explicit unknown inside its layouts", async () => {
+    const { tree, errors } = await render("next-app", { framework: "next-app", route: "/notes" });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<main>\n\s+\?unknown\(page\.mdx is compiled by the bundler's MDX loader\)/,
+    );
+    expect(lines(tree)).toContain("<nav>");
   });
 
   it("nests segment layouts, loading boundaries and resolves dynamic params", async () => {
@@ -114,6 +155,28 @@ describe("next app router", () => {
     });
     expect(errors.map((diagnostic) => diagnostic.code)).toEqual(["next-app-no-page"]);
     expect(getRenderRootChildren(result)).toEqual([expect.objectContaining({ kind: "wildcard" })]);
+  });
+
+  it("models next/link as the pages forwardRef before Next 15.3 introduced LinkStatusContext", () => {
+    const linkTag = (version: string | null): number | undefined | null => {
+      const link = createNextModel({ kind: "next-app", route: "/", version }).externalValues(
+        "next/link",
+        "default",
+      );
+      return link?.kind === "component-reference" && link.type.kind === "stub"
+        ? link.type.stub.tag
+        : null;
+    };
+    expect(linkTag("13.3.2-canary.13")).toBe(ForwardRefTag);
+    expect(linkTag("15.1.4")).toBe(ForwardRefTag);
+    expect(linkTag("15.3.0")).toBeUndefined();
+    expect(linkTag("16.2.0")).toBeUndefined();
+    expect(linkTag(null)).toBeUndefined();
+  });
+
+  it("reads the installed version of a package from the project root", () => {
+    expect(readInstalledVersion(FIXTURES, "react")).toMatch(/^\d+\.\d+\.\d+/);
+    expect(readInstalledVersion(FIXTURES, "@bippy/not-installed")).toBeNull();
   });
 });
 
@@ -222,6 +285,19 @@ describe("next pages router", () => {
     });
     expect(errors).toEqual([]);
     expect(tree).toContain("<Docs>");
+  });
+
+  it("models next@12.0 Link as a plain function cloning its child and Head's SideEffect as a class", async () => {
+    const { tree, errors } = await render("next-pages", {
+      framework: "next-pages",
+      route: "/about",
+    });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<section>\n\s+<Head>\n\s+<_class>\n\s+<Link>\n\s+<a>\n\s+<Link>\n\s+<a>\n/,
+    );
+    expect(tree).not.toContain("LinkComponent");
+    expect(tree).not.toContain("?unknown");
   });
 
   it("never renders api routes", async () => {

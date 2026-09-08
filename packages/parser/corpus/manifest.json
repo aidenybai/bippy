@@ -1163,6 +1163,169 @@
         "maxFiberCount": 20000
       },
       "notes": "Nx loads the repository `.env` into every task, so the setup script copies `.env.dev.example` to `.env` with the corpus PostgreSQL URL and runs the Prisma migrations through `nx migrate:deploy prisma`. `nx dev builder` builds `@typebot.io/react` first and then runs `next dev` on :3000; the viewer, MinIO and Redis from `docker-compose.dev.yml` are not started."
+    },
+    {
+      "id": "commerce",
+      "repository": "https://github.com/vercel/commerce",
+      "revision": "1df2cf6f6c935f4782eed27351fa18f276917a4d",
+      "description": "Next.js Commerce home page (Next 15 canary app router, Shopify Storefront API, pnpm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/"
+      },
+      "notes": "Cannot run here: every server component awaits the Shopify Storefront GraphQL API (lib/shopify/index.ts reads SHOPIFY_STORE_DOMAIN and SHOPIFY_STOREFRONT_ACCESS_TOKEN and throws without them), so the dev server only renders the error overlay. Recorded static-only."
+    },
+    {
+      "id": "app-router-playground",
+      "repository": "https://github.com/vercel/next-app-router-playground",
+      "revision": "e7414970453d7fe2415adca2f34fc4d83ad2f46f",
+      "description": "Next.js App Router playground home page (Next 16 canary, MDX, pnpm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": ["@heroicons/react"]
+      }
+    },
+    {
+      "id": "chatbot",
+      "repository": "https://github.com/vercel/chatbot",
+      "revision": "107a43a8039bb4f19d0ced4ff3445e2523d14305",
+      "description": "Vercel AI Chatbot new-chat page (Next 16 app router, Auth.js guest session, Drizzle over a local PostgreSQL container, pnpm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/chatbot-setup.sh\""],
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-chatbot-pg 5451 chatbot"],
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "maxFiberCount": 20000,
+        "externalPackageAllowList": [
+          "radix-ui",
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "cmdk",
+          "sonner",
+          "next-themes"
+        ]
+      }
+    },
+    {
+      "id": "next-mdx-blog",
+      "repository": "https://github.com/leerob/next-mdx-blog",
+      "revision": "90d71ae00cc1518394e6f0fa635bc3d9e3adbff9",
+      "description": "leerob/next-mdx-blog home page (Next 16 app router, @next/mdx pages, pnpm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": ["@vercel/analytics"]
+      }
+    },
+    {
+      "id": "taxonomy",
+      "repository": "https://github.com/shadcn-ui/taxonomy",
+      "revision": "298a8857c7128a0d121e7f699dfd729f23b3966d",
+      "description": "shadcn/taxonomy marketing page (Next 13.3 canary app router, contentlayer, next-auth, Prisma, pnpm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/taxonomy-setup.sh\""],
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "envFiles": [".env"],
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "next-themes",
+          "@vercel/analytics"
+        ]
+      }
+    },
+    {
+      "id": "novel",
+      "repository": "https://github.com/steven-tey/novel",
+      "revision": "fa95098e66476c466faebb8211baa5869c101a9c",
+      "description": "Novel editor demo app (Next 15 app router over the novel workspace package, pnpm + turbo)",
+      "framework": "next-app",
+      "workingDirectory": "apps/web",
+      "install": "pnpm install && pnpm --filter novel build",
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "apps/web",
+        "route": "/",
+        "externalPackageAllowList": ["novel"]
+      },
+      "notes": "Live capture crashes: the editor's default content embeds a tweet and react-tweet@3.2.1 (node_modules/react-tweet/dist/utils.js addEntities) throws `TypeError: entities is not iterable` on the payload Twitter's syndication API returns today, so the page commits only the Next error overlay. Not patched (library/API drift, not a parser gap)."
+    },
+    {
+      "id": "contentful-blog",
+      "repository": "https://github.com/contentful/template-blog-webapp-nextjs",
+      "revision": "e7e4a7be787d2957d87109395cb9ff2231370091",
+      "description": "Contentful blog starter landing page (Next 14 app router under src/, react-i18next, GraphQL codegen SDK, Yarn 1)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "yarn install --ignore-engines",
+      "dev": "yarn dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/en-US"
+      },
+      "notes": "Cannot run here: the landing page fetches the Contentful GraphQL API through src/lib/client.ts, which needs CONTENTFUL_SPACE_ID and CONTENTFUL_ACCESS_TOKEN. Recorded static-only. next-i18n-router middleware rewrites / to /en-US, so the static route is the rewritten one."
+    },
+    {
+      "id": "nextjs-blog-boilerplate",
+      "repository": "https://github.com/ixartz/Next-js-Blog-Boilerplate",
+      "revision": "8b29f57b8da07127bf59fcdad68b9b4e9e1d8770",
+      "description": "Next-js-Blog-Boilerplate home page (Next 12 pages router, React 17, markdown posts, npm)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/"
+      }
     }
   ]
 }
