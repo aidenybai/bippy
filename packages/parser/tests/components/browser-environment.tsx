@@ -71,6 +71,17 @@ const ObjectRef = () => {
   return <span ref={ref}>{tag === "span" ? <strong>attached</strong> : <em>detached</em>}</span>;
 };
 
+const DatasetReader = () => {
+  const theme = document.documentElement.dataset.theme ?? "light";
+  const hint = document.body.dataset.hint;
+  return (
+    <output>
+      {theme === "light" ? <b>light</b> : <i>{theme}</i>}
+      {hint === undefined ? <small>no hint</small> : <mark>{hint}</mark>}
+    </output>
+  );
+};
+
 const describeAbort = (controller: AbortController): string => {
   const events: string[] = [];
   const onAbort = () => events.push("listener");
@@ -107,6 +118,21 @@ const Aborts = () => {
   );
 };
 
+const describeDataset = (): string => {
+  const marker = document.createElement("style");
+  marker.dataset.cssOrder = "prepend";
+  marker.dataset.hashPriority = "low";
+  const keys = Object.keys(marker.dataset).sort().join(",");
+  return `${marker.getAttribute("data-css-order")}|${marker.dataset.hashPriority}|${keys}|${"missing" in marker.dataset}`;
+};
+
+const DatasetMarkers = () => (
+  <p>
+    {describeDataset()}
+    {document.body.dataset.theme === undefined ? <b>unthemed</b> : <i>themed</i>}
+  </p>
+);
+
 export default function BrowserEnvironment() {
   return (
     <main>
@@ -118,7 +144,9 @@ export default function BrowserEnvironment() {
       </CallbackRefPortal>
       <LayoutEffectContainer />
       <ObjectRef />
+      <DatasetReader />
       <Aborts />
+      <DatasetMarkers />
     </main>
   );
 }

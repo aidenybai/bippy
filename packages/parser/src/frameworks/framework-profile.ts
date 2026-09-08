@@ -15,6 +15,13 @@ export interface FrameworkProfile {
   /** Spliced out by the comparison wherever the static tree has no fiber for them. */
   transparentRuntimeFibers: ReadonlySet<string>;
   transparentRuntimeProviders: ReadonlySet<string>;
+  /**
+   * Fibers a transparent wrapper renders directly around its children, keyed by
+   * the wrapper's name: React's `Activity` -> `Offscreen` pair that Next's
+   * `OuterLayoutRouter` keeps each route segment in. An application's own
+   * `Activity` elsewhere stays a fiber on both sides.
+   */
+  transparentRuntimeWrapperChildren: ReadonlyMap<string, ReadonlySet<string>>;
   transparentStaticFibers: ReadonlySet<string>;
   /**
    * Runtime fibers (with their subtrees) the framework or its dev tooling
@@ -28,8 +35,7 @@ export interface FrameworkProfile {
   defaultAnchor: string | null;
 }
 
-/** A framework wrapper the comparison may splice out where the static tree has no fiber for it. */
-export const isTransparentRuntimeFiber = (
+const isTransparentRuntimeFiber = (
   fiber: RuntimeFiberSnapshot,
   profile: FrameworkProfile,
 ): boolean => {
@@ -37,6 +43,24 @@ export const isTransparentRuntimeFiber = (
   return fiber.tag === "ContextProvider"
     ? profile.transparentRuntimeProviders.has(name)
     : profile.transparentRuntimeFibers.has(name);
+};
+
+/**
+ * What a framework wrapper stands in for where the static tree has no fiber for
+ * it: its children, with the pairs it renders directly around them spliced
+ * along. Null for any other fiber.
+ */
+export const unwrapTransparentRuntimeFiber = (
+  fiber: RuntimeFiberSnapshot,
+  profile: FrameworkProfile,
+): RuntimeFiberSnapshot[] | null => {
+  if (!isTransparentRuntimeFiber(fiber, profile)) return null;
+  const wrapped = profile.transparentRuntimeWrapperChildren.get(fiber.name ?? fiber.tag);
+  const unwrap = (children: RuntimeFiberSnapshot[]): RuntimeFiberSnapshot[] =>
+    children.flatMap((child) =>
+      wrapped?.has(child.name ?? child.tag) ? unwrap(child.children) : [child],
+    );
+  return unwrap(fiber.children);
 };
 
 const dropInjectedFiber = (
@@ -74,8 +98,10 @@ const spliceTransparentList = (
   profile: FrameworkProfile,
 ): RuntimeFiberSnapshot[] =>
   fibers.flatMap((fiber) => {
-    const children = spliceTransparentList(fiber.children, profile);
-    return isTransparentRuntimeFiber(fiber, profile) ? children : [{ ...fiber, children }];
+    const unwrapped = unwrapTransparentRuntimeFiber(fiber, profile);
+    return unwrapped
+      ? spliceTransparentList(unwrapped, profile)
+      : [{ ...fiber, children: spliceTransparentList(fiber.children, profile) }];
   });
 
 /** The application hierarchy alone: injected subtrees dropped and every transparent wrapper spliced out. */
@@ -93,6 +119,7 @@ export const SPA_PROFILE: FrameworkProfile = {
   kind: "spa",
   transparentRuntimeFibers: new Set(),
   transparentRuntimeProviders: new Set(),
+  transparentRuntimeWrapperChildren: new Map(),
   transparentStaticFibers: new Set(),
   isInjectedRuntimeFiber: neverInjected,
   defaultAnchor: null,

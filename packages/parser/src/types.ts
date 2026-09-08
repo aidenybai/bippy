@@ -126,8 +126,8 @@ export interface ModuleRecord {
   sideEffectStatements: Statement[];
   /** Exports were collected from `exports.x = ` / `module.exports` assignments rather than ESM syntax. */
   isCommonJs: boolean;
-  /** `module.exports = value` replaced the exports object, so `require()` yields the `default` export. */
-  replacesModuleExports: boolean;
+  /** The `value` of `module.exports = value`, whose runtime members are the exports a bundler imports. */
+  moduleExports: Expression | null;
 }
 
 export type ModuleResolution =
@@ -161,6 +161,13 @@ export type ResolvedSymbol =
       isClientReference: boolean;
     }
   | { kind: "namespace"; module: ModuleRecord }
+  /** A member of a CommonJS module's evaluated `module.exports`, read as bundlers do. */
+  | {
+      kind: "module-exports";
+      module: ModuleRecord;
+      exportedName: string;
+      isClientReference: boolean;
+    }
   | { kind: "external"; packageName: string; imported: ImportedName; specifier: string }
   | { kind: "unresolved"; reason: string };
 
@@ -708,6 +715,7 @@ export interface StaticClassValue {
   module: ModuleRecord;
   name: string | null;
   properties: Map<string, StaticValue>;
+  isClientReference?: boolean;
 }
 
 /** A list item (or child) that is present on some paths and absent on others, as `filter` produces. */

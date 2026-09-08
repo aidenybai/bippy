@@ -95,19 +95,6 @@ const readNumber = (props: Record<string, SnapshotPropValue>, key: string): numb
   return typeof value === "number" ? value : null;
 };
 
-/**
- * A `$Suspended` marker under a boundary's Offscreen holds the fallback; React
- * would show it in a Fragment next to an empty hidden Offscreen
- * (`mountSuspenseFallbackChildren` in ReactFiberBeginWork.js).
- */
-const getSuspendedFallback = (fiber: RuntimeFiberSnapshot): RuntimeFiberSnapshot | null => {
-  if (fiber.tag !== "SuspenseComponent" || fiber.children.length !== 1) return null;
-  const [offscreen] = fiber.children;
-  if (offscreen.tag !== "OffscreenComponent" || offscreen.children.length !== 1) return null;
-  const [primary] = offscreen.children;
-  return primary.name === MARKER_NAMES.suspended ? primary : null;
-};
-
 const NEGATED_PREDICATE_PREFIX = "!";
 
 /** `!flag ? A : B` decides the same variable as `flag ? B : A`; both are read as the latter. */
@@ -128,21 +115,6 @@ class PatternReader {
 
   read(fibers: RuntimeFiberSnapshot[]): PatternNode[] {
     return fibers.flatMap((fiber) => this.toPatternNode(fiber));
-  }
-
-  private readFiberChildren(fiber: RuntimeFiberSnapshot): PatternNode[] {
-    const children = this.read(fiber.children);
-    const suspendedFallback = getSuspendedFallback(fiber);
-    if (suspendedFallback) {
-      children.push({
-        kind: "fiber",
-        tag: "Fragment",
-        name: "Fragment",
-        key: null,
-        children: this.read(suspendedFallback.children),
-      });
-    }
-    return children;
   }
 
   private toPatternNode(fiber: RuntimeFiberSnapshot): PatternNode[] {
@@ -207,7 +179,7 @@ class PatternReader {
             tag: fiber.tag,
             name: fiber.name,
             key: fiber.key,
-            children: this.readFiberChildren(fiber),
+            children: this.read(fiber.children),
           },
         ];
     }

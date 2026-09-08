@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { ReactModule } from "./react-runtime.js";
 
 /**
  * Components the materializer mounts where the source's value is not one
@@ -86,12 +87,16 @@ export const UnknownMarker = named(
 
 export const TextMarker = named(MARKER_NAMES.text, (): string => TEXT_PLACEHOLDER);
 
+const NEVER_RESOLVES = new Promise<never>(() => {});
+
 /**
- * Stands in for a boundary's primary children while it shows its fallback; it
- * renders the fallback so React builds those fibers, and `toPattern` moves them
- * into the fallback fragment React would mount next to the hidden Offscreen.
+ * Stands in for primary children that may be suspended when the tree is
+ * observed. Suspends through `use` where React has it: a thrown promise takes
+ * the deprecated unwind path that schedules a retry per boundary, and two
+ * boundaries with pending retries keep re-committing each other forever.
  */
-export const SuspendedMarker = named(
-  MARKER_NAMES.suspended,
-  ({ children }: MarkerChildrenProps): ReactNode => children,
-);
+export const createSuspendedMarker = (use: ReactModule["use"] | undefined) =>
+  named(MARKER_NAMES.suspended, (): never => {
+    if (!use) throw NEVER_RESOLVES;
+    return use(NEVER_RESOLVES);
+  });

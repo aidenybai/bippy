@@ -1,3 +1,4 @@
+import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { getRDTHook } from "bippy";
 import { ReactRuntimeError } from "../errors.js";
@@ -12,6 +13,9 @@ export type ReactDomModule = typeof import("react-dom");
  * The React installation the static tree is materialized with: the app's own
  * `react`/`react-dom` when they resolve from the analyzed root, so the fibers
  * React constructs carry the same work tags and naming as the app's runtime.
+ * An app whose `react-dom` has no `client` entry (React 17) is mounted with the
+ * harness's copy of all three modules; mixing its `react` with a newer
+ * `react-dom` cannot render.
  */
 export interface ReactRuntime {
   react: ReactModule;
@@ -39,18 +43,25 @@ const isReactDomModule = (value: unknown): value is ReactDomModule =>
 const unwrapModule = (loaded: unknown): unknown =>
   isRecord(loaded) && "default" in loaded && isRecord(loaded.default) ? loaded.default : loaded;
 
+const resolveFromApp = (
+  resolver: ModuleResolver | null,
+  specifier: string,
+  fromDirectory: string | null,
+): string | null => {
+  if (!resolver || !fromDirectory) return null;
+  const resolution = resolver.resolve(specifier, `${fromDirectory}/index.js`);
+  return resolution.kind === "external" && resolution.filePath ? resolution.filePath : null;
+};
+
 const importResolved = async (
   resolver: ModuleResolver | null,
   specifier: string,
   fromDirectory: string | null,
 ): Promise<unknown> => {
-  if (resolver && fromDirectory) {
-    const resolution = resolver.resolve(specifier, `${fromDirectory}/index.js`);
-    if (resolution.kind === "external" && resolution.filePath) {
-      return unwrapModule(await import(pathToFileURL(resolution.filePath).href));
-    }
-  }
-  return unwrapModule(await import(specifier));
+  const filePath = resolveFromApp(resolver, specifier, fromDirectory);
+  return unwrapModule(
+    await (filePath === null ? import(specifier) : import(pathToFileURL(filePath).href)),
+  );
 };
 
 const hasAct = (
@@ -90,6 +101,15 @@ export const loadReactRuntime = ({
   return pending;
 };
 
+/** React < 18 has no `react-dom/client`; a clone nested under another project would resolve that project's. */
+const hasClientEntry = (resolver: ModuleResolver | null, rootDirectory: string | null): boolean => {
+  const domPath = resolveFromApp(resolver, "react-dom", rootDirectory);
+  const clientPath = resolveFromApp(resolver, "react-dom/client", rootDirectory);
+  return (
+    domPath !== null && clientPath !== null && path.dirname(domPath) === path.dirname(clientPath)
+  );
+};
+
 const load = async (
   resolver: ModuleResolver | null,
   rootDirectory: string | null,
@@ -97,10 +117,11 @@ const load = async (
   ensureDomGlobals();
   getRDTHook();
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  const appResolver = hasClientEntry(resolver, rootDirectory) ? resolver : null;
   const [react, domClient, dom] = await Promise.all([
-    importResolved(resolver, "react", rootDirectory),
-    importResolved(resolver, "react-dom/client", rootDirectory),
-    importResolved(resolver, "react-dom", rootDirectory),
+    importResolved(appResolver, "react", rootDirectory),
+    importResolved(appResolver, "react-dom/client", rootDirectory),
+    importResolved(appResolver, "react-dom", rootDirectory),
   ]);
   if (!isReactModule(react)) throw new ReactRuntimeError("could not load react");
   if (!isReactDomClientModule(domClient)) {
@@ -111,7 +132,7 @@ const load = async (
     react,
     domClient,
     dom,
-    act: await loadAct(react, resolver, rootDirectory),
+    act: await loadAct(react, appResolver, rootDirectory),
     version: react.version,
   };
 };

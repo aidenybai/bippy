@@ -48,11 +48,12 @@ export interface ComparisonOptions {
   maxSteps?: number;
   /**
    * Framework wrappers the runtime may insert anywhere without a static
-   * counterpart. They are spliced out only where the static tree does not
-   * account for them, so an application component sharing a wrapper's name
-   * still matches its own fiber.
+   * counterpart, mapped to the fibers they stand in for (null for any other
+   * fiber). They are spliced out only where the static tree does not account
+   * for them, so an application component sharing a wrapper's name still
+   * matches its own fiber.
    */
-  isTransparentRuntimeFiber?: (fiber: RuntimeFiberSnapshot) => boolean;
+  unwrapTransparentRuntimeFiber?: (fiber: RuntimeFiberSnapshot) => RuntimeFiberSnapshot[] | null;
 }
 
 export interface ComparisonDivergence {
@@ -125,9 +126,6 @@ export interface ComparisonReport extends ComparisonTally {
 }
 
 const DEFAULT_MAX_STEPS = 200_000;
-// Providers and routers typically render their children within a few wrapper
-// layers; deeper slot searches would start matching unrelated subtrees.
-const MAX_SLOT_SEARCH_DEPTH = 12;
 
 const EMPTY_TALLY: MatchTally = {
   matchedFibers: 0,
@@ -196,17 +194,28 @@ interface SlotSearchResult {
   divergence: ComparisonDivergence | null;
 }
 
-interface SlotSearchFrame {
-  fiber: RuntimeFiberSnapshot;
-  depth: number;
-}
-
 interface FurthestSlotDivergence {
   progress: number;
   divergence: ComparisonDivergence;
 }
 
 class BudgetExceeded extends Error {}
+
+// Any non-host fiber passes an opaque head check, so a slot candidate that
+// merely leaves its own slots unmatched is only a fallback; the candidate
+// explaining the most runtime fibers is the library's real slot.
+const isSettledSlotMatch = ({ tally }: SlotMatch): boolean =>
+  tally.slotsUnmatched === 0 && tally.opaqueRenamed === 0;
+
+const isBetterSlotMatch = (candidate: SlotMatch, best: SlotMatch): boolean => {
+  const matched = candidate.tally.matchedFibers + candidate.tally.matchedText;
+  const bestMatched = best.tally.matchedFibers + best.tally.matchedText;
+  if (matched !== bestMatched) return matched > bestMatched;
+  if (candidate.tally.slotsUnmatched !== best.tally.slotsUnmatched) {
+    return candidate.tally.slotsUnmatched < best.tally.slotsUnmatched;
+  }
+  return candidate.tally.opaqueRenamed < best.tally.opaqueRenamed;
+};
 
 export const describeRuntimeFiber = (fiber: RuntimeFiberSnapshot | undefined): string => {
   if (!fiber) return "<end of children>";
@@ -287,14 +296,16 @@ class Matcher {
   private readonly compareTags: boolean;
   private readonly compareText: boolean;
   private readonly maxSteps: number;
-  private readonly isTransparentRuntimeFiber: (fiber: RuntimeFiberSnapshot) => boolean;
+  private readonly unwrapTransparentRuntimeFiber: (
+    fiber: RuntimeFiberSnapshot,
+  ) => RuntimeFiberSnapshot[] | null;
 
   constructor(options: ComparisonOptions) {
     this.compareKeys = options.compareKeys ?? true;
     this.compareTags = options.compareTags ?? true;
     this.compareText = options.compareText ?? true;
     this.maxSteps = options.maxSteps ?? DEFAULT_MAX_STEPS;
-    this.isTransparentRuntimeFiber = options.isTransparentRuntimeFiber ?? (() => false);
+    this.unwrapTransparentRuntimeFiber = options.unwrapTransparentRuntimeFiber ?? (() => null);
   }
 
   get stepsUsed(): number {
@@ -365,17 +376,24 @@ class Matcher {
     );
   }
 
+  /** The runtime list with the wrapper at `runtimeIndex` replaced by what it stands in for, and the number of fibers that removed. */
   private spliceTransparentFiber(
     runtime: RuntimeFiberSnapshot[],
     runtimeIndex: number,
-  ): RuntimeFiberSnapshot[] {
+  ): { spliced: RuntimeFiberSnapshot[]; transparentFibers: number } | null {
+    const wrapper = runtime[runtimeIndex];
+    const unwrapped = wrapper ? this.unwrapTransparentRuntimeFiber(wrapper) : null;
+    if (!unwrapped) return null;
     const spliced = [
       ...runtime.slice(0, runtimeIndex),
-      ...runtime[runtimeIndex].children,
+      ...unwrapped,
       ...runtime.slice(runtimeIndex + 1),
     ];
     this.positions.end.set(spliced, this.positions.end.get(runtime) ?? 0);
-    return spliced;
+    const transparentFibers =
+      countSnapshotFibers(wrapper) -
+      unwrapped.reduce((sum, fiber) => sum + countSnapshotFibers(fiber), 0);
+    return { spliced, transparentFibers };
   }
 
   /** The pattern is exhausted: only framework wrappers with nothing left inside may remain. */
@@ -385,13 +403,10 @@ class Matcher {
     path: string[],
   ): MatchTally | null {
     if (runtimeIndex === runtime.length) return EMPTY_TALLY;
-    if (this.isTransparentRuntimeFiber(runtime[runtimeIndex])) {
-      const rest = this.matchEnd(
-        this.spliceTransparentFiber(runtime, runtimeIndex),
-        runtimeIndex,
-        path,
-      );
-      if (rest) return addTally(rest, { transparentFibers: 1 });
+    const transparent = this.spliceTransparentFiber(runtime, runtimeIndex);
+    if (transparent) {
+      const rest = this.matchEnd(transparent.spliced, runtimeIndex, path);
+      if (rest) return addTally(rest, { transparentFibers: transparent.transparentFibers });
     }
     this.recordFailure(path, runtime, runtimeIndex, null);
     return null;
@@ -527,15 +542,16 @@ class Matcher {
     continuation: Continuation,
   ): MatchTally | null {
     const actual = runtime[runtimeIndex];
-    if (actual && this.isTransparentRuntimeFiber(actual)) {
+    const transparent = this.spliceTransparentFiber(runtime, runtimeIndex);
+    if (transparent) {
       const spliced = this.matchLeaf(
         pattern,
-        this.spliceTransparentFiber(runtime, runtimeIndex),
+        transparent.spliced,
         runtimeIndex,
         path,
         continuation,
       );
-      if (spliced) return addTally(spliced, { transparentFibers: 1 });
+      if (spliced) return addTally(spliced, { transparentFibers: transparent.transparentFibers });
     }
     switch (pattern.kind) {
       case "fiber": {
@@ -693,38 +709,39 @@ class Matcher {
     );
   }
 
-  // Searches the library's runtime subtree for the place where it rendered the
-  // children the application passed in. Libraries may render siblings around the
-  // slot, so the passed children only need to appear as a contiguous run. When
-  // no candidate fits, the one that got furthest past its start explains why.
+  // Searches the library's runtime subtree breadth-first for the place where it
+  // rendered the children the application passed in, so the shallowest fit wins.
+  // Libraries may render siblings around the slot, so the passed children only
+  // need to appear as a contiguous run; provider stacks may bury the slot under
+  // dozens of wrapper layers. When no candidate fits, the one that got furthest
+  // past its start explains why.
   private matchSlot(
     pattern: PatternOpaque,
     actual: RuntimeFiberSnapshot,
     path: string[],
   ): SlotSearchResult {
-    const queue: SlotSearchFrame[] = [{ fiber: actual, depth: 0 }];
+    const queue: RuntimeFiberSnapshot[] = [actual];
     let best: FurthestSlotDivergence | null = null;
+    let bestMatch: SlotMatch | null = null;
     for (let queueIndex = 0; queueIndex < queue.length; queueIndex++) {
-      const { fiber, depth } = queue[queueIndex];
+      const fiber = queue[queueIndex];
       for (let start = 0; start < fiber.children.length; start++) {
         const { result, failure } = this.attempt(() =>
           this.matchSlotAt(pattern, fiber.children, start, path),
         );
-        if (result) return { match: result, divergence: null };
+        if (result) {
+          if (isSettledSlotMatch(result)) return { match: result, divergence: null };
+          if (!bestMatch || isBetterSlotMatch(result, bestMatch)) bestMatch = result;
+          continue;
+        }
         const startPosition = this.positions.start.get(fiber.children[start]) ?? 0;
         if (failure && (!best || failure.position - startPosition > best.progress)) {
           best = { progress: failure.position - startPosition, divergence: failure.divergence };
         }
       }
-      if (depth < MAX_SLOT_SEARCH_DEPTH) {
-        for (const child of fiber.children) {
-          queue.push({
-            fiber: child,
-            depth: this.isTransparentRuntimeFiber(child) ? depth : depth + 1,
-          });
-        }
-      }
+      queue.push(...fiber.children);
     }
+    if (bestMatch) return { match: bestMatch, divergence: null };
     // Passed children that evaluate to nothing (all-empty branches) leave no
     // runtime trace to find; they match against an empty sibling list.
     const empty = this.attempt(() => this.matchSlotAt(pattern, [], 0, path));

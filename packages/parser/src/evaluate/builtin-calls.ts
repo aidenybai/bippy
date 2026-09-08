@@ -45,6 +45,7 @@ import { nativeFunction } from "../frameworks/stubs.js";
 import {
   constructNativeObject,
   fromNativeValue,
+  getNativeOwnEntries,
   isNativeConstructorName,
   toNativeArguments,
 } from "./native-values.js";
@@ -112,7 +113,7 @@ import {
   getClassPrototype,
   getKnownObjectKeys,
   getKnownObjectOwnNames,
-  getOwnEnumerableEntries,
+  getOwnEnumerableEntries as getModeledOwnEnumerableEntries,
   getOwnPropertyDescriptor,
   getKnownObjectSymbols,
   getListLength,
@@ -578,6 +579,14 @@ const getOwnPropertyDescriptors = (
   }
   return objectValue(descriptors);
 };
+
+/** Own enumerable string-keyed entries in `Object.keys` order; null when the shape is not fully known. */
+const getOwnEnumerableEntries = (
+  target: StaticValue,
+): [key: string, value: StaticValue][] | null =>
+  target.kind === "native-object"
+    ? getNativeOwnEntries(target)
+    : getModeledOwnEnumerableEntries(target);
 
 /** Own string keys including non-enumerable ones; null when the shape is not fully known. */
 const getOwnNames = (target: StaticObjectValue | StaticListValue): string[] | null => {

@@ -4,7 +4,10 @@ import path from "node:path";
 import { z } from "zod";
 import { CorpusRevisionError, NoCommitsError, parseWithSchema } from "../errors.js";
 import { renderFramework } from "../frameworks/render-framework.js";
-import { dropInjectedFibers, isTransparentRuntimeFiber } from "../frameworks/framework-profile.js";
+import {
+  dropInjectedFibers,
+  unwrapTransparentRuntimeFiber,
+} from "../frameworks/framework-profile.js";
 import { getFrameworkProfile } from "../frameworks/profiles.js";
 import { BrowserCapturer, type BrowserCaptureResult } from "../harness/capture-browser.js";
 import {
@@ -243,7 +246,7 @@ const compareEntry = (
     dropInjectedFibers(capture.snapshot, profile),
     {
       ...entry.compare,
-      isTransparentRuntimeFiber: (fiber) => isTransparentRuntimeFiber(fiber, profile),
+      unwrapTransparentRuntimeFiber: (fiber) => unwrapTransparentRuntimeFiber(fiber, profile),
     },
   );
   result.runtime = summarizeRuntime(capture);

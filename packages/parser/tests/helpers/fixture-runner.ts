@@ -4,7 +4,7 @@ import type { RootObservations, RuntimeObservations, StaticRenderResult } from "
 import {
   dropInjectedFibers,
   getFrameworkProfile,
-  isTransparentRuntimeFiber,
+  unwrapTransparentRuntimeFiber,
   renderFrameworkTarget,
   type FrameworkKind,
 } from "../../src/frameworks/index.js";
@@ -31,6 +31,8 @@ export interface FixtureManifest {
   entry: string;
   expectedStatus: ComparisonStatus;
   minCoverage: number;
+  /** Runtime fibers that must match without wildcards or skipped opaque subtrees. */
+  minStrictCoverage?: number;
   framework: FrameworkKind;
   /** URL pathname for routed frameworks; the runtime side navigates here before mounting. */
   route?: string;
@@ -171,7 +173,7 @@ export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult
     budget: fixture.manifest.stateSpaceBudget,
   });
   const comparison = compareStaticToRuntime(stateSpace, dropInjectedFibers(runtime, profile), {
-    isTransparentRuntimeFiber: (fiber) => isTransparentRuntimeFiber(fiber, profile),
+    unwrapTransparentRuntimeFiber: (fiber) => unwrapTransparentRuntimeFiber(fiber, profile),
   });
   return { staticResult, runtime, observed, comparison };
 };

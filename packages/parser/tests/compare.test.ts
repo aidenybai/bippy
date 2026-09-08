@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import { comparePatternToRuntime } from "../src/harness/compare.js";
 import type { RuntimeFiberSnapshot } from "../src/harness/snapshot.js";
-import type { PatternFiber, PatternNode } from "../src/harness/static-pattern.js";
+import type { PatternFiber, PatternNode, PatternOpaque } from "../src/harness/static-pattern.js";
 
 const runtimeFiber = (
   name: string,
@@ -11,7 +11,7 @@ const runtimeFiber = (
 
 const patternFiber = (
   name: string,
-  children: PatternFiber[] = [],
+  children: PatternNode[] = [],
   tag: PatternFiber["tag"] = "FunctionComponent",
 ): PatternFiber => ({ kind: "fiber", tag, name, key: null, children });
 
@@ -20,6 +20,15 @@ const host = (name: string, children: RuntimeFiberSnapshot[] = []): RuntimeFiber
 
 const patternHost = (name: string, children: PatternFiber[] = []): PatternFiber =>
   patternFiber(name, children, "HostComponent");
+
+const opaqueFiber = (name: string, passedChildren: PatternNode[]): PatternOpaque => ({
+  kind: "opaque",
+  name,
+  runtimeNames: [name],
+  key: null,
+  reason: `${name} is not analyzed`,
+  passedChildren,
+});
 
 describe("comparePatternToRuntime", () => {
   it("accepts a bundler-deconflicted `$N` suffix on the runtime name", () => {
@@ -35,14 +44,77 @@ describe("comparePatternToRuntime", () => {
     expect(report.matchedFibers).toBe(3);
   });
 
+  it("accepts esbuild's dedupe counter on a component the bundler renamed", () => {
+    const report = comparePatternToRuntime(
+      [patternFiber("PersistGate", [patternFiber("Gate")])],
+      [runtimeFiber("PersistGate2", [runtimeFiber("Gate")])],
+    );
+    expect(report.status).toBe("exact");
+    expect(report.matchedFibers).toBe(2);
+  });
+
   it("does not equate names that differ beyond a `$N` suffix", () => {
     const report = comparePatternToRuntime([patternFiber("Dialog")], [runtimeFiber("Dialog$1x")]);
     expect(report.status).toBe("mismatch");
   });
+
+  it("keeps a different component name a mismatch", () => {
+    for (const runtimeName of ["PersistGateX", "PersistGat"]) {
+      const report = comparePatternToRuntime(
+        [patternFiber("PersistGate")],
+        [runtimeFiber(runtimeName)],
+      );
+      expect(report.status).toBe("mismatch");
+    }
+  });
+
+  it("places nested opaque children in the slot whose own slot matches, not the first component", () => {
+    const report = comparePatternToRuntime(
+      [opaqueFiber("MantineProvider", [opaqueFiber("ModalsProvider", [patternFiber("App")])])],
+      [
+        runtimeFiber("MantineProvider", [
+          runtimeFiber("CssVariables", [runtimeFiber("style", [], "HostComponent")]),
+          runtimeFiber("ModalsProvider", [
+            runtimeFiber("Fragment", [runtimeFiber("App")], "Fragment"),
+          ]),
+        ]),
+      ],
+    );
+    expect(report.status).toBe("partial");
+    expect(report.matchedFibers).toBe(1);
+    expect(report.slotsMatched).toBe(2);
+    expect(report.slotsUnmatched).toBe(0);
+    expect(report.opaqueRenamed).toBe(0);
+  });
+
+  it("prefers the slot explaining the most runtime fibers over one that hides them in an unmatched slot", () => {
+    const report = comparePatternToRuntime(
+      [
+        opaqueFiber("MantineProvider", [
+          opaqueFiber("ModalsProvider", [
+            patternFiber("App", [opaqueFiber("Shell", [patternFiber("Page")])]),
+          ]),
+        ]),
+      ],
+      [
+        runtimeFiber("MantineProvider", [
+          runtimeFiber("CssVariables", [runtimeFiber("style", [], "HostComponent")]),
+          runtimeFiber("ModalsProvider", [
+            runtimeFiber("App", [runtimeFiber("Shell", [runtimeFiber("Sidebar")])]),
+          ]),
+        ]),
+      ],
+    );
+    expect(report.status).toBe("partial");
+    expect(report.matchedFibers).toBe(1);
+    expect(report.slotsMatched).toBe(2);
+    expect(report.slotsUnmatched).toBe(1);
+  });
 });
 
 const WRAPPERS = new Set(["Root", "ErrorBoundary"]);
-const isWrapper = (fiber: RuntimeFiberSnapshot): boolean => WRAPPERS.has(fiber.name ?? fiber.tag);
+const unwrapWrapper = (fiber: RuntimeFiberSnapshot): RuntimeFiberSnapshot[] | null =>
+  WRAPPERS.has(fiber.name ?? fiber.tag) ? fiber.children : null;
 
 describe("transparent runtime fibers", () => {
   it("splices framework wrappers the static tree does not render", () => {
@@ -55,7 +127,7 @@ describe("transparent runtime fibers", () => {
     const report = comparePatternToRuntime(
       [patternHost("main", [patternHost("h1")]), patternHost("footer")],
       runtime,
-      { isTransparentRuntimeFiber: isWrapper },
+      { unwrapTransparentRuntimeFiber: unwrapWrapper },
     );
     expect(report.status).toBe("exact");
     expect(report.transparentFibers).toBe(2);
@@ -73,7 +145,7 @@ describe("transparent runtime fibers", () => {
       patternHost("nav", [patternFiber("Root", [patternFiber("Dialog", [patternHost("button")])])]),
     ];
     const report = comparePatternToRuntime(pattern, runtime, {
-      isTransparentRuntimeFiber: isWrapper,
+      unwrapTransparentRuntimeFiber: unwrapWrapper,
     });
     expect(report.status).toBe("exact");
     expect(report.transparentFibers).toBe(1);
@@ -93,7 +165,7 @@ describe("transparent runtime fibers", () => {
       [patternHost("main", [patternHost("article")])],
       runtime,
       {
-        isTransparentRuntimeFiber: isWrapper,
+        unwrapTransparentRuntimeFiber: unwrapWrapper,
       },
     );
     expect(report.status).toBe("exact");
@@ -104,7 +176,7 @@ describe("transparent runtime fibers", () => {
   it("reports the divergence past a spliced wrapper", () => {
     const runtime = [runtimeFiber("Root", [host("main", [host("h2")])])];
     const report = comparePatternToRuntime([patternHost("main", [patternHost("h1")])], runtime, {
-      isTransparentRuntimeFiber: isWrapper,
+      unwrapTransparentRuntimeFiber: unwrapWrapper,
     });
     expect(report.status).toBe("mismatch");
     expect(report.divergence).toEqual({
@@ -129,7 +201,7 @@ describe("transparent runtime fibers", () => {
       passedChildren: [patternHost("section", [patternHost("p")])],
     };
     const report = comparePatternToRuntime([opaque], runtime, {
-      isTransparentRuntimeFiber: isWrapper,
+      unwrapTransparentRuntimeFiber: unwrapWrapper,
     });
     expect(report.status).toBe("partial");
     expect(report.slotsMatched).toBe(1);
