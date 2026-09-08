@@ -87,8 +87,8 @@
       "id": "admin-one-react-tailwind",
       "revision": "251841fff0a36e4ac1eb96836adcd2858a66c3ac",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T09:06:17.866Z",
-      "durationMs": 311,
+      "capturedAt": "2026-09-08T14:45:16.235Z",
+      "durationMs": 903,
       "runtime": {
         "reactVersion": "19.2.0-canary-0bdb9206-20250818",
         "rendererName": "react-dom",
@@ -101,31 +101,35 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 848,
-          "textCount": 44,
-          "branchCount": 6,
+          "fiberCount": 830,
+          "textCount": 46,
+          "branchCount": 3,
           "repeatCount": 0,
           "opaqueCount": 4,
-          "unknownCount": 7,
-          "modulesLoaded": 58
+          "unknownCount": 6,
+          "modulesLoaded": 59
         },
         "diagnostics": [
           {
             "code": "unsettled-state",
             "count": 3
+          },
+          {
+            "code": "max-call-depth",
+            "count": 1
           }
         ]
       },
       "report": {
         "matchedFibers": 741,
-        "matchedText": 44,
+        "matchedText": 45,
         "opaqueSubtrees": 4,
         "opaqueSkippedFibers": 9,
         "slotsMatched": 2,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "wildcardAbsorbedFibers": 4,
+        "wildcardAbsorbedFibers": 3,
         "wildcards": [
           {
             "path": "root > <body> [HostSingleton] > <LayoutAuthenticated> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <h1> [HostComponent] > <NumberDynamic> [FunctionComponent] > <div> [HostComponent]",
@@ -150,49 +154,18 @@
             "heads": [
               "\"256\""
             ]
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <LayoutAuthenticated> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <FooterBar> [FunctionComponent] > <footer> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <b> [HostComponent]",
-            "reason": "call of new Date()",
-            "absorbedFibers": 1,
-            "heads": [
-              "\"2026\""
-            ]
           }
         ],
-        "branchesResolved": 6,
-        "branchDeviations": [
-          {
-            "path": "root > <body> [HostSingleton] > <LayoutAuthenticated> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <section> [HostComponent]",
-            "reason": "&& on <boolean: negation of unknown>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <LayoutAuthenticated> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <section> [HostComponent][2]",
-              "expected": "<button> [HostComponent]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <LayoutAuthenticated> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <ChartLineSampleComponentBlock> [FunctionComponent] > <SectionTitleLineWithButton> [FunctionComponent] > <section> [HostComponent]",
-            "reason": "&& on <boolean: negation of unknown>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <LayoutAuthenticated> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <ChartLineSampleComponentBlock> [FunctionComponent] > <SectionTitleLineWithButton> [FunctionComponent] > <section> [HostComponent][2]",
-              "expected": "<Button> [FunctionComponent]",
-              "actual": "<end of children>"
-            }
-          }
-        ],
+        "branchesResolved": 3,
+        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 798,
-        "staticFibers": 799,
+        "staticFibers": 790,
         "coverage": 1,
-        "strictCoverage": 0.9837092731829574,
+        "strictCoverage": 0.9849624060150376,
         "divergence": null,
-        "stepsUsed": 816,
+        "stepsUsed": 810,
         "budgetExhausted": false
       },
       "anchor": "body",
@@ -773,8 +746,8 @@
       "id": "graphic-walker",
       "revision": "538029764c2a9cfbb6b9a59a83f7d13ae30089ac",
       "framework": "spa",
-      "capturedAt": "2026-09-08T09:06:25.898Z",
-      "durationMs": 436,
+      "capturedAt": "2026-09-08T14:45:31.482Z",
+      "durationMs": 702,
       "runtime": {
         "reactVersion": "19.2.0",
         "rendererName": "react-dom",
@@ -790,32 +763,43 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 14,
+          "fiberCount": 22,
           "textCount": 0,
           "branchCount": 0,
           "repeatCount": 0,
           "opaqueCount": 2,
-          "unknownCount": 2,
-          "modulesLoaded": 215
+          "unknownCount": 0,
+          "modulesLoaded": 217
         },
         "diagnostics": []
       },
       "report": {
-        "matchedFibers": 4,
+        "matchedFibers": 9,
         "matchedText": 0,
         "opaqueSubtrees": 2,
-        "opaqueSkippedFibers": 1521,
+        "opaqueSkippedFibers": 1516,
         "slotsMatched": 0,
-        "slotsUnmatched": 1,
+        "slotsUnmatched": 2,
         "opaqueRenamed": 0,
         "unmatchedSlots": [
           {
-            "path": "root > <FullGraphicWalker> [FunctionComponent] > <DataSourceSegmentComponent> [FunctionComponent] > <ShadowDom> [FunctionComponent] > <root.div> (opaque)",
+            "path": "root > <FullGraphicWalker> [FunctionComponent] > <DataSourceSegmentComponent> [FunctionComponent] > <ShadowDom2> [FunctionComponent] > <root.div> (opaque)",
             "reason": "default.div from react-shadow is not analyzed",
             "head": "<ForwardRef> [ForwardRef]",
             "skippedFibers": 97,
             "divergence": {
-              "path": "root > <FullGraphicWalker> [FunctionComponent] > <DataSourceSegmentComponent> [FunctionComponent] > <ShadowDom> [FunctionComponent] > <root.div> (opaque) > <ContextProvider> [ContextProvider][4]",
+              "path": "root > <FullGraphicWalker> [FunctionComponent] > <DataSourceSegmentComponent> [FunctionComponent] > <ShadowDom2> [FunctionComponent] > <root.div> (opaque) > <ContextProvider> [ContextProvider][4]",
+              "expected": "<end of children>",
+              "actual": "<Ye> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <FullGraphicWalker> [FunctionComponent] > <DataSourceSegmentComponent> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <MemoComponent> [MemoComponent] > <ForwardRef> [ForwardRef] > <ForwardRef> [ForwardRef] > <ContextProvider> [ContextProvider] > <ShadowDom2> [FunctionComponent] > <root.div> (opaque)",
+            "reason": "default.div from react-shadow is not analyzed",
+            "head": "<ForwardRef> [ForwardRef]",
+            "skippedFibers": 1419,
+            "divergence": {
+              "path": "root > <FullGraphicWalker> [FunctionComponent] > <DataSourceSegmentComponent> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <MemoComponent> [MemoComponent] > <ForwardRef> [ForwardRef] > <ForwardRef> [ForwardRef] > <ContextProvider> [ContextProvider] > <ShadowDom2> [FunctionComponent] > <root.div> (opaque) > <ContextProvider> [ContextProvider][4]",
               "expected": "<end of children>",
               "actual": "<Ye> [FunctionComponent]"
             }
@@ -828,11 +812,11 @@
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 1525,
-        "staticFibers": 11,
+        "staticFibers": 21,
         "coverage": 1,
-        "strictCoverage": 0.002622950819672131,
+        "strictCoverage": 0.005901639344262295,
         "divergence": null,
-        "stepsUsed": 37,
+        "stepsUsed": 68,
         "budgetExhausted": false
       },
       "anchor": null,
@@ -898,8 +882,8 @@
       "id": "hooks-admin",
       "revision": "0f0735266b71ca70d619d6ccb47e9a988d992034",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T09:06:20.441Z",
-      "durationMs": 180,
+      "capturedAt": "2026-09-08T14:45:21.859Z",
+      "durationMs": 473,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -920,7 +904,7 @@
           "repeatCount": 0,
           "opaqueCount": 10,
           "unknownCount": 5,
-          "modulesLoaded": 79
+          "modulesLoaded": 78
         },
         "diagnostics": []
       },
@@ -1565,8 +1549,8 @@
       "id": "mantine-admin",
       "revision": "8b6f5dcdda08d355b9bb91a0355303ff18593995",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T09:06:19.184Z",
-      "durationMs": 246,
+      "capturedAt": "2026-09-08T14:45:19.896Z",
+      "durationMs": 831,
       "runtime": {
         "reactVersion": "18.3.0-canary-60a927d04-20240113",
         "rendererName": "react-dom",
@@ -1587,7 +1571,7 @@
           "repeatCount": 0,
           "opaqueCount": 181,
           "unknownCount": 0,
-          "modulesLoaded": 25
+          "modulesLoaded": 26
         },
         "diagnostics": []
       },
@@ -2008,8 +1992,8 @@
       "id": "material-kit-react",
       "revision": "69e780a40c455d664b2e13c525faf1d492a072a7",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T09:06:16.262Z",
-      "durationMs": 440,
+      "capturedAt": "2026-09-08T14:45:13.756Z",
+      "durationMs": 1099,
       "runtime": {
         "reactVersion": "19.1.0",
         "rendererName": "react-dom",
@@ -2023,11 +2007,11 @@
       "static": {
         "stats": {
           "fiberCount": 1025,
-          "textCount": 98,
+          "textCount": 110,
           "branchCount": 36,
           "repeatCount": 1,
           "opaqueCount": 499,
-          "unknownCount": 49,
+          "unknownCount": 37,
           "modulesLoaded": 117
         },
         "diagnostics": [
@@ -2039,11 +2023,11 @@
       },
       "report": {
         "matchedFibers": 135,
-        "matchedText": 10,
+        "matchedText": 14,
         "opaqueSubtrees": 277,
-        "opaqueSkippedFibers": 1574,
-        "slotsMatched": 178,
-        "slotsUnmatched": 31,
+        "opaqueSkippedFibers": 1598,
+        "slotsMatched": 170,
+        "slotsUnmatched": 39,
         "opaqueRenamed": 0,
         "unmatchedSlots": [
           {
@@ -2243,7 +2227,29 @@
             "skippedFibers": 4,
             "divergence": {
               "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsWidgetSummary> [FunctionComponent] > <Card> (opaque) > <Box> (opaque) > <Box> (opaque) > <Box> (opaque)[0]",
+              "expected": "\"714k\"",
+              "actual": "<Styled(div)> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsWidgetSummary> [FunctionComponent] > <Card> (opaque) > <Box> (opaque) > <Box> (opaque) > <Box> (opaque)",
+            "reason": "default from @mui/material is not analyzed",
+            "head": "<Box3> [ForwardRef]",
+            "skippedFibers": 4,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsWidgetSummary> [FunctionComponent] > <Card> (opaque) > <Box> (opaque) > <Box> (opaque) > <Box> (opaque)[0]",
               "expected": "\"New users\"",
+              "actual": "<Styled(div)> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsWidgetSummary> [FunctionComponent] > <Card> (opaque) > <Box> (opaque) > <Box> (opaque) > <Box> (opaque)",
+            "reason": "default from @mui/material is not analyzed",
+            "head": "<Box3> [ForwardRef]",
+            "skippedFibers": 4,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsWidgetSummary> [FunctionComponent] > <Card> (opaque) > <Box> (opaque) > <Box> (opaque) > <Box> (opaque)[0]",
+              "expected": "\"1.35m\"",
               "actual": "<Styled(div)> [ForwardRef]"
             }
           },
@@ -2265,7 +2271,29 @@
             "skippedFibers": 4,
             "divergence": {
               "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsWidgetSummary> [FunctionComponent] > <Card> (opaque) > <Box> (opaque) > <Box> (opaque) > <Box> (opaque)[0]",
+              "expected": "\"1.72m\"",
+              "actual": "<Styled(div)> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsWidgetSummary> [FunctionComponent] > <Card> (opaque) > <Box> (opaque) > <Box> (opaque) > <Box> (opaque)",
+            "reason": "default from @mui/material is not analyzed",
+            "head": "<Box3> [ForwardRef]",
+            "skippedFibers": 4,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsWidgetSummary> [FunctionComponent] > <Card> (opaque) > <Box> (opaque) > <Box> (opaque) > <Box> (opaque)[0]",
               "expected": "\"Messages\"",
+              "actual": "<Styled(div)> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsWidgetSummary> [FunctionComponent] > <Card> (opaque) > <Box> (opaque) > <Box> (opaque) > <Box> (opaque)",
+            "reason": "default from @mui/material is not analyzed",
+            "head": "<Box3> [ForwardRef]",
+            "skippedFibers": 4,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsWidgetSummary> [FunctionComponent] > <Card> (opaque) > <Box> (opaque) > <Box> (opaque) > <Box> (opaque)[0]",
+              "expected": "\"234\"",
               "actual": "<Styled(div)> [ForwardRef]"
             }
           },
@@ -2311,7 +2339,29 @@
             "skippedFibers": 4,
             "divergence": {
               "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsTrafficBySite> [FunctionComponent] > <Card> (opaque) > <Box> (opaque) > <Box> (opaque) > <Typography> (opaque)[0]",
+              "expected": "\"19.5k\"",
+              "actual": "<MuiTypographyRoot> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsTrafficBySite> [FunctionComponent] > <Card> (opaque) > <Box> (opaque) > <Box> (opaque) > <Typography> (opaque)",
+            "reason": "default from @mui/material is not analyzed",
+            "head": "<Typography2> [ForwardRef]",
+            "skippedFibers": 4,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsTrafficBySite> [FunctionComponent] > <Card> (opaque) > <Box> (opaque) > <Box> (opaque) > <Typography> (opaque)[0]",
               "expected": "\"Facebook\"",
+              "actual": "<MuiTypographyRoot> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsTrafficBySite> [FunctionComponent] > <Card> (opaque) > <Box> (opaque) > <Box> (opaque) > <Typography> (opaque)",
+            "reason": "default from @mui/material is not analyzed",
+            "head": "<Typography2> [ForwardRef]",
+            "skippedFibers": 4,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsTrafficBySite> [FunctionComponent] > <Card> (opaque) > <Box> (opaque) > <Box> (opaque) > <Typography> (opaque)[0]",
+              "expected": "\"91.2k\"",
               "actual": "<MuiTypographyRoot> [ForwardRef]"
             }
           },
@@ -2333,7 +2383,29 @@
             "skippedFibers": 4,
             "divergence": {
               "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsTrafficBySite> [FunctionComponent] > <Card> (opaque) > <Box> (opaque) > <Box> (opaque) > <Typography> (opaque)[0]",
+              "expected": "\"69.8k\"",
+              "actual": "<MuiTypographyRoot> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsTrafficBySite> [FunctionComponent] > <Card> (opaque) > <Box> (opaque) > <Box> (opaque) > <Typography> (opaque)",
+            "reason": "default from @mui/material is not analyzed",
+            "head": "<Typography2> [ForwardRef]",
+            "skippedFibers": 4,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsTrafficBySite> [FunctionComponent] > <Card> (opaque) > <Box> (opaque) > <Box> (opaque) > <Typography> (opaque)[0]",
               "expected": "\"Linkedin\"",
+              "actual": "<MuiTypographyRoot> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsTrafficBySite> [FunctionComponent] > <Card> (opaque) > <Box> (opaque) > <Box> (opaque) > <Typography> (opaque)",
+            "reason": "default from @mui/material is not analyzed",
+            "head": "<Typography2> [ForwardRef]",
+            "skippedFibers": 4,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsTrafficBySite> [FunctionComponent] > <Card> (opaque) > <Box> (opaque) > <Box> (opaque) > <Typography> (opaque)[0]",
+              "expected": "\"84.9k\"",
               "actual": "<MuiTypographyRoot> [ForwardRef]"
             }
           },
@@ -2356,7 +2428,7 @@
             "divergence": null
           }
         ],
-        "wildcardAbsorbedFibers": 124,
+        "wildcardAbsorbedFibers": 96,
         "wildcards": [
           {
             "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsOrderTimeline> [FunctionComponent] > <Card> (opaque) > <Timeline> (opaque) > <Item> key=\"e99f09a7-dd88-49d5-b1c8-1daf80c2d7b0\" [FunctionComponent] > <TimelineItem> (opaque) > <TimelineContent> (opaque) > <Typography> (opaque)",
@@ -2399,40 +2471,40 @@
             ]
           },
           {
-            "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsWidgetSummary> [FunctionComponent] > <Card> (opaque) > <Box> (opaque) > <Box> (opaque)",
-            "reason": "call of new Intl.NumberFormat()",
-            "absorbedFibers": 4,
-            "heads": [
-              "<Styled(div)> [ForwardRef]"
-            ]
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsWidgetSummary> [FunctionComponent] > <Card> (opaque) > <Box> (opaque) > <Box> (opaque) > <Box> (opaque)",
-            "reason": "call of call of new Intl.NumberFormat()",
+            "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsNews> [FunctionComponent] > <Card> (opaque) > <Scrollbar> [FunctionComponent] > <ScrollbarRoot> (opaque) > <Box> (opaque) > <Item> key=\"e99f09a7-dd88-49d5-b1c8-1daf80c2d7b0\" [FunctionComponent] > <Box> (opaque) > <Box> (opaque)",
+            "reason": "value from dayjs (default().toNow())",
             "absorbedFibers": 3,
             "heads": [
               "<Styled(div)> [ForwardRef]"
             ]
           },
           {
-            "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsWidgetSummary> [FunctionComponent] > <Card> (opaque) > <Box> (opaque) > <Box> (opaque) > <Box> (opaque)",
-            "reason": "call of call of new Intl.NumberFormat()",
+            "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsNews> [FunctionComponent] > <Card> (opaque) > <Scrollbar> [FunctionComponent] > <ScrollbarRoot> (opaque) > <Box> (opaque) > <Item> key=\"e99f09a7-dd88-49d5-b1c8-1daf80c2d7b1\" [FunctionComponent] > <Box> (opaque) > <Box> (opaque)",
+            "reason": "value from dayjs (default().toNow())",
             "absorbedFibers": 3,
             "heads": [
               "<Styled(div)> [ForwardRef]"
             ]
           },
           {
-            "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsWidgetSummary> [FunctionComponent] > <Card> (opaque) > <Box> (opaque) > <Box> (opaque) > <Box> (opaque)",
-            "reason": "call of call of new Intl.NumberFormat()",
+            "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsNews> [FunctionComponent] > <Card> (opaque) > <Scrollbar> [FunctionComponent] > <ScrollbarRoot> (opaque) > <Box> (opaque) > <Item> key=\"e99f09a7-dd88-49d5-b1c8-1daf80c2d7b2\" [FunctionComponent] > <Box> (opaque) > <Box> (opaque)",
+            "reason": "value from dayjs (default().toNow())",
             "absorbedFibers": 3,
             "heads": [
               "<Styled(div)> [ForwardRef]"
             ]
           },
           {
-            "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsWidgetSummary> [FunctionComponent] > <Card> (opaque) > <Box> (opaque) > <Box> (opaque) > <Box> (opaque)",
-            "reason": "call of call of new Intl.NumberFormat()",
+            "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsNews> [FunctionComponent] > <Card> (opaque) > <Scrollbar> [FunctionComponent] > <ScrollbarRoot> (opaque) > <Box> (opaque) > <Item> key=\"e99f09a7-dd88-49d5-b1c8-1daf80c2d7b3\" [FunctionComponent] > <Box> (opaque) > <Box> (opaque)",
+            "reason": "value from dayjs (default().toNow())",
+            "absorbedFibers": 3,
+            "heads": [
+              "<Styled(div)> [ForwardRef]"
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque) > <AnalyticsNews> [FunctionComponent] > <Card> (opaque) > <Scrollbar> [FunctionComponent] > <ScrollbarRoot> (opaque) > <Box> (opaque) > <Item> key=\"e99f09a7-dd88-49d5-b1c8-1daf80c2d7b4\" [FunctionComponent] > <Box> (opaque) > <Box> (opaque)",
+            "reason": "value from dayjs (default().toNow())",
             "absorbedFibers": 3,
             "heads": [
               "<Styled(div)> [ForwardRef]"
@@ -2555,11 +2627,11 @@
         "repeatIterations": 4,
         "status": "partial",
         "runtimeFibers": 1850,
-        "staticFibers": 809,
-        "coverage": 0.9539473684210527,
-        "strictCoverage": 0.07837837837837838,
+        "staticFibers": 821,
+        "coverage": 0.9551282051282052,
+        "strictCoverage": 0.08054054054054054,
         "divergence": null,
-        "stepsUsed": 63166,
+        "stepsUsed": 63205,
         "budgetExhausted": false
       },
       "anchor": null,
@@ -3204,8 +3276,8 @@
       "id": "react-admin-dashboard",
       "revision": "c7bf047a09745c744d020bb4e6e0da54b21378cd",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T09:06:23.275Z",
-      "durationMs": 207,
+      "capturedAt": "2026-09-08T14:45:26.162Z",
+      "durationMs": 1981,
       "runtime": {
         "reactVersion": "16.13.1",
         "rendererName": "react-dom",
@@ -3226,13 +3298,18 @@
           "unknownCount": 7,
           "modulesLoaded": 47
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "timers-unsettled",
+            "count": 1
+          }
+        ]
       },
       "report": {
         "matchedFibers": 0,
         "matchedText": 0,
         "opaqueSubtrees": 1,
-        "opaqueSkippedFibers": 689,
+        "opaqueSkippedFibers": 691,
         "slotsMatched": 0,
         "slotsUnmatched": 1,
         "opaqueRenamed": 0,
@@ -3241,7 +3318,7 @@
             "path": "root > <ThemeProvider> (opaque)",
             "reason": "ThemeProvider from react-jss is not analyzed",
             "head": "<ThemeProvider> [ClassComponent]",
-            "skippedFibers": 689,
+            "skippedFibers": 691,
             "divergence": {
               "path": "root > <ThemeProvider> (opaque)[0]",
               "expected": "<BrowserRouter> [FunctionComponent]",
@@ -3255,12 +3332,12 @@
         "branchDeviations": [],
         "repeatIterations": 0,
         "status": "partial",
-        "runtimeFibers": 689,
+        "runtimeFibers": 691,
         "staticFibers": 151,
         "coverage": 0,
         "strictCoverage": 0,
         "divergence": null,
-        "stepsUsed": 16,
+        "stepsUsed": 15,
         "budgetExhausted": false
       },
       "anchor": null,
@@ -3295,8 +3372,8 @@
       "id": "react-material-admin",
       "revision": "dd136027c2253253cfb5b8a4cb698696fb63f8cd",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T09:06:21.657Z",
-      "durationMs": 370,
+      "capturedAt": "2026-09-08T14:45:23.491Z",
+      "durationMs": 1493,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -3311,19 +3388,19 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 155,
-          "textCount": 26,
+          "fiberCount": 156,
+          "textCount": 28,
           "branchCount": 10,
           "repeatCount": 0,
           "opaqueCount": 39,
-          "unknownCount": 2,
-          "modulesLoaded": 187
+          "unknownCount": 1,
+          "modulesLoaded": 210
         },
         "diagnostics": []
       },
       "report": {
         "matchedFibers": 37,
-        "matchedText": 8,
+        "matchedText": 9,
         "opaqueSubtrees": 19,
         "opaqueSkippedFibers": 168,
         "slotsMatched": 10,
@@ -3371,17 +3448,8 @@
             }
           }
         ],
-        "wildcardAbsorbedFibers": 1,
-        "wildcards": [
-          {
-            "path": "root > <LayoutProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <UserProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <StyledEngineProvider> (opaque) > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ContextConsumer> [ContextConsumer] > <ThemeProviderV5> (opaque) > <ManagementProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <SnackbarProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <PublicRoute> [FunctionComponent] > <Login> [FunctionComponent] > <Grid> (opaque) > <div> [HostComponent] > <Typography> (opaque)",
-            "reason": "call of new Date()",
-            "absorbedFibers": 1,
-            "heads": [
-              "\"2026\""
-            ]
-          }
-        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
         "branchesResolved": 7,
         "branchDeviations": [
           {
@@ -3399,11 +3467,11 @@
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 214,
-        "staticFibers": 103,
+        "staticFibers": 104,
         "coverage": 1,
-        "strictCoverage": 0.2102803738317757,
+        "strictCoverage": 0.21495327102803738,
         "divergence": null,
-        "stepsUsed": 316,
+        "stepsUsed": 314,
         "budgetExhausted": false
       },
       "anchor": null,
@@ -3731,8 +3799,8 @@
       "id": "shadcn-crm-dashboard",
       "revision": "f262d7570fbf315992516fc6a90257c5e4ad812e",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T09:06:24.477Z",
-      "durationMs": 409,
+      "capturedAt": "2026-09-08T14:45:29.288Z",
+      "durationMs": 684,
       "runtime": {
         "reactVersion": "19.1.0-canary-029e8bd6-20250306",
         "rendererName": "react-dom",
@@ -3753,7 +3821,7 @@
           "repeatCount": 0,
           "opaqueCount": 402,
           "unknownCount": 0,
-          "modulesLoaded": 36
+          "modulesLoaded": 37
         },
         "diagnostics": []
       },
