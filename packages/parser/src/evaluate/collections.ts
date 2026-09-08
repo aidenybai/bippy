@@ -1,40 +1,83 @@
-import type { SourceLocation, StaticObjectValue, StaticValue } from "../types.js";
+import type {
+  JournaledState,
+  SourceLocation,
+  StaticBranchValue,
+  StaticObjectValue,
+  StaticValue,
+  StubRenderTools,
+} from "../types.js";
 import { getGeneratorItems } from "./generators.js";
 import { getNativeIterableItems } from "./native-values.js";
 import { getSearchParamsItems } from "./url-search-params.js";
 import {
+  accessorEntry,
   branchValue,
   FALSE_VALUE,
-  getListLength,
   listValue,
+  mapValue,
   objectFromRecord,
+  optionalValue,
+  primitiveValue,
   TRUE_VALUE,
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
   unknownValue,
 } from "./values.js";
 
+/** `isDefinite` is false when the entry exists on some paths only (a branch key, or a fork whose paths disagree). */
 interface CollectionEntry {
   key: StaticValue;
   value: StaticValue;
+  isDefinite: boolean;
+}
+
+interface CollectionState {
+  entries: CollectionEntries;
+  hasDynamicKeys: boolean;
+  isExternallyMutable: boolean;
 }
 
 export type CollectionKind = "Map" | "Set" | "WeakMap" | "WeakSet";
 
 const isKeyed = (kind: CollectionKind): boolean => kind === "Map" || kind === "WeakMap";
 
-const nativeMethod = (name: string, call: (args: StaticValue[]) => StaticValue): StaticValue => ({
+const nativeMethod = (
+  name: string,
+  call: (args: StaticValue[], tools: StubRenderTools) => StaticValue,
+): StaticValue => ({
   kind: "native-function",
   name,
   call,
 });
 
-const isSameKey = (left: StaticValue, right: StaticValue): boolean =>
-  left === right ||
-  (left.kind === "primitive" && right.kind === "primitive" && Object.is(left.value, right.value)) ||
-  (left.kind === "symbol" && right.kind === "symbol" && left.key === right.key) ||
-  (left.kind === "context" && right.kind === "context" && left.context === right.context) ||
-  (left.kind === "global" && right.kind === "global" && left.name === right.name);
+type KeyIdentity = unknown;
+
+const internedIdentities = new Map<string, symbol>();
+
+const internIdentity = (namespace: string, name: string): symbol => {
+  const qualified = `${namespace}:${name}`;
+  const interned = internedIdentities.get(qualified);
+  if (interned) return interned;
+  const identity = Symbol(qualified);
+  internedIdentities.set(qualified, identity);
+  return identity;
+};
+
+/** What a `Map` compares keys by: the primitive itself (SameValueZero) or the value's identity. */
+const getKeyIdentity = (key: StaticValue): KeyIdentity => {
+  switch (key.kind) {
+    case "primitive":
+      return key.value;
+    case "symbol":
+      return internIdentity("symbol", key.key);
+    case "global":
+      return internIdentity("global", key.name);
+    case "context":
+      return key.context;
+    default:
+      return key;
+  }
+};
 
 /** Values with a stable identity (or value equality) across the analysis, so a key lookup is exact. */
 const isDefiniteKey = (key: StaticValue): boolean =>
@@ -50,27 +93,91 @@ const isDefiniteKey = (key: StaticValue): boolean =>
   key.kind === "native-object" ||
   key.kind === "element";
 
+/** Upper bound on key alternatives written one by one before the write counts as a dynamic key. */
+const MAX_KEY_ALTERNATIVES = 8;
+
+/** A small branch whose every alternative is a definite key: the operation applies to each alternative. */
+const getDefiniteKeyBranch = (key: StaticValue): StaticBranchValue | null =>
+  key.kind === "branch" &&
+  key.alternatives.length <= MAX_KEY_ALTERNATIVES &&
+  key.alternatives.every(isDefiniteKey)
+    ? key
+    : null;
+
+type CollectionEntries = ReadonlyMap<KeyIdentity, CollectionEntry>;
+
 /**
  * Module-level `Map`/`Set` caches are common in data-fetching helpers, so
  * collections are modeled exactly while every key is known and fall back to
  * "any stored value" once a dynamic key is used.
  */
-class StaticCollection {
-  private readonly entries: CollectionEntry[] = [];
+class StaticCollection implements JournaledState<CollectionState> {
+  private entries = new Map<KeyIdentity, CollectionEntry>();
   private hasDynamicKeys = false;
   private isExternallyMutable = false;
 
   constructor(
     readonly kind: CollectionKind,
+    readonly allocation: number,
     private readonly location: SourceLocation | null,
   ) {}
 
-  private find(key: StaticValue): CollectionEntry | null {
-    return this.entries.find((entry) => isSameKey(entry.key, key)) ?? null;
+  capture(): CollectionState {
+    return {
+      entries: new Map(this.entries),
+      hasDynamicKeys: this.hasDynamicKeys,
+      isExternallyMutable: this.isExternallyMutable,
+    };
+  }
+
+  restore(snapshot: CollectionState): void {
+    this.entries = new Map(snapshot.entries);
+    this.hasDynamicKeys = snapshot.hasDynamicKeys;
+    this.isExternallyMutable = snapshot.isExternallyMutable;
+  }
+
+  join(
+    snapshots: CollectionState[],
+    reason: string,
+    location: SourceLocation | null,
+    preferredPath: number,
+  ): void {
+    this.hasDynamicKeys = snapshots.some((snapshot) => snapshot.hasDynamicKeys);
+    this.isExternallyMutable = snapshots.some((snapshot) => snapshot.isExternallyMutable);
+    const joined = new Map<KeyIdentity, CollectionEntry>();
+    for (const snapshot of snapshots) {
+      for (const [identity, entry] of snapshot.entries) {
+        if (joined.has(identity)) continue;
+        const pathEntries = snapshots.map(
+          (pathSnapshot) => pathSnapshot.entries.get(identity) ?? null,
+        );
+        if (pathEntries.every((pathEntry) => pathEntry === entry)) {
+          joined.set(identity, entry);
+          continue;
+        }
+        const present = pathEntries.filter((pathEntry) => pathEntry !== null);
+        const preferred = pathEntries[preferredPath];
+        joined.set(identity, {
+          key: entry.key,
+          value: branchValue(
+            present.map((pathEntry) => pathEntry.value),
+            reason,
+            location,
+            preferred ? present.indexOf(preferred) : 0,
+          ),
+          isDefinite: pathEntries.every((pathEntry) => pathEntry?.isDefinite ?? false),
+        });
+      }
+    }
+    this.entries = joined;
   }
 
   private isExact(key: StaticValue): boolean {
-    return isDefiniteKey(key) && !this.hasDynamicKeys && !this.isExternallyMutable;
+    return isDefiniteKey(key) && !this.hasDynamicKeys;
+  }
+
+  private find(key: StaticValue): CollectionEntry | null {
+    return this.entries.get(getKeyIdentity(key)) ?? null;
   }
 
   markExternallyMutable(): void {
@@ -83,55 +190,112 @@ class StaticCollection {
       : `${this.kind}.${method}() with a dynamic key`;
   }
 
+  private describeMaybePresent(method: string): string {
+    return `${this.kind}.${method}() of an entry set on some paths only`;
+  }
+
   get(key: StaticValue): StaticValue {
-    if (this.isExact(key)) return this.find(key)?.value ?? UNDEFINED_VALUE;
-    const reason = this.describeUncertainty("get");
-    if (this.hasDynamicKeys || !isDefiniteKey(key)) {
-      const stored = this.entries.map((entry) => entry.value);
+    return mapValue(key, (alternative) => this.getOne(alternative));
+  }
+
+  private getOne(key: StaticValue): StaticValue {
+    if (!this.isExact(key)) {
+      const reason = this.describeUncertainty("get");
+      const stored = [...this.entries.values()].map((entry) => entry.value);
       if (this.isExternallyMutable) stored.push(unknownValue(reason, this.location));
       return branchValue([...stored, UNDEFINED_VALUE], reason, this.location);
     }
-    // Registrations the analysis saw are the likely runtime contents; code it
-    // did not see may still have changed them.
-    return branchValue(
-      [this.find(key)?.value ?? UNDEFINED_VALUE, unknownValue(reason, this.location)],
-      reason,
-      this.location,
-    );
+    const entry = this.find(key);
+    if (!entry) return UNDEFINED_VALUE;
+    return entry.isDefinite
+      ? entry.value
+      : branchValue(
+          [entry.value, UNDEFINED_VALUE],
+          this.describeMaybePresent("get"),
+          this.location,
+        );
   }
 
   has(key: StaticValue): StaticValue {
-    if (this.isExact(key)) return this.find(key) ? TRUE_VALUE : FALSE_VALUE;
-    return unknownPrimitiveValue("boolean", this.describeUncertainty("has"));
+    return mapValue(key, (alternative) => {
+      if (!this.isExact(alternative)) {
+        return unknownPrimitiveValue("boolean", this.describeUncertainty("has"));
+      }
+      const entry = this.find(alternative);
+      if (!entry) return FALSE_VALUE;
+      return entry.isDefinite
+        ? TRUE_VALUE
+        : unknownPrimitiveValue("boolean", this.describeMaybePresent("has"));
+    });
+  }
+
+  private replace(entry: CollectionEntry): void {
+    this.entries.set(getKeyIdentity(entry.key), entry);
   }
 
   set(key: StaticValue, value: StaticValue): void {
-    if (!isDefiniteKey(key)) this.hasDynamicKeys = true;
-    const existing = this.find(key);
-    if (existing) existing.value = value;
-    else this.entries.push({ key, value });
+    const keyBranch = getDefiniteKeyBranch(key);
+    if (keyBranch) {
+      keyBranch.alternatives.forEach((alternative, index) => {
+        const existing = this.find(alternative);
+        const reason = `${this.kind}.set() with a key that is one of several values`;
+        this.replace(
+          existing
+            ? {
+                key: alternative,
+                value: branchValue(
+                  [value, existing.value],
+                  reason,
+                  this.location,
+                  index === keyBranch.preferredIndex ? 0 : 1,
+                ),
+                isDefinite: existing.isDefinite,
+              }
+            : { key: alternative, value, isDefinite: false },
+        );
+      });
+      return;
+    }
+    if (!isDefiniteKey(key)) {
+      this.hasDynamicKeys = true;
+    }
+    this.replace({ key, value, isDefinite: true });
   }
 
   delete(key: StaticValue): StaticValue {
+    const keyBranch = getDefiniteKeyBranch(key);
+    if (keyBranch) {
+      for (const alternative of keyBranch.alternatives) {
+        const existing = this.find(alternative);
+        if (existing) this.replace({ ...existing, isDefinite: false });
+      }
+      return unknownPrimitiveValue("boolean", this.describeUncertainty("delete"));
+    }
     if (!this.isExact(key)) {
       this.hasDynamicKeys = true;
       return unknownPrimitiveValue("boolean", this.describeUncertainty("delete"));
     }
-    const index = this.entries.findIndex((entry) => isSameKey(entry.key, key));
-    if (index === -1) return FALSE_VALUE;
-    this.entries.splice(index, 1);
-    return TRUE_VALUE;
+    const existing = this.find(key);
+    if (!existing) return FALSE_VALUE;
+    this.entries.delete(getKeyIdentity(key));
+    return existing.isDefinite
+      ? TRUE_VALUE
+      : unknownPrimitiveValue("boolean", this.describeMaybePresent("delete"));
   }
 
   clear(): void {
-    this.entries.length = 0;
+    this.entries = new Map();
     this.hasDynamicKeys = false;
   }
 
   /** Entries in insertion order; code the analysis did not see may have appended more. */
   project(select: (entry: CollectionEntry) => StaticValue): StaticValue {
     if (this.hasDynamicKeys) return unknownValue(`${this.kind} with dynamic keys`, this.location);
-    const items = this.entries.map(select);
+    const items = [...this.entries.values()].map((entry) =>
+      entry.isDefinite
+        ? select(entry)
+        : optionalValue(select(entry), this.describeMaybePresent("entries"), this.location),
+    );
     if (this.isExternallyMutable) {
       items.push({
         kind: "repeat",
@@ -149,9 +313,11 @@ class StaticCollection {
   }
 
   size(): StaticValue {
-    return this.hasDynamicKeys || this.isExternallyMutable
+    return this.hasDynamicKeys ||
+      this.isExternallyMutable ||
+      [...this.entries.values()].some((entry) => !entry.isDefinite)
       ? unknownPrimitiveValue("number", `${this.kind}.size`)
-      : getListLength(listValue(this.entries.map((entry) => entry.value)));
+      : primitiveValue(this.entries.size);
   }
 }
 
@@ -196,10 +362,6 @@ export const markCollectionExternallyMutable = (value: StaticObjectValue): boole
   const collection = collectionsByValue.get(value);
   if (!collection) return false;
   collection.markExternallyMutable();
-  const sizeEntry = value.entries.find(
-    (entry) => entry.kind === "property" && entry.key === "size",
-  );
-  if (sizeEntry?.kind === "property") sizeEntry.value = collection.size();
   return true;
 };
 
@@ -208,27 +370,28 @@ export const createCollectionValue = (
   initial: StaticValue | undefined,
   location: SourceLocation | null,
 ): StaticValue => {
-  const collection = new StaticCollection(kind, location);
+  const self: StaticObjectValue = objectFromRecord({});
+  const collection = new StaticCollection(kind, self.allocation ?? 0, location);
   if (!seedCollection(collection, kind, initial)) {
     return unknownValue(`new ${kind}() from a dynamic iterable`, location);
   }
   const keyOf = (args: StaticValue[]): StaticValue => args[0] ?? UNDEFINED_VALUE;
   const isWeak = kind === "WeakMap" || kind === "WeakSet";
-  const self: StaticObjectValue = objectFromRecord(isWeak ? {} : { size: collection.size() });
-  const sizeEntry = isWeak ? null : self.entries[0];
-  const withSizeRefresh = (name: string, call: (args: StaticValue[]) => StaticValue): StaticValue =>
-    nativeMethod(name, (args) => {
-      const result = call(args);
-      if (sizeEntry?.kind === "property") sizeEntry.value = collection.size();
-      return result;
+  const mutatingMethod = (
+    name: string,
+    mutate: (args: StaticValue[]) => StaticValue,
+  ): StaticValue =>
+    nativeMethod(name, (args, tools) => {
+      tools.recordStateMutation(collection);
+      return mutate(args);
     });
   const methods: Record<string, StaticValue> = {
     get: nativeMethod("get", (args) => collection.get(keyOf(args))),
     has: nativeMethod("has", (args) => collection.has(keyOf(args))),
-    delete: withSizeRefresh("delete", (args) => collection.delete(keyOf(args))),
+    delete: mutatingMethod("delete", (args) => collection.delete(keyOf(args))),
   };
   const iterationMethods: Record<string, StaticValue> = {
-    clear: withSizeRefresh("clear", () => {
+    clear: mutatingMethod("clear", () => {
       collection.clear();
       return UNDEFINED_VALUE;
     }),
@@ -237,31 +400,32 @@ export const createCollectionValue = (
     entries: nativeMethod("entries", () =>
       collection.project((entry) => listValue([entry.key, entry.value])),
     ),
-    forEach: {
-      kind: "native-function",
-      name: "forEach",
-      call: ([callback], tools) => {
-        const entries = collection.project((entry) => listValue([entry.value, entry.key, self]));
-        if (entries.kind !== "list" || !callback)
-          return unknownValue(`${kind}.forEach()`, location);
-        for (const entry of entries.items) {
-          if (entry.kind === "list") tools.call(callback, entry.items);
-          else tools.call(callback, [unknownValue(`${kind}.forEach() entry`, location), self]);
-        }
-        return UNDEFINED_VALUE;
-      },
-    },
+    forEach: nativeMethod("forEach", ([callback], tools) => {
+      const entries = collection.project((entry) => listValue([entry.value, entry.key, self]));
+      if (entries.kind !== "list" || !callback) return unknownValue(`${kind}.forEach()`, location);
+      for (const entry of entries.items) {
+        if (entry.kind === "list") tools.call(callback, entry.items);
+        else tools.call(callback, [unknownValue(`${kind}.forEach() entry`, location), self]);
+      }
+      return UNDEFINED_VALUE;
+    }),
   };
-  methods[isKeyed(kind) ? "set" : "add"] = withSizeRefresh(
-    isKeyed(kind) ? "set" : "add",
-    (args) => {
-      collection.set(keyOf(args), isKeyed(kind) ? (args[1] ?? UNDEFINED_VALUE) : keyOf(args));
-      return self;
-    },
-  );
+  methods[isKeyed(kind) ? "set" : "add"] = mutatingMethod(isKeyed(kind) ? "set" : "add", (args) => {
+    collection.set(keyOf(args), isKeyed(kind) ? (args[1] ?? UNDEFINED_VALUE) : keyOf(args));
+    return self;
+  });
   const members = isWeak ? methods : { ...methods, ...iterationMethods };
   for (const [key, value] of Object.entries(members)) {
     self.entries.push({ kind: "property", key, value });
+  }
+  if (!isWeak) {
+    self.entries.push(
+      accessorEntry(
+        "size",
+        { get: nativeMethod("size", () => collection.size()), set: null },
+        location,
+      ),
+    );
   }
   collectionsByValue.set(self, collection);
   return self;

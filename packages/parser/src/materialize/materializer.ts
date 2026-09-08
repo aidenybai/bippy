@@ -1294,6 +1294,7 @@ export class Materializer {
       isDeferred: () => this.interpreter.timers.isDeferred,
       setProperty: (object, key, value) => this.interpreter.assignOwnProperty(object, key, value),
       project: this.interpreter.project,
+      recordStateMutation: (state) => this.interpreter.recordStateMutation(state),
       realm: this.interpreter.getRealm(context.environment),
       nameHint: null,
       templateArgumentNames: null,

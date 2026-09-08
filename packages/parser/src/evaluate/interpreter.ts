@@ -80,6 +80,7 @@ import type {
   Diagnostic,
   ExternalValueProvider,
   FunctionLikeNode,
+  JournaledState,
   CapturedExportReference,
   CapturedPageState,
   CapturedValue,
@@ -188,7 +189,18 @@ import { NO_PROVIDERS, withOutcomeHandler, withScope, withoutSuspension } from "
 import { decodeJsxEntities } from "./jsx-entities.js";
 import { cleanJsxText } from "./jsx-text.js";
 import { describeMacroJsxChildren, getStubExpandJsx } from "./macro-jsx.js";
-import { forEachEscapedCallable, getMutatedIdentifiers, THIS_MUTATION } from "./escapes.js";
+import { EscapeMemo } from "./escape-memo.js";
+import {
+  type EscapedMutation,
+  type EscapeFrame,
+  type EscapeWalk,
+  followStaleCallables,
+  forEachEscapedCallable,
+  getAccessRoot,
+  getEscapedMutations,
+  isClosureLocal,
+  resolveAccessPath,
+} from "./escapes.js";
 import {
   type AsyncCall,
   awaitedValue,
@@ -544,19 +556,42 @@ const mayBeUnknown = (value: StaticValue): boolean =>
   (value.kind === "external" && value.origin === "derived") ||
   (value.kind === "branch" && value.alternatives.some(mayBeUnknown));
 
-const describeEscapedMutation = (name: string): string =>
-  `"${name}" is mutated by code the analysis did not run`;
+const describeEscapedMutation = ({ target, key }: EscapedMutation): string =>
+  `"${[...target, ...(key === null ? [] : [key])].join(".")}" is mutated by code the analysis did not run`;
 
-const isExternallyMutable = (object: StaticObjectValue, reason: string): boolean =>
-  object.entries.some(
-    (entry) =>
-      entry.kind === "spread" && entry.value.kind === "unknown" && entry.value.reason === reason,
-  );
-
-const markExternallyMutable = (value: StaticValue, reason: string): void => {
-  if (value.kind !== "object" || markCollectionExternallyMutable(value)) return;
-  if (isExternallyMutable(value, reason)) return;
+const markExternallyMutable = (value: StaticObjectValue, reason: string): void => {
+  if (markCollectionExternallyMutable(value)) return;
+  if (value.entries.some((entry) => entry.kind === "spread" && entry.value.kind === "unknown")) {
+    return;
+  }
   value.entries.push({ kind: "spread", value: unknownValue(reason) });
+};
+
+/**
+ * A mutation of a statically known property widens that property alone and a
+ * computed member the whole object. A mutating method call only widens a
+ * collection: a plain object defines such a method itself, so the method body
+ * is the mutation. Each is idempotent, so following a closure again leaves the
+ * object as it was.
+ */
+const markEscapedMutation = (value: StaticValue, mutation: EscapedMutation): void => {
+  if (value.kind !== "object") return;
+  if (mutation.isMethodCall) {
+    markCollectionExternallyMutable(value);
+    return;
+  }
+  const reason = describeEscapedMutation(mutation);
+  if (mutation.key === null) {
+    markExternallyMutable(value, reason);
+    return;
+  }
+  const current = getObjectProperty(value, mutation.key);
+  if (mayBeUnknown(current)) return;
+  value.entries.push({
+    kind: "property",
+    key: mutation.key,
+    value: branchValue([current, unknownValue(reason)], reason),
+  });
 };
 
 export interface CallOptions {
@@ -601,7 +636,8 @@ export class Interpreter {
   private readonly moduleValues = new Map<string, ModuleValues>();
   private readonly initializedModules = new Set<string>();
   /** Module bindings mutated by closures that escaped before the binding was evaluated. */
-  private readonly escapedMutations = new Map<string, Set<string>>();
+  /** Module variables mutated by escaped closures before the variable was evaluated, by file, name and property key. */
+  private readonly escapedMutations = new Map<string, Map<string, Set<EscapedMutation>>>();
   private readonly exportExpressionValues = new WeakMap<
     Expression,
     StaticValue | typeof IN_PROGRESS
@@ -787,6 +823,26 @@ export class Interpreter {
     const binding = module.bindings.get(name);
     if (!binding) return null;
     this.initializeModule(module);
+    return this.evaluateDeclaredBinding(module, binding);
+  }
+
+  /**
+   * A module binding as escape analysis may see it without running the module:
+   * whatever is already evaluated, plus hoisted function and class declarations,
+   * whose creation has no side effects.
+   */
+  private peekModuleBinding(module: ModuleRecord, name: string): StaticValue | null {
+    const binding = module.bindings.get(name);
+    if (!binding) return null;
+    const cached = this.getModuleValues(module).get(name);
+    if (cached) return cached === IN_PROGRESS ? null : cached;
+    return binding.kind === "function" || binding.kind === "class"
+      ? this.evaluateDeclaredBinding(module, binding)
+      : null;
+  }
+
+  private evaluateDeclaredBinding(module: ModuleRecord, binding: TopLevelBinding): StaticValue {
+    const { name } = binding;
     const values = this.getModuleValues(module);
     const cached = values.get(name);
     if (cached === IN_PROGRESS) {
@@ -804,9 +860,10 @@ export class Interpreter {
       this.createModuleContext(module),
     );
     values.set(name, value);
+    this.escapeWalk.memo.invalidate(module, name);
     this.journalLazyBindingValue(value);
-    if (this.escapedMutations.get(module.filePath)?.has(name)) {
-      markExternallyMutable(value, describeEscapedMutation(name));
+    for (const mutation of this.escapedMutations.get(module.filePath)?.get(name) ?? []) {
+      markEscapedMutation(value, mutation);
     }
     return value;
   }
@@ -1007,6 +1064,7 @@ export class Interpreter {
       }
       case "function":
       case "class":
+        if (target.kind === "function") this.escapeWalk.memo.invalidate(target, propertyName);
         target.properties.set(propertyName, value);
         return target;
       case "global":
@@ -1083,6 +1141,7 @@ export class Interpreter {
           }
           return componentReference({ ...type, displayName });
         }
+        this.changeCount++;
         type.properties.set(propertyName, value);
         return target;
       }
@@ -1536,10 +1595,20 @@ export class Interpreter {
   /** Mutating a value that predates an enclosing fork must be undone for the fork's other paths. */
   recordHeapMutation(target: MutableHeapValue): void {
     this.changeCount++;
+    if (target.kind === "list") this.escapeWalk.memo.invalidate(target, null);
     for (let index = this.heapJournals.length - 1; index >= 0; index--) {
       const journal = this.heapJournals[index];
       if (!journal.isPreexisting(target)) return;
       journal.record(target);
+    }
+  }
+
+  recordStateMutation(state: JournaledState<unknown>): void {
+    this.changeCount++;
+    for (let index = this.heapJournals.length - 1; index >= 0; index--) {
+      const journal = this.heapJournals[index];
+      if (!journal.isPreexisting(state)) return;
+      journal.recordState(state);
     }
   }
 
@@ -1808,6 +1877,7 @@ export class Interpreter {
       case "object":
         if (target.isFrozen) return;
         this.recordHeapMutation(target);
+        this.escapeWalk.memo.invalidate(target, name);
         if (name !== null) deleteObjectProperty(target, name);
         else
           target.entries.push({
@@ -1997,6 +2067,7 @@ export class Interpreter {
   assignOwnProperty(target: StaticObjectValue, key: string, value: StaticValue): void {
     if (target.isFrozen) return;
     this.recordHeapMutation(target);
+    this.escapeWalk.memo.invalidate(target, key);
     target.entries.push({ kind: "property", key, value });
   }
 
@@ -2007,6 +2078,7 @@ export class Interpreter {
   ): void {
     if (target.isFrozen) return;
     this.recordHeapMutation(target);
+    this.escapeWalk.memo.invalidate(target, null);
     target.entries.push({
       kind: "spread",
       value: unknownValue(`property ${describeValue(key)} set to ${describeValue(value)}`),
@@ -2017,6 +2089,7 @@ export class Interpreter {
     const owner = findOwningScope(context.scope, name);
     if (owner) {
       this.changeCount++;
+      this.escapeWalk.memo.invalidate(owner, name);
       owner.bindings.set(
         name,
         this.withUncertainAssignment(owner.bindings.get(name), value, name, context),
@@ -2029,6 +2102,7 @@ export class Interpreter {
     const previous = values.get(name);
     if (previous === undefined || previous === IN_PROGRESS) return;
     this.changeCount++;
+    this.escapeWalk.memo.invalidate(context.module, name);
     for (const journal of this.heapJournals) journal.recordModuleBinding(values, name, previous);
     values.set(name, this.withUncertainAssignment(previous, value, name, context));
   }
@@ -2549,6 +2623,7 @@ export class Interpreter {
           isDeferred: () => this.timers.isDeferred || (context.hooks?.isDeferred ?? false),
           setProperty: (object, key, value) => this.assignOwnProperty(object, key, value),
           project: this.project,
+          recordStateMutation: (state) => this.recordStateMutation(state),
           realm: this.getRealm(context.environment),
           nameHint: options.nameHint ?? null,
           templateArgumentNames: options.templateArgumentNames ?? null,
@@ -2624,38 +2699,58 @@ export class Interpreter {
    * containers its closures mutate may hold entries the analysis never saw.
    */
   markEscaped(value: StaticValue): void {
-    forEachEscapedCallable(value, (callable) => {
-      if (callable.kind === "native-function") callable.onEscape?.();
-      else this.markEscapedMutations(callable);
-    });
+    forEachEscapedCallable(value, this.escapeWalk);
   }
 
-  private markEscapedMutations(functionValue: StaticFunctionValue): void {
+  private readonly escapeWalk: EscapeWalk = {
+    visit: (callable, frame) => {
+      if (callable.kind === "native-function") callable.onEscape?.(frame?.arguments ?? null);
+      else this.markEscapedMutations(callable, frame);
+    },
+    resolveModuleBinding: (module, name) => this.peekModuleBinding(module, name),
+    memo: new EscapeMemo(() =>
+      this.timers.queueMicrotask(() => followStaleCallables(this.escapeWalk)),
+    ),
+  };
+
+  /**
+   * Escaped code widens the heap it names through the variables it captures
+   * and its module's bindings; an arrow function captures its `this` too.
+   * Its arguments and a method's `this` belong to whichever escaped code
+   * handed them over; only a method that escaped directly, as a callback or
+   * bound method, may widen the `this` it was bound to.
+   */
+  private markEscapedMutations(
+    functionValue: StaticFunctionValue,
+    frame: EscapeFrame | null,
+  ): void {
     const { module } = functionValue;
-    for (const name of getMutatedIdentifiers(functionValue.node)) {
-      if (name === THIS_MUTATION) {
-        if (functionValue.thisValue) {
-          markExternallyMutable(functionValue.thisValue, describeEscapedMutation(name));
-        }
+    for (const mutation of getEscapedMutations(functionValue.node)) {
+      const root = getAccessRoot(mutation.target, mutation.bindings);
+      if (isClosureLocal(functionValue, root) || (root === "this" && frame !== null)) continue;
+      const resolved = resolveAccessPath(
+        functionValue,
+        null,
+        mutation.target,
+        this.escapeWalk,
+        mutation.bindings,
+      );
+      if (resolved.length > 0) {
+        for (const value of resolved) markEscapedMutation(value, mutation);
         continue;
       }
-      const scoped = lookupScope(functionValue.scope, name);
-      if (scoped) {
-        markExternallyMutable(scoped, describeEscapedMutation(name));
-        continue;
+      if (mutation.target.length !== 1 || module.bindings.get(root)?.kind !== "variable") continue;
+      let mutationsByName = this.escapedMutations.get(module.filePath);
+      if (!mutationsByName) {
+        mutationsByName = new Map();
+        this.escapedMutations.set(module.filePath, mutationsByName);
       }
-      if (module.bindings.get(name)?.kind !== "variable") continue;
-      const evaluated = this.getModuleValues(module).get(name);
-      if (evaluated && evaluated !== IN_PROGRESS) {
-        markExternallyMutable(evaluated, describeEscapedMutation(name));
-        continue;
+      let mutations = mutationsByName.get(root);
+      if (!mutations) {
+        mutations = new Set();
+        mutationsByName.set(root, mutations);
       }
-      let names = this.escapedMutations.get(module.filePath);
-      if (!names) {
-        names = new Set();
-        this.escapedMutations.set(module.filePath, names);
-      }
-      names.add(name);
+      mutations.add(mutation);
     }
   }
 

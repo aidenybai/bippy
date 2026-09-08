@@ -30,6 +30,7 @@ const REACT_API_NAMES: ReadonlySet<string> = new Set<ReactApi>([
   "useMemo",
   "useCallback",
   "useRef",
+  "createRef",
   "useContext",
   "use",
   "useEffect",

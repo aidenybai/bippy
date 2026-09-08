@@ -189,10 +189,19 @@ export const queueStateUpdate = (
 };
 
 /**
- * A setter handed to code the analysis does not follow may fire at any time, so
- * the cell commits to every value it may take and re-renders once to show them.
+ * A setter handed to code the analysis does not follow may fire at any time: a
+ * known `value` it sets is one more the cell may hold by the commit, an unknown
+ * one makes the cell commit to every value it may take.
  */
-export const escapeStateCell = (frame: HookFrame, cell: StateCell): void => {
+export const escapeStateCell = (
+  frame: HookFrame,
+  cell: StateCell,
+  value: StaticValue | null,
+): void => {
+  if (value) {
+    queueStateUpdate(frame, cell, value, true);
+    return;
+  }
   if (cell.isEscaped) return;
   cell.isEscaped = true;
   if (isSameHookValue(escapedStateValue(cell), cell.current)) return;

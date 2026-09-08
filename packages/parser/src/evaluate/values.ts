@@ -331,10 +331,15 @@ const lookupObjectProperty = (object: StaticObjectValue, key: string): StaticVal
       `property "${key}" may come from a spread of ${describeValue(spread)}`,
     );
     const fromEarlier = getObjectProperty(objectValue(object.entries.slice(0, index)), key);
-    return isPresent(fromEarlier)
-      ? branchValue([fromEarlier, fromSpread], fromSpread.reason, null)
-      : fromSpread;
+    if (isPresent(fromEarlier))
+      return branchValue([fromEarlier, fromSpread], fromSpread.reason, null);
+    const inherited = getInheritedProperty(object, key);
+    return isPresent(inherited) ? inherited : fromSpread;
   }
+  return getInheritedProperty(object, key);
+};
+
+const getInheritedProperty = (object: StaticObjectValue, key: string): StaticValue => {
   if (key === "constructor" && object.constructedBy) return object.constructedBy;
   return object.prototype ? getObjectProperty(object.prototype, key) : UNDEFINED_VALUE;
 };
@@ -1107,6 +1112,14 @@ export const getPreferredTruthiness = (value: StaticValue): boolean | null =>
   value.kind === "branch"
     ? getPreferredTruthiness(value.alternatives[value.preferredIndex])
     : getTruthiness(value);
+
+export type CallableValue = Extract<
+  StaticValue,
+  { kind: "function" | "native-function" | "global" }
+>;
+
+export const isCallable = (value: StaticValue | undefined): value is CallableValue =>
+  value?.kind === "function" || value?.kind === "native-function" || value?.kind === "global";
 
 export const isNullish = (value: StaticValue): boolean | null => {
   if (value.kind === "primitive") return value.value === null || value.value === undefined;
