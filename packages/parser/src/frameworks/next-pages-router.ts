@@ -3,6 +3,7 @@ import { componentReference, objectValue, unknownValue } from "../evaluate/value
 import { toElementType } from "../react/element-type.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
 import type { StaticRenderResult } from "../types.js";
+import { applyNextCompilerOptions } from "./next-config.js";
 import type { NextModel } from "./next-externals.js";
 import {
   type DynamicSegment,
@@ -113,6 +114,7 @@ export const renderNextPagesRoute = (
     : findFirstDirectory(renderer.options.rootDirectory, ["pages", "src/pages"]);
 
   return renderer.renderWith((interpreter) => {
+    applyNextCompilerOptions(renderer, interpreter);
     if (!pagesDirectory) {
       interpreter.report(
         "next-pages-missing",

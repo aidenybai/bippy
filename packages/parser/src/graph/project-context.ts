@@ -35,7 +35,7 @@ const readManifest = (manifestPath: string): object | null => {
   }
 };
 
-const readDeclaredDependencies = (manifestPath: string): Set<string> | null => {
+export const readDeclaredDependencies = (manifestPath: string): Set<string> | null => {
   const manifest = readManifest(manifestPath);
   if (manifest === null) return null;
   const declared = new Set<string>();

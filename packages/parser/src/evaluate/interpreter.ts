@@ -20,6 +20,7 @@ import type {
   LogicalExpression,
   MemberExpression,
   NewExpression,
+  Node,
   ObjectExpression,
   ObjectProperty,
   ParamPattern,
@@ -29,6 +30,7 @@ import type {
   Span,
   Statement,
   SwitchStatement,
+  TaggedTemplateExpression,
   TemplateLiteral,
   TryStatement,
   UnaryExpression,
@@ -39,6 +41,7 @@ import type {
 } from "oxc-parser";
 import path from "node:path";
 import { isModuleRecord, type ModuleGraph } from "../graph/module-graph.js";
+import { isInsideNodeModules } from "../graph/module-resolver.js";
 import { nativeFunction } from "../frameworks/stubs.js";
 import { getLibraryValue } from "../libraries/index.js";
 import { PurePackages } from "../libraries/pure-packages.js";
@@ -85,6 +88,7 @@ import type {
   StaticObjectValue,
   StaticPrimitive,
   StaticValue,
+  StyledComponentsTransformOptions,
   SuperBinding,
   TopLevelBinding,
   UnknownPrimitiveType,
@@ -117,6 +121,7 @@ import {
   getHistoryMember,
   isHistoryName,
 } from "./session-history.js";
+import { isCryptoName } from "./web-crypto.js";
 import { isEnvironmentVariableName } from "./bundler-globals.js";
 import { hasProperty, OBJECT_PROTOTYPE_METHODS } from "./has-property.js";
 import { isInstanceOf } from "./instance-of.js";
@@ -151,6 +156,11 @@ import {
   getStorageLength,
 } from "./web-storage.js";
 import { type CompiledClass, getCompiledClass } from "./compiled-class.js";
+import {
+  collectStyledDisplayNames,
+  DEFAULT_STYLED_COMPONENTS_TRANSFORM,
+  STYLED_COMPONENTS_MACRO_SPECIFIER,
+} from "./styled-components-transform.js";
 import type { CallFrame, ContextReader, EvaluationContext } from "./context.js";
 import type { HookFrame, StateCell } from "./hooks.js";
 import { NO_PROVIDERS, withOutcomeHandler, withScope, withoutSuspension } from "./context.js";
@@ -251,6 +261,14 @@ interface JsxAttributeValues {
   props: StaticObjectValue;
   key: StaticValue | null;
 }
+
+/** What a file's JSX compiles to under its `@jsx`/`@jsxImportSource` annotation. */
+interface JsxFactory {
+  source: "classic" | "automatic";
+  callee: StaticValue;
+}
+
+const REACT_FRAGMENT: StaticValue = { kind: "react-api", api: "Fragment" };
 
 interface CallValueOptions {
   thisValue?: StaticValue | null;
@@ -569,6 +587,9 @@ export class Interpreter {
   private readonly diagnosticKeys = new Set<string>();
   /** The `super(...)` each instance under construction runs, for lowered constructors calling it through `Reflect.construct`. */
   readonly pendingSuperBindings = new WeakMap<StaticObjectValue, SuperBinding>();
+  /** The styled-components transform the project's build applies to its own modules; `null` when it has none. */
+  styledComponentsTransform: StyledComponentsTransformOptions | null;
+  private readonly styledDisplayNames = new WeakMap<ModuleRecord, Map<Node, string>>();
 
   constructor(graph: ModuleGraph, options: InterpreterOptions = {}) {
     this.graph = graph;
@@ -597,6 +618,11 @@ export class Interpreter {
     this.reactVersion = options.reactVersion ?? null;
     this.elementSymbolKey = getReactElementSymbolKey(this.reactVersion);
     this.assumeOuterProviders = options.assumeOuterProviders ?? false;
+    this.styledComponentsTransform = this.project.hasDeclaredDependency(
+      "babel-plugin-styled-components",
+    )
+      ? DEFAULT_STYLED_COMPONENTS_TRANSFORM
+      : null;
   }
 
   /** A value recorded from the running page, with references to the project's own module exports evaluated. */
@@ -1263,7 +1289,11 @@ export class Interpreter {
           ),
         );
       case "TaggedTemplateExpression": {
-        const tag = this.evaluateExpression(node.tag, context);
+        const tag = this.withStyledDisplayName(
+          this.evaluateExpression(node.tag, context),
+          node,
+          context,
+        );
         if (tag.kind === "external") {
           return { ...tag, importedName: `${tag.importedName}\`\``, origin: "derived" };
         }
@@ -2024,6 +2054,7 @@ export class Interpreter {
             getHistoryMember(this.history, key) ?? { kind: "method", receiver: object, name: key }
           );
         }
+        if (isCryptoName(object.name)) return { kind: "method", receiver: object, name: key };
         if (isWindowAlias(object.name)) {
           const windowGlobal = this.windowGlobals.get(key);
           if (windowGlobal) return windowGlobal;
@@ -2172,7 +2203,16 @@ export class Interpreter {
       if (callee === CHAIN_SHORT_CIRCUIT) return callee;
       if (node.optional && isNullish(callee) === true) return CHAIN_SHORT_CIRCUIT;
       args ??= this.evaluateArguments(node.arguments, context);
-      return this.callValue(callee, args, context, location, { thisValue, nameHint });
+      return this.callValue(
+        this.withStyledDisplayName(callee, node, context),
+        args,
+        context,
+        location,
+        {
+          thisValue,
+          nameHint,
+        },
+      );
     };
     if (node.callee.type !== "MemberExpression") {
       return callWith(this.evaluateExpression(node.callee, context), null);
@@ -2281,6 +2321,38 @@ export class Interpreter {
         this.markEscapes(args);
         return unknownValue(`call of ${describeValue(callee)}`, location);
     }
+  }
+
+  /** `callee.withConfig({ displayName })` when the project's styled-components transform names this call site. */
+  private withStyledDisplayName(
+    callee: StaticValue,
+    node: CallExpression | TaggedTemplateExpression,
+    context: EvaluationContext,
+  ): StaticValue {
+    if (callee.kind === "external" || callee.kind === "unknown") return callee;
+    const displayName = this.getStyledDisplayNames(context.module).get(node);
+    if (displayName === undefined) return callee;
+    const location = this.locate(context.module, node);
+    const withConfig = this.getProperty(callee, "withConfig", context, location, false);
+    const config = objectFromRecord({ displayName: primitiveValue(displayName) });
+    return this.callValue(withConfig, [config], context, location, { thisValue: callee });
+  }
+
+  private getStyledDisplayNames(module: ModuleRecord): Map<Node, string> {
+    let displayNames = this.styledDisplayNames.get(module);
+    if (!displayNames) {
+      const usesMacro = module.imports.some(
+        (binding) => binding.specifier === STYLED_COMPONENTS_MACRO_SPECIFIER,
+      );
+      const transform = usesMacro
+        ? DEFAULT_STYLED_COMPONENTS_TRANSFORM
+        : isInsideNodeModules(module.filePath)
+          ? null
+          : this.styledComponentsTransform;
+      displayNames = transform ? collectStyledDisplayNames(module, transform) : new Map();
+      this.styledDisplayNames.set(module, displayNames);
+    }
+    return displayNames;
   }
 
   private markEscapes(args: StaticValue[]): void {
@@ -3416,6 +3488,19 @@ export class Interpreter {
       this.getStyledJsxType(node.openingElement.name, props) ??
       this.evaluateJsxName(node.openingElement.name, context);
     const children = this.evaluateJsxChildren(node.children, context);
+    const factory = this.getJsxFactory(context, this.locate(context.module, node));
+    if (factory) {
+      return this.callJsxFactory(
+        factory,
+        type,
+        props,
+        key,
+        children,
+        node,
+        this.describeJsxName(node.openingElement.name),
+        context,
+      );
+    }
     const expandJsx = getStubExpandJsx(type);
     return this.createElement(
       type,
@@ -3441,14 +3526,110 @@ export class Interpreter {
 
   private evaluateJsxFragment(node: JSXFragment, context: EvaluationContext): StaticValue {
     const children = this.evaluateJsxChildren(node.children, context);
+    const location = this.locate(context.module, node);
+    const factory = this.getJsxFactory(context, location);
+    if (factory) {
+      const pragma = context.module.file.jsxPragma;
+      const fragmentType =
+        pragma?.fragment && factory.source === "classic"
+          ? this.evaluatePragmaMember(pragma.fragment, context, location)
+          : REACT_FRAGMENT;
+      return this.callJsxFactory(
+        factory,
+        fragmentType,
+        objectValue(),
+        null,
+        children,
+        node,
+        "Fragment",
+        context,
+      );
+    }
     return this.createElement(
-      { kind: "react-api", api: "Fragment" },
+      REACT_FRAGMENT,
       objectValue(),
       null,
       children,
-      this.locate(context.module, node),
+      location,
       "Fragment",
       context,
+    );
+  }
+
+  /**
+   * The element factory a file's `@jsx` (classic) or `@jsxImportSource`
+   * (automatic) annotation routes its JSX through; null when the JSX compiles
+   * to React's own `createElement`/`jsx`.
+   */
+  private getJsxFactory(
+    context: EvaluationContext,
+    location: SourceLocation | null,
+  ): JsxFactory | null {
+    const pragma = context.module.file.jsxPragma;
+    if (!pragma) return null;
+    if (pragma.factory !== null && pragma.runtime !== "automatic") {
+      const callee = this.evaluatePragmaMember(pragma.factory, context, location);
+      if (callee.kind === "react-api" && callee.api === "createElement") return null;
+      return { source: "classic", callee };
+    }
+    if (
+      pragma.importSource !== null &&
+      pragma.importSource !== "react" &&
+      pragma.runtime !== "classic"
+    ) {
+      const symbol = this.graph.resolveImportedSymbol(
+        `${pragma.importSource}/jsx-runtime`,
+        { kind: "named", name: "jsx" },
+        context.module,
+      );
+      return { source: "automatic", callee: this.resolvedSymbolToValue(symbol, null) };
+    }
+    return null;
+  }
+
+  private evaluatePragmaMember(
+    expression: string,
+    context: EvaluationContext,
+    location: SourceLocation | null,
+  ): StaticValue {
+    const [root, ...members] = expression.split(".");
+    let value = this.lookupIdentifier(root, context);
+    for (const member of members) value = this.getProperty(value, member, context, location);
+    return value;
+  }
+
+  /** `factory(type, props, ...children)` (classic) or `jsx(type, propsWithChildren, key)` (automatic), as the JSX compiles. */
+  private callJsxFactory(
+    factory: JsxFactory,
+    type: StaticValue,
+    props: StaticObjectValue,
+    key: StaticValue | null,
+    children: StaticValue[],
+    node: JSXElement | JSXFragment,
+    nameHint: string,
+    context: EvaluationContext,
+  ): StaticValue {
+    const location = this.locate(context.module, node);
+    if (factory.source === "classic") {
+      if (key) props.entries.push({ kind: "property", key: "key", value: key });
+      const propsArgument = props.entries.length === 0 ? NULL_VALUE : props;
+      return this.callValue(factory.callee, [type, propsArgument, ...children], context, location, {
+        nameHint,
+      });
+    }
+    if (children.length === 1) {
+      props.entries.push({ kind: "property", key: "children", value: children[0] });
+    } else if (children.length > 1) {
+      props.entries.push({ kind: "property", key: "children", value: listValue(children) });
+    }
+    return this.callValue(
+      factory.callee,
+      [type, props, key ?? UNDEFINED_VALUE],
+      context,
+      location,
+      {
+        nameHint,
+      },
     );
   }
 }

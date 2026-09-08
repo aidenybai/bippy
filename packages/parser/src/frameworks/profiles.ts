@@ -108,15 +108,35 @@ const NEXT_PAGES_RUNTIME_WRAPPERS = [
   "HotReload",
   "ReactDevOverlay",
   "PagesDevOverlay",
+  "PagesDevOverlayBridge",
   "PagesDevOverlayErrorBoundary",
   "Fragment",
 ];
+
+// `next/dist/client/index` renders `<Root><Head callback/><AppContainer>{app}
+// <Portal type="next-route-announcer"><RouteAnnouncer/></Portal></AppContainer></Root>`:
+// that `Head` (a childless commit callback, unlike `next/head`'s, which renders
+// `SideEffect`) and the announcer portal have no application source.
+const isNextPagesInjectedFiber = (
+  fiber: RuntimeFiberSnapshot,
+  parent: RuntimeFiberSnapshot,
+): boolean => {
+  if (fiber.name === "Head") return parent.name === "Root" && fiber.children.length === 0;
+  if (fiber.name !== "Portal" || fiber.tag !== "FunctionComponent") return false;
+  const [hostPortal] = fiber.children;
+  return (
+    fiber.children.length === 1 &&
+    hostPortal.tag === "HostPortal" &&
+    hostPortal.children.length === 1 &&
+    hostPortal.children[0].name === "RouteAnnouncer"
+  );
+};
 
 export const NEXT_PAGES_PROFILE: FrameworkProfile = {
   kind: "next-pages",
   transparentRuntimeFibers: new Set(NEXT_PAGES_RUNTIME_WRAPPERS),
   transparentStaticFibers: new Set(["Fragment"]),
-  isInjectedRuntimeFiber: neverInjected,
+  isInjectedRuntimeFiber: isNextPagesInjectedFiber,
   defaultAnchor: null,
 };
 

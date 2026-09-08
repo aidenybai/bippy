@@ -1,7 +1,13 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
-import { renderFrameworkTarget, type FrameworkRenderTarget } from "../src/frameworks/index.js";
+import {
+  flattenTransparentFibers,
+  getFrameworkProfile,
+  renderFrameworkTarget,
+  type FrameworkRenderTarget,
+} from "../src/frameworks/index.js";
 import { formatPattern, getRenderPattern, getRenderRootChildren } from "../src/harness/index.js";
+import type { RuntimeFiberSnapshot, SnapshotWorkTag } from "../src/harness/snapshot.js";
 
 // Next.js cannot mount inside happy-dom, so its adapters are checked
 // structurally here; reality checks for Next run through the corpus (browser
@@ -9,11 +15,16 @@ import { formatPattern, getRenderPattern, getRenderRootChildren } from "../src/h
 
 const FIXTURES = join(import.meta.dirname, "framework-fixtures");
 
-const render = async (fixture: string, target: FrameworkRenderTarget) => {
+const render = async (
+  fixture: string,
+  target: FrameworkRenderTarget,
+  externalPackageAllowList: string[] = [],
+) => {
   const rootDirectory = join(FIXTURES, fixture);
   const result = await renderFrameworkTarget(target, {
     rootDirectory,
     tsconfigPath: join(rootDirectory, "tsconfig.json"),
+    externalPackageAllowList,
   });
   return {
     result,
@@ -110,9 +121,65 @@ describe("next pages router", () => {
     expect(tree).toContain("<Docs>");
   });
 
+  it("applies next.config's compiler.styledComponents naming to the app's styled components", async () => {
+    const { tree, errors } = await render(
+      "next-pages",
+      { framework: "next-pages", route: "/about" },
+      ["styled-components"],
+    );
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<About>\n\s+<about__Page>\n\s+<main>/);
+  });
+
   it("never renders api routes", async () => {
     const { errors } = await render("next-pages", { framework: "next-pages", route: "/api/hello" });
     expect(errors.map((diagnostic) => diagnostic.code)).toEqual(["next-pages-no-page"]);
+  });
+
+  it("splices out the Next 16 dev client around _app, keeping the app's own next/head", () => {
+    const fiber = (
+      name: string | null,
+      tag: SnapshotWorkTag,
+      children: RuntimeFiberSnapshot[] = [],
+    ): RuntimeFiberSnapshot => ({ tag, name, key: null, text: null, props: {}, children });
+    const app = fiber("App", "FunctionComponent", [
+      fiber("Head", "FunctionComponent", [fiber("SideEffect", "FunctionComponent")]),
+      fiber("Portal", "FunctionComponent", [
+        fiber("Portal", "HostPortal", [fiber("div", "HostComponent")]),
+      ]),
+    ]);
+    const runtimeRoot = fiber("HostRoot", "HostRoot", [
+      fiber("Root", "FunctionComponent", [
+        fiber("Head", "FunctionComponent"),
+        fiber("AppContainer", "FunctionComponent", [
+          fiber("Container", "ClassComponent", [
+            fiber("PagesDevOverlayBridge", "FunctionComponent", [
+              fiber("PagesDevOverlayErrorBoundary", "ClassComponent", [
+                fiber("RouterContext", "ContextProvider", [
+                  app,
+                  fiber("Portal", "FunctionComponent", [
+                    fiber("Portal", "HostPortal", [
+                      fiber("RouteAnnouncer", "FunctionComponent", [fiber("p", "HostComponent")]),
+                    ]),
+                  ]),
+                ]),
+              ]),
+            ]),
+          ]),
+        ]),
+      ]),
+    ]);
+    const flattened = flattenTransparentFibers(
+      {
+        reactVersion: null,
+        rendererName: null,
+        buildType: null,
+        roots: [runtimeRoot],
+        capturedAt: "",
+      },
+      getFrameworkProfile("next-pages"),
+    );
+    expect(flattened.roots[0].children).toEqual([app]);
   });
 });
 

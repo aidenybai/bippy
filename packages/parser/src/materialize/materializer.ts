@@ -790,12 +790,19 @@ export class Materializer {
     context: MaterializeContext,
     location: SourceLocation | null,
   ): ReactNode {
-    if (children.kind !== "function") {
-      return this.unknownElementNode("Consumer render prop is dynamic", context);
-    }
     const contextValue = definition
       ? providedContextValue(this.interpreter, definition, provided, location)
       : unknownValue("context value from an unresolved context");
+    if (children.kind === "native-function") {
+      return this.toNode(
+        children.call([contextValue], this.createStubTools(context, location)),
+        context,
+        true,
+      );
+    }
+    if (children.kind !== "function") {
+      return this.unknownElementNode("Consumer render prop is dynamic", context);
+    }
     const evaluationContext = this.interpreter.createModuleContext(children.module, (candidate) =>
       candidate === definition ? provided : null,
     );
@@ -1202,8 +1209,10 @@ export class Materializer {
     }
   }
 
-  private renderStub(input: ProxyInput, stub: StubComponent): ReactNode {
-    const { context, props, location } = input;
+  private createStubTools(
+    context: MaterializeContext,
+    location: SourceLocation | null,
+  ): StubRenderTools {
     const tools: StubRenderTools = {
       readContext: (definition) =>
         providedContextValue(this.interpreter, definition, this.readContext(definition), location),
@@ -1225,7 +1234,12 @@ export class Materializer {
       nameHint: null,
       templateArgumentNames: null,
     };
-    const rendered = stub.render(props, tools);
+    return tools;
+  }
+
+  private renderStub(input: ProxyInput, stub: StubComponent): ReactNode {
+    const { context, props, location } = input;
+    const rendered = stub.render(props, this.createStubTools(context, location));
     return this.finishRender(rendered, { ...context, depth: context.depth + 1 }, input);
   }
 

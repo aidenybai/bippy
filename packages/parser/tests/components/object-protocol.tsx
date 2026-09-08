@@ -52,6 +52,14 @@ const spreadSymbolled = { ...symbolled };
 const ownSymbols = Object.getOwnPropertySymbols(spreadSymbolled).map((symbol) => symbol.toString());
 const hasSymbol = Object.prototype.hasOwnProperty.call(spreadSymbolled, iteratorKey);
 
+const descriptors = Object.getOwnPropertyDescriptors({ ...symbolled, extra: true });
+const descriptorText = Object.keys(descriptors)
+  .map((key) => {
+    const { value, writable, enumerable, configurable } = descriptors[key];
+    return `${key}=${String(value)}:${String(writable)}${String(enumerable)}${String(configurable)}`;
+  })
+  .join(",");
+
 const buffer = new Uint16Array(3);
 buffer[1] = 5;
 const bufferText = Array.from(buffer).join("-");
@@ -74,6 +82,8 @@ export default function ObjectProtocol() {
       <dd>
         {ownSymbols.join(",")}/{String(hasSymbol)}/{Object.keys(spreadSymbolled).join(",")}
       </dd>
+      <dt>descriptors</dt>
+      <dd>{descriptorText}</dd>
       <dt>typed array</dt>
       <dd>{bufferText}</dd>
       <dt>history</dt>

@@ -701,6 +701,7 @@
         "externalPackageAllowList": [
           "@radix-ui/*",
           "@floating-ui/*",
+          "@phosphor-icons/react",
           "jotai",
           "jotai-immer",
           "nanoid",
@@ -804,6 +805,63 @@
         ]
       },
       "notes": "vite.config.ts sets `root: src` (index.html lives in src/), aliases `@/` to src/ (mirrored by tsconfig paths) and defines BUILD_TIME as `new Date().toISOString()` at dev-server start, which the Header prints as text; that timestamp differs per run so it stays unbound (one text wildcard) rather than a guessed define. No .env files exist so VITE_PUBLIC_PATH is unset and base stays `/`. Translations load from src/public/locales through i18next-http-backend with `useSuspense: true`."
+    },
+    {
+      "id": "bookshelf",
+      "repository": "https://github.com/kentcdodds/bookshelf",
+      "revision": "32e9e87db958de863bead65761bfbe2dec0eafd4",
+      "description": "Kent C. Dodds' Bookshelf workshop app, unauthenticated screen (CRA 5 / webpack, React 18, Emotion 10 `@jsx jsx` pragma with css props, react-query 2, Reach UI, MSW mock API in a service worker)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npm start",
+      "env": {
+        "BROWSER": "none"
+      },
+      "url": "http://localhost:3000/",
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "jsconfig.json",
+        "entry": "src/index.js",
+        "route": "/",
+        "anchor": "AppProviders",
+        "envFiles": [".env.development", ".env"],
+        "externalPackageAllowList": ["react-query", "@reach/dialog"]
+      },
+      "notes": "CRA loads `.env.development` over `.env` and inlines `REACT_APP_*`; `jsconfig.json` sets `baseUrl: ./src`. The dev tools install a second React root, so the app root is anchored on `AppProviders`. Without a stored auth token `bootstrapAppData` resolves to no user without hitting the mock API, so the unauthenticated screen is captured."
+    },
+    {
+      "id": "jsoncrack",
+      "repository": "https://github.com/AykutSarac/jsoncrack.com",
+      "revision": "ffd250b5cbcab410a2985f9e379ad86c644d0e57",
+      "description": "JSON Crack landing page (Next 16 pages router on webpack, pnpm + turbo monorepo, React 19, Mantine 8, styled-components 6, next-seo, zustand 5)",
+      "framework": "next-pages",
+      "workingDirectory": "apps/www",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.20.0 install --frozen-lockfile",
+      "setup": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.20.0 --filter jsoncrack-react build"
+      ],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.20.0 dev",
+      "env": {
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "apps/www",
+        "route": "/",
+        "envFiles": [".env.development", ".env"],
+        "externalPackageAllowList": [
+          "@mantine/*",
+          "styled-components",
+          "next-seo",
+          "react-hot-toast",
+          "nextjs-google-analytics",
+          "react-icons"
+        ]
+      },
+      "notes": "`engines.node >= 24` and `packageManager: pnpm@10.20.0`, so install/dev run through the Node wrapper. `turbo run dev` builds the `jsoncrack-react` workspace package first (`_app.tsx` imports its dist stylesheet), which the setup step reproduces; `next dev --webpack` then serves apps/www. Next loads `.env.development` over `.env` and inlines `NEXT_PUBLIC_*`. `pages/index.tsx` exports `getStaticProps` (GitHub star count fetched at build time), so `pageProps` is unknown to the static side."
     }
   ]
 }

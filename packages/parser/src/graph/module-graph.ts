@@ -109,7 +109,15 @@ export class ModuleGraph {
   }
 
   resolveImport(binding: ImportBinding, fromModule: ModuleRecord): ResolvedSymbol {
-    return this.resolveImportedName(binding.specifier, binding.imported, fromModule, new Set());
+    return this.resolveImportedSymbol(binding.specifier, binding.imported, fromModule);
+  }
+
+  resolveImportedSymbol(
+    specifier: string,
+    imported: ImportedName,
+    fromModule: ModuleRecord,
+  ): ResolvedSymbol {
+    return this.resolveImportedName(specifier, imported, fromModule, new Set());
   }
 
   resolveLocalName(module: ModuleRecord, localName: string): ResolvedSymbol {

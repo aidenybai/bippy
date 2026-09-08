@@ -68,6 +68,24 @@ const LAYOUT_MEMBERS = new Set([
   "caretPositionFromPoint",
 ]);
 
+/**
+ * Canvas members whose runtime value depends on rasterization, which the static
+ * document never performs: happy-dom answers them with null or empty pixels.
+ */
+const RASTER_MEMBERS = new Set([
+  "getContext",
+  "toDataURL",
+  "toBlob",
+  "captureStream",
+  "transferControlToOffscreen",
+]);
+
+const getStubbedMemberReason = (key: string): string | null => {
+  if (LAYOUT_MEMBERS.has(key)) return "layout";
+  if (RASTER_MEMBERS.has(key)) return "rasterization";
+  return null;
+};
+
 const PURE_METHOD_PREFIXES = [
   "get",
   "has",
@@ -308,10 +326,11 @@ export const getNativeObjectMember = (
   } catch (error) {
     return unknownValue(`${name} threw: ${describeError(error)}`);
   }
-  if (LAYOUT_MEMBERS.has(key)) {
+  const stubbedReason = getStubbedMemberReason(key);
+  if (stubbedReason !== null) {
     return typeof member === "function"
-      ? nativeFunction(name, () => unknownValue(`${name}() depends on layout`))
-      : unknownPrimitiveValue("number", `${name} depends on layout`);
+      ? nativeFunction(name, () => unknownValue(`${name}() depends on ${stubbedReason}`))
+      : unknownPrimitiveValue("number", `${name} depends on ${stubbedReason}`);
   }
   if (typeof member !== "function") return fromNativeValue(member, name);
   return pureNativeFunction(name, member, object.value, () => {

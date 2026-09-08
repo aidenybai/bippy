@@ -51,6 +51,7 @@ import {
 import { mediaQueryListValue } from "./media-query.js";
 import { getObjectTag } from "./object-tag.js";
 import { callHistoryMethod, isHistoryName } from "./session-history.js";
+import { callCryptoMethod, isCryptoName } from "./web-crypto.js";
 import { callStorageMethod, getStorageAreaName } from "./web-storage.js";
 import type { EvaluationContext } from "./context.js";
 import { createCollectionValue, getCollectionItems } from "./collections.js";
@@ -84,6 +85,7 @@ import {
   getClassPrototype,
   getKnownObjectKeys,
   getOwnPropertyDescriptor,
+  getOwnPropertyDescriptors,
   getKnownObjectSymbols,
   getListLength,
   getObjectProperty,
@@ -472,6 +474,10 @@ export const getTypeofValue = (
       return mapValue(value, (alternative) => getTypeofValue(alternative, environment));
     case "primitive":
       return primitiveValue(typeof value.value);
+    case "unknown-primitive":
+      return value.primitiveType === "any"
+        ? unknownPrimitiveValue("string", `typeof ${describeValue(value)}`)
+        : primitiveValue(value.primitiveType);
     case "function":
     case "class":
     case "native-function":
@@ -1040,6 +1046,13 @@ const callGlobal = (
         return unknownValue(`${name} on a dynamic target`, location);
       return (
         getOwnPropertyDescriptor(first, key) ??
+        unknownValue(`${name} on an object with dynamic spreads`, location)
+      );
+    }
+    case "Object.getOwnPropertyDescriptors": {
+      if (first?.kind !== "object") return unknownValue(`${name} on a dynamic target`, location);
+      return (
+        getOwnPropertyDescriptors(first) ??
         unknownValue(`${name} on an object with dynamic spreads`, location)
       );
     }
@@ -1806,6 +1819,10 @@ export const evaluateBuiltinCall = (
         location,
       );
       if (navigated) return navigated;
+    }
+    if (isCryptoName(receiver.name)) {
+      const random = callCryptoMethod(name, args, location);
+      if (random) return random;
     }
     const storageAreaName = getStorageAreaName(receiver.name);
     if (storageAreaName !== null) {

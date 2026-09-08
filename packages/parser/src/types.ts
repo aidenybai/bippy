@@ -27,6 +27,16 @@ export interface ParsedSourceFile {
   program: Program;
   lineStarts: number[];
   errors: string[];
+  /** `@jsx`/`@jsxFrag`/`@jsxRuntime`/`@jsxImportSource` comment annotations, when the file has any. */
+  jsxPragma: JsxPragma | null;
+}
+
+export interface JsxPragma {
+  runtime: "classic" | "automatic" | null;
+  /** The classic-runtime element factory (`jsx`, `h`, `React.createElement`). */
+  factory: string | null;
+  fragment: string | null;
+  importSource: string | null;
 }
 
 export type DiagnosticSeverity = "info" | "warning" | "error";
@@ -288,6 +298,16 @@ export interface StubRenderTools {
  */
 export interface ExternalValueProvider {
   (specifier: string, importedName: string): StaticValue | null;
+}
+
+/** The styled-components build transform's naming options (`displayName` on, as in development). */
+export interface StyledComponentsTransformOptions {
+  /** Prefix component names with the file's block name (`File__Component`). */
+  fileName: boolean;
+  /** File stems whose directory names the block instead (`index`). */
+  meaninglessFileNames: string[];
+  /** Import specifiers recognized as styled-components; `styled-components` and its subpaths when empty. */
+  topLevelImportPaths: string[];
 }
 
 /** What a library model may learn about the analyzed project: which transforms shaped the runtime, and what the running page held. */

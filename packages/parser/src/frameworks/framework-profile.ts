@@ -16,27 +16,28 @@ export interface FrameworkProfile {
    * Runtime fibers (with their subtrees) the framework injects with no
    * application counterpart: outlet boundaries, route announcers, asset scripts.
    */
-  isInjectedRuntimeFiber: (fiber: RuntimeFiberSnapshot) => boolean;
+  isInjectedRuntimeFiber: (fiber: RuntimeFiberSnapshot, parent: RuntimeFiberSnapshot) => boolean;
   /** Fiber name both trees are aligned on when the corpus entry does not name one. */
   defaultAnchor: string | null;
 }
 
 const flattenFiber = (
   fiber: RuntimeFiberSnapshot,
+  parent: RuntimeFiberSnapshot,
   profile: FrameworkProfile,
 ): RuntimeFiberSnapshot[] => {
-  if (profile.isInjectedRuntimeFiber(fiber)) return [];
-  const children = flattenList(fiber.children, profile);
+  if (profile.isInjectedRuntimeFiber(fiber, parent)) return [];
+  const children = flattenList(fiber, profile);
   if (profile.transparentRuntimeFibers.has(fiber.name ?? fiber.tag)) return children;
   return [{ ...fiber, children }];
 };
 
 const flattenList = (
-  fibers: RuntimeFiberSnapshot[],
+  parent: RuntimeFiberSnapshot,
   profile: FrameworkProfile,
 ): RuntimeFiberSnapshot[] => {
   const result: RuntimeFiberSnapshot[] = [];
-  for (const fiber of fibers) result.push(...flattenFiber(fiber, profile));
+  for (const fiber of parent.children) result.push(...flattenFiber(fiber, parent, profile));
   return result;
 };
 
@@ -46,10 +47,7 @@ export const flattenTransparentFibers = (
   profile: FrameworkProfile,
 ): RuntimeSnapshot => ({
   ...snapshot,
-  roots: snapshot.roots.map((root) => ({
-    ...root,
-    children: flattenList(root.children, profile),
-  })),
+  roots: snapshot.roots.map((root) => ({ ...root, children: flattenList(root, profile) })),
 });
 
 export const neverInjected = (): boolean => false;

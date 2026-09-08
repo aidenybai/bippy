@@ -420,6 +420,19 @@ export const getOwnPropertyDescriptor = (
   });
 };
 
+/** `Object.getOwnPropertyDescriptors(object)`, or null when a dynamic spread could own a key. */
+export const getOwnPropertyDescriptors = (object: StaticObjectValue): StaticObjectValue | null => {
+  const ownKeys = getKnownOwnKeys(object, () => true);
+  if (!ownKeys) return null;
+  const descriptors: Record<string, StaticValue> = {};
+  for (const key of ownKeys) {
+    const descriptor = getOwnPropertyDescriptor(object, key);
+    if (descriptor === null) return null;
+    descriptors[key] = descriptor;
+  }
+  return objectFromRecord(descriptors);
+};
+
 /** The symbols keying own properties, as `Object.getOwnPropertySymbols` lists them. */
 export const getKnownObjectSymbols = (object: StaticObjectValue): StaticSymbolValue[] | null =>
   getKnownOwnKeys(object, isSymbolPropertyKey)?.map((propertyKey) => {
@@ -602,6 +615,8 @@ const getIdentityClass = (value: StaticValue): "scalar" | "symbol" | "reference"
   switch (value.kind) {
     case "primitive":
       return "scalar";
+    case "unknown-primitive":
+      return value.primitiveType === "any" ? null : "scalar";
     case "symbol":
       return "symbol";
     case "react-api":
@@ -613,6 +628,13 @@ const getIdentityClass = (value: StaticValue): "scalar" | "symbol" | "reference"
     default:
       return REFERENCE_KINDS.has(value.kind) ? "reference" : null;
   }
+};
+
+/** The `typeof` of a scalar, when known: a typed unknown primitive can never equal a scalar of another type. */
+const getScalarTypeof = (value: StaticValue): string | null => {
+  if (value.kind === "primitive") return typeof value.value;
+  if (value.kind === "unknown-primitive") return value.primitiveType;
+  return null;
 };
 
 const isHeapValue = (value: StaticValue): value is StaticObjectValue | StaticListValue =>
@@ -729,6 +751,11 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
   const leftClass = getIdentityClass(left);
   const rightClass = getIdentityClass(right);
   if (leftClass && rightClass && leftClass !== rightClass) return false;
+  if (leftClass === "scalar" && rightClass === "scalar") {
+    const leftType = getScalarTypeof(left);
+    const rightType = getScalarTypeof(right);
+    return leftType !== null && rightType !== null && leftType !== rightType ? false : null;
+  }
   return null;
 };
 

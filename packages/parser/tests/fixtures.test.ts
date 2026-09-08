@@ -47,3 +47,17 @@ describe("synthetic fixtures: static fiber tree vs react-dom", () => {
     });
   }
 });
+
+describe("browser facts stay uncertain", () => {
+  it("keeps canvas rasterization results as explicit branches", async () => {
+    const fixture = listFixtures().find((candidate) => candidate.name === "canvas-rasterization");
+    if (!fixture) throw new Error("missing canvas-rasterization fixture");
+    const run = await runFixture({
+      ...fixture,
+      manifest: { ...fixture.manifest, skipRuntime: true },
+    });
+    const detail = describeFixtureRun(fixture, run);
+    expect(run.staticResult.stats.branchCount, detail).toBe(2);
+    expect(run.staticResult.stats.unknownCount, detail).toBe(1);
+  });
+});
