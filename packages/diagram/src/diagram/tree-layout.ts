@@ -1,0 +1,41 @@
+import { diagramMetrics, type Point } from "./geometry";
+import { getNodeOffset, type TreeRow, type Indentation } from "./tree-model";
+
+interface TreeLayoutOptions {
+  indentation?: Indentation;
+  maxOffset?: number;
+}
+
+export interface TreeLayout {
+  positions: readonly Point[];
+  offsets: readonly number[];
+}
+
+export const getTreeLayout = (
+  rows: readonly TreeRow[],
+  rowHeight = diagramMetrics.rowHeight,
+  indent = diagramMetrics.indent,
+  options: TreeLayoutOptions = {},
+): TreeLayout => {
+  const positions: Point[] = [];
+  const offsets = [0];
+  for (const [index, row] of rows.entries()) {
+    const isDetail = row.node.componentId !== undefined;
+    const height = isDetail ? Math.min(rowHeight, diagramMetrics.detailRowHeight) : rowHeight;
+    const parent = positions[row.parentIndex];
+    positions.push({
+      x:
+        isDetail && parent
+          ? parent.x + diagramMetrics.labelOffset
+          : options.indentation
+            ? Math.min(
+                options.maxOffset ?? Infinity,
+                getNodeOffset(row.depth, options.indentation) + 12,
+              )
+            : diagramMetrics.indent * 2 + row.depth * indent,
+      y: offsets[index] + height / 2,
+    });
+    offsets.push(offsets[index] + height);
+  }
+  return { positions, offsets };
+};
