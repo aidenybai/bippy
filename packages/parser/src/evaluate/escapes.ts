@@ -9,8 +9,6 @@ import { forEachChildNode } from "../parse/ast-walk.js";
 import { lookupScope } from "./scope.js";
 import { getObjectProperty } from "./values.js";
 
-const MAX_ESCAPE_SCAN_DEPTH = 4;
-
 interface MutatedMember {
   name: string;
   key: string | null;
@@ -172,9 +170,8 @@ export const forEachEscapedCallable = (
   value: StaticValue,
   visit: (callable: StaticFunctionValue | StaticNativeFunctionValue) => void,
   visited: Set<StaticValue> = new Set(),
-  depth = 0,
 ): void => {
-  if (depth > MAX_ESCAPE_SCAN_DEPTH || visited.has(value)) return;
+  if (visited.has(value)) return;
   visited.add(value);
   switch (value.kind) {
     case "native-function":
@@ -184,39 +181,33 @@ export const forEachEscapedCallable = (
       visit(value);
       for (const name of getFreeIdentifiers(value.node)) {
         const bound = lookupScope(value.scope, name);
-        if (bound) forEachEscapedCallable(bound, visit, visited, depth + 1);
+        if (bound) forEachEscapedCallable(bound, visit, visited);
       }
       const thisValue = value.thisValue;
       if (!thisValue) return;
       const members = getThisMembers(value.node);
       if (members === null || thisValue.kind !== "object") {
-        forEachEscapedCallable(thisValue, visit, visited, depth + 1);
+        forEachEscapedCallable(thisValue, visit, visited);
         return;
       }
       for (const name of members) {
-        forEachEscapedCallable(getObjectProperty(thisValue, name), visit, visited, depth + 1);
+        forEachEscapedCallable(getObjectProperty(thisValue, name), visit, visited);
       }
       return;
     }
     case "object":
-      for (const entry of value.entries)
-        forEachEscapedCallable(entry.value, visit, visited, depth + 1);
+      for (const entry of value.entries) forEachEscapedCallable(entry.value, visit, visited);
       return;
     case "list":
-      for (const item of value.items) forEachEscapedCallable(item, visit, visited, depth + 1);
+      for (const item of value.items) forEachEscapedCallable(item, visit, visited);
       return;
     case "branch":
       for (const alternative of value.alternatives)
-        forEachEscapedCallable(alternative, visit, visited, depth + 1);
+        forEachEscapedCallable(alternative, visit, visited);
       return;
     case "optional":
     case "repeat":
-      forEachEscapedCallable(
-        value.kind === "optional" ? value.value : value.item,
-        visit,
-        visited,
-        depth + 1,
-      );
+      forEachEscapedCallable(value.kind === "optional" ? value.value : value.item, visit, visited);
       return;
     default:
       return;

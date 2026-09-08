@@ -763,6 +763,73 @@
       "failure": null
     },
     {
+      "id": "formbricks",
+      "revision": "1380c81bffe44f3ea9e7ff0d9a95fd37044ddc83",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T12:29:09.859Z",
+      "durationMs": 453,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 285,
+        "commits": 15,
+        "pageErrors": [],
+        "title": "Intro | Formbricks"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 89,
+          "textCount": 0,
+          "branchCount": 2,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 4,
+          "modulesLoaded": 123
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 74,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 2,
+        "branchDeviations": [
+          {
+            "path": "root > <body> [HostSingleton] > <SentryProvider> [FunctionComponent] > <I18nProvider> [FunctionComponent]",
+            "reason": "if (branch(true | <boolean>))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <SentryProvider> [FunctionComponent] > <I18nProvider> [FunctionComponent][0]",
+              "expected": "<end of children>",
+              "actual": "<I18nextProvider> [FunctionComponent]"
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 74,
+        "staticFibers": 74,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 79,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T11:34:51.280Z",
+      "failure": null
+    },
+    {
       "id": "foxel",
       "revision": "d5a24c69e180711e55abeddb4e31ce06e60a456f",
       "framework": "react-router",
@@ -908,7 +975,7 @@
         "fibers": 1439,
         "commits": 27,
         "pageErrors": [
-          "Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <Home>\n      <main className=\"container ...\">\n        <WizardProvider>\n          <InvoiceMain>\n            <FormProvider control={{...}} subscribe={function subscribe} trigger={function trigger} ...>\n              <form onSubmit={function}>\n                <div className=\"grid grid-...\">\n                  <InvoiceForm>\n                    <div className=\"@container...\">\n                      <div className=\"mx-auto ma...\">\n                        <div className=\"mb-4 flex ...\">\n                          <AutosaveIndicator>\n                          <span\n+                           className=\"text-sm font-medium text-muted-foreground\"\n-                           className=\"flex items-center gap-1.5 text-xs text-muted-foreground\"\n                          >\n+                           New Invoice\n-                           Saved · just now\n                        ...\n                  ...\n                ...\n      ...\n    ...\n"
+          "Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <Home>\n      <main className=\"container ...\">\n        <WizardProvider>\n          <InvoiceMain>\n            <FormProvider control={{...}} subscribe={function subscribe} trigger={function trigger} ...>\n              <form onSubmit={function}>\n                <div className=\"grid grid-...\">\n                  <InvoiceForm>\n                    <div className=\"@container...\">\n                      <div className=\"mx-auto ma...\">\n                        <div className=\"mb-4 flex ...\">\n                          <AutosaveIndicator>\n                          <span\n+                           className=\"text-sm font-medium text-muted-foreground\"\n-                           className=\"flex items-center gap-1.5 text-xs text-muted-foreground\"\n                          >\n+                           New Invoice\n-                           Saved \u00b7 just now\n                        ...\n                  ...\n                ...\n      ...\n    ...\n"
         ],
         "title": "Free Invoice Generator | Invoify"
       },
@@ -949,6 +1016,254 @@
       },
       "anchor": "body",
       "note": null,
+      "failure": null
+    },
+    {
+      "id": "karakeep",
+      "revision": "01d636f263866770d1e37ad9336d1b0d9df44935",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T12:29:18.660Z",
+      "durationMs": 1260,
+      "runtime": {
+        "reactVersion": "19.2.0-canary-3fbfb9ba-20250409",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 241,
+        "commits": 7,
+        "pageErrors": [
+          "Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch"
+        ],
+        "title": "Karakeep"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 158,
+          "textCount": 4,
+          "branchCount": 7,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 5,
+          "modulesLoaded": 1801
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 82,
+        "matchedText": 2,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 5,
+        "branchDeviations": [
+          {
+            "path": "root > <body> [HostSingleton] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <Providers> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <CustomI18nextProvider> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent]",
+            "reason": "&& on branch(<boolean> | undefined)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <Providers> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <CustomI18nextProvider> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent][0]",
+              "expected": "<OAuthAutoRedirect> [FunctionComponent]",
+              "actual": "<div> [HostComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <Providers> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <CustomI18nextProvider> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent]",
+            "reason": "&& on zod#z.object().transform().parse().demoMode",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <Providers> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <CustomI18nextProvider> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent][0]",
+              "expected": "<div> [HostComponent]",
+              "actual": "<CredentialsForm> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <Providers> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <CustomI18nextProvider> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <CredentialsForm> [FunctionComponent]",
+            "reason": "if (zod#z.object().transform().parse().auth.disablePasswordAuth)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <Providers> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <CustomI18nextProvider> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <CredentialsForm> [FunctionComponent] > <div> [HostComponent][0]",
+              "expected": "<Alert> [ForwardRef]",
+              "actual": "<FormProvider> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <Providers> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <CustomI18nextProvider> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent]",
+            "reason": "&& on branch(<boolean> | undefined)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <Providers> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <CustomI18nextProvider> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent][1]",
+              "expected": "<div> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 84,
+        "staticFibers": 104,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 94,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T11:35:21.672Z",
+      "failure": null
+    },
+    {
+      "id": "langfuse",
+      "revision": "1e3535e126fc918781f45753706ff0f576b12175",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-08T12:29:21.029Z",
+      "durationMs": 1605,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 303,
+        "commits": 22,
+        "pageErrors": [
+          "Failed to load module script: Expected a JavaScript-or-Wasm module script but the server responded with a MIME type of \"application/json\". Strict MIME type checking is enforced for module scripts per HTML spec."
+        ],
+        "title": "Sign in | Langfuse"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 2166,
+          "textCount": 199,
+          "branchCount": 181,
+          "repeatCount": 0,
+          "opaqueCount": 132,
+          "unknownCount": 83,
+          "modulesLoaded": 868
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 134,
+        "matchedText": 14,
+        "opaqueSubtrees": 7,
+        "opaqueSkippedFibers": 57,
+        "slotsMatched": 5,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 1,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 30,
+        "wildcards": [
+          {
+            "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectContent> [ForwardRef] > <SelectPortal> [FunctionComponent] > <Portal> [ForwardRef] > <Portal> [HostPortal] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <SelectContent> [ForwardRef] > <Portal> [HostPortal] > <SelectContentProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionSlot> [ForwardRef] > <SelectCollectionSlot.Slot> [ForwardRef] > <SelectCollectionSlot.SlotClone> [ForwardRef] > <div> [HostComponent] > <SelectViewport> [ForwardRef] > <SelectCollectionSlot> [ForwardRef] > <SelectCollectionSlot.Slot> [ForwardRef] > <SelectCollectionSlot.SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent]",
+            "reason": "alternative nested 2 branches away from the preferred path",
+            "absorbedFibers": 25,
+            "heads": [
+              "<SelectItem> key=\"DEV\" [ForwardRef]"
+            ]
+          },
+          {
+            "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectTrigger> [ForwardRef] > <SelectTrigger> [ForwardRef] > <PopperAnchor> [ForwardRef] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <button> [HostComponent] > <SelectIcon> [ForwardRef] > <Primitive.span> [ForwardRef] > <Primitive.span.Slot> [ForwardRef]",
+            "reason": "alternative nested 2 branches away from the preferred path",
+            "absorbedFibers": 5,
+            "heads": [
+              "<Primitive.span.SlotClone> [ForwardRef]"
+            ]
+          }
+        ],
+        "branchesResolved": 15,
+        "branchDeviations": [
+          {
+            "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent]",
+            "reason": "if (branch(true | false))",
+            "preferredIndex": 0,
+            "chosenIndex": 3,
+            "divergence": {
+              "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent][0]",
+              "expected": "<LoadingLayout> [FunctionComponent]",
+              "actual": "<UnauthenticatedLayout> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent]",
+            "reason": "if (<boolean: negation of unknown>)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent][0]",
+              "expected": "<end of children>",
+              "actual": "<div> [HostComponent]"
+            }
+          },
+          {
+            "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectTrigger> [ForwardRef] > <SelectTrigger> [ForwardRef] > <PopperAnchor> [ForwardRef] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <button> [HostComponent] > <SelectIcon> [ForwardRef] > <Primitive.span> [ForwardRef] > <Primitive.span.Slot> [ForwardRef]",
+            "reason": "if (branch(<ChevronDown> | undefined))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectTrigger> [ForwardRef] > <SelectTrigger> [ForwardRef] > <PopperAnchor> [ForwardRef] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <button> [HostComponent] > <SelectIcon> [ForwardRef] > <Primitive.span> [ForwardRef] > <Primitive.span.Slot> [ForwardRef] > <Primitive.span.SlotClone> [ForwardRef][0]",
+              "expected": "<end of children>",
+              "actual": "<ChevronDown> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectContent> [ForwardRef] > <SelectPortal> [FunctionComponent] > <Portal> [ForwardRef] > <Portal> [HostPortal] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <SelectContent> [ForwardRef] > <Portal> [HostPortal] > <SelectContentProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionSlot> [ForwardRef] > <SelectCollectionSlot.Slot> [ForwardRef] > <SelectCollectionSlot.SlotClone> [ForwardRef] > <div> [HostComponent] > <SelectViewport> [ForwardRef] > <SelectCollectionSlot> [ForwardRef] > <SelectCollectionSlot.Slot> [ForwardRef] > <SelectCollectionSlot.SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent]",
+            "reason": "if (<boolean: negation of unknown>)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectContent> [ForwardRef] > <SelectPortal> [FunctionComponent] > <Portal> [ForwardRef] > <Portal> [HostPortal] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <SelectContent> [ForwardRef] > <Portal> [HostPortal] > <SelectContentProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionSlot> [ForwardRef] > <SelectCollectionSlot.Slot> [ForwardRef] > <SelectCollectionSlot.SlotClone> [ForwardRef] > <div> [HostComponent] > <SelectViewport> [ForwardRef] > <SelectCollectionSlot> [ForwardRef] > <SelectCollectionSlot.Slot> [ForwardRef] > <SelectCollectionSlot.SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent][0]",
+              "expected": "<SelectItem> key=\"STAGING\" [ForwardRef]",
+              "actual": "<SelectItem> key=\"DEV\" [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent]",
+            "reason": "&& on <boolean: === on dynamic values>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent][2]",
+              "expected": "<div> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SSOButtons> [FunctionComponent]",
+            "reason": "conditional on unknown(call of Object.entries of unknown(property \"authProviders\" may come from a spread of unknown(rest of unknown(pageProps come from data fetching at request time))))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SSOButtons> [FunctionComponent][0]",
+              "expected": "<div> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 235,
+        "staticFibers": 321,
+        "coverage": 1,
+        "strictCoverage": 0.6297872340425532,
+        "divergence": null,
+        "stepsUsed": 199,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T11:36:20.884Z",
       "failure": null
     },
     {
@@ -1009,6 +1324,160 @@
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-07T23:03:03.725Z",
+      "failure": null
+    },
+    {
+      "id": "linkwarden",
+      "revision": "22723575b04503eb67c9733c63d55179c069903d",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-08T12:28:55.638Z",
+      "durationMs": 6153,
+      "runtime": {
+        "reactVersion": "19.1.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 142,
+        "commits": 8,
+        "pageErrors": [
+          "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <PathnameContextProviderAdapter router={{sdc:{},sbc:{}, ...}} isAutoExport={false}>\n      <AppWithTranslation pageProps={{...}} __N_SSP={true} Component={function Login} err={undefined} ...>\n        <I18nextProvider i18n={{observers:{}, ...}}>\n          <App pageProps={{...}} __N_SSP={true} Component={function Login} err={undefined} router={{sdc:{},sbc:{}, ...}}>\n            <QueryClientProvider client={{}}>\n              <SessionProvider>\n              <ReactQueryDevtools initialIsOpen={false}>\n                <div\n+                 className=\"tsqd-parent-container\"\n-                 className={null}\n                  ref={{current:null}}\n-                 style={{position:\"fixed\",z-index:\"9999\",top:\"16px\",left:\"16px\",right:\"16px\",bottom:\"16px\",pointer-events:\"none\"}}\n                >\n      ...\n"
+        ],
+        "title": "Linkwarden"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 148,
+          "textCount": 0,
+          "branchCount": 18,
+          "repeatCount": 0,
+          "opaqueCount": 1,
+          "unknownCount": 20,
+          "modulesLoaded": 80
+        },
+        "diagnostics": [
+          {
+            "code": "budget-exhausted",
+            "count": 34
+          },
+          {
+            "code": "max-call-depth",
+            "count": 8
+          },
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 54,
+        "matchedText": 0,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 2,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 10,
+        "wildcards": [
+          {
+            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent] > <Login> [FunctionComponent] > <CenteredForm> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <p> [HostComponent] > <Trans> [FunctionComponent]",
+            "reason": "step budget exhausted",
+            "absorbedFibers": 5,
+            "heads": [
+              "\"\u00a9 2026 \"",
+              "<LinkComponent> key=\"1/.$linkwarden-website-key\" [ForwardRef]",
+              "\". All rights reserved.\""
+            ]
+          },
+          {
+            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent] > <Login> [FunctionComponent] > <CenteredForm> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <InstallApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <p> [HostComponent] > <Trans> [FunctionComponent]",
+            "reason": "alternative nested 2 branches away from the preferred path",
+            "absorbedFibers": 3,
+            "heads": [
+              "\"Install Linkwarden to your home screen for a faster access and enhanced experience. \"",
+              "<a> key=\"1/.$0\" [HostComponent]"
+            ]
+          },
+          {
+            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent] > <Login> [FunctionComponent] > <CenteredForm> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <InstallApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Button> [ForwardRef]",
+            "reason": "step budget exhausted",
+            "absorbedFibers": 2,
+            "heads": [
+              "<button> [HostComponent]"
+            ]
+          }
+        ],
+        "branchesResolved": 16,
+        "branchDeviations": [
+          {
+            "path": "root > <AppWithTranslation> [FunctionComponent]",
+            "reason": "branch(unknown | unknown | unknown | unknown | unknown) may be thrown",
+            "preferredIndex": 1,
+            "chosenIndex": 0,
+            "divergence": {
+              "path": "root > <AppWithTranslation> [FunctionComponent][0]",
+              "expected": "<App> [FunctionComponent]",
+              "actual": "<I18nextProvider> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent]",
+            "reason": "if (branch(false | undefined))",
+            "preferredIndex": 1,
+            "chosenIndex": 0,
+            "divergence": {
+              "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent][0]",
+              "expected": "<end of children>",
+              "actual": "<Ie> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent] > <Login> [FunctionComponent] > <CenteredForm> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <form> [HostComponent] > <div> [HostComponent] > <div> [HostComponent]",
+            "reason": "&& on <boolean: === on dynamic values>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent] > <Login> [FunctionComponent] > <CenteredForm> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <form> [HostComponent] > <div> [HostComponent] > <div> [HostComponent][2]",
+              "expected": "<div> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent] > <Login> [FunctionComponent] > <CenteredForm> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <form> [HostComponent] > <div> [HostComponent]",
+            "reason": "&& on <boolean: > on dynamic values>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent] > <Login> [FunctionComponent] > <CenteredForm> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <form> [HostComponent] > <div> [HostComponent] > <div> [HostComponent][0]",
+              "expected": "<Separator> [ForwardRef]",
+              "actual": "<p> [HostComponent]"
+            }
+          },
+          {
+            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent] > <Login> [FunctionComponent] > <CenteredForm> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <InstallApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <p> [HostComponent] > <Trans> [FunctionComponent]",
+            "reason": "if (branch(<boolean> | true))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent] > <Login> [FunctionComponent] > <CenteredForm> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <InstallApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <p> [HostComponent] > <Trans> [FunctionComponent][0]",
+              "expected": "<end of children>",
+              "actual": "\"Install Linkwarden to your home screen for a faster access and enhanced experience. \""
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 66,
+        "staticFibers": 68,
+        "coverage": 1,
+        "strictCoverage": 0.8181818181818182,
+        "divergence": null,
+        "stepsUsed": 137,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T11:35:38.607Z",
       "failure": null
     },
     {
@@ -1606,6 +2075,85 @@
       "failure": null
     },
     {
+      "id": "plane",
+      "revision": "4225bc59de784f8991a8c30de77ca8b2b3fd8cc7",
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T12:29:52.681Z",
+      "durationMs": 936,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 105,
+        "commits": 7,
+        "pageErrors": [
+          "Warning: Expected server HTML to contain a matching <%s> in <%s>.%s div div \n    at div\n    at LogoSpinner (http://localhost:3000/core/components/common/logo-spinner.tsx:10:7)\n    at div\n    at HydrateFallback (http://localhost:3000/app/root.tsx:276:7)\n    at WithHydrateFallbackProps2 (http://localhost:3000/node_modules/.vite/deps/chunk-4TBH6EGN.js?v=f85388cf:7221:19)\n    at V (http://localhost:3000/node_modules/.vite/deps/next-themes.js?v=f85388cf:44:25)\n    at J (http://localhost:3000/node_modules/.vite/deps/next-themes.js?v=f85388cf:42:18)\n    at body\n    at html\n    at Layout (http://localhost:3000/app/root.tsx:65:3)\n    at RenderedRoute (http://localhost:3000/node_modules/.vite/deps/chunk-4TBH6EGN.js?v=f85388cf:6185:26)\n    at RenderErrorBoundary (http://localhost:3000/node_modules/.vite/deps/chunk-4TBH6EGN.js?v=f85388cf:6095:5)\n    at DataRoutes (http://localhost:3000/node_modules/.vite/deps/chunk-4TBH6EGN.js?v=f85388cf:6877:3)\n    at Router (http://localhost:3000/node_modules/.vite/deps/chunk-4TBH6EGN.js?v=f85388cf:6969:13)\n    at RouterProvider (http://localhost:3000/node_modules/.vite/deps/chunk-4TBH6EGN.js?v=f85388cf:6646:3)\n    at RouterProvider2\n    at RemixErrorBoundary (http://localhost:3000/node_modules/.vite/deps/chunk-4TBH6EGN.js?v=f85388cf:9949:5)\n    at HydratedRouter (http://localhost:3000/node_modules/.vite/deps/react-router_dom.js?v=f85388cf:187:46)",
+          "Hydration failed because the initial UI does not match what was rendered on the server.",
+          "Error: Hydration failed because the initial UI does not match what was rendered on the server.\n    at throwOnHydrationMismatch (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:9520:17)\n    at tryToClaimNextHydratableInstance (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:9530:15)\n    at updateHostComponent (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:14842:13)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:15983:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:19251:20)\n    at workLoopConcurrent (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:19242:13)\n    at renderRootConcurrent (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:19217:15)\n    at performConcurrentWorkOnRoot (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:18728:46)\n    at workLoop (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:197:42)",
+          "Error: Hydration failed because the initial UI does not match what was rendered on the server.\n    at throwOnHydrationMismatch (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:9520:17)\n    at tryToClaimNextHydratableInstance (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:9530:15)\n    at updateHostComponent (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:14842:13)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:15983:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:19251:20)\n    at workLoopConcurrent (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:19242:13)\n    at renderRootConcurrent (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:19217:15)\n    at performConcurrentWorkOnRoot (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:18728:46)\n    at workLoop (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:197:42)",
+          "Warning: An error occurred during hydration. The server HTML was replaced with client content in <%s>. #document",
+          "Hydration failed because the initial UI does not match what was rendered on the server.",
+          "Hydration failed because the initial UI does not match what was rendered on the server.",
+          "Hydration failed because the initial UI does not match what was rendered on the server.",
+          "Hydration failed because the initial UI does not match what was rendered on the server.",
+          "Hydration failed because the initial UI does not match what was rendered on the server.",
+          "Hydration failed because the initial UI does not match what was rendered on the server.",
+          "Hydration failed because the initial UI does not match what was rendered on the server.",
+          "Hydration failed because the initial UI does not match what was rendered on the server.",
+          "There was an error while hydrating. Because the error happened outside of a Suspense boundary, the entire root will switch to client rendering."
+        ],
+        "title": ""
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 185,
+          "textCount": 2,
+          "branchCount": 6,
+          "repeatCount": 1,
+          "opaqueCount": 11,
+          "unknownCount": 3,
+          "modulesLoaded": 333
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 3
+          },
+          {
+            "code": "dynamic-props",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 82,
+        "matchedText": 1,
+        "opaqueSubtrees": 3,
+        "opaqueSkippedFibers": 8,
+        "slotsMatched": 3,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 91,
+        "staticFibers": 117,
+        "coverage": 1,
+        "strictCoverage": 0.9120879120879121,
+        "divergence": null,
+        "stepsUsed": 94,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T12:08:41.496Z",
+      "failure": null
+    },
+    {
       "id": "posthog",
       "revision": "09c5fbd37b2714276d4206debd3aeb253ce0e43a",
       "framework": "spa",
@@ -2023,7 +2571,7 @@
         "fibers": 2201,
         "commits": 1469,
         "pageErrors": [],
-        "title": "Reactive Trader®"
+        "title": "Reactive Trader\u00ae"
       },
       "static": {
         "stats": {
@@ -3499,6 +4047,111 @@
       "failure": null
     },
     {
+      "id": "teable",
+      "revision": "bda82ee5c1553e560a8db7f3ac9ff1131d7c3628",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-08T12:29:23.764Z",
+      "durationMs": 1694,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-f93b9fd4-20251217",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 554,
+        "commits": 18,
+        "pageErrors": [
+          "Warning: Prop `%s` did not match. Server: %s Client: %s%s style \"animation:pulse 2.9094913846195753s cubic-bezier(0.4, 0, 0.6, 1) infinite\" \"animation:pulse 3.184256283327418s cubic-bezier(0.4, 0, 0.6, 1) infinite\" \n    at div\n    at Rectangles (http://localhost:3000/_next/static/chunks/apps_nextjs-app_src_1b162657._.js:292:23)\n    at div\n    at div\n    at DescContent (http://localhost:3000/_next/static/chunks/apps_nextjs-app_src_1b162657._.js:344:362)\n    at div\n    at div\n    at div\n    at http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:25644:26\n    at http://localhost:3000/_next/static/chunks/node_modules__pnpm_c91247aa._.js:7598:32\n    at div\n    at http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:25644:26\n    at Provider (http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:25395:28)\n    at http://localhost:3000/_next/static/chunks/node_modules__pnpm_c91247aa._.js:7546:32\n    at _c (http://localhost:3000/_next/static/chunks/packages_6eecbca4._.js:565:230)\n    at LoginPage (http://localhost:3000/_next/static/chunks/apps_nextjs-app_src_1b162657._.js:1874:13)\n    at HydrationBoundary (http://localhost:3000/_next/static/chunks/node_modules__pnpm_c91247aa._.js:619:28)\n    at QueryClientProvider (http://localhost:3000/_next/static/chunks/node_modules__pnpm_c91247aa._.js:583:30)\n    at LoginRoute (http://localhost:3000/_next/static/chunks/apps_nextjs-app_src_1b162657._.js:2101:217)\n    at ConfirmModalProvider (http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__425c3197._.js:2711:33)\n    at B (http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:17130:24)\n    at K (http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:17125:200)\n    at AppProviders (http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__425c3197._.js:3283:13)\n    at MyApp (http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__425c3197._.js:3396:13)\n    at I18nextProvider (http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:2009:11)\n    at AppWithTranslation (http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:3124:26)\n    at PathnameContextProviderAdapter (http://localhost:3000/_next/static/chunks/e0369_next_dist_shared_lib_0ec0913e._.js:5872:43)\n    at PagesDevOverlayErrorBoundary (http://localhost:3000/_next/static/chunks/e0369_next_dist_6908bab3._.js:2719:9)\n    at PagesDevOverlayBridge (http://localhost:3000/_next/static/chunks/e0369_next_dist_6908bab3._.js:3496:34)\n    at Container (http://localhost:3000/_next/static/chunks/e0369_next_dist_client_4b07ac1b._.js:3085:1)\n    at AppContainer (http://localhost:3000/_next/static/chunks/e0369_next_dist_client_4b07ac1b._.js:3184:25)\n    at Root (http://localhost:3000/_next/static/chunks/e0369_next_dist_client_4b07ac1b._.js:3393:17)"
+        ],
+        "title": "Login"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 1326,
+          "textCount": 11,
+          "branchCount": 53,
+          "repeatCount": 0,
+          "opaqueCount": 6,
+          "unknownCount": 66,
+          "modulesLoaded": 1871
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 471,
+        "matchedText": 1,
+        "opaqueSubtrees": 3,
+        "opaqueSkippedFibers": 8,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 1,
+        "wildcards": [
+          {
+            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MyApp> [FunctionComponent] > <AppProviders> [FunctionComponent] > <K> [FunctionComponent] > <B> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfirmModalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <LoginRoute> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <LoginPage> [FunctionComponent] > <ForwardRef> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SignForm> [FunctionComponent] > <div> [HostComponent] > <form> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Button> [ForwardRef] > <button> [HostComponent]",
+            "reason": "value from i18next (default.createInstance().getFixedT()())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"Sign in\""
+            ]
+          }
+        ],
+        "branchesResolved": 23,
+        "branchDeviations": [
+          {
+            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MyApp> [FunctionComponent] > <AppProviders> [FunctionComponent] > <K> [FunctionComponent] > <B> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfirmModalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider]",
+            "reason": "conditional on branch(<boolean> | undefined)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MyApp> [FunctionComponent] > <AppProviders> [FunctionComponent] > <K> [FunctionComponent] > <B> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfirmModalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider][6]",
+              "expected": "<HttpErrorPage> [FunctionComponent]",
+              "actual": "<LoginRoute> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MyApp> [FunctionComponent] > <AppProviders> [FunctionComponent] > <K> [FunctionComponent] > <B> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfirmModalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <LoginRoute> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <LoginPage> [FunctionComponent] > <ForwardRef> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SignForm> [FunctionComponent] > <div> [HostComponent] > <form> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Button> [ForwardRef] > <button> [HostComponent]",
+            "reason": "conditional on branch(true | false)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MyApp> [FunctionComponent] > <AppProviders> [FunctionComponent] > <K> [FunctionComponent] > <B> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfirmModalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <LoginRoute> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <LoginPage> [FunctionComponent] > <ForwardRef> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SignForm> [FunctionComponent] > <div> [HostComponent] > <form> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Button> [ForwardRef] > <button> [HostComponent][0]",
+              "expected": "\"auth:button.signin\"",
+              "actual": "\"Sign in\""
+            }
+          },
+          {
+            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MyApp> [FunctionComponent] > <AppProviders> [FunctionComponent] > <K> [FunctionComponent] > <B> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfirmModalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <LoginRoute> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <LoginPage> [FunctionComponent] > <ForwardRef> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ForwardRef> [ForwardRef] > <ScrollAreaScrollbar> [ForwardRef] > <ForwardRef> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Presence> [FunctionComponent]",
+            "reason": "conditional on <boolean: includes()>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MyApp> [FunctionComponent] > <AppProviders> [FunctionComponent] > <K> [FunctionComponent] > <B> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfirmModalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <LoginRoute> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <LoginPage> [FunctionComponent] > <ForwardRef> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ForwardRef> [ForwardRef] > <ScrollAreaScrollbar> [ForwardRef] > <ForwardRef> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Presence> [FunctionComponent][0]",
+              "expected": "<ForwardRef> [ForwardRef]",
+              "actual": "<end of children>"
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 481,
+        "staticFibers": 494,
+        "coverage": 1,
+        "strictCoverage": 0.9812889812889813,
+        "divergence": null,
+        "stepsUsed": 507,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T11:37:09.679Z",
+      "failure": null
+    },
+    {
       "id": "tldraw",
       "revision": "e8f61acedcbf2dc69693ea1e1f612a7f635fb4b5",
       "framework": "react-router",
@@ -3867,6 +4520,234 @@
       "report": null,
       "anchor": null,
       "note": "static only",
+      "failure": null
+    },
+    {
+      "id": "twenty",
+      "revision": "6dd1e8a4712ab80ad76f2fbd4badf125f2f0b47d",
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T12:29:12.920Z",
+      "durationMs": 4524,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 96,
+        "commits": 7,
+        "pageErrors": [
+          "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+          "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+        ],
+        "title": "Sign in or Create an account"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 3904,
+          "textCount": 217,
+          "branchCount": 281,
+          "repeatCount": 3,
+          "opaqueCount": 1691,
+          "unknownCount": 394,
+          "modulesLoaded": 5947
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 3
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 27,
+        "matchedText": 0,
+        "opaqueSubtrees": 16,
+        "opaqueSkippedFibers": 59,
+        "slotsMatched": 12,
+        "slotsUnmatched": 2,
+        "opaqueRenamed": 5,
+        "unmatchedSlots": [
+          {
+            "path": "root > <App> [FunctionComponent] > <JotaiProvider> (opaque) > <AppErrorBoundary> [FunctionComponent] > <ErrorBoundary> (opaque) > <I18nProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <IconsProvider> (opaque) > <ExceptionHandlerProvider> [FunctionComponent] > <HelmetProvider> (opaque) > <ContextProvider> [ContextProvider] > <AppRouter> [FunctionComponent] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <AppRouterProviders> [FunctionComponent] > <ApolloProvider> [FunctionComponent] > <ApolloProviderBase> (opaque) > <BaseThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> (opaque) > <ClientConfigProvider> [FunctionComponent] > <AppFullScreenErrorFallback> [FunctionComponent] > <StyledContainer> (opaque) > <PageBody> [FunctionComponent] > <StyledMainContainer> (opaque) > <StyledLeftContainer> (opaque) > <PagePanel> [FunctionComponent] > <StyledPanel> (opaque) > <AppErrorDisplay> [FunctionComponent] > <AnimatedPlaceholderEmptyContainer> (opaque) > <AnimatedPlaceholderEmptyTextContainer> (opaque) > <AnimatedPlaceholderEmptyTitle> (opaque)",
+            "reason": "AnimatedPlaceholderEmptyTitle from twenty-ui is not analyzed",
+            "head": "<AnimatedPlaceholderEmptyTitle> [ForwardRef]",
+            "skippedFibers": 2,
+            "divergence": {
+              "path": "root > <App> [FunctionComponent] > <JotaiProvider> (opaque) > <AppErrorBoundary> [FunctionComponent] > <ErrorBoundary> (opaque) > <I18nProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <IconsProvider> (opaque) > <ExceptionHandlerProvider> [FunctionComponent] > <HelmetProvider> (opaque) > <ContextProvider> [ContextProvider] > <AppRouter> [FunctionComponent] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <AppRouterProviders> [FunctionComponent] > <ApolloProvider> [FunctionComponent] > <ApolloProviderBase> (opaque) > <BaseThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> (opaque) > <ClientConfigProvider> [FunctionComponent] > <AppFullScreenErrorFallback> [FunctionComponent] > <StyledContainer> (opaque) > <PageBody> [FunctionComponent] > <StyledMainContainer> (opaque) > <StyledLeftContainer> (opaque) > <PagePanel> [FunctionComponent] > <StyledPanel> (opaque) > <AppErrorDisplay> [FunctionComponent] > <AnimatedPlaceholderEmptyContainer> (opaque) > <AnimatedPlaceholderEmptyTextContainer> (opaque) > <AnimatedPlaceholderEmptyTitle> (opaque)[0]",
+              "expected": "\"Unable to Reach Back-end\"",
+              "actual": "<div> [HostComponent]"
+            }
+          },
+          {
+            "path": "root > <App> [FunctionComponent] > <JotaiProvider> (opaque) > <AppErrorBoundary> [FunctionComponent] > <ErrorBoundary> (opaque) > <I18nProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <IconsProvider> (opaque) > <ExceptionHandlerProvider> [FunctionComponent] > <HelmetProvider> (opaque) > <ContextProvider> [ContextProvider] > <AppRouter> [FunctionComponent] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <AppRouterProviders> [FunctionComponent] > <ApolloProvider> [FunctionComponent] > <ApolloProviderBase> (opaque) > <BaseThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> (opaque) > <ClientConfigProvider> [FunctionComponent] > <AppFullScreenErrorFallback> [FunctionComponent] > <StyledContainer> (opaque) > <PageBody> [FunctionComponent] > <StyledMainContainer> (opaque) > <StyledLeftContainer> (opaque) > <PagePanel> [FunctionComponent] > <StyledPanel> (opaque) > <AppErrorDisplay> [FunctionComponent] > <AnimatedPlaceholderEmptyContainer> (opaque) > <AnimatedPlaceholderEmptyTextContainer> (opaque) > <AnimatedPlaceholderEmptySubTitle> (opaque)",
+            "reason": "AnimatedPlaceholderEmptySubTitle from twenty-ui is not analyzed",
+            "head": "<AnimatedPlaceholderEmptySubTitle> [ForwardRef]",
+            "skippedFibers": 2,
+            "divergence": {
+              "path": "root > <App> [FunctionComponent] > <JotaiProvider> (opaque) > <AppErrorBoundary> [FunctionComponent] > <ErrorBoundary> (opaque) > <I18nProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <IconsProvider> (opaque) > <ExceptionHandlerProvider> [FunctionComponent] > <HelmetProvider> (opaque) > <ContextProvider> [ContextProvider] > <AppRouter> [FunctionComponent] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <AppRouterProviders> [FunctionComponent] > <ApolloProvider> [FunctionComponent] > <ApolloProviderBase> (opaque) > <BaseThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> (opaque) > <ClientConfigProvider> [FunctionComponent] > <AppFullScreenErrorFallback> [FunctionComponent] > <StyledContainer> (opaque) > <PageBody> [FunctionComponent] > <StyledMainContainer> (opaque) > <StyledLeftContainer> (opaque) > <PagePanel> [FunctionComponent] > <StyledPanel> (opaque) > <AppErrorDisplay> [FunctionComponent] > <AnimatedPlaceholderEmptyContainer> (opaque) > <AnimatedPlaceholderEmptyTextContainer> (opaque) > <AnimatedPlaceholderEmptySubTitle> (opaque)[0]",
+              "expected": "\"Please refresh the page.\"",
+              "actual": "<div> [HostComponent]"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 86,
+        "staticFibers": 1293,
+        "coverage": 1,
+        "strictCoverage": 0.313953488372093,
+        "divergence": null,
+        "stepsUsed": 66,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T11:38:08.867Z",
+      "failure": null
+    },
+    {
+      "id": "typebot",
+      "revision": "67c7c86b1a9cb255260d562446ba5010327382b7",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-08T12:29:26.556Z",
+      "durationMs": 666,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-f93b9fd4-20251217",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 135,
+        "commits": 19,
+        "pageErrors": [],
+        "title": "Sign In | Typebot"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 105,
+          "textCount": 5,
+          "branchCount": 6,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 9,
+          "modulesLoaded": 582
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-props",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 43,
+        "matchedText": 1,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 18,
+        "wildcards": [
+          {
+            "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <UserProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TypebotProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <WorkspaceProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Page> [FunctionComponent] > <SignInPage> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <SignInForm> [FunctionComponent]",
+            "reason": "alternative nested 2 branches away from the preferred path",
+            "absorbedFibers": 12,
+            "heads": [
+              "<div> [HostComponent]"
+            ]
+          },
+          {
+            "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <List> [FunctionComponent] > <FloatingPortalLite> [ForwardRef]",
+            "reason": "alternative nested 2 branches away from the preferred path",
+            "absorbedFibers": 5,
+            "heads": [
+              "<Portal> [HostPortal]",
+              "<Portal> [HostPortal]"
+            ]
+          },
+          {
+            "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <UserProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TypebotProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <WorkspaceProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Page> [FunctionComponent] > <SignInPage> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <p> [HostComponent]",
+            "reason": "value from @tolgee/web (Tolgee().use().init().t())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"Don't have an account?\""
+            ]
+          }
+        ],
+        "branchesResolved": 6,
+        "branchDeviations": [
+          {
+            "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider]",
+            "reason": "conditional on branch(<boolean> | unknown)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider][0]",
+              "expected": "<end of children>",
+              "actual": "<FunctionComponent> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <UserProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TypebotProvider> [FunctionComponent]",
+            "reason": "if (branch(<boolean> | false))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <UserProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TypebotProvider> [FunctionComponent][0]",
+              "expected": "<NotFoundPage> [FunctionComponent]",
+              "actual": "<ContextProvider> [ContextProvider]"
+            }
+          },
+          {
+            "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <UserProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TypebotProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <WorkspaceProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Page> [FunctionComponent] > <SignInPage> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <SignInForm> [FunctionComponent]",
+            "reason": "if (<boolean: === on dynamic values>)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <UserProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TypebotProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <WorkspaceProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Page> [FunctionComponent] > <SignInPage> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <SignInForm> [FunctionComponent][0]",
+              "expected": "<p> [HostComponent]",
+              "actual": "<div> [HostComponent]"
+            }
+          },
+          {
+            "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <List> [FunctionComponent] > <FloatingPortalLite> [ForwardRef]",
+            "reason": "if (branch(true | <boolean> | false))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <List> [FunctionComponent] > <FloatingPortalLite> [ForwardRef][0]",
+              "expected": "<end of children>",
+              "actual": "<Portal> [HostPortal]"
+            }
+          },
+          {
+            "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <List> [FunctionComponent] > <FloatingPortalLite> [ForwardRef]",
+            "reason": "&& on branch(null | unknown)",
+            "preferredIndex": 1,
+            "chosenIndex": 0,
+            "divergence": {
+              "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <List> [FunctionComponent] > <FloatingPortalLite> [ForwardRef][0]",
+              "expected": "<end of children>",
+              "actual": "<Portal> [HostPortal]"
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 62,
+        "staticFibers": 58,
+        "coverage": 1,
+        "strictCoverage": 0.7096774193548387,
+        "divergence": null,
+        "stepsUsed": 63,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T11:36:02.368Z",
       "failure": null
     }
   ]

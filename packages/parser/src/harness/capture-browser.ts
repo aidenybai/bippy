@@ -32,6 +32,18 @@ export interface BrowserCaptureResult {
 
 const DEFAULT_TIMEOUT_MS = 60_000;
 const COMMIT_POLL_INTERVAL_MS = 100;
+// Dev servers compiling lazily requested routes (Next's `/api/*` on first load)
+// trigger a Fast Refresh full reload that tears down the page mid-read, and
+// Vite answers module requests with 504 "Outdated Optimize Dep" while it
+// re-bundles dependencies it discovered on the first page load; the capture is
+// simply repeated against the now warm server.
+const MAX_CAPTURE_ATTEMPTS = 3;
+
+const isDestroyedContextError = (error: unknown): boolean =>
+  error instanceof Error && error.message.includes("Execution context was destroyed");
+
+const isColdDevServerResult = (result: BrowserCaptureResult): boolean =>
+  result.commits === 0 && result.pageErrors.some((text) => text.includes("Outdated Optimize Dep"));
 
 const harnessDirectory = dirname(fileURLToPath(import.meta.url));
 const requireFromHere = createRequire(import.meta.url);
@@ -152,6 +164,17 @@ export class BrowserCapturer {
   }
 
   async capture(options: BrowserCaptureOptions): Promise<BrowserCaptureResult> {
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        const result = await this.captureOnce(options);
+        if (attempt >= MAX_CAPTURE_ATTEMPTS || !isColdDevServerResult(result)) return result;
+      } catch (error) {
+        if (attempt >= MAX_CAPTURE_ATTEMPTS || !isDestroyedContextError(error)) throw error;
+      }
+    }
+  }
+
+  private async captureOnce(options: BrowserCaptureOptions): Promise<BrowserCaptureResult> {
     const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     const settleMs = options.settleMs ?? DEFAULT_SETTLE_MS;
     const [browser, inject] = await Promise.all([this.browser(), buildInjectBundle()]);

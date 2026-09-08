@@ -1,0 +1,8 @@
+{
+  "name": "fixture-scoped-context",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@radix-ui/react-tabs": "1.1.21"
+  }
+}

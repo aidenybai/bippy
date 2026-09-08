@@ -66,6 +66,31 @@ describe("next app router", () => {
     expect(tree).toMatch(/<main>\n\s+<h1>/);
   });
 
+  it("renders server-side forwardRef and memo components without fibers", async () => {
+    const { tree, errors } = await render("next-app", { framework: "next-app", route: "/about" });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<main>\n\s+<h1>\n\s+<div>\n\s+<h3>\n\s+<em>/);
+    expect(tree).not.toContain("<Card>");
+    expect(tree).not.toContain("<CardTitle>");
+  });
+
+  it("treats exports re-exported through a `use client` module as client references", async () => {
+    const { tree, errors } = await render("next-app", { framework: "next-app", route: "/about" });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<h3>\n\s+<em>\n\s+<Badge>\n\s+<em>\n\s+<Dashboard>/);
+  });
+
+  it("links `.svg` imports as the @svgr/webpack component module", async () => {
+    const { tree, errors } = await render("next-app", { framework: "next-app", route: "/about" });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<span>\n\s+<svg>\n\s+<path>\n\s+<circle>/);
+    expect(tree).toMatch(
+      /<ClientLogo>\n\s+<button>\n\s+<SvgLogo>\n\s+<svg>\n\s+<path>\n\s+<circle>/,
+    );
+    expect(tree).not.toContain("<title>");
+    expect(tree).not.toContain("unsupported module");
+  });
+
   it("models next/dynamic as the loaded LoadableComponent tree", async () => {
     const { tree } = await render("next-app", { framework: "next-app", route: "/about" });
     expect(tree).toMatch(
@@ -175,8 +200,14 @@ describe("next pages router", () => {
     });
     expect(errors).toEqual([]);
     expect(tree).toMatch(
-      /<figure>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>\n\s+<ImagePreload>\n\s+<Head>\n\s+<SideEffect>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>$/,
+      /<figure>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>\n\s+<ImagePreload>\n\s+<Head>\n\s+<SideEffect>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>\n\s+<Script>$/,
     );
+  });
+
+  it("renders next/script without a host <script>: the pages head manager owns every strategy", async () => {
+    const { tree } = await render("next-pages", { framework: "next-pages", route: "/" });
+    expect(tree).toContain("<Script>");
+    expect(tree).not.toContain("<script>");
   });
 
   it("feeds dynamic segments into useRouter().query", async () => {
@@ -295,5 +326,20 @@ describe("react router framework mode config", () => {
     expect(tree).toMatch(
       /\?branch\(the subresource integrity[^\n]*\n\s+\|0 \(preferred\)\n\s+<script>\n\s+\|1\n\s+<link>\n\s+<link>\n\s+<Fragment>\n\s+<link> key="\/app\/root.tsx"\n\s+<link> key="\/app\/routes\/home.tsx"\n\s+<Fragment>\n\s+<script>\n\s+<script>\n/,
     );
+  });
+});
+
+describe("react router data router with JSX routes", () => {
+  const target = (route: string) =>
+    render("react-router-computed", { framework: "react-router", route, entry: "src/main.tsx" });
+
+  it("keeps a nested route whose path is computed at runtime as an alternative to the static match", async () => {
+    const { tree, errors } = await target("/about");
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /\?branch\(1 route\(s\) could not be read statically and may also match \/about\)\n\s+\|0 \(preferred\)\n\s+<RenderedRoute>/,
+    );
+    expect(tree).toMatch(/<Outlet>\n\s+<ContextProvider>\n\s+<RenderedRoute>\n\s+<Route>\n\s+<h1>/);
+    expect(tree).toMatch(/\|1\n\s+\?unknown\(react-router: route path is unknown\(JSON\.parse\)\)/);
   });
 });

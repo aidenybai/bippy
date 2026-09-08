@@ -1,6 +1,7 @@
 import type { StaticClassValue, StaticFunctionValue, StaticValue } from "../types.js";
 import { getAbortWitness } from "./abort-controller.js";
 import { isBlobValue } from "./blob.js";
+import { getPrototypeOwner } from "./class-component.js";
 import { isClockDateValue } from "./clock-date.js";
 import { getCollectionKind } from "./collections.js";
 import { getErrorWitness } from "./errors.js";
@@ -181,6 +182,58 @@ const isInstanceOfFunction = (left: StaticValue, fn: StaticFunctionValue): boole
     current = current.prototype;
   }
   return current.constructedBy || getPrototypeWitness(current) === null ? null : false;
+};
+
+const FUNCTION_CHAIN_PROTOTYPES = new Set(["Function.prototype", "Object.prototype"]);
+
+const isFunctionChainPrototype = (prototype: StaticValue): boolean =>
+  prototype.kind === "global" && FUNCTION_CHAIN_PROTOTYPES.has(prototype.name);
+
+const isSameConstructor = (left: StaticValue, right: StaticValue): boolean =>
+  left === right ||
+  (left.kind === "react-api" && right.kind === "react-api" && left.api === right.api) ||
+  (left.kind === "global" && right.kind === "global" && left.name === right.name);
+
+const isPrototypeOfWitness = (prototype: StaticValue, value: StaticValue): boolean | null => {
+  const witness = getPrototypeWitness(value);
+  if (witness === null) return null;
+  if (prototype.kind !== "global") return false;
+  const builtinPrototype = getBuiltinPrototype(prototype.name);
+  return builtinPrototype === null ? null : builtinPrototype.isPrototypeOf(witness);
+};
+
+/** `prototype.isPrototypeOf(value)`; null once `value`'s chain reaches something the analysis did not create. */
+export const isPrototypeOf = (prototype: StaticValue, value: StaticValue): boolean | null => {
+  if (isPrimitiveLike(value)) return false;
+  const owner = prototype.kind === "object" ? getPrototypeOwner(prototype) : null;
+  if (owner) return isInstanceOfClass(value, owner);
+  switch (value.kind) {
+    case "function":
+    case "native-function":
+    case "method":
+    case "react-api":
+      return isFunctionChainPrototype(prototype);
+    case "class": {
+      let current: StaticValue = value;
+      while (current.kind === "class") {
+        const superValue: StaticValue | null = current.body.superValue;
+        if (!superValue) return isFunctionChainPrototype(prototype);
+        if (isSameConstructor(superValue, prototype)) return true;
+        current = superValue;
+      }
+      return current.kind === "react-api" ? isFunctionChainPrototype(prototype) : null;
+    }
+    case "object": {
+      let current = value;
+      while (current.prototype) {
+        if (current.prototype === prototype) return true;
+        current = current.prototype;
+      }
+      return current.constructedBy ? null : isPrototypeOfWitness(prototype, current);
+    }
+    default:
+      return isPrototypeOfWitness(prototype, value);
+  }
 };
 
 /** `left instanceof right` for a built-in or analyzed constructor; null when it depends on values the analysis cannot see. */

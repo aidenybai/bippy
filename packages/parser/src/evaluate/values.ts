@@ -657,6 +657,32 @@ const isCallableValue = (value: StaticValue): value is StaticFunctionValue | Sta
 const isProgramAllocated = (value: StaticValue): boolean =>
   isHeapValue(value) || isCallableValue(value) || value.kind === "element";
 
+const getElementTypeIdentity = (type: StaticElementType): object | null => {
+  switch (type.kind) {
+    case "function":
+    case "class":
+      return type.component.properties;
+    case "memo":
+    case "forward-ref":
+    case "lazy":
+      return type.properties;
+    case "context-provider":
+    case "context-consumer":
+      return type.context;
+    case "stub":
+      return type.stub;
+    default:
+      return null;
+  }
+};
+
+/** Element types share their statics map with the value they were created from. */
+const getComponentIdentity = (value: StaticValue): object | null => {
+  if (value.kind === "function") return value.boundThis ? null : value.properties;
+  if (value.kind === "class") return value.properties;
+  return value.kind === "component-reference" ? getElementTypeIdentity(value.type) : null;
+};
+
 /**
  * A host global is an object or function, or absent in environments without it
  * (`window` on a server), so it only ever equals `undefined`.
@@ -749,6 +775,10 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
   const typedVersusOther =
     compareTypedUnknownToOther(left, right) ?? compareTypedUnknownToOther(right, left);
   if (typedVersusOther !== null) return typedVersusOther;
+  if (left.kind === "element" && right.kind === "element") return false;
+  const leftComponent = getComponentIdentity(left);
+  const rightComponent = getComponentIdentity(right);
+  if (leftComponent && rightComponent) return leftComponent === rightComponent;
   const leftClass = getIdentityClass(left);
   const rightClass = getIdentityClass(right);
   if (leftClass && rightClass && leftClass !== rightClass) return false;

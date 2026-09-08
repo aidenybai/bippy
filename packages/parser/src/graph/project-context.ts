@@ -1,9 +1,10 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
-import type { ModuleResolver } from "./module-resolver.js";
 import { EMPTY_OBSERVATIONS } from "../observations.js";
 import { readPackageManifest } from "../package-manifest.js";
-import type { ProjectContext, RuntimeObservations } from "../types.js";
+import type { ModuleTranspiler, ProjectContext, RuntimeObservations } from "../types.js";
+import { readInstalledPackage } from "./installed-package.js";
+import type { ModuleResolver } from "./module-resolver.js";
 import { createServedAssets } from "./served-assets.js";
 
 /** Where Next, Vite and CRA dev servers serve static files from, at the URL root. */
@@ -17,17 +18,6 @@ const readDeclaredDependencies = (manifestPath: string): string[] => {
     ...manifest.devDependencies,
     ...manifest.optionalDependencies,
   });
-};
-
-/** The version of the package the project's own resolution reaches, as its manifest declares it. */
-export const readPackageVersion = (
-  resolver: ModuleResolver,
-  rootDirectory: string,
-  packageName: string,
-): string | null => {
-  const resolution = resolver.resolve(`${packageName}/package.json`, `${rootDirectory}/index.js`);
-  if (resolution.kind !== "external" || !resolution.filePath) return null;
-  return readPackageManifest(resolution.filePath).version ?? null;
 };
 
 /**
@@ -45,10 +35,17 @@ export interface ProjectContextOptions {
   publicDirectory?: string;
   observations?: RuntimeObservations;
   origin?: string | null;
+  transpiler?: ModuleTranspiler;
 }
 
 export const createProjectContext = (options: ProjectContextOptions): ProjectContext => {
-  const { rootDirectory, resolver, observations = EMPTY_OBSERVATIONS, origin = null } = options;
+  const {
+    rootDirectory,
+    resolver,
+    observations = EMPTY_OBSERVATIONS,
+    origin = null,
+    transpiler = "name-preserving",
+  } = options;
   const servedDirectory = options.servedDirectory ?? rootDirectory;
   const publicDirectory = options.publicDirectory ?? path.join(servedDirectory, PUBLIC_DIRECTORY);
   const declared = new Set<string>();
@@ -72,7 +69,9 @@ export const createProjectContext = (options: ProjectContextOptions): ProjectCon
     rootDirectory,
     servedDirectory,
     hasDeclaredDependency,
-    readPackageVersion: (packageName) => readPackageVersion(resolver, rootDirectory, packageName),
+    readPackageVersion: (packageName) =>
+      readInstalledPackage(resolver, rootDirectory, packageName)?.version ?? null,
+    transpiler,
     getImportedAssetUrl: assets.getImportedUrl,
     readServedAsset: assets.read,
     findQuery: (queryHash) => queries.get(queryHash) ?? null,
