@@ -1,15 +1,19 @@
 import { describe, expect, it } from "vite-plus/test";
 import { comparePatternToRuntime } from "../src/harness/compare.js";
-import type { RuntimeFiberSnapshot, SnapshotWorkTag } from "../src/harness/snapshot.js";
+import type { RuntimeFiberSnapshot } from "../src/harness/snapshot.js";
 import type { PatternFiber, PatternNode, PatternOpaque } from "../src/harness/static-pattern.js";
 
-const staticFiber = (name: string, children: PatternNode[] = []): PatternFiber => ({
-  kind: "fiber",
-  tag: "ClassComponent",
-  name,
-  key: null,
-  children,
-});
+const runtimeFiber = (
+  name: string,
+  children: RuntimeFiberSnapshot[] = [],
+  tag: RuntimeFiberSnapshot["tag"] = "FunctionComponent",
+): RuntimeFiberSnapshot => ({ tag, name, key: null, text: null, props: {}, children });
+
+const patternFiber = (
+  name: string,
+  children: PatternNode[] = [],
+  tag: PatternFiber["tag"] = "FunctionComponent",
+): PatternFiber => ({ kind: "fiber", tag, name, key: null, children });
 
 const opaqueFiber = (name: string, passedChildren: PatternNode[]): PatternOpaque => ({
   kind: "opaque",
@@ -20,33 +24,38 @@ const opaqueFiber = (name: string, passedChildren: PatternNode[]): PatternOpaque
   passedChildren,
 });
 
-const runtimeFiber = (
-  name: string,
-  children: RuntimeFiberSnapshot[] = [],
-  tag: SnapshotWorkTag = "ClassComponent",
-): RuntimeFiberSnapshot => ({
-  tag,
-  name,
-  key: null,
-  text: null,
-  props: {},
-  children,
-});
-
 describe("comparePatternToRuntime", () => {
+  it("accepts a bundler-deconflicted `$N` suffix on the runtime name", () => {
+    const report = comparePatternToRuntime(
+      [patternFiber("Dialog", [patternFiber("Panel", [patternFiber("div", [], "HostComponent")])])],
+      [
+        runtimeFiber("Dialog$1", [
+          runtimeFiber("Panel$12", [runtimeFiber("div", [], "HostComponent")]),
+        ]),
+      ],
+    );
+    expect(report.status).toBe("exact");
+    expect(report.matchedFibers).toBe(3);
+  });
+
   it("accepts esbuild's dedupe counter on a component the bundler renamed", () => {
     const report = comparePatternToRuntime(
-      [staticFiber("PersistGate", [staticFiber("Gate")])],
+      [patternFiber("PersistGate", [patternFiber("Gate")])],
       [runtimeFiber("PersistGate2", [runtimeFiber("Gate")])],
     );
     expect(report.status).toBe("exact");
     expect(report.matchedFibers).toBe(2);
   });
 
+  it("does not equate names that differ beyond a `$N` suffix", () => {
+    const report = comparePatternToRuntime([patternFiber("Dialog")], [runtimeFiber("Dialog$1x")]);
+    expect(report.status).toBe("mismatch");
+  });
+
   it("keeps a different component name a mismatch", () => {
-    for (const runtimeName of ["PersistGate0", "PersistGateX", "PersistGat"]) {
+    for (const runtimeName of ["PersistGateX", "PersistGat"]) {
       const report = comparePatternToRuntime(
-        [staticFiber("PersistGate")],
+        [patternFiber("PersistGate")],
         [runtimeFiber(runtimeName)],
       );
       expect(report.status).toBe("mismatch");
@@ -55,7 +64,7 @@ describe("comparePatternToRuntime", () => {
 
   it("places nested opaque children in the slot whose own slot matches, not the first component", () => {
     const report = comparePatternToRuntime(
-      [opaqueFiber("MantineProvider", [opaqueFiber("ModalsProvider", [staticFiber("App")])])],
+      [opaqueFiber("MantineProvider", [opaqueFiber("ModalsProvider", [patternFiber("App")])])],
       [
         runtimeFiber("MantineProvider", [
           runtimeFiber("CssVariables", [runtimeFiber("style", [], "HostComponent")]),
@@ -77,7 +86,7 @@ describe("comparePatternToRuntime", () => {
       [
         opaqueFiber("MantineProvider", [
           opaqueFiber("ModalsProvider", [
-            staticFiber("App", [opaqueFiber("Shell", [staticFiber("Page")])]),
+            patternFiber("App", [opaqueFiber("Shell", [patternFiber("Page")])]),
           ]),
         ]),
       ],
@@ -85,9 +94,7 @@ describe("comparePatternToRuntime", () => {
         runtimeFiber("MantineProvider", [
           runtimeFiber("CssVariables", [runtimeFiber("style", [], "HostComponent")]),
           runtimeFiber("ModalsProvider", [
-            runtimeFiber("App", [
-              runtimeFiber("Shell", [runtimeFiber("Sidebar", [], "FunctionComponent")]),
-            ]),
+            runtimeFiber("App", [runtimeFiber("Shell", [runtimeFiber("Sidebar")])]),
           ]),
         ]),
       ],

@@ -1,4 +1,14 @@
+import "fake-indexeddb/auto";
 import "../../bippy/src/install-hook-only.js";
+
+// HACK: vitest's happy-dom environment copies `hasOwnProperty` onto the global
+// as a function bound to the window, which breaks `hasOwnProperty.call(target,
+// key)` in libraries loaded from the analyzed app (`@babel/template` via SVGR).
+Object.defineProperty(globalThis, "hasOwnProperty", {
+  value: Object.prototype.hasOwnProperty,
+  configurable: true,
+  writable: true,
+});
 
 // happy-dom never fires load/error on `<link rel="preload">`, but React DOM
 // suspends the commit of a `<link rel="stylesheet" precedence>` on exactly that

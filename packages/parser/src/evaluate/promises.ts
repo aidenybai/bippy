@@ -7,11 +7,14 @@ import type {
 } from "../types.js";
 import { listValue, objectValue, thrownValue, UNDEFINED_VALUE, unknownValue } from "./values.js";
 
-export type PromiseTools = Pick<StubRenderTools, "call" | "markEscaped" | "queueMicrotask">;
+export type PromiseTools = Pick<
+  StubRenderTools,
+  "call" | "callDeferred" | "markEscaped" | "queueMicrotask"
+>;
 
 export interface PromiseReaction {
   run: (outcome: StaticValue, tools: PromiseTools) => void;
-  escape: (markEscaped: PromiseTools["markEscaped"]) => void;
+  escape: (tools: PromiseTools) => void;
 }
 
 /**
@@ -128,20 +131,24 @@ export const suspendOnPromise = (
       const returned = resume(outcome, false);
       if (returned) settlePromise(result, returned, tools);
     },
-    escape: (markEscaped) => {
+    escape: (tools) => {
       resume(unknownValue("promise settled outside the analysis", location), true);
-      escapePromise(result, markEscaped);
+      escapePromise(result, tools);
     },
   });
 };
 
-export const escapePromise = (
-  promise: ModeledPromise,
-  markEscaped: PromiseTools["markEscaped"],
-): void => {
+export const escapePromise = (promise: ModeledPromise, tools: PromiseTools): void => {
   if (promise.settled || promise.isEscaped) return;
   promise.isEscaped = true;
-  for (const reaction of promise.reactions.splice(0)) reaction.escape(markEscaped);
+  for (const reaction of promise.reactions.splice(0)) reaction.escape(tools);
+};
+
+/** The result of an async function whose body awaited a promise the analysis cannot see settle: it settles at an unknown time too. */
+export const escapedPromiseValue = (): StaticValue => {
+  const promise = createPendingPromise();
+  promise.isEscaped = true;
+  return promise.value;
 };
 
 const settlePromise = (
@@ -163,7 +170,7 @@ const settlePromise = (
 
 const forwardTo = (target: ModeledPromise): PromiseReaction => ({
   run: (outcome, tools) => settlePromise(target, outcome, tools),
-  escape: (markEscaped) => escapePromise(target, markEscaped),
+  escape: (tools) => escapePromise(target, tools),
 });
 
 const subscribe = (
@@ -173,7 +180,7 @@ const subscribe = (
 ): void => {
   const settled = promise.settled;
   if (settled) tools.queueMicrotask(() => reaction.run(settled, tools));
-  else if (promise.isEscaped) reaction.escape(tools.markEscaped);
+  else if (promise.isEscaped) reaction.escape(tools);
   else promise.reactions.push(reaction);
 };
 
@@ -181,7 +188,7 @@ const settlingFunction = (
   name: string,
   promise: ModeledPromise,
   toOutcome: (value: StaticValue) => StaticValue,
-  markEscaped: PromiseTools["markEscaped"],
+  creationTools: PromiseTools,
 ): StaticValue => ({
   kind: "native-function",
   name,
@@ -189,7 +196,7 @@ const settlingFunction = (
     settlePromise(promise, toOutcome(value ?? UNDEFINED_VALUE), tools);
     return UNDEFINED_VALUE;
   },
-  onEscape: () => escapePromise(promise, markEscaped),
+  onEscape: () => escapePromise(promise, creationTools),
 });
 
 /** `new Promise(executor)`, settled when the executor settles it synchronously. */
@@ -201,8 +208,8 @@ export const createPromiseValue = (
   const promise = createPendingPromise();
   const rejection = (reason: StaticValue): StaticValue =>
     thrownValue("rejected promise", reason, location);
-  const resolve = settlingFunction("resolve", promise, (value) => value, tools.markEscaped);
-  const reject = settlingFunction("reject", promise, rejection, tools.markEscaped);
+  const resolve = settlingFunction("resolve", promise, (value) => value, tools);
+  const reject = settlingFunction("reject", promise, rejection, tools);
   if (executor) {
     const outcome = tools.call(executor, [resolve, reject]);
     if (isThrownOutcome(outcome)) settlePromise(promise, outcome, tools);
@@ -230,11 +237,16 @@ const handlerOutcome = (
   return tools.call(handler, [isThrownOutcome(outcome) ? outcome.thrown : outcome]);
 };
 
-/** `promise.then(...)`/`.catch(...)`/`.finally(...)`: the derived promise, settled from the handlers' results. */
+/**
+ * `promise.then(...)`/`.catch(...)`/`.finally(...)`: the derived promise,
+ * settled from the handlers' results. Once the promise escapes, the handlers
+ * that run whatever the outcome are continuations landing at an unknown time.
+ */
 export const chainPromise = (
   promise: ModeledPromise,
   handlers: PromiseHandlers,
   tools: PromiseTools,
+  location: SourceLocation | null,
 ): StaticValue => {
   const derived = createPendingPromise();
   subscribe(
@@ -242,11 +254,15 @@ export const chainPromise = (
     {
       run: (outcome, runTools) =>
         settlePromise(derived, handlerOutcome(handlers, outcome, runTools), runTools),
-      escape: (markEscaped) => {
-        for (const handler of [handlers.onFulfilled, handlers.onRejected, handlers.onFinally]) {
-          if (handler) markEscaped(handler);
+      escape: (escapeTools) => {
+        if (handlers.onFinally) escapeTools.callDeferred(handlers.onFinally, []);
+        if (handlers.onFulfilled) {
+          escapeTools.callDeferred(handlers.onFulfilled, [
+            unknownValue("promise settled outside the analysis", location),
+          ]);
         }
-        escapePromise(derived, markEscaped);
+        if (handlers.onRejected) escapeTools.markEscaped(handlers.onRejected);
+        escapePromise(derived, escapeTools);
       },
     },
     tools,
@@ -283,7 +299,7 @@ export const combinePromises = (
           else if (--remaining === 0)
             settlePromise(combined, listValue(items.map(outcomeOf)), runTools);
         },
-        escape: (markEscaped) => escapePromise(combined, markEscaped),
+        escape: (escapeTools) => escapePromise(combined, escapeTools),
       },
       tools,
     );

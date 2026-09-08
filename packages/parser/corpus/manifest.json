@@ -4,20 +4,36 @@
       "id": "actual",
       "repository": "https://github.com/actualbudget/actual",
       "revision": "8867158f0a2e101467fb191c9e253f47c75a9e2d",
-      "description": "Actual Budget desktop client (Vite SPA, React Compiler, Yarn 4 workspaces)",
-      "framework": "spa",
+      "description": "Actual Budget desktop client (Vite SPA with a react-router BrowserRouter, React Compiler, Yarn 4 workspaces)",
+      "framework": "react-router",
       "workingDirectory": "packages/desktop-client",
       "install": "yarn install",
       "dev": "yarn start:browser",
+      "env": {
+        "REACT_APP_BACKEND_WORKER_HASH": "dev"
+      },
       "url": "http://localhost:3001/",
       "readyTimeoutMs": 900000,
       "settleMs": 8000,
       "static": {
         "rootDirectory": "packages/desktop-client",
         "entry": "src/index.tsx",
+        "externalPackageAllowList": [
+          "react-redux",
+          "@actual-app/*",
+          "react-error-boundary",
+          "@tanstack/react-query",
+          "react-hotkeys-hook",
+          "react-dnd",
+          "dnd-core",
+          "react-aria-components",
+          "react-aria"
+        ],
+        "envFiles": [],
+        "envPrefix": "REACT_APP_",
         "maxFiberCount": 20000
       },
-      "notes": "start:browser builds loot-core for the browser before serving; the first render is the budget-file picker."
+      "notes": "start:browser builds loot-core for the browser before serving; the first render is the budget-file picker. desktop-client's vite config sets `envPrefix: 'REACT_APP_'` and the workspace has no dotenv files, so only the manifest env reaches the client bundle; the config itself sets `REACT_APP_BACKEND_WORKER_HASH` to `dev` when serving."
     },
     {
       "id": "bulletproof-react",
@@ -107,12 +123,20 @@
       "url": "http://localhost:3000/",
       "readyTimeoutMs": 600000,
       "settleMs": 6000,
+      "capturedGlobals": ["ENV"],
       "static": {
         "rootDirectory": ".",
         "entry": "app/routes.ts",
-        "route": "/"
+        "route": "/",
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "remix-utils",
+          "openimg",
+          "sonner",
+          "spin-delay"
+        ]
       },
-      "notes": "routes.ts delegates to react-router-auto-routes; the static side mirrors its file conventions (_layout nesting, pathless _groups, $params, [.] escapes, trailing-underscore opt-outs) to rebuild the route table without running the generator. Loader data, honeypot and theme values stay unknown."
+      "notes": "routes.ts delegates to react-router-auto-routes; the static side mirrors its file conventions (_layout nesting, pathless _groups, $params, [.] escapes, trailing-underscore opt-outs) to rebuild the route table without running the generator. Loader data, honeypot and theme values stay unknown. @radix-ui, remix-utils, openimg, sonner and spin-delay are analyzed from source (each would otherwise leave opaque fibers or a branch); @conform-to, @epic-web and @nasa-gcn/remix-seo analyze cleanly but change no fiber, so they stay external."
     },
     {
       "id": "excalidraw",
@@ -183,6 +207,17 @@
       "static": {
         "rootDirectory": ".",
         "route": "/en",
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "@dnd-kit/*",
+          "@hookform/resolvers",
+          "@vercel/analytics",
+          "lucide-react",
+          "next-themes",
+          "react-day-picker",
+          "use-debounce",
+          "zod"
+        ],
         "maxFiberCount": 20000
       }
     },
@@ -523,6 +558,7 @@
         "rootDirectory": "apps/examples",
         "entry": "src/index.tsx",
         "route": "/",
+        "externalPackageAllowList": ["tldraw", "@tldraw/*"],
         "maxFiberCount": 20000
       }
     },
@@ -646,6 +682,486 @@
         "maxFiberCount": 20000
       },
       "notes": "Django normally renders index.html with window.POSTHOG_APP_CONTEXT and points the module scripts at the Vite dev server; corpus/scripts/posthog-app-server.ts stands in for it with an anonymous app context and the checked-in _preflight fixture, answering the API calls the login scene makes. The kea store the page builds is captured through the Redux DevTools compose hook and replayed into the static render; the app server's stand-in API returns 404 for the endpoints it does not model, which the page logs."
+    },
+    {
+      "id": "lobe-chat",
+      "repository": "https://github.com/lobehub/lobe-chat",
+      "revision": "36c4be46f07aa45a10d186871b6fd6265a2ecbf3",
+      "description": "LobeChat SPA shell (Vite + react-router-dom data router, antd-style) served without its Next.js API backend",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "pnpm install",
+      "dev": "pnpm exec vite --port 9878",
+      "url": "http://localhost:9878/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/spa/entry.web.tsx",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@lobehub/*",
+          "@lobechat/*",
+          "antd-style",
+          "zustand",
+          "swr",
+          "react-i18next",
+          "i18next"
+        ],
+        "maxFiberCount": 20000
+      }
+    },
+    {
+      "id": "copilotkit",
+      "repository": "https://github.com/CopilotKit/CopilotKit",
+      "revision": "fbe488869949f5b7300945ed54c88ef6b8b16df1",
+      "description": "CopilotKit examples/v2/react/demo (Next 15 app router, CopilotKitProvider + CopilotChat from workspace packages)",
+      "framework": "next-app",
+      "workingDirectory": "examples/v2/react/demo",
+      "install": "pnpm install",
+      "setup": [
+        "cd ../../../.. && NODE_OPTIONS=--max-old-space-size=8192 NX_DAEMON=false pnpm nx run-many -t build --projects=@copilotkit/react-core,@copilotkit/runtime,@copilotkit/voice --parallel=2"
+      ],
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "examples/v2/react/demo",
+        "route": "/",
+        "externalPackageAllowList": ["@copilotkit/*", "@ag-ui/*", "@radix-ui/*", "lucide-react"]
+      }
+    },
+    {
+      "id": "react-three-next",
+      "repository": "https://github.com/pmndrs/react-three-next",
+      "revision": "bb29a61949601e1c563688faf33a12d062ec3710",
+      "description": "react-three-next starter (Next app router, @react-three/fiber canvas tunnel, dynamic() imports)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": ["@react-three/*", "its-fine", "tunnel-rat", "three"]
+      }
+    },
+    {
+      "id": "openchakra",
+      "repository": "https://github.com/premieroctet/openchakra",
+      "revision": "5605d412cb7570fb4b261655a88d2abb229352bb",
+      "description": "OpenChakra visual editor (Next pages router, Chakra UI v1, redux + redux-persist, react-dnd)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "yarn install",
+      "dev": "yarn dev",
+      "url": "http://localhost:3000/",
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@chakra-ui/*",
+          "@emotion/*",
+          "next-redux-wrapper",
+          "react-redux",
+          "redux",
+          "redux-undo",
+          "redux-persist",
+          "redux-persist/*",
+          "react-dnd",
+          "react-dnd-html5-backend",
+          "@rematch/*"
+        ]
+      }
+    },
+    {
+      "id": "craft-js",
+      "repository": "https://github.com/prevwong/craft.js",
+      "revision": "23f44f3208ebf78d1632ec4aa7094001f513eb41",
+      "description": "craft.js examples/landing (Next pages router, @craftjs/core Editor/Frame from workspace packages, MUI v4)",
+      "notes": "Cannot serve on Node 22: the Next 12 server bundle of examples/landing imports `@mui/utils/formatMuiErrorMessage` as an ESM directory import (ERR_UNSUPPORTED_DIR_IMPORT), so every page request 500s; `esmExternals: 'loose'` and `false` do not help. Recorded static-only.",
+      "framework": "next-pages",
+      "workingDirectory": "examples/landing",
+      "install": "yarn install && yarn build",
+      "dev": "yarn start",
+      "url": "http://localhost:3001/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "examples/landing",
+        "route": "/",
+        "externalPackageAllowList": ["@craftjs/*", "@material-ui/*", "styled-components"]
+      }
+    },
+    {
+      "id": "pdfme",
+      "repository": "https://github.com/pdfme/pdfme",
+      "revision": "5a6376a824fb8ab4f989841564b61cbb771100d2",
+      "description": "pdfme playground (Vite + react-router-dom declarative routes, @pdfme/ui Designer embedded via ref)",
+      "framework": "react-router",
+      "workingDirectory": "playground",
+      "install": "npm install && npm run build && cd playground && npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:5173/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "playground",
+        "entry": "src/index.tsx",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@pdfme/*",
+          "@headlessui/react",
+          "lucide-react",
+          "react-toastify",
+          "@sentry/react"
+        ]
+      }
+    },
+    {
+      "id": "socialecho",
+      "repository": "https://github.com/nz-m/SocialEcho",
+      "revision": "4dc6c7822bfff5c0b13e1b8098e8d7ae0084939a",
+      "description": "SocialEcho client sign-in page (CRA, react-router-dom v6 declarative routes, react-redux) without its Express backend",
+      "framework": "react-router",
+      "workingDirectory": "client",
+      "install": "cd client && npm install",
+      "dev": "npm start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3006"
+      },
+      "url": "http://localhost:3006/signin",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "client",
+        "entry": "src/index.jsx",
+        "route": "/signin",
+        "externalPackageAllowList": ["react-redux", "react-icons", "react-icons/*"]
+      }
+    },
+    {
+      "id": "react-starter-kit",
+      "repository": "https://github.com/kriasoft/react-starter-kit",
+      "revision": "3c5132eb3d0a02dc8090eb6248f8959744e18d12",
+      "description": "React Starter Kit apps/app (Vite SPA, TanStack Router file routes, TanStack Query, shadcn/ui) without its Hono API",
+      "framework": "spa",
+      "workingDirectory": "apps/app",
+      "install": "bun install",
+      "dev": "bun run dev",
+      "url": "http://localhost:5173/",
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "apps/app",
+        "entry": "index.tsx",
+        "externalPackageAllowList": [
+          "@tanstack/react-router",
+          "@tanstack/router-core",
+          "@tanstack/history",
+          "@tanstack/react-store",
+          "@tanstack/store",
+          "@tanstack/react-query",
+          "@tanstack/react-query-devtools",
+          "@radix-ui/*",
+          "lucide-react",
+          "better-auth",
+          "better-auth/*"
+        ]
+      }
+    },
+    {
+      "id": "nextjs-starter",
+      "repository": "https://github.com/weijunext/nextjs-starter",
+      "revision": "c33149454f19f74651f73245d63b1cfab187f7d3",
+      "description": "weijunext/nextjs-starter landing page (Next app router, next-themes, next-intl, shadcn/ui)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "setup": ["cp -n .env.example .env; true"],
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/en",
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/en",
+        "externalPackageAllowList": [
+          "next-themes",
+          "next-intl",
+          "next-intl/*",
+          "use-intl",
+          "use-intl/*",
+          "@radix-ui/*",
+          "lucide-react",
+          "react-icons",
+          "react-icons/*"
+        ],
+        "envFiles": [".env"]
+      }
+    },
+    {
+      "id": "foxel",
+      "repository": "https://github.com/DrizzleTime/Foxel",
+      "revision": "d5a24c69e180711e55abeddb4e31ce06e60a456f",
+      "description": "Foxel web client (Vite SPA, react-router v7 declarative routes, antd) without its FastAPI backend",
+      "framework": "react-router",
+      "workingDirectory": "web",
+      "install": "cd web && bun install",
+      "dev": "bun run dev",
+      "url": "http://localhost:5173/",
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "web",
+        "entry": "src/main.tsx",
+        "route": "/",
+        "externalPackageAllowList": ["antd", "@ant-design/*"]
+      }
+    },
+    {
+      "id": "karakeep",
+      "repository": "https://github.com/karakeep-app/karakeep",
+      "revision": "01d636f263866770d1e37ad9336d1b0d9df44935",
+      "description": "Karakeep web app sign-in page (Next app router, pnpm + Turborepo monorepo, Drizzle over a local SQLite data directory)",
+      "framework": "next-app",
+      "workingDirectory": "apps/web",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 22 pnpm install --frozen-lockfile",
+      "setup": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 22 bash \"$BIPPY_CORPUS_SCRIPTS/karakeep-setup.sh\""
+      ],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 22 pnpm dev",
+      "url": "http://localhost:3000/signin",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "apps/web",
+        "route": "/signin",
+        "externalPackageAllowList": [
+          "@karakeep/*",
+          "nuqs",
+          "next-auth",
+          "@tanstack/react-query",
+          "@tanstack/react-query-devtools",
+          "@trpc/*",
+          "react-i18next",
+          "i18next",
+          "i18next-resources-to-backend",
+          "next-themes",
+          "@radix-ui/*",
+          "react-hook-form",
+          "lucide-react",
+          "sonner"
+        ],
+        "envFiles": ["../../.env"],
+        "maxFiberCount": 20000
+      },
+      "notes": "The setup script writes the repository `.env` (SQLite `DATA_DIR`, NextAuth secret) and symlinks it into `apps/web` so `next dev` loads it; `pnpm db:migrate` creates the database. `/` redirects unauthenticated visitors to `/signin`, which is captured directly. The background workers, Meilisearch and the headless Chrome container are not started (not needed for the sign-in page). Runs on Node 22 rather than the repository's `.nvmrc` 24: `better-sqlite3@11.3.0` has no Node 24 prebuild and its locally compiled binary aborts `next-server` (`RemoveEnvironmentCleanupHook` assertion) when Next tears down a worker."
+    },
+    {
+      "id": "linkwarden",
+      "repository": "https://github.com/linkwarden/linkwarden",
+      "revision": "22723575b04503eb67c9733c63d55179c069903d",
+      "description": "Linkwarden login page (Next pages router, Yarn 4 monorepo, Prisma over a local PostgreSQL container)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "yarn install",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/linkwarden-setup.sh\""],
+      "services": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-linkwarden-pg 5451 linkwarden"
+      ],
+      "dev": "yarn web:dev",
+      "url": "http://localhost:3000/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "apps/web",
+        "route": "/login",
+        "externalPackageAllowList": [
+          "@linkwarden/*",
+          "next-i18next",
+          "hoist-non-react-statics",
+          "react-is",
+          "react-i18next",
+          "next-auth",
+          "@tanstack/react-query",
+          "react-hot-toast",
+          "@radix-ui/*"
+        ],
+        "envFiles": ["../../.env"],
+        "maxFiberCount": 20000
+      },
+      "notes": "The root `web:dev` script runs `next dev` under dotenv with the repository `.env` written by the setup script (Postgres URL, NextAuth secret, credentials login enabled). The worker process is not started."
+    },
+    {
+      "id": "formbricks",
+      "repository": "https://github.com/formbricks/formbricks",
+      "revision": "1380c81bffe44f3ea9e7ff0d9a95fd37044ddc83",
+      "description": "Formbricks web app fresh-instance setup intro page (Next app router + Turbopack, pnpm + Turborepo monorepo, Prisma over local PostgreSQL and Valkey containers)",
+      "framework": "next-app",
+      "workingDirectory": "apps/web",
+      "install": "pnpm install --frozen-lockfile",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/formbricks-setup.sh\""],
+      "services": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-formbricks-pg 5452 formbricks pgvector/pgvector:pg17",
+        "bash \"$BIPPY_CORPUS_SCRIPTS/redis.sh\" bippy-formbricks-redis 6380"
+      ],
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/setup/intro",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": "apps/web",
+        "route": "/setup/intro",
+        "envFiles": ["../../.env"],
+        "externalPackageAllowList": ["@radix-ui/*", "react-i18next", "react-hot-toast"],
+        "maxFiberCount": 20000
+      },
+      "notes": "The setup script copies `.env.example` to `.env` with generated secrets, the corpus Postgres/Valkey URLs and telemetry disabled, symlinks it into `apps/web`, builds the workspace packages `@formbricks/web#dev` depends on and applies the Prisma migrations. Mailhog and the S3 store from `docker-compose.dev.yml` are not started. With an empty database every auth page's layout `redirect()`s to `/setup/intro` (a database fact), so that page is captured directly."
+    },
+    {
+      "id": "plane",
+      "repository": "https://github.com/makeplane/plane",
+      "revision": "4225bc59de784f8991a8c30de77ca8b2b3fd8cc7",
+      "description": "Plane web app sign-in page (React Router framework mode with ssr: false, pnpm + Turborepo monorepo, Django API from the repository's Docker development stack)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "pnpm install --frozen-lockfile",
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/plane-services.sh\""],
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/plane-setup.sh\""],
+      "dev": "pnpm turbo run dev --filter=web",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": "apps/web",
+        "entry": "app/routes.ts",
+        "route": "/",
+        "envFiles": [".env"],
+        "maxFiberCount": 20000,
+        "externalPackageAllowList": ["@plane/*", "next-themes", "swr"]
+      },
+      "notes": "`plane-services.sh` copies the three `.env.example` files and brings up `docker-compose-local.yml` (PostgreSQL, Valkey, RabbitMQ, MinIO, migrator, API on :8000) with `plane-compose.override.yml`, which unpublishes the database/cache host ports so they cannot collide with the other corpus containers. `turbo run dev --filter=web` builds the workspace packages first (they export `dist/`), then runs `react-router dev --port 3000`. `plane-setup.sh` symlinks `@tailwindcss/postcss` (a dependency of `packages/tailwind-config` only) into `apps/web/node_modules` because `apps/web/postcss.config.js` re-exports the shared config and postcss-load-config resolves plugin names from `apps/web`. Run with `--corpus-dir` outside this monorepo: `@react-router/dev` pre-bundles `react-router-dom` whenever `require.resolve` finds one from the app root, and a checkout nested under bippy picks up bippy's unrelated `react-router-dom@6`, which fails esbuild's optimizer against `react-router@7`."
+    },
+    {
+      "id": "twenty",
+      "repository": "https://github.com/twentyhq/twenty",
+      "revision": "6dd1e8a4712ab80ad76f2fbd4badf125f2f0b47d",
+      "description": "Twenty CRM front sign-in page (Vite SPA with Jotai + Apollo, Yarn 4 + Nx monorepo, NestJS server over local PostgreSQL + Redis containers)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 yarn install",
+      "setup": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 bash \"$BIPPY_CORPUS_SCRIPTS/twenty-setup.sh\""
+      ],
+      "services": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-twenty-pg 5455 default",
+        "bash \"$BIPPY_CORPUS_SCRIPTS/redis.sh\" bippy-twenty-redis 6381"
+      ],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 env -u FORCE_COLOR npx nx run-many -t start -p twenty-server twenty-front",
+      "url": "http://localhost:3001/welcome",
+      "waitForSelector": "form",
+      "readyTimeoutMs": 900000,
+      "settleMs": 15000,
+      "static": {
+        "rootDirectory": "packages/twenty-front",
+        "entry": "src/index.tsx",
+        "route": "/welcome",
+        "envFiles": [".env"],
+        "externalPackageAllowList": ["twenty-shared"],
+        "maxFiberCount": 20000
+      },
+      "notes": "The setup script copies both `.env.example` files, points the server at the corpus PostgreSQL/Redis containers and runs `nx run twenty-server:database:init` (builds the server, creates the schema, applies instance migrations). `nx run-many -t start` runs the NestJS server (:3000) and the Vite dev server (:3001) together; the worker is not started. `twenty-shared` (a workspace package the front resolves through its built `dist/`) holds the `AppPath` route constants; `twenty-ui` is not analyzed because materializing its subtree overflows the stack / heap (see results residuals)."
+    },
+    {
+      "id": "langfuse",
+      "repository": "https://github.com/langfuse/langfuse",
+      "revision": "1e3535e126fc918781f45753706ff0f576b12175",
+      "description": "Langfuse web sign-in page (Next pages router, pnpm + Turborepo monorepo, Prisma over the repository's Docker development stack)",
+      "framework": "next-pages",
+      "workingDirectory": "web",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 pnpm install --frozen-lockfile",
+      "setup": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 bash \"$BIPPY_CORPUS_SCRIPTS/langfuse-setup.sh\""
+      ],
+      "services": ["docker compose -f docker-compose.dev.yml up -d --wait"],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 pnpm dev",
+      "url": "http://localhost:3000/auth/sign-in",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": "web",
+        "route": "/auth/sign-in",
+        "envFiles": ["../.env"],
+        "externalPackageAllowList": ["@trpc/*", "@tanstack/react-query", "@radix-ui/*"],
+        "maxFiberCount": 20000
+      },
+      "notes": "`docker-compose.dev.yml` publishes PostgreSQL :5432, ClickHouse :8123/:9000, Redis :6379 and MinIO :9090 on their default ports. The setup script copies `.env.dev.example` to `.env` (telemetry disabled), generates the Prisma client, builds `@langfuse/shared` (the web app resolves its `dist/`) and applies the Prisma migrations; the ClickHouse migrations are not applied (they need the golang-migrate CLI and the sign-in page does not query ClickHouse)."
+    },
+    {
+      "id": "teable",
+      "repository": "https://github.com/teableio/teable",
+      "revision": "bda82ee5c1553e560a8db7f3ac9ff1131d7c3628",
+      "description": "Teable login page (Next pages router served by the NestJS backend, pnpm monorepo, Prisma over a local PostgreSQL container)",
+      "framework": "next-pages",
+      "workingDirectory": "apps/nestjs-backend",
+      "install": "pnpm install --frozen-lockfile",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/teable-setup.sh\""],
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-teable-pg 5453 teable"],
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/auth/login",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": "apps/nextjs-app",
+        "route": "/auth/login",
+        "envFiles": [".env.development.local", ".env.development"],
+        "maxFiberCount": 20000,
+        "externalPackageAllowList": [
+          "next-i18next",
+          "react-i18next",
+          "@teable/*",
+          "@radix-ui/*",
+          "@tanstack/react-query"
+        ]
+      },
+      "notes": "Teable's backend (`nest start --webpackPath ./webpack.dev.js -w`) embeds the Next.js app and reads `apps/nextjs-app/.env.development{,.local}`; the setup script writes the `.local` override with the corpus PostgreSQL URL, generates both Prisma clients, deploys both schemas and runs `pnpm build:packages` (the workspace packages export `dist/`)."
+    },
+    {
+      "id": "typebot",
+      "repository": "https://github.com/baptisteArno/typebot.io",
+      "revision": "67c7c86b1a9cb255260d562446ba5010327382b7",
+      "description": "Typebot builder sign-in page (Next pages router, Bun + Nx monorepo, Prisma over a local PostgreSQL container)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 bun install",
+      "setup": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 bash \"$BIPPY_CORPUS_SCRIPTS/typebot-setup.sh\""
+      ],
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-typebot-pg 5454 typebot"],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 bunx nx dev builder",
+      "url": "http://localhost:3000/signin",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": "apps/builder",
+        "route": "/signin",
+        "envFiles": ["../../.env"],
+        "externalPackageAllowList": [
+          "@typebot.io/*",
+          "@tolgee/react",
+          "nuqs",
+          "next-themes",
+          "@tanstack/react-query",
+          "next-auth",
+          "@radix-ui/*",
+          "@base-ui/react"
+        ],
+        "maxFiberCount": 20000
+      },
+      "notes": "Nx loads the repository `.env` into every task, so the setup script copies `.env.dev.example` to `.env` with the corpus PostgreSQL URL and runs the Prisma migrations through `nx migrate:deploy prisma`. `nx dev builder` builds `@typebot.io/react` first and then runs `next dev` on :3000; the viewer, MinIO and Redis from `docker-compose.dev.yml` are not started."
     },
     {
       "id": "material-kit-react",

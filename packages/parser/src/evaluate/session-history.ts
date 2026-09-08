@@ -18,7 +18,11 @@ import {
 export interface SessionHistory {
   route: string | null;
   state: StaticValue;
+  /** `popstate`/`hashchange` listeners: they fire only when the entry is traversed, not on `pushState`/`replaceState`. */
+  traversalListeners: Set<StaticValue>;
 }
+
+export const HISTORY_TRAVERSAL_EVENTS: ReadonlySet<string> = new Set(["popstate", "hashchange"]);
 
 const HISTORY_NAME = /^(?:(?:window|globalThis|self)\.)?history$/;
 
@@ -33,6 +37,7 @@ export const createSessionHistory = (
     page?.historyState === undefined
       ? unknownValue("history.state")
       : capturedValue(page.historyState, "history.state"),
+  traversalListeners: new Set(),
 });
 
 export const getHistoryMember = (history: SessionHistory, name: string): StaticValue | null => {
@@ -59,6 +64,7 @@ export const callHistoryMethod = (
   methodName: string,
   args: StaticValue[],
   location: SourceLocation | null,
+  markEscaped: (value: StaticValue) => void,
 ): StaticValue | null => {
   const [state = UNDEFINED_VALUE, , url] = args;
   switch (methodName) {
@@ -77,6 +83,7 @@ export const callHistoryMethod = (
     case "go":
       history.route = null;
       history.state = unknownValue(`history.state after history.${methodName}()`, location);
+      for (const listener of history.traversalListeners) markEscaped(listener);
       return UNDEFINED_VALUE;
     default:
       return null;

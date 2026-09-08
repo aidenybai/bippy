@@ -6,6 +6,7 @@ import {
   unmountClassInstance,
 } from "../evaluate/class-component.js";
 import type { ContextReader, EvaluationContext } from "../evaluate/context.js";
+import { ComponentKindError } from "../errors.js";
 import { providedContextValue } from "../evaluate/react-calls.js";
 import {
   beginHookPass,
@@ -34,10 +35,11 @@ import {
 } from "../evaluate/values.js";
 import { nativeObjectValue } from "../evaluate/native-values.js";
 import { formatSourceLocation } from "../parse/source-location.js";
+import { isClientModule } from "../graph/module-record.js";
+import { getFunctionComponent } from "../react/element-type.js";
 import type {
   ComponentDefinition,
   ContextDefinition,
-  ModuleRecord,
   RenderEnvironment,
   Scope,
   SourceLocation,
@@ -48,6 +50,7 @@ import type {
   StaticObjectValue,
   StaticValue,
   StubComponent,
+  StubHooks,
   StubRenderTools,
 } from "../types.js";
 import { ForwardRefTag } from "../work-tags.js";
@@ -86,7 +89,6 @@ const MAX_RENDER_PHASE_UPDATES = 25;
 // Every alternative of a branch is materialized, so nested branches multiply the
 // work; deviations from the preferred path deeper than this become wildcards.
 const MAX_ALTERNATIVE_DEPTH = 2;
-const USE_CLIENT_DIRECTIVE = "use client";
 
 /** Tags whose `children` React DOM either rejects (void elements) or never reconciles (`textarea`, `noscript`). */
 const CHILDLESS_HOST_TAGS = new Set([
@@ -200,6 +202,7 @@ interface ContextRead {
 /** What a proxy last committed (its `current`), so an update that changes nothing bails out as React's would. */
 interface CommittedRender {
   input: ProxyInput;
+  context: MaterializeContext;
   node: ReactNode;
   contextReads: ContextRead[];
   componentContext: EvaluationContext | null;
@@ -221,8 +224,11 @@ interface ClassProxyHost {
   queueCommitWork: (work: EffectPhaseWork) => void;
 }
 
-const createProxyInstance = (context: MaterializeContext): ProxyInstance => ({
-  frame: createHookFrame(context.isStrictMode),
+const createProxyInstance = (
+  context: MaterializeContext,
+  interpreter: Interpreter,
+): ProxyInstance => ({
+  frame: createHookFrame(context.isStrictMode, (cell) => interpreter.recordStateUpdate(cell)),
   passCount: 0,
   isRenderedSinceCommit: false,
   committed: null,
@@ -273,30 +279,37 @@ export class StaticThrowError extends Error {
   }
 }
 
-const isClientModule = (module: ModuleRecord): boolean =>
-  module.directives.includes(USE_CLIENT_DIRECTIVE);
+const isClientComponent = (component: ComponentDefinition): boolean =>
+  component.isClientReference || isClientModule(component.module);
 
 const isClassNode = (node: ComponentDefinition["node"]): node is Class =>
   node.type === "ClassDeclaration" || node.type === "ClassExpression";
 
 /**
  * A component's React identity is its closure: the same function node evaluated
- * in two scopes (e.g. a HOC applied twice) yields two distinct component types.
+ * in two scopes (e.g. a HOC applied twice) yields two distinct component types,
+ * as does each `bind` of the same function.
  */
+const getComponentIdentity = (component: ComponentDefinition): Scope | StaticValue[] =>
+  component.boundArgs ?? component.scope;
+
 class ComponentCache<T> {
-  private readonly byNode = new WeakMap<ComponentDefinition["node"], WeakMap<Scope, T>>();
+  private readonly byNode = new WeakMap<
+    ComponentDefinition["node"],
+    WeakMap<Scope | StaticValue[], T>
+  >();
 
   get(component: ComponentDefinition): T | undefined {
-    return this.byNode.get(component.node)?.get(component.scope);
+    return this.byNode.get(component.node)?.get(getComponentIdentity(component));
   }
 
   set(component: ComponentDefinition, value: T): void {
-    let byScope = this.byNode.get(component.node);
-    if (!byScope) {
-      byScope = new WeakMap();
-      this.byNode.set(component.node, byScope);
+    let byIdentity = this.byNode.get(component.node);
+    if (!byIdentity) {
+      byIdentity = new WeakMap();
+      this.byNode.set(component.node, byIdentity);
     }
-    byScope.set(component.scope, value);
+    byIdentity.set(getComponentIdentity(component), value);
   }
 }
 
@@ -347,7 +360,9 @@ const applyDefaultProps = (
 
 const toFunctionValue = (component: ComponentDefinition): StaticFunctionValue => {
   const node = component.node;
-  if (isClassNode(node)) throw new Error(`${describeComponent(component)} is a class component`);
+  if (isClassNode(node)) {
+    throw new ComponentKindError(`${describeComponent(component)} is a class component`);
+  }
   return {
     kind: "function",
     node,
@@ -357,12 +372,14 @@ const toFunctionValue = (component: ComponentDefinition): StaticFunctionValue =>
     superBinding: null,
     name: component.name,
     properties: component.properties,
+    boundArgs: component.boundArgs,
+    boundThis: component.boundThis,
   };
 };
 
 const toClassValue = (component: ComponentDefinition): StaticClassValue => {
   if (!component.classBody) {
-    throw new Error(`${describeComponent(component)} is not a class component`);
+    throw new ComponentKindError(`${describeComponent(component)} is not a class component`);
   }
   return {
     kind: "class",
@@ -515,7 +532,7 @@ export class Materializer {
         return this.branchNode(
           [this.toNode(value.value, context, isTopLevel), null],
           value.reason,
-          0,
+          value.isAbsentPreferred ? 1 : 0,
           isTopLevel,
           value.location,
         );
@@ -616,8 +633,8 @@ export class Materializer {
     context: MaterializeContext,
     isTopLevel: boolean,
   ): ReactNode {
-    if (element.type.kind === "function" && this.isServerComponentElement(element, context)) {
-      const component = element.type.component;
+    const component = this.getServerComponent(element, context);
+    if (component) {
       const server = this.evaluateComposite(
         component,
         element.props,
@@ -633,6 +650,18 @@ export class Materializer {
           ),
       );
       return this.toNode(server.rendered, server.childContext, isTopLevel);
+    }
+    if (
+      element.type.kind === "stub" &&
+      element.type.stub.isServerComponent === true &&
+      this.isServerEnvironment(element, context)
+    ) {
+      const serverContext = { ...context, environment: element.environment ?? context.environment };
+      const rendered = element.type.stub.render(
+        element.props,
+        this.stubTools(serverContext, element.location),
+      );
+      return this.toNode(rendered, { ...serverContext, depth: context.depth + 1 }, isTopLevel);
     }
     return this.createNode(element.type, element.key, element.props, element.location, context);
   }
@@ -898,7 +927,7 @@ export class Materializer {
         return preferred ? this.toAttribute(key, preferred, context) : undefined;
       }
       case "optional":
-        return this.toAttribute(key, value.value, context);
+        return value.isAbsentPreferred ? undefined : this.toAttribute(key, value.value, context);
       case "function":
       case "native-function":
       case "method":
@@ -954,6 +983,13 @@ export class Materializer {
     return context;
   }
 
+  /** What a ref to a host component holds after commit: the document's node, or an instance no document describes. */
+  private hostInstanceValue(node: Element | null): StaticValue {
+    if (node === null) return NULL_VALUE;
+    const host = this.interpreter.hostDocument;
+    return host ? nativeObjectValue(node, host) : unknownValue("host instance");
+  }
+
   private hostRef(
     ref: StaticValue,
     location: SourceLocation | null,
@@ -973,7 +1009,7 @@ export class Materializer {
       callback: (node) => {
         this.interpreter.assignRef(
           ref,
-          node ? nativeObjectValue(node) : NULL_VALUE,
+          this.hostInstanceValue(node),
           binding.owner,
           binding.location,
         );
@@ -1007,6 +1043,7 @@ export class Materializer {
     let proxy = this.classProxies.get(component);
     if (!proxy) {
       const classValue = toClassValue(component);
+      const { interpreter } = this;
       const beginLayoutPhase = (context: MaterializeContext): void => {
         this.beginLayoutPhase();
         this.commitSuspenseScope(context.suspenseScope);
@@ -1028,7 +1065,7 @@ export class Materializer {
           getInstance: (caughtError) => {
             let instance = this.instances.get(caughtError);
             if (!instance) {
-              instance = createProxyInstance(this.props.input.context);
+              instance = createProxyInstance(this.props.input.context, interpreter);
               this.instances.set(caughtError, instance);
             }
             return instance;
@@ -1201,9 +1238,27 @@ export class Materializer {
 
   private renderStub(input: ProxyInput, stub: StubComponent): ReactNode {
     const { context, props, location } = input;
+    const { useState, useRef, useEffect } = this.runtime.react;
+    const rendered = stub.render(
+      props,
+      this.stubTools(context, location, {
+        useState: (initial) => useState(initial),
+        useRef: (initial) => useRef(initial),
+        useEffect: (effect, dependencies) => useEffect(effect, dependencies),
+      }),
+    );
+    return this.finishRender(rendered, { ...context, depth: context.depth + 1 }, input);
+  }
+
+  private stubTools(
+    context: MaterializeContext,
+    location: SourceLocation | null,
+    hooks: StubHooks | null = null,
+  ): StubRenderTools {
     const tools: StubRenderTools = {
       readContext: (definition) =>
         providedContextValue(this.interpreter, definition, this.readContext(definition), location),
+      hooks,
       callAwaited: (callee, args) => this.callAwaited(callee, args, context, location),
       call: (callee, args) => {
         if (callee.kind === "function") {
@@ -1212,15 +1267,26 @@ export class Materializer {
         if (callee.kind === "native-function") return callee.call(args, tools);
         return unknownValue(`call of ${describeValue(callee)}`, location);
       },
+      callDeferred: (callee, args) =>
+        callee.kind === "function"
+          ? this.interpreter.callDeferred(
+              callee,
+              args,
+              this.moduleContext(callee, context),
+              location,
+            )
+          : tools.call(callee, args),
       captured: (captured, name) => this.interpreter.captured(captured, name),
       markEscaped: (value) => this.interpreter.markEscaped(value),
       queueMicrotask: (task) => this.interpreter.timers.queueMicrotask(task),
+      isDeferred: () => this.interpreter.timers.isDeferred,
       setProperty: (object, key, value) => this.interpreter.assignOwnProperty(object, key, value),
+      realm: this.interpreter.getRealm(context.environment),
       nameHint: null,
       templateArgumentNames: null,
+      environment: context.environment,
     };
-    const rendered = stub.render(props, tools);
-    return this.finishRender(rendered, { ...context, depth: context.depth + 1 }, input);
+    return tools;
   }
 
   renderFunctionProxy(
@@ -1230,11 +1296,12 @@ export class Materializer {
   ): ReactNode {
     const { useRef, useState, useEffect, useLayoutEffect } = this.runtime.react;
     const instanceRef = useRef<ProxyInstance | null>(null);
-    instanceRef.current ??= createProxyInstance(input.context);
+    instanceRef.current ??= createProxyInstance(input.context, this.interpreter);
     const [, setPass] = useState(0);
     const props = applyDefaultProps(component, input.props);
     const { node, mount, unmount } = this.renderStateful(
       input,
+      input.context,
       component,
       instanceRef.current,
       () => setPass((pass) => pass + 1),
@@ -1298,6 +1365,7 @@ export class Materializer {
    */
   private renderStateful(
     input: ProxyInput,
+    context: MaterializeContext,
     component: ComponentDefinition,
     instance: ProxyInstance,
     rerender: () => void,
@@ -1310,6 +1378,7 @@ export class Materializer {
       changedCells.length === 0 &&
       previous &&
       isRetainedInput(previous.input, input) &&
+      previous.context.ignoresMaybeThrows === context.ignoresMaybeThrows &&
       previous.contextReads.every((read) => this.readContext(read.definition) === read.value)
     ) {
       return this.commitRender(instance, previous, input.location);
@@ -1362,6 +1431,7 @@ export class Materializer {
     const node = this.finishRender(evaluation.rendered, evaluation.childContext, input);
     instance.rendered = {
       input,
+      context,
       node,
       contextReads,
       componentContext: evaluation.componentContext,
@@ -1424,6 +1494,7 @@ export class Materializer {
     ): ReactNode => {
       const { node, mount, unmount } = this.renderStateful(
         input,
+        boundaryContext,
         component,
         host.getInstance(caughtError),
         host.rerender,
@@ -1471,7 +1542,7 @@ export class Materializer {
     if (certainty === "always") throw new StaticThrowError(describeThrow(rendered), false);
     if (certainty === "maybe") {
       if (input.context.errorBoundaryDepth > 0 && !input.context.ignoresMaybeThrows) {
-        throw new StaticThrowError("component may throw", true);
+        throw new StaticThrowError(`component may throw: ${describeThrow(rendered)}`, true);
       }
       return this.toNode(withoutThrows(rendered), childContext, true);
     }
@@ -1540,15 +1611,20 @@ export class Materializer {
   /**
    * Under RSC a function component created by server code renders on the server
    * unless its module (or the module that created the element) opted into the
-   * client bundle with `"use client"`.
+   * client bundle with `"use client"`. Flight unwraps `memo` and calls a
+   * `forwardRef` render function with an undefined ref the same way.
    */
-  private isServerComponentElement(
+  private isServerEnvironment(element: StaticElementValue, context: MaterializeContext): boolean {
+    return this.serverComponents && (element.environment ?? context.environment) !== "client";
+  }
+
+  private getServerComponent(
     element: StaticElementValue,
     context: MaterializeContext,
-  ): boolean {
-    if (!this.serverComponents || element.type.kind !== "function") return false;
-    const createdIn = element.environment ?? context.environment;
-    return createdIn !== "client" && !isClientModule(element.type.component.module);
+  ): ComponentDefinition | null {
+    if (!this.isServerEnvironment(element, context)) return null;
+    const component = getFunctionComponent(element.type);
+    return component && !isClientComponent(component) ? component : null;
   }
 
   private componentEnvironment(
@@ -1556,7 +1632,7 @@ export class Materializer {
     context: MaterializeContext,
   ): RenderEnvironment | null {
     if (!this.serverComponents) return null;
-    if (context.environment === "client" || isClientModule(component.module)) return "client";
+    if (context.environment === "client" || isClientComponent(component)) return "client";
     return isClassNode(component.node) ? "client" : "server";
   }
 

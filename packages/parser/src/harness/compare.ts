@@ -14,13 +14,13 @@ const BUNDLER_PLACEHOLDER_NAME = /^_[a-z]\d*$/;
 
 const isBundlerPlaceholderName = (name: string): boolean => BUNDLER_PLACEHOLDER_NAME.test(name);
 
-// esbuild dedupes a binding that collides with one in its enclosing scope (Babel's
-// `var X = function () { function X() {} … }`) by appending a counter: `X2`, `X3`.
-const BUNDLER_DEDUPE_COUNTER = /^[1-9]\d*$/;
+// A binding that collides with another in the bundled scope is renamed with a
+// counter: `Toaster2` by esbuild (Vite dev pre-bundling), `Toaster$1` by rollup.
+const BUNDLER_DEDUPE_SUFFIX = /^\$?\d+$/;
 
-const isBundlerRenameOf = (staticName: string, runtimeName: string): boolean =>
-  runtimeName.startsWith(staticName) &&
-  BUNDLER_DEDUPE_COUNTER.test(runtimeName.slice(staticName.length));
+const isBundlerDedupedName = (sourceName: string, runtimeName: string): boolean =>
+  runtimeName.startsWith(sourceName) &&
+  BUNDLER_DEDUPE_SUFFIX.test(runtimeName.slice(sourceName.length));
 
 export interface ComparisonOptions {
   compareKeys?: boolean;
@@ -521,7 +521,7 @@ class Matcher {
     )
       return false;
     if (pattern.name === null || actual.name === null || pattern.name === actual.name) return true;
-    if (isBundlerRenameOf(pattern.name, actual.name)) return true;
+    if (isBundlerDedupedName(pattern.name, actual.name)) return true;
     return isClassTag(actual.tag) && isBundlerPlaceholderName(actual.name);
   }
 
@@ -542,7 +542,7 @@ class Matcher {
     if (pattern.runtimeNames === null) return true;
     const runtimeName = actual.name;
     return pattern.runtimeNames.some(
-      (name) => name === runtimeName || isBundlerRenameOf(name, runtimeName),
+      (name) => name === runtimeName || isBundlerDedupedName(name, runtimeName),
     );
   }
 
