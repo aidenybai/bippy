@@ -57,6 +57,16 @@
         "default": "./dist/install-hook-only.cjs"
       }
     },
+    "./reconciler": {
+      "import": {
+        "types": "./dist/reconciler.d.ts",
+        "default": "./dist/reconciler.js"
+      },
+      "require": {
+        "types": "./dist/reconciler.d.cts",
+        "default": "./dist/reconciler.cjs"
+      }
+    },
     "./source": {
       "import": {
         "types": "./dist/source.d.ts",
