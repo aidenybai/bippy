@@ -1,5 +1,7 @@
 import { Window } from "happy-dom";
 import { DEFAULT_BROWSER_ENVIRONMENT } from "../evaluate/media-query.js";
+import type { HostDocument } from "../host/host-document.js";
+import { loadHostRealm } from "../host/host-realm.js";
 
 const WINDOW_GLOBALS = ["window", "self", "document", "navigator", "location", "history"];
 
@@ -71,6 +73,38 @@ const installWindow = (): void => {
   }
   installedWindow = window;
   observePreloadLinks();
+};
+
+/** An object of an interface the DOM declares and the language does not: a node, range, selection, token list, style declaration. */
+const isDomObject = (value: object): boolean => {
+  const browser = loadHostRealm("browser");
+  const language = loadHostRealm("ecmascript");
+  for (
+    let prototype: object | null = Object.getPrototypeOf(value);
+    prototype !== null;
+    prototype = Object.getPrototypeOf(prototype)
+  ) {
+    const interfaceName = prototype.constructor.name;
+    if (language.getInterface(interfaceName) !== null) return false;
+    if (browser.getInterface(interfaceName) !== null) return true;
+  }
+  return false;
+};
+
+/** The installed DOM as the document React DOM renders into and interpreted code reads from. */
+export const createDomHostDocument = (): HostDocument => {
+  ensureDomGlobals();
+  const browser = loadHostRealm("browser");
+  return {
+    document,
+    globalObject: window,
+    isInstanceOf: (value, interfaceName) => {
+      if (browser.getInterface(interfaceName) === null) return null;
+      const installed: unknown = Reflect.get(window, interfaceName);
+      return typeof installed === "function" ? value instanceof installed : null;
+    },
+    ownsObject: isDomObject,
+  };
 };
 
 const collectPropertyNames = (target: object): Set<string> => {

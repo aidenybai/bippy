@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "partial",
+  "minCoverage": 1,
+  "notes": "Radix ScrollArea's auto scrollbar: a callback ref stores the viewport node in state, a layout effect then observes it with a ResizeObserver whose callback reaches the visibility setter through requestAnimationFrame, a stable callback ref and a debounced setTimeout. The observer decides visibility from layout the analysis cannot measure, so the scrollbar stays a residual branch instead of being decided absent."
+}

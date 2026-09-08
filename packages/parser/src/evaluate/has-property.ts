@@ -1,10 +1,9 @@
 import {
   FUNCTION_OWN_KEYS,
-  getWrapperKindForTag,
+  getStubOwnKeys,
   REACT_ELEMENT_OWN_KEYS,
   WRAPPER_OWN_KEYS,
 } from "../react/element-shape.js";
-import { FunctionComponentTag } from "../work-tags.js";
 import type {
   StaticClassValue,
   StaticElementType,
@@ -63,11 +62,10 @@ const hasComponentProperty = (type: StaticElementType, name: string): StaticValu
         : FALSE_VALUE;
     case "stub": {
       if (type.stub.properties?.has(name)) return TRUE_VALUE;
-      if (name === "displayName") return type.stub.displayName === null ? null : TRUE_VALUE;
-      const wrapperKind = getWrapperKindForTag(type.stub.tag ?? FunctionComponentTag);
-      if (wrapperKind !== null)
-        return WRAPPER_OWN_KEYS[wrapperKind].has(name) ? TRUE_VALUE : FALSE_VALUE;
-      return FUNCTION_OWN_KEYS.has(name) ? null : FALSE_VALUE;
+      if (name === "displayName") return primitiveValue(type.stub.displayName !== null);
+      const ownKeys = getStubOwnKeys(type.stub.tag);
+      if (!ownKeys.has(name)) return FALSE_VALUE;
+      return ownKeys === FUNCTION_OWN_KEYS ? null : TRUE_VALUE;
     }
     default:
       return null;

@@ -10,7 +10,8 @@ import type {
   StaticValue,
   StubRenderTools,
 } from "../types.js";
-import { callUncertainCallback } from "./builtin-calls.js";
+import { type CallableValue, callUncertainCallback, isCallable } from "./builtin-calls.js";
+import { countChildrenExactly, mapChildrenExactly } from "./react-children.js";
 import type { EvaluationContext } from "./context.js";
 import {
   escapeStateCell,
@@ -26,11 +27,12 @@ import {
   componentReference,
   describeValue,
   FALSE_VALUE,
-  getListLength,
+  getKnownObjectKeys,
   getObjectProperty,
   isNullish,
   listValue,
   mapValue,
+  NULL_VALUE,
   objectFromRecord,
   objectValue,
   optionalValue,
@@ -39,6 +41,39 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "./values.js";
+
+const ELEMENT_TYPE_TAG_KEY = "$$typeof";
+
+const IDENTITY_MAPPER: StaticNativeFunctionValue = {
+  kind: "native-function",
+  name: "toArray",
+  call: ([child = NULL_VALUE]) => child,
+};
+
+/** `isValidElement`: `object.$$typeof === REACT_ELEMENT_TYPE`, so a program object whose keys are known and lack the tag is decided. */
+const isValidElementValue = (value: StaticValue): StaticValue => {
+  switch (value.kind) {
+    case "element":
+      return primitiveValue(true);
+    case "object": {
+      const keys = getKnownObjectKeys(value);
+      return keys !== null && !keys.includes(ELEMENT_TYPE_TAG_KEY)
+        ? FALSE_VALUE
+        : unknownPrimitiveValue("boolean", "isValidElement on dynamic value");
+    }
+    case "unknown":
+    case "optional":
+    case "external":
+    case "proxy":
+      return unknownPrimitiveValue("boolean", "isValidElement on dynamic value");
+    case "unknown-primitive":
+      return value.primitiveType === "any"
+        ? unknownPrimitiveValue("boolean", "isValidElement on dynamic value")
+        : FALSE_VALUE;
+    default:
+      return FALSE_VALUE;
+  }
+};
 
 /** `mountState`/`mountReducer`: the initializer runs on mount only, twice under Strict Mode. */
 const stateHook = (
@@ -67,7 +102,12 @@ const stateHook = (
     kind: "native-function",
     name: `set ${name}`,
     call: ([action], tools) => {
-      queueStateUpdate(frame, cell, reduce(action, cell.next ?? cell.current, tools));
+      queueStateUpdate(
+        frame,
+        cell,
+        reduce(action, cell.next ?? cell.current, tools),
+        tools.isDeferred(),
+      );
       return UNDEFINED_VALUE;
     },
     onEscape: () => escapeStateCell(frame, cell),
@@ -101,8 +141,8 @@ const externalStoreHook = (
   const handleStoreChange: StaticNativeFunctionValue = {
     kind: "native-function",
     name: "handleStoreChange",
-    call: () => {
-      queueStateUpdate(frame, cell, readSnapshot());
+    call: (_args, tools) => {
+      queueStateUpdate(frame, cell, readSnapshot(), tools.isDeferred());
       return UNDEFINED_VALUE;
     },
   };
@@ -215,16 +255,13 @@ const readContextValue = (
   return unknownValue(`useContext on ${describeValue(contextValue)}`, location);
 };
 
-const mapChildren = (
+/** Children whose shape is uncertain (repeats, branches, unknowns) are mapped item-wise without React's flattening or keys. */
+const mapUncertainChildren = (
   interpreter: Interpreter,
-  children: StaticValue | undefined,
-  callback: StaticValue | undefined,
+  children: StaticValue,
+  callback: CallableValue,
   context: EvaluationContext,
 ): StaticValue => {
-  if (!children || !callback || callback.kind !== "function")
-    return unknownValue("Children.map with dynamic callback");
-  if (children.kind === "primitive" && (children.value === null || children.value === undefined))
-    return children;
   if (children.kind === "list") {
     return listValue(
       children.items.map((item, index) =>
@@ -239,7 +276,7 @@ const mapChildren = (
               ),
               location: item.location,
             }
-          : interpreter.callFunction(callback, [item, primitiveValue(index)], context),
+          : interpreter.callValue(callback, [item, primitiveValue(index)], context, null),
       ),
     );
   }
@@ -255,28 +292,26 @@ const mapChildren = (
       location: children.location,
     };
   }
-  if (children.kind === "element" || children.kind === "primitive") {
-    return listValue([interpreter.callFunction(callback, [children, primitiveValue(0)], context)]);
-  }
   const uncertainContext = { ...context, uncertainDepth: context.uncertainDepth + 1 };
   if (children.kind === "branch") {
     return mapValue(children, (alternative) =>
-      mapChildren(interpreter, alternative, callback, uncertainContext),
+      mapChildren(interpreter, alternative, callback, undefined, uncertainContext),
     );
   }
   if (children.kind === "optional") {
     return optionalValue(
-      mapChildren(interpreter, children.value, callback, uncertainContext),
+      mapChildren(interpreter, children.value, callback, undefined, uncertainContext),
       children.reason,
       children.location,
     );
   }
   return {
     kind: "repeat",
-    item: interpreter.callFunction(
+    item: interpreter.callValue(
       callback,
       [unknownValue("child"), unknownPrimitiveValue("number", "index")],
       context,
+      null,
     ),
     location: null,
   };
@@ -306,24 +341,36 @@ const cloneElement = (
   };
 };
 
-const isValidElement = (value: StaticValue): StaticValue => {
-  if (value.kind === "element") return primitiveValue(true);
-  if (value.kind === "primitive" || value.kind === "list" || value.kind === "function")
-    return FALSE_VALUE;
-  return unknownPrimitiveValue("boolean", "isValidElement on dynamic value");
-};
-
-const childrenToArray = (children: StaticValue): StaticValue => {
-  if (children.kind === "list" || children.kind === "repeat") return children;
+const childrenToArray = (
+  interpreter: Interpreter,
+  children: StaticValue,
+  context: EvaluationContext,
+): StaticValue => {
   if (isNullish(children) === true) return listValue([]);
+  const mapped = mapChildrenExactly(interpreter, children, IDENTITY_MAPPER, undefined, context);
+  if (mapped) return mapped;
+  if (children.kind === "list" || children.kind === "repeat") return children;
   if (children.kind === "element" || children.kind === "primitive") return listValue([children]);
   return children;
 };
 
 const countChildren = (children: StaticValue): StaticValue => {
-  const asArray = childrenToArray(children);
-  if (asArray.kind === "list") return getListLength(asArray);
-  return unknownPrimitiveValue("number", "Children.count");
+  const count = countChildrenExactly(children);
+  return count === null ? unknownPrimitiveValue("number", "Children.count") : primitiveValue(count);
+};
+
+const mapChildren = (
+  interpreter: Interpreter,
+  children: StaticValue | undefined,
+  callback: StaticValue | undefined,
+  thisArg: StaticValue | undefined,
+  context: EvaluationContext,
+): StaticValue => {
+  if (!children || !isCallable(callback)) return unknownValue("Children.map with dynamic callback");
+  return (
+    mapChildrenExactly(interpreter, children, callback, thisArg, context) ??
+    mapUncertainChildren(interpreter, children, callback, context)
+  );
 };
 
 export const evaluateReactApiCall = (
@@ -371,7 +418,7 @@ export const evaluateReactApiCall = (
         ? mapValue(first, (element) => cloneElement(element, second, args.slice(2), location))
         : unknownValue("cloneElement of nothing", location);
     case "isValidElement":
-      return first ? mapValue(first, isValidElement) : FALSE_VALUE;
+      return first ? mapValue(first, isValidElementValue) : FALSE_VALUE;
     case "memo": {
       if (!first) return unknownValue("memo without a component", location);
       const inner = toElementType(first, null);
@@ -394,7 +441,8 @@ export const evaluateReactApiCall = (
       }
       return componentReference({
         kind: "forward-ref",
-        component: createFunctionComponentDefinition(first, first.name),
+        component: createFunctionComponentDefinition(first),
+        render: first,
         displayName: null,
         properties: new Map(),
       });
@@ -546,12 +594,14 @@ export const evaluateReactApiCall = (
     case "hydrate":
       return unknownValue(`${api}() root`, location);
     case "Children.map":
-      return mapChildren(interpreter, first, second, context);
+      return mapChildren(interpreter, first, second, third, context);
     case "Children.forEach":
-      mapChildren(interpreter, first, second, context);
+      mapChildren(interpreter, first, second, third, context);
       return UNDEFINED_VALUE;
     case "Children.toArray":
-      return first ? mapValue(first, childrenToArray) : listValue([]);
+      return first
+        ? mapValue(first, (children) => childrenToArray(interpreter, children, context))
+        : listValue([]);
     case "Children.count":
       return first ? mapValue(first, countChildren) : primitiveValue(0);
     case "Children.only":

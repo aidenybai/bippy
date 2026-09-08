@@ -79,7 +79,7 @@ const convertSvg = (svgText: string, rootDirectory: string): StaticValue => {
   if (convert === null) return unknownValue(`${PACKAGE_NAME} without ${CONVERTER_PACKAGE}`);
   const node = convert(svgText, { nodeOnly: true });
   if (!(node instanceof SVGSVGElement)) return unknownValue(`${PACKAGE_NAME} src is not an <svg>`);
-  return fromNativeValue(convert(node), `${CONVERTER_PACKAGE}()`);
+  return fromNativeValue(convert(node), `${CONVERTER_PACKAGE}()`, null);
 };
 
 const renderSettledSvg = (props: StaticObjectValue, project: ProjectContext): StaticValue => {

@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import path from "node:path";
 import type { Interpreter } from "../evaluate/interpreter.js";
 import { objectFromRecord, objectValue, primitiveValue, unknownValue } from "../evaluate/values.js";
@@ -161,6 +162,40 @@ const loadDefaultExport = (
 const componentName = (filePath: string): string => path.basename(filePath, path.extname(filePath));
 
 /**
+ * Runs `next.config.*` the way `next dev` does at startup so plugins register
+ * what they alias (next-intl's request configuration module), then loads that
+ * module's default export into the model.
+ */
+const loadNextConfig = (
+  renderer: StaticRenderer,
+  interpreter: Interpreter,
+  model: NextModel,
+): void => {
+  const rootDirectory = renderer.options.rootDirectory;
+  const configPath = findRouteFile(rootDirectory, "next.config");
+  if (!configPath) return;
+  const config = loadDefaultExport(renderer, interpreter, configPath);
+  if (!config) return;
+  const requestConfigPath = model.intl.getRequestConfigPath();
+  if (requestConfigPath === null) return;
+  const requestModulePath = path.resolve(rootDirectory, requestConfigPath);
+  const requestFile = existsSync(requestModulePath)
+    ? requestModulePath
+    : findRouteFile(path.dirname(requestModulePath), path.basename(requestModulePath));
+  if (!requestFile) {
+    interpreter.report(
+      "next-intl-request-config",
+      `next-intl request configuration ${requestConfigPath} not found`,
+      null,
+      "warning",
+    );
+    return;
+  }
+  const requestConfig = loadDefaultExport(renderer, interpreter, requestFile);
+  if (requestConfig) model.intl.setRequestConfig(requestConfig.component);
+};
+
+/**
  * Composes the route the way Next's app router does on the server: the page
  * element is wrapped, innermost first, by each segment's loading boundary,
  * template, and layout. Route props (`params`, `searchParams`) stay unknown.
@@ -195,6 +230,7 @@ export const renderNextAppRoute = (
 
     const leaf = segments[segments.length - 1];
     Object.assign(model.params, leaf.params);
+    loadNextConfig(renderer, interpreter, model);
     const pagePath = findPageFile(leaf.directory);
     if (!pagePath) return unknownValue(`no page for ${options.route}`);
 

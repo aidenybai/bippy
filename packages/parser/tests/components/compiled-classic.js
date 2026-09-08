@@ -47,6 +47,31 @@ function _objectWithoutProperties(source, excluded) {
   return target;
 }
 
+/** MUI's `Menu`: rest of an optional prop object, `{}` when it was never passed. */
+function Transitioned(props) {
+  var _props$TransitionProp = props.TransitionProps,
+    _ref = _props$TransitionProp === void 0 ? {} : _props$TransitionProp,
+    onEntering = _ref.onEntering,
+    TransitionProps = _objectWithoutPropertiesLoose(props.TransitionProps, ["onEntering"]),
+    other = _objectWithoutPropertiesLoose(props, ["TransitionProps"]);
+  var keys = Object.keys(TransitionProps);
+  return React.createElement(
+    keys.length === 0 ? "i" : "b",
+    _extends({}, other, { "data-entering": typeof onEntering }),
+    keys.length,
+  );
+}
+
+function _objectWithoutPropertiesLoose(source, excluded) {
+  if (source == null) return {};
+  var target = {};
+  for (var key in source) {
+    if (excluded.indexOf(key) >= 0) continue;
+    target[key] = source[key];
+  }
+  return target;
+}
+
 var Memoized = /*#__PURE__*/ React.memo(function Memoized(_ref) {
   var value = _ref.value;
   return React.createElement("code", null, value);
@@ -62,6 +87,10 @@ export default function CompiledClassic() {
       { title: "panel" },
       React.createElement(Memoized, { value: "memo" }),
       React.createElement(React.StrictMode, null, React.createElement("hr", null)),
+      React.createElement(Transitioned, { title: "bare" }),
+      React.createElement(Transitioned, {
+        TransitionProps: { onEntering: function () {}, timeout: 200 },
+      }),
     ),
   );
 }

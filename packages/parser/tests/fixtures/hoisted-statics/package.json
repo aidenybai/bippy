@@ -1,0 +1,8 @@
+{
+  "name": "fixture-hoisted-statics",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "hoist-non-react-statics": "3.3.2"
+  }
+}
