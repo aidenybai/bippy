@@ -236,6 +236,8 @@ export interface StubComponent {
   tag?: WorkTag;
   /** Statics the library hangs on the component (`Styled.withComponent`). */
   properties?: ReadonlyMap<string, StaticValue>;
+  /** The real module has no `"use client"`: under RSC an element server code creates renders on the server and leaves no fiber. */
+  isServerComponent?: boolean;
   render: (props: StaticObjectValue, tools: StubRenderTools) => StaticValue;
   /**
    * For build-time macros (Lingui's `<Trans>`): the props of the element the
@@ -272,6 +274,8 @@ export interface StubRenderTools {
   queueMicrotask: (task: () => void) => void;
   /** Assigns an own property of a modeled object, undone on the other paths of an enclosing fork like any heap write. */
   setProperty: (object: StaticObjectValue, key: string, value: StaticValue) => void;
+  /** Where the stub renders, as `typeof window` would tell it. */
+  environment: RenderEnvironment | null;
   /** Binding the call's result is assigned to, as build-time labelers (Emotion's babel/swc plugin) see it. */
   nameHint: string | null;
   /** For tagged templates, the identifier each `${expression}` is (null when not a bare identifier); null for other calls. */

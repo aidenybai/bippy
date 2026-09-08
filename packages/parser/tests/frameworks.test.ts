@@ -50,6 +50,27 @@ describe("next app router", () => {
     expect(tree).toMatch(/<LinkComponent>\n\s+<ContextProvider>\n\s+<a>\n\s+<LinkComponent>/);
   });
 
+  it("answers `in` checks against a modeled component's statics", async () => {
+    const { tree } = await render("next-app", { framework: "next-app", route: "/" });
+    expect(tree).toMatch(/<Slot>\n\s+<i>\n\s+<LinkComponent>/);
+    expect(tree).toMatch(/<Slot>\n\s+<b>\n\s+<Slottable>/);
+    expect(tree).not.toContain("__radixId");
+  });
+
+  it("elides server components wrapped in memo, like Flight does", async () => {
+    const { tree } = await render("next-app", { framework: "next-app", route: "/" });
+    expect(tree).toMatch(/<Slottable>\n\s+"slotted"\n\s+<header>\n\s+<ForwardRef>/);
+    expect(tree).not.toContain("<Hero>");
+    expect(tree).not.toContain("Memo");
+  });
+
+  it("models next/image as ForwardRef -> ForwardRef -> <img>, preloading only priority images", async () => {
+    const { tree } = await render("next-app", { framework: "next-app", route: "/" });
+    expect(tree).toMatch(
+      /<header>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>\n\s+<ImagePreload>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>\n\s+<main>/,
+    );
+  });
+
   it("nests segment layouts, loading boundaries and resolves dynamic params", async () => {
     const { tree, errors } = await render("next-app", {
       framework: "next-app",
@@ -94,6 +115,13 @@ describe("next pages router", () => {
   it("models next/dynamic as a forwardRef LoadableComponent rendering the loaded module", async () => {
     const { tree } = await render("next-pages", { framework: "next-pages", route: "/" });
     expect(tree).toMatch(/<h1>\n\s+<LoadableComponent>\n\s+<Widget>\n\s+<aside>/);
+  });
+
+  it("preloads next/image through next/head instead of ReactDOM.preload", async () => {
+    const { tree } = await render("next-pages", { framework: "next-pages", route: "/" });
+    expect(tree).toMatch(
+      /<ForwardRef>\n\s+<ForwardRef>\n\s+<img>\n\s+<ImagePreload>\n\s+<Head>\n\s+<SideEffect>/,
+    );
   });
 
   it("feeds dynamic segments into useRouter().query", async () => {

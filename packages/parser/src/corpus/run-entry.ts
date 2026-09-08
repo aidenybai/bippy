@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { renderFramework } from "../frameworks/render-framework.js";
-import { flattenTransparentFibers } from "../frameworks/framework-profile.js";
+import { dropInjectedFibers } from "../frameworks/framework-profile.js";
 import { getFrameworkProfile } from "../frameworks/profiles.js";
 import { BrowserCapturer, type BrowserCaptureResult } from "../harness/capture-browser.js";
 import { compareStaticToRuntime } from "../harness/compare-render.js";
@@ -230,11 +230,12 @@ const compareEntry = (
   const profile = getFrameworkProfile(entry.framework);
   const comparison = compareStaticToRuntime(
     staticResult,
-    flattenTransparentFibers(capture.snapshot, profile),
+    dropInjectedFibers(capture.snapshot, profile),
     {
       ...entry.compare,
       anchor: entry.static.anchor ?? profile.defaultAnchor ?? undefined,
       transparentStaticFibers: profile.transparentStaticFibers,
+      transparentRuntimeFibers: profile.transparentRuntimeFibers,
     },
   );
   result.runtime = summarizeRuntime(capture);

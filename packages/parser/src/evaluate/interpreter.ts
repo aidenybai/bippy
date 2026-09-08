@@ -1175,20 +1175,20 @@ export class Interpreter {
         const truthiness = getTruthiness(test);
         if (truthiness === true) return this.evaluateExpression(node.consequent, context, nameHint);
         if (truthiness === false) return this.evaluateExpression(node.alternate, context, nameHint);
+        const reason = `conditional on ${describeValue(test)}`;
+        const preferredSide = getPreferredTruthiness(test) === false ? 1 : 0;
         const [consequent, alternate] = this.evaluateTestedPaths(
           node.test,
           context,
           () => this.evaluateExpression(node.consequent, context, nameHint),
           () => this.evaluateExpression(node.alternate, context, nameHint),
+          reason,
+          location,
+          preferredSide,
         );
         if (!consequent) return alternate ?? UNDEFINED_VALUE;
         if (!alternate) return consequent;
-        return branchValue(
-          [consequent, alternate],
-          `conditional on ${describeValue(test)}`,
-          location,
-          getPreferredTruthiness(test) === false ? 1 : 0,
-        );
+        return branchValue([consequent, alternate], reason, location, preferredSide);
       }
       case "LogicalExpression":
         return this.evaluateLogicalExpression(node, context, nameHint);
@@ -1408,40 +1408,40 @@ export class Interpreter {
         const truthiness = getTruthiness(left);
         if (truthiness === true) return this.evaluateExpression(node.right, context, nameHint);
         if (truthiness === false) return left;
+        const reason = `&& on ${describeValue(left)}`;
+        const preferredSide = getPreferredTruthiness(left) === false ? 1 : 0;
         const [right, falsyLeft] = this.evaluateTestedPaths(
           node.left,
           context,
           () => this.evaluateExpression(node.right, context, nameHint),
           (narrowed) =>
             narrowed ? this.evaluateExpression(node.left, context) : falsyCounterpart(left),
+          reason,
+          location,
+          preferredSide,
         );
         if (!right) return falsyLeft ?? falsyCounterpart(left);
         if (!falsyLeft) return right;
-        return branchValue(
-          [right, falsyLeft],
-          `&& on ${describeValue(left)}`,
-          location,
-          getPreferredTruthiness(left) === false ? 1 : 0,
-        );
+        return branchValue([right, falsyLeft], reason, location, preferredSide);
       }
       case "||": {
         const truthiness = getTruthiness(left);
         if (truthiness === true) return left;
         if (truthiness === false) return this.evaluateExpression(node.right, context, nameHint);
+        const reason = `|| on ${describeValue(left)}`;
+        const preferredSide = getPreferredTruthiness(left) === false ? 1 : 0;
         const [truthyLeft, right] = this.evaluateTestedPaths(
           node.left,
           context,
           (narrowed) => (narrowed ? this.evaluateExpression(node.left, context) : left),
           () => this.evaluateExpression(node.right, context, nameHint),
+          reason,
+          location,
+          preferredSide,
         );
         if (!truthyLeft) return right ?? left;
         if (!right) return truthyLeft;
-        return branchValue(
-          [truthyLeft, right],
-          `|| on ${describeValue(left)}`,
-          location,
-          getPreferredTruthiness(left) === false ? 1 : 0,
-        );
+        return branchValue([truthyLeft, right], reason, location, preferredSide);
       }
       case "??": {
         const nullish = isNullish(left);
@@ -1464,20 +1464,76 @@ export class Interpreter {
    * Evaluates the two sides of an uncertain test with the tested identifier
    * narrowed to what it must be on each side; a side the narrowing rules out
    * is `null`. The callbacks receive the narrowed value when there is one.
+   * Both sides start from the same state and their states are joined after,
+   * so an assignment inside one operand stays conditional.
    */
   private evaluateTestedPaths<Result>(
     test: Expression,
     context: EvaluationContext,
     onTrue: (narrowed: StaticValue | null) => Result,
     onFalse: (narrowed: StaticValue | null) => Result,
+    reason: string,
+    location: SourceLocation | null,
+    preferredSide: number,
   ): [Result | null, Result | null] {
     const narrowing = narrowTest(test, (name) => lookupScope(context.scope, name));
-    if (!narrowing) return [onTrue(null), onFalse(null)];
-    const runSide = (value: StaticValue | null, run: (narrowed: StaticValue | null) => Result) =>
-      value === null
-        ? null
-        : withNarrowedBinding(context.scope, narrowing.name, value, () => run(value));
-    return [runSide(narrowing.whenTrue, onTrue), runSide(narrowing.whenFalse, onFalse)];
+    if (!narrowing) {
+      const [trueResult, falseResult] = this.forkValues(
+        context.scope,
+        [() => onTrue(null), () => onFalse(null)],
+        reason,
+        location,
+        preferredSide,
+      );
+      return [trueResult, falseResult];
+    }
+    const { name, whenTrue, whenFalse } = narrowing;
+    const narrowedSide =
+      (value: StaticValue, run: (narrowed: StaticValue | null) => Result) => (): Result =>
+        withNarrowedBinding(context.scope, name, value, () => run(value));
+    if (whenTrue === null) return [null, whenFalse && narrowedSide(whenFalse, onFalse)()];
+    if (whenFalse === null) return [narrowedSide(whenTrue, onTrue)(), null];
+    const [trueResult, falseResult] = this.forkValues(
+      context.scope,
+      [narrowedSide(whenTrue, onTrue), narrowedSide(whenFalse, onFalse)],
+      reason,
+      location,
+      preferredSide,
+    );
+    return [trueResult, falseResult];
+  }
+
+  /**
+   * Runs each path from the same scope state and joins the states afterwards
+   * (`forkPaths` for expressions): bindings, objects and lists a path changed
+   * hold one alternative per path.
+   */
+  private forkValues<Result>(
+    scope: Scope,
+    paths: Array<() => Result>,
+    reason: string,
+    location: SourceLocation | null,
+    preferredPath: number,
+  ): Result[] {
+    const entrySnapshot = snapshotScopes(scope);
+    const journal = new HeapJournal();
+    this.heapJournals.push(journal);
+    const snapshots: ScopeSnapshot[][] = [];
+    try {
+      return paths.map((path, pathIndex) => {
+        if (pathIndex > 0) restoreScopes(entrySnapshot);
+        const result = path();
+        snapshots.push(snapshotScopes(scope));
+        journal.endPath();
+        return result;
+      });
+    } finally {
+      this.heapJournals.pop();
+      if (snapshots.length === paths.length) {
+        journal.join(reason, location, preferredPath);
+        joinScopes(snapshots, reason, location);
+      }
+    }
   }
 
   private evaluateUnaryExpression(node: UnaryExpression, context: EvaluationContext): StaticValue {
@@ -2183,6 +2239,7 @@ export class Interpreter {
           markEscaped: (value) => this.markEscaped(value),
           queueMicrotask: (task) => this.timers.queueMicrotask(task),
           setProperty: (object, key, value) => this.assignOwnProperty(object, key, value),
+          environment: context.environment,
           nameHint: options.nameHint ?? null,
           templateArgumentNames: options.templateArgumentNames ?? null,
         });

@@ -41,8 +41,9 @@ import {
 // fiber trees the real components commit: `next/link` in the App Router is
 // `LinkComponent` -> LinkStatusContext provider -> <a>; in the Pages Router a
 // `forwardRef` -> <a>. `next/image` is a forwardRef wrapping a forwardRef
-// `ImageElement` -> <img>. Router hooks resolve from the URL being rendered;
-// anything only the running router knows is an explicit unknown.
+// `ImageElement` -> <img>, followed by `ImagePreload` when `priority`/`preload`
+// is set. Router hooks resolve from the URL being rendered; anything only the
+// running router knows is an explicit unknown.
 
 export interface NextModel {
   externalValues: ExternalValueProvider;
@@ -144,6 +145,12 @@ const PAGES_LINK_STUB: StubComponent = {
   render: anchorForLink,
 };
 
+/** `next/head` renders its children into `<head>` through a `SideEffect` that returns null. */
+const HEAD_STUB: StubComponent = {
+  displayName: "Head",
+  render: () => stubElement(emptyStub("SideEffect"), {}),
+};
+
 const IMAGE_ELEMENT_STUB: StubComponent = {
   displayName: null,
   tag: ForwardRefTag,
@@ -169,10 +176,47 @@ const IMAGE_ELEMENT_STUB: StubComponent = {
   },
 };
 
-const IMAGE_STUB: StubComponent = {
-  displayName: null,
-  tag: ForwardRefTag,
-  render: (props) => stubElement(IMAGE_ELEMENT_STUB, Object.fromEntries(propEntries(props))),
+/**
+ * `ImagePreload` (next/dist/client/image-component.js) calls `ReactDOM.preload`
+ * and returns null in the App Router; in the Pages Router it renders a
+ * `<link rel="preload">` through `next/head`.
+ */
+const imagePreloadStub = (kind: NextRouterKind): StubComponent => ({
+  displayName: "ImagePreload",
+  render: () =>
+    kind === "next-app"
+      ? NULL_VALUE
+      : stubElement(HEAD_STUB, {
+          children: hostElement("link", {
+            rel: primitiveValue("preload"),
+            as: primitiveValue("image"),
+          }),
+        }),
+});
+
+const imageStub = (kind: NextRouterKind): StubComponent => {
+  const preloadStub = imagePreloadStub(kind);
+  const imagePreload = (props: StaticObjectValue): StaticValue => {
+    const isPreload = getTruthiness(getObjectProperty(props, "preload"));
+    const isPriority = getTruthiness(getObjectProperty(props, "priority"));
+    if (isPreload === true || isPriority === true) return stubElement(preloadStub, {});
+    if (isPreload === false && isPriority === false) return NULL_VALUE;
+    return unknownValue("image preload depends on priority/preload props");
+  };
+  return {
+    displayName: null,
+    tag: ForwardRefTag,
+    render: (props) =>
+      listValue([
+        stubElement(IMAGE_ELEMENT_STUB, Object.fromEntries(propEntries(props))),
+        imagePreload(props),
+      ]),
+  };
+};
+
+const IMAGE_STUBS: Record<NextRouterKind, StubComponent> = {
+  "next-app": imageStub("next-app"),
+  "next-pages": imageStub("next-pages"),
 };
 
 const propEntries = (props: StaticObjectValue): [string, StaticValue][] => {
@@ -181,12 +225,6 @@ const propEntries = (props: StaticObjectValue): [string, StaticValue][] => {
     if (entry.kind === "property") entries.push([entry.key, entry.value]);
   }
   return entries;
-};
-
-/** `next/head` renders its children into `<head>` through a `SideEffect` that returns null. */
-const HEAD_STUB: StubComponent = {
-  displayName: "Head",
-  render: () => stubElement(emptyStub("SideEffect"), {}),
 };
 
 /** `next/script` renders a `<script>` only for `beforeInteractive`; every other strategy returns null. */
@@ -207,11 +245,15 @@ const SCRIPT_STUB: StubComponent = {
 
 const BAILOUT_TO_CSR_STUB = passthroughStub("BailoutToCSR");
 
+const PRELOAD_CHUNKS_STUB = emptyStub("PreloadChunks");
+
 /**
  * `next/dynamic` at the time the page is captured: the chunk has loaded, so the
- * App Router's `LoadableComponent` commits Fragment/Suspense -> `<Lazy>` (the
- * `PreloadChunks` slot is null on the client) and the Pages Router's forwardRef
- * `LoadableComponent` renders the loaded module's default export directly.
+ * App Router's `LoadableComponent` (a server component unless client code
+ * rendered it) commits Fragment/Suspense -> `<Lazy>`, preceded by the client
+ * `PreloadChunks` only when it ran on the server, and the Pages Router's
+ * forwardRef `LoadableComponent` renders the loaded module's default export
+ * directly.
  */
 const dynamicComponent = (
   kind: NextRouterKind,
@@ -250,14 +292,24 @@ const dynamicComponent = (
   if (isSsr === null || hasLoading === null) {
     return unknownValue("next/dynamic options decide its suspense boundary");
   }
+  const loadableGenerated = readOption("loadableGenerated");
+  const moduleIds =
+    loadableGenerated.kind === "object"
+      ? getObjectProperty(loadableGenerated, "modules")
+      : UNDEFINED_VALUE;
   return stubValue({
     displayName: "LoadableComponent",
-    render: (props) => {
+    isServerComponent: true,
+    render: (props, renderTools) => {
       const lazyElement = element(lazyType, props);
+      const preloadChunks =
+        renderTools.environment === "server"
+          ? stubElement(PRELOAD_CHUNKS_STUB, { moduleIds })
+          : NULL_VALUE;
       const children = isSsr
         ? element(
             { kind: "fragment" },
-            objectFromRecord({ children: listValue([NULL_VALUE, lazyElement]) }),
+            objectFromRecord({ children: listValue([preloadChunks, lazyElement]) }),
           )
         : stubElement(BAILOUT_TO_CSR_STUB, {
             reason: primitiveValue("next/dynamic"),
@@ -398,7 +450,7 @@ export const createNextModel = (options: NextModelOptions): NextModel => {
           : null;
       case "next/image":
       case "next/legacy/image":
-        return importedName === "default" ? stubValue(IMAGE_STUB) : null;
+        return importedName === "default" ? stubValue(IMAGE_STUBS[options.kind]) : null;
       case "next/head":
         return importedName === "default" ? stubValue(HEAD_STUB) : null;
       case "next/script":

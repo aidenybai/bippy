@@ -10,6 +10,7 @@ export type FrameworkKind = "spa" | "next-app" | "next-pages" | "react-router";
 // for a provider whose context has no displayName).
 export interface FrameworkProfile {
   kind: FrameworkKind;
+  /** Spliced out by the comparison wherever the static tree has no fiber for them. */
   transparentRuntimeFibers: ReadonlySet<string>;
   transparentStaticFibers: ReadonlySet<string>;
   /**
@@ -21,34 +22,23 @@ export interface FrameworkProfile {
   defaultAnchor: string | null;
 }
 
-const flattenFiber = (
-  fiber: RuntimeFiberSnapshot,
-  profile: FrameworkProfile,
-): RuntimeFiberSnapshot[] => {
-  if (profile.isInjectedRuntimeFiber(fiber)) return [];
-  const children = flattenList(fiber.children, profile);
-  if (profile.transparentRuntimeFibers.has(fiber.name ?? fiber.tag)) return children;
-  return [{ ...fiber, children }];
-};
-
-const flattenList = (
+const dropInjectedList = (
   fibers: RuntimeFiberSnapshot[],
   profile: FrameworkProfile,
-): RuntimeFiberSnapshot[] => {
-  const result: RuntimeFiberSnapshot[] = [];
-  for (const fiber of fibers) result.push(...flattenFiber(fiber, profile));
-  return result;
-};
+): RuntimeFiberSnapshot[] =>
+  fibers
+    .filter((fiber) => !profile.isInjectedRuntimeFiber(fiber))
+    .map((fiber) => ({ ...fiber, children: dropInjectedList(fiber.children, profile) }));
 
-/** Splices out transparent framework wrappers and drops injected subtrees so the runtime tree describes the application hierarchy. */
-export const flattenTransparentFibers = (
+/** Drops the subtrees the framework injects with no application counterpart. */
+export const dropInjectedFibers = (
   snapshot: RuntimeSnapshot,
   profile: FrameworkProfile,
 ): RuntimeSnapshot => ({
   ...snapshot,
   roots: snapshot.roots.map((root) => ({
     ...root,
-    children: flattenList(root.children, profile),
+    children: dropInjectedList(root.children, profile),
   })),
 });
 

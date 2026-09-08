@@ -280,6 +280,32 @@ const isClassNode = (node: ComponentDefinition["node"]): node is Class =>
   node.type === "ClassDeclaration" || node.type === "ClassExpression";
 
 /**
+ * Under RSC a function component created by server code renders on the server
+ * unless its module opted into the client bundle with `"use client"`. Flight
+ * looks through `memo` and a resolved `lazy` and calls a `forwardRef` render
+ * function directly (react-server/src/ReactFlightServer.js `renderElement`), so
+ * those wrappers leave no fiber either.
+ */
+const getServerComponent = (type: StaticElementType): ComponentDefinition | null => {
+  switch (type.kind) {
+    case "function":
+    case "forward-ref":
+      return isClientModule(type.component.module) ? null : type.component;
+    case "memo":
+      return getServerComponent(type.inner);
+    case "lazy":
+      return type.inner ? getServerComponent(type.inner) : null;
+    default:
+      return null;
+  }
+};
+
+const NOT_SERVER_RENDERED = Symbol("not-server-rendered");
+
+const isKeyless = (key: StaticValue | null): boolean =>
+  !key || (key.kind === "primitive" && (key.value === null || key.value === undefined));
+
+/**
  * A component's React identity is its closure: the same function node evaluated
  * in two scopes (e.g. a HOC applied twice) yields two distinct component types.
  */
@@ -616,25 +642,54 @@ export class Materializer {
     context: MaterializeContext,
     isTopLevel: boolean,
   ): ReactNode {
-    if (element.type.kind === "function" && this.isServerComponentElement(element, context)) {
-      const component = element.type.component;
-      const server = this.evaluateComposite(
-        component,
-        element.props,
-        { ...context, environment: element.environment ?? context.environment },
-        element.location,
-        null,
-        (componentContext) =>
-          this.interpreter.callFunction(
-            toFunctionValue(component),
-            [element.props],
-            componentContext,
-            { awaited: true },
-          ),
-      );
-      return this.toNode(server.rendered, server.childContext, isTopLevel);
+    if (this.isCreatedOnServer(element, context)) {
+      const serverNode = this.serverElementToNode(element, context, isTopLevel);
+      if (serverNode !== NOT_SERVER_RENDERED) return serverNode;
     }
     return this.createNode(element.type, element.key, element.props, element.location, context);
+  }
+
+  private isCreatedOnServer(element: StaticElementValue, context: MaterializeContext): boolean {
+    return this.serverComponents && (element.environment ?? context.environment) !== "client";
+  }
+
+  /**
+   * What Flight sends the client for an element server code created: a key-less
+   * Fragment is flattened to its children (`renderElement` in
+   * react-server/src/ReactFlightServer.js), and a server component's output
+   * replaces it.
+   */
+  private serverElementToNode(
+    element: StaticElementValue,
+    context: MaterializeContext,
+    isTopLevel: boolean,
+  ): ReactNode | typeof NOT_SERVER_RENDERED {
+    const { type, props, location } = element;
+    const serverContext: MaterializeContext = {
+      ...context,
+      environment: element.environment ?? context.environment,
+    };
+    if (type.kind === "fragment" && isKeyless(element.key)) {
+      return this.toNode(getObjectProperty(props, "children"), serverContext, isTopLevel);
+    }
+    if (type.kind === "stub" && type.stub.isServerComponent) {
+      const rendered = type.stub.render(props, this.stubRenderTools(serverContext, location));
+      return this.toNode(rendered, { ...serverContext, depth: context.depth + 1 }, isTopLevel);
+    }
+    const serverComponent = getServerComponent(type);
+    if (!serverComponent) return NOT_SERVER_RENDERED;
+    const server = this.evaluateComposite(
+      serverComponent,
+      props,
+      serverContext,
+      location,
+      null,
+      (componentContext) =>
+        this.interpreter.callFunction(toFunctionValue(serverComponent), [props], componentContext, {
+          awaited: true,
+        }),
+    );
+    return this.toNode(server.rendered, server.childContext, isTopLevel);
   }
 
   private createNode(
@@ -1201,6 +1256,14 @@ export class Materializer {
 
   private renderStub(input: ProxyInput, stub: StubComponent): ReactNode {
     const { context, props, location } = input;
+    const rendered = stub.render(props, this.stubRenderTools(context, location));
+    return this.finishRender(rendered, { ...context, depth: context.depth + 1 }, input);
+  }
+
+  private stubRenderTools(
+    context: MaterializeContext,
+    location: SourceLocation | null,
+  ): StubRenderTools {
     const tools: StubRenderTools = {
       readContext: (definition) =>
         providedContextValue(this.interpreter, definition, this.readContext(definition), location),
@@ -1216,11 +1279,11 @@ export class Materializer {
       markEscaped: (value) => this.interpreter.markEscaped(value),
       queueMicrotask: (task) => this.interpreter.timers.queueMicrotask(task),
       setProperty: (object, key, value) => this.interpreter.assignOwnProperty(object, key, value),
+      environment: context.environment,
       nameHint: null,
       templateArgumentNames: null,
     };
-    const rendered = stub.render(props, tools);
-    return this.finishRender(rendered, { ...context, depth: context.depth + 1 }, input);
+    return tools;
   }
 
   renderFunctionProxy(
@@ -1537,20 +1600,6 @@ export class Materializer {
     return { rendered: render(componentContext), childContext, componentContext };
   }
 
-  /**
-   * Under RSC a function component created by server code renders on the server
-   * unless its module (or the module that created the element) opted into the
-   * client bundle with `"use client"`.
-   */
-  private isServerComponentElement(
-    element: StaticElementValue,
-    context: MaterializeContext,
-  ): boolean {
-    if (!this.serverComponents || element.type.kind !== "function") return false;
-    const createdIn = element.environment ?? context.environment;
-    return createdIn !== "client" && !isClientModule(element.type.component.module);
-  }
-
   private componentEnvironment(
     component: ComponentDefinition,
     context: MaterializeContext,
@@ -1592,8 +1641,11 @@ export class Materializer {
    * A Suspense boundary whose primary subtree can still be suspended once the
    * page has settled (external or unknown content; a resolved `lazy` has loaded
    * by then) is observed either showing its content or its fallback; the second
-   * alternative really suspends so React lays out the hidden primary tree and
-   * the fallback itself.
+   * alternative mounts the fallback under the `$Suspended` marker instead of
+   * suspending for real: a never-settling thenable makes React retry the
+   * boundary on every later commit, and two such boundaries retry each other
+   * forever (`markRootFinished` in ReactFiberLane.js re-suspends only the retry
+   * lanes spawned by the just-finished render).
    */
   renderSuspenseBoundary(input: ProxyInput): ReactNode {
     const { useRef, useState, useLayoutEffect, createElement, Suspense } = this.runtime.react;
@@ -1615,7 +1667,7 @@ export class Materializer {
     const content = createElement(Suspense, { fallback }, primary);
     if (!isSuspendable) return content;
     return this.branchNode(
-      [content, createElement(Suspense, { fallback }, createElement(SuspendedMarker))],
+      [content, createElement(Suspense, null, createElement(SuspendedMarker, null, fallback))],
       "Suspense boundary may be suspended when observed",
       0,
       true,

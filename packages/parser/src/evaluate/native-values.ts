@@ -68,6 +68,15 @@ const LAYOUT_MEMBERS = new Set([
   "caretPositionFromPoint",
 ]);
 
+/** Canvas members whose value comes from rasterizing, which the static document only answers with placeholders. */
+const RASTER_MEMBERS = new Set([
+  "getContext",
+  "toDataURL",
+  "toBlob",
+  "captureStream",
+  "transferControlToOffscreen",
+]);
+
 const PURE_METHOD_PREFIXES = [
   "get",
   "has",
@@ -312,6 +321,9 @@ export const getNativeObjectMember = (
     return typeof member === "function"
       ? nativeFunction(name, () => unknownValue(`${name}() depends on layout`))
       : unknownPrimitiveValue("number", `${name} depends on layout`);
+  }
+  if (RASTER_MEMBERS.has(key) && typeof member === "function") {
+    return nativeFunction(name, () => unknownValue(`${name}() depends on rasterization`));
   }
   if (typeof member !== "function") return fromNativeValue(member, name);
   return pureNativeFunction(name, member, object.value, () => {

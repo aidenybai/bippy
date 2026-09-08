@@ -76,6 +76,34 @@ const readNumber = (props: Record<string, SnapshotPropValue>, key: string): numb
   return typeof value === "number" ? value : null;
 };
 
+/**
+ * A `$Suspended` marker under a boundary's Offscreen holds the fallback; React
+ * would show it in a Fragment next to an empty hidden Offscreen
+ * (`mountSuspenseFallbackChildren` in ReactFiberBeginWork.js).
+ */
+const getSuspendedFallback = (fiber: RuntimeFiberSnapshot): RuntimeFiberSnapshot | null => {
+  if (fiber.tag !== "SuspenseComponent" || fiber.children.length !== 1) return null;
+  const [offscreen] = fiber.children;
+  if (offscreen.tag !== "OffscreenComponent" || offscreen.children.length !== 1) return null;
+  const [primary] = offscreen.children;
+  return primary.name === MARKER_NAMES.suspended ? primary : null;
+};
+
+const toFiberChildren = (fiber: RuntimeFiberSnapshot): PatternNode[] => {
+  const children = snapshotToPattern(fiber.children);
+  const suspendedFallback = getSuspendedFallback(fiber);
+  if (suspendedFallback) {
+    children.push({
+      kind: "fiber",
+      tag: "Fragment",
+      name: "Fragment",
+      key: null,
+      children: snapshotToPattern(suspendedFallback.children),
+    });
+  }
+  return children;
+};
+
 const toPatternNode = (fiber: RuntimeFiberSnapshot): PatternNode[] => {
   if (fiber.tag === "HostText") return [{ kind: "text", text: fiber.text }];
   switch (fiber.name) {
@@ -122,7 +150,7 @@ const toPatternNode = (fiber: RuntimeFiberSnapshot): PatternNode[] => {
           tag: fiber.tag,
           name: fiber.name,
           key: fiber.key,
-          children: snapshotToPattern(fiber.children),
+          children: toFiberChildren(fiber),
         },
       ];
   }

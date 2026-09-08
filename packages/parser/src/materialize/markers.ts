@@ -76,9 +76,12 @@ export const UnknownMarker = named(
 
 export const TextMarker = named(MARKER_NAMES.text, (): string => TEXT_PLACEHOLDER);
 
-const NEVER_RESOLVES = new Promise<never>(() => {});
-
-/** Stands in for primary children that may be suspended when the tree is observed. */
-export const SuspendedMarker = named(MARKER_NAMES.suspended, (): never => {
-  throw NEVER_RESOLVES;
-});
+/**
+ * Stands in for a boundary's primary children while it shows its fallback; it
+ * renders the fallback so React builds those fibers, and `toPattern` moves them
+ * into the fallback fragment React would mount next to the hidden Offscreen.
+ */
+export const SuspendedMarker = named(
+  MARKER_NAMES.suspended,
+  ({ children }: MarkerChildrenProps): ReactNode => children,
+);

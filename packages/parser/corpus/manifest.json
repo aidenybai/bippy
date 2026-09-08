@@ -374,6 +374,13 @@
       "static": {
         "rootDirectory": "apps/web",
         "route": "/",
+        "externalPackageAllowList": [
+          "@react-email/*",
+          "@radix-ui/*",
+          "lucide-react",
+          "vaul",
+          "prism-react-renderer"
+        ],
         "maxFiberCount": 20000
       }
     },
@@ -424,6 +431,7 @@
       "framework": "next-app",
       "workingDirectory": "apps/v4",
       "install": "pnpm install",
+      "setup": ["pnpm --filter=v4 registry:build --style all"],
       "dev": "pnpm dev",
       "url": "http://localhost:4000/",
       "readyTimeoutMs": 900000,
@@ -431,6 +439,20 @@
       "static": {
         "rootDirectory": "apps/v4",
         "route": "/",
+        "externalPackageAllowList": [
+          "@shadcn/*",
+          "radix-ui",
+          "@radix-ui/*",
+          "@base-ui/*",
+          "@floating-ui/*",
+          "next-themes",
+          "nuqs",
+          "cmdk",
+          "sonner",
+          "lucide-react",
+          "@tabler/icons-react",
+          "@hugeicons/react"
+        ],
         "maxFiberCount": 20000
       }
     },

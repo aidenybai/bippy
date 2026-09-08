@@ -1,5 +1,5 @@
 export {
-  flattenTransparentFibers,
+  dropInjectedFibers,
   SPA_PROFILE,
   type FrameworkKind,
   type FrameworkProfile,

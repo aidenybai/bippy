@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { RootObservations, RuntimeObservations, StaticRenderResult } from "../../src/index.js";
 import {
-  flattenTransparentFibers,
+  dropInjectedFibers,
   getFrameworkProfile,
   renderFrameworkTarget,
   type FrameworkKind,
@@ -155,14 +155,11 @@ export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult
     };
   }
   const { snapshot: runtime, observed } = await mountFixture(fixture);
-  const comparison = compareStaticToRuntime(
-    staticResult,
-    flattenTransparentFibers(runtime, profile),
-    {
-      anchor: fixture.manifest.anchor ?? profile.defaultAnchor ?? undefined,
-      transparentStaticFibers: profile.transparentStaticFibers,
-    },
-  );
+  const comparison = compareStaticToRuntime(staticResult, dropInjectedFibers(runtime, profile), {
+    anchor: fixture.manifest.anchor ?? profile.defaultAnchor ?? undefined,
+    transparentStaticFibers: profile.transparentStaticFibers,
+    transparentRuntimeFibers: profile.transparentRuntimeFibers,
+  });
   return { staticResult, runtime, observed, comparison };
 };
 
