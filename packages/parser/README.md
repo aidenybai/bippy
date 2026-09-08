@@ -177,18 +177,22 @@ root by explicit index, then anchor search, then the largest root.
 
 ## Corpus
 
-`corpus/manifest.json` pins 23 real repositories by revision with framework, install/setup/dev
+`corpus/manifest.json` pins 41 real repositories by revision with framework, install/setup/dev
 commands, URL, static target and notes; `corpus/results.json` holds the latest merged results.
 Clones and captures live under the ignored `.corpus/`. Every entry renders statically; runtime
 capture runs where a dev server can start in this environment.
 
-Live-verified so far: `react-router-templates`, `sonner`, `documenso`, `sentry`, `posthog`,
-`nextjs-examples`, `tanstack-query`, `redux-toolkit` (exact); `cal-diy` (partial at 100% strict
-coverage — every runtime fiber is matched by a concrete static fiber, but one branch was consumed:
-the login page's `redirect("/auth/setup")` when `prisma.user.findFirst()` finds no user, a
-database fact the static side cannot know); `bulletproof-react`, `puck`, `lexical`, `graphiql`,
-`react-admin`, `tanstack-router` (partial — opaque third-party providers or dynamic data cut
-the static tree short). Provider packages become exact by listing them in an entry's
+Live-verified so far: 18 entries are `exact` — the runtime capture is one of the enumerated
+states and nothing was omitted — including `cal-diy` (6 states: the login page's
+`redirect("/auth/setup")` when `prisma.user.findFirst()` finds no user is one of them, the
+runtime matched the populated database), `documenso`, `sentry` (5 states), `posthog`, `graphiql`
+and `invoify` (6 states each), `lexical`, `puck`, `tanstack-router`, `tanstack-query`,
+`redux-toolkit`, `bulletproof-react`, `epic-stack`, `nextjs-examples`, `nextjs-boilerplate`,
+`react-router-templates`, `react-three-next` and `sonner`. 17 are `partial`: `formbricks`,
+`karakeep` and `socialecho` at 100% strict coverage behind opaque nodes, `react-admin` (18 states
+but MUI's theme construction still exhausts the step budget) and the rest short of full coverage
+through dynamic data or opaque third-party providers; `lobe-chat` and `nextjs-starter` are
+`unresolved`. Provider packages become exact by listing them in an entry's
 `externalPackageAllowList` (their source is interpreted like application code, as `react-redux`
 and `@tanstack/react-query` are) or through a library model (`src/libraries`, as Redux Toolkit's
 `configureStore`/`createApi` are, reading the recorded store state).
