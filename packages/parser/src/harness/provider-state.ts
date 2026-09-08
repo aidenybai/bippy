@@ -1,6 +1,9 @@
 import type { Fiber, FiberRoot } from "bippy";
 import { traverseFiber } from "bippy";
+import { z } from "zod";
+import { routerActivityStateSchema } from "../observations.js";
 import type {
+  CapturedFetcher,
   CapturedLinguiCatalog,
   CapturedRouteMatch,
   CapturedRouterState,
@@ -11,67 +14,53 @@ import { type ExportIndex, NO_EXPORTS } from "./module-exports.js";
 import { readQueryCaches, toCapturedValue } from "./query-cache.js";
 import { captureStores, readProviderStores, type ReduxStoreLike } from "./redux-store.js";
 
-interface LinguiContextLike {
-  i18n: { locale: string; messages: Record<string, unknown> };
-}
+const unknownRecordSchema = z.record(z.string(), z.unknown());
 
-interface RouterLocationLike {
-  pathname: string;
-  search: string;
-  hash: string;
-}
+const functionSchema = z.custom<(...args: never[]) => unknown>(
+  (value) => typeof value === "function",
+);
 
-interface RouterMatchLike {
-  route: { id: string };
-  pathname: string;
-  params: Record<string, string | undefined>;
-}
+const providerPropsSchema = z.object({ value: z.unknown().optional() });
 
-interface DataRouterStateLike {
-  location: RouterLocationLike;
-  matches: RouterMatchLike[];
-  loaderData: Record<string, unknown>;
-  navigation: { state: CapturedRouterState["navigationState"] };
-  revalidation: CapturedRouterState["revalidationState"];
-}
+const linguiContextSchema = z.object({
+  i18n: z.object({ locale: z.string(), messages: unknownRecordSchema, _: functionSchema }),
+});
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
+const routeMatchSchema = z.object({
+  route: z.object({ id: z.string() }),
+  pathname: z.string(),
+  params: z.record(z.string(), z.string().optional()),
+});
 
-const isLinguiContext = (value: unknown): value is LinguiContextLike =>
-  isRecord(value) &&
-  isRecord(value.i18n) &&
-  typeof value.i18n.locale === "string" &&
-  isRecord(value.i18n.messages) &&
-  typeof value.i18n._ === "function";
+const fetcherSchema = z.object({
+  state: routerActivityStateSchema,
+  formMethod: z.string().optional(),
+  formAction: z.string().optional(),
+  formEncType: z.string().optional(),
+  data: z.unknown().optional(),
+});
 
-const isLocation = (value: unknown): value is RouterLocationLike =>
-  isRecord(value) &&
-  typeof value.pathname === "string" &&
-  typeof value.search === "string" &&
-  typeof value.hash === "string";
+const dataRouterStateSchema = z.object({
+  location: z.object({ pathname: z.string(), search: z.string(), hash: z.string() }),
+  matches: z.array(routeMatchSchema),
+  loaderData: unknownRecordSchema,
+  navigation: z.object({ state: routerActivityStateSchema }),
+  revalidation: z.enum(["idle", "loading"]),
+  fetchers: z.map(z.string(), fetcherSchema),
+});
 
-const isRouteMatch = (value: unknown): value is RouterMatchLike =>
-  isRecord(value) &&
-  isRecord(value.route) &&
-  typeof value.route.id === "string" &&
-  typeof value.pathname === "string" &&
-  isRecord(value.params);
+interface LinguiContextLike extends z.infer<typeof linguiContextSchema> {}
 
-const isDataRouterState = (value: unknown): value is DataRouterStateLike =>
-  isRecord(value) &&
-  isLocation(value.location) &&
-  Array.isArray(value.matches) &&
-  value.matches.every(isRouteMatch) &&
-  isRecord(value.loaderData) &&
-  isRecord(value.navigation) &&
-  (value.navigation.state === "idle" ||
-    value.navigation.state === "loading" ||
-    value.navigation.state === "submitting") &&
-  (value.revalidation === "idle" || value.revalidation === "loading");
+interface RouterMatchLike extends z.infer<typeof routeMatchSchema> {}
 
-const getProviderValue = (fiber: Fiber): unknown =>
-  isRecord(fiber.memoizedProps) ? fiber.memoizedProps.value : undefined;
+interface FetcherLike extends z.infer<typeof fetcherSchema> {}
+
+interface DataRouterStateLike extends z.infer<typeof dataRouterStateSchema> {}
+
+const getProviderValue = (fiber: Fiber): unknown => {
+  const props = providerPropsSchema.safeParse(fiber.memoizedProps);
+  return props.success ? props.data.value : undefined;
+};
 
 const captureRecord = (record: Record<string, unknown>): Record<string, CapturedValue> => {
   const entries: Record<string, CapturedValue> = {};
@@ -90,6 +79,15 @@ const captureMatch = (match: RouterMatchLike): CapturedRouteMatch => {
   return { id: match.route.id, pathname: match.pathname, params };
 };
 
+const captureFetcher = (key: string, fetcher: FetcherLike): CapturedFetcher => ({
+  key,
+  state: fetcher.state,
+  formMethod: fetcher.formMethod,
+  formAction: fetcher.formAction,
+  formEncType: fetcher.formEncType,
+  data: toCapturedValue(fetcher.data),
+});
+
 const captureLingui = (context: LinguiContextLike): CapturedLinguiCatalog => ({
   locale: context.i18n.locale,
   messages: captureRecord(context.i18n.messages),
@@ -105,6 +103,7 @@ const captureRouterState = (state: DataRouterStateLike): CapturedRouterState => 
   loaderData: captureRecord(state.loaderData),
   navigationState: state.navigation.state,
   revalidationState: state.revalidation,
+  fetchers: [...state.fetchers].map(([key, fetcher]) => captureFetcher(key, fetcher)),
 });
 
 /**
@@ -128,10 +127,13 @@ export const readRootObservations = (
   for (const root of roots) {
     traverseFiber(root.current, (fiber) => {
       const value = getProviderValue(fiber);
-      if (!observations.lingui && isLinguiContext(value))
-        observations.lingui = captureLingui(value);
-      if (!observations.router && isDataRouterState(value)) {
-        observations.router = captureRouterState(value);
+      if (!observations.lingui) {
+        const lingui = linguiContextSchema.safeParse(value);
+        if (lingui.success) observations.lingui = captureLingui(lingui.data);
+      }
+      if (!observations.router) {
+        const router = dataRouterStateSchema.safeParse(value);
+        if (router.success) observations.router = captureRouterState(router.data);
       }
       return false;
     });

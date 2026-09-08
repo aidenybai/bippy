@@ -2,6 +2,7 @@ import { z } from "zod";
 import { parseWithSchema } from "./errors.js";
 import type {
   CapturedExportReference,
+  CapturedFetcher,
   CapturedLinguiCatalog,
   CapturedMutation,
   CapturedPageState,
@@ -83,12 +84,24 @@ const capturedRouteMatchSchema: z.ZodType<CapturedRouteMatch> = z.object({
   params: stringRecordSchema,
 });
 
+export const routerActivityStateSchema = z.enum(["idle", "loading", "submitting"]);
+
+const capturedFetcherSchema: z.ZodType<CapturedFetcher> = z.object({
+  key: z.string(),
+  state: routerActivityStateSchema,
+  formMethod: z.string().optional(),
+  formAction: z.string().optional(),
+  formEncType: z.string().optional(),
+  data: capturedValueSchema.optional(),
+});
+
 const capturedRouterStateSchema: z.ZodType<CapturedRouterState> = z.object({
   location: z.object({ pathname: z.string(), search: z.string(), hash: z.string() }),
   matches: z.array(capturedRouteMatchSchema),
   loaderData: capturedValueRecordSchema,
-  navigationState: z.enum(["idle", "loading", "submitting"]),
+  navigationState: routerActivityStateSchema,
   revalidationState: z.enum(["idle", "loading"]),
+  fetchers: z.array(capturedFetcherSchema).optional(),
 });
 
 const capturedPageStateSchema: z.ZodType<CapturedPageState> = z.object({

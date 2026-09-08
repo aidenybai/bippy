@@ -164,7 +164,7 @@ describe("react router framework mode with react-router-auto-routes", () => {
     expect(post).toMatch(
       /<Meta>\n\s+<title> key="title"\n\s+<meta> key="\{\\"name\\":\\"description\\",\\"content\\":\\"A post\\"\}"\n\s+<link> key="\{\\"rel\\":\\"alternate\\",\\"href\\":\\"\/feed.xml\\"\}"/,
     );
-    const links = lines(post).filter((line) => line.startsWith("<link>"));
+    const links = lines(post).filter((line) => line.startsWith('<link> key="{'));
     expect(links).toEqual([
       '<link> key="{\\"rel\\":\\"alternate\\",\\"href\\":\\"/feed.xml\\"}"',
       '<link> key="{\\"href\\":\\"https://fonts.example\\",\\"rel\\":\\"preconnect\\"}"',
@@ -177,5 +177,40 @@ describe("react router framework mode with react-router-auto-routes", () => {
     const { tree, errors } = await target("/robots.txt");
     expect(errors).toEqual([]);
     expect(tree).not.toContain("?unknown");
+  });
+
+  it("renders <Scripts> as the pre-hydration preloads and boot scripts, lazy route discovery by default", async () => {
+    const { tree } = await target("/");
+    expect(tree).toMatch(
+      /<Scripts>\n\s+<link>\n\s+<Fragment>\n\s+<link> key="\/app\/root.tsx"\n\s+<link> key="\/app\/routes\/_marketing\/index.tsx"\n\s+<Fragment>\n\s+<script>\n\s+<script>\n/,
+    );
+    expect(tree).not.toContain("subresource integrity");
+  });
+
+  it("renders useFetcher()'s Form through <Form> while its state stays a runtime branch", async () => {
+    const { tree, errors } = await target("/about");
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<fetcher\.Form>\n\s+<Form>\n\s+<form>\n\s+<input>\n\s+<button>\n\s+\?branch/,
+    );
+    expect(tree).toContain("react-router fetcher state is only known at runtime");
+    expect(tree).not.toContain("?unknown");
+  });
+});
+
+describe("react router framework mode config", () => {
+  it("preloads the route manifest under initial route discovery and branches on the SRI import map", async () => {
+    const { tree, errors } = await render("react-router-initial", {
+      framework: "react-router",
+      route: "/",
+      entry: "app/routes.ts",
+    });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<ScrollRestoration>\n\s+<script>\n\s+<Scripts>\n\s+\?branch\(the subresource integrity/,
+    );
+    expect(tree).toMatch(
+      /<Scripts>\n\s+\?branch[^\n]*\n\s+\|0 \(preferred\)\n\s+<script>\n\s+\|1\n\s+<link>\n\s+<link>\n\s+<Fragment>\n\s+<link> key="\/app\/root.tsx"\n\s+<link> key="\/app\/routes\/home.tsx"\n\s+<Fragment>\n\s+<script>\n\s+<script>\n/,
+    );
   });
 });

@@ -1,10 +1,5 @@
 import type { RuntimeFiberSnapshot } from "../harness/snapshot.js";
-import {
-  type FrameworkKind,
-  type FrameworkProfile,
-  neverInjected,
-  SPA_PROFILE,
-} from "./framework-profile.js";
+import { type FrameworkKind, type FrameworkProfile, SPA_PROFILE } from "./framework-profile.js";
 
 // Names observed in Next 15/16 development builds (app router). Everything here
 // is framework plumbing that wraps application output without rendering host
@@ -179,12 +174,20 @@ const REACT_ROUTER_RUNTIME_PROVIDERS = [
   "RSCRouterContext",
 ];
 
+// `react-router-devtools`' Vite plugin rewrites the root route module in
+// development so its default export renders next to the devtools panel
+// (`withViteDevTools` in `react-router-devtools/client`).
+const REACT_ROUTER_INJECTED_FIBERS = new Set(["TanStackDevtools"]);
+
+const isReactRouterInjectedFiber = (fiber: RuntimeFiberSnapshot): boolean =>
+  fiber.name !== null && REACT_ROUTER_INJECTED_FIBERS.has(fiber.name);
+
 export const REACT_ROUTER_PROFILE: FrameworkProfile = {
   kind: "react-router",
   transparentRuntimeFibers: new Set(REACT_ROUTER_RUNTIME_WRAPPERS),
   transparentRuntimeProviders: new Set(REACT_ROUTER_RUNTIME_PROVIDERS),
   transparentStaticFibers: new Set(["Location"]),
-  isInjectedRuntimeFiber: neverInjected,
+  isInjectedRuntimeFiber: isReactRouterInjectedFiber,
   defaultAnchor: null,
 };
 

@@ -35,6 +35,7 @@ import type {
   ExternalValueProvider,
   ModuleRecord,
   StaticElementValue,
+  StaticObjectEntry,
   StaticObjectValue,
   StaticRenderResult,
   StaticValue,
@@ -79,8 +80,20 @@ export interface ReactRouterModel {
 interface FrameworkState extends FrameworkDocument {
   /** The matched route tree `HydratedRouter` mounts (root `RenderedRoute` inwards). */
   routeTree: StaticValue | null;
-  /** `ssr` from `react-router.config.ts`; `false` is SPA mode. Null outside framework mode. */
-  ssr: StaticValue | null;
+  /** `react-router.config.ts` settings; null outside framework mode. */
+  config: FrameworkConfig | null;
+  /** Dev-server URLs of the matched route modules, root first, as `<Scripts>` preloads them. */
+  routeModuleUrls: string[];
+}
+
+/** Config flags the document components branch on; null when not static. */
+interface FrameworkConfig {
+  /** `ssr`; `false` is SPA mode. */
+  isSsr: boolean | null;
+  /** `routeDiscovery.mode === "lazy"` under SSR: the route manifest is fetched on demand. */
+  isFogOfWar: boolean | null;
+  /** `future.unstable_subResourceIntegrity`. */
+  hasSubResourceIntegrity: boolean | null;
 }
 
 const CLIENT_ENTRY_NAMES = [
@@ -613,6 +626,33 @@ const FORM_STUB: StubComponent = {
     ),
 };
 
+const FETCHER_FORM_STUB: StubComponent = {
+  displayName: "fetcher.Form",
+  tag: ForwardRefTag,
+  render: (props) =>
+    element(
+      { kind: "stub", stub: FORM_STUB },
+      objectValue([
+        { kind: "spread", value: props },
+        { kind: "property", key: "navigate", value: primitiveValue(false) },
+      ]),
+    ),
+};
+
+const FETCHER_METHODS = ["submit", "load", "reset"];
+
+/** `useFetcher()`: a fixed `Form` and imperative API around whatever fetcher state the router holds. */
+const fetcherValue = (state: StaticValue): StaticValue =>
+  objectValue([
+    { kind: "spread", value: state },
+    { kind: "property", key: "Form", value: stubValue(FETCHER_FORM_STUB) },
+    ...FETCHER_METHODS.map((method): StaticObjectEntry => ({
+      kind: "property",
+      key: method,
+      value: nativeFunction(method, () => UNDEFINED_VALUE),
+    })),
+  ]);
+
 const createRouterFactory = (name: string): StaticValue =>
   nativeFunction(name, (args) => objectFromRecord({ routes: args[0] ?? listValue([]) }));
 
@@ -625,7 +665,6 @@ const RUNTIME_ONLY_HOOKS = new Set([
   "useMatch",
   "useNavigation",
   "useRevalidator",
-  "useFetcher",
   "useFetchers",
   "useRouteError",
   "useSearchParams",
@@ -683,6 +722,8 @@ const observedHookValue = (
           nativeFunction("setSearchParams", () => UNDEFINED_VALUE),
         ]),
       );
+    case "useFetchers":
+      return nativeFunction(importedName, () => observed.fetchers);
     default:
       return null;
   }
@@ -735,6 +776,12 @@ const routerHookValue = (
     case "useInRouterContext":
       return nativeFunction(importedName, (_args, tools) =>
         primitiveValue(tools.readContext(LOCATION_CONTEXT).kind !== "primitive"),
+      );
+    case "useFetcher":
+      return nativeFunction(importedName, () =>
+        fetcherValue(
+          observed?.fetcher ?? unknownValue("react-router fetcher state is only known at runtime"),
+        ),
       );
     default:
       if (!RUNTIME_ONLY_HOOKS.has(importedName)) return null;
@@ -794,7 +841,13 @@ export const createReactRouterModel = (
   pathname: string,
   routerState: CapturedRouterState | null = null,
 ): ReactRouterModel => {
-  const framework: FrameworkState = { routeTree: null, meta: null, links: null, ssr: null };
+  const framework: FrameworkState = {
+    routeTree: null,
+    meta: null,
+    links: null,
+    config: null,
+    routeModuleUrls: [],
+  };
   const observed = observeRouterState(routerState, pathname);
   // `RouterProvider$1` from `react-router/dom` wraps the core `RouterProvider`;
   // only the latter is kept as a fiber so SPA and framework trees line up.
@@ -837,25 +890,72 @@ export const createReactRouterModel = (
   const scrollRestorationStub: StubComponent = {
     displayName: "ScrollRestoration",
     render: (props) => {
-      if (!framework.ssr) return NULL_VALUE;
-      const isSpaMode = getTruthiness(framework.ssr);
-      if (isSpaMode === false) return NULL_VALUE;
-      const script = element(
-        { kind: "host", tagName: "script" },
-        objectValue([
-          { kind: "spread", value: omitProps(props, SCROLL_RESTORATION_PROPS) },
-          { kind: "property", key: "suppressHydrationWarning", value: primitiveValue(true) },
-          {
-            kind: "property",
-            key: "dangerouslySetInnerHTML",
-            value: objectFromRecord({
-              __html: unknownPrimitiveValue("string", "inline scroll restoration script"),
-            }),
-          },
-        ]),
+      if (!framework.config) return NULL_VALUE;
+      return whenFlag(
+        framework.config.isSsr,
+        inlineScript(
+          omitProps(props, SCROLL_RESTORATION_PROPS),
+          "inline scroll restoration script",
+        ),
+        "react-router.config `ssr` is not static",
       );
-      if (isSpaMode === true) return script;
-      return branchValue([script, NULL_VALUE], "react-router.config `ssr` is not static", null);
+    },
+  };
+  // `<Scripts>` renders the module preloads and boot scripts until the first
+  // hydration effect runs; the fibers stay until something re-renders it.
+  const scriptsStub: StubComponent = {
+    displayName: "Scripts",
+    render: (props) => {
+      const { config } = framework;
+      if (!config) return NULL_VALUE;
+      const preloadUrl = (asset: string) =>
+        unknownPrimitiveValue("string", `${asset} URL is assigned at build time`);
+      const modulePreload = (href: StaticValue, key: StaticValue | null = null) =>
+        element(
+          { kind: "host", tagName: "link" },
+          objectFromRecord({
+            rel: primitiveValue("modulepreload"),
+            href,
+            crossOrigin: getObjectProperty(props, "crossOrigin"),
+            nonce: getObjectProperty(props, "nonce"),
+            suppressHydrationWarning: primitiveValue(true),
+          }),
+          key,
+        );
+      return listValue([
+        whenFlag(
+          config.hasSubResourceIntegrity === false ? false : null,
+          inlineScript(props, "subresource integrity import map", {
+            "rr-importmap": primitiveValue(""),
+            type: primitiveValue("importmap"),
+          }),
+          "the subresource integrity manifest is only inlined by production builds",
+        ),
+        whenFlag(
+          config.isFogOfWar === null ? null : !config.isFogOfWar,
+          modulePreload(preloadUrl("route manifest")),
+          "react-router.config `routeDiscovery` is not static",
+        ),
+        modulePreload(preloadUrl("client entry")),
+        listValue(
+          framework.routeModuleUrls.map((url) => {
+            const href = primitiveValue(url);
+            return modulePreload(href, href);
+          }),
+        ),
+        element(
+          { kind: "fragment" },
+          objectFromRecord({
+            children: listValue([
+              inlineScript(props, "server handoff context"),
+              inlineScript(props, "route module imports", {
+                type: primitiveValue("module"),
+                async: primitiveValue(true),
+              }),
+            ]),
+          }),
+        ),
+      ]);
     },
   };
   const routerProviderStub: StubComponent = {
@@ -933,8 +1033,9 @@ export const createReactRouterModel = (
         return stubValue(linksStub);
       case "ScrollRestoration":
         return stubValue(scrollRestorationStub);
-      case "Navigate":
       case "Scripts":
+        return stubValue(scriptsStub);
+      case "Navigate":
       case "PrefetchPageLinks":
         return stubValue(emptyStub(importedName));
       default:
@@ -960,15 +1061,64 @@ export const createReactRouterModel = (
  * file; `app/root.tsx` is the implicit root route whose optional `Layout` export
  * wraps everything. Each route module's default export is its component.
  */
-/** `ssr` from the framework config; defaults to `true` like `@react-router/dev`. */
-const readSsrFlag = (interpreter: Interpreter, configModule: ModuleRecord | null): StaticValue => {
-  if (!configModule) return primitiveValue(true);
-  const config = interpreter.evaluateModuleExport(configModule, "default");
-  if (config.kind !== "object")
-    return unknownValue("react-router.config default export is not a static object");
+/** The `@react-router/dev` defaults: SSR on, lazy route discovery under SSR, no SRI. */
+const readFrameworkConfig = (
+  interpreter: Interpreter,
+  configModule: ModuleRecord | null,
+): FrameworkConfig => {
+  const config = configModule
+    ? interpreter.evaluateModuleExport(configModule, "default")
+    : objectValue();
+  if (config.kind !== "object") {
+    return { isSsr: null, isFogOfWar: null, hasSubResourceIntegrity: null };
+  }
   const ssr = getObjectProperty(config, "ssr");
-  return isDefined(ssr) ? ssr : primitiveValue(true);
+  const isSsr = isDefined(ssr) ? getTruthiness(ssr) : true;
+  const routeDiscovery = getObjectProperty(config, "routeDiscovery");
+  const mode =
+    routeDiscovery.kind === "object" ? readString(getObjectProperty(routeDiscovery, "mode")) : null;
+  const future = getObjectProperty(config, "future");
+  const subResourceIntegrity =
+    future.kind === "object"
+      ? getObjectProperty(future, "unstable_subResourceIntegrity")
+      : UNDEFINED_VALUE;
+  return {
+    isSsr,
+    isFogOfWar:
+      mode === "initial" ? false : !isDefined(routeDiscovery) || mode === "lazy" ? isSsr : null,
+    hasSubResourceIntegrity: isDefined(subResourceIntegrity)
+      ? getTruthiness(subResourceIntegrity)
+      : false,
+  };
 };
+
+const whenFlag = (flag: boolean | null, value: StaticValue, reason: string): StaticValue => {
+  if (flag === null) return branchValue([value, NULL_VALUE], reason, null);
+  return flag ? value : NULL_VALUE;
+};
+
+const inlineScript = (
+  scriptProps: StaticValue,
+  content: string,
+  attributes: Record<string, StaticValue> = {},
+): StaticValue =>
+  element(
+    { kind: "host", tagName: "script" },
+    objectValue([
+      { kind: "spread", value: scriptProps },
+      { kind: "property", key: "suppressHydrationWarning", value: primitiveValue(true) },
+      {
+        kind: "property",
+        key: "dangerouslySetInnerHTML",
+        value: objectFromRecord({ __html: unknownPrimitiveValue("string", content) }),
+      },
+      ...Object.entries(attributes).map(([key, value]): StaticObjectEntry => ({
+        kind: "property",
+        key,
+        value,
+      })),
+    ]),
+  );
 
 const renderFrameworkRoutes = (
   renderer: StaticRenderer,
@@ -1070,7 +1220,15 @@ const renderFrameworkRoutes = (
       });
       leafMeta = callExport(module, "meta", [metaArgs]) ?? leafMeta;
     }
-    model.framework.ssr = readSsrFlag(interpreter, configModule ?? null);
+    model.framework.config = readFrameworkConfig(interpreter, configModule ?? null);
+    model.framework.routeModuleUrls = [
+      ...new Set(
+        matchedModules.map(
+          ({ module }) =>
+            `/${path.relative(renderer.options.rootDirectory, module.filePath).split(path.sep).join("/")}`,
+        ),
+      ),
+    ];
     model.framework.meta = leafMeta ?? listValue([]);
     model.framework.links = dedupeLinkDescriptors(
       matchedModules.flatMap(({ module }) => callExport(module, "links", []) ?? []),

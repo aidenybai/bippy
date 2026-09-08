@@ -406,6 +406,16 @@ export interface CapturedLocation {
   hash: string;
 }
 
+/** A fetcher in `state.fetchers`: one that has loaded or submitted since mounting. */
+export interface CapturedFetcher {
+  key: string;
+  state: "idle" | "loading" | "submitting";
+  formMethod?: string;
+  formAction?: string;
+  formEncType?: string;
+  data?: CapturedValue;
+}
+
 /** React Router's `DataRouterStateContext` value once the page settled. */
 export interface CapturedRouterState {
   location: CapturedLocation;
@@ -413,6 +423,8 @@ export interface CapturedRouterState {
   loaderData: Record<string, CapturedValue>;
   navigationState: "idle" | "loading" | "submitting";
   revalidationState: "idle" | "loading";
+  /** Absent in captures taken before it was recorded. */
+  fetchers?: CapturedFetcher[];
 }
 
 /** What the harness reads off the live roots besides the fiber tree: library state the page's code reads at render. */
