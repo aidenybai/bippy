@@ -54,7 +54,8 @@ const NAMED_CONTEXT_VERSIONS = ">=7.58.0";
 const createHookFormContext = (version: string | null): ContextDefinition => ({
   name: "HookFormContext",
   displayName:
-    version === null || semver.satisfies(version, NAMED_CONTEXT_VERSIONS, { includePrerelease: true })
+    version === null ||
+    semver.satisfies(version, NAMED_CONTEXT_VERSIONS, { includePrerelease: true })
       ? "HookFormContext"
       : null,
   defaultValue: NULL_VALUE,
@@ -1560,87 +1561,90 @@ const createUseFormContext = (context: ContextDefinition): StaticValue =>
 
 const createUseWatch = (context: ContextDefinition): StaticValue =>
   nativeFunction("useWatch", ([props], tools) => {
-  const control = resolveControl(props, tools, context);
-  if (!control) return missingControl("useWatch", props);
-  const name = propertyOf(props, "name");
-  const disabled = propertyOf(props, "disabled");
-  const isExact = isTruthy(propertyOf(props, "exact"));
-  const compute = propertyOf(props, "compute");
-  const instance = useInstance(tools, watchInstances, () => ({
-    defaultValue: propertyOf(props, "defaultValue"),
-    computedValue: null,
-  }));
-  const applyCompute = (value: StaticValue, computeTools: StubRenderTools): StaticValue =>
-    isCallable(compute) ? computeTools.call(compute, [value]) : value;
-  const [value, updateValue] = useStateValue(
-    tools,
-    applyCompute(getWatch(control, name, instance.defaultValue, false), tools),
-  );
-  useEffectHook(
-    tools,
-    "useLayoutEffect",
-    [control.control, disabled, name, primitiveValue(isExact)],
-    () =>
-      subscribeState(control, {
-        name,
-        isExact,
-        proxy: new Map([["values", true]]),
-        isRoot: false,
-        notify: (payload, notifyTools) => {
-          if (isTruthy(disabled)) return;
-          const formValues = generateWatchOutput(
-            name,
-            control.names,
-            payload.values ?? readStore(control, "formValues"),
-            false,
-            instance.defaultValue,
-          );
-          if (!isCallable(compute)) {
-            notifyTools.call(updateValue, [formValues]);
-            return;
-          }
-          const computed = notifyTools.call(compute, [formValues]);
-          if (!instance.computedValue || compareDeeply(computed, instance.computedValue) !== true) {
-            notifyTools.call(updateValue, [computed]);
-            instance.computedValue = computed;
-          }
-        },
-      }),
-  );
-  return value;
+    const control = resolveControl(props, tools, context);
+    if (!control) return missingControl("useWatch", props);
+    const name = propertyOf(props, "name");
+    const disabled = propertyOf(props, "disabled");
+    const isExact = isTruthy(propertyOf(props, "exact"));
+    const compute = propertyOf(props, "compute");
+    const instance = useInstance(tools, watchInstances, () => ({
+      defaultValue: propertyOf(props, "defaultValue"),
+      computedValue: null,
+    }));
+    const applyCompute = (value: StaticValue, computeTools: StubRenderTools): StaticValue =>
+      isCallable(compute) ? computeTools.call(compute, [value]) : value;
+    const [value, updateValue] = useStateValue(
+      tools,
+      applyCompute(getWatch(control, name, instance.defaultValue, false), tools),
+    );
+    useEffectHook(
+      tools,
+      "useLayoutEffect",
+      [control.control, disabled, name, primitiveValue(isExact)],
+      () =>
+        subscribeState(control, {
+          name,
+          isExact,
+          proxy: new Map([["values", true]]),
+          isRoot: false,
+          notify: (payload, notifyTools) => {
+            if (isTruthy(disabled)) return;
+            const formValues = generateWatchOutput(
+              name,
+              control.names,
+              payload.values ?? readStore(control, "formValues"),
+              false,
+              instance.defaultValue,
+            );
+            if (!isCallable(compute)) {
+              notifyTools.call(updateValue, [formValues]);
+              return;
+            }
+            const computed = notifyTools.call(compute, [formValues]);
+            if (
+              !instance.computedValue ||
+              compareDeeply(computed, instance.computedValue) !== true
+            ) {
+              notifyTools.call(updateValue, [computed]);
+              instance.computedValue = computed;
+            }
+          },
+        }),
+    );
+    return value;
   });
 
 const createUseFormState = (context: ContextDefinition): StaticValue =>
   nativeFunction("useFormState", ([props], tools) => {
-  const control = resolveControl(props, tools, context);
-  if (!control) return missingControl("useFormState", props);
-  const name = propertyOf(props, "name");
-  const disabled = propertyOf(props, "disabled");
-  const isExact = isTruthy(propertyOf(props, "exact"));
-  const [formState, updateFormState] = useStateValue(tools, readStore(control, "formState"));
-  const localProxy = useInstance<ProxyFormState>(
-    tools,
-    localProxies,
-    () => new Map(LOCAL_PROXY_KEYS.map((key) => [key, false])),
-  );
-  useEffectHook(tools, "useLayoutEffect", [name, disabled, primitiveValue(isExact)], () =>
-    subscribeState(control, {
-      name,
-      isExact,
-      proxy: localProxy,
-      isRoot: false,
-      notify: (payload, notifyTools) => {
-        if (isTruthy(disabled)) return;
-        notifyTools.call(updateFormState, [
-          withProperties(readStore(control, "formState"), payload),
-        ]);
-      },
-    }),
-  );
-  useEffectHook(tools, "useEffect", [control.control], (effectTools) => {
-    if (localProxy.get("isValid")) setValid(control, true, effectTools);
-  });
-  return getProxyFormState(formState, control, localProxy, false);
+    const control = resolveControl(props, tools, context);
+    if (!control) return missingControl("useFormState", props);
+    const name = propertyOf(props, "name");
+    const disabled = propertyOf(props, "disabled");
+    const isExact = isTruthy(propertyOf(props, "exact"));
+    const [formState, updateFormState] = useStateValue(tools, readStore(control, "formState"));
+    const localProxy = useInstance<ProxyFormState>(
+      tools,
+      localProxies,
+      () => new Map(LOCAL_PROXY_KEYS.map((key) => [key, false])),
+    );
+    useEffectHook(tools, "useLayoutEffect", [name, disabled, primitiveValue(isExact)], () =>
+      subscribeState(control, {
+        name,
+        isExact,
+        proxy: localProxy,
+        isRoot: false,
+        notify: (payload, notifyTools) => {
+          if (isTruthy(disabled)) return;
+          notifyTools.call(updateFormState, [
+            withProperties(readStore(control, "formState"), payload),
+          ]);
+        },
+      }),
+    );
+    useEffectHook(tools, "useEffect", [control.control], (effectTools) => {
+      if (localProxy.get("isValid")) setValid(control, true, effectTools);
+    });
+    return getProxyFormState(formState, control, localProxy, false);
   });
 
 const createUseController = (
@@ -1649,147 +1653,153 @@ const createUseController = (
   useFormState: StaticValue,
 ): StaticValue =>
   nativeFunction("useController", ([props], tools) => {
-  const control = resolveControl(props, tools, context);
-  if (!control) return missingControl("useController", props);
-  const nameValue = propertyOf(props, "name");
-  const name = knownString(nameValue);
-  const disabled = propertyOf(props, "disabled");
-  const shouldUnregister = propertyOf(props, "shouldUnregister");
-  const isArrayField = name !== null && control.names.array.has(getNodeParentName(name));
-  const defaultValue =
-    name === null
-      ? unknownValue(`default of field ${describeValue(nameValue)}`)
-      : readPath(
-          readStore(control, "formValues"),
-          name,
-          readPath(readStore(control, "defaultValues"), name, propertyOf(props, "defaultValue")),
-        );
-  const value = tools.call(useWatch, [
-    objectFromRecord({
-      control: control.control,
-      name: nameValue,
-      defaultValue,
-      exact: TRUE_VALUE,
-    }),
-  ]);
-  const formState = tools.call(useFormState, [
-    objectFromRecord({
-      control: control.control,
-      name: nameValue,
-      exact: TRUE_VALUE,
-    }),
-  ]);
-  const isDisabledBoolean = disabled.kind === "primitive" && typeof disabled.value === "boolean";
-  const rules = spreadCopy(propertyOf(props, "rules"));
-  register(
-    control,
-    nameValue,
-    withProperties(rules, {
-      value,
-      ...(isDisabledBoolean ? { disabled } : {}),
-    }),
-    tools,
-  );
-  const readFieldState = (key: string, fieldTools: StubRenderTools): StaticValue =>
-    name === null
-      ? unknownValue(`${key} of field ${describeValue(nameValue)}`)
-      : readPath(readProperty(formState, key, fieldTools), name);
-  const fieldStateEntry = (key: string, source: string, isBoolean: boolean): StaticObjectEntry => ({
-    kind: "property",
-    key,
-    value: unknownValue(`fieldState.${key}`),
-    accessor: {
-      get: nativeFunction(key, (_args, fieldTools) => {
-        const read = readFieldState(source, fieldTools);
-        return isBoolean ? booleanValue(getTruthiness(read), `whether ${key} for "${name}"`) : read;
+    const control = resolveControl(props, tools, context);
+    if (!control) return missingControl("useController", props);
+    const nameValue = propertyOf(props, "name");
+    const name = knownString(nameValue);
+    const disabled = propertyOf(props, "disabled");
+    const shouldUnregister = propertyOf(props, "shouldUnregister");
+    const isArrayField = name !== null && control.names.array.has(getNodeParentName(name));
+    const defaultValue =
+      name === null
+        ? unknownValue(`default of field ${describeValue(nameValue)}`)
+        : readPath(
+            readStore(control, "formValues"),
+            name,
+            readPath(readStore(control, "defaultValues"), name, propertyOf(props, "defaultValue")),
+          );
+    const value = tools.call(useWatch, [
+      objectFromRecord({
+        control: control.control,
+        name: nameValue,
+        defaultValue,
+        exact: TRUE_VALUE,
       }),
-      set: null,
-    },
-  });
-  const fieldState = objectValue([
-    fieldStateEntry("invalid", "errors", true),
-    fieldStateEntry("isDirty", "dirtyFields", true),
-    fieldStateEntry("isTouched", "touchedFields", true),
-    fieldStateEntry("isValidating", "validatingFields", true),
-    fieldStateEntry("error", "errors", false),
-  ]);
-  const formDisabled = readProperty(formState, "disabled", tools);
-  const onChange = handleChange(control);
-  const field = objectFromRecord({
-    name: nameValue,
-    value,
-    ...(isDisabledBoolean || isTruthy(formDisabled)
-      ? { disabled: orValue(formDisabled, disabled) }
-      : {}),
-    onChange: nativeFunction("onChange", ([event], changeTools) =>
-      changeTools.call(onChange, [
-        objectFromRecord({
-          target: objectFromRecord({
-            value: eventValue(event),
-            name: nameValue,
-          }),
-          type: primitiveValue("change"),
+    ]);
+    const formState = tools.call(useFormState, [
+      objectFromRecord({
+        control: control.control,
+        name: nameValue,
+        exact: TRUE_VALUE,
+      }),
+    ]);
+    const isDisabledBoolean = disabled.kind === "primitive" && typeof disabled.value === "boolean";
+    const rules = spreadCopy(propertyOf(props, "rules"));
+    register(
+      control,
+      nameValue,
+      withProperties(rules, {
+        value,
+        ...(isDisabledBoolean ? { disabled } : {}),
+      }),
+      tools,
+    );
+    const readFieldState = (key: string, fieldTools: StubRenderTools): StaticValue =>
+      name === null
+        ? unknownValue(`${key} of field ${describeValue(nameValue)}`)
+        : readPath(readProperty(formState, key, fieldTools), name);
+    const fieldStateEntry = (
+      key: string,
+      source: string,
+      isBoolean: boolean,
+    ): StaticObjectEntry => ({
+      kind: "property",
+      key,
+      value: unknownValue(`fieldState.${key}`),
+      accessor: {
+        get: nativeFunction(key, (_args, fieldTools) => {
+          const read = readFieldState(source, fieldTools);
+          return isBoolean
+            ? booleanValue(getTruthiness(read), `whether ${key} for "${name}"`)
+            : read;
         }),
-      ]),
-    ),
-    onBlur: nativeFunction("onBlur", (_args, blurTools) =>
-      blurTools.call(onChange, [
-        objectFromRecord({
-          target: objectFromRecord({
-            value:
-              name === null ? UNDEFINED_VALUE : readPath(readStore(control, "formValues"), name),
-            name: nameValue,
+        set: null,
+      },
+    });
+    const fieldState = objectValue([
+      fieldStateEntry("invalid", "errors", true),
+      fieldStateEntry("isDirty", "dirtyFields", true),
+      fieldStateEntry("isTouched", "touchedFields", true),
+      fieldStateEntry("isValidating", "validatingFields", true),
+      fieldStateEntry("error", "errors", false),
+    ]);
+    const formDisabled = readProperty(formState, "disabled", tools);
+    const onChange = handleChange(control);
+    const field = objectFromRecord({
+      name: nameValue,
+      value,
+      ...(isDisabledBoolean || isTruthy(formDisabled)
+        ? { disabled: orValue(formDisabled, disabled) }
+        : {}),
+      onChange: nativeFunction("onChange", ([event], changeTools) =>
+        changeTools.call(onChange, [
+          objectFromRecord({
+            target: objectFromRecord({
+              value: eventValue(event),
+              name: nameValue,
+            }),
+            type: primitiveValue("change"),
           }),
-          type: primitiveValue("blur"),
-        }),
-      ]),
-    ),
-    ref: nativeFunction("ref", () => UNDEFINED_VALUE),
-  });
-  useEffectHook(
-    tools,
-    "useEffect",
-    [nameValue, control.control, primitiveValue(isArrayField), shouldUnregister],
-    (effectTools) => {
-      const shouldUnregisterField =
-        isTruthy(getObjectProperty(control.options, "shouldUnregister")) ||
-        isTruthy(shouldUnregister);
-      register(
-        control,
-        nameValue,
-        withProperties(rules, isDisabledBoolean ? { disabled } : {}),
-        effectTools,
-      );
-      if (shouldUnregisterField && name !== null) {
-        const optionDefault = cloneValue(
-          readPath(getObjectProperty(control.options, "defaultValues"), name),
-        );
-        writeStore(
+        ]),
+      ),
+      onBlur: nativeFunction("onBlur", (_args, blurTools) =>
+        blurTools.call(onChange, [
+          objectFromRecord({
+            target: objectFromRecord({
+              value:
+                name === null ? UNDEFINED_VALUE : readPath(readStore(control, "formValues"), name),
+              name: nameValue,
+            }),
+            type: primitiveValue("blur"),
+          }),
+        ]),
+      ),
+      ref: nativeFunction("ref", () => UNDEFINED_VALUE),
+    });
+    useEffectHook(
+      tools,
+      "useEffect",
+      [nameValue, control.control, primitiveValue(isArrayField), shouldUnregister],
+      (effectTools) => {
+        const shouldUnregisterField =
+          isTruthy(getObjectProperty(control.options, "shouldUnregister")) ||
+          isTruthy(shouldUnregister);
+        register(
           control,
-          "defaultValues",
-          writePath(readStore(control, "defaultValues"), toPath(name), optionDefault),
+          nameValue,
+          withProperties(rules, isDisabledBoolean ? { disabled } : {}),
           effectTools,
         );
-        if (isUndefined(readPath(readStore(control, "formValues"), name))) {
+        if (shouldUnregisterField && name !== null) {
+          const optionDefault = cloneValue(
+            readPath(getObjectProperty(control.options, "defaultValues"), name),
+          );
           writeStore(
             control,
-            "formValues",
-            writePath(readStore(control, "formValues"), toPath(name), optionDefault),
+            "defaultValues",
+            writePath(readStore(control, "defaultValues"), toPath(name), optionDefault),
             effectTools,
           );
+          if (isUndefined(readPath(readStore(control, "formValues"), name))) {
+            writeStore(
+              control,
+              "formValues",
+              writePath(readStore(control, "formValues"), toPath(name), optionDefault),
+              effectTools,
+            );
+          }
         }
-      }
-      if (!isArrayField) register(control, nameValue, UNDEFINED_VALUE, effectTools);
-      return nativeFunction("cleanup", (_args, cleanupTools) => {
-        if (shouldUnregisterField) unregister(control, nameValue, UNDEFINED_VALUE, cleanupTools);
-        return UNDEFINED_VALUE;
-      });
-    },
-  );
-  useEffectHook(tools, "useEffect", [disabled, nameValue, control.control], () => {
-    if (name !== null) setDisabledField(control, name, disabled);
-  });
-  return objectFromRecord({ field, formState, fieldState });
+        if (!isArrayField) register(control, nameValue, UNDEFINED_VALUE, effectTools);
+        return nativeFunction("cleanup", (_args, cleanupTools) => {
+          if (shouldUnregisterField) unregister(control, nameValue, UNDEFINED_VALUE, cleanupTools);
+          return UNDEFINED_VALUE;
+        });
+      },
+    );
+    useEffectHook(tools, "useEffect", [disabled, nameValue, control.control], () => {
+      if (name !== null) setDisabledField(control, name, disabled);
+    });
+    return objectFromRecord({ field, formState, fieldState });
   });
 
 const eventValue = (event: StaticValue | undefined): StaticValue => {
@@ -1834,187 +1844,187 @@ const generateId = (): StaticValue =>
 
 const createUseFieldArray = (context: ContextDefinition): StaticValue =>
   nativeFunction("useFieldArray", ([props], tools) => {
-  const control = resolveControl(props, tools, context);
-  if (!control) return missingControl("useFieldArray", props);
-  const nameValue = propertyOf(props, "name");
-  const name = knownString(nameValue);
-  if (name === null) return unknownValue(`useFieldArray on ${describeValue(nameValue)}`);
-  const keyName = knownString(propertyOf(props, "keyName")) ?? "id";
-  const shouldUnregister = propertyOf(props, "shouldUnregister");
-  const [fields, setFields] = useStateValue(tools, getFieldArray(control, name));
-  const instance = useInstance(tools, fieldArrayInstances, () => ({
-    ids: (fields.kind === "list" ? fields.items : []).map(generateId),
-  }));
-  control.names.array.add(name);
-  const rules = propertyOf(props, "rules");
-  useInstance(tools, ruleRegistrations, () => {
-    if (isTruthy(rules)) register(control, nameValue, rules, tools);
-    return true;
-  });
-  useEffectHook(tools, "useLayoutEffect", [control.control, nameValue], () => {
-    const subscription: ArraySubscription = {
-      notify: (payload, notifyTools) => {
-        const fieldArrayName = payload.name;
-        if (fieldArrayName !== undefined && getTruthiness(fieldArrayName) !== false) {
-          const signal = knownString(fieldArrayName);
-          if (signal !== null && signal !== name) return;
-        }
-        const fieldValues = readPath(payload.values ?? UNDEFINED_VALUE, name);
-        if (fieldValues.kind === "list") {
-          notifyTools.call(setFields, [fieldValues]);
-          instance.ids = fieldValues.items.map(generateId);
-        } else if (fieldValues.kind !== "primitive") {
-          notifyTools.call(setFields, [unknownValue(`field array "${name}" after an update`)]);
-        }
-      },
-    };
-    control.arraySubscriptions.add(subscription);
-    return nativeFunction("unsubscribe", () => {
-      control.arraySubscriptions.delete(subscription);
-      return UNDEFINED_VALUE;
+    const control = resolveControl(props, tools, context);
+    if (!control) return missingControl("useFieldArray", props);
+    const nameValue = propertyOf(props, "name");
+    const name = knownString(nameValue);
+    if (name === null) return unknownValue(`useFieldArray on ${describeValue(nameValue)}`);
+    const keyName = knownString(propertyOf(props, "keyName")) ?? "id";
+    const shouldUnregister = propertyOf(props, "shouldUnregister");
+    const [fields, setFields] = useStateValue(tools, getFieldArray(control, name));
+    const instance = useInstance(tools, fieldArrayInstances, () => ({
+      ids: (fields.kind === "list" ? fields.items : []).map(generateId),
+    }));
+    control.names.array.add(name);
+    const rules = propertyOf(props, "rules");
+    useInstance(tools, ruleRegistrations, () => {
+      if (isTruthy(rules)) register(control, nameValue, rules, tools);
+      return true;
     });
-  });
-  const updateValues = (updated: StaticValue[], updateTools: StubRenderTools): void => {
-    writeStore(
-      control,
-      "formValues",
-      writePath(readStore(control, "formValues"), toPath(name), listValue(updated)),
-      updateTools,
-    );
-    updateTools.call(setFields, [listValue(updated)]);
-    notifyState(
-      control,
-      {
-        name: nameValue,
-        isDirty: getDirty(control),
-        dirtyFields: isProxied(control, "dirtyFields")
-          ? unknownValue("dirty fields after a field array change")
-          : readFormState(control, "dirtyFields"),
-        errors: readFormState(control, "errors"),
-        isValid: readFormState(control, "isValid"),
-      },
-      updateTools,
-    );
-    notifyState(
-      control,
-      { name: nameValue, values: cloneValue(readStore(control, "formValues")) },
-      updateTools,
-    );
-    setValid(control, false, updateTools);
-  };
-  const currentItems = (): StaticValue[] | null => {
-    const current = getFieldArray(control, name);
-    return current.kind === "list" ? current.items : null;
-  };
-  const arrayMethod = (
-    methodName: string,
-    apply: (items: StaticValue[], args: StaticValue[]) => StaticValue[] | null,
-  ): StaticValue =>
-    nativeFunction(methodName, (args, methodTools) => {
-      const items = currentItems();
-      const updated = items ? apply(items, args) : null;
-      if (updated === null) {
-        writeStore(
-          control,
-          "formValues",
-          writePath(
-            readStore(control, "formValues"),
-            toPath(name),
-            unknownValue(`field array "${name}" after ${methodName}`),
-          ),
-          methodTools,
-        );
-        methodTools.call(setFields, [unknownValue(`field array "${name}" after ${methodName}`)]);
+    useEffectHook(tools, "useLayoutEffect", [control.control, nameValue], () => {
+      const subscription: ArraySubscription = {
+        notify: (payload, notifyTools) => {
+          const fieldArrayName = payload.name;
+          if (fieldArrayName !== undefined && getTruthiness(fieldArrayName) !== false) {
+            const signal = knownString(fieldArrayName);
+            if (signal !== null && signal !== name) return;
+          }
+          const fieldValues = readPath(payload.values ?? UNDEFINED_VALUE, name);
+          if (fieldValues.kind === "list") {
+            notifyTools.call(setFields, [fieldValues]);
+            instance.ids = fieldValues.items.map(generateId);
+          } else if (fieldValues.kind !== "primitive") {
+            notifyTools.call(setFields, [unknownValue(`field array "${name}" after an update`)]);
+          }
+        },
+      };
+      control.arraySubscriptions.add(subscription);
+      return nativeFunction("unsubscribe", () => {
+        control.arraySubscriptions.delete(subscription);
         return UNDEFINED_VALUE;
-      }
-      instance.ids = updated.map(generateId);
-      updateValues(updated, methodTools);
-      return UNDEFINED_VALUE;
+      });
     });
-  const toItems = (value: StaticValue | undefined): StaticValue[] | null => {
-    if (value === undefined) return [];
-    if (value.kind === "list")
-      return value.items.some(isIndefinite) ? null : value.items.map(cloneValue);
-    return [cloneValue(value)];
-  };
-  const knownIndex = (value: StaticValue | undefined): number | null =>
-    value?.kind === "primitive" && typeof value.value === "number" ? value.value : null;
-  useEffectHook(
-    tools,
-    "useEffect",
-    [nameValue, control.control, primitiveValue(keyName), shouldUnregister],
-    (effectTools) => {
-      if (getTruthiness(readPath(readStore(control, "formValues"), name)) === false) {
-        writeStore(
-          control,
-          "formValues",
-          writePath(readStore(control, "formValues"), toPath(name), listValue([])),
-          effectTools,
-        );
-      }
-    },
-  );
-  return objectFromRecord({
-    swap: arrayMethod("swap", (items, [from, to]) => {
-      const fromIndex = knownIndex(from);
-      const toIndex = knownIndex(to);
-      if (fromIndex === null || toIndex === null) return null;
-      const updated = [...items];
-      [updated[fromIndex], updated[toIndex]] = [
-        updated[toIndex] ?? UNDEFINED_VALUE,
-        updated[fromIndex] ?? UNDEFINED_VALUE,
-      ];
-      return updated;
-    }),
-    move: arrayMethod("move", (items, [from, to]) => {
-      const fromIndex = knownIndex(from);
-      const toIndex = knownIndex(to);
-      if (fromIndex === null || toIndex === null) return null;
-      const updated = [...items];
-      const [moved] = updated.splice(fromIndex, 1);
-      updated.splice(toIndex, 0, moved ?? UNDEFINED_VALUE);
-      return updated;
-    }),
-    prepend: arrayMethod("prepend", (items, [value]) => {
-      const added = toItems(value);
-      return added && [...added, ...items];
-    }),
-    append: arrayMethod("append", (items, [value]) => {
-      const added = toItems(value);
-      return added && [...items, ...added];
-    }),
-    remove: arrayMethod("remove", (items, [index]) => {
-      if (index === undefined || isUndefined(index)) return [];
-      const indexes = index.kind === "list" ? index.items.map(knownIndex) : [knownIndex(index)];
-      return indexes.includes(null)
-        ? null
-        : items.filter((_item, position) => !indexes.includes(position));
-    }),
-    insert: arrayMethod("insert", (items, [index, value]) => {
-      const position = knownIndex(index);
-      const added = toItems(value);
-      if (position === null || added === null) return null;
-      return [...items.slice(0, position), ...added, ...items.slice(position)];
-    }),
-    update: arrayMethod("update", (items, [index, value]) => {
-      const position = knownIndex(index);
-      if (position === null) return null;
-      const updated = [...items];
-      updated[position] = cloneValue(value ?? UNDEFINED_VALUE);
-      return updated;
-    }),
-    replace: arrayMethod("replace", (_items, [value]) => toItems(value)),
-    fields:
-      fields.kind === "list"
-        ? listValue(
-            fields.items.map((field, index) =>
-              withProperties(spreadCopy(field), {
-                [keyName]: instance.ids[index] ?? generateId(),
-              }),
+    const updateValues = (updated: StaticValue[], updateTools: StubRenderTools): void => {
+      writeStore(
+        control,
+        "formValues",
+        writePath(readStore(control, "formValues"), toPath(name), listValue(updated)),
+        updateTools,
+      );
+      updateTools.call(setFields, [listValue(updated)]);
+      notifyState(
+        control,
+        {
+          name: nameValue,
+          isDirty: getDirty(control),
+          dirtyFields: isProxied(control, "dirtyFields")
+            ? unknownValue("dirty fields after a field array change")
+            : readFormState(control, "dirtyFields"),
+          errors: readFormState(control, "errors"),
+          isValid: readFormState(control, "isValid"),
+        },
+        updateTools,
+      );
+      notifyState(
+        control,
+        { name: nameValue, values: cloneValue(readStore(control, "formValues")) },
+        updateTools,
+      );
+      setValid(control, false, updateTools);
+    };
+    const currentItems = (): StaticValue[] | null => {
+      const current = getFieldArray(control, name);
+      return current.kind === "list" ? current.items : null;
+    };
+    const arrayMethod = (
+      methodName: string,
+      apply: (items: StaticValue[], args: StaticValue[]) => StaticValue[] | null,
+    ): StaticValue =>
+      nativeFunction(methodName, (args, methodTools) => {
+        const items = currentItems();
+        const updated = items ? apply(items, args) : null;
+        if (updated === null) {
+          writeStore(
+            control,
+            "formValues",
+            writePath(
+              readStore(control, "formValues"),
+              toPath(name),
+              unknownValue(`field array "${name}" after ${methodName}`),
             ),
-          )
-        : fields,
-  });
+            methodTools,
+          );
+          methodTools.call(setFields, [unknownValue(`field array "${name}" after ${methodName}`)]);
+          return UNDEFINED_VALUE;
+        }
+        instance.ids = updated.map(generateId);
+        updateValues(updated, methodTools);
+        return UNDEFINED_VALUE;
+      });
+    const toItems = (value: StaticValue | undefined): StaticValue[] | null => {
+      if (value === undefined) return [];
+      if (value.kind === "list")
+        return value.items.some(isIndefinite) ? null : value.items.map(cloneValue);
+      return [cloneValue(value)];
+    };
+    const knownIndex = (value: StaticValue | undefined): number | null =>
+      value?.kind === "primitive" && typeof value.value === "number" ? value.value : null;
+    useEffectHook(
+      tools,
+      "useEffect",
+      [nameValue, control.control, primitiveValue(keyName), shouldUnregister],
+      (effectTools) => {
+        if (getTruthiness(readPath(readStore(control, "formValues"), name)) === false) {
+          writeStore(
+            control,
+            "formValues",
+            writePath(readStore(control, "formValues"), toPath(name), listValue([])),
+            effectTools,
+          );
+        }
+      },
+    );
+    return objectFromRecord({
+      swap: arrayMethod("swap", (items, [from, to]) => {
+        const fromIndex = knownIndex(from);
+        const toIndex = knownIndex(to);
+        if (fromIndex === null || toIndex === null) return null;
+        const updated = [...items];
+        [updated[fromIndex], updated[toIndex]] = [
+          updated[toIndex] ?? UNDEFINED_VALUE,
+          updated[fromIndex] ?? UNDEFINED_VALUE,
+        ];
+        return updated;
+      }),
+      move: arrayMethod("move", (items, [from, to]) => {
+        const fromIndex = knownIndex(from);
+        const toIndex = knownIndex(to);
+        if (fromIndex === null || toIndex === null) return null;
+        const updated = [...items];
+        const [moved] = updated.splice(fromIndex, 1);
+        updated.splice(toIndex, 0, moved ?? UNDEFINED_VALUE);
+        return updated;
+      }),
+      prepend: arrayMethod("prepend", (items, [value]) => {
+        const added = toItems(value);
+        return added && [...added, ...items];
+      }),
+      append: arrayMethod("append", (items, [value]) => {
+        const added = toItems(value);
+        return added && [...items, ...added];
+      }),
+      remove: arrayMethod("remove", (items, [index]) => {
+        if (index === undefined || isUndefined(index)) return [];
+        const indexes = index.kind === "list" ? index.items.map(knownIndex) : [knownIndex(index)];
+        return indexes.includes(null)
+          ? null
+          : items.filter((_item, position) => !indexes.includes(position));
+      }),
+      insert: arrayMethod("insert", (items, [index, value]) => {
+        const position = knownIndex(index);
+        const added = toItems(value);
+        if (position === null || added === null) return null;
+        return [...items.slice(0, position), ...added, ...items.slice(position)];
+      }),
+      update: arrayMethod("update", (items, [index, value]) => {
+        const position = knownIndex(index);
+        if (position === null) return null;
+        const updated = [...items];
+        updated[position] = cloneValue(value ?? UNDEFINED_VALUE);
+        return updated;
+      }),
+      replace: arrayMethod("replace", (_items, [value]) => toItems(value)),
+      fields:
+        fields.kind === "list"
+          ? listValue(
+              fields.items.map((field, index) =>
+                withProperties(spreadCopy(field), {
+                  [keyName]: instance.ids[index] ?? generateId(),
+                }),
+              ),
+            )
+          : fields,
+    });
   });
 
 const get = nativeFunction("get", ([object, path, defaultValue]) => {
