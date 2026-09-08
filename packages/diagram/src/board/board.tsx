@@ -83,10 +83,17 @@ const styles = stylex.create({
     backgroundColor: colors.canvas,
     fontFamily: fonts.sans,
   },
+  container: { width: "100%", maxWidth: 1007, marginInline: "auto" },
+  trees: {
+    display: "grid",
+    gridTemplateColumns: {
+      default: "repeat(2, minmax(0, 1fr))",
+      "@media (max-width: 713px)": "minmax(0, 1fr)",
+    },
+    alignItems: "start",
+    gap: spacing[4],
+  },
   grid: {
-    width: "100%",
-    maxWidth: 1007,
-    marginInline: "auto",
     display: "grid",
     gridTemplateColumns: {
       default: "repeat(auto-fit, 325px)",
@@ -98,31 +105,33 @@ const styles = stylex.create({
   columnLabel: { fill: colors.muted, fontFamily: fonts.sans, fontSize: fontSizes.xs },
   divider: { stroke: colors.border, strokeWidth: 1, strokeDasharray: "3 2" },
   tree: { width: { default: 293, "@media (max-width: 372px)": "calc(100vw - 80px)" } },
-  fullTree: { width: "100%" },
+  treeFrame: { width: "100%", minWidth: 0, overflow: "clip" },
 });
 
 export const Board = () => (
   <main aria-label="Diagram board" {...stylex.props(styles.board)}>
     <TreeRoot nodes={treeDataflowNodes} dataflowEdges={treeDataflowEdges}>
-      <Specimen id="parent-tree" name="Tree / Parent" size="full" fitContent>
-        <div data-tree-relationship="parent" {...stylex.props(styles.fullTree)}>
-          <TreeView
-            label="Parent tree"
-            width="100%"
-            height="auto"
-            showOwners
-            scopeId="theme"
-            scopeLabel="ThemeContext"
-          />
-        </div>
-      </Specimen>
-      <Specimen id="owner-tree" name="Tree / Owner" size="full" fitContent>
-        <div data-tree-relationship="owner" {...stylex.props(styles.fullTree)}>
-          <TreeView label="Owner tree" width="100%" height="auto" relationship="owner" />
-        </div>
-      </Specimen>
+      <div {...stylex.props(styles.container, styles.trees)}>
+        <Specimen id="parent-tree" name="Tree / Parent" fitContent>
+          <div data-tree-relationship="parent" {...stylex.props(styles.treeFrame)}>
+            <TreeView
+              label="Parent tree"
+              width="100%"
+              height="auto"
+              showOwners
+              scopeId="theme"
+              scopeLabel="ThemeContext"
+            />
+          </div>
+        </Specimen>
+        <Specimen id="owner-tree" name="Tree / Owner" fitContent>
+          <div data-tree-relationship="owner" {...stylex.props(styles.treeFrame)}>
+            <TreeView label="Owner tree" width="100%" height="auto" relationship="owner" />
+          </div>
+        </Specimen>
+      </div>
     </TreeRoot>
-    <div {...stylex.props(styles.grid)}>
+    <div {...stylex.props(styles.container, styles.grid)}>
       <Specimen id="deep-tree" name="Tree / Deep">
         <div {...stylex.props(styles.tree)}>
           <Tree

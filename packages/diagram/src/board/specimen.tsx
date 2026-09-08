@@ -47,6 +47,7 @@ const styles = stylex.create({
     scrollbarColor: `${colors.border} transparent`,
     display: "flex",
   },
+  fluidContent: { width: "100%", minWidth: 0, flexShrink: 1 },
   content: {
     margin: "auto",
     flexShrink: 0,
@@ -79,7 +80,7 @@ export const Specimen = ({
         {name}
       </h2>
       <div {...stylex.props(styles.body)}>
-        <div {...stylex.props(styles.content)}>{children}</div>
+        <div {...stylex.props(styles.content, fitContent && styles.fluidContent)}>{children}</div>
       </div>
     </section>
   );

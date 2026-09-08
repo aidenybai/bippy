@@ -11,7 +11,7 @@ The automated Chromium, Firefox, and WebKit suites cover:
 - One tab stop, arrows, Home/End, typeahead, expansion, and separate activation callbacks.
 - Focus recovery when items disappear, become disabled, or are hidden.
 - Native row focus retention during automatic windowing, with the focused SVG item kept mounted.
-- Opt-in Base UI controls and tooltips on a dedicated fixture; board-only layout with full-width, content-height Parent/Owner trees.
+- Opt-in Base UI controls and tooltips on a dedicated fixture; board-only layout with side-by-side, content-height Parent/Owner trees that stack on narrow screens without horizontal bleed.
 - Shift reveals subdued background flows only in the pointed-at graph; the active trace stays emphasized. Release, pointer exit, and window blur clear the overview.
 - Touch activation without duplicate callbacks or disappearing inspection traces.
 - Search/reveal through collapsed ancestors, per-view bulk expansion, shared activation, and bounded virtual mounting.

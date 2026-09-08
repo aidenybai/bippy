@@ -123,7 +123,10 @@ export const TreeView = ({
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
-    const measure = () => setWidth(viewport.clientWidth || fallbackWidth);
+    const measure = () => {
+      const contentWidth = Math.floor(Number.parseFloat(getComputedStyle(viewport).width));
+      setWidth(Math.min(viewport.clientWidth, contentWidth) || fallbackWidth);
+    };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(viewport);

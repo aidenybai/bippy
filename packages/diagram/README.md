@@ -6,7 +6,7 @@ Private Next.js / StyleX specimen board for reusable React tree and dataflow dia
 pnpm --filter diagram dev
 ```
 
-Open http://localhost:3100/diagram. Parent and Owner trees come first, at full width and content height. Mini node and edge specimens sit at the bottom. There is no sidebar, page toolbar, or single-component mode; `/` also renders the board.
+Open http://localhost:3100/diagram. Parent and Owner trees come first, side by side at content height in a centered, width-limited grid. Each chart stays inside its column; narrow screens stack the pair. Mini node and edge specimens sit at the bottom. There is no sidebar, page toolbar, or single-component mode; `/` also renders the board.
 
 Hold Shift while pointing at a graph to reveal all visible dataflow at low opacity, with the active trace emphasized. Releasing Shift or leaving the graph restores the normal view.
 
