@@ -79,6 +79,103 @@ const combineReducers = nativeFunction("combineReducers", ([reducers]) => {
   return combined;
 });
 
+const isCallable = (value: StaticValue): boolean =>
+  value.kind === "function" || value.kind === "native-function";
+
+const actionCreator = (type: string, prepare: StaticValue | null): StaticValue =>
+  nativeFunction(type, (args, tools) => {
+    if (prepare === null)
+      return objectFromRecord({ type: primitiveValue(type), payload: args[0] ?? UNDEFINED_VALUE });
+    const prepared = tools.call(prepare, args);
+    if (prepared.kind !== "object") return unknownValue(`action prepared for ${type} at runtime`);
+    return objectValue([
+      { kind: "property", key: "type", value: primitiveValue(type) },
+      ...prepared.entries.filter(
+        (entry) => entry.kind !== "property" || ["payload", "meta", "error"].includes(entry.key),
+      ),
+    ]);
+  });
+
+const createAction = nativeFunction("createAction", ([type, prepare]) =>
+  isKnownString(type)
+    ? actionCreator(type.value, prepare !== undefined && isCallable(prepare) ? prepare : null)
+    : unknownValue("createAction() with a type that is not statically known"),
+);
+
+const sliceActionCreators = (name: string, reducers: StaticValue): StaticValue | null => {
+  const reducerNames = reducers.kind === "object" ? getKnownObjectKeys(reducers) : null;
+  if (reducers.kind !== "object" || reducerNames === null) return null;
+  return objectFromRecord(
+    Object.fromEntries(
+      reducerNames.map((reducerName) => {
+        const definition = getObjectProperty(reducers, reducerName);
+        const prepare =
+          definition.kind === "object" ? getObjectProperty(definition, "prepare") : null;
+        return [
+          reducerName,
+          actionCreator(
+            `${name}/${reducerName}`,
+            prepare !== null && isCallable(prepare) ? prepare : null,
+          ),
+        ];
+      }),
+    ),
+  );
+};
+
+/**
+ * `createSlice`: the slice's `name` and `reducerPath` are the strings it was
+ * given, `getInitialState` its `initialState` (called when a function), and
+ * `actions` one creator per case reducer typed `${name}/${reducerName}`.
+ */
+const createSlice = nativeFunction("createSlice", ([options]) => {
+  const name = getOptionalProperty(options, "name");
+  if (!isKnownString(name))
+    return unknownValue("createSlice() with a name that is not statically known");
+  const actions = sliceActionCreators(name.value, getOptionalProperty(options, "reducers"));
+  if (actions === null)
+    return unknownValue(`createSlice(${name.value}) with reducers that are not statically known`);
+  const reducerPathOption = getOptionalProperty(options, "reducerPath");
+  const reducerPath = isKnownString(reducerPathOption) ? reducerPathOption.value : name.value;
+  const initialState = getOptionalProperty(options, "initialState");
+  const getInitialState = nativeFunction("getInitialState", (_args, tools) =>
+    isCallable(initialState) ? tools.call(initialState, []) : initialState,
+  );
+  const selectSlice = nativeFunction("selectSlice", ([state]) =>
+    state?.kind === "object"
+      ? getObjectProperty(state, reducerPath)
+      : unknownValue(`the ${reducerPath} slice of a state that is not statically known`),
+  );
+  return objectFromRecord({
+    name,
+    reducerPath: primitiveValue(reducerPath),
+    reducer: nativeFunction("reducer", () =>
+      unknownValue(`state produced by the ${name.value} slice reducer`),
+    ),
+    actions,
+    caseReducers: getOptionalProperty(options, "reducers"),
+    getInitialState,
+    selectSlice,
+  });
+});
+
+const bindActionCreators = nativeFunction("bindActionCreators", ([creators, dispatch]) => {
+  if (creators === undefined || dispatch === undefined)
+    return unknownValue("bindActionCreators() without creators or a dispatch");
+  const bind = (creator: StaticValue): StaticValue =>
+    nativeFunction("boundActionCreator", (args, callTools) =>
+      callTools.call(dispatch, [callTools.call(creator, args)]),
+    );
+  if (isCallable(creators)) return bind(creators);
+  const keys = creators.kind === "object" ? getKnownObjectKeys(creators) : null;
+  if (creators.kind !== "object" || keys === null) {
+    return unknownValue("bindActionCreators() over creators that are not statically known");
+  }
+  return objectFromRecord(
+    Object.fromEntries(keys.map((key) => [key, bind(getObjectProperty(creators, key))])),
+  );
+});
+
 const configureStore = (project: ProjectContext): StaticValue =>
   nativeFunction("configureStore", ([options]) => {
     const reducerKeys = getReducerKeys(getOptionalProperty(options, "reducer"));
@@ -339,6 +436,12 @@ export const reduxToolkitValue: LibraryValueProvider = (specifier, importedName,
   switch (importedName) {
     case "combineReducers":
       return combineReducers;
+    case "createAction":
+      return createAction;
+    case "createSlice":
+      return createSlice;
+    case "bindActionCreators":
+      return bindActionCreators;
     case "configureStore":
       return configureStore(project);
     case "createApi":

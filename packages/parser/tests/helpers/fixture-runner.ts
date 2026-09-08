@@ -4,6 +4,7 @@ import type { RootObservations, RuntimeObservations, StaticRenderResult } from "
 import {
   dropInjectedFibers,
   getFrameworkProfile,
+  isTransparentRuntimeFiber,
   renderFrameworkTarget,
   type FrameworkKind,
 } from "../../src/frameworks/index.js";
@@ -21,6 +22,7 @@ import {
   type RuntimeFiberSnapshot,
   type RuntimeSnapshot,
 } from "../../src/harness/index.js";
+import { NODE_TIMER_UNDERRUN_MS } from "../../src/evaluate/timers.js";
 import { installReduxStoreHook } from "../../src/harness/redux-store.js";
 
 export interface FixtureManifest {
@@ -139,11 +141,11 @@ export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult
     },
     {
       rootDirectory: fixture.directory,
-      tsconfigPath: existsSync(join(fixture.directory, "tsconfig.json"))
-        ? join(fixture.directory, "tsconfig.json")
-        : undefined,
+      tsconfigPath: join(fixture.directory, "tsconfig.json"),
       externalPackageAllowList: fixture.manifest.externalPackages,
       observations: fixture.manifest.observations,
+      settleMs: SETTLE_QUIET_MS,
+      timerUnderrunMs: NODE_TIMER_UNDERRUN_MS,
     },
   );
   if (fixture.manifest.skipRuntime) {
@@ -158,7 +160,7 @@ export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult
   const comparison = compareStaticToRuntime(staticResult, dropInjectedFibers(runtime, profile), {
     anchor: fixture.manifest.anchor ?? profile.defaultAnchor ?? undefined,
     transparentStaticFibers: profile.transparentStaticFibers,
-    transparentRuntimeFibers: profile.transparentRuntimeFibers,
+    isTransparentRuntimeFiber: (fiber) => isTransparentRuntimeFiber(fiber, profile),
   });
   return { staticResult, runtime, observed, comparison };
 };

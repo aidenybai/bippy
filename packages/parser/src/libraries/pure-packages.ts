@@ -13,6 +13,7 @@ import {
 // uncertain argument stays opaque, exactly as an unmodeled external call.
 
 const PURE_PACKAGES: ReadonlySet<string> = new Set([
+  "class-variance-authority",
   "classnames",
   "clsx",
   "date-fns",
@@ -41,12 +42,12 @@ export class PurePackages {
     if (exported === undefined) return null;
     const name = `${specifier}#${importedName}`;
     return typeof exported === "function"
-      ? pureNativeFunction(name, exported, undefined, () => ({
+      ? pureNativeFunction(name, exported, undefined, null, () => ({
           kind: "external",
           packageName,
           importedName: `${importedName}()`,
           origin: "derived",
         }))
-      : fromNativeValue(exported, name);
+      : fromNativeValue(exported, name, null);
   }
 }

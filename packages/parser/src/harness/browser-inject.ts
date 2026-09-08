@@ -1,5 +1,6 @@
 // Bundled by capture-browser.ts and injected into the page before any app
 // script runs so the DevTools hook exists when React initializes.
+import "./zod-jitless.js";
 import type { CapturedPageState, CapturedValue, RootObservations } from "../types.js";
 import { createCommitRecorder } from "./commit-recorder.js";
 import { readKeaStores } from "./kea-store.js";

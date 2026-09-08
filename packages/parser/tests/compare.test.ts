@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import { comparePatternToRuntime } from "../src/harness/compare.js";
 import type { RuntimeFiberSnapshot } from "../src/harness/snapshot.js";
-import type { PatternNode } from "../src/harness/static-pattern.js";
+import type { PatternFiber, PatternNode } from "../src/harness/static-pattern.js";
 
 const runtimeFiber = (
   name: string,
@@ -9,19 +9,40 @@ const runtimeFiber = (
   tag: RuntimeFiberSnapshot["tag"] = "FunctionComponent",
 ): RuntimeFiberSnapshot => ({ tag, name, key: null, text: null, props: {}, children });
 
+const patternFiber = (
+  name: string,
+  children: PatternFiber[] = [],
+  tag: PatternFiber["tag"] = "FunctionComponent",
+): PatternFiber => ({ kind: "fiber", tag, name, key: null, children });
+
 const host = (name: string, children: RuntimeFiberSnapshot[] = []): RuntimeFiberSnapshot =>
   runtimeFiber(name, children, "HostComponent");
 
-const patternFiber = (
-  name: string,
-  children: PatternNode[] = [],
-  tag: RuntimeFiberSnapshot["tag"] = "FunctionComponent",
-): PatternNode => ({ kind: "fiber", tag, name, key: null, children });
-
-const patternHost = (name: string, children: PatternNode[] = []): PatternNode =>
+const patternHost = (name: string, children: PatternFiber[] = []): PatternFiber =>
   patternFiber(name, children, "HostComponent");
 
+describe("comparePatternToRuntime", () => {
+  it("accepts a bundler-deconflicted `$N` suffix on the runtime name", () => {
+    const report = comparePatternToRuntime(
+      [patternFiber("Dialog", [patternFiber("Panel", [patternFiber("div", [], "HostComponent")])])],
+      [
+        runtimeFiber("Dialog$1", [
+          runtimeFiber("Panel$12", [runtimeFiber("div", [], "HostComponent")]),
+        ]),
+      ],
+    );
+    expect(report.status).toBe("exact");
+    expect(report.matchedFibers).toBe(3);
+  });
+
+  it("does not equate names that differ beyond a `$N` suffix", () => {
+    const report = comparePatternToRuntime([patternFiber("Dialog")], [runtimeFiber("Dialog$1x")]);
+    expect(report.status).toBe("mismatch");
+  });
+});
+
 const WRAPPERS = new Set(["Root", "ErrorBoundary"]);
+const isWrapper = (fiber: RuntimeFiberSnapshot): boolean => WRAPPERS.has(fiber.name ?? fiber.tag);
 
 describe("transparent runtime fibers", () => {
   it("splices framework wrappers the static tree does not render", () => {
@@ -34,7 +55,7 @@ describe("transparent runtime fibers", () => {
     const report = comparePatternToRuntime(
       [patternHost("main", [patternHost("h1")]), patternHost("footer")],
       runtime,
-      { transparentRuntimeFibers: WRAPPERS },
+      { isTransparentRuntimeFiber: isWrapper },
     );
     expect(report.status).toBe("exact");
     expect(report.transparentFibers).toBe(2);
@@ -52,7 +73,7 @@ describe("transparent runtime fibers", () => {
       patternHost("nav", [patternFiber("Root", [patternFiber("Dialog", [patternHost("button")])])]),
     ];
     const report = comparePatternToRuntime(pattern, runtime, {
-      transparentRuntimeFibers: WRAPPERS,
+      isTransparentRuntimeFiber: isWrapper,
     });
     expect(report.status).toBe("exact");
     expect(report.transparentFibers).toBe(1);
@@ -72,7 +93,7 @@ describe("transparent runtime fibers", () => {
       [patternHost("main", [patternHost("article")])],
       runtime,
       {
-        transparentRuntimeFibers: WRAPPERS,
+        isTransparentRuntimeFiber: isWrapper,
       },
     );
     expect(report.status).toBe("exact");
@@ -83,7 +104,7 @@ describe("transparent runtime fibers", () => {
   it("reports the divergence past a spliced wrapper", () => {
     const runtime = [runtimeFiber("Root", [host("main", [host("h2")])])];
     const report = comparePatternToRuntime([patternHost("main", [patternHost("h1")])], runtime, {
-      transparentRuntimeFibers: WRAPPERS,
+      isTransparentRuntimeFiber: isWrapper,
     });
     expect(report.status).toBe("mismatch");
     expect(report.divergence).toEqual({
@@ -108,7 +129,7 @@ describe("transparent runtime fibers", () => {
       passedChildren: [patternHost("section", [patternHost("p")])],
     };
     const report = comparePatternToRuntime([opaque], runtime, {
-      transparentRuntimeFibers: WRAPPERS,
+      isTransparentRuntimeFiber: isWrapper,
     });
     expect(report.status).toBe("partial");
     expect(report.slotsMatched).toBe(1);

@@ -1,5 +1,6 @@
 import {
   FUNCTION_OWN_KEYS,
+  getStubOwnKeys,
   REACT_ELEMENT_OWN_KEYS,
   WRAPPER_OWN_KEYS,
 } from "../react/element-shape.js";
@@ -8,15 +9,7 @@ import type {
   StaticElementType,
   StaticFunctionValue,
   StaticValue,
-  StubComponent,
 } from "../types.js";
-import {
-  ForwardRefTag,
-  FunctionComponentTag,
-  LazyComponentTag,
-  MemoComponentTag,
-  SimpleMemoComponentTag,
-} from "../work-tags.js";
 import { getStaticProperty } from "./class-component.js";
 import { createErrorValue } from "./errors.js";
 import { hasNativeObjectMember } from "./native-values.js";
@@ -68,25 +61,11 @@ const hasComponentProperty = (type: StaticElementType, name: string): StaticValu
         ? TRUE_VALUE
         : FALSE_VALUE;
     case "stub":
-      return hasStubProperty(type.stub, name) ? TRUE_VALUE : FALSE_VALUE;
+      if (type.stub.properties?.has(name)) return TRUE_VALUE;
+      if (name === "displayName") return primitiveValue(type.stub.displayName !== null);
+      return getStubOwnKeys(type.stub.tag).has(name) ? null : FALSE_VALUE;
     default:
       return null;
-  }
-};
-
-const hasStubProperty = (stub: StubComponent, name: string): boolean => {
-  if (stub.properties?.has(name)) return true;
-  if (name === "displayName") return stub.displayName !== null;
-  switch (stub.tag ?? FunctionComponentTag) {
-    case ForwardRefTag:
-      return WRAPPER_OWN_KEYS["forward-ref"].has(name);
-    case MemoComponentTag:
-    case SimpleMemoComponentTag:
-      return WRAPPER_OWN_KEYS.memo.has(name);
-    case LazyComponentTag:
-      return WRAPPER_OWN_KEYS.lazy.has(name);
-    default:
-      return name === "length" || name === "name" || name === "prototype";
   }
 };
 

@@ -42,5 +42,8 @@ export const readProcessEnvironment = (
   for (const file of entry.static.envFiles) {
     parseDotenv(readFileSync(path.resolve(rootDirectory, file), "utf8"), variables);
   }
-  return { variables, clientPrefix: CLIENT_PREFIXES[entry.framework] };
+  return {
+    variables,
+    clientPrefix: entry.static.envPrefix ?? CLIENT_PREFIXES[entry.framework],
+  };
 };

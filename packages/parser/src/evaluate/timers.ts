@@ -1,39 +1,83 @@
-import type { StaticValue } from "../types.js";
+import type { ClockReading, ClockTask, StaticValue } from "../types.js";
 import { rangedNumberValue } from "./primitive-shapes.js";
-import { primitiveValue, unknownPrimitiveValue } from "./values.js";
+import { primitiveValue } from "./values.js";
+
+/** The quiet window (no React commit) after which the runtime snapshot is taken. */
+export const DEFAULT_SETTLE_MS = 1_500;
+
+/** Node's timers fire once its millisecond-truncated monotonic clock has advanced by the delay, so `Date.now()` can measure 1ms less. */
+export const NODE_TIMER_UNDERRUN_MS = 1;
 
 /**
  * Timers as the harness observes them. The runtime snapshot is captured once
- * React has been quiet for a while: short timeouts have fired, and a repeating
- * interval has either cleared itself or its ticks no longer change state.
- * Timer callbacks are queued as tasks and flushed between settle rounds of the
+ * React has been quiet for `settleMs`: a timer with a shorter delay has fired,
+ * one with a longer or dynamic delay may not have, and a repeating interval
+ * has either cleared itself or its ticks no longer change state.
+ * Timer callbacks are queued as tasks and run one per settle round of the
  * materialized mount, so the code following `setTimeout` (including the
- * assignment of the returned handle) runs first, as it does in the event loop.
+ * assignment of the returned handle) runs first and React commits the updates
+ * a task made before the next task runs, as it does in the event loop.
  * Microtasks (`queueMicrotask`, promise reactions) run once the current task's
  * synchronous work ends: the host drains them before each timer task and at
  * the points of a React commit where the event loop would run them.
  * An interval's ticks are evaluated at that quiescent point, where any clock
  * reading is later than every earlier reading by an unbounded amount, until
  * the interval clears itself or a tick changes nothing. Readings taken in
- * evaluation order never decrease, and two readings taken by the same task
- * (no timer round between them) are less than a second apart.
+ * evaluation order never decrease, two readings taken by the same task (no
+ * timer round between them) are less than a second apart, and a reading taken
+ * by a timer task is at least the timer's delay after the readings of the task
+ * that scheduled it.
  */
 export class TimerQueue {
   private tasks: (() => void)[] = [];
   private microtasks: (() => void)[] = [];
   private readonly clearedHandles = new WeakSet<StaticValue>();
   private clockSequence = 0;
-  private clockTask = 0;
+  private clockTask: ClockTask = { scheduledBy: null, delayMs: 0 };
+  private deferredDepth = 0;
   isClockSettled = false;
   isFlushing = false;
 
-  createHandle(name: string): StaticValue {
-    return unknownPrimitiveValue("number", `${name} handle`);
+  constructor(
+    private readonly settleMs = DEFAULT_SETTLE_MS,
+    private readonly timerUnderrunMs = 0,
+  ) {}
+
+  /** The delay of a timer that has fired by the captured commit, in ms; null for longer or dynamic delays. */
+  getSettledDelay(delay: StaticValue | undefined): number | null {
+    if (delay === undefined) return 0;
+    if (delay.kind !== "primitive") return null;
+    if (delay.value === undefined || delay.value === null) return 0;
+    if (typeof delay.value === "number" && delay.value < this.settleMs) {
+      return Math.max(0, delay.value);
+    }
+    return null;
   }
 
-  schedule(handle: StaticValue, task: () => void): void {
+  /** True while running a continuation of a promise that settles outside the analysis: its position on this timeline is unknown, so it may or may not have run by the captured commit. */
+  get isDeferred(): boolean {
+    return this.deferredDepth > 0;
+  }
+
+  runDeferred<Result>(run: () => Result): Result {
+    this.deferredDepth += 1;
+    try {
+      return run();
+    } finally {
+      this.deferredDepth -= 1;
+    }
+  }
+
+  createHandle(name: string): StaticValue {
+    return rangedNumberValue(`${name} handle`, { min: 1, max: Number.POSITIVE_INFINITY });
+  }
+
+  schedule(handle: StaticValue, task: () => void, delayMs = 0): void {
+    const scheduledBy = this.clockTask;
     this.tasks.push(() => {
-      if (!this.clearedHandles.has(handle)) task();
+      if (this.clearedHandles.has(handle)) return;
+      this.clockTask = { scheduledBy, delayMs };
+      task();
     });
   }
 
@@ -58,15 +102,17 @@ export class TimerQueue {
     for (let task = this.microtasks.shift(); task; task = this.microtasks.shift()) task();
   }
 
-  /** Runs the tasks queued so far; tasks they queue wait for the next round. */
-  flush(): void {
-    const tasks = this.tasks;
-    this.tasks = [];
+  hasTasks(): boolean {
+    return this.tasks.length > 0;
+  }
+
+  /** One turn of the event loop: the microtasks due, the next timer task, then the microtasks it queued. */
+  runNextTask(): void {
     this.isFlushing = true;
     try {
       this.drainMicrotasks();
-      for (const task of tasks) {
-        this.clockTask += 1;
+      const task = this.tasks.shift();
+      if (task) {
         task();
         this.drainMicrotasks();
       }
@@ -84,6 +130,7 @@ export class TimerQueue {
         ordering: this.isClockSettled ? "settled" : "reading",
         sequence: ++this.clockSequence,
         task: this.clockTask,
+        timerUnderrunMs: this.timerUnderrunMs,
       },
     };
   }
@@ -93,13 +140,29 @@ const UNBOUNDED_ELAPSED: StaticValue = {
   kind: "unknown-primitive",
   primitiveType: "number",
   reason: "time elapsed until the interval settled",
-  clock: { ordering: "unbounded", sequence: 0, task: 0 },
+  clock: {
+    ordering: "unbounded",
+    sequence: 0,
+    task: { scheduledBy: null, delayMs: 0 },
+    timerUnderrunMs: 0,
+  },
 };
 
 const SAME_TASK_ELAPSED_BOUND_MS = 1000;
+const ELAPSED_REASON = "time elapsed between clock readings";
 
 const isUnbounded = (value: StaticValue): boolean =>
   value.kind === "unknown-primitive" && value.clock?.ordering === "unbounded";
+
+/** The delays a later reading's scheduling chain adds up to since an earlier one, less the timer underrun; 0 when the earlier task is not on that chain. */
+const getMinimumElapsed = (later: ClockReading, earlier: ClockReading): number => {
+  let elapsed = 0;
+  for (let task: ClockTask | null = later.task; task; task = task.scheduledBy) {
+    if (task === earlier.task) return Math.max(0, elapsed - later.timerUnderrunMs);
+    elapsed += task.delayMs;
+  }
+  return 0;
+};
 
 /** `later - earlier` for two clock readings; null unless both are readings. */
 const subtractReadings = (left: StaticValue, right: StaticValue): StaticValue | null => {
@@ -112,11 +175,20 @@ const subtractReadings = (left: StaticValue, right: StaticValue): StaticValue | 
   }
   if (leftClock.ordering === "unbounded" || rightClock.ordering === "unbounded") return null;
   if (leftClock.ordering !== rightClock.ordering) return null;
-  const bound =
-    leftClock.task === rightClock.task ? SAME_TASK_ELAPSED_BOUND_MS : Number.POSITIVE_INFINITY;
+  if (leftClock.task === rightClock.task) {
+    return leftClock.sequence >= rightClock.sequence
+      ? rangedNumberValue(ELAPSED_REASON, { min: 0, max: SAME_TASK_ELAPSED_BOUND_MS })
+      : rangedNumberValue(ELAPSED_REASON, { min: -SAME_TASK_ELAPSED_BOUND_MS, max: 0 });
+  }
   return leftClock.sequence >= rightClock.sequence
-    ? rangedNumberValue("time elapsed between clock readings", { min: 0, max: bound })
-    : rangedNumberValue("time elapsed between clock readings", { min: -bound, max: 0 });
+    ? rangedNumberValue(ELAPSED_REASON, {
+        min: getMinimumElapsed(leftClock, rightClock),
+        max: Number.POSITIVE_INFINITY,
+      })
+    : rangedNumberValue(ELAPSED_REASON, {
+        min: Number.NEGATIVE_INFINITY,
+        max: -getMinimumElapsed(rightClock, leftClock),
+      });
 };
 
 const isFiniteNumber = (value: StaticValue): boolean =>
