@@ -70,12 +70,8 @@
       "framework": "next-app",
       "workingDirectory": "apps/web",
       "install": "yarn install",
-      "setup": [
-        "bash \"$BIPPY_CORPUS_SCRIPTS/cal-diy-setup.sh\""
-      ],
-      "services": [
-        "bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-cal-pg 5450 calendso"
-      ],
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/cal-diy-setup.sh\""],
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-cal-pg 5450 calendso"],
       "dev": "yarn dev",
       "url": "http://localhost:3000/auth/login",
       "readyTimeoutMs": 900000,
@@ -105,9 +101,7 @@
         "defines": {
           "process.env.NEXT_PUBLIC_CALCOM_VERSION": "6.2.0"
         },
-        "envFiles": [
-          "../../.env"
-        ],
+        "envFiles": ["../../.env"],
         "maxFiberCount": 20000
       },
       "notes": "`next.config.ts` loads the repository `.env` (written by the setup script) and sets `NEXT_PUBLIC_CALCOM_VERSION` from the root package version, which is the one define. The seeded database comes from cal.diy's own `db-seed`; `/` redirects unauthenticated visitors to the login page, which is captured directly."
@@ -129,9 +123,7 @@
       "url": "http://localhost:3000/",
       "readyTimeoutMs": 600000,
       "settleMs": 6000,
-      "capturedGlobals": [
-        "ENV"
-      ],
+      "capturedGlobals": ["ENV"],
       "static": {
         "rootDirectory": ".",
         "entry": "app/routes.ts",
@@ -313,9 +305,7 @@
         "tsconfig": "apps/demo/tsconfig.json",
         "appDirectory": "apps/demo/app",
         "route": "/",
-        "externalPackageAllowList": [
-          "lucide-react"
-        ],
+        "externalPackageAllowList": ["lucide-react"],
         "maxFiberCount": 20000
       }
     },
@@ -459,9 +449,7 @@
       "static": {
         "rootDirectory": "examples/query/react/basic",
         "entry": "src/index.tsx",
-        "externalPackageAllowList": [
-          "react-redux"
-        ]
+        "externalPackageAllowList": ["react-redux"]
       }
     },
     {
@@ -497,9 +485,7 @@
       "static": {
         "rootDirectory": "test",
         "route": "/",
-        "externalPackageAllowList": [
-          "sonner"
-        ]
+        "externalPackageAllowList": ["sonner"]
       },
       "notes": "Live: Next 14 (React 18.3 canary). Same profile normalization as nextjs-examples; the toaster state is runtime-only (partial)."
     },
@@ -573,10 +559,7 @@
         "rootDirectory": "apps/examples",
         "entry": "src/index.tsx",
         "route": "/",
-        "externalPackageAllowList": [
-          "tldraw",
-          "@tldraw/*"
-        ],
+        "externalPackageAllowList": ["tldraw", "@tldraw/*"],
         "maxFiberCount": 20000
       }
     },
@@ -588,19 +571,13 @@
       "framework": "react-router",
       "workingDirectory": ".",
       "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npm install --no-audit --no-fund",
-      "setup": [
-        "bash \"$BIPPY_CORPUS_SCRIPTS/documenso-setup.sh\""
-      ],
-      "services": [
-        "docker compose -f docker/development/compose.yml up -d database redis"
-      ],
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/documenso-setup.sh\""],
+      "services": ["docker compose -f docker/development/compose.yml up -d database redis"],
       "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npm run dev:remix",
       "url": "http://localhost:3000/signin",
       "readyTimeoutMs": 900000,
       "settleMs": 10000,
-      "capturedGlobals": [
-        "__ENV__"
-      ],
+      "capturedGlobals": ["__ENV__"],
       "static": {
         "rootDirectory": "apps/remix",
         "entry": "app/routes.ts",
@@ -635,9 +612,7 @@
       "url": "https://localhost:7999/auth/login/",
       "readyTimeoutMs": 900000,
       "settleMs": 10000,
-      "capturedGlobals": [
-        "__initialData"
-      ],
+      "capturedGlobals": ["__initialData"],
       "static": {
         "rootDirectory": ".",
         "entry": "static/app/main.tsx",
@@ -684,11 +659,7 @@
       "url": "http://localhost:8000/login",
       "readyTimeoutMs": 900000,
       "settleMs": 10000,
-      "capturedGlobals": [
-        "POSTHOG_APP_CONTEXT",
-        "JS_URL",
-        "JS_CAPTURE_TIME_TO_SEE_DATA"
-      ],
+      "capturedGlobals": ["POSTHOG_APP_CONTEXT", "JS_URL", "JS_CAPTURE_TIME_TO_SEE_DATA"],
       "static": {
         "rootDirectory": "frontend",
         "entry": "src/index.tsx",
@@ -759,12 +730,7 @@
       "static": {
         "rootDirectory": "examples/v2/react/demo",
         "route": "/",
-        "externalPackageAllowList": [
-          "@copilotkit/*",
-          "@ag-ui/*",
-          "@radix-ui/*",
-          "lucide-react"
-        ]
+        "externalPackageAllowList": ["@copilotkit/*", "@ag-ui/*", "@radix-ui/*", "lucide-react"]
       }
     },
     {
@@ -781,12 +747,7 @@
       "static": {
         "rootDirectory": ".",
         "route": "/",
-        "externalPackageAllowList": [
-          "@react-three/*",
-          "its-fine",
-          "tunnel-rat",
-          "three"
-        ]
+        "externalPackageAllowList": ["@react-three/*", "its-fine", "tunnel-rat", "three"]
       }
     },
     {
@@ -834,11 +795,7 @@
       "static": {
         "rootDirectory": "examples/landing",
         "route": "/",
-        "externalPackageAllowList": [
-          "@craftjs/*",
-          "@material-ui/*",
-          "styled-components"
-        ]
+        "externalPackageAllowList": ["@craftjs/*", "@material-ui/*", "styled-components"]
       }
     },
     {
@@ -886,11 +843,7 @@
         "rootDirectory": "client",
         "entry": "src/index.jsx",
         "route": "/signin",
-        "externalPackageAllowList": [
-          "react-redux",
-          "react-icons",
-          "react-icons/*"
-        ]
+        "externalPackageAllowList": ["react-redux", "react-icons", "react-icons/*"]
       }
     },
     {
@@ -930,9 +883,7 @@
       "framework": "next-app",
       "workingDirectory": ".",
       "install": "pnpm install --ignore-workspace",
-      "setup": [
-        "cp -n .env.example .env; true"
-      ],
+      "setup": ["cp -n .env.example .env; true"],
       "dev": "pnpm dev",
       "url": "http://localhost:3000/en",
       "settleMs": 8000,
@@ -950,9 +901,7 @@
           "react-icons",
           "react-icons/*"
         ],
-        "envFiles": [
-          ".env"
-        ]
+        "envFiles": [".env"]
       }
     },
     {
@@ -970,10 +919,7 @@
         "rootDirectory": "web",
         "entry": "src/main.tsx",
         "route": "/",
-        "externalPackageAllowList": [
-          "antd",
-          "@ant-design/*"
-        ]
+        "externalPackageAllowList": ["antd", "@ant-design/*"]
       }
     },
     {
@@ -1010,9 +956,7 @@
           "lucide-react",
           "sonner"
         ],
-        "envFiles": [
-          "../../.env"
-        ],
+        "envFiles": ["../../.env"],
         "maxFiberCount": 20000
       },
       "notes": "The setup script writes the repository `.env` (SQLite `DATA_DIR`, NextAuth secret) and symlinks it into `apps/web` so `next dev` loads it; `pnpm db:migrate` creates the database. `/` redirects unauthenticated visitors to `/signin`, which is captured directly. The background workers, Meilisearch and the headless Chrome container are not started (not needed for the sign-in page). Runs on Node 22 rather than the repository's `.nvmrc` 24: `better-sqlite3@11.3.0` has no Node 24 prebuild and its locally compiled binary aborts `next-server` (`RemoveEnvironmentCleanupHook` assertion) when Next tears down a worker."
@@ -1025,9 +969,7 @@
       "framework": "next-pages",
       "workingDirectory": ".",
       "install": "yarn install",
-      "setup": [
-        "bash \"$BIPPY_CORPUS_SCRIPTS/linkwarden-setup.sh\""
-      ],
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/linkwarden-setup.sh\""],
       "services": [
         "bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-linkwarden-pg 5451 linkwarden"
       ],
@@ -1049,9 +991,7 @@
           "react-hot-toast",
           "@radix-ui/*"
         ],
-        "envFiles": [
-          "../../.env"
-        ],
+        "envFiles": ["../../.env"],
         "maxFiberCount": 20000
       },
       "notes": "The root `web:dev` script runs `next dev` under dotenv with the repository `.env` written by the setup script (Postgres URL, NextAuth secret, credentials login enabled). The worker process is not started."
@@ -1064,9 +1004,7 @@
       "framework": "next-app",
       "workingDirectory": "apps/web",
       "install": "pnpm install --frozen-lockfile",
-      "setup": [
-        "bash \"$BIPPY_CORPUS_SCRIPTS/formbricks-setup.sh\""
-      ],
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/formbricks-setup.sh\""],
       "services": [
         "bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-formbricks-pg 5452 formbricks pgvector/pgvector:pg17",
         "bash \"$BIPPY_CORPUS_SCRIPTS/redis.sh\" bippy-formbricks-redis 6380"
@@ -1078,14 +1016,8 @@
       "static": {
         "rootDirectory": "apps/web",
         "route": "/setup/intro",
-        "envFiles": [
-          "../../.env"
-        ],
-        "externalPackageAllowList": [
-          "@radix-ui/*",
-          "react-i18next",
-          "react-hot-toast"
-        ],
+        "envFiles": ["../../.env"],
+        "externalPackageAllowList": ["@radix-ui/*", "react-i18next", "react-hot-toast"],
         "maxFiberCount": 20000
       },
       "notes": "The setup script copies `.env.example` to `.env` with generated secrets, the corpus Postgres/Valkey URLs and telemetry disabled, symlinks it into `apps/web`, builds the workspace packages `@formbricks/web#dev` depends on and applies the Prisma migrations. Mailhog and the S3 store from `docker-compose.dev.yml` are not started. With an empty database every auth page's layout `redirect()`s to `/setup/intro` (a database fact), so that page is captured directly."
@@ -1098,12 +1030,8 @@
       "framework": "react-router",
       "workingDirectory": ".",
       "install": "pnpm install --frozen-lockfile",
-      "services": [
-        "bash \"$BIPPY_CORPUS_SCRIPTS/plane-services.sh\""
-      ],
-      "setup": [
-        "bash \"$BIPPY_CORPUS_SCRIPTS/plane-setup.sh\""
-      ],
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/plane-services.sh\""],
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/plane-setup.sh\""],
       "dev": "pnpm turbo run dev --filter=web",
       "url": "http://localhost:3000/",
       "readyTimeoutMs": 900000,
@@ -1112,15 +1040,9 @@
         "rootDirectory": "apps/web",
         "entry": "app/routes.ts",
         "route": "/",
-        "envFiles": [
-          ".env"
-        ],
+        "envFiles": [".env"],
         "maxFiberCount": 20000,
-        "externalPackageAllowList": [
-          "@plane/*",
-          "next-themes",
-          "swr"
-        ]
+        "externalPackageAllowList": ["@plane/*", "next-themes", "swr"]
       },
       "notes": "`plane-services.sh` copies the three `.env.example` files and brings up `docker-compose-local.yml` (PostgreSQL, Valkey, RabbitMQ, MinIO, migrator, API on :8000) with `plane-compose.override.yml`, which unpublishes the database/cache host ports so they cannot collide with the other corpus containers. `turbo run dev --filter=web` builds the workspace packages first (they export `dist/`), then runs `react-router dev --port 3000`. `plane-setup.sh` symlinks `@tailwindcss/postcss` (a dependency of `packages/tailwind-config` only) into `apps/web/node_modules` because `apps/web/postcss.config.js` re-exports the shared config and postcss-load-config resolves plugin names from `apps/web`. Run with `--corpus-dir` outside this monorepo: `@react-router/dev` pre-bundles `react-router-dom` whenever `require.resolve` finds one from the app root, and a checkout nested under bippy picks up bippy's unrelated `react-router-dom@6`, which fails esbuild's optimizer against `react-router@7`."
     },
@@ -1148,12 +1070,8 @@
         "rootDirectory": "packages/twenty-front",
         "entry": "src/index.tsx",
         "route": "/welcome",
-        "envFiles": [
-          ".env"
-        ],
-        "externalPackageAllowList": [
-          "twenty-shared"
-        ],
+        "envFiles": [".env"],
+        "externalPackageAllowList": ["twenty-shared"],
         "maxFiberCount": 20000
       },
       "notes": "The setup script copies both `.env.example` files, points the server at the corpus PostgreSQL/Redis containers and runs `nx run twenty-server:database:init` (builds the server, creates the schema, applies instance migrations). `nx run-many -t start` runs the NestJS server (:3000) and the Vite dev server (:3001) together; the worker is not started. `twenty-shared` (a workspace package the front resolves through its built `dist/`) holds the `AppPath` route constants; `twenty-ui` is not analyzed because materializing its subtree overflows the stack / heap (see results residuals)."
@@ -1169,9 +1087,7 @@
       "setup": [
         "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 bash \"$BIPPY_CORPUS_SCRIPTS/langfuse-setup.sh\""
       ],
-      "services": [
-        "docker compose -f docker-compose.dev.yml up -d --wait"
-      ],
+      "services": ["docker compose -f docker-compose.dev.yml up -d --wait"],
       "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 pnpm dev",
       "url": "http://localhost:3000/auth/sign-in",
       "readyTimeoutMs": 900000,
@@ -1179,14 +1095,8 @@
       "static": {
         "rootDirectory": "web",
         "route": "/auth/sign-in",
-        "envFiles": [
-          "../.env"
-        ],
-        "externalPackageAllowList": [
-          "@trpc/*",
-          "@tanstack/react-query",
-          "@radix-ui/*"
-        ],
+        "envFiles": ["../.env"],
+        "externalPackageAllowList": ["@trpc/*", "@tanstack/react-query", "@radix-ui/*"],
         "maxFiberCount": 20000
       },
       "notes": "`docker-compose.dev.yml` publishes PostgreSQL :5432, ClickHouse :8123/:9000, Redis :6379 and MinIO :9090 on their default ports. The setup script copies `.env.dev.example` to `.env` (telemetry disabled), generates the Prisma client, builds `@langfuse/shared` (the web app resolves its `dist/`) and applies the Prisma migrations; the ClickHouse migrations are not applied (they need the golang-migrate CLI and the sign-in page does not query ClickHouse)."
@@ -1199,12 +1109,8 @@
       "framework": "next-pages",
       "workingDirectory": "apps/nestjs-backend",
       "install": "pnpm install --frozen-lockfile",
-      "setup": [
-        "bash \"$BIPPY_CORPUS_SCRIPTS/teable-setup.sh\""
-      ],
-      "services": [
-        "bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-teable-pg 5453 teable"
-      ],
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/teable-setup.sh\""],
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-teable-pg 5453 teable"],
       "dev": "pnpm dev",
       "url": "http://localhost:3000/auth/login",
       "readyTimeoutMs": 900000,
@@ -1212,10 +1118,7 @@
       "static": {
         "rootDirectory": "apps/nextjs-app",
         "route": "/auth/login",
-        "envFiles": [
-          ".env.development.local",
-          ".env.development"
-        ],
+        "envFiles": [".env.development.local", ".env.development"],
         "maxFiberCount": 20000,
         "externalPackageAllowList": [
           "next-i18next",
@@ -1238,9 +1141,7 @@
       "setup": [
         "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 bash \"$BIPPY_CORPUS_SCRIPTS/typebot-setup.sh\""
       ],
-      "services": [
-        "bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-typebot-pg 5454 typebot"
-      ],
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-typebot-pg 5454 typebot"],
       "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 bunx nx dev builder",
       "url": "http://localhost:3000/signin",
       "readyTimeoutMs": 900000,
@@ -1248,9 +1149,7 @@
       "static": {
         "rootDirectory": "apps/builder",
         "route": "/signin",
-        "envFiles": [
-          "../../.env"
-        ],
+        "envFiles": ["../../.env"],
         "externalPackageAllowList": [
           "@typebot.io/*",
           "@tolgee/react",
@@ -1298,9 +1197,7 @@
       "static": {
         "rootDirectory": ".",
         "route": "/",
-        "externalPackageAllowList": [
-          "@heroicons/react"
-        ]
+        "externalPackageAllowList": ["@heroicons/react"]
       }
     },
     {
@@ -1311,12 +1208,8 @@
       "framework": "next-app",
       "workingDirectory": ".",
       "install": "pnpm install --ignore-workspace",
-      "setup": [
-        "bash \"$BIPPY_CORPUS_SCRIPTS/chatbot-setup.sh\""
-      ],
-      "services": [
-        "bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-chatbot-pg 5451 chatbot"
-      ],
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/chatbot-setup.sh\""],
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-chatbot-pg 5451 chatbot"],
       "dev": "pnpm dev",
       "url": "http://localhost:3000/",
       "readyTimeoutMs": 600000,
@@ -1351,9 +1244,7 @@
       "static": {
         "rootDirectory": ".",
         "route": "/",
-        "externalPackageAllowList": [
-          "@vercel/analytics"
-        ]
+        "externalPackageAllowList": ["@vercel/analytics"]
       }
     },
     {
@@ -1364,9 +1255,7 @@
       "framework": "next-app",
       "workingDirectory": ".",
       "install": "pnpm install --ignore-workspace",
-      "setup": [
-        "bash \"$BIPPY_CORPUS_SCRIPTS/taxonomy-setup.sh\""
-      ],
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/taxonomy-setup.sh\""],
       "dev": "pnpm dev",
       "url": "http://localhost:3000/",
       "readyTimeoutMs": 600000,
@@ -1374,9 +1263,7 @@
       "static": {
         "rootDirectory": ".",
         "route": "/",
-        "envFiles": [
-          ".env"
-        ],
+        "envFiles": [".env"],
         "externalPackageAllowList": [
           "@radix-ui/*",
           "@floating-ui/*",
@@ -1401,9 +1288,7 @@
       "static": {
         "rootDirectory": "apps/web",
         "route": "/",
-        "externalPackageAllowList": [
-          "novel"
-        ]
+        "externalPackageAllowList": ["novel"]
       },
       "notes": "Live capture crashes: the editor's default content embeds a tweet and react-tweet@3.2.1 (node_modules/react-tweet/dist/utils.js addEntities) throws `TypeError: entities is not iterable` on the payload Twitter's syndication API returns today, so the page commits only the Next error overlay. Not patched (library/API drift, not a parser gap)."
     },
@@ -1476,9 +1361,7 @@
       "static": {
         "rootDirectory": ".",
         "route": "/dashboard",
-        "externalPackageAllowList": [
-          "react-redux"
-        ]
+        "externalPackageAllowList": ["react-redux"]
       }
     },
     {
@@ -1515,11 +1398,7 @@
         "rootDirectory": ".",
         "entry": "src/main.tsx",
         "route": "/login",
-        "externalPackageAllowList": [
-          "react-redux",
-          "hoist-non-react-statics",
-          "redux-persist"
-        ]
+        "externalPackageAllowList": ["react-redux", "hoist-non-react-statics", "redux-persist"]
       }
     },
     {
@@ -1584,9 +1463,7 @@
       "static": {
         "rootDirectory": ".",
         "route": "/dashboard/overview",
-        "externalPackageAllowList": [
-          "@uidotdev/usehooks"
-        ]
+        "externalPackageAllowList": ["@uidotdev/usehooks"]
       }
     },
     {
@@ -1607,9 +1484,7 @@
         "aliases": {
           "@kanaries/graphic-walker": "../graphic-walker/src/index.tsx"
         },
-        "externalPackageAllowList": [
-          "@kanaries/graphic-walker"
-        ]
+        "externalPackageAllowList": ["@kanaries/graphic-walker"]
       },
       "notes": "The playground resolves @kanaries/graphic-walker to the workspace build output, so the install builds the library; the package build minifies by default (vite.config.ts minify: esbuild), which would leave only mangled component names in the runtime tree, so the build runs with --minify false. The static side aliases the package to the library sources."
     }
