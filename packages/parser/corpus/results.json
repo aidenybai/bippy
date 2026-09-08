@@ -348,8 +348,8 @@
       "id": "decap-cms",
       "revision": "d4d4cd4bb9728c6e20bdcd06de69747d06d09175",
       "framework": "spa",
-      "capturedAt": "2026-09-08T16:04:21.635Z",
-      "durationMs": 735,
+      "capturedAt": "2026-09-08T23:39:53.376Z",
+      "durationMs": 1252,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -365,9 +365,9 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 64,
+          "fiberCount": 70,
           "textCount": 0,
-          "branchCount": 0,
+          "branchCount": 2,
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
@@ -391,16 +391,16 @@
         "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
-        "branchesResolved": 0,
+        "branchesResolved": 2,
         "branchDeviations": [],
         "repeatIterations": 0,
-        "status": "exact",
+        "status": "partial",
         "runtimeFibers": 63,
         "staticFibers": 63,
         "coverage": 1,
         "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 63,
+        "stepsUsed": 65,
         "budgetExhausted": false
       },
       "anchor": null,
@@ -576,8 +576,8 @@
       "id": "flagsmith",
       "revision": "8f8b83775642ffea54551121f64f38978191b244",
       "framework": "spa",
-      "capturedAt": "2026-09-08T16:01:17.653Z",
-      "durationMs": 1802,
+      "capturedAt": "2026-09-08T23:28:36.796Z",
+      "durationMs": 4273,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -598,17 +598,21 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 3512,
-          "textCount": 196,
-          "branchCount": 244,
-          "repeatCount": 0,
-          "opaqueCount": 20,
-          "unknownCount": 344,
+          "fiberCount": 7284,
+          "textCount": 497,
+          "branchCount": 472,
+          "repeatCount": 1,
+          "opaqueCount": 73,
+          "unknownCount": 615,
           "modulesLoaded": 772
         },
         "diagnostics": [
           {
             "code": "dynamic-key",
+            "count": 5
+          },
+          {
+            "code": "unsettled-state",
             "count": 2
           },
           {
@@ -698,7 +702,7 @@
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 151,
-        "staticFibers": 361,
+        "staticFibers": 633,
         "coverage": 1,
         "strictCoverage": 0.13245033112582782,
         "divergence": null,
@@ -713,8 +717,8 @@
       "id": "flowise",
       "revision": "9ae635b434d4410e17186d3f267f89bf6aa7d556",
       "framework": "spa",
-      "capturedAt": "2026-09-08T16:01:20.538Z",
-      "durationMs": 169019,
+      "capturedAt": "2026-09-08T23:28:42.182Z",
+      "durationMs": 163411,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -1653,8 +1657,8 @@
       "id": "mini-dashboard",
       "revision": "db4553b9aff43c0aa96ebc768a1c384be9099380",
       "framework": "spa",
-      "capturedAt": "2026-09-08T16:01:16.075Z",
-      "durationMs": 514,
+      "capturedAt": "2026-09-08T23:28:35.149Z",
+      "durationMs": 517,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -2648,8 +2652,8 @@
       "id": "reactive-trader",
       "revision": "4a31f016e6336c438ae9ab3731674af5d5c9203a",
       "framework": "spa",
-      "capturedAt": "2026-09-08T16:04:15.109Z",
-      "durationMs": 1786,
+      "capturedAt": "2026-09-08T23:31:31.865Z",
+      "durationMs": 2409,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -3602,8 +3606,8 @@
       "id": "redash",
       "revision": "4956e6d17cf429cbf2a2ac4330855cff1b98d92a",
       "framework": "spa",
-      "capturedAt": "2026-09-08T16:04:13.528Z",
-      "durationMs": 465,
+      "capturedAt": "2026-09-08T23:31:29.785Z",
+      "durationMs": 487,
       "runtime": null,
       "static": {
         "stats": {
@@ -3681,8 +3685,8 @@
       "id": "saleor-dashboard",
       "revision": "845a10414c17b84c35c69d5c7808587cc0031b03",
       "framework": "spa",
-      "capturedAt": "2026-09-08T16:04:18.053Z",
-      "durationMs": 2453,
+      "capturedAt": "2026-09-08T23:31:35.573Z",
+      "durationMs": 7980,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -3699,22 +3703,22 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 3138,
-          "textCount": 131,
-          "branchCount": 111,
+          "fiberCount": 4843,
+          "textCount": 129,
+          "branchCount": 240,
           "repeatCount": 6,
-          "opaqueCount": 1164,
-          "unknownCount": 152,
+          "opaqueCount": 1508,
+          "unknownCount": 368,
           "modulesLoaded": 2907
         },
         "diagnostics": [
           {
             "code": "dynamic-key",
-            "count": 3
+            "count": 6
           },
           {
             "code": "unsettled-state",
-            "count": 1
+            "count": 2
           }
         ]
       },
@@ -3741,7 +3745,7 @@
         ],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
-        "branchesResolved": 10,
+        "branchesResolved": 11,
         "branchDeviations": [
           {
             "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <SaleorProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ApolloProvider> (opaque) > <Router> [FunctionComponent] > <Router> [ClassComponent] > <Router> [ContextProvider] > <Router-History> [ContextProvider] > <LegacyThemeProvider> (opaque) > <ThemeProvider> [FunctionComponent] > <MacawThemeProvider> (opaque) > <LocaleProvider> [FunctionComponent] > <IntlProvider> (opaque) > <ContextProvider> [ContextProvider] > <NotificationProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BackgroundTasksProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppStateProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ProductAnalytics> [FunctionComponent] > <ShopProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppChannelProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ExitFormDialogProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <DevModeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <NavigatorSearchProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SavebarRefProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FeatureFlagsProviderWithUser> [FunctionComponent] > <FeatureFlagsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <OnboardingProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Routes> [FunctionComponent]",
@@ -3791,11 +3795,11 @@
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 303,
-        "staticFibers": 1871,
+        "staticFibers": 1838,
         "coverage": 1,
         "strictCoverage": 0.7425742574257426,
         "divergence": null,
-        "stepsUsed": 279,
+        "stepsUsed": 280,
         "budgetExhausted": false
       },
       "anchor": null,
@@ -4589,8 +4593,8 @@
       "id": "tooljet",
       "revision": "f33ff86cbb2c5a1bc3ff7d62ff4fc6ab00e8358b",
       "framework": "spa",
-      "capturedAt": "2026-09-08T16:04:10.649Z",
-      "durationMs": 1773,
+      "capturedAt": "2026-09-08T23:31:26.730Z",
+      "durationMs": 1840,
       "runtime": null,
       "static": {
         "stats": {
