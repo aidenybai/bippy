@@ -374,6 +374,7 @@ const toFunctionValue = (component: ComponentDefinition): StaticFunctionValue =>
     properties: component.properties,
     boundArgs: component.boundArgs,
     boundThis: component.boundThis,
+    isClientReference: component.isClientReference,
   };
 };
 
@@ -389,6 +390,7 @@ const toClassValue = (component: ComponentDefinition): StaticClassValue => {
     module: component.module,
     name: component.name,
     properties: component.properties,
+    isClientReference: component.isClientReference,
   };
 };
 

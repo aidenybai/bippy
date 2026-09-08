@@ -42,6 +42,22 @@ describe("next app router", () => {
     expect(tree).toMatch(/<section>\n\s+<h1>\n\s+<Counter>/);
   });
 
+  it("renders forwardRef/memo wrappers created by server code on the server", async () => {
+    const { tree, errors } = await render("next-app", { framework: "next-app", route: "/" });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<nav>(\n\s+<LinkComponent>[\s\S]*?<a>){2}\n\s+<svg>\n\s+<path>\n\s+<span>/,
+    );
+    expect(tree).not.toContain("<Badge>");
+    expect(tree).toMatch(/<Counter>\n\s+<button>\n\s+"1"\n\s+<ArrowIcon>\n\s+<svg>/);
+  });
+
+  it('treats every export of a "use client" module as a client reference', async () => {
+    const { tree, errors } = await render("next-app", { framework: "next-app", route: "/" });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<Counter>[\s\S]*?<Toaster>\n\s+<output>\n\s+<Sonner>\n\s+<aside>/);
+  });
+
   it("awaits async server components and their data helpers", async () => {
     const { tree } = await render("next-app", { framework: "next-app", route: "/" });
     expect(tree).not.toContain("async function result");
@@ -60,6 +76,7 @@ describe("next app router", () => {
       kind: "next-pages",
       route: "/",
       version: null,
+      nextIntlVersion: null,
     }).externalValues("next/form", "default");
     expect(
       pagesForm?.kind === "component-reference" && pagesForm.type.kind === "stub"
@@ -89,6 +106,19 @@ describe("next app router", () => {
       /<main>\n\s+\?unknown\(page\.mdx is compiled by the bundler's MDX loader\)/,
     );
     expect(lines(tree)).toContain("<nav>");
+  });
+
+  it("models next/link before 15.3 as a forwardRef LinkComponent -> <a>", async () => {
+    const { result, tree, errors } = await render("next-app-14", {
+      framework: "next-app",
+      route: "/",
+    });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<nav>\n\s+<LinkComponent>\n\s+<a>$/);
+    expect(tree).not.toContain("<ContextProvider>");
+    expect(JSON.stringify(getRenderRootChildren(result))).toContain(
+      '"tag":"ForwardRef","name":"LinkComponent"',
+    );
   });
 
   it("nests segment layouts, loading boundaries and resolves dynamic params", async () => {
@@ -159,10 +189,12 @@ describe("next app router", () => {
 
   it("models next/link as the pages forwardRef before Next 15.3 introduced LinkStatusContext", () => {
     const linkTag = (version: string | null): number | undefined | null => {
-      const link = createNextModel({ kind: "next-app", route: "/", version }).externalValues(
-        "next/link",
-        "default",
-      );
+      const link = createNextModel({
+        kind: "next-app",
+        route: "/",
+        version,
+        nextIntlVersion: null,
+      }).externalValues("next/link", "default");
       return link?.kind === "component-reference" && link.type.kind === "stub"
         ? link.type.stub.tag
         : null;
@@ -241,6 +273,23 @@ describe("next app router with next-intl", () => {
   it("keeps notFound() for an unsupported locale as control-flow uncertainty", async () => {
     const { tree } = await target("/de");
     expect(tree).toContain("notFound() interrupts rendering");
+  });
+
+  it("models next-intl 3.x: `locale` param from unstable_setRequestLocale, locale fallback, minified provider", async () => {
+    const legacy = (route: string) =>
+      render("next-app-intl-legacy", { framework: "next-app", route });
+    const english = await legacy("/en");
+    expect(english.errors).toEqual([]);
+    expect(english.tree).not.toContain("?unknown");
+    expect(english.tree).toMatch(/<body>\n\s+<r>\n\s+<IntlProvider>/);
+    expect(english.tree).toMatch(/<h1>\n\s+"Welcome"/);
+    expect(english.tree).toMatch(/<p>\n\s+"en"/);
+    expect(english.tree).toMatch(/<Greeting>\n\s+<p>\n\s+"Hello, Ada!"/);
+    const french = await legacy("/fr");
+    expect(french.tree).toMatch(/<h1>\n\s+"Bienvenue"/);
+    expect(french.tree).toMatch(/<p>\n\s+"fr"/);
+    expect(french.tree).toMatch(/"Bonjour, Ada !"/);
+    expect((await legacy("/de")).tree).toContain("notFound() interrupts rendering");
   });
 });
 

@@ -1,16 +1,12 @@
-import { z } from "zod";
-import { getInstalledModules } from "./installed-modules.js";
-
-const packageManifestSchema = z.object({ version: z.string() });
+import semver from "semver";
+import { readInstalledPackage } from "../graph/installed-package.js";
+import { ModuleResolver } from "../graph/module-resolver.js";
 
 /** The version of the project's installed copy of a package; `null` when it is not installed. */
-export const readInstalledVersion = (rootDirectory: string, packageName: string): string | null => {
-  const manifest = getInstalledModules(rootDirectory).load(`${packageName}/package.json`);
-  const parsed = packageManifestSchema.safeParse(manifest);
-  return parsed.success ? parsed.data.version : null;
-};
+export const readInstalledVersion = (rootDirectory: string, packageName: string): string | null =>
+  readInstalledPackage(new ModuleResolver({ rootDirectory }), rootDirectory, packageName)
+    ?.version ?? null;
 
-export const isVersionAtLeast = (version: string, major: number, minor: number): boolean => {
-  const [installedMajor = 0, installedMinor = 0] = version.split(".").map(Number);
-  return installedMajor > major || (installedMajor === major && installedMinor >= minor);
-};
+/** Release-line comparison: a `15.3.0-canary.5` install already has 15.3's shapes. */
+export const isVersionAtLeast = (version: string, minimum: string): boolean =>
+  semver.gte(semver.coerce(version) ?? version, minimum);

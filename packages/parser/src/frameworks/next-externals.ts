@@ -1,3 +1,4 @@
+import { isVersionAtLeast } from "../libraries/installed-version.js";
 import { STYLED_JSX_SPECIFIER } from "../evaluate/interpreter.js";
 import { createSearchParamsValue } from "../evaluate/url-search-params.js";
 import {
@@ -25,7 +26,6 @@ import type {
   StubComponent,
   StubRenderTools,
 } from "../types.js";
-import { isVersionAtLeast } from "../libraries/installed-version.js";
 import { ClassComponentTag, ForwardRefTag } from "../work-tags.js";
 import type { FrameworkKind } from "./framework-profile.js";
 import { toElementType } from "../react/element-type.js";
@@ -42,10 +42,10 @@ import {
   stubValue,
 } from "./stubs.js";
 
-// Static stand-ins for the `next/*` client surface (next@15). Shapes follow the
-// fiber trees the real components commit: `next/link` in the App Router is
-// `LinkComponent` -> LinkStatusContext provider -> <a>; in the Pages Router a
-// `forwardRef` -> <a>. `next/image` is a forwardRef wrapping a forwardRef
+// Static stand-ins for the `next/*` client surface. Shapes follow the fiber
+// trees the real components commit: `next/link` in the App Router (15.3+) is
+// `LinkComponent` -> LinkStatusContext provider -> <a>; before 15.3 and in the
+// Pages Router a `forwardRef` -> <a>. `next/image` is a forwardRef wrapping a forwardRef
 // `ImageElement` -> <img>. Router hooks resolve from the URL being rendered;
 // anything only the running router knows is an explicit unknown.
 
@@ -154,7 +154,7 @@ const isLegacyLinkBehavior = (
 ): boolean | null => {
   const legacy = getObjectProperty(props, "legacyBehavior");
   if (legacy.kind === "primitive" && legacy.value === undefined) {
-    return options.version !== null && !isVersionAtLeast(options.version, 13, 0);
+    return options.version !== null && !isVersionAtLeast(options.version, "13.0.0");
   }
   return getTruthiness(legacy);
 };
@@ -186,7 +186,7 @@ const anchorForLink = (props: StaticObjectValue, options: NextModelOptions): Sta
 /** `app-dir/link` became a plain function publishing `LinkStatusContext` in Next 15.3; before that it was the pages `forwardRef`. */
 const hasLinkStatus = (options: NextModelOptions): boolean =>
   options.kind === "next-app" &&
-  (options.version === null || isVersionAtLeast(options.version, 15, 3));
+  (options.version === null || isVersionAtLeast(options.version, "15.3.0"));
 
 /** Before Next 12.2 `next/link` was a plain `Link` function; since then a `forwardRef` named `LinkComponent`. */
 const createLinkStub = (options: NextModelOptions): StubComponent => {
@@ -208,7 +208,7 @@ const createLinkStub = (options: NextModelOptions): StubComponent => {
         ),
     };
   }
-  if (options.version !== null && !isVersionAtLeast(options.version, 12, 2)) {
+  if (options.version !== null && !isVersionAtLeast(options.version, "12.2.0")) {
     return { displayName: "Link", render };
   }
   return { displayName: "LinkComponent", tag: ForwardRefTag, render };
@@ -317,7 +317,7 @@ const CLASS_HEAD_STUB: StubComponent = {
 };
 
 const hasClassSideEffect = (options: NextModelOptions): boolean =>
-  options.version !== null && !isVersionAtLeast(options.version, 12, 2);
+  options.version !== null && !isVersionAtLeast(options.version, "12.2.0");
 
 /**
  * `next/script` commits a `<script>` only for `beforeInteractive` in the App
@@ -533,6 +533,8 @@ export interface NextModelOptions {
   request?: CapturedRequest;
   /** Installed `next` version; `null` models the latest release. */
   version: string | null;
+  /** Installed `next-intl` release; `null` when it cannot be read or is not installed. */
+  nextIntlVersion: string | null;
 }
 
 export const createNextModel = (options: NextModelOptions): NextModel => {
@@ -543,6 +545,7 @@ export const createNextModel = (options: NextModelOptions): NextModel => {
   const intl = createNextIntlModel({
     link: linkStub,
     navigation: (importedName) => appNavigationValue(importedName, url, params),
+    version: options.nextIntlVersion,
   });
   const externalValues: ExternalValueProvider = (packageName, importedName) => {
     switch (packageName) {

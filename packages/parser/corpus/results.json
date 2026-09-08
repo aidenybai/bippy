@@ -5212,6 +5212,883 @@
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T11:36:02.368Z",
       "failure": null
+    },
+    {
+      "id": "chadnext",
+      "revision": "1a1f25a6de88453bd3c80efa8c3f61f9c159661c",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T23:17:43.639Z",
+      "durationMs": 777,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-52684925-20251110",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 797,
+        "commits": 20,
+        "pageErrors": [],
+        "title": "ChadNext"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 559,
+          "textCount": 16,
+          "branchCount": 4,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 16,
+          "modulesLoaded": 1638
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-props",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "status": "partial",
+        "matchedFibers": 467,
+        "matchedText": 16,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 51,
+        "wildcards": [
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <main> [HostComponent]",
+            "reason": "promise settled asynchronously",
+            "absorbedFibers": 50,
+            "heads": [
+              "<section> [HostComponent]"
+            ]
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <p> [HostComponent]",
+            "reason": "call of value sent to the generator",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"ChadNext also includes Changelog & About page built using\""
+            ]
+          }
+        ],
+        "branchesResolved": 4,
+        "repeatIterations": 0,
+        "runtimeFibers": 534,
+        "staticFibers": 487,
+        "coverage": 1,
+        "strictCoverage": 0.9044943820224719,
+        "divergence": null,
+        "stepsUsed": 512,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 17,
+        "matchedState": {
+          "index": 16,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(158)",
+              "reason": "&& on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/chadnext/node_modules/@radix-ui/react-collapsible/dist/index.mjs:135:17",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(161)",
+              "reason": "&& on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/chadnext/node_modules/@radix-ui/react-collapsible/dist/index.mjs:135:17",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(164)",
+              "reason": "&& on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/chadnext/node_modules/@radix-ui/react-collapsible/dist/index.mjs:135:17",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(167)",
+              "reason": "&& on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/chadnext/node_modules/@radix-ui/react-collapsible/dist/index.mjs:135:17",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T07:56:36.878Z",
+      "failure": null
+    },
+    {
+      "id": "next-enterprise",
+      "revision": "e5e9735e943cd93c17bf99e26dfee6d351e855f7",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T23:17:23.491Z",
+      "durationMs": 336,
+      "runtime": {
+        "reactVersion": "19.2.0-canary-0bdb9206-20250818",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 282,
+        "commits": 14,
+        "pageErrors": [],
+        "title": "Next.js Enterprise Boilerplate"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 141,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 6
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 139,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "runtimeFibers": 139,
+        "staticFibers": 139,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 139,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T07:55:30.651Z",
+      "failure": null
+    },
+    {
+      "id": "next-forge",
+      "revision": "9aad7123ef8accc79d6ece399f249c46bdb6b138",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T23:17:28.489Z",
+      "durationMs": 3414,
+      "runtime": null,
+      "static": {
+        "stats": {
+          "fiberCount": 710,
+          "textCount": 78,
+          "branchCount": 7,
+          "repeatCount": 3,
+          "opaqueCount": 87,
+          "unknownCount": 4,
+          "modulesLoaded": 1770
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          },
+          {
+            "code": "dynamic-props",
+            "count": 1
+          },
+          {
+            "code": "timers-unsettled",
+            "count": 1
+          }
+        ]
+      },
+      "report": null,
+      "stateSpace": null,
+      "anchor": null,
+      "note": "static only",
+      "failure": null
+    },
+    {
+      "id": "next-shadcn-dashboard-starter",
+      "revision": "621cae9b49baa4f3ce9508c62525ee54c4180fa5",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T23:17:47.513Z",
+      "durationMs": 1202,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 3,
+        "fibers": 1689,
+        "commits": 55,
+        "pageErrors": [],
+        "title": "Authentication | Sign In"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 673,
+          "textCount": 11,
+          "branchCount": 3,
+          "repeatCount": 0,
+          "opaqueCount": 2,
+          "unknownCount": 2,
+          "modulesLoaded": 6135
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-props",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 633,
+        "matchedText": 11,
+        "opaqueSubtrees": 2,
+        "opaqueSkippedFibers": 29,
+        "slotsMatched": 1,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 3,
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 673,
+        "staticFibers": 646,
+        "coverage": 1,
+        "strictCoverage": 0.9569093610698366,
+        "divergence": null,
+        "stepsUsed": 671,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 8,
+        "matchedState": {
+          "index": 0,
+          "conditions": [
+            {
+              "kind": "branch",
+              "variable": "branch#1",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/next-shadcn-dashboard-starter/src/components/github-stars-button.tsx:18:5",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#2",
+              "reason": "&& on branch(false | <boolean>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/next-shadcn-dashboard-starter/src/components/github-stars-button.tsx:140:8",
+              "alternativeIndex": 0,
+              "alternativeCount": 3
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#3",
+              "reason": "if (<boolean: >= on dynamic values>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/next-shadcn-dashboard-starter/src/components/github-stars-button.tsx:33:3",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T07:56:48.697Z",
+      "failure": null
+    },
+    {
+      "id": "nextjs-saas-starter",
+      "revision": "6e33e58b1e553a41fe22e6b941a7229a002de361",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T23:17:26.717Z",
+      "durationMs": 695,
+      "runtime": {
+        "reactVersion": "19.3.0-experimental-3025aa39-20251007",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 2,
+        "fibers": 290,
+        "commits": 22,
+        "pageErrors": [],
+        "title": "Next.js SaaS Starter"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 128,
+          "textCount": 15,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1681
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 106,
+        "matchedText": 15,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "runtimeFibers": 121,
+        "staticFibers": 121,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 121,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T07:56:05.487Z",
+      "failure": null
+    },
+    {
+      "id": "nextjs-starter-kit",
+      "revision": "6b6deebe61d8ac37738fa53ada43033465e42c22",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T23:17:41.918Z",
+      "durationMs": 655,
+      "runtime": {
+        "reactVersion": "19.2.0-canary-3fbfb9ba-20250409",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 353,
+        "commits": 13,
+        "pageErrors": [],
+        "title": "Next.js Starter Kit - Launch Your SAAS"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 221,
+          "textCount": 6,
+          "branchCount": 3,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1621
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-props",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 189,
+        "matchedText": 5,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 2,
+        "repeatIterations": 0,
+        "runtimeFibers": 194,
+        "staticFibers": 199,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 196,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 12,
+        "matchedState": {
+          "index": 11,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(45)",
+              "reason": "&& on branch(false | <boolean> | undefined)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/nextjs-starter-kit/app/pricing/_component/pricing-table.tsx:125:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(51)",
+              "reason": "conditional on branch(false | <boolean> | undefined)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/nextjs-starter-kit/app/pricing/_component/pricing-table.tsx:162:14",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T07:56:22.624Z",
+      "failure": null
+    },
+    {
+      "id": "saas-boilerplate",
+      "revision": "4d81106bd2abf2f1309a6c73f97be4c63c54b700",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T23:17:24.962Z",
+      "durationMs": 696,
+      "runtime": {
+        "reactVersion": "18.3.0-canary-178c267a4e-20241218",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 695,
+        "commits": 5,
+        "pageErrors": [
+          "EventSource failed: Event",
+          "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+          "EventSource failed: Event",
+          "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+          "EventSource failed: Event",
+          "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+          "Warning: Prop `%s` did not match. Server: %s Client: %s%s style \"--radix-accordion-content-height: var(--radix-collapsible-content-height); --radix-accordion-content-width: var(--radix-collapsible-content-width);\" \"--radix-accordion-content-height:var(--radix-collapsible-content-height);--radix-accordion-content-width:var(--radix-collapsible-content-width)\" \n    at div\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-primitive/dist/index.mjs:36:13)\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-collapsible/dist/index.mjs:128:13)\n    at Presence (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-presence/dist/index.mjs:26:13)\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-collapsible/dist/index.mjs:102:13)\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-accordion/dist/index.mjs:365:13)\n    at _c4 (webpack-internal:///(app-pages-browser)/./src/components/ui/accordion.tsx:66:11)\n    at div\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-primitive/dist/index.mjs:36:13)\n    at Provider (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-context/dist/index.mjs:34:15)\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-collapsible/dist/index.mjs:38:13)\n    at Provider (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-context/dist/index.mjs:34:15)\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-accordion/dist/index.mjs:254:13)\n    at _c (webpack-internal:///(app-pages-browser)/./src/components/ui/accordion.tsx:21:11)\n    at div\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-primitive/dist/index.mjs:36:13)\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-slot/dist/index.mjs:34:11)\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-slot/dist/index.mjs:15:11)\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-collection/dist/index.mjs:43:17)\n    at Provider (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-context/dist/index.mjs:34:15)\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-accordion/dist/index.mjs:155:13)\n    at Provider (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-context/dist/index.mjs:34:15)\n    at Provider (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-context/dist/index.mjs:34:15)\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-accordion/dist/index.mjs:111:20)\n    at Provider (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-collection/node_modules/@radix-ui/react-context/dist/index.mjs:34:15)\n    at CollectionProvider (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-collection/dist/index.mjs:28:17)\n    at _c (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-accordion/dist/index.mjs:56:13)\n    at div\n    at div\n    at Section (Server)\n    at FAQ (Server)\n    at IndexPage (Server)\n    at IndexPage (Server)\n    at InnerLayoutRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:243:11)\n    at RedirectErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:74:9)\n    at RedirectBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:82:11)\n    at NotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:84:11)\n    at LoadingBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:349:11)\n    at ErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/error-boundary.js:160:11)\n    at InnerScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:153:9)\n    at ScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:228:11)\n    at RenderFromTemplateContext (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/render-from-template-context.js:16:44)\n    at OuterLayoutRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:370:11)\n    at InnerLayoutRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:243:11)\n    at RedirectErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:74:9)\n    at RedirectBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:82:11)\n    at NotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:84:11)\n    at LoadingBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:349:11)\n    at ErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/error-boundary.js:160:11)\n    at InnerScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:153:9)\n    at ScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:228:11)\n    at RenderFromTemplateContext (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/render-from-template-context.js:16:44)\n    at OuterLayoutRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:370:11)\n    at IntlProvider (webpack-internal:///(app-pages-browser)/./node_modules/use-intl/dist/development/_IntlProvider.js:16:5)\n    at r (webpack-internal:///(app-pages-browser)/./node_modules/next-intl/dist/esm/shared/NextIntlClientProvider.js:13:19)\n    at i (Server)\n    at body\n    at html\n    at RootLayout (Server)\n    at InnerLayoutRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:243:11)\n    at RedirectErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:74:9)\n    at RedirectBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:82:11)\n    at NotFoundErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:76:9)\n    at NotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:84:11)\n    at LoadingBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:349:11)\n    at ErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/error-boundary.js:160:11)\n    at InnerScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:153:9)\n    at ScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:228:11)\n    at RenderFromTemplateContext (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/render-from-template-context.js:16:44)\n    at OuterLayoutRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:370:11)\n    at RedirectErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:74:9)\n    at RedirectBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:82:11)\n    at NotFoundErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:76:9)\n    at NotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:84:11)\n    at DevRootNotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/dev-root-not-found-boundary.js:33:11)\n    at ReactDevOverlay (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/react-dev-overlay/app/ReactDevOverlay.js:87:9)\n    at HotReload (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/react-dev-overlay/app/hot-reloader-client.js:321:11)\n    at Router (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/app-router.js:207:11)\n    at ErrorBoundaryHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/error-boundary.js:113:9)\n    at ErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/error-boundary.js:160:11)\n    at AppRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/app-router.js:585:13)\n    at ServerRoot (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/app-index.js:112:27)\n    at Root (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/app-index.js:117:11)"
+        ],
+        "title": "SaaS Template - The perfect SaaS template to build and scale your business with ease."
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 642,
+          "textCount": 37,
+          "branchCount": 6,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1610
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 556,
+        "matchedText": 36,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 6,
+        "repeatIterations": 0,
+        "runtimeFibers": 592,
+        "staticFibers": 598,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 604,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 65,
+        "matchedState": {
+          "index": 64,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(92)",
+              "reason": "&& on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/saas-boilerplate/node_modules/@radix-ui/react-collapsible/dist/index.mjs:135:17",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(95)",
+              "reason": "&& on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/saas-boilerplate/node_modules/@radix-ui/react-collapsible/dist/index.mjs:135:17",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(98)",
+              "reason": "&& on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/saas-boilerplate/node_modules/@radix-ui/react-collapsible/dist/index.mjs:135:17",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(101)",
+              "reason": "&& on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/saas-boilerplate/node_modules/@radix-ui/react-collapsible/dist/index.mjs:135:17",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(104)",
+              "reason": "&& on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/saas-boilerplate/node_modules/@radix-ui/react-collapsible/dist/index.mjs:135:17",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(107)",
+              "reason": "&& on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/saas-boilerplate/node_modules/@radix-ui/react-collapsible/dist/index.mjs:135:17",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T07:55:50.586Z",
+      "failure": null
+    },
+    {
+      "id": "saasfly",
+      "revision": "49f7e28f69eae9cd9eed84221e13a3dbae87da67",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T23:17:45.461Z",
+      "durationMs": 1001,
+      "runtime": {
+        "reactVersion": "18.3.0-canary-14898b6a9-20240318",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 2,
+        "fibers": 1048,
+        "commits": 37,
+        "pageErrors": [
+          "Warning: React Element cannot be passed to Server Functions from the Client.%s \n  {publishableKey: ..., secretKey: ..., claimUrl: ..., apiKeysUrl: ..., children: </>, returnUrl: ...}\n                                                                                  ^^^",
+          "Warning: React Lazy cannot be passed to Server Functions from the Client.%s \n  </>",
+          "Warning: React Element cannot be passed to Server Functions from the Client.%s \n  {publishableKey: ..., secretKey: ..., claimUrl: ..., apiKeysUrl: ..., children: </>, returnUrl: ...}\n                                                                                  ^^^",
+          "Warning: React Lazy cannot be passed to Server Functions from the Client.%s \n  </>",
+          "Client Functions cannot be passed directly to Server Functions. Only Functions passed from the Server can be passed back again.",
+          "Client Functions cannot be passed directly to Server Functions. Only Functions passed from the Server can be passed back again.",
+          "Warning: Expected server HTML to contain a matching <%s> in <%s>.%s main div \n    at main\n    at div\n    at MarketingLayout (Server)\n    at InnerLayoutRouter (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/layout-router.js:243:11)\n    at RedirectErrorBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/redirect-boundary.js:74:9)\n    at RedirectBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/redirect-boundary.js:82:11)\n    at NotFoundBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/not-found-boundary.js:84:11)\n    at LoadingBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/layout-router.js:349:11)\n    at ErrorBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/error-boundary.js:160:11)\n    at InnerScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/layout-router.js:153:9)\n    at ScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/layout-router.js:228:11)\n    at RenderFromTemplateContext (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/render-from-template-context.js:16:44)\n    at OuterLayoutRouter (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/layout-router.js:370:11)\n    at InnerLayoutRouter (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/layout-router.js:243:11)\n    at RedirectErrorBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/redirect-boundary.js:74:9)\n    at RedirectBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/redirect-boundary.js:82:11)\n    at NotFoundErrorBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/not-found-boundary.js:76:9)\n    at NotFoundBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/not-found-boundary.js:84:11)\n    at LoadingBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/layout-router.js:349:11)\n    at ErrorBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/error-boundary.js:160:11)\n    at InnerScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/layout-router.js:153:9)\n    at ScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/layout-router.js:228:11)\n    at RenderFromTemplateContext (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/render-from-template-context.js:16:44)\n    at OuterLayoutRouter (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/layout-router.js:370:11)\n    at Suspense\n    at NextDevtoolsProvider (webpack-internal:///(app-pages-browser)/../../node_modules/@next-devtools/core/dist/provider/provider.js:43:11)\n    at f (webpack-internal:///(app-pages-browser)/../../node_modules/next-themes/dist/index.module.js:8:597)\n    at $ (webpack-internal:///(app-pages-browser)/../../node_modules/next-themes/dist/index.module.js:8:348)\n    at body\n    at html\n    at SWRConfig (webpack-internal:///(app-pages-browser)/../../node_modules/swr/dist/_internal/config-context-client-v7VOFo66.mjs:549:13)\n    at OrganizationProvider (webpack-internal:///(app-pages-browser)/../../node_modules/@clerk/shared/dist/react/index.mjs:114:3)\n    at ClerkContextProvider (webpack-internal:///(app-pages-browser)/../../node_modules/@clerk/clerk-react/dist/index.mjs:2207:11)\n    at ClerkProviderBase (webpack-internal:///(app-pages-browser)/../../node_modules/@clerk/clerk-react/dist/index.mjs:2293:11)\n    at Hoc (webpack-internal:///(app-pages-browser)/../../node_modules/@clerk/clerk-react/dist/index.mjs:118:5)\n    at ClerkNextOptionsProvider (webpack-internal:///(app-pages-browser)/../../node_modules/@clerk/nextjs/dist/esm/client-boundary/NextOptionsContext.js:17:11)\n    at NextClientClerkProvider (webpack-internal:///(app-pages-browser)/../../node_modules/@clerk/nextjs/dist/esm/app-router/client/ClerkProvider.js:60:13)\n    at ClientClerkProvider (webpack-internal:///(app-pages-browser)/../../node_modules/@clerk/nextjs/dist/esm/app-router/client/ClerkProvider.js:127:13)\n    at KeylessCookieSync (webpack-internal:///(app-pages-browser)/../../node_modules/@clerk/nextjs/dist/esm/app-router/client/keyless-cookie-sync.js:17:96)\n    at KeylessProvider (Server)\n    at ClerkProvider (Server)\n    at RootLayout (Server)\n    at RedirectErrorBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/redirect-boundary.js:74:9)\n    at RedirectBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/redirect-boundary.js:82:11)\n    at NotFoundErrorBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/not-found-boundary.js:76:9)\n    at NotFoundBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/not-found-boundary.js:84:11)\n    at DevRootNotFoundBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/dev-root-not-found-boundary.js:33:11)\n    at ReactDevOverlay (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/react-dev-overlay/app/ReactDevOverlay.js:87:9)\n    at HotReload (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/react-dev-overlay/app/hot-reloader-client.js:321:11)\n    at Router (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/app-router.js:207:11)\n    at ErrorBoundaryHandler (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/error-boundary.js:113:9)\n    at ErrorBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/error-boundary.js:160:11)\n    at AppRouter (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/app-router.js:585:13)\n    at ServerRoot (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/app-index.js:112:27)\n    at Root (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/app-index.js:117:11)",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "There was an error while hydrating this Suspense boundary. Switched to client rendering.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Warning: React Element cannot be passed to Server Functions from the Client.%s \n  {publishableKey: ..., secretKey: ..., claimUrl: ..., apiKeysUrl: ..., children: </>, returnUrl: ...}\n                                                                                  ^^^",
+          "Warning: React Lazy cannot be passed to Server Functions from the Client.%s \n  </>",
+          "Warning: React Element cannot be passed to Server Functions from the Client.%s \n  {publishableKey: ..., secretKey: ..., claimUrl: ..., apiKeysUrl: ..., children: </>, returnUrl: ...}\n                                                                                  ^^^",
+          "Warning: React Lazy cannot be passed to Server Functions from the Client.%s \n  </>",
+          "Client Functions cannot be passed directly to Server Functions. Only Functions passed from the Server can be passed back again.",
+          "Client Functions cannot be passed directly to Server Functions. Only Functions passed from the Server can be passed back again."
+        ],
+        "title": "Saasfly"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 958,
+          "textCount": 9,
+          "branchCount": 11,
+          "repeatCount": 0,
+          "opaqueCount": 10,
+          "unknownCount": 1,
+          "modulesLoaded": 1533
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 17
+          }
+        ]
+      },
+      "report": {
+        "status": "partial",
+        "matchedFibers": 727,
+        "matchedText": 6,
+        "opaqueSubtrees": 8,
+        "opaqueSkippedFibers": 14,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 5,
+        "repeatIterations": 0,
+        "runtimeFibers": 747,
+        "staticFibers": 823,
+        "coverage": 1,
+        "strictCoverage": 0.9812583668005355,
+        "divergence": null,
+        "stepsUsed": 748,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 256,
+        "matchedState": {
+          "index": null,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 11,
+              "commitCount": 12
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#1",
+              "reason": "Suspense boundary may be suspended when observed",
+              "location": null,
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#2",
+              "reason": "Suspense boundary may be suspended when observed",
+              "location": null,
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(9)",
+              "reason": "conditional on <boolean: negation of unknown>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/saasfly/apps/nextjs/src/components/navbar.tsx:87:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#3",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/saasfly/apps/nextjs/src/components/sign-in-modal-clerk.tsx:20:3",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(250)",
+              "reason": "conditional on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/saasfly/node_modules/@radix-ui/react-presence/dist/index.mjs:26:10",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "omissions": [
+            {
+              "kind": "state",
+              "conditions": [
+                {
+                  "kind": "transition",
+                  "commit": 10,
+                  "commitCount": 12
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "Suspense boundary may be suspended when observed",
+                  "location": null,
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#2",
+                  "reason": "Suspense boundary may be suspended when observed",
+                  "location": null,
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#3",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/saasfly/apps/nextjs/src/components/sign-in-modal-clerk.tsx:20:3",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(250)",
+                  "reason": "conditional on <boolean: includes()>",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/saasfly/node_modules/@radix-ui/react-presence/dist/index.mjs:26:10",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(251)",
+                  "reason": "conditional on <boolean: includes()>",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/saasfly/node_modules/@radix-ui/react-presence/dist/index.mjs:26:10",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(252)",
+                  "reason": "conditional on <boolean: includes()>",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/saasfly/node_modules/@radix-ui/react-presence/dist/index.mjs:26:10",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(252)",
+              "reason": "conditional on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/saasfly/node_modules/@radix-ui/react-presence/dist/index.mjs:26:10",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "Suspense boundary may be suspended when observed",
+                  "location": null,
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#2",
+                  "reason": "Suspense boundary may be suspended when observed",
+                  "location": null,
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#3",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/saasfly/apps/nextjs/src/components/sign-in-modal-clerk.tsx:20:3",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(250)",
+                  "reason": "conditional on <boolean: includes()>",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/saasfly/node_modules/@radix-ui/react-presence/dist/index.mjs:26:10",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(251)",
+                  "reason": "conditional on <boolean: includes()>",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/saasfly/node_modules/@radix-ui/react-presence/dist/index.mjs:26:10",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(250)",
+              "reason": "conditional on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/saasfly/node_modules/@radix-ui/react-presence/dist/index.mjs:26:10",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "Suspense boundary may be suspended when observed",
+                  "location": null,
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#2",
+                  "reason": "Suspense boundary may be suspended when observed",
+                  "location": null,
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#3",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/saasfly/apps/nextjs/src/components/sign-in-modal-clerk.tsx:20:3",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#1",
+              "reason": "Suspense boundary may be suspended when observed",
+              "location": null,
+              "alternativeIndex": 1,
+              "conditions": []
+            }
+          ]
+        }
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T07:34:54.109Z",
+      "failure": null
     }
   ]
 }

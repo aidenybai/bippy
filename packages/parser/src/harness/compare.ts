@@ -113,9 +113,6 @@ export interface ComparisonReport extends ComparisonTally {
 }
 
 const DEFAULT_MAX_STEPS = 200_000;
-// Providers and routers typically render their children within a few wrapper
-// layers; deeper slot searches would start matching unrelated subtrees.
-const MAX_SLOT_SEARCH_DEPTH = 12;
 
 const EMPTY_TALLY: MatchTally = {
   matchedFibers: 0,
@@ -180,11 +177,6 @@ interface RankedAlternative {
 interface SlotSearchResult {
   match: SlotMatch | null;
   divergence: ComparisonDivergence | null;
-}
-
-interface SlotSearchFrame {
-  fiber: RuntimeFiberSnapshot;
-  depth: number;
 }
 
 interface FurthestSlotDivergence {
@@ -619,20 +611,22 @@ class Matcher {
     );
   }
 
-  // Searches the library's runtime subtree for the place where it rendered the
-  // children the application passed in. Libraries may render siblings around the
-  // slot, so the passed children only need to appear as a contiguous run. When
-  // no candidate fits, the one that got furthest past its start explains why.
+  // Searches the library's runtime subtree breadth-first for the place where it
+  // rendered the children the application passed in, so the shallowest fit wins.
+  // Libraries may render siblings around the slot, so the passed children only
+  // need to appear as a contiguous run; provider stacks may bury the slot under
+  // dozens of wrapper layers. When no candidate fits, the one that got furthest
+  // past its start explains why.
   private matchSlot(
     pattern: PatternOpaque,
     actual: RuntimeFiberSnapshot,
     path: string[],
   ): SlotSearchResult {
-    const queue: SlotSearchFrame[] = [{ fiber: actual, depth: 0 }];
+    const queue: RuntimeFiberSnapshot[] = [actual];
     let best: FurthestSlotDivergence | null = null;
     let bestMatch: SlotMatch | null = null;
     for (let queueIndex = 0; queueIndex < queue.length; queueIndex++) {
-      const { fiber, depth } = queue[queueIndex];
+      const fiber = queue[queueIndex];
       for (let start = 0; start < fiber.children.length; start++) {
         const { result, failure } = this.attempt(() =>
           this.matchSlotAt(pattern, fiber.children, start, path),
@@ -647,9 +641,7 @@ class Matcher {
           best = { progress: failure.position - startPosition, divergence: failure.divergence };
         }
       }
-      if (depth < MAX_SLOT_SEARCH_DEPTH) {
-        for (const child of fiber.children) queue.push({ fiber: child, depth: depth + 1 });
-      }
+      queue.push(...fiber.children);
     }
     if (bestMatch) return { match: bestMatch, divergence: null };
     // Passed children that evaluate to nothing (all-empty branches) leave no

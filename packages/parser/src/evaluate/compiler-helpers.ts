@@ -1,4 +1,10 @@
-import type { StaticNativeFunctionValue, StaticValue, StubRenderTools } from "../types.js";
+import type { Expression, Node } from "oxc-parser";
+import type {
+  FunctionLikeNode,
+  StaticNativeFunctionValue,
+  StaticValue,
+  StubRenderTools,
+} from "../types.js";
 import { isCompilerHelperPackage } from "../graph/helper-packages.js";
 import { hasExportedName } from "../graph/module-record.js";
 import { getBuiltinGlobal, getTypeofValue } from "./builtin-calls.js";
@@ -25,7 +31,7 @@ interface HelperImplementation {
 }
 
 /** Whether a module namespace behaves as an ES module to interop helpers. */
-const isEsModuleLike = (value: StaticValue): boolean => {
+export const isEsModuleLike = (value: StaticValue): boolean => {
   if (value.kind === "namespace") {
     return !value.module.isCommonJs || hasExportedName(value.module, "__esModule");
   }
@@ -106,6 +112,7 @@ const HELPERS: Record<string, HelperImplementation> = {
   _interop_require_default: interopRequireDefault,
   interopRequireWildcard,
   __importStar: interopRequireWildcard,
+  __toESM: interopRequireWildcard,
   _interop_require_wildcard: interopRequireWildcard,
   extends: assign,
   __assign: assign,
@@ -138,13 +145,57 @@ const getHelperName = (packageName: string, specifier: string, importedName: str
   return subpath.replace(/^(helpers\/)?(esm\/)?(_\/)?/, "").replace(/\.js$/, "");
 };
 
+const getReturnedExpression = (node: FunctionLikeNode): Expression | null => {
+  const body = node.body;
+  if (!body) return null;
+  if (body.type !== "BlockStatement") return body;
+  const [statement] = body.body;
+  return statement?.type === "ReturnStatement" ? (statement.argument ?? null) : null;
+};
+
+const readsEsModuleFlag = (node: Node): boolean => {
+  switch (node.type) {
+    case "LogicalExpression":
+      return readsEsModuleFlag(node.left) || readsEsModuleFlag(node.right);
+    case "UnaryExpression":
+      return readsEsModuleFlag(node.argument);
+    case "MemberExpression":
+      return (
+        !node.computed && node.property.type === "Identifier" && node.property.name === "__esModule"
+      );
+    default:
+      return false;
+  }
+};
+
+/**
+ * esbuild's `__toESM` by shape, since minifiers rename it:
+ * `(mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {},
+ *   __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", ...) : target, mod))`.
+ */
+const isEsbuildToEsm = (node: FunctionLikeNode): boolean => {
+  if (node.params.length !== 3) return false;
+  const body = getReturnedExpression(node);
+  if (body?.type !== "SequenceExpression" || body.expressions.length !== 2) return false;
+  const [assignment, copy] = body.expressions;
+  if (assignment.type !== "AssignmentExpression" || copy.type !== "CallExpression") return false;
+  const [converted] = copy.arguments;
+  return converted?.type === "ConditionalExpression" && readsEsModuleFlag(converted.test);
+};
+
 /**
  * Babel inlines helpers as `function _name() {}` declarations when a package is
- * compiled without `@babel/runtime`; their bodies are the same reflection-heavy code.
+ * compiled without `@babel/runtime`, esbuild as `var __name = (...) => ...`;
+ * their bodies are the same reflection-heavy code.
  */
-export const getInlineCompilerHelper = (functionName: string): StaticNativeFunctionValue | null => {
-  if (!functionName.startsWith("_")) return null;
-  const implementation = HELPERS[functionName.slice(1)];
+export const getInlineCompilerHelper = (
+  functionName: string,
+  node: FunctionLikeNode,
+): StaticNativeFunctionValue | null => {
+  const named = functionName.startsWith("_")
+    ? (HELPERS[functionName] ?? HELPERS[functionName.slice(1)])
+    : undefined;
+  const implementation = named ?? (isEsbuildToEsm(node) ? interopRequireWildcard : undefined);
   return implementation
     ? { kind: "native-function", name: functionName, call: implementation }
     : null;

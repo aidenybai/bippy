@@ -57,6 +57,7 @@ export const renderFrameworkTarget = (
         origin: options.origin,
         request: options.observations?.request,
         version: readInstalledVersion(options.rootDirectory, "next"),
+        nextIntlVersion: readInstalledVersion(options.rootDirectory, "next-intl"),
       });
       const renderer = createStaticRenderer({
         ...options,
@@ -72,6 +73,7 @@ export const renderFrameworkTarget = (
         route,
         origin: options.origin,
         version: readInstalledVersion(options.rootDirectory, "next"),
+        nextIntlVersion: readInstalledVersion(options.rootDirectory, "next-intl"),
       });
       const renderer = createStaticRenderer({ ...options, externalValues: model.externalValues });
       return renderNextPagesRoute(renderer, model, {

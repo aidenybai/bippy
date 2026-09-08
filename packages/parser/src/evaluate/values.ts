@@ -912,6 +912,7 @@ const areInterchangeableThrownObjects = (
 /** Alternatives analysis could never tell apart, so a branch keeps only one of them. */
 const isInterchangeable = (left: StaticValue, right: StaticValue): boolean => {
   if (isSameValue(left, right)) return true;
+  if (left === CHAIN_SHORT_CIRCUIT || right === CHAIN_SHORT_CIRCUIT) return false;
   if (left.kind === "unknown" && right.kind === "unknown") {
     if (left.thrown === undefined || right.thrown === undefined)
       return left.thrown === right.thrown;
