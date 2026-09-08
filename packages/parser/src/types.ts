@@ -202,7 +202,11 @@ export type StaticElementType =
   | { kind: "function"; component: ComponentDefinition }
   | { kind: "class"; component: ComponentDefinition }
   | ({ kind: "memo"; inner: StaticElementType; hasCompare: boolean } & WrapperElementType)
-  | ({ kind: "forward-ref"; component: ComponentDefinition } & WrapperElementType)
+  | ({
+      kind: "forward-ref";
+      component: ComponentDefinition;
+      render: StaticFunctionValue;
+    } & WrapperElementType)
   | ({ kind: "lazy"; inner: StaticElementType | null } & WrapperElementType)
   | { kind: "fragment" }
   | { kind: "strict-mode" }
