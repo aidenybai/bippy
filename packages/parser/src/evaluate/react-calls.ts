@@ -30,6 +30,7 @@ import {
   isNullish,
   listValue,
   mapValue,
+  NULL_VALUE,
   objectFromRecord,
   objectValue,
   optionalValue,
@@ -448,6 +449,8 @@ export const evaluateReactApiCall = (
       const createRef = (): StaticValue => objectFromRecord({ current: first ?? UNDEFINED_VALUE });
       return context.hooks ? nextMemoCell(context.hooks, null, createRef) : createRef();
     }
+    case "createRef":
+      return objectFromRecord({ current: NULL_VALUE });
     case "useContext":
       return first
         ? readContextValue(interpreter, first, context, location)

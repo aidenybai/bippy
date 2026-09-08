@@ -725,6 +725,7 @@ export type ReactApi =
   | "forwardRef"
   | "lazy"
   | "createContext"
+  | "createRef"
   | "createElement"
   | "cloneElement"
   | "isValidElement"
