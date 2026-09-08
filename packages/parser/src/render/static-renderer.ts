@@ -201,6 +201,7 @@ export class StaticRenderer {
     }
     return {
       snapshot: mounted.snapshot,
+      commits: mounted.commits,
       diagnostics: [...interpreter.diagnostics],
       stats: computeRenderStats(mounted.snapshot, this.graph.loadedModuleCount),
     };

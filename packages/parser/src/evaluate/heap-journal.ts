@@ -192,8 +192,13 @@ export class HeapJournal {
     this.paths.push(path);
   }
 
-  join(reason: string, location: SourceLocation | null, preferredPath: number): void {
-    this.applyJoin(this.paths, reason, location, preferredPath);
+  join(
+    reason: string,
+    location: SourceLocation | null,
+    preferredPath: number,
+    predicate: string | null,
+  ): void {
+    this.applyJoin(this.paths, reason, location, preferredPath, predicate);
   }
 
   /**
@@ -206,10 +211,11 @@ export class HeapJournal {
     reason: string,
     location: SourceLocation | null,
     preferredPath: number,
+    predicate: string | null,
   ): void {
     const selected = indices.map((index) => this.paths[index]);
     this.paths = this.paths.filter((_, index) => !indices.includes(index));
-    this.applyJoin(selected, reason, location, preferredPath);
+    this.applyJoin(selected, reason, location, preferredPath, predicate);
   }
 
   private applyJoin(
@@ -217,6 +223,7 @@ export class HeapJournal {
     reason: string,
     location: SourceLocation | null,
     preferredPath: number,
+    predicate: string | null,
   ): void {
     for (const [cell, original] of this.updates) {
       const pathUpdates = paths.map((path) =>
@@ -231,6 +238,7 @@ export class HeapJournal {
         reason,
         location,
         preferredPath,
+        predicate,
       );
     }
     for (const [values, originals] of this.bindings) {
@@ -240,7 +248,7 @@ export class HeapJournal {
           name,
           pathValues.every((value) => value === pathValues[0])
             ? pathValues[0]
-            : branchValue(pathValues, reason, location, preferredPath),
+            : branchValue(pathValues, reason, location, preferredPath, predicate),
         );
       }
     }
@@ -249,11 +257,11 @@ export class HeapJournal {
       if (isUnchanged(pathEntries, original)) continue;
       object.entries =
         getAgreedState(pathEntries) ??
-        joinObjectEntries(original, pathEntries, reason, location, preferredPath);
+        joinObjectEntries(original, pathEntries, reason, location, preferredPath, predicate);
     }
     for (const [state, original] of this.states) {
       state.join(
-        this.paths.map((path) => (path.states.has(state) ? path.states.get(state) : original)),
+        paths.map((path) => (path.states.has(state) ? path.states.get(state) : original)),
         reason,
         location,
         preferredPath,

@@ -11,6 +11,8 @@ const noop = (): void => {};
 
 export interface MountResult {
   snapshot: RuntimeSnapshot;
+  /** Every tree React committed while settling, in order; the last one is `snapshot`. */
+  commits: RuntimeSnapshot[];
   /** Errors React surfaced while rendering: uncaught ones unmount the tree, caught ones reached a boundary. */
   uncaughtErrors: unknown[];
   caughtErrors: unknown[];
@@ -32,6 +34,7 @@ export const mountNode = async (
   document.body.appendChild(container);
   const recorder = createCommitRecorder({
     rootFilter: (root) => getRootContainer(root) === container,
+    recordCommits: true,
   });
   const uncaughtErrors: unknown[] = [];
   const caughtErrors: unknown[] = [];
@@ -59,7 +62,12 @@ export const mountNode = async (
     } catch (error) {
       uncaughtErrors.push(error);
     }
-    return { snapshot: recorder.snapshot(), uncaughtErrors, caughtErrors };
+    return {
+      snapshot: recorder.snapshot(),
+      commits: recorder.commits(),
+      uncaughtErrors,
+      caughtErrors,
+    };
   } finally {
     await runtime.act(async () => root.unmount());
     console.error = consoleError;

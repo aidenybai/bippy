@@ -321,6 +321,7 @@ const lookupObjectProperty = (object: StaticObjectValue, key: string): StaticVal
         spread.reason,
         spread.location,
         spread.preferredIndex,
+        spread.predicate,
       );
     }
     const inherited = getInheritedProperty(object, key);
@@ -510,6 +511,7 @@ export const joinObjectEntries = (
   reason: string,
   location: SourceLocation | null,
   preferredIndex: number,
+  predicate: string | null,
 ): StaticObjectEntry[] => {
   const isExtension = (entries: StaticObjectEntry[]): boolean =>
     entries.length >= original.length && original.every((entry, index) => entries[index] === entry);
@@ -524,7 +526,10 @@ export const joinObjectEntries = (
       );
       return [
         ...original,
-        { kind: "spread", value: branchValue(alternatives, reason, location, preferredIndex) },
+        {
+          kind: "spread",
+          value: branchValue(alternatives, reason, location, preferredIndex, predicate),
+        },
       ];
     }
     for (const entry of entries) if (entry.kind === "property") keys.add(entry.key);
@@ -543,6 +548,7 @@ export const joinObjectEntries = (
         reason,
         location,
         preferredIndex,
+        predicate,
       ),
     })),
   ];
@@ -970,6 +976,7 @@ export const branchValue = (
   reason: string,
   location: SourceLocation | null = null,
   preferredIndex = 0,
+  predicate: string | null = null,
 ): StaticValue => {
   const flattened: StaticValue[] = [];
   let resolvedPreferred = 0;
@@ -993,12 +1000,16 @@ export const branchValue = (
     }
   });
   if (flattened.length === 1) return flattened[0];
+  const isPositional =
+    flattened.length === alternatives.length &&
+    alternatives.every((alternative) => alternative.kind !== "branch");
   return {
     kind: "branch",
     alternatives: flattened,
     preferredIndex: resolvedPreferred,
     reason,
     location,
+    predicate: isPositional ? predicate : null,
   };
 };
 
@@ -1128,6 +1139,7 @@ export const mapValue = (
     value.reason,
     value.location,
     value.preferredIndex,
+    value.predicate,
   );
 };
 
@@ -1185,6 +1197,7 @@ export const spreadListItems = (
           value.reason,
           value.location,
           value.preferredIndex,
+          value.predicate,
         ),
       );
     }

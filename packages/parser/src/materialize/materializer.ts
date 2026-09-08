@@ -519,6 +519,9 @@ export class Materializer {
         return value.items.map((item) => this.toNode(item, context, false));
       case "repeat":
         return this.runtime.react.createElement(RepeatMarker, {
+          location: value.location && formatSourceLocation(value.location),
+          countMin: value.count?.min ?? 0,
+          countMax: value.count?.max ?? null,
           children: [this.toNode(value.item, context, false)],
         });
       case "branch":
@@ -530,6 +533,7 @@ export class Materializer {
           value.preferredIndex,
           isTopLevel,
           value.location,
+          value.predicate,
         );
       case "optional":
         return this.branchNode(
@@ -561,6 +565,7 @@ export class Materializer {
     if (context.alternativeDepth >= MAX_ALTERNATIVE_DEPTH) {
       return this.unknownNode(
         `alternative nested ${MAX_ALTERNATIVE_DEPTH} branches away from the preferred path`,
+        true,
       );
     }
     return this.toNode(
@@ -576,20 +581,22 @@ export class Materializer {
     preferredIndex: number | null,
     isTopLevel: boolean,
     location: SourceLocation | null = null,
+    predicate: string | null = null,
   ): ReactNode {
     const { createElement } = this.runtime.react;
     return createElement(BranchMarker, {
       reason,
       location: location && formatSourceLocation(location),
       preferredIndex,
+      predicate,
       children: alternatives.map((node, index) =>
         createElement(AlternativeMarker, { key: index, children: isTopLevel ? node : [node] }),
       ),
     });
   }
 
-  private unknownNode(reason: string): ReactNode {
-    return this.runtime.react.createElement(UnknownMarker, { reason });
+  private unknownNode(reason: string, isTruncated = false): ReactNode {
+    return this.runtime.react.createElement(UnknownMarker, { reason, isTruncated });
   }
 
   /** An element whose component is not known may suspend (a `use()` or lazy inside it). */
@@ -687,7 +694,7 @@ export class Materializer {
           "warning",
         );
       }
-      return this.unknownNode("element budget exhausted");
+      return this.unknownNode("element budget exhausted", true);
     }
     const reactKey = this.keyToString(key, location);
     const children = getObjectProperty(props, "children");
