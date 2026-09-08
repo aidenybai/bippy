@@ -1,4 +1,4 @@
 {
-  "externalPackages": ["cjs-kit"],
-  "notes": "A dependency shipped as compiled CommonJS: Babel output (interop/extends/objectWithoutProperties helpers, `exports.x =`, `Object.keys(...).forEach` re-exports) and tsc output (inline `__importDefault`, `exports.default =`), analyzed from source through the CommonJS export model."
+  "externalPackages": ["cjs-kit", "top-bar"],
+  "notes": "A dependency shipped as compiled CommonJS: Babel output (interop/extends/objectWithoutProperties helpers, `exports.x =`, `Object.keys(...).forEach` re-exports) tsc output (inline `__importDefault`, `exports.default =`), esbuild output (`__export(ns, { x: () => x })` + `module.exports = __toCommonJS(ns)`) and minified esbuild output whose helpers have lost their names (`module.exports = ee(oe)` evaluated to an `__esModule` object whose members are the imports, its default re-exported from a sibling `__toESM(require(...))`), analyzed from source through the CommonJS export model."
 }

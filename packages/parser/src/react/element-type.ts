@@ -10,6 +10,7 @@ export const createFunctionComponentDefinition = (
   scope: value.scope,
   classBody: null,
   properties: value.properties,
+  isClientReference: value.isClientReference ?? false,
 });
 
 export const createClassComponentDefinition = (
@@ -22,7 +23,36 @@ export const createClassComponentDefinition = (
   scope: value.scope,
   classBody: value.body,
   properties: value.properties,
+  isClientReference: value.isClientReference ?? false,
 });
+
+const toClientReferenceType = (type: StaticElementType): StaticElementType => {
+  switch (type.kind) {
+    case "function":
+    case "class":
+    case "forward-ref":
+      return { ...type, component: { ...type.component, isClientReference: true } };
+    case "memo":
+      return { ...type, inner: toClientReferenceType(type.inner) };
+    case "lazy":
+      return type.inner ? { ...type, inner: toClientReferenceType(type.inner) } : type;
+    default:
+      return type;
+  }
+};
+
+/** What a server module sees when it imports from a `"use client"` module: the export as a client reference. */
+export const toClientReference = (value: StaticValue): StaticValue => {
+  switch (value.kind) {
+    case "function":
+    case "class":
+      return { ...value, isClientReference: true };
+    case "component-reference":
+      return { kind: "component-reference", type: toClientReferenceType(value.type) };
+    default:
+      return value;
+  }
+};
 
 export const toElementType = (value: StaticValue, nameHint: string | null): StaticElementType => {
   switch (value.kind) {

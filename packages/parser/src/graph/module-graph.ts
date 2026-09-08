@@ -175,7 +175,10 @@ export class ModuleGraph {
     const target = this.getResolvedModule(resolution);
     if (isModuleRecord(target)) {
       if (imported.kind === "namespace") return { kind: "namespace", module: target };
-      return this.resolveExportWithVisited(target, describeImportedName(imported), visited);
+      const symbol = this.resolveExportWithVisited(target, describeImportedName(imported), visited);
+      return isClientModule(target) && (symbol.kind === "binding" || symbol.kind === "expression")
+        ? { ...symbol, isClientReference: true }
+        : symbol;
     }
     switch (target.kind) {
       case "external":
@@ -208,7 +211,7 @@ export class ModuleGraph {
         visited,
       );
     }
-    return { kind: "binding", module, binding };
+    return { kind: "binding", module, binding, isClientReference: isClientModule(module) };
   }
 
   private resolveExportWithVisited(
@@ -230,7 +233,15 @@ export class ModuleGraph {
           break;
         case "expression":
           if (entry.exportedName === exportedName) {
-            return { kind: "expression", module, expression: entry.expression };
+            if (entry.expression === module.moduleExports) {
+              return { kind: "module-exports", module, exportedName };
+            }
+            return {
+              kind: "expression",
+              module,
+              expression: entry.expression,
+              isClientReference: isClientModule(module),
+            };
           }
           break;
         case "re-export":
@@ -266,12 +277,16 @@ export class ModuleGraph {
         };
       }
     }
+    if (module.moduleExports) return { kind: "module-exports", module, exportedName };
     return { kind: "unresolved", reason: `no export "${exportedName}" in ${module.filePath}` };
   }
 }
 
 export const isModuleRecord = (value: ModuleRecord | ModuleResolution): value is ModuleRecord =>
   "bindings" in value;
+
+export const isClientModule = (module: ModuleRecord): boolean =>
+  module.directives.includes("use client");
 
 const externalSymbol = (
   target: ExternalModuleResolution | BuiltinModuleResolution,

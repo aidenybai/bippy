@@ -22,7 +22,8 @@
     "esbuild": "^0.28.2",
     "oxc-parser": "^0.148.0",
     "oxc-resolver": "^11.24.2",
-    "playwright": "^1.63.0"
+    "playwright": "^1.63.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@babel/runtime": "^7.29.7",

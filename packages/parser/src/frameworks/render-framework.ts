@@ -4,6 +4,7 @@ import { readProcessEnvironment } from "../corpus/process-environment.js";
 import { createStaticRenderer, type StaticRenderer } from "../render/static-renderer.js";
 import type { RuntimeObservations, StaticRenderResult, StaticRendererOptions } from "../types.js";
 import type { FrameworkKind } from "./framework-profile.js";
+import { readInstalledPackageVersion } from "./installed-package-version.js";
 import { renderNextAppRoute } from "./next-app-router.js";
 import { createNextModel } from "./next-externals.js";
 import { renderNextPagesRoute } from "./next-pages-router.js";
@@ -52,6 +53,7 @@ export const renderFrameworkTarget = (
         route,
         origin: options.origin,
         request: options.observations?.request,
+        nextVersion: readInstalledPackageVersion(options.rootDirectory, "next"),
       });
       const renderer = createStaticRenderer({
         ...options,
@@ -62,7 +64,12 @@ export const renderFrameworkTarget = (
     }
     case "next-pages": {
       const route = requireField(target, "route");
-      const model = createNextModel({ kind: "next-pages", route, origin: options.origin });
+      const model = createNextModel({
+        kind: "next-pages",
+        route,
+        origin: options.origin,
+        nextVersion: readInstalledPackageVersion(options.rootDirectory, "next"),
+      });
       const renderer = createStaticRenderer({ ...options, externalValues: model.externalValues });
       return renderNextPagesRoute(renderer, model, {
         route,

@@ -38,12 +38,17 @@ import type {
   VariableDeclarator,
 } from "oxc-parser";
 import path from "node:path";
-import { isModuleRecord, type ModuleGraph } from "../graph/module-graph.js";
+import { isClientModule, isModuleRecord, type ModuleGraph } from "../graph/module-graph.js";
 import { hasExportedName } from "../graph/module-record.js";
 import { nativeFunction } from "../frameworks/stubs.js";
 import { getLibraryValue } from "../libraries/index.js";
 import { PurePackages } from "../libraries/pure-packages.js";
-import { getHoistedVarNames, getPatternNames, unwrapExpression } from "../parse/ast-walk.js";
+import {
+  getHoistedVarNames,
+  getPatternNames,
+  isFunctionLikeExpression,
+  unwrapExpression,
+} from "../parse/ast-walk.js";
 import { getSourceLocation } from "../parse/source-location.js";
 import {
   FUNCTION_OWN_KEYS,
@@ -52,7 +57,7 @@ import {
   getReactElementSymbolKey,
   REACT_ELEMENT_SYMBOL_KEYS,
 } from "../react/element-shape.js";
-import { toElementType } from "../react/element-type.js";
+import { toClientReference, toElementType } from "../react/element-type.js";
 import {
   getExternalMember,
   isReactLikePackage,
@@ -60,7 +65,7 @@ import {
   resolveReactApi,
   resolveReactApiMember,
 } from "../react/react-api.js";
-import { getCompilerHelper, getInlineCompilerHelper } from "./compiler-helpers.js";
+import { getCompilerHelper, getInlineCompilerHelper, isEsModuleLike } from "./compiler-helpers.js";
 import type {
   ClassBody,
   Diagnostic,
@@ -486,6 +491,12 @@ const isNonProgressingRecursion = (
 const mayBeUnknown = (value: StaticValue): boolean =>
   value.kind === "unknown" || (value.kind === "branch" && value.alternatives.some(mayBeUnknown));
 
+const isCallInitialized = (binding: TopLevelBinding): boolean => {
+  if (binding.kind !== "variable" && binding.kind !== "destructured") return false;
+  const init = binding.init ? unwrapExpression(binding.init) : null;
+  return init?.type === "CallExpression" || init?.type === "NewExpression";
+};
+
 const describeEscapedMutation = (name: string): string =>
   `"${name}" is mutated by code the analysis did not run`;
 
@@ -643,6 +654,26 @@ export class Interpreter {
     return this.resolvedSymbolToValue(this.graph.resolveExport(module, exportedName), exportedName);
   }
 
+  /** Bundler interop: a default import is `module.exports` itself unless it is flagged `__esModule`. */
+  private evaluateModuleExportsMember(module: ModuleRecord, exportedName: string): StaticValue {
+    const moduleExports = this.evaluateModuleExports(module);
+    if (exportedName === "default" && !isEsModuleLike(moduleExports)) return moduleExports;
+    return this.getProperty(moduleExports, exportedName, this.createModuleContext(module), null);
+  }
+
+  private evaluateModuleExports(module: ModuleRecord): StaticValue {
+    if (!module.moduleExports) return { kind: "namespace", module };
+    return this.resolvedSymbolToValue(
+      {
+        kind: "expression",
+        module,
+        expression: module.moduleExports,
+        isClientReference: isClientModule(module),
+      },
+      "default",
+    );
+  }
+
   /** The exports of a module as an object, for `{ ...m }` / `const { a, ...rest } = m` over a namespace. */
   materializeNamespace(module: ModuleRecord): StaticValue {
     const { names, complete } = this.graph.collectExportNames(module);
@@ -682,6 +713,7 @@ export class Interpreter {
     }
     if (cached) return cached;
     values.set(name, IN_PROGRESS);
+    this.evaluatePrecedingCalls(module, binding, values);
     const value = this.evaluateTopLevelBindingValue(
       module,
       binding,
@@ -692,6 +724,23 @@ export class Interpreter {
       markExternallyMutable(value, describeEscapedMutation(name));
     }
     return value;
+  }
+
+  /**
+   * Module bindings are evaluated on demand, but a call in an earlier
+   * declaration may mutate state a later one reads (`let registry = []` grown by
+   * a factory, then snapshotted by a sibling closure), so calls declared before
+   * `binding` run first, in source order.
+   */
+  private evaluatePrecedingCalls(
+    module: ModuleRecord,
+    binding: TopLevelBinding,
+    values: ModuleValues,
+  ): void {
+    for (const preceding of module.bindings.values()) {
+      if (preceding.span.start >= binding.span.start || values.has(preceding.name)) continue;
+      if (isCallInitialized(preceding)) this.evaluateModuleBinding(module, preceding.name);
+    }
   }
 
   /**
@@ -720,12 +769,19 @@ export class Interpreter {
 
   resolvedSymbolToValue(symbol: ResolvedSymbol, nameHint: string | null): StaticValue {
     switch (symbol.kind) {
-      case "binding":
-        return this.evaluateModuleBinding(symbol.module, symbol.binding.name) ?? UNDEFINED_VALUE;
-      case "expression":
-        return this.evaluateExportExpression(symbol.module, symbol.expression, nameHint);
+      case "binding": {
+        const value =
+          this.evaluateModuleBinding(symbol.module, symbol.binding.name) ?? UNDEFINED_VALUE;
+        return symbol.isClientReference ? toClientReference(value) : value;
+      }
+      case "expression": {
+        const value = this.evaluateExportExpression(symbol.module, symbol.expression, nameHint);
+        return symbol.isClientReference ? toClientReference(value) : value;
+      }
       case "namespace":
         return { kind: "namespace", module: symbol.module };
+      case "module-exports":
+        return this.evaluateModuleExportsMember(symbol.module, symbol.exportedName);
       case "external": {
         const importedName =
           symbol.imported.kind === "named"
@@ -936,12 +992,15 @@ export class Interpreter {
   ): StaticValue {
     switch (binding.kind) {
       case "variable":
-        return binding.init
-          ? this.evaluateExpression(binding.init, context, binding.name)
-          : UNDEFINED_VALUE;
+        if (!binding.init) return UNDEFINED_VALUE;
+        return (
+          (isFunctionLikeExpression(binding.init)
+            ? getInlineCompilerHelper(binding.name, binding.init)
+            : null) ?? this.evaluateExpression(binding.init, context, binding.name)
+        );
       case "function":
         return (
-          getInlineCompilerHelper(binding.name) ??
+          getInlineCompilerHelper(binding.name, binding.node) ??
           this.createFunctionValue(binding.node, context, binding.name)
         );
       case "class":
@@ -2052,10 +2111,7 @@ export class Interpreter {
   ): StaticValue {
     const target = this.graph.resolveImportedModule(specifier, context.module);
     if (isModuleRecord(target)) {
-      if (isRequire && target.replacesModuleExports) {
-        return this.evaluateModuleExport(target, "default");
-      }
-      return { kind: "namespace", module: target };
+      return isRequire ? this.evaluateModuleExports(target) : { kind: "namespace", module: target };
     }
     if (target.kind === "external" || target.kind === "builtin") {
       const packageName = target.kind === "external" ? target.packageName : target.specifier;

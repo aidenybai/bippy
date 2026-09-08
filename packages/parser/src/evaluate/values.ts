@@ -834,6 +834,7 @@ const areInterchangeableThrownObjects = (
 /** Alternatives analysis could never tell apart, so a branch keeps only one of them. */
 const isInterchangeable = (left: StaticValue, right: StaticValue): boolean => {
   if (isSameValue(left, right)) return true;
+  if (left === CHAIN_SHORT_CIRCUIT || right === CHAIN_SHORT_CIRCUIT) return false;
   if (left.kind === "unknown" && right.kind === "unknown") {
     if (left.thrown === undefined || right.thrown === undefined)
       return left.thrown === right.thrown;
@@ -1100,6 +1101,16 @@ export const getListItem = (
 
 const MAX_DESCRIPTION_DEPTH = 3;
 
+/**
+ * Read off the prototype: a Proxy-backed DOM object (happy-dom's `dataset`)
+ * answers `undefined` for `value.constructor` itself.
+ */
+export const getNativeConstructorName = (value: object): string => {
+  const prototype = Reflect.getPrototypeOf(value);
+  const constructor: unknown = prototype === null ? null : Reflect.get(prototype, "constructor");
+  return typeof constructor === "function" && constructor.name !== "" ? constructor.name : "Object";
+};
+
 export const describeValue = (value: StaticValue, depth = 0): string => {
   if (depth >= MAX_DESCRIPTION_DEPTH) return "…";
   const describeNested = (nested: StaticValue): string => describeValue(nested, depth + 1);
@@ -1149,7 +1160,7 @@ export const describeValue = (value: StaticValue, depth = 0): string => {
     case "native-function":
       return `native ${value.name}`;
     case "native-object":
-      return `native ${value.value.constructor.name}`;
+      return `native ${getNativeConstructorName(value.value)}`;
     case "proxy":
       return `proxy of ${describeNested(value.target)}`;
     case "unknown":

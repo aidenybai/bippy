@@ -39,6 +39,22 @@ describe("next app router", () => {
     expect(tree).toMatch(/<section>\n\s+<h1>\n\s+<Counter>/);
   });
 
+  it("renders forwardRef/memo wrappers created by server code on the server", async () => {
+    const { tree, errors } = await render("next-app", { framework: "next-app", route: "/" });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<nav>(\n\s+<LinkComponent>[\s\S]*?<a>){2}\n\s+<svg>\n\s+<path>\n\s+<span>/,
+    );
+    expect(tree).not.toContain("<Badge>");
+    expect(tree).toMatch(/<Counter>\n\s+<button>\n\s+"1"\n\s+<ArrowIcon>\n\s+<svg>/);
+  });
+
+  it('treats every export of a "use client" module as a client reference', async () => {
+    const { tree, errors } = await render("next-app", { framework: "next-app", route: "/" });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<body>[\s\S]*<Toaster>\n\s+<output>\n\s+<Sonner>\n\s+<aside>/);
+  });
+
   it("awaits async server components and their data helpers", async () => {
     const { tree } = await render("next-app", { framework: "next-app", route: "/" });
     expect(tree).not.toContain("async function result");
@@ -48,6 +64,19 @@ describe("next app router", () => {
   it("models next/link as LinkComponent -> anonymous provider -> <a>", async () => {
     const { tree } = await render("next-app", { framework: "next-app", route: "/" });
     expect(tree).toMatch(/<LinkComponent>\n\s+<ContextProvider>\n\s+<a>\n\s+<LinkComponent>/);
+  });
+
+  it("models next/link before 15.3 as a forwardRef LinkComponent -> <a>", async () => {
+    const { result, tree, errors } = await render("next-app-14", {
+      framework: "next-app",
+      route: "/",
+    });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<nav>\n\s+<LinkComponent>\n\s+<a>$/);
+    expect(tree).not.toContain("<ContextProvider>");
+    expect(JSON.stringify(getRenderRootChildren(result))).toContain(
+      '"tag":"ForwardRef","name":"LinkComponent"',
+    );
   });
 
   it("nests segment layouts, loading boundaries and resolves dynamic params", async () => {

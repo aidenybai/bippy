@@ -140,6 +140,238 @@
       "failure": null
     },
     {
+      "id": "chadnext",
+      "revision": "1a1f25a6de88453bd3c80efa8c3f61f9c159661c",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T08:51:48.191Z",
+      "durationMs": 461,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-52684925-20251110",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 797,
+        "commits": 20,
+        "pageErrors": [],
+        "title": "ChadNext"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 638,
+          "textCount": 16,
+          "branchCount": 16,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 16,
+          "modulesLoaded": 1637
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-props",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 467,
+        "matchedText": 16,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 51,
+        "wildcards": [
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <main> [HostComponent]",
+            "reason": "promise settled asynchronously",
+            "absorbedFibers": 50,
+            "heads": [
+              "<section> [HostComponent]"
+            ]
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <p> [HostComponent]",
+            "reason": "call of value sent to the generator",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"ChadNext also includes Changelog & About page built using\""
+            ]
+          }
+        ],
+        "branchesResolved": 14,
+        "branchDeviations": [
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef]",
+            "reason": "if (branch(<Primitive.div> | undefined))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef][0]",
+              "expected": "<end of children>",
+              "actual": "<Primitive.div> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> key=\"0\" [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionHeader> [ForwardRef] > <Primitive.h3> [ForwardRef] > <h3> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef]",
+            "reason": "if (branch(<CollapsibleTrigger> | undefined))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> key=\"0\" [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionHeader> [ForwardRef] > <Primitive.h3> [ForwardRef] > <h3> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef][0]",
+              "expected": "<end of children>",
+              "actual": "<CollapsibleTrigger> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> key=\"0\" [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionContent> [ForwardRef] > <AccordionContent> [ForwardRef] > <CollapsibleContent> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent]",
+            "reason": "&& on <boolean: includes()>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> key=\"0\" [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionContent> [ForwardRef] > <AccordionContent> [ForwardRef] > <CollapsibleContent> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent][0]",
+              "expected": "<div> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> key=\"1\" [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionHeader> [ForwardRef] > <Primitive.h3> [ForwardRef] > <h3> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef]",
+            "reason": "if (branch(<CollapsibleTrigger> | undefined))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> key=\"1\" [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionHeader> [ForwardRef] > <Primitive.h3> [ForwardRef] > <h3> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef][0]",
+              "expected": "<end of children>",
+              "actual": "<CollapsibleTrigger> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> key=\"1\" [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionContent> [ForwardRef] > <AccordionContent> [ForwardRef] > <CollapsibleContent> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent]",
+            "reason": "&& on <boolean: includes()>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> key=\"1\" [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionContent> [ForwardRef] > <AccordionContent> [ForwardRef] > <CollapsibleContent> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent][0]",
+              "expected": "<div> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> key=\"2\" [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionHeader> [ForwardRef] > <Primitive.h3> [ForwardRef] > <h3> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef]",
+            "reason": "if (branch(<CollapsibleTrigger> | undefined))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> key=\"2\" [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionHeader> [ForwardRef] > <Primitive.h3> [ForwardRef] > <h3> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef][0]",
+              "expected": "<end of children>",
+              "actual": "<CollapsibleTrigger> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> key=\"2\" [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionContent> [ForwardRef] > <AccordionContent> [ForwardRef] > <CollapsibleContent> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent]",
+            "reason": "&& on <boolean: includes()>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> key=\"2\" [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionContent> [ForwardRef] > <AccordionContent> [ForwardRef] > <CollapsibleContent> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent][0]",
+              "expected": "<div> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> key=\"3\" [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionHeader> [ForwardRef] > <Primitive.h3> [ForwardRef] > <h3> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef]",
+            "reason": "if (branch(<CollapsibleTrigger> | undefined))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> key=\"3\" [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionHeader> [ForwardRef] > <Primitive.h3> [ForwardRef] > <h3> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef][0]",
+              "expected": "<end of children>",
+              "actual": "<CollapsibleTrigger> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> key=\"3\" [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionContent> [ForwardRef] > <AccordionContent> [ForwardRef] > <CollapsibleContent> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent]",
+            "reason": "&& on <boolean: includes()>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> key=\"3\" [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionContent> [ForwardRef] > <AccordionContent> [ForwardRef] > <CollapsibleContent> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent][0]",
+              "expected": "<div> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <I18nProviderWrapper> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <I18nProvider> [FunctionComponent] > <footer> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <LocaleToggler> [FunctionComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuProvider> [FunctionComponent] > <Menu> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <DropdownMenuTrigger> [ForwardRef] > <MenuAnchor> [ForwardRef] > <PopperAnchor> [ForwardRef] > <Primitive.div> [ForwardRef] > <Slot> [ForwardRef]",
+            "reason": "if (branch(<Primitive.button> | undefined))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <I18nProviderWrapper> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <I18nProvider> [FunctionComponent] > <footer> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <LocaleToggler> [FunctionComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuProvider> [FunctionComponent] > <Menu> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <DropdownMenuTrigger> [ForwardRef] > <MenuAnchor> [ForwardRef] > <PopperAnchor> [ForwardRef] > <Primitive.div> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef][0]",
+              "expected": "<Button> [ForwardRef]",
+              "actual": "<Primitive.button> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <I18nProviderWrapper> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <I18nProvider> [FunctionComponent] > <footer> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <LocaleToggler> [FunctionComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuProvider> [FunctionComponent] > <Menu> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <DropdownMenuTrigger> [ForwardRef] > <MenuAnchor> [ForwardRef] > <PopperAnchor> [ForwardRef] > <Primitive.div> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <Slot> [ForwardRef]",
+            "reason": "if (branch(<Button> | undefined))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <I18nProviderWrapper> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <I18nProvider> [FunctionComponent] > <footer> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <LocaleToggler> [FunctionComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuProvider> [FunctionComponent] > <Menu> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <DropdownMenuTrigger> [ForwardRef] > <MenuAnchor> [ForwardRef] > <PopperAnchor> [ForwardRef] > <Primitive.div> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef][0]",
+              "expected": "<end of children>",
+              "actual": "<Button> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <I18nProviderWrapper> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <I18nProvider> [FunctionComponent] > <footer> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <ThemeToggle> [FunctionComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuProvider> [FunctionComponent] > <Menu> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <DropdownMenuTrigger> [ForwardRef] > <MenuAnchor> [ForwardRef] > <PopperAnchor> [ForwardRef] > <Primitive.div> [ForwardRef] > <Slot> [ForwardRef]",
+            "reason": "if (branch(<Primitive.button> | undefined))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <I18nProviderWrapper> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <I18nProvider> [FunctionComponent] > <footer> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <ThemeToggle> [FunctionComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuProvider> [FunctionComponent] > <Menu> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <DropdownMenuTrigger> [ForwardRef] > <MenuAnchor> [ForwardRef] > <PopperAnchor> [ForwardRef] > <Primitive.div> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef][0]",
+              "expected": "<Button> [ForwardRef]",
+              "actual": "<Primitive.button> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <I18nProviderWrapper> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <I18nProvider> [FunctionComponent] > <footer> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <ThemeToggle> [FunctionComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuProvider> [FunctionComponent] > <Menu> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <DropdownMenuTrigger> [ForwardRef] > <MenuAnchor> [ForwardRef] > <PopperAnchor> [ForwardRef] > <Primitive.div> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <Slot> [ForwardRef]",
+            "reason": "if (branch(<Button> | undefined))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <I18nProviderWrapper> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <I18nProvider> [FunctionComponent] > <footer> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <ThemeToggle> [FunctionComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuProvider> [FunctionComponent] > <Menu> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <DropdownMenuTrigger> [ForwardRef] > <MenuAnchor> [ForwardRef] > <PopperAnchor> [ForwardRef] > <Primitive.div> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef][0]",
+              "expected": "<end of children>",
+              "actual": "<Button> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <Toaster> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastCollectionProvider> [FunctionComponent] > <ToastCollectionProviderProvider> [FunctionComponent] > <ToastProviderProvider> [FunctionComponent] > <ToastViewport> [ForwardRef] > <ToastViewport> [ForwardRef] > <DismissableLayerBranch> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ToastCollectionSlot> [ForwardRef] > <Slot> [ForwardRef]",
+            "reason": "if (branch(<Primitive.ol> | undefined))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <Toaster> [FunctionComponent] > <ToastProvider> [FunctionComponent] > <ToastCollectionProvider> [FunctionComponent] > <ToastCollectionProviderProvider> [FunctionComponent] > <ToastProviderProvider> [FunctionComponent] > <ToastViewport> [ForwardRef] > <ToastViewport> [ForwardRef] > <DismissableLayerBranch> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ToastCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef][0]",
+              "expected": "<end of children>",
+              "actual": "<Primitive.ol> [ForwardRef]"
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 534,
+        "staticFibers": 487,
+        "coverage": 1,
+        "strictCoverage": 0.9044943820224719,
+        "divergence": null,
+        "stepsUsed": 534,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T07:56:36.878Z",
+      "failure": null
+    },
+    {
       "id": "documenso",
       "revision": "2cac63a000e22422bdea449f68b8025e709aa73a",
       "framework": "react-router",
@@ -422,6 +654,166 @@
       "failure": null
     },
     {
+      "id": "next-enterprise",
+      "revision": "e5e9735e943cd93c17bf99e26dfee6d351e855f7",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T08:51:41.496Z",
+      "durationMs": 102,
+      "runtime": {
+        "reactVersion": "19.2.0-canary-0bdb9206-20250818",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 282,
+        "commits": 14,
+        "pageErrors": [],
+        "title": "Next.js Enterprise Boilerplate"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 141,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 4
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 139,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "exact",
+        "runtimeFibers": 139,
+        "staticFibers": 139,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 139,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T07:55:30.651Z",
+      "failure": null
+    },
+    {
+      "id": "next-forge",
+      "revision": "9aad7123ef8accc79d6ece399f249c46bdb6b138",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T08:51:45.458Z",
+      "durationMs": 407,
+      "runtime": null,
+      "static": {
+        "stats": {
+          "fiberCount": 710,
+          "textCount": 74,
+          "branchCount": 7,
+          "repeatCount": 3,
+          "opaqueCount": 87,
+          "unknownCount": 8,
+          "modulesLoaded": 1765
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          },
+          {
+            "code": "dynamic-props",
+            "count": 1
+          }
+        ]
+      },
+      "report": null,
+      "anchor": null,
+      "note": "static only",
+      "failure": null
+    },
+    {
+      "id": "next-shadcn-dashboard-starter",
+      "revision": "621cae9b49baa4f3ce9508c62525ee54c4180fa5",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T08:51:51.389Z",
+      "durationMs": 772,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 3,
+        "fibers": 1689,
+        "commits": 55,
+        "pageErrors": [],
+        "title": "Authentication | Sign In"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 673,
+          "textCount": 11,
+          "branchCount": 3,
+          "repeatCount": 0,
+          "opaqueCount": 2,
+          "unknownCount": 2,
+          "modulesLoaded": 6134
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-props",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 633,
+        "matchedText": 11,
+        "opaqueSubtrees": 2,
+        "opaqueSkippedFibers": 29,
+        "slotsMatched": 1,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 3,
+        "branchDeviations": [
+          {
+            "path": "root > <body> [HostSingleton] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <Providers> [FunctionComponent] > <ActiveThemeProvider> [FunctionComponent] > <ClerkProvider> (opaque) > <QueryProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <a> [HostComponent]",
+            "reason": "&& on branch(false | <boolean>)",
+            "preferredIndex": 1,
+            "chosenIndex": 0,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <Providers> [FunctionComponent] > <ActiveThemeProvider> [FunctionComponent] > <ClerkProvider> (opaque) > <QueryProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <a> [HostComponent][2]",
+              "expected": "<end of children>",
+              "actual": "<span> [HostComponent]"
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 673,
+        "staticFibers": 646,
+        "coverage": 1,
+        "strictCoverage": 0.9569093610698366,
+        "divergence": null,
+        "stepsUsed": 671,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T07:56:48.697Z",
+      "failure": null
+    },
+    {
       "id": "nextjs-boilerplate",
       "revision": "1dffa39a32450300c8b01d8cfd3819f9b6e95842",
       "framework": "next-app",
@@ -503,6 +895,162 @@
       },
       "anchor": "body",
       "note": "runtime replayed from 2026-09-06T04:55:26.311Z",
+      "failure": null
+    },
+    {
+      "id": "nextjs-saas-starter",
+      "revision": "6e33e58b1e553a41fe22e6b941a7229a002de361",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T08:51:44.053Z",
+      "durationMs": 400,
+      "runtime": {
+        "reactVersion": "19.3.0-experimental-3025aa39-20251007",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 2,
+        "fibers": 290,
+        "commits": 22,
+        "pageErrors": [],
+        "title": "Next.js SaaS Starter"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 187,
+          "textCount": 15,
+          "branchCount": 5,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 3,
+          "modulesLoaded": 1680
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 103,
+        "matchedText": 15,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 3,
+        "wildcards": [
+          {
+            "path": "root > <body> [HostSingleton] > <SWRConfig> [FunctionComponent] > <Layout> [FunctionComponent] > <section> [HostComponent] > <Header> [FunctionComponent] > <header> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <UserMenu> [FunctionComponent] > <Button> [FunctionComponent] > <Slot.Slot> [ForwardRef]",
+            "reason": "element: call of cyclic module-level evaluation of \"createSlotClone\"",
+            "absorbedFibers": 3,
+            "heads": [
+              "<Slot.SlotClone> [ForwardRef]"
+            ]
+          }
+        ],
+        "branchesResolved": 3,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 121,
+        "staticFibers": 149,
+        "coverage": 1,
+        "strictCoverage": 0.9752066115702479,
+        "divergence": null,
+        "stepsUsed": 126,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T07:56:05.487Z",
+      "failure": null
+    },
+    {
+      "id": "nextjs-starter-kit",
+      "revision": "6b6deebe61d8ac37738fa53ada43033465e42c22",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T08:51:46.870Z",
+      "durationMs": 320,
+      "runtime": {
+        "reactVersion": "19.2.0-canary-3fbfb9ba-20250409",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 353,
+        "commits": 13,
+        "pageErrors": [],
+        "title": "Next.js Starter Kit - Launch Your SAAS"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 236,
+          "textCount": 6,
+          "branchCount": 7,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 1620
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-props",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 189,
+        "matchedText": 4,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 1,
+        "wildcards": [
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <footer> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <span> [HostComponent]",
+            "reason": "call of new Date()",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"2026\""
+            ]
+          }
+        ],
+        "branchesResolved": 4,
+        "branchDeviations": [
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent]",
+            "reason": "if (branch(<LinkComponent> | undefined))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent][0]",
+              "expected": "<span> [HostComponent]",
+              "actual": "<LinkComponent> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent]",
+            "reason": "if (branch(<LinkComponent> | undefined))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent][1]",
+              "expected": "<span> [HostComponent]",
+              "actual": "<LinkComponent> [FunctionComponent]"
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 194,
+        "staticFibers": 198,
+        "coverage": 1,
+        "strictCoverage": 0.9948453608247423,
+        "divergence": null,
+        "stepsUsed": 201,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T07:56:22.624Z",
       "failure": null
     },
     {
@@ -822,6 +1370,431 @@
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-07T12:12:03.185Z",
+      "failure": null
+    },
+    {
+      "id": "saas-boilerplate",
+      "revision": "4d81106bd2abf2f1309a6c73f97be4c63c54b700",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T08:51:42.597Z",
+      "durationMs": 408,
+      "runtime": {
+        "reactVersion": "18.3.0-canary-178c267a4e-20241218",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 695,
+        "commits": 5,
+        "pageErrors": [
+          "EventSource failed: Event",
+          "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+          "EventSource failed: Event",
+          "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+          "EventSource failed: Event",
+          "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+          "Warning: Prop `%s` did not match. Server: %s Client: %s%s style \"--radix-accordion-content-height: var(--radix-collapsible-content-height); --radix-accordion-content-width: var(--radix-collapsible-content-width);\" \"--radix-accordion-content-height:var(--radix-collapsible-content-height);--radix-accordion-content-width:var(--radix-collapsible-content-width)\" \n    at div\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-primitive/dist/index.mjs:36:13)\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-collapsible/dist/index.mjs:128:13)\n    at Presence (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-presence/dist/index.mjs:26:13)\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-collapsible/dist/index.mjs:102:13)\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-accordion/dist/index.mjs:365:13)\n    at _c4 (webpack-internal:///(app-pages-browser)/./src/components/ui/accordion.tsx:66:11)\n    at div\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-primitive/dist/index.mjs:36:13)\n    at Provider (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-context/dist/index.mjs:34:15)\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-collapsible/dist/index.mjs:38:13)\n    at Provider (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-context/dist/index.mjs:34:15)\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-accordion/dist/index.mjs:254:13)\n    at _c (webpack-internal:///(app-pages-browser)/./src/components/ui/accordion.tsx:21:11)\n    at div\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-primitive/dist/index.mjs:36:13)\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-slot/dist/index.mjs:34:11)\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-slot/dist/index.mjs:15:11)\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-collection/dist/index.mjs:43:17)\n    at Provider (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-context/dist/index.mjs:34:15)\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-accordion/dist/index.mjs:155:13)\n    at Provider (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-context/dist/index.mjs:34:15)\n    at Provider (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-context/dist/index.mjs:34:15)\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-accordion/dist/index.mjs:111:20)\n    at Provider (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-collection/node_modules/@radix-ui/react-context/dist/index.mjs:34:15)\n    at CollectionProvider (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-collection/dist/index.mjs:28:17)\n    at _c (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-accordion/dist/index.mjs:56:13)\n    at div\n    at div\n    at Section (Server)\n    at FAQ (Server)\n    at IndexPage (Server)\n    at IndexPage (Server)\n    at InnerLayoutRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:243:11)\n    at RedirectErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:74:9)\n    at RedirectBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:82:11)\n    at NotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:84:11)\n    at LoadingBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:349:11)\n    at ErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/error-boundary.js:160:11)\n    at InnerScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:153:9)\n    at ScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:228:11)\n    at RenderFromTemplateContext (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/render-from-template-context.js:16:44)\n    at OuterLayoutRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:370:11)\n    at InnerLayoutRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:243:11)\n    at RedirectErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:74:9)\n    at RedirectBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:82:11)\n    at NotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:84:11)\n    at LoadingBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:349:11)\n    at ErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/error-boundary.js:160:11)\n    at InnerScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:153:9)\n    at ScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:228:11)\n    at RenderFromTemplateContext (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/render-from-template-context.js:16:44)\n    at OuterLayoutRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:370:11)\n    at IntlProvider (webpack-internal:///(app-pages-browser)/./node_modules/use-intl/dist/development/_IntlProvider.js:16:5)\n    at r (webpack-internal:///(app-pages-browser)/./node_modules/next-intl/dist/esm/shared/NextIntlClientProvider.js:13:19)\n    at i (Server)\n    at body\n    at html\n    at RootLayout (Server)\n    at InnerLayoutRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:243:11)\n    at RedirectErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:74:9)\n    at RedirectBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:82:11)\n    at NotFoundErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:76:9)\n    at NotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:84:11)\n    at LoadingBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:349:11)\n    at ErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/error-boundary.js:160:11)\n    at InnerScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:153:9)\n    at ScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:228:11)\n    at RenderFromTemplateContext (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/render-from-template-context.js:16:44)\n    at OuterLayoutRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:370:11)\n    at RedirectErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:74:9)\n    at RedirectBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:82:11)\n    at NotFoundErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:76:9)\n    at NotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:84:11)\n    at DevRootNotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/dev-root-not-found-boundary.js:33:11)\n    at ReactDevOverlay (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/react-dev-overlay/app/ReactDevOverlay.js:87:9)\n    at HotReload (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/react-dev-overlay/app/hot-reloader-client.js:321:11)\n    at Router (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/app-router.js:207:11)\n    at ErrorBoundaryHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/error-boundary.js:113:9)\n    at ErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/error-boundary.js:160:11)\n    at AppRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/app-router.js:585:13)\n    at ServerRoot (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/app-index.js:112:27)\n    at Root (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/app-index.js:117:11)"
+        ],
+        "title": "SaaS Template - The perfect SaaS template to build and scale your business with ease."
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 761,
+          "textCount": 6,
+          "branchCount": 25,
+          "repeatCount": 0,
+          "opaqueCount": 1,
+          "unknownCount": 77,
+          "modulesLoaded": 1607
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 552,
+        "matchedText": 6,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 2,
+        "slotsMatched": 1,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 1,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 32,
+        "wildcards": [
+          {
+            "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent]",
+            "reason": "value from next-intl (useTranslations().rich())",
+            "absorbedFibers": 4,
+            "heads": [
+              "\"The perfect \"",
+              "<span> key=\"important0\" [HostComponent]",
+              "\" to build and scale your business with ease.\""
+            ]
+          },
+          {
+            "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent]",
+            "reason": "value from next-intl (useTranslations().rich())",
+            "absorbedFibers": 3,
+            "heads": [
+              "\"© 2026 SaaS Template. Made with \"",
+              "<a> key=\"author0\" [HostComponent]",
+              "\".\""
+            ]
+          },
+          {
+            "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <a> [HostComponent]",
+            "reason": "value from next-intl (useTranslations()())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"Follow @Ixartz on Twitter\""
+            ]
+          },
+          {
+            "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <a> [HostComponent]",
+            "reason": "value from next-intl (useTranslations()())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"Star on GitHub\""
+            ]
+          },
+          {
+            "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <a> [HostComponent]",
+            "reason": "value from next-intl (useTranslations()())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"Get Next.js SaaS Starter Kit\""
+            ]
+          },
+          {
+            "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent]",
+            "reason": "value from next-intl (useTranslations()())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"2 Team Members\""
+            ]
+          },
+          {
+            "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent]",
+            "reason": "value from next-intl (useTranslations()())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"2 Websites\""
+            ]
+          },
+          {
+            "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent]",
+            "reason": "value from next-intl (useTranslations()())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"2 GB Storage\""
+            ]
+          },
+          {
+            "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent]",
+            "reason": "value from next-intl (useTranslations()())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"2 TB Transfer\""
+            ]
+          },
+          {
+            "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent]",
+            "reason": "value from next-intl (useTranslations()())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"Email Support\""
+            ]
+          }
+        ],
+        "branchesResolved": 23,
+        "branchDeviations": [
+          {
+            "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <CenteredMenu> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <LocaleSwitcher> [FunctionComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuProvider> [FunctionComponent] > <Menu> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <DropdownMenuTrigger> [ForwardRef] > <MenuAnchor> [ForwardRef] > <PopperAnchor> [ForwardRef] > <Primitive.div> [ForwardRef] > <Slot> [ForwardRef]",
+            "reason": "if (branch(<Primitive.button> | undefined))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <CenteredMenu> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <LocaleSwitcher> [FunctionComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuProvider> [FunctionComponent] > <Menu> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <DropdownMenuTrigger> [ForwardRef] > <MenuAnchor> [ForwardRef] > <PopperAnchor> [ForwardRef] > <Primitive.div> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef][0]",
+              "expected": "<Button> [ForwardRef]",
+              "actual": "<Primitive.button> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <CenteredMenu> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <LocaleSwitcher> [FunctionComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuProvider> [FunctionComponent] > <Menu> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <DropdownMenuTrigger> [ForwardRef] > <MenuAnchor> [ForwardRef] > <PopperAnchor> [ForwardRef] > <Primitive.div> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <Slot> [ForwardRef]",
+            "reason": "if (branch(<Button> | undefined))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <CenteredMenu> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <LocaleSwitcher> [FunctionComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuProvider> [FunctionComponent] > <Menu> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <DropdownMenuTrigger> [ForwardRef] > <MenuAnchor> [ForwardRef] > <PopperAnchor> [ForwardRef] > <Primitive.div> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef][0]",
+              "expected": "<svg> [HostComponent]",
+              "actual": "<Button> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef]",
+            "reason": "if (branch(<Primitive.div> | undefined))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef][0]",
+              "expected": "<end of children>",
+              "actual": "<Primitive.div> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionHeader> [ForwardRef] > <Primitive.h3> [ForwardRef] > <h3> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef]",
+            "reason": "if (branch(<CollapsibleTrigger> | undefined))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionHeader> [ForwardRef] > <Primitive.h3> [ForwardRef] > <h3> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef][0]",
+              "expected": "<end of children>",
+              "actual": "<CollapsibleTrigger> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionContent> [ForwardRef] > <AccordionContent> [ForwardRef] > <CollapsibleContent> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent]",
+            "reason": "&& on <boolean: includes()>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionContent> [ForwardRef] > <AccordionContent> [ForwardRef] > <CollapsibleContent> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent][0]",
+              "expected": "<div> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionHeader> [ForwardRef] > <Primitive.h3> [ForwardRef] > <h3> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef]",
+            "reason": "if (branch(<CollapsibleTrigger> | undefined))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionHeader> [ForwardRef] > <Primitive.h3> [ForwardRef] > <h3> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef][0]",
+              "expected": "<end of children>",
+              "actual": "<CollapsibleTrigger> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionContent> [ForwardRef] > <AccordionContent> [ForwardRef] > <CollapsibleContent> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent]",
+            "reason": "&& on <boolean: includes()>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionContent> [ForwardRef] > <AccordionContent> [ForwardRef] > <CollapsibleContent> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent][0]",
+              "expected": "<div> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionHeader> [ForwardRef] > <Primitive.h3> [ForwardRef] > <h3> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef]",
+            "reason": "if (branch(<CollapsibleTrigger> | undefined))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionHeader> [ForwardRef] > <Primitive.h3> [ForwardRef] > <h3> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef][0]",
+              "expected": "<end of children>",
+              "actual": "<CollapsibleTrigger> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionContent> [ForwardRef] > <AccordionContent> [ForwardRef] > <CollapsibleContent> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent]",
+            "reason": "&& on <boolean: includes()>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionContent> [ForwardRef] > <AccordionContent> [ForwardRef] > <CollapsibleContent> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent][0]",
+              "expected": "<div> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionHeader> [ForwardRef] > <Primitive.h3> [ForwardRef] > <h3> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef]",
+            "reason": "if (branch(<CollapsibleTrigger> | undefined))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionHeader> [ForwardRef] > <Primitive.h3> [ForwardRef] > <h3> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef][0]",
+              "expected": "<end of children>",
+              "actual": "<CollapsibleTrigger> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionContent> [ForwardRef] > <AccordionContent> [ForwardRef] > <CollapsibleContent> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent]",
+            "reason": "&& on <boolean: includes()>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionContent> [ForwardRef] > <AccordionContent> [ForwardRef] > <CollapsibleContent> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent][0]",
+              "expected": "<div> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionHeader> [ForwardRef] > <Primitive.h3> [ForwardRef] > <h3> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef]",
+            "reason": "if (branch(<CollapsibleTrigger> | undefined))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionHeader> [ForwardRef] > <Primitive.h3> [ForwardRef] > <h3> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef][0]",
+              "expected": "<end of children>",
+              "actual": "<CollapsibleTrigger> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionContent> [ForwardRef] > <AccordionContent> [ForwardRef] > <CollapsibleContent> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent]",
+            "reason": "&& on <boolean: includes()>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionContent> [ForwardRef] > <AccordionContent> [ForwardRef] > <CollapsibleContent> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent][0]",
+              "expected": "<div> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionHeader> [ForwardRef] > <Primitive.h3> [ForwardRef] > <h3> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef]",
+            "reason": "if (branch(<CollapsibleTrigger> | undefined))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionHeader> [ForwardRef] > <Primitive.h3> [ForwardRef] > <h3> [HostComponent] > <AccordionTrigger> [ForwardRef] > <AccordionCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef][0]",
+              "expected": "<end of children>",
+              "actual": "<CollapsibleTrigger> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionContent> [ForwardRef] > <AccordionContent> [ForwardRef] > <CollapsibleContent> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent]",
+            "reason": "&& on <boolean: includes()>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostComponent] > <NextIntlClientProvider> (opaque) > <div> [HostComponent] > <div> [HostComponent] > <Accordion> [ForwardRef] > <AccordionCollectionProvider> [FunctionComponent] > <AccordionCollectionProviderProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionProvider> [FunctionComponent] > <ForwardRef> [ForwardRef] > <AccordionProvider> [FunctionComponent] > <AccordionCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionItem> [ForwardRef] > <AccordionItem> [ForwardRef] > <AccordionItemProvider> [FunctionComponent] > <Collapsible> [ForwardRef] > <CollapsibleProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <AccordionContent> [ForwardRef] > <AccordionContent> [ForwardRef] > <CollapsibleContent> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent][0]",
+              "expected": "<div> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 592,
+        "staticFibers": 565,
+        "coverage": 1,
+        "strictCoverage": 0.9425675675675675,
+        "divergence": null,
+        "stepsUsed": 682,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T07:55:50.586Z",
+      "failure": null
+    },
+    {
+      "id": "saasfly",
+      "revision": "49f7e28f69eae9cd9eed84221e13a3dbae87da67",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T08:51:49.707Z",
+      "durationMs": 676,
+      "runtime": {
+        "reactVersion": "18.3.0-canary-14898b6a9-20240318",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 2,
+        "fibers": 1048,
+        "commits": 37,
+        "pageErrors": [
+          "Warning: React Element cannot be passed to Server Functions from the Client.%s \n  {publishableKey: ..., secretKey: ..., claimUrl: ..., apiKeysUrl: ..., children: </>, returnUrl: ...}\n                                                                                  ^^^",
+          "Warning: React Lazy cannot be passed to Server Functions from the Client.%s \n  </>",
+          "Warning: React Element cannot be passed to Server Functions from the Client.%s \n  {publishableKey: ..., secretKey: ..., claimUrl: ..., apiKeysUrl: ..., children: </>, returnUrl: ...}\n                                                                                  ^^^",
+          "Warning: React Lazy cannot be passed to Server Functions from the Client.%s \n  </>",
+          "Client Functions cannot be passed directly to Server Functions. Only Functions passed from the Server can be passed back again.",
+          "Client Functions cannot be passed directly to Server Functions. Only Functions passed from the Server can be passed back again.",
+          "Warning: Expected server HTML to contain a matching <%s> in <%s>.%s main div \n    at main\n    at div\n    at MarketingLayout (Server)\n    at InnerLayoutRouter (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/layout-router.js:243:11)\n    at RedirectErrorBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/redirect-boundary.js:74:9)\n    at RedirectBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/redirect-boundary.js:82:11)\n    at NotFoundBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/not-found-boundary.js:84:11)\n    at LoadingBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/layout-router.js:349:11)\n    at ErrorBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/error-boundary.js:160:11)\n    at InnerScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/layout-router.js:153:9)\n    at ScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/layout-router.js:228:11)\n    at RenderFromTemplateContext (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/render-from-template-context.js:16:44)\n    at OuterLayoutRouter (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/layout-router.js:370:11)\n    at InnerLayoutRouter (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/layout-router.js:243:11)\n    at RedirectErrorBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/redirect-boundary.js:74:9)\n    at RedirectBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/redirect-boundary.js:82:11)\n    at NotFoundErrorBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/not-found-boundary.js:76:9)\n    at NotFoundBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/not-found-boundary.js:84:11)\n    at LoadingBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/layout-router.js:349:11)\n    at ErrorBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/error-boundary.js:160:11)\n    at InnerScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/layout-router.js:153:9)\n    at ScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/layout-router.js:228:11)\n    at RenderFromTemplateContext (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/render-from-template-context.js:16:44)\n    at OuterLayoutRouter (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/layout-router.js:370:11)\n    at Suspense\n    at NextDevtoolsProvider (webpack-internal:///(app-pages-browser)/../../node_modules/@next-devtools/core/dist/provider/provider.js:43:11)\n    at f (webpack-internal:///(app-pages-browser)/../../node_modules/next-themes/dist/index.module.js:8:597)\n    at $ (webpack-internal:///(app-pages-browser)/../../node_modules/next-themes/dist/index.module.js:8:348)\n    at body\n    at html\n    at SWRConfig (webpack-internal:///(app-pages-browser)/../../node_modules/swr/dist/_internal/config-context-client-v7VOFo66.mjs:549:13)\n    at OrganizationProvider (webpack-internal:///(app-pages-browser)/../../node_modules/@clerk/shared/dist/react/index.mjs:114:3)\n    at ClerkContextProvider (webpack-internal:///(app-pages-browser)/../../node_modules/@clerk/clerk-react/dist/index.mjs:2207:11)\n    at ClerkProviderBase (webpack-internal:///(app-pages-browser)/../../node_modules/@clerk/clerk-react/dist/index.mjs:2293:11)\n    at Hoc (webpack-internal:///(app-pages-browser)/../../node_modules/@clerk/clerk-react/dist/index.mjs:118:5)\n    at ClerkNextOptionsProvider (webpack-internal:///(app-pages-browser)/../../node_modules/@clerk/nextjs/dist/esm/client-boundary/NextOptionsContext.js:17:11)\n    at NextClientClerkProvider (webpack-internal:///(app-pages-browser)/../../node_modules/@clerk/nextjs/dist/esm/app-router/client/ClerkProvider.js:60:13)\n    at ClientClerkProvider (webpack-internal:///(app-pages-browser)/../../node_modules/@clerk/nextjs/dist/esm/app-router/client/ClerkProvider.js:127:13)\n    at KeylessCookieSync (webpack-internal:///(app-pages-browser)/../../node_modules/@clerk/nextjs/dist/esm/app-router/client/keyless-cookie-sync.js:17:96)\n    at KeylessProvider (Server)\n    at ClerkProvider (Server)\n    at RootLayout (Server)\n    at RedirectErrorBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/redirect-boundary.js:74:9)\n    at RedirectBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/redirect-boundary.js:82:11)\n    at NotFoundErrorBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/not-found-boundary.js:76:9)\n    at NotFoundBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/not-found-boundary.js:84:11)\n    at DevRootNotFoundBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/dev-root-not-found-boundary.js:33:11)\n    at ReactDevOverlay (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/react-dev-overlay/app/ReactDevOverlay.js:87:9)\n    at HotReload (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/react-dev-overlay/app/hot-reloader-client.js:321:11)\n    at Router (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/app-router.js:207:11)\n    at ErrorBoundaryHandler (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/error-boundary.js:113:9)\n    at ErrorBoundary (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/error-boundary.js:160:11)\n    at AppRouter (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/components/app-router.js:585:13)\n    at ServerRoot (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/app-index.js:112:27)\n    at Root (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/client/app-index.js:117:11)",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "There was an error while hydrating this Suspense boundary. Switched to client rendering.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Warning: React Element cannot be passed to Server Functions from the Client.%s \n  {publishableKey: ..., secretKey: ..., claimUrl: ..., apiKeysUrl: ..., children: </>, returnUrl: ...}\n                                                                                  ^^^",
+          "Warning: React Lazy cannot be passed to Server Functions from the Client.%s \n  </>",
+          "Warning: React Element cannot be passed to Server Functions from the Client.%s \n  {publishableKey: ..., secretKey: ..., claimUrl: ..., apiKeysUrl: ..., children: </>, returnUrl: ...}\n                                                                                  ^^^",
+          "Warning: React Lazy cannot be passed to Server Functions from the Client.%s \n  </>",
+          "Client Functions cannot be passed directly to Server Functions. Only Functions passed from the Server can be passed back again.",
+          "Client Functions cannot be passed directly to Server Functions. Only Functions passed from the Server can be passed back again."
+        ],
+        "title": "Saasfly"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 958,
+          "textCount": 9,
+          "branchCount": 11,
+          "repeatCount": 0,
+          "opaqueCount": 10,
+          "unknownCount": 1,
+          "modulesLoaded": 1518
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 17
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 727,
+        "matchedText": 6,
+        "opaqueSubtrees": 8,
+        "opaqueSkippedFibers": 14,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 6,
+        "branchDeviations": [
+          {
+            "path": "root > <body> [HostComponent] > <$> [FunctionComponent] > <f> [FunctionComponent] > <NextDevtoolsProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <NavBar> [FunctionComponent] > <header> [HostComponent] > <div> [HostComponent] > <div> [HostComponent]",
+            "reason": "conditional on @clerk/nextjs#auth().sessionClaims.user",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostComponent] > <$> [FunctionComponent] > <f> [FunctionComponent] > <NextDevtoolsProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <NavBar> [FunctionComponent] > <header> [HostComponent] > <div> [HostComponent] > <div> [HostComponent][5]",
+              "expected": "<UserAccountNav> [FunctionComponent]",
+              "actual": "<Button> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <body> [HostComponent] > <$> [FunctionComponent] > <f> [FunctionComponent] > <NextDevtoolsProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <div> [HostComponent] > <ModalProvider> [FunctionComponent] > <SignInClerkModal> [FunctionComponent]",
+            "reason": "if (<boolean: negation of unknown>)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostComponent] > <$> [FunctionComponent] > <f> [FunctionComponent] > <NextDevtoolsProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <div> [HostComponent] > <ModalProvider> [FunctionComponent] > <SignInClerkModal> [FunctionComponent][0]",
+              "expected": "<end of children>",
+              "actual": "<Modal> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostComponent] > <$> [FunctionComponent] > <f> [FunctionComponent] > <NextDevtoolsProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <div> [HostComponent] > <ModalProvider> [FunctionComponent] > <SignInClerkModal> [FunctionComponent] > <Modal> [FunctionComponent] > <Dialog> [FunctionComponent] > <DialogProvider> [FunctionComponent] > <DialogContext> [ContextProvider] > <ForwardRef> [ForwardRef] > <DialogPortal> [FunctionComponent] > <DialogPortal> [FunctionComponent] > <DialogPortalProvider> [FunctionComponent] > <DialogPortalContext> [ContextProvider] > <Presence> [FunctionComponent]",
+            "reason": "conditional on <boolean: includes()>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostComponent] > <$> [FunctionComponent] > <f> [FunctionComponent] > <NextDevtoolsProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <div> [HostComponent] > <ModalProvider> [FunctionComponent] > <SignInClerkModal> [FunctionComponent] > <Modal> [FunctionComponent] > <Dialog> [FunctionComponent] > <DialogProvider> [FunctionComponent] > <DialogContext> [ContextProvider] > <ForwardRef> [ForwardRef] > <DialogPortal> [FunctionComponent] > <DialogPortal> [FunctionComponent] > <DialogPortalProvider> [FunctionComponent] > <DialogPortalContext> [ContextProvider] > <Presence> [FunctionComponent][0]",
+              "expected": "<Portal> [ForwardRef]",
+              "actual": "<end of children>"
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 747,
+        "staticFibers": 823,
+        "coverage": 1,
+        "strictCoverage": 0.9812583668005355,
+        "divergence": null,
+        "stepsUsed": 749,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T07:34:54.109Z",
       "failure": null
     },
     {

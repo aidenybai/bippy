@@ -33,11 +33,11 @@ import {
   unknownValue,
 } from "../evaluate/values.js";
 import { nativeObjectValue } from "../evaluate/native-values.js";
+import { isClientModule } from "../graph/module-graph.js";
 import { formatSourceLocation } from "../parse/source-location.js";
 import type {
   ComponentDefinition,
   ContextDefinition,
-  ModuleRecord,
   RenderEnvironment,
   Scope,
   SourceLocation,
@@ -86,7 +86,6 @@ const MAX_RENDER_PHASE_UPDATES = 25;
 // Every alternative of a branch is materialized, so nested branches multiply the
 // work; deviations from the preferred path deeper than this become wildcards.
 const MAX_ALTERNATIVE_DEPTH = 2;
-const USE_CLIENT_DIRECTIVE = "use client";
 
 /** Tags whose `children` React DOM either rejects (void elements) or never reconciles (`textarea`, `noscript`). */
 const CHILDLESS_HOST_TAGS = new Set([
@@ -273,8 +272,24 @@ export class StaticThrowError extends Error {
   }
 }
 
-const isClientModule = (module: ModuleRecord): boolean =>
-  module.directives.includes(USE_CLIENT_DIRECTIVE);
+const isClientComponent = (component: ComponentDefinition): boolean =>
+  component.isClientReference || isClientModule(component.module);
+
+/**
+ * The component Flight calls when it renders `type` on the server: a forwardRef's
+ * render function, a memo's inner type (`ReactFlightServer.renderElement`).
+ */
+const getServerRenderedComponent = (type: StaticElementType): ComponentDefinition | null => {
+  switch (type.kind) {
+    case "function":
+    case "forward-ref":
+      return type.component;
+    case "memo":
+      return getServerRenderedComponent(type.inner);
+    default:
+      return null;
+  }
+};
 
 const isClassNode = (node: ComponentDefinition["node"]): node is Class =>
   node.type === "ClassDeclaration" || node.type === "ClassExpression";
@@ -357,6 +372,7 @@ const toFunctionValue = (component: ComponentDefinition): StaticFunctionValue =>
     superBinding: null,
     name: component.name,
     properties: component.properties,
+    isClientReference: component.isClientReference,
   };
 };
 
@@ -372,6 +388,7 @@ const toClassValue = (component: ComponentDefinition): StaticClassValue => {
     module: component.module,
     name: component.name,
     properties: component.properties,
+    isClientReference: component.isClientReference,
   };
 };
 
@@ -616,8 +633,8 @@ export class Materializer {
     context: MaterializeContext,
     isTopLevel: boolean,
   ): ReactNode {
-    if (element.type.kind === "function" && this.isServerComponentElement(element, context)) {
-      const component = element.type.component;
+    const component = this.getServerComponent(element, context);
+    if (component) {
       const server = this.evaluateComposite(
         component,
         element.props,
@@ -1542,13 +1559,15 @@ export class Materializer {
    * unless its module (or the module that created the element) opted into the
    * client bundle with `"use client"`.
    */
-  private isServerComponentElement(
+  private getServerComponent(
     element: StaticElementValue,
     context: MaterializeContext,
-  ): boolean {
-    if (!this.serverComponents || element.type.kind !== "function") return false;
+  ): ComponentDefinition | null {
+    if (!this.serverComponents) return null;
+    const component = getServerRenderedComponent(element.type);
+    if (!component) return null;
     const createdIn = element.environment ?? context.environment;
-    return createdIn !== "client" && !isClientModule(element.type.component.module);
+    return createdIn !== "client" && !isClientComponent(component) ? component : null;
   }
 
   private componentEnvironment(
@@ -1556,7 +1575,7 @@ export class Materializer {
     context: MaterializeContext,
   ): RenderEnvironment | null {
     if (!this.serverComponents) return null;
-    if (context.environment === "client" || isClientModule(component.module)) return "client";
+    if (context.environment === "client" || isClientComponent(component)) return "client";
     return isClassNode(component.node) ? "client" : "server";
   }
 

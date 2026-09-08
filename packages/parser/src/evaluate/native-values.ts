@@ -16,6 +16,7 @@ import {
   primitiveValue,
   unknownPrimitiveValue,
   unknownValue,
+  getNativeConstructorName,
 } from "./values.js";
 
 const UNCERTAIN = Symbol("uncertain");
@@ -104,10 +105,11 @@ const getDomInterface = (name: string): Function | null => {
   return typeof iface === "function" ? iface : null;
 };
 
+// happy-dom leaves some interfaces (`DOMStringMap`) off the window, so fall back to the prototype's name.
 const isDomObject = (value: object): boolean =>
   DOM_INTERFACE_NAMES.some((name) => {
     const iface = getDomInterface(name);
-    return iface !== null && value instanceof iface;
+    return iface !== null ? value instanceof iface : getNativeConstructorName(value) === name;
   });
 
 const isIterable = (value: object): value is Iterable<unknown> =>
@@ -242,7 +244,7 @@ const liftObject = (value: object, name: string, ancestors: ReadonlySet<object>)
     return { kind: "regexp", pattern: value.source, flags: value.flags, lastIndex: 0 };
   }
   if (!isPlainObject(value)) {
-    return unknownValue(`${name}: ${value.constructor.name} from native code`);
+    return unknownValue(`${name}: ${getNativeConstructorName(value)} from native code`);
   }
   if (isReactElementTag(Reflect.get(value, "$$typeof"))) {
     const type: unknown = Reflect.get(value, "type");
@@ -284,7 +286,7 @@ export const fromNativeValue = (value: unknown, name: string): StaticValue =>
   liftValue(value, name, new Set());
 
 const describeMember = (object: StaticNativeObjectValue, key: string): string =>
-  `${object.value.constructor.name}.${key}`;
+  `${getNativeConstructorName(object.value)}.${key}`;
 
 /**
  * A property of a native object, with methods bound so they run natively when
@@ -354,7 +356,7 @@ export const hasNativeObjectMember = (object: StaticNativeObjectValue, key: stri
 /** What `for..of`, spread and `Array.from` see of a native iterable (`NodeList`, `DOMTokenList`); null for other objects. */
 export const getNativeIterableItems = (object: StaticNativeObjectValue): StaticListValue | null => {
   if (uncertainNativeObjects.has(object.value) || !isIterable(object.value)) return null;
-  const name = object.value.constructor.name;
+  const name = getNativeConstructorName(object.value);
   return listValue(
     Array.from(object.value, (item, index) => fromNativeValue(item, `${name}[${index}]`)),
   );
