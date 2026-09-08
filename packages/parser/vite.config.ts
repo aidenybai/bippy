@@ -1,6 +1,6 @@
 import { existsSync, statSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
-import { defineConfig, type Plugin } from "vite-plus";
+import { defineConfig, type Plugin, transformWithOxc } from "vite-plus";
 
 const parserDirectory = import.meta.dirname;
 const bippyDirectory = resolve(parserDirectory, "../bippy");
@@ -56,9 +56,18 @@ const fixtureAliasPlugin = (): Plugin => ({
   },
 });
 
+const fixtureJsxInJsPlugin = (): Plugin => ({
+  name: "bippy-parser-fixture-jsx-in-js",
+  enforce: "pre",
+  transform(code, id) {
+    if (!id.endsWith(".js") || relative(fixturesDirectory, id).startsWith("..")) return null;
+    return transformWithOxc(code, id, { lang: "jsx" });
+  },
+});
+
 export default defineConfig({
   root: parserDirectory,
-  plugins: [fixtureAliasPlugin()],
+  plugins: [fixtureAliasPlugin(), fixtureJsxInJsPlugin()],
   resolve: {
     alias: [{ find: /^bippy$/, replacement: resolve(bippyDirectory, "src/index.ts") }],
   },

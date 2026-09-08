@@ -21,6 +21,11 @@ const EXTENSION_TO_LANG: Record<string, SourceLanguage> = {
 // become its exports.
 const JSON_MODULE_PREFIX = "module.exports = ";
 
+const getParserLanguage = (lang: SourceLanguage): "js" | "jsx" | "ts" | "tsx" => {
+  if (lang === "json") return "js";
+  return lang === "js" ? "jsx" : lang;
+};
+
 export const SUPPORTED_SOURCE_EXTENSIONS = Object.keys(EXTENSION_TO_LANG);
 
 export const getSourceLanguage = (filePath: string): SourceLanguage | null => {
@@ -45,7 +50,7 @@ export const parseSourceText = (
 ): ParsedSourceFile => {
   const programText = lang === "json" ? `${JSON_MODULE_PREFIX}${sourceText};` : sourceText;
   const result = parseSync(filePath, programText, {
-    lang: lang === "json" ? "js" : lang,
+    lang: getParserLanguage(lang),
     sourceType: "module",
     astType: lang === "ts" || lang === "tsx" ? "ts" : "js",
     preserveParens: false,

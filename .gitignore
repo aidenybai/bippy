@@ -16,4 +16,5 @@ packages/bippy/LICENSE
 !packages/parser/tests/fixtures/*/node_modules
 !packages/parser/tests/resolver-fixtures/*/node_modules
 !packages/parser/tests/resolver-fixtures/*/node_modules/*/dist
+!packages/parser/tests/framework-fixtures/*/node_modules
 packages/parser/.corpus

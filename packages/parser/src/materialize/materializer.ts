@@ -55,14 +55,14 @@ import type {
   StubHooks,
   StubRenderTools,
 } from "../types.js";
-import { ForwardRefTag } from "../work-tags.js";
+import { ClassComponentTag, ForwardRefTag, type WorkTag } from "../work-tags.js";
 import {
   AlternativeMarker,
   BranchMarker,
+  createSuspendedMarker,
   MARKER_NAMES,
   OpaqueMarker,
   RepeatMarker,
-  SuspendedMarker,
   TEXT_PLACEHOLDER,
   TextMarker,
   UnknownMarker,
@@ -376,6 +376,7 @@ const toFunctionValue = (component: ComponentDefinition): StaticFunctionValue =>
     properties: component.properties,
     boundArgs: component.boundArgs,
     boundThis: component.boundThis,
+    isClientReference: component.isClientReference,
   };
 };
 
@@ -391,6 +392,7 @@ const toClassValue = (component: ComponentDefinition): StaticClassValue => {
     module: component.module,
     name: component.name,
     properties: component.properties,
+    isClientReference: component.isClientReference,
   };
 };
 
@@ -455,6 +457,7 @@ export class Materializer {
   private contextReads: ContextRead[] | null = null;
   private readonly stubProxies = new WeakMap<StubComponent, ComponentType<ProxyProps>>();
   private readonly suspenseBoundaryProxy: ComponentType<ProxyProps>;
+  private readonly suspendedMarker: ComponentType;
   private portalContainer: Element | null = null;
   private readonly hostRefs = new WeakMap<StaticValue, HostRefBinding>();
   private readonly materializedElements = new WeakMap<StaticElementValue, MaterializedElement[]>();
@@ -472,6 +475,7 @@ export class Materializer {
       ({ input }: ProxyProps): ReactNode => this.renderSuspenseBoundary(input),
       MARKER_NAMES.suspenseBoundary,
     );
+    this.suspendedMarker = createSuspendedMarker(runtime.react.use);
   }
 
   createRootContext(): MaterializeContext {
@@ -1235,13 +1239,30 @@ export class Materializer {
           this.renderInsideComponent(() => this.renderStub(input, stub)),
         getStubDisplayName(stub),
       );
-      proxy =
-        stub.tag === ForwardRefTag
-          ? this.runtime.react.forwardRef<unknown, ProxyProps>(render)
-          : render;
+      proxy = this.stubProxyForTag(stub.tag, render);
       this.stubProxies.set(stub, proxy);
     }
     return proxy;
+  }
+
+  private stubProxyForTag(
+    tag: WorkTag | undefined,
+    render: (props: ProxyProps) => ReactNode,
+  ): ComponentType<ProxyProps> {
+    switch (tag) {
+      case ForwardRefTag:
+        return this.runtime.react.forwardRef<unknown, ProxyProps>(render);
+      case ClassComponentTag: {
+        class StubClassProxy extends this.runtime.react.Component<ProxyProps> {
+          render(): ReactNode {
+            return render(this.props);
+          }
+        }
+        return setFunctionName(StubClassProxy, render.name);
+      }
+      default:
+        return render;
+    }
   }
 
   private renderInsideComponent<T>(render: () => T): T {
@@ -1743,7 +1764,7 @@ export class Materializer {
     const content = createElement(Suspense, { fallback }, primary);
     if (!isSuspendable) return content;
     return this.branchNode(
-      [content, createElement(Suspense, { fallback }, createElement(SuspendedMarker))],
+      [content, createElement(Suspense, { fallback }, createElement(this.suspendedMarker))],
       "Suspense boundary may be suspended when observed",
       0,
       true,
