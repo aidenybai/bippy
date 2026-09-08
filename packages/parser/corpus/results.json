@@ -476,8 +476,8 @@
       "id": "excalidraw",
       "revision": "214cd6e6e8ac3ad6b68486aa7aa7241abdf9445f",
       "framework": "spa",
-      "capturedAt": "2026-09-08T06:25:06.401Z",
-      "durationMs": 20763,
+      "capturedAt": "2026-09-08T14:40:41.548Z",
+      "durationMs": 5403,
       "runtime": {
         "reactVersion": "19.0.0",
         "rendererName": "react-dom",
@@ -501,7 +501,7 @@
         "diagnostics": [
           {
             "code": "budget-exhausted",
-            "count": 101
+            "count": 102
           },
           {
             "code": "dynamic-key",
@@ -542,7 +542,7 @@
         "budgetExhausted": false
       },
       "anchor": null,
-      "note": null,
+      "note": "runtime replayed from 2026-09-08T06:25:19.421Z",
       "failure": null
     },
     {
