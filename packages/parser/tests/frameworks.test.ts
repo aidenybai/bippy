@@ -46,7 +46,7 @@ describe("next app router", () => {
     const { tree, errors } = await render("next-app", { framework: "next-app", route: "/" });
     expect(errors).toEqual([]);
     expect(tree).toMatch(
-      /<nav>(\n\s+<LinkComponent>[\s\S]*?<a>){2}\n\s+<svg>\n\s+<path>\n\s+<span>/,
+      /<nav>(\n\s+<LinkComponent>[\s\S]*?<a>){2}\n\s+<NavLink>[\s\S]*?<PendingDot>\n\s+<svg>\n\s+<path>\n\s+<span>/,
     );
     expect(tree).not.toContain("<Badge>");
     expect(tree).toMatch(/<Counter>\n\s+<button>\n\s+"1"\n\s+<ArrowIcon>\n\s+<svg>/);
@@ -88,7 +88,7 @@ describe("next app router", () => {
   it("resolves useLinkStatus to the idle LinkStatusContext default", async () => {
     const { tree, errors } = await render("next-app", { framework: "next-app", route: "/" });
     expect(errors).toEqual([]);
-    expect(tree).toMatch(/<a>\n\s+"Notes"\n\s+<PendingDot>\n\s+<main>/);
+    expect(tree).toMatch(/<a>\n\s+"Notes"\n\s+<PendingDot>\n\s+<svg>/);
     expect(tree).not.toContain("useLinkStatus");
   });
 
