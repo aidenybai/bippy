@@ -153,13 +153,18 @@ describe("next pages router", () => {
   });
 
   it("models next/head, next/image and next/legacy/image after the current next", async () => {
-    const { tree, errors } = await render("next-pages", { framework: "next-pages", route: "/media" });
+    const { tree, errors } = await render("next-pages", {
+      framework: "next-pages",
+      route: "/media",
+    });
     expect(errors).toEqual([]);
     expect(tree).toMatch(/<Head>\n\s+<SideEffect>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>/);
     expect(tree).toMatch(
       /<Image>\n\s+<span>\n\s+<span>\n\s+<img>\n\s+<ImageElement>\n\s+<img>\n\s+<noscript>/,
     );
-    expect(tree).toMatch(/<Image>\n\s+<span>\n\s+<ImageElement>\n\s+<img>\n\s+<Head>\n\s+<SideEffect>/);
+    expect(tree).toMatch(
+      /<Image>\n\s+<span>\n\s+<ImageElement>\n\s+<img>\n\s+<Head>\n\s+<SideEffect>/,
+    );
   });
 
   it("follows the installed next version: 12.1 renders head through a class and images inline", async () => {
@@ -170,7 +175,9 @@ describe("next pages router", () => {
     );
     const pattern = getRenderPattern(result);
     const tree = formatPattern(pattern);
-    expect(tree).toMatch(/<Head>\n\s+<_class>\n\s+<Image>\n\s+<span>\n\s+<span>\n\s+<img>\n\s+<img>\n\s+<noscript>/);
+    expect(tree).toMatch(
+      /<Head>\n\s+<_class>\n\s+<Image>\n\s+<span>\n\s+<span>\n\s+<img>\n\s+<img>\n\s+<noscript>/,
+    );
     expect(tree).toMatch(/<Image>\n\s+<span>\n\s+<img>\n\s+<Head>\n\s+<_class>/);
     expect(tree).not.toContain("<ImageElement>");
     expect(findFiberTags(pattern, "_class")).toEqual(["ClassComponent", "ClassComponent"]);
@@ -200,9 +207,7 @@ describe("next pages router", () => {
                     fiber("MyApp", "FunctionComponent", [appHead, page]),
                     fiber("Portal", "FunctionComponent", [
                       fiber("Portal", "HostPortal", [
-                        fiber("RouteAnnouncer", "FunctionComponent", [
-                          fiber("p", "HostComponent"),
-                        ]),
+                        fiber("RouteAnnouncer", "FunctionComponent", [fiber("p", "HostComponent")]),
                       ]),
                     ]),
                   ]),

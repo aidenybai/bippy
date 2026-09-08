@@ -50,7 +50,9 @@ const ParameterProperties = () => {
       <li>
         first: {selection.first()} of {selection.items.length}
       </li>
-      <li>{circle.describe()} radius {circle["radius"]}</li>
+      <li>
+        {circle.describe()} radius {circle["radius"]}
+      </li>
       {Selection.empty().items.length === 0 ? <li>empty is empty</li> : <li>empty has items</li>}
     </ul>
   );

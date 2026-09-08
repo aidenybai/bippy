@@ -29,16 +29,16 @@ interface StubReactInstallation {
 
 const writePackage = (directory: string, name: string, files: Record<string, string>): void => {
   mkdirSync(directory, { recursive: true });
-  writeFileSync(join(directory, "package.json"), JSON.stringify({ name, version: "0.0.0", main: "index.js" }));
+  writeFileSync(
+    join(directory, "package.json"),
+    JSON.stringify({ name, version: "0.0.0", main: "index.js" }),
+  );
   for (const [fileName, source] of Object.entries(files)) {
     writeFileSync(join(directory, fileName), source);
   }
 };
 
-const createStubInstallation = ({
-  rootDirectory,
-  hasClientEntry,
-}: StubReactInstallation): void => {
+const createStubInstallation = ({ rootDirectory, hasClientEntry }: StubReactInstallation): void => {
   writePackage(join(rootDirectory, "node_modules/react"), "react", { "index.js": REACT_STUB });
   writePackage(join(rootDirectory, "node_modules/react-dom"), "react-dom", {
     "index.js": REACT_DOM_STUB,

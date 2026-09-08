@@ -218,7 +218,8 @@ const imageStubs = (nextVersion: string | null, head: StubComponent): NextImageS
   const hasImageElement = version === null || isVersionAtLeast(version, 12, 2);
   const legacyImage = stubValue(legacyImageStub({ hasImageElement, head }));
   return {
-    image: version !== null && !isVersionAtLeast(version, 13, 0) ? legacyImage : stubValue(IMAGE_STUB),
+    image:
+      version !== null && !isVersionAtLeast(version, 13, 0) ? legacyImage : stubValue(IMAGE_STUB),
     legacyImage,
   };
 };
@@ -427,7 +428,9 @@ export const createNextModel = (options: NextModelOptions): NextModel => {
   const url = new URL(options.route, options.origin ?? "http://static.invalid");
   const params: Record<string, string> = {};
   const nextVersion =
-    options.rootDirectory === undefined ? null : readInstalledVersion(options.rootDirectory, "next");
+    options.rootDirectory === undefined
+      ? null
+      : readInstalledVersion(options.rootDirectory, "next");
   const head = headStub(nextVersion);
   const headValue = stubValue(head);
   const images = imageStubs(nextVersion, head);

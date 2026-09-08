@@ -36,8 +36,5 @@ export const parsePackageVersion = (version: string | null): PackageVersion | nu
     : { major, minor };
 };
 
-export const isVersionAtLeast = (
-  version: PackageVersion,
-  major: number,
-  minor: number,
-): boolean => version.major > major || (version.major === major && version.minor >= minor);
+export const isVersionAtLeast = (version: PackageVersion, major: number, minor: number): boolean =>
+  version.major > major || (version.major === major && version.minor >= minor);

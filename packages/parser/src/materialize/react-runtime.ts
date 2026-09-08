@@ -66,7 +66,11 @@ const getPackageDirectory = (filePath: string, packageName: string): string | nu
   return index === -1 ? null : filePath.slice(0, index + marker.length);
 };
 
-const isInsidePackage = (filePath: string, packageFilePath: string, packageName: string): boolean => {
+const isInsidePackage = (
+  filePath: string,
+  packageFilePath: string,
+  packageName: string,
+): boolean => {
   const packageDirectory = getPackageDirectory(packageFilePath, packageName);
   return packageDirectory !== null && filePath.startsWith(packageDirectory);
 };

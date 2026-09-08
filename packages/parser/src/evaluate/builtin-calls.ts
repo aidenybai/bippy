@@ -829,13 +829,13 @@ const callGlobal = (
       if (second !== undefined && second.kind !== "primitive")
         return unknownValue("RegExp with dynamic flags", location);
       const flags = second?.value === undefined ? null : String(second.value);
-      if (first?.kind === "regexp") {
-        return { ...first, flags: flags ?? first.flags, lastIndex: 0 };
-      }
-      if (first?.kind === "primitive") {
-        return { kind: "regexp", pattern: String(first.value), flags: flags ?? "", lastIndex: 0 };
-      }
-      return unknownValue("RegExp from a dynamic pattern", location);
+      return mapValue(first ?? UNDEFINED_VALUE, (pattern) =>
+        pattern.kind === "regexp"
+          ? { ...pattern, flags: flags ?? pattern.flags, lastIndex: 0 }
+          : pattern.kind === "primitive" && pattern.value !== undefined
+            ? { kind: "regexp", pattern: String(pattern.value), flags: flags ?? "", lastIndex: 0 }
+            : unknownValue("RegExp from a dynamic pattern", location),
+      );
     }
     case "Proxy":
       return isConstructor && first && second?.kind === "object"
@@ -1628,6 +1628,15 @@ const callPromiseMethod = (
   return receiver;
 };
 
+const MAX_DISTRIBUTED_ALTERNATIVES = 8;
+
+const isPrimitiveBranch = (value: StaticValue): boolean =>
+  value.kind === "branch" &&
+  value.alternatives.length <= MAX_DISTRIBUTED_ALTERNATIVES &&
+  value.alternatives.every(
+    (alternative) => alternative.kind === "primitive" || alternative.kind === "regexp",
+  );
+
 export const evaluateBuiltinCall = (
   interpreter: Interpreter,
   callee: Extract<StaticValue, { kind: "method" | "global" }>,
@@ -1738,6 +1747,19 @@ export const evaluateBuiltinCall = (
   }
 
   if (receiver.kind === "primitive") {
+    const branchIndex = args.findIndex(isPrimitiveBranch);
+    if (branchIndex !== -1 && args.filter((argument) => argument.kind === "branch").length === 1) {
+      return mapValue(args[branchIndex], (alternative) =>
+        evaluateBuiltinCall(
+          interpreter,
+          callee,
+          args.with(branchIndex, alternative),
+          context,
+          location,
+          isConstructor,
+        ),
+      );
+    }
     const computed =
       typeof receiver.value === "string"
         ? callStringMethod(interpreter, receiver.value, name, args, context)

@@ -65,10 +65,7 @@ const keepsPropsAsIs = (options: StaticValue, component: StaticValue): boolean |
 
 const OMITTED_PROPS = new Set(["as", "class"]);
 
-const forwardedProps = (
-  props: StaticObjectValue,
-  keepsAsIs: boolean | null,
-): StaticObjectEntry[] =>
+const forwardedProps = (props: StaticObjectValue, keepsAsIs: boolean | null): StaticObjectEntry[] =>
   props.entries.flatMap((entry) => {
     if (entry.kind === "spread") {
       return entry.value.kind === "object" ? forwardedProps(entry.value, keepsAsIs) : [entry];

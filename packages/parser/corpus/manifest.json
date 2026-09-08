@@ -699,6 +699,7 @@
       "framework": "next-pages",
       "workingDirectory": "apps/material-react-table-docs",
       "install": "pnpm install && pnpm --use-node-version=20.19.5 --filter material-react-table lib:build-lib",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/next-cjs-externals-setup.sh\" next.config.js"],
       "dev": "pnpm docs:dev",
       "url": "http://localhost:3000/",
       "static": {
@@ -714,7 +715,7 @@
         ],
         "maxFiberCount": 20000
       },
-      "notes": "The docs app consumes the workspace package's dist build, whose rollup config uses `assert { type: 'json' }` import assertions that Node 22 rejects, so the library is built under Node 20; the static side aliases material-react-table to packages/material-react-table/src."
+      "notes": "The docs app consumes the workspace package's dist build, whose rollup config uses `assert { type: 'json' }` import assertions that Node 22 rejects, so the library is built under Node 20. Next 14 externalizes the pnpm-hoisted @mui/* server modules as ESM and Node rejects their directory subpath imports (ERR_UNSUPPORTED_DIR_IMPORT on @mui/utils/formatMuiErrorMessage), so setup turns off experimental.esmExternals in next.config.js; the static side aliases material-react-table to packages/material-react-table/src."
     },
     {
       "id": "mantine-react-table",

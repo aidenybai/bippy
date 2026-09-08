@@ -165,7 +165,13 @@ import {
 } from "./promises.js";
 import { applyClockOperator, TimerQueue } from "./timers.js";
 import { evaluateLoop } from "./loops.js";
-import { applyNarrowing, narrowTest, withNarrowedBinding } from "./narrowing.js";
+import {
+  type TestNarrowing,
+  applyNarrowing,
+  narrowTest,
+  narrowTestByEvaluation,
+  withNarrowedBinding,
+} from "./narrowing.js";
 import { evaluateReactApiCall } from "./react-calls.js";
 import { createScope, declareInScope, findOwningScope, lookupScope } from "./scope.js";
 import {
@@ -1471,13 +1477,25 @@ export class Interpreter {
     onTrue: (narrowed: StaticValue | null) => Result,
     onFalse: (narrowed: StaticValue | null) => Result,
   ): [Result | null, Result | null] {
-    const narrowing = narrowTest(test, (name) => lookupScope(context.scope, name));
+    const narrowing = this.narrowTest(test, context);
     if (!narrowing) return [onTrue(null), onFalse(null)];
     const runSide = (value: StaticValue | null, run: (narrowed: StaticValue | null) => Result) =>
       value === null
         ? null
         : withNarrowedBinding(context.scope, narrowing.name, value, () => run(value));
     return [runSide(narrowing.whenTrue, onTrue), runSide(narrowing.whenFalse, onFalse)];
+  }
+
+  private narrowTest(test: Expression, context: EvaluationContext): TestNarrowing | null {
+    const lookup = (name: string) => lookupScope(context.scope, name);
+    return (
+      narrowTest(test, lookup) ??
+      narrowTestByEvaluation(test, lookup, (name, alternative) =>
+        withNarrowedBinding(context.scope, name, alternative, () =>
+          this.evaluateExpression(test, context),
+        ),
+      )
+    );
   }
 
   private evaluateUnaryExpression(node: UnaryExpression, context: EvaluationContext): StaticValue {
@@ -2878,7 +2896,7 @@ export class Interpreter {
               : proceed(pathContext);
           if (truthiness === true) return runConsequent(context);
           if (truthiness === false) return runAlternate(context);
-          const narrowing = narrowTest(statement.test, (name) => lookupScope(context.scope, name));
+          const narrowing = this.narrowTest(statement.test, context);
           if (narrowing?.whenTrue === null) return runAlternate(context);
           if (narrowing?.whenFalse === null) return runConsequent(context);
           const narrowed =

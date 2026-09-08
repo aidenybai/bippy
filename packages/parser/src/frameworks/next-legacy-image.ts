@@ -140,9 +140,15 @@ export const legacyImageStub = (shape: LegacyImageShape): StubComponent => ({
     const preload = legacyImagePreload(props, shape.head);
     if (shape.hasImageElement) {
       const wrapper = hostElement("span", {
-        children: listValue([sizer, element({ kind: "stub", stub: LEGACY_IMAGE_ELEMENT_STUB }, props)]),
+        children: listValue([
+          sizer,
+          element({ kind: "stub", stub: LEGACY_IMAGE_ELEMENT_STUB }, props),
+        ]),
       });
-      return element({ kind: "fragment" }, objectFromRecord({ children: listValue([wrapper, preload]) }));
+      return element(
+        { kind: "fragment" },
+        objectFromRecord({ children: listValue([wrapper, preload]) }),
+      );
     }
     return hostElement("span", {
       children: listValue([
