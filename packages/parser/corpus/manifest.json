@@ -409,13 +409,7 @@
       "static": {
         "rootDirectory": "apps/web",
         "route": "/",
-        "externalPackageAllowList": [
-          "@react-email/*",
-          "@radix-ui/*",
-          "lucide-react",
-          "vaul",
-          "prism-react-renderer"
-        ],
+        "externalPackageAllowList": ["@react-email/*", "@radix-ui/*", "lucide-react", "vaul"],
         "maxFiberCount": 20000
       }
     },

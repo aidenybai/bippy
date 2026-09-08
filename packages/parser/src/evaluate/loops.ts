@@ -20,7 +20,7 @@ import {
 } from "./interpreter.js";
 import { createScope } from "./scope.js";
 import {
-  getKnownObjectKeys,
+  getOwnEnumerableEntries,
   getObjectProperty,
   getTruthiness,
   isKnownList,
@@ -88,9 +88,9 @@ const iterationValues = (
     return null;
   }
   const enumerated = getEnumerationTarget(right);
-  if (enumerated.kind !== "object") return null;
-  const keys = getKnownObjectKeys(enumerated);
-  return keys ? keys.map(primitiveValue) : null;
+  if (enumerated.kind !== "object" && enumerated.kind !== "list") return null;
+  const entries = getOwnEnumerableEntries(enumerated);
+  return entries ? entries.map(([key]) => primitiveValue(key)) : null;
 };
 
 const runBody = (

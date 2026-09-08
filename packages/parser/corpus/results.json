@@ -1947,8 +1947,8 @@
       "id": "react-email",
       "revision": "0f0cb94e1f15581131a2d50b80f8daa13dd1c9fc",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T08:45:33.007Z",
-      "durationMs": 14621,
+      "capturedAt": "2026-09-08T16:04:26.334Z",
+      "durationMs": 2206,
       "runtime": {
         "reactVersion": "9.6.0",
         "rendererName": "@react-three/fiber",
@@ -1961,27 +1961,27 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 2066,
+          "fiberCount": 1817,
           "textCount": 32,
-          "branchCount": 52,
-          "repeatCount": 40,
-          "opaqueCount": 18,
-          "unknownCount": 30,
+          "branchCount": 65,
+          "repeatCount": 5,
+          "opaqueCount": 21,
+          "unknownCount": 50,
           "modulesLoaded": 1816
         },
         "diagnostics": [
           {
             "code": "dynamic-key",
-            "count": 7
+            "count": 2
           }
         ]
       },
       "report": {
-        "matchedFibers": 3127,
+        "matchedFibers": 989,
         "matchedText": 30,
-        "opaqueSubtrees": 17,
-        "opaqueSkippedFibers": 91,
-        "slotsMatched": 7,
+        "opaqueSubtrees": 19,
+        "opaqueSkippedFibers": 89,
+        "slotsMatched": 9,
         "slotsUnmatched": 4,
         "opaqueRenamed": 4,
         "unmatchedSlots": [
@@ -2030,8 +2030,32 @@
             }
           }
         ],
-        "wildcardAbsorbedFibers": 32,
+        "wildcardAbsorbedFibers": 4072,
         "wildcards": [
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <CodeBlock> [FunctionComponent] > <Highlight> (opaque)",
+            "reason": "function <anonymous> is not a valid React child",
+            "absorbedFibers": 3102,
+            "heads": [
+              "<Highlight> [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <PlaygroundSection> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <CodePreview> [FunctionComponent] > <div> [HostComponent] > <CodePreviewContent> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> key=\"tailwind\" [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <CodeBlock> key=\"tailwind\" [FunctionComponent] > <Highlight> (opaque)",
+            "reason": "function <anonymous> is not a valid React child",
+            "absorbedFibers": 913,
+            "heads": [
+              "<Highlight> [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <HeroSection> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Code> [FunctionComponent] > <Highlight> (opaque)",
+            "reason": "function <anonymous> is not a valid React child",
+            "absorbedFibers": 25,
+            "heads": [
+              "<Highlight> [FunctionComponent]"
+            ]
+          },
           {
             "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <RootWithDefault> [FunctionComponent] > <Default> [FunctionComponent] > <Root> [FunctionComponent] > <EditorFocusScope> [FunctionComponent] > <children> (opaque) > <BubbleMenuNodeSelector> [FunctionComponent] > <NodeSelectorRoot> [FunctionComponent]",
             "reason": "alternative nested 2 branches away from the preferred path",
@@ -2057,28 +2081,17 @@
             ]
           }
         ],
-        "branchesResolved": 33,
+        "branchesResolved": 30,
         "branchDeviations": [
           {
             "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <HeroSection> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <LoadableComponent> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <BailoutToCSR> [FunctionComponent] > <Tower> [FunctionComponent]",
-            "reason": "if (branch(true | unknown))",
+            "reason": "if (branch(true | false))",
             "preferredIndex": 0,
             "chosenIndex": 2,
             "divergence": {
               "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <HeroSection> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <LoadableComponent> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <BailoutToCSR> [FunctionComponent] > <Tower> [FunctionComponent][0]",
               "expected": "<Loader> [FunctionComponent]",
               "actual": "<View> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <PlaygroundSection> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <CodePreview> [FunctionComponent] > <div> [HostComponent] > <CodePreviewContent> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> key=\"tailwind\" [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <CodeBlock> key=\"tailwind\" [FunctionComponent] > <Highlight2> [FunctionComponent] > <Highlight> [FunctionComponent] > <pre> [HostComponent]",
-            "reason": "if (<boolean: == on dynamic values>)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <PlaygroundSection> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <CodePreview> [FunctionComponent] > <div> [HostComponent] > <CodePreviewContent> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> key=\"tailwind\" [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <CodeBlock> key=\"tailwind\" [FunctionComponent] > <Highlight2> [FunctionComponent] > <Highlight> [FunctionComponent] > <pre> [HostComponent] > <div> key=\"0\" [HostComponent][1]",
-              "expected": "<end of children>",
-              "actual": "<span> [HostComponent]"
             }
           },
           {
@@ -2247,19 +2260,19 @@
             }
           }
         ],
-        "repeatIterations": 1956,
-        "transparentFibers": 1997,
+        "repeatIterations": 0,
+        "transparentFibers": 97,
         "status": "partial",
-        "runtimeFibers": 3280,
-        "staticFibers": 1497,
+        "runtimeFibers": 5180,
+        "staticFibers": 1279,
         "coverage": 1,
-        "strictCoverage": 0.9625,
+        "strictCoverage": 0.19671814671814672,
         "divergence": null,
-        "stepsUsed": 4087,
+        "stepsUsed": 1187,
         "budgetExhausted": false
       },
       "anchor": "body",
-      "note": null,
+      "note": "runtime replayed from 2026-09-08T08:45:45.605Z",
       "failure": null
     },
     {
@@ -2583,8 +2596,8 @@
       "id": "shadcn-ui",
       "revision": "7c9eaba1c0a6404c990c144a654792e3313c650d",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T08:40:31.498Z",
-      "durationMs": 30137,
+      "capturedAt": "2026-09-08T16:03:58.307Z",
+      "durationMs": 14287,
       "runtime": {
         "reactVersion": "19.3.0-canary-28cd4bb0-20260723",
         "rendererName": "react-dom",
@@ -2603,9 +2616,13 @@
           "repeatCount": 4,
           "opaqueCount": 0,
           "unknownCount": 11,
-          "modulesLoaded": 12789
+          "modulesLoaded": 12792
         },
         "diagnostics": [
+          {
+            "code": "budget-exhausted",
+            "count": 66
+          },
           {
             "code": "dynamic-key",
             "count": 5
@@ -2645,12 +2662,12 @@
             }
           },
           {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ActiveThemeProvider> [FunctionComponent] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <header> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <CommandMenu> [FunctionComponent] > <Dialog> [FunctionComponent] > <Dialog> [FunctionComponent] > <DialogProvider> [FunctionComponent] > <DialogContent> [FunctionComponent] > <DialogPortal> [FunctionComponent] > <DialogPortal> [FunctionComponent] > <DialogPortalProvider> [FunctionComponent] > <Presence> [FunctionComponent]",
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ActiveThemeProvider> [FunctionComponent] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <header> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <CommandMenu> [FunctionComponent] > <Dialog> [FunctionComponent] > <Dialog> [FunctionComponent] > <DialogProvider> [FunctionComponent] > <DialogContent> [FunctionComponent] > <DialogPortal> [FunctionComponent] > <DialogPortal> [FunctionComponent] > <DialogPortalProvider> [FunctionComponent] > <Presence> key=\".0\" [FunctionComponent]",
             "reason": "conditional on <boolean: includes()>",
             "preferredIndex": 0,
             "chosenIndex": 1,
             "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ActiveThemeProvider> [FunctionComponent] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <header> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <CommandMenu> [FunctionComponent] > <Dialog> [FunctionComponent] > <Dialog> [FunctionComponent] > <DialogProvider> [FunctionComponent] > <DialogContent> [FunctionComponent] > <DialogPortal> [FunctionComponent] > <DialogPortal> [FunctionComponent] > <DialogPortalProvider> [FunctionComponent] > <Presence> [FunctionComponent][0]",
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ActiveThemeProvider> [FunctionComponent] > <NuqsAdapter> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <header> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <CommandMenu> [FunctionComponent] > <Dialog> [FunctionComponent] > <Dialog> [FunctionComponent] > <DialogProvider> [FunctionComponent] > <DialogContent> [FunctionComponent] > <DialogPortal> [FunctionComponent] > <DialogPortal> [FunctionComponent] > <DialogPortalProvider> [FunctionComponent] > <Presence> key=\".0\" [FunctionComponent][0]",
               "expected": "<Portal> [ForwardRef]",
               "actual": "<end of children>"
             }
@@ -2668,7 +2685,7 @@
         "budgetExhausted": false
       },
       "anchor": "body",
-      "note": null,
+      "note": "runtime replayed from 2026-09-08T08:40:51.563Z",
       "failure": null
     },
     {

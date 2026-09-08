@@ -7,6 +7,7 @@ import type {
   StaticGlobalValue,
   StaticListValue,
   StaticObjectEntry,
+  StaticPropertyEntry,
   StaticObjectValue,
   StaticPrimitive,
   StaticRegExpValue,
@@ -110,6 +111,8 @@ import {
   FALSE_VALUE,
   getClassPrototype,
   getKnownObjectKeys,
+  getKnownObjectOwnNames,
+  getOwnEnumerableEntries,
   getOwnPropertyDescriptor,
   getKnownObjectSymbols,
   getListLength,
@@ -450,6 +453,10 @@ const readDescriptorValue = (
   return unknownValue(`property "${key}" defined with a dynamic descriptor`, location);
 };
 
+/** A descriptor without `enumerable` defines a non-enumerable property; an undecidable flag is taken as enumerable. */
+const isEnumerableDescriptor = (descriptor: StaticObjectValue): boolean =>
+  getTruthiness(getObjectProperty(descriptor, "enumerable")) !== false;
+
 /** `Object.defineProperty`; a function's `name` is what fibers display. */
 const defineOwnProperty = (
   interpreter: Interpreter,
@@ -459,17 +466,18 @@ const defineOwnProperty = (
   context: EvaluationContext,
   location: SourceLocation | null,
 ): void => {
+  const isEnumerable = isEnumerableDescriptor(descriptor);
+  if (target.kind === "object" || target.kind === "list") interpreter.recordHeapMutation(target);
   if (target.kind === "object") {
     const accessor = getDescriptorAccessor(descriptor);
-    target.entries.push(
-      accessor
-        ? accessorEntry(key, accessor, location)
-        : {
-            kind: "property",
-            key,
-            value: readDescriptorValue(interpreter, target, descriptor, key, context, location),
-          },
-    );
+    const entry: StaticPropertyEntry = accessor
+      ? accessorEntry(key, accessor, location)
+      : {
+          kind: "property",
+          key,
+          value: readDescriptorValue(interpreter, target, descriptor, key, context, location),
+        };
+    target.entries.push({ ...entry, isEnumerable });
     return;
   }
   const value = readDescriptorValue(interpreter, target, descriptor, key, context, location);
@@ -483,6 +491,13 @@ const defineOwnProperty = (
       }
       target.properties.set(key, value);
       return;
+    case "list": {
+      if (target.isFrozen || Number.isInteger(Number(key)) || key === "length") return;
+      target.properties ??= new Map();
+      target.properties.set(key, value);
+      if (!isEnumerable) (target.nonEnumerableKeys ??= new Set()).add(key);
+      return;
+    }
     default:
       return;
   }
@@ -547,7 +562,7 @@ const getOwnPropertyDescriptors = (
       })),
     );
   }
-  const ownKeys = target.kind === "object" ? getKnownObjectKeys(target) : null;
+  const ownKeys = target.kind === "object" ? getKnownObjectOwnNames(target) : null;
   if (target.kind !== "object" || !ownKeys) {
     return unknownValue(`Object.getOwnPropertyDescriptors of ${describeValue(target)}`, location);
   }
@@ -562,17 +577,14 @@ const getOwnPropertyDescriptors = (
   return objectValue(descriptors);
 };
 
-/** Own enumerable string-keyed entries in `Object.keys` order; null when the shape is not fully known. */
-const getOwnEnumerableEntries = (
-  target: StaticValue,
-): [key: string, value: StaticValue][] | null => {
-  if (target.kind === "object") {
-    return getKnownObjectKeys(target)?.map((key) => [key, getObjectProperty(target, key)]) ?? null;
-  }
+/** Own string keys including non-enumerable ones; null when the shape is not fully known. */
+const getOwnNames = (target: StaticObjectValue | StaticListValue): string[] | null => {
+  if (target.kind === "object") return getKnownObjectOwnNames(target);
   if (!hasDefiniteItems(target)) return null;
   return [
-    ...target.items.map((item, index): [string, StaticValue] => [String(index), item]),
-    ...(target.properties ?? []),
+    ...target.items.map((_, index) => String(index)),
+    "length",
+    ...(target.properties?.keys() ?? []),
   ];
 };
 
@@ -604,7 +616,9 @@ const hasOwnProperty = (
     const ownKeys =
       receiver.kind === "object" && isSymbolPropertyKey(propertyName)
         ? getKnownObjectSymbols(receiver)?.map(getSymbolPropertyKey)
-        : getOwnEnumerableEntries(receiver)?.map(([ownKey]) => ownKey);
+        : name === "hasOwnProperty"
+          ? getOwnNames(receiver)
+          : getOwnEnumerableEntries(receiver)?.map(([ownKey]) => ownKey);
     return ownKeys
       ? primitiveValue(ownKeys.includes(propertyName))
       : unknownPrimitiveValue("boolean", `${name} of a partially known target`);
@@ -1025,12 +1039,7 @@ const callGlobal = (
       }
       if (first?.kind !== "object" && first?.kind !== "list")
         return unknownValue(`${name} on a dynamic target`, location);
-      const ownNames =
-        name === "Object.getOwnPropertySymbols"
-          ? []
-          : (getOwnEnumerableEntries(first)
-              ?.map(([key]) => key)
-              .concat(first.kind === "list" ? ["length"] : []) ?? null);
+      const ownNames = name === "Object.getOwnPropertySymbols" ? [] : getOwnNames(first);
       const ownSymbols =
         name === "Object.getOwnPropertyNames" || first.kind === "list"
           ? []
@@ -1097,7 +1106,6 @@ const callGlobal = (
       if (!first || second?.kind !== "primitive" || descriptor?.kind !== "object") {
         return first ?? unknownValue("Object.defineProperty on a dynamic target", location);
       }
-      if (first.kind === "object") interpreter.recordHeapMutation(first);
       defineOwnProperty(interpreter, first, String(second.value), descriptor, context, location);
       return first;
     }
@@ -1693,6 +1701,7 @@ const callRegExpMethod = (
   const [first] = args;
   const regExp = toRegExp(receiver);
   if (!regExp) return unknownValue(`invalid RegExp /${receiver.pattern}/`, location);
+  if (name === "toString") return primitiveValue(regExp.toString());
   if (name !== "test" && name !== "exec") return unknownValue(`RegExp.${name}()`, location);
   if (first?.kind === "branch" && !regExp.global && !regExp.sticky) {
     return mapValue(first, (alternative) =>

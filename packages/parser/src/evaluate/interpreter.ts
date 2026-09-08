@@ -238,6 +238,8 @@ import {
   unknownPrimitiveValue,
   thrownValue,
   unknownValue,
+  optionalValue,
+  hasDefiniteItems,
 } from "./values.js";
 
 export interface InterpreterOptions {
@@ -332,6 +334,17 @@ const isFunctionOwnOrInheritedKey = (key: string): boolean =>
 /** Methods every callable inherits from `Function.prototype` and `Object.prototype`. */
 const isCallableProtocolKey = (key: string): boolean =>
   key === "call" || key === "apply" || key === "bind" || OBJECT_PROTOTYPE_METHODS.has(key);
+
+const REGEXP_FLAG_ACCESSORS = new Map([
+  ["global", "g"],
+  ["ignoreCase", "i"],
+  ["multiline", "m"],
+  ["dotAll", "s"],
+  ["unicode", "u"],
+  ["unicodeSets", "v"],
+  ["sticky", "y"],
+  ["hasIndices", "d"],
+]);
 
 /** A member read on a value whose prototype chain is fully known: absent names are `undefined`. */
 const prototypeMember = (
@@ -931,9 +944,23 @@ export class Interpreter {
         if (target.isFrozen) return target;
         const index = Number(propertyName);
         if (Number.isInteger(index) && index >= 0) {
-          if (index < target.items.length) {
-            this.recordHeapMutation(target);
-            target.items[index] = value;
+          this.recordHeapMutation(target);
+          const isDefinite = hasDefiniteItems(target);
+          if (isDefinite && index < target.items.length) {
+            target.items[index] = this.withUncertainAssignment(
+              target.items[index],
+              value,
+              `[${index}]`,
+              context,
+            );
+          } else if (context.uncertainDepth > 0 || !isDefinite) {
+            target.items.push({ kind: "repeat", item: value, location: null });
+          } else {
+            if (index > target.items.length) {
+              const hole = optionalValue(UNDEFINED_VALUE, "array hole");
+              target.items.push({ kind: "repeat", item: hole, location: null });
+            }
+            target.items.push(value);
           }
           return target;
         }
@@ -2157,12 +2184,14 @@ export class Interpreter {
           object.reason,
           object.location,
         );
-      case "regexp":
+      case "regexp": {
         if (key === "source") return primitiveValue(object.pattern);
         if (key === "flags") return primitiveValue(object.flags);
-        if (key === "global") return primitiveValue(object.flags.includes("g"));
         if (key === "lastIndex") return primitiveValue(object.lastIndex);
+        const flag = REGEXP_FLAG_ACCESSORS.get(key);
+        if (flag !== undefined) return primitiveValue(object.flags.includes(flag));
         return prototypeMember(object, RegExp.prototype, key);
+      }
       case "symbol":
         if (key === "description") return primitiveValue(getSymbolDescription(object));
         return prototypeMember(object, Symbol.prototype, key);
