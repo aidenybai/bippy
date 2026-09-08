@@ -14,18 +14,13 @@ const BUNDLER_PLACEHOLDER_NAME = /^_[a-z]\d*$/;
 
 const isBundlerPlaceholderName = (name: string): boolean => BUNDLER_PLACEHOLDER_NAME.test(name);
 
-// Dependency pre-bundling renames a binding that collides in the merged chunk:
-// rolldown/rollup emit `Ae$1`, `Ae$2`, …, esbuild emits `Item2` (including the
-// name of a function expression assigned to a same-named variable).
+// A binding that collides with another in the bundled scope is renamed with a
+// counter: `Toaster2` by esbuild (Vite dev pre-bundling), `Toaster$1` by rollup.
 const BUNDLER_DEDUPE_SUFFIX = /^\$?\d+$/;
 
 const isBundlerDedupedName = (sourceName: string, runtimeName: string): boolean =>
-  runtimeName.length > sourceName.length &&
   runtimeName.startsWith(sourceName) &&
   BUNDLER_DEDUPE_SUFFIX.test(runtimeName.slice(sourceName.length));
-
-const runtimeNameAgrees = (sourceName: string, runtimeName: string): boolean =>
-  sourceName === runtimeName || isBundlerDedupedName(sourceName, runtimeName);
 
 export interface ComparisonOptions {
   compareKeys?: boolean;
@@ -509,8 +504,8 @@ class Matcher {
       pattern.key !== actual.key
     )
       return false;
-    if (pattern.name === null || actual.name === null) return true;
-    if (runtimeNameAgrees(pattern.name, actual.name)) return true;
+    if (pattern.name === null || actual.name === null || pattern.name === actual.name) return true;
+    if (isBundlerDedupedName(pattern.name, actual.name)) return true;
     return isClassTag(actual.tag) && isBundlerPlaceholderName(actual.name);
   }
 
@@ -527,11 +522,11 @@ class Matcher {
   }
 
   private opaqueNameAgrees(pattern: PatternOpaque, actual: RuntimeFiberSnapshot): boolean {
+    if (actual.name === null || isBundlerPlaceholderName(actual.name)) return true;
+    if (pattern.runtimeNames === null) return true;
     const runtimeName = actual.name;
-    if (runtimeName === null || isBundlerPlaceholderName(runtimeName)) return true;
-    return (
-      pattern.runtimeNames === null ||
-      pattern.runtimeNames.some((name) => runtimeNameAgrees(name, runtimeName))
+    return pattern.runtimeNames.some(
+      (name) => name === runtimeName || isBundlerDedupedName(name, runtimeName),
     );
   }
 

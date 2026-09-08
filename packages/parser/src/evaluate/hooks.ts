@@ -1,5 +1,4 @@
 import type { StaticNativeFunctionValue, StaticValue } from "../types.js";
-import type { Interpreter } from "./interpreter.js";
 import { areValuesEquivalent, branchValue, compareIdentity, unknownValue } from "./values.js";
 
 export interface StateCell {
@@ -8,6 +7,7 @@ export interface StateCell {
   current: StaticValue;
   next: StaticValue | null;
   setter: StaticNativeFunctionValue | null;
+  deferred: StaticValue[];
   isEscaped: boolean;
 }
 
@@ -36,7 +36,8 @@ export interface EffectCall {
  * changing hold unknown values and further updates no longer schedule passes.
  * `requestRender` is the owner's `scheduleUpdateOnFiber`: an update queued
  * outside its render (from another component's effect, a store listener) must
- * still produce a pass.
+ * still produce a pass. `recordUpdate` journals a cell's pending update like a
+ * heap write, so an update queued on one path of a fork is undone on the others.
  */
 export interface HookFrame {
   cells: StateCell[];
@@ -50,9 +51,13 @@ export interface HookFrame {
   isFrozen: boolean;
   isStrictMode: boolean;
   requestRender: (() => void) | null;
+  recordUpdate: ((cell: StateCell) => void) | null;
 }
 
-export const createHookFrame = (isStrictMode = false): HookFrame => ({
+export const createHookFrame = (
+  isStrictMode = false,
+  recordUpdate: HookFrame["recordUpdate"] = null,
+): HookFrame => ({
   cells: [],
   cursor: 0,
   memoCells: [],
@@ -64,6 +69,7 @@ export const createHookFrame = (isStrictMode = false): HookFrame => ({
   isFrozen: false,
   isStrictMode,
   requestRender: null,
+  recordUpdate,
 });
 
 /**
@@ -106,6 +112,7 @@ export const nextStateCell = (
     current: initial,
     next: null,
     setter: null,
+    deferred: [],
     isEscaped: false,
   };
   frame.cells[index] = cell;
@@ -134,7 +141,7 @@ export const nextMemoCell = (
 const isSameHookValue = (left: StaticValue, right: StaticValue): boolean =>
   compareIdentity(left, right) ?? areValuesEquivalent(left, right);
 
-export const escapedStateValue = (cell: StateCell): StaticValue =>
+const escapedStateValue = (cell: StateCell): StaticValue =>
   branchValue(
     [cell.initial, unknownValue(`updated state of ${cell.name}`)],
     "state setter escapes to code that is not evaluated",
@@ -142,23 +149,42 @@ export const escapedStateValue = (cell: StateCell): StaticValue =>
   );
 
 /**
+ * The value the next pass commits: an escaped cell takes every value it may
+ * hold; a cell with deferred updates holds the synchronous state or any value
+ * a continuation of unknown timing may have set by the commit.
+ */
+const pendingStateValue = (cell: StateCell): StaticValue | null => {
+  if (cell.isEscaped) return escapedStateValue(cell);
+  if (cell.deferred.length === 0) return cell.next;
+  return branchValue(
+    [cell.next ?? cell.current, ...cell.deferred],
+    "state set by a continuation that may run after the commit",
+    null,
+  );
+};
+
+/**
  * Mirrors `dispatchSetState`: with nothing pending, an update that leaves the
  * cell unchanged is dropped eagerly. An escaped cell already commits to every
- * value it may take, so further updates cannot change it either. Queued from
- * one path of a fork, the update is journaled like any heap write so the other
- * paths keep the cell unchanged.
+ * value it may take, so further updates cannot change it either. An update
+ * queued by a continuation whose timing is unknown is kept as one more value
+ * the cell may hold rather than the value it holds.
  */
 export const queueStateUpdate = (
-  interpreter: Interpreter,
   frame: HookFrame,
   cell: StateCell,
   value: StaticValue,
+  isDeferred: boolean,
 ): void => {
-  if (frame.isDeferred) return escapeStateCell(frame, cell);
   if (cell.isEscaped) return;
-  if (cell.next === null && isSameHookValue(value, cell.current)) return;
-  interpreter.recordStateUpdate(cell);
-  cell.next = value;
+  if (isDeferred) {
+    if (cell.deferred.some((deferred) => isSameHookValue(deferred, value))) return;
+    cell.deferred.push(value);
+  } else {
+    if (cell.next === null && isSameHookValue(value, cell.current)) return;
+    frame.recordUpdate?.(cell);
+    cell.next = value;
+  }
   if (!frame.isRendering) frame.requestRender?.();
 };
 
@@ -175,7 +201,7 @@ export const escapeStateCell = (frame: HookFrame, cell: StateCell): void => {
 
 /** `processUpdateQueue` for one cell: true when its committed value changed. */
 export const applyPendingState = (cell: StateCell, isFrozen = false): boolean => {
-  const next = cell.isEscaped ? escapedStateValue(cell) : cell.next;
+  const next = pendingStateValue(cell);
   cell.next = null;
   if (next === null || isFrozen || isSameHookValue(next, cell.current)) return false;
   cell.current = next;

@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "The snapshot is taken after a quiet window: a slow interval has not ticked, and a chain of effects each scheduling the next short timer runs to its end."
+}

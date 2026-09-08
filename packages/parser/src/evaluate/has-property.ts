@@ -1,5 +1,6 @@
 import {
   FUNCTION_OWN_KEYS,
+  getStubOwnKeys,
   REACT_ELEMENT_OWN_KEYS,
   WRAPPER_OWN_KEYS,
 } from "../react/element-shape.js";
@@ -9,7 +10,6 @@ import type {
   StaticFunctionValue,
   StaticValue,
 } from "../types.js";
-import { isWindowAlias, isWindowMember } from "./browser-globals.js";
 import { getStaticProperty } from "./class-component.js";
 import { createErrorValue } from "./errors.js";
 import { getPrototypeWitness } from "./instance-of.js";
@@ -69,6 +69,10 @@ const hasComponentProperty = (type: StaticElementType, name: string): StaticValu
         (name === "displayName" && type.displayName !== null)
         ? TRUE_VALUE
         : FALSE_VALUE;
+    case "stub":
+      if (type.stub.properties?.has(name)) return TRUE_VALUE;
+      if (name === "displayName") return primitiveValue(type.stub.displayName !== null);
+      return getStubOwnKeys(type.stub.tag).has(name) ? null : FALSE_VALUE;
     default:
       return null;
   }
@@ -112,7 +116,6 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
     case "native-function":
       return name in Function.prototype ? TRUE_VALUE : FALSE_VALUE;
     case "global": {
-      if (isWindowAlias(target.name) && isWindowMember(name)) return TRUE_VALUE;
       const witness = getPrototypeWitness(target);
       if (witness === null) return null;
       return toRuntimePropertyKey(name) in witness ? TRUE_VALUE : FALSE_VALUE;

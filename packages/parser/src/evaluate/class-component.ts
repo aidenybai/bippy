@@ -187,11 +187,13 @@ export const getSuperObject = (
 const classPrototypes = new WeakMap<StaticClassValue, StaticObjectValue>();
 const prototypeOwners = new WeakMap<StaticObjectValue, StaticClassValue>();
 
+/** The class whose `.prototype` this object is, or null for any other object. */
+export const getPrototypeOwner = (value: StaticObjectValue): StaticClassValue | null =>
+  prototypeOwners.get(value) ?? null;
+
 /** `Object.getPrototypeOf(Base.prototype)` is `Object.prototype` when `Base` has no `extends` clause. */
-export const isBaseClassPrototype = (value: StaticObjectValue): boolean => {
-  const owner = prototypeOwners.get(value);
-  return owner !== undefined && owner.body.superValue === null;
-};
+export const isBaseClassPrototype = (value: StaticObjectValue): boolean =>
+  getPrototypeOwner(value)?.body.superValue === null;
 
 /**
  * `Class.prototype`: the chain's methods and accessors with the prototype as
@@ -222,7 +224,7 @@ export const getClassPrototypeObject = (
   return prototype;
 };
 
-/** `fn.length`: the parameters before the first default or rest parameter. */
+/** `Function.length`: the leading parameters before the first default or rest parameter. */
 export const getFunctionLength = (functionNode: FunctionLikeNode): number => {
   const parameters = functionNode.params;
   const optionalIndex = parameters.findIndex(
@@ -231,7 +233,7 @@ export const getFunctionLength = (functionNode: FunctionLikeNode): number => {
   return optionalIndex === -1 ? parameters.length : optionalIndex;
 };
 
-/** `Class.length`: the constructor's leading parameters without defaults; 0 without a constructor. */
+/** `Class.length`: the constructor's `Function.length`; 0 without a constructor. */
 export const getClassLength = (classValue: StaticClassValue): number => {
   const constructor = classValue.body.members.find(
     (member) => member.kind === "constructor" && !member.isStatic,
@@ -340,7 +342,12 @@ const mountClassInstance = (
           ? tools.call(partialState, [previousState, getObjectProperty(instance, "props")])
           : (partialState ?? UNDEFINED_VALUE);
       if (callback) record.pendingCallbacks.push(callback);
-      queueStateUpdate(interpreter, frame, stateCell, mergeState(previousState, resolvedPartial));
+      queueStateUpdate(
+        frame,
+        stateCell,
+        mergeState(previousState, resolvedPartial),
+        tools.isDeferred(),
+      );
       return UNDEFINED_VALUE;
     },
     onEscape: () => escapeStateCell(frame, stateCell),

@@ -9,8 +9,9 @@ import type {
   ResolvedSymbol,
 } from "../types.js";
 import { isModeledLibraryExport, isModeledLibraryPackage } from "../libraries/index.js";
+import { readAssetModuleSource } from "./asset-modules.js";
 import { isCompilerHelperPackage } from "./helper-packages.js";
-import { createModuleRecord } from "./module-record.js";
+import { createModuleRecord, isClientModule } from "./module-record.js";
 import { ModuleResolver } from "./module-resolver.js";
 
 export interface ExportNameSet {
@@ -70,11 +71,14 @@ export class ModuleGraph {
     return record;
   }
 
+  /** A module from source text rather than disk; a path already added is returned as is. */
   addVirtualModule(filePath: string, sourceText: string): ModuleRecord | null {
+    const cached = this.modules.get(filePath);
+    if (cached !== undefined) return cached;
     const lang = getSourceLanguage(filePath);
     if (!lang) return null;
     const file = this.sourceFileCache.readVirtual(filePath, sourceText, lang);
-    const record = createModuleRecord(file);
+    const record = file.errors.length === 0 ? createModuleRecord(file) : null;
     this.modules.set(filePath, record);
     return record;
   }
@@ -91,21 +95,34 @@ export class ModuleGraph {
     specifier: string,
     fromModule: ModuleRecord,
   ): ModuleRecord | ModuleResolution {
-    return this.getResolvedModule(this.resolveSpecifier(specifier, fromModule));
+    return this.getResolvedModule(this.resolveSpecifier(specifier, fromModule), specifier);
   }
 
-  private getResolvedModule(resolution: ModuleResolution): ModuleRecord | ModuleResolution {
-    if (resolution.kind === "internal") {
-      return this.getModule(resolution.filePath) ?? resolution;
+  private getResolvedModule(
+    resolution: ModuleResolution,
+    specifier: string,
+  ): ModuleRecord | ModuleResolution {
+    if (resolution.kind !== "internal" && resolution.kind !== "external") return resolution;
+    if (resolution.filePath === null) return resolution;
+    const assetModule = this.getAssetModule(resolution.filePath, specifier);
+    if (assetModule) return assetModule;
+    if (resolution.kind === "external" && !this.shouldAnalyzePackage(resolution.packageName)) {
+      return resolution;
     }
-    if (
-      resolution.kind === "external" &&
-      resolution.filePath &&
-      this.shouldAnalyzePackage(resolution.packageName)
-    ) {
-      return this.getModule(resolution.filePath) ?? resolution;
-    }
-    return resolution;
+    return this.getModule(resolution.filePath) ?? resolution;
+  }
+
+  private getAssetModule(filePath: string, specifier: string): ModuleRecord | null {
+    if (!specifier.includes("?")) return null;
+    const source = readAssetModuleSource(filePath, specifier);
+    if (!source) return null;
+    const cached = this.modules.get(source.moduleKey);
+    if (cached) return cached;
+    const record = createModuleRecord(
+      this.sourceFileCache.readVirtual(source.moduleKey, source.sourceText, "js"),
+    );
+    this.modules.set(source.moduleKey, record);
+    return record;
   }
 
   resolveImport(binding: ImportBinding, fromModule: ModuleRecord): ResolvedSymbol {
@@ -180,10 +197,10 @@ export class ModuleGraph {
     ) {
       return { kind: "external", packageName: resolution.packageName, imported, specifier };
     }
-    const target = this.getResolvedModule(resolution);
+    const target = this.getResolvedModule(resolution, specifier);
     if (isModuleRecord(target)) {
       if (imported.kind === "namespace") return { kind: "namespace", module: target };
-      return this.resolveExportWithVisited(target, describeImportedName(imported), visited);
+      return this.resolveExportFrom(target, describeImportedName(imported), fromModule, visited);
     }
     switch (target.kind) {
       case "external":
@@ -216,7 +233,19 @@ export class ModuleGraph {
         visited,
       );
     }
-    return { kind: "binding", module, binding };
+    return { kind: "binding", module, binding, isClientReference: false };
+  }
+
+  private resolveExportFrom(
+    target: ModuleRecord,
+    exportedName: string,
+    fromModule: ModuleRecord,
+    visited: Set<string>,
+  ): ResolvedSymbol {
+    const symbol = this.resolveExportWithVisited(target, exportedName, visited);
+    return isClientModule(target) && !isClientModule(fromModule)
+      ? toClientReferenceSymbol(symbol)
+      : symbol;
   }
 
   private resolveExportWithVisited(
@@ -238,7 +267,12 @@ export class ModuleGraph {
           break;
         case "expression":
           if (entry.exportedName === exportedName) {
-            return { kind: "expression", module, expression: entry.expression };
+            return {
+              kind: "expression",
+              module,
+              expression: entry.expression,
+              isClientReference: false,
+            };
           }
           break;
         case "re-export":
@@ -273,7 +307,7 @@ export class ModuleGraph {
           }
           continue;
         }
-        const resolved = this.resolveExportWithVisited(target, exportedName, visited);
+        const resolved = this.resolveExportFrom(target, exportedName, module, visited);
         if (resolved.kind !== "unresolved") return resolved;
       }
       if (externalSources.length === 1) return externalSources[0];
@@ -290,6 +324,11 @@ export class ModuleGraph {
 
 export const isModuleRecord = (value: ModuleRecord | ModuleResolution): value is ModuleRecord =>
   "bindings" in value;
+
+const toClientReferenceSymbol = (symbol: ResolvedSymbol): ResolvedSymbol =>
+  symbol.kind === "binding" || symbol.kind === "expression"
+    ? { ...symbol, isClientReference: true }
+    : symbol;
 
 const externalSymbol = (
   target: ExternalModuleResolution | BuiltinModuleResolution,

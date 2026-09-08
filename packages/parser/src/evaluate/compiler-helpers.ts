@@ -7,7 +7,9 @@ import {
   getObjectProperty,
   getTruthiness,
   isKnownList,
+  isNullish,
   listValue,
+  mapValue,
   objectValue,
   omitObjectKeys,
   primitiveValue,
@@ -51,7 +53,7 @@ const interopRequireWildcard: HelperImplementation = ([moduleValue]) => {
 };
 
 const callGlobal = (name: string, args: StaticValue[], tools: StubRenderTools): StaticValue => {
-  const global = getBuiltinGlobal(name);
+  const global = getBuiltinGlobal(name, tools.realm, null);
   return global ? tools.call(global, args) : unknownValue(`${name} helper`);
 };
 
@@ -114,17 +116,21 @@ const spreadArray: HelperImplementation = ([target, source]) => {
   return unknownValue("spread of an indefinite array");
 };
 
+/** `null == source` yields `{}`; the excluded keys must be a literal list for the rest to be known. */
 const objectWithoutProperties: HelperImplementation = ([source, excluded]) => {
   if (!source || !excluded) return source ?? UNDEFINED_VALUE;
-  if (source.kind !== "object" || !isKnownList(excluded)) {
-    return unknownValue("rest of a non-object");
-  }
+  if (!isKnownList(excluded)) return unknownValue("rest with dynamic excluded keys");
   const omitted = new Set<string>();
   for (const key of excluded.items) {
     if (key.kind !== "primitive") return unknownValue("rest with dynamic excluded keys");
     omitted.add(String(key.value));
   }
-  return omitObjectKeys(source, omitted);
+  return mapValue(source, (alternative) => {
+    if (isNullish(alternative) === true) return objectValue();
+    return alternative.kind === "object"
+      ? omitObjectKeys(alternative, omitted)
+      : unknownValue("rest of a non-object");
+  });
 };
 
 const defineProperty: HelperImplementation = ([target, key, value], tools) => {
@@ -147,8 +153,8 @@ const toPropertyKey: HelperImplementation = ([key]) => {
   return unknownValue("property key of a dynamic value");
 };
 
-const typeOf: HelperImplementation = ([value]) =>
-  value ? getTypeofValue(value, null) : primitiveValue("undefined");
+const typeOf: HelperImplementation = ([value], tools) =>
+  value ? getTypeofValue(value, tools.realm) : primitiveValue("undefined");
 
 /** A lowered class already carries its parent; a plain constructor function gets a prototype the analysis does not model. */
 const inherits: HelperImplementation = ([subClass, superClass]) => {

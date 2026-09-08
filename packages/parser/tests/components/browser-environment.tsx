@@ -1,11 +1,27 @@
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
+declare global {
+  interface Navigator {
+    standalone?: boolean;
+  }
+}
+
 const AddToHomescreen = () => {
   if (typeof window !== "undefined" && window.matchMedia("(display-mode: standalone)").matches) {
     return null;
   }
   return <aside>install banner</aside>;
+};
+
+const isInstalledApp = () =>
+  window.matchMedia("(display-mode: standalone)").matches ||
+  window.navigator.standalone ||
+  document.referrer.includes("android-app://");
+
+const VendorNavigatorPrompt = () => {
+  const [isOpen] = useState(true);
+  return isOpen && !isInstalledApp() ? <output>install prompt</output> : <></>;
 };
 
 const Responsive = () => {
@@ -127,6 +143,7 @@ export default function BrowserEnvironment() {
   return (
     <main>
       <AddToHomescreen />
+      <VendorNavigatorPrompt />
       <Responsive />
       <Viewport />
       <StoredModes />

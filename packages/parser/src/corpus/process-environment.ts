@@ -16,7 +16,7 @@ const readClientPrefix = (framework: FrameworkKind, rootDirectory: string): stri
   if (framework === "next-app" || framework === "next-pages") return NEXT_CLIENT_PREFIX;
   const declared = readDeclaredDependencies(path.join(rootDirectory, "package.json"));
   for (const [bundler, prefix] of SPA_CLIENT_PREFIXES) {
-    if (declared?.has(bundler)) return prefix;
+    if (declared.includes(bundler)) return prefix;
   }
   return VITE_CLIENT_PREFIX;
 };
@@ -52,5 +52,8 @@ export const readProcessEnvironment = (
   for (const file of entry.static.envFiles) {
     parseDotenv(readFileSync(path.resolve(rootDirectory, file), "utf8"), variables);
   }
-  return { variables, clientPrefix: readClientPrefix(entry.framework, rootDirectory) };
+  return {
+    variables,
+    clientPrefix: entry.static.envPrefix ?? readClientPrefix(entry.framework, rootDirectory),
+  };
 };

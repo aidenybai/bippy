@@ -60,6 +60,20 @@ const descriptorText = Object.keys(descriptors)
   })
   .join(",");
 
+const helper = function helper(input: string) {
+  return input;
+};
+Object.defineProperty(helper, "__esModule", { value: true });
+const functionNames = Object.getOwnPropertyNames(helper).join(",");
+const isNameEnumerable = Object.getOwnPropertyDescriptor(helper, "name")?.enumerable;
+const interop = Object.create(Object.getPrototypeOf(helper));
+Object.defineProperties(
+  interop,
+  Object.getOwnPropertyDescriptors({ default: helper, kind: "esm" }),
+);
+const interopText = `${interop.default("call")}/${Object.keys(interop).join(",")}`;
+const boxedKeys = Object.keys(Object({ boxed: true })).join(",");
+
 const buffer = new Uint16Array(3);
 buffer[1] = 5;
 const bufferText = Array.from(buffer).join("-");
@@ -84,6 +98,10 @@ export default function ObjectProtocol() {
       </dd>
       <dt>descriptors</dt>
       <dd>{descriptorText}</dd>
+      <dt>function shape</dt>
+      <dd>
+        {functionNames}/{String(isNameEnumerable)}/{interopText}/{boxedKeys}
+      </dd>
       <dt>typed array</dt>
       <dd>{bufferText}</dd>
       <dt>history</dt>

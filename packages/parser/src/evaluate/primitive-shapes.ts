@@ -159,6 +159,85 @@ export const compareNumberRanges = (
   }
 };
 
+const rangeOf = (reason: string, bounds: number[]): StaticValue | null =>
+  bounds.some(Number.isNaN)
+    ? null
+    : rangedNumberValue(reason, { min: Math.min(...bounds), max: Math.max(...bounds) });
+
+/** Interval arithmetic on two numbers whose ranges are known; null when the result's range is not. */
+export const applyNumberRangeOperator = (
+  operator: string,
+  left: StaticValue,
+  right: StaticValue,
+): StaticValue | null => {
+  const leftRange = toNumberRange(left);
+  const rightRange = toNumberRange(right);
+  if (!leftRange || !rightRange) return null;
+  const reason = `${operator} on dynamic values`;
+  switch (operator) {
+    case "+":
+      return rangeOf(reason, [leftRange.min + rightRange.min, leftRange.max + rightRange.max]);
+    case "-":
+      return rangeOf(reason, [leftRange.min - rightRange.max, leftRange.max - rightRange.min]);
+    case "*":
+      return rangeOf(reason, [
+        leftRange.min * rightRange.min,
+        leftRange.min * rightRange.max,
+        leftRange.max * rightRange.min,
+        leftRange.max * rightRange.max,
+      ]);
+    case "/":
+      if (rightRange.min <= 0 && rightRange.max >= 0) return null;
+      return rangeOf(reason, [
+        leftRange.min / rightRange.min,
+        leftRange.min / rightRange.max,
+        leftRange.max / rightRange.min,
+        leftRange.max / rightRange.max,
+      ]);
+    default:
+      return null;
+  }
+};
+
+const ROUNDING_METHODS: Record<string, (value: number) => number> = {
+  floor: Math.floor,
+  ceil: Math.ceil,
+  round: Math.round,
+  trunc: Math.trunc,
+};
+
+/** `Math.<method>` over numbers whose ranges are known; null when the method or an argument's range is not. */
+export const applyMathToRanges = (method: string, args: StaticValue[]): StaticValue | null => {
+  const ranges = args.map(toNumberRange);
+  if (ranges.length === 0 || !ranges.every((range) => range !== null)) return null;
+  const reason = `Math.${method}`;
+  const [first] = ranges;
+  switch (method) {
+    case "max":
+      return rangeOf(reason, [
+        Math.max(...ranges.map((range) => range.min)),
+        Math.max(...ranges.map((range) => range.max)),
+      ]);
+    case "min":
+      return rangeOf(reason, [
+        Math.min(...ranges.map((range) => range.min)),
+        Math.min(...ranges.map((range) => range.max)),
+      ]);
+    case "abs":
+      if (ranges.length !== 1) return null;
+      return first.min >= 0
+        ? rangeOf(reason, [first.min, first.max])
+        : first.max <= 0
+          ? rangeOf(reason, [-first.max, -first.min])
+          : rangeOf(reason, [0, Math.max(-first.min, first.max)]);
+    default: {
+      const round = ROUNDING_METHODS[method];
+      if (!round || ranges.length !== 1) return null;
+      return rangeOf(reason, [round(first.min), round(first.max)]);
+    }
+  }
+};
+
 const startsWithShapedString = (shape: StringShape, search: string): StaticValue | null => {
   if (search.length <= shape.prefix.length) return primitiveValue(shape.prefix.startsWith(search));
   return shape.prefix === search.slice(0, shape.prefix.length) ? null : primitiveValue(false);

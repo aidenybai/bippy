@@ -1,5 +1,6 @@
 // Bundled by capture-browser.ts and injected into the page before any app
 // script runs so the DevTools hook exists when React initializes.
+import "./zod-jitless.js";
 import type { CapturedPageState, CapturedValue, RootObservations } from "../types.js";
 import { createCommitRecorder } from "./commit-recorder.js";
 import { readKeaStores } from "./kea-store.js";
@@ -40,22 +41,12 @@ const readStorageArea = (area: Storage): Record<string, string> => {
 
 const initialHistoryState = toCapturedValue(history.state) ?? null;
 
-interface WindowKeys {
-  all: string[];
-  functions: string[];
-}
-
-const readWindowKeys = (): WindowKeys => {
+const readWindowKeys = (): string[] => {
   const names = new Set<string>();
-  const functionNames = new Set<string>();
   for (let object: unknown = globalThis; object; object = Object.getPrototypeOf(object)) {
-    for (const name of Object.getOwnPropertyNames(object)) {
-      names.add(name);
-      if (typeof Object.getOwnPropertyDescriptor(object, name)?.value === "function")
-        functionNames.add(name);
-    }
+    for (const name of Object.getOwnPropertyNames(object)) names.add(name);
   }
-  return { all: [...names], functions: [...functionNames] };
+  return [...names];
 };
 const initialWindowKeys = readWindowKeys();
 
@@ -63,8 +54,7 @@ const readPageState = (): CapturedPageState => ({
   cookie: document.cookie,
   name: window.name,
   historyState: initialHistoryState,
-  windowKeys: initialWindowKeys.all,
-  windowFunctionKeys: initialWindowKeys.functions,
+  windowKeys: initialWindowKeys,
   userAgent: navigator.userAgent,
   language: navigator.language,
   localStorage: readStorageArea(localStorage),

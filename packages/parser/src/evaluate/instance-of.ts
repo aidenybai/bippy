@@ -1,31 +1,18 @@
 import type { StaticClassValue, StaticFunctionValue, StaticValue } from "../types.js";
 import { getAbortWitness } from "./abort-controller.js";
+import { isBlobValue } from "./blob.js";
+import { getPrototypeOwner } from "./class-component.js";
+import { isClockDateValue } from "./clock-date.js";
 import { getCollectionKind } from "./collections.js";
 import { getErrorWitness } from "./errors.js";
 import { isNativeInstanceOf } from "./native-values.js";
 import { getModeledPromise } from "./promises.js";
+import { getBinaryWitness, TYPED_ARRAY_CONSTRUCTORS } from "./typed-arrays.js";
 import { isSearchParamsValue } from "./url-search-params.js";
 import { isUrlValue } from "./url.js";
 import { getObjectProperty } from "./values.js";
 
 type BuiltinConstructor = abstract new (...args: never[]) => unknown;
-
-export const TYPED_ARRAY_CONSTRUCTORS = {
-  Int8Array,
-  Uint8Array,
-  Uint8ClampedArray,
-  Int16Array,
-  Uint16Array,
-  Int32Array,
-  Uint32Array,
-  Float32Array,
-  Float64Array,
-};
-
-export const TYPED_ARRAY_NAMES = Object.keys(TYPED_ARRAY_CONSTRUCTORS);
-
-export const isTypedArrayName = (name: string): name is keyof typeof TYPED_ARRAY_CONSTRUCTORS =>
-  Object.hasOwn(TYPED_ARRAY_CONSTRUCTORS, name);
 
 const BUILTIN_CONSTRUCTORS: Record<string, BuiltinConstructor> = {
   Object,
@@ -82,19 +69,38 @@ export const getBuiltinMember = (globalName: string): unknown => {
   return member;
 };
 
-/** The `<Constructor>.prototype` global name of a native prototype object, or null when no builtin owns it. */
-export const getBuiltinPrototypeName = (prototype: object | null): string | null => {
-  const owner = Object.entries(BUILTIN_CONSTRUCTORS).find(
-    ([, constructor]) => constructor.prototype === prototype,
-  );
-  return owner === undefined ? null : `${owner[0]}.prototype`;
-};
-
 /** The native prototype object a `<Constructor>.prototype` global denotes, or null for other names. */
-export const getBuiltinPrototype = (globalName: string): object | null => {
+const getBuiltinPrototype = (globalName: string): object | null => {
   const [constructorName, member, ...rest] = globalName.split(".");
   if (member !== "prototype" || rest.length > 0 || constructorName === undefined) return null;
   return BUILTIN_CONSTRUCTORS[constructorName]?.prototype ?? null;
+};
+
+const BUILTIN_PROTOTYPE_NAMES = new Map<object, string>(
+  Object.entries(BUILTIN_CONSTRUCTORS).flatMap(([name, constructor]) =>
+    constructor.prototype === null ? [] : [[constructor.prototype, `${name}.prototype`]],
+  ),
+);
+
+/** The `<Constructor>.prototype` global name of a native prototype object, or null when it is not a modeled builtin. */
+export const getBuiltinPrototypeName = (prototype: object): string | null =>
+  BUILTIN_PROTOTYPE_NAMES.get(prototype) ?? null;
+
+const NAMESPACE_GLOBALS: Record<string, object> = { Math, JSON, Reflect };
+
+const getMember = (current: unknown, member: string): unknown =>
+  (typeof current === "object" || typeof current === "function") && current !== null
+    ? Reflect.get(current, member)
+    : undefined;
+
+/** `Function.prototype.toString` of the native function a dotted global such as `Object.prototype.hasOwnProperty` denotes, or null. */
+export const getBuiltinFunctionSource = (globalName: string): string | null => {
+  const [rootName = "", ...members] = globalName.split(".");
+  const witness = members.reduce<unknown>(
+    getMember,
+    BUILTIN_CONSTRUCTORS[rootName] ?? NAMESPACE_GLOBALS[rootName],
+  );
+  return typeof witness === "function" ? Function.prototype.toString.call(witness) : null;
 };
 
 const COLLECTION_WITNESSES: Record<string, object> = {
@@ -112,13 +118,15 @@ const COLLECTION_WITNESSES: Record<string, object> = {
 export const getPrototypeWitness = (value: StaticValue): object | null => {
   switch (value.kind) {
     case "list":
-      return [];
+      return getBinaryWitness(value) ?? [];
     case "object": {
       if (value.hasNullPrototype) return Object.create(null);
       const collectionKind = getCollectionKind(value);
       if (collectionKind !== null) return COLLECTION_WITNESSES[collectionKind];
       if (isSearchParamsValue(value)) return new URLSearchParams();
       if (isUrlValue(value)) return new URL("http://witness.invalid");
+      if (isClockDateValue(value)) return new Date(0);
+      if (isBlobValue(value)) return new Blob();
       const errorWitness = getErrorWitness(value);
       if (errorWitness) return errorWitness;
       const abortWitness = getAbortWitness(value);
@@ -187,6 +195,58 @@ const isInstanceOfFunction = (left: StaticValue, fn: StaticFunctionValue): boole
     current = current.prototype;
   }
   return current.constructedBy || getPrototypeWitness(current) === null ? null : false;
+};
+
+const FUNCTION_CHAIN_PROTOTYPES = new Set(["Function.prototype", "Object.prototype"]);
+
+const isFunctionChainPrototype = (prototype: StaticValue): boolean =>
+  prototype.kind === "global" && FUNCTION_CHAIN_PROTOTYPES.has(prototype.name);
+
+const isSameConstructor = (left: StaticValue, right: StaticValue): boolean =>
+  left === right ||
+  (left.kind === "react-api" && right.kind === "react-api" && left.api === right.api) ||
+  (left.kind === "global" && right.kind === "global" && left.name === right.name);
+
+const isPrototypeOfWitness = (prototype: StaticValue, value: StaticValue): boolean | null => {
+  const witness = getPrototypeWitness(value);
+  if (witness === null) return null;
+  if (prototype.kind !== "global") return false;
+  const builtinPrototype = getBuiltinPrototype(prototype.name);
+  return builtinPrototype === null ? null : builtinPrototype.isPrototypeOf(witness);
+};
+
+/** `prototype.isPrototypeOf(value)`; null once `value`'s chain reaches something the analysis did not create. */
+export const isPrototypeOf = (prototype: StaticValue, value: StaticValue): boolean | null => {
+  if (isPrimitiveLike(value)) return false;
+  const owner = prototype.kind === "object" ? getPrototypeOwner(prototype) : null;
+  if (owner) return isInstanceOfClass(value, owner);
+  switch (value.kind) {
+    case "function":
+    case "native-function":
+    case "method":
+    case "react-api":
+      return isFunctionChainPrototype(prototype);
+    case "class": {
+      let current: StaticValue = value;
+      while (current.kind === "class") {
+        const superValue: StaticValue | null = current.body.superValue;
+        if (!superValue) return isFunctionChainPrototype(prototype);
+        if (isSameConstructor(superValue, prototype)) return true;
+        current = superValue;
+      }
+      return current.kind === "react-api" ? isFunctionChainPrototype(prototype) : null;
+    }
+    case "object": {
+      let current = value;
+      while (current.prototype) {
+        if (current.prototype === prototype) return true;
+        current = current.prototype;
+      }
+      return current.constructedBy ? null : isPrototypeOfWitness(prototype, current);
+    }
+    default:
+      return isPrototypeOfWitness(prototype, value);
+  }
 };
 
 /** `left instanceof right` for a built-in or analyzed constructor; null when it depends on values the analysis cannot see. */

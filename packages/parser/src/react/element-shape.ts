@@ -1,3 +1,11 @@
+import {
+  ForwardRefTag,
+  LazyComponentTag,
+  MemoComponentTag,
+  SimpleMemoComponentTag,
+  type WorkTag,
+} from "../work-tags.js";
+
 /** Own keys of a development-mode `ReactElement` (react/src/jsx/ReactJSXElement.js). */
 export const REACT_ELEMENT_OWN_KEYS = new Set([
   "$$typeof",
@@ -29,6 +37,21 @@ export const FUNCTION_OWN_KEYS = new Set([
   "propTypes",
   "contextTypes",
 ]);
+
+/** Own keys of the object a stub stands in for, by the work tag its fibers report. */
+export const getStubOwnKeys = (tag: WorkTag | undefined): ReadonlySet<string> => {
+  switch (tag) {
+    case ForwardRefTag:
+      return WRAPPER_OWN_KEYS["forward-ref"];
+    case MemoComponentTag:
+    case SimpleMemoComponentTag:
+      return WRAPPER_OWN_KEYS.memo;
+    case LazyComponentTag:
+      return WRAPPER_OWN_KEYS.lazy;
+    default:
+      return FUNCTION_OWN_KEYS;
+  }
+};
 
 /** `Symbol.for` keys React tags elements with; renamed in 19 (shared/ReactSymbols.js). */
 export const REACT_ELEMENT_SYMBOL_KEYS = new Set(["react.element", "react.transitional.element"]);

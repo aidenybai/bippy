@@ -10,6 +10,8 @@ import type {
 } from "oxc-parser";
 import type { TypeScriptDeclaration } from "./evaluate/typescript-declarations.js";
 import type { RuntimeSnapshot } from "./harness/snapshot.js";
+import type { HostDocument } from "./host/host-document.js";
+import type { HostPlatform, HostRealm } from "./host/host-realm.js";
 import type { WorkTag } from "./work-tags.js";
 
 export type SourceLanguage = "js" | "jsx" | "ts" | "tsx" | "json";
@@ -37,6 +39,17 @@ export interface JsxPragma {
   factory: string | null;
   fragment: string | null;
   importSource: string | null;
+}
+
+export interface TransformedSource {
+  sourceText: string;
+  lang: SourceLanguage;
+}
+
+/** A bundler loader the app applies to a non-JavaScript file extension, producing the module the bundler links in its place. */
+export interface SourceTransform {
+  extension: string;
+  transform: (filePath: string, sourceText: string) => TransformedSource | null;
 }
 
 export type DiagnosticSeverity = "info" | "warning" | "error";
@@ -119,7 +132,7 @@ export interface ModuleRecord {
   bindings: Map<string, TopLevelBinding>;
   /** Specifiers of static `import`/`export ... from` declarations, in source order. */
   dependencies: string[];
-  /** Top-level statements that run when the module is evaluated (`X.displayName = ...`, `registry.set(...)`). */
+  /** Top-level statements that run when the module is evaluated (`X.displayName = ...`, `registry.set(...)`, `const x = create()`). */
   sideEffectStatements: Statement[];
   /** Exports were collected from `exports.x = ` / `module.exports` assignments rather than ESM syntax. */
   isCommonJs: boolean;
@@ -144,9 +157,19 @@ export interface BuiltinModuleResolution {
   specifier: string;
 }
 
+/**
+ * Under RSC, what server code imports from a `"use client"` module is a
+ * reference to the export, rendered on the client, wherever the value itself
+ * was defined.
+ */
 export type ResolvedSymbol =
-  | { kind: "binding"; module: ModuleRecord; binding: TopLevelBinding }
-  | { kind: "expression"; module: ModuleRecord; expression: Expression }
+  | { kind: "binding"; module: ModuleRecord; binding: TopLevelBinding; isClientReference: boolean }
+  | {
+      kind: "expression";
+      module: ModuleRecord;
+      expression: Expression;
+      isClientReference: boolean;
+    }
   | { kind: "namespace"; module: ModuleRecord }
   | { kind: "external"; packageName: string; imported: ImportedName; specifier: string }
   | { kind: "unresolved"; reason: string };
@@ -161,6 +184,11 @@ export interface ComponentDefinition {
   /** Present for class components. */
   classBody: ClassBody | null;
   properties: Map<string, StaticValue>;
+  /** Set when the component is a `bind` result; each `bind` call is a distinct component type. */
+  boundArgs?: StaticValue[];
+  boundThis?: StaticValue;
+  /** Reached by server code through a `"use client"` module's export. */
+  isClientReference: boolean;
 }
 
 export interface ClassMemberBase {
@@ -212,7 +240,11 @@ export type StaticElementType =
   | { kind: "function"; component: ComponentDefinition }
   | { kind: "class"; component: ComponentDefinition }
   | ({ kind: "memo"; inner: StaticElementType; hasCompare: boolean } & WrapperElementType)
-  | ({ kind: "forward-ref"; component: ComponentDefinition } & WrapperElementType)
+  | ({
+      kind: "forward-ref";
+      component: ComponentDefinition;
+      render: StaticFunctionValue;
+    } & WrapperElementType)
   | ({ kind: "lazy"; inner: StaticElementType | null } & WrapperElementType)
   | { kind: "fragment" }
   | { kind: "strict-mode" }
@@ -246,6 +278,8 @@ export interface StubComponent {
   tag?: WorkTag;
   /** Statics the library hangs on the component (`Styled.withComponent`); the app's own assignments (`Component.displayName = ...`) land here too. */
   properties?: Map<string, StaticValue>;
+  /** Under RSC, renders on the server (no fiber) when created outside a client boundary, like a component whose module lacks `"use client"`. */
+  isServerComponent?: boolean;
   render: (props: StaticObjectValue, tools: StubRenderTools) => StaticValue;
   /**
    * For build-time macros (Lingui's `<Trans>`): the props of the element the
@@ -268,26 +302,43 @@ export type MacroJsxChildSource =
   | { kind: "element"; children: MacroJsxChild[] | null }
   | { kind: "expression" };
 
+/** React hooks bound to the stub's own fiber, with the reconciler's ordering rules. */
+export interface StubHooks {
+  useState: (initial: StaticValue) => [StaticValue, (next: StaticValue) => void];
+  useRef: <T>(initial: T) => { current: T };
+  useEffect: (effect: () => void | (() => void), dependencies: unknown[]) => void;
+}
+
 export interface StubRenderTools {
   /** Reads a context value as `useContext` would from the stub's position in the tree. */
   readContext: (context: ContextDefinition) => StaticValue;
+  /** The stub's hooks while the reconciler renders it on the client; null in server renders and callbacks. */
+  hooks: StubHooks | null;
   /** Calls a function whose promise the framework awaits (route `lazy`), with `await x` read as `x`. */
   callAwaited: (callee: StaticValue, args: StaticValue[]) => StaticValue;
   /** Calls `callee` with `thisValue` as its receiver, as `callee.call(thisValue, ...args)` would. */
   call: (callee: StaticValue, args: StaticValue[], thisValue?: StaticValue) => StaticValue;
+  /** Calls a continuation of a promise that settles outside the analysis: it runs at an unknown time, so what it updates may or may not have changed by the captured commit. */
+  callDeferred: (callee: StaticValue, args: StaticValue[]) => StaticValue;
   /** A value recorded from the running page, with references to the project's module exports evaluated. */
   captured: (captured: CapturedValue, name: string) => StaticValue;
   /** Records that `value` reached code the analysis cannot see, so its later mutations are uncertain. */
   markEscaped: (value: StaticValue) => void;
   /** Runs `task` once the current task's synchronous work ends, as `queueMicrotask` would. */
   queueMicrotask: (task: () => void) => void;
+  /** True while the caller runs at an unknown time relative to the captured commit (past an `await` the analysis cannot see settle, or in such a promise's continuation): the state it updates escapes. */
+  isDeferred: () => boolean;
   /** Assigns an own property of a modeled object, undone on the other paths of an enclosing fork like any heap write. */
   setProperty: (object: StaticObjectValue, key: string, value: StaticValue) => void;
   project: ProjectContext;
+  /** The host whose globals the calling code sees. */
+  realm: HostRealm;
   /** Binding the call's result is assigned to, as build-time labelers (Emotion's babel/swc plugin) see it. */
   nameHint: string | null;
   /** For tagged templates, the identifier each `${expression}` is (null when not a bare identifier); null for other calls. */
   templateArgumentNames: Array<string | null> | null;
+  /** Where the call runs under RSC: `server` outside client boundaries, `client` inside; null when not rendering with server components. */
+  environment: RenderEnvironment | null;
 }
 
 /**
@@ -310,13 +361,22 @@ export interface StyledComponentsTransformOptions {
   topLevelImportPaths: string[];
 }
 
+export interface InstalledPackage {
+  name: string;
+  version: string;
+}
+
+/** What transpiles the app's `.ts`/`.tsx`/`.jsx` modules for the browser: esbuild renumbers a declaration whose name is already bound in an enclosing scope (`Foo` → `Foo2`); the others keep source names. */
+export type ModuleTranspiler = "esbuild" | "name-preserving";
+
 /** What a library model may learn about the analyzed project: which transforms shaped the runtime, and what the running page held. */
 export interface ProjectContext {
   /** Directory the analyzed app is served from (`process.cwd()` of its dev server); `null` when analyzing loose modules. */
   rootDirectory: string | null;
   hasDeclaredDependency: (packageName: string) => boolean;
-  /** The installed version of a package as the project's modules resolve it; `null` when it is not installed. */
-  readInstalledVersion: (packageName: string) => string | null;
+  /** The installed version of a package as resolved from the root; `null` when it is not installed. */
+  readPackageVersion: (packageName: string) => string | null;
+  transpiler: ModuleTranspiler;
   /** The text the dev server serves for a same-origin or root-relative URL from the project's static directory; `null` when it serves none. */
   readServedAsset: (url: string) => string | null;
   /** The captured TanStack Query cache entry for a query hash (`hashKey(queryKey)`), if the page held one. */
@@ -419,6 +479,16 @@ export interface CapturedLocation {
   hash: string;
 }
 
+/** A fetcher in `state.fetchers`: one that has loaded or submitted since mounting. */
+export interface CapturedFetcher {
+  key: string;
+  state: "idle" | "loading" | "submitting";
+  formMethod?: string;
+  formAction?: string;
+  formEncType?: string;
+  data?: CapturedValue;
+}
+
 /** React Router's `DataRouterStateContext` value once the page settled. */
 export interface CapturedRouterState {
   location: CapturedLocation;
@@ -426,6 +496,9 @@ export interface CapturedRouterState {
   loaderData: Record<string, CapturedValue>;
   navigationState: "idle" | "loading" | "submitting";
   revalidationState: "idle" | "loading";
+  /** Absent in captures taken before it was recorded. */
+  fetchers?: CapturedFetcher[];
+  hasCriticalCss?: boolean;
 }
 
 /** What the harness reads off the live roots besides the fiber tree: library state the page's code reads at render. */
@@ -445,8 +518,6 @@ export interface CapturedPageState {
   historyState?: CapturedValue;
   /** Every name `in window` before the page's first script ran (feature detection); absent in older captures. */
   windowKeys?: string[];
-  /** The `windowKeys` whose own value was a function (interface objects, global functions); absent in older captures. */
-  windowFunctionKeys?: string[];
   /** `navigator.userAgent` and `navigator.language`; absent in older captures. */
   userAgent?: string;
   language?: string;
@@ -537,11 +608,19 @@ export type UnknownPrimitiveType = "string" | "number" | "boolean" | "any";
 /** Ordering a clock-derived number carries; see `evaluate/timers.ts`. */
 export type ClockOrdering = "reading" | "settled" | "unbounded";
 
+/** A timer task: the task that scheduled it and the delay it was scheduled with, so a reading it takes is at least that far after any reading of its scheduler. */
+export interface ClockTask {
+  scheduledBy: ClockTask | null;
+  delayMs: number;
+}
+
 /** A clock reading's place among the readings the analysis took, and the timer task that took it. */
 export interface ClockReading {
   ordering: ClockOrdering;
   sequence: number;
-  task: number;
+  task: ClockTask;
+  /** Milliseconds a timer fires before its delay as `Date.now()` measures it: 1 under Node's millisecond-truncated timer clock, 0 in browsers. */
+  timerUnderrunMs: number;
 }
 
 /** Leading characters of an unknown string and, when fixed, its length; see `evaluate/primitive-shapes.ts`. */
@@ -569,8 +648,8 @@ export interface StaticListValue {
   kind: "list";
   items: StaticValue[];
   allocation?: number;
-  /** Named properties an array carries besides its indices, like `index` on a match. */
-  properties?: ReadonlyMap<string, StaticValue>;
+  /** Named properties an array carries besides its indices, like `index` on a match or `t` on a `useTranslation()` result. */
+  properties?: Map<string, StaticValue>;
   isFrozen?: boolean;
 }
 
@@ -599,6 +678,7 @@ export interface StaticFunctionValue {
   properties: Map<string, StaticValue>;
   boundArgs?: StaticValue[];
   boundThis?: StaticValue;
+  isClientReference?: boolean;
 }
 
 export interface StaticClassValue {
@@ -617,6 +697,8 @@ export interface StaticOptionalValue {
   value: StaticValue;
   reason: string;
   location: SourceLocation | null;
+  /** The analysis prefers the position to be empty, as when the preferred alternative of the item failed a filter. */
+  isAbsentPreferred?: boolean;
 }
 
 export interface StaticRegExpValue {
@@ -678,13 +760,15 @@ export interface StaticGlobalValue {
 
 /**
  * An object native code owns: a `Date` built from known parts, or a node,
- * selection or range of the happy-dom document React renders into. Its members
- * run natively once their arguments are known; one value per object so identity
+ * selection or range of the host document React renders into. Its members run
+ * natively once their arguments are known; one value per object so identity
  * comparisons hold.
  */
 export interface StaticNativeObjectValue {
   kind: "native-object";
   value: object;
+  /** The document the object belongs to; null for a language object. */
+  host: HostDocument | null;
 }
 
 export interface StaticMethodValue {
@@ -832,11 +916,17 @@ export interface StaticRendererOptions {
   maxRecursionPerComponent?: number;
   maxCallDepth?: number;
   maxSteps?: number;
+  /** Quiet window (no React commit) after which the runtime snapshot is taken; timers delayed at least this long have not fired by then. */
+  settleMs?: number;
+  /** Milliseconds a timer may fire before its delay as `Date.now()` measures it (see `ClockReading`). */
+  timerUnderrunMs?: number;
   resolveExternalPackages?: boolean;
   /** Package names to analyze from source; `@scope/*` admits every package in a scope (monorepo workspaces). */
   externalPackageAllowList?: string[];
   /** Apply React Server Components semantics: components outside `"use client"` modules render without a fiber. */
   serverComponents?: boolean;
+  /** The JavaScript host the client code runs on, deciding which globals exist; browser when unset. Server-side code always sees Node. */
+  hostPlatform?: HostPlatform;
   /**
    * Functions the boot code calls before mounting (registries, stores), as
    * `path#exportName` or `path#exportName(globalName, ...)` to pass `window`
@@ -845,7 +935,7 @@ export interface StaticRendererOptions {
   bootstrap?: string[];
   /** `window` properties the served page defines (server-injected config); nested objects are partial, so unlisted keys stay unknown. */
   globals?: Record<string, JsonValue>;
-  /** Expressions the bundler inlines at build time (`DefinePlugin`, Vite `define`), keyed by source text such as `process.env.FLAG`; an environment variable given `null` is unset. */
+  /** Expressions the bundler inlines at build time (`DefinePlugin`, Vite `define`), keyed by source text such as `process.env.FLAG`; an environment variable or bundler shim (`global`) given `null` is left unset. */
   defines?: Record<string, JsonValue>;
   /** The server process's environment, whole; unlisted variables are unset. */
   environment?: ProcessEnvironment;
@@ -855,6 +945,8 @@ export interface StaticRendererOptions {
   origin?: string;
   /** Directory the dev server serves at the URL root, relative to `rootDirectory`; `public` unless the bundler is configured otherwise. */
   publicDirectory?: string;
+  /** Defaults to what the root's Vite config implies (Vite ≤ 7 without an swc/oxc React plugin transpiles with esbuild), else `name-preserving`. */
+  transpiler?: ModuleTranspiler;
   /** What a running page was observed to hold; the render takes these as its runtime inputs. */
   observations?: RuntimeObservations;
   externalValues?: ExternalValueProvider;

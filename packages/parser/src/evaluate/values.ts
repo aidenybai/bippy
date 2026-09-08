@@ -25,7 +25,6 @@ import type {
   UnknownPrimitiveType,
 } from "../types.js";
 import { getExternalMember, getReactApiTypeof } from "../react/react-api.js";
-import { isWindowAlias } from "./browser-globals.js";
 
 export const isKnownString = (
   value: StaticValue,
@@ -100,6 +99,9 @@ export const objectValue = (entries: StaticObjectEntry[] = []): StaticObjectValu
 
 export const objectFromRecord = (record: Record<string, StaticValue>): StaticObjectValue =>
   objectValue(Object.entries(record).map(([key, value]) => ({ kind: "property", key, value })));
+
+export const isJsonRecord = (json: JsonValue): json is { [key: string]: JsonValue } =>
+  json !== null && typeof json === "object" && !Array.isArray(json);
 
 /** A value known whole, as a bundler inlines a `define` replacement. */
 export const jsonValue = (json: JsonValue): StaticValue => {
@@ -366,9 +368,13 @@ export const getSymbolDescription = (symbol: StaticSymbolValue): string | undefi
   unregisteredSymbols.has(symbol.key) ? symbol.description : symbol.key;
 
 /** Symbol-keyed properties are stored under an `@@` key; enumeration skips them like `Object.keys` does. */
-export const getSymbolPropertyKey = (symbol: StaticSymbolValue): string => `@@${symbol.key}`;
+export const SYMBOL_PROPERTY_KEY_PREFIX = "@@";
 
-export const isSymbolPropertyKey = (key: string): boolean => key.startsWith("@@");
+export const getSymbolPropertyKey = (symbol: StaticSymbolValue): string =>
+  `${SYMBOL_PROPERTY_KEY_PREFIX}${symbol.key}`;
+
+export const isSymbolPropertyKey = (key: string): boolean =>
+  key.startsWith(SYMBOL_PROPERTY_KEY_PREFIX);
 
 /** The property name a computed key denotes, or `null` when the key is not statically known. */
 export const getPropertyName = (key: StaticValue): string | null => {
@@ -436,7 +442,7 @@ export const getOwnPropertyDescriptors = (object: StaticObjectValue): StaticObje
 /** The symbols keying own properties, as `Object.getOwnPropertySymbols` lists them. */
 export const getKnownObjectSymbols = (object: StaticObjectValue): StaticSymbolValue[] | null =>
   getKnownOwnKeys(object, isSymbolPropertyKey)?.map((propertyKey) => {
-    const key = propertyKey.slice("@@".length);
+    const key = propertyKey.slice(SYMBOL_PROPERTY_KEY_PREFIX.length);
     return unregisteredSymbols.get(key) ?? { kind: "symbol", key };
   }) ?? null;
 
@@ -683,6 +689,32 @@ const compareClosureIdentity = (left: StaticValue, right: StaticValue): boolean 
 const isProgramAllocated = (value: StaticValue): boolean =>
   isHeapValue(value) || isCallableValue(value) || value.kind === "element";
 
+const getElementTypeIdentity = (type: StaticElementType): object | null => {
+  switch (type.kind) {
+    case "function":
+    case "class":
+      return type.component.properties;
+    case "memo":
+    case "forward-ref":
+    case "lazy":
+      return type.properties;
+    case "context-provider":
+    case "context-consumer":
+      return type.context;
+    case "stub":
+      return type.stub;
+    default:
+      return null;
+  }
+};
+
+/** Element types share their statics map with the value they were created from. */
+const getComponentIdentity = (value: StaticValue): object | null => {
+  if (value.kind === "function") return value.boundThis ? null : value.properties;
+  if (value.kind === "class") return value.properties;
+  return value.kind === "component-reference" ? getElementTypeIdentity(value.type) : null;
+};
+
 /**
  * A host global is an object or function, or absent in environments without it
  * (`window` on a server), so it only ever equals `undefined`.
@@ -690,6 +722,23 @@ const isProgramAllocated = (value: StaticValue): boolean =>
 const compareGlobalToPrimitive = (global: StaticValue, other: StaticValue): boolean | null => {
   if (global.kind !== "global" || other.kind !== "primitive") return null;
   return other.value === undefined ? null : false;
+};
+
+/**
+ * A primitive of known type is never identical to a primitive of another
+ * type, to `null`/`undefined`, or to a reference value.
+ */
+const compareTypedUnknownToOther = (typed: StaticValue, other: StaticValue): boolean | null => {
+  if (typed.kind !== "unknown-primitive" || typed.primitiveType === "any") return null;
+  if (other.kind === "primitive") {
+    return typeof other.value === typed.primitiveType ? null : false;
+  }
+  if (other.kind === "unknown-primitive") {
+    return other.primitiveType === "any" || other.primitiveType === typed.primitiveType
+      ? null
+      : false;
+  }
+  return getIdentityClass(other) === null ? null : false;
 };
 
 /** `===` decided the same way against every alternative, else undecided. */
@@ -709,16 +758,22 @@ const compareIdentityAcross = (alternatives: StaticValue[], other: StaticValue):
 export const compareIdentity = (left: StaticValue, right: StaticValue): boolean | null => {
   if (left.kind === "primitive" && right.kind === "primitive") return left.value === right.value;
   if (left === right) return true;
+  if (left.kind === "function" && right.kind === "function" && left.scope !== right.scope) {
+    return false;
+  }
   if (left.kind === "branch") return compareIdentityAcross(left.alternatives, right);
   if (right.kind === "branch") return compareIdentityAcross(right.alternatives, left);
   if (isHeapValue(left) && isHeapValue(right) && left.allocation && right.allocation) {
     return left.allocation === right.allocation;
   }
   if (left.kind === "symbol" && right.kind === "symbol") return left.key === right.key;
-  if (left.kind === "global" && right.kind === "global")
-    return left.name === right.name || (isWindowAlias(left.name) && isWindowAlias(right.name));
-  if (left.kind === "namespace" && right.kind === "namespace")
+  if (left.kind === "namespace" && right.kind === "namespace") {
     return left.module.filePath === right.module.filePath;
+  }
+  if (left.kind === "global" && right.kind === "global") {
+    if (left.name === right.name) return true;
+    if (left.name.endsWith(".prototype") && right.name.endsWith(".prototype")) return false;
+  }
   if (
     (left.kind === "global" && isProgramAllocated(right)) ||
     (right.kind === "global" && isProgramAllocated(left))
@@ -748,6 +803,13 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
   }
   const closureIdentity = compareClosureIdentity(left, right);
   if (closureIdentity !== null) return closureIdentity;
+  const typedVersusOther =
+    compareTypedUnknownToOther(left, right) ?? compareTypedUnknownToOther(right, left);
+  if (typedVersusOther !== null) return typedVersusOther;
+  if (left.kind === "element" && right.kind === "element") return false;
+  const leftComponent = getComponentIdentity(left);
+  const rightComponent = getComponentIdentity(right);
+  if (leftComponent && rightComponent) return leftComponent === rightComponent;
   const leftClass = getIdentityClass(left);
   const rightClass = getIdentityClass(right);
   if (leftClass && rightClass && leftClass !== rightClass) return false;
@@ -979,6 +1041,19 @@ export const isRenderableValue = (value: StaticValue): boolean =>
   value.kind === "branch" ||
   value.kind === "unknown";
 
+/** Truthiness an unknown primitive's shape already decides: a clock reading or a range that excludes zero, a string with known characters or a known length. */
+const getShapedTruthiness = (value: StaticUnknownPrimitiveValue): boolean | null => {
+  if (value.clock) return true;
+  const range = value.numberRange;
+  if (range && (range.min > 0 || range.max < 0)) return true;
+  const shape = value.stringShape;
+  if (shape) {
+    if (shape.prefix.length > 0) return true;
+    if (shape.length !== null) return shape.length > 0;
+  }
+  return null;
+};
+
 export const getTruthiness = (value: StaticValue): boolean | null => {
   switch (value.kind) {
     case "primitive":
@@ -990,6 +1065,7 @@ export const getTruthiness = (value: StaticValue): boolean | null => {
         : null;
     }
     case "unknown-primitive":
+      return getShapedTruthiness(value);
     case "unknown":
     case "optional":
       return null;
@@ -1113,7 +1189,8 @@ export const optionalValue = (
   value: StaticValue,
   reason: string,
   location: SourceLocation | null = null,
-): StaticOptionalValue => ({ kind: "optional", value, reason, location });
+  isAbsentPreferred = false,
+): StaticOptionalValue => ({ kind: "optional", value, reason, location, isAbsentPreferred });
 
 /**
  * Items contributed by `...value` inside an array literal (also `concat`,
@@ -1129,7 +1206,9 @@ export const spreadListItems = (
   if (value.kind === "repeat") return [value];
   if (value.kind === "optional") {
     return spreadListItems(value.value, location).map((item) =>
-      item.kind === "repeat" ? item : optionalValue(item, value.reason, value.location),
+      item.kind === "repeat"
+        ? item
+        : optionalValue(item, value.reason, value.location, value.isAbsentPreferred),
     );
   }
   if (value.kind === "branch" && value.alternatives.every(hasDefiniteItems)) {
@@ -1153,7 +1232,14 @@ export const spreadListItems = (
         value.location,
         Math.max(0, present.indexOf(lists[value.preferredIndex])),
       );
-      return [optionalValue(item, value.reason, value.location)];
+      return [
+        optionalValue(
+          item,
+          value.reason,
+          value.location,
+          lists[value.preferredIndex].items.length === 0,
+        ),
+      ];
     }
     return [
       {
@@ -1191,7 +1277,11 @@ export const getListItem = (
       return true;
     }
     if (head.kind === "repeat") return false;
-    if (head.kind === "optional") return pick([head.value, ...rest], offset) && pick(rest, offset);
+    if (head.kind === "optional") {
+      return head.isAbsentPreferred
+        ? pick(rest, offset) && pick([head.value, ...rest], offset)
+        : pick([head.value, ...rest], offset) && pick(rest, offset);
+    }
     if (offset === 0) {
       candidates.push(head);
       return true;
@@ -1255,7 +1345,7 @@ export const describeValue = (value: StaticValue, depth = 0): string => {
     case "native-function":
       return `native ${value.name}`;
     case "native-object":
-      return `native ${value.value.constructor.name}`;
+      return `native ${Object.prototype.toString.call(value.value).slice("[object ".length, -1)}`;
     case "proxy":
       return `proxy of ${describeNested(value.target)}`;
     case "unknown":

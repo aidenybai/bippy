@@ -2,18 +2,25 @@ import { objectValue, UNDEFINED_VALUE } from "../evaluate/values.js";
 import { lazyProperties } from "../frameworks/stubs.js";
 import type { LibraryValueProvider, ModeledExports } from "../types.js";
 import { EMOTION_PACKAGES, emotionValue } from "./emotion.js";
+import { ES_SHIM_PACKAGES, esShimValue } from "./es-shims.js";
 import {
   FRAMER_MOTION_MODELED_EXPORTS,
   FRAMER_MOTION_PACKAGES,
   framerMotionValue,
 } from "./framer-motion.js";
+import {
+  HOIST_NON_REACT_STATICS_PACKAGES,
+  hoistNonReactStaticsValue,
+} from "./hoist-non-react-statics.js";
 import { IMMER_PACKAGES, immerValue } from "./immer.js";
 import { JED_PACKAGES, jedValue } from "./jed.js";
 import { JOTAI_MODELED_EXPORTS, JOTAI_PACKAGES, jotaiValue } from "./jotai.js";
 import { KEA_PACKAGES, keaValue } from "./kea.js";
 import { LINGUI_PACKAGES, linguiValue } from "./lingui.js";
 import { LODASH_MODELED_EXPORTS, LODASH_PACKAGES, lodashValue } from "./lodash.js";
+import { MOBX_PACKAGES, mobxValue } from "./mobx.js";
 import { NODE_FS_PACKAGES, nodeFsValue } from "./node-fs.js";
+import { REACT_HOOK_FORM_PACKAGES, reactHookFormValue } from "./react-hook-form.js";
 import {
   REACT_INLINESVG_MODELED_EXPORTS,
   REACT_INLINESVG_PACKAGES,
@@ -47,11 +54,13 @@ interface LibraryModel {
 
 const LIBRARY_MODELS: readonly LibraryModel[] = [
   { packages: EMOTION_PACKAGES, getValue: emotionValue },
+  { packages: ES_SHIM_PACKAGES, getValue: esShimValue },
   {
     packages: FRAMER_MOTION_PACKAGES,
     getValue: framerMotionValue,
     modeledExports: FRAMER_MOTION_MODELED_EXPORTS,
   },
+  { packages: HOIST_NON_REACT_STATICS_PACKAGES, getValue: hoistNonReactStaticsValue },
   { packages: IMMER_PACKAGES, getValue: immerValue },
   { packages: JED_PACKAGES, getValue: jedValue },
   { packages: JOTAI_PACKAGES, getValue: jotaiValue, modeledExports: JOTAI_MODELED_EXPORTS },
@@ -62,7 +71,9 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     getValue: lodashValue,
     modeledExports: LODASH_MODELED_EXPORTS,
   },
+  { packages: MOBX_PACKAGES, getValue: mobxValue },
   { packages: NODE_FS_PACKAGES, getValue: nodeFsValue },
+  { packages: REACT_HOOK_FORM_PACKAGES, getValue: reactHookFormValue },
   {
     packages: REACT_INLINESVG_PACKAGES,
     getValue: reactInlineSvgValue,

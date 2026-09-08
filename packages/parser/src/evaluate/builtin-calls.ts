@@ -1,10 +1,10 @@
 import type {
-  RenderEnvironment,
   SourceLocation,
   StaticAccessor,
   StaticElementType,
   StaticElementValue,
   StaticFunctionValue,
+  StaticGlobalValue,
   StaticListValue,
   StaticObjectEntry,
   StaticObjectValue,
@@ -20,38 +20,58 @@ import {
   MemoComponentTag,
   SimpleMemoComponentTag,
 } from "../work-tags.js";
-import {
-  getBrowserGlobalMember,
-  isBrowserGlobalName,
-  isWindowAlias,
-  isWindowMember,
-} from "./browser-globals.js";
+import type { HostDocument } from "../host/host-document.js";
+import type { HostRealm } from "../host/host-realm.js";
 import {
   type EnvironmentLookup,
+  BUNDLER_INJECTED_NAMES,
   callHotModuleMethod,
   getBundlerGlobal,
-  isEnvironmentObject,
+  getBundlerGlobalTypeof,
 } from "./bundler-globals.js";
+import {
+  GLOBAL_OBJECT_VALUE,
+  getHostGlobal,
+  getHostGlobalTypeof,
+  getLanguageMethodResult,
+  getLanguageObject,
+  toLanguagePropertyKey,
+} from "./host-globals.js";
 import { createAbortController } from "./abort-controller.js";
 import { createDomObserver, isDomObserverName } from "./dom-observers.js";
-import { createErrorValue, ERROR_CONSTRUCTOR_NAMES, isErrorConstructorName } from "./errors.js";
+import { createErrorValue, isErrorConstructorName } from "./errors.js";
 import { callFetch } from "./fetch.js";
 import { nativeFunction } from "../frameworks/stubs.js";
-import { constructNativeDate } from "./native-values.js";
+import {
+  constructNativeObject,
+  fromNativeValue,
+  isNativeConstructorName,
+  toNativeArguments,
+} from "./native-values.js";
+import { constructFunctionFromSource } from "./function-constructor.js";
+import { callImportMetaGlob } from "./import-glob.js";
+import { createClockDateValue, isClockReading } from "./clock-date.js";
+import { createBlobValue } from "./blob.js";
 import { callEventTargetMethod } from "./event-listeners.js";
 import { hasProperty, isIntrinsicFunctionKey } from "./has-property.js";
 import {
-  getBuiltinMember,
-  getBuiltinPrototype,
+  getBuiltinFunctionSource,
   getBuiltinPrototypeName,
   getPrototypeWitness,
-  isTypedArrayName,
-  TYPED_ARRAY_NAMES,
+  isPrototypeOf,
 } from "./instance-of.js";
+import { callIndexedDbMethod, isIndexedDbName, type IndexedDbHost } from "./indexed-db.js";
+import {
+  binaryFromItems,
+  callBinaryMethod,
+  constructBinary,
+  isBinaryView,
+  isTypedArrayName,
+} from "./typed-arrays.js";
+import { callWebCryptoMethod, isWebCryptoName } from "./web-crypto.js";
 import { mediaQueryListValue } from "./media-query.js";
 import { getObjectTag } from "./object-tag.js";
 import { callHistoryMethod, isHistoryName } from "./session-history.js";
-import { callCryptoMethod, isCryptoName } from "./web-crypto.js";
 import { callStorageMethod, getStorageAreaName } from "./web-storage.js";
 import type { EvaluationContext } from "./context.js";
 import { createCollectionValue, getCollectionItems } from "./collections.js";
@@ -65,11 +85,19 @@ import {
   type PromiseHandlers,
   type PromiseTools,
 } from "./promises.js";
-import { callShapedPrimitiveMethod, joinStrings, rangedNumberValue } from "./primitive-shapes.js";
+import { createNumberFormat } from "./intl-format.js";
+import {
+  applyMathToRanges,
+  callShapedPrimitiveMethod,
+  joinStrings,
+  rangedNumberValue,
+} from "./primitive-shapes.js";
 import { createSearchParamsValue } from "./url-search-params.js";
 import {
   callStringCodec,
   createBufferValue,
+  createTextDecoder,
+  createTextEncoder,
   getBufferByteLength,
   isStringCodecName,
 } from "./text-encoding.js";
@@ -85,10 +113,10 @@ import {
   getClassPrototype,
   getKnownObjectKeys,
   getOwnPropertyDescriptor,
-  getOwnPropertyDescriptors,
   getKnownObjectSymbols,
   getListLength,
   getObjectProperty,
+  getPreferredTruthiness,
   getPropertyName,
   getSymbolPropertyKey,
   getTruthiness,
@@ -166,6 +194,29 @@ const getEntryFromPair = (pair: StaticValue): StaticObjectEntry | null => {
 
 const ITERATION_METHOD_NAMES = new Set(["map", "forEach", "flatMap", "filter"]);
 
+const THIS_ARG_METHOD_NAMES = new Set([
+  ...ITERATION_METHOD_NAMES,
+  "some",
+  "every",
+  "find",
+  "findIndex",
+  "findLast",
+  "findLastIndex",
+]);
+
+/** `list.forEach(callback, thisArg)`: the callback runs with `this` set to `thisArg` (arrows keep their lexical `this`). */
+const bindCallbackThisArg = (name: string, args: StaticValue[]): StaticValue[] => {
+  const [callback, thisArg] = args;
+  if (
+    thisArg === undefined ||
+    !THIS_ARG_METHOD_NAMES.has(name) ||
+    callback?.kind !== "function" ||
+    callback.boundThis
+  )
+    return args;
+  return [{ ...callback, boundThis: thisArg }];
+};
+
 /** `flatMap`/`concat` flattening: arrays contribute their items, anything else itself. */
 const flattenOneLevel = (value: StaticValue, location: SourceLocation | null): StaticValue[] =>
   spreadListItems(
@@ -181,146 +232,7 @@ const flattenOneLevel = (value: StaticValue, location: SourceLocation | null): S
 export const isModeledOpaqueMethodName = (name: string): boolean =>
   PROMISE_METHOD_NAMES.has(name) || ITERATION_METHOD_NAMES.has(name);
 
-const GLOBAL_NAMES = new Set([
-  "Object",
-  "Function",
-  "Array",
-  "Math",
-  "JSON",
-  "String",
-  "Number",
-  "Boolean",
-  "Date",
-  "Map",
-  "Set",
-  "WeakMap",
-  "WeakSet",
-  "Promise",
-  "Symbol",
-  ...ERROR_CONSTRUCTOR_NAMES,
-  "RegExp",
-  "Intl",
-  "Reflect",
-  "Proxy",
-  "console",
-  "window",
-  "document",
-  "globalThis",
-  "navigator",
-  "location",
-  "localStorage",
-  "sessionStorage",
-  "history",
-  "process",
-  "performance",
-  "parseInt",
-  "parseFloat",
-  "isNaN",
-  "isFinite",
-  "encodeURIComponent",
-  "decodeURIComponent",
-  "encodeURI",
-  "decodeURI",
-  "btoa",
-  "atob",
-  "Buffer",
-  "setTimeout",
-  "clearTimeout",
-  "setInterval",
-  "clearInterval",
-  "setImmediate",
-  "requestAnimationFrame",
-  "requestIdleCallback",
-  "cancelAnimationFrame",
-  "cancelIdleCallback",
-  "fetch",
-  "structuredClone",
-  "queueMicrotask",
-  "URL",
-  "URLSearchParams",
-  "Headers",
-  "Request",
-  "Response",
-  "FormData",
-  "Blob",
-  "AbortController",
-  "AbortSignal",
-  "MutationObserver",
-  "ResizeObserver",
-  "IntersectionObserver",
-  "PerformanceObserver",
-  "Event",
-  "EventTarget",
-  "TextEncoder",
-  "TextDecoder",
-  "ArrayBuffer",
-  "DataView",
-  ...TYPED_ARRAY_NAMES,
-  "Infinity",
-  "NaN",
-]);
-
-const STRING_RESULT_METHODS = new Set([
-  "toString",
-  "toLocaleString",
-  "toUpperCase",
-  "toLowerCase",
-  "trim",
-  "trimStart",
-  "trimEnd",
-  "padStart",
-  "padEnd",
-  "replace",
-  "replaceAll",
-  "substring",
-  "substr",
-  "charAt",
-  "concat",
-  "normalize",
-  "toFixed",
-  "toPrecision",
-  "join",
-  "toLocaleDateString",
-  "toLocaleTimeString",
-  "toISOString",
-  "toDateString",
-  "format",
-]);
-
-const BOOLEAN_RESULT_METHODS = new Set([
-  "includes",
-  "some",
-  "every",
-  "startsWith",
-  "endsWith",
-  "has",
-  "hasOwnProperty",
-  "test",
-  "isArray",
-]);
-
-const NUMBER_RESULT_METHODS = new Set([
-  "indexOf",
-  "lastIndexOf",
-  "findIndex",
-  "findLastIndex",
-  "localeCompare",
-  "charCodeAt",
-  "codePointAt",
-  "getTime",
-  "getFullYear",
-  "getMonth",
-  "getDate",
-  "getDay",
-  "getHours",
-  "getMinutes",
-  "getSeconds",
-  "valueOf",
-  "push",
-  "unshift",
-  "size",
-]);
-
+/** Methods whose result is a list with the items' shape preserved, so an indefinite receiver stands for its own result. */
 const LIST_PRESERVING_METHODS = new Set([
   "filter",
   "slice",
@@ -334,99 +246,10 @@ const LIST_PRESERVING_METHODS = new Set([
   "toArray",
 ]);
 
-const BROWSER_GLOBALS = new Set([
-  "window",
-  "document",
-  "navigator",
-  "location",
-  "localStorage",
-  "sessionStorage",
-  "history",
-]);
-/** Function-valued globals every rendering environment (browser or Node) provides. */
-const UNIVERSAL_FUNCTION_GLOBALS = new Set([
-  "parseInt",
-  "parseFloat",
-  "isNaN",
-  "isFinite",
-  "encodeURIComponent",
-  "decodeURIComponent",
-  "encodeURI",
-  "decodeURI",
-  "btoa",
-  "atob",
-  "setTimeout",
-  "clearTimeout",
-  "setInterval",
-  "clearInterval",
-  "queueMicrotask",
-  "structuredClone",
-  "fetch",
-  "URL",
-  "URLSearchParams",
-  "Headers",
-  "Request",
-  "Response",
-  "FormData",
-  "Blob",
-  "AbortController",
-  "AbortSignal",
-  "Event",
-  "EventTarget",
-  "TextEncoder",
-  "TextDecoder",
-  "ArrayBuffer",
-  "DataView",
-  "PerformanceObserver",
-]);
-/** Function-valued globals only browsers provide. */
-const BROWSER_FUNCTION_GLOBALS = new Set([
-  "requestAnimationFrame",
-  "cancelAnimationFrame",
-  "MutationObserver",
-  "ResizeObserver",
-  "IntersectionObserver",
-]);
-const CONSTRUCTOR_GLOBALS = new Set([
-  "Object",
-  "Function",
-  "Array",
-  "String",
-  "Number",
-  "Boolean",
-  "Date",
-  "Map",
-  "Set",
-  "WeakMap",
-  "WeakSet",
-  "Promise",
-  "Symbol",
-  ...ERROR_CONSTRUCTOR_NAMES,
-  "RegExp",
-  "Proxy",
-  ...TYPED_ARRAY_NAMES,
-]);
-
-/** `typeof <global>` as observed by the rendering environment; null when it depends on the host. */
-export const getGlobalTypeof = (
-  name: string,
-  environment: RenderEnvironment | null,
-): string | null => {
-  if (name.endsWith(".prototype") && CONSTRUCTOR_GLOBALS.has(name.slice(0, -".prototype".length)))
-    return name === "Function.prototype" ? "function" : "object";
-  if (name.includes(".")) {
-    const member = getBuiltinMember(name);
-    return member === undefined ? null : typeof member;
-  }
-  if (BROWSER_GLOBALS.has(name)) return environment === "server" ? "undefined" : "object";
-  if (BROWSER_FUNCTION_GLOBALS.has(name))
-    return environment === "server" ? "undefined" : "function";
-  if (CONSTRUCTOR_GLOBALS.has(name) || UNIVERSAL_FUNCTION_GLOBALS.has(name)) return "function";
-  if (name === "performance") return "object";
-  if (name === "Infinity" || name === "NaN") return "number";
-  if (name === "Math" || name === "JSON" || name === "Intl" || name === "Reflect") return "object";
-  if (name === "globalThis" || name === "console" || name === "module") return "object";
-  return null;
+/** `typeof <global>` in the rendering host; null when its declarations leave it open, or when only the bundler could provide it. */
+export const getGlobalTypeof = (name: string, realm: HostRealm): string | null => {
+  if (BUNDLER_INJECTED_NAMES.has(name) && !realm.hasGlobal(name)) return null;
+  return getBundlerGlobalTypeof(name) ?? getHostGlobalTypeof(realm, name);
 };
 
 const getComponentTypeof = (type: StaticElementType): string | null => {
@@ -465,13 +288,10 @@ const getComponentTypeof = (type: StaticElementType): string | null => {
   }
 };
 
-export const getTypeofValue = (
-  value: StaticValue,
-  environment: RenderEnvironment | null,
-): StaticValue => {
+export const getTypeofValue = (value: StaticValue, realm: HostRealm): StaticValue => {
   switch (value.kind) {
     case "branch":
-      return mapValue(value, (alternative) => getTypeofValue(alternative, environment));
+      return mapValue(value, (alternative) => getTypeofValue(alternative, realm));
     case "primitive":
       return primitiveValue(typeof value.value);
     case "unknown-primitive":
@@ -492,7 +312,7 @@ export const getTypeofValue = (
         : unknownPrimitiveValue("string", `typeof ${describeValue(value)}`);
     }
     case "proxy":
-      return getTypeofValue(value.target, environment);
+      return getTypeofValue(value.target, realm);
     case "native-object":
       return primitiveValue("object");
     case "symbol":
@@ -509,7 +329,7 @@ export const getTypeofValue = (
         ? primitiveValue("object")
         : unknownPrimitiveValue("string", `typeof ${describeValue(value)}`);
     case "global": {
-      const globalType = getGlobalTypeof(value.name, environment);
+      const globalType = getGlobalTypeof(value.name, realm);
       return globalType
         ? primitiveValue(globalType)
         : unknownPrimitiveValue("string", `typeof ${describeValue(value)}`);
@@ -519,46 +339,14 @@ export const getTypeofValue = (
   }
 };
 
-const WELL_KNOWN_SYMBOL_NAMES = new Set(
-  Object.getOwnPropertyNames(Symbol).filter(
-    (name) => typeof Object.getOwnPropertyDescriptor(Symbol, name)?.value === "symbol",
-  ),
-);
-
-/** Whether the analysis has its own model of the global `name` (a builtin or a modeled `window` member). */
-export const isModeledGlobalName = (name: string): boolean =>
-  GLOBAL_NAMES.has(name) || isWindowMember(name);
-
+/** A global the bundler injects or the host declares; null when the name is undeclared in this host. */
 export const getBuiltinGlobal = (
   name: string,
+  realm: HostRealm,
+  hostDocument: HostDocument | null,
   environment?: EnvironmentLookup,
-): StaticValue | null => {
-  if (name === "NaN") return primitiveValue(Number.NaN);
-  if (name === "Infinity") return primitiveValue(Number.POSITIVE_INFINITY);
-  if (name.startsWith("Symbol.") && WELL_KNOWN_SYMBOL_NAMES.has(name.slice("Symbol.".length)))
-    return { kind: "symbol", key: name };
-  const bundlerGlobal = getBundlerGlobal(name, environment);
-  if (bundlerGlobal) return bundlerGlobal;
-  if (name.startsWith("Math.") && name !== "Math.max" && name !== "Math.min") {
-    const constant = name.slice("Math.".length);
-    if (constant === "PI") return primitiveValue(Math.PI);
-    if (constant === "E") return primitiveValue(Math.E);
-  }
-  const root = name.split(".")[0];
-  if (name === `${root}.prototype.constructor` && CONSTRUCTOR_GLOBALS.has(root))
-    return { kind: "global", name: root };
-  if (!GLOBAL_NAMES.has(root)) {
-    return root === name && isWindowMember(name)
-      ? getBrowserGlobalMember("window", name, getBuiltinGlobal)
-      : null;
-  }
-  if (root !== name && isBrowserGlobalName(root)) {
-    const member = name.slice(root.length + 1);
-    if (isWindowAlias(root) && GLOBAL_NAMES.has(member)) return getBuiltinGlobal(member);
-    return getBrowserGlobalMember(root, member, getBuiltinGlobal);
-  }
-  return { kind: "global", name };
-};
+): StaticValue | null =>
+  getBundlerGlobal(name, environment) ?? getHostGlobal(realm, hostDocument, name);
 
 const toStringValue = (value: StaticValue): StaticValue => {
   if (value.kind === "primitive") return primitiveValue(String(value.value));
@@ -686,6 +474,65 @@ const defineOwnProperties = (
   }
 };
 
+const INTRINSIC_PROTOTYPE_NAMES = new Set(["Object.prototype", "Function.prototype"]);
+
+/** `Object.getOwnPropertyNames(fn)`: the intrinsic names, then the names the analyzed code assigned. */
+const getFunctionOwnNames = (callable: StaticFunctionValue): string[] => {
+  const names = ["length", "name"];
+  if (isIntrinsicFunctionKey(callable, "prototype")) names.push("prototype");
+  for (const key of callable.properties.keys()) {
+    if (!names.includes(key) && !isSymbolPropertyKey(key)) names.push(key);
+  }
+  return names;
+};
+
+const getFunctionOwnPropertyDescriptor = (
+  interpreter: Interpreter,
+  callable: StaticFunctionValue,
+  key: string,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): StaticValue => {
+  if (!getFunctionOwnNames(callable).includes(key)) return UNDEFINED_VALUE;
+  const isIntrinsic = isIntrinsicFunctionKey(callable, key);
+  return objectFromRecord({
+    value: interpreter.getProperty(callable, key, context, location),
+    writable: primitiveValue(key === "prototype" || !isIntrinsic),
+    enumerable: primitiveValue(!isIntrinsic),
+    configurable: primitiveValue(key !== "prototype"),
+  });
+};
+
+const getOwnPropertyDescriptors = (
+  interpreter: Interpreter,
+  target: StaticValue,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): StaticValue => {
+  if (target.kind === "function") {
+    return objectValue(
+      getFunctionOwnNames(target).map((key) => ({
+        kind: "property",
+        key,
+        value: getFunctionOwnPropertyDescriptor(interpreter, target, key, context, location),
+      })),
+    );
+  }
+  const ownKeys = target.kind === "object" ? getKnownObjectKeys(target) : null;
+  if (target.kind !== "object" || !ownKeys) {
+    return unknownValue(`Object.getOwnPropertyDescriptors of ${describeValue(target)}`, location);
+  }
+  const descriptors: StaticObjectEntry[] = [];
+  for (const key of ownKeys) {
+    const descriptor = getOwnPropertyDescriptor(target, key);
+    if (!descriptor) {
+      return unknownValue(`Object.getOwnPropertyDescriptors of ${describeValue(target)}`, location);
+    }
+    descriptors.push({ kind: "property", key, value: descriptor });
+  }
+  return objectValue(descriptors);
+};
+
 /** Own enumerable string-keyed entries in `Object.keys` order; null when the shape is not fully known. */
 const getOwnEnumerableEntries = (
   target: StaticValue,
@@ -747,18 +594,59 @@ const hasOwnProperty = (
     );
   }
   if (receiver.kind === "global") {
-    const builtinPrototype = getBuiltinPrototype(receiver.name);
-    if (!builtinPrototype || isSymbolPropertyKey(propertyName)) return null;
+    const languageObject = getLanguageObject(receiver.name);
+    const propertyKey = toLanguagePropertyKey(propertyName);
+    if (languageObject === null || propertyKey === null) return null;
     return primitiveValue(
       name === "hasOwnProperty"
-        ? Object.hasOwn(builtinPrototype, propertyName)
-        : Object.prototype.propertyIsEnumerable.call(builtinPrototype, propertyName),
+        ? Object.hasOwn(languageObject, propertyKey)
+        : Object.prototype.propertyIsEnumerable.call(languageObject, propertyKey),
     );
   }
   return null;
 };
 
+/** `Object.getPrototypeOf(value)` for values whose chain is a native one: the builtin prototype global, or null at the chain's end. */
+const getWitnessedPrototype = (
+  value: StaticValue | undefined,
+  name: string,
+  location: SourceLocation | null,
+): StaticValue => {
+  if (value?.kind === "branch")
+    return mapValue(value, (alternative) => getWitnessedPrototype(alternative, name, location));
+  const witness = value === undefined ? null : getPrototypeWitness(value);
+  if (witness === null) return unknownValue(`${name} on a dynamic target`, location);
+  const prototype: object | null = Object.getPrototypeOf(witness);
+  if (prototype === null) return NULL_VALUE;
+  const prototypeName = getBuiltinPrototypeName(prototype);
+  return prototypeName === null
+    ? unknownValue(`${name} on an instance of an unmodeled builtin`, location)
+    : { kind: "global", name: prototypeName };
+};
+
 const FUNCTION_INVOCATION_METHODS = new Set(["call", "apply", "bind"]);
+
+/** `Function.prototype.toString`: the source text of program functions, V8's `[native code]` form for intrinsics. */
+const getFunctionSourceText = (receiver: StaticValue): string | null => {
+  switch (receiver.kind) {
+    case "function":
+      return receiver.boundArgs || receiver.boundThis
+        ? "function () { [native code] }"
+        : receiver.module.file.sourceText.slice(receiver.node.start, receiver.node.end);
+    case "class":
+      return receiver.module.file.sourceText.slice(receiver.node.start, receiver.node.end);
+    case "method":
+      return receiver.receiver.kind === "global"
+        ? getBuiltinFunctionSource(`${receiver.receiver.name}.${receiver.name}`)
+        : receiver.receiver.kind === "external" || receiver.receiver.kind === "unknown"
+          ? null
+          : `function ${receiver.name}() { [native code] }`;
+    case "global":
+      return getBuiltinFunctionSource(receiver.name);
+    default:
+      return null;
+  }
+};
 
 const PROTOTYPE_SEGMENT = ".prototype.";
 
@@ -786,9 +674,11 @@ const callInvokedGlobal = (
           name: target.slice(prototypeIndex + PROTOTYPE_SEGMENT.length),
         };
   if (invocation === "bind") {
-    return callee.kind === "global" && args.length <= 1
-      ? callee
-      : unknownValue(`${name}()`, location);
+    const boundArgs = args.slice(1);
+    if (callee.kind === "global" && boundArgs.length === 0) return callee;
+    return nativeFunction(`bound ${target}`, (callArgs, tools) =>
+      tools.call(callee, [...boundArgs, ...callArgs]),
+    );
   }
   const [, second] = args;
   const calleeArgs =
@@ -802,32 +692,64 @@ const callInvokedGlobal = (
   return interpreter.callValue(callee, calleeArgs, context, location);
 };
 
-/** `Object.getPrototypeOf(value)` when the value's chain is a native one the analysis can name. */
-const getWitnessPrototype = (value: StaticValue | undefined): StaticValue | null => {
-  const witness = value === undefined ? null : getPrototypeWitness(value);
-  if (witness === null) return null;
-  const prototype = Object.getPrototypeOf(witness);
-  if (prototype === null) return NULL_VALUE;
-  const prototypeName = getBuiltinPrototypeName(prototype);
-  return prototypeName === null ? null : { kind: "global", name: prototypeName };
+/** `window.addEventListener` splits into the global object and `addEventListener`; `history.pushState` into `history` and `pushState`. */
+const splitGlobalName = (name: string): [receiver: StaticValue, memberName: string] => {
+  const separator = name.lastIndexOf(".");
+  return separator === -1
+    ? [GLOBAL_OBJECT_VALUE, name]
+    : [{ kind: "global", name: name.slice(0, separator) }, name.slice(separator + 1)];
 };
 
-const TO_STRING_SUFFIX = ".toString";
-
-/** `Function.prototype.toString` of a host function: the NativeFunction form the spec mandates. */
-const getNativeFunctionSource = (receiver: StaticValue): string | null => {
-  switch (receiver.kind) {
-    case "global": {
-      if (typeof getBuiltinMember(receiver.name) !== "function") return null;
-      return `function ${receiver.name.slice(receiver.name.lastIndexOf(".") + 1)}() { [native code] }`;
-    }
-    case "method":
-      return receiver.receiver.kind === "unknown" || receiver.receiver.kind === "external"
-        ? null
-        : `function ${receiver.name}() { [native code] }`;
-    default:
-      return null;
-  }
+/** Methods of host objects whose state the interpreter models: listeners, media queries, hot modules, history and storage. */
+const callHostObjectMethod = (
+  interpreter: Interpreter,
+  receiver: StaticGlobalValue,
+  name: string,
+  args: StaticValue[],
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): StaticValue | null => {
+  const realm = interpreter.getRealm(context.environment);
+  const listened = callEventTargetMethod(interpreter, realm, receiver, name, args);
+  if (listened) return listened;
+  if (realm.isGlobalAlias(receiver.name) && name === "matchMedia")
+    return mediaQueryListValue(args[0]);
+  const hotModuleResult = callHotModuleMethod(receiver, name);
+  if (hotModuleResult) return hotModuleResult;
+  if (isHistoryName(receiver.name))
+    return callHistoryMethod(
+      interpreter.history,
+      interpreter.origin,
+      name,
+      args,
+      location,
+      (listener) => interpreter.markEscaped(listener),
+    );
+  if (isIndexedDbName(receiver.name))
+    return callIndexedDbMethod(
+      indexedDbHost(interpreter, context, location),
+      interpreter.indexedDb,
+      name,
+      args,
+    );
+  if (isWebCryptoName(receiver.name))
+    return callWebCryptoMethod(
+      receiver.name,
+      name,
+      args,
+      (list) => interpreter.recordHeapMutation(list),
+      location,
+    );
+  const storageAreaName = getStorageAreaName(receiver.name);
+  return storageAreaName === null
+    ? null
+    : callStorageMethod(
+        interpreter.storageAreas[storageAreaName],
+        storageAreaName,
+        name,
+        args,
+        location,
+      );
 };
 
 const callGlobal = (
@@ -838,39 +760,64 @@ const callGlobal = (
   location: SourceLocation | null,
   isConstructor: boolean,
 ): StaticValue => {
-  const invoked = isConstructor
-    ? null
-    : callInvokedGlobal(interpreter, name, args, context, location);
-  if (invoked) return invoked;
-  if (!isConstructor && args.length === 0 && name.endsWith(TO_STRING_SUFFIX)) {
-    const nativeSource = getNativeFunctionSource({
-      kind: "global",
-      name: name.slice(0, -TO_STRING_SUFFIX.length),
-    });
-    if (nativeSource !== null) return primitiveValue(nativeSource);
+  if (!isConstructor) {
+    const invoked = callInvokedGlobal(interpreter, name, args, context, location);
+    if (invoked) return invoked;
+    const [receiver, memberName] = splitGlobalName(name);
+    const hostResult =
+      receiver.kind === "global"
+        ? callHostObjectMethod(interpreter, receiver, memberName, args, context, location)
+        : null;
+    if (hostResult) return hostResult;
   }
   if (isErrorConstructorName(name)) return createErrorValue(name, args, location);
+  if (name === "import.meta.glob") return callImportMetaGlob(interpreter, args, context, location);
   if (isStringCodecName(name)) return callStringCodec(name, args, location);
   if (name === "Buffer.from") return createBufferValue(args, location);
   if (name === "Buffer.byteLength") return getBufferByteLength(args);
   const [first, second] = args;
-  if (isConstructor && isTypedArrayName(name)) return constructTypedArray(name, first, location);
+  if (isConstructor && (isTypedArrayName(name) || name === "ArrayBuffer"))
+    return constructBinary(name, args, location);
+  if (name === "ArrayBuffer.isView") {
+    const isView = isBinaryView(first);
+    return isView === null
+      ? unknownPrimitiveValue("boolean", "ArrayBuffer.isView on dynamic value")
+      : primitiveValue(isView);
+  }
+  if (name.endsWith(".of")) {
+    const ofItems = binaryFromItems(name.slice(0, -".of".length), args);
+    if (ofItems) return ofItems;
+  }
+  if (name === "Intl.NumberFormat") return createNumberFormat(args, location);
+  if (isConstructor && name === "TextEncoder") return createTextEncoder();
+  if (isConstructor && name === "TextDecoder") return createTextDecoder(first, location);
   if (isConstructor && isDomObserverName(name))
     return createDomObserver(interpreter, name, first, location);
+  if (isConstructor && isNativeConstructorName(name) && (name !== "Date" || args.length > 0)) {
+    const constructed = constructNativeObject(name, args);
+    if (constructed) return constructed;
+  }
   switch (name) {
     case "Date": {
-      const date = isConstructor ? constructNativeDate(args) : null;
-      if (date) return date;
+      if (!isConstructor) break;
+      if (args.length === 0) return createClockDateValue(interpreter.timers.readClock("new Date"));
+      if (args.length === 1 && first !== undefined && isClockReading(first))
+        return createClockDateValue(first);
       break;
     }
-    case "Object":
-      if (first === undefined) return objectValue();
-      return mapValue(first, (argument) => {
-        if (isNullish(argument) === true) return objectValue();
-        return argument.kind === "primitive" || argument.kind === "unknown-primitive"
-          ? unknownValue(`Object(${describeValue(argument)})`, location)
-          : argument;
-      });
+    case "Function":
+      return constructFunctionFromSource(interpreter, args, location);
+    case "Object": {
+      if (first === undefined || (first.kind === "primitive" && isNullish(first)))
+        return objectValue([]);
+      const firstTypeof = getTypeofValue(first, interpreter.getRealm(context.environment));
+      if (
+        firstTypeof.kind === "primitive" &&
+        (firstTypeof.value === "object" || firstTypeof.value === "function")
+      )
+        return first;
+      break;
+    }
     case "String":
       return first ? toStringValue(first) : primitiveValue("");
     case "Number":
@@ -896,6 +843,9 @@ const callGlobal = (
     case "fetch":
       if (isConstructor) break;
       return callFetch(interpreter.project, args, location);
+    case "Blob":
+      if (isConstructor) return createBlobValue(args, location);
+      break;
     case "RegExp": {
       if (second !== undefined && second.kind !== "primitive")
         return unknownValue("RegExp with dynamic flags", location);
@@ -950,6 +900,23 @@ const callGlobal = (
         return source;
       }
       return unknownValue("Array.from of dynamic iterable", location);
+    }
+    case "Int8Array.from":
+    case "Uint8Array.from":
+    case "Uint8ClampedArray.from":
+    case "Int16Array.from":
+    case "Uint16Array.from":
+    case "Int32Array.from":
+    case "Uint32Array.from":
+    case "Float32Array.from":
+    case "Float64Array.from": {
+      const source =
+        first?.kind === "object" ? (getCollectionItems(first) ?? arrayLikeToList(first)) : first;
+      if (source?.kind !== "list") return unknownValue(`${name} of dynamic iterable`, location);
+      const mapped = isCallable(second) ? mapList(interpreter, source, second, context) : source;
+      return mapped.kind === "list"
+        ? (binaryFromItems(name.slice(0, -".from".length), mapped.items) ?? mapped)
+        : mapped;
     }
     case "Object.keys":
     case "Object.values":
@@ -1012,16 +979,24 @@ const callGlobal = (
     case "Object.getPrototypeOf":
     case "Reflect.getPrototypeOf":
       if (first?.kind === "class") return getClassPrototype(first);
+      if (first?.kind === "function") return { kind: "global", name: "Function.prototype" };
       if (first?.kind === "object" && first.prototype) return first.prototype;
       if (first?.kind === "object" && first.hasNullPrototype) return NULL_VALUE;
       if (first?.kind === "object" && first.constructedBy)
         return getClassPrototypeObject(interpreter, first.constructedBy, context);
       if (first?.kind === "object" && isBaseClassPrototype(first))
         return { kind: "global", name: "Object.prototype" };
-      return getWitnessPrototype(first) ?? unknownValue(`${name} on a dynamic target`, location);
+      return getWitnessedPrototype(first, name, location);
     case "Object.getOwnPropertyNames":
     case "Object.getOwnPropertySymbols":
     case "Reflect.ownKeys": {
+      if (first?.kind === "function") {
+        return listValue(
+          name === "Object.getOwnPropertySymbols"
+            ? []
+            : getFunctionOwnNames(first).map((key) => primitiveValue(key)),
+        );
+      }
       if (first?.kind !== "object" && first?.kind !== "list")
         return unknownValue(`${name} on a dynamic target`, location);
       const ownNames =
@@ -1042,6 +1017,8 @@ const callGlobal = (
       const key = second ? getPropertyName(second) : null;
       if (first?.kind === "element" && key === "ref")
         return getElementRefDescriptor(first, location);
+      if (first?.kind === "function" && key !== null)
+        return getFunctionOwnPropertyDescriptor(interpreter, first, key, context, location);
       if (first?.kind !== "object" || key === null)
         return unknownValue(`${name} on a dynamic target`, location);
       return (
@@ -1049,23 +1026,18 @@ const callGlobal = (
         unknownValue(`${name} on an object with dynamic spreads`, location)
       );
     }
-    case "Object.getOwnPropertyDescriptors": {
-      if (first?.kind !== "object") return unknownValue(`${name} on a dynamic target`, location);
-      return (
-        getOwnPropertyDescriptors(first) ??
-        unknownValue(`${name} on an object with dynamic spreads`, location)
-      );
-    }
     case "Object.create": {
       if (!first) break;
       return mapValue(first, (prototype) => {
         const isNull = prototype.kind === "primitive" && prototype.value === null;
-        if (!isNull && prototype.kind !== "object")
+        const isIntrinsicPrototype =
+          prototype.kind === "global" && INTRINSIC_PROTOTYPE_NAMES.has(prototype.name);
+        if (!isNull && !isIntrinsicPrototype && prototype.kind !== "object")
           return unknownValue(`Object.create with ${describeValue(prototype)}`, location);
         const created: StaticObjectValue =
           prototype.kind === "object"
             ? { ...objectValue(), prototype }
-            : { ...objectValue(), hasNullPrototype: true };
+            : { ...objectValue(), hasNullPrototype: isNull };
         if (second?.kind === "object") {
           defineOwnProperties(interpreter, created, second, context, location);
         }
@@ -1120,6 +1092,10 @@ const callGlobal = (
       defineOwnProperty(interpreter, first, String(second.value), descriptor, context, location);
       return first;
     }
+    case "Object.getOwnPropertyDescriptors":
+      return first
+        ? getOwnPropertyDescriptors(interpreter, first, context, location)
+        : unknownValue(`${name} without a target`, location);
     case "Object.defineProperties": {
       if (!first || second?.kind !== "object") {
         return first ?? unknownValue("Object.defineProperties on a dynamic target", location);
@@ -1167,7 +1143,7 @@ const callGlobal = (
     case "Number.isSafeInteger": {
       if (first === undefined) return FALSE_VALUE;
       if (first.kind === "primitive") return primitiveValue(NUMBER_PREDICATES[name](first.value));
-      const typeofFirst = getTypeofValue(first, context.environment);
+      const typeofFirst = getTypeofValue(first, interpreter.getRealm(context.environment));
       if (typeofFirst.kind === "primitive" && typeofFirst.value !== "number") return FALSE_VALUE;
       return unknownPrimitiveValue("boolean", name);
     }
@@ -1200,32 +1176,40 @@ const callGlobal = (
       return unknownValue("JSON.parse", location);
     case "queueMicrotask":
       if (first) {
-        interpreter.timers.queueMicrotask(() =>
-          interpreter.callValue(first, [], context, location),
-        );
+        interpreter.timers.queueMicrotask(scheduledTask(interpreter, first, context, location));
       }
       return UNDEFINED_VALUE;
     case "setTimeout":
     case "setImmediate":
     case "requestAnimationFrame":
     case "requestIdleCallback": {
-      // The runtime snapshot is taken once short timers settled; longer or dynamic delays may not have fired.
       const handle = interpreter.timers.createHandle(name);
       if (first) {
-        if (isSettledDelay(second)) {
-          interpreter.timers.schedule(handle, () =>
-            interpreter.callValue(first, [], context, location),
+        const delayMs = interpreter.timers.getSettledDelay(second);
+        if (delayMs === null) interpreter.markEscaped(first);
+        else {
+          interpreter.timers.schedule(
+            handle,
+            scheduledTask(interpreter, first, context, location),
+            delayMs,
           );
-        } else interpreter.markEscaped(first);
+        }
       }
       return handle;
     }
     case "setInterval": {
       const handle = interpreter.timers.createHandle(name);
       if (first) {
-        interpreter.timers.schedule(handle, () =>
-          interpreter.runIntervalTicks(first, handle, context, location),
-        );
+        const delayMs = interpreter.timers.getSettledDelay(second);
+        const isDeferred = interpreter.timers.isDeferred;
+        if (delayMs === null) interpreter.markEscaped(first);
+        else {
+          interpreter.timers.schedule(
+            handle,
+            () => interpreter.runIntervalTicks(first, handle, context, location, isDeferred),
+            delayMs,
+          );
+        }
       }
       return handle;
     }
@@ -1247,34 +1231,14 @@ const callGlobal = (
     default:
       break;
   }
+  if (name === "Math.random") return rangedNumberValue(name, { min: 0, max: 1 });
   if (name.startsWith("Math.")) {
-    if (
-      args.every((argument) => argument.kind === "primitive" && typeof argument.value === "number")
-    ) {
-      const numbers = args.map((argument) =>
-        argument.kind === "primitive" ? Number(argument.value) : 0,
-      );
-      const method = name.slice("Math.".length);
-      switch (method) {
-        case "max":
-          return primitiveValue(Math.max(...numbers));
-        case "min":
-          return primitiveValue(Math.min(...numbers));
-        case "floor":
-          return primitiveValue(Math.floor(numbers[0]));
-        case "ceil":
-          return primitiveValue(Math.ceil(numbers[0]));
-        case "round":
-          return primitiveValue(Math.round(numbers[0]));
-        case "abs":
-          return primitiveValue(Math.abs(numbers[0]));
-        case "random":
-          return rangedNumberValue(name, { min: 0, max: 1 });
-        default:
-          break;
-      }
-    }
-    return unknownPrimitiveValue("number", name);
+    const method = name.slice("Math.".length);
+    const mathFunction: unknown = Reflect.get(Math, method);
+    const natives = toNativeArguments(args, null);
+    if (typeof mathFunction === "function" && natives !== null)
+      return fromNativeValue(Reflect.apply(mathFunction, Math, natives), `${name}()`, null);
+    return applyMathToRanges(method, args) ?? unknownPrimitiveValue("number", name);
   }
   if (isConstructor) return unknownValue(`new ${name}()`, location);
   return unknownValue(`${name}()`, location);
@@ -1300,23 +1264,6 @@ const arrayOfLength = (length: StaticValue, location: SourceLocation | null): St
   return listValue(Array.from({ length: length.value }, () => UNDEFINED_VALUE));
 };
 
-/** `new Uint16Array(length | array)`: a zero-filled or copied list; element coercion is not modeled. */
-const constructTypedArray = (
-  name: string,
-  source: StaticValue | undefined,
-  location: SourceLocation | null,
-): StaticValue => {
-  if (source === undefined) return listValue([]);
-  if (source.kind === "list") return listValue([...source.items]);
-  if (source.kind === "primitive" && typeof source.value === "number") {
-    const zeroFilled = arrayOfLength(source, location);
-    return zeroFilled.kind === "list"
-      ? listValue(zeroFilled.items.map(() => primitiveValue(0)))
-      : zeroFilled;
-  }
-  return unknownValue(`new ${name}() from ${describeValue(source)}`, location);
-};
-
 // `{ length: n }` (and sparse array-likes) as consumed by `Array.from`.
 const arrayLikeToList = (value: Extract<StaticValue, { kind: "object" }>): StaticValue => {
   const length = getObjectProperty(value, "length");
@@ -1331,32 +1278,49 @@ const arrayLikeToList = (value: Extract<StaticValue, { kind: "object" }>): Stati
   );
 };
 
-type CallableValue = Extract<StaticValue, { kind: "function" | "native-function" | "global" }>;
+export type CallableValue = Extract<
+  StaticValue,
+  { kind: "function" | "native-function" | "global" }
+>;
 
-const MAX_SETTLED_DELAY_MS = 2_000;
+/** A task queued from a continuation of unknown timing runs at an unknown time too. */
+const scheduledTask = (
+  interpreter: Interpreter,
+  callback: StaticValue,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): (() => void) =>
+  interpreter.timers.isDeferred
+    ? () => interpreter.callDeferred(callback, [], context, location)
+    : () => interpreter.callValue(callback, [], context, location);
 
-const isSettledDelay = (delay: StaticValue | undefined): boolean =>
-  delay === undefined ||
-  (delay.kind === "primitive" &&
-    (delay.value === undefined ||
-      delay.value === null ||
-      (typeof delay.value === "number" && delay.value <= MAX_SETTLED_DELAY_MS)));
-
-const isCallable = (value: StaticValue | undefined): value is CallableValue =>
+export const isCallable = (value: StaticValue | undefined): value is CallableValue =>
   value?.kind === "function" || value?.kind === "native-function" || value?.kind === "global";
 
-/** Truthiness of `predicate(item, index, list)` per item; null where the analysis cannot decide. */
+interface ItemVerdict {
+  verdict: boolean | null;
+  preference: boolean | null;
+}
+
+/**
+ * `predicate(item, index, list)` per item: its truthiness (null where the
+ * analysis cannot decide) and the truthiness of the alternative it prefers.
+ */
 const testItems = (
   interpreter: Interpreter,
   list: StaticListValue,
   predicate: CallableValue,
   context: EvaluationContext,
-): (boolean | null)[] =>
-  list.items.map((item, index) =>
-    getTruthiness(
-      callCallback(interpreter, predicate, [item, primitiveValue(index), list], context),
-    ),
-  );
+): ItemVerdict[] =>
+  list.items.map((item, index) => {
+    const outcome = callCallback(
+      interpreter,
+      predicate,
+      [item, primitiveValue(index), list],
+      context,
+    );
+    return { verdict: getTruthiness(outcome), preference: getPreferredTruthiness(outcome) };
+  });
 
 const callCallback = (
   interpreter: Interpreter,
@@ -1364,6 +1328,87 @@ const callCallback = (
   args: StaticValue[],
   context: EvaluationContext,
 ): StaticValue => interpreter.callValue(callback, args, context, null);
+
+const MAX_FILTERED_ALTERNATIVES = 16;
+
+/**
+ * An item as `filter` keeps it: itself when accepted, null when rejected, and
+ * optional when undecided. A branch item is tested per alternative so only the
+ * alternatives the predicate may accept remain, and the position is preferred
+ * empty when the alternative the analysis prefers was rejected.
+ */
+const filterItem = (
+  interpreter: Interpreter,
+  list: StaticListValue,
+  predicate: CallableValue,
+  item: StaticValue,
+  index: number,
+  context: EvaluationContext,
+): StaticValue | null => {
+  const alternatives =
+    item.kind === "branch" && item.alternatives.length <= MAX_FILTERED_ALTERNATIVES
+      ? item.alternatives
+      : [item];
+  const verdicts = alternatives.map((alternative) =>
+    getTruthiness(
+      callCallback(interpreter, predicate, [alternative, primitiveValue(index), list], context),
+    ),
+  );
+  if (verdicts.every((verdict) => verdict === true)) return item;
+  const accepted = alternatives.filter((_, position) => verdicts[position] !== false);
+  if (accepted.length === 0) return null;
+  const preferredIndex = item.kind === "branch" ? item.preferredIndex : 0;
+  const preferred = alternatives[preferredIndex];
+  const kept =
+    item.kind === "branch"
+      ? branchValue(accepted, item.reason, item.location, Math.max(0, accepted.indexOf(preferred)))
+      : item;
+  return optionalValue(kept, "uncertain filter", null, verdicts[preferredIndex] === false);
+};
+
+const MAX_JOINED_COMBINATIONS = 16;
+
+interface JoinedItems {
+  parts: StaticValue[];
+  isPreferred: boolean;
+}
+
+/** `join()` over items that may be absent: one string per combination of present items. */
+const joinListItems = (
+  items: StaticValue[],
+  separator: string,
+  location: SourceLocation | null,
+): StaticValue => {
+  let combinations: JoinedItems[] = [{ parts: [], isPreferred: true }];
+  for (const item of items) {
+    if (item.kind === "repeat") {
+      return unknownPrimitiveValue("string", "join of a list with an unknown length");
+    }
+    if (item.kind !== "optional") {
+      combinations = combinations.map(({ parts, isPreferred }) => ({
+        parts: [...parts, item],
+        isPreferred,
+      }));
+      continue;
+    }
+    if (combinations.length * 2 > MAX_JOINED_COMBINATIONS) {
+      return unknownPrimitiveValue("string", "join of a list with many uncertain items");
+    }
+    combinations = combinations.flatMap(({ parts, isPreferred }) => [
+      { parts: [...parts, item.value], isPreferred: isPreferred && !item.isAbsentPreferred },
+      { parts, isPreferred: isPreferred && item.isAbsentPreferred === true },
+    ]);
+  }
+  return branchValue(
+    combinations.map(({ parts }) => joinStrings(parts, separator)),
+    "join of a filtered list",
+    location,
+    Math.max(
+      0,
+      combinations.findIndex(({ isPreferred }) => isPreferred),
+    ),
+  );
+};
 
 /** A callback run for an item that may occur zero or many times: its side effects are uncertain. */
 export const callUncertainCallback = (
@@ -1686,9 +1731,6 @@ const fallbackMethodResult = (
   name: string,
   location: SourceLocation | null,
 ): StaticValue => {
-  if (STRING_RESULT_METHODS.has(name)) return unknownPrimitiveValue("string", `${name}()`);
-  if (BOOLEAN_RESULT_METHODS.has(name)) return unknownPrimitiveValue("boolean", `${name}()`);
-  if (NUMBER_RESULT_METHODS.has(name)) return unknownPrimitiveValue("number", `${name}()`);
   if (name === "split") return dynamicSplitResult(location);
   if (
     LIST_PRESERVING_METHODS.has(name) &&
@@ -1696,11 +1738,29 @@ const fallbackMethodResult = (
   ) {
     return receiver;
   }
-  const isStringReceiver =
-    (receiver.kind === "primitive" && typeof receiver.value === "string") ||
-    (receiver.kind === "unknown-primitive" && receiver.primitiveType === "string");
-  if (isStringReceiver && name === "slice") return unknownPrimitiveValue("string", "slice()");
-  return unknownValue(`${describeValue(receiver)}.${name}()`, location);
+  return (
+    getLanguageMethodResult(receiver, name) ??
+    unknownValue(`${describeValue(receiver)}.${name}()`, location)
+  );
+};
+
+/** Request events fire in later tasks; from a deferred continuation they stay deferred. */
+const indexedDbHost = (
+  interpreter: Interpreter,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): IndexedDbHost => {
+  const isDeferred = interpreter.timers.isDeferred;
+  return {
+    schedule: (task) =>
+      interpreter.timers.schedule(
+        interpreter.timers.createHandle("IndexedDB request"),
+        isDeferred ? () => interpreter.timers.runDeferred(task) : task,
+      ),
+    call: (callee, callArgs) => interpreter.callValue(callee, callArgs, context, location),
+    setProperty: (object, key, value) => interpreter.assignOwnProperty(object, key, value),
+    location,
+  };
 };
 
 const promiseTools = (
@@ -1709,6 +1769,7 @@ const promiseTools = (
   location: SourceLocation | null,
 ): PromiseTools => ({
   call: (callee, callArgs) => interpreter.callValue(callee, callArgs, context, location),
+  callDeferred: (callee, callArgs) => interpreter.callDeferred(callee, callArgs, context, location),
   markEscaped: (value) => interpreter.markEscaped(value),
   queueMicrotask: (task) => interpreter.timers.queueMicrotask(task),
 });
@@ -1735,11 +1796,13 @@ const callPromiseMethod = (
     onFinally: name === "finally" && isCallable(first) ? first : null,
   };
   const modeled = getModeledPromise(receiver);
-  if (modeled) return chainPromise(modeled, handlers, promiseTools(interpreter, context, location));
+  if (modeled) {
+    return chainPromise(modeled, handlers, promiseTools(interpreter, context, location), location);
+  }
   if (receiver.kind === "unknown" || receiver.kind === "external") {
-    if (handlers.onFulfilled?.kind === "function")
-      return interpreter.callDeferred(handlers.onFulfilled, [receiver], context);
-    for (const handler of [handlers.onFulfilled, handlers.onRejected, handlers.onFinally]) {
+    if (handlers.onFulfilled)
+      return interpreter.callDeferred(handlers.onFulfilled, [receiver], context, location);
+    for (const handler of [handlers.onRejected, handlers.onFinally]) {
       if (handler) interpreter.markEscaped(handler);
     }
     return receiver;
@@ -1764,15 +1827,22 @@ export const evaluateBuiltinCall = (
   if (callee.kind === "global")
     return callGlobal(interpreter, callee.name, args, context, location, isConstructor);
   const { receiver, name } = callee;
-  const [first, second] = args;
+  const [first, second] = bindCallbackThisArg(name, args);
 
   if (isPromiseMethodName(name))
     return callPromiseMethod(interpreter, receiver, name, args, context, location);
+
+  if (name === "toString" && args.length === 0) {
+    const sourceText = getFunctionSourceText(receiver);
+    if (sourceText !== null) return primitiveValue(sourceText);
+  }
 
   if (receiver.kind === "function") {
     if (name === "bind") {
       return {
         ...receiver,
+        name: `bound ${receiver.name ?? ""}`,
+        properties: new Map(),
         boundThis: receiver.boundThis ?? first ?? UNDEFINED_VALUE,
         boundArgs: [...(receiver.boundArgs ?? []), ...args.slice(1)],
       };
@@ -1796,48 +1866,22 @@ export const evaluateBuiltinCall = (
     const ownProperty = hasOwnProperty(receiver, first, name);
     if (ownProperty) return ownProperty;
   }
-
-  if (name === "toString" && args.length === 0) {
-    const nativeSource = getNativeFunctionSource(receiver);
-    if (nativeSource !== null) return primitiveValue(nativeSource);
+  if (name === "isPrototypeOf" && first !== undefined) {
+    const isOnChain = isPrototypeOf(receiver, first);
+    if (isOnChain !== null) return primitiveValue(isOnChain);
   }
 
-  const listened = callEventTargetMethod(interpreter, receiver, name, args);
+  if (receiver.kind === "global")
+    return callGlobal(interpreter, `${receiver.name}.${name}`, args, context, location, false);
+
+  const listened = callEventTargetMethod(
+    interpreter,
+    interpreter.getRealm(context.environment),
+    receiver,
+    name,
+    args,
+  );
   if (listened) return listened;
-
-  if (receiver.kind === "global") {
-    if ((receiver.name === "window" || receiver.name === "globalThis") && name === "matchMedia")
-      return mediaQueryListValue(first);
-    const hotModuleResult = callHotModuleMethod(receiver, name);
-    if (hotModuleResult) return hotModuleResult;
-    if (isHistoryName(receiver.name)) {
-      const navigated = callHistoryMethod(
-        interpreter.history,
-        interpreter.origin,
-        name,
-        args,
-        location,
-      );
-      if (navigated) return navigated;
-    }
-    if (isCryptoName(receiver.name)) {
-      const random = callCryptoMethod(name, args, location);
-      if (random) return random;
-    }
-    const storageAreaName = getStorageAreaName(receiver.name);
-    if (storageAreaName !== null) {
-      const stored = callStorageMethod(
-        interpreter.storageAreas[storageAreaName],
-        storageAreaName,
-        name,
-        args,
-        location,
-      );
-      if (stored) return stored;
-    }
-    if (FUNCTION_INVOCATION_METHODS.has(name))
-      return callGlobal(interpreter, `${receiver.name}.${name}`, args, context, location, false);
-  }
 
   if (name === "bind" && receiver.kind === "class" && args.length <= 1) return receiver;
 
@@ -1855,20 +1899,24 @@ export const evaluateBuiltinCall = (
     receiver.kind === "native-function" ||
     receiver.kind === "method"
   ) {
-    if (name === "call") return interpreter.callValue(receiver, args.slice(1), context, location);
+    const rebound: StaticValue =
+      receiver.kind === "method" && first !== undefined
+        ? { kind: "method", receiver: first, name: receiver.name }
+        : receiver;
+    if (name === "call") return interpreter.callValue(rebound, args.slice(1), context, location);
     if (name === "apply") {
       return interpreter.callValue(
-        receiver,
+        rebound,
         second?.kind === "list" ? second.items : [unknownValue("apply arguments")],
         context,
         location,
       );
     }
     if (name === "bind") {
-      if (receiver.kind !== "method") return receiver;
+      if (rebound.kind !== "method") return rebound;
       const boundArgs = args.slice(1);
-      return nativeFunction(`bound ${receiver.name}`, (callArgs, tools) =>
-        tools.call(receiver, [...boundArgs, ...callArgs]),
+      return nativeFunction(`bound ${rebound.name}`, (callArgs, tools) =>
+        tools.call(rebound, [...boundArgs, ...callArgs]),
       );
     }
   }
@@ -1890,10 +1938,6 @@ export const evaluateBuiltinCall = (
   if (receiver.kind === "unknown-primitive") {
     const shaped = callShapedPrimitiveMethod(receiver, name, args);
     if (shaped) return shaped;
-  }
-
-  if (receiver.kind === "global" && isEnvironmentObject(receiver.name)) {
-    return unknownPrimitiveValue("string", `${receiver.name} access`);
   }
 
   if (name === "map" && isCallable(first)) return mapList(interpreter, receiver, first, context);
@@ -1934,18 +1978,23 @@ export const evaluateBuiltinCall = (
   }
 
   if (receiver.kind === "list") {
+    const binaryResult = callBinaryMethod(
+      receiver,
+      name,
+      args,
+      () => interpreter.recordHeapMutation(receiver),
+      location,
+    );
+    if (binaryResult) return binaryResult;
     switch (name) {
       case "filter":
         if (isCallable(first) && hasDefiniteItems(receiver)) {
-          const kept: StaticValue[] = [];
-          receiver.items.forEach((item, index) => {
-            const verdict = getTruthiness(
-              callCallback(interpreter, first, [item, primitiveValue(index), receiver], context),
-            );
-            if (verdict === true) kept.push(item);
-            else if (verdict === null) kept.push(optionalValue(item, "uncertain filter"));
-          });
-          return listValue(kept);
+          return listValue(
+            receiver.items.flatMap((item, index) => {
+              const kept = filterItem(interpreter, receiver, first, item, index, context);
+              return kept ? [kept] : [];
+            }),
+          );
         }
         return receiver;
       case "slice": {
@@ -1988,16 +2037,13 @@ export const evaluateBuiltinCall = (
         return listValue(items);
       }
       case "join": {
-        const separator =
-          first === undefined || (first.kind === "primitive" && first.value === undefined)
-            ? ","
-            : first.kind === "primitive"
-              ? String(first.value)
-              : null;
-        if (separator === null || !hasDefiniteItems(receiver)) {
-          return unknownPrimitiveValue("string", "join of dynamic list");
+        if (first === undefined || (first.kind === "primitive" && first.value === undefined)) {
+          return joinListItems(receiver.items, ",", location);
         }
-        return joinStrings(receiver.items, separator);
+        if (first.kind !== "primitive") {
+          return unknownPrimitiveValue("string", "join with a dynamic separator");
+        }
+        return joinListItems(receiver.items, String(first.value), location);
       }
       case "at": {
         if (first?.kind === "primitive" && isKnownList(receiver)) {
@@ -2038,10 +2084,23 @@ export const evaluateBuiltinCall = (
         if (!isCallable(first) || !hasDefiniteItems(receiver)) break;
         const isSome = name === "some";
         const verdicts = testItems(interpreter, receiver, first, context);
-        if (verdicts.some((verdict) => verdict === isSome))
+        if (verdicts.some(({ verdict }) => verdict === isSome))
           return isSome ? TRUE_VALUE : FALSE_VALUE;
-        if (verdicts.every((verdict) => verdict !== null)) return isSome ? FALSE_VALUE : TRUE_VALUE;
-        return unknownPrimitiveValue("boolean", `${name}() with an uncertain predicate`);
+        if (verdicts.every(({ verdict }) => verdict !== null))
+          return isSome ? FALSE_VALUE : TRUE_VALUE;
+        const undecided = verdicts.filter(({ verdict }) => verdict === null);
+        if (undecided.every(({ preference }) => preference === null)) {
+          return unknownPrimitiveValue("boolean", `${name}() with an uncertain predicate`);
+        }
+        const isPreferred = undecided.some(({ preference }) => preference === isSome)
+          ? isSome
+          : !isSome;
+        return branchValue(
+          [TRUE_VALUE, FALSE_VALUE],
+          `${name}() with an uncertain predicate`,
+          location,
+          isPreferred ? 0 : 1,
+        );
       }
       case "find":
       case "findLast":
@@ -2059,12 +2118,24 @@ export const evaluateBuiltinCall = (
           ? verdicts.map((_, index) => verdicts.length - 1 - index)
           : verdicts.map((_, index) => index);
         const candidates: StaticValue[] = [];
+        const preferences: (boolean | null)[] = [];
         for (const index of order) {
-          if (verdicts[index] === false) continue;
+          const { verdict, preference } = verdicts[index];
+          if (verdict === false) continue;
           candidates.push(isIndex ? primitiveValue(index) : receiver.items[index]);
-          if (verdicts[index] === true) return branchValue(candidates, `${name}()`, location);
+          preferences.push(preference);
+          if (verdict === true) break;
         }
-        return branchValue([...candidates, missing], `${name}()`, location);
+        if (preferences.at(-1) !== true) {
+          candidates.push(missing);
+          preferences.push(preferences.every((preference) => preference === false));
+        }
+        return branchValue(
+          candidates,
+          `${name}()`,
+          location,
+          Math.max(0, preferences.indexOf(true)),
+        );
       }
       case "reduce":
       case "reduceRight": {

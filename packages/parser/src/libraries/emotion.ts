@@ -80,7 +80,7 @@ const EMOTION_11: EmotionRuntime = {
 };
 
 const readRuntime = (project: ProjectContext, packageName: string): EmotionRuntime => {
-  const version = project.readInstalledVersion(packageName);
+  const version = project.readPackageVersion(packageName);
   return version !== null && Number(version.split(".")[0]) < FIRST_HOOKS_MAJOR
     ? EMOTION_10
     : EMOTION_11;
