@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { z } from "zod";
 import { renderFramework } from "../frameworks/render-framework.js";
 import { flattenTransparentFibers } from "../frameworks/framework-profile.js";
 import { getFrameworkProfile } from "../frameworks/profiles.js";
@@ -153,11 +154,15 @@ const describeError = (error: unknown): string =>
 const capturePath = (outputDirectory: string, entry: CorpusEntry): string =>
   path.join(outputDirectory, `${entry.id}.capture.json`);
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
-const isStringArray = (value: unknown): value is string[] =>
-  Array.isArray(value) && value.every((item) => typeof item === "string");
+const savedCaptureSchema = z.object({
+  revision: z.string(),
+  commits: z.number(),
+  title: z.string(),
+  pageErrors: z.array(z.string()),
+  snapshot: z.unknown().transform(readSnapshot),
+  observations: z.unknown().optional(),
+  globals: z.unknown().optional(),
+});
 
 // A browser capture saved by an earlier live run; static-only passes replay it so
 // evaluator changes are re-verified against the same runtime tree without a dev server.
@@ -167,22 +172,15 @@ const readSavedCapture = (
 ): BrowserCaptureResult | null => {
   const filePath = capturePath(outputDirectory, entry);
   if (!existsSync(filePath)) return null;
-  const parsed: unknown = JSON.parse(readFileSync(filePath, "utf8"));
-  if (
-    !isRecord(parsed) ||
-    parsed.revision !== entry.revision ||
-    typeof parsed.commits !== "number" ||
-    typeof parsed.title !== "string" ||
-    !isStringArray(parsed.pageErrors)
-  ) {
-    return null;
-  }
+  const parsed = savedCaptureSchema.safeParse(JSON.parse(readFileSync(filePath, "utf8")));
+  if (!parsed.success || parsed.data.revision !== entry.revision) return null;
+  const { snapshot, commits, pageErrors, title, observations, globals } = parsed.data;
   return {
-    snapshot: readSnapshot(parsed.snapshot),
-    commits: parsed.commits,
-    pageErrors: parsed.pageErrors,
-    title: parsed.title,
-    observations: readObservationsJson(parsed.observations ?? { globals: parsed.globals }),
+    snapshot,
+    commits,
+    pageErrors,
+    title,
+    observations: readObservationsJson(observations ?? { globals }),
   };
 };
 

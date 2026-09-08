@@ -2,6 +2,7 @@
 // runtime capture. Keeping this file free of Node imports lets the browser
 // injection bundle reuse it.
 
+import { z } from "zod";
 import type { WorkTagName } from "../work-tags.js";
 
 export type SnapshotWorkTag =
@@ -17,63 +18,7 @@ export type SnapshotWorkTag =
 
 export type SnapshotPropValue = string | number | boolean | null;
 
-export interface RuntimeFiberSnapshot {
-  tag: SnapshotWorkTag;
-  name: string | null;
-  key: string | null;
-  text: string | null;
-  props: Record<string, SnapshotPropValue>;
-  children: RuntimeFiberSnapshot[];
-}
-
-export interface RuntimeSnapshot {
-  reactVersion: string | null;
-  rendererName: string | null;
-  buildType: "development" | "production" | null;
-  roots: RuntimeFiberSnapshot[];
-  capturedAt: string;
-}
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
-const isPropValue = (value: unknown): value is SnapshotPropValue =>
-  value === null ||
-  typeof value === "string" ||
-  typeof value === "number" ||
-  typeof value === "boolean";
-
-const readNullableString = (value: unknown, path: string): string | null => {
-  if (value === null || typeof value === "string") return value;
-  throw new Error(`snapshot ${path}: expected string | null`);
-};
-
-const readFiber = (value: unknown, path: string): RuntimeFiberSnapshot => {
-  if (!isRecord(value)) throw new Error(`snapshot ${path}: expected a fiber object`);
-  if (typeof value.tag !== "string") throw new Error(`snapshot ${path}.tag: expected a string`);
-  if (!isRecord(value.props)) throw new Error(`snapshot ${path}.props: expected an object`);
-  if (!Array.isArray(value.children)) {
-    throw new Error(`snapshot ${path}.children: expected an array`);
-  }
-  const props: Record<string, SnapshotPropValue> = {};
-  for (const [name, prop] of Object.entries(value.props)) {
-    if (!isPropValue(prop)) throw new Error(`snapshot ${path}.props.${name}: unsupported value`);
-    props[name] = prop;
-  }
-  // The recorder writes tag names from the same union; an unfamiliar tag from a
-  // newer React degrades to "Unknown" rather than failing the whole capture.
-  const tag: SnapshotWorkTag = isKnownTag(value.tag) ? value.tag : "Unknown";
-  return {
-    tag,
-    name: readNullableString(value.name, `${path}.name`),
-    key: readNullableString(value.key, `${path}.key`),
-    text: readNullableString(value.text, `${path}.text`),
-    props,
-    children: value.children.map((child, index) => readFiber(child, `${path}.children[${index}]`)),
-  };
-};
-
-const KNOWN_TAGS: ReadonlySet<string> = new Set<SnapshotWorkTag>([
+const snapshotWorkTagSchema = z.enum([
   "FunctionComponent",
   "ClassComponent",
   "HostRoot",
@@ -106,23 +51,50 @@ const KNOWN_TAGS: ReadonlySet<string> = new Set<SnapshotWorkTag>([
   "Unknown",
 ]);
 
-const isKnownTag = (tag: string): tag is SnapshotWorkTag => KNOWN_TAGS.has(tag);
+export interface RuntimeFiberSnapshot {
+  tag: SnapshotWorkTag;
+  name: string | null;
+  key: string | null;
+  text: string | null;
+  props: Record<string, SnapshotPropValue>;
+  children: RuntimeFiberSnapshot[];
+}
+
+export interface RuntimeSnapshot {
+  reactVersion: string | null;
+  rendererName: string | null;
+  buildType: "development" | "production" | null;
+  roots: RuntimeFiberSnapshot[];
+  capturedAt: string;
+}
+
+// The recorder writes tag names from the same union; an unfamiliar tag from a
+// newer React degrades to "Unknown" rather than failing the whole capture.
+const fiberSnapshotSchema: z.ZodType<RuntimeFiberSnapshot> = z.lazy(() =>
+  z.object({
+    tag: z.string().pipe(snapshotWorkTagSchema.catch("Unknown")),
+    name: z.string().nullable(),
+    key: z.string().nullable(),
+    text: z.string().nullable(),
+    props: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])),
+    children: z.array(fiberSnapshotSchema),
+  }),
+);
+
+const snapshotSchema: z.ZodType<RuntimeSnapshot> = z.object({
+  reactVersion: z.string().nullable().default(null),
+  rendererName: z.string().nullable().default(null),
+  buildType: z.enum(["development", "production"]).nullable().catch(null),
+  roots: z.array(fiberSnapshotSchema),
+  capturedAt: z.string().catch(() => new Date().toISOString()),
+});
 
 export const parseSnapshot = (json: string): RuntimeSnapshot => readSnapshot(JSON.parse(json));
 
 export const readSnapshot = (value: unknown): RuntimeSnapshot => {
-  if (!isRecord(value) || !Array.isArray(value.roots)) {
-    throw new Error("snapshot: expected { roots: [...] }");
-  }
-  const buildType =
-    value.buildType === "development" || value.buildType === "production" ? value.buildType : null;
-  return {
-    reactVersion: readNullableString(value.reactVersion ?? null, "reactVersion"),
-    rendererName: readNullableString(value.rendererName ?? null, "rendererName"),
-    buildType,
-    roots: value.roots.map((root, index) => readFiber(root, `roots[${index}]`)),
-    capturedAt: typeof value.capturedAt === "string" ? value.capturedAt : new Date().toISOString(),
-  };
+  const snapshot = snapshotSchema.safeParse(value);
+  if (!snapshot.success) throw new Error(`snapshot: ${z.prettifyError(snapshot.error)}`);
+  return snapshot.data;
 };
 
 export const countSnapshotFibers = (fiber: RuntimeFiberSnapshot): number => {

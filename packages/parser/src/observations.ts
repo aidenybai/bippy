@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type {
   CapturedExportReference,
   CapturedFetcher,
@@ -9,6 +10,7 @@ import type {
   CapturedRouteMatch,
   CapturedRouterState,
   CapturedValue,
+  JsonValue,
   RuntimeObservations,
 } from "./types.js";
 
@@ -38,109 +40,109 @@ export const hashKey = (key: unknown): string =>
       : value,
   );
 
-const isCapturedValue = (value: unknown): value is CapturedValue =>
-  value === null ||
-  typeof value === "string" ||
-  typeof value === "number" ||
-  typeof value === "boolean" ||
-  (Array.isArray(value) && value.every(isCapturedValue)) ||
-  (isRecord(value) && Object.values(value).every(isCapturedValue));
+export const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
+  z.union([
+    z.null(),
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.array(jsonValueSchema),
+    z.record(z.string(), jsonValueSchema),
+  ]),
+);
 
-const isCapturedQuery = (value: unknown): value is CapturedQuery =>
-  isRecord(value) &&
-  typeof value.queryHash === "string" &&
-  (value.status === "pending" || value.status === "error" || value.status === "success") &&
-  (value.fetchStatus === "fetching" ||
-    value.fetchStatus === "paused" ||
-    value.fetchStatus === "idle") &&
-  (value.data === undefined || isCapturedValue(value.data)) &&
-  isCapturedValue(value.error) &&
-  typeof value.dataUpdateCount === "number" &&
-  typeof value.dataUpdatedAt === "number" &&
-  typeof value.errorUpdateCount === "number" &&
-  typeof value.errorUpdatedAt === "number" &&
-  typeof value.fetchFailureCount === "number" &&
-  isCapturedValue(value.fetchFailureReason) &&
-  typeof value.isInvalidated === "boolean" &&
-  typeof value.isStale === "boolean";
+const capturedValueRecordSchema = z.record(z.string(), jsonValueSchema);
 
-const isOptionalCapturedValue = (value: unknown): value is CapturedValue | undefined =>
-  value === undefined || isCapturedValue(value);
+const stringRecordSchema = z.record(z.string(), z.string());
 
-const isCapturedMutation = (value: unknown): value is CapturedMutation =>
-  isRecord(value) &&
-  (value.mutationHash === null || typeof value.mutationHash === "string") &&
-  (value.status === "idle" ||
-    value.status === "pending" ||
-    value.status === "success" ||
-    value.status === "error") &&
-  isOptionalCapturedValue(value.data) &&
-  isCapturedValue(value.error) &&
-  isOptionalCapturedValue(value.variables) &&
-  isOptionalCapturedValue(value.context) &&
-  typeof value.failureCount === "number" &&
-  isCapturedValue(value.failureReason) &&
-  typeof value.isPaused === "boolean" &&
-  typeof value.submittedAt === "number";
+const capturedQuerySchema: z.ZodType<CapturedQuery> = z.object({
+  queryHash: z.string(),
+  status: z.enum(["pending", "error", "success"]),
+  fetchStatus: z.enum(["fetching", "paused", "idle"]),
+  data: jsonValueSchema.optional(),
+  error: jsonValueSchema,
+  dataUpdateCount: z.number(),
+  dataUpdatedAt: z.number(),
+  errorUpdateCount: z.number(),
+  errorUpdatedAt: z.number(),
+  fetchFailureCount: z.number(),
+  fetchFailureReason: jsonValueSchema,
+  isInvalidated: z.boolean(),
+  isStale: z.boolean(),
+});
 
-const isCapturedValueRecord = (value: unknown): value is Record<string, CapturedValue> =>
-  isRecord(value) && Object.values(value).every(isCapturedValue);
+const capturedMutationSchema: z.ZodType<CapturedMutation> = z.object({
+  mutationHash: z.string().nullable(),
+  status: z.enum(["idle", "pending", "success", "error"]),
+  data: jsonValueSchema.optional(),
+  error: jsonValueSchema,
+  variables: jsonValueSchema.optional(),
+  context: jsonValueSchema.optional(),
+  failureCount: z.number(),
+  failureReason: jsonValueSchema,
+  isPaused: z.boolean(),
+  submittedAt: z.number(),
+});
 
-const isStringRecord = (value: unknown): value is Record<string, string> =>
-  isRecord(value) && Object.values(value).every((item) => typeof item === "string");
+const capturedLinguiCatalogSchema: z.ZodType<CapturedLinguiCatalog> = z.object({
+  locale: z.string(),
+  messages: capturedValueRecordSchema,
+});
 
-const isCapturedLinguiCatalog = (value: unknown): value is CapturedLinguiCatalog =>
-  isRecord(value) && typeof value.locale === "string" && isCapturedValueRecord(value.messages);
+const capturedRouteMatchSchema: z.ZodType<CapturedRouteMatch> = z.object({
+  id: z.string(),
+  pathname: z.string(),
+  params: stringRecordSchema,
+});
 
-const isCapturedRouteMatch = (value: unknown): value is CapturedRouteMatch =>
-  isRecord(value) &&
-  typeof value.id === "string" &&
-  typeof value.pathname === "string" &&
-  isStringRecord(value.params);
+export const routerActivityStateSchema = z.enum(["idle", "loading", "submitting"]);
 
-const isOptionalString = (value: unknown): value is string | undefined =>
-  value === undefined || typeof value === "string";
+const capturedFetcherSchema: z.ZodType<CapturedFetcher> = z.object({
+  key: z.string(),
+  state: routerActivityStateSchema,
+  formMethod: z.string().optional(),
+  formAction: z.string().optional(),
+  formEncType: z.string().optional(),
+  data: jsonValueSchema.optional(),
+});
 
-const isCapturedFetcher = (value: unknown): value is CapturedFetcher =>
-  isRecord(value) &&
-  typeof value.key === "string" &&
-  (value.state === "idle" || value.state === "loading" || value.state === "submitting") &&
-  isOptionalString(value.formMethod) &&
-  isOptionalString(value.formAction) &&
-  isOptionalString(value.formEncType) &&
-  isOptionalCapturedValue(value.data);
+const capturedRouterStateSchema: z.ZodType<CapturedRouterState> = z.object({
+  location: z.object({ pathname: z.string(), search: z.string(), hash: z.string() }),
+  matches: z.array(capturedRouteMatchSchema),
+  loaderData: capturedValueRecordSchema,
+  navigationState: routerActivityStateSchema,
+  revalidationState: z.enum(["idle", "loading"]),
+  fetchers: z.array(capturedFetcherSchema).optional(),
+});
 
-const isCapturedRouterState = (value: unknown): value is CapturedRouterState =>
-  isRecord(value) &&
-  (value.fetchers === undefined ||
-    (Array.isArray(value.fetchers) && value.fetchers.every(isCapturedFetcher))) &&
-  isStringRecord(value.location) &&
-  typeof value.location.pathname === "string" &&
-  typeof value.location.search === "string" &&
-  typeof value.location.hash === "string" &&
-  Array.isArray(value.matches) &&
-  value.matches.every(isCapturedRouteMatch) &&
-  isCapturedValueRecord(value.loaderData) &&
-  (value.navigationState === "idle" ||
-    value.navigationState === "loading" ||
-    value.navigationState === "submitting") &&
-  (value.revalidationState === "idle" || value.revalidationState === "loading");
+const capturedRequestSchema: z.ZodType<CapturedRequest> = z.object({
+  headers: stringRecordSchema,
+});
 
-const isCapturedRequest = (value: unknown): value is CapturedRequest =>
-  isRecord(value) && isStringRecord(value.headers);
+const capturedPageStateSchema: z.ZodType<CapturedPageState> = z.object({
+  cookie: z.string(),
+  name: z.string().optional(),
+  historyState: jsonValueSchema.optional(),
+  windowKeys: z.array(z.string()).optional(),
+  userAgent: z.string().optional(),
+  language: z.string().optional(),
+  localStorage: stringRecordSchema,
+  sessionStorage: stringRecordSchema,
+});
 
-const isCapturedPageState = (value: unknown): value is CapturedPageState =>
-  isRecord(value) &&
-  typeof value.cookie === "string" &&
-  (value.name === undefined || typeof value.name === "string") &&
-  isOptionalCapturedValue(value.historyState) &&
-  (value.windowKeys === undefined ||
-    (Array.isArray(value.windowKeys) &&
-      value.windowKeys.every((key) => typeof key === "string"))) &&
-  (value.userAgent === undefined || typeof value.userAgent === "string") &&
-  (value.language === undefined || typeof value.language === "string") &&
-  isStringRecord(value.localStorage) &&
-  isStringRecord(value.sessionStorage);
+/** Every element of `value` that parses; a non-array is no elements. */
+const parseEach = <T>(schema: z.ZodType<T>, value: unknown): T[] =>
+  Array.isArray(value)
+    ? value.flatMap((item) => {
+        const result = schema.safeParse(item);
+        return result.success ? [result.data] : [];
+      })
+    : [];
+
+const parseOptional = <T>(schema: z.ZodType<T>, value: unknown): T | undefined => {
+  const result = schema.safeParse(value);
+  return result.success ? result.data : undefined;
+};
 
 /** Reads observations back from JSON (a page's serialized result or a saved capture), dropping malformed parts. */
 export const readObservationsJson = (value: unknown): RuntimeObservations => {
@@ -148,21 +150,26 @@ export const readObservationsJson = (value: unknown): RuntimeObservations => {
   const globals: Record<string, CapturedValue> = {};
   if (isRecord(value.globals)) {
     for (const [name, item] of Object.entries(value.globals)) {
-      if (isCapturedValue(item)) globals[name] = item;
+      const global = parseOptional(jsonValueSchema, item);
+      if (global !== undefined) globals[name] = global;
     }
   }
   const observations: RuntimeObservations = {
     globals,
-    queries: Array.isArray(value.queries) ? value.queries.filter(isCapturedQuery) : [],
+    queries: parseEach(capturedQuerySchema, value.queries),
   };
   if (Array.isArray(value.mutations)) {
-    observations.mutations = value.mutations.filter(isCapturedMutation);
+    observations.mutations = parseEach(capturedMutationSchema, value.mutations);
   }
-  if (isCapturedLinguiCatalog(value.lingui)) observations.lingui = value.lingui;
-  if (isCapturedRouterState(value.router)) observations.router = value.router;
-  if (Array.isArray(value.stores)) observations.stores = value.stores.filter(isCapturedValue);
-  if (isCapturedPageState(value.page)) observations.page = value.page;
-  if (isCapturedRequest(value.request)) observations.request = value.request;
+  if (Array.isArray(value.stores)) observations.stores = parseEach(jsonValueSchema, value.stores);
+  const lingui = parseOptional(capturedLinguiCatalogSchema, value.lingui);
+  if (lingui) observations.lingui = lingui;
+  const router = parseOptional(capturedRouterStateSchema, value.router);
+  if (router) observations.router = router;
+  const page = parseOptional(capturedPageStateSchema, value.page);
+  if (page) observations.page = page;
+  const request = parseOptional(capturedRequestSchema, value.request);
+  if (request) observations.request = request;
   return observations;
 };
 

@@ -211,8 +211,8 @@
       "id": "epic-stack",
       "revision": "8473afd804b66dba6a23f317908dc35d1535e90d",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T06:27:18.659Z",
-      "durationMs": 15881,
+      "capturedAt": "2026-09-08T07:14:17.752Z",
+      "durationMs": 16528,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",

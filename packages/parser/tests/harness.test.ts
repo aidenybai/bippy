@@ -7,6 +7,7 @@ import {
 import {
   comparePatternToRuntime,
   type PatternFiber,
+  readSnapshot,
   type RuntimeFiberSnapshot,
   type RuntimeSnapshot,
   type SnapshotWorkTag,
@@ -37,6 +38,27 @@ const snapshot = (roots: RuntimeFiberSnapshot[]): RuntimeSnapshot => ({
 
 const names = (fibers: RuntimeFiberSnapshot[]): unknown[] =>
   fibers.map((child) => [child.name, names(child.children)]);
+
+describe("snapshot reading", () => {
+  it("fills absent metadata and degrades unfamiliar tags to Unknown", () => {
+    const root = { ...fiber("App", [fiber("Leaf")]), tag: "FutureComponent" };
+    const read = readSnapshot({ roots: [root], buildType: "staging" });
+    expect(read.roots[0]?.tag).toBe("Unknown");
+    expect(read.roots[0]?.children[0]?.tag).toBe("FunctionComponent");
+    expect(read.reactVersion).toBeNull();
+    expect(read.buildType).toBeNull();
+    expect(typeof read.capturedAt).toBe("string");
+  });
+
+  it("rejects malformed fibers with their path", () => {
+    const leaf: unknown = { ...fiber("Leaf"), props: { onClick: {} } };
+    expect(() => readSnapshot({ roots: [{ ...fiber("App"), children: [leaf] }] })).toThrow(
+      /roots\[0\]\.children\[0\]\.props/,
+    );
+    expect(() => readSnapshot({ roots: [{ ...fiber("App"), tag: 3 }] })).toThrow(/roots\[0\]\.tag/);
+    expect(() => readSnapshot({})).toThrow(/roots/);
+  });
+});
 
 describe("fiber comparison", () => {
   it("matches a component the bundler renamed to avoid a scope collision", () => {
