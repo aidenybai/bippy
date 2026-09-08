@@ -9,6 +9,8 @@ export const createFunctionComponentDefinition = (
   scope: value.scope,
   classBody: null,
   properties: value.properties,
+  boundArgs: value.boundArgs,
+  boundThis: value.boundThis,
 });
 
 export const createClassComponentDefinition = (

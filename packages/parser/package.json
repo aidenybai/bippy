@@ -25,6 +25,7 @@
     "oxc-parser": "^0.148.0",
     "oxc-resolver": "^11.24.2",
     "playwright": "^1.63.0",
+    "tinyglobby": "0.2.17",
     "zod": "^4.4.3"
   },
   "devDependencies": {

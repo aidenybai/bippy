@@ -35,6 +35,8 @@ export interface CorpusStaticTarget {
   envFiles?: string[];
   /** Interpreter step budget; large pages with many commits need more than the default. */
   maxSteps?: number;
+  /** Bundler prefix of the variables the client bundle inlines (Vite `envPrefix`); defaults to the framework's. */
+  envPrefix?: string;
   maxFiberCount?: number;
   maxComponentDepth?: number;
 }
@@ -121,6 +123,7 @@ const staticTargetSchema: z.ZodType<CorpusStaticTarget> = z.object({
   globals: jsonRecordSchema.optional(),
   defines: jsonRecordSchema.optional(),
   envFiles: z.array(z.string()).optional(),
+  envPrefix: z.string().optional(),
   maxSteps: z.number().optional(),
   maxFiberCount: z.number().optional(),
   maxComponentDepth: z.number().optional(),

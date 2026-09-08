@@ -4,20 +4,34 @@
       "id": "actual",
       "repository": "https://github.com/actualbudget/actual",
       "revision": "8867158f0a2e101467fb191c9e253f47c75a9e2d",
-      "description": "Actual Budget desktop client (Vite SPA, React Compiler, Yarn 4 workspaces)",
-      "framework": "spa",
+      "description": "Actual Budget desktop client (Vite SPA with a react-router BrowserRouter, React Compiler, Yarn 4 workspaces)",
+      "framework": "react-router",
       "workingDirectory": "packages/desktop-client",
       "install": "yarn install",
       "dev": "yarn start:browser",
+      "env": { "REACT_APP_BACKEND_WORKER_HASH": "dev" },
       "url": "http://localhost:3001/",
       "readyTimeoutMs": 900000,
       "settleMs": 8000,
       "static": {
         "rootDirectory": "packages/desktop-client",
         "entry": "src/index.tsx",
+        "externalPackageAllowList": [
+          "react-redux",
+          "@actual-app/*",
+          "react-error-boundary",
+          "@tanstack/react-query",
+          "react-hotkeys-hook",
+          "react-dnd",
+          "dnd-core",
+          "react-aria-components",
+          "react-aria"
+        ],
+        "envFiles": [],
+        "envPrefix": "REACT_APP_",
         "maxFiberCount": 20000
       },
-      "notes": "start:browser builds loot-core for the browser before serving; the first render is the budget-file picker."
+      "notes": "start:browser builds loot-core for the browser before serving; the first render is the budget-file picker. desktop-client's vite config sets `envPrefix: 'REACT_APP_'` and the workspace has no dotenv files, so only the manifest env reaches the client bundle; the config itself sets `REACT_APP_BACKEND_WORKER_HASH` to `dev` when serving."
     },
     {
       "id": "bulletproof-react",
@@ -523,6 +537,7 @@
         "rootDirectory": "apps/examples",
         "entry": "src/index.tsx",
         "route": "/",
+        "externalPackageAllowList": ["tldraw", "@tldraw/*"],
         "maxFiberCount": 20000
       }
     },

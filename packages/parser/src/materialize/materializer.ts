@@ -283,22 +283,29 @@ const isClassNode = (node: ComponentDefinition["node"]): node is Class =>
 
 /**
  * A component's React identity is its closure: the same function node evaluated
- * in two scopes (e.g. a HOC applied twice) yields two distinct component types.
+ * in two scopes (e.g. a HOC applied twice) yields two distinct component types,
+ * as does each `bind` of the same function.
  */
+const getComponentIdentity = (component: ComponentDefinition): Scope | StaticValue[] =>
+  component.boundArgs ?? component.scope;
+
 class ComponentCache<T> {
-  private readonly byNode = new WeakMap<ComponentDefinition["node"], WeakMap<Scope, T>>();
+  private readonly byNode = new WeakMap<
+    ComponentDefinition["node"],
+    WeakMap<Scope | StaticValue[], T>
+  >();
 
   get(component: ComponentDefinition): T | undefined {
-    return this.byNode.get(component.node)?.get(component.scope);
+    return this.byNode.get(component.node)?.get(getComponentIdentity(component));
   }
 
   set(component: ComponentDefinition, value: T): void {
-    let byScope = this.byNode.get(component.node);
-    if (!byScope) {
-      byScope = new WeakMap();
-      this.byNode.set(component.node, byScope);
+    let byIdentity = this.byNode.get(component.node);
+    if (!byIdentity) {
+      byIdentity = new WeakMap();
+      this.byNode.set(component.node, byIdentity);
     }
-    byScope.set(component.scope, value);
+    byIdentity.set(getComponentIdentity(component), value);
   }
 }
 
@@ -361,6 +368,8 @@ const toFunctionValue = (component: ComponentDefinition): StaticFunctionValue =>
     superBinding: null,
     name: component.name,
     properties: component.properties,
+    boundArgs: component.boundArgs,
+    boundThis: component.boundThis,
   };
 };
 

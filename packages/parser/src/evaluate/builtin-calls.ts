@@ -33,6 +33,7 @@ import { createErrorValue, ERROR_CONSTRUCTOR_NAMES, isErrorConstructorName } fro
 import { nativeFunction } from "../frameworks/stubs.js";
 import { constructNativeObject, isNativeConstructorName } from "./native-values.js";
 import { constructFunctionFromSource } from "./function-constructor.js";
+import { callImportMetaGlob } from "./import-glob.js";
 import { callEventTargetMethod } from "./event-listeners.js";
 import { hasProperty, isIntrinsicFunctionKey } from "./has-property.js";
 import {
@@ -861,6 +862,7 @@ const callGlobal = (
     : callInvokedGlobal(interpreter, name, args, context, location);
   if (invoked) return invoked;
   if (isErrorConstructorName(name)) return createErrorValue(name, args, location);
+  if (name === "import.meta.glob") return callImportMetaGlob(interpreter, args, context, location);
   if (isStringCodecName(name)) return callStringCodec(name, args, location);
   if (name === "Buffer.from") return createBufferValue(args, location);
   if (name === "Buffer.byteLength") return getBufferByteLength(args);
@@ -1739,6 +1741,8 @@ export const evaluateBuiltinCall = (
     if (name === "bind") {
       return {
         ...receiver,
+        name: `bound ${receiver.name ?? ""}`,
+        properties: new Map(),
         boundThis: receiver.boundThis ?? first ?? UNDEFINED_VALUE,
         boundArgs: [...(receiver.boundArgs ?? []), ...args.slice(1)],
       };

@@ -63,7 +63,7 @@ interface ResolverPair {
 export class ModuleResolver {
   private readonly resolvers: Record<ImporterKind, ResolverPair>;
   private readonly cache = new Map<string, ModuleResolution>();
-  private readonly rootDirectory: string | null;
+  readonly rootDirectory: string | null;
 
   constructor(options: ModuleResolverOptions = {}) {
     this.rootDirectory = options.rootDirectory ? path.resolve(options.rootDirectory) : null;

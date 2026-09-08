@@ -9,6 +9,7 @@ import type {
   ResolvedSymbol,
 } from "../types.js";
 import { isModeledLibraryExport, isModeledLibraryPackage } from "../libraries/index.js";
+import { readAssetModuleSource } from "./asset-modules.js";
 import { isCompilerHelperPackage } from "./helper-packages.js";
 import { createModuleRecord } from "./module-record.js";
 import { ModuleResolver } from "./module-resolver.js";
@@ -94,21 +95,34 @@ export class ModuleGraph {
     specifier: string,
     fromModule: ModuleRecord,
   ): ModuleRecord | ModuleResolution {
-    return this.getResolvedModule(this.resolveSpecifier(specifier, fromModule));
+    return this.getResolvedModule(this.resolveSpecifier(specifier, fromModule), specifier);
   }
 
-  private getResolvedModule(resolution: ModuleResolution): ModuleRecord | ModuleResolution {
-    if (resolution.kind === "internal") {
-      return this.getModule(resolution.filePath) ?? resolution;
+  private getResolvedModule(
+    resolution: ModuleResolution,
+    specifier: string,
+  ): ModuleRecord | ModuleResolution {
+    if (resolution.kind !== "internal" && resolution.kind !== "external") return resolution;
+    if (resolution.filePath === null) return resolution;
+    const assetModule = this.getAssetModule(resolution.filePath, specifier);
+    if (assetModule) return assetModule;
+    if (resolution.kind === "external" && !this.shouldAnalyzePackage(resolution.packageName)) {
+      return resolution;
     }
-    if (
-      resolution.kind === "external" &&
-      resolution.filePath &&
-      this.shouldAnalyzePackage(resolution.packageName)
-    ) {
-      return this.getModule(resolution.filePath) ?? resolution;
-    }
-    return resolution;
+    return this.getModule(resolution.filePath) ?? resolution;
+  }
+
+  private getAssetModule(filePath: string, specifier: string): ModuleRecord | null {
+    if (!specifier.includes("?")) return null;
+    const source = readAssetModuleSource(filePath, specifier);
+    if (!source) return null;
+    const cached = this.modules.get(source.moduleKey);
+    if (cached) return cached;
+    const record = createModuleRecord(
+      this.sourceFileCache.readVirtual(source.moduleKey, source.sourceText, "js"),
+    );
+    this.modules.set(source.moduleKey, record);
+    return record;
   }
 
   resolveImport(binding: ImportBinding, fromModule: ModuleRecord): ResolvedSymbol {
@@ -175,7 +189,7 @@ export class ModuleGraph {
     ) {
       return { kind: "external", packageName: resolution.packageName, imported, specifier };
     }
-    const target = this.getResolvedModule(resolution);
+    const target = this.getResolvedModule(resolution, specifier);
     if (isModuleRecord(target)) {
       if (imported.kind === "namespace") return { kind: "namespace", module: target };
       return this.resolveExportWithVisited(target, describeImportedName(imported), visited);
