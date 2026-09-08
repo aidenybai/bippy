@@ -34,6 +34,7 @@
         ]
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 203,
         "matchedText": 10,
         "opaqueSubtrees": 12,
@@ -68,9 +69,7 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 232,
         "staticFibers": 235,
         "coverage": 1,
@@ -79,6 +78,7 @@
         "stepsUsed": 234,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": null,
       "failure": null
@@ -87,8 +87,8 @@
       "id": "bulletproof-react",
       "revision": "9506629ed003a561c6627735480cce4994244bb4",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T03:55:39.289Z",
-      "durationMs": 233,
+      "capturedAt": "2026-09-08T23:06:24.187Z",
+      "durationMs": 583,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -101,7 +101,7 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 48,
+          "fiberCount": 49,
           "textCount": 0,
           "branchCount": 0,
           "repeatCount": 0,
@@ -123,7 +123,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 46,
@@ -134,6 +133,15 @@
         "stepsUsed": 46,
         "budgetExhausted": false
       },
+      "stateSpace": {
+        "states": 1,
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null
+      },
       "anchor": null,
       "note": "runtime replayed from 2026-09-07T23:12:07.223Z",
       "failure": null
@@ -142,8 +150,8 @@
       "id": "cal-diy",
       "revision": "abffde336e744e15cf69626c10e436d6172bc406",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T03:55:39.523Z",
-      "durationMs": 927,
+      "capturedAt": "2026-09-08T23:06:24.781Z",
+      "durationMs": 1220,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
@@ -162,7 +170,7 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 1,
-          "modulesLoaded": 2133
+          "modulesLoaded": 2137
         },
         "diagnostics": []
       },
@@ -178,9 +186,8 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 1,
-        "branchDeviations": [],
         "repeatIterations": 0,
-        "status": "partial",
+        "status": "exact",
         "runtimeFibers": 938,
         "staticFibers": 938,
         "coverage": 1,
@@ -188,6 +195,29 @@
         "divergence": null,
         "stepsUsed": 939,
         "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 6,
+        "matchedState": {
+          "index": 5,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 2,
+              "commitCount": 3
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#1",
+              "reason": "unknown(redirect() interrupts rendering with a control-flow throw) may be thrown",
+              "location": "/home/ubuntu/bippy-corpus/cal-diy/apps/web/app/(use-page-wrapper)/auth/login/page.tsx:26:3",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null
       },
       "anchor": "body",
       "note": "runtime replayed from 2026-09-07T11:40:39.987Z",
@@ -227,6 +257,7 @@
         ]
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 162,
         "matchedText": 0,
         "opaqueSubtrees": 1,
@@ -249,65 +280,7 @@
           }
         ],
         "branchesResolved": 12,
-        "branchDeviations": [
-          {
-            "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent] > <CopilotKitInspector> [FunctionComponent]",
-            "reason": "if (<boolean: negation of unknown>)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent] > <CopilotKitInspector> [FunctionComponent][0]",
-              "expected": "<end of children>",
-              "actual": "<WebInspectorElement> [ForwardRef]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent]",
-            "reason": "&& on branch(true | false)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent][4]",
-              "expected": "<LicenseWarningBanner> [FunctionComponent]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent]",
-            "reason": "&& on <boolean: === on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent][4]",
-              "expected": "<LicenseWarningBanner> [FunctionComponent]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent]",
-            "reason": "&& on <boolean: === on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent][4]",
-              "expected": "<LicenseWarningBanner> [FunctionComponent]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent]",
-            "reason": "&& on <boolean: === on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent][4]",
-              "expected": "<LicenseWarningBanner> [FunctionComponent]",
-              "actual": "<end of children>"
-            }
-          }
-        ],
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 179,
         "staticFibers": 264,
         "coverage": 1,
@@ -316,6 +289,7 @@
         "stepsUsed": 735,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": "body",
       "note": "runtime replayed from 2026-09-08T08:02:55.873Z",
       "failure": null
@@ -340,6 +314,7 @@
         "diagnostics": []
       },
       "report": null,
+      "stateSpace": null,
       "anchor": null,
       "note": "static only",
       "failure": null
@@ -667,8 +642,8 @@
       "id": "documenso",
       "revision": "2cac63a000e22422bdea449f68b8025e709aa73a",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T03:56:00.489Z",
-      "durationMs": 645,
+      "capturedAt": "2026-09-08T23:06:49.414Z",
+      "durationMs": 635,
       "runtime": {
         "reactVersion": "19.2.8",
         "rendererName": "react-dom",
@@ -681,19 +656,15 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 204,
+          "fiberCount": 207,
           "textCount": 8,
           "branchCount": 0,
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 1905
+          "modulesLoaded": 1904
         },
         "diagnostics": [
-          {
-            "code": "unsettled-state",
-            "count": 2
-          },
           {
             "code": "dynamic-key",
             "count": 1
@@ -716,7 +687,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 203,
@@ -727,16 +697,31 @@
         "stepsUsed": 203,
         "budgetExhausted": false
       },
+      "stateSpace": {
+        "states": 2,
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null
+      },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-07T00:50:55.867Z",
+      "note": "runtime replayed from 2026-09-08T11:49:10.139Z",
       "failure": null
     },
     {
       "id": "epic-stack",
       "revision": "8473afd804b66dba6a23f317908dc35d1535e90d",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T07:14:17.752Z",
-      "durationMs": 16528,
+      "capturedAt": "2026-09-08T23:06:26.005Z",
+      "durationMs": 559,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -749,7 +734,7 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 695,
+          "fiberCount": 697,
           "textCount": 4,
           "branchCount": 0,
           "repeatCount": 0,
@@ -776,7 +761,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 693,
@@ -787,8 +771,17 @@
         "stepsUsed": 693,
         "budgetExhausted": false
       },
+      "stateSpace": {
+        "states": 1,
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null
+      },
       "anchor": null,
-      "note": null,
+      "note": "runtime replayed from 2026-09-08T11:48:29.216Z",
       "failure": null
     },
     {
@@ -824,6 +817,7 @@
         ]
       },
       "report": null,
+      "stateSpace": null,
       "anchor": null,
       "note": "static only",
       "failure": null
@@ -857,6 +851,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 74,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -868,21 +863,7 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 2,
-        "branchDeviations": [
-          {
-            "path": "root > <body> [HostSingleton] > <SentryProvider> [FunctionComponent] > <I18nProvider> [FunctionComponent]",
-            "reason": "if (branch(true | <boolean>))",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <SentryProvider> [FunctionComponent] > <I18nProvider> [FunctionComponent][0]",
-              "expected": "<end of children>",
-              "actual": "<I18nextProvider> [FunctionComponent]"
-            }
-          }
-        ],
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 74,
         "staticFibers": 74,
         "coverage": 1,
@@ -891,6 +872,7 @@
         "stepsUsed": 79,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": "body",
       "note": "runtime replayed from 2026-09-08T11:34:51.280Z",
       "failure": null
@@ -937,6 +919,7 @@
         ]
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 4,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -957,9 +940,7 @@
           }
         ],
         "branchesResolved": 1,
-        "branchDeviations": [],
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 14,
         "staticFibers": 4,
         "coverage": 1,
@@ -968,6 +949,7 @@
         "stepsUsed": 7,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T07:24:29.116Z",
       "failure": null
@@ -976,8 +958,8 @@
       "id": "graphiql",
       "revision": "fd32cea3e191eb6eb41b785e157403308d787b12",
       "framework": "spa",
-      "capturedAt": "2026-09-08T03:55:45.495Z",
-      "durationMs": 703,
+      "capturedAt": "2026-09-08T23:06:26.569Z",
+      "durationMs": 1826,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -998,7 +980,16 @@
           "unknownCount": 0,
           "modulesLoaded": 544
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "max-call-depth",
+            "count": 2
+          },
+          {
+            "code": "timers-unsettled",
+            "count": 1
+          }
+        ]
       },
       "report": {
         "matchedFibers": 376,
@@ -1012,9 +1003,8 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 1,
-        "branchDeviations": [],
         "repeatIterations": 0,
-        "status": "partial",
+        "status": "exact",
         "runtimeFibers": 378,
         "staticFibers": 405,
         "coverage": 1,
@@ -1022,6 +1012,29 @@
         "divergence": null,
         "stepsUsed": 379,
         "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 6,
+        "matchedState": {
+          "index": 5,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 3,
+              "commitCount": 4
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(5094)",
+              "reason": "conditional on branch(true | undefined)",
+              "location": "/home/ubuntu/bippy-corpus/graphiql/packages/graphiql-react/dist/components/execute-button/index.js:68:10",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T03:45:17.260Z",
@@ -1031,15 +1044,15 @@
       "id": "invoify",
       "revision": "3859b3cbae28ca4ec559db5ef87e41b798740340",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T10:06:34.010Z",
-      "durationMs": 20085,
+      "capturedAt": "2026-09-08T23:06:28.398Z",
+      "durationMs": 1715,
       "runtime": {
         "reactVersion": "19.2.0-canary-3fbfb9ba-20250409",
         "rendererName": "react-dom",
         "buildType": "development",
         "roots": 1,
         "fibers": 1439,
-        "commits": 27,
+        "commits": 25,
         "pageErrors": [
           "Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <Home>\n      <main className=\"container ...\">\n        <WizardProvider>\n          <InvoiceMain>\n            <FormProvider control={{...}} subscribe={function subscribe} trigger={function trigger} ...>\n              <form onSubmit={function}>\n                <div className=\"grid grid-...\">\n                  <InvoiceForm>\n                    <div className=\"@container...\">\n                      <div className=\"mx-auto ma...\">\n                        <div className=\"mb-4 flex ...\">\n                          <AutosaveIndicator>\n                          <span\n+                           className=\"text-sm font-medium text-muted-foreground\"\n-                           className=\"flex items-center gap-1.5 text-xs text-muted-foreground\"\n                          >\n+                           New Invoice\n-                           Saved · just now\n                        ...\n                  ...\n                ...\n      ...\n    ...\n"
         ],
@@ -1053,7 +1066,7 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 1451
+          "modulesLoaded": 1452
         },
         "diagnostics": []
       },
@@ -1069,7 +1082,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 1144,
@@ -1080,8 +1092,23 @@
         "stepsUsed": 1144,
         "budgetExhausted": false
       },
+      "stateSpace": {
+        "states": 6,
+        "matchedState": {
+          "index": 5,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 5,
+              "commitCount": 6
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null
+      },
       "anchor": "body",
-      "note": null,
+      "note": "runtime replayed from 2026-09-08T11:14:21.196Z",
       "failure": null
     },
     {
@@ -1115,6 +1142,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 82,
         "matchedText": 2,
         "opaqueSubtrees": 0,
@@ -1126,54 +1154,7 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 5,
-        "branchDeviations": [
-          {
-            "path": "root > <body> [HostSingleton] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <Providers> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <CustomI18nextProvider> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent]",
-            "reason": "&& on branch(<boolean> | undefined)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <Providers> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <CustomI18nextProvider> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent][0]",
-              "expected": "<OAuthAutoRedirect> [FunctionComponent]",
-              "actual": "<div> [HostComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <Providers> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <CustomI18nextProvider> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent]",
-            "reason": "&& on zod#z.object().transform().parse().demoMode",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <Providers> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <CustomI18nextProvider> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent][0]",
-              "expected": "<div> [HostComponent]",
-              "actual": "<CredentialsForm> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <Providers> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <CustomI18nextProvider> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <CredentialsForm> [FunctionComponent]",
-            "reason": "if (zod#z.object().transform().parse().auth.disablePasswordAuth)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <Providers> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <CustomI18nextProvider> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <CredentialsForm> [FunctionComponent] > <div> [HostComponent][0]",
-              "expected": "<Alert> [ForwardRef]",
-              "actual": "<FormProvider> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <Providers> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <CustomI18nextProvider> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent]",
-            "reason": "&& on branch(<boolean> | undefined)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <Providers> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <CustomI18nextProvider> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent][1]",
-              "expected": "<div> [HostComponent]",
-              "actual": "<end of children>"
-            }
-          }
-        ],
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 84,
         "staticFibers": 104,
         "coverage": 1,
@@ -1182,6 +1163,7 @@
         "stepsUsed": 94,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": "body",
       "note": "runtime replayed from 2026-09-08T11:35:21.672Z",
       "failure": null
@@ -1222,6 +1204,7 @@
         ]
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 134,
         "matchedText": 14,
         "opaqueSubtrees": 7,
@@ -1250,76 +1233,7 @@
           }
         ],
         "branchesResolved": 15,
-        "branchDeviations": [
-          {
-            "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent]",
-            "reason": "if (branch(true | false))",
-            "preferredIndex": 0,
-            "chosenIndex": 3,
-            "divergence": {
-              "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent][0]",
-              "expected": "<LoadingLayout> [FunctionComponent]",
-              "actual": "<UnauthenticatedLayout> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent]",
-            "reason": "if (<boolean: negation of unknown>)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent][0]",
-              "expected": "<end of children>",
-              "actual": "<div> [HostComponent]"
-            }
-          },
-          {
-            "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectTrigger> [ForwardRef] > <SelectTrigger> [ForwardRef] > <PopperAnchor> [ForwardRef] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <button> [HostComponent] > <SelectIcon> [ForwardRef] > <Primitive.span> [ForwardRef] > <Primitive.span.Slot> [ForwardRef]",
-            "reason": "if (branch(<ChevronDown> | undefined))",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectTrigger> [ForwardRef] > <SelectTrigger> [ForwardRef] > <PopperAnchor> [ForwardRef] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <button> [HostComponent] > <SelectIcon> [ForwardRef] > <Primitive.span> [ForwardRef] > <Primitive.span.Slot> [ForwardRef] > <Primitive.span.SlotClone> [ForwardRef][0]",
-              "expected": "<end of children>",
-              "actual": "<ChevronDown> [ForwardRef]"
-            }
-          },
-          {
-            "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectContent> [ForwardRef] > <SelectPortal> [FunctionComponent] > <Portal> [ForwardRef] > <Portal> [HostPortal] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <SelectContent> [ForwardRef] > <Portal> [HostPortal] > <SelectContentProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionSlot> [ForwardRef] > <SelectCollectionSlot.Slot> [ForwardRef] > <SelectCollectionSlot.SlotClone> [ForwardRef] > <div> [HostComponent] > <SelectViewport> [ForwardRef] > <SelectCollectionSlot> [ForwardRef] > <SelectCollectionSlot.Slot> [ForwardRef] > <SelectCollectionSlot.SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent]",
-            "reason": "if (<boolean: negation of unknown>)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectContent> [ForwardRef] > <SelectPortal> [FunctionComponent] > <Portal> [ForwardRef] > <Portal> [HostPortal] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <SelectContent> [ForwardRef] > <Portal> [HostPortal] > <SelectContentProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionSlot> [ForwardRef] > <SelectCollectionSlot.Slot> [ForwardRef] > <SelectCollectionSlot.SlotClone> [ForwardRef] > <div> [HostComponent] > <SelectViewport> [ForwardRef] > <SelectCollectionSlot> [ForwardRef] > <SelectCollectionSlot.Slot> [ForwardRef] > <SelectCollectionSlot.SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent][0]",
-              "expected": "<SelectItem> key=\"STAGING\" [ForwardRef]",
-              "actual": "<SelectItem> key=\"DEV\" [ForwardRef]"
-            }
-          },
-          {
-            "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent]",
-            "reason": "&& on <boolean: === on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent][2]",
-              "expected": "<div> [HostComponent]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SSOButtons> [FunctionComponent]",
-            "reason": "conditional on unknown(call of Object.entries of unknown(property \"authProviders\" may come from a spread of unknown(rest of unknown(pageProps come from data fetching at request time))))",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SSOButtons> [FunctionComponent][0]",
-              "expected": "<div> [HostComponent]",
-              "actual": "<end of children>"
-            }
-          }
-        ],
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 235,
         "staticFibers": 321,
         "coverage": 1,
@@ -1328,6 +1242,7 @@
         "stepsUsed": 199,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T11:36:20.884Z",
       "failure": null
@@ -1336,8 +1251,8 @@
       "id": "lexical",
       "revision": "c3b629dcf6b5111811bb9ca5a3db0665099b2856",
       "framework": "spa",
-      "capturedAt": "2026-09-08T03:55:46.807Z",
-      "durationMs": 2665,
+      "capturedAt": "2026-09-08T23:06:30.122Z",
+      "durationMs": 3220,
       "runtime": {
         "reactVersion": "19.2.5",
         "rendererName": "react-dom",
@@ -1356,11 +1271,15 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 1059
+          "modulesLoaded": 1077
         },
         "diagnostics": [
           {
             "code": "dynamic-props",
+            "count": 1
+          },
+          {
+            "code": "timers-unsettled",
             "count": 1
           }
         ]
@@ -1377,7 +1296,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 225,
@@ -1387,6 +1305,21 @@
         "divergence": null,
         "stepsUsed": 225,
         "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 3,
+        "matchedState": {
+          "index": 2,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 2,
+              "commitCount": 3
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-07T23:03:03.725Z",
@@ -1436,6 +1369,7 @@
         ]
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 54,
         "matchedText": 0,
         "opaqueSubtrees": 1,
@@ -1475,65 +1409,7 @@
           }
         ],
         "branchesResolved": 16,
-        "branchDeviations": [
-          {
-            "path": "root > <AppWithTranslation> [FunctionComponent]",
-            "reason": "branch(unknown | unknown | unknown | unknown | unknown) may be thrown",
-            "preferredIndex": 1,
-            "chosenIndex": 0,
-            "divergence": {
-              "path": "root > <AppWithTranslation> [FunctionComponent][0]",
-              "expected": "<App> [FunctionComponent]",
-              "actual": "<I18nextProvider> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent]",
-            "reason": "if (branch(false | undefined))",
-            "preferredIndex": 1,
-            "chosenIndex": 0,
-            "divergence": {
-              "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent][0]",
-              "expected": "<end of children>",
-              "actual": "<Ie> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent] > <Login> [FunctionComponent] > <CenteredForm> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <form> [HostComponent] > <div> [HostComponent] > <div> [HostComponent]",
-            "reason": "&& on <boolean: === on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent] > <Login> [FunctionComponent] > <CenteredForm> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <form> [HostComponent] > <div> [HostComponent] > <div> [HostComponent][2]",
-              "expected": "<div> [HostComponent]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent] > <Login> [FunctionComponent] > <CenteredForm> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <form> [HostComponent] > <div> [HostComponent]",
-            "reason": "&& on <boolean: > on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent] > <Login> [FunctionComponent] > <CenteredForm> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <form> [HostComponent] > <div> [HostComponent] > <div> [HostComponent][0]",
-              "expected": "<Separator> [ForwardRef]",
-              "actual": "<p> [HostComponent]"
-            }
-          },
-          {
-            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent] > <Login> [FunctionComponent] > <CenteredForm> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <InstallApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <p> [HostComponent] > <Trans> [FunctionComponent]",
-            "reason": "if (branch(<boolean> | true))",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent] > <Login> [FunctionComponent] > <CenteredForm> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <InstallApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <p> [HostComponent] > <Trans> [FunctionComponent][0]",
-              "expected": "<end of children>",
-              "actual": "\"Install Linkwarden to your home screen for a faster access and enhanced experience. \""
-            }
-          }
-        ],
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 66,
         "staticFibers": 68,
         "coverage": 1,
@@ -1542,6 +1418,7 @@
         "stepsUsed": 137,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T11:35:38.607Z",
       "failure": null
@@ -1611,7 +1488,6 @@
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "branchDeviations": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
@@ -1624,6 +1500,7 @@
         "stepsUsed": 0,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "React failed to render the materialized tree; runtime replayed from 2026-09-08T07:20:29.476Z",
       "failure": null
@@ -1946,15 +1823,15 @@
       "id": "nextjs-boilerplate",
       "revision": "1dffa39a32450300c8b01d8cfd3819f9b6e95842",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T10:06:59.352Z",
-      "durationMs": 11658,
+      "capturedAt": "2026-09-08T23:06:33.344Z",
+      "durationMs": 118,
       "runtime": {
         "reactVersion": "19.3.0-canary-cbb046ab-20260731",
         "rendererName": "react-dom",
         "buildType": "production",
         "roots": 2,
         "fibers": 353,
-        "commits": 10,
+        "commits": 11,
         "pageErrors": [],
         "title": "Next.js Boilerplate Presentation"
       },
@@ -1982,7 +1859,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 162,
@@ -1993,16 +1869,25 @@
         "stepsUsed": 162,
         "budgetExhausted": false
       },
+      "stateSpace": {
+        "states": 1,
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null
+      },
       "anchor": "body",
-      "note": null,
+      "note": "runtime replayed from 2026-09-08T11:14:34.649Z",
       "failure": null
     },
     {
       "id": "nextjs-examples",
       "revision": "4fed8eaf197aaa60fd85371352482199a4c2107f",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T03:55:49.539Z",
-      "durationMs": 131,
+      "capturedAt": "2026-09-08T23:06:33.464Z",
+      "durationMs": 141,
       "runtime": {
         "reactVersion": "19.3.0-canary-cbb046ab-20260731",
         "rendererName": "react-dom",
@@ -2037,7 +1922,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 83,
@@ -2047,6 +1931,15 @@
         "divergence": null,
         "stepsUsed": 83,
         "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null
       },
       "anchor": "body",
       "note": "runtime replayed from 2026-09-06T04:55:26.311Z",
@@ -2090,7 +1983,6 @@
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "branchDeviations": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
@@ -2103,6 +1995,7 @@
         "stepsUsed": 0,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "static render did not resolve to a component tree; runtime replayed from 2026-09-08T07:50:14.781Z",
       "failure": null
@@ -2164,6 +2057,7 @@
         ]
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 1,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -2184,9 +2078,7 @@
           }
         ],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 1961,
         "staticFibers": 1,
         "coverage": 1,
@@ -2195,6 +2087,7 @@
         "stepsUsed": 2,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T07:23:05.031Z",
       "failure": null
@@ -2243,6 +2136,7 @@
         ]
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 170,
         "matchedText": 7,
         "opaqueSubtrees": 0,
@@ -2263,43 +2157,7 @@
           }
         ],
         "branchesResolved": 3,
-        "branchDeviations": [
-          {
-            "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Navigation> [FunctionComponent] > <div> [HostComponent] > <nav> [HostComponent] > <HelpModal> [FunctionComponent] > <$e> [ForwardRef] > <j> [FunctionComponent] > <ContextProvider> [ContextProvider]",
-            "reason": "&& on branch(true | <boolean>)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Navigation> [FunctionComponent] > <div> [HostComponent] > <nav> [HostComponent] > <HelpModal> [FunctionComponent] > <$e> [ForwardRef] > <j> [FunctionComponent] > <ContextProvider> [ContextProvider][1]",
-              "expected": "<l> [ForwardRef]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TemplatesApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <div> [HostComponent]",
-            "reason": "callback for an item that may not occur",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TemplatesApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <Fragment> [Fragment][0]",
-              "expected": "<end of children>",
-              "actual": "<Fragment> key=\"invoice\" [Fragment]"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TemplatesApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <div> [HostComponent]",
-            "reason": "&& on branch(true | <boolean>)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TemplatesApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <div> [HostComponent][1]",
-              "expected": "<div> [HostComponent]",
-              "actual": "<end of children>"
-            }
-          }
-        ],
         "repeatIterations": 32,
-        "status": "partial",
         "runtimeFibers": 1456,
         "staticFibers": 119,
         "coverage": 1,
@@ -2308,6 +2166,7 @@
         "stepsUsed": 220,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T07:35:03.692Z",
       "failure": null
@@ -2365,6 +2224,7 @@
         ]
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 82,
         "matchedText": 1,
         "opaqueSubtrees": 3,
@@ -2376,9 +2236,7 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 1,
-        "branchDeviations": [],
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 91,
         "staticFibers": 117,
         "coverage": 1,
@@ -2387,6 +2245,7 @@
         "stepsUsed": 94,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T12:08:41.496Z",
       "failure": null
@@ -2395,8 +2254,8 @@
       "id": "posthog",
       "revision": "09c5fbd37b2714276d4206debd3aeb253ce0e43a",
       "framework": "spa",
-      "capturedAt": "2026-09-08T03:56:04.682Z",
-      "durationMs": 2358,
+      "capturedAt": "2026-09-08T23:06:55.576Z",
+      "durationMs": 3690,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -2418,7 +2277,7 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 3013
+          "modulesLoaded": 3842
         },
         "diagnostics": [
           {
@@ -2439,7 +2298,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 191,
@@ -2450,6 +2308,21 @@
         "stepsUsed": 191,
         "budgetExhausted": false
       },
+      "stateSpace": {
+        "states": 3,
+        "matchedState": {
+          "index": 2,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 2,
+              "commitCount": 3
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null
+      },
       "anchor": null,
       "note": "runtime replayed from 2026-09-07T05:44:44.473Z",
       "failure": null
@@ -2458,8 +2331,8 @@
       "id": "puck",
       "revision": "74a42c74db2b52da13ce1fc49087a07a6653dac8",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T03:55:49.671Z",
-      "durationMs": 9503,
+      "capturedAt": "2026-09-08T23:06:33.607Z",
+      "durationMs": 10111,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
@@ -2478,7 +2351,7 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 1865
+          "modulesLoaded": 1870
         },
         "diagnostics": []
       },
@@ -2494,7 +2367,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 450,
@@ -2505,6 +2377,21 @@
         "stepsUsed": 450,
         "budgetExhausted": false
       },
+      "stateSpace": {
+        "states": 2,
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null
+      },
       "anchor": "body",
       "note": "runtime replayed from 2026-09-06T14:42:06.387Z",
       "failure": null
@@ -2512,68 +2399,88 @@
     {
       "id": "react-admin",
       "revision": "fa7ede4a25d36917b41f9b9e9936e9e7ab8fa8ab",
-      "framework": "spa",
-      "capturedAt": "2026-09-08T03:55:59.176Z",
-      "durationMs": 274,
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T23:06:43.721Z",
+      "durationMs": 4764,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
         "buildType": "development",
         "roots": 1,
         "fibers": 5581,
-        "commits": 69,
+        "commits": 68,
         "pageErrors": [],
         "title": "React Admin"
       },
       "static": {
         "stats": {
-          "fiberCount": 14,
+          "fiberCount": 36,
           "textCount": 0,
           "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 12,
-          "unknownCount": 0,
-          "modulesLoaded": 40
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 2208
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "budget-exhausted",
+            "count": 118
+          },
+          {
+            "code": "max-call-depth",
+            "count": 56
+          }
+        ]
       },
       "report": {
-        "matchedFibers": 1,
+        "matchedFibers": 33,
         "matchedText": 0,
-        "opaqueSubtrees": 1,
-        "opaqueSkippedFibers": 5579,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
-        "slotsUnmatched": 1,
+        "slotsUnmatched": 0,
         "opaqueRenamed": 0,
-        "unmatchedSlots": [
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 5538,
+        "wildcards": [
           {
-            "path": "root > <StrictMode> [Mode] > <Admin> (opaque)",
-            "reason": "Admin from react-admin is not analyzed",
-            "head": "<Admin> [FunctionComponent]",
-            "skippedFibers": 5579,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <Admin> (opaque)[1]",
-              "expected": "<Resource> (opaque)",
-              "actual": "<end of children>"
-            }
+            "path": "root > <StrictMode> [Mode] > <Admin> [FunctionComponent] > <AdminContext> [FunctionComponent] > <CoreAdminContext> [FunctionComponent] > <RouterProviderContext> [ContextProvider] > <AuthContext> [ContextProvider] > <DataProviderContext> [ContextProvider] > <StoreContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PreferencesEditorContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AdminRouter> [FunctionComponent] > <BasenameContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RouterWrapper> [FunctionComponent] > <InternalRouter> [FunctionComponent] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <I18nContextProvider> [FunctionComponent] > <I18nContext> key=\"0\" [ContextProvider] > <NotificationContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <UndoableMutationsContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ResourceDefinitionContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent]",
+            "reason": "step budget exhausted",
+            "absorbedFibers": 5538,
+            "heads": [
+              "<ThemeProvider> [FunctionComponent]"
+            ]
           }
         ],
-        "wildcardAbsorbedFibers": 0,
-        "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "partial",
-        "runtimeFibers": 5580,
-        "staticFibers": 13,
+        "runtimeFibers": 5571,
+        "staticFibers": 33,
         "coverage": 1,
-        "strictCoverage": 0.00017921146953405018,
+        "strictCoverage": 0.0059235325794291865,
         "divergence": null,
-        "stepsUsed": 29,
+        "stepsUsed": 34,
         "budgetExhausted": false
       },
+      "stateSpace": {
+        "states": 18,
+        "matchedState": {
+          "index": 17,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 3,
+              "commitCount": 4
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null
+      },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-06T14:42:18.572Z",
+      "note": "runtime replayed from 2026-09-08T05:50:16.241Z",
       "failure": null
     },
     {
@@ -2596,6 +2503,7 @@
         "diagnostics": []
       },
       "report": null,
+      "stateSpace": null,
       "anchor": null,
       "note": "static only",
       "failure": null
@@ -2604,8 +2512,8 @@
       "id": "react-router-templates",
       "revision": "b68be71489a22315c7a734a86a18347745b393d2",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T03:55:59.664Z",
-      "durationMs": 71,
+      "capturedAt": "2026-09-08T23:06:48.487Z",
+      "durationMs": 85,
       "runtime": {
         "reactVersion": "19.2.7",
         "rendererName": "react-dom",
@@ -2618,7 +2526,7 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 51,
+          "fiberCount": 54,
           "textCount": 2,
           "branchCount": 0,
           "repeatCount": 0,
@@ -2640,7 +2548,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 50,
@@ -2651,8 +2558,23 @@
         "stepsUsed": 50,
         "budgetExhausted": false
       },
+      "stateSpace": {
+        "states": 2,
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null
+      },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-06T04:55:32.863Z",
+      "note": "runtime replayed from 2026-09-08T11:39:09.076Z",
       "failure": null
     },
     {
@@ -2696,6 +2618,7 @@
         ]
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 7,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -2716,9 +2639,7 @@
           }
         ],
         "branchesResolved": 1,
-        "branchDeviations": [],
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 40,
         "staticFibers": 16,
         "coverage": 1,
@@ -2727,6 +2648,7 @@
         "stepsUsed": 19,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T07:23:55.274Z",
       "failure": null
@@ -2769,6 +2691,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 54,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -2780,9 +2703,7 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 54,
         "staticFibers": 54,
         "coverage": 1,
@@ -2791,6 +2712,7 @@
         "stepsUsed": 54,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": "body",
       "note": "runtime replayed from 2026-09-08T07:22:45.011Z",
       "failure": null
@@ -2799,8 +2721,8 @@
       "id": "redux-toolkit",
       "revision": "e99fe6135188219f031c5028f653fb82e671de24",
       "framework": "spa",
-      "capturedAt": "2026-09-08T03:55:59.736Z",
-      "durationMs": 71,
+      "capturedAt": "2026-09-08T23:06:48.574Z",
+      "durationMs": 438,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -2835,7 +2757,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 6,
@@ -2846,6 +2767,15 @@
         "stepsUsed": 6,
         "budgetExhausted": false
       },
+      "stateSpace": {
+        "states": 1,
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null
+      },
       "anchor": null,
       "note": "runtime replayed from 2026-09-07T12:12:03.185Z",
       "failure": null
@@ -2854,8 +2784,8 @@
       "id": "sentry",
       "revision": "a7b4a8a2a78a666418e527d812e81528147789da",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T03:56:01.135Z",
-      "durationMs": 3544,
+      "capturedAt": "2026-09-08T23:06:50.051Z",
+      "durationMs": 5521,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -2875,15 +2805,19 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 569,
+          "fiberCount": 570,
           "textCount": 8,
           "branchCount": 0,
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 6584
+          "modulesLoaded": 6654
         },
         "diagnostics": [
+          {
+            "code": "max-call-depth",
+            "count": 11
+          },
           {
             "code": "dynamic-key",
             "count": 4
@@ -2902,7 +2836,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 566,
@@ -2912,6 +2845,21 @@
         "divergence": null,
         "stepsUsed": 566,
         "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 5,
+        "matchedState": {
+          "index": 4,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 4,
+              "commitCount": 5
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-06T23:25:35.602Z",
@@ -3790,6 +3738,7 @@
         ]
       },
       "report": null,
+      "stateSpace": null,
       "anchor": null,
       "note": "static only",
       "failure": null
@@ -3826,6 +3775,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 5,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -3837,21 +3787,7 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 2,
-        "branchDeviations": [
-          {
-            "path": "root > <BrowserRouter> [FunctionComponent] > <AppContainer> [FunctionComponent] > <div> [HostComponent]",
-            "reason": "conditional on branch(true | unknown)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <BrowserRouter> [FunctionComponent] > <AppContainer> [FunctionComponent] > <div> [HostComponent][0]",
-              "expected": "<CommonLoading> [FunctionComponent]",
-              "actual": "<ErrorComponent> [FunctionComponent]"
-            }
-          }
-        ],
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 5,
         "staticFibers": 77,
         "coverage": 1,
@@ -3860,6 +3796,7 @@
         "stepsUsed": 8,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T07:23:34.754Z",
       "failure": null
@@ -3868,8 +3805,8 @@
       "id": "sonner",
       "revision": "8e4662b39255120b62138312058f5d77c0139a5e",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T03:56:00.125Z",
-      "durationMs": 68,
+      "capturedAt": "2026-09-08T23:06:49.014Z",
+      "durationMs": 73,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
@@ -3888,7 +3825,7 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 4
+          "modulesLoaded": 5
         },
         "diagnostics": []
       },
@@ -3904,7 +3841,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 44,
@@ -3915,16 +3851,25 @@
         "stepsUsed": 44,
         "budgetExhausted": false
       },
+      "stateSpace": {
+        "states": 1,
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null
+      },
       "anchor": "body",
-      "note": "runtime replayed from 2026-09-06T04:55:41.386Z",
+      "note": "runtime replayed from 2026-09-08T11:14:51.057Z",
       "failure": null
     },
     {
       "id": "tanstack-query",
       "revision": "1893a965d219032207cbe147880d0e9f757a5a56",
       "framework": "spa",
-      "capturedAt": "2026-09-08T03:56:00.193Z",
-      "durationMs": 82,
+      "capturedAt": "2026-09-08T23:06:49.089Z",
+      "durationMs": 119,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -3959,7 +3904,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 217,
@@ -3970,6 +3914,15 @@
         "stepsUsed": 217,
         "budgetExhausted": false
       },
+      "stateSpace": {
+        "states": 1,
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null
+      },
       "anchor": null,
       "note": "runtime replayed from 2026-09-07T12:08:20.819Z",
       "failure": null
@@ -3978,8 +3931,8 @@
       "id": "tanstack-router",
       "revision": "cf166d160e6397007a979bfc7065b45ff69ea543",
       "framework": "spa",
-      "capturedAt": "2026-09-08T03:56:00.275Z",
-      "durationMs": 148,
+      "capturedAt": "2026-09-08T23:06:49.210Z",
+      "durationMs": 202,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -4014,7 +3967,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 48,
@@ -4025,8 +3977,23 @@
         "stepsUsed": 48,
         "budgetExhausted": false
       },
+      "stateSpace": {
+        "states": 2,
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null
+      },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-07T13:00:25.894Z",
+      "note": "runtime replayed from 2026-09-08T11:14:58.721Z",
       "failure": null
     },
     {
@@ -4065,6 +4032,7 @@
         ]
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 471,
         "matchedText": 1,
         "opaqueSubtrees": 3,
@@ -4085,43 +4053,7 @@
           }
         ],
         "branchesResolved": 23,
-        "branchDeviations": [
-          {
-            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MyApp> [FunctionComponent] > <AppProviders> [FunctionComponent] > <K> [FunctionComponent] > <B> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfirmModalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider]",
-            "reason": "conditional on branch(<boolean> | undefined)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MyApp> [FunctionComponent] > <AppProviders> [FunctionComponent] > <K> [FunctionComponent] > <B> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfirmModalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider][6]",
-              "expected": "<HttpErrorPage> [FunctionComponent]",
-              "actual": "<LoginRoute> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MyApp> [FunctionComponent] > <AppProviders> [FunctionComponent] > <K> [FunctionComponent] > <B> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfirmModalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <LoginRoute> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <LoginPage> [FunctionComponent] > <ForwardRef> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SignForm> [FunctionComponent] > <div> [HostComponent] > <form> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Button> [ForwardRef] > <button> [HostComponent]",
-            "reason": "conditional on branch(true | false)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MyApp> [FunctionComponent] > <AppProviders> [FunctionComponent] > <K> [FunctionComponent] > <B> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfirmModalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <LoginRoute> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <LoginPage> [FunctionComponent] > <ForwardRef> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SignForm> [FunctionComponent] > <div> [HostComponent] > <form> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Button> [ForwardRef] > <button> [HostComponent][0]",
-              "expected": "\"auth:button.signin\"",
-              "actual": "\"Sign in\""
-            }
-          },
-          {
-            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MyApp> [FunctionComponent] > <AppProviders> [FunctionComponent] > <K> [FunctionComponent] > <B> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfirmModalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <LoginRoute> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <LoginPage> [FunctionComponent] > <ForwardRef> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ForwardRef> [ForwardRef] > <ScrollAreaScrollbar> [ForwardRef] > <ForwardRef> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Presence> [FunctionComponent]",
-            "reason": "conditional on <boolean: includes()>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MyApp> [FunctionComponent] > <AppProviders> [FunctionComponent] > <K> [FunctionComponent] > <B> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfirmModalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <LoginRoute> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <LoginPage> [FunctionComponent] > <ForwardRef> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ForwardRef> [ForwardRef] > <ScrollAreaScrollbar> [ForwardRef] > <ForwardRef> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Presence> [FunctionComponent][0]",
-              "expected": "<ForwardRef> [ForwardRef]",
-              "actual": "<end of children>"
-            }
-          }
-        ],
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 481,
         "staticFibers": 494,
         "coverage": 1,
@@ -4130,6 +4062,7 @@
         "stepsUsed": 507,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T11:37:09.679Z",
       "failure": null
@@ -4163,6 +4096,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 89,
         "matchedText": 0,
         "opaqueSubtrees": 2,
@@ -4466,9 +4400,7 @@
           }
         ],
         "branchesResolved": 2,
-        "branchDeviations": [],
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 3748,
         "staticFibers": 104,
         "coverage": 1,
@@ -4477,6 +4409,7 @@
         "stepsUsed": 111,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": null,
       "failure": null
@@ -4586,6 +4519,7 @@
         ]
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 27,
         "matchedText": 0,
         "opaqueSubtrees": 16,
@@ -4620,9 +4554,7 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 1,
-        "branchDeviations": [],
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 86,
         "staticFibers": 1293,
         "coverage": 1,
@@ -4631,6 +4563,7 @@
         "stepsUsed": 66,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T11:38:08.867Z",
       "failure": null
@@ -4669,6 +4602,7 @@
         ]
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 43,
         "matchedText": 1,
         "opaqueSubtrees": 0,
@@ -4706,65 +4640,7 @@
           }
         ],
         "branchesResolved": 6,
-        "branchDeviations": [
-          {
-            "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider]",
-            "reason": "conditional on branch(<boolean> | unknown)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider][0]",
-              "expected": "<end of children>",
-              "actual": "<FunctionComponent> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <UserProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TypebotProvider> [FunctionComponent]",
-            "reason": "if (branch(<boolean> | false))",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <UserProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TypebotProvider> [FunctionComponent][0]",
-              "expected": "<NotFoundPage> [FunctionComponent]",
-              "actual": "<ContextProvider> [ContextProvider]"
-            }
-          },
-          {
-            "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <UserProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TypebotProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <WorkspaceProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Page> [FunctionComponent] > <SignInPage> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <SignInForm> [FunctionComponent]",
-            "reason": "if (<boolean: === on dynamic values>)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <UserProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TypebotProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <WorkspaceProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Page> [FunctionComponent] > <SignInPage> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <SignInForm> [FunctionComponent][0]",
-              "expected": "<p> [HostComponent]",
-              "actual": "<div> [HostComponent]"
-            }
-          },
-          {
-            "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <List> [FunctionComponent] > <FloatingPortalLite> [ForwardRef]",
-            "reason": "if (branch(true | <boolean> | false))",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <List> [FunctionComponent] > <FloatingPortalLite> [ForwardRef][0]",
-              "expected": "<end of children>",
-              "actual": "<Portal> [HostPortal]"
-            }
-          },
-          {
-            "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <List> [FunctionComponent] > <FloatingPortalLite> [ForwardRef]",
-            "reason": "&& on branch(null | unknown)",
-            "preferredIndex": 1,
-            "chosenIndex": 0,
-            "divergence": {
-              "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <List> [FunctionComponent] > <FloatingPortalLite> [ForwardRef][0]",
-              "expected": "<end of children>",
-              "actual": "<Portal> [HostPortal]"
-            }
-          }
-        ],
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 62,
         "staticFibers": 58,
         "coverage": 1,
@@ -4773,6 +4649,7 @@
         "stepsUsed": 63,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T11:36:02.368Z",
       "failure": null

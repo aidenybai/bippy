@@ -34,6 +34,14 @@ export interface BranchMarkerProps extends MarkerChildrenProps {
   reason: string;
   location: string | null;
   preferredIndex: number | null;
+  /** Identity of the decision; branches sharing one are selected together. */
+  predicate: string | null;
+}
+
+export interface RepeatMarkerProps extends MarkerChildrenProps {
+  location: string | null;
+  countMin: number;
+  countMax: number | null;
 }
 
 export interface OpaqueMarkerProps extends MarkerChildrenProps {
@@ -45,6 +53,8 @@ export interface OpaqueMarkerProps extends MarkerChildrenProps {
 
 export interface UnknownMarkerProps {
   reason: string;
+  /** The subtree was not materialized, so the states below it are not enumerated. */
+  isTruncated: boolean;
 }
 
 export const TEXT_PLACEHOLDER = "\u2026";
@@ -64,7 +74,7 @@ export const AlternativeMarker = named(
 
 export const RepeatMarker = named(
   MARKER_NAMES.repeat,
-  ({ children }: MarkerChildrenProps): ReactNode => children,
+  ({ children }: RepeatMarkerProps): ReactNode => children,
 );
 
 export const OpaqueMarker = named(

@@ -8,6 +8,8 @@ import type { RuntimeSnapshot } from "./snapshot.js";
 
 export interface CommitRecorder {
   snapshot: () => RuntimeSnapshot;
+  /** The tree after each commit, in commit order (only with `recordCommits`). */
+  commits: () => RuntimeSnapshot[];
   /** Library state held by providers in the live roots, as the page's code reads it. */
   observations: () => Promise<RootObservations>;
   commitCount: () => number;
@@ -22,6 +24,8 @@ export interface CommitRecorderOptions {
   reduxStores?: () => ReduxStoreLike[] | Promise<ReduxStoreLike[]>;
   /** Exports of the page's loaded modules, so captured state names them instead of serializing them. */
   moduleExports?: () => ExportIndex | Promise<ExportIndex>;
+  /** Snapshot the roots after every commit, so intermediate committed trees are kept. */
+  recordCommits?: boolean;
 }
 
 const DEFAULT_COMMIT_TIMEOUT_MS = 5_000;
@@ -37,11 +41,15 @@ export const createCommitRecorder = ({
   rootFilter,
   reduxStores,
   moduleExports,
+  recordCommits = false,
 }: CommitRecorderOptions = {}): CommitRecorder => {
   const roots = new Set<FiberRoot>();
+  const committedSnapshots: RuntimeSnapshot[] = [];
   let renderer: ReactRenderer | null = null;
   let commits = 0;
   let commitWaiters: Array<() => void> = [];
+  const liveRoots = (): FiberRoot[] => [...roots].filter((root) => _fiberRoots.has(root));
+  const snapshot = (): RuntimeSnapshot => createRuntimeSnapshot({ roots: liveRoots(), renderer });
   const unsubscribe = instrument({
     name: "bippy-parser-harness",
     onCommitFiberRoot: (rendererId, root) => {
@@ -49,14 +57,15 @@ export const createCommitRecorder = ({
       roots.add(root);
       renderer = getRDTHook().renderers.get(rendererId) ?? renderer;
       commits++;
+      if (recordCommits) committedSnapshots.push(snapshot());
       const waiters = commitWaiters;
       commitWaiters = [];
       for (const resolve of waiters) resolve();
     },
   });
-  const liveRoots = (): FiberRoot[] => [...roots].filter((root) => _fiberRoots.has(root));
   return {
-    snapshot: () => createRuntimeSnapshot({ roots: liveRoots(), renderer }),
+    snapshot,
+    commits: () => [...committedSnapshots],
     observations: async () =>
       readRootObservations(liveRoots(), await reduxStores?.(), await moduleExports?.()),
     commitCount: () => commits,
