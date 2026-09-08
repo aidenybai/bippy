@@ -3,7 +3,7 @@
   "route": "/posts/hello",
   "expectedStatus": "exact",
   "minCoverage": 1,
-  "notes": "Data router with loaders. The static side cannot run loaders, so the captured router state (loaderData keyed by route id, matches, navigation/revalidation state, location) is replayed into useLoaderData/useRouteLoaderData/useMatches/useNavigation/useRevalidator/useSearchParams/useLocation. The observations below must equal what the runtime capture records.",
+  "notes": "Data router with loaders. The static side cannot run loaders, so the captured router state (loaderData keyed by route id, matches, navigation/revalidation state, location) is replayed into useLoaderData/useRouteLoaderData/useMatches/useNavigation/useRevalidator/useSearchParams/useLocation, and the (empty) fetcher map into useFetchers/useFetcher so an idle fetcher.Form renders as the real one does. The observations below must equal what the runtime capture records.",
   "observations": {
     "globals": {},
     "queries": [],
@@ -19,7 +19,8 @@
       },
       "actionData": null,
       "navigationState": "idle",
-      "revalidationState": "idle"
+      "revalidationState": "idle",
+      "fetchers": []
     }
   }
 }

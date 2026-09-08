@@ -3,6 +3,7 @@ import type {
   ClassBody,
   ClassFunctionMember,
   ClassMember,
+  FunctionLikeNode,
   SourceLocation,
   StaticClassValue,
   StaticFunctionValue,
@@ -186,11 +187,13 @@ export const getSuperObject = (
 const classPrototypes = new WeakMap<StaticClassValue, StaticObjectValue>();
 const prototypeOwners = new WeakMap<StaticObjectValue, StaticClassValue>();
 
+/** The class whose `.prototype` this object is, or null for any other object. */
+export const getPrototypeOwner = (value: StaticObjectValue): StaticClassValue | null =>
+  prototypeOwners.get(value) ?? null;
+
 /** `Object.getPrototypeOf(Base.prototype)` is `Object.prototype` when `Base` has no `extends` clause. */
-export const isBaseClassPrototype = (value: StaticObjectValue): boolean => {
-  const owner = prototypeOwners.get(value);
-  return owner !== undefined && owner.body.superValue === null;
-};
+export const isBaseClassPrototype = (value: StaticObjectValue): boolean =>
+  getPrototypeOwner(value)?.body.superValue === null;
 
 /**
  * `Class.prototype`: the chain's methods and accessors with the prototype as
@@ -221,17 +224,21 @@ export const getClassPrototypeObject = (
   return prototype;
 };
 
-/** `Class.length`: the constructor's leading parameters without defaults; 0 without a constructor. */
-export const getClassLength = (classValue: StaticClassValue): number => {
-  const constructor = classValue.body.members.find(
-    (member) => member.kind === "constructor" && !member.isStatic,
-  );
-  if (constructor?.kind !== "constructor") return 0;
-  const parameters = constructor.functionNode.params;
+/** `Function.length`: the leading parameters before the first default or rest parameter. */
+export const getFunctionLength = (functionNode: FunctionLikeNode): number => {
+  const parameters = functionNode.params;
   const optionalIndex = parameters.findIndex(
     (parameter) => parameter.type === "AssignmentPattern" || parameter.type === "RestElement",
   );
   return optionalIndex === -1 ? parameters.length : optionalIndex;
+};
+
+/** `Class.length`: the constructor's `Function.length`; 0 without a constructor. */
+export const getClassLength = (classValue: StaticClassValue): number => {
+  const constructor = classValue.body.members.find(
+    (member) => member.kind === "constructor" && !member.isStatic,
+  );
+  return constructor?.kind === "constructor" ? getFunctionLength(constructor.functionNode) : 0;
 };
 
 /** The class's own or inherited static property, or null when no class in the chain defines it. */
@@ -331,7 +338,12 @@ const mountClassInstance = (
           ? tools.call(partialState, [previousState, getObjectProperty(instance, "props")])
           : (partialState ?? UNDEFINED_VALUE);
       if (callback) record.pendingCallbacks.push(callback);
-      queueStateUpdate(frame, stateCell, mergeState(previousState, resolvedPartial));
+      queueStateUpdate(
+        frame,
+        stateCell,
+        mergeState(previousState, resolvedPartial),
+        tools.isDeferred(),
+      );
       return UNDEFINED_VALUE;
     },
     onEscape: () => escapeStateCell(frame, stateCell),

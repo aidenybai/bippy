@@ -3,6 +3,7 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { act, createElement, type ComponentType } from "react";
 import { createRoot } from "react-dom/client";
+import { NODE_TIMER_UNDERRUN_MS } from "../../src/evaluate/timers.js";
 import { createStaticRenderer, type StaticRenderResult } from "../../src/index.js";
 import {
   compareStaticToRuntime,
@@ -105,6 +106,8 @@ export const runComponentFixture = async (
   const renderer = createStaticRenderer({
     rootDirectory: COMPONENTS_DIRECTORY,
     tsconfigPath: join(COMPONENTS_DIRECTORY, "tsconfig.json"),
+    settleMs: QUIET_COMMIT_MS,
+    timerUnderrunMs: NODE_TIMER_UNDERRUN_MS,
   });
   const staticResult = await renderer.renderComponent(fixture.filePath);
   const runtime = await runFromProjectRoot(() => mountComponent(loaded.default));

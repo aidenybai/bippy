@@ -19,7 +19,9 @@ describe("synthetic fixtures: static fiber tree vs react-dom", () => {
       const detail = describeFixtureRun(fixture, run);
       if (process.env.BIPPY_PARSER_DEBUG) process.stdout.write(`${detail}\n`);
       expect(
-        run.staticResult.diagnostics.filter((diagnostic) => diagnostic.severity === "error"),
+        run.staticResult.diagnostics.filter(
+          (diagnostic) => diagnostic.severity === "error" || diagnostic.code === "max-call-depth",
+        ),
         detail,
       ).toEqual([]);
       if (!run.comparison) return;

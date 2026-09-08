@@ -5,6 +5,7 @@ import {
   useActionData,
   useAsyncValue,
   useFetcher,
+  useFetchers,
   useLoaderData,
   useMatches,
   useRouteLoaderData,
@@ -34,8 +35,9 @@ export const Post = () => {
   const tab = searchParams.get("tab") ?? "overview";
   const shellRoute = unstable_useRoute("shell");
   const missingRoute = unstable_useRoute("nope");
-  const fetcher = useFetcher();
   const actionData = useActionData();
+  const fetcher = useFetcher<{ liked: boolean }>();
+  const pendingFetchers = useFetchers().filter((inflight) => inflight.state !== "idle");
 
   return (
     <article data-tab={tab}>
@@ -46,9 +48,6 @@ export const Post = () => {
       ) : null}
       {missingRoute === undefined ? <small>no such route</small> : <b>?</b>}
       {actionData === undefined ? <small>not submitted</small> : <b>submitted</b>}
-      <fetcher.Form method="post" action="/posts/hello/like">
-        <button type="submit">Like</button>
-      </fetcher.Form>
       {post.publishedAt ? <time>{post.publishedAt}</time> : <span>Draft</span>}
       <Suspense fallback={<span>loading</span>}>
         <Await resolve={post.title} errorElement={<b>failed</b>}>
@@ -68,6 +67,13 @@ export const Post = () => {
           <li key={match.id}>{match.pathname}</li>
         ))}
       </ol>
+      <fetcher.Form method="post" action="/posts/hello/like">
+        <input type="hidden" name="slug" value="hello" />
+        <button type="submit" disabled={fetcher.state !== "idle"}>
+          {fetcher.data?.liked ? "Liked" : "Like"}
+        </button>
+        {pendingFetchers.length > 0 && <output>{pendingFetchers.length} pending</output>}
+      </fetcher.Form>
     </article>
   );
 };

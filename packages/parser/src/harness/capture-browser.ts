@@ -1,10 +1,12 @@
-import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build, stop as stopEsbuild } from "esbuild";
 import { chromium, type Browser, type Page } from "playwright";
+import { BundleError, HarnessInjectionError } from "../errors.js";
+import { DEFAULT_SETTLE_MS } from "../evaluate/timers.js";
 import { readObservationsJson } from "../observations.js";
+import { readPackageManifest } from "../package-manifest.js";
 import type { RuntimeObservations } from "../types.js";
 import type { HarnessGlobals } from "./browser-inject.js";
 import { parseSnapshot, type RuntimeSnapshot } from "./snapshot.js";
@@ -28,9 +30,20 @@ export interface BrowserCaptureResult {
   observations: RuntimeObservations;
 }
 
-const DEFAULT_SETTLE_MS = 1_500;
 const DEFAULT_TIMEOUT_MS = 60_000;
 const COMMIT_POLL_INTERVAL_MS = 100;
+// Dev servers compiling lazily requested routes (Next's `/api/*` on first load)
+// trigger a Fast Refresh full reload that tears down the page mid-read, and
+// Vite answers module requests with 504 "Outdated Optimize Dep" while it
+// re-bundles dependencies it discovered on the first page load; the capture is
+// simply repeated against the now warm server.
+const MAX_CAPTURE_ATTEMPTS = 3;
+
+const isDestroyedContextError = (error: unknown): boolean =>
+  error instanceof Error && error.message.includes("Execution context was destroyed");
+
+const isColdDevServerResult = (result: BrowserCaptureResult): boolean =>
+  result.commits === 0 && result.pageErrors.some((text) => text.includes("Outdated Optimize Dep"));
 
 const harnessDirectory = dirname(fileURLToPath(import.meta.url));
 const requireFromHere = createRequire(import.meta.url);
@@ -41,17 +54,8 @@ const bippyPackageDirectory = (): string => dirname(requireFromHere.resolve("bip
 
 const bippySourceEntry = (): string => resolve(bippyPackageDirectory(), "src/index.ts");
 
-const bippyVersion = (): string => {
-  const manifest: unknown = JSON.parse(
-    readFileSync(resolve(bippyPackageDirectory(), "package.json"), "utf8"),
-  );
-  return typeof manifest === "object" &&
-    manifest !== null &&
-    "version" in manifest &&
-    typeof manifest.version === "string"
-    ? manifest.version
-    : "0.0.0";
-};
+const bippyVersion = (): string =>
+  readPackageManifest(resolve(bippyPackageDirectory(), "package.json")).version ?? "0.0.0";
 
 export const buildInjectBundle = (): Promise<string> => {
   injectBundlePromise ??= build({
@@ -69,7 +73,7 @@ export const buildInjectBundle = (): Promise<string> => {
     logLevel: "silent",
   }).then((result) => {
     const [output] = result.outputFiles;
-    if (!output) throw new Error("esbuild produced no output for browser-inject");
+    if (!output) throw new BundleError("esbuild produced no output for browser-inject");
     return output.text;
   });
   return injectBundlePromise;
@@ -120,7 +124,7 @@ const readObservations = async (page: Page, names: string[]): Promise<RuntimeObs
     };
     return JSON.stringify(observed);
   }, names);
-  return readObservationsJson(JSON.parse(json));
+  return readObservationsJson(JSON.parse(json), `${page.url()} observations`);
 };
 
 const readDevServerOverlay = (page: Page): Promise<string | null> =>
@@ -174,6 +178,17 @@ export class BrowserCapturer {
   }
 
   async capture(options: BrowserCaptureOptions): Promise<BrowserCaptureResult> {
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        const result = await this.captureOnce(options);
+        if (attempt >= MAX_CAPTURE_ATTEMPTS || !isColdDevServerResult(result)) return result;
+      } catch (error) {
+        if (attempt >= MAX_CAPTURE_ATTEMPTS || !isDestroyedContextError(error)) throw error;
+      }
+    }
+  }
+
+  private async captureOnce(options: BrowserCaptureOptions): Promise<BrowserCaptureResult> {
     const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     const settleMs = options.settleMs ?? DEFAULT_SETTLE_MS;
     const [browser, inject] = await Promise.all([this.browser(), buildInjectBundle()]);
@@ -202,9 +217,7 @@ export class BrowserCapturer {
         commits = await waitForQuietCommits(page, settleMs, timeoutMs);
       }
       const snapshot = await readSnapshot(page);
-      if (!snapshot) {
-        throw new Error(`harness globals missing on ${options.url}; the init script did not run`);
-      }
+      if (!snapshot) throw new HarnessInjectionError(options.url);
       if (commits === 0) {
         const overlay = await readDevServerOverlay(page);
         if (overlay) pageErrors.push(overlay);

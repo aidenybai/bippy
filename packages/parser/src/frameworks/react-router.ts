@@ -4,6 +4,7 @@ import {
   NULL_VALUE,
   UNDEFINED_VALUE,
   branchValue,
+  describeValue,
   getObjectProperty,
   getTruthiness,
   listValue,
@@ -40,6 +41,8 @@ import type {
   ExternalValueProvider,
   ModuleRecord,
   StaticElementValue,
+  StaticListValue,
+  StaticObjectEntry,
   StaticObjectValue,
   StaticRenderResult,
   StaticValue,
@@ -90,18 +93,54 @@ export interface ReactRouterModel {
 interface FrameworkState extends FrameworkDocument {
   /** The matched route tree `HydratedRouter` mounts (root `RenderedRoute` inwards). */
   routeTree: StaticValue | null;
-  /** `ssr` from the framework config; `false` is SPA mode. Null outside framework mode. */
-  ssr: StaticValue | null;
-  /** `future.v3_singleFetch` from the Remix config; `RemixBrowser` renders an extra fragment for it. */
-  singleFetch: StaticValue | null;
-  /** `future.v3_lazyRouteDiscovery`; when set, Remix's `<Scripts>` skips the manifest preload. */
-  lazyRouteDiscovery: StaticValue | null;
-  /** Route modules matched root-first, each preloaded by Remix's `<Scripts>`. */
-  matchedRouteCount: number;
-  /** The client entry or a matched module imports a side-effect stylesheet Remix inlines. */
-  hasCriticalCss: boolean;
+  /** Every route below the root, as the server matches manifest requests against them. */
+  routes: RouteRecord[] | null;
+  /** `react-router.config.ts` settings; null outside framework mode. */
+  config: FrameworkConfig | null;
+  /** Dev-server URLs of the matched route modules, root first, as `<Scripts>` preloads them. */
+  routeModuleUrls: string[];
+  /** Where the rendered `<Link>`s and `<Form>`s point, which eager route discovery fetches manifest patches for. */
+  discoveredTargets: DiscoveredTargets;
+  /** Whether hydration is followed by a router re-render, which drops the `<Scripts>` preloads. */
+  isRerenderedAfterHydration: UncertainFlag;
+  /** The client entry or a matched module imports a side-effect stylesheet the Vite dev server inlines, which Remix's `<Links>` keeps. */
+  hasInlinedCriticalCss: boolean;
   /** `remix.config.*` drives the esbuild-based compiler (dev live reload over a socket, no critical CSS). */
   isClassicCompiler: boolean;
+}
+
+interface DiscoveredTargets {
+  pathnames: Set<string>;
+  hasDynamicPathname: boolean;
+}
+
+interface UncertainFlag {
+  value: boolean | null;
+  /** Why the value is null. */
+  reason: string;
+}
+
+/** A link target `resolveTo` resolved against its route, or null when it is not static. */
+interface ResolvedTarget {
+  pathname: string;
+  href: string;
+}
+
+/** `Link`/`Form` targets that React Router marks with `data-discover` for the fog-of-war observer. */
+interface DiscoveryRegistry {
+  register: (target: ResolvedTarget | null) => void;
+}
+
+/** Config flags the document components branch on; null when not static. */
+interface FrameworkConfig {
+  /** `ssr`; `false` is SPA mode. */
+  isSsr: boolean | null;
+  /** `routeDiscovery.mode === "lazy"` under SSR: the route manifest is fetched on demand. */
+  isFogOfWar: boolean | null;
+  /** `future.unstable_subResourceIntegrity`. */
+  hasSubResourceIntegrity: boolean | null;
+  /** Remix's `future.v3_singleFetch`; `RemixBrowser` renders an extra fragment for it. */
+  isSingleFetch: boolean | null;
 }
 
 const CLIENT_ENTRY_NAMES = [
@@ -143,9 +182,9 @@ const ROUTE_CONFIG_PACKAGE = "@react-router/dev/routes";
 
 /**
  * Mirrors React Router's `RouteContext` (displayName `Route`). The static
- * provider value is `{ outlet, params, id }`: the element for the matched child
- * route, the params accumulated down to this match, and the route id that keys
- * loader data.
+ * provider value is `{ outlet, params, id, pathnameBase }`: the element for the
+ * matched child route, the params accumulated down to this match, the route id
+ * that keys loader data, and the URL prefix descendant `<Routes>` match after.
  */
 export const ROUTE_CONTEXT: ContextDefinition = {
   name: "RouteContext",
@@ -165,11 +204,39 @@ const LOCATION_CONTEXT: ContextDefinition = {
   location: null,
 };
 
+/**
+ * `DataRouterStateContext`: the router's state, republished on every state
+ * update so that `<Scripts>` re-renders (and drops its preloads) when route
+ * discovery patches the manifest.
+ */
+const DATA_ROUTER_STATE_CONTEXT: ContextDefinition = {
+  name: "DataRouterStateContext",
+  displayName: "DataRouterState",
+  defaultValue: NULL_VALUE,
+  location: null,
+};
+
+/** `FrameworkContext`: the manifest, route modules and the critical CSS `HydratedRouter` clears once hydrated. */
+const FRAMEWORK_CONTEXT: ContextDefinition = {
+  name: "FrameworkContext",
+  displayName: "FrameworkContext",
+  defaultValue: NULL_VALUE,
+  location: null,
+};
+
 /** Mirrors `AwaitContext` (displayName `Await`): the tracked promise whose `_data` `useAsyncValue` reads. */
 const AWAIT_CONTEXT: ContextDefinition = {
   name: "AwaitContext",
   displayName: "Await",
   defaultValue: NULL_VALUE,
+  location: null,
+};
+
+/** `RemixContext` (displayName `Remix`), provided by `RemixBrowser` around the router. */
+const REMIX_CONTEXT: ContextDefinition = {
+  name: "RemixContext",
+  displayName: "Remix",
+  defaultValue: UNDEFINED_VALUE,
   location: null,
 };
 
@@ -225,6 +292,19 @@ interface RouteContent {
   uncertainty: string | null;
 }
 
+interface RoutePath {
+  path: string | null;
+  uncertainty: string | null;
+}
+
+/** A route's `path`: a literal, absent, or (a computed value) unreadable, in which case any URL may match it. */
+const readRoutePath = (fields: StaticObjectValue): RoutePath => {
+  const value = getObjectProperty(fields, "path");
+  const literal = readString(value);
+  if (literal !== null || !isDefined(value)) return { path: literal, uncertainty: null };
+  return { path: null, uncertainty: `route path is ${describeValue(value)}` };
+};
+
 /** Route module fields (`element`, `Component`), taking `lazy`'s awaited module as a fallback source. */
 const readRouteContent = (
   fields: StaticObjectValue,
@@ -273,15 +353,18 @@ const readRouteObject = (
   if (value.kind !== "object") return uncertainRoute(`route is ${value.kind}`);
   const hasSpread = value.entries.some((entry) => entry.kind === "spread");
   const content = readRouteContent(value, getObjectProperty(value, "lazy"), resolveLazy);
+  const routePath = readRoutePath(value);
   return {
     id: readRouteId(value, treePath),
-    path: readString(getObjectProperty(value, "path")),
+    path: routePath.path,
     index: getTruthiness(getObjectProperty(value, "index")) === true,
     element: content.element,
     component: content.component,
     file: readString(getObjectProperty(value, "file")),
     children: readRouteList(getObjectProperty(value, "children"), resolveLazy, treePath),
-    uncertainty: hasSpread ? "route object has a spread" : content.uncertainty,
+    uncertainty: hasSpread
+      ? "route object has a spread"
+      : (routePath.uncertainty ?? content.uncertainty),
   };
 };
 
@@ -299,28 +382,32 @@ const readRouteList = (
   return [uncertainRoute(`route list is ${value.kind}`)];
 };
 
+/** `Children.forEach` order: nested arrays are flattened into one running index. */
+const flattenChildren = (value: StaticValue): StaticValue[] =>
+  value.kind === "list" ? value.items.flatMap(flattenChildren) : [value];
+
 /** `<Route path element>` elements nested under `<Routes>` are routes too (`createRoutesFromChildren`). */
 const readRouteElements = (
   value: StaticValue,
   resolveLazy: LazyResolver | null,
   parentPath: number[] = [],
 ): RouteRecord[] => {
-  const elements = value.kind === "list" ? value.items : [value];
   const routes: RouteRecord[] = [];
-  elements.forEach((item, index) => {
+  flattenChildren(value).forEach((item, index) => {
     const treePath = [...parentPath, index];
     if (item.kind === "element" && item.type.kind === "stub" && item.type.stub === ROUTE_STUB) {
       const props = item.props;
       const content = readRouteContent(props, getObjectProperty(props, "lazy"), resolveLazy);
+      const routePath = readRoutePath(props);
       routes.push({
         id: readRouteId(props, treePath),
-        path: readString(getObjectProperty(props, "path")),
+        path: routePath.path,
         index: getTruthiness(getObjectProperty(props, "index")) === true,
         element: content.element,
         component: content.component,
         file: null,
         children: readRouteElements(getObjectProperty(props, "children"), resolveLazy, treePath),
-        uncertainty: content.uncertainty,
+        uncertainty: routePath.uncertainty ?? content.uncertainty,
       });
     } else if (item.kind === "element" && item.type.kind === "fragment") {
       routes.push(
@@ -345,6 +432,8 @@ interface RouteMatch {
   route: RouteRecord;
   /** Params of this route and every ancestor, as `useParams` reports them. */
   params: RouteParams;
+  /** URL segments matched by this route and its ancestors, excluding a splat. */
+  consumedSegments: number;
 }
 
 interface RankedMatch {
@@ -361,18 +450,19 @@ interface OwnPathMatch {
   rest: string[];
   score: number;
   params: RouteParams;
+  consumedSegments: number;
 }
 
 /** Matches one route's own `path` against the remaining URL segments. */
 const matchOwnPath = (routePath: string | null, remaining: string[]): OwnPathMatch | null => {
-  if (routePath === null) return { rest: remaining, score: 0, params: {} };
+  if (routePath === null) return { rest: remaining, score: 0, params: {}, consumedSegments: 0 };
   const params: RouteParams = {};
   let score = 0;
   let cursor = 0;
   for (const segment of splitPathname(routePath)) {
     if (segment === "*") {
       params["*"] = remaining.slice(cursor).join("/");
-      return { rest: [], score: score + SPLAT_PENALTY, params };
+      return { rest: [], score: score + SPLAT_PENALTY, params, consumedSegments: cursor };
     }
     const optional = segment.endsWith("?");
     const name = optional ? segment.slice(0, -1) : segment;
@@ -392,20 +482,22 @@ const matchOwnPath = (routePath: string | null, remaining: string[]): OwnPathMat
       return null;
     }
   }
-  return { rest: remaining.slice(cursor), score, params };
+  return { rest: remaining.slice(cursor), score, params, consumedSegments: cursor };
 };
 
 const matchRoutes = (
   routes: RouteRecord[],
   remaining: string[],
   inherited: RouteParams,
+  consumedBefore = 0,
 ): RankedMatch[] => {
   const matches: RankedMatch[] = [];
   for (const route of routes) {
     const own = matchOwnPath(route.path, remaining);
     if (!own) continue;
     const params = { ...inherited, ...own.params };
-    const match: RouteMatch = { route, params };
+    const consumedSegments = consumedBefore + own.consumedSegments;
+    const match: RouteMatch = { route, params, consumedSegments };
     if (route.index) {
       if (own.rest.length === 0) {
         matches.push({ chain: [match], score: own.score + INDEX_ROUTE_SCORE });
@@ -416,7 +508,7 @@ const matchRoutes = (
       if (own.rest.length === 0) matches.push({ chain: [match], score: own.score });
       continue;
     }
-    for (const child of matchRoutes(route.children, own.rest, params)) {
+    for (const child of matchRoutes(route.children, own.rest, params, consumedSegments)) {
       matches.push({ chain: [match, ...child.chain], score: own.score + child.score });
     }
     if (own.rest.length === 0 && route.path !== null) {
@@ -426,8 +518,26 @@ const matchRoutes = (
   return matches;
 };
 
-const bestMatch = (routes: RouteRecord[], pathname: string): RouteMatch[] | null => {
-  const matches = matchRoutes(routes, splitPathname(pathname), {});
+/** What an enclosing route already matched, as `useRoutes` reads it from `RouteContext`. */
+interface ParentMatch {
+  params: RouteParams;
+  pathnameBase: string;
+}
+
+const ROOT_PARENT_MATCH: ParentMatch = { params: {}, pathnameBase: "/" };
+
+const bestMatch = (
+  routes: RouteRecord[],
+  pathname: string,
+  parent: ParentMatch,
+): RouteMatch[] | null => {
+  const parentSegmentCount = splitPathname(parent.pathnameBase).length;
+  const matches = matchRoutes(
+    routes,
+    splitPathname(pathname).slice(parentSegmentCount),
+    parent.params,
+    parentSegmentCount,
+  );
   if (matches.length === 0) return null;
   matches.sort((left, right) => right.score - left.score);
   return matches[0].chain;
@@ -459,8 +569,9 @@ const RENDERED_ROUTE_STUB: StubComponent = {
 const renderedRoute = (
   outlet: StaticValue,
   params: RouteParams,
-  children: StaticValue,
   routeId: string | null,
+  pathnameBase: string,
+  children: StaticValue,
 ): StaticElementValue =>
   element(
     { kind: "stub", stub: RENDERED_ROUTE_STUB },
@@ -469,10 +580,15 @@ const renderedRoute = (
         outlet,
         params: paramsValue(params),
         id: routeId === null ? UNDEFINED_VALUE : primitiveValue(routeId),
+        pathnameBase: primitiveValue(pathnameBase),
       }),
       children,
     }),
   );
+
+/** The URL prefix a match consumed, which descendant `<Routes>` match relative to. */
+const getPathnameBase = (pathname: string, match: RouteMatch): string =>
+  `/${splitPathname(pathname).slice(0, match.consumedSegments).join("/")}`;
 
 /**
  * Builds the element for a matched chain exactly like `_renderMatches`: each
@@ -481,16 +597,23 @@ const renderedRoute = (
  */
 const composeChain = (
   chain: RouteMatch[],
+  pathname: string,
   renderRoute: (route: RouteRecord, outlet: StaticValue) => StaticValue,
 ): StaticValue => {
   let outlet: StaticValue = NULL_VALUE;
   for (let index = chain.length - 1; index >= 0; index -= 1) {
-    const { route, params } = chain[index];
-    if (route.uncertainty) {
-      outlet = unknownValue(`react-router: ${route.uncertainty}`);
+    const match = chain[index];
+    if (match.route.uncertainty) {
+      outlet = unknownValue(`react-router: ${match.route.uncertainty}`);
       continue;
     }
-    outlet = renderedRoute(outlet, params, renderRoute(route, outlet), route.id);
+    outlet = renderedRoute(
+      outlet,
+      match.params,
+      match.route.id,
+      getPathnameBase(pathname, match),
+      renderRoute(match.route, outlet),
+    );
   }
   return outlet;
 };
@@ -503,12 +626,25 @@ const renderDataRoute = (route: RouteRecord, outlet: StaticValue): StaticValue =
 
 /**
  * Routes whose path is unknown (a spread of a computed list, a dynamic
- * object) may rank above any statically matched route, so a match found next
- * to them is only the preferred alternative.
+ * object, a computed `path`) may rank above any statically matched route, so a
+ * match found next to them, at any depth under matching parents, is only the
+ * preferred alternative.
  */
-const renderMatchedRoutes = (routes: RouteRecord[], pathname: string): StaticValue => {
-  const unreadable = routes.filter((route) => route.uncertainty !== null && route.path === null);
-  const chain = bestMatch(routes, pathname);
+const collectUnreadableRoutes = (routes: RouteRecord[], remaining: string[]): RouteRecord[] =>
+  routes.flatMap((route) => {
+    if (route.uncertainty !== null && route.path === null) return [route];
+    const own = matchOwnPath(route.path, remaining);
+    return own ? collectUnreadableRoutes(route.children, own.rest) : [];
+  });
+
+const renderMatchedRoutes = (
+  routes: RouteRecord[],
+  pathname: string,
+  parent: ParentMatch,
+): StaticValue => {
+  const remaining = splitPathname(pathname).slice(splitPathname(parent.pathnameBase).length);
+  const unreadable = collectUnreadableRoutes(routes, remaining);
+  const chain = bestMatch(routes, pathname, parent);
   if (!chain) {
     return unknownValue(
       unreadable.length > 0
@@ -516,7 +652,7 @@ const renderMatchedRoutes = (routes: RouteRecord[], pathname: string): StaticVal
         : `react-router: no route matches ${pathname}`,
     );
   }
-  const matched = composeChain(chain, renderDataRoute);
+  const matched = composeChain(chain, pathname, renderDataRoute);
   if (unreadable.length === 0) return matched;
   return branchValue(
     [matched, unknownValue(`react-router: ${unreadable[0].uncertainty}`)],
@@ -533,6 +669,26 @@ const readRouteContext = (
     return unknownValue(`react-router: ${field} read outside a matched route`);
   }
   return getObjectProperty(routeContext, field);
+};
+
+/**
+ * Descendant `<Routes>` match the URL left over by the enclosing route, and
+ * their matches inherit its params; top-level `<Routes>` see the whole URL.
+ */
+const readParentMatch = (tools: StubRenderTools): ParentMatch | null => {
+  const routeContext = tools.readContext(ROUTE_CONTEXT);
+  if (routeContext.kind !== "object") return ROOT_PARENT_MATCH;
+  const pathnameBase = readString(getObjectProperty(routeContext, "pathnameBase"));
+  const params = getObjectProperty(routeContext, "params");
+  if (pathnameBase === null || params.kind !== "object") return null;
+  const inherited: RouteParams = {};
+  for (const entry of params.entries) {
+    if (entry.kind !== "property") return null;
+    const value = readString(entry.value);
+    if (value === null) return null;
+    inherited[entry.key] = value;
+  }
+  return { params: inherited, pathnameBase };
 };
 
 const ROUTE_STUB: StubComponent = {
@@ -553,14 +709,15 @@ const OUTLET_STUB: StubComponent = {
     ),
 };
 
+const ABSOLUTE_URL = /^(?:[a-z][a-z0-9+.-]*:|[\\/]{2})/i;
+
 interface LinkPrefetch {
   /** Null when only the browser decides (viewport visibility, non-static props). */
   isPrefetching: boolean | null;
   reason: string | null;
 }
 
-const ABSOLUTE_URL_PATTERN = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i;
-const PREFETCH_PROPS: ReadonlySet<string> = new Set(["prefetch", "discover"]);
+const PREFETCH_PROPS: ReadonlySet<string> = new Set(["prefetch"]);
 
 /** `<PrefetchPageLinks>` lists the modules and data of a page from the build manifest. */
 const PREFETCH_PAGE_LINKS_STUB: StubComponent = {
@@ -581,7 +738,7 @@ const readLinkPrefetch = (props: StaticObjectValue): LinkPrefetch => {
   const to = getObjectProperty(props, "to");
   const target = readString(to);
   const isAbsolute =
-    to.kind === "object" ? false : target === null ? null : ABSOLUTE_URL_PATTERN.test(target);
+    to.kind === "object" ? false : target === null ? null : ABSOLUTE_URL.test(target);
   if (isAbsolute === null) return { isPrefetching: null, reason: "`to` is not a static string" };
   if (isAbsolute) return { isPrefetching: false, reason: null };
   return mode === "render"
@@ -589,82 +746,190 @@ const readLinkPrefetch = (props: StaticObjectValue): LinkPrefetch => {
     : { isPrefetching: null, reason: "viewport prefetch waits for the IntersectionObserver" };
 };
 
-const prefetchPageLinks = (): StaticValue =>
-  element(
-    { kind: "stub", stub: PREFETCH_PAGE_LINKS_STUB },
-    objectFromRecord({ page: unknownValue("href is resolved by the router") }),
-  );
+const prefetchPageLinks = (href: StaticValue): StaticValue =>
+  element({ kind: "stub", stub: PREFETCH_PAGE_LINKS_STUB }, objectFromRecord({ page: href }));
 
 const fragmentOf = (children: StaticValue[]): StaticElementValue =>
   element({ kind: "fragment" }, objectFromRecord({ children: listValue(children) }));
 
-/** `shouldPrefetch ? <>{link}<PrefetchPageLinks /></> : link` */
-const LINK_STUB: StubComponent = {
-  displayName: "Link",
+const resolvePathnameFrom = (relativePath: string, fromPathname: string): string => {
+  const segments = fromPathname.replace(/\/+$/, "").split("/");
+  for (const segment of relativePath.split("/")) {
+    if (segment === "..") {
+      if (segments.length > 1) segments.pop();
+    } else if (segment !== ".") {
+      segments.push(segment);
+    }
+  }
+  return segments.length > 1 ? segments.join("/") : "/";
+};
+
+/**
+ * `resolveTo` for a `to`/`action` string or `{ pathname }` object: relative
+ * paths resolve against the enclosing route, `..` walks up the route matches
+ * (which needs the ancestor list this context does not carry, so stays unknown).
+ */
+const resolveTarget = (
+  target: StaticValue,
+  parent: ParentMatch | null,
+  locationPathname: string,
+): ResolvedTarget | null => {
+  if (!parent) return null;
+  const targetPathname = target.kind === "object" ? getObjectProperty(target, "pathname") : target;
+  if (!isDefined(targetPathname)) {
+    return { pathname: locationPathname, href: locationPathname };
+  }
+  const text = readString(targetPathname);
+  if (text === null) return null;
+  const restIndex = text.search(/[?#]/);
+  const toPathname = restIndex === -1 ? text : text.slice(0, restIndex);
+  const rest = restIndex === -1 ? "" : text.slice(restIndex);
+  if (toPathname.startsWith("..")) return null;
+  const pathname =
+    toPathname === ""
+      ? text === ""
+        ? parent.pathnameBase
+        : locationPathname
+      : toPathname.startsWith("/")
+        ? resolvePathnameFrom(toPathname.slice(1), "/")
+        : resolvePathnameFrom(toPathname, parent.pathnameBase);
+  return { pathname, href: `${pathname}${rest}` };
+};
+
+const createLinkStubs = (
+  discovery: DiscoveryRegistry,
+  locationPathname: string,
+): {
+  link: StubComponent;
+  navLink: StubComponent;
+  form: StubComponent;
+  fetcherForm: StubComponent;
+} => {
+  const discover = (
+    target: StaticValue,
+    tools: StubRenderTools,
+    discoverProp: StaticValue,
+  ): ResolvedTarget | null => {
+    const resolved = resolveTarget(target, readParentMatch(tools), locationPathname);
+    const mode = isDefined(discoverProp) ? readString(discoverProp) : "render";
+    if (mode === null) {
+      discovery.register(null);
+    } else if (mode === "render") {
+      discovery.register(resolved);
+    }
+    return resolved;
+  };
+  const link: StubComponent = {
+    displayName: "Link",
+    tag: ForwardRefTag,
+    render: (props, tools) => {
+      const to = getObjectProperty(props, "to");
+      const absoluteHref = readString(to);
+      const isAbsolute = absoluteHref !== null && ABSOLUTE_URL.test(absoluteHref);
+      const resolved = isAbsolute
+        ? null
+        : discover(to, tools, getObjectProperty(props, "discover"));
+      const href = isAbsolute
+        ? primitiveValue(absoluteHref)
+        : resolved
+          ? primitiveValue(resolved.href)
+          : unknownPrimitiveValue("string", "href is resolved by the router");
+      const anchor = element(
+        { kind: "host", tagName: "a" },
+        objectFromRecord({ href, children: getObjectProperty(props, "children") }),
+      );
+      const { isPrefetching, reason } = readLinkPrefetch(props);
+      if (isPrefetching === false) return anchor;
+      const prefetching = fragmentOf([anchor, prefetchPageLinks(href)]);
+      return isPrefetching
+        ? prefetching
+        : branchValue([anchor, prefetching], `react-router: <Link> ${reason}`);
+    },
+  };
+  const navLink: StubComponent = {
+    displayName: "NavLink",
+    tag: ForwardRefTag,
+    render: (props) => {
+      const children = getObjectProperty(props, "children");
+      return element(
+        { kind: "stub", stub: link },
+        objectValue([
+          { kind: "spread", value: omitProps(props, NAV_LINK_PROPS) },
+          {
+            kind: "property",
+            key: "children",
+            value:
+              children.kind === "function"
+                ? unknownValue("NavLink children render function")
+                : children,
+          },
+        ]),
+      );
+    },
+  };
+  const form: StubComponent = {
+    displayName: "Form",
+    tag: ForwardRefTag,
+    render: (props, tools) => {
+      const action = getObjectProperty(props, "action");
+      discover(
+        isDefined(action) ? action : primitiveValue("."),
+        tools,
+        getObjectProperty(props, "discover"),
+      );
+      return element(
+        { kind: "host", tagName: "form" },
+        objectFromRecord({ children: getObjectProperty(props, "children") }),
+      );
+    },
+  };
+  const fetcherForm: StubComponent = {
+    displayName: "fetcher.Form",
+    tag: ForwardRefTag,
+    render: (props) =>
+      element(
+        { kind: "stub", stub: form },
+        objectValue([
+          { kind: "spread", value: props },
+          { kind: "property", key: "navigate", value: primitiveValue(false) },
+        ]),
+      ),
+  };
+  return { link, navLink, form, fetcherForm };
+};
+
+const NAV_LINK_PROPS = new Set(["className", "style", "end", "caseSensitive", "children"]);
+
+/**
+ * `@remix-run/react` v2 wraps react-router-dom's `Link`/`NavLink` in
+ * `<>{inner}{shouldPrefetch && !isAbsolute ? <PrefetchPageLinks /> : null}</>`
+ * and `Form` in a plain pass-through.
+ */
+const remixLinkStub = (inner: StubComponent): StubComponent => ({
+  displayName: inner.displayName,
   tag: ForwardRefTag,
   render: (props) => {
-    const anchor = element(
-      { kind: "host", tagName: "a" },
-      objectFromRecord({
-        href: unknownValue("href is resolved by the router"),
-        children: getObjectProperty(props, "children"),
-      }),
-    );
+    const innerElement = element({ kind: "stub", stub: inner }, omitProps(props, PREFETCH_PROPS));
     const { isPrefetching, reason } = readLinkPrefetch(props);
-    if (isPrefetching === false) return anchor;
-    const prefetching = fragmentOf([anchor, prefetchPageLinks()]);
-    return isPrefetching
-      ? prefetching
-      : branchValue([anchor, prefetching], `react-router: <Link> ${reason}`);
+    const page = unknownPrimitiveValue("string", "href is resolved by the router");
+    const trailing =
+      isPrefetching === null
+        ? branchValue(
+            [NULL_VALUE, prefetchPageLinks(page)],
+            `remix: <${inner.displayName}> ${reason}`,
+          )
+        : isPrefetching
+          ? prefetchPageLinks(page)
+          : NULL_VALUE;
+    return fragmentOf([innerElement, trailing]);
   },
-};
+});
 
-/** `NavLink` renders a `Link` after computing its active state; `children` may be a render function. */
-const NAV_LINK_STUB: StubComponent = {
-  displayName: "NavLink",
-  tag: ForwardRefTag,
-  render: (props) => {
-    const children = getObjectProperty(props, "children");
-    return element(
-      { kind: "stub", stub: LINK_STUB },
-      objectValue([
-        { kind: "spread", value: props },
-        {
-          kind: "property",
-          key: "children",
-          value:
-            children.kind === "function"
-              ? unknownValue("NavLink children render function")
-              : children,
-        },
-      ]),
-    );
-  },
-};
-
-const FORM_STUB: StubComponent = {
+const remixFormStub = (inner: StubComponent): StubComponent => ({
   displayName: "Form",
   tag: ForwardRefTag,
-  render: (props) =>
-    element(
-      { kind: "host", tagName: "form" },
-      objectFromRecord({ children: getObjectProperty(props, "children") }),
-    ),
-};
-
-/** `useFetcher().Form`: a forwardRef named `fetcher.Form` around `<Form navigate={false}>`. */
-const FETCHER_FORM_STUB: StubComponent = {
-  displayName: "fetcher.Form",
-  tag: ForwardRefTag,
-  render: (props) =>
-    element(
-      { kind: "stub", stub: FORM_STUB },
-      objectValue([
-        { kind: "spread", value: props },
-        { kind: "property", key: "navigate", value: primitiveValue(false) },
-      ]),
-    ),
-};
+  render: (props) => element({ kind: "stub", stub: inner }, props),
+});
 
 const readAsyncValue = (tools: StubRenderTools): StaticValue => {
   const awaited = tools.readContext(AWAIT_CONTEXT);
@@ -720,46 +985,77 @@ const AWAIT_STUB: StubComponent = {
   },
 };
 
-const fetcherValue = (): StaticValue =>
+const FETCHER_METHODS = ["submit", "load", "reset"];
+
+/** `useFetcher()`: a fixed `Form` and imperative API around whatever fetcher state the router holds. */
+const fetcherValue = (state: StaticValue, fetcherForm: StubComponent): StaticValue =>
   objectValue([
-    {
-      kind: "spread",
-      value: unknownValue("react-router: fetcher state and data are only known at runtime"),
-    },
-    { kind: "property", key: "Form", value: stubValue(FETCHER_FORM_STUB) },
+    { kind: "spread", value: state },
+    { kind: "property", key: "Form", value: stubValue(fetcherForm) },
+    ...FETCHER_METHODS.map((method): StaticObjectEntry => ({
+      kind: "property",
+      key: method,
+      value: nativeFunction(method, () => UNDEFINED_VALUE),
+    })),
   ]);
-
-/**
- * `@remix-run/react` v2 wraps react-router-dom's `Link`/`NavLink` in
- * `<>{inner}{shouldPrefetch && !isAbsolute ? <PrefetchPageLinks /> : null}</>`
- * and `Form` in a plain pass-through.
- */
-const remixLinkStub = (inner: StubComponent): StubComponent => ({
-  displayName: inner.displayName,
-  tag: ForwardRefTag,
-  render: (props) => {
-    const innerElement = element({ kind: "stub", stub: inner }, omitProps(props, PREFETCH_PROPS));
-    const { isPrefetching, reason } = readLinkPrefetch(props);
-    const trailing =
-      isPrefetching === null
-        ? branchValue([NULL_VALUE, prefetchPageLinks()], `remix: <${inner.displayName}> ${reason}`)
-        : isPrefetching
-          ? prefetchPageLinks()
-          : NULL_VALUE;
-    return fragmentOf([innerElement, trailing]);
-  },
-});
-
-const REMIX_LINK_STUB = remixLinkStub(LINK_STUB);
-const REMIX_NAV_LINK_STUB = remixLinkStub(NAV_LINK_STUB);
-const REMIX_FORM_STUB: StubComponent = {
-  displayName: "Form",
-  tag: ForwardRefTag,
-  render: (props) => element({ kind: "stub", stub: FORM_STUB }, omitProps(props, PREFETCH_PROPS)),
-};
 
 const createRouterFactory = (name: string): StaticValue =>
   nativeFunction(name, (args) => objectFromRecord({ routes: args[0] ?? listValue([]) }));
+
+/**
+ * `createRoutesFromChildren`: `<Route>` elements (fragments flattened) become
+ * route objects whose id is the explicit `id` or the tree path joined with `-`.
+ * Children that are not static elements stay in the list so the route reader
+ * reports them as uncertain instead of dropping them.
+ */
+const routeObjectsFromElements = (
+  children: StaticValue,
+  parentPath: number[] = [],
+): StaticListValue => {
+  const items = children.kind === "list" ? children.items : [children];
+  const routes: StaticValue[] = [];
+  items.forEach((item, index) => {
+    if (item.kind === "primitive") return;
+    const treePath = [...parentPath, index];
+    if (item.kind === "element" && item.type.kind === "fragment") {
+      routes.push(
+        ...routeObjectsFromElements(getObjectProperty(item.props, "children"), treePath).items,
+      );
+      return;
+    }
+    if (item.kind !== "element" || item.type.kind !== "stub" || item.type.stub !== ROUTE_STUB) {
+      routes.push(item);
+      return;
+    }
+    const props = item.props;
+    const nestedChildren = getObjectProperty(props, "children");
+    const id = getObjectProperty(props, "id");
+    const errorElement = getObjectProperty(props, "errorElement");
+    const errorBoundary = getObjectProperty(props, "ErrorBoundary");
+    routes.push(
+      objectFromRecord({
+        id: getTruthiness(id) === true ? id : primitiveValue(treePath.join("-")),
+        caseSensitive: getObjectProperty(props, "caseSensitive"),
+        element: getObjectProperty(props, "element"),
+        Component: getObjectProperty(props, "Component"),
+        index: getObjectProperty(props, "index"),
+        path: getObjectProperty(props, "path"),
+        loader: getObjectProperty(props, "loader"),
+        action: getObjectProperty(props, "action"),
+        errorElement,
+        ErrorBoundary: errorBoundary,
+        hasErrorBoundary: primitiveValue(isDefined(errorBoundary) || isDefined(errorElement)),
+        shouldRevalidate: getObjectProperty(props, "shouldRevalidate"),
+        handle: getObjectProperty(props, "handle"),
+        lazy: getObjectProperty(props, "lazy"),
+        children: isDefined(nestedChildren)
+          ? routeObjectsFromElements(nestedChildren, treePath)
+          : UNDEFINED_VALUE,
+      }),
+    );
+  });
+  return listValue(routes);
+};
 
 /** Values only the running router knows; each is a hook returning an explicit unknown. */
 const RUNTIME_ONLY_HOOKS = new Set([
@@ -848,6 +1144,8 @@ const observedHookValue = (
           nativeFunction("setSearchParams", () => UNDEFINED_VALUE),
         ]),
       );
+    case "useFetchers":
+      return nativeFunction(importedName, () => observed.fetchers);
     default:
       return null;
   }
@@ -863,26 +1161,35 @@ const locationValue = (pathname: string, observed: ObservedRouterState | null): 
     key: unknownValue("location key is assigned at runtime"),
   });
 
+const provide = (
+  context: ContextDefinition,
+  value: StaticValue,
+  children: StaticValue,
+): StaticElementValue =>
+  element(
+    { kind: "context-provider", context, displayName: context.displayName },
+    objectFromRecord({ value, children }),
+  );
+
 const withinRouter = (
   children: StaticValue,
   pathname: string,
   observed: ObservedRouterState | null,
 ): StaticElementValue =>
-  element(
-    { kind: "context-provider", context: LOCATION_CONTEXT, displayName: "Location" },
+  provide(
+    LOCATION_CONTEXT,
     objectFromRecord({
-      value: objectFromRecord({
-        location: locationValue(pathname, observed),
-        navigationType: primitiveValue("POP"),
-      }),
-      children,
+      location: locationValue(pathname, observed),
+      navigationType: primitiveValue("POP"),
     }),
+    children,
   );
 
 const routerHookValue = (
   importedName: string,
   pathname: string,
   observed: ObservedRouterState | null,
+  fetcherForm: StubComponent,
 ): StaticValue | null => {
   switch (importedName) {
     case "useParams":
@@ -899,11 +1206,16 @@ const routerHookValue = (
       return nativeFunction(importedName, () => nativeFunction("navigate", () => UNDEFINED_VALUE));
     case "useNavigationType":
       return nativeFunction(importedName, () => primitiveValue("POP"));
-    case "useFetcher":
-      return nativeFunction(importedName, fetcherValue);
     case "useInRouterContext":
       return nativeFunction(importedName, (_args, tools) =>
         primitiveValue(tools.readContext(LOCATION_CONTEXT).kind !== "primitive"),
+      );
+    case "useFetcher":
+      return nativeFunction(importedName, () =>
+        fetcherValue(
+          observed?.fetcher ?? unknownValue("react-router fetcher state is only known at runtime"),
+          fetcherForm,
+        ),
       );
     default:
       if (!RUNTIME_ONLY_HOOKS.has(importedName)) return null;
@@ -959,77 +1271,145 @@ const routeConfigValue = (name: string): StaticValue | null => {
   }
 };
 
-/** `RemixContext` (displayName `Remix`), provided by `RemixBrowser` around the router. */
-const REMIX_CONTEXT: ContextDefinition = {
-  name: "RemixContext",
-  displayName: "Remix",
-  defaultValue: UNDEFINED_VALUE,
-  location: null,
+const CRITICAL_CSS_REASON =
+  "whether the dev server inlined critical CSS is only known from a capture";
+const NO_RERENDER: UncertainFlag = { value: false, reason: "" };
+
+const eitherFlag = (left: UncertainFlag, right: UncertainFlag): UncertainFlag => {
+  if (left.value === true || right.value === true) return { value: true, reason: "" };
+  return left.value === null ? left : right;
+};
+
+/** `getPathsWithAncestors`: the manifest covers a path together with every ancestor path. */
+const pathsWithAncestors = (pathname: string): string[] => {
+  const segments = splitPathname(pathname);
+  return ["/", ...segments.map((_segment, index) => `/${segments.slice(0, index + 1).join("/")}`)];
+};
+
+const matchedRouteIds = (routes: RouteRecord[], pathname: string): Array<string | null> =>
+  (bestMatch(routes, pathname, ROOT_PARENT_MATCH) ?? []).map((match) => match.route.id);
+
+/**
+ * Whether `useFogOFWarDiscovery` patches the manifest right after hydration: it
+ * asks the server for the routes of every discoverable link target and only
+ * re-renders the router when one is missing from the manifest the page loaded
+ * with (`getPartialManifest`: the routes matching the URL and its ancestors).
+ */
+const discoversNewRoutes = (framework: FrameworkState, locationPathname: string): UncertainFlag => {
+  const { config, routes, discoveredTargets } = framework;
+  if (!config || !routes || config.isFogOfWar === false) return { value: false, reason: "" };
+  if (config.isFogOfWar === null) {
+    return { value: null, reason: "react-router.config `routeDiscovery` is not static" };
+  }
+  const knownRouteIds = new Set(
+    pathsWithAncestors(locationPathname).flatMap((path) => matchedRouteIds(routes, path)),
+  );
+  const discoveredRouteIds = [...discoveredTargets.pathnames]
+    .flatMap(pathsWithAncestors)
+    .flatMap((path) => matchedRouteIds(routes, path));
+  if (discoveredRouteIds.some((routeId) => routeId !== null && !knownRouteIds.has(routeId))) {
+    return { value: true, reason: "" };
+  }
+  if (discoveredTargets.hasDynamicPathname || discoveredRouteIds.includes(null)) {
+    return { value: null, reason: "a discoverable link's target route is not static" };
+  }
+  return { value: false, reason: "" };
 };
 
 export const createReactRouterModel = (
   pathname: string,
   routerState: CapturedRouterState | null = null,
 ): ReactRouterModel => {
+  const observed = observeRouterState(routerState, pathname);
+  const hasCriticalCss = observed?.hasCriticalCss ?? null;
+  const clearsCriticalCss: UncertainFlag = { value: hasCriticalCss, reason: CRITICAL_CSS_REASON };
   const framework: FrameworkState = {
     routeTree: null,
+    routes: null,
     meta: null,
     links: null,
-    ssr: null,
-    singleFetch: null,
-    lazyRouteDiscovery: null,
-    matchedRouteCount: 0,
-    hasCriticalCss: false,
+    config: null,
+    routeModuleUrls: [],
+    discoveredTargets: { pathnames: new Set(), hasDynamicPathname: false },
+    isRerenderedAfterHydration: clearsCriticalCss,
+    hasInlinedCriticalCss: false,
     isClassicCompiler: false,
   };
-  const observed = observeRouterState(routerState, pathname);
+  const linkStubs = createLinkStubs(
+    {
+      register: (target) => {
+        if (target) framework.discoveredTargets.pathnames.add(target.pathname);
+        else framework.discoveredTargets.hasDynamicPathname = true;
+      },
+    },
+    pathname,
+  );
   // `RouterProvider$1` from `react-router/dom` wraps the core `RouterProvider`;
   // only the latter is kept as a fiber so SPA and framework trees line up.
-  const routerProviderShell: StubComponent = {
+  // Route discovery's manifest patch lands as a router state update here, which
+  // reaches `<Scripts>` through `DataRouterStateContext`; `isRerenderedByBrowser`
+  // is whatever else the browser entry re-renders the router for after hydration.
+  const routerProviderShell = (isRerenderedByBrowser: UncertainFlag): StubComponent => ({
     displayName: "RouterProvider",
-    render: (props) => withinRouter(getObjectProperty(props, "children"), pathname, observed),
-  };
-  const frameworkRouter = (displayName: string): StaticValue =>
+    render: (props, tools) => {
+      const routerState = tools.hooks?.useState(objectValue());
+      tools.hooks?.useEffect(() => {
+        const discovered = discoversNewRoutes(framework, pathname);
+        framework.isRerenderedAfterHydration = eitherFlag(isRerenderedByBrowser, discovered);
+        if (discovered.value !== false) routerState?.[1](objectValue());
+      }, []);
+      return provide(
+        DATA_ROUTER_STATE_CONTEXT,
+        routerState?.[0] ?? objectValue(),
+        withinRouter(getObjectProperty(props, "children"), pathname, observed),
+      );
+    },
+  });
+  const frameworkRouter = (shell: StubComponent, displayName: string): StaticValue =>
     framework.routeTree
-      ? element(
-          { kind: "stub", stub: routerProviderShell },
-          objectFromRecord({ children: framework.routeTree }),
-        )
+      ? element({ kind: "stub", stub: shell }, objectFromRecord({ children: framework.routeTree }))
       : unknownValue(`react-router: ${displayName} mounts routes only known to framework mode`);
+  const hydratedRouterShell = routerProviderShell(clearsCriticalCss);
   const hydratedRouterStub: StubComponent = {
     displayName: "HydratedRouter",
-    render: () =>
-      fragmentOf([frameworkRouter("HydratedRouter"), element({ kind: "fragment" }, objectValue())]),
-  };
-  const remixBrowserStub: StubComponent = {
-    displayName: "RemixBrowser",
-    render: () => {
-      const singleFetch = framework.singleFetch ?? primitiveValue(false);
-      const isSingleFetch = getTruthiness(singleFetch);
-      const trailingFragment = element({ kind: "fragment" }, objectValue());
+    render: (_props, tools) => {
+      const criticalCss = tools.hooks?.useState(
+        hasCriticalCss === false
+          ? UNDEFINED_VALUE
+          : unknownPrimitiveValue("string", "critical CSS inlined by the dev server"),
+      );
+      tools.hooks?.useEffect(() => criticalCss?.[1](UNDEFINED_VALUE), []);
+      if (!framework.routeTree) return frameworkRouter(hydratedRouterShell, "HydratedRouter");
       return fragmentOf([
-        element(
-          {
-            kind: "context-provider",
-            context: REMIX_CONTEXT,
-            displayName: REMIX_CONTEXT.displayName,
-          },
-          objectFromRecord({
-            value: unknownValue("remix: manifest and route modules are only known to the bundler"),
-            children: frameworkRouter("RemixBrowser"),
-          }),
+        provide(
+          FRAMEWORK_CONTEXT,
+          objectFromRecord({ criticalCss: criticalCss?.[0] ?? UNDEFINED_VALUE }),
+          frameworkRouter(hydratedRouterShell, "HydratedRouter"),
         ),
-        isSingleFetch === true
-          ? trailingFragment
-          : isSingleFetch === false
-            ? NULL_VALUE
-            : branchValue(
-                [trailingFragment, NULL_VALUE],
-                "remix `future.v3_singleFetch` is not static",
-                null,
-              ),
+        element({ kind: "fragment" }, objectValue()),
       ]);
     },
+  };
+  // `RemixBrowser` keeps the critical CSS it hydrated with (only HMR clears it),
+  // so route discovery is the only router update after hydration.
+  const remixBrowserShell = routerProviderShell(NO_RERENDER);
+  const remixBrowserStub: StubComponent = {
+    displayName: "RemixBrowser",
+    render: () =>
+      fragmentOf([
+        provide(
+          REMIX_CONTEXT,
+          unknownValue("remix: manifest and route modules are only known to the bundler"),
+          frameworkRouter(remixBrowserShell, "RemixBrowser"),
+        ),
+        framework.config
+          ? whenFlag(
+              framework.config.isSingleFetch,
+              element({ kind: "fragment" }, objectValue()),
+              "remix `future.v3_singleFetch` is not static",
+            )
+          : NULL_VALUE,
+      ]),
   };
   const metaStub: StubComponent = {
     displayName: "Meta",
@@ -1039,13 +1419,17 @@ export const createReactRouterModel = (
     displayName: "Links",
     render: () => (framework.links ? renderLinkDescriptors(framework.links) : NULL_VALUE),
   };
+  // Remix's `<Links>` keeps the critical CSS the Vite dev server inlined and
+  // wraps each descriptor in a keyed fragment.
   const remixLinksStub: StubComponent = {
     displayName: "Links",
     render: () =>
       framework.links
-        ? renderRemixLinkDescriptors(framework.links, framework.hasCriticalCss)
+        ? renderRemixLinkDescriptors(framework.links, framework.hasInlinedCriticalCss)
         : NULL_VALUE,
   };
+  // The classic compiler's dev server pushes reloads over a socket; the Vite
+  // plugin's `LiveReload` is a no-op.
   const liveReloadStub: StubComponent = {
     displayName: "LiveReload",
     render: (props) =>
@@ -1054,96 +1438,122 @@ export const createReactRouterModel = (
             nonce: getObjectProperty(props, "nonce"),
             suppressHydrationWarning: primitiveValue(true),
             dangerouslySetInnerHTML: objectFromRecord({
-              __html: unknownPrimitiveValue("string", "remix live reload script"),
+              __html: unknownPrimitiveValue("string", "live reload client"),
             }),
           })
         : NULL_VALUE,
-  };
-  const remixScriptsStub: StubComponent = {
-    displayName: "Scripts",
-    render: (props) => {
-      const crossOrigin = getObjectProperty(props, "crossOrigin");
-      const modulePreload = (href: StaticValue): StaticValue =>
-        hostElement("link", { rel: primitiveValue("modulepreload"), href, crossOrigin });
-      const script = (attributes: Record<string, StaticValue>): StaticValue =>
-        element(
-          { kind: "host", tagName: "script" },
-          objectValue([
-            { kind: "spread", value: props },
-            {
-              kind: "spread",
-              value: objectFromRecord({
-                suppressHydrationWarning: primitiveValue(true),
-                dangerouslySetInnerHTML: objectFromRecord({
-                  __html: unknownPrimitiveValue("string", "remix hydration script"),
-                }),
-                ...attributes,
-              }),
-            },
-          ]),
-        );
-      const manifestPreload = modulePreload(
-        unknownPrimitiveValue("string", "remix browser manifest url"),
-      );
-      const isLazyRouteDiscovery = getTruthiness(
-        framework.lazyRouteDiscovery ?? primitiveValue(false),
-      );
-      const hydrated = fragmentOf([
-        isLazyRouteDiscovery === false
-          ? manifestPreload
-          : isLazyRouteDiscovery === true
-            ? NULL_VALUE
-            : branchValue(
-                [manifestPreload, NULL_VALUE],
-                "remix `future.v3_lazyRouteDiscovery` is not static",
-                null,
-              ),
-        modulePreload(unknownPrimitiveValue("string", "remix client entry url")),
-        listValue([
-          unknownValue("remix: entry imports come from the build manifest"),
-          ...Array.from({ length: framework.matchedRouteCount }, () =>
-            modulePreload(unknownPrimitiveValue("string", "remix route module url")),
-          ),
-        ]),
-        fragmentOf([
-          script({ type: UNDEFINED_VALUE }),
-          script({ type: primitiveValue("module"), async: primitiveValue(true) }),
-        ]),
-        listValue([]),
-      ]);
-      return branchValue(
-        [hydrated, NULL_VALUE],
-        "remix: <Scripts> renders null once a router update re-renders it",
-        null,
-      );
-    },
   };
   // Server-rendered framework apps inline a scroll-restoring `<script>`; SPA
   // mode (and plain data routers) render nothing.
   const scrollRestorationStub: StubComponent = {
     displayName: "ScrollRestoration",
     render: (props) => {
-      if (!framework.ssr) return NULL_VALUE;
-      const isSpaMode = getTruthiness(framework.ssr);
-      if (isSpaMode === false) return NULL_VALUE;
-      const script = element(
-        { kind: "host", tagName: "script" },
-        objectValue([
-          { kind: "spread", value: omitProps(props, SCROLL_RESTORATION_PROPS) },
-          { kind: "property", key: "suppressHydrationWarning", value: primitiveValue(true) },
-          {
-            kind: "property",
-            key: "dangerouslySetInnerHTML",
-            value: objectFromRecord({
-              __html: unknownPrimitiveValue("string", "inline scroll restoration script"),
-            }),
-          },
-        ]),
+      if (!framework.config) return NULL_VALUE;
+      return whenFlag(
+        framework.config.isSsr,
+        inlineScript(
+          omitProps(props, SCROLL_RESTORATION_PROPS),
+          "inline scroll restoration script",
+        ),
+        "react-router.config `ssr` is not static",
       );
-      if (isSpaMode === true) return script;
-      return branchValue([script, NULL_VALUE], "react-router.config `ssr` is not static", null);
     },
   };
+  // `<Scripts>` renders the module preloads and boot scripts until its
+  // hydration effect runs; the fibers stay until something above re-renders it.
+  const scriptsStub = (
+    context: ContextDefinition,
+    bootstrap: (props: StaticObjectValue, config: FrameworkConfig) => StaticValue[],
+  ): StubComponent => ({
+    displayName: "Scripts",
+    render: (props, tools) => {
+      tools.readContext(context);
+      tools.readContext(DATA_ROUTER_STATE_CONTEXT);
+      const isHydrated = tools.hooks?.useRef(false);
+      tools.hooks?.useEffect(() => {
+        if (isHydrated) isHydrated.current = true;
+      }, []);
+      const { config } = framework;
+      if (!config) return NULL_VALUE;
+      const firstRender = listValue(bootstrap(props, config));
+      if (!isHydrated?.current) return firstRender;
+      const { value, reason } = framework.isRerenderedAfterHydration;
+      return value === null ? branchValue([firstRender, NULL_VALUE], reason, null) : NULL_VALUE;
+    },
+  });
+  const preloadUrl = (asset: string) =>
+    unknownPrimitiveValue("string", `${asset} URL is assigned at build time`);
+  const modulePreload = (
+    props: StaticObjectValue,
+    href: StaticValue,
+    key: StaticValue | null = null,
+  ) =>
+    element(
+      { kind: "host", tagName: "link" },
+      objectFromRecord({
+        rel: primitiveValue("modulepreload"),
+        href,
+        crossOrigin: getObjectProperty(props, "crossOrigin"),
+        nonce: getObjectProperty(props, "nonce"),
+        suppressHydrationWarning: primitiveValue(true),
+      }),
+      key,
+    );
+  const manifestPreload = (props: StaticObjectValue, config: FrameworkConfig, reason: string) =>
+    whenFlag(
+      config.isFogOfWar === null ? null : !config.isFogOfWar,
+      modulePreload(props, preloadUrl("route manifest")),
+      reason,
+    );
+  const bootScripts = (props: StaticObjectValue) =>
+    fragmentOf([
+      inlineScript(props, "server handoff context"),
+      inlineScript(props, "route module imports", {
+        type: primitiveValue("module"),
+        async: primitiveValue(true),
+      }),
+    ]);
+  const reactRouterScriptsStub = scriptsStub(FRAMEWORK_CONTEXT, (props, config) => [
+    whenFlag(
+      config.hasSubResourceIntegrity === false ? false : null,
+      inlineScript(props, "subresource integrity import map", {
+        "rr-importmap": primitiveValue(""),
+        type: primitiveValue("importmap"),
+      }),
+      "the subresource integrity manifest is only inlined by production builds",
+    ),
+    manifestPreload(props, config, "react-router.config `routeDiscovery` is not static"),
+    modulePreload(props, preloadUrl("client entry")),
+    listValue(
+      framework.routeModuleUrls.map((url) => {
+        const href = primitiveValue(url);
+        return modulePreload(props, href, href);
+      }),
+    ),
+    bootScripts(props),
+  ]);
+  // Remix preloads the matched route modules from its build manifest (the
+  // classic compiler's URLs are hashed at build time) and ends with the
+  // deferred-data scripts, none on a page without streamed loaders.
+  const remixScriptsStub = scriptsStub(REMIX_CONTEXT, (props, config) => [
+    manifestPreload(props, config, "remix `future.v3_lazyRouteDiscovery` is not static"),
+    modulePreload(props, preloadUrl("client entry")),
+    listValue(
+      framework.isClassicCompiler
+        ? [
+            unknownValue("remix: entry imports come from the build manifest"),
+            ...framework.routeModuleUrls.map(() =>
+              modulePreload(props, preloadUrl("route module")),
+            ),
+          ]
+        : framework.routeModuleUrls.map((url) => {
+            const href = primitiveValue(url);
+            return modulePreload(props, href, href);
+          }),
+    ),
+    bootScripts(props),
+    listValue([]),
+  ]);
   const routerProviderStub: StubComponent = {
     displayName: "RouterProvider",
     render: (props, tools) => {
@@ -1156,6 +1566,7 @@ export const createReactRouterModel = (
         renderMatchedRoutes(
           readRouteList(getObjectProperty(router, "routes"), resolveLazy),
           pathname,
+          ROOT_PARENT_MATCH,
         ),
         pathname,
         observed,
@@ -1168,15 +1579,26 @@ export const createReactRouterModel = (
   });
   const routesStub: StubComponent = {
     displayName: "Routes",
-    render: (props, tools) =>
-      renderMatchedRoutes(
+    render: (props, tools) => {
+      const parent = readParentMatch(tools);
+      if (!parent) {
+        return unknownValue("react-router: the enclosing route's match is not static");
+      }
+      return renderMatchedRoutes(
         readRouteElements(getObjectProperty(props, "children"), (lazy) =>
           tools.callAwaited(lazy, []),
         ),
         pathname,
-      ),
+        parent,
+      );
+    },
   };
 
+  const remixLinkStubs = {
+    link: remixLinkStub(linkStubs.link),
+    navLink: remixLinkStub(linkStubs.navLink),
+    form: remixFormStub(linkStubs.form),
+  };
   const routerValue = (specifier: string, importedName: string): StaticValue | null => {
     const isRemix = specifier === REMIX_REACT_PACKAGE;
     switch (importedName) {
@@ -1185,6 +1607,11 @@ export const createReactRouterModel = (
       case "createMemoryRouter":
       case "createStaticRouter":
         return createRouterFactory(importedName);
+      case "createRoutesFromElements":
+      case "createRoutesFromChildren":
+        return nativeFunction(importedName, (args) =>
+          routeObjectsFromElements(args[0] ?? UNDEFINED_VALUE),
+        );
       case "RouterProvider":
         return stubValue(routerProviderStub);
       case "Routes":
@@ -1194,11 +1621,11 @@ export const createReactRouterModel = (
       case "Outlet":
         return stubValue(OUTLET_STUB);
       case "Link":
-        return stubValue(isRemix ? REMIX_LINK_STUB : LINK_STUB);
+        return stubValue(isRemix ? remixLinkStubs.link : linkStubs.link);
       case "NavLink":
-        return stubValue(isRemix ? REMIX_NAV_LINK_STUB : NAV_LINK_STUB);
+        return stubValue(isRemix ? remixLinkStubs.navLink : linkStubs.navLink);
       case "Form":
-        return stubValue(isRemix ? REMIX_FORM_STUB : FORM_STUB);
+        return stubValue(isRemix ? remixLinkStubs.form : linkStubs.form);
       case "Await":
         return stubValue(AWAIT_STUB);
       case "BrowserRouter":
@@ -1217,16 +1644,16 @@ export const createReactRouterModel = (
         return stubValue(isRemix ? remixLinksStub : linksStub);
       case "ScrollRestoration":
         return stubValue(scrollRestorationStub);
+      case "Scripts":
+        return stubValue(isRemix ? remixScriptsStub : reactRouterScriptsStub);
+      case "LiveReload":
+        return stubValue(liveReloadStub);
       case "PrefetchPageLinks":
         return stubValue(PREFETCH_PAGE_LINKS_STUB);
       case "Navigate":
         return stubValue(emptyStub(importedName));
-      case "Scripts":
-        return stubValue(isRemix ? remixScriptsStub : emptyStub(importedName));
-      case "LiveReload":
-        return stubValue(liveReloadStub);
       default:
-        return routerHookValue(importedName, pathname, observed);
+        return routerHookValue(importedName, pathname, observed, linkStubs.fetcherForm);
     }
   };
 
@@ -1261,24 +1688,13 @@ export const createReactRouterModel = (
  * wraps everything. Each route module's default export is its component.
  */
 /**
- * The framework options: `react-router.config.ts`/`remix.config.js`'s default
- * export, or the object passed to `vitePlugin()` from `@remix-run/dev` in
- * `vite.config.ts`. An empty object when the project has neither.
+ * The options object passed to `vitePlugin()` from `@remix-run/dev` in the
+ * Vite config, whose default export may be a `defineConfig` callback.
  */
-const readFrameworkConfig = (
+const readRemixPluginConfig = (
   interpreter: Interpreter,
-  configModule: ModuleRecord | null,
-  viteConfigModule: ModuleRecord | null,
+  viteConfigModule: ModuleRecord,
 ): StaticValue => {
-  if (configModule) {
-    const config = interpreter.evaluateModuleExport(configModule, "default");
-    return config.kind === "object"
-      ? config
-      : unknownValue(
-          `${path.basename(configModule.filePath)} default export is not a static object`,
-        );
-  }
-  if (!viteConfigModule) return objectValue();
   const exported = interpreter.evaluateModuleExport(viteConfigModule, "default");
   const viteConfig =
     exported.kind === "function"
@@ -1294,46 +1710,105 @@ const readFrameworkConfig = (
           null,
         )
       : exported;
-  if (viteConfig.kind !== "object") return objectValue();
+  if (viteConfig.kind !== "object") return viteConfig;
   const plugins = getObjectProperty(viteConfig, "plugins");
-  if (plugins.kind !== "list") return objectValue();
-  const flattened = plugins.items.flatMap((plugin) =>
-    plugin.kind === "list" ? plugin.items : [plugin],
+  if (plugins.kind !== "list") return plugins;
+  const isRemixPlugin = (plugin: StaticValue): boolean =>
+    plugin.kind === "object" &&
+    readString(getObjectProperty(plugin, "name")) === REMIX_VITE_PLUGIN_NAME;
+  return (
+    plugins.items
+      .flatMap((plugin) => (plugin.kind === "list" ? plugin.items : [plugin]))
+      .find(isRemixPlugin) ?? objectValue()
   );
-  const isRemixPlugin = (plugin: StaticValue): boolean => {
-    if (plugin.kind !== "object") return false;
-    const name = getObjectProperty(plugin, "name");
-    return name.kind === "primitive" && name.value === REMIX_VITE_PLUGIN_NAME;
-  };
-  return flattened.find(isRemixPlugin) ?? objectValue();
 };
 
-/** `remix.config.*` drives the esbuild-based Remix compiler, which never inlines critical CSS. */
+const readFutureFlag = (config: StaticObjectValue, flag: string): boolean | null => {
+  const future = getObjectProperty(config, "future");
+  if (!isDefined(future)) return false;
+  if (future.kind !== "object") return null;
+  const value = getObjectProperty(future, flag);
+  return isDefined(value) ? getTruthiness(value) : false;
+};
+
+const bothFlags = (left: boolean | null, right: boolean | null): boolean | null =>
+  left === false || right === false ? false : left === true && right === true ? true : null;
+
+/**
+ * `react-router.config.*`, `remix.config.*` or the Remix Vite plugin options.
+ * The `@react-router/dev` defaults: SSR on, lazy route discovery under SSR, no
+ * SRI. Remix only discovers routes lazily under `future.v3_lazyRouteDiscovery`
+ * (and never in SPA mode) and has no SRI.
+ */
+const readFrameworkConfig = (
+  interpreter: Interpreter,
+  configModule: ModuleRecord | null,
+  viteConfigModule: ModuleRecord | null,
+  isRemix: boolean,
+): FrameworkConfig => {
+  const config = configModule
+    ? interpreter.evaluateModuleExport(configModule, "default")
+    : isRemix && viteConfigModule
+      ? readRemixPluginConfig(interpreter, viteConfigModule)
+      : objectValue();
+  if (config.kind !== "object") {
+    return { isSsr: null, isFogOfWar: null, hasSubResourceIntegrity: null, isSingleFetch: null };
+  }
+  const ssr = getObjectProperty(config, "ssr");
+  const isSsr = isDefined(ssr) ? getTruthiness(ssr) : true;
+  if (isRemix) {
+    return {
+      isSsr,
+      isFogOfWar: bothFlags(isSsr, readFutureFlag(config, "v3_lazyRouteDiscovery")),
+      hasSubResourceIntegrity: false,
+      isSingleFetch: readFutureFlag(config, "v3_singleFetch"),
+    };
+  }
+  const routeDiscovery = getObjectProperty(config, "routeDiscovery");
+  const mode =
+    routeDiscovery.kind === "object" ? readString(getObjectProperty(routeDiscovery, "mode")) : null;
+  return {
+    isSsr,
+    isFogOfWar:
+      mode === "initial" ? false : !isDefined(routeDiscovery) || mode === "lazy" ? isSsr : null,
+    hasSubResourceIntegrity: readFutureFlag(config, "unstable_subResourceIntegrity"),
+    isSingleFetch: false,
+  };
+};
+
 const isClassicRemixCompiler = (configModule: ModuleRecord | null): boolean =>
   configModule !== null && path.basename(configModule.filePath).startsWith(REMIX_CONFIG_PREFIX);
 
-const usesRemixCompiler = (configModule: ModuleRecord | null, config: StaticValue): boolean => {
-  if (configModule) return isClassicRemixCompiler(configModule);
-  if (config.kind !== "object") return false;
-  const name = getObjectProperty(config, "name");
-  return name.kind === "primitive" && name.value === REMIX_VITE_PLUGIN_NAME;
+const importsRemix = (module: ModuleRecord): boolean =>
+  module.imports.some((binding) => binding.specifier === REMIX_REACT_PACKAGE);
+
+const whenFlag = (flag: boolean | null, value: StaticValue, reason: string): StaticValue => {
+  if (flag === null) return branchValue([value, NULL_VALUE], reason, null);
+  return flag ? value : NULL_VALUE;
 };
 
-/** `ssr` from the framework config; defaults to `true` like `@react-router/dev`. */
-const readSsrFlag = (config: StaticValue): StaticValue => {
-  if (config.kind !== "object") return config;
-  const ssr = getObjectProperty(config, "ssr");
-  return isDefined(ssr) ? ssr : primitiveValue(true);
-};
-
-const readFutureFlag = (config: StaticValue, flag: string): StaticValue => {
-  if (config.kind !== "object") return config;
-  const future = getObjectProperty(config, "future");
-  if (!isDefined(future)) return primitiveValue(false);
-  if (future.kind !== "object") return future;
-  const value = getObjectProperty(future, flag);
-  return isDefined(value) ? value : primitiveValue(false);
-};
+const inlineScript = (
+  scriptProps: StaticValue,
+  content: string,
+  attributes: Record<string, StaticValue> = {},
+): StaticValue =>
+  element(
+    { kind: "host", tagName: "script" },
+    objectValue([
+      { kind: "spread", value: scriptProps },
+      { kind: "property", key: "suppressHydrationWarning", value: primitiveValue(true) },
+      {
+        kind: "property",
+        key: "dangerouslySetInnerHTML",
+        value: objectFromRecord({ __html: unknownPrimitiveValue("string", content) }),
+      },
+      ...Object.entries(attributes).map(([key, value]): StaticObjectEntry => ({
+        kind: "property",
+        key,
+        value,
+      })),
+    ]),
+  );
 
 const renderFrameworkRoutes = (
   renderer: StaticRenderer,
@@ -1352,15 +1827,17 @@ const renderFrameworkRoutes = (
   const rootModule = findModule(ROOT_MODULE_NAMES);
   const clientEntry = findModule(CLIENT_ENTRY_NAMES);
   const projectDirectory = path.join(appDirectory, "..");
-  const configModule = CONFIG_MODULE_NAMES.map((name) =>
-    renderer.loadModule(path.join(projectDirectory, name)),
-  ).find((module) => module !== null);
-  const viteConfigModule = VITE_CONFIG_MODULE_NAMES.map((name) =>
-    renderer.loadModule(path.join(projectDirectory, name)),
-  ).find((module) => module !== null);
+  const findProjectModule = (names: string[]): ModuleRecord | null =>
+    names
+      .map((name) => renderer.loadModule(path.join(projectDirectory, name)))
+      .find((module) => module !== null) ?? null;
+  const configModule = findProjectModule(CONFIG_MODULE_NAMES);
+  const viteConfigModule = findProjectModule(VITE_CONFIG_MODULE_NAMES);
+  const moduleUrl = (filePath: string): string =>
+    `/${path.relative(renderer.options.rootDirectory, filePath).split(path.sep).join("/")}`;
 
   return renderer.renderWith((interpreter) => {
-    const chain = bestMatch(routes, model.pathname);
+    const chain = bestMatch(routes, model.pathname, ROOT_PARENT_MATCH);
     if (!chain) {
       interpreter.report(
         "react-router-no-match",
@@ -1411,7 +1888,7 @@ const renderFrameworkRoutes = (
         routeProps(params, route.id),
       );
     };
-    const matched = composeChain(chain, renderRoute);
+    const matched = composeChain(chain, model.pathname, renderRoute);
     if (!rootModule) return matched;
 
     // `meta`/`links` see every match root-first, exactly as `<Meta>`/`<Links>` do.
@@ -1445,13 +1922,24 @@ const renderFrameworkRoutes = (
       });
       leafMeta = callExport(module, "meta", [metaArgs]) ?? leafMeta;
     }
-    const config = readFrameworkConfig(interpreter, configModule ?? null, viteConfigModule ?? null);
-    model.framework.ssr = readSsrFlag(config);
-    model.framework.singleFetch = readFutureFlag(config, "v3_singleFetch");
-    model.framework.lazyRouteDiscovery = readFutureFlag(config, "v3_lazyRouteDiscovery");
-    model.framework.matchedRouteCount = 1 + chain.filter((match) => match.route.file).length;
-    model.framework.isClassicCompiler = isClassicRemixCompiler(configModule ?? null);
-    model.framework.hasCriticalCss =
+    const isRemix = importsRemix(rootModule);
+    model.framework.config = readFrameworkConfig(
+      interpreter,
+      configModule,
+      viteConfigModule,
+      isRemix,
+    );
+    model.framework.routes = routes;
+    model.framework.routeModuleUrls = [
+      ...new Set([
+        moduleUrl(rootModule.filePath),
+        ...chain.flatMap((match) =>
+          match.route.file ? [moduleUrl(path.join(appDirectory, match.route.file))] : [],
+        ),
+      ]),
+    ];
+    model.framework.isClassicCompiler = isClassicRemixCompiler(configModule);
+    model.framework.hasInlinedCriticalCss =
       !model.framework.isClassicCompiler &&
       importsCriticalCss(interpreter.graph, [
         ...(clientEntry ? [clientEntry] : []),
@@ -1481,15 +1969,16 @@ const renderFrameworkRoutes = (
           objectFromRecord({ children: app }),
         )
       : app;
-    model.framework.routeTree = renderedRoute(matched, {}, rootElement, ROOT_ROUTE_ID);
+    model.framework.routeTree = renderedRoute(matched, {}, ROOT_ROUTE_ID, "/", rootElement);
 
+    // The client entry decides what wraps `<HydratedRouter />` (StrictMode, providers);
+    // without one, `@react-router/dev` uses `<StrictMode><HydratedRouter /></StrictMode>`
+    // and `@remix-run/dev` `<StrictMode><RemixBrowser /></StrictMode>`.
     if (clientEntry) {
       const entry = renderer.evaluateEntryElement(interpreter, clientEntry);
       if (entry) return entry;
     }
-    const browserRouter = usesRemixCompiler(configModule ?? null, config)
-      ? model.remixBrowser
-      : model.hydratedRouter;
+    const browserRouter = isRemix ? model.remixBrowser : model.hydratedRouter;
     return element(
       { kind: "strict-mode" },
       objectFromRecord({ children: element({ kind: "stub", stub: browserRouter }, objectValue()) }),

@@ -517,7 +517,11 @@ class Matcher {
 
   private opaqueNameAgrees(pattern: PatternOpaque, actual: RuntimeFiberSnapshot): boolean {
     if (actual.name === null || isBundlerPlaceholderName(actual.name)) return true;
-    return pattern.runtimeNames === null || pattern.runtimeNames.includes(actual.name);
+    if (pattern.runtimeNames === null) return true;
+    const runtimeName = actual.name;
+    return pattern.runtimeNames.some(
+      (name) => name === runtimeName || isBundlerDedupedName(name, runtimeName),
+    );
   }
 
   // Searches the library's runtime subtree for the place where it rendered the

@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "partial",
+  "minCoverage": 1,
+  "notes": "Radix ScrollArea's hover scrollbar: an effect listens for pointerenter on the root node. A loaded page reports the resting pointer position to the element under it, so whether the handler ran before the snapshot depends on where the pointer rests; the visibility stays a residual branch while the pointerleave handler, which needs the pointer to move, stays certain."
+}

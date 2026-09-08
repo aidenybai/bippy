@@ -1,5 +1,6 @@
 import {
   FUNCTION_OWN_KEYS,
+  getStubOwnKeys,
   REACT_ELEMENT_OWN_KEYS,
   WRAPPER_OWN_KEYS,
 } from "../react/element-shape.js";
@@ -59,6 +60,10 @@ const hasComponentProperty = (type: StaticElementType, name: string): StaticValu
         (name === "displayName" && type.displayName !== null)
         ? TRUE_VALUE
         : FALSE_VALUE;
+    case "stub":
+      if (type.stub.properties?.has(name)) return TRUE_VALUE;
+      if (name === "displayName") return primitiveValue(type.stub.displayName !== null);
+      return getStubOwnKeys(type.stub.tag).has(name) ? null : FALSE_VALUE;
     default:
       return null;
   }

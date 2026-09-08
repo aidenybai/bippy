@@ -3,30 +3,84 @@
     {
       "id": "actual",
       "revision": "8867158f0a2e101467fb191c9e253f47c75a9e2d",
-      "framework": "spa",
-      "capturedAt": "2026-09-08T03:55:38.418Z",
-      "durationMs": 859,
-      "runtime": null,
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T06:04:13.966Z",
+      "durationMs": 28254,
+      "runtime": {
+        "reactVersion": "19.2.7",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 236,
+        "commits": 22,
+        "pageErrors": [],
+        "title": "Actual"
+      },
       "static": {
         "stats": {
-          "fiberCount": 1663,
-          "textCount": 50,
-          "branchCount": 101,
-          "repeatCount": 4,
-          "opaqueCount": 623,
-          "unknownCount": 187,
-          "modulesLoaded": 492
+          "fiberCount": 239,
+          "textCount": 17,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 12,
+          "unknownCount": 2,
+          "modulesLoaded": 2065
         },
         "diagnostics": [
           {
             "code": "dynamic-key",
-            "count": 85
+            "count": 1
           }
         ]
       },
-      "report": null,
+      "report": {
+        "matchedFibers": 203,
+        "matchedText": 10,
+        "opaqueSubtrees": 12,
+        "opaqueSkippedFibers": 19,
+        "slotsMatched": 10,
+        "slotsUnmatched": 2,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [
+          {
+            "path": "root > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <ServerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <BrowserRouter> [FunctionComponent] > <F> [FunctionComponent] > <ContextProvider> [ContextProvider] > <j> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SpreadsheetProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SidebarProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BudgetMonthCountProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <DndProvider> [SimpleMemoComponent] > <ContextProvider> [ContextProvider] > <View> [ForwardRef] > <div> [HostComponent] > <View> [ForwardRef] > <div> [HostComponent] > <m> [ClassComponent] > <ContextProvider> [ContextProvider] > <AppInner> [FunctionComponent] > <ManagementApp> [FunctionComponent] > <View> [ForwardRef] > <div> [HostComponent] > <View> [ForwardRef] > <div> [HostComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <WelcomeScreen> [FunctionComponent] > <View> [ForwardRef] > <div> [HostComponent] > <View> [ForwardRef] > <div> [HostComponent] > <Paragraph> [FunctionComponent] > <div> [HostComponent] > <Trans> (opaque)",
+            "reason": "Trans from react-i18next is not analyzed",
+            "head": "<Trans> [FunctionComponent]",
+            "skippedFibers": 7,
+            "divergence": {
+              "path": "root > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <ServerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <BrowserRouter> [FunctionComponent] > <F> [FunctionComponent] > <ContextProvider> [ContextProvider] > <j> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SpreadsheetProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SidebarProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BudgetMonthCountProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <DndProvider> [SimpleMemoComponent] > <ContextProvider> [ContextProvider] > <View> [ForwardRef] > <div> [HostComponent] > <View> [ForwardRef] > <div> [HostComponent] > <m> [ClassComponent] > <ContextProvider> [ContextProvider] > <AppInner> [FunctionComponent] > <ManagementApp> [FunctionComponent] > <View> [ForwardRef] > <div> [HostComponent] > <View> [ForwardRef] > <div> [HostComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <WelcomeScreen> [FunctionComponent] > <View> [ForwardRef] > <div> [HostComponent] > <View> [ForwardRef] > <div> [HostComponent] > <Paragraph> [FunctionComponent] > <div> [HostComponent] > <Trans> (opaque)[0]",
+              "expected": "\"New to budgeting? Take the\"",
+              "actual": "\"New to budgeting? Take the \""
+            }
+          },
+          {
+            "path": "root > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <ServerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <BrowserRouter> [FunctionComponent] > <F> [FunctionComponent] > <ContextProvider> [ContextProvider] > <j> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SpreadsheetProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SidebarProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BudgetMonthCountProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <DndProvider> [SimpleMemoComponent] > <ContextProvider> [ContextProvider] > <View> [ForwardRef] > <div> [HostComponent] > <View> [ForwardRef] > <div> [HostComponent] > <m> [ClassComponent] > <ContextProvider> [ContextProvider] > <AppInner> [FunctionComponent] > <ManagementApp> [FunctionComponent] > <View> [ForwardRef] > <div> [HostComponent] > <Version> [FunctionComponent] > <Text> [ForwardRef] > <span> [HostComponent] > <Trans> (opaque)",
+            "reason": "Trans from react-i18next is not analyzed",
+            "head": "<Trans> [FunctionComponent]",
+            "skippedFibers": 2,
+            "divergence": {
+              "path": "root > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <ServerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <BrowserRouter> [FunctionComponent] > <F> [FunctionComponent] > <ContextProvider> [ContextProvider] > <j> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SpreadsheetProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SidebarProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BudgetMonthCountProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <DndProvider> [SimpleMemoComponent] > <ContextProvider> [ContextProvider] > <View> [ForwardRef] > <div> [HostComponent] > <View> [ForwardRef] > <div> [HostComponent] > <m> [ClassComponent] > <ContextProvider> [ContextProvider] > <AppInner> [FunctionComponent] > <ManagementApp> [FunctionComponent] > <View> [ForwardRef] > <div> [HostComponent] > <Version> [FunctionComponent] > <Text> [ForwardRef] > <span> [HostComponent] > <Trans> (opaque)[0]",
+              "expected": "\"App: v\"",
+              "actual": "\"App: v26.9.0 | Server: N/A\""
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 232,
+        "staticFibers": 235,
+        "coverage": 1,
+        "strictCoverage": 0.9181034482758621,
+        "divergence": null,
+        "stepsUsed": 234,
+        "budgetExhausted": false
+      },
       "anchor": null,
-      "note": "static only",
+      "note": null,
       "failure": null
     },
     {
@@ -140,6 +194,157 @@
       "failure": null
     },
     {
+      "id": "copilotkit",
+      "revision": "fbe488869949f5b7300945ed54c88ef6b8b16df1",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T08:10:21.274Z",
+      "durationMs": 1292,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-f93b9fd4-20251217",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 2,
+        "fibers": 355,
+        "commits": 128,
+        "pageErrors": [],
+        "title": "Create Next App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 942,
+          "textCount": 0,
+          "branchCount": 35,
+          "repeatCount": 7,
+          "opaqueCount": 5,
+          "unknownCount": 18,
+          "modulesLoaded": 1723
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 8
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 162,
+        "matchedText": 0,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 2,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 15,
+        "wildcards": [
+          {
+            "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent] > <div> [HostComponent] > <Chat> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <CopilotChat> key=\"stateless\" [FunctionComponent] > <CopilotChatConfigurationProvider> [FunctionComponent] > <div> [HostComponent] > <MemoizedSlotWrapper> [MemoComponent] > <MemoizedSlotWrapper> [ForwardRef] > <CopilotChatView> [FunctionComponent] > <div> [HostComponent] > <MemoizedSlotWrapper> [MemoComponent] > <MemoizedSlotWrapper> [ForwardRef] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <MemoizedSlotWrapper> [MemoComponent] > <MemoizedSlotWrapper> [ForwardRef] > <CopilotChatSuggestionView> [ForwardRef] > <MemoizedSlotWrapper> [MemoComponent] > <MemoizedSlotWrapper> [ForwardRef] > <DefaultContainer> [ForwardRef] > <div> [HostComponent]",
+            "reason": "call of call of Object.values of {...}",
+            "absorbedFibers": 15,
+            "heads": [
+              "<MemoizedSlotWrapper> key=\"Generate a simple UI-0\" [MemoComponent]",
+              "<MemoizedSlotWrapper> key=\"Build an interactive form-1\" [MemoComponent]",
+              "<MemoizedSlotWrapper> key=\"Test the sayHello tool-2\" [MemoComponent]"
+            ]
+          }
+        ],
+        "branchesResolved": 12,
+        "branchDeviations": [
+          {
+            "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent] > <CopilotKitInspector> [FunctionComponent]",
+            "reason": "if (<boolean: negation of unknown>)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent] > <CopilotKitInspector> [FunctionComponent][0]",
+              "expected": "<end of children>",
+              "actual": "<WebInspectorElement> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent]",
+            "reason": "&& on branch(true | false)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent][4]",
+              "expected": "<LicenseWarningBanner> [FunctionComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent]",
+            "reason": "&& on <boolean: === on dynamic values>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent][4]",
+              "expected": "<LicenseWarningBanner> [FunctionComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent]",
+            "reason": "&& on <boolean: === on dynamic values>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent][4]",
+              "expected": "<LicenseWarningBanner> [FunctionComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent]",
+            "reason": "&& on <boolean: === on dynamic values>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent][4]",
+              "expected": "<LicenseWarningBanner> [FunctionComponent]",
+              "actual": "<end of children>"
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 179,
+        "staticFibers": 264,
+        "coverage": 1,
+        "strictCoverage": 0.9050279329608939,
+        "divergence": null,
+        "stepsUsed": 735,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T08:02:55.873Z",
+      "failure": null
+    },
+    {
+      "id": "craft-js",
+      "revision": "23f44f3208ebf78d1632ec4aa7094001f513eb41",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-08T08:11:27.601Z",
+      "durationMs": 1047,
+      "runtime": null,
+      "static": {
+        "stats": {
+          "fiberCount": 111,
+          "textCount": 1,
+          "branchCount": 4,
+          "repeatCount": 0,
+          "opaqueCount": 6,
+          "unknownCount": 9,
+          "modulesLoaded": 35
+        },
+        "diagnostics": []
+      },
+      "report": null,
+      "anchor": null,
+      "note": "static only",
+      "failure": null
+    },
+    {
       "id": "documenso",
       "revision": "2cac63a000e22422bdea449f68b8025e709aa73a",
       "framework": "react-router",
@@ -211,8 +416,8 @@
       "id": "elysia-react-router",
       "revision": "3c6321cd125bae03b7d848965f7dfd576672b284",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T08:50:38.228Z",
-      "durationMs": 111,
+      "capturedAt": "2026-09-08T15:06:34.818Z",
+      "durationMs": 385,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -225,7 +430,7 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 60,
+          "fiberCount": 62,
           "textCount": 12,
           "branchCount": 0,
           "repeatCount": 0,
@@ -266,18 +471,27 @@
       "id": "epic-stack",
       "revision": "8473afd804b66dba6a23f317908dc35d1535e90d",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T03:55:40.453Z",
-      "durationMs": 135,
-      "runtime": null,
+      "capturedAt": "2026-09-08T07:14:17.752Z",
+      "durationMs": 16528,
+      "runtime": {
+        "reactVersion": "19.2.4",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 1989,
+        "commits": 8,
+        "pageErrors": [],
+        "title": "Epic Notes"
+      },
       "static": {
         "stats": {
-          "fiberCount": 480,
-          "textCount": 30,
-          "branchCount": 7,
+          "fiberCount": 695,
+          "textCount": 4,
+          "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 101,
-          "unknownCount": 2,
-          "modulesLoaded": 44
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 91
         },
         "diagnostics": [
           {
@@ -286,9 +500,31 @@
           }
         ]
       },
-      "report": null,
+      "report": {
+        "matchedFibers": 689,
+        "matchedText": 4,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "exact",
+        "runtimeFibers": 693,
+        "staticFibers": 693,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 693,
+        "budgetExhausted": false
+      },
       "anchor": null,
-      "note": "static only",
+      "note": null,
       "failure": null
     },
     {
@@ -329,11 +565,155 @@
       "failure": null
     },
     {
+      "id": "formbricks",
+      "revision": "1380c81bffe44f3ea9e7ff0d9a95fd37044ddc83",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T12:29:09.859Z",
+      "durationMs": 453,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 285,
+        "commits": 15,
+        "pageErrors": [],
+        "title": "Intro | Formbricks"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 89,
+          "textCount": 0,
+          "branchCount": 2,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 4,
+          "modulesLoaded": 123
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 74,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 2,
+        "branchDeviations": [
+          {
+            "path": "root > <body> [HostSingleton] > <SentryProvider> [FunctionComponent] > <I18nProvider> [FunctionComponent]",
+            "reason": "if (branch(true | <boolean>))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <SentryProvider> [FunctionComponent] > <I18nProvider> [FunctionComponent][0]",
+              "expected": "<end of children>",
+              "actual": "<I18nextProvider> [FunctionComponent]"
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 74,
+        "staticFibers": 74,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 79,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T11:34:51.280Z",
+      "failure": null
+    },
+    {
+      "id": "foxel",
+      "revision": "d5a24c69e180711e55abeddb4e31ce06e60a456f",
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T08:12:02.275Z",
+      "durationMs": 8619,
+      "runtime": {
+        "reactVersion": "19.2.4",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 18,
+        "commits": 1,
+        "pageErrors": [
+          "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+          "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+          "Failed to check initialization status: TypeError: Failed to fetch\n    at request (http://localhost:5173/src/api/client.ts:25:22)\n    at status (http://localhost:5173/src/api/config.ts:18:10)\n    at checkInitialization (http://localhost:5173/src/App.tsx:62:34)\n    at http://localhost:5173/src/App.tsx:78:5\n    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/chunk-UTQ67KV7.js?v=7db57128:18567:20)\n    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/chunk-UTQ67KV7.js?v=7db57128:997:72)\n    at commitHookEffectListMount (http://localhost:5173/node_modules/.vite/deps/chunk-UTQ67KV7.js?v=7db57128:9411:163)\n    at commitHookPassiveMountEffects (http://localhost:5173/node_modules/.vite/deps/chunk-UTQ67KV7.js?v=7db57128:9465:60)\n    at commitPassiveMountOnFiber (http://localhost:5173/node_modules/.vite/deps/chunk-UTQ67KV7.js?v=7db57128:11040:29)\n    at recursivelyTraversePassiveMountEffects (http://localhost:5173/node_modules/.vite/deps/chunk-UTQ67KV7.js?v=7db57128:11010:13)"
+        ],
+        "title": "Foxel"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 12,
+          "textCount": 0,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 2,
+          "modulesLoaded": 2512
+        },
+        "diagnostics": [
+          {
+            "code": "budget-exhausted",
+            "count": 23
+          },
+          {
+            "code": "max-call-depth",
+            "count": 3
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 4,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 10,
+        "wildcards": [
+          {
+            "path": "root > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Spin> [FunctionComponent]",
+            "reason": "step budget exhausted",
+            "absorbedFibers": 10,
+            "heads": [
+              "<div> [HostComponent]"
+            ]
+          }
+        ],
+        "branchesResolved": 1,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 14,
+        "staticFibers": 4,
+        "coverage": 1,
+        "strictCoverage": 0.2857142857142857,
+        "divergence": null,
+        "stepsUsed": 7,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T07:24:29.116Z",
+      "failure": null
+    },
+    {
       "id": "gcn-nasa-gov",
       "revision": "5dd03d9d919d080d051ad9e06f8d382913a7dbe7",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T08:50:39.316Z",
-      "durationMs": 322,
+      "capturedAt": "2026-09-08T15:06:39.303Z",
+      "durationMs": 852,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -346,13 +726,13 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 368,
+          "fiberCount": 357,
           "textCount": 47,
-          "branchCount": 2,
+          "branchCount": 1,
           "repeatCount": 0,
           "opaqueCount": 0,
-          "unknownCount": 1,
-          "modulesLoaded": 26
+          "unknownCount": 0,
+          "modulesLoaded": 27
         },
         "diagnostics": [
           {
@@ -376,7 +756,7 @@
         "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
-        "branchesResolved": 2,
+        "branchesResolved": 1,
         "branchDeviations": [
           {
             "path": "root > <StrictMode> [Mode] > <RemixBrowser> [FunctionComponent] > <Remix> [ContextProvider] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Layout> [FunctionComponent] > <html> [HostComponent] > <body> [HostComponent] > <Progress> [FunctionComponent]",
@@ -388,27 +768,16 @@
               "expected": "<TopBar> [FunctionComponent]",
               "actual": "<end of children>"
             }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <RemixBrowser> [FunctionComponent] > <Remix> [ContextProvider] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Layout> [FunctionComponent] > <html> [HostComponent] > <body> [HostComponent] > <Scripts> [FunctionComponent]",
-            "reason": "remix: <Scripts> renders null once a router update re-renders it",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <RemixBrowser> [FunctionComponent] > <Remix> [ContextProvider] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Layout> [FunctionComponent] > <html> [HostComponent] > <body> [HostComponent] > <Scripts> [FunctionComponent][0]",
-              "expected": "<link> [HostComponent]",
-              "actual": "<end of children>"
-            }
           }
         ],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 350,
-        "staticFibers": 359,
+        "staticFibers": 351,
         "coverage": 1,
         "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 354,
+        "stepsUsed": 352,
         "budgetExhausted": false
       },
       "anchor": null,
@@ -474,33 +843,305 @@
       "id": "invoify",
       "revision": "3859b3cbae28ca4ec559db5ef87e41b798740340",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T03:55:46.199Z",
-      "durationMs": 582,
-      "runtime": null,
+      "capturedAt": "2026-09-08T10:06:34.010Z",
+      "durationMs": 20085,
+      "runtime": {
+        "reactVersion": "19.2.0-canary-3fbfb9ba-20250409",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 1439,
+        "commits": 27,
+        "pageErrors": [
+          "Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <Home>\n      <main className=\"container ...\">\n        <WizardProvider>\n          <InvoiceMain>\n            <FormProvider control={{...}} subscribe={function subscribe} trigger={function trigger} ...>\n              <form onSubmit={function}>\n                <div className=\"grid grid-...\">\n                  <InvoiceForm>\n                    <div className=\"@container...\">\n                      <div className=\"mx-auto ma...\">\n                        <div className=\"mb-4 flex ...\">\n                          <AutosaveIndicator>\n                          <span\n+                           className=\"text-sm font-medium text-muted-foreground\"\n-                           className=\"flex items-center gap-1.5 text-xs text-muted-foreground\"\n                          >\n+                           New Invoice\n-                           Saved · just now\n                        ...\n                  ...\n                ...\n      ...\n    ...\n"
+        ],
+        "title": "Free Invoice Generator | Invoify"
+      },
       "static": {
         "stats": {
-          "fiberCount": 7169,
-          "textCount": 308,
-          "branchCount": 724,
-          "repeatCount": 42,
-          "opaqueCount": 603,
-          "unknownCount": 1091,
-          "modulesLoaded": 128
+          "fiberCount": 1261,
+          "textCount": 51,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1451
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 1093,
+        "matchedText": 51,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "exact",
+        "runtimeFibers": 1144,
+        "staticFibers": 1144,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 1144,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": null,
+      "failure": null
+    },
+    {
+      "id": "karakeep",
+      "revision": "01d636f263866770d1e37ad9336d1b0d9df44935",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T12:29:18.660Z",
+      "durationMs": 1260,
+      "runtime": {
+        "reactVersion": "19.2.0-canary-3fbfb9ba-20250409",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 241,
+        "commits": 7,
+        "pageErrors": [
+          "Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch"
+        ],
+        "title": "Karakeep"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 158,
+          "textCount": 4,
+          "branchCount": 7,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 5,
+          "modulesLoaded": 1801
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 82,
+        "matchedText": 2,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 5,
+        "branchDeviations": [
+          {
+            "path": "root > <body> [HostSingleton] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <Providers> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <CustomI18nextProvider> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent]",
+            "reason": "&& on branch(<boolean> | undefined)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <Providers> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <CustomI18nextProvider> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent][0]",
+              "expected": "<OAuthAutoRedirect> [FunctionComponent]",
+              "actual": "<div> [HostComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <Providers> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <CustomI18nextProvider> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent]",
+            "reason": "&& on zod#z.object().transform().parse().demoMode",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <Providers> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <CustomI18nextProvider> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent][0]",
+              "expected": "<div> [HostComponent]",
+              "actual": "<CredentialsForm> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <Providers> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <CustomI18nextProvider> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <CredentialsForm> [FunctionComponent]",
+            "reason": "if (zod#z.object().transform().parse().auth.disablePasswordAuth)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <Providers> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <CustomI18nextProvider> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <CredentialsForm> [FunctionComponent] > <div> [HostComponent][0]",
+              "expected": "<Alert> [ForwardRef]",
+              "actual": "<FormProvider> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <Providers> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <CustomI18nextProvider> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent]",
+            "reason": "&& on branch(<boolean> | undefined)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <Providers> [FunctionComponent] > <SessionProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <CustomI18nextProvider> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent][1]",
+              "expected": "<div> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 84,
+        "staticFibers": 104,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 94,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T11:35:21.672Z",
+      "failure": null
+    },
+    {
+      "id": "langfuse",
+      "revision": "1e3535e126fc918781f45753706ff0f576b12175",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-08T12:29:21.029Z",
+      "durationMs": 1605,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 303,
+        "commits": 22,
+        "pageErrors": [
+          "Failed to load module script: Expected a JavaScript-or-Wasm module script but the server responded with a MIME type of \"application/json\". Strict MIME type checking is enforced for module scripts per HTML spec."
+        ],
+        "title": "Sign in | Langfuse"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 2166,
+          "textCount": 199,
+          "branchCount": 181,
+          "repeatCount": 0,
+          "opaqueCount": 132,
+          "unknownCount": 83,
+          "modulesLoaded": 868
         },
         "diagnostics": [
           {
             "code": "dynamic-key",
-            "count": 24
-          },
-          {
-            "code": "dynamic-props",
-            "count": 2
+            "count": 1
           }
         ]
       },
-      "report": null,
+      "report": {
+        "matchedFibers": 134,
+        "matchedText": 14,
+        "opaqueSubtrees": 7,
+        "opaqueSkippedFibers": 57,
+        "slotsMatched": 5,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 1,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 30,
+        "wildcards": [
+          {
+            "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectContent> [ForwardRef] > <SelectPortal> [FunctionComponent] > <Portal> [ForwardRef] > <Portal> [HostPortal] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <SelectContent> [ForwardRef] > <Portal> [HostPortal] > <SelectContentProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionSlot> [ForwardRef] > <SelectCollectionSlot.Slot> [ForwardRef] > <SelectCollectionSlot.SlotClone> [ForwardRef] > <div> [HostComponent] > <SelectViewport> [ForwardRef] > <SelectCollectionSlot> [ForwardRef] > <SelectCollectionSlot.Slot> [ForwardRef] > <SelectCollectionSlot.SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent]",
+            "reason": "alternative nested 2 branches away from the preferred path",
+            "absorbedFibers": 25,
+            "heads": [
+              "<SelectItem> key=\"DEV\" [ForwardRef]"
+            ]
+          },
+          {
+            "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectTrigger> [ForwardRef] > <SelectTrigger> [ForwardRef] > <PopperAnchor> [ForwardRef] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <button> [HostComponent] > <SelectIcon> [ForwardRef] > <Primitive.span> [ForwardRef] > <Primitive.span.Slot> [ForwardRef]",
+            "reason": "alternative nested 2 branches away from the preferred path",
+            "absorbedFibers": 5,
+            "heads": [
+              "<Primitive.span.SlotClone> [ForwardRef]"
+            ]
+          }
+        ],
+        "branchesResolved": 15,
+        "branchDeviations": [
+          {
+            "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent]",
+            "reason": "if (branch(true | false))",
+            "preferredIndex": 0,
+            "chosenIndex": 3,
+            "divergence": {
+              "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent][0]",
+              "expected": "<LoadingLayout> [FunctionComponent]",
+              "actual": "<UnauthenticatedLayout> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent]",
+            "reason": "if (<boolean: negation of unknown>)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent][0]",
+              "expected": "<end of children>",
+              "actual": "<div> [HostComponent]"
+            }
+          },
+          {
+            "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectTrigger> [ForwardRef] > <SelectTrigger> [ForwardRef] > <PopperAnchor> [ForwardRef] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <button> [HostComponent] > <SelectIcon> [ForwardRef] > <Primitive.span> [ForwardRef] > <Primitive.span.Slot> [ForwardRef]",
+            "reason": "if (branch(<ChevronDown> | undefined))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectTrigger> [ForwardRef] > <SelectTrigger> [ForwardRef] > <PopperAnchor> [ForwardRef] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <button> [HostComponent] > <SelectIcon> [ForwardRef] > <Primitive.span> [ForwardRef] > <Primitive.span.Slot> [ForwardRef] > <Primitive.span.SlotClone> [ForwardRef][0]",
+              "expected": "<end of children>",
+              "actual": "<ChevronDown> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectContent> [ForwardRef] > <SelectPortal> [FunctionComponent] > <Portal> [ForwardRef] > <Portal> [HostPortal] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <SelectContent> [ForwardRef] > <Portal> [HostPortal] > <SelectContentProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionSlot> [ForwardRef] > <SelectCollectionSlot.Slot> [ForwardRef] > <SelectCollectionSlot.SlotClone> [ForwardRef] > <div> [HostComponent] > <SelectViewport> [ForwardRef] > <SelectCollectionSlot> [ForwardRef] > <SelectCollectionSlot.Slot> [ForwardRef] > <SelectCollectionSlot.SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent]",
+            "reason": "if (<boolean: negation of unknown>)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectContent> [ForwardRef] > <SelectPortal> [FunctionComponent] > <Portal> [ForwardRef] > <Portal> [HostPortal] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <SelectContent> [ForwardRef] > <Portal> [HostPortal] > <SelectContentProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionSlot> [ForwardRef] > <SelectCollectionSlot.Slot> [ForwardRef] > <SelectCollectionSlot.SlotClone> [ForwardRef] > <div> [HostComponent] > <SelectViewport> [ForwardRef] > <SelectCollectionSlot> [ForwardRef] > <SelectCollectionSlot.Slot> [ForwardRef] > <SelectCollectionSlot.SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent][0]",
+              "expected": "<SelectItem> key=\"STAGING\" [ForwardRef]",
+              "actual": "<SelectItem> key=\"DEV\" [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent]",
+            "reason": "&& on <boolean: === on dynamic values>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <CloudRegionSwitch> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent][2]",
+              "expected": "<div> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SSOButtons> [FunctionComponent]",
+            "reason": "conditional on unknown(call of Object.entries of unknown(property \"authProviders\" may come from a spread of unknown(rest of unknown(pageProps come from data fetching at request time))))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <withTRPC(MyApp)> [FunctionComponent] > <TRPCProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <MyApp> [FunctionComponent] > <QueryParamProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CommandMenuProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PostHogProvider> (opaque) > <SessionProvider> (opaque) > <DetailPageListsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MarkdownContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <ScoreCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CorrectionCacheProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SupportDrawerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppLayout> [FunctionComponent] > <UnauthenticatedLayout> [FunctionComponent] > <SidebarProvider> [ForwardRef] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <main> [HostComponent] > <SignIn> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SSOButtons> [FunctionComponent][0]",
+              "expected": "<div> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 235,
+        "staticFibers": 321,
+        "coverage": 1,
+        "strictCoverage": 0.6297872340425532,
+        "divergence": null,
+        "stepsUsed": 199,
+        "budgetExhausted": false
+      },
       "anchor": null,
-      "note": "static only",
+      "note": "runtime replayed from 2026-09-08T11:36:20.884Z",
       "failure": null
     },
     {
@@ -564,32 +1205,294 @@
       "failure": null
     },
     {
-      "id": "nextjs-boilerplate",
-      "revision": "1dffa39a32450300c8b01d8cfd3819f9b6e95842",
-      "framework": "next-app",
-      "capturedAt": "2026-09-08T03:55:49.472Z",
-      "durationMs": 67,
-      "runtime": null,
+      "id": "linkwarden",
+      "revision": "22723575b04503eb67c9733c63d55179c069903d",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-08T12:28:55.638Z",
+      "durationMs": 6153,
+      "runtime": {
+        "reactVersion": "19.1.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 142,
+        "commits": 8,
+        "pageErrors": [
+          "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <PathnameContextProviderAdapter router={{sdc:{},sbc:{}, ...}} isAutoExport={false}>\n      <AppWithTranslation pageProps={{...}} __N_SSP={true} Component={function Login} err={undefined} ...>\n        <I18nextProvider i18n={{observers:{}, ...}}>\n          <App pageProps={{...}} __N_SSP={true} Component={function Login} err={undefined} router={{sdc:{},sbc:{}, ...}}>\n            <QueryClientProvider client={{}}>\n              <SessionProvider>\n              <ReactQueryDevtools initialIsOpen={false}>\n                <div\n+                 className=\"tsqd-parent-container\"\n-                 className={null}\n                  ref={{current:null}}\n-                 style={{position:\"fixed\",z-index:\"9999\",top:\"16px\",left:\"16px\",right:\"16px\",bottom:\"16px\",pointer-events:\"none\"}}\n                >\n      ...\n"
+        ],
+        "title": "Linkwarden"
+      },
       "static": {
         "stats": {
-          "fiberCount": 162,
-          "textCount": 22,
-          "branchCount": 1,
-          "repeatCount": 1,
-          "opaqueCount": 8,
-          "unknownCount": 11,
-          "modulesLoaded": 11
+          "fiberCount": 148,
+          "textCount": 0,
+          "branchCount": 18,
+          "repeatCount": 0,
+          "opaqueCount": 1,
+          "unknownCount": 20,
+          "modulesLoaded": 80
         },
         "diagnostics": [
+          {
+            "code": "budget-exhausted",
+            "count": 34
+          },
+          {
+            "code": "max-call-depth",
+            "count": 8
+          },
           {
             "code": "dynamic-key",
             "count": 1
           }
         ]
       },
-      "report": null,
+      "report": {
+        "matchedFibers": 54,
+        "matchedText": 0,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 2,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 10,
+        "wildcards": [
+          {
+            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent] > <Login> [FunctionComponent] > <CenteredForm> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <p> [HostComponent] > <Trans> [FunctionComponent]",
+            "reason": "step budget exhausted",
+            "absorbedFibers": 5,
+            "heads": [
+              "\"© 2026 \"",
+              "<LinkComponent> key=\"1/.$linkwarden-website-key\" [ForwardRef]",
+              "\". All rights reserved.\""
+            ]
+          },
+          {
+            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent] > <Login> [FunctionComponent] > <CenteredForm> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <InstallApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <p> [HostComponent] > <Trans> [FunctionComponent]",
+            "reason": "alternative nested 2 branches away from the preferred path",
+            "absorbedFibers": 3,
+            "heads": [
+              "\"Install Linkwarden to your home screen for a faster access and enhanced experience. \"",
+              "<a> key=\"1/.$0\" [HostComponent]"
+            ]
+          },
+          {
+            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent] > <Login> [FunctionComponent] > <CenteredForm> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <InstallApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Button> [ForwardRef]",
+            "reason": "step budget exhausted",
+            "absorbedFibers": 2,
+            "heads": [
+              "<button> [HostComponent]"
+            ]
+          }
+        ],
+        "branchesResolved": 16,
+        "branchDeviations": [
+          {
+            "path": "root > <AppWithTranslation> [FunctionComponent]",
+            "reason": "branch(unknown | unknown | unknown | unknown | unknown) may be thrown",
+            "preferredIndex": 1,
+            "chosenIndex": 0,
+            "divergence": {
+              "path": "root > <AppWithTranslation> [FunctionComponent][0]",
+              "expected": "<App> [FunctionComponent]",
+              "actual": "<I18nextProvider> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent]",
+            "reason": "if (branch(false | undefined))",
+            "preferredIndex": 1,
+            "chosenIndex": 0,
+            "divergence": {
+              "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent][0]",
+              "expected": "<end of children>",
+              "actual": "<Ie> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent] > <Login> [FunctionComponent] > <CenteredForm> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <form> [HostComponent] > <div> [HostComponent] > <div> [HostComponent]",
+            "reason": "&& on <boolean: === on dynamic values>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent] > <Login> [FunctionComponent] > <CenteredForm> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <form> [HostComponent] > <div> [HostComponent] > <div> [HostComponent][2]",
+              "expected": "<div> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent] > <Login> [FunctionComponent] > <CenteredForm> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <form> [HostComponent] > <div> [HostComponent]",
+            "reason": "&& on <boolean: > on dynamic values>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent] > <Login> [FunctionComponent] > <CenteredForm> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <form> [HostComponent] > <div> [HostComponent] > <div> [HostComponent][0]",
+              "expected": "<Separator> [ForwardRef]",
+              "actual": "<p> [HostComponent]"
+            }
+          },
+          {
+            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent] > <Login> [FunctionComponent] > <CenteredForm> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <InstallApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <p> [HostComponent] > <Trans> [FunctionComponent]",
+            "reason": "if (branch(<boolean> | true))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthRedirect> [FunctionComponent] > <Login> [FunctionComponent] > <CenteredForm> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <InstallApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <p> [HostComponent] > <Trans> [FunctionComponent][0]",
+              "expected": "<end of children>",
+              "actual": "\"Install Linkwarden to your home screen for a faster access and enhanced experience. \""
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 66,
+        "staticFibers": 68,
+        "coverage": 1,
+        "strictCoverage": 0.8181818181818182,
+        "divergence": null,
+        "stepsUsed": 137,
+        "budgetExhausted": false
+      },
       "anchor": null,
-      "note": "static only",
+      "note": "runtime replayed from 2026-09-08T11:35:38.607Z",
+      "failure": null
+    },
+    {
+      "id": "lobe-chat",
+      "revision": "36c4be46f07aa45a10d186871b6fd6265a2ecbf3",
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T08:12:12.356Z",
+      "durationMs": 8338,
+      "runtime": {
+        "reactVersion": "19.2.8",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 357,
+        "commits": 15,
+        "pageErrors": [
+          "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+          "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+          "TRPCClientError: Failed to execute 'json' on 'Response': Unexpected end of JSON input\n    at TRPCClientError.from (http://localhost:9878/node_modules/.vite/deps/dist-CoR6I6sU.js?v=319fa08a:1100:10)\n    at http://localhost:9878/node_modules/.vite/deps/dist-CoR6I6sU.js?v=319fa08a:1312:37",
+          "%o\n\n%s\n\n%s\n SyntaxError: The requested module '/node_modules/.vite/deps/@lobehub_editor_react.js?v=319fa08a' does not provide an export named 'FloatMenu' The above error occurred in one of your React components. React will try to recreate this component tree from scratch using the error boundary you provided, RenderErrorBoundary.",
+          "React Router caught the following error during render SyntaxError: The requested module '/node_modules/.vite/deps/@lobehub_editor_react.js?v=319fa08a' does not provide an export named 'FloatMenu'",
+          "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+          "TRPCClientError: Failed to execute 'json' on 'Response': Unexpected end of JSON input\n    at TRPCClientError.from (http://localhost:9878/node_modules/.vite/deps/dist-CoR6I6sU.js?v=319fa08a:1100:10)\n    at http://localhost:9878/node_modules/.vite/deps/dist-CoR6I6sU.js?v=319fa08a:1312:37",
+          "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+          "TRPCClientError: Failed to execute 'json' on 'Response': Unexpected end of JSON input\n    at TRPCClientError.from (http://localhost:9878/node_modules/.vite/deps/dist-CoR6I6sU.js?v=319fa08a:1100:10)\n    at http://localhost:9878/node_modules/.vite/deps/dist-CoR6I6sU.js?v=319fa08a:1312:37"
+        ],
+        "title": ""
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 0,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 8754
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 11
+          },
+          {
+            "code": "max-recursion",
+            "count": 4
+          },
+          {
+            "code": "dynamic-props",
+            "count": 1
+          },
+          {
+            "code": "render-error",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "status": "unresolved",
+        "matchedFibers": 0,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "branchDeviations": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "runtimeFibers": 0,
+        "staticFibers": 0,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": null,
+        "stepsUsed": 0,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "React failed to render the materialized tree; runtime replayed from 2026-09-08T07:20:29.476Z",
+      "failure": null
+    },
+    {
+      "id": "nextjs-boilerplate",
+      "revision": "1dffa39a32450300c8b01d8cfd3819f9b6e95842",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T10:06:59.352Z",
+      "durationMs": 11658,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-cbb046ab-20260731",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 353,
+        "commits": 10,
+        "pageErrors": [],
+        "title": "Next.js Boilerplate Presentation"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 174,
+          "textCount": 24,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 15
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 139,
+        "matchedText": 23,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "exact",
+        "runtimeFibers": 162,
+        "staticFibers": 162,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 162,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": null,
       "failure": null
     },
     {
@@ -645,6 +1548,345 @@
       },
       "anchor": "body",
       "note": "runtime replayed from 2026-09-06T04:55:26.311Z",
+      "failure": null
+    },
+    {
+      "id": "nextjs-starter",
+      "revision": "c33149454f19f74651f73245d63b1cfab187f7d3",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T08:12:00.420Z",
+      "durationMs": 526,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-f93b9fd4-20251217",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 928,
+        "commits": 16,
+        "pageErrors": [],
+        "title": "Next.js Starter - Multilingual Next.js 16 Starter"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 2,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 1644
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "unresolved",
+        "matchedFibers": 0,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "branchDeviations": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "runtimeFibers": 0,
+        "staticFibers": 0,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": null,
+        "stepsUsed": 0,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "static render did not resolve to a component tree; runtime replayed from 2026-09-08T07:50:14.781Z",
+      "failure": null
+    },
+    {
+      "id": "openchakra",
+      "revision": "5605d412cb7570fb4b261655a88d2abb229352bb",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-08T08:11:19.594Z",
+      "durationMs": 6594,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 2010,
+        "commits": 13,
+        "pageErrors": [
+          "Warning: React does not recognize the `%s` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `%s` instead. If you accidentally passed it from a parent component, remove it from the DOM element.%s isExternal isexternal \n    at a\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at eval (webpack-internal:///./node_modules/@chakra-ui/menu/dist/index.esm.js:746:11)\n    at eval (webpack-internal:///./node_modules/@chakra-ui/menu/dist/index.esm.js:800:5)\n    at MenuItemLink\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at VisualElementHandler (webpack-internal:///./node_modules/framer-motion/dist/es/motion/utils/VisualElementHandler.mjs:8:1)\n    at MotionComponent (webpack-internal:///./node_modules/framer-motion/dist/es/motion/index.mjs:48:65)\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at eval (webpack-internal:///./node_modules/@chakra-ui/menu/dist/index.esm.js:859:11)\n    at LightMode (webpack-internal:///./node_modules/@chakra-ui/color-mode/dist/index.esm.js:227:65)\n    at DefaultPortal (webpack-internal:///./node_modules/@chakra-ui/portal/dist/index.esm.js:52:11)\n    at Portal (webpack-internal:///./node_modules/@chakra-ui/portal/dist/index.esm.js:117:11)\n    at Menu (webpack-internal:///./node_modules/@chakra-ui/menu/dist/index.esm.js:626:11)\n    at HeaderMenu\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at eval (webpack-internal:///./node_modules/@chakra-ui/layout/dist/index.esm.js:714:5)\n    at HStack\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at Flex2 (webpack-internal:///./node_modules/@chakra-ui/layout/dist/index.esm.js:273:11)\n    at header\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at Flex2 (webpack-internal:///./node_modules/@chakra-ui/layout/dist/index.esm.js:273:11)\n    at DarkMode (webpack-internal:///./node_modules/@chakra-ui/color-mode/dist/index.esm.js:215:65)\n    at Header (webpack-internal:///./src/components/Header.tsx:216:78)\n    at App (webpack-internal:///./src/pages/index.tsx:36:68)\n    at AppErrorBoundary (webpack-internal:///./src/components/errorBoundaries/AppErrorBoundary.tsx:36:90)\n    at EnvironmentProvider (webpack-internal:///./node_modules/@chakra-ui/react-env/dist/index.esm.js:121:11)\n    at ColorModeProvider (webpack-internal:///./node_modules/@chakra-ui/color-mode/dist/index.esm.js:158:5)\n    at ThemeProvider (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:96:64)\n    at ThemeProvider (webpack-internal:///./node_modules/@chakra-ui/system/dist/index.esm.js:112:11)\n    at ChakraProvider (webpack-internal:///./node_modules/@chakra-ui/provider/dist/index.esm.js:21:5)\n    at ChakraProvider (webpack-internal:///./node_modules/@chakra-ui/react/dist/index.esm.js:245:3)\n    at ErrorBoundary (webpack-internal:///./node_modules/@bugsnag/plugin-react/dist/bugsnag-react.js:22:34)\n    at Main (webpack-internal:///./src/pages/_app.tsx:28:27)\n    at Provider (webpack-internal:///./node_modules/react-redux/es/components/Provider.js:16:20)\n    at Wrapper (webpack-internal:///./node_modules/next-redux-wrapper/es6/index.js:184:35)\n    at ErrorBoundary (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/dist/client.js:8:20740)\n    at ReactDevOverlay (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/dist/client.js:8:23632)\n    at Container (webpack-internal:///./node_modules/next/dist/client/index.js:71:9)\n    at AppContainer (webpack-internal:///./node_modules/next/dist/client/index.js:592:26)\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:703:27)",
+          "Warning: Expected server HTML to contain a matching <%s> in <%s>.%s span div \n    at span\n    at DefaultPortal (webpack-internal:///./node_modules/@chakra-ui/portal/dist/index.esm.js:52:11)\n    at Portal (webpack-internal:///./node_modules/@chakra-ui/portal/dist/index.esm.js:117:11)\n    at Menu (webpack-internal:///./node_modules/@chakra-ui/menu/dist/index.esm.js:626:11)\n    at HeaderMenu\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at eval (webpack-internal:///./node_modules/@chakra-ui/layout/dist/index.esm.js:714:5)\n    at HStack\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at Flex2 (webpack-internal:///./node_modules/@chakra-ui/layout/dist/index.esm.js:273:11)\n    at header\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at Flex2 (webpack-internal:///./node_modules/@chakra-ui/layout/dist/index.esm.js:273:11)\n    at DarkMode (webpack-internal:///./node_modules/@chakra-ui/color-mode/dist/index.esm.js:215:65)\n    at Header (webpack-internal:///./src/components/Header.tsx:216:78)\n    at App (webpack-internal:///./src/pages/index.tsx:36:68)\n    at AppErrorBoundary (webpack-internal:///./src/components/errorBoundaries/AppErrorBoundary.tsx:36:90)\n    at EnvironmentProvider (webpack-internal:///./node_modules/@chakra-ui/react-env/dist/index.esm.js:121:11)\n    at ColorModeProvider (webpack-internal:///./node_modules/@chakra-ui/color-mode/dist/index.esm.js:158:5)\n    at ThemeProvider (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:96:64)\n    at ThemeProvider (webpack-internal:///./node_modules/@chakra-ui/system/dist/index.esm.js:112:11)\n    at ChakraProvider (webpack-internal:///./node_modules/@chakra-ui/provider/dist/index.esm.js:21:5)\n    at ChakraProvider (webpack-internal:///./node_modules/@chakra-ui/react/dist/index.esm.js:245:3)\n    at ErrorBoundary (webpack-internal:///./node_modules/@bugsnag/plugin-react/dist/bugsnag-react.js:22:34)\n    at Main (webpack-internal:///./src/pages/_app.tsx:28:27)\n    at Provider (webpack-internal:///./node_modules/react-redux/es/components/Provider.js:16:20)\n    at Wrapper (webpack-internal:///./node_modules/next-redux-wrapper/es6/index.js:184:35)\n    at ErrorBoundary (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/dist/client.js:8:20740)\n    at ReactDevOverlay (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/dist/client.js:8:23632)\n    at Container (webpack-internal:///./node_modules/next/dist/client/index.js:71:9)\n    at AppContainer (webpack-internal:///./node_modules/next/dist/client/index.js:592:26)\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:703:27)",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Warning: An error occurred during hydration. The server HTML was replaced with client content in <%s>. div \n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\n\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "There was an error while hydrating. Because the error happened outside of a Suspense boundary, the entire root will switch to client rendering.",
+          "Warning: React does not recognize the `%s` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `%s` instead. If you accidentally passed it from a parent component, remove it from the DOM element.%s isExternal isexternal \n    at a\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at eval (webpack-internal:///./node_modules/@chakra-ui/menu/dist/index.esm.js:746:11)\n    at eval (webpack-internal:///./node_modules/@chakra-ui/menu/dist/index.esm.js:800:5)\n    at MenuItemLink\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at VisualElementHandler (webpack-internal:///./node_modules/framer-motion/dist/es/motion/utils/VisualElementHandler.mjs:8:1)\n    at MotionComponent (webpack-internal:///./node_modules/framer-motion/dist/es/motion/index.mjs:48:65)\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at eval (webpack-internal:///./node_modules/@chakra-ui/menu/dist/index.esm.js:859:11)\n    at LightMode (webpack-internal:///./node_modules/@chakra-ui/color-mode/dist/index.esm.js:227:65)\n    at DefaultPortal (webpack-internal:///./node_modules/@chakra-ui/portal/dist/index.esm.js:52:11)\n    at Portal (webpack-internal:///./node_modules/@chakra-ui/portal/dist/index.esm.js:117:11)\n    at Menu (webpack-internal:///./node_modules/@chakra-ui/menu/dist/index.esm.js:626:11)\n    at HeaderMenu\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at eval (webpack-internal:///./node_modules/@chakra-ui/layout/dist/index.esm.js:714:5)\n    at HStack\n    at div\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at Flex2 (webpack-internal:///./node_modules/@chakra-ui/layout/dist/index.esm.js:273:11)\n    at header\n    at eval (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:57:66)\n    at Flex2 (webpack-internal:///./node_modules/@chakra-ui/layout/dist/index.esm.js:273:11)\n    at DarkMode (webpack-internal:///./node_modules/@chakra-ui/color-mode/dist/index.esm.js:215:65)\n    at Header (webpack-internal:///./src/components/Header.tsx:216:78)\n    at App (webpack-internal:///./src/pages/index.tsx:36:68)\n    at AppErrorBoundary (webpack-internal:///./src/components/errorBoundaries/AppErrorBoundary.tsx:36:90)\n    at EnvironmentProvider (webpack-internal:///./node_modules/@chakra-ui/react-env/dist/index.esm.js:121:11)\n    at ColorModeProvider (webpack-internal:///./node_modules/@chakra-ui/color-mode/dist/index.esm.js:158:5)\n    at ThemeProvider (webpack-internal:///./node_modules/@emotion/react/dist/emotion-element-6a883da9.browser.esm.js:96:64)\n    at ThemeProvider (webpack-internal:///./node_modules/@chakra-ui/system/dist/index.esm.js:112:11)\n    at ChakraProvider (webpack-internal:///./node_modules/@chakra-ui/provider/dist/index.esm.js:21:5)\n    at ChakraProvider (webpack-internal:///./node_modules/@chakra-ui/react/dist/index.esm.js:245:3)\n    at ErrorBoundary (webpack-internal:///./node_modules/@bugsnag/plugin-react/dist/bugsnag-react.js:22:34)\n    at Main (webpack-internal:///./src/pages/_app.tsx:28:27)\n    at Provider (webpack-internal:///./node_modules/react-redux/es/components/Provider.js:16:20)\n    at Wrapper (webpack-internal:///./node_modules/next-redux-wrapper/es6/index.js:184:35)\n    at ErrorBoundary (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/dist/client.js:8:20740)\n    at ReactDevOverlay (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/dist/client.js:8:23632)\n    at Container (webpack-internal:///./node_modules/next/dist/client/index.js:71:9)\n    at AppContainer (webpack-internal:///./node_modules/next/dist/client/index.js:592:26)\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:703:27)"
+        ],
+        "title": "OpenChakra"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 3,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 334
+        },
+        "diagnostics": [
+          {
+            "code": "budget-exhausted",
+            "count": 32
+          },
+          {
+            "code": "dynamic-props",
+            "count": 2
+          },
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 1,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 1960,
+        "wildcards": [
+          {
+            "path": "root > <withRedux(Main)> [FunctionComponent]",
+            "reason": "step budget exhausted",
+            "absorbedFibers": 1960,
+            "heads": [
+              "<Provider> [FunctionComponent]"
+            ]
+          }
+        ],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 1961,
+        "staticFibers": 1,
+        "coverage": 1,
+        "strictCoverage": 0.0005099439061703213,
+        "divergence": null,
+        "stepsUsed": 2,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T07:23:05.031Z",
+      "failure": null
+    },
+    {
+      "id": "pdfme",
+      "revision": "5a6376a824fb8ab4f989841564b61cbb771100d2",
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T08:11:29.992Z",
+      "durationMs": 5618,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 1460,
+        "commits": 6,
+        "pageErrors": [
+          "Failed to load resource: the server responded with a status of 403 ()",
+          "Failed to load resource: the server responded with a status of 403 ()",
+          "Failed to load resource: the server responded with a status of 403 ()",
+          "Failed to load resource: the server responded with a status of 403 ()",
+          "Failed to load resource: the server responded with a status of 403 ()",
+          "Failed to load resource: the server responded with a status of 403 ()",
+          "Failed to load resource: the server responded with a status of 403 ()",
+          "Failed to load resource: the server responded with a status of 403 ()",
+          "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOrigin"
+        ],
+        "title": "pdfme Playground"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 134,
+          "textCount": 7,
+          "branchCount": 3,
+          "repeatCount": 1,
+          "opaqueCount": 0,
+          "unknownCount": 2,
+          "modulesLoaded": 1721
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 170,
+        "matchedText": 7,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 1279,
+        "wildcards": [
+          {
+            "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TemplatesApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <div> [HostComponent]",
+            "reason": "call of call of updated state of useState",
+            "absorbedFibers": 1279,
+            "heads": [
+              "<Fragment> [Fragment]"
+            ]
+          }
+        ],
+        "branchesResolved": 3,
+        "branchDeviations": [
+          {
+            "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Navigation> [FunctionComponent] > <div> [HostComponent] > <nav> [HostComponent] > <HelpModal> [FunctionComponent] > <$e> [ForwardRef] > <j> [FunctionComponent] > <ContextProvider> [ContextProvider]",
+            "reason": "&& on branch(true | <boolean>)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Navigation> [FunctionComponent] > <div> [HostComponent] > <nav> [HostComponent] > <HelpModal> [FunctionComponent] > <$e> [ForwardRef] > <j> [FunctionComponent] > <ContextProvider> [ContextProvider][1]",
+              "expected": "<l> [ForwardRef]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TemplatesApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <div> [HostComponent]",
+            "reason": "callback for an item that may not occur",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TemplatesApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <Fragment> [Fragment][0]",
+              "expected": "<end of children>",
+              "actual": "<Fragment> key=\"invoice\" [Fragment]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TemplatesApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <div> [HostComponent]",
+            "reason": "&& on branch(true | <boolean>)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TemplatesApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <div> [HostComponent][1]",
+              "expected": "<div> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          }
+        ],
+        "repeatIterations": 32,
+        "status": "partial",
+        "runtimeFibers": 1456,
+        "staticFibers": 119,
+        "coverage": 1,
+        "strictCoverage": 0.12156593406593406,
+        "divergence": null,
+        "stepsUsed": 220,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T07:35:03.692Z",
+      "failure": null
+    },
+    {
+      "id": "plane",
+      "revision": "4225bc59de784f8991a8c30de77ca8b2b3fd8cc7",
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T12:29:52.681Z",
+      "durationMs": 936,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 105,
+        "commits": 7,
+        "pageErrors": [
+          "Warning: Expected server HTML to contain a matching <%s> in <%s>.%s div div \n    at div\n    at LogoSpinner (http://localhost:3000/core/components/common/logo-spinner.tsx:10:7)\n    at div\n    at HydrateFallback (http://localhost:3000/app/root.tsx:276:7)\n    at WithHydrateFallbackProps2 (http://localhost:3000/node_modules/.vite/deps/chunk-4TBH6EGN.js?v=f85388cf:7221:19)\n    at V (http://localhost:3000/node_modules/.vite/deps/next-themes.js?v=f85388cf:44:25)\n    at J (http://localhost:3000/node_modules/.vite/deps/next-themes.js?v=f85388cf:42:18)\n    at body\n    at html\n    at Layout (http://localhost:3000/app/root.tsx:65:3)\n    at RenderedRoute (http://localhost:3000/node_modules/.vite/deps/chunk-4TBH6EGN.js?v=f85388cf:6185:26)\n    at RenderErrorBoundary (http://localhost:3000/node_modules/.vite/deps/chunk-4TBH6EGN.js?v=f85388cf:6095:5)\n    at DataRoutes (http://localhost:3000/node_modules/.vite/deps/chunk-4TBH6EGN.js?v=f85388cf:6877:3)\n    at Router (http://localhost:3000/node_modules/.vite/deps/chunk-4TBH6EGN.js?v=f85388cf:6969:13)\n    at RouterProvider (http://localhost:3000/node_modules/.vite/deps/chunk-4TBH6EGN.js?v=f85388cf:6646:3)\n    at RouterProvider2\n    at RemixErrorBoundary (http://localhost:3000/node_modules/.vite/deps/chunk-4TBH6EGN.js?v=f85388cf:9949:5)\n    at HydratedRouter (http://localhost:3000/node_modules/.vite/deps/react-router_dom.js?v=f85388cf:187:46)",
+          "Hydration failed because the initial UI does not match what was rendered on the server.",
+          "Error: Hydration failed because the initial UI does not match what was rendered on the server.\n    at throwOnHydrationMismatch (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:9520:17)\n    at tryToClaimNextHydratableInstance (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:9530:15)\n    at updateHostComponent (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:14842:13)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:15983:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:19251:20)\n    at workLoopConcurrent (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:19242:13)\n    at renderRootConcurrent (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:19217:15)\n    at performConcurrentWorkOnRoot (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:18728:46)\n    at workLoop (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:197:42)",
+          "Error: Hydration failed because the initial UI does not match what was rendered on the server.\n    at throwOnHydrationMismatch (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:9520:17)\n    at tryToClaimNextHydratableInstance (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:9530:15)\n    at updateHostComponent (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:14842:13)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:15983:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:19251:20)\n    at workLoopConcurrent (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:19242:13)\n    at renderRootConcurrent (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:19217:15)\n    at performConcurrentWorkOnRoot (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:18728:46)\n    at workLoop (http://localhost:3000/node_modules/.vite/deps/chunk-U3QUL45X.js?v=f85388cf:197:42)",
+          "Warning: An error occurred during hydration. The server HTML was replaced with client content in <%s>. #document",
+          "Hydration failed because the initial UI does not match what was rendered on the server.",
+          "Hydration failed because the initial UI does not match what was rendered on the server.",
+          "Hydration failed because the initial UI does not match what was rendered on the server.",
+          "Hydration failed because the initial UI does not match what was rendered on the server.",
+          "Hydration failed because the initial UI does not match what was rendered on the server.",
+          "Hydration failed because the initial UI does not match what was rendered on the server.",
+          "Hydration failed because the initial UI does not match what was rendered on the server.",
+          "Hydration failed because the initial UI does not match what was rendered on the server.",
+          "There was an error while hydrating. Because the error happened outside of a Suspense boundary, the entire root will switch to client rendering."
+        ],
+        "title": ""
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 185,
+          "textCount": 2,
+          "branchCount": 6,
+          "repeatCount": 1,
+          "opaqueCount": 11,
+          "unknownCount": 3,
+          "modulesLoaded": 333
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 3
+          },
+          {
+            "code": "dynamic-props",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 82,
+        "matchedText": 1,
+        "opaqueSubtrees": 3,
+        "opaqueSkippedFibers": 8,
+        "slotsMatched": 3,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 91,
+        "staticFibers": 117,
+        "coverage": 1,
+        "strictCoverage": 0.9120879120879121,
+        "divergence": null,
+        "stepsUsed": 94,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T12:08:41.496Z",
       "failure": null
     },
     {
@@ -860,8 +2102,8 @@
       "id": "react-router-better-auth",
       "revision": "c5aa2949a4090d7706eae7c5907f6ccfad46df64",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T08:50:36.879Z",
-      "durationMs": 376,
+      "capturedAt": "2026-09-08T15:07:26.500Z",
+      "durationMs": 13349,
       "runtime": {
         "reactVersion": "19.2.5",
         "rendererName": "react-dom",
@@ -874,7 +2116,7 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 141,
+          "fiberCount": 143,
           "textCount": 5,
           "branchCount": 0,
           "repeatCount": 0,
@@ -908,7 +2150,7 @@
         "budgetExhausted": false
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-08T07:43:25.515Z",
+      "note": null,
       "failure": null
     },
     {
@@ -964,6 +2206,146 @@
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-06T04:55:32.863Z",
+      "failure": null
+    },
+    {
+      "id": "react-starter-kit",
+      "revision": "3c5132eb3d0a02dc8090eb6248f8959744e18d12",
+      "framework": "spa",
+      "capturedAt": "2026-09-08T08:11:39.327Z",
+      "durationMs": 19783,
+      "runtime": {
+        "reactVersion": "19.2.4",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 41,
+        "commits": 4,
+        "pageErrors": [
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "%o\n\n%s\n\n%s\n {status: 500, statusText: Internal Server Error, routerCode: BEFORE_LOAD} The above error occurred in the <MatchInnerImpl> component. React will try to recreate this component tree from scratch using the error boundary you provided, m.",
+          "Uncaught error: {status: 500, statusText: Internal Server Error, routerCode: BEFORE_LOAD}"
+        ],
+        "title": "Acme Co."
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 23,
+          "textCount": 0,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 2,
+          "modulesLoaded": 1866
+        },
+        "diagnostics": [
+          {
+            "code": "budget-exhausted",
+            "count": 36
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 7,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 33,
+        "wildcards": [
+          {
+            "path": "root > <StrictMode> [Mode] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RouterProvider> [FunctionComponent] > <RouterContextProvider> [FunctionComponent]",
+            "reason": "<provider>: window.__TSR_ROUTER_CONTEXT__",
+            "absorbedFibers": 33,
+            "heads": [
+              "<ContextProvider> [ContextProvider]"
+            ]
+          }
+        ],
+        "branchesResolved": 1,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 40,
+        "staticFibers": 16,
+        "coverage": 1,
+        "strictCoverage": 0.175,
+        "divergence": null,
+        "stepsUsed": 19,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T07:23:55.274Z",
+      "failure": null
+    },
+    {
+      "id": "react-three-next",
+      "revision": "bb29a61949601e1c563688faf33a12d062ec3710",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T08:11:17.176Z",
+      "durationMs": 977,
+      "runtime": {
+        "reactVersion": "18.3.0-canary-178c267a4e-20241218",
+        "rendererName": "@react-three/fiber",
+        "buildType": "development",
+        "roots": 2,
+        "fibers": 249,
+        "commits": 19,
+        "pageErrors": [
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Warning: An error occurred during hydration. The server HTML was replaced with client content in <%s>. #document",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "There was an error while hydrating. Because the error happened outside of a Suspense boundary, the entire root will switch to client rendering.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error"
+        ],
+        "title": "Next.js + Three.js"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 62,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 171
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 54,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "exact",
+        "runtimeFibers": 54,
+        "staticFibers": 54,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 54,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T07:22:45.011Z",
       "failure": null
     },
     {
@@ -1025,8 +2407,8 @@
       "id": "remix-blocks",
       "revision": "14e622c2a3f029ab0c81a6e20d1d423da9a20c9c",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T08:50:40.673Z",
-      "durationMs": 220,
+      "capturedAt": "2026-09-08T15:07:53.522Z",
+      "durationMs": 462,
       "runtime": {
         "reactVersion": "17.0.2",
         "rendererName": "react-dom",
@@ -1039,12 +2421,12 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 305,
+          "fiberCount": 422,
           "textCount": 2,
-          "branchCount": 5,
+          "branchCount": 33,
           "repeatCount": 0,
           "opaqueCount": 9,
-          "unknownCount": 35,
+          "unknownCount": 65,
           "modulesLoaded": 34
         },
         "diagnostics": []
@@ -1084,8 +2466,8 @@
       "id": "remix-fastify",
       "revision": "c69fe3491774b636dd148b409c916006588e37e7",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T08:50:35.740Z",
-      "durationMs": 142,
+      "capturedAt": "2026-09-08T15:06:37.824Z",
+      "durationMs": 417,
       "runtime": {
         "reactVersion": "19.2.0",
         "rendererName": "react-dom",
@@ -1098,7 +2480,7 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 123,
+          "fiberCount": 125,
           "textCount": 7,
           "branchCount": 1,
           "repeatCount": 0,
@@ -1148,8 +2530,8 @@
       "id": "remix-shadcn",
       "revision": "cf1652b60fe33a89ef77d6341894b02533cd3a15",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T08:49:57.407Z",
-      "durationMs": 191,
+      "capturedAt": "2026-09-08T15:06:29.683Z",
+      "durationMs": 539,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -1162,12 +2544,12 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 97,
+          "fiberCount": 94,
           "textCount": 0,
-          "branchCount": 1,
+          "branchCount": 0,
           "repeatCount": 0,
           "opaqueCount": 0,
-          "unknownCount": 1,
+          "unknownCount": 0,
           "modulesLoaded": 36
         },
         "diagnostics": []
@@ -1183,16 +2565,16 @@
         "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
-        "branchesResolved": 1,
+        "branchesResolved": 0,
         "branchDeviations": [],
         "repeatIterations": 0,
-        "status": "partial",
+        "status": "exact",
         "runtimeFibers": 91,
         "staticFibers": 91,
         "coverage": 1,
         "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 93,
+        "stepsUsed": 91,
         "budgetExhausted": false
       },
       "anchor": null,
@@ -1296,6 +2678,76 @@
       "failure": null
     },
     {
+      "id": "socialecho",
+      "revision": "4dc6c7822bfff5c0b13e1b8098e8d7ae0084939a",
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T08:11:36.992Z",
+      "durationMs": 979,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 9,
+        "commits": 3,
+        "pageErrors": [
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+        ],
+        "title": "Sign In | SocialEcho"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 109,
+          "textCount": 0,
+          "branchCount": 6,
+          "repeatCount": 0,
+          "opaqueCount": 2,
+          "unknownCount": 5,
+          "modulesLoaded": 92
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 5,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 2,
+        "branchDeviations": [
+          {
+            "path": "root > <BrowserRouter> [FunctionComponent] > <AppContainer> [FunctionComponent] > <div> [HostComponent]",
+            "reason": "conditional on branch(true | unknown)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <BrowserRouter> [FunctionComponent] > <AppContainer> [FunctionComponent] > <div> [HostComponent][0]",
+              "expected": "<CommonLoading> [FunctionComponent]",
+              "actual": "<ErrorComponent> [FunctionComponent]"
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 5,
+        "staticFibers": 77,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 8,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T07:23:34.754Z",
+      "failure": null
+    },
+    {
       "id": "sonner",
       "revision": "8e4662b39255120b62138312058f5d77c0139a5e",
       "framework": "next-app",
@@ -1354,8 +2806,8 @@
       "id": "start-ui-web",
       "revision": "61623ea2fd0ef5f2287190a072ec250956cae65b",
       "framework": "spa",
-      "capturedAt": "2026-09-08T08:53:55.176Z",
-      "durationMs": 18362,
+      "capturedAt": "2026-09-08T15:06:41.204Z",
+      "durationMs": 311,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -1407,7 +2859,7 @@
         "budgetExhausted": false
       },
       "anchor": null,
-      "note": "static render did not resolve to a component tree",
+      "note": "static render did not resolve to a component tree; runtime replayed from 2026-09-08T08:54:13.412Z",
       "failure": null
     },
     {
@@ -1524,8 +2976,8 @@
       "id": "tanstarter",
       "revision": "6f4f91831afee00019104248b88a1a2d1b457c40",
       "framework": "spa",
-      "capturedAt": "2026-09-08T08:52:06.329Z",
-      "durationMs": 11129,
+      "capturedAt": "2026-09-08T15:06:33.345Z",
+      "durationMs": 340,
       "runtime": {
         "reactVersion": "19.2.8",
         "rendererName": "react-dom",
@@ -1580,31 +3032,687 @@
         "budgetExhausted": false
       },
       "anchor": null,
-      "note": "static render did not resolve to a component tree",
+      "note": "static render did not resolve to a component tree; runtime replayed from 2026-09-08T08:52:17.363Z",
+      "failure": null
+    },
+    {
+      "id": "teable",
+      "revision": "bda82ee5c1553e560a8db7f3ac9ff1131d7c3628",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-08T12:29:23.764Z",
+      "durationMs": 1694,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-f93b9fd4-20251217",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 554,
+        "commits": 18,
+        "pageErrors": [
+          "Warning: Prop `%s` did not match. Server: %s Client: %s%s style \"animation:pulse 2.9094913846195753s cubic-bezier(0.4, 0, 0.6, 1) infinite\" \"animation:pulse 3.184256283327418s cubic-bezier(0.4, 0, 0.6, 1) infinite\" \n    at div\n    at Rectangles (http://localhost:3000/_next/static/chunks/apps_nextjs-app_src_1b162657._.js:292:23)\n    at div\n    at div\n    at DescContent (http://localhost:3000/_next/static/chunks/apps_nextjs-app_src_1b162657._.js:344:362)\n    at div\n    at div\n    at div\n    at http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:25644:26\n    at http://localhost:3000/_next/static/chunks/node_modules__pnpm_c91247aa._.js:7598:32\n    at div\n    at http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:25644:26\n    at Provider (http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:25395:28)\n    at http://localhost:3000/_next/static/chunks/node_modules__pnpm_c91247aa._.js:7546:32\n    at _c (http://localhost:3000/_next/static/chunks/packages_6eecbca4._.js:565:230)\n    at LoginPage (http://localhost:3000/_next/static/chunks/apps_nextjs-app_src_1b162657._.js:1874:13)\n    at HydrationBoundary (http://localhost:3000/_next/static/chunks/node_modules__pnpm_c91247aa._.js:619:28)\n    at QueryClientProvider (http://localhost:3000/_next/static/chunks/node_modules__pnpm_c91247aa._.js:583:30)\n    at LoginRoute (http://localhost:3000/_next/static/chunks/apps_nextjs-app_src_1b162657._.js:2101:217)\n    at ConfirmModalProvider (http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__425c3197._.js:2711:33)\n    at B (http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:17130:24)\n    at K (http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:17125:200)\n    at AppProviders (http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__425c3197._.js:3283:13)\n    at MyApp (http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__425c3197._.js:3396:13)\n    at I18nextProvider (http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:2009:11)\n    at AppWithTranslation (http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:3124:26)\n    at PathnameContextProviderAdapter (http://localhost:3000/_next/static/chunks/e0369_next_dist_shared_lib_0ec0913e._.js:5872:43)\n    at PagesDevOverlayErrorBoundary (http://localhost:3000/_next/static/chunks/e0369_next_dist_6908bab3._.js:2719:9)\n    at PagesDevOverlayBridge (http://localhost:3000/_next/static/chunks/e0369_next_dist_6908bab3._.js:3496:34)\n    at Container (http://localhost:3000/_next/static/chunks/e0369_next_dist_client_4b07ac1b._.js:3085:1)\n    at AppContainer (http://localhost:3000/_next/static/chunks/e0369_next_dist_client_4b07ac1b._.js:3184:25)\n    at Root (http://localhost:3000/_next/static/chunks/e0369_next_dist_client_4b07ac1b._.js:3393:17)"
+        ],
+        "title": "Login"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 1326,
+          "textCount": 11,
+          "branchCount": 53,
+          "repeatCount": 0,
+          "opaqueCount": 6,
+          "unknownCount": 66,
+          "modulesLoaded": 1871
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 471,
+        "matchedText": 1,
+        "opaqueSubtrees": 3,
+        "opaqueSkippedFibers": 8,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 1,
+        "wildcards": [
+          {
+            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MyApp> [FunctionComponent] > <AppProviders> [FunctionComponent] > <K> [FunctionComponent] > <B> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfirmModalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <LoginRoute> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <LoginPage> [FunctionComponent] > <ForwardRef> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SignForm> [FunctionComponent] > <div> [HostComponent] > <form> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Button> [ForwardRef] > <button> [HostComponent]",
+            "reason": "value from i18next (default.createInstance().getFixedT()())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"Sign in\""
+            ]
+          }
+        ],
+        "branchesResolved": 23,
+        "branchDeviations": [
+          {
+            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MyApp> [FunctionComponent] > <AppProviders> [FunctionComponent] > <K> [FunctionComponent] > <B> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfirmModalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider]",
+            "reason": "conditional on branch(<boolean> | undefined)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MyApp> [FunctionComponent] > <AppProviders> [FunctionComponent] > <K> [FunctionComponent] > <B> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfirmModalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider][6]",
+              "expected": "<HttpErrorPage> [FunctionComponent]",
+              "actual": "<LoginRoute> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MyApp> [FunctionComponent] > <AppProviders> [FunctionComponent] > <K> [FunctionComponent] > <B> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfirmModalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <LoginRoute> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <LoginPage> [FunctionComponent] > <ForwardRef> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SignForm> [FunctionComponent] > <div> [HostComponent] > <form> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Button> [ForwardRef] > <button> [HostComponent]",
+            "reason": "conditional on branch(true | false)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MyApp> [FunctionComponent] > <AppProviders> [FunctionComponent] > <K> [FunctionComponent] > <B> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfirmModalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <LoginRoute> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <LoginPage> [FunctionComponent] > <ForwardRef> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SignForm> [FunctionComponent] > <div> [HostComponent] > <form> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Button> [ForwardRef] > <button> [HostComponent][0]",
+              "expected": "\"auth:button.signin\"",
+              "actual": "\"Sign in\""
+            }
+          },
+          {
+            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MyApp> [FunctionComponent] > <AppProviders> [FunctionComponent] > <K> [FunctionComponent] > <B> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfirmModalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <LoginRoute> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <LoginPage> [FunctionComponent] > <ForwardRef> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ForwardRef> [ForwardRef] > <ScrollAreaScrollbar> [ForwardRef] > <ForwardRef> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Presence> [FunctionComponent]",
+            "reason": "conditional on <boolean: includes()>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MyApp> [FunctionComponent] > <AppProviders> [FunctionComponent] > <K> [FunctionComponent] > <B> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfirmModalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <LoginRoute> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <LoginPage> [FunctionComponent] > <ForwardRef> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ForwardRef> [ForwardRef] > <ScrollAreaScrollbar> [ForwardRef] > <ForwardRef> [ForwardRef] > <Presence> [FunctionComponent] > <ForwardRef> [ForwardRef] > <Presence> [FunctionComponent][0]",
+              "expected": "<ForwardRef> [ForwardRef]",
+              "actual": "<end of children>"
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 481,
+        "staticFibers": 494,
+        "coverage": 1,
+        "strictCoverage": 0.9812889812889813,
+        "divergence": null,
+        "stepsUsed": 507,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T11:37:09.679Z",
       "failure": null
     },
     {
       "id": "tldraw",
       "revision": "e8f61acedcbf2dc69693ea1e1f612a7f635fb4b5",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T03:56:00.423Z",
-      "durationMs": 65,
-      "runtime": null,
+      "capturedAt": "2026-09-08T06:03:52.638Z",
+      "durationMs": 14414,
+      "runtime": {
+        "reactVersion": "19.2.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 3758,
+        "commits": 13,
+        "pageErrors": [],
+        "title": "tldraw examples"
+      },
       "static": {
         "stats": {
-          "fiberCount": 125,
+          "fiberCount": 126,
           "textCount": 1,
           "branchCount": 2,
           "repeatCount": 0,
-          "opaqueCount": 3,
+          "opaqueCount": 2,
           "unknownCount": 14,
-          "modulesLoaded": 11
+          "modulesLoaded": 759
         },
         "diagnostics": []
       },
-      "report": null,
+      "report": {
+        "matchedFibers": 89,
+        "matchedText": 0,
+        "opaqueSubtrees": 2,
+        "opaqueSkippedFibers": 5,
+        "slotsMatched": 1,
+        "slotsUnmatched": 1,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [
+          {
+            "path": "root > <ErrorBoundary> [ClassComponent] > <HelmetProvider> (opaque) > <RootMeta> [FunctionComponent] > <Helmet> (opaque)",
+            "reason": "Helmet from react-helmet-async is not analyzed",
+            "head": "<Helmet> [ClassComponent]",
+            "skippedFibers": 3,
+            "divergence": {
+              "path": "root > <ErrorBoundary> [ClassComponent] > <HelmetProvider> (opaque) > <RootMeta> [FunctionComponent] > <Helmet> (opaque)[0]",
+              "expected": "<title> [HostHoistable]",
+              "actual": "<ContextConsumer> [ContextConsumer]"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 3654,
+        "wildcards": [
+          {
+            "path": "root > <ErrorBoundary> [ClassComponent] > <HelmetProvider> (opaque) > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <ExamplePage> [FunctionComponent] > <DialogContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <div> [HostComponent] > <ExampleWrapper> [FunctionComponent]",
+            "reason": "<Component>: call of call of call of call of call of Object.values of unknown(import.meta.glob matched \"./examples/collaboration/comment-anchors/README.md\", which only a bundler plugin can load)",
+            "absorbedFibers": 1940,
+            "heads": [
+              "<BasicExample> [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <ErrorBoundary> [ClassComponent] > <HelmetProvider> (opaque) > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <ExamplePage> [FunctionComponent] > <DialogContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <Fragment> [Fragment] > <li> key=\"UI & theming\" [HostComponent] > <ul> [HostComponent]",
+            "reason": "call of call of call of call of call of call of Object.values of unknown(import.meta.glob matched \"./examples/collaboration/comment-anchors/README.md\", which only a bundler plugin can load)",
+            "absorbedFibers": 360,
+            "heads": [
+              "<ExampleSidebarListItem> key=\"/add-tool-to-toolbar\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/remove-tool\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/changing-default-colors\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/changing-default-style\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/custom-menus\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/rich-text-on-multiple-shapes\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/custom-theme\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/multiple-themes\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/ui-components-hidden\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/menu-system-hover\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/screen-reader-accessibility\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/things-on-the-canvas\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/toasts-and-dialogs\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/ui-primitives\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/zones\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/hide-ui\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/custom-ui\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/contextual-toolbar\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/custom-components\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/custom-grid\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/drag-and-drop-tray\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/error-boundary\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/selection-ui\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/text-mass-style-updates\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/add-connected-shape\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/color-picker\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/action-overrides\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/custom-error-capture\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/indicators-logic\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/keyboard-shortcuts\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/escape-shape-focus-trap\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/overlay-theme-colors\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/selection-color-condition\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/stroke-size-picker\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/dark-mode\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/force-mobile\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/dark-mode-toggle\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/inspector-panel\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/layer-panel\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/page-panel\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/floaty-window\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/custom-language-translations\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/custom-renderer\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/toolbar-groups\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/vertical-toolbar\" [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <ErrorBoundary> [ClassComponent] > <HelmetProvider> (opaque) > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <ExamplePage> [FunctionComponent] > <DialogContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <Fragment> [Fragment] > <li> key=\"Shapes & tools\" [HostComponent] > <ul> [HostComponent]",
+            "reason": "call of call of call of call of call of call of Object.values of unknown(import.meta.glob matched \"./examples/collaboration/comment-anchors/README.md\", which only a bundler plugin can load)",
+            "absorbedFibers": 320,
+            "heads": [
+              "<ExampleSidebarListItem> key=\"/custom-shape\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/custom-tool\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/screenshot-tool\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/cubic-bezier-shape\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/custom-config\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/shape-with-onClick\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/shape-with-onDoubleClickEdge\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/shape-with-custom-styles\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/shape-with-tldraw-styles\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/interactive-shape\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/custom-relative-snapping\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/speech-bubble\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/tool-with-child-states\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/editable-shape\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/flex-layout\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/arrow-binding-options\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/custom-geo-types\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/shape-with-geometry\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/shape-with-migrations\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/toSvg-method-example\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/bounds-snapping-shape\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/frame-layouts\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/drop-zone-shape\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/stamp-tool\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/custom-validators\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/text-shape-configuration\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/ag-grid-shape\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/drag-and-drop\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/portal-shapes\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/sticker-bindings\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/size-from-dom\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/layout-bindings\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/persistent-iframe-shape\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/pin-bindings\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/rich-text-custom-extension\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/rich-text-font-extensions\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/outlined-text\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/globs-editor\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/popup-shape\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/custom-shape-wrapper\" [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <ErrorBoundary> [ClassComponent] > <HelmetProvider> (opaque) > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <ExamplePage> [FunctionComponent] > <DialogContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <Fragment> [Fragment] > <li> key=\"Editor API\" [HostComponent] > <ul> [HostComponent]",
+            "reason": "call of call of call of call of call of call of Object.values of unknown(import.meta.glob matched \"./examples/collaboration/comment-anchors/README.md\", which only a bundler plugin can load)",
+            "absorbedFibers": 232,
+            "heads": [
+              "<ExampleSidebarListItem> key=\"/api\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/snapshots\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/coordinate-system\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/create-arrow\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/custom-clipping-shape\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/zoom-to-bounds\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/arrow-labels\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/local-videos\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/local-images\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/custom-overlay\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/dynamic-tools\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/editor-focus\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/lock-camera-zoom\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/text-search\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/shape-animation\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/z-order\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/align-and-distribute-shapes\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/conditional-culling\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/dimensions-hud\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/lasso-select-tool\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/locked-shapes\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/reactive-inputs\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/replace-brush-overlay\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/focus-mode\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/hovered-overlay\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/interaction-end-callback\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/performance-hooks\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/selection-bounds\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/easter-egg-styles\" [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <ErrorBoundary> [ClassComponent] > <HelmetProvider> (opaque) > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <ExamplePage> [FunctionComponent] > <DialogContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <Fragment> [Fragment] > <li> key=\"Configuration\" [HostComponent] > <ul> [HostComponent]",
+            "reason": "call of call of call of call of call of call of Object.values of unknown(import.meta.glob matched \"./examples/collaboration/comment-anchors/README.md\", which only a bundler plugin can load)",
+            "absorbedFibers": 160,
+            "heads": [
+              "<ExampleSidebarListItem> key=\"/custom-options\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/configure-shape-util\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/camera-options\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/asset-props\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/custom-text-outline\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/display-options\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/edge-scrolling\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/persistence-key\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/readonly\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/reduced-motion\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/custom-embed\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/environment-detection\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/embed-permissions\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/deep-links\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/frame-colors\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/resize-note\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/arrows-precise-exact\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/disable-pages\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/only-editor\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/exploded\" [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <ErrorBoundary> [ClassComponent] > <HelmetProvider> (opaque) > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <ExamplePage> [FunctionComponent] > <DialogContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <Fragment> [Fragment] > <li> key=\"Events & effects\" [HostComponent] > <ul> [HostComponent]",
+            "reason": "call of call of call of call of call of call of Object.values of unknown(import.meta.glob matched \"./examples/collaboration/comment-anchors/README.md\", which only a bundler plugin can load)",
+            "absorbedFibers": 152,
+            "heads": [
+              "<ExampleSidebarListItem> key=\"/signals\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/canvas-events\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/store-events\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/ui-events\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/event-blocker\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/prevent-instance-change\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/prevent-shape-change\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/prevent-multi-shape-selection\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/before-create-update-shape\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/before-delete-shape\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/custom-double-click-behavior\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/after-create-update-shape\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/after-delete-shape\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/permissions\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/permissions-2\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/derived-view\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/meta-on-change\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/meta-on-create\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/unsaved-changes\" [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <ErrorBoundary> [ClassComponent] > <HelmetProvider> (opaque) > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <ExamplePage> [FunctionComponent] > <DialogContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <Fragment> [Fragment] > <li> key=\"Use cases\" [HostComponent] > <ul> [HostComponent]",
+            "reason": "call of call of call of call of call of call of Object.values of unknown(import.meta.glob matched \"./examples/collaboration/comment-anchors/README.md\", which only a bundler plugin can load)",
+            "absorbedFibers": 144,
+            "heads": [
+              "<ExampleSidebarListItem> key=\"/slideshow\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/slides\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/education-canvas\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/image-annotator\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/pdf-editor\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/mask-window\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/fog-of-war\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/exam-marking\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/many-shapes\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/soft-clip\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/tower-defense\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/custom-shape-mermaids\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/xkcd-dependency\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/hundred-mermaids\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/mermaid-pasting\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/snowstorm\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/timeline-scrubber\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/d3-map\" [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <ErrorBoundary> [ClassComponent] > <HelmetProvider> (opaque) > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <ExamplePage> [FunctionComponent] > <DialogContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <Fragment> [Fragment] > <li> key=\"Collaboration\" [HostComponent] > <ul> [HostComponent]",
+            "reason": "call of call of call of call of call of call of Object.values of unknown(import.meta.glob matched \"./examples/collaboration/comment-anchors/README.md\", which only a bundler plugin can load)",
+            "absorbedFibers": 128,
+            "heads": [
+              "<ExampleSidebarListItem> key=\"/commenting\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/sync-demo\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/commenting-sidebar\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/comment-clustering\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/sync-custom-shape\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/sync-custom-people-menu\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/sync-custom-presence\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/comment-anchors\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/sync-private-content\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/commenting-mobile\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/user-presence\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/comment-shape-precision\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/comment-history\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/comment-regions\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/comment-drawing-reactions\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/comment-notifications\" [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <ErrorBoundary> [ClassComponent] > <HelmetProvider> (opaque) > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <ExamplePage> [FunctionComponent] > <DialogContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <Fragment> [Fragment] > <li> key=\"Data & assets\" [HostComponent] > <ul> [HostComponent]",
+            "reason": "call of call of call of call of call of call of Object.values of unknown(import.meta.glob matched \"./examples/collaboration/comment-anchors/README.md\", which only a bundler plugin can load)",
+            "absorbedFibers": 88,
+            "heads": [
+              "<ExampleSidebarListItem> key=\"/local-storage\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/static-assets\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/custom-records\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/export-canvas-as-image\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/export-canvas-settings\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/hosted-images\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/custom-paste\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/external-content-sources\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/clipboard-events\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/custom-asset-type\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/meta-migrations\" [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <ErrorBoundary> [ClassComponent] > <HelmetProvider> (opaque) > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <ExamplePage> [FunctionComponent] > <DialogContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <Fragment> [Fragment] > <li> key=\"Page layout\" [HostComponent] > <ul> [HostComponent]",
+            "reason": "call of call of call of call of call of call of Object.values of unknown(import.meta.glob matched \"./examples/collaboration/comment-anchors/README.md\", which only a bundler plugin can load)",
+            "absorbedFibers": 80,
+            "heads": [
+              "<ExampleSidebarListItem> key=\"/inset\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/inline\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/inline-behavior\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/inset-canvas\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/scroll\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/multiple\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/external-dialog\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/external-ui-context\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/external-ui\" [FunctionComponent]",
+              "<ExampleSidebarListItem> key=\"/image-component\" [FunctionComponent]"
+            ]
+          }
+        ],
+        "branchesResolved": 2,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 3748,
+        "staticFibers": 104,
+        "coverage": 1,
+        "strictCoverage": 0.023745997865528282,
+        "divergence": null,
+        "stepsUsed": 111,
+        "budgetExhausted": false
+      },
       "anchor": null,
-      "note": "static only",
+      "note": null,
+      "failure": null
+    },
+    {
+      "id": "twenty",
+      "revision": "6dd1e8a4712ab80ad76f2fbd4badf125f2f0b47d",
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T12:29:12.920Z",
+      "durationMs": 4524,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 96,
+        "commits": 7,
+        "pageErrors": [
+          "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+          "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+        ],
+        "title": "Sign in or Create an account"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 3904,
+          "textCount": 217,
+          "branchCount": 281,
+          "repeatCount": 3,
+          "opaqueCount": 1691,
+          "unknownCount": 394,
+          "modulesLoaded": 5947
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 3
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 27,
+        "matchedText": 0,
+        "opaqueSubtrees": 16,
+        "opaqueSkippedFibers": 59,
+        "slotsMatched": 12,
+        "slotsUnmatched": 2,
+        "opaqueRenamed": 5,
+        "unmatchedSlots": [
+          {
+            "path": "root > <App> [FunctionComponent] > <JotaiProvider> (opaque) > <AppErrorBoundary> [FunctionComponent] > <ErrorBoundary> (opaque) > <I18nProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <IconsProvider> (opaque) > <ExceptionHandlerProvider> [FunctionComponent] > <HelmetProvider> (opaque) > <ContextProvider> [ContextProvider] > <AppRouter> [FunctionComponent] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <AppRouterProviders> [FunctionComponent] > <ApolloProvider> [FunctionComponent] > <ApolloProviderBase> (opaque) > <BaseThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> (opaque) > <ClientConfigProvider> [FunctionComponent] > <AppFullScreenErrorFallback> [FunctionComponent] > <StyledContainer> (opaque) > <PageBody> [FunctionComponent] > <StyledMainContainer> (opaque) > <StyledLeftContainer> (opaque) > <PagePanel> [FunctionComponent] > <StyledPanel> (opaque) > <AppErrorDisplay> [FunctionComponent] > <AnimatedPlaceholderEmptyContainer> (opaque) > <AnimatedPlaceholderEmptyTextContainer> (opaque) > <AnimatedPlaceholderEmptyTitle> (opaque)",
+            "reason": "AnimatedPlaceholderEmptyTitle from twenty-ui is not analyzed",
+            "head": "<AnimatedPlaceholderEmptyTitle> [ForwardRef]",
+            "skippedFibers": 2,
+            "divergence": {
+              "path": "root > <App> [FunctionComponent] > <JotaiProvider> (opaque) > <AppErrorBoundary> [FunctionComponent] > <ErrorBoundary> (opaque) > <I18nProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <IconsProvider> (opaque) > <ExceptionHandlerProvider> [FunctionComponent] > <HelmetProvider> (opaque) > <ContextProvider> [ContextProvider] > <AppRouter> [FunctionComponent] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <AppRouterProviders> [FunctionComponent] > <ApolloProvider> [FunctionComponent] > <ApolloProviderBase> (opaque) > <BaseThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> (opaque) > <ClientConfigProvider> [FunctionComponent] > <AppFullScreenErrorFallback> [FunctionComponent] > <StyledContainer> (opaque) > <PageBody> [FunctionComponent] > <StyledMainContainer> (opaque) > <StyledLeftContainer> (opaque) > <PagePanel> [FunctionComponent] > <StyledPanel> (opaque) > <AppErrorDisplay> [FunctionComponent] > <AnimatedPlaceholderEmptyContainer> (opaque) > <AnimatedPlaceholderEmptyTextContainer> (opaque) > <AnimatedPlaceholderEmptyTitle> (opaque)[0]",
+              "expected": "\"Unable to Reach Back-end\"",
+              "actual": "<div> [HostComponent]"
+            }
+          },
+          {
+            "path": "root > <App> [FunctionComponent] > <JotaiProvider> (opaque) > <AppErrorBoundary> [FunctionComponent] > <ErrorBoundary> (opaque) > <I18nProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <IconsProvider> (opaque) > <ExceptionHandlerProvider> [FunctionComponent] > <HelmetProvider> (opaque) > <ContextProvider> [ContextProvider] > <AppRouter> [FunctionComponent] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <AppRouterProviders> [FunctionComponent] > <ApolloProvider> [FunctionComponent] > <ApolloProviderBase> (opaque) > <BaseThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> (opaque) > <ClientConfigProvider> [FunctionComponent] > <AppFullScreenErrorFallback> [FunctionComponent] > <StyledContainer> (opaque) > <PageBody> [FunctionComponent] > <StyledMainContainer> (opaque) > <StyledLeftContainer> (opaque) > <PagePanel> [FunctionComponent] > <StyledPanel> (opaque) > <AppErrorDisplay> [FunctionComponent] > <AnimatedPlaceholderEmptyContainer> (opaque) > <AnimatedPlaceholderEmptyTextContainer> (opaque) > <AnimatedPlaceholderEmptySubTitle> (opaque)",
+            "reason": "AnimatedPlaceholderEmptySubTitle from twenty-ui is not analyzed",
+            "head": "<AnimatedPlaceholderEmptySubTitle> [ForwardRef]",
+            "skippedFibers": 2,
+            "divergence": {
+              "path": "root > <App> [FunctionComponent] > <JotaiProvider> (opaque) > <AppErrorBoundary> [FunctionComponent] > <ErrorBoundary> (opaque) > <I18nProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <IconsProvider> (opaque) > <ExceptionHandlerProvider> [FunctionComponent] > <HelmetProvider> (opaque) > <ContextProvider> [ContextProvider] > <AppRouter> [FunctionComponent] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <AppRouterProviders> [FunctionComponent] > <ApolloProvider> [FunctionComponent] > <ApolloProviderBase> (opaque) > <BaseThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> (opaque) > <ClientConfigProvider> [FunctionComponent] > <AppFullScreenErrorFallback> [FunctionComponent] > <StyledContainer> (opaque) > <PageBody> [FunctionComponent] > <StyledMainContainer> (opaque) > <StyledLeftContainer> (opaque) > <PagePanel> [FunctionComponent] > <StyledPanel> (opaque) > <AppErrorDisplay> [FunctionComponent] > <AnimatedPlaceholderEmptyContainer> (opaque) > <AnimatedPlaceholderEmptyTextContainer> (opaque) > <AnimatedPlaceholderEmptySubTitle> (opaque)[0]",
+              "expected": "\"Please refresh the page.\"",
+              "actual": "<div> [HostComponent]"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 86,
+        "staticFibers": 1293,
+        "coverage": 1,
+        "strictCoverage": 0.313953488372093,
+        "divergence": null,
+        "stepsUsed": 66,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T11:38:08.867Z",
+      "failure": null
+    },
+    {
+      "id": "typebot",
+      "revision": "67c7c86b1a9cb255260d562446ba5010327382b7",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-08T12:29:26.556Z",
+      "durationMs": 666,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-f93b9fd4-20251217",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 135,
+        "commits": 19,
+        "pageErrors": [],
+        "title": "Sign In | Typebot"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 105,
+          "textCount": 5,
+          "branchCount": 6,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 9,
+          "modulesLoaded": 582
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-props",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 43,
+        "matchedText": 1,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 18,
+        "wildcards": [
+          {
+            "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <UserProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TypebotProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <WorkspaceProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Page> [FunctionComponent] > <SignInPage> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <SignInForm> [FunctionComponent]",
+            "reason": "alternative nested 2 branches away from the preferred path",
+            "absorbedFibers": 12,
+            "heads": [
+              "<div> [HostComponent]"
+            ]
+          },
+          {
+            "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <List> [FunctionComponent] > <FloatingPortalLite> [ForwardRef]",
+            "reason": "alternative nested 2 branches away from the preferred path",
+            "absorbedFibers": 5,
+            "heads": [
+              "<Portal> [HostPortal]",
+              "<Portal> [HostPortal]"
+            ]
+          },
+          {
+            "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <UserProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TypebotProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <WorkspaceProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Page> [FunctionComponent] > <SignInPage> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <p> [HostComponent]",
+            "reason": "value from @tolgee/web (Tolgee().use().init().t())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"Don't have an account?\""
+            ]
+          }
+        ],
+        "branchesResolved": 6,
+        "branchDeviations": [
+          {
+            "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider]",
+            "reason": "conditional on branch(<boolean> | unknown)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider][0]",
+              "expected": "<end of children>",
+              "actual": "<FunctionComponent> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <UserProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TypebotProvider> [FunctionComponent]",
+            "reason": "if (branch(<boolean> | false))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <UserProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TypebotProvider> [FunctionComponent][0]",
+              "expected": "<NotFoundPage> [FunctionComponent]",
+              "actual": "<ContextProvider> [ContextProvider]"
+            }
+          },
+          {
+            "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <UserProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TypebotProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <WorkspaceProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Page> [FunctionComponent] > <SignInPage> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <SignInForm> [FunctionComponent]",
+            "reason": "if (<boolean: === on dynamic values>)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SessionProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <UserProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TypebotProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <WorkspaceProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Page> [FunctionComponent] > <SignInPage> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <SignInForm> [FunctionComponent][0]",
+              "expected": "<p> [HostComponent]",
+              "actual": "<div> [HostComponent]"
+            }
+          },
+          {
+            "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <List> [FunctionComponent] > <FloatingPortalLite> [ForwardRef]",
+            "reason": "if (branch(true | <boolean> | false))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <List> [FunctionComponent] > <FloatingPortalLite> [ForwardRef][0]",
+              "expected": "<end of children>",
+              "actual": "<Portal> [HostPortal]"
+            }
+          },
+          {
+            "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <List> [FunctionComponent] > <FloatingPortalLite> [ForwardRef]",
+            "reason": "&& on branch(null | unknown)",
+            "preferredIndex": 1,
+            "chosenIndex": 0,
+            "divergence": {
+              "path": "root > <App> [FunctionComponent] > <TolgeeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <NuqsAdapterContext> [ContextProvider] > <J> [FunctionComponent] > <V> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <FloatingDelayGroup> [FunctionComponent] > <FloatingDelayGroupContext> [ContextProvider] > <ToastProvider> [FunctionComponent] > <ToastContext> [ContextProvider] > <List> [FunctionComponent] > <FloatingPortalLite> [ForwardRef][0]",
+              "expected": "<end of children>",
+              "actual": "<Portal> [HostPortal]"
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 62,
+        "staticFibers": 58,
+        "coverage": 1,
+        "strictCoverage": 0.7096774193548387,
+        "divergence": null,
+        "stepsUsed": 63,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T11:36:02.368Z",
       "failure": null
     }
   ]

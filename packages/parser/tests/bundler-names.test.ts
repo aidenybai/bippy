@@ -2,16 +2,27 @@ import { describe, expect, it } from "vite-plus/test";
 import { REACT_ROUTER_PROFILE } from "../src/frameworks/profiles.js";
 import { flattenTransparentFibers } from "../src/frameworks/framework-profile.js";
 import { isBundledDefaultExportName, isBundlerDedupedName } from "../src/harness/bundler-names.js";
-import type { RuntimeFiberSnapshot, RuntimeSnapshot } from "../src/harness/snapshot.js";
+import type {
+  RuntimeFiberSnapshot,
+  RuntimeSnapshot,
+  SnapshotWorkTag,
+} from "../src/harness/snapshot.js";
 
-const fiber = (name: string, children: RuntimeFiberSnapshot[] = []): RuntimeFiberSnapshot => ({
-  tag: "FunctionComponent",
+const fiber = (
+  name: string,
+  children: RuntimeFiberSnapshot[] = [],
+  tag: SnapshotWorkTag = "FunctionComponent",
+): RuntimeFiberSnapshot => ({
+  tag,
   name,
   key: null,
   text: null,
   props: {},
   children,
 });
+
+const provider = (name: string, children: RuntimeFiberSnapshot[]): RuntimeFiberSnapshot =>
+  fiber(name, children, "ContextProvider");
 
 const snapshotOf = (children: RuntimeFiberSnapshot[]): RuntimeSnapshot => ({
   reactVersion: null,
@@ -42,7 +53,9 @@ describe("bundler-renamed fibers", () => {
   it("splices out a re-export wrapper around the fiber it was renamed against", () => {
     const flattened = flattenTransparentFibers(
       snapshotOf([
-        fiber("RouterProvider2", [fiber("RouterProvider", [fiber("DataRouter", [fiber("App")])])]),
+        fiber("RouterProvider2", [
+          fiber("RouterProvider", [provider("DataRouter", [fiber("App")])]),
+        ]),
       ]),
       REACT_ROUTER_PROFILE,
     );
@@ -51,7 +64,7 @@ describe("bundler-renamed fibers", () => {
 
   it("keeps a renamed fiber that is the only provider (react-router-dom 6)", () => {
     const flattened = flattenTransparentFibers(
-      snapshotOf([fiber("RouterProvider2", [fiber("DataRouter", [fiber("App")])])]),
+      snapshotOf([fiber("RouterProvider2", [provider("DataRouter", [fiber("App")])])]),
       REACT_ROUTER_PROFILE,
     );
     expect(names(flattened.roots[0].children)).toEqual([["RouterProvider2", [["App", []]]]]);
