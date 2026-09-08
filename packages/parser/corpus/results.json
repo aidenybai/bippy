@@ -657,8 +657,8 @@
       "id": "glide-data-grid",
       "revision": "0875d78cc41535a39f8b417ff88ce1ebe129c363",
       "framework": "next-pages",
-      "capturedAt": "2026-09-08T09:46:12.708Z",
-      "durationMs": 6218,
+      "capturedAt": "2026-09-08T14:45:39.580Z",
+      "durationMs": 18111,
       "runtime": {
         "reactVersion": "17.0.2",
         "rendererName": "react-dom",
@@ -671,15 +671,20 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 71,
+          "fiberCount": 144,
           "textCount": 7,
-          "branchCount": 4,
+          "branchCount": 10,
           "repeatCount": 0,
           "opaqueCount": 0,
-          "unknownCount": 3,
-          "modulesLoaded": 109
+          "unknownCount": 14,
+          "modulesLoaded": 247
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "budget-exhausted",
+            "count": 60
+          }
+        ]
       },
       "report": {
         "matchedFibers": 44,
@@ -701,7 +706,7 @@
             ]
           }
         ],
-        "branchesResolved": 3,
+        "branchesResolved": 6,
         "branchDeviations": [
           {
             "path": "root > <MyApp> [FunctionComponent] > <Home> [FunctionComponent] > <div> [HostComponent] > <main> [HostComponent] > <LoadableComponent> [ForwardRef] > <Grid> [FunctionComponent] > <DataEditorAllImpl> [ForwardRef] > <DataEditorImpl> [ForwardRef] > <ContextProvider> [ContextProvider] > <DataEditorContainer> [FunctionComponent] > <Wrapper> [ForwardRef] > <div> [HostComponent] > <DataGridSearch> [FunctionComponent] > <GridScroller> [FunctionComponent] > <InfiniteScroller> [FunctionComponent]",
@@ -724,20 +729,31 @@
               "expected": "<end of children>",
               "actual": "<table> key=\"access-tree\" [HostComponent]"
             }
+          },
+          {
+            "path": "root > <MyApp> [FunctionComponent] > <Home> [FunctionComponent] > <div> [HostComponent] > <main> [HostComponent] > <LoadableComponent> [ForwardRef] > <Grid> [FunctionComponent] > <DataEditorAllImpl> [ForwardRef] > <DataEditorImpl> [ForwardRef] > <ContextProvider> [ContextProvider] > <DataEditorContainer> [FunctionComponent] > <Wrapper> [ForwardRef] > <div> [HostComponent] > <DataGridSearch> [FunctionComponent]",
+            "reason": "if (branch(false | true | <boolean>))",
+            "preferredIndex": 1,
+            "chosenIndex": 0,
+            "divergence": {
+              "path": "root > <MyApp> [FunctionComponent] > <Home> [FunctionComponent] > <div> [HostComponent] > <main> [HostComponent] > <LoadableComponent> [ForwardRef] > <Grid> [FunctionComponent] > <DataEditorAllImpl> [ForwardRef] > <DataEditorImpl> [ForwardRef] > <ContextProvider> [ContextProvider] > <DataEditorContainer> [FunctionComponent] > <Wrapper> [ForwardRef] > <div> [HostComponent] > <DataGridSearch> [FunctionComponent][1]",
+              "expected": "<SearchWrapper> [ForwardRef]",
+              "actual": "<end of children>"
+            }
           }
         ],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 118,
-        "staticFibers": 52,
+        "staticFibers": 82,
         "coverage": 1,
         "strictCoverage": 0.4322033898305085,
         "divergence": null,
-        "stepsUsed": 56,
+        "stepsUsed": 60,
         "budgetExhausted": false
       },
       "anchor": null,
-      "note": null,
+      "note": "runtime replayed from 2026-09-08T09:46:18.125Z",
       "failure": null
     },
     {
@@ -1400,8 +1416,8 @@
       "id": "mantine-react-table",
       "revision": "d338579598b52a93045a96c55eacadfc8db331bb",
       "framework": "next-pages",
-      "capturedAt": "2026-09-08T09:47:09.336Z",
-      "durationMs": 16477,
+      "capturedAt": "2026-09-08T15:01:43.376Z",
+      "durationMs": 4807,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -1423,18 +1439,18 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 1269,
-          "textCount": 114,
-          "branchCount": 25,
+          "fiberCount": 8,
+          "textCount": 0,
+          "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 2,
-          "unknownCount": 152,
+          "opaqueCount": 1,
+          "unknownCount": 1,
           "modulesLoaded": 6526
         },
         "diagnostics": [
           {
             "code": "budget-exhausted",
-            "count": 102
+            "count": 103
           },
           {
             "code": "dynamic-props",
@@ -1447,50 +1463,47 @@
         ]
       },
       "report": {
-        "matchedFibers": 13,
+        "matchedFibers": 5,
         "matchedText": 0,
-        "opaqueSubtrees": 2,
-        "opaqueSkippedFibers": 5409,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 1,
         "slotsMatched": 1,
-        "slotsUnmatched": 1,
+        "slotsUnmatched": 0,
         "opaqueRenamed": 0,
-        "unmatchedSlots": [
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 5416,
+        "wildcards": [
           {
-            "path": "root > <App> [FunctionComponent] > <PlausibleProvider> (opaque) > <ThemeContextProvider> [FunctionComponent] > <@mantine/core/MantineProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <@mantine/core/MantineThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <MDXProvider> (opaque)",
-            "reason": "MDXProvider from @mdx-js/react is not analyzed",
-            "head": "<MDXProvider> [FunctionComponent]",
-            "skippedFibers": 5408,
-            "divergence": {
-              "path": "root > <App> [FunctionComponent] > <PlausibleProvider> (opaque) > <ThemeContextProvider> [FunctionComponent] > <@mantine/core/MantineProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <@mantine/core/MantineThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <MDXProvider> (opaque) > <@mantine/core/AppShell> [ForwardRef] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <@mantine/core/Box> [ForwardRef] > <div> [HostComponent] > <TopBar> [FunctionComponent] > <@mantine/core/AppShellHeader> [ForwardRef] > <@mantine/core/Box> [ForwardRef] > <header> [HostComponent] > <@mantine/core/Flex> [ForwardRef] > <@mantine/core/Box> [ForwardRef] > <div> [HostComponent] > <@mantine/core/Select> [ForwardRef] > <@mantine/core/Combobox> [FunctionComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <@mantine/core/Popover> [FunctionComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <OptionsDropdown> [FunctionComponent] > <@mantine/core/ComboboxDropdown> [ForwardRef] > <@mantine/core/PopoverDropdown> [ForwardRef] > <@mantine/core/OptionalPortal> [FunctionComponent] > <@mantine/core/Portal> [ForwardRef][0]",
-              "expected": "<end of children>",
-              "actual": "<Portal> [HostPortal]"
-            }
+            "path": "root > <App> [FunctionComponent] > <PlausibleProvider> (opaque) > <ThemeContextProvider> [FunctionComponent] > <@mantine/core/MantineProvider> [FunctionComponent]",
+            "reason": "step budget exhausted",
+            "absorbedFibers": 5416,
+            "heads": [
+              "<ContextProvider> [ContextProvider]"
+            ]
           }
         ],
-        "wildcardAbsorbedFibers": 0,
-        "wildcards": [],
         "branchesResolved": 0,
         "branchDeviations": [],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 5422,
-        "staticFibers": 786,
+        "staticFibers": 6,
         "coverage": 1,
-        "strictCoverage": 0.002397639247510144,
+        "strictCoverage": 0.0009221689413500553,
         "divergence": null,
-        "stepsUsed": 183,
+        "stepsUsed": 7,
         "budgetExhausted": false
       },
       "anchor": null,
-      "note": null,
+      "note": "runtime replayed from 2026-09-08T09:47:20.238Z",
       "failure": null
     },
     {
       "id": "material-react-table",
       "revision": "a16bafe78a547c423a72eff1dd000f3875885f86",
       "framework": "next-pages",
-      "capturedAt": "2026-09-08T09:46:25.640Z",
-      "durationMs": 42350,
+      "capturedAt": "2026-09-08T14:46:00.576Z",
+      "durationMs": 7459,
       "runtime": {
         "reactVersion": "19.0.0",
         "rendererName": "react-dom",
@@ -1516,15 +1529,11 @@
         "diagnostics": [
           {
             "code": "budget-exhausted",
-            "count": 66
+            "count": 71
           },
           {
             "code": "dynamic-key",
             "count": 6
-          },
-          {
-            "code": "max-call-depth",
-            "count": 3
           },
           {
             "code": "dynamic-props",
@@ -1567,7 +1576,7 @@
         "budgetExhausted": false
       },
       "anchor": null,
-      "note": null,
+      "note": "runtime replayed from 2026-09-08T09:46:39.066Z",
       "failure": null
     },
     {
@@ -2208,8 +2217,8 @@
       "id": "react-arborist",
       "revision": "ab6a0031f536ec7a411b01dc26012065e2ae849b",
       "framework": "next-pages",
-      "capturedAt": "2026-09-08T09:47:40.308Z",
-      "durationMs": 13946,
+      "capturedAt": "2026-09-08T15:01:34.962Z",
+      "durationMs": 7241,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -2308,9 +2317,9 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 82,
-          "textCount": 14,
-          "branchCount": 1,
+          "fiberCount": 6,
+          "textCount": 0,
+          "branchCount": 0,
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 1,
@@ -2319,52 +2328,52 @@
         "diagnostics": [
           {
             "code": "budget-exhausted",
-            "count": 18
+            "count": 15
           }
         ]
       },
       "report": {
-        "matchedFibers": 63,
-        "matchedText": 14,
+        "matchedFibers": 4,
+        "matchedText": 0,
         "opaqueSubtrees": 0,
         "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "wildcardAbsorbedFibers": 538,
+        "wildcardAbsorbedFibers": 611,
         "wildcards": [
           {
-            "path": "root > <MyApp> [FunctionComponent] > <Cities> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <FillFlexParent> [ForwardRef] > <div> [HostComponent] > <TreeComponent> [ForwardRef] > <TreeProvider> [FunctionComponent]",
+            "path": "root > <MyApp> [FunctionComponent] > <Cities> [FunctionComponent]",
             "reason": "step budget exhausted",
-            "absorbedFibers": 538,
+            "absorbedFibers": 611,
             "heads": [
-              "<ContextProvider> [ContextProvider]"
+              "<div> [HostComponent]"
             ]
           }
         ],
-        "branchesResolved": 1,
+        "branchesResolved": 0,
         "branchDeviations": [],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 615,
-        "staticFibers": 77,
+        "staticFibers": 4,
         "coverage": 1,
-        "strictCoverage": 0.12520325203252033,
+        "strictCoverage": 0.0065040650406504065,
         "divergence": null,
-        "stepsUsed": 79,
+        "stepsUsed": 5,
         "budgetExhausted": false
       },
       "anchor": null,
-      "note": null,
+      "note": "runtime replayed from 2026-09-08T09:47:47.358Z",
       "failure": null
     },
     {
       "id": "react-data-table-component",
       "revision": "3c080557be7723f6815a7dc9555f21df1164c11f",
       "framework": "spa",
-      "capturedAt": "2026-09-08T09:47:27.101Z",
-      "durationMs": 12168,
+      "capturedAt": "2026-09-08T14:46:15.904Z",
+      "durationMs": 314,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -2411,15 +2420,15 @@
         "budgetExhausted": false
       },
       "anchor": null,
-      "note": "static render did not resolve to a component tree",
+      "note": "static render did not resolve to a component tree; runtime replayed from 2026-09-08T09:47:39.134Z",
       "failure": null
     },
     {
       "id": "react-datasheet-grid",
       "revision": "862a1bb7777550fa04445fb283fa035a759c7c22",
       "framework": "spa",
-      "capturedAt": "2026-09-08T09:46:20.011Z",
-      "durationMs": 4590,
+      "capturedAt": "2026-09-08T14:45:58.802Z",
+      "durationMs": 616,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -2665,7 +2674,7 @@
         "budgetExhausted": false
       },
       "anchor": null,
-      "note": null,
+      "note": "runtime replayed from 2026-09-08T09:46:24.291Z",
       "failure": null
     },
     {
@@ -2891,8 +2900,8 @@
       "id": "react-virtuoso",
       "revision": "b7feb0c2415044a99c75c7c8d03f5f7c14342038",
       "framework": "spa",
-      "capturedAt": "2026-09-08T09:47:55.425Z",
-      "durationMs": 5702,
+      "capturedAt": "2026-09-08T14:46:25.290Z",
+      "durationMs": 600,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -2948,7 +2957,7 @@
         "budgetExhausted": false
       },
       "anchor": "Example",
-      "note": null,
+      "note": "runtime replayed from 2026-09-08T09:48:00.838Z",
       "failure": null
     },
     {
@@ -3341,8 +3350,8 @@
       "id": "tanstack-table",
       "revision": "05f3ed11f36b83bcd0991e25e3d4e78c143e6df4",
       "framework": "spa",
-      "capturedAt": "2026-09-08T09:48:02.180Z",
-      "durationMs": 8105,
+      "capturedAt": "2026-09-08T14:46:27.001Z",
+      "durationMs": 8614,
       "runtime": {
         "reactVersion": "19.2.6",
         "rendererName": "react-dom",
@@ -3355,35 +3364,35 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 7533,
-          "textCount": 2,
-          "branchCount": 197,
-          "repeatCount": 85,
+          "fiberCount": 9233,
+          "textCount": 9,
+          "branchCount": 328,
+          "repeatCount": 12,
           "opaqueCount": 0,
-          "unknownCount": 3186,
+          "unknownCount": 3797,
           "modulesLoaded": 79
         },
         "diagnostics": [
           {
-            "code": "dynamic-key",
-            "count": 16
-          },
-          {
             "code": "budget-exhausted",
             "count": 15
+          },
+          {
+            "code": "dynamic-key",
+            "count": 5
           }
         ]
       },
       "report": {
         "matchedFibers": 457,
-        "matchedText": 2,
+        "matchedText": 9,
         "opaqueSubtrees": 0,
         "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "wildcardAbsorbedFibers": 907,
+        "wildcardAbsorbedFibers": 900,
         "wildcards": [
           {
             "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <ProductsTable> [FunctionComponent]",
@@ -3466,224 +3475,81 @@
             ]
           }
         ],
-        "branchesResolved": 110,
+        "branchesResolved": 78,
         "branchDeviations": [
           {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <HeaderFlexRender> [FunctionComponent] > <FlexRender> [FunctionComponent]",
-            "reason": "conditional on <boolean: negation of unknown>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <HeaderFlexRender> [FunctionComponent] > <FlexRender> [FunctionComponent][0]",
-              "expected": "<end of children>",
-              "actual": "\"First Name\""
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <ColumnFilter> [FunctionComponent]",
-            "reason": "if (<boolean: negation of unknown>)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <ColumnFilter> [FunctionComponent][0]",
-              "expected": "<end of children>",
-              "actual": "<div> [HostComponent]"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent]",
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> key=\"firstName\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent]",
             "reason": "&& on branch(<boolean> | false)",
             "preferredIndex": 0,
             "chosenIndex": 1,
             "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent][3]",
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> key=\"firstName\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent][3]",
               "expected": "<span> [HostComponent]",
               "actual": "<end of children>"
             }
           },
           {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <HeaderFlexRender> [FunctionComponent] > <FlexRender> [FunctionComponent]",
-            "reason": "conditional on <boolean: negation of unknown>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <HeaderFlexRender> [FunctionComponent] > <FlexRender> [FunctionComponent][0]",
-              "expected": "<end of children>",
-              "actual": "\"Last Name\""
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <ColumnFilter> [FunctionComponent]",
-            "reason": "if (<boolean: negation of unknown>)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <ColumnFilter> [FunctionComponent][0]",
-              "expected": "<end of children>",
-              "actual": "<div> [HostComponent]"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent]",
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> key=\"lastName\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent]",
             "reason": "&& on branch(<boolean> | false)",
             "preferredIndex": 0,
             "chosenIndex": 1,
             "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent][3]",
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> key=\"lastName\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent][3]",
               "expected": "<span> [HostComponent]",
               "actual": "<end of children>"
             }
           },
           {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <HeaderFlexRender> [FunctionComponent] > <FlexRender> [FunctionComponent]",
-            "reason": "conditional on <boolean: negation of unknown>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <HeaderFlexRender> [FunctionComponent] > <FlexRender> [FunctionComponent][0]",
-              "expected": "<end of children>",
-              "actual": "\"Age\""
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <ColumnFilter> [FunctionComponent]",
-            "reason": "if (<boolean: negation of unknown>)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <ColumnFilter> [FunctionComponent][0]",
-              "expected": "<end of children>",
-              "actual": "<div> [HostComponent]"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent]",
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> key=\"age\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent]",
             "reason": "&& on branch(<boolean> | false)",
             "preferredIndex": 0,
             "chosenIndex": 1,
             "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent][3]",
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> key=\"age\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent][3]",
               "expected": "<span> [HostComponent]",
               "actual": "<end of children>"
             }
           },
           {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <HeaderFlexRender> [FunctionComponent] > <FlexRender> [FunctionComponent]",
-            "reason": "conditional on <boolean: negation of unknown>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <HeaderFlexRender> [FunctionComponent] > <FlexRender> [FunctionComponent][0]",
-              "expected": "<end of children>",
-              "actual": "\"Visits\""
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <ColumnFilter> [FunctionComponent]",
-            "reason": "if (<boolean: negation of unknown>)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <ColumnFilter> [FunctionComponent][0]",
-              "expected": "<end of children>",
-              "actual": "<div> [HostComponent]"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent]",
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> key=\"visits\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent]",
             "reason": "&& on branch(<boolean> | false)",
             "preferredIndex": 0,
             "chosenIndex": 1,
             "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent][3]",
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> key=\"visits\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent][3]",
               "expected": "<span> [HostComponent]",
               "actual": "<end of children>"
             }
           },
           {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <HeaderFlexRender> [FunctionComponent] > <FlexRender> [FunctionComponent]",
-            "reason": "conditional on <boolean: negation of unknown>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <HeaderFlexRender> [FunctionComponent] > <FlexRender> [FunctionComponent][0]",
-              "expected": "<end of children>",
-              "actual": "\"Status\""
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <ColumnFilter> [FunctionComponent]",
-            "reason": "if (<boolean: negation of unknown>)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <ColumnFilter> [FunctionComponent][0]",
-              "expected": "<end of children>",
-              "actual": "<div> [HostComponent]"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent]",
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> key=\"status\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent]",
             "reason": "&& on branch(<boolean> | false)",
             "preferredIndex": 0,
             "chosenIndex": 1,
             "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent][3]",
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> key=\"status\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent][3]",
               "expected": "<span> [HostComponent]",
               "actual": "<end of children>"
             }
           },
           {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <HeaderFlexRender> [FunctionComponent] > <FlexRender> [FunctionComponent]",
-            "reason": "conditional on <boolean: negation of unknown>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <HeaderFlexRender> [FunctionComponent] > <FlexRender> [FunctionComponent][0]",
-              "expected": "<end of children>",
-              "actual": "\"Progress\""
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <ColumnFilter> [FunctionComponent]",
-            "reason": "if (<boolean: negation of unknown>)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <ColumnFilter> [FunctionComponent][0]",
-              "expected": "<end of children>",
-              "actual": "<div> [HostComponent]"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent]",
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> key=\"progress\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent]",
             "reason": "&& on branch(<boolean> | false)",
             "preferredIndex": 0,
             "chosenIndex": 1,
             "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent][3]",
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> key=\"progress\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent][3]",
               "expected": "<span> [HostComponent]",
               "actual": "<end of children>"
             }
           },
           {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <HeaderFlexRender> [FunctionComponent] > <FlexRender> [FunctionComponent]",
-            "reason": "conditional on <boolean: negation of unknown>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent] > <HeaderFlexRender> [FunctionComponent] > <FlexRender> [FunctionComponent][0]",
-              "expected": "<end of children>",
-              "actual": "\"Actions\""
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent]",
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> key=\"actions\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent]",
             "reason": "&& on branch(<boolean> | false)",
             "preferredIndex": 0,
             "chosenIndex": 1,
             "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent][3]",
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <thead> [HostComponent] > <tr> key=\"0\" [HostComponent] > <AppHeaderImpl> key=\"actions\" [FunctionComponent] > <ContextProvider> [ContextProvider] > <th> [HostComponent][3]",
               "expected": "<span> [HostComponent]",
               "actual": "<end of children>"
             }
@@ -4459,18 +4325,18 @@
             }
           }
         ],
-        "repeatIterations": 24,
+        "repeatIterations": 10,
         "status": "partial",
         "runtimeFibers": 1366,
-        "staticFibers": 134,
+        "staticFibers": 249,
         "coverage": 1,
-        "strictCoverage": 0.33601756954612005,
+        "strictCoverage": 0.3411420204978038,
         "divergence": null,
-        "stepsUsed": 20156,
+        "stepsUsed": 14725,
         "budgetExhausted": false
       },
       "anchor": null,
-      "note": null,
+      "note": "runtime replayed from 2026-09-08T09:48:07.158Z",
       "failure": null
     },
     {
