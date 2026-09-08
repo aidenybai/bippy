@@ -14,7 +14,6 @@ import {
 import { Materializer } from "../materialize/materializer.js";
 import { mountNode } from "../materialize/mount.js";
 import { loadReactRuntime, type ReactRuntime } from "../materialize/react-runtime.js";
-import { readReactVersion } from "../react/element-shape.js";
 import { toElementType } from "../react/element-type.js";
 import type {
   Diagnostic,
@@ -78,14 +77,15 @@ export class StaticRenderer {
       conditionNames: options.conditionNames,
       rootDirectory: this.options.rootDirectory,
     });
-    this.reactVersion = readReactVersion(this.resolver, this.options.rootDirectory);
     this.project = createProjectContext({
       rootDirectory: this.options.rootDirectory,
+      resolver: this.resolver,
       servedDirectory: this.resolveOptionalPath(options.servedDirectory),
       publicDirectory: this.resolveOptionalPath(options.publicDirectory),
       observations: this.options.observations,
       origin: this.options.origin ?? null,
     });
+    this.reactVersion = this.project.readPackageVersion("react");
     this.graph = new ModuleGraph({
       resolver: this.resolver,
       resolveExternalPackages: options.resolveExternalPackages,
@@ -125,6 +125,8 @@ export class StaticRenderer {
       assumeOuterProviders,
       reactVersion: this.reactVersion,
       project: this.project,
+      settleMs: this.options.settleMs,
+      timerUnderrunMs: this.options.timerUnderrunMs,
     });
     for (const bootstrap of this.options.bootstrap ?? []) this.runBootstrap(interpreter, bootstrap);
     return interpreter;
@@ -173,7 +175,15 @@ export class StaticRenderer {
     });
     const rootNode = materializer.toRootNode(rootValue);
     interpreter.timers.drainMicrotasks();
-    const mounted = await mountNode(runtime, rootNode, () => interpreter.timers.flush());
+    const mounted = await mountNode(runtime, rootNode, interpreter.timers);
+    if (interpreter.timers.hasTasks()) {
+      interpreter.report(
+        "timers-unsettled",
+        "timer tasks were still queueing more tasks when the settle rounds ran out",
+        null,
+        "warning",
+      );
+    }
     for (const error of mounted.uncaughtErrors) {
       interpreter.report(
         "render-error",

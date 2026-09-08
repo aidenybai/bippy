@@ -72,8 +72,8 @@ const SNAPSHOT_WORK_TAGS = [
 // The recorder writes tag names from the same union; an unfamiliar tag from a
 // newer React degrades to "Unknown" rather than failing the whole capture.
 const workTagSchema: z.ZodType<SnapshotWorkTag, unknown> = z
-  .enum(SNAPSHOT_WORK_TAGS)
-  .catch("Unknown");
+  .string()
+  .pipe(z.enum(SNAPSHOT_WORK_TAGS).catch("Unknown"));
 
 const propValueSchema: z.ZodType<SnapshotPropValue> = z.union([
   z.string(),

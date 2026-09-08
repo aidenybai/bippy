@@ -49,6 +49,7 @@ import type {
   StaticObjectValue,
   StaticValue,
   StubComponent,
+  StubHooks,
   StubRenderTools,
 } from "../types.js";
 import { ClassComponentTag, ForwardRefTag, type WorkTag } from "../work-tags.js";
@@ -531,7 +532,7 @@ export class Materializer {
         return this.branchNode(
           [this.toNode(value.value, context, isTopLevel), null],
           value.reason,
-          0,
+          value.isAbsentPreferred ? 1 : 0,
           isTopLevel,
           value.location,
         );
@@ -649,6 +650,14 @@ export class Materializer {
           ),
       );
       return this.toNode(server.rendered, server.childContext, isTopLevel);
+    }
+    if (element.type.kind === "stub" && this.isServerComponentElement(element, context)) {
+      const serverContext = { ...context, environment: element.environment ?? context.environment };
+      const rendered = element.type.stub.render(
+        element.props,
+        this.stubTools(serverContext, element.location),
+      );
+      return this.toNode(rendered, { ...serverContext, depth: context.depth + 1 }, isTopLevel);
     }
     return this.createNode(element.type, element.key, element.props, element.location, context);
   }
@@ -914,7 +923,7 @@ export class Materializer {
         return preferred ? this.toAttribute(key, preferred, context) : undefined;
       }
       case "optional":
-        return this.toAttribute(key, value.value, context);
+        return value.isAbsentPreferred ? undefined : this.toAttribute(key, value.value, context);
       case "function":
       case "native-function":
       case "method":
@@ -1199,9 +1208,12 @@ export class Materializer {
   private getStubProxy(stub: StubComponent): ComponentType<ProxyProps> {
     let proxy = this.stubProxies.get(stub);
     if (!proxy) {
-      const render = ({ input }: ProxyProps): ReactNode =>
-        this.renderInsideComponent(() => this.renderStub(input, stub));
-      proxy = setFunctionName(this.wrapStubRender(render, stub.tag), stub.displayName);
+      const render = setFunctionName(
+        ({ input }: ProxyProps): ReactNode =>
+          this.renderInsideComponent(() => this.renderStub(input, stub)),
+        stub.displayName,
+      );
+      proxy = this.wrapStubRender(render, stub.tag);
       this.stubProxies.set(stub, proxy);
     }
     return proxy;
@@ -1213,11 +1225,14 @@ export class Materializer {
   ): ComponentType<ProxyProps> {
     if (tag === ForwardRefTag) return this.runtime.react.forwardRef<unknown, ProxyProps>(render);
     if (tag !== ClassComponentTag) return render;
-    return class StubClassProxy extends this.runtime.react.Component<ProxyProps> {
-      render(): ReactNode {
-        return render(this.props);
-      }
-    };
+    return setFunctionName(
+      class extends this.runtime.react.Component<ProxyProps> {
+        render(): ReactNode {
+          return render(this.props);
+        }
+      },
+      render.name,
+    );
   }
 
   private renderInsideComponent<T>(render: () => T): T {
@@ -1231,9 +1246,27 @@ export class Materializer {
 
   private renderStub(input: ProxyInput, stub: StubComponent): ReactNode {
     const { context, props, location } = input;
+    const { useState, useRef, useEffect } = this.runtime.react;
+    const rendered = stub.render(
+      props,
+      this.stubTools(context, location, {
+        useState: (initial) => useState(initial),
+        useRef: (initial) => useRef(initial),
+        useEffect: (effect, dependencies) => useEffect(effect, dependencies),
+      }),
+    );
+    return this.finishRender(rendered, { ...context, depth: context.depth + 1 }, input);
+  }
+
+  private stubTools(
+    context: MaterializeContext,
+    location: SourceLocation | null,
+    hooks: StubHooks | null = null,
+  ): StubRenderTools {
     const tools: StubRenderTools = {
       readContext: (definition) =>
         providedContextValue(this.interpreter, definition, this.readContext(definition), location),
+      hooks,
       callAwaited: (callee, args) => this.callAwaited(callee, args, context, location),
       call: (callee, args) => {
         if (callee.kind === "function") {
@@ -1242,17 +1275,27 @@ export class Materializer {
         if (callee.kind === "native-function") return callee.call(args, tools);
         return unknownValue(`call of ${describeValue(callee)}`, location);
       },
+      callDeferred: (callee, args) =>
+        callee.kind === "function"
+          ? this.interpreter.callDeferred(
+              callee,
+              args,
+              this.moduleContext(callee, context),
+              location,
+            )
+          : tools.call(callee, args),
       captured: (captured, name) => this.interpreter.captured(captured, name),
       markEscaped: (value) => this.interpreter.markEscaped(value),
       queueMicrotask: (task) => this.interpreter.timers.queueMicrotask(task),
+      isDeferred: () => this.interpreter.timers.isDeferred,
       setProperty: (object, key, value) => this.interpreter.assignOwnProperty(object, key, value),
       realm: this.interpreter.getRealm(context.environment),
       pushItems: (list, items) => this.interpreter.pushItems(list, items),
       nameHint: null,
       templateArgumentNames: null,
+      environment: context.environment,
     };
-    const rendered = stub.render(props, tools);
-    return this.finishRender(rendered, { ...context, depth: context.depth + 1 }, input);
+    return tools;
   }
 
   renderFunctionProxy(
@@ -1588,9 +1631,11 @@ export class Materializer {
     element: StaticElementValue,
     context: MaterializeContext,
   ): boolean {
-    if (!this.serverComponents || element.type.kind !== "function") return false;
+    if (!this.serverComponents) return false;
     const createdIn = element.environment ?? context.environment;
-    return createdIn !== "client" && !isClientModule(element.type.component.module);
+    if (createdIn === "client") return false;
+    if (element.type.kind === "stub") return element.type.stub.isServerComponent === true;
+    return element.type.kind === "function" && !isClientModule(element.type.component.module);
   }
 
   private componentEnvironment(

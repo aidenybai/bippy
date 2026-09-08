@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
+import type { ModuleResolver } from "./module-resolver.js";
 import { EMPTY_OBSERVATIONS } from "../observations.js";
 import { readPackageManifest } from "../package-manifest.js";
 import type { ProjectContext, RuntimeObservations } from "../types.js";
@@ -18,6 +19,17 @@ const readDeclaredDependencies = (manifestPath: string): string[] => {
   });
 };
 
+/** The version of the package the project's own resolution reaches, as its manifest declares it. */
+export const readPackageVersion = (
+  resolver: ModuleResolver,
+  rootDirectory: string,
+  packageName: string,
+): string | null => {
+  const resolution = resolver.resolve(`${packageName}/package.json`, `${rootDirectory}/index.js`);
+  if (resolution.kind !== "external" || !resolution.filePath) return null;
+  return readPackageManifest(resolution.filePath).version ?? null;
+};
+
 /**
  * Build tooling (babel/swc plugins) is never imported and, being pulled in
  * transitively by the libraries it serves, is installed in projects that do not
@@ -26,6 +38,7 @@ const readDeclaredDependencies = (manifestPath: string): string[] => {
  */
 export interface ProjectContextOptions {
   rootDirectory: string;
+  resolver: ModuleResolver;
   /** The bundler's served root (Vite `root`) when it is not `rootDirectory`. */
   servedDirectory?: string;
   /** Directory served as-is at the URL root (Vite `publicDir`); `public/` under the served root by default. */
@@ -35,7 +48,7 @@ export interface ProjectContextOptions {
 }
 
 export const createProjectContext = (options: ProjectContextOptions): ProjectContext => {
-  const { rootDirectory, observations = EMPTY_OBSERVATIONS, origin = null } = options;
+  const { rootDirectory, resolver, observations = EMPTY_OBSERVATIONS, origin = null } = options;
   const servedDirectory = options.servedDirectory ?? rootDirectory;
   const publicDirectory = options.publicDirectory ?? path.join(servedDirectory, PUBLIC_DIRECTORY);
   const declared = new Set<string>();
@@ -59,6 +72,7 @@ export const createProjectContext = (options: ProjectContextOptions): ProjectCon
     rootDirectory,
     servedDirectory,
     hasDeclaredDependency,
+    readPackageVersion: (packageName) => readPackageVersion(resolver, rootDirectory, packageName),
     getImportedAssetUrl: assets.getImportedUrl,
     readServedAsset: assets.read,
     findQuery: (queryHash) => queries.get(queryHash) ?? null,

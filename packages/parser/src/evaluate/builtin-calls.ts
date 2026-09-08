@@ -34,6 +34,8 @@ import {
   getHostGlobal,
   getHostGlobalTypeof,
   getLanguageMethodResult,
+  getLanguageObject,
+  toLanguagePropertyKey,
 } from "./host-globals.js";
 import { createAbortController } from "./abort-controller.js";
 import { createDomObserver, isDomObserverName } from "./dom-observers.js";
@@ -47,15 +49,24 @@ import {
 } from "./native-values.js";
 import { constructFunctionFromSource } from "./function-constructor.js";
 import { callImportMetaGlob } from "./import-glob.js";
+import { createClockDateValue, isClockReading } from "./clock-date.js";
+import { createBlobValue } from "./blob.js";
 import { callEventTargetMethod } from "./event-listeners.js";
 import { hasProperty, isIntrinsicFunctionKey } from "./has-property.js";
 import {
   getBuiltinFunctionSource,
-  getBuiltinPrototype,
   getBuiltinPrototypeName,
   getPrototypeWitness,
-  isTypedArrayName,
 } from "./instance-of.js";
+import { callIndexedDbMethod, isIndexedDbName, type IndexedDbHost } from "./indexed-db.js";
+import {
+  binaryFromItems,
+  callBinaryMethod,
+  constructBinary,
+  isBinaryView,
+  isTypedArrayName,
+} from "./typed-arrays.js";
+import { callWebCryptoMethod, isWebCryptoName } from "./web-crypto.js";
 import { mediaQueryListValue } from "./media-query.js";
 import { getObjectTag } from "./object-tag.js";
 import { callHistoryMethod, isHistoryName } from "./session-history.js";
@@ -72,12 +83,19 @@ import {
   type PromiseHandlers,
   type PromiseTools,
 } from "./promises.js";
-import { callShapedPrimitiveMethod, rangedNumberValue } from "./primitive-shapes.js";
+import { createNumberFormat } from "./intl-format.js";
+import {
+  applyMathToRanges,
+  callShapedPrimitiveMethod,
+  rangedNumberValue,
+} from "./primitive-shapes.js";
 import { isArrayValue } from "./type-predicates.js";
 import { createSearchParamsValue } from "./url-search-params.js";
 import {
   callStringCodec,
   createBufferValue,
+  createTextDecoder,
+  createTextEncoder,
   getBufferByteLength,
   isStringCodecName,
 } from "./text-encoding.js";
@@ -100,11 +118,11 @@ import {
   getKnownObjectSymbols,
   getListLength,
   getObjectProperty,
+  getPreferredTruthiness,
   getPropertyName,
   getSymbolPropertyKey,
   getTruthiness,
   compareIdentity,
-  isSymbolPropertyKey,
   hasDefiniteItems,
   hasOwnKey,
   isIndefiniteItem,
@@ -278,6 +296,10 @@ export const getTypeofValue = (value: StaticValue, realm: HostRealm): StaticValu
       return mapValue(value, (alternative) => getTypeofValue(alternative, realm));
     case "primitive":
       return primitiveValue(typeof value.value);
+    case "unknown-primitive":
+      return value.primitiveType === "any"
+        ? unknownPrimitiveValue("string", `typeof ${describeValue(value)}`)
+        : primitiveValue(value.primitiveType);
     case "function":
     case "class":
     case "native-function":
@@ -314,10 +336,6 @@ export const getTypeofValue = (value: StaticValue, realm: HostRealm): StaticValu
         ? primitiveValue(globalType)
         : unknownPrimitiveValue("string", `typeof ${describeValue(value)}`);
     }
-    case "unknown-primitive":
-      return value.primitiveType === "any"
-        ? unknownPrimitiveValue("string", `typeof ${describeValue(value)}`)
-        : primitiveValue(value.primitiveType);
     default:
       return unknownPrimitiveValue("string", `typeof ${describeValue(value)}`);
   }
@@ -519,12 +537,13 @@ const hasOwnProperty = (
     );
   }
   if (receiver.kind === "global") {
-    const builtinPrototype = getBuiltinPrototype(receiver.name);
-    if (!builtinPrototype || isSymbolPropertyKey(propertyName)) return null;
+    const languageObject = getLanguageObject(receiver.name);
+    const propertyKey = toLanguagePropertyKey(propertyName);
+    if (languageObject === null || propertyKey === null) return null;
     return primitiveValue(
       name === "hasOwnProperty"
-        ? Object.hasOwn(builtinPrototype, propertyName)
-        : Object.prototype.propertyIsEnumerable.call(builtinPrototype, propertyName),
+        ? Object.hasOwn(languageObject, propertyKey)
+        : Object.prototype.propertyIsEnumerable.call(languageObject, propertyKey),
     );
   }
   return null;
@@ -622,9 +641,11 @@ const callInvokedGlobal = (
           name: target.slice(prototypeIndex + PROTOTYPE_SEGMENT.length),
         };
   if (invocation === "bind") {
-    return callee.kind === "global" && args.length <= 1
-      ? callee
-      : unknownValue(`${name}()`, location);
+    const boundArgs = args.slice(1);
+    if (callee.kind === "global" && boundArgs.length === 0) return callee;
+    return nativeFunction(`bound ${target}`, (callArgs, tools) =>
+      tools.call(callee, [...boundArgs, ...callArgs]),
+    );
   }
   const [, second] = args;
   const calleeArgs =
@@ -670,6 +691,21 @@ const callHostObjectMethod = (
       args,
       location,
       (listener) => interpreter.markEscaped(listener),
+    );
+  if (isIndexedDbName(receiver.name))
+    return callIndexedDbMethod(
+      indexedDbHost(interpreter, context, location),
+      interpreter.indexedDb,
+      name,
+      args,
+    );
+  if (isWebCryptoName(receiver.name))
+    return callWebCryptoMethod(
+      receiver.name,
+      name,
+      args,
+      (list) => interpreter.recordHeapMutation(list),
+      location,
     );
   const storageAreaName = getStorageAreaName(receiver.name);
   return storageAreaName === null
@@ -723,7 +759,21 @@ const callGlobal = (
   if (name === "Buffer.from") return createBufferValue(args, location);
   if (name === "Buffer.byteLength") return getBufferByteLength(args);
   const [first, second] = args;
-  if (isConstructor && isTypedArrayName(name)) return constructTypedArray(name, first, location);
+  if (isConstructor && (isTypedArrayName(name) || name === "ArrayBuffer"))
+    return constructBinary(name, args, location);
+  if (name === "ArrayBuffer.isView") {
+    const isView = isBinaryView(first);
+    return isView === null
+      ? unknownPrimitiveValue("boolean", "ArrayBuffer.isView on dynamic value")
+      : primitiveValue(isView);
+  }
+  if (name.endsWith(".of")) {
+    const ofItems = binaryFromItems(name.slice(0, -".of".length), args);
+    if (ofItems) return ofItems;
+  }
+  if (name === "Intl.NumberFormat") return createNumberFormat(args, location);
+  if (isConstructor && name === "TextEncoder") return createTextEncoder();
+  if (isConstructor && name === "TextDecoder") return createTextDecoder(first, location);
   if (isConstructor && isDomObserverName(name))
     return createDomObserver(interpreter, name, first, location);
   if (isConstructor && isNativeConstructorName(name) && (name !== "Date" || args.length > 0)) {
@@ -731,6 +781,13 @@ const callGlobal = (
     if (constructed) return constructed;
   }
   switch (name) {
+    case "Date": {
+      if (!isConstructor) break;
+      if (args.length === 0) return createClockDateValue(interpreter.timers.readClock("new Date"));
+      if (args.length === 1 && first !== undefined && isClockReading(first))
+        return createClockDateValue(first);
+      break;
+    }
     case "Function":
       return constructFunctionFromSource(interpreter, args, location);
     case "Object":
@@ -756,6 +813,9 @@ const callGlobal = (
       return createUrlValue(args, location);
     case "AbortController":
       if (isConstructor) return createAbortController(interpreter, location);
+      break;
+    case "Blob":
+      if (isConstructor) return createBlobValue(args, location);
       break;
     case "RegExp": {
       if (second !== undefined && second.kind !== "primitive")
@@ -810,6 +870,23 @@ const callGlobal = (
         return source;
       }
       return unknownValue("Array.from of dynamic iterable", location);
+    }
+    case "Int8Array.from":
+    case "Uint8Array.from":
+    case "Uint8ClampedArray.from":
+    case "Int16Array.from":
+    case "Uint16Array.from":
+    case "Int32Array.from":
+    case "Uint32Array.from":
+    case "Float32Array.from":
+    case "Float64Array.from": {
+      const source =
+        first?.kind === "object" ? (getCollectionItems(first) ?? arrayLikeToList(first)) : first;
+      if (source?.kind !== "list") return unknownValue(`${name} of dynamic iterable`, location);
+      const mapped = isCallable(second) ? mapList(interpreter, source, second, context) : source;
+      return mapped.kind === "list"
+        ? (binaryFromItems(name.slice(0, -".from".length), mapped.items) ?? mapped)
+        : mapped;
     }
     case "Object.keys":
     case "Object.values":
@@ -1024,32 +1101,40 @@ const callGlobal = (
       return unknownValue("JSON.parse", location);
     case "queueMicrotask":
       if (first) {
-        interpreter.timers.queueMicrotask(() =>
-          interpreter.callValue(first, [], context, location),
-        );
+        interpreter.timers.queueMicrotask(scheduledTask(interpreter, first, context, location));
       }
       return UNDEFINED_VALUE;
     case "setTimeout":
     case "setImmediate":
     case "requestAnimationFrame":
     case "requestIdleCallback": {
-      // The runtime snapshot is taken once short timers settled; longer or dynamic delays may not have fired.
       const handle = interpreter.timers.createHandle(name);
       if (first) {
-        if (isSettledDelay(second)) {
-          interpreter.timers.schedule(handle, () =>
-            interpreter.callValue(first, [], context, location),
+        const delayMs = interpreter.timers.getSettledDelay(second);
+        if (delayMs === null) interpreter.markEscaped(first);
+        else {
+          interpreter.timers.schedule(
+            handle,
+            scheduledTask(interpreter, first, context, location),
+            delayMs,
           );
-        } else interpreter.markEscaped(first);
+        }
       }
       return handle;
     }
     case "setInterval": {
       const handle = interpreter.timers.createHandle(name);
       if (first) {
-        interpreter.timers.schedule(handle, () =>
-          interpreter.runIntervalTicks(first, handle, context, location),
-        );
+        const delayMs = interpreter.timers.getSettledDelay(second);
+        const isDeferred = interpreter.timers.isDeferred;
+        if (delayMs === null) interpreter.markEscaped(first);
+        else {
+          interpreter.timers.schedule(
+            handle,
+            () => interpreter.runIntervalTicks(first, handle, context, location, isDeferred),
+            delayMs,
+          );
+        }
       }
       return handle;
     }
@@ -1073,11 +1158,12 @@ const callGlobal = (
   }
   if (name === "Math.random") return rangedNumberValue(name, { min: 0, max: 1 });
   if (name.startsWith("Math.")) {
-    const mathFunction: unknown = Reflect.get(Math, name.slice("Math.".length));
+    const method = name.slice("Math.".length);
+    const mathFunction: unknown = Reflect.get(Math, method);
     const natives = toNativeArguments(args, null);
-    return typeof mathFunction === "function" && natives !== null
-      ? fromNativeValue(Reflect.apply(mathFunction, Math, natives), `${name}()`, null)
-      : unknownPrimitiveValue("number", name);
+    if (typeof mathFunction === "function" && natives !== null)
+      return fromNativeValue(Reflect.apply(mathFunction, Math, natives), `${name}()`, null);
+    return applyMathToRanges(method, args) ?? unknownPrimitiveValue("number", name);
   }
   if (isConstructor) return unknownValue(`new ${name}()`, location);
   return unknownValue(`${name}()`, location);
@@ -1103,23 +1189,6 @@ const arrayOfLength = (length: StaticValue, location: SourceLocation | null): St
   return listValue(Array.from({ length: length.value }, () => UNDEFINED_VALUE));
 };
 
-/** `new Uint16Array(length | array)`: a zero-filled or copied list; element coercion is not modeled. */
-const constructTypedArray = (
-  name: string,
-  source: StaticValue | undefined,
-  location: SourceLocation | null,
-): StaticValue => {
-  if (source === undefined) return listValue([]);
-  if (source.kind === "list") return listValue([...source.items]);
-  if (source.kind === "primitive" && typeof source.value === "number") {
-    const zeroFilled = arrayOfLength(source, location);
-    return zeroFilled.kind === "list"
-      ? listValue(zeroFilled.items.map(() => primitiveValue(0)))
-      : zeroFilled;
-  }
-  return unknownValue(`new ${name}() from ${describeValue(source)}`, location);
-};
-
 // `{ length: n }` (and sparse array-likes) as consumed by `Array.from`.
 const arrayLikeToList = (value: Extract<StaticValue, { kind: "object" }>): StaticValue => {
   const length = getObjectProperty(value, "length");
@@ -1139,30 +1208,44 @@ export type CallableValue = Extract<
   { kind: "function" | "native-function" | "global" }
 >;
 
-const MAX_SETTLED_DELAY_MS = 2_000;
-
-const isSettledDelay = (delay: StaticValue | undefined): boolean =>
-  delay === undefined ||
-  (delay.kind === "primitive" &&
-    (delay.value === undefined ||
-      delay.value === null ||
-      (typeof delay.value === "number" && delay.value <= MAX_SETTLED_DELAY_MS)));
+/** A task queued from a continuation of unknown timing runs at an unknown time too. */
+const scheduledTask = (
+  interpreter: Interpreter,
+  callback: StaticValue,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): (() => void) =>
+  interpreter.timers.isDeferred
+    ? () => interpreter.callDeferred(callback, [], context, location)
+    : () => interpreter.callValue(callback, [], context, location);
 
 export const isCallable = (value: StaticValue | undefined): value is CallableValue =>
   value?.kind === "function" || value?.kind === "native-function" || value?.kind === "global";
 
-/** Truthiness of `predicate(item, index, list)` per item; null where the analysis cannot decide. */
+interface ItemVerdict {
+  verdict: boolean | null;
+  preference: boolean | null;
+}
+
+/**
+ * `predicate(item, index, list)` per item: its truthiness (null where the
+ * analysis cannot decide) and the truthiness of the alternative it prefers.
+ */
 const testItems = (
   interpreter: Interpreter,
   list: StaticListValue,
   predicate: CallableValue,
   context: EvaluationContext,
-): (boolean | null)[] =>
-  list.items.map((item, index) =>
-    getTruthiness(
-      callCallback(interpreter, predicate, [item, primitiveValue(index), list], context),
-    ),
-  );
+): ItemVerdict[] =>
+  list.items.map((item, index) => {
+    const outcome = callCallback(
+      interpreter,
+      predicate,
+      [item, primitiveValue(index), list],
+      context,
+    );
+    return { verdict: getTruthiness(outcome), preference: getPreferredTruthiness(outcome) };
+  });
 
 const callCallback = (
   interpreter: Interpreter,
@@ -1170,6 +1253,96 @@ const callCallback = (
   args: StaticValue[],
   context: EvaluationContext,
 ): StaticValue => interpreter.callValue(callback, args, context, null);
+
+const MAX_FILTERED_ALTERNATIVES = 16;
+
+/**
+ * An item as `filter` keeps it: itself when accepted, null when rejected, and
+ * optional when undecided. A branch item is tested per alternative so only the
+ * alternatives the predicate may accept remain, and the position is preferred
+ * empty when the alternative the analysis prefers was rejected.
+ */
+const filterItem = (
+  interpreter: Interpreter,
+  list: StaticListValue,
+  predicate: CallableValue,
+  item: StaticValue,
+  index: number,
+  context: EvaluationContext,
+): StaticValue | null => {
+  const alternatives =
+    item.kind === "branch" && item.alternatives.length <= MAX_FILTERED_ALTERNATIVES
+      ? item.alternatives
+      : [item];
+  const verdicts = alternatives.map((alternative) =>
+    getTruthiness(
+      callCallback(interpreter, predicate, [alternative, primitiveValue(index), list], context),
+    ),
+  );
+  if (verdicts.every((verdict) => verdict === true)) return item;
+  const accepted = alternatives.filter((_, position) => verdicts[position] !== false);
+  if (accepted.length === 0) return null;
+  const preferredIndex = item.kind === "branch" ? item.preferredIndex : 0;
+  const preferred = alternatives[preferredIndex];
+  const kept =
+    item.kind === "branch"
+      ? branchValue(accepted, item.reason, item.location, Math.max(0, accepted.indexOf(preferred)))
+      : item;
+  return optionalValue(kept, "uncertain filter", null, verdicts[preferredIndex] === false);
+};
+
+const MAX_JOINED_COMBINATIONS = 16;
+
+interface JoinedItems {
+  parts: StaticValue[];
+  isPreferred: boolean;
+}
+
+const joinParts = (parts: StaticValue[], separator: string): StaticValue =>
+  parts.every((part) => part.kind === "primitive")
+    ? primitiveValue(
+        parts
+          .map((part) => (part.kind === "primitive" ? String(part.value ?? "") : ""))
+          .join(separator),
+      )
+    : unknownPrimitiveValue("string", "join of dynamic list");
+
+/** `join()` over items that may be absent: one string per combination of present items. */
+const joinListItems = (
+  items: StaticValue[],
+  separator: string,
+  location: SourceLocation | null,
+): StaticValue => {
+  let combinations: JoinedItems[] = [{ parts: [], isPreferred: true }];
+  for (const item of items) {
+    if (item.kind === "repeat") {
+      return unknownPrimitiveValue("string", "join of a list with an unknown length");
+    }
+    if (item.kind !== "optional") {
+      combinations = combinations.map(({ parts, isPreferred }) => ({
+        parts: [...parts, item],
+        isPreferred,
+      }));
+      continue;
+    }
+    if (combinations.length * 2 > MAX_JOINED_COMBINATIONS) {
+      return unknownPrimitiveValue("string", "join of a list with many uncertain items");
+    }
+    combinations = combinations.flatMap(({ parts, isPreferred }) => [
+      { parts: [...parts, item.value], isPreferred: isPreferred && !item.isAbsentPreferred },
+      { parts, isPreferred: isPreferred && item.isAbsentPreferred === true },
+    ]);
+  }
+  return branchValue(
+    combinations.map(({ parts }) => joinParts(parts, separator)),
+    "join of a filtered list",
+    location,
+    Math.max(
+      0,
+      combinations.findIndex(({ isPreferred }) => isPreferred),
+    ),
+  );
+};
 
 /** A callback run for an item that may occur zero or many times: its side effects are uncertain. */
 export const callUncertainCallback = (
@@ -1487,12 +1660,32 @@ const fallbackMethodResult = (
   );
 };
 
+/** Request events fire in later tasks; from a deferred continuation they stay deferred. */
+const indexedDbHost = (
+  interpreter: Interpreter,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): IndexedDbHost => {
+  const isDeferred = interpreter.timers.isDeferred;
+  return {
+    schedule: (task) =>
+      interpreter.timers.schedule(
+        interpreter.timers.createHandle("IndexedDB request"),
+        isDeferred ? () => interpreter.timers.runDeferred(task) : task,
+      ),
+    call: (callee, callArgs) => interpreter.callValue(callee, callArgs, context, location),
+    setProperty: (object, key, value) => interpreter.assignOwnProperty(object, key, value),
+    location,
+  };
+};
+
 const promiseTools = (
   interpreter: Interpreter,
   context: EvaluationContext,
   location: SourceLocation | null,
 ): PromiseTools => ({
   call: (callee, callArgs) => interpreter.callValue(callee, callArgs, context, location),
+  callDeferred: (callee, callArgs) => interpreter.callDeferred(callee, callArgs, context, location),
   markEscaped: (value) => interpreter.markEscaped(value),
   queueMicrotask: (task) => interpreter.timers.queueMicrotask(task),
 });
@@ -1519,11 +1712,13 @@ const callPromiseMethod = (
     onFinally: name === "finally" && isCallable(first) ? first : null,
   };
   const modeled = getModeledPromise(receiver);
-  if (modeled) return chainPromise(modeled, handlers, promiseTools(interpreter, context, location));
+  if (modeled) {
+    return chainPromise(modeled, handlers, promiseTools(interpreter, context, location), location);
+  }
   if (receiver.kind === "unknown" || receiver.kind === "external") {
-    if (handlers.onFulfilled?.kind === "function")
-      return interpreter.callDeferred(handlers.onFulfilled, [receiver], context);
-    for (const handler of [handlers.onFulfilled, handlers.onRejected, handlers.onFinally]) {
+    if (handlers.onFulfilled)
+      return interpreter.callDeferred(handlers.onFulfilled, [receiver], context, location);
+    for (const handler of [handlers.onRejected, handlers.onFinally]) {
       if (handler) interpreter.markEscaped(handler);
     }
     return receiver;
@@ -1614,24 +1809,24 @@ export const evaluateBuiltinCall = (
     receiver.kind === "native-function" ||
     receiver.kind === "method"
   ) {
-    const invoked: StaticValue =
-      receiver.kind === "method" && (name === "call" || name === "apply")
-        ? { kind: "method", receiver: first ?? UNDEFINED_VALUE, name: receiver.name }
+    const rebound: StaticValue =
+      receiver.kind === "method" && first !== undefined
+        ? { kind: "method", receiver: first, name: receiver.name }
         : receiver;
-    if (name === "call") return interpreter.callValue(invoked, args.slice(1), context, location);
+    if (name === "call") return interpreter.callValue(rebound, args.slice(1), context, location);
     if (name === "apply") {
       return interpreter.callValue(
-        invoked,
+        rebound,
         second?.kind === "list" ? second.items : [unknownValue("apply arguments")],
         context,
         location,
       );
     }
     if (name === "bind") {
-      if (receiver.kind !== "method") return receiver;
+      if (rebound.kind !== "method") return rebound;
       const boundArgs = args.slice(1);
-      return nativeFunction(`bound ${receiver.name}`, (callArgs, tools) =>
-        tools.call(receiver, [...boundArgs, ...callArgs]),
+      return nativeFunction(`bound ${rebound.name}`, (callArgs, tools) =>
+        tools.call(rebound, [...boundArgs, ...callArgs]),
       );
     }
   }
@@ -1693,18 +1888,23 @@ export const evaluateBuiltinCall = (
   }
 
   if (receiver.kind === "list") {
+    const binaryResult = callBinaryMethod(
+      receiver,
+      name,
+      args,
+      () => interpreter.recordHeapMutation(receiver),
+      location,
+    );
+    if (binaryResult) return binaryResult;
     switch (name) {
       case "filter":
         if (isCallable(first) && hasDefiniteItems(receiver)) {
-          const kept: StaticValue[] = [];
-          receiver.items.forEach((item, index) => {
-            const verdict = getTruthiness(
-              callCallback(interpreter, first, [item, primitiveValue(index), receiver], context),
-            );
-            if (verdict === true) kept.push(item);
-            else if (verdict === null) kept.push(optionalValue(item, "uncertain filter"));
-          });
-          return listValue(kept);
+          return listValue(
+            receiver.items.flatMap((item, index) => {
+              const kept = filterItem(interpreter, receiver, first, item, index, context);
+              return kept ? [kept] : [];
+            }),
+          );
         }
         return receiver;
       case "slice": {
@@ -1746,16 +1946,15 @@ export const evaluateBuiltinCall = (
         }
         return listValue(items);
       }
-      case "join":
-        if (receiver.items.every((item) => item.kind === "primitive")) {
-          const separator = first?.kind === "primitive" ? String(first.value) : ",";
-          return primitiveValue(
-            receiver.items
-              .map((item) => (item.kind === "primitive" ? String(item.value ?? "") : ""))
-              .join(separator),
-          );
+      case "join": {
+        if (first === undefined || (first.kind === "primitive" && first.value === undefined)) {
+          return joinListItems(receiver.items, ",", location);
         }
-        return unknownPrimitiveValue("string", "join of dynamic list");
+        if (first.kind !== "primitive") {
+          return unknownPrimitiveValue("string", "join with a dynamic separator");
+        }
+        return joinListItems(receiver.items, String(first.value), location);
+      }
       case "at": {
         if (first?.kind === "primitive" && isKnownList(receiver)) {
           const index = Number(first.value);
@@ -1795,10 +1994,23 @@ export const evaluateBuiltinCall = (
         if (!isCallable(first) || !hasDefiniteItems(receiver)) break;
         const isSome = name === "some";
         const verdicts = testItems(interpreter, receiver, first, context);
-        if (verdicts.some((verdict) => verdict === isSome))
+        if (verdicts.some(({ verdict }) => verdict === isSome))
           return isSome ? TRUE_VALUE : FALSE_VALUE;
-        if (verdicts.every((verdict) => verdict !== null)) return isSome ? FALSE_VALUE : TRUE_VALUE;
-        return unknownPrimitiveValue("boolean", `${name}() with an uncertain predicate`);
+        if (verdicts.every(({ verdict }) => verdict !== null))
+          return isSome ? FALSE_VALUE : TRUE_VALUE;
+        const undecided = verdicts.filter(({ verdict }) => verdict === null);
+        if (undecided.every(({ preference }) => preference === null)) {
+          return unknownPrimitiveValue("boolean", `${name}() with an uncertain predicate`);
+        }
+        const isPreferred = undecided.some(({ preference }) => preference === isSome)
+          ? isSome
+          : !isSome;
+        return branchValue(
+          [TRUE_VALUE, FALSE_VALUE],
+          `${name}() with an uncertain predicate`,
+          location,
+          isPreferred ? 0 : 1,
+        );
       }
       case "find":
       case "findLast":
@@ -1816,12 +2028,24 @@ export const evaluateBuiltinCall = (
           ? verdicts.map((_, index) => verdicts.length - 1 - index)
           : verdicts.map((_, index) => index);
         const candidates: StaticValue[] = [];
+        const preferences: (boolean | null)[] = [];
         for (const index of order) {
-          if (verdicts[index] === false) continue;
+          const { verdict, preference } = verdicts[index];
+          if (verdict === false) continue;
           candidates.push(isIndex ? primitiveValue(index) : receiver.items[index]);
-          if (verdicts[index] === true) return branchValue(candidates, `${name}()`, location);
+          preferences.push(preference);
+          if (verdict === true) break;
         }
-        return branchValue([...candidates, missing], `${name}()`, location);
+        if (preferences.at(-1) !== true) {
+          candidates.push(missing);
+          preferences.push(preferences.every((preference) => preference === false));
+        }
+        return branchValue(
+          candidates,
+          `${name}()`,
+          location,
+          Math.max(0, preferences.indexOf(true)),
+        );
       }
       case "reduce":
       case "reduceRight": {

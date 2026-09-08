@@ -7,7 +7,6 @@ export interface StateCell {
   current: StaticValue;
   next: StaticValue | null;
   setter: StaticNativeFunctionValue | null;
-  /** Values queued after an unknown `await`; they land after the captured commit. */
   deferred: StaticValue[];
   isEscaped: boolean;
 }
@@ -136,43 +135,49 @@ export const nextMemoCell = (
 const isSameHookValue = (left: StaticValue, right: StaticValue): boolean =>
   compareIdentity(left, right) ?? areValuesEquivalent(left, right);
 
-const hasLateUpdates = (cell: StateCell): boolean => cell.isEscaped || cell.deferred.length > 0;
+const escapedStateValue = (cell: StateCell): StaticValue =>
+  branchValue(
+    [cell.initial, unknownValue(`updated state of ${cell.name}`)],
+    "state setter escapes to code that is not evaluated",
+    null,
+  );
 
-/** Every value the cell may hold once updates the capture did not see have landed. */
-export const escapedStateValue = (cell: StateCell): StaticValue =>
-  cell.isEscaped
-    ? branchValue(
-        [cell.initial, ...cell.deferred, unknownValue(`updated state of ${cell.name}`)],
-        "state setter escapes to code that is not evaluated",
-        null,
-      )
-    : branchValue(
-        [cell.initial, ...cell.deferred],
-        "state updates after an await the analysis cannot settle",
-        null,
-      );
-
-const rerenderLate = (frame: HookFrame, cell: StateCell): void => {
-  if (isSameHookValue(escapedStateValue(cell), cell.current)) return;
-  if (!frame.isRendering) frame.requestRender?.();
+/**
+ * The value the next pass commits: an escaped cell takes every value it may
+ * hold; a cell with deferred updates holds the synchronous state or any value
+ * a continuation of unknown timing may have set by the commit.
+ */
+const pendingStateValue = (cell: StateCell): StaticValue | null => {
+  if (cell.isEscaped) return escapedStateValue(cell);
+  if (cell.deferred.length === 0) return cell.next;
+  return branchValue(
+    [cell.next ?? cell.current, ...cell.deferred],
+    "state set by a continuation that may run after the commit",
+    null,
+  );
 };
 
 /**
  * Mirrors `dispatchSetState`: with nothing pending, an update that leaves the
- * cell unchanged is dropped eagerly. An update queued past an unknown `await`
- * lands after the captured commit, so the cell commits to it as one more value
- * it may take. An escaped cell already commits to every value, so further
- * updates cannot change it either.
+ * cell unchanged is dropped eagerly. An escaped cell already commits to every
+ * value it may take, so further updates cannot change it either. An update
+ * queued by a continuation whose timing is unknown is kept as one more value
+ * the cell may hold rather than the value it holds.
  */
-export const queueStateUpdate = (frame: HookFrame, cell: StateCell, value: StaticValue): void => {
+export const queueStateUpdate = (
+  frame: HookFrame,
+  cell: StateCell,
+  value: StaticValue,
+  isDeferred: boolean,
+): void => {
   if (cell.isEscaped) return;
-  if (frame.isDeferred) {
-    if ([cell.initial, ...cell.deferred].some((known) => isSameHookValue(known, value))) return;
+  if (isDeferred) {
+    if (cell.deferred.some((deferred) => isSameHookValue(deferred, value))) return;
     cell.deferred.push(value);
-    return rerenderLate(frame, cell);
+  } else {
+    if (cell.next === null && isSameHookValue(value, cell.current)) return;
+    cell.next = value;
   }
-  if (cell.next === null && isSameHookValue(value, cell.current)) return;
-  cell.next = value;
   if (!frame.isRendering) frame.requestRender?.();
 };
 
@@ -183,12 +188,13 @@ export const queueStateUpdate = (frame: HookFrame, cell: StateCell, value: Stati
 export const escapeStateCell = (frame: HookFrame, cell: StateCell): void => {
   if (cell.isEscaped) return;
   cell.isEscaped = true;
-  rerenderLate(frame, cell);
+  if (isSameHookValue(escapedStateValue(cell), cell.current)) return;
+  if (!frame.isRendering) frame.requestRender?.();
 };
 
 /** `processUpdateQueue` for one cell: true when its committed value changed. */
 export const applyPendingState = (cell: StateCell, isFrozen = false): boolean => {
-  const next = hasLateUpdates(cell) ? escapedStateValue(cell) : cell.next;
+  const next = pendingStateValue(cell);
   cell.next = null;
   if (next === null || isFrozen || isSameHookValue(next, cell.current)) return false;
   cell.current = next;

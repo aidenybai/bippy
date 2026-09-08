@@ -358,9 +358,13 @@ export const getSymbolDescription = (symbol: StaticSymbolValue): string | undefi
   unregisteredSymbols.has(symbol.key) ? symbol.description : symbol.key;
 
 /** Symbol-keyed properties are stored under an `@@` key; enumeration skips them like `Object.keys` does. */
-export const getSymbolPropertyKey = (symbol: StaticSymbolValue): string => `@@${symbol.key}`;
+export const SYMBOL_PROPERTY_KEY_PREFIX = "@@";
 
-export const isSymbolPropertyKey = (key: string): boolean => key.startsWith("@@");
+export const getSymbolPropertyKey = (symbol: StaticSymbolValue): string =>
+  `${SYMBOL_PROPERTY_KEY_PREFIX}${symbol.key}`;
+
+export const isSymbolPropertyKey = (key: string): boolean =>
+  key.startsWith(SYMBOL_PROPERTY_KEY_PREFIX);
 
 /** The property name a computed key denotes, or `null` when the key is not statically known. */
 export const getPropertyName = (key: StaticValue): string | null => {
@@ -443,7 +447,7 @@ export const getOwnPropertyDescriptor = (
 /** The symbols keying own properties, as `Object.getOwnPropertySymbols` lists them. */
 export const getKnownObjectSymbols = (object: StaticObjectValue): StaticSymbolValue[] | null =>
   getKnownOwnKeys(object, isSymbolPropertyKey)?.map((propertyKey) => {
-    const key = propertyKey.slice("@@".length);
+    const key = propertyKey.slice(SYMBOL_PROPERTY_KEY_PREFIX.length);
     return unregisteredSymbols.get(key) ?? { kind: "symbol", key };
   }) ?? null;
 
@@ -662,6 +666,23 @@ const compareGlobalToPrimitive = (global: StaticValue, other: StaticValue): bool
   return other.value === undefined ? null : false;
 };
 
+/**
+ * A primitive of known type is never identical to a primitive of another
+ * type, to `null`/`undefined`, or to a reference value.
+ */
+const compareTypedUnknownToOther = (typed: StaticValue, other: StaticValue): boolean | null => {
+  if (typed.kind !== "unknown-primitive" || typed.primitiveType === "any") return null;
+  if (other.kind === "primitive") {
+    return typeof other.value === typed.primitiveType ? null : false;
+  }
+  if (other.kind === "unknown-primitive") {
+    return other.primitiveType === "any" || other.primitiveType === typed.primitiveType
+      ? null
+      : false;
+  }
+  return getIdentityClass(other) === null ? null : false;
+};
+
 /** `===` decided the same way against every alternative, else undecided. */
 const compareIdentityAcross = (alternatives: StaticValue[], other: StaticValue): boolean | null => {
   const first = compareIdentity(alternatives[0], other);
@@ -682,6 +703,9 @@ const isIntrinsicGlobalName = (name: string): boolean => INTRINSIC_GLOBAL_NAME.t
 export const compareIdentity = (left: StaticValue, right: StaticValue): boolean | null => {
   if (left.kind === "primitive" && right.kind === "primitive") return left.value === right.value;
   if (left === right) return true;
+  if (left.kind === "function" && right.kind === "function" && left.scope !== right.scope) {
+    return false;
+  }
   if (left.kind === "branch") return compareIdentityAcross(left.alternatives, right);
   if (right.kind === "branch") return compareIdentityAcross(right.alternatives, left);
   if (isHeapValue(left) && isHeapValue(right) && left.allocation && right.allocation) {
@@ -722,6 +746,9 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
       : null;
   }
   if (isCallableValue(left) && isCallableValue(right) && left.node !== right.node) return false;
+  const typedVersusOther =
+    compareTypedUnknownToOther(left, right) ?? compareTypedUnknownToOther(right, left);
+  if (typedVersusOther !== null) return typedVersusOther;
   const leftClass = getIdentityClass(left);
   const rightClass = getIdentityClass(right);
   if (leftClass && rightClass && leftClass !== rightClass) return false;
@@ -948,11 +975,25 @@ export const isRenderableValue = (value: StaticValue): boolean =>
   value.kind === "branch" ||
   value.kind === "unknown";
 
+/** Truthiness an unknown primitive's shape already decides: a clock reading or a range that excludes zero, a string with known characters or a known length. */
+const getShapedTruthiness = (value: StaticUnknownPrimitiveValue): boolean | null => {
+  if (value.clock) return true;
+  const range = value.numberRange;
+  if (range && (range.min > 0 || range.max < 0)) return true;
+  const shape = value.stringShape;
+  if (shape) {
+    if (shape.prefix.length > 0) return true;
+    if (shape.length !== null) return shape.length > 0;
+  }
+  return null;
+};
+
 export const getTruthiness = (value: StaticValue): boolean | null => {
   switch (value.kind) {
     case "primitive":
       return Boolean(value.value);
     case "unknown-primitive":
+      return getShapedTruthiness(value);
     case "unknown":
     case "branch":
     case "optional":
@@ -1068,7 +1109,8 @@ export const optionalValue = (
   value: StaticValue,
   reason: string,
   location: SourceLocation | null = null,
-): StaticOptionalValue => ({ kind: "optional", value, reason, location });
+  isAbsentPreferred = false,
+): StaticOptionalValue => ({ kind: "optional", value, reason, location, isAbsentPreferred });
 
 /**
  * Items contributed by `...value` inside an array literal (also `concat`,
@@ -1084,7 +1126,9 @@ export const spreadListItems = (
   if (value.kind === "repeat") return [value];
   if (value.kind === "optional") {
     return spreadListItems(value.value, location).map((item) =>
-      item.kind === "repeat" ? item : optionalValue(item, value.reason, value.location),
+      item.kind === "repeat"
+        ? item
+        : optionalValue(item, value.reason, value.location, value.isAbsentPreferred),
     );
   }
   if (value.kind === "branch" && value.alternatives.every(hasDefiniteItems)) {
@@ -1108,7 +1152,14 @@ export const spreadListItems = (
         value.location,
         Math.max(0, present.indexOf(lists[value.preferredIndex])),
       );
-      return [optionalValue(item, value.reason, value.location)];
+      return [
+        optionalValue(
+          item,
+          value.reason,
+          value.location,
+          lists[value.preferredIndex].items.length === 0,
+        ),
+      ];
     }
     return [
       {
@@ -1146,7 +1197,11 @@ export const getListItem = (
       return true;
     }
     if (head.kind === "repeat") return false;
-    if (head.kind === "optional") return pick([head.value, ...rest], offset) && pick(rest, offset);
+    if (head.kind === "optional") {
+      return head.isAbsentPreferred
+        ? pick(rest, offset) && pick([head.value, ...rest], offset)
+        : pick([head.value, ...rest], offset) && pick(rest, offset);
+    }
     if (offset === 0) {
       candidates.push(head);
       return true;
@@ -1210,7 +1265,7 @@ export const describeValue = (value: StaticValue, depth = 0): string => {
     case "native-function":
       return `native ${value.name}`;
     case "native-object":
-      return `native ${value.value.constructor.name}`;
+      return `native ${Object.prototype.toString.call(value.value).slice("[object ".length, -1)}`;
     case "proxy":
       return `proxy of ${describeNested(value.target)}`;
     case "unknown":

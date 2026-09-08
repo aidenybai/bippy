@@ -3,6 +3,7 @@ import type { HostDocument } from "../host/host-document.js";
 import type { HostRealm } from "../host/host-realm.js";
 import type { Interpreter } from "./interpreter.js";
 import { toNativeArguments } from "./native-values.js";
+import { HISTORY_TRAVERSAL_EVENTS } from "./session-history.js";
 import { UNDEFINED_VALUE } from "./values.js";
 
 /** Events only a user gesture dispatches; none fires before the runtime snapshot is captured. */
@@ -58,6 +59,9 @@ const PAGE_UNLOAD_EVENTS = new Set(["pagehide", "beforeunload", "unload"]);
 /** The capture viewport never changes, so `window` never fires these before the snapshot. */
 const VIEWPORT_EVENTS = new Set(["resize", "orientationchange"]);
 
+/** The captured page stays the visible, foreground tab from load to snapshot. */
+const DOCUMENT_VISIBILITY_EVENTS = new Set(["visibilitychange"]);
+
 /** A freshly loaded page sits at its initial scroll offset until a user or script scrolls it. */
 const SCROLL_EVENTS = new Set(["scroll", "scrollend"]);
 
@@ -70,9 +74,6 @@ const FOCUS_EVENTS = new Set([
   "selectionchange",
   "selectstart",
 ]);
-
-/** The session history is traversed only by the user (back/forward) or a script's `history.back()`/`go()`, which escapes these listeners then (see `callHistoryMethod`). */
-const HISTORY_TRAVERSAL_EVENTS = new Set(["popstate", "hashchange"]);
 
 /** Browser-dispatched event types are bare words; namespaced names are app-defined and only fire on `dispatchEvent`. */
 const isCustomEventType = (type: string): boolean => /[^a-zA-Z]/.test(type);
@@ -166,6 +167,13 @@ const isEventBeforeCapture = (
     receiver.kind === "global" &&
     realm.isGlobalAlias(receiver.name) &&
     VIEWPORT_EVENTS.has(type.value)
+  ) {
+    return false;
+  }
+  if (
+    receiver.kind === "global" &&
+    receiver.name === "document" &&
+    DOCUMENT_VISIBILITY_EVENTS.has(type.value)
   ) {
     return false;
   }

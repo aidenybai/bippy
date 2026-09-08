@@ -18,9 +18,11 @@ import {
 export interface SessionHistory {
   route: string | null;
   state: StaticValue;
-  /** `window` listeners for `popstate`/`hashchange`: they run once the session history is traversed, not on load. */
+  /** `popstate`/`hashchange` listeners: they fire only when the entry is traversed, not on `pushState`/`replaceState`. */
   traversalListeners: Set<StaticValue>;
 }
+
+export const HISTORY_TRAVERSAL_EVENTS: ReadonlySet<string> = new Set(["popstate", "hashchange"]);
 
 const HISTORY_NAME = /^(?:(?:window|globalThis|self)\.)?history$/;
 
@@ -62,7 +64,7 @@ export const callHistoryMethod = (
   methodName: string,
   args: StaticValue[],
   location: SourceLocation | null,
-  markEscaped: (listener: StaticValue) => void,
+  markEscaped: (value: StaticValue) => void,
 ): StaticValue | null => {
   const [state = UNDEFINED_VALUE, , url] = args;
   switch (methodName) {

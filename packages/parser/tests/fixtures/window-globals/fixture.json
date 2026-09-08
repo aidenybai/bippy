@@ -1,6 +1,6 @@
 {
-  "entry": "src/main.jsx",
+  "entry": "src/main.tsx",
   "expectedStatus": "exact",
   "minCoverage": 1,
-  "notes": "Components published as `window.<Name>` by a side-effect import and referenced as bare globals elsewhere."
+  "notes": "A bootstrap script assigns a payload to `window` and components read it as a bare global (`ENV`), the way a server-rendered document inlines its public environment."
 }

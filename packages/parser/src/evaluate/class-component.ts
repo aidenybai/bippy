@@ -348,7 +348,12 @@ const mountClassInstance = (
           ? tools.call(partialState, [previousState, getObjectProperty(instance, "props")])
           : (partialState ?? UNDEFINED_VALUE);
       if (callback) record.pendingCallbacks.push(callback);
-      queueStateUpdate(frame, stateCell, mergeState(previousState, resolvedPartial));
+      queueStateUpdate(
+        frame,
+        stateCell,
+        mergeState(previousState, resolvedPartial),
+        tools.isDeferred(),
+      );
       return UNDEFINED_VALUE;
     },
     onEscape: () => escapeStateCell(frame, stateCell),

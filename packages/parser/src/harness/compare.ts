@@ -15,13 +15,13 @@ const BUNDLER_PLACEHOLDER_NAME = /^_([a-z]\d*|class\d*)$/;
 
 const isBundlerPlaceholderName = (name: string): boolean => BUNDLER_PLACEHOLDER_NAME.test(name);
 
-// Bundlers deconflict same-named top-level bindings hoisted into one chunk by
-// suffixing the name: esbuild appends a counter (`SnackbarProvider2`), rollup
-// appends `$1`, `$2`, …; the source function keeps its unsuffixed name.
+// A binding that collides with another in the bundled scope is renamed with a
+// counter: `Toaster2` by esbuild (Vite dev pre-bundling), `Toaster$1` by rollup.
+const BUNDLER_DEDUPE_SUFFIX = /^\$?\d+$/;
+
 const isBundlerDedupedName = (sourceName: string, runtimeName: string): boolean =>
-  runtimeName.length > sourceName.length &&
   runtimeName.startsWith(sourceName) &&
-  /^(\$?\d+)$/.test(runtimeName.slice(sourceName.length));
+  BUNDLER_DEDUPE_SUFFIX.test(runtimeName.slice(sourceName.length));
 
 const WRAPPED_DISPLAY_NAME = /^([^()]+)\((.+)\)$/;
 
