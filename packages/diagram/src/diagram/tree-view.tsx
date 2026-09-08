@@ -31,8 +31,8 @@ export interface TreeViewProps extends Omit<
   controls?: ReactNode;
   traceComponents?: boolean;
   relationship?: "parent" | "owner";
-  width?: number;
-  height?: number;
+  width?: number | "100%";
+  height?: number | "auto";
   rowHeight?: number;
   indent?: number;
   showOwners?: boolean;
@@ -41,7 +41,7 @@ export interface TreeViewProps extends Omit<
 }
 
 const styles = stylex.create({
-  frame: (width: number) => ({ width, maxWidth: "100%" }),
+  frame: (width: number | "100%") => ({ width, maxWidth: "100%" }),
   viewport: (height: number) => ({ height, width: "100%" }),
 });
 
@@ -66,7 +66,8 @@ export const TreeView = ({
   const containerRef = useRef<SVGSVGElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const mergedRef = useMemo(() => mergeRefs(containerRef, ref), [ref]);
-  const [width, setWidth] = useState(requestedWidth);
+  const fallbackWidth = typeof requestedWidth === "number" ? requestedWidth : 400;
+  const [width, setWidth] = useState(fallbackWidth);
   const [scrollTop, setScrollTop] = useState(0);
   const [collapsedIds, setCollapsedIds] = useState<ReadonlySet<string>>(() => new Set());
   const toggle = useCallback(
@@ -99,7 +100,10 @@ export const TreeView = ({
     [rows, rowHeight, indent],
   );
   const contentHeight = Math.max(rowHeight * 4, baseLayout.offsets[rows.length] + rowHeight / 2);
-  const viewportHeight = Math.min(contentHeight, Math.max(rowHeight, height - (controls ? 32 : 0)));
+  const viewportHeight =
+    height === "auto"
+      ? contentHeight
+      : Math.min(contentHeight, Math.max(rowHeight, height - (controls ? 32 : 0)));
   const range = useMemo(
     () => getTreeWindow(baseLayout.offsets, scrollTop, viewportHeight),
     [baseLayout, scrollTop, viewportHeight],
@@ -119,12 +123,12 @@ export const TreeView = ({
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
-    const measure = () => setWidth(viewport.clientWidth || requestedWidth);
+    const measure = () => setWidth(viewport.clientWidth || fallbackWidth);
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(viewport);
     return () => observer.disconnect();
-  }, [requestedWidth]);
+  }, [requestedWidth, fallbackWidth]);
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
@@ -150,6 +154,7 @@ export const TreeView = ({
   const interaction = useMemo<DiagramInteraction>(() => {
     const next = {
       ...root.interaction,
+      dataflowIndex: root.flowIndex,
       ...getTreeHighlight(root.highlightIndex, root.interaction.activeId, relationship),
       catchRanges: visibleHighlight.catchRanges.get(root.interaction.activeId ?? "") ?? [],
     };
@@ -159,7 +164,7 @@ export const TreeView = ({
       next.highlightedEdgeIds = flow.edgeIds;
     }
     return next;
-  }, [root.interaction, root.highlightIndex, relationship, visibleHighlight, flow]);
+  }, [root.interaction, root.flowIndex, root.highlightIndex, relationship, visibleHighlight, flow]);
   const navigation = useTreeNavigation({
     rows,
     windowRows,

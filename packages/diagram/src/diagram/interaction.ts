@@ -2,8 +2,11 @@
 
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
 import { getTreeHighlight, type TreeHighlight, type TreeHighlightIndex } from "./tree-highlight";
+import type { DataflowIndex } from "./dataflow-model";
 
 export interface DiagramInteraction extends TreeHighlight {
+  dataflowIndex?: DataflowIndex;
+  isShowingAllDataflow?: boolean;
   highlightedEdgeIds?: ReadonlySet<string>;
   activeId: string | null;
   setHoveredId: (nodeId: string | null, isPointerActive?: boolean) => void;

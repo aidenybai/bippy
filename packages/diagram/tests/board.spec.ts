@@ -1,23 +1,21 @@
 import { expect, test } from "@playwright/test";
 import { diagramMetrics } from "../src/diagram/geometry";
 
-test("uses the million-ui sidebar and fixed-size specimen board", async ({ page }) => {
+test("uses a board-only layout with fixed-size mini specimens", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
-  await expect(page.locator("main section")).toHaveCount(16);
-  await expect(page.getByRole("navigation", { name: "Components" })).toBeVisible();
-  await expect(
-    page.getByRole("searchbox", { name: "Search components", exact: true }),
-  ).toBeVisible();
-  const first = page.locator("main section").first();
+  await expect(page.locator("main section")).toHaveCount(17);
+  await expect(page.getByRole("navigation")).toHaveCount(0);
+  await expect(page.getByRole("searchbox")).toHaveCount(0);
+  const first = page.locator("#node-component");
   await expect(first).toHaveCSS("width", "325px");
   await expect(first).toHaveCSS("height", "325px");
   await expect(first).toHaveCSS("background-color", "oklch(1 0 0)");
   await expect(first).toHaveCSS("border-radius", "0px");
   const firstBounds = await first.boundingBox();
-  const secondBounds = await page.locator("main section").nth(1).boundingBox();
+  const secondBounds = await page.locator("#node-host").boundingBox();
   if (!firstBounds || !secondBounds) throw new Error("Missing specimen");
   expect(secondBounds.x - firstBounds.x - firstBounds.width).toBe(16);
   await page.screenshot({ path: "test-results/diagram-board.png" });
@@ -92,8 +90,8 @@ test("normal trees window large models and emphasize only the hovered item", asy
   const tree = page.getByRole("tree", { name: "Deep tree", exact: true });
   const viewport = page.locator("#deep-tree [data-tree-viewport]");
   await expect(tree.locator('[aria-selected="true"]')).toHaveCount(0);
-  await expect(viewport).toHaveAttribute("data-visible-count", "10");
-  await expect(viewport).toHaveAttribute("data-mounted-count", "15");
+  await expect(viewport).toHaveAttribute("data-visible-count", "11");
+  await expect(viewport).toHaveAttribute("data-mounted-count", "16");
   const node = tree.locator('[data-node-id="deep-3"]');
   const other = tree.locator('[data-node-id="deep-2"]');
   await node.hover();
@@ -194,7 +192,7 @@ test("rebases a deep window without mounting the whole tree", async ({ page }) =
     element.scrollTop = 6000 * rowHeight;
   }, diagramMetrics.rowHeight);
   await expect(viewport).toHaveAttribute("data-first-visible-index", "6000");
-  expect(await tree.getByRole("treeitem").count()).toBeLessThanOrEqual(21);
+  expect(await tree.getByRole("treeitem").count()).toBeLessThanOrEqual(22);
   expect(await tree.locator("[data-edge-path]").count()).toBeLessThan(30);
   const dimensions = await viewport.evaluate((element) => ({
     width: element.clientWidth,

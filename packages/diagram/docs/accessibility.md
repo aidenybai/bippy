@@ -11,7 +11,8 @@ The automated Chromium, Firefox, and WebKit suites cover:
 - One tab stop, arrows, Home/End, typeahead, expansion, and separate activation callbacks.
 - Focus recovery when items disappear, become disabled, or are hidden.
 - Native row focus retention during automatic windowing, with the focused SVG item kept mounted.
-- Base UI controls and tooltips, sidebar search, preview selection, and browser history.
+- Opt-in Base UI controls and tooltips on a dedicated fixture; board-only layout with full-width, content-height Parent/Owner trees.
+- Shift reveals subdued background flows only in the pointed-at graph; the active trace stays emphasized. Release, pointer exit, and window blur clear the overview.
 - Touch activation without duplicate callbacks or disappearing inspection traces.
 - Search/reveal through collapsed ancestors, per-view bulk expansion, shared activation, and bounded virtual mounting.
 - Semantic-color glyph contrast and callable descriptions without polluting accessible names.
@@ -37,7 +38,7 @@ Run these with VoiceOver + Safari and NVDA + Firefox or Chrome. Include JAWS + C
 6. Use browser zoom at 200% and 400%, OS text scaling, and narrow viewports. Diagrams may scroll as two-dimensional content, but focused labels and controls must remain reachable without overlap or lost information.
 7. Test Windows High Contrast and keyboard-only navigation. Focus must remain visible without relying on blue alone.
 8. Search for hidden descendants, cycle matches, reveal the active node in the other projection, and expand/collapse all. Check status announcements and confirm focus moves only when requested.
-9. Navigate the sidebar and board/preview controls, including Ctrl/Cmd+K, back/forward, tooltip descriptions, and Escape dismissal. Verify that each scroll area remains operable and does not introduce unwanted tab stops.
+9. Navigate the full-height trees and the opt-in controls at `/fixtures/tree-controls`, including tooltip descriptions and Escape dismissal. Verify that each bounded scroll area remains operable without unwanted tab stops. Check that Shift overview remains supplemental: labels and the active trace retain contrast while background wires are subdued.
 10. Test iOS VoiceOver and Android TalkBack activation, touch scrolling, and cancellation. A tap must activate once; dragging to scroll must not activate a row.
 11. Inspect a changing app at `/inspect`. Confirm updates do not produce repeated announcements or steal focus, pause/resume is understandable, and root switching, disconnection, and unavailable owner data are announced appropriately.
 

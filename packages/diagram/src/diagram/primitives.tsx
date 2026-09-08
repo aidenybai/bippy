@@ -11,6 +11,8 @@ import { getNodeDescription, getNodeName } from "./accessibility";
 import { composeEventHandlers, mergeClassNames } from "./dom-props";
 import { colors } from "./tokens.stylex";
 import { drawing } from "./drawing.stylex";
+import { useShiftHover } from "./use-shift-hover";
+import { getDataflowHighlight } from "./dataflow-model";
 import { getIsCallableNode } from "./node-kind";
 import type { TreeNode } from "./tree-model";
 import {
@@ -19,6 +21,7 @@ import {
   useDiagramInteractionState,
   getIsNodeHighlighted,
   getIsEdgeHighlighted,
+  type DiagramInteraction,
 } from "./interaction";
 import {
   diagramMetrics,
@@ -104,6 +107,7 @@ const styles = stylex.create({
   update: { strokeOpacity: 1, strokeDasharray: "3 2" },
   subscription: { strokeOpacity: 1, strokeDasharray: "2 2" },
   activeEdge: { stroke: colors.blue, strokeOpacity: 1 },
+  backgroundFlow: { opacity: 0.16 },
   edgeHalo: { stroke: colors.surface, strokeWidth: 3, fill: "none", pointerEvents: "none" },
   activeNode: { color: colors.blue },
   contextNode: { color: colors.context },
@@ -141,14 +145,30 @@ export const DiagramCanvas = ({
   ...props
 }: DiagramCanvasProps) => {
   const interaction = useDiagramInteractionState();
+  const shiftHover = useShiftHover();
+  const canvasInteraction = useMemo<DiagramInteraction>(() => {
+    const highlight =
+      shiftHover.isShowingAllDataflow && interaction.dataflowIndex && interaction.activeId !== null
+        ? getDataflowHighlight(interaction.dataflowIndex, interaction.activeId)
+        : undefined;
+    return {
+      ...interaction,
+      isShowingAllDataflow: shiftHover.isShowingAllDataflow,
+      ...(highlight
+        ? { mode: "flow", highlightedIds: highlight.nodeIds, highlightedEdgeIds: highlight.edgeIds }
+        : {}),
+    };
+  }, [interaction, shiftHover.isShowingAllDataflow]);
   const descriptionId = useId();
   const canvasStyles = stylex.props(styles.canvas);
   return (
-    <DiagramInteractionContext value={interaction}>
+    <DiagramInteractionContext value={canvasInteraction}>
       <svg
         {...canvasStyles}
         data-slot="diagram-canvas"
         {...props}
+        data-diagram-canvas=""
+        data-show-all-dataflow={shiftHover.isShowingAllDataflow}
         className={mergeClassNames(canvasStyles.className, className)}
         width={width}
         height={height}
@@ -160,9 +180,12 @@ export const DiagramCanvas = ({
           mergeClassNames(props["aria-describedby"], description ? descriptionId : undefined) ||
           undefined
         }
-        onPointerLeave={composeEventHandlers(props.onPointerLeave, () =>
-          interaction.setHoveredId(null),
-        )}
+        onPointerEnter={composeEventHandlers(props.onPointerEnter, shiftHover.onPointerMove)}
+        onPointerMove={composeEventHandlers(props.onPointerMove, shiftHover.onPointerMove)}
+        onPointerLeave={composeEventHandlers(props.onPointerLeave, () => {
+          shiftHover.onPointerLeave();
+          interaction.setHoveredId(null);
+        })}
       >
         <title>{label}</title>
         {description && <desc id={descriptionId}>{description}</desc>}
@@ -461,20 +484,29 @@ export const DiagramEdge = (props: DiagramEdgeProps) => {
   const labelPosition = getEdgeLabelPosition(geometry);
   const interaction = useDiagramInteraction();
   const isDimmed = !getIsEdgeHighlighted(interaction, fromId, toId, id);
+  const isDataflow = ["data", "update", "context", "subscription"].includes(kind);
+  const isBackground = Boolean(
+    interaction?.isShowingAllDataflow && isDataflow && (interaction.activeId === null || isDimmed),
+  );
   const isActive =
-    interaction !== null &&
-    interaction.activeId !== null &&
-    interaction.mode !== "boundary" &&
-    kind !== "parent" &&
-    !isDimmed;
+    Boolean(interaction?.isShowingAllDataflow && isDataflow) ||
+    (interaction !== null &&
+      interaction.activeId !== null &&
+      interaction.mode !== "boundary" &&
+      kind !== "parent" &&
+      !isDimmed);
   const isContext = getIsContextEdge(kind);
   const isUpdate = getIsUpdateEdge(kind);
   return (
     <g
       data-slot="diagram-edge"
       {...groupProps}
-      className={className}
+      className={mergeClassNames(
+        stylex.props(isBackground && styles.backgroundFlow).className,
+        className,
+      )}
       aria-hidden="true"
+      data-flow-background={isBackground}
       data-edge-id={id}
       data-edge-kind={kind}
       data-edge-from={fromId}

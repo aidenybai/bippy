@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
+import { openBoard } from "./open-board";
 import { treeDataflowEdges } from "../src/board/tree-dataflow-fixture";
 
 for (const theme of ["light", "dark"]) {
   test(`flow labels clear rows, glyphs, and each other in ${theme} mode`, async ({ page }) => {
-    await page.goto("/?component=parent-tree");
-    await expect(page.locator("main section")).toHaveCount(1);
+    await openBoard(page);
     if (theme === "dark") await page.getByRole("button", { name: "Switch to dark mode" }).click();
     for (const projection of ["Parent tree", "Owner tree"]) {
       const tree = page.getByRole("tree", { name: projection, exact: true });

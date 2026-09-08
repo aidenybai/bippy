@@ -6,11 +6,13 @@ Private Next.js / StyleX specimen board for reusable React tree and dataflow dia
 pnpm --filter diagram dev
 ```
 
-Open http://localhost:3100. The sidebar searches the component index; Ctrl/Cmd+K focuses it. Board and preview modes share the same specimens. Preview selection is addressable through `?component=parent-tree`; browser history and board anchors work normally.
+Open http://localhost:3100/diagram. Parent and Owner trees come first, at full width and content height. Mini node and edge specimens sit at the bottom. There is no sidebar, page toolbar, or single-component mode; `/` also renders the board.
+
+Hold Shift while pointing at a graph to reveal all visible dataflow at low opacity, with the active trace emphasized. Releasing Shift or leaving the graph restores the normal view.
 
 ## UI system
 
-The sidebar, board/preview arrangement, and selected controls are adapted from `millionco/million-ui`. Only the pieces needed here are included:
+The palette and selected reusable controls are adapted from `millionco/million-ui`. Only the pieces needed here are included:
 
 - `components/ui/button.tsx`: Base UI button, default/ghost variants, regular and icon sizes.
 - `components/ui/input.tsx`: Base UI input, regular and compact density.
@@ -85,7 +87,7 @@ The local `@/*` alias points to `src/*`. Package consumers can import `diagram/u
 
 Small trees render in full. Above 100 expanded rows, the same `Tree.View` mounts the viewport window, five overscan rows on either side, and the current roving-focus row when it is outside that window. Native DOM focus stays on that item during manual scrolling. Keyboard navigation and search can reach the complete model, mounting destinations before focusing them. Structural connectors are windowed too.
 
-Indentation adapts to the available width. Deep windows rebase against visible ancestry while `aria-level` and `data-depth` retain absolute depth. Long labels truncate without changing their accessible names. `height` bounds the view including its default controls; short trees shrink to their contents. `data-tree-viewport` identifies the scroll container and exposes separate total, visible, and mounted counts.
+Indentation adapts to the available width. Deep windows rebase against visible ancestry while `aria-level` and `data-depth` retain absolute depth. Long labels truncate without changing their accessible names. Numeric `height` bounds the view, including any opt-in controls; short trees shrink to their contents. Use `height="auto"` for an unconstrained chart and `width="100%"` to fill its container. `data-tree-viewport` identifies the scroll container and exposes separate total, visible, and mounted counts.
 
 The two 10,000-node board fixtures use this same component. They remain synthetic models; `/inspect` supplies real bippy captures instead.
 
@@ -132,7 +134,7 @@ IDs must be unique. Missing parents and parent cycles are rejected. Input order 
 
 ### Controls and disclosure
 
-`controls` adds the default search and action row. `controls={<TreeControls />}` composes it explicitly within the view provider. `TreeComparison` includes controls by default; `controls={false}` omits them.
+`controls` adds the default search and action row. `controls={<TreeControls />}` composes it explicitly within the view provider. Controls are opt-in, including in `TreeComparison`. The board and live inspector omit tree toolbars; `/fixtures/tree-controls` demonstrates the reusable controls.
 
 Search matches labels, annotations, and IDs across the complete model without filtering hierarchy. Enter expands ancestors, scrolls to the match, and focuses it when available. ↑/↓ and the previous/next buttons cycle matches without moving focus into the tree. Escape clears the query. The reveal action restores the last active node; expand/collapse-all affects only that view. Results are announced through a live status, and icon actions have tooltips.
 
@@ -183,7 +185,7 @@ Arrows navigate and expand/collapse, Home/End jump, locale-aware typeahead searc
 
 Base UI supplies the HTML controls, tooltips, and scrolling primitives. The custom SVG tree retains React Aria's press, focus-visibility, locale, and slot utilities; Base UI does not supply an SVG tree primitive.
 
-Automated Chromium, Firefox, and WebKit checks cover keyboard/touch interaction, controlled state, slots, focus retention, windowing, sidebar navigation, tooltips, and axe rules. SVG paint checks cover both themes, including colored glyphs. Regression checks compare the board's neutral paints with million-ui and detect flow-label collisions with row text, glyphs, focus underlines, and other labels in both projections. Forced-colors emulation and the combined CSS-zoom check remain Chromium-only. This does not establish full WCAG conformance or screen-reader compatibility. See [manual checks and limits](docs/accessibility.md).
+Automated Chromium, Firefox, and WebKit checks cover keyboard/touch interaction, controlled state, slots, focus retention, windowing, board-only layout, Shift dataflow overview, tooltips, and axe rules. SVG paint checks cover both themes, including colored glyphs. Regression checks compare the board's neutral paints with million-ui and detect flow-label collisions with row text, glyphs, focus underlines, and other labels in both projections. Forced-colors emulation and the combined CSS-zoom check remain Chromium-only. This does not establish full WCAG conformance or screen-reader compatibility. See [manual checks and limits](docs/accessibility.md).
 
 ```sh
 pnpm --filter diagram typecheck
@@ -200,7 +202,7 @@ This package exports TypeScript source. Consumers must transpile it and compile 
 
 ## Sources
 
-- Sidebar, board layout, and selected Base UI/shadcn patterns: `millionco/million-ui` at `fd7308c`, `src/board/board.tsx` and `src/components/ui/{button,input,tooltip,scroll-area}.tsx`. Adapted to this package's scoped tokens; registry demos, inspection panels, git-history tooling, and unrelated controls are not copied.
+- Board palette and selected Base UI/shadcn patterns: `millionco/million-ui` at `fd7308c`, `src/board/board.tsx` and `src/components/ui/{button,input,tooltip,scroll-area}.tsx`. Adapted to this package's scoped tokens; registry demos, inspection panels, git-history tooling, and unrelated controls are not copied.
 - Base UI source inspected locally: button, input, tooltip, and scroll-area primitives in `mui/base-ui`.
 - React Aria: tree/collection, press, focus, locale, and slot implementations in `adobe/react-spectrum`.
 - Compound architecture: `pacocoursey/cmdk` and `shadcn-ui/ui` command components.

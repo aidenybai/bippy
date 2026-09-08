@@ -60,12 +60,9 @@ test("captures real commits, preserves identity, and renders through the normal 
     );
     expect(JSON.stringify(session.getMessage())).not.toContain("private-reference-sentinel");
     expect(JSON.stringify(session.getMessage())).not.toContain("private-store-sentinel");
-    const search = viewerPage.getByRole("searchbox", {
-      name: "Search Live parent tree",
-      exact: true,
-    });
-    await search.fill("CaptureExample");
-    await search.press("Enter");
+    await expect(viewerPage.getByRole("searchbox")).toHaveCount(0);
+    await tree.locator('[data-tree-item][tabindex="0"]').focus();
+    await viewerPage.keyboard.type("CaptureExample");
     await viewerPage.keyboard.press("Space");
     await expect(
       viewerPage.getByRole("tree", { name: "Live dataflow tree", exact: true }),

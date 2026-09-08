@@ -60,7 +60,9 @@ test("uses one tab stop per tree with arrow navigation, typeahead, collapse, and
   await expect(parent.locator('[data-tree-item][tabindex="0"]')).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(
-    page.getByRole("searchbox", { name: "Search Owner tree", exact: true }),
+    page
+      .getByRole("tree", { name: "Owner tree", exact: true })
+      .locator('[data-tree-item][tabindex="0"]'),
   ).toBeFocused();
 });
 
@@ -69,7 +71,10 @@ test("keeps native row focus mounted during automatic windowing and recovers on 
 }) => {
   await page.goto("/");
   const tree = page.getByRole("tree", { name: "Deep tree", exact: true });
-  await page.getByRole("button", { name: "Collapse all in Deep tree", exact: true }).focus();
+  await page
+    .getByRole("tree", { name: "Owner tree", exact: true })
+    .locator('[data-tree-item][tabindex="0"]')
+    .focus();
   await page.keyboard.press("Tab");
   const first = tree.locator('[data-node-id="deep-0"]');
   await expect(first).toBeFocused();

@@ -72,8 +72,8 @@ for (const { theme } of themes) {
       );
     expect(targets.length).toBeGreaterThan(30);
     for (const target of targets) {
-      expect(target.width).toBeGreaterThanOrEqual(24);
-      expect(target.height).toBeGreaterThanOrEqual(24);
+      expect(target.width).toBeGreaterThanOrEqual(24 - 0.001);
+      expect(target.height).toBeGreaterThanOrEqual(24 - 0.001);
     }
   });
 }

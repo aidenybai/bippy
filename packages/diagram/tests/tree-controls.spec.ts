@@ -30,7 +30,7 @@ test("chevrons appear only on the hovered row in static and virtual trees", asyn
 test("static disclosure, search, reveal, and bulk expansion preserve per-view state", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/fixtures/tree-controls");
   const parent = page.getByRole("tree", { name: "Parent tree", exact: true });
   const owner = page.getByRole("tree", { name: "Owner tree", exact: true });
   const disclosure = parent.locator('[data-disclosure-for="app"]');
@@ -61,7 +61,7 @@ test("static disclosure, search, reveal, and bulk expansion preserve per-view st
 test("virtual search reveals hidden descendants without mounting the full tree", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/fixtures/tree-controls");
   const tree = page.getByRole("tree", { name: "Deep tree", exact: true });
   await page.getByRole("button", { name: "Collapse all in Deep tree", exact: true }).click();
   await expect(tree.getByRole("treeitem")).toHaveCount(1);

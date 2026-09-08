@@ -228,7 +228,7 @@ export const LiveInspector = () => {
   return (
     <main aria-label="Live fiber inspector" {...stylex.props(styles.root)}>
       <header {...stylex.props(styles.header)}>
-        <a href="/" {...stylex.props(styles.link)}>
+        <a href="/diagram" {...stylex.props(styles.link)}>
           Board
         </a>
         <h1 {...stylex.props(styles.title)}>Live fibers</h1>
@@ -301,13 +301,7 @@ export const LiveInspector = () => {
           >
             <section {...stylex.props(styles.column)}>
               <h2 {...stylex.props(styles.heading)}>Parent tree</h2>
-              <TreeView
-                label="Live parent tree"
-                width={width}
-                height={height}
-                controls
-                traceComponents
-              />
+              <TreeView label="Live parent tree" width={width} height={height} traceComponents />
             </section>
             {isPaired && (
               <section {...stylex.props(styles.column)}>
@@ -318,7 +312,6 @@ export const LiveInspector = () => {
                   relationship="owner"
                   width={width}
                   height={height}
-                  controls
                 />
               </section>
             )}
@@ -342,7 +335,7 @@ export const LiveInspector = () => {
           ? `${selectedNode.label} · ${selectedNode.id} · work tag ${selectedNode.tag}`
           : selectedDetail
             ? `${selectedDetail.label} · component detail, not a separate fiber`
-            : "Select a fiber to inspect its dataflow. Expand, search, and navigate with the same tree controls as the board."}
+            : "Hover or focus a component or detail to trace its dataflow. Use disclosure arrows and keyboard navigation to explore."}
       </footer>
     </main>
   );

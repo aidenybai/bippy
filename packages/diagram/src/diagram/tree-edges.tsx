@@ -7,6 +7,7 @@ import { getTreeFlowLabelPositions } from "./tree-flow-labels";
 import { useTreeRoot, useTreeView } from "./tree-context";
 import { getDataflowOffsets } from "./dataflow-geometry";
 import { diagramMetrics, type EdgeGeometry } from "./geometry";
+import { useDiagramInteraction } from "./interaction";
 
 export interface TreeEdgesProps extends Omit<ComponentPropsWithRef<"g">, "children"> {}
 
@@ -18,17 +19,25 @@ export const TreeEdges = (props: TreeEdgesProps) => {
     mountedRows,
     positions,
     indexById,
-    interaction,
+    interaction: treeInteraction,
     activeNode,
-    flow,
     relationship,
     showOwners,
     scopeIndex,
     scopeId,
   } = useTreeView();
+  const interaction = useDiagramInteraction() ?? treeInteraction;
+  const highlightedEdges = interaction.highlightedEdgeIds;
   const visibleEdges = useMemo(
-    () => dataflowEdges.filter((edge) => flow?.edgeIds.has(edge.id)),
-    [dataflowEdges, flow],
+    () =>
+      dataflowEdges
+        .filter((edge) => interaction.isShowingAllDataflow || highlightedEdges?.has(edge.id))
+        .sort(
+          (first, second) =>
+            Number(highlightedEdges?.has(first.id) ?? false) -
+            Number(highlightedEdges?.has(second.id) ?? false),
+        ),
+    [dataflowEdges, interaction.isShowingAllDataflow, highlightedEdges],
   );
   const flowLanes = useMemo(
     () => getTreeFlowLanes(visibleEdges, indexById),
@@ -77,15 +86,16 @@ export const TreeEdges = (props: TreeEdgesProps) => {
             fromId: edge.from,
             toId: edge.to,
             label:
-              activeNode?.componentType !== undefined ||
-              edge.from === activeNode?.id ||
-              edge.to === activeNode?.id
+              highlightedEdges?.has(edge.id) &&
+              (activeNode?.componentType !== undefined ||
+                edge.from === activeNode?.id ||
+                edge.to === activeNode?.id)
                 ? edge.label
                 : undefined,
           },
         ];
       }),
-    [visibleEdges, indexById, rows, positions, flowLanes, activeNode],
+    [visibleEdges, indexById, rows, positions, flowLanes, activeNode, highlightedEdges],
   );
   const labelPositions = useMemo(
     () => getTreeFlowLabelPositions(flowGeometry, positions, width - 20),

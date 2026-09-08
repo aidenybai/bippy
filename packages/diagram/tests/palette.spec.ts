@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { openBoard } from "./open-board";
 
 interface PaletteCase {
   theme: "light" | "dark";
@@ -11,7 +12,7 @@ for (const { theme } of cases) {
   }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.emulateMedia({ colorScheme: theme });
-    await page.goto("/");
+    await openBoard(page);
     await expect(page.locator("[data-theme]")).toHaveAttribute("data-theme", theme);
     await page.mouse.move(0, 0);
     const parent = page.locator('[data-tree-relationship="parent"]');
@@ -44,10 +45,8 @@ for (const { theme } of cases) {
     await expect(parent.locator('[data-component-symbol="class"] rect').first()).toHaveCount(1);
     await expect(parent.locator('[data-component-symbol="memo"] path')).toHaveCount(1);
     await page.locator("#parent-tree").screenshot({ path: `test-results/palette-${theme}.png` });
-    await page
-      .getByRole("navigation", { name: "Components" })
-      .getByRole("link", { name: "Component", exact: true })
-      .click();
-    await page.screenshot({ path: `test-results/board-${theme}.png` });
+    await page.mouse.move(0, 0);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: `test-results/board-${theme}.png`, fullPage: true });
   });
 }

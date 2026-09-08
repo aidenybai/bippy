@@ -1,9 +1,10 @@
 import { expect, test } from "@playwright/test";
+import { openBoard } from "./open-board";
 
 test("shows catch regions for the hovered boundary and synchronizes the owner view", async ({
   page,
 }) => {
-  await page.goto("/");
+  await openBoard(page);
   const parent = page.locator('[data-tree-relationship="parent"]');
   const owner = page.locator('[data-tree-relationship="owner"]');
   await expect(parent.locator("[data-scope-kind]")).toHaveCount(0);
@@ -23,7 +24,7 @@ test("shows catch regions for the hovered boundary and synchronizes the owner vi
 });
 
 test("only shows the context overlay while its provider is active", async ({ page }) => {
-  await page.goto("/");
+  await openBoard(page);
   const parent = page.locator('[data-tree-relationship="parent"]');
   await parent.locator('[data-node-id="theme"]').hover();
   await expect(parent.locator('[data-scope-kind="context"]')).toHaveCount(1);
@@ -36,7 +37,7 @@ test("only shows the context overlay while its provider is active", async ({ pag
 test("shows direct creations in the parent tree and the subtree in the owner tree", async ({
   page,
 }) => {
-  await page.goto("/");
+  await openBoard(page);
   const parent = page.locator('[data-tree-relationship="parent"]');
   const owner = page.locator('[data-tree-relationship="owner"]');
   await parent.locator('[data-node-id="app"]').hover();

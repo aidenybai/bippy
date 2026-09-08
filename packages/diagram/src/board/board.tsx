@@ -4,14 +4,12 @@ import * as stylex from "@stylexjs/stylex";
 import { fonts, fontSizes, spacing } from "tailwind-stylex/tokens.stylex";
 import { DiagramCanvas, DiagramNode, type DiagramEdgeProps } from "../diagram/primitives";
 import { DiagramScene } from "../diagram/diagram-scene";
-import { Tree } from "../components/ui/tree";
-import { TreeComparison } from "../diagram/tree-comparison";
+import { Tree, TreeRoot, TreeView } from "../components/ui/tree";
 import { diagramMetrics } from "../diagram/geometry";
 import { colors } from "../diagram/tokens.stylex";
 import type { TreeNode } from "../diagram/tree-model";
 import { branchingNodes, deepNodes, relationshipEdges, relationshipNodes } from "./fixtures";
 import { Specimen } from "./specimen";
-import { BoardShell, type BoardItem } from "./board-shell";
 import { treeDataflowNodes, treeDataflowEdges } from "./tree-dataflow-fixture";
 
 interface NodeSpecimen {
@@ -74,18 +72,19 @@ const scopeNodes: TreeNode[] = [
   { id: "scope-second", label: "Child", parentId: "scope-provider" },
 ];
 
-const boardItems: readonly BoardItem[] = [
-  ...nodeSpecimens.map(({ node, name }) => ({ id: node.id, name })),
-  ...edgeSpecimens.map(({ kind, name }) => ({ id: `edge-${kind}`, name })),
-  { id: "scope", name: "Scope" },
-  { id: "relationships", name: "Parent / Owner / DOM" },
-  { id: "parent-tree", name: "Parent / owner" },
-  { id: "deep-tree", name: "Tree / Deep" },
-  { id: "branching-tree", name: "Tree / Branching" },
-];
-
 const styles = stylex.create({
+  board: {
+    minHeight: "100dvh",
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
+    padding: 24,
+    boxSizing: "border-box",
+    backgroundColor: colors.canvas,
+    fontFamily: fonts.sans,
+  },
   grid: {
+    width: "100%",
     maxWidth: 1007,
     marginInline: "auto",
     display: "grid",
@@ -95,16 +94,97 @@ const styles = stylex.create({
     },
     justifyContent: "center",
     gap: spacing[4],
-    gridAutoFlow: "dense",
   },
   columnLabel: { fill: colors.muted, fontFamily: fonts.sans, fontSize: fontSizes.xs },
   divider: { stroke: colors.border, strokeWidth: 1, strokeDasharray: "3 2" },
   tree: { width: { default: 293, "@media (max-width: 372px)": "calc(100vw - 80px)" } },
+  fullTree: { width: "100%" },
 });
 
 export const Board = () => (
-  <BoardShell items={boardItems}>
+  <main aria-label="Diagram board" {...stylex.props(styles.board)}>
+    <TreeRoot nodes={treeDataflowNodes} dataflowEdges={treeDataflowEdges}>
+      <Specimen id="parent-tree" name="Tree / Parent" size="full" fitContent>
+        <div data-tree-relationship="parent" {...stylex.props(styles.fullTree)}>
+          <TreeView
+            label="Parent tree"
+            width="100%"
+            height="auto"
+            showOwners
+            scopeId="theme"
+            scopeLabel="ThemeContext"
+          />
+        </div>
+      </Specimen>
+      <Specimen id="owner-tree" name="Tree / Owner" size="full" fitContent>
+        <div data-tree-relationship="owner" {...stylex.props(styles.fullTree)}>
+          <TreeView label="Owner tree" width="100%" height="auto" relationship="owner" />
+        </div>
+      </Specimen>
+    </TreeRoot>
     <div {...stylex.props(styles.grid)}>
+      <Specimen id="deep-tree" name="Tree / Deep">
+        <div {...stylex.props(styles.tree)}>
+          <Tree
+            width={293}
+            nodes={deepNodes}
+            label="Deep tree"
+            height={diagramMetrics.rowHeight * 11}
+          />
+        </div>
+      </Specimen>
+      <Specimen id="branching-tree" name="Tree / Branching">
+        <div {...stylex.props(styles.tree)}>
+          <Tree
+            width={293}
+            nodes={branchingNodes}
+            label="Branching tree"
+            height={diagramMetrics.rowHeight * 11}
+          />
+        </div>
+      </Specimen>
+      <Specimen id="scope" name="Scope">
+        <Tree
+          nodes={scopeNodes}
+          label="Context scope"
+          width={225}
+          scopeId="scope-provider"
+          scopeLabel="Theme"
+        />
+      </Specimen>
+      <Specimen id="relationships" name="Parent / Owner / DOM" size="full">
+        <DiagramScene
+          label="Parent, owner, and DOM trees"
+          width={960}
+          height={40 + diagramMetrics.rowHeight * 8 + diagramMetrics.rowHeight / 2}
+          nodes={relationshipNodes}
+          edges={relationshipEdges}
+          scopes={[
+            {
+              x: 48 + diagramMetrics.indent - 12,
+              y: 40 + diagramMetrics.rowHeight / 2,
+              width: 235,
+              height: diagramMetrics.rowHeight * 7,
+              label: "DefsContext",
+              nodeId: "parent-provider",
+            },
+          ]}
+        >
+          <text x={48} y={12} {...stylex.props(styles.columnLabel)}>
+            Parent tree
+          </text>
+          <text x={360} y={12} {...stylex.props(styles.columnLabel)}>
+            Owner tree
+          </text>
+          <text x={672} y={12} {...stylex.props(styles.columnLabel)}>
+            DOM tree
+          </text>
+          <path
+            d={`M324 0V${40 + diagramMetrics.rowHeight * 8}M636 0V${40 + diagramMetrics.rowHeight * 8}`}
+            {...stylex.props(styles.divider)}
+          />
+        </DiagramScene>
+      </Specimen>
       {nodeSpecimens.map(({ name, node }) => (
         <Specimen key={node.id} id={node.id} name={name}>
           <DiagramCanvas width={225} height={diagramMetrics.rowHeight} label={`${name} node`}>
@@ -151,78 +231,6 @@ export const Board = () => (
           />
         </Specimen>
       ))}
-      <Specimen id="scope" name="Scope">
-        <Tree
-          nodes={scopeNodes}
-          label="Context scope"
-          width={225}
-          scopeId="scope-provider"
-          scopeLabel="Theme"
-        />
-      </Specimen>
-      <Specimen id="relationships" name="Parent / Owner / DOM" size="full">
-        <DiagramScene
-          label="Parent, owner, and DOM trees"
-          width={960}
-          height={40 + diagramMetrics.rowHeight * 8 + diagramMetrics.rowHeight / 2}
-          nodes={relationshipNodes}
-          edges={relationshipEdges}
-          scopes={[
-            {
-              x: 48 + diagramMetrics.indent - 12,
-              y: 40 + diagramMetrics.rowHeight / 2,
-              width: 235,
-              height: diagramMetrics.rowHeight * 7,
-              label: "DefsContext",
-              nodeId: "parent-provider",
-            },
-          ]}
-        >
-          <text x={48} y={12} {...stylex.props(styles.columnLabel)}>
-            Parent tree
-          </text>
-          <text x={360} y={12} {...stylex.props(styles.columnLabel)}>
-            Owner tree
-          </text>
-          <text x={672} y={12} {...stylex.props(styles.columnLabel)}>
-            DOM tree
-          </text>
-          <path
-            d={`M324 0V${40 + diagramMetrics.rowHeight * 8}M636 0V${40 + diagramMetrics.rowHeight * 8}`}
-            {...stylex.props(styles.divider)}
-          />
-        </DiagramScene>
-      </Specimen>
-      <Specimen id="parent-tree" name="Parent / owner" size="full">
-        <TreeComparison
-          nodes={treeDataflowNodes}
-          dataflowEdges={treeDataflowEdges}
-          scopeId="theme"
-          scopeLabel="ThemeContext"
-        />
-      </Specimen>
-      <Specimen id="deep-tree" name="Tree / Deep">
-        <div {...stylex.props(styles.tree)}>
-          <Tree
-            width={293}
-            nodes={deepNodes}
-            label="Deep tree"
-            height={diagramMetrics.rowHeight * 11}
-            controls
-          />
-        </div>
-      </Specimen>
-      <Specimen id="branching-tree" name="Tree / Branching">
-        <div {...stylex.props(styles.tree)}>
-          <Tree
-            width={293}
-            nodes={branchingNodes}
-            label="Branching tree"
-            controls
-            height={diagramMetrics.rowHeight * 11}
-          />
-        </div>
-      </Specimen>
     </div>
-  </BoardShell>
+  </main>
 );

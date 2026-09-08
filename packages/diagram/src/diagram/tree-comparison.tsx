@@ -18,7 +18,7 @@ const styles = stylex.create({
 export const TreeComparison = ({
   scopeId,
   scopeLabel,
-  controls = true,
+  controls = false,
   ...props
 }: TreeComparisonProps) => (
   <Tree.Root {...props}>
