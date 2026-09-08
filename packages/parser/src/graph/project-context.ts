@@ -1,9 +1,8 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { EMPTY_OBSERVATIONS } from "../observations.js";
+import { readPackageManifest } from "../package-manifest.js";
 import type { ProjectContext, RuntimeObservations } from "../types.js";
-
-const DEPENDENCY_FIELDS = ["dependencies", "devDependencies", "optionalDependencies"];
 
 /** Where Next, Vite and CRA dev servers serve static files from, at the URL root. */
 const PUBLIC_DIRECTORY = "public";
@@ -13,33 +12,24 @@ const readServedAsset = (
   origin: string | null,
   url: string,
 ): string | null => {
-  if (origin === null && !url.startsWith("/")) return null;
-  try {
-    const parsed = new URL(url, origin ?? "http://origin.invalid");
-    if (origin !== null && parsed.origin !== origin) return null;
-    const publicDirectory = path.join(rootDirectory, PUBLIC_DIRECTORY);
-    const assetPath = path.join(publicDirectory, decodeURIComponent(parsed.pathname));
-    if (!assetPath.startsWith(publicDirectory + path.sep)) return null;
-    return readFileSync(assetPath, "utf8");
-  } catch {
-    return null;
-  }
+  const base = origin ?? "http://origin.invalid";
+  if ((origin === null && !url.startsWith("/")) || !URL.canParse(url, base)) return null;
+  const parsed = new URL(url, base);
+  if (origin !== null && parsed.origin !== origin) return null;
+  const publicDirectory = path.join(rootDirectory, PUBLIC_DIRECTORY);
+  const assetPath = path.join(publicDirectory, decodeURIComponent(parsed.pathname));
+  if (!assetPath.startsWith(publicDirectory + path.sep) || !existsSync(assetPath)) return null;
+  return readFileSync(assetPath, "utf8");
 };
 
-const readDeclaredDependencies = (manifestPath: string): Set<string> | null => {
-  let manifest: unknown;
-  try {
-    manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
-  } catch {
-    return null;
-  }
-  if (typeof manifest !== "object" || manifest === null) return null;
-  const declared = new Set<string>();
-  for (const [field, value] of Object.entries(manifest)) {
-    if (!DEPENDENCY_FIELDS.includes(field) || typeof value !== "object" || value === null) continue;
-    for (const packageName of Object.keys(value)) declared.add(packageName);
-  }
-  return declared;
+const readDeclaredDependencies = (manifestPath: string): string[] => {
+  if (!existsSync(manifestPath)) return [];
+  const manifest = readPackageManifest(manifestPath);
+  return Object.keys({
+    ...manifest.dependencies,
+    ...manifest.devDependencies,
+    ...manifest.optionalDependencies,
+  });
 };
 
 /**
@@ -55,8 +45,9 @@ export const createProjectContext = (
 ): ProjectContext => {
   const declared = new Set<string>();
   for (let directory = rootDirectory; ; directory = path.dirname(directory)) {
-    const dependencies = readDeclaredDependencies(path.join(directory, "package.json"));
-    for (const packageName of dependencies ?? []) declared.add(packageName);
+    for (const packageName of readDeclaredDependencies(path.join(directory, "package.json"))) {
+      declared.add(packageName);
+    }
     if (path.dirname(directory) === directory) break;
   }
   const queries = new Map(observations.queries.map((query) => [query.queryHash, query]));

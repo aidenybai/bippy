@@ -14,6 +14,14 @@ const BUNDLER_PLACEHOLDER_NAME = /^_[a-z]\d*$/;
 
 const isBundlerPlaceholderName = (name: string): boolean => BUNDLER_PLACEHOLDER_NAME.test(name);
 
+// esbuild and rollup deconflict same-named top-level bindings hoisted into one chunk
+// by suffixing `$1`, `$2`, …; the source function keeps its unsuffixed name.
+const BUNDLER_DECONFLICT_SUFFIX = /\$\d+$/;
+
+const isBundlerRenameOf = (staticName: string, runtimeName: string): boolean =>
+  BUNDLER_DECONFLICT_SUFFIX.test(runtimeName) &&
+  runtimeName.replace(BUNDLER_DECONFLICT_SUFFIX, "") === staticName;
+
 export interface ComparisonOptions {
   compareKeys?: boolean;
   compareTags?: boolean;
@@ -497,6 +505,7 @@ class Matcher {
     )
       return false;
     if (pattern.name === null || actual.name === null || pattern.name === actual.name) return true;
+    if (isBundlerRenameOf(pattern.name, actual.name)) return true;
     return isClassTag(actual.tag) && isBundlerPlaceholderName(actual.name);
   }
 
@@ -514,7 +523,11 @@ class Matcher {
 
   private opaqueNameAgrees(pattern: PatternOpaque, actual: RuntimeFiberSnapshot): boolean {
     if (actual.name === null || isBundlerPlaceholderName(actual.name)) return true;
-    return pattern.runtimeNames === null || pattern.runtimeNames.includes(actual.name);
+    if (pattern.runtimeNames === null) return true;
+    const runtimeName = actual.name;
+    return pattern.runtimeNames.some(
+      (name) => name === runtimeName || isBundlerRenameOf(name, runtimeName),
+    );
   }
 
   // Searches the library's runtime subtree for the place where it rendered the

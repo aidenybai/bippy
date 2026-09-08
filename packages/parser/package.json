@@ -13,6 +13,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vp test --project parser",
+    "generate:realms": "tsx scripts/generate-host-realms.ts",
+    "check:realms": "tsx scripts/generate-host-realms.ts --check",
     "render": "tsx scripts/render.ts",
     "corpus": "tsx scripts/corpus.ts"
   },
@@ -22,7 +24,8 @@
     "esbuild": "^0.28.2",
     "oxc-parser": "^0.148.0",
     "oxc-resolver": "^11.24.2",
-    "playwright": "^1.63.0"
+    "playwright": "^1.63.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@babel/runtime": "^7.29.7",
@@ -35,13 +38,18 @@
     "@types/node": "^20",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
+    "array.prototype.foreach": "1.0.7",
     "happy-dom": "^20.11.6",
+    "hasown": "2.0.4",
     "kea": "3.1.7",
     "kea-loaders": "3.1.1",
+    "object.entries": "1.1.9",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-native": "0.81.5",
     "react-redux": "9.3.0",
     "react-router": "8.3.0",
+    "string.prototype.trim": "1.2.11",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "use-sync-external-store": "1.6.0",

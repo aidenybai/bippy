@@ -1,6 +1,8 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { z } from "zod";
+import { CorpusRevisionError, NoCommitsError, parseWithSchema } from "../errors.js";
 import { renderFramework } from "../frameworks/render-framework.js";
 import { flattenTransparentFibers } from "../frameworks/framework-profile.js";
 import { getFrameworkProfile } from "../frameworks/profiles.js";
@@ -60,11 +62,7 @@ export const ensureClone = (
     git(cloneDirectory, ["checkout", "--quiet", "FETCH_HEAD"]);
   }
   const head = git(cloneDirectory, ["rev-parse", "HEAD"]);
-  if (head !== entry.revision) {
-    throw new Error(
-      `${cloneDirectory} is at ${head.slice(0, 10)} but the manifest pins ${entry.revision.slice(0, 10)}`,
-    );
-  }
+  if (head !== entry.revision) throw new CorpusRevisionError(cloneDirectory, head, entry.revision);
   return cloneDirectory;
 };
 
@@ -153,11 +151,16 @@ const describeError = (error: unknown): string =>
 const capturePath = (outputDirectory: string, entry: CorpusEntry): string =>
   path.join(outputDirectory, `${entry.id}.capture.json`);
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
-const isStringArray = (value: unknown): value is string[] =>
-  Array.isArray(value) && value.every((item) => typeof item === "string");
+// Captures written before observations were grouped kept `globals` at the top level.
+const savedCaptureSchema = z.object({
+  revision: z.string(),
+  snapshot: z.unknown(),
+  commits: z.number(),
+  pageErrors: z.array(z.string()),
+  title: z.string(),
+  observations: z.unknown().optional(),
+  globals: z.unknown().optional(),
+});
 
 // A browser capture saved by an earlier live run; static-only passes replay it so
 // evaluator changes are re-verified against the same runtime tree without a dev server.
@@ -167,22 +170,21 @@ const readSavedCapture = (
 ): BrowserCaptureResult | null => {
   const filePath = capturePath(outputDirectory, entry);
   if (!existsSync(filePath)) return null;
-  const parsed: unknown = JSON.parse(readFileSync(filePath, "utf8"));
-  if (
-    !isRecord(parsed) ||
-    parsed.revision !== entry.revision ||
-    typeof parsed.commits !== "number" ||
-    typeof parsed.title !== "string" ||
-    !isStringArray(parsed.pageErrors)
-  ) {
-    return null;
-  }
+  const saved = parseWithSchema(
+    savedCaptureSchema,
+    JSON.parse(readFileSync(filePath, "utf8")),
+    filePath,
+  );
+  if (saved.revision !== entry.revision) return null;
   return {
-    snapshot: readSnapshot(parsed.snapshot),
-    commits: parsed.commits,
-    pageErrors: parsed.pageErrors,
-    title: parsed.title,
-    observations: readObservationsJson(parsed.observations ?? { globals: parsed.globals }),
+    snapshot: readSnapshot(saved.snapshot),
+    commits: saved.commits,
+    pageErrors: saved.pageErrors,
+    title: saved.title,
+    observations: readObservationsJson(
+      saved.observations ?? { globals: saved.globals },
+      `${filePath} observations`,
+    ),
   };
 };
 
@@ -339,11 +341,7 @@ export const runCorpusEntry = async (
     }
     if (capture.commits === 0) {
       await renderStatic(cloneDirectory, null);
-      throw new Error(
-        [`no React commits observed at ${entry.url} ("${capture.title}")`, ...capture.pageErrors]
-          .join("; ")
-          .slice(0, 1_000),
-      );
+      throw new NoCommitsError(entry.url, capture.title, capture.pageErrors);
     }
     compareEntry(entry, await renderStatic(cloneDirectory, capture), capture, result);
     return result;

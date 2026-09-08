@@ -13,6 +13,15 @@ const DEV_SERVER_MODE = "development";
 
 const ENVIRONMENT_OBJECTS = ["process.env", "import.meta.env"];
 
+/** Free names some bundlers define per module (webpack's Node shims, AMD's `define`) and others leave undeclared. */
+export const BUNDLER_INJECTED_NAMES = new Set([
+  "global",
+  "define",
+  "require",
+  "__dirname",
+  "__filename",
+]);
+
 const VITE_ENVIRONMENT: Record<string, StaticValue> = {
   MODE: primitiveValue(DEV_SERVER_MODE),
   DEV: TRUE_VALUE,
@@ -24,6 +33,8 @@ const VITE_ENVIRONMENT: Record<string, StaticValue> = {
 export interface EnvironmentLookup {
   declared: ProcessEnvironment | null;
   renderEnvironment: RenderEnvironment | null;
+  /** Environment objects a `define` replaced wholesale, so undeclared variables read `undefined`. */
+  definedObjects?: ReadonlySet<string>;
 }
 
 const NO_ENVIRONMENT: EnvironmentLookup = { declared: null, renderEnvironment: null };
@@ -51,6 +62,7 @@ const getEnvironmentVariable = (
     return VITE_ENVIRONMENT[variable];
   const declared = getDeclaredVariable(environment, variable);
   if (declared !== null) return declared;
+  if (environment.definedObjects?.has(objectName)) return UNDEFINED_VALUE;
   const reason = `environment variable ${variable}`;
   return branchValue([UNDEFINED_VALUE, unknownPrimitiveValue("string", reason)], reason, null);
 };
@@ -78,6 +90,10 @@ export const isEnvironmentObject = (globalName: string): boolean =>
 
 export const isEnvironmentVariableName = (name: string): boolean =>
   ENVIRONMENT_OBJECTS.some((objectName) => name.startsWith(`${objectName}.`));
+
+/** A define of `null` for these means the bundler leaves the name unset rather than inlining `null`. */
+export const isUnsettableDefineName = (name: string): boolean =>
+  isEnvironmentVariableName(name) || BUNDLER_INJECTED_NAMES.has(name);
 
 export const getBundlerGlobal = (
   name: string,

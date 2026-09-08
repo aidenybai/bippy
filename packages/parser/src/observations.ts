@@ -1,3 +1,5 @@
+import { z } from "zod";
+import { parseWithSchema } from "./errors.js";
 import type {
   CapturedExportReference,
   CapturedLinguiCatalog,
@@ -37,119 +39,87 @@ export const hashKey = (key: unknown): string =>
       : value,
   );
 
-const isCapturedValue = (value: unknown): value is CapturedValue =>
-  value === null ||
-  typeof value === "string" ||
-  typeof value === "number" ||
-  typeof value === "boolean" ||
-  (Array.isArray(value) && value.every(isCapturedValue)) ||
-  (isRecord(value) && Object.values(value).every(isCapturedValue));
+const capturedValueSchema: z.ZodType<CapturedValue> = z.json();
+const capturedValueRecordSchema = z.record(z.string(), capturedValueSchema);
+const stringRecordSchema = z.record(z.string(), z.string());
 
-const isCapturedQuery = (value: unknown): value is CapturedQuery =>
-  isRecord(value) &&
-  typeof value.queryHash === "string" &&
-  (value.status === "pending" || value.status === "error" || value.status === "success") &&
-  (value.fetchStatus === "fetching" ||
-    value.fetchStatus === "paused" ||
-    value.fetchStatus === "idle") &&
-  (value.data === undefined || isCapturedValue(value.data)) &&
-  isCapturedValue(value.error) &&
-  typeof value.dataUpdateCount === "number" &&
-  typeof value.dataUpdatedAt === "number" &&
-  typeof value.errorUpdateCount === "number" &&
-  typeof value.errorUpdatedAt === "number" &&
-  typeof value.fetchFailureCount === "number" &&
-  isCapturedValue(value.fetchFailureReason) &&
-  typeof value.isInvalidated === "boolean" &&
-  typeof value.isStale === "boolean";
+const capturedQuerySchema: z.ZodType<CapturedQuery> = z.object({
+  queryHash: z.string(),
+  status: z.enum(["pending", "error", "success"]),
+  fetchStatus: z.enum(["fetching", "paused", "idle"]),
+  data: capturedValueSchema.optional(),
+  error: capturedValueSchema,
+  dataUpdateCount: z.number(),
+  dataUpdatedAt: z.number(),
+  errorUpdateCount: z.number(),
+  errorUpdatedAt: z.number(),
+  fetchFailureCount: z.number(),
+  fetchFailureReason: capturedValueSchema,
+  isInvalidated: z.boolean(),
+  isStale: z.boolean(),
+});
 
-const isOptionalCapturedValue = (value: unknown): value is CapturedValue | undefined =>
-  value === undefined || isCapturedValue(value);
+const capturedMutationSchema: z.ZodType<CapturedMutation> = z.object({
+  mutationHash: z.string().nullable(),
+  status: z.enum(["idle", "pending", "success", "error"]),
+  data: capturedValueSchema.optional(),
+  error: capturedValueSchema,
+  variables: capturedValueSchema.optional(),
+  context: capturedValueSchema.optional(),
+  failureCount: z.number(),
+  failureReason: capturedValueSchema,
+  isPaused: z.boolean(),
+  submittedAt: z.number(),
+});
 
-const isCapturedMutation = (value: unknown): value is CapturedMutation =>
-  isRecord(value) &&
-  (value.mutationHash === null || typeof value.mutationHash === "string") &&
-  (value.status === "idle" ||
-    value.status === "pending" ||
-    value.status === "success" ||
-    value.status === "error") &&
-  isOptionalCapturedValue(value.data) &&
-  isCapturedValue(value.error) &&
-  isOptionalCapturedValue(value.variables) &&
-  isOptionalCapturedValue(value.context) &&
-  typeof value.failureCount === "number" &&
-  isCapturedValue(value.failureReason) &&
-  typeof value.isPaused === "boolean" &&
-  typeof value.submittedAt === "number";
+const capturedLinguiCatalogSchema: z.ZodType<CapturedLinguiCatalog> = z.object({
+  locale: z.string(),
+  messages: capturedValueRecordSchema,
+});
 
-const isCapturedValueRecord = (value: unknown): value is Record<string, CapturedValue> =>
-  isRecord(value) && Object.values(value).every(isCapturedValue);
+const capturedRouteMatchSchema: z.ZodType<CapturedRouteMatch> = z.object({
+  id: z.string(),
+  pathname: z.string(),
+  params: stringRecordSchema,
+});
 
-const isStringRecord = (value: unknown): value is Record<string, string> =>
-  isRecord(value) && Object.values(value).every((item) => typeof item === "string");
+const capturedRouterStateSchema: z.ZodType<CapturedRouterState> = z.object({
+  location: z.object({ pathname: z.string(), search: z.string(), hash: z.string() }),
+  matches: z.array(capturedRouteMatchSchema),
+  loaderData: capturedValueRecordSchema,
+  navigationState: z.enum(["idle", "loading", "submitting"]),
+  revalidationState: z.enum(["idle", "loading"]),
+});
 
-const isCapturedLinguiCatalog = (value: unknown): value is CapturedLinguiCatalog =>
-  isRecord(value) && typeof value.locale === "string" && isCapturedValueRecord(value.messages);
+const capturedPageStateSchema: z.ZodType<CapturedPageState> = z.object({
+  cookie: z.string(),
+  name: z.string().optional(),
+  historyState: capturedValueSchema.optional(),
+  windowKeys: z.array(z.string()).optional(),
+  userAgent: z.string().optional(),
+  language: z.string().optional(),
+  localStorage: stringRecordSchema,
+  sessionStorage: stringRecordSchema,
+});
 
-const isCapturedRouteMatch = (value: unknown): value is CapturedRouteMatch =>
-  isRecord(value) &&
-  typeof value.id === "string" &&
-  typeof value.pathname === "string" &&
-  isStringRecord(value.params);
+const capturedRequestSchema: z.ZodType<CapturedRequest> = z.object({
+  headers: stringRecordSchema,
+});
 
-const isCapturedRouterState = (value: unknown): value is CapturedRouterState =>
-  isRecord(value) &&
-  isStringRecord(value.location) &&
-  typeof value.location.pathname === "string" &&
-  typeof value.location.search === "string" &&
-  typeof value.location.hash === "string" &&
-  Array.isArray(value.matches) &&
-  value.matches.every(isCapturedRouteMatch) &&
-  isCapturedValueRecord(value.loaderData) &&
-  (value.navigationState === "idle" ||
-    value.navigationState === "loading" ||
-    value.navigationState === "submitting") &&
-  (value.revalidationState === "idle" || value.revalidationState === "loading");
+const observationsSchema: z.ZodType<RuntimeObservations, unknown> = z.object({
+  globals: capturedValueRecordSchema.default({}),
+  queries: z.array(capturedQuerySchema).default([]),
+  mutations: z.array(capturedMutationSchema).optional(),
+  lingui: capturedLinguiCatalogSchema.optional(),
+  router: capturedRouterStateSchema.optional(),
+  stores: z.array(capturedValueSchema).optional(),
+  page: capturedPageStateSchema.optional(),
+  request: capturedRequestSchema.optional(),
+});
 
-const isCapturedRequest = (value: unknown): value is CapturedRequest =>
-  isRecord(value) && isStringRecord(value.headers);
-
-const isCapturedPageState = (value: unknown): value is CapturedPageState =>
-  isRecord(value) &&
-  typeof value.cookie === "string" &&
-  (value.name === undefined || typeof value.name === "string") &&
-  isOptionalCapturedValue(value.historyState) &&
-  (value.windowKeys === undefined ||
-    (Array.isArray(value.windowKeys) &&
-      value.windowKeys.every((key) => typeof key === "string"))) &&
-  (value.userAgent === undefined || typeof value.userAgent === "string") &&
-  (value.language === undefined || typeof value.language === "string") &&
-  isStringRecord(value.localStorage) &&
-  isStringRecord(value.sessionStorage);
-
-/** Reads observations back from JSON (a page's serialized result or a saved capture), dropping malformed parts. */
-export const readObservationsJson = (value: unknown): RuntimeObservations => {
-  if (!isRecord(value)) return EMPTY_OBSERVATIONS;
-  const globals: Record<string, CapturedValue> = {};
-  if (isRecord(value.globals)) {
-    for (const [name, item] of Object.entries(value.globals)) {
-      if (isCapturedValue(item)) globals[name] = item;
-    }
-  }
-  const observations: RuntimeObservations = {
-    globals,
-    queries: Array.isArray(value.queries) ? value.queries.filter(isCapturedQuery) : [],
-  };
-  if (Array.isArray(value.mutations)) {
-    observations.mutations = value.mutations.filter(isCapturedMutation);
-  }
-  if (isCapturedLinguiCatalog(value.lingui)) observations.lingui = value.lingui;
-  if (isCapturedRouterState(value.router)) observations.router = value.router;
-  if (Array.isArray(value.stores)) observations.stores = value.stores.filter(isCapturedValue);
-  if (isCapturedPageState(value.page)) observations.page = value.page;
-  if (isCapturedRequest(value.request)) observations.request = value.request;
-  return observations;
-};
+/** Reads observations back from JSON: a page's serialized result or a saved capture. */
+export const readObservationsJson = (value: unknown, source: string): RuntimeObservations =>
+  parseWithSchema(observationsSchema, value, source);
 
 export const opaqueCapture = (description: string): CapturedValue => ({
   [OPAQUE_CAPTURE_KEY]: description,

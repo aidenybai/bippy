@@ -3,6 +3,7 @@ import { createWriteStream, type WriteStream } from "node:fs";
 import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 import { setTimeout as sleep } from "node:timers/promises";
+import { CommandFailedError, CommandTimeoutError, DevServerError } from "../errors.js";
 
 export interface DevServerOptions {
   command: string;
@@ -60,24 +61,30 @@ const spawnShell = (
   return child;
 };
 
+const getSystemErrorCode = (error: unknown): string | null =>
+  error instanceof Error && "code" in error && typeof error.code === "string" ? error.code : null;
+
+// The group can exit between the liveness check and the signal.
+const isMissingProcessError = (error: unknown): boolean => getSystemErrorCode(error) === "ESRCH";
+
+const signalProcessGroup = (pid: number, signal: NodeJS.Signals): boolean => {
+  try {
+    process.kill(-pid, signal);
+    return true;
+  } catch (error) {
+    if (isMissingProcessError(error)) return false;
+    throw error;
+  }
+};
+
 // Detached children are their own process group so the whole dev-server tree
 // (package manager -> vite/next -> workers) goes away together.
 const killProcessGroup = async (child: ChildProcess): Promise<void> => {
   if (child.exitCode !== null || child.pid === undefined) return;
   const exited = new Promise<void>((resolveExit) => child.once("exit", () => resolveExit()));
-  try {
-    process.kill(-child.pid, "SIGTERM");
-  } catch {
-    return;
-  }
+  if (!signalProcessGroup(child.pid, "SIGTERM")) return;
   const timedOut = await Promise.race([exited.then(() => false), deadline(KILL_GRACE_MS, true)]);
-  if (timedOut) {
-    try {
-      process.kill(-child.pid, "SIGKILL");
-    } catch {
-      return;
-    }
-  }
+  if (timedOut) signalProcessGroup(child.pid, "SIGKILL");
 };
 
 export const runCommand = async (options: RunCommandOptions): Promise<void> => {
@@ -92,10 +99,10 @@ export const runCommand = async (options: RunCommandOptions): Promise<void> => {
   if (outcome === "timeout") {
     await killProcessGroup(child);
     log.end();
-    throw new Error(`\`${options.command}\` timed out after ${options.timeoutMs}ms`);
+    throw new CommandTimeoutError(options.command, options.timeoutMs);
   }
   log.end();
-  if (outcome !== 0) throw new Error(`\`${options.command}\` exited with code ${outcome}`);
+  if (outcome !== 0) throw new CommandFailedError(options.command, outcome);
 };
 
 export class DevServer {
@@ -120,18 +127,19 @@ export class DevServer {
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
       if (this.exitCode !== null) {
-        throw new Error(
-          `dev server exited with code ${this.exitCode} before ${url} answered; see ${this.options.logPath}`,
+        throw new DevServerError(
+          `dev server exited with code ${this.exitCode} before ${url} answered`,
+          this.options.logPath,
         );
       }
       try {
         if ((await probeStatus(url)) < 500) return;
-      } catch {
-        // not listening yet
+      } catch (error) {
+        if (getSystemErrorCode(error) === null) throw error;
       }
       await sleep(READY_POLL_INTERVAL_MS);
     }
-    throw new Error(`${url} did not answer within ${timeoutMs}ms; see ${this.options.logPath}`);
+    throw new DevServerError(`${url} did not answer within ${timeoutMs}ms`, this.options.logPath);
   }
 
   async stop(): Promise<void> {

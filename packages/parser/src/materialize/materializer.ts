@@ -6,6 +6,7 @@ import {
   unmountClassInstance,
 } from "../evaluate/class-component.js";
 import type { ContextReader, EvaluationContext } from "../evaluate/context.js";
+import { ComponentKindError } from "../errors.js";
 import { providedContextValue } from "../evaluate/react-calls.js";
 import {
   beginHookPass,
@@ -200,6 +201,7 @@ interface ContextRead {
 /** What a proxy last committed (its `current`), so an update that changes nothing bails out as React's would. */
 interface CommittedRender {
   input: ProxyInput;
+  context: MaterializeContext;
   node: ReactNode;
   contextReads: ContextRead[];
   componentContext: EvaluationContext | null;
@@ -347,7 +349,9 @@ const applyDefaultProps = (
 
 const toFunctionValue = (component: ComponentDefinition): StaticFunctionValue => {
   const node = component.node;
-  if (isClassNode(node)) throw new Error(`${describeComponent(component)} is a class component`);
+  if (isClassNode(node)) {
+    throw new ComponentKindError(`${describeComponent(component)} is a class component`);
+  }
   return {
     kind: "function",
     node,
@@ -362,7 +366,7 @@ const toFunctionValue = (component: ComponentDefinition): StaticFunctionValue =>
 
 const toClassValue = (component: ComponentDefinition): StaticClassValue => {
   if (!component.classBody) {
-    throw new Error(`${describeComponent(component)} is not a class component`);
+    throw new ComponentKindError(`${describeComponent(component)} is not a class component`);
   }
   return {
     kind: "class",
@@ -1235,6 +1239,7 @@ export class Materializer {
     const props = applyDefaultProps(component, input.props);
     const { node, mount, unmount } = this.renderStateful(
       input,
+      input.context,
       component,
       instanceRef.current,
       () => setPass((pass) => pass + 1),
@@ -1298,6 +1303,7 @@ export class Materializer {
    */
   private renderStateful(
     input: ProxyInput,
+    context: MaterializeContext,
     component: ComponentDefinition,
     instance: ProxyInstance,
     rerender: () => void,
@@ -1310,6 +1316,7 @@ export class Materializer {
       changedCells.length === 0 &&
       previous &&
       isRetainedInput(previous.input, input) &&
+      isSamePosition(previous.context, context) &&
       previous.contextReads.every((read) => this.readContext(read.definition) === read.value)
     ) {
       return this.commitRender(instance, previous, input.location);
@@ -1362,6 +1369,7 @@ export class Materializer {
     const node = this.finishRender(evaluation.rendered, evaluation.childContext, input);
     instance.rendered = {
       input,
+      context,
       node,
       contextReads,
       componentContext: evaluation.componentContext,
@@ -1424,6 +1432,7 @@ export class Materializer {
     ): ReactNode => {
       const { node, mount, unmount } = this.renderStateful(
         input,
+        boundaryContext,
         component,
         host.getInstance(caughtError),
         host.rerender,
@@ -1471,7 +1480,7 @@ export class Materializer {
     if (certainty === "always") throw new StaticThrowError(describeThrow(rendered), false);
     if (certainty === "maybe") {
       if (input.context.errorBoundaryDepth > 0 && !input.context.ignoresMaybeThrows) {
-        throw new StaticThrowError("component may throw", true);
+        throw new StaticThrowError(`component may throw: ${describeThrow(rendered)}`, true);
       }
       return this.toNode(withoutThrows(rendered), childContext, true);
     }

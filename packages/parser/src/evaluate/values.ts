@@ -96,6 +96,9 @@ export const objectValue = (entries: StaticObjectEntry[] = []): StaticObjectValu
 export const objectFromRecord = (record: Record<string, StaticValue>): StaticObjectValue =>
   objectValue(Object.entries(record).map(([key, value]) => ({ kind: "property", key, value })));
 
+export const isJsonRecord = (json: JsonValue): json is { [key: string]: JsonValue } =>
+  json !== null && typeof json === "object" && !Array.isArray(json);
+
 /** A value known whole, as a bundler inlines a `define` replacement. */
 export const jsonValue = (json: JsonValue): StaticValue => {
   if (json === null || typeof json !== "object") return primitiveValue(json);
@@ -645,7 +648,13 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
     return left.allocation === right.allocation;
   }
   if (left.kind === "symbol" && right.kind === "symbol") return left.key === right.key;
-  if (left.kind === "global" && right.kind === "global" && left.name === right.name) return true;
+  if (left.kind === "namespace" && right.kind === "namespace") {
+    return left.module.filePath === right.module.filePath;
+  }
+  if (left.kind === "global" && right.kind === "global") {
+    if (left.name === right.name) return true;
+    if (left.name.endsWith(".prototype") && right.name.endsWith(".prototype")) return false;
+  }
   if (
     (left.kind === "global" && isProgramAllocated(right)) ||
     (right.kind === "global" && isProgramAllocated(left))

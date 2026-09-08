@@ -107,9 +107,9 @@ const ROUTE_CONFIG_PACKAGE = "@react-router/dev/routes";
 
 /**
  * Mirrors React Router's `RouteContext` (displayName `Route`). The static
- * provider value is `{ outlet, params, id }`: the element for the matched child
- * route, the params accumulated down to this match, and the route id that keys
- * loader data.
+ * provider value is `{ outlet, params, id, pathnameBase }`: the element for the
+ * matched child route, the params accumulated down to this match, the route id
+ * that keys loader data, and the URL prefix descendant `<Routes>` match after.
  */
 export const ROUTE_CONTEXT: ContextDefinition = {
   name: "RouteContext",
@@ -255,15 +255,18 @@ const readRouteList = (
   return [uncertainRoute(`route list is ${value.kind}`)];
 };
 
+/** `Children.forEach` order: nested arrays are flattened into one running index. */
+const flattenChildren = (value: StaticValue): StaticValue[] =>
+  value.kind === "list" ? value.items.flatMap(flattenChildren) : [value];
+
 /** `<Route path element>` elements nested under `<Routes>` are routes too (`createRoutesFromChildren`). */
 const readRouteElements = (
   value: StaticValue,
   resolveLazy: LazyResolver | null,
   parentPath: number[] = [],
 ): RouteRecord[] => {
-  const elements = value.kind === "list" ? value.items : [value];
   const routes: RouteRecord[] = [];
-  elements.forEach((item, index) => {
+  flattenChildren(value).forEach((item, index) => {
     const treePath = [...parentPath, index];
     if (item.kind === "element" && item.type.kind === "stub" && item.type.stub === ROUTE_STUB) {
       const props = item.props;
@@ -301,6 +304,8 @@ interface RouteMatch {
   route: RouteRecord;
   /** Params of this route and every ancestor, as `useParams` reports them. */
   params: RouteParams;
+  /** URL segments matched by this route and its ancestors, excluding a splat. */
+  consumedSegments: number;
 }
 
 interface RankedMatch {
@@ -317,18 +322,19 @@ interface OwnPathMatch {
   rest: string[];
   score: number;
   params: RouteParams;
+  consumedSegments: number;
 }
 
 /** Matches one route's own `path` against the remaining URL segments. */
 const matchOwnPath = (routePath: string | null, remaining: string[]): OwnPathMatch | null => {
-  if (routePath === null) return { rest: remaining, score: 0, params: {} };
+  if (routePath === null) return { rest: remaining, score: 0, params: {}, consumedSegments: 0 };
   const params: RouteParams = {};
   let score = 0;
   let cursor = 0;
   for (const segment of splitPathname(routePath)) {
     if (segment === "*") {
       params["*"] = remaining.slice(cursor).join("/");
-      return { rest: [], score: score + SPLAT_PENALTY, params };
+      return { rest: [], score: score + SPLAT_PENALTY, params, consumedSegments: cursor };
     }
     const optional = segment.endsWith("?");
     const name = optional ? segment.slice(0, -1) : segment;
@@ -348,20 +354,22 @@ const matchOwnPath = (routePath: string | null, remaining: string[]): OwnPathMat
       return null;
     }
   }
-  return { rest: remaining.slice(cursor), score, params };
+  return { rest: remaining.slice(cursor), score, params, consumedSegments: cursor };
 };
 
 const matchRoutes = (
   routes: RouteRecord[],
   remaining: string[],
   inherited: RouteParams,
+  consumedBefore = 0,
 ): RankedMatch[] => {
   const matches: RankedMatch[] = [];
   for (const route of routes) {
     const own = matchOwnPath(route.path, remaining);
     if (!own) continue;
     const params = { ...inherited, ...own.params };
-    const match: RouteMatch = { route, params };
+    const consumedSegments = consumedBefore + own.consumedSegments;
+    const match: RouteMatch = { route, params, consumedSegments };
     if (route.index) {
       if (own.rest.length === 0) {
         matches.push({ chain: [match], score: own.score + INDEX_ROUTE_SCORE });
@@ -372,7 +380,7 @@ const matchRoutes = (
       if (own.rest.length === 0) matches.push({ chain: [match], score: own.score });
       continue;
     }
-    for (const child of matchRoutes(route.children, own.rest, params)) {
+    for (const child of matchRoutes(route.children, own.rest, params, consumedSegments)) {
       matches.push({ chain: [match, ...child.chain], score: own.score + child.score });
     }
     if (own.rest.length === 0 && route.path !== null) {
@@ -382,8 +390,26 @@ const matchRoutes = (
   return matches;
 };
 
-const bestMatch = (routes: RouteRecord[], pathname: string): RouteMatch[] | null => {
-  const matches = matchRoutes(routes, splitPathname(pathname), {});
+/** What an enclosing route already matched, as `useRoutes` reads it from `RouteContext`. */
+interface ParentMatch {
+  params: RouteParams;
+  pathnameBase: string;
+}
+
+const ROOT_PARENT_MATCH: ParentMatch = { params: {}, pathnameBase: "/" };
+
+const bestMatch = (
+  routes: RouteRecord[],
+  pathname: string,
+  parent: ParentMatch,
+): RouteMatch[] | null => {
+  const parentSegmentCount = splitPathname(parent.pathnameBase).length;
+  const matches = matchRoutes(
+    routes,
+    splitPathname(pathname).slice(parentSegmentCount),
+    parent.params,
+    parentSegmentCount,
+  );
   if (matches.length === 0) return null;
   matches.sort((left, right) => right.score - left.score);
   return matches[0].chain;
@@ -415,8 +441,9 @@ const RENDERED_ROUTE_STUB: StubComponent = {
 const renderedRoute = (
   outlet: StaticValue,
   params: RouteParams,
-  children: StaticValue,
   routeId: string | null,
+  pathnameBase: string,
+  children: StaticValue,
 ): StaticElementValue =>
   element(
     { kind: "stub", stub: RENDERED_ROUTE_STUB },
@@ -425,10 +452,15 @@ const renderedRoute = (
         outlet,
         params: paramsValue(params),
         id: routeId === null ? UNDEFINED_VALUE : primitiveValue(routeId),
+        pathnameBase: primitiveValue(pathnameBase),
       }),
       children,
     }),
   );
+
+/** The URL prefix a match consumed, which descendant `<Routes>` match relative to. */
+const getPathnameBase = (pathname: string, match: RouteMatch): string =>
+  `/${splitPathname(pathname).slice(0, match.consumedSegments).join("/")}`;
 
 /**
  * Builds the element for a matched chain exactly like `_renderMatches`: each
@@ -437,16 +469,23 @@ const renderedRoute = (
  */
 const composeChain = (
   chain: RouteMatch[],
+  pathname: string,
   renderRoute: (route: RouteRecord, outlet: StaticValue) => StaticValue,
 ): StaticValue => {
   let outlet: StaticValue = NULL_VALUE;
   for (let index = chain.length - 1; index >= 0; index -= 1) {
-    const { route, params } = chain[index];
-    if (route.uncertainty) {
-      outlet = unknownValue(`react-router: ${route.uncertainty}`);
+    const match = chain[index];
+    if (match.route.uncertainty) {
+      outlet = unknownValue(`react-router: ${match.route.uncertainty}`);
       continue;
     }
-    outlet = renderedRoute(outlet, params, renderRoute(route, outlet), route.id);
+    outlet = renderedRoute(
+      outlet,
+      match.params,
+      match.route.id,
+      getPathnameBase(pathname, match),
+      renderRoute(match.route, outlet),
+    );
   }
   return outlet;
 };
@@ -462,9 +501,13 @@ const renderDataRoute = (route: RouteRecord, outlet: StaticValue): StaticValue =
  * object) may rank above any statically matched route, so a match found next
  * to them is only the preferred alternative.
  */
-const renderMatchedRoutes = (routes: RouteRecord[], pathname: string): StaticValue => {
+const renderMatchedRoutes = (
+  routes: RouteRecord[],
+  pathname: string,
+  parent: ParentMatch,
+): StaticValue => {
   const unreadable = routes.filter((route) => route.uncertainty !== null && route.path === null);
-  const chain = bestMatch(routes, pathname);
+  const chain = bestMatch(routes, pathname, parent);
   if (!chain) {
     return unknownValue(
       unreadable.length > 0
@@ -472,7 +515,7 @@ const renderMatchedRoutes = (routes: RouteRecord[], pathname: string): StaticVal
         : `react-router: no route matches ${pathname}`,
     );
   }
-  const matched = composeChain(chain, renderDataRoute);
+  const matched = composeChain(chain, pathname, renderDataRoute);
   if (unreadable.length === 0) return matched;
   return branchValue(
     [matched, unknownValue(`react-router: ${unreadable[0].uncertainty}`)],
@@ -489,6 +532,26 @@ const readRouteContext = (
     return unknownValue(`react-router: ${field} read outside a matched route`);
   }
   return getObjectProperty(routeContext, field);
+};
+
+/**
+ * Descendant `<Routes>` match the URL left over by the enclosing route, and
+ * their matches inherit its params; top-level `<Routes>` see the whole URL.
+ */
+const readParentMatch = (tools: StubRenderTools): ParentMatch | null => {
+  const routeContext = tools.readContext(ROUTE_CONTEXT);
+  if (routeContext.kind !== "object") return ROOT_PARENT_MATCH;
+  const pathnameBase = readString(getObjectProperty(routeContext, "pathnameBase"));
+  const params = getObjectProperty(routeContext, "params");
+  if (pathnameBase === null || params.kind !== "object") return null;
+  const inherited: RouteParams = {};
+  for (const entry of params.entries) {
+    if (entry.kind !== "property") return null;
+    const value = readString(entry.value);
+    if (value === null) return null;
+    inherited[entry.key] = value;
+  }
+  return { params: inherited, pathnameBase };
 };
 
 const ROUTE_STUB: StubComponent = {
@@ -807,6 +870,7 @@ export const createReactRouterModel = (
         renderMatchedRoutes(
           readRouteList(getObjectProperty(router, "routes"), resolveLazy),
           pathname,
+          ROOT_PARENT_MATCH,
         ),
         pathname,
         observed,
@@ -819,13 +883,19 @@ export const createReactRouterModel = (
   });
   const routesStub: StubComponent = {
     displayName: "Routes",
-    render: (props, tools) =>
-      renderMatchedRoutes(
+    render: (props, tools) => {
+      const parent = readParentMatch(tools);
+      if (!parent) {
+        return unknownValue("react-router: the enclosing route's match is not static");
+      }
+      return renderMatchedRoutes(
         readRouteElements(getObjectProperty(props, "children"), (lazy) =>
           tools.callAwaited(lazy, []),
         ),
         pathname,
-      ),
+        parent,
+      );
+    },
   };
 
   const routerValue = (importedName: string): StaticValue | null => {
@@ -921,7 +991,7 @@ const renderFrameworkRoutes = (
   ).find((module) => module !== null);
 
   return renderer.renderWith((interpreter) => {
-    const chain = bestMatch(routes, model.pathname);
+    const chain = bestMatch(routes, model.pathname, ROOT_PARENT_MATCH);
     if (!chain) {
       interpreter.report(
         "react-router-no-match",
@@ -966,7 +1036,7 @@ const renderFrameworkRoutes = (
         routeProps(params, route.id),
       );
     };
-    const matched = composeChain(chain, renderRoute);
+    const matched = composeChain(chain, model.pathname, renderRoute);
     if (!rootModule) return matched;
 
     // `meta`/`links` see every match root-first, exactly as `<Meta>`/`<Links>` do.
@@ -1012,7 +1082,7 @@ const renderFrameworkRoutes = (
     const rootElement = isDefined(layout)
       ? element(toElementType(layout, "Layout"), objectFromRecord({ children: app }))
       : app;
-    model.framework.routeTree = renderedRoute(matched, {}, rootElement, ROOT_ROUTE_ID);
+    model.framework.routeTree = renderedRoute(matched, {}, ROOT_ROUTE_ID, "/", rootElement);
 
     // The client entry decides what wraps `<HydratedRouter />` (StrictMode, providers);
     // without one, `@react-router/dev` uses `<StrictMode><HydratedRouter /></StrictMode>`.

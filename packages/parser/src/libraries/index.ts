@@ -2,6 +2,7 @@ import { objectValue, UNDEFINED_VALUE } from "../evaluate/values.js";
 import { lazyProperties } from "../frameworks/stubs.js";
 import type { LibraryValueProvider, ModeledExports } from "../types.js";
 import { EMOTION_PACKAGES, emotionValue } from "./emotion.js";
+import { ES_SHIM_PACKAGES, esShimValue } from "./es-shims.js";
 import {
   FRAMER_MOTION_MODELED_EXPORTS,
   FRAMER_MOTION_PACKAGES,
@@ -45,6 +46,7 @@ interface LibraryModel {
 
 const LIBRARY_MODELS: readonly LibraryModel[] = [
   { packages: EMOTION_PACKAGES, getValue: emotionValue },
+  { packages: ES_SHIM_PACKAGES, getValue: esShimValue },
   {
     packages: FRAMER_MOTION_PACKAGES,
     getValue: framerMotionValue,

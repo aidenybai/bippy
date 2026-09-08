@@ -70,11 +70,14 @@ export class ModuleGraph {
     return record;
   }
 
+  /** A module from source text rather than disk; a path already added is returned as is. */
   addVirtualModule(filePath: string, sourceText: string): ModuleRecord | null {
+    const cached = this.modules.get(filePath);
+    if (cached !== undefined) return cached;
     const lang = getSourceLanguage(filePath);
     if (!lang) return null;
     const file = this.sourceFileCache.readVirtual(filePath, sourceText, lang);
-    const record = createModuleRecord(file);
+    const record = file.errors.length === 0 ? createModuleRecord(file) : null;
     this.modules.set(filePath, record);
     return record;
   }

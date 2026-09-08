@@ -1,10 +1,11 @@
-import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build, stop as stopEsbuild } from "esbuild";
 import { chromium, type Browser, type Page } from "playwright";
+import { BundleError, HarnessInjectionError } from "../errors.js";
 import { readObservationsJson } from "../observations.js";
+import { readPackageManifest } from "../package-manifest.js";
 import type { RuntimeObservations } from "../types.js";
 import type { HarnessGlobals } from "./browser-inject.js";
 import { parseSnapshot, type RuntimeSnapshot } from "./snapshot.js";
@@ -41,17 +42,8 @@ const bippyPackageDirectory = (): string => dirname(requireFromHere.resolve("bip
 
 const bippySourceEntry = (): string => resolve(bippyPackageDirectory(), "src/index.ts");
 
-const bippyVersion = (): string => {
-  const manifest: unknown = JSON.parse(
-    readFileSync(resolve(bippyPackageDirectory(), "package.json"), "utf8"),
-  );
-  return typeof manifest === "object" &&
-    manifest !== null &&
-    "version" in manifest &&
-    typeof manifest.version === "string"
-    ? manifest.version
-    : "0.0.0";
-};
+const bippyVersion = (): string =>
+  readPackageManifest(resolve(bippyPackageDirectory(), "package.json")).version ?? "0.0.0";
 
 export const buildInjectBundle = (): Promise<string> => {
   injectBundlePromise ??= build({
@@ -69,7 +61,7 @@ export const buildInjectBundle = (): Promise<string> => {
     logLevel: "silent",
   }).then((result) => {
     const [output] = result.outputFiles;
-    if (!output) throw new Error("esbuild produced no output for browser-inject");
+    if (!output) throw new BundleError("esbuild produced no output for browser-inject");
     return output.text;
   });
   return injectBundlePromise;
@@ -106,7 +98,7 @@ const readObservations = async (page: Page, names: string[]): Promise<RuntimeObs
     };
     return JSON.stringify(observed);
   }, names);
-  return readObservationsJson(JSON.parse(json));
+  return readObservationsJson(JSON.parse(json), `${page.url()} observations`);
 };
 
 const readDevServerOverlay = (page: Page): Promise<string | null> =>
@@ -183,9 +175,7 @@ export class BrowserCapturer {
       }
       const commits = await waitForQuietCommits(page, settleMs, timeoutMs);
       const snapshot = await readSnapshot(page);
-      if (!snapshot) {
-        throw new Error(`harness globals missing on ${options.url}; the init script did not run`);
-      }
+      if (!snapshot) throw new HarnessInjectionError(options.url);
       if (commits === 0) {
         const overlay = await readDevServerOverlay(page);
         if (overlay) pageErrors.push(overlay);

@@ -73,6 +73,33 @@ export const getBuiltinPrototype = (globalName: string): object | null => {
   return BUILTIN_CONSTRUCTORS[constructorName]?.prototype ?? null;
 };
 
+const BUILTIN_PROTOTYPE_NAMES = new Map<object, string>(
+  Object.entries(BUILTIN_CONSTRUCTORS).flatMap(([name, constructor]) =>
+    constructor.prototype === null ? [] : [[constructor.prototype, `${name}.prototype`]],
+  ),
+);
+
+/** The `<Constructor>.prototype` global name of a native prototype object, or null when it is not a modeled builtin. */
+export const getBuiltinPrototypeName = (prototype: object): string | null =>
+  BUILTIN_PROTOTYPE_NAMES.get(prototype) ?? null;
+
+const NAMESPACE_GLOBALS: Record<string, object> = { Math, JSON, Reflect };
+
+const getMember = (current: unknown, member: string): unknown =>
+  (typeof current === "object" || typeof current === "function") && current !== null
+    ? Reflect.get(current, member)
+    : undefined;
+
+/** `Function.prototype.toString` of the native function a dotted global such as `Object.prototype.hasOwnProperty` denotes, or null. */
+export const getBuiltinFunctionSource = (globalName: string): string | null => {
+  const [rootName = "", ...members] = globalName.split(".");
+  const witness = members.reduce<unknown>(
+    getMember,
+    BUILTIN_CONSTRUCTORS[rootName] ?? NAMESPACE_GLOBALS[rootName],
+  );
+  return typeof witness === "function" ? Function.prototype.toString.call(witness) : null;
+};
+
 const COLLECTION_WITNESSES: Record<string, object> = {
   Map: new Map(),
   Set: new Set(),

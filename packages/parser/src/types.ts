@@ -235,7 +235,7 @@ export interface StubComponent {
   /** Work tag of the real component (e.g. `ForwardRef` for `Link`); defaults to a function component. */
   tag?: WorkTag;
   /** Statics the library hangs on the component (`Styled.withComponent`). */
-  properties?: ReadonlyMap<string, StaticValue>;
+  properties?: Map<string, StaticValue>;
   render: (props: StaticObjectValue, tools: StubRenderTools) => StaticValue;
   /**
    * For build-time macros (Lingui's `<Trans>`): the props of the element the
@@ -819,7 +819,7 @@ export interface StaticRendererOptions {
   bootstrap?: string[];
   /** `window` properties the served page defines (server-injected config); nested objects are partial, so unlisted keys stay unknown. */
   globals?: Record<string, JsonValue>;
-  /** Expressions the bundler inlines at build time (`DefinePlugin`, Vite `define`), keyed by source text such as `process.env.FLAG`; an environment variable given `null` is unset. */
+  /** Expressions the bundler inlines at build time (`DefinePlugin`, Vite `define`), keyed by source text such as `process.env.FLAG`; an environment variable or bundler shim (`global`) given `null` is left unset. */
   defines?: Record<string, JsonValue>;
   /** The server process's environment, whole; unlisted variables are unset. */
   environment?: ProcessEnvironment;

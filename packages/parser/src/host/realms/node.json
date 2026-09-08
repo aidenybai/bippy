@@ -1,0 +1,2670 @@
+{
+  "globalObjectInterfaces": [],
+  "interfaces": {
+    "AbortController": {
+      "extends": ["_AbortController"],
+      "members": { "abort": "function>undefined", "signal": "object:AbortSignal" }
+    },
+    "AbortSignal": {
+      "extends": ["EventTarget", "_AbortSignal"],
+      "members": {
+        "aborted": "boolean",
+        "onabort": "function?",
+        "reason": "any",
+        "throwIfAborted": "function>undefined"
+      }
+    },
+    "AddEventListenerOptions": {
+      "extends": ["EventListenerOptions"],
+      "members": { "once": "boolean", "passive": "boolean", "signal": "object:AbortSignal" }
+    },
+    "AggregateError": { "extends": ["Error"], "members": { "errors": "object:Array" } },
+    "AggregateErrorConstructor": { "members": { "prototype": "object:AggregateError" } },
+    "Array": {
+      "extends": ["RelativeIndexable"],
+      "members": {
+        "at": "function>any?",
+        "concat": "function>object:Array",
+        "copyWithin": "function>object:Array",
+        "entries": "function>object:ArrayIterator",
+        "every": "function>boolean",
+        "fill": "function>object:Array",
+        "filter": "function>object:Array",
+        "find": "function>any?",
+        "findIndex": "function>number",
+        "findLast": "function>any?",
+        "findLastIndex": "function>number",
+        "flat": "function>object:Array",
+        "flatMap": "function>object:Array",
+        "forEach": "function>undefined",
+        "includes": "function>boolean",
+        "indexOf": "function>number",
+        "join": "function>string",
+        "keys": "function>object:ArrayIterator",
+        "lastIndexOf": "function>number",
+        "length": "number",
+        "map": "function>object:Array",
+        "pop": "function>any?",
+        "push": "function>number",
+        "reduce": "function>any",
+        "reduceRight": "function>any",
+        "reverse": "function>object:Array",
+        "shift": "function>any?",
+        "slice": "function>object:Array",
+        "some": "function>boolean",
+        "sort": "function>object:Array",
+        "splice": "function>object:Array",
+        "toLocaleString": "function>string",
+        "toReversed": "function>object:Array",
+        "toSorted": "function>object:Array",
+        "toSpliced": "function>object:Array",
+        "toString": "function>string",
+        "unshift": "function>number",
+        "values": "function>object:ArrayIterator",
+        "with": "function>object:Array"
+      }
+    },
+    "ArrayBuffer": {
+      "members": {
+        "byteLength": "number",
+        "detached": "boolean",
+        "maxByteLength": "number",
+        "resizable": "boolean",
+        "resize": "function>undefined",
+        "slice": "function>object:ArrayBuffer",
+        "transfer": "function>object:ArrayBuffer",
+        "transferToFixedLength": "function>object:ArrayBuffer"
+      }
+    },
+    "ArrayBufferConstructor": {
+      "members": { "isView": "function>boolean", "prototype": "object:ArrayBuffer" }
+    },
+    "ArrayBufferTypes": {
+      "members": {
+        "ArrayBuffer": "object:ArrayBuffer",
+        "SharedArrayBuffer": "object:SharedArrayBuffer"
+      }
+    },
+    "ArrayBufferView": {
+      "members": { "buffer": "any", "byteLength": "number", "byteOffset": "number" }
+    },
+    "ArrayConstructor": {
+      "members": {
+        "from": "function>object:Array",
+        "fromAsync": "function>object:Promise",
+        "isArray": "function>boolean",
+        "of": "function>object:Array",
+        "prototype": "object:Array"
+      }
+    },
+    "ArrayIterator": { "extends": ["IteratorObject"] },
+    "ArrayLike": { "members": { "length": "number" } },
+    "AsyncDisposable": {},
+    "AsyncDisposableStack": {
+      "members": {
+        "adopt": "function>any",
+        "defer": "function>undefined",
+        "disposeAsync": "function>object:Promise",
+        "disposed": "boolean",
+        "move": "function>object:AsyncDisposableStack",
+        "use": "function>any"
+      }
+    },
+    "AsyncDisposableStackConstructor": {
+      "members": { "prototype": "object:AsyncDisposableStack" }
+    },
+    "AsyncGenerator": {
+      "extends": ["AsyncIteratorObject"],
+      "members": {
+        "next": "function>object:Promise",
+        "return": "function>object:Promise",
+        "throw": "function>object:Promise"
+      }
+    },
+    "AsyncGeneratorFunction": {
+      "members": { "length": "number", "name": "string", "prototype": "object:AsyncGenerator" }
+    },
+    "AsyncGeneratorFunctionConstructor": {
+      "members": {
+        "length": "number",
+        "name": "string",
+        "prototype": "function:AsyncGeneratorFunction"
+      }
+    },
+    "AsyncIterable": {},
+    "AsyncIterableIterator": { "extends": ["AsyncIterator"] },
+    "AsyncIterator": {
+      "members": {
+        "next": "function>object:Promise",
+        "return": "function>object:Promise",
+        "throw": "function>object:Promise"
+      }
+    },
+    "AsyncIteratorObject": { "extends": ["AsyncIterator", "AsyncDisposable"] },
+    "Atomics": {
+      "members": {
+        "add": "function>any",
+        "and": "function>any",
+        "compareExchange": "function>any",
+        "exchange": "function>any",
+        "isLockFree": "function>boolean",
+        "load": "function>any",
+        "notify": "function>number",
+        "or": "function>any",
+        "pause": "function>undefined",
+        "store": "function>any",
+        "sub": "function>any",
+        "wait": "function>string",
+        "waitAsync": "function>object",
+        "xor": "function>any"
+      }
+    },
+    "BigInt": {
+      "members": {
+        "toLocaleString": "function>string",
+        "toString": "function>string",
+        "valueOf": "function>bigint"
+      }
+    },
+    "BigInt64Array": {
+      "extends": ["RelativeIndexable"],
+      "members": {
+        "BYTES_PER_ELEMENT": "number",
+        "at": "function>bigint?",
+        "buffer": "any",
+        "byteLength": "number",
+        "byteOffset": "number",
+        "copyWithin": "function>object:BigInt64Array",
+        "entries": "function>object:ArrayIterator",
+        "every": "function>boolean",
+        "fill": "function>object:BigInt64Array",
+        "filter": "function>object:BigInt64Array",
+        "find": "function>bigint?",
+        "findIndex": "function>number",
+        "findLast": "function>any",
+        "findLastIndex": "function>number",
+        "forEach": "function>undefined",
+        "includes": "function>boolean",
+        "indexOf": "function>number",
+        "join": "function>string",
+        "keys": "function>object:ArrayIterator",
+        "lastIndexOf": "function>number",
+        "length": "number",
+        "map": "function>object:BigInt64Array",
+        "reduce": "function>any",
+        "reduceRight": "function>any",
+        "reverse": "function>object:BigInt64Array",
+        "set": "function>undefined",
+        "slice": "function>object:BigInt64Array",
+        "some": "function>boolean",
+        "sort": "function>object:BigInt64Array",
+        "subarray": "function>object:BigInt64Array",
+        "toLocaleString": "function>string",
+        "toReversed": "function>object:BigInt64Array",
+        "toSorted": "function>object:BigInt64Array",
+        "toString": "function>string",
+        "valueOf": "function>object:BigInt64Array",
+        "values": "function>object:ArrayIterator",
+        "with": "function>object:BigInt64Array"
+      }
+    },
+    "BigInt64ArrayConstructor": {
+      "members": {
+        "BYTES_PER_ELEMENT": "number",
+        "from": "function>object:BigInt64Array",
+        "of": "function>object:BigInt64Array",
+        "prototype": "object:BigInt64Array"
+      }
+    },
+    "BigIntConstructor": {
+      "members": {
+        "asIntN": "function>bigint",
+        "asUintN": "function>bigint",
+        "prototype": "object:BigInt"
+      }
+    },
+    "BigIntToLocaleStringOptions": {
+      "members": {
+        "compactDisplay": "string",
+        "currency": "string",
+        "currencyDisplay": "string",
+        "localeMatcher": "string",
+        "maximumFractionDigits": "number",
+        "maximumSignificantDigits": "number",
+        "minimumFractionDigits": "number",
+        "minimumIntegerDigits": "number",
+        "minimumSignificantDigits": "number",
+        "notation": "string",
+        "numberingSystem": "string",
+        "style": "string",
+        "unit": "string",
+        "unitDisplay": "string",
+        "useGrouping": "boolean"
+      }
+    },
+    "BigUint64Array": {
+      "extends": ["RelativeIndexable"],
+      "members": {
+        "BYTES_PER_ELEMENT": "number",
+        "at": "function>bigint?",
+        "buffer": "any",
+        "byteLength": "number",
+        "byteOffset": "number",
+        "copyWithin": "function>object:BigUint64Array",
+        "entries": "function>object:ArrayIterator",
+        "every": "function>boolean",
+        "fill": "function>object:BigUint64Array",
+        "filter": "function>object:BigUint64Array",
+        "find": "function>bigint?",
+        "findIndex": "function>number",
+        "findLast": "function>any",
+        "findLastIndex": "function>number",
+        "forEach": "function>undefined",
+        "includes": "function>boolean",
+        "indexOf": "function>number",
+        "join": "function>string",
+        "keys": "function>object:ArrayIterator",
+        "lastIndexOf": "function>number",
+        "length": "number",
+        "map": "function>object:BigUint64Array",
+        "reduce": "function>any",
+        "reduceRight": "function>any",
+        "reverse": "function>object:BigUint64Array",
+        "set": "function>undefined",
+        "slice": "function>object:BigUint64Array",
+        "some": "function>boolean",
+        "sort": "function>object:BigUint64Array",
+        "subarray": "function>object:BigUint64Array",
+        "toLocaleString": "function>string",
+        "toReversed": "function>object:BigUint64Array",
+        "toSorted": "function>object:BigUint64Array",
+        "toString": "function>string",
+        "valueOf": "function>object:BigUint64Array",
+        "values": "function>object:ArrayIterator",
+        "with": "function>object:BigUint64Array"
+      }
+    },
+    "BigUint64ArrayConstructor": {
+      "members": {
+        "BYTES_PER_ELEMENT": "number",
+        "from": "function>object:BigUint64Array",
+        "of": "function>object:BigUint64Array",
+        "prototype": "object:BigUint64Array"
+      }
+    },
+    "Blob": { "extends": ["_Blob"] },
+    "Boolean": { "members": { "valueOf": "function>boolean" } },
+    "BooleanConstructor": { "members": { "prototype": "object:Boolean" } },
+    "Buffer": {
+      "extends": ["Uint8Array"],
+      "members": {
+        "compare": "function>number",
+        "copy": "function>number",
+        "equals": "function>boolean",
+        "fill": "function>object:Buffer",
+        "includes": "function>boolean",
+        "indexOf": "function>number",
+        "lastIndexOf": "function>number",
+        "readBigInt64BE": "function>bigint",
+        "readBigInt64LE": "function>bigint",
+        "readBigUInt64BE": "function>bigint",
+        "readBigUInt64LE": "function>bigint",
+        "readBigUint64BE": "function>bigint",
+        "readBigUint64LE": "function>bigint",
+        "readDoubleBE": "function>number",
+        "readDoubleLE": "function>number",
+        "readFloatBE": "function>number",
+        "readFloatLE": "function>number",
+        "readInt16BE": "function>number",
+        "readInt16LE": "function>number",
+        "readInt32BE": "function>number",
+        "readInt32LE": "function>number",
+        "readInt8": "function>number",
+        "readIntBE": "function>number",
+        "readIntLE": "function>number",
+        "readUInt16BE": "function>number",
+        "readUInt16LE": "function>number",
+        "readUInt32BE": "function>number",
+        "readUInt32LE": "function>number",
+        "readUInt8": "function>number",
+        "readUIntBE": "function>number",
+        "readUIntLE": "function>number",
+        "readUint16BE": "function>number",
+        "readUint16LE": "function>number",
+        "readUint32BE": "function>number",
+        "readUint32LE": "function>number",
+        "readUint8": "function>number",
+        "readUintBE": "function>number",
+        "readUintLE": "function>number",
+        "reverse": "function>object:Buffer",
+        "slice": "function>object:Buffer",
+        "subarray": "function>object:Buffer",
+        "swap16": "function>object:Buffer",
+        "swap32": "function>object:Buffer",
+        "swap64": "function>object:Buffer",
+        "toJSON": "function>object",
+        "toString": "function>string",
+        "write": "function>number",
+        "writeBigInt64BE": "function>number",
+        "writeBigInt64LE": "function>number",
+        "writeBigUInt64BE": "function>number",
+        "writeBigUInt64LE": "function>number",
+        "writeBigUint64BE": "function>number",
+        "writeBigUint64LE": "function>number",
+        "writeDoubleBE": "function>number",
+        "writeDoubleLE": "function>number",
+        "writeFloatBE": "function>number",
+        "writeFloatLE": "function>number",
+        "writeInt16BE": "function>number",
+        "writeInt16LE": "function>number",
+        "writeInt32BE": "function>number",
+        "writeInt32LE": "function>number",
+        "writeInt8": "function>number",
+        "writeIntBE": "function>number",
+        "writeIntLE": "function>number",
+        "writeUInt16BE": "function>number",
+        "writeUInt16LE": "function>number",
+        "writeUInt32BE": "function>number",
+        "writeUInt32LE": "function>number",
+        "writeUInt8": "function>number",
+        "writeUIntBE": "function>number",
+        "writeUIntLE": "function>number",
+        "writeUint16BE": "function>number",
+        "writeUint16LE": "function>number",
+        "writeUint32BE": "function>number",
+        "writeUint32LE": "function>number",
+        "writeUint8": "function>number",
+        "writeUintBE": "function>number",
+        "writeUintLE": "function>number"
+      }
+    },
+    "BufferConstructor": {
+      "members": {
+        "alloc": "function>object:Buffer",
+        "allocUnsafe": "function>object:Buffer",
+        "allocUnsafeSlow": "function>object:Buffer",
+        "byteLength": "function>number",
+        "compare": "function>number",
+        "concat": "function>object:Buffer",
+        "copyBytesFrom": "function>object:Buffer",
+        "from": "function>object:Buffer",
+        "isBuffer": "function>boolean",
+        "isEncoding": "function>boolean",
+        "of": "function>object:Buffer",
+        "poolSize": "number"
+      }
+    },
+    "ByteLengthQueuingStrategy": { "extends": ["_ByteLengthQueuingStrategy"] },
+    "CallableFunction": {
+      "extends": ["Function"],
+      "members": { "apply": "function>any", "bind": "function>any", "call": "function>any" }
+    },
+    "ClassAccessorDecoratorContext": {
+      "members": {
+        "access": "object",
+        "addInitializer": "function>undefined",
+        "kind": "string",
+        "metadata": "any",
+        "name": "any",
+        "private": "boolean",
+        "static": "boolean"
+      }
+    },
+    "ClassAccessorDecoratorResult": {
+      "members": { "get": "function>any", "init": "function>any", "set": "function>undefined" }
+    },
+    "ClassAccessorDecoratorTarget": {
+      "members": { "get": "function>any", "set": "function>undefined" }
+    },
+    "ClassDecoratorContext": {
+      "members": {
+        "addInitializer": "function>undefined",
+        "kind": "string",
+        "metadata": "any",
+        "name": "string?"
+      }
+    },
+    "ClassFieldDecoratorContext": {
+      "members": {
+        "access": "object",
+        "addInitializer": "function>undefined",
+        "kind": "string",
+        "metadata": "any",
+        "name": "any",
+        "private": "boolean",
+        "static": "boolean"
+      }
+    },
+    "ClassGetterDecoratorContext": {
+      "members": {
+        "access": "object",
+        "addInitializer": "function>undefined",
+        "kind": "string",
+        "metadata": "any",
+        "name": "any",
+        "private": "boolean",
+        "static": "boolean"
+      }
+    },
+    "ClassMethodDecoratorContext": {
+      "members": {
+        "access": "object",
+        "addInitializer": "function>undefined",
+        "kind": "string",
+        "metadata": "any",
+        "name": "any",
+        "private": "boolean",
+        "static": "boolean"
+      }
+    },
+    "ClassSetterDecoratorContext": {
+      "members": {
+        "access": "object",
+        "addInitializer": "function>undefined",
+        "kind": "string",
+        "metadata": "any",
+        "name": "any",
+        "private": "boolean",
+        "static": "boolean"
+      }
+    },
+    "CompressionStream": { "extends": ["_CompressionStream"] },
+    "ConcatArray": {
+      "members": { "join": "function>string", "length": "number", "slice": "function>object:Array" }
+    },
+    "Console": {
+      "members": {
+        "Console": "function:console.ConsoleConstructor",
+        "assert": "function>undefined",
+        "clear": "function>undefined",
+        "count": "function>undefined",
+        "countReset": "function>undefined",
+        "debug": "function>undefined",
+        "dir": "function>undefined",
+        "dirxml": "function>undefined",
+        "error": "function>undefined",
+        "group": "function>undefined",
+        "groupCollapsed": "function>undefined",
+        "groupEnd": "function>undefined",
+        "info": "function>undefined",
+        "log": "function>undefined",
+        "profile": "function>undefined",
+        "profileEnd": "function>undefined",
+        "table": "function>undefined",
+        "time": "function>undefined",
+        "timeEnd": "function>undefined",
+        "timeLog": "function>undefined",
+        "timeStamp": "function>undefined",
+        "trace": "function>undefined",
+        "warn": "function>undefined"
+      }
+    },
+    "console.ConsoleConstructor": { "members": { "prototype": "object:Console" } },
+    "console.ConsoleConstructorOptions": {
+      "members": {
+        "colorMode": "any?",
+        "groupIndentation": "number?",
+        "ignoreErrors": "boolean?",
+        "inspectOptions": "any?",
+        "stderr": "object:NodeJS.WritableStream?",
+        "stdout": "object:NodeJS.WritableStream"
+      }
+    },
+    "CountQueuingStrategy": { "extends": ["_CountQueuingStrategy"] },
+    "CustomEvent": { "extends": ["Event", "_CustomEvent"], "members": { "detail": "any" } },
+    "CustomEventInit": { "extends": ["EventInit"], "members": { "detail": "any" } },
+    "DataView": {
+      "members": {
+        "buffer": "any",
+        "byteLength": "number",
+        "byteOffset": "number",
+        "getBigInt64": "function>bigint",
+        "getBigUint64": "function>bigint",
+        "getFloat16": "function>number",
+        "getFloat32": "function>number",
+        "getFloat64": "function>number",
+        "getInt16": "function>number",
+        "getInt32": "function>number",
+        "getInt8": "function>number",
+        "getUint16": "function>number",
+        "getUint32": "function>number",
+        "getUint8": "function>number",
+        "setBigInt64": "function>undefined",
+        "setBigUint64": "function>undefined",
+        "setFloat16": "function>undefined",
+        "setFloat32": "function>undefined",
+        "setFloat64": "function>undefined",
+        "setInt16": "function>undefined",
+        "setInt32": "function>undefined",
+        "setInt8": "function>undefined",
+        "setUint16": "function>undefined",
+        "setUint32": "function>undefined",
+        "setUint8": "function>undefined"
+      }
+    },
+    "DataViewConstructor": { "members": { "prototype": "object:DataView" } },
+    "Date": {
+      "members": {
+        "getDate": "function>number",
+        "getDay": "function>number",
+        "getFullYear": "function>number",
+        "getHours": "function>number",
+        "getMilliseconds": "function>number",
+        "getMinutes": "function>number",
+        "getMonth": "function>number",
+        "getSeconds": "function>number",
+        "getTime": "function>number",
+        "getTimezoneOffset": "function>number",
+        "getUTCDate": "function>number",
+        "getUTCDay": "function>number",
+        "getUTCFullYear": "function>number",
+        "getUTCHours": "function>number",
+        "getUTCMilliseconds": "function>number",
+        "getUTCMinutes": "function>number",
+        "getUTCMonth": "function>number",
+        "getUTCSeconds": "function>number",
+        "setDate": "function>number",
+        "setFullYear": "function>number",
+        "setHours": "function>number",
+        "setMilliseconds": "function>number",
+        "setMinutes": "function>number",
+        "setMonth": "function>number",
+        "setSeconds": "function>number",
+        "setTime": "function>number",
+        "setUTCDate": "function>number",
+        "setUTCFullYear": "function>number",
+        "setUTCHours": "function>number",
+        "setUTCMilliseconds": "function>number",
+        "setUTCMinutes": "function>number",
+        "setUTCMonth": "function>number",
+        "setUTCSeconds": "function>number",
+        "toDateString": "function>string",
+        "toISOString": "function>string",
+        "toJSON": "function>string",
+        "toLocaleDateString": "function>string",
+        "toLocaleString": "function>string",
+        "toLocaleTimeString": "function>string",
+        "toString": "function>string",
+        "toTimeString": "function>string",
+        "toUTCString": "function>string",
+        "valueOf": "function>number"
+      }
+    },
+    "DateConstructor": {
+      "members": {
+        "UTC": "function>number",
+        "now": "function>number",
+        "parse": "function>number",
+        "prototype": "object:Date"
+      }
+    },
+    "DecompressionStream": { "extends": ["_DecompressionStream"] },
+    "Disposable": {},
+    "DisposableStack": {
+      "members": {
+        "adopt": "function>any",
+        "defer": "function>undefined",
+        "dispose": "function>undefined",
+        "disposed": "boolean",
+        "move": "function>object:DisposableStack",
+        "use": "function>any"
+      }
+    },
+    "DisposableStackConstructor": { "members": { "prototype": "object:DisposableStack" } },
+    "DOMException": {
+      "extends": ["Error", "_DOMException"],
+      "members": {
+        "ABORT_ERR": "number",
+        "DATA_CLONE_ERR": "number",
+        "DOMSTRING_SIZE_ERR": "number",
+        "HIERARCHY_REQUEST_ERR": "number",
+        "INDEX_SIZE_ERR": "number",
+        "INUSE_ATTRIBUTE_ERR": "number",
+        "INVALID_ACCESS_ERR": "number",
+        "INVALID_CHARACTER_ERR": "number",
+        "INVALID_MODIFICATION_ERR": "number",
+        "INVALID_NODE_TYPE_ERR": "number",
+        "INVALID_STATE_ERR": "number",
+        "NAMESPACE_ERR": "number",
+        "NETWORK_ERR": "number",
+        "NOT_FOUND_ERR": "number",
+        "NOT_SUPPORTED_ERR": "number",
+        "NO_DATA_ALLOWED_ERR": "number",
+        "NO_MODIFICATION_ALLOWED_ERR": "number",
+        "QUOTA_EXCEEDED_ERR": "number",
+        "SECURITY_ERR": "number",
+        "SYNTAX_ERR": "number",
+        "TIMEOUT_ERR": "number",
+        "TYPE_MISMATCH_ERR": "number",
+        "URL_MISMATCH_ERR": "number",
+        "VALIDATION_ERR": "number",
+        "WRONG_DOCUMENT_ERR": "number",
+        "code": "number",
+        "message": "string",
+        "name": "string"
+      }
+    },
+    "Error": {
+      "members": { "cause": "any", "message": "string", "name": "string", "stack": "string" }
+    },
+    "ErrorConstructor": {
+      "members": {
+        "captureStackTrace": "function>undefined",
+        "isError": "function>boolean",
+        "prepareStackTrace": "function>any",
+        "prototype": "object:Error",
+        "stackTraceLimit": "number"
+      }
+    },
+    "ErrorOptions": { "members": { "cause": "any" } },
+    "EvalError": { "extends": ["Error"] },
+    "EvalErrorConstructor": {
+      "extends": ["ErrorConstructor"],
+      "members": { "prototype": "object:EvalError" }
+    },
+    "Event": {
+      "extends": ["_Event"],
+      "members": {
+        "bubbles": "boolean",
+        "cancelBubble": "boolean",
+        "cancelable": "boolean",
+        "composed": "boolean",
+        "composedPath": "function>object:Array",
+        "currentTarget": "object:EventTarget?",
+        "defaultPrevented": "boolean",
+        "eventPhase": "number",
+        "initEvent": "function>undefined",
+        "isTrusted": "boolean",
+        "preventDefault": "function>undefined",
+        "returnValue": "boolean",
+        "srcElement": "object:EventTarget?",
+        "stopImmediatePropagation": "function>undefined",
+        "stopPropagation": "function>undefined",
+        "target": "object:EventTarget?",
+        "timeStamp": "number",
+        "type": "string"
+      }
+    },
+    "EventInit": {
+      "members": { "bubbles": "boolean", "cancelable": "boolean", "composed": "boolean" }
+    },
+    "EventListener": {},
+    "EventListenerObject": { "members": { "handleEvent": "function>undefined" } },
+    "EventListenerOptions": {
+      "extends": ["_EventListenerOptions"],
+      "members": { "capture": "boolean" }
+    },
+    "EventSource": { "extends": ["_EventSource"] },
+    "EventSourceInit": { "extends": ["_EventSourceInit"] },
+    "EventTarget": {
+      "extends": ["_EventTarget"],
+      "members": {
+        "addEventListener": "function>undefined",
+        "dispatchEvent": "function>boolean",
+        "removeEventListener": "function>undefined"
+      }
+    },
+    "File": { "extends": ["_File"] },
+    "FinalizationRegistry": {
+      "members": { "register": "function>undefined", "unregister": "function>boolean" }
+    },
+    "FinalizationRegistryConstructor": {
+      "members": { "prototype": "object:FinalizationRegistry" }
+    },
+    "Float16Array": {
+      "members": {
+        "BYTES_PER_ELEMENT": "number",
+        "at": "function>number?",
+        "buffer": "any",
+        "byteLength": "number",
+        "byteOffset": "number",
+        "copyWithin": "function>object:Float16Array",
+        "entries": "function>object:ArrayIterator",
+        "every": "function>boolean",
+        "fill": "function>object:Float16Array",
+        "filter": "function>object:Float16Array",
+        "find": "function>number?",
+        "findIndex": "function>number",
+        "findLast": "function>any",
+        "findLastIndex": "function>number",
+        "forEach": "function>undefined",
+        "includes": "function>boolean",
+        "indexOf": "function>number",
+        "join": "function>string",
+        "keys": "function>object:ArrayIterator",
+        "lastIndexOf": "function>number",
+        "length": "number",
+        "map": "function>object:Float16Array",
+        "reduce": "function>any",
+        "reduceRight": "function>any",
+        "reverse": "function>object:Float16Array",
+        "set": "function>undefined",
+        "slice": "function>object:Float16Array",
+        "some": "function>boolean",
+        "sort": "function>object:Float16Array",
+        "subarray": "function>object:Float16Array",
+        "toLocaleString": "function>string",
+        "toReversed": "function>object:Float16Array",
+        "toSorted": "function>object:Float16Array",
+        "toString": "function>string",
+        "valueOf": "function>object:Float16Array",
+        "values": "function>object:ArrayIterator",
+        "with": "function>object:Float16Array"
+      }
+    },
+    "Float16ArrayConstructor": {
+      "members": {
+        "BYTES_PER_ELEMENT": "number",
+        "from": "function>object:Float16Array",
+        "of": "function>object:Float16Array",
+        "prototype": "object:Float16Array"
+      }
+    },
+    "Float32Array": {
+      "extends": ["RelativeIndexable"],
+      "members": {
+        "BYTES_PER_ELEMENT": "number",
+        "at": "function>number?",
+        "buffer": "any",
+        "byteLength": "number",
+        "byteOffset": "number",
+        "copyWithin": "function>object:Float32Array",
+        "entries": "function>object:ArrayIterator",
+        "every": "function>boolean",
+        "fill": "function>object:Float32Array",
+        "filter": "function>object:Float32Array",
+        "find": "function>number?",
+        "findIndex": "function>number",
+        "findLast": "function>any",
+        "findLastIndex": "function>number",
+        "forEach": "function>undefined",
+        "includes": "function>boolean",
+        "indexOf": "function>number",
+        "join": "function>string",
+        "keys": "function>object:ArrayIterator",
+        "lastIndexOf": "function>number",
+        "length": "number",
+        "map": "function>object:Float32Array",
+        "reduce": "function>any",
+        "reduceRight": "function>any",
+        "reverse": "function>object:Float32Array",
+        "set": "function>undefined",
+        "slice": "function>object:Float32Array",
+        "some": "function>boolean",
+        "sort": "function>object:Float32Array",
+        "subarray": "function>object:Float32Array",
+        "toLocaleString": "function>string",
+        "toReversed": "function>object:Float32Array",
+        "toSorted": "function>object:Float32Array",
+        "toString": "function>string",
+        "valueOf": "function>object:Float32Array",
+        "values": "function>object:ArrayIterator",
+        "with": "function>object:Float32Array"
+      }
+    },
+    "Float32ArrayConstructor": {
+      "members": {
+        "BYTES_PER_ELEMENT": "number",
+        "from": "function>object:Float32Array",
+        "of": "function>object:Float32Array",
+        "prototype": "object:Float32Array"
+      }
+    },
+    "Float64Array": {
+      "extends": ["RelativeIndexable"],
+      "members": {
+        "BYTES_PER_ELEMENT": "number",
+        "at": "function>number?",
+        "buffer": "any",
+        "byteLength": "number",
+        "byteOffset": "number",
+        "copyWithin": "function>object:Float64Array",
+        "entries": "function>object:ArrayIterator",
+        "every": "function>boolean",
+        "fill": "function>object:Float64Array",
+        "filter": "function>object:Float64Array",
+        "find": "function>number?",
+        "findIndex": "function>number",
+        "findLast": "function>any",
+        "findLastIndex": "function>number",
+        "forEach": "function>undefined",
+        "includes": "function>boolean",
+        "indexOf": "function>number",
+        "join": "function>string",
+        "keys": "function>object:ArrayIterator",
+        "lastIndexOf": "function>number",
+        "length": "number",
+        "map": "function>object:Float64Array",
+        "reduce": "function>any",
+        "reduceRight": "function>any",
+        "reverse": "function>object:Float64Array",
+        "set": "function>undefined",
+        "slice": "function>object:Float64Array",
+        "some": "function>boolean",
+        "sort": "function>object:Float64Array",
+        "subarray": "function>object:Float64Array",
+        "toLocaleString": "function>string",
+        "toReversed": "function>object:Float64Array",
+        "toSorted": "function>object:Float64Array",
+        "toString": "function>string",
+        "valueOf": "function>object:Float64Array",
+        "values": "function>object:ArrayIterator",
+        "with": "function>object:Float64Array"
+      }
+    },
+    "Float64ArrayConstructor": {
+      "members": {
+        "BYTES_PER_ELEMENT": "number",
+        "from": "function>object:Float64Array",
+        "of": "function>object:Float64Array",
+        "prototype": "object:Float64Array"
+      }
+    },
+    "FormData": { "extends": ["_FormData"] },
+    "Function": {
+      "members": {
+        "apply": "function>any",
+        "arguments": "any",
+        "bind": "function>any",
+        "call": "function>any",
+        "caller": "object:Function",
+        "length": "number",
+        "name": "string",
+        "prototype": "any",
+        "toString": "function>string"
+      }
+    },
+    "FunctionConstructor": { "members": { "prototype": "object:Function" } },
+    "Generator": {
+      "extends": ["IteratorObject"],
+      "members": {
+        "next": "function>object",
+        "return": "function>object",
+        "throw": "function>object"
+      }
+    },
+    "GeneratorFunction": {
+      "members": { "length": "number", "name": "string", "prototype": "object:Generator" }
+    },
+    "GeneratorFunctionConstructor": {
+      "members": { "length": "number", "name": "string", "prototype": "function:GeneratorFunction" }
+    },
+    "Global": { "members": { "URL": "any", "URLSearchParams": "any" } },
+    "globalThis": {
+      "members": {
+        "AbortController": "any",
+        "AbortSignal": "any",
+        "AggregateError": "function:AggregateErrorConstructor",
+        "Array": "function:ArrayConstructor",
+        "ArrayBuffer": "function:ArrayBufferConstructor",
+        "AsyncDisposableStack": "function:AsyncDisposableStackConstructor",
+        "Atomics": "object:Atomics",
+        "BigInt": "function:BigIntConstructor",
+        "BigInt64Array": "function:BigInt64ArrayConstructor",
+        "BigUint64Array": "function:BigUint64ArrayConstructor",
+        "Blob": "any",
+        "Boolean": "function:BooleanConstructor",
+        "BroadcastChannel": "any",
+        "Buffer": "function:BufferConstructor",
+        "ByteLengthQueuingStrategy": "any",
+        "CompressionStream": "any",
+        "CountQueuingStrategy": "any",
+        "CustomEvent": "any",
+        "DOMException": "any",
+        "DataView": "function:DataViewConstructor",
+        "Date": "function:DateConstructor",
+        "DecompressionStream": "any",
+        "DisposableStack": "function:DisposableStackConstructor",
+        "Error": "function:ErrorConstructor",
+        "EvalError": "function:EvalErrorConstructor",
+        "Event": "any",
+        "EventSource": "any",
+        "EventTarget": "any",
+        "File": "any",
+        "FinalizationRegistry": "function:FinalizationRegistryConstructor",
+        "Float16Array": "function:Float16ArrayConstructor",
+        "Float32Array": "function:Float32ArrayConstructor",
+        "Float64Array": "function:Float64ArrayConstructor",
+        "FormData": "any",
+        "Function": "function:FunctionConstructor",
+        "Headers": "any",
+        "Infinity": "number",
+        "Int16Array": "function:Int16ArrayConstructor",
+        "Int32Array": "function:Int32ArrayConstructor",
+        "Int8Array": "function:Int8ArrayConstructor",
+        "Intl": "object:namespace Intl",
+        "Iterator": "any",
+        "JSON": "object:JSON",
+        "Map": "function:MapConstructor",
+        "Math": "object:Math",
+        "MessageChannel": "any",
+        "MessageEvent": "any",
+        "MessagePort": "any",
+        "NaN": "number",
+        "NodeJS": "object:namespace NodeJS",
+        "Number": "function:NumberConstructor",
+        "Object": "function:ObjectConstructor",
+        "PerformanceEntry": "any",
+        "PerformanceMark": "any",
+        "PerformanceMeasure": "any",
+        "PerformanceObserver": "any",
+        "PerformanceObserverEntryList": "any",
+        "PerformanceResourceTiming": "any",
+        "Promise": "function:PromiseConstructor",
+        "Proxy": "function:ProxyConstructor",
+        "RangeError": "function:RangeErrorConstructor",
+        "ReadableByteStreamController": "any",
+        "ReadableStream": "any",
+        "ReadableStreamBYOBReader": "any",
+        "ReadableStreamBYOBRequest": "any",
+        "ReadableStreamDefaultController": "any",
+        "ReadableStreamDefaultReader": "any",
+        "ReferenceError": "function:ReferenceErrorConstructor",
+        "Reflect": "object:namespace Reflect",
+        "RegExp": "function:RegExpConstructor",
+        "Request": "any",
+        "Response": "any",
+        "Set": "function:SetConstructor",
+        "SharedArrayBuffer": "function:SharedArrayBufferConstructor",
+        "String": "function:StringConstructor",
+        "SuppressedError": "function:SuppressedErrorConstructor",
+        "Symbol": "function:SymbolConstructor",
+        "SyntaxError": "function:SyntaxErrorConstructor",
+        "TextDecoder": "any",
+        "TextDecoderStream": "any",
+        "TextEncoder": "any",
+        "TextEncoderStream": "any",
+        "TransformStream": "any",
+        "TransformStreamDefaultController": "any",
+        "TypeError": "function:TypeErrorConstructor",
+        "URIError": "function:URIErrorConstructor",
+        "URL": "any",
+        "URLSearchParams": "any",
+        "Uint16Array": "function:Uint16ArrayConstructor",
+        "Uint32Array": "function:Uint32ArrayConstructor",
+        "Uint8Array": "function:Uint8ArrayConstructor",
+        "Uint8ClampedArray": "function:Uint8ClampedArrayConstructor",
+        "WeakMap": "function:WeakMapConstructor",
+        "WeakRef": "function:WeakRefConstructor",
+        "WeakSet": "function:WeakSetConstructor",
+        "WebSocket": "any",
+        "WritableStream": "any",
+        "WritableStreamDefaultController": "any",
+        "WritableStreamDefaultWriter": "any",
+        "__dirname": "string",
+        "__filename": "string",
+        "atob": "function>string",
+        "btoa": "function>string",
+        "clearImmediate": "function>undefined",
+        "clearInterval": "function>undefined",
+        "clearTimeout": "function>undefined",
+        "console": "object:Console",
+        "crypto": "any",
+        "decodeURI": "function>string",
+        "decodeURIComponent": "function>string",
+        "encodeURI": "function>string",
+        "encodeURIComponent": "function>string",
+        "escape": "function>string",
+        "eval": "function>any",
+        "exports": "any",
+        "fetch": "function>object:Promise",
+        "gc": "function:NodeJS.GCFunction?",
+        "global": "object:globalThis",
+        "isFinite": "function>boolean",
+        "isNaN": "function>boolean",
+        "module": "object:NodeJS.Module",
+        "parseFloat": "function>number",
+        "parseInt": "function>number",
+        "performance": "any",
+        "process": "object:NodeJS.Process",
+        "queueMicrotask": "function>undefined",
+        "require": "function:NodeJS.Require",
+        "setImmediate": "function>object:NodeJS.Immediate",
+        "setInterval": "function>object:NodeJS.Timeout",
+        "setTimeout": "function>object:NodeJS.Timeout",
+        "structuredClone": "function>any",
+        "unescape": "function>string"
+      }
+    },
+    "Headers": { "extends": ["_Headers"] },
+    "IArguments": { "members": { "callee": "object:Function", "length": "number" } },
+    "ImportAssertions": {},
+    "ImportAttributes": {},
+    "ImportCallOptions": {
+      "members": { "assert": "object:ImportAssertions", "with": "object:ImportAttributes" }
+    },
+    "ImportMeta": {
+      "members": {
+        "dirname": "string",
+        "filename": "string",
+        "resolve": "function>string",
+        "url": "string"
+      }
+    },
+    "Int16Array": {
+      "extends": ["RelativeIndexable"],
+      "members": {
+        "BYTES_PER_ELEMENT": "number",
+        "at": "function>number?",
+        "buffer": "any",
+        "byteLength": "number",
+        "byteOffset": "number",
+        "copyWithin": "function>object:Int16Array",
+        "entries": "function>object:ArrayIterator",
+        "every": "function>boolean",
+        "fill": "function>object:Int16Array",
+        "filter": "function>object:Int16Array",
+        "find": "function>number?",
+        "findIndex": "function>number",
+        "findLast": "function>any",
+        "findLastIndex": "function>number",
+        "forEach": "function>undefined",
+        "includes": "function>boolean",
+        "indexOf": "function>number",
+        "join": "function>string",
+        "keys": "function>object:ArrayIterator",
+        "lastIndexOf": "function>number",
+        "length": "number",
+        "map": "function>object:Int16Array",
+        "reduce": "function>any",
+        "reduceRight": "function>any",
+        "reverse": "function>object:Int16Array",
+        "set": "function>undefined",
+        "slice": "function>object:Int16Array",
+        "some": "function>boolean",
+        "sort": "function>object:Int16Array",
+        "subarray": "function>object:Int16Array",
+        "toLocaleString": "function>string",
+        "toReversed": "function>object:Int16Array",
+        "toSorted": "function>object:Int16Array",
+        "toString": "function>string",
+        "valueOf": "function>object:Int16Array",
+        "values": "function>object:ArrayIterator",
+        "with": "function>object:Int16Array"
+      }
+    },
+    "Int16ArrayConstructor": {
+      "members": {
+        "BYTES_PER_ELEMENT": "number",
+        "from": "function>object:Int16Array",
+        "of": "function>object:Int16Array",
+        "prototype": "object:Int16Array"
+      }
+    },
+    "Int32Array": {
+      "extends": ["RelativeIndexable"],
+      "members": {
+        "BYTES_PER_ELEMENT": "number",
+        "at": "function>number?",
+        "buffer": "any",
+        "byteLength": "number",
+        "byteOffset": "number",
+        "copyWithin": "function>object:Int32Array",
+        "entries": "function>object:ArrayIterator",
+        "every": "function>boolean",
+        "fill": "function>object:Int32Array",
+        "filter": "function>object:Int32Array",
+        "find": "function>number?",
+        "findIndex": "function>number",
+        "findLast": "function>any",
+        "findLastIndex": "function>number",
+        "forEach": "function>undefined",
+        "includes": "function>boolean",
+        "indexOf": "function>number",
+        "join": "function>string",
+        "keys": "function>object:ArrayIterator",
+        "lastIndexOf": "function>number",
+        "length": "number",
+        "map": "function>object:Int32Array",
+        "reduce": "function>any",
+        "reduceRight": "function>any",
+        "reverse": "function>object:Int32Array",
+        "set": "function>undefined",
+        "slice": "function>object:Int32Array",
+        "some": "function>boolean",
+        "sort": "function>object:Int32Array",
+        "subarray": "function>object:Int32Array",
+        "toLocaleString": "function>string",
+        "toReversed": "function>object:Int32Array",
+        "toSorted": "function>object:Int32Array",
+        "toString": "function>string",
+        "valueOf": "function>object:Int32Array",
+        "values": "function>object:ArrayIterator",
+        "with": "function>object:Int32Array"
+      }
+    },
+    "Int32ArrayConstructor": {
+      "members": {
+        "BYTES_PER_ELEMENT": "number",
+        "from": "function>object:Int32Array",
+        "of": "function>object:Int32Array",
+        "prototype": "object:Int32Array"
+      }
+    },
+    "Int8Array": {
+      "extends": ["RelativeIndexable"],
+      "members": {
+        "BYTES_PER_ELEMENT": "number",
+        "at": "function>number?",
+        "buffer": "any",
+        "byteLength": "number",
+        "byteOffset": "number",
+        "copyWithin": "function>object:Int8Array",
+        "entries": "function>object:ArrayIterator",
+        "every": "function>boolean",
+        "fill": "function>object:Int8Array",
+        "filter": "function>object:Int8Array",
+        "find": "function>number?",
+        "findIndex": "function>number",
+        "findLast": "function>any",
+        "findLastIndex": "function>number",
+        "forEach": "function>undefined",
+        "includes": "function>boolean",
+        "indexOf": "function>number",
+        "join": "function>string",
+        "keys": "function>object:ArrayIterator",
+        "lastIndexOf": "function>number",
+        "length": "number",
+        "map": "function>object:Int8Array",
+        "reduce": "function>any",
+        "reduceRight": "function>any",
+        "reverse": "function>object:Int8Array",
+        "set": "function>undefined",
+        "slice": "function>object:Int8Array",
+        "some": "function>boolean",
+        "sort": "function>object:Int8Array",
+        "subarray": "function>object:Int8Array",
+        "toLocaleString": "function>string",
+        "toReversed": "function>object:Int8Array",
+        "toSorted": "function>object:Int8Array",
+        "toString": "function>string",
+        "valueOf": "function>object:Int8Array",
+        "values": "function>object:ArrayIterator",
+        "with": "function>object:Int8Array"
+      }
+    },
+    "Int8ArrayConstructor": {
+      "members": {
+        "BYTES_PER_ELEMENT": "number",
+        "from": "function>object:Int8Array",
+        "of": "function>object:Int8Array",
+        "prototype": "object:Int8Array"
+      }
+    },
+    "Intl.Collator": {
+      "members": {
+        "compare": "function>number",
+        "resolvedOptions": "function>object:Intl.ResolvedCollatorOptions"
+      }
+    },
+    "Intl.CollatorConstructor": { "members": { "supportedLocalesOf": "function>object:Array" } },
+    "Intl.CollatorOptions": {
+      "members": {
+        "caseFirst": "string?",
+        "collation": "string?",
+        "ignorePunctuation": "boolean?",
+        "localeMatcher": "string?",
+        "numeric": "boolean?",
+        "sensitivity": "string?",
+        "usage": "string?"
+      }
+    },
+    "Intl.DateTimeFormat": {
+      "members": {
+        "format": "function>string",
+        "formatRange": "function>string",
+        "formatRangeToParts": "function>object:Array",
+        "formatToParts": "function>object:Array",
+        "resolvedOptions": "function>object:Intl.ResolvedDateTimeFormatOptions"
+      }
+    },
+    "Intl.DateTimeFormatConstructor": {
+      "members": {
+        "prototype": "object:Intl.DateTimeFormat",
+        "supportedLocalesOf": "function>object:Array"
+      }
+    },
+    "Intl.DateTimeFormatOptions": {
+      "members": {
+        "calendar": "string?",
+        "dateStyle": "string?",
+        "day": "string?",
+        "dayPeriod": "string?",
+        "era": "string?",
+        "formatMatcher": "string?",
+        "fractionalSecondDigits": "number?",
+        "hour": "string?",
+        "hour12": "boolean?",
+        "hourCycle": "string?",
+        "localeMatcher": "string?",
+        "minute": "string?",
+        "month": "string?",
+        "numberingSystem": "string?",
+        "second": "string?",
+        "timeStyle": "string?",
+        "timeZone": "string?",
+        "timeZoneName": "string?",
+        "weekday": "string?",
+        "year": "string?"
+      }
+    },
+    "Intl.DateTimeFormatPart": { "members": { "type": "any", "value": "string" } },
+    "Intl.DateTimeFormatPartTypesRegistry": {
+      "members": {
+        "day": "any",
+        "dayPeriod": "any",
+        "era": "any",
+        "fractionalSecond": "any",
+        "hour": "any",
+        "literal": "any",
+        "minute": "any",
+        "month": "any",
+        "second": "any",
+        "timeZoneName": "any",
+        "unknown": "any",
+        "weekday": "any",
+        "year": "any"
+      }
+    },
+    "Intl.DateTimeRangeFormatPart": {
+      "extends": ["Intl.DateTimeFormatPart"],
+      "members": { "source": "string" }
+    },
+    "Intl.DisplayNames": {
+      "members": {
+        "of": "function>string?",
+        "resolvedOptions": "function>object:Intl.ResolvedDisplayNamesOptions"
+      }
+    },
+    "Intl.DisplayNamesOptions": {
+      "members": {
+        "fallback": "string",
+        "languageDisplay": "string",
+        "localeMatcher": "string",
+        "style": "string",
+        "type": "string"
+      }
+    },
+    "Intl.ListFormat": {
+      "members": {
+        "format": "function>string",
+        "formatToParts": "function>object:Array",
+        "resolvedOptions": "function>object:Intl.ResolvedListFormatOptions"
+      }
+    },
+    "Intl.ListFormatOptions": {
+      "members": { "localeMatcher": "string?", "style": "string?", "type": "string?" }
+    },
+    "Intl.Locale": {
+      "extends": ["Intl.LocaleOptions"],
+      "members": {
+        "baseName": "string",
+        "language": "string",
+        "maximize": "function>object:Intl.Locale",
+        "minimize": "function>object:Intl.Locale",
+        "toString": "function>string"
+      }
+    },
+    "Intl.LocaleOptions": {
+      "members": {
+        "baseName": "string",
+        "calendar": "string",
+        "caseFirst": "string",
+        "collation": "string",
+        "hourCycle": "string",
+        "language": "string",
+        "numberingSystem": "string",
+        "numeric": "boolean",
+        "region": "string",
+        "script": "string"
+      }
+    },
+    "Intl.NumberFormat": {
+      "members": {
+        "format": "function>string",
+        "formatRange": "function>string",
+        "formatRangeToParts": "function>object:Array",
+        "formatToParts": "function>object:Array",
+        "resolvedOptions": "function>object:Intl.ResolvedNumberFormatOptions"
+      }
+    },
+    "Intl.NumberFormatConstructor": {
+      "members": {
+        "prototype": "object:Intl.NumberFormat",
+        "supportedLocalesOf": "function>object:Array"
+      }
+    },
+    "Intl.NumberFormatOptions": {
+      "members": {
+        "compactDisplay": "string?",
+        "currency": "string?",
+        "currencyDisplay": "any?",
+        "currencySign": "string?",
+        "localeMatcher": "string?",
+        "maximumFractionDigits": "number?",
+        "maximumSignificantDigits": "number?",
+        "minimumFractionDigits": "number?",
+        "minimumIntegerDigits": "number?",
+        "minimumSignificantDigits": "number?",
+        "notation": "string?",
+        "numberingSystem": "string?",
+        "roundingIncrement": "number?",
+        "roundingMode": "string?",
+        "roundingPriority": "string?",
+        "signDisplay": "any?",
+        "style": "any?",
+        "trailingZeroDisplay": "string?",
+        "unit": "string?",
+        "unitDisplay": "string?",
+        "useGrouping": "any?"
+      }
+    },
+    "Intl.NumberFormatOptionsCurrencyDisplayRegistry": {
+      "members": { "code": "any", "name": "any", "narrowSymbol": "any", "symbol": "any" }
+    },
+    "Intl.NumberFormatOptionsSignDisplayRegistry": {
+      "members": {
+        "always": "any",
+        "auto": "any",
+        "exceptZero": "any",
+        "negative": "any",
+        "never": "any"
+      }
+    },
+    "Intl.NumberFormatOptionsStyleRegistry": {
+      "members": { "currency": "any", "decimal": "any", "percent": "any", "unit": "any" }
+    },
+    "Intl.NumberFormatOptionsUseGroupingRegistry": {
+      "members": { "always": "any", "auto": "any", "min2": "any" }
+    },
+    "Intl.NumberFormatPart": { "members": { "type": "any", "value": "string" } },
+    "Intl.NumberFormatPartTypeRegistry": {
+      "members": {
+        "compact": "any",
+        "currency": "any",
+        "decimal": "any",
+        "exponentInteger": "any",
+        "exponentMinusSign": "any",
+        "exponentSeparator": "any",
+        "fraction": "any",
+        "group": "any",
+        "infinity": "any",
+        "integer": "any",
+        "literal": "any",
+        "minusSign": "any",
+        "nan": "any",
+        "percent": "any",
+        "percentSign": "any",
+        "plusSign": "any",
+        "unit": "any",
+        "unknown": "any"
+      }
+    },
+    "Intl.NumberRangeFormatPart": {
+      "extends": ["Intl.NumberFormatPart"],
+      "members": { "source": "string" }
+    },
+    "Intl.PluralRules": {
+      "members": {
+        "resolvedOptions": "function>object:Intl.ResolvedPluralRulesOptions",
+        "select": "function>string"
+      }
+    },
+    "Intl.PluralRulesConstructor": { "members": { "supportedLocalesOf": "function>object:Array" } },
+    "Intl.PluralRulesOptions": {
+      "members": {
+        "localeMatcher": "string?",
+        "maximumFractionDigits": "number?",
+        "maximumSignificantDigits": "number?",
+        "minimumFractionDigits": "number?",
+        "minimumIntegerDigits": "number?",
+        "minimumSignificantDigits": "number?",
+        "type": "string?"
+      }
+    },
+    "Intl.RelativeTimeFormat": {
+      "members": {
+        "format": "function>string",
+        "formatToParts": "function>object:Array",
+        "resolvedOptions": "function>object:Intl.ResolvedRelativeTimeFormatOptions"
+      }
+    },
+    "Intl.RelativeTimeFormatOptions": {
+      "members": { "localeMatcher": "string", "numeric": "string", "style": "string" }
+    },
+    "Intl.ResolvedCollatorOptions": {
+      "members": {
+        "caseFirst": "string",
+        "collation": "string",
+        "ignorePunctuation": "boolean",
+        "locale": "string",
+        "numeric": "boolean",
+        "sensitivity": "string",
+        "usage": "string"
+      }
+    },
+    "Intl.ResolvedDateTimeFormatOptions": {
+      "members": {
+        "calendar": "string",
+        "dateStyle": "string",
+        "day": "string",
+        "dayPeriod": "string",
+        "era": "string",
+        "formatMatcher": "string",
+        "fractionalSecondDigits": "number",
+        "hour": "string",
+        "hour12": "boolean",
+        "hourCycle": "string",
+        "locale": "string",
+        "minute": "string",
+        "month": "string",
+        "numberingSystem": "string",
+        "second": "string",
+        "timeStyle": "string",
+        "timeZone": "string",
+        "timeZoneName": "string",
+        "weekday": "string",
+        "year": "string"
+      }
+    },
+    "Intl.ResolvedDisplayNamesOptions": {
+      "members": {
+        "fallback": "string",
+        "languageDisplay": "string",
+        "locale": "string",
+        "style": "string",
+        "type": "string"
+      }
+    },
+    "Intl.ResolvedListFormatOptions": {
+      "members": { "locale": "string", "style": "string", "type": "string" }
+    },
+    "Intl.ResolvedNumberFormatOptions": {
+      "members": {
+        "compactDisplay": "string",
+        "currency": "string",
+        "currencyDisplay": "any",
+        "currencySign": "string",
+        "locale": "string",
+        "maximumFractionDigits": "number",
+        "maximumSignificantDigits": "number",
+        "minimumFractionDigits": "number",
+        "minimumIntegerDigits": "number",
+        "minimumSignificantDigits": "number",
+        "notation": "string",
+        "numberingSystem": "string",
+        "roundingIncrement": "number",
+        "roundingMode": "string",
+        "roundingPriority": "string",
+        "signDisplay": "any",
+        "style": "any",
+        "trailingZeroDisplay": "string",
+        "unit": "string",
+        "unitDisplay": "string",
+        "useGrouping": "any"
+      }
+    },
+    "Intl.ResolvedPluralRulesOptions": {
+      "members": {
+        "locale": "string",
+        "maximumFractionDigits": "number",
+        "maximumSignificantDigits": "number",
+        "minimumFractionDigits": "number",
+        "minimumIntegerDigits": "number",
+        "minimumSignificantDigits": "number",
+        "pluralCategories": "object:Array",
+        "type": "string"
+      }
+    },
+    "Intl.ResolvedRelativeTimeFormatOptions": {
+      "members": {
+        "locale": "string",
+        "numberingSystem": "string",
+        "numeric": "string",
+        "style": "string"
+      }
+    },
+    "Intl.ResolvedSegmenterOptions": { "members": { "granularity": "string", "locale": "string" } },
+    "Intl.SegmentData": {
+      "members": {
+        "index": "number",
+        "input": "string",
+        "isWordLike": "boolean",
+        "segment": "string"
+      }
+    },
+    "Intl.Segmenter": {
+      "members": {
+        "resolvedOptions": "function>object:Intl.ResolvedSegmenterOptions",
+        "segment": "function>object:Intl.Segments"
+      }
+    },
+    "Intl.SegmenterOptions": {
+      "members": { "granularity": "string?", "localeMatcher": "string?" }
+    },
+    "Intl.SegmentIterator": { "extends": ["IteratorObject"] },
+    "Intl.Segments": { "members": { "containing": "function>object:Intl.SegmentData?" } },
+    "Iterable": {},
+    "IterableIterator": { "extends": ["Iterator"] },
+    "Iterator": {
+      "extends": ["globalThis.IteratorObject"],
+      "members": {
+        "next": "function>object",
+        "return": "function>object",
+        "throw": "function>object"
+      }
+    },
+    "IteratorConstructor": {
+      "extends": ["IteratorObjectConstructor"],
+      "members": { "from": "function>object:IteratorObject" }
+    },
+    "IteratorObject": {
+      "extends": ["Iterator", "Disposable"],
+      "members": {
+        "drop": "function>object:IteratorObject",
+        "every": "function>boolean",
+        "filter": "function>object:IteratorObject",
+        "find": "function>any?",
+        "flatMap": "function>object:IteratorObject",
+        "forEach": "function>undefined",
+        "map": "function>object:IteratorObject",
+        "reduce": "function>any",
+        "some": "function>boolean",
+        "take": "function>object:IteratorObject",
+        "toArray": "function>object:Array"
+      }
+    },
+    "IteratorReturnResult": { "members": { "done": "boolean", "value": "any" } },
+    "IteratorYieldResult": { "members": { "done": "boolean", "value": "any" } },
+    "JSON": { "members": { "parse": "function>any", "stringify": "function>string" } },
+    "Map": {
+      "members": {
+        "clear": "function>undefined",
+        "delete": "function>boolean",
+        "entries": "function>object:MapIterator",
+        "forEach": "function>undefined",
+        "get": "function>any?",
+        "has": "function>boolean",
+        "keys": "function>object:MapIterator",
+        "set": "function>object:Map",
+        "size": "number",
+        "values": "function>object:MapIterator"
+      }
+    },
+    "MapConstructor": {
+      "members": { "groupBy": "function>object:Map", "prototype": "object:Map" }
+    },
+    "MapIterator": { "extends": ["IteratorObject"] },
+    "Math": {
+      "members": {
+        "E": "number",
+        "LN10": "number",
+        "LN2": "number",
+        "LOG10E": "number",
+        "LOG2E": "number",
+        "PI": "number",
+        "SQRT1_2": "number",
+        "SQRT2": "number",
+        "abs": "function>number",
+        "acos": "function>number",
+        "acosh": "function>number",
+        "asin": "function>number",
+        "asinh": "function>number",
+        "atan": "function>number",
+        "atan2": "function>number",
+        "atanh": "function>number",
+        "cbrt": "function>number",
+        "ceil": "function>number",
+        "clz32": "function>number",
+        "cos": "function>number",
+        "cosh": "function>number",
+        "exp": "function>number",
+        "expm1": "function>number",
+        "f16round": "function>number",
+        "floor": "function>number",
+        "fround": "function>number",
+        "hypot": "function>number",
+        "imul": "function>number",
+        "log": "function>number",
+        "log10": "function>number",
+        "log1p": "function>number",
+        "log2": "function>number",
+        "max": "function>number",
+        "min": "function>number",
+        "pow": "function>number",
+        "random": "function>number",
+        "round": "function>number",
+        "sign": "function>number",
+        "sin": "function>number",
+        "sinh": "function>number",
+        "sqrt": "function>number",
+        "tan": "function>number",
+        "tanh": "function>number",
+        "trunc": "function>number"
+      }
+    },
+    "MessageEvent": { "extends": ["_MessageEvent"] },
+    "MessageEventInit": { "extends": ["_MessageEventInit"] },
+    "namespace console": {},
+    "namespace Intl": {
+      "members": {
+        "Collator": "function:Intl.CollatorConstructor",
+        "DateTimeFormat": "function:Intl.DateTimeFormatConstructor",
+        "DisplayNames": "function",
+        "ListFormat": "function",
+        "Locale": "function",
+        "NumberFormat": "function:Intl.NumberFormatConstructor",
+        "PluralRules": "function:Intl.PluralRulesConstructor",
+        "RelativeTimeFormat": "function",
+        "Segmenter": "function",
+        "getCanonicalLocales": "function>object:Array",
+        "supportedValuesOf": "function>object:Array"
+      }
+    },
+    "namespace NodeJS": {},
+    "namespace Reflect": {
+      "members": {
+        "apply": "function>any",
+        "construct": "function>any",
+        "defineProperty": "function>boolean",
+        "deleteProperty": "function>boolean",
+        "get": "function>any",
+        "getOwnPropertyDescriptor": "function>object:TypedPropertyDescriptor?",
+        "getPrototypeOf": "function>object?",
+        "has": "function>boolean",
+        "isExtensible": "function>boolean",
+        "ownKeys": "function>object:Array",
+        "preventExtensions": "function>boolean",
+        "set": "function>boolean",
+        "setPrototypeOf": "function>boolean"
+      }
+    },
+    "namespace setImmediate": {},
+    "namespace setTimeout": {},
+    "NewableFunction": {
+      "extends": ["Function"],
+      "members": {
+        "apply": "function>undefined",
+        "bind": "function>any",
+        "call": "function>undefined"
+      }
+    },
+    "NodeJS.AsyncIterator": { "extends": ["globalThis.AsyncIterator", "AsyncIteratorObject"] },
+    "NodeJS.CallSite": {
+      "members": {
+        "getColumnNumber": "function>number?",
+        "getEnclosingColumnNumber": "function>number?",
+        "getEnclosingLineNumber": "function>number?",
+        "getEvalOrigin": "function>string?",
+        "getFileName": "function>string?",
+        "getFunction": "function>object:Function?",
+        "getFunctionName": "function>string?",
+        "getLineNumber": "function>number?",
+        "getMethodName": "function>string?",
+        "getPosition": "function>number",
+        "getPromiseIndex": "function>number?",
+        "getScriptHash": "function>string",
+        "getScriptNameOrSourceURL": "function>string?",
+        "getThis": "function>any",
+        "getTypeName": "function>string?",
+        "isAsync": "function>boolean",
+        "isConstructor": "function>boolean",
+        "isEval": "function>boolean",
+        "isNative": "function>boolean",
+        "isPromiseAll": "function>boolean",
+        "isToplevel": "function>boolean"
+      }
+    },
+    "NodeJS.CpuUsage": { "members": { "system": "number", "user": "number" } },
+    "NodeJS.Dict": {},
+    "NodeJS.EmitWarningOptions": {
+      "members": {
+        "code": "string?",
+        "ctor": "object:Function?",
+        "detail": "string?",
+        "type": "string?"
+      }
+    },
+    "NodeJS.ErrnoException": {
+      "extends": ["Error"],
+      "members": { "code": "string?", "errno": "number?", "path": "string?", "syscall": "string?" }
+    },
+    "NodeJS.EventEmitter": {
+      "members": {
+        "addListener": "function>object:NodeJS.EventEmitter",
+        "emit": "function>boolean",
+        "eventNames": "function>object:Array",
+        "getMaxListeners": "function>number",
+        "listenerCount": "function>number",
+        "listeners": "function>object:Array",
+        "off": "function>object:NodeJS.EventEmitter",
+        "on": "function>object:NodeJS.EventEmitter",
+        "once": "function>object:NodeJS.EventEmitter",
+        "prependListener": "function>object:NodeJS.EventEmitter",
+        "prependOnceListener": "function>object:NodeJS.EventEmitter",
+        "rawListeners": "function>object:Array",
+        "removeAllListeners": "function>object:NodeJS.EventEmitter",
+        "removeListener": "function>object:NodeJS.EventEmitter",
+        "setMaxListeners": "function>object:NodeJS.EventEmitter"
+      }
+    },
+    "NodeJS.GCFunction": {},
+    "NodeJS.GCOptions": {
+      "members": {
+        "execution": "string?",
+        "filename": "string?",
+        "flavor": "string?",
+        "type": "string?"
+      }
+    },
+    "NodeJS.HRTime": { "members": { "bigint": "function>bigint" } },
+    "NodeJS.Immediate": {
+      "extends": ["NodeJS.RefCounted", "Disposable"],
+      "members": {
+        "_onImmediate": "function>undefined",
+        "hasRef": "function>boolean",
+        "ref": "function>object:NodeJS.Immediate",
+        "unref": "function>object:NodeJS.Immediate"
+      }
+    },
+    "NodeJS.Iterator": { "extends": ["globalThis.Iterator", "IteratorObject"] },
+    "NodeJS.MemoryUsage": {
+      "members": {
+        "arrayBuffers": "number",
+        "external": "number",
+        "heapTotal": "number",
+        "heapUsed": "number",
+        "rss": "number"
+      }
+    },
+    "NodeJS.MemoryUsageFn": { "members": { "rss": "function>number" } },
+    "NodeJS.Module": {
+      "members": {
+        "children": "object:Array",
+        "exports": "any",
+        "filename": "string",
+        "id": "string",
+        "isPreloading": "boolean",
+        "loaded": "boolean",
+        "parent": "object:NodeJS.Module?",
+        "path": "string",
+        "paths": "object:Array",
+        "require": "function>any"
+      }
+    },
+    "NodeJS.Process": {
+      "extends": ["NodeJS.EventEmitter"],
+      "members": {
+        "abort": "function>any",
+        "addListener": "function>object:NodeJS.Process",
+        "allowedNodeEnvironmentFlags": "object:ReadonlySet",
+        "arch": "string",
+        "argv": "object:Array",
+        "argv0": "string",
+        "availableMemory": "function>number",
+        "channel": "any",
+        "chdir": "function>undefined",
+        "config": "object:NodeJS.ProcessConfig",
+        "connected": "boolean",
+        "constrainedMemory": "function>number",
+        "cpuUsage": "function>object:NodeJS.CpuUsage",
+        "cwd": "function>string",
+        "debugPort": "number",
+        "disconnect": "function>undefined",
+        "dlopen": "function>undefined",
+        "emit": "function>any",
+        "emitWarning": "function>undefined",
+        "env": "object:NodeJS.ProcessEnv",
+        "execArgv": "object:Array",
+        "execPath": "string",
+        "exit": "function>any",
+        "exitCode": "any?",
+        "features": "object:NodeJS.ProcessFeatures",
+        "getActiveResourcesInfo": "function>object:Array",
+        "getBuiltinModule": "function>any",
+        "getegid": "function",
+        "geteuid": "function",
+        "getgid": "function",
+        "getgroups": "function",
+        "getuid": "function",
+        "hasUncaughtExceptionCaptureCallback": "function>boolean",
+        "hrtime": "function:NodeJS.HRTime",
+        "kill": "function>boolean",
+        "listeners": "function>object:Array",
+        "loadEnvFile": "function>undefined",
+        "mainModule": "object:NodeJS.Module",
+        "memoryUsage": "function:NodeJS.MemoryUsageFn",
+        "nextTick": "function>undefined",
+        "noDeprecation": "boolean",
+        "on": "function>object:NodeJS.Process",
+        "once": "function>object:NodeJS.Process",
+        "permission": "object:NodeJS.ProcessPermission",
+        "pid": "number",
+        "platform": "string",
+        "ppid": "number",
+        "prependListener": "function>object:NodeJS.Process",
+        "prependOnceListener": "function>object:NodeJS.Process",
+        "release": "object:NodeJS.ProcessRelease",
+        "report": "object:NodeJS.ProcessReport",
+        "resourceUsage": "function>object:NodeJS.ResourceUsage",
+        "send": "function>boolean",
+        "setSourceMapsEnabled": "function>undefined",
+        "setUncaughtExceptionCaptureCallback": "function>undefined",
+        "setegid": "function",
+        "seteuid": "function",
+        "setgid": "function",
+        "setgroups": "function",
+        "setuid": "function",
+        "sourceMapsEnabled": "boolean",
+        "stderr": "object:NodeJS.WriteStream",
+        "stdin": "object:NodeJS.ReadStream",
+        "stdout": "object:NodeJS.WriteStream",
+        "throwDeprecation": "boolean",
+        "title": "string",
+        "traceDeprecation": "boolean",
+        "umask": "function>number",
+        "uptime": "function>number",
+        "version": "string",
+        "versions": "object:NodeJS.ProcessVersions"
+      }
+    },
+    "NodeJS.ProcessConfig": { "members": { "target_defaults": "object", "variables": "object" } },
+    "NodeJS.ProcessEnv": { "extends": ["NodeJS.Dict"] },
+    "NodeJS.ProcessFeatures": {
+      "members": {
+        "cached_builtins": "boolean",
+        "debug": "boolean",
+        "inspector": "boolean",
+        "ipv6": "boolean",
+        "require_module": "boolean",
+        "tls": "boolean",
+        "tls_alpn": "boolean",
+        "tls_ocsp": "boolean",
+        "tls_sni": "boolean",
+        "uv": "boolean"
+      }
+    },
+    "NodeJS.ProcessPermission": { "members": { "has": "function>boolean" } },
+    "NodeJS.ProcessRelease": {
+      "members": {
+        "headersUrl": "string?",
+        "libUrl": "string?",
+        "lts": "string?",
+        "name": "string",
+        "sourceUrl": "string?"
+      }
+    },
+    "NodeJS.ProcessReport": {
+      "members": {
+        "compact": "boolean",
+        "directory": "string",
+        "filename": "string",
+        "getReport": "function>object",
+        "reportOnFatalError": "boolean",
+        "reportOnSignal": "boolean",
+        "reportOnUncaughtException": "boolean",
+        "signal": "string",
+        "writeReport": "function>string"
+      }
+    },
+    "NodeJS.ProcessVersions": {
+      "extends": ["NodeJS.Dict"],
+      "members": {
+        "ares": "string",
+        "http_parser": "string",
+        "modules": "string",
+        "node": "string",
+        "openssl": "string",
+        "uv": "string",
+        "v8": "string",
+        "zlib": "string"
+      }
+    },
+    "NodeJS.ReadableStream": {
+      "extends": ["EventEmitter"],
+      "members": {
+        "isPaused": "function>boolean",
+        "pause": "function>object:NodeJS.ReadableStream",
+        "pipe": "function>any",
+        "read": "function>any",
+        "readable": "boolean",
+        "resume": "function>object:NodeJS.ReadableStream",
+        "setEncoding": "function>object:NodeJS.ReadableStream",
+        "unpipe": "function>object:NodeJS.ReadableStream",
+        "unshift": "function>undefined",
+        "wrap": "function>object:NodeJS.ReadableStream"
+      }
+    },
+    "NodeJS.ReadOnlyDict": {},
+    "NodeJS.ReadStream": { "extends": ["tty.ReadStream"] },
+    "NodeJS.ReadWriteStream": { "extends": ["NodeJS.ReadableStream", "NodeJS.WritableStream"] },
+    "NodeJS.RefCounted": {
+      "members": {
+        "ref": "function>object:NodeJS.RefCounted",
+        "unref": "function>object:NodeJS.RefCounted"
+      }
+    },
+    "NodeJS.Require": {
+      "members": {
+        "cache": "object:NodeJS.Dict",
+        "extensions": "object:NodeJS.RequireExtensions",
+        "main": "object:NodeJS.Module?",
+        "resolve": "function:NodeJS.RequireResolve"
+      }
+    },
+    "NodeJS.RequireExtensions": {
+      "extends": ["NodeJS.Dict"],
+      "members": { ".js": "function", ".json": "function", ".node": "function" }
+    },
+    "NodeJS.RequireResolve": { "members": { "paths": "function>object:Array?" } },
+    "NodeJS.RequireResolveOptions": { "members": { "paths": "object:Array?" } },
+    "NodeJS.ResourceUsage": {
+      "members": {
+        "fsRead": "number",
+        "fsWrite": "number",
+        "involuntaryContextSwitches": "number",
+        "ipcReceived": "number",
+        "ipcSent": "number",
+        "majorPageFault": "number",
+        "maxRSS": "number",
+        "minorPageFault": "number",
+        "sharedMemorySize": "number",
+        "signalsCount": "number",
+        "swappedOut": "number",
+        "systemCPUTime": "number",
+        "unsharedDataSize": "number",
+        "unsharedStackSize": "number",
+        "userCPUTime": "number",
+        "voluntaryContextSwitches": "number"
+      }
+    },
+    "NodeJS.Socket": { "extends": ["NodeJS.ReadWriteStream"], "members": { "isTTY": "boolean?" } },
+    "NodeJS.Timeout": {
+      "extends": ["NodeJS.RefCounted", "Disposable", "NodeJS.Timer"],
+      "members": {
+        "_onTimeout": "function>undefined",
+        "close": "function>object:NodeJS.Timeout",
+        "hasRef": "function>boolean",
+        "ref": "function>object:NodeJS.Timeout",
+        "refresh": "function>object:NodeJS.Timeout",
+        "unref": "function>object:NodeJS.Timeout"
+      }
+    },
+    "NodeJS.Timer": {
+      "extends": ["NodeJS.RefCounted"],
+      "members": { "hasRef": "function>boolean", "refresh": "function>object:NodeJS.Timer" }
+    },
+    "NodeJS.WritableStream": {
+      "extends": ["EventEmitter"],
+      "members": {
+        "end": "function>object:NodeJS.WritableStream",
+        "writable": "boolean",
+        "write": "function>boolean"
+      }
+    },
+    "NodeJS.WriteStream": { "extends": ["tty.WriteStream"] },
+    "NodeModule": { "extends": ["NodeJS.Module"] },
+    "NodeRequire": { "extends": ["NodeJS.Require"] },
+    "Number": {
+      "members": {
+        "toExponential": "function>string",
+        "toFixed": "function>string",
+        "toLocaleString": "function>string",
+        "toPrecision": "function>string",
+        "toString": "function>string",
+        "valueOf": "function>number"
+      }
+    },
+    "NumberConstructor": {
+      "members": {
+        "EPSILON": "number",
+        "MAX_SAFE_INTEGER": "number",
+        "MAX_VALUE": "number",
+        "MIN_SAFE_INTEGER": "number",
+        "MIN_VALUE": "number",
+        "NEGATIVE_INFINITY": "number",
+        "NaN": "number",
+        "POSITIVE_INFINITY": "number",
+        "isFinite": "function>boolean",
+        "isInteger": "function>boolean",
+        "isNaN": "function>boolean",
+        "isSafeInteger": "function>boolean",
+        "parseFloat": "function>number",
+        "parseInt": "function>number",
+        "prototype": "object:Number"
+      }
+    },
+    "Object": {
+      "members": {
+        "constructor": "object:Function",
+        "hasOwnProperty": "function>boolean",
+        "isPrototypeOf": "function>boolean",
+        "propertyIsEnumerable": "function>boolean",
+        "toLocaleString": "function>string",
+        "toString": "function>string",
+        "valueOf": "function>object:Object"
+      }
+    },
+    "ObjectConstructor": {
+      "members": {
+        "assign": "function>any",
+        "create": "function>any",
+        "defineProperties": "function>any",
+        "defineProperty": "function>any",
+        "entries": "function>object:Array",
+        "freeze": "function>any",
+        "fromEntries": "function>any",
+        "getOwnPropertyDescriptor": "function>object:PropertyDescriptor?",
+        "getOwnPropertyDescriptors": "function>object",
+        "getOwnPropertyNames": "function>object:Array",
+        "getOwnPropertySymbols": "function>object:Array",
+        "getPrototypeOf": "function>any",
+        "groupBy": "function>any",
+        "hasOwn": "function>boolean",
+        "is": "function>boolean",
+        "isExtensible": "function>boolean",
+        "isFrozen": "function>boolean",
+        "isSealed": "function>boolean",
+        "keys": "function>object:Array",
+        "preventExtensions": "function>any",
+        "prototype": "object:Object",
+        "seal": "function>any",
+        "setPrototypeOf": "function>any",
+        "values": "function>object:Array"
+      }
+    },
+    "Promise": {
+      "members": {
+        "catch": "function>object:Promise",
+        "finally": "function>object:Promise",
+        "then": "function>object:Promise"
+      }
+    },
+    "PromiseConstructor": {
+      "members": {
+        "all": "function>object:Promise",
+        "allSettled": "function>object:Promise",
+        "any": "function>object:Promise",
+        "prototype": "object:Promise",
+        "race": "function>object:Promise",
+        "reject": "function>object:Promise",
+        "resolve": "function>object:Promise",
+        "try": "function>object:Promise",
+        "withResolvers": "function>object:PromiseWithResolvers"
+      }
+    },
+    "PromiseFulfilledResult": { "members": { "status": "string", "value": "any" } },
+    "PromiseLike": { "members": { "then": "function>object:PromiseLike" } },
+    "PromiseRejectedResult": { "members": { "reason": "any", "status": "string" } },
+    "PromiseWithResolvers": {
+      "members": { "promise": "object:Promise", "reject": "function", "resolve": "function" }
+    },
+    "PropertyDescriptor": {
+      "members": {
+        "configurable": "boolean",
+        "enumerable": "boolean",
+        "get": "function>any",
+        "set": "function>undefined",
+        "value": "any",
+        "writable": "boolean"
+      }
+    },
+    "PropertyDescriptorMap": {},
+    "ProxyConstructor": { "members": { "revocable": "function>object" } },
+    "ProxyHandler": {
+      "members": {
+        "apply": "function>any",
+        "construct": "function>object",
+        "defineProperty": "function>boolean",
+        "deleteProperty": "function>boolean",
+        "get": "function>any",
+        "getOwnPropertyDescriptor": "function>object:PropertyDescriptor?",
+        "getPrototypeOf": "function>object?",
+        "has": "function>boolean",
+        "isExtensible": "function>boolean",
+        "ownKeys": "function>object:ArrayLike",
+        "preventExtensions": "function>boolean",
+        "set": "function>boolean",
+        "setPrototypeOf": "function>boolean"
+      }
+    },
+    "QueuingStrategy": { "extends": ["_QueuingStrategy"] },
+    "RangeError": { "extends": ["Error"] },
+    "RangeErrorConstructor": {
+      "extends": ["ErrorConstructor"],
+      "members": { "prototype": "object:RangeError" }
+    },
+    "ReadableByteStreamController": { "extends": ["_ReadableByteStreamController"] },
+    "ReadableStream": { "extends": ["_ReadableStream"] },
+    "ReadableStreamBYOBReader": { "extends": ["_ReadableStreamBYOBReader"] },
+    "ReadableStreamBYOBRequest": { "extends": ["_ReadableStreamBYOBRequest"] },
+    "ReadableStreamDefaultController": { "extends": ["_ReadableStreamDefaultController"] },
+    "ReadableStreamDefaultReader": { "extends": ["_ReadableStreamDefaultReader"] },
+    "ReadonlyArray": {
+      "extends": ["RelativeIndexable"],
+      "members": {
+        "at": "function>any?",
+        "concat": "function>object:Array",
+        "entries": "function>object:ArrayIterator",
+        "every": "function>boolean",
+        "filter": "function>object:Array",
+        "find": "function>any?",
+        "findIndex": "function>number",
+        "findLast": "function>any?",
+        "findLastIndex": "function>number",
+        "flat": "function>object:Array",
+        "flatMap": "function>object:Array",
+        "forEach": "function>undefined",
+        "includes": "function>boolean",
+        "indexOf": "function>number",
+        "join": "function>string",
+        "keys": "function>object:ArrayIterator",
+        "lastIndexOf": "function>number",
+        "length": "number",
+        "map": "function>object:Array",
+        "reduce": "function>any",
+        "reduceRight": "function>any",
+        "slice": "function>object:Array",
+        "some": "function>boolean",
+        "toLocaleString": "function>string",
+        "toReversed": "function>object:Array",
+        "toSorted": "function>object:Array",
+        "toSpliced": "function>object:Array",
+        "toString": "function>string",
+        "values": "function>object:ArrayIterator",
+        "with": "function>object:Array"
+      }
+    },
+    "ReadonlyMap": {
+      "members": {
+        "entries": "function>object:MapIterator",
+        "forEach": "function>undefined",
+        "get": "function>any?",
+        "has": "function>boolean",
+        "keys": "function>object:MapIterator",
+        "size": "number",
+        "values": "function>object:MapIterator"
+      }
+    },
+    "ReadonlySet": {
+      "members": {
+        "difference": "function>object:Set",
+        "entries": "function>object:SetIterator",
+        "forEach": "function>undefined",
+        "has": "function>boolean",
+        "intersection": "function>object:Set",
+        "isDisjointFrom": "function>boolean",
+        "isSubsetOf": "function>boolean",
+        "isSupersetOf": "function>boolean",
+        "keys": "function>object:SetIterator",
+        "size": "number",
+        "symmetricDifference": "function>object:Set",
+        "union": "function>object:Set",
+        "values": "function>object:SetIterator"
+      }
+    },
+    "ReadonlySetLike": {
+      "members": { "has": "function>boolean", "keys": "function>object:Iterator", "size": "number" }
+    },
+    "ReferenceError": { "extends": ["Error"] },
+    "ReferenceErrorConstructor": {
+      "extends": ["ErrorConstructor"],
+      "members": { "prototype": "object:ReferenceError" }
+    },
+    "RegExp": {
+      "members": {
+        "compile": "function>object:RegExp",
+        "dotAll": "boolean",
+        "exec": "function>object:RegExpExecArray?",
+        "flags": "string",
+        "global": "boolean",
+        "hasIndices": "boolean",
+        "ignoreCase": "boolean",
+        "lastIndex": "number",
+        "multiline": "boolean",
+        "source": "string",
+        "sticky": "boolean",
+        "test": "function>boolean",
+        "unicode": "boolean",
+        "unicodeSets": "boolean"
+      }
+    },
+    "RegExpConstructor": {
+      "members": {
+        "$&": "string",
+        "$'": "string",
+        "$+": "string",
+        "$1": "string",
+        "$2": "string",
+        "$3": "string",
+        "$4": "string",
+        "$5": "string",
+        "$6": "string",
+        "$7": "string",
+        "$8": "string",
+        "$9": "string",
+        "$_": "string",
+        "$`": "string",
+        "input": "string",
+        "lastMatch": "string",
+        "lastParen": "string",
+        "leftContext": "string",
+        "prototype": "object:RegExp",
+        "rightContext": "string"
+      }
+    },
+    "RegExpExecArray": {
+      "extends": ["Array"],
+      "members": {
+        "groups": "object",
+        "index": "number",
+        "indices": "object:RegExpIndicesArray",
+        "input": "string"
+      }
+    },
+    "RegExpIndicesArray": { "extends": ["Array"], "members": { "groups": "object" } },
+    "RegExpMatchArray": {
+      "extends": ["Array"],
+      "members": {
+        "groups": "object",
+        "index": "number",
+        "indices": "object:RegExpIndicesArray",
+        "input": "string"
+      }
+    },
+    "RegExpStringIterator": { "extends": ["IteratorObject"] },
+    "RelativeIndexable": { "members": { "at": "function>any?" } },
+    "Request": { "extends": ["_Request"] },
+    "RequestInit": { "extends": ["_RequestInit"] },
+    "RequireResolve": { "extends": ["NodeJS.RequireResolve"] },
+    "Response": { "extends": ["_Response"] },
+    "ResponseInit": { "extends": ["_ResponseInit"] },
+    "Set": {
+      "members": {
+        "add": "function>object:Set",
+        "clear": "function>undefined",
+        "delete": "function>boolean",
+        "difference": "function>object:Set",
+        "entries": "function>object:SetIterator",
+        "forEach": "function>undefined",
+        "has": "function>boolean",
+        "intersection": "function>object:Set",
+        "isDisjointFrom": "function>boolean",
+        "isSubsetOf": "function>boolean",
+        "isSupersetOf": "function>boolean",
+        "keys": "function>object:SetIterator",
+        "size": "number",
+        "symmetricDifference": "function>object:Set",
+        "union": "function>object:Set",
+        "values": "function>object:SetIterator"
+      }
+    },
+    "SetConstructor": { "members": { "prototype": "object:Set" } },
+    "SetIterator": { "extends": ["IteratorObject"] },
+    "SharedArrayBuffer": {
+      "members": {
+        "byteLength": "number",
+        "grow": "function>undefined",
+        "growable": "boolean",
+        "maxByteLength": "number",
+        "slice": "function>object:SharedArrayBuffer"
+      }
+    },
+    "SharedArrayBufferConstructor": { "members": { "prototype": "object:SharedArrayBuffer" } },
+    "String": {
+      "extends": ["RelativeIndexable"],
+      "members": {
+        "anchor": "function>string",
+        "at": "function>string?",
+        "big": "function>string",
+        "blink": "function>string",
+        "bold": "function>string",
+        "charAt": "function>string",
+        "charCodeAt": "function>number",
+        "codePointAt": "function>number?",
+        "concat": "function>string",
+        "endsWith": "function>boolean",
+        "fixed": "function>string",
+        "fontcolor": "function>string",
+        "fontsize": "function>string",
+        "includes": "function>boolean",
+        "indexOf": "function>number",
+        "isWellFormed": "function>boolean",
+        "italics": "function>string",
+        "lastIndexOf": "function>number",
+        "length": "number",
+        "link": "function>string",
+        "localeCompare": "function>number",
+        "match": "function>object:RegExpMatchArray?",
+        "matchAll": "function>object:RegExpStringIterator",
+        "normalize": "function>string",
+        "padEnd": "function>string",
+        "padStart": "function>string",
+        "repeat": "function>string",
+        "replace": "function>string",
+        "replaceAll": "function>string",
+        "search": "function>number",
+        "slice": "function>string",
+        "small": "function>string",
+        "split": "function>object:Array",
+        "startsWith": "function>boolean",
+        "strike": "function>string",
+        "sub": "function>string",
+        "substr": "function>string",
+        "substring": "function>string",
+        "sup": "function>string",
+        "toLocaleLowerCase": "function>string",
+        "toLocaleUpperCase": "function>string",
+        "toLowerCase": "function>string",
+        "toString": "function>string",
+        "toUpperCase": "function>string",
+        "toWellFormed": "function>string",
+        "trim": "function>string",
+        "trimEnd": "function>string",
+        "trimLeft": "function>string",
+        "trimRight": "function>string",
+        "trimStart": "function>string",
+        "valueOf": "function>string"
+      }
+    },
+    "StringConstructor": {
+      "members": {
+        "fromCharCode": "function>string",
+        "fromCodePoint": "function>string",
+        "prototype": "object:String",
+        "raw": "function>string"
+      }
+    },
+    "StringIterator": { "extends": ["IteratorObject"] },
+    "SuppressedError": { "extends": ["Error"], "members": { "error": "any", "suppressed": "any" } },
+    "SuppressedErrorConstructor": { "members": { "prototype": "object:SuppressedError" } },
+    "Symbol": {
+      "members": {
+        "description": "string?",
+        "toString": "function>string",
+        "valueOf": "function>symbol"
+      }
+    },
+    "SymbolConstructor": {
+      "members": {
+        "asyncDispose": "symbol",
+        "asyncIterator": "symbol",
+        "dispose": "symbol",
+        "for": "function>symbol",
+        "hasInstance": "symbol",
+        "isConcatSpreadable": "symbol",
+        "iterator": "symbol",
+        "keyFor": "function>string?",
+        "match": "symbol",
+        "matchAll": "symbol",
+        "metadata": "symbol",
+        "prototype": "object:Symbol",
+        "replace": "symbol",
+        "search": "symbol",
+        "species": "symbol",
+        "split": "symbol",
+        "toPrimitive": "symbol",
+        "toStringTag": "symbol",
+        "unscopables": "symbol"
+      }
+    },
+    "SyntaxError": { "extends": ["Error"] },
+    "SyntaxErrorConstructor": {
+      "extends": ["ErrorConstructor"],
+      "members": { "prototype": "object:SyntaxError" }
+    },
+    "TemplateStringsArray": { "extends": ["ReadonlyArray"], "members": { "raw": "object:Array" } },
+    "TextDecoderStream": { "extends": ["_TextDecoderStream"] },
+    "TextEncoderStream": { "extends": ["_TextEncoderStream"] },
+    "ThisType": {},
+    "TransformStream": { "extends": ["_TransformStream"] },
+    "TransformStreamDefaultController": { "extends": ["_TransformStreamDefaultController"] },
+    "TypedPropertyDescriptor": {
+      "members": {
+        "configurable": "boolean",
+        "enumerable": "boolean",
+        "get": "function",
+        "set": "function",
+        "value": "any",
+        "writable": "boolean"
+      }
+    },
+    "TypeError": { "extends": ["Error"] },
+    "TypeErrorConstructor": {
+      "extends": ["ErrorConstructor"],
+      "members": { "prototype": "object:TypeError" }
+    },
+    "Uint16Array": {
+      "extends": ["RelativeIndexable"],
+      "members": {
+        "BYTES_PER_ELEMENT": "number",
+        "at": "function>number?",
+        "buffer": "any",
+        "byteLength": "number",
+        "byteOffset": "number",
+        "copyWithin": "function>object:Uint16Array",
+        "entries": "function>object:ArrayIterator",
+        "every": "function>boolean",
+        "fill": "function>object:Uint16Array",
+        "filter": "function>object:Uint16Array",
+        "find": "function>number?",
+        "findIndex": "function>number",
+        "findLast": "function>any",
+        "findLastIndex": "function>number",
+        "forEach": "function>undefined",
+        "includes": "function>boolean",
+        "indexOf": "function>number",
+        "join": "function>string",
+        "keys": "function>object:ArrayIterator",
+        "lastIndexOf": "function>number",
+        "length": "number",
+        "map": "function>object:Uint16Array",
+        "reduce": "function>any",
+        "reduceRight": "function>any",
+        "reverse": "function>object:Uint16Array",
+        "set": "function>undefined",
+        "slice": "function>object:Uint16Array",
+        "some": "function>boolean",
+        "sort": "function>object:Uint16Array",
+        "subarray": "function>object:Uint16Array",
+        "toLocaleString": "function>string",
+        "toReversed": "function>object:Uint16Array",
+        "toSorted": "function>object:Uint16Array",
+        "toString": "function>string",
+        "valueOf": "function>object:Uint16Array",
+        "values": "function>object:ArrayIterator",
+        "with": "function>object:Uint16Array"
+      }
+    },
+    "Uint16ArrayConstructor": {
+      "members": {
+        "BYTES_PER_ELEMENT": "number",
+        "from": "function>object:Uint16Array",
+        "of": "function>object:Uint16Array",
+        "prototype": "object:Uint16Array"
+      }
+    },
+    "Uint32Array": {
+      "extends": ["RelativeIndexable"],
+      "members": {
+        "BYTES_PER_ELEMENT": "number",
+        "at": "function>number?",
+        "buffer": "any",
+        "byteLength": "number",
+        "byteOffset": "number",
+        "copyWithin": "function>object:Uint32Array",
+        "entries": "function>object:ArrayIterator",
+        "every": "function>boolean",
+        "fill": "function>object:Uint32Array",
+        "filter": "function>object:Uint32Array",
+        "find": "function>number?",
+        "findIndex": "function>number",
+        "findLast": "function>any",
+        "findLastIndex": "function>number",
+        "forEach": "function>undefined",
+        "includes": "function>boolean",
+        "indexOf": "function>number",
+        "join": "function>string",
+        "keys": "function>object:ArrayIterator",
+        "lastIndexOf": "function>number",
+        "length": "number",
+        "map": "function>object:Uint32Array",
+        "reduce": "function>any",
+        "reduceRight": "function>any",
+        "reverse": "function>object:Uint32Array",
+        "set": "function>undefined",
+        "slice": "function>object:Uint32Array",
+        "some": "function>boolean",
+        "sort": "function>object:Uint32Array",
+        "subarray": "function>object:Uint32Array",
+        "toLocaleString": "function>string",
+        "toReversed": "function>object:Uint32Array",
+        "toSorted": "function>object:Uint32Array",
+        "toString": "function>string",
+        "valueOf": "function>object:Uint32Array",
+        "values": "function>object:ArrayIterator",
+        "with": "function>object:Uint32Array"
+      }
+    },
+    "Uint32ArrayConstructor": {
+      "members": {
+        "BYTES_PER_ELEMENT": "number",
+        "from": "function>object:Uint32Array",
+        "of": "function>object:Uint32Array",
+        "prototype": "object:Uint32Array"
+      }
+    },
+    "Uint8Array": {
+      "extends": ["RelativeIndexable"],
+      "members": {
+        "BYTES_PER_ELEMENT": "number",
+        "at": "function>number?",
+        "buffer": "any",
+        "byteLength": "number",
+        "byteOffset": "number",
+        "copyWithin": "function>object:Uint8Array",
+        "entries": "function>object:ArrayIterator",
+        "every": "function>boolean",
+        "fill": "function>object:Uint8Array",
+        "filter": "function>object:Uint8Array",
+        "find": "function>number?",
+        "findIndex": "function>number",
+        "findLast": "function>any",
+        "findLastIndex": "function>number",
+        "forEach": "function>undefined",
+        "includes": "function>boolean",
+        "indexOf": "function>number",
+        "join": "function>string",
+        "keys": "function>object:ArrayIterator",
+        "lastIndexOf": "function>number",
+        "length": "number",
+        "map": "function>object:Uint8Array",
+        "reduce": "function>any",
+        "reduceRight": "function>any",
+        "reverse": "function>object:Uint8Array",
+        "set": "function>undefined",
+        "slice": "function>object:Uint8Array",
+        "some": "function>boolean",
+        "sort": "function>object:Uint8Array",
+        "subarray": "function>object:Uint8Array",
+        "toLocaleString": "function>string",
+        "toReversed": "function>object:Uint8Array",
+        "toSorted": "function>object:Uint8Array",
+        "toString": "function>string",
+        "valueOf": "function>object:Uint8Array",
+        "values": "function>object:ArrayIterator",
+        "with": "function>object:Uint8Array"
+      }
+    },
+    "Uint8ArrayConstructor": {
+      "members": {
+        "BYTES_PER_ELEMENT": "number",
+        "from": "function>object:Uint8Array",
+        "of": "function>object:Uint8Array",
+        "prototype": "object:Uint8Array"
+      }
+    },
+    "Uint8ClampedArray": {
+      "extends": ["RelativeIndexable"],
+      "members": {
+        "BYTES_PER_ELEMENT": "number",
+        "at": "function>number?",
+        "buffer": "any",
+        "byteLength": "number",
+        "byteOffset": "number",
+        "copyWithin": "function>object:Uint8ClampedArray",
+        "entries": "function>object:ArrayIterator",
+        "every": "function>boolean",
+        "fill": "function>object:Uint8ClampedArray",
+        "filter": "function>object:Uint8ClampedArray",
+        "find": "function>number?",
+        "findIndex": "function>number",
+        "findLast": "function>any",
+        "findLastIndex": "function>number",
+        "forEach": "function>undefined",
+        "includes": "function>boolean",
+        "indexOf": "function>number",
+        "join": "function>string",
+        "keys": "function>object:ArrayIterator",
+        "lastIndexOf": "function>number",
+        "length": "number",
+        "map": "function>object:Uint8ClampedArray",
+        "reduce": "function>any",
+        "reduceRight": "function>any",
+        "reverse": "function>object:Uint8ClampedArray",
+        "set": "function>undefined",
+        "slice": "function>object:Uint8ClampedArray",
+        "some": "function>boolean",
+        "sort": "function>object:Uint8ClampedArray",
+        "subarray": "function>object:Uint8ClampedArray",
+        "toLocaleString": "function>string",
+        "toReversed": "function>object:Uint8ClampedArray",
+        "toSorted": "function>object:Uint8ClampedArray",
+        "toString": "function>string",
+        "valueOf": "function>object:Uint8ClampedArray",
+        "values": "function>object:ArrayIterator",
+        "with": "function>object:Uint8ClampedArray"
+      }
+    },
+    "Uint8ClampedArrayConstructor": {
+      "members": {
+        "BYTES_PER_ELEMENT": "number",
+        "from": "function>object:Uint8ClampedArray",
+        "of": "function>object:Uint8ClampedArray",
+        "prototype": "object:Uint8ClampedArray"
+      }
+    },
+    "URIError": { "extends": ["Error"] },
+    "URIErrorConstructor": {
+      "extends": ["ErrorConstructor"],
+      "members": { "prototype": "object:URIError" }
+    },
+    "URL": { "extends": ["_URL"] },
+    "URLSearchParams": { "extends": ["_URLSearchParams"] },
+    "WeakKeyTypes": { "members": { "object": "object", "symbol": "symbol" } },
+    "WeakMap": {
+      "members": {
+        "delete": "function>boolean",
+        "get": "function>any?",
+        "has": "function>boolean",
+        "set": "function>object:WeakMap"
+      }
+    },
+    "WeakMapConstructor": { "members": { "prototype": "object:WeakMap" } },
+    "WeakRef": { "members": { "deref": "function>any?" } },
+    "WeakRefConstructor": { "members": { "prototype": "object:WeakRef" } },
+    "WeakSet": {
+      "members": {
+        "add": "function>object:WeakSet",
+        "delete": "function>boolean",
+        "has": "function>boolean"
+      }
+    },
+    "WeakSetConstructor": { "members": { "prototype": "object:WeakSet" } },
+    "WebSocket": { "extends": ["_WebSocket"] },
+    "WebSocketInit": { "extends": ["_WebSocketInit"] },
+    "WritableStream": { "extends": ["_WritableStream"] },
+    "WritableStreamDefaultController": { "extends": ["_WritableStreamDefaultController"] },
+    "WritableStreamDefaultWriter": { "extends": ["_WritableStreamDefaultWriter"] }
+  }
+}

@@ -61,6 +61,7 @@ import {
   resolveReactApiMember,
 } from "../react/react-api.js";
 import { getCompilerHelper, getInlineCompilerHelper } from "./compiler-helpers.js";
+import { createErrorValue } from "./errors.js";
 import type {
   ClassBody,
   Diagnostic,
@@ -102,6 +103,7 @@ import {
   constructClassInstance,
   getClassLength,
   getClassPrototypeObject,
+  getFunctionLength,
   getStaticProperty,
   getSuperObject,
 } from "./class-component.js";
@@ -114,7 +116,11 @@ import {
   getHistoryMember,
   isHistoryName,
 } from "./session-history.js";
-import { isEnvironmentVariableName } from "./bundler-globals.js";
+import {
+  BUNDLER_INJECTED_NAMES,
+  isEnvironmentObject,
+  isUnsettableDefineName,
+} from "./bundler-globals.js";
 import { hasProperty, OBJECT_PROTOTYPE_METHODS } from "./has-property.js";
 import { isInstanceOf } from "./instance-of.js";
 import {
@@ -200,6 +206,7 @@ import {
   mapValue,
   NULL_VALUE,
   capturedValue,
+  isJsonRecord,
   jsonValue,
   objectFromRecord,
   objectValue,
@@ -276,6 +283,7 @@ export const STYLED_JSX_SPECIFIER = "styled-jsx/style";
 
 const MAX_INTERVAL_TICKS = 1_000;
 const WINDOW_NAME = /^(?:window|globalThis)\.name$/;
+const USE_STRICT_DIRECTIVE = "use strict";
 const NAVIGATOR_MEMBER = /^(?:(?:window|globalThis)\.)?navigator\.(userAgent|language)$/;
 const FS_URL_PREFIX = "/@fs/";
 
@@ -514,6 +522,7 @@ export class Interpreter {
   private readonly purePackages: PurePackages | null;
   private readonly windowGlobals = new Map<string, StaticValue>();
   private readonly defines = new Map<string, StaticValue>();
+  private readonly definedEnvironmentObjects = new Set<string>();
   private readonly pageState: CapturedPageState | null;
   private readonly processEnvironment: ProcessEnvironment | null;
   readonly storageAreas: StorageAreas;
@@ -560,9 +569,18 @@ export class Interpreter {
     for (const [name, captured] of Object.entries(options.capturedGlobals ?? {})) {
       this.windowGlobals.set(name, this.captured(captured, `window.${name}`));
     }
-    for (const [name, json] of Object.entries(options.defines ?? {})) {
-      const isUnsetVariable = json === null && isEnvironmentVariableName(name);
-      this.defines.set(name, isUnsetVariable ? UNDEFINED_VALUE : jsonValue(json));
+    const defines = options.defines ?? {};
+    for (const [name, json] of Object.entries(defines)) {
+      if (isEnvironmentObject(name) && isJsonRecord(json)) {
+        this.definedEnvironmentObjects.add(name);
+        for (const [variable, variableJson] of Object.entries(json)) {
+          const variableName = `${name}.${variable}`;
+          if (!(variableName in defines)) this.defines.set(variableName, jsonValue(variableJson));
+        }
+        continue;
+      }
+      const isUnset = json === null && isUnsettableDefineName(name);
+      this.defines.set(name, isUnset ? UNDEFINED_VALUE : jsonValue(json));
     }
     this.reactVersion = options.reactVersion ?? null;
     this.elementSymbolKey = getReactElementSymbolKey(this.reactVersion);
@@ -641,6 +659,24 @@ export class Interpreter {
 
   evaluateModuleExport(module: ModuleRecord, exportedName: string): StaticValue {
     return this.resolvedSymbolToValue(this.graph.resolveExport(module, exportedName), exportedName);
+  }
+
+  /**
+   * A name a namespace lacks is `undefined` when its export list is complete:
+   * an ESM module whose `export *` sources are all analyzed, or a CommonJS
+   * module that replaces `module.exports`, whose own `exports` object only
+   * holds the statically collected members.
+   */
+  private getNamespaceMember(module: ModuleRecord, key: string): StaticValue {
+    if (hasExportedName(module, key)) return this.evaluateModuleExport(module, key);
+    if (key === "__esModule") return module.isCommonJs ? UNDEFINED_VALUE : TRUE_VALUE;
+    if (module.isCommonJs && !module.replacesModuleExports) {
+      return this.evaluateModuleExport(module, key);
+    }
+    const { names, complete } = this.graph.collectExportNames(module);
+    return complete && !names.includes(key)
+      ? UNDEFINED_VALUE
+      : this.evaluateModuleExport(module, key);
   }
 
   /** The exports of a module as an object, for `{ ...m }` / `const { a, ...rest } = m` over a namespace. */
@@ -723,7 +759,11 @@ export class Interpreter {
       case "binding":
         return this.evaluateModuleBinding(symbol.module, symbol.binding.name) ?? UNDEFINED_VALUE;
       case "expression":
-        return this.evaluateExportExpression(symbol.module, symbol.expression, nameHint);
+        return this.evaluateExportExpression(
+          symbol.module,
+          symbol.expression,
+          symbol.module.isCommonJs ? nameHint : "default",
+        );
       case "namespace":
         return { kind: "namespace", module: symbol.module };
       case "external": {
@@ -904,6 +944,16 @@ export class Interpreter {
           type.component.properties.set(propertyName, value);
           return target;
         }
+        if (type.kind === "stub") {
+          if (propertyName === "displayName") {
+            type.stub.displayName =
+              value.kind === "primitive" && typeof value.value === "string" ? value.value : null;
+          } else {
+            type.stub.properties ??= new Map();
+            type.stub.properties.set(propertyName, value);
+          }
+          return target;
+        }
         if (type.kind !== "memo" && type.kind !== "forward-ref" && type.kind !== "lazy")
           return target;
         if (propertyName === "displayName") {
@@ -1056,6 +1106,18 @@ export class Interpreter {
   }
 
   lookupIdentifier(name: string, context: EvaluationContext): StaticValue {
+    const resolved = this.resolveIdentifier(name, context);
+    if (resolved) return resolved;
+    return this.isAbsentGlobal(name)
+      ? thrownValue(
+          `\`${name}\` is not defined`,
+          createErrorValue("ReferenceError", [primitiveValue(`${name} is not defined`)], null),
+        )
+      : unknownValue(`unbound identifier "${name}"`);
+  }
+
+  /** The binding, module export, or modeled global `name` denotes; null when nothing in scope defines it. */
+  private resolveIdentifier(name: string, context: EvaluationContext): StaticValue | null {
     const scoped = lookupScope(context.scope, name);
     if (scoped) return scoped;
     const moduleValue = this.evaluateModuleBinding(context.module, name);
@@ -1065,9 +1127,21 @@ export class Interpreter {
       if (name === "exports") return exportsValue;
       if (name === "module") return objectFromRecord({ exports: exportsValue });
     }
-    return (
-      this.getGlobal(name, context.environment) ?? unknownValue(`unbound identifier "${name}"`)
-    );
+    return this.getGlobal(name, context.environment);
+  }
+
+  /**
+   * An unbound name the captured page's `window` did not have either, so reading
+   * it throws a `ReferenceError` and `typeof` yields `"undefined"`. Names a
+   * bundler may inject per module (`global`, `define`) are not decided by the page.
+   */
+  private isAbsentGlobal(name: string): boolean {
+    return !BUNDLER_INJECTED_NAMES.has(name) && this.isAbsentWindowProperty(name);
+  }
+
+  private isAbsentWindowProperty(name: string): boolean {
+    const windowKeys = this.pageState?.windowKeys;
+    return windowKeys !== undefined && !windowKeys.includes(name) && !this.windowGlobals.has(name);
   }
 
   private getGlobal(name: string, renderEnvironment: RenderEnvironment | null): StaticValue | null {
@@ -1088,7 +1162,11 @@ export class Interpreter {
     }
     return (
       getPageLocationMember(this.origin, this.history.route, name) ??
-      getBuiltinGlobal(name, { declared: this.processEnvironment, renderEnvironment })
+      getBuiltinGlobal(name, {
+        declared: this.processEnvironment,
+        renderEnvironment,
+        definedObjects: this.definedEnvironmentObjects,
+      })
     );
   }
 
@@ -1125,7 +1203,7 @@ export class Interpreter {
         if (node.name === "undefined") return UNDEFINED_VALUE;
         return this.lookupIdentifier(node.name, context);
       case "ThisExpression":
-        return context.thisValue ?? unknownValue("this outside of a class", location);
+        return context.thisValue ?? this.evaluateUnboundThis(context, location);
       case "ArrayExpression":
         return this.evaluateArrayExpression(node, context);
       case "ObjectExpression":
@@ -1154,7 +1232,7 @@ export class Interpreter {
         for (const expression of node.expressions.slice(0, lastIndex)) {
           this.evaluateExpression(expression, context);
         }
-        return this.evaluateExpression(node.expressions[lastIndex], context, nameHint);
+        return this.evaluateExpression(node.expressions[lastIndex], context);
       }
       case "AwaitExpression": {
         const resolved = this.takeResolvedAwait(node);
@@ -1173,13 +1251,13 @@ export class Interpreter {
       case "ConditionalExpression": {
         const test = this.evaluateExpression(node.test, context);
         const truthiness = getTruthiness(test);
-        if (truthiness === true) return this.evaluateExpression(node.consequent, context, nameHint);
-        if (truthiness === false) return this.evaluateExpression(node.alternate, context, nameHint);
+        if (truthiness === true) return this.evaluateExpression(node.consequent, context);
+        if (truthiness === false) return this.evaluateExpression(node.alternate, context);
         const [consequent, alternate] = this.evaluateTestedPaths(
           node.test,
           context,
-          () => this.evaluateExpression(node.consequent, context, nameHint),
-          () => this.evaluateExpression(node.alternate, context, nameHint),
+          () => this.evaluateExpression(node.consequent, context),
+          () => this.evaluateExpression(node.alternate, context),
         );
         if (!consequent) return alternate ?? UNDEFINED_VALUE;
         if (!alternate) return consequent;
@@ -1191,7 +1269,7 @@ export class Interpreter {
         );
       }
       case "LogicalExpression":
-        return this.evaluateLogicalExpression(node, context, nameHint);
+        return this.evaluateLogicalExpression(node, context);
       case "UnaryExpression":
         return this.evaluateUnaryExpression(node, context);
       case "BinaryExpression":
@@ -1399,19 +1477,18 @@ export class Interpreter {
   private evaluateLogicalExpression(
     node: LogicalExpression,
     context: EvaluationContext,
-    nameHint: string | null,
   ): StaticValue {
-    const left = this.evaluateExpression(node.left, context, nameHint);
+    const left = this.evaluateExpression(node.left, context);
     const location = this.locate(context.module, node);
     switch (node.operator) {
       case "&&": {
         const truthiness = getTruthiness(left);
-        if (truthiness === true) return this.evaluateExpression(node.right, context, nameHint);
+        if (truthiness === true) return this.evaluateExpression(node.right, context);
         if (truthiness === false) return left;
         const [right, falsyLeft] = this.evaluateTestedPaths(
           node.left,
           context,
-          () => this.evaluateExpression(node.right, context, nameHint),
+          () => this.evaluateExpression(node.right, context),
           (narrowed) =>
             narrowed ? this.evaluateExpression(node.left, context) : falsyCounterpart(left),
         );
@@ -1427,12 +1504,12 @@ export class Interpreter {
       case "||": {
         const truthiness = getTruthiness(left);
         if (truthiness === true) return left;
-        if (truthiness === false) return this.evaluateExpression(node.right, context, nameHint);
+        if (truthiness === false) return this.evaluateExpression(node.right, context);
         const [truthyLeft, right] = this.evaluateTestedPaths(
           node.left,
           context,
           (narrowed) => (narrowed ? this.evaluateExpression(node.left, context) : left),
-          () => this.evaluateExpression(node.right, context, nameHint),
+          () => this.evaluateExpression(node.right, context),
         );
         if (!truthyLeft) return right ?? left;
         if (!right) return truthyLeft;
@@ -1446,11 +1523,11 @@ export class Interpreter {
       case "??": {
         const nullish = isNullish(left);
         if (nullish === false) return left;
-        if (nullish === true) return this.evaluateExpression(node.right, context, nameHint);
+        if (nullish === true) return this.evaluateExpression(node.right, context);
         let right: StaticValue | null = null;
         const withRight = (alternative: StaticValue): StaticValue => {
           if (isNullish(alternative) === false) return alternative;
-          right ??= this.evaluateExpression(node.right, context, nameHint);
+          right ??= this.evaluateExpression(node.right, context);
           return isNullish(alternative) === true
             ? right
             : branchValue([alternative, right], `?? on ${describeValue(alternative)}`, location);
@@ -1482,10 +1559,9 @@ export class Interpreter {
 
   private evaluateUnaryExpression(node: UnaryExpression, context: EvaluationContext): StaticValue {
     if (node.operator === "delete") return this.evaluateDelete(node.argument, context);
+    if (node.operator === "typeof") return this.evaluateTypeof(node.argument, context);
     const argument = this.evaluateExpression(node.argument, context);
     switch (node.operator) {
-      case "typeof":
-        return getTypeofValue(argument, context.environment);
       case "void":
         return getThrownOperand([argument]) ?? UNDEFINED_VALUE;
       default: {
@@ -1493,6 +1569,36 @@ export class Interpreter {
         return mapValue(argument, (alternative) => applyUnaryOperator(operator, alternative));
       }
     }
+  }
+
+  /** `this` of a function called without a receiver: the global object in sloppy code, uncertain in strict code we cannot place. */
+  private evaluateUnboundThis(
+    context: EvaluationContext,
+    location: SourceLocation | null,
+  ): StaticValue {
+    const frame = context.callStack.at(-1);
+    const isSloppy =
+      context.module.isCommonJs &&
+      !context.module.directives.includes(USE_STRICT_DIRECTIVE) &&
+      frame !== undefined &&
+      frame.node.type !== "ArrowFunctionExpression" &&
+      !frame.node.body?.body.some(
+        (statement) => "directive" in statement && statement.directive === USE_STRICT_DIRECTIVE,
+      );
+    return isSloppy
+      ? { kind: "global", name: "globalThis" }
+      : unknownValue("this outside of a class", location);
+  }
+
+  /** `typeof name` does not throw on an undeclared name: it is `"undefined"` when the page has no such global. */
+  private evaluateTypeof(argument: Expression, context: EvaluationContext): StaticValue {
+    const target = unwrapExpression(argument);
+    if (target.type === "Identifier") {
+      const resolved = this.resolveIdentifier(target.name, context);
+      if (resolved) return getTypeofValue(resolved, context.environment);
+      if (this.isAbsentGlobal(target.name)) return primitiveValue("undefined");
+    }
+    return getTypeofValue(this.evaluateExpression(argument, context), context.environment);
   }
 
   private evaluateDelete(argument: Expression, context: EvaluationContext): StaticValue {
@@ -1946,11 +2052,7 @@ export class Interpreter {
       case "native-object":
         return getNativeObjectMember(object, key);
       case "namespace":
-        if (key === "__esModule") {
-          if (!object.module.isCommonJs) return TRUE_VALUE;
-          if (!hasExportedName(object.module, key)) return UNDEFINED_VALUE;
-        }
-        return this.evaluateModuleExport(object.module, key);
+        return this.getNamespaceMember(object.module, key);
       case "global": {
         const storageAreaName = getStorageAreaName(object.name);
         if (storageAreaName !== null) {
@@ -1966,7 +2068,7 @@ export class Interpreter {
         if (isWindowAlias(object.name)) {
           const windowGlobal = this.windowGlobals.get(key);
           if (windowGlobal) return windowGlobal;
-          if (isSymbolPropertyKey(key)) return UNDEFINED_VALUE;
+          if (isSymbolPropertyKey(key) || this.isAbsentWindowProperty(key)) return UNDEFINED_VALUE;
         }
         return (
           this.getGlobal(`${object.name}.${key}`, context.environment) ?? {
@@ -1994,7 +2096,14 @@ export class Interpreter {
           if (key === "prototype") return getClassPrototypeObject(this, object, context);
           if (key === "__proto__") return getClassPrototype(object);
           if (key === "length") return primitiveValue(getClassLength(object));
-        } else if (key === "prototype") return getFunctionPrototype(object);
+        } else {
+          if (key === "prototype") return getFunctionPrototype(object);
+          if (key === "length") {
+            return primitiveValue(
+              Math.max(0, getFunctionLength(object.node) - (object.boundArgs?.length ?? 0)),
+            );
+          }
+        }
         if (key === "displayName") return UNDEFINED_VALUE;
         if (key === "name") return object.name ? primitiveValue(object.name) : primitiveValue("");
         if (object.kind === "function" && !isFunctionOwnOrInheritedKey(key)) return UNDEFINED_VALUE;

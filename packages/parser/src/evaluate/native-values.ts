@@ -369,12 +369,25 @@ export const isNativeInstanceOf = (
   return iface === null ? null : object.value instanceof iface;
 };
 
-/** `new Date(...)` from known parts; null when a part is uncertain or no parts are given (the clock decides then). */
-export const constructNativeDate = (args: StaticValue[]): StaticValue | null => {
-  if (args.length === 0) return null;
+const NATIVE_CONSTRUCTORS = { Date, ArrayBuffer, DataView } satisfies Record<string, Function>;
+
+export type NativeConstructorName = keyof typeof NATIVE_CONSTRUCTORS;
+
+export const isNativeConstructorName = (name: string): name is NativeConstructorName =>
+  Object.hasOwn(NATIVE_CONSTRUCTORS, name);
+
+/** `new <name>(...args)` run natively; null when an argument is uncertain or the construction throws. */
+export const constructNativeObject = (
+  name: NativeConstructorName,
+  args: StaticValue[],
+): StaticValue | null => {
   const natives = toNativeArguments(args);
   if (natives === null) return null;
-  return fromNativeValue(Reflect.construct(Date, natives), "Date");
+  try {
+    return fromNativeValue(Reflect.construct(NATIVE_CONSTRUCTORS[name], natives), name);
+  } catch {
+    return null;
+  }
 };
 
 const DOCUMENT_NATIVE_MEMBERS = new Set([

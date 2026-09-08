@@ -2,9 +2,8 @@ import type { ComponentDefinition, StaticElementType, StaticValue } from "../typ
 
 export const createFunctionComponentDefinition = (
   value: Extract<StaticValue, { kind: "function" }>,
-  fallbackName: string | null,
 ): ComponentDefinition => ({
-  name: value.name ?? fallbackName,
+  name: value.name,
   module: value.module,
   node: value.node,
   scope: value.scope,
@@ -14,9 +13,8 @@ export const createFunctionComponentDefinition = (
 
 export const createClassComponentDefinition = (
   value: Extract<StaticValue, { kind: "class" }>,
-  fallbackName: string | null,
 ): ComponentDefinition => ({
-  name: value.name ?? fallbackName,
+  name: value.name,
   module: value.module,
   node: value.node,
   scope: value.scope,
@@ -34,9 +32,9 @@ export const toElementType = (value: StaticValue, nameHint: string | null): Stat
         reason: `element type is ${String(value.value)}`,
       };
     case "function":
-      return { kind: "function", component: createFunctionComponentDefinition(value, nameHint) };
+      return { kind: "function", component: createFunctionComponentDefinition(value) };
     case "class":
-      return { kind: "class", component: createClassComponentDefinition(value, nameHint) };
+      return { kind: "class", component: createClassComponentDefinition(value) };
     case "component-reference":
       return value.type;
     case "context":

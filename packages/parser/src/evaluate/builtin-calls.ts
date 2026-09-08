@@ -31,10 +31,18 @@ import { createAbortController } from "./abort-controller.js";
 import { createDomObserver, isDomObserverName } from "./dom-observers.js";
 import { createErrorValue, ERROR_CONSTRUCTOR_NAMES, isErrorConstructorName } from "./errors.js";
 import { nativeFunction } from "../frameworks/stubs.js";
-import { constructNativeDate } from "./native-values.js";
+import { constructNativeObject, isNativeConstructorName } from "./native-values.js";
+import { constructFunctionFromSource } from "./function-constructor.js";
 import { callEventTargetMethod } from "./event-listeners.js";
 import { hasProperty, isIntrinsicFunctionKey } from "./has-property.js";
-import { getBuiltinPrototype, isTypedArrayName, TYPED_ARRAY_NAMES } from "./instance-of.js";
+import {
+  getBuiltinFunctionSource,
+  getBuiltinPrototype,
+  getBuiltinPrototypeName,
+  getPrototypeWitness,
+  isTypedArrayName,
+  TYPED_ARRAY_NAMES,
+} from "./instance-of.js";
 import { mediaQueryListValue } from "./media-query.js";
 import { getObjectTag } from "./object-tag.js";
 import { callHistoryMethod, isHistoryName } from "./session-history.js";
@@ -150,6 +158,29 @@ const getEntryFromPair = (pair: StaticValue): StaticObjectEntry | null => {
 };
 
 const ITERATION_METHOD_NAMES = new Set(["map", "forEach", "flatMap", "filter"]);
+
+const THIS_ARG_METHOD_NAMES = new Set([
+  ...ITERATION_METHOD_NAMES,
+  "some",
+  "every",
+  "find",
+  "findIndex",
+  "findLast",
+  "findLastIndex",
+]);
+
+/** `list.forEach(callback, thisArg)`: the callback runs with `this` set to `thisArg` (arrows keep their lexical `this`). */
+const bindCallbackThisArg = (name: string, args: StaticValue[]): StaticValue[] => {
+  const [callback, thisArg] = args;
+  if (
+    thisArg === undefined ||
+    !THIS_ARG_METHOD_NAMES.has(name) ||
+    callback?.kind !== "function" ||
+    callback.boundThis
+  )
+    return args;
+  return [{ ...callback, boundThis: thisArg }];
+};
 
 /** `flatMap`/`concat` flattening: arrays contribute their items, anything else itself. */
 const flattenOneLevel = (value: StaticValue, location: SourceLocation | null): StaticValue[] =>
@@ -733,7 +764,47 @@ const hasOwnProperty = (
   return null;
 };
 
+/** `Object.getPrototypeOf(value)` for values whose chain is a native one: the builtin prototype global, or null at the chain's end. */
+const getWitnessedPrototype = (
+  value: StaticValue | undefined,
+  name: string,
+  location: SourceLocation | null,
+): StaticValue => {
+  if (value?.kind === "branch")
+    return mapValue(value, (alternative) => getWitnessedPrototype(alternative, name, location));
+  const witness = value === undefined ? null : getPrototypeWitness(value);
+  if (witness === null) return unknownValue(`${name} on a dynamic target`, location);
+  const prototype: object | null = Object.getPrototypeOf(witness);
+  if (prototype === null) return NULL_VALUE;
+  const prototypeName = getBuiltinPrototypeName(prototype);
+  return prototypeName === null
+    ? unknownValue(`${name} on an instance of an unmodeled builtin`, location)
+    : { kind: "global", name: prototypeName };
+};
+
 const FUNCTION_INVOCATION_METHODS = new Set(["call", "apply", "bind"]);
+
+/** `Function.prototype.toString`: the source text of program functions, V8's `[native code]` form for intrinsics. */
+const getFunctionSourceText = (receiver: StaticValue): string | null => {
+  switch (receiver.kind) {
+    case "function":
+      return receiver.boundArgs || receiver.boundThis
+        ? "function () { [native code] }"
+        : receiver.module.file.sourceText.slice(receiver.node.start, receiver.node.end);
+    case "class":
+      return receiver.module.file.sourceText.slice(receiver.node.start, receiver.node.end);
+    case "method":
+      return receiver.receiver.kind === "global"
+        ? getBuiltinFunctionSource(`${receiver.receiver.name}.${receiver.name}`)
+        : receiver.receiver.kind === "external" || receiver.receiver.kind === "unknown"
+          ? null
+          : `function ${receiver.name}() { [native code] }`;
+    case "global":
+      return getBuiltinFunctionSource(receiver.name);
+    default:
+      return null;
+  }
+};
 
 const PROTOTYPE_SEGMENT = ".prototype.";
 
@@ -797,10 +868,22 @@ const callGlobal = (
   if (isConstructor && isTypedArrayName(name)) return constructTypedArray(name, first, location);
   if (isConstructor && isDomObserverName(name))
     return createDomObserver(interpreter, name, first, location);
+  if (isConstructor && isNativeConstructorName(name) && (name !== "Date" || args.length > 0)) {
+    const constructed = constructNativeObject(name, args);
+    if (constructed) return constructed;
+  }
   switch (name) {
-    case "Date": {
-      const date = isConstructor ? constructNativeDate(args) : null;
-      if (date) return date;
+    case "Function":
+      return constructFunctionFromSource(interpreter, args, location);
+    case "Object": {
+      if (first === undefined || (first.kind === "primitive" && isNullish(first)))
+        return objectValue([]);
+      const firstTypeof = getTypeofValue(first, context.environment);
+      if (
+        firstTypeof.kind === "primitive" &&
+        (firstTypeof.value === "object" || firstTypeof.value === "function")
+      )
+        return first;
       break;
     }
     case "String":
@@ -947,7 +1030,7 @@ const callGlobal = (
         return getClassPrototypeObject(interpreter, first.constructedBy, context);
       if (first?.kind === "object" && isBaseClassPrototype(first))
         return { kind: "global", name: "Object.prototype" };
-      return unknownValue(`${name} on a dynamic target`, location);
+      return getWitnessedPrototype(first, name, location);
     case "Object.getOwnPropertyNames":
     case "Object.getOwnPropertySymbols":
     case "Reflect.ownKeys": {
@@ -1224,7 +1307,10 @@ const arrayLikeToList = (value: Extract<StaticValue, { kind: "object" }>): Stati
   );
 };
 
-type CallableValue = Extract<StaticValue, { kind: "function" | "native-function" | "global" }>;
+export type CallableValue = Extract<
+  StaticValue,
+  { kind: "function" | "native-function" | "global" }
+>;
 
 const MAX_SETTLED_DELAY_MS = 2_000;
 
@@ -1235,7 +1321,7 @@ const isSettledDelay = (delay: StaticValue | undefined): boolean =>
       delay.value === null ||
       (typeof delay.value === "number" && delay.value <= MAX_SETTLED_DELAY_MS)));
 
-const isCallable = (value: StaticValue | undefined): value is CallableValue =>
+export const isCallable = (value: StaticValue | undefined): value is CallableValue =>
   value?.kind === "function" || value?.kind === "native-function" || value?.kind === "global";
 
 /** Truthiness of `predicate(item, index, list)` per item; null where the analysis cannot decide. */
@@ -1639,10 +1725,15 @@ export const evaluateBuiltinCall = (
   if (callee.kind === "global")
     return callGlobal(interpreter, callee.name, args, context, location, isConstructor);
   const { receiver, name } = callee;
-  const [first, second] = args;
+  const [first, second] = bindCallbackThisArg(name, args);
 
   if (isPromiseMethodName(name))
     return callPromiseMethod(interpreter, receiver, name, args, context, location);
+
+  if (name === "toString" && args.length === 0) {
+    const sourceText = getFunctionSourceText(receiver);
+    if (sourceText !== null) return primitiveValue(sourceText);
+  }
 
   if (receiver.kind === "function") {
     if (name === "bind") {

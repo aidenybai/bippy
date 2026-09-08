@@ -1,5 +1,6 @@
 import { hashKey as tanstackHashKey } from "@tanstack/react-query";
 import { describe, expect, it } from "vite-plus/test";
+import { SchemaError } from "../src/errors.js";
 import { toCapturedValue } from "../src/harness/query-cache.js";
 import {
   EMPTY_OBSERVATIONS,
@@ -44,7 +45,7 @@ describe("runtime observations", () => {
     expect(getOpaqueCaptureDescription({ name: "x" })).toBeNull();
   });
 
-  it("reads saved observations and drops malformed entries", () => {
+  it("reads saved observations and rejects malformed ones", () => {
     const query = {
       queryHash: '["todos"]',
       status: "success",
@@ -70,42 +71,31 @@ describe("runtime observations", () => {
       isPaused: false,
       submittedAt: 20,
     };
-    expect(readObservationsJson(undefined)).toEqual(EMPTY_OBSERVATIONS);
+    const source = "capture.json";
+    expect(readObservationsJson({}, source)).toEqual(EMPTY_OBSERVATIONS);
     expect(
-      readObservationsJson({
-        globals: { config: { user: null }, broken: undefined },
-        queries: [query, { queryHash: 1 }, { ...query, status: "loading" }],
-      }),
+      readObservationsJson({ globals: { config: { user: null } }, queries: [query] }, source),
     ).toEqual({ globals: { config: { user: null } }, queries: [query] });
     expect(
-      readObservationsJson({
-        globals: {},
-        queries: [],
-        mutations: [mutation, { ...mutation, mutationHash: 1 }, { ...mutation, status: "loading" }],
-      }),
+      readObservationsJson({ globals: {}, queries: [], mutations: [mutation] }, source),
     ).toEqual({ globals: {}, queries: [], mutations: [mutation] });
     const page = { cookie: "", localStorage: {}, sessionStorage: {} };
-    expect(readObservationsJson({ globals: {}, queries: [], page })).toEqual({
-      globals: {},
-      queries: [],
-      page,
-    });
-    expect(
-      readObservationsJson({ globals: {}, queries: [], page: { ...page, name: "cal-embed=x" } }),
-    ).toEqual({ globals: {}, queries: [], page: { ...page, name: "cal-embed=x" } });
-    expect(readObservationsJson({ globals: {}, queries: [], page: { ...page, name: 1 } })).toEqual({
-      globals: {},
-      queries: [],
-    });
     const browser = { ...page, userAgent: "Mozilla/5.0 (Macintosh)", language: "en-US" };
-    expect(readObservationsJson({ globals: {}, queries: [], page: browser })).toEqual({
+    expect(readObservationsJson({ globals: {}, queries: [], page: browser }, source)).toEqual({
       globals: {},
       queries: [],
       page: browser,
     });
-    expect(
-      readObservationsJson({ globals: {}, queries: [], page: { ...page, userAgent: null } }),
-    ).toEqual({ globals: {}, queries: [] });
+    for (const malformed of [
+      undefined,
+      { globals: {}, queries: [{ queryHash: 1 }] },
+      { globals: {}, queries: [{ ...query, status: "loading" }] },
+      { globals: {}, queries: [], mutations: [{ ...mutation, mutationHash: 1 }] },
+      { globals: {}, queries: [], page: { ...page, name: 1 } },
+      { globals: {}, queries: [], page: { ...page, userAgent: null } },
+    ]) {
+      expect(() => readObservationsJson(malformed, source)).toThrow(SchemaError);
+    }
   });
 
   it("hashes query keys exactly like @tanstack/query-core", () => {
