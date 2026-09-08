@@ -12,6 +12,10 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
+import {
+  createSearchParamsValue,
+  getSearchParamsString,
+} from "../evaluate/url-search-params.js";
 import { toElementType } from "../react/element-type.js";
 import { findRootRenderCalls } from "../render/find-root-elements.js";
 import { AUTO_ROUTES_PACKAGE, readAutoRoutes } from "./react-router-auto-routes.js";
@@ -589,7 +593,6 @@ const RUNTIME_ONLY_HOOKS = new Set([
   "useFetcher",
   "useFetchers",
   "useRouteError",
-  "useSearchParams",
   "useHref",
   "useResolvedPath",
   "useBlocker",
@@ -637,72 +640,109 @@ const observedHookValue = (
           state: observed.revalidation,
         }),
       );
-    case "useSearchParams":
-      return nativeFunction(importedName, () =>
-        listValue([
-          observed.searchParams,
-          nativeFunction("setSearchParams", () => UNDEFINED_VALUE),
-        ]),
-      );
     default:
       return null;
   }
 };
 
-const locationValue = (pathname: string, observed: ObservedRouterState | null): StaticValue =>
+interface RouteLocation {
+  pathname: string;
+  search: string;
+  hash: string;
+}
+
+const parseRouteLocation = (route: string): RouteLocation => {
+  const { pathname, search, hash } = new URL(route, "http://localhost");
+  return { pathname, search, hash };
+};
+
+const locationValue = (
+  location: RouteLocation,
+  observed: ObservedRouterState | null,
+): StaticValue =>
   observed?.location ??
   objectFromRecord({
-    pathname: primitiveValue(pathname),
-    search: primitiveValue(""),
-    hash: primitiveValue(""),
+    pathname: primitiveValue(location.pathname),
+    search: primitiveValue(location.search),
+    hash: primitiveValue(location.hash),
     state: NULL_VALUE,
     key: unknownValue("location key is assigned at runtime"),
   });
 
-const withinRouter = (
-  children: StaticValue,
-  pathname: string,
-  observed: ObservedRouterState | null,
-): StaticElementValue =>
+const withinRouter = (children: StaticValue, location: StaticValue): StaticElementValue =>
   element(
     { kind: "context-provider", context: LOCATION_CONTEXT, displayName: "Location" },
     objectFromRecord({
-      value: objectFromRecord({
-        location: locationValue(pathname, observed),
-        navigationType: primitiveValue("POP"),
-      }),
+      value: objectFromRecord({ location, navigationType: primitiveValue("POP") }),
       children,
     }),
   );
 
-const routerHookValue = (
-  importedName: string,
-  pathname: string,
+/**
+ * The router hooks of one location. `useLocation` returns the context's object,
+ * `useNavigate` a callback memoized on the pathname, and `useSearchParams` a
+ * pair memoized on `location.search`, so all three keep their identity across
+ * renders like the real hooks do.
+ */
+const createRouterHookValues = (
+  location: StaticValue,
+  search: string,
   observed: ObservedRouterState | null,
-): StaticValue | null => {
-  switch (importedName) {
-    case "useParams":
-      return nativeFunction(importedName, (_args, tools) => readRouteContext(tools, "params"));
-    case "useOutlet":
-      return nativeFunction(importedName, (_args, tools) => readRouteContext(tools, "outlet"));
-    case "useOutletContext":
-      return nativeFunction(importedName, (_args, tools) => tools.readContext(OUTLET_CONTEXT));
-    case "useLocation":
-      return nativeFunction(importedName, () => locationValue(pathname, observed));
-    case "useNavigate":
-      return nativeFunction(importedName, () => nativeFunction("navigate", () => UNDEFINED_VALUE));
-    case "useNavigationType":
-      return nativeFunction(importedName, () => primitiveValue("POP"));
-    case "useInRouterContext":
-      return nativeFunction(importedName, (_args, tools) =>
-        primitiveValue(tools.readContext(LOCATION_CONTEXT).kind !== "primitive"),
-      );
-    default:
-      if (!RUNTIME_ONLY_HOOKS.has(importedName)) return null;
-      return (
-        (observed && observedHookValue(importedName, observed)) ?? runtimeOnlyHook(importedName)
-      );
-  }
+): ((importedName: string) => StaticValue | null) => {
+  const navigate = nativeFunction("navigate", () => UNDEFINED_VALUE);
+  const setSearchParams = nativeFunction("setSearchParams", () => UNDEFINED_VALUE);
+  const searchParamsByDefaults = new Map<string, StaticValue>();
+  /** `useSearchParams(defaultInit)`: the URL's query, with default keys the URL lacks appended after it. */
+  const searchParamsValue = (defaultInit: StaticValue | undefined): StaticValue => {
+    const defaultQuery =
+      defaultInit === undefined
+        ? ""
+        : getSearchParamsString(createSearchParamsValue(defaultInit));
+    if (defaultQuery === null) {
+      return unknownValue("react-router useSearchParams() with a dynamic default init");
+    }
+    const memoized = searchParamsByDefaults.get(defaultQuery);
+    if (memoized) return memoized;
+    const params = new URLSearchParams(search);
+    const defaults = new URLSearchParams(defaultQuery);
+    for (const key of new Set(defaults.keys())) {
+      if (params.has(key)) continue;
+      for (const value of defaults.getAll(key)) params.append(key, value);
+    }
+    const created = listValue([
+      createSearchParamsValue(primitiveValue(params.toString())),
+      setSearchParams,
+    ]);
+    searchParamsByDefaults.set(defaultQuery, created);
+    return created;
+  };
+  return (importedName) => {
+    switch (importedName) {
+      case "useParams":
+        return nativeFunction(importedName, (_args, tools) => readRouteContext(tools, "params"));
+      case "useOutlet":
+        return nativeFunction(importedName, (_args, tools) => readRouteContext(tools, "outlet"));
+      case "useOutletContext":
+        return nativeFunction(importedName, (_args, tools) => tools.readContext(OUTLET_CONTEXT));
+      case "useLocation":
+        return nativeFunction(importedName, () => location);
+      case "useSearchParams":
+        return nativeFunction(importedName, (args) => searchParamsValue(args[0]));
+      case "useNavigate":
+        return nativeFunction(importedName, () => navigate);
+      case "useNavigationType":
+        return nativeFunction(importedName, () => primitiveValue("POP"));
+      case "useInRouterContext":
+        return nativeFunction(importedName, (_args, tools) =>
+          primitiveValue(tools.readContext(LOCATION_CONTEXT).kind !== "primitive"),
+        );
+      default:
+        if (!RUNTIME_ONLY_HOOKS.has(importedName)) return null;
+        return (
+          (observed && observedHookValue(importedName, observed)) ?? runtimeOnlyHook(importedName)
+        );
+    }
+  };
 };
 
 const routeConfigValue = (name: string): StaticValue | null => {
@@ -752,16 +792,24 @@ const routeConfigValue = (name: string): StaticValue | null => {
 };
 
 export const createReactRouterModel = (
-  pathname: string,
+  route: string,
   routerState: CapturedRouterState | null = null,
 ): ReactRouterModel => {
   const framework: FrameworkState = { routeTree: null, meta: null, links: null, ssr: null };
+  const routeLocation = parseRouteLocation(route);
+  const { pathname } = routeLocation;
   const observed = observeRouterState(routerState, pathname);
+  const location = locationValue(routeLocation, observed);
+  const routerHookValue = createRouterHookValues(
+    location,
+    observed?.search ?? routeLocation.search,
+    observed,
+  );
   // `RouterProvider$1` from `react-router/dom` wraps the core `RouterProvider`;
   // only the latter is kept as a fiber so SPA and framework trees line up.
   const routerProviderShell: StubComponent = {
     displayName: "RouterProvider",
-    render: (props) => withinRouter(getObjectProperty(props, "children"), pathname, observed),
+    render: (props) => withinRouter(getObjectProperty(props, "children"), location),
   };
   const hydratedRouterStub: StubComponent = {
     displayName: "HydratedRouter",
@@ -833,14 +881,13 @@ export const createReactRouterModel = (
           pathname,
           tools,
         ),
-        pathname,
-        observed,
+        location,
       );
     },
   };
   const routerStub = (displayName: string): StubComponent => ({
     displayName,
-    render: (props) => withinRouter(getObjectProperty(props, "children"), pathname, observed),
+    render: (props) => withinRouter(getObjectProperty(props, "children"), location),
   });
   const routesStub: StubComponent = {
     displayName: "Routes",
@@ -894,7 +941,7 @@ export const createReactRouterModel = (
       case "PrefetchPageLinks":
         return stubValue(emptyStub(importedName));
       default:
-        return routerHookValue(importedName, pathname, observed);
+        return routerHookValue(importedName);
     }
   };
 

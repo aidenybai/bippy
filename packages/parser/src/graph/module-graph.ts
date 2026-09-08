@@ -246,6 +246,12 @@ export class ModuleGraph {
       const externalSources: ResolvedSymbol[] = [];
       for (const entry of module.exports) {
         if (entry.kind !== "re-export-all") continue;
+        if (isModeledLibraryExport(entry.specifier, exportedName)) {
+          const resolution = this.resolveSpecifier(entry.specifier, module);
+          if (resolution.kind === "external") {
+            return externalSymbol(resolution, { kind: "named", name: exportedName }, entry.specifier);
+          }
+        }
         const target = this.resolveImportedModule(entry.specifier, module);
         if (!isModuleRecord(target)) {
           if (target.kind === "external" || target.kind === "builtin") {

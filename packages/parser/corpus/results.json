@@ -880,6 +880,70 @@
       "failure": null
     },
     {
+      "id": "regex-vis",
+      "revision": "a6d920601ca44ab2d4e9cd02306510ab6d5e4b38",
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T09:42:40.616Z",
+      "durationMs": 6123,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 838,
+        "commits": 9,
+        "pageErrors": [],
+        "title": "Regex Vis"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 146,
+          "textCount": 0,
+          "branchCount": 2,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 20,
+          "modulesLoaded": 311
+        },
+        "diagnostics": [
+          {
+            "code": "budget-exhausted",
+            "count": 45
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 0,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "mismatch",
+        "runtimeFibers": 834,
+        "staticFibers": 98,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": {
+          "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <header> [HostComponent] > <div> [HostComponent] > <LanguageSelect> [FunctionComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectContent> [ForwardRef] > <SelectPortal> [FunctionComponent] > <Portal> [ForwardRef][0]",
+          "expected": "<end of children>",
+          "actual": "<Portal> [HostPortal]"
+        },
+        "stepsUsed": 69,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T07:07:03.492Z",
+      "failure": null
+    },
+    {
       "id": "sentry",
       "revision": "a7b4a8a2a78a666418e527d812e81528147789da",
       "framework": "react-router",

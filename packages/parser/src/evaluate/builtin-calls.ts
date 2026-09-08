@@ -1073,6 +1073,22 @@ const callGlobal = (
           })
         : unknownValue("Reflect.apply with dynamic arguments", location);
     }
+    case "Reflect.construct": {
+      const newTarget = args[2];
+      if (!first) return unknownValue("Reflect.construct without a target", location);
+      const constructArguments =
+        second === undefined ? [] : isKnownList(second) ? second.items : null;
+      if (constructArguments === null) {
+        return unknownValue("Reflect.construct with dynamic arguments", location);
+      }
+      const superConstructed =
+        context.thisValue && interpreter.constructSuper(context.thisValue, first, constructArguments);
+      if (superConstructed) return superConstructed;
+      if (newTarget && newTarget !== first) {
+        return unknownValue("Reflect.construct with a foreign new.target", location);
+      }
+      return interpreter.construct(first, constructArguments, context, location);
+    }
     case "Object.defineProperty": {
       const descriptor = args[2];
       if (!first || second?.kind !== "primitive" || descriptor?.kind !== "object") {
@@ -1416,6 +1432,27 @@ const toPattern = (value: StaticValue): string | RegExp | null => {
 const listOfStrings = (parts: (string | undefined)[]): StaticListValue =>
   listValue(parts.map((part) => (part === undefined ? UNDEFINED_VALUE : primitiveValue(part))));
 
+const matchResultValue = (matched: RegExpExecArray, input: string): StaticListValue => ({
+  ...listOfStrings([...matched]),
+  properties: new Map([
+    ["index", primitiveValue(matched.index)],
+    ["input", primitiveValue(input)],
+    [
+      "groups",
+      matched.groups
+        ? objectFromRecord(
+            Object.fromEntries(
+              Object.entries(matched.groups).map(([groupName, groupText]) => [
+                groupName,
+                groupText === undefined ? UNDEFINED_VALUE : primitiveValue(groupText),
+              ]),
+            ),
+          )
+        : UNDEFINED_VALUE,
+    ],
+  ]),
+});
+
 const dynamicSplitResult = (location: SourceLocation | null): StaticListValue =>
   listValue([
     { kind: "repeat", item: unknownPrimitiveValue("string", "split of dynamic string"), location },
@@ -1487,8 +1524,12 @@ const callStringMethod = (
   if (name === "match" && first?.kind === "regexp") {
     const regExp = toRegExp(first);
     if (!regExp) return null;
-    const matched = receiver.match(regExp);
-    return matched ? listOfStrings([...matched]) : NULL_VALUE;
+    if (regExp.global) {
+      const matched = receiver.match(regExp);
+      return matched ? listOfStrings([...matched]) : NULL_VALUE;
+    }
+    const matched = regExp.exec(receiver);
+    return matched ? matchResultValue(matched, receiver) : NULL_VALUE;
   }
   if (!allKnown) return null;
   const position = primitiveArgs[1] === undefined ? undefined : Number(primitiveArgs[1]);
@@ -1603,14 +1644,7 @@ const callRegExpMethod = (
   const matched = regExp.exec(input);
   receiver.lastIndex = regExp.lastIndex;
   if (name === "test") return primitiveValue(matched !== null);
-  if (!matched) return NULL_VALUE;
-  return {
-    ...listOfStrings([...matched]),
-    properties: new Map([
-      ["index", primitiveValue(matched.index)],
-      ["input", primitiveValue(input)],
-    ]),
-  };
+  return matched ? matchResultValue(matched, input) : NULL_VALUE;
 };
 
 const fallbackMethodResult = (
@@ -1766,6 +1800,8 @@ export const evaluateBuiltinCall = (
     if (FUNCTION_INVOCATION_METHODS.has(name))
       return callGlobal(interpreter, `${receiver.name}.${name}`, args, context, location, false);
   }
+
+  if (name === "bind" && receiver.kind === "class" && args.length <= 1) return receiver;
 
   if (
     (name === "call" || name === "apply") &&

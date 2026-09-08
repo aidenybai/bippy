@@ -1,8 +1,11 @@
 import { getCapturedExportReference, getOpaqueCaptureDescription } from "../observations.js";
+import type { Class } from "oxc-parser";
 import type {
   CapturedExportReference,
   CapturedValue,
+  FunctionLikeNode,
   JsonValue,
+  Scope,
   SourceLocation,
   StaticAccessor,
   StaticClassValue,
@@ -607,9 +610,44 @@ const getIdentityClass = (value: StaticValue): "scalar" | "symbol" | "reference"
 const isHeapValue = (value: StaticValue): value is StaticObjectValue | StaticListValue =>
   value.kind === "object" || value.kind === "list";
 
-/** Two closures or classes created from different source nodes are never the same object. */
 const isCallableValue = (value: StaticValue): value is StaticFunctionValue | StaticClassValue =>
   value.kind === "function" || value.kind === "class";
+
+interface ClosureIdentity {
+  node: FunctionLikeNode | Class;
+  scope: Scope;
+}
+
+/** The closure or class a callable or an element's `type` refers to; a bound function is a distinct object. */
+const getClosureIdentity = (value: StaticValue): ClosureIdentity | null => {
+  if (value.kind === "class") return value;
+  if (value.kind === "function") return value.boundArgs || value.boundThis ? null : value;
+  if (value.kind !== "component-reference") return null;
+  const { type } = value;
+  return type.kind === "function" || type.kind === "class" ? type.component : null;
+};
+
+/** A `forwardRef`/`memo`/`lazy` object, never identical to a closure or class. */
+const isWrapperReference = (value: StaticValue): boolean =>
+  value.kind === "component-reference" &&
+  (value.type.kind === "forward-ref" || value.type.kind === "memo" || value.type.kind === "lazy");
+
+/**
+ * Closures created from different source nodes are never the same object; the
+ * same node evaluated in the same scope is the same closure (a component
+ * declaration compared against an element's `type`).
+ */
+const compareClosureIdentity = (left: StaticValue, right: StaticValue): boolean | null => {
+  const leftClosure = getClosureIdentity(left);
+  const rightClosure = getClosureIdentity(right);
+  if (leftClosure && rightClosure) {
+    if (leftClosure.node !== rightClosure.node) return false;
+    return leftClosure.scope === rightClosure.scope ? true : null;
+  }
+  if ((leftClosure && isWrapperReference(right)) || (rightClosure && isWrapperReference(left)))
+    return false;
+  return null;
+};
 
 /** Values the analyzed program itself creates, so never a host intrinsic such as `Function.prototype`. */
 const isProgramAllocated = (value: StaticValue): boolean =>
@@ -678,7 +716,8 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
       ? true
       : null;
   }
-  if (isCallableValue(left) && isCallableValue(right) && left.node !== right.node) return false;
+  const closureIdentity = compareClosureIdentity(left, right);
+  if (closureIdentity !== null) return closureIdentity;
   const leftClass = getIdentityClass(left);
   const rightClass = getIdentityClass(right);
   if (leftClass && rightClass && leftClass !== rightClass) return false;

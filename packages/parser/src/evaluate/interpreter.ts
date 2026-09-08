@@ -85,6 +85,7 @@ import type {
   StaticObjectValue,
   StaticPrimitive,
   StaticValue,
+  SuperBinding,
   TopLevelBinding,
   UnknownPrimitiveType,
 } from "../types.js";
@@ -120,6 +121,7 @@ import { isInstanceOf } from "./instance-of.js";
 import {
   compareNumberRanges,
   concatenateStrings,
+  getShapedStringCharacter,
   getShapedStringLength,
 } from "./primitive-shapes.js";
 import {
@@ -153,7 +155,7 @@ import { NO_PROVIDERS, withOutcomeHandler, withScope, withoutSuspension } from "
 import { decodeJsxEntities } from "./jsx-entities.js";
 import { cleanJsxText } from "./jsx-text.js";
 import { describeMacroJsxChildren, getStubExpandJsx } from "./macro-jsx.js";
-import { forEachEscapedCallable, getMutatedIdentifiers } from "./escapes.js";
+import { forEachEscapedCallable, getMutatedIdentifiers, THIS_MUTATION } from "./escapes.js";
 import {
   type AsyncCall,
   awaitedValue,
@@ -295,6 +297,11 @@ const isFunctionOwnOrInheritedKey = (key: string): boolean =>
   isSymbolPropertyKey(key) || FUNCTION_INSTANCE_KEYS.has(key) || key in Function.prototype;
 
 /** A member read on a value whose prototype chain is fully known: absent names are `undefined`. */
+const toIndexKey = (key: string): number | null => {
+  const index = Number(key);
+  return Number.isInteger(index) && index >= 0 && String(index) === key ? index : null;
+};
+
 const prototypeMember = (
   receiver: StaticValue,
   prototype: object | null,
@@ -457,15 +464,22 @@ const isSameTypePrimitive = (previous: StaticValue, next: StaticValue): boolean 
  * would never bottom out (dynamic values never become more precise). Nor
  * would one that only threads unknowns forward with a changing counter
  * (`walk(node.child, depth + 1)` over an unknown `node`): every level sees
- * the same unknown data, so the result is unknown either way. A call that
- * makes progress over known data (walking a tree, re-entering a batch
- * flush after a counter changed) is followed until the call-depth limit.
+ * the same unknown data, so the result is unknown either way. Nor would one
+ * re-entered from inside a fork that opened during that activation (a
+ * recursive-descent parser's `case GroupStart: this.parseNodes()` over an
+ * unknown input): only data the analysis cannot see decides whether it
+ * recurses, so how deep it goes is unknown, as for a loop with an uncertain
+ * exit. A call that makes progress over known data (walking a tree,
+ * re-entering a batch flush after a counter changed) is followed until the
+ * call-depth limit.
  */
 const isNonProgressingRecursion = (
   callStack: CallFrame[],
   functionValue: StaticFunctionValue,
   args: StaticValue[],
+  thisValue: StaticValue | null,
   changeCount: number,
+  forkDepth: number,
 ): boolean => {
   const hasUnknownArgument = args.some(mayBeUnknown);
   return callStack.some(
@@ -473,7 +487,10 @@ const isNonProgressingRecursion = (
       frame.node === functionValue.node &&
       frame.scope === functionValue.scope &&
       frame.args.length === args.length &&
-      (hasUnknownArgument || frame.changeCount === changeCount) &&
+      areValuesEquivalent(frame.thisValue ?? UNDEFINED_VALUE, thisValue ?? UNDEFINED_VALUE) &&
+      (hasUnknownArgument ||
+        frame.changeCount === changeCount ||
+        frame.forkDepth < forkDepth) &&
       frame.args.every(
         (argument, index) =>
           areValuesEquivalent(argument, args[index]) ||
@@ -483,6 +500,14 @@ const isNonProgressingRecursion = (
       ),
   );
 };
+
+const getCallReceiver = (
+  functionValue: StaticFunctionValue,
+  options: CallOptions,
+): StaticValue | null =>
+  functionValue.node.type === "ArrowFunctionExpression"
+    ? functionValue.thisValue
+    : (options.thisValue ?? null);
 
 /** An unknown, or a branch one of whose paths is: `paths.slice(0, -1)` of such a value is no more precise. */
 const mayBeUnknown = (value: StaticValue): boolean =>
@@ -541,6 +566,8 @@ export class Interpreter {
   /** One evaluation per destructuring declarator, shared by every name it binds. */
   private readonly destructuredInitValues = new WeakMap<Expression, StaticValue>();
   private readonly diagnosticKeys = new Set<string>();
+  /** The `super(...)` each instance under construction runs, for lowered constructors calling it through `Reflect.construct`. */
+  readonly pendingSuperBindings = new WeakMap<StaticObjectValue, SuperBinding>();
 
   constructor(graph: ModuleGraph, options: InterpreterOptions = {}) {
     this.graph = graph;
@@ -839,13 +866,12 @@ export class Interpreter {
         return target;
       }
       case "list": {
-        const index = Number(propertyName);
-        if (
-          !target.isFrozen &&
-          Number.isInteger(index) &&
-          index >= 0 &&
-          index < target.items.length
-        ) {
+        if (target.isFrozen || propertyName === "length") return target;
+        const index = toIndexKey(propertyName);
+        if (index === null) {
+          this.recordHeapMutation(target);
+          target.properties = new Map([...(target.properties ?? []), [propertyName, value]]);
+        } else if (index < target.items.length) {
           this.recordHeapMutation(target);
           target.items[index] = value;
         }
@@ -1858,10 +1884,8 @@ export class Interpreter {
       }
       case "list": {
         if (key === "length") return getListLength(object);
-        const index = Number(key);
-        if (Number.isInteger(index) && index >= 0) {
-          return getListItem(object.items, index, location);
-        }
+        const index = toIndexKey(key);
+        if (index !== null) return getListItem(object.items, index, location);
         return object.properties?.get(key) ?? prototypeMember(object, Array.prototype, key);
       }
       case "optional":
@@ -1887,16 +1911,23 @@ export class Interpreter {
           if (optional) return CHAIN_SHORT_CIRCUIT;
           return unknownValue(`property "${key}" of ${String(object.value)}`, location);
         }
-        if (typeof object.value === "string" && key === "length")
-          return primitiveValue(object.value.length);
+        if (typeof object.value === "string") {
+          if (key === "length") return primitiveValue(object.value.length);
+          const index = toIndexKey(key);
+          if (index !== null) return primitiveValue(object.value[index]);
+        }
         return prototypeMember(object, Object.getPrototypeOf(object.value), key);
-      case "unknown-primitive":
+      case "unknown-primitive": {
         if (key === "length") {
           return object.primitiveType === "string"
             ? getShapedStringLength(object)
             : unknownPrimitiveValue("number", "length of dynamic value");
         }
+        const index = toIndexKey(key);
+        if (index !== null && object.primitiveType === "string")
+          return getShapedStringCharacter(object, index);
         return prototypeMember(object, PRIMITIVE_PROTOTYPES[object.primitiveType], key);
+      }
       case "context":
         if (key === "Provider") {
           return componentReference({
@@ -2191,7 +2222,8 @@ export class Interpreter {
           readContext: (definition) => context.readContext(definition) ?? definition.defaultValue,
           callAwaited: (callee, calleeArgs) =>
             this.callAwaited(callee, calleeArgs, context, location),
-          call: (callee, calleeArgs) => this.callValue(callee, calleeArgs, context, location),
+          call: (callee, calleeArgs, thisValue) =>
+            this.callValue(callee, calleeArgs, context, location, { thisValue }),
           captured: (captured, name) => this.captured(captured, name),
           markEscaped: (value) => this.markEscaped(value),
           queueMicrotask: (task) => this.timers.queueMicrotask(task),
@@ -2243,6 +2275,12 @@ export class Interpreter {
   private markEscapedMutations(functionValue: StaticFunctionValue): void {
     const { module } = functionValue;
     for (const name of getMutatedIdentifiers(functionValue.node)) {
+      if (name === THIS_MUTATION) {
+        if (functionValue.thisValue) {
+          markExternallyMutable(functionValue.thisValue, describeEscapedMutation(name));
+        }
+        continue;
+      }
       const scoped = lookupScope(functionValue.scope, name);
       if (scoped) {
         markExternallyMutable(scoped, describeEscapedMutation(name));
@@ -2268,6 +2306,19 @@ export class Interpreter {
     const location = this.locate(context.module, node);
     const args = this.evaluateArguments(node.arguments, context);
     return this.construct(callee, args, context, location);
+  }
+
+  /** Runs the pending `super(...)` of `instance` when `superClass` is its parent; null when it is not under construction by that parent. */
+  constructSuper(
+    instance: StaticValue,
+    superClass: StaticValue,
+    args: StaticValue[],
+  ): StaticValue | null {
+    if (instance.kind !== "object") return null;
+    const binding = this.pendingSuperBindings.get(instance);
+    if (!binding?.construct || binding.parent !== superClass) return null;
+    binding.construct(args);
+    return instance;
   }
 
   construct(
@@ -2462,7 +2513,16 @@ export class Interpreter {
       );
       return unknownValue("call depth exceeded", location);
     }
-    if (isNonProgressingRecursion(callStack, functionValue, args, this.changeCount)) {
+    if (
+      isNonProgressingRecursion(
+        callStack,
+        functionValue,
+        args,
+        getCallReceiver(functionValue, options),
+        this.changeCount,
+        context.forkDepth,
+      )
+    ) {
       return unknownValue(
         `recursive call of ${functionValue.name ?? "anonymous function"}`,
         location,
@@ -2522,13 +2582,11 @@ export class Interpreter {
     const location = this.locate(functionValue.module, functionValue.node);
     const callStack = options.callStack ?? context.callStack;
     const scope = createScope(functionValue.scope);
+    const thisValue = getCallReceiver(functionValue, options);
     const callContext: EvaluationContext = {
       module: functionValue.module,
       scope,
-      thisValue:
-        functionValue.node.type === "ArrowFunctionExpression"
-          ? functionValue.thisValue
-          : (options.thisValue ?? null),
+      thisValue,
       superBinding: functionValue.superBinding,
       readContext: context.readContext,
       callStack: [
@@ -2537,7 +2595,9 @@ export class Interpreter {
           node: functionValue.node,
           scope: functionValue.scope,
           args,
+          thisValue,
           changeCount: this.changeCount,
+          forkDepth: context.forkDepth,
         },
       ],
       uncertainDepth: context.uncertainDepth,
@@ -2572,10 +2632,10 @@ export class Interpreter {
     call: CallExpression,
     context: EvaluationContext,
   ): StaticValue {
-    const superValue = this.evaluateArguments(call.arguments, context)[0] ?? UNDEFINED_VALUE;
+    const superValue = this.evaluateArguments(call.arguments, context)[0] ?? null;
     const scope = createScope(context.scope);
     const wrapperContext: EvaluationContext = { ...context, scope };
-    this.bindParameters(compiled.wrapper.params, [superValue], scope, wrapperContext);
+    this.bindParameters(compiled.wrapper.params, superValue ? [superValue] : [], scope, wrapperContext);
     const classValue = this.defineClass(
       compiled.wrapper,
       { members: compiled.members, superValue },

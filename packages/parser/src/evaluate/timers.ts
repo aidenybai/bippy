@@ -32,9 +32,14 @@ export class TimerQueue {
   }
 
   schedule(handle: StaticValue, task: () => void): void {
-    this.tasks.push(() => {
+    this.enqueue(() => {
       if (!this.clearedHandles.has(handle)) task();
     });
+  }
+
+  /** Queues `task` for the next round, like a short timer that cannot be cleared. */
+  enqueue(task: () => void): void {
+    this.tasks.push(task);
   }
 
   clear(handle: StaticValue | undefined): void {

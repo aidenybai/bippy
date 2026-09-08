@@ -5,7 +5,7 @@ import type {
   StaticObjectValue,
   StaticValue,
 } from "../types.js";
-import { branchValue, getAllocationCount, joinObjectEntries } from "./values.js";
+import { branchValue, getAllocationCount, joinObjectEntries, UNDEFINED_VALUE } from "./values.js";
 
 export type MutableHeapValue = StaticObjectValue | StaticListValue;
 
@@ -16,9 +16,12 @@ export type ModuleValues = Map<string, StaticValue | typeof IN_PROGRESS>;
 
 type ModuleBindingStates = Map<ModuleValues, Map<string, StaticValue>>;
 
+type ListProperties = ReadonlyMap<string, StaticValue> | undefined;
+
 interface HeapPath {
   objects: Map<StaticObjectValue, StaticObjectEntry[]>;
   lists: Map<StaticListValue, StaticValue[]>;
+  listProperties: Map<StaticListValue, ListProperties>;
   bindings: ModuleBindingStates;
 }
 
@@ -35,6 +38,27 @@ const isUnchanged = <Item>(paths: Item[][], original: Item[]): boolean =>
 const getAgreedState = <Item>(paths: Item[][]): Item[] | null =>
   paths.every((items) => isSameState(items, paths[0])) ? paths[0] : null;
 
+const joinListProperties = (
+  paths: ListProperties[],
+  reason: string,
+  location: SourceLocation | null,
+  preferredPath: number,
+): ListProperties => {
+  if (paths.every((properties) => properties === paths[0])) return paths[0];
+  const keys = new Set(paths.flatMap((properties) => [...(properties?.keys() ?? [])]));
+  return new Map(
+    [...keys].map((key) => {
+      const values = paths.map((properties) => properties?.get(key) ?? UNDEFINED_VALUE);
+      return [
+        key,
+        values.every((value) => value === values[0])
+          ? values[0]
+          : branchValue(values, reason, location, preferredPath),
+      ];
+    }),
+  );
+};
+
 /**
  * Scope bindings are restored and joined around every fork, but objects and
  * lists reached through them live on the heap, and module-level variables in
@@ -47,6 +71,7 @@ const getAgreedState = <Item>(paths: Item[][]): Item[] | null =>
 export class HeapJournal {
   private readonly objects = new Map<StaticObjectValue, StaticObjectEntry[]>();
   private readonly lists = new Map<StaticListValue, StaticValue[]>();
+  private readonly listProperties = new Map<StaticListValue, ListProperties>();
   private readonly bindings: ModuleBindingStates = new Map();
   private readonly paths: HeapPath[] = [];
   private readonly entryAllocation = getAllocationCount();
@@ -61,6 +86,7 @@ export class HeapJournal {
       if (!this.objects.has(target)) this.objects.set(target, [...target.entries]);
     } else if (!this.lists.has(target)) {
       this.lists.set(target, [...target.items]);
+      this.listProperties.set(target, target.properties);
     }
   }
 
@@ -74,14 +100,21 @@ export class HeapJournal {
   }
 
   endPath(): void {
-    const path: HeapPath = { objects: new Map(), lists: new Map(), bindings: new Map() };
+    const path: HeapPath = {
+      objects: new Map(),
+      lists: new Map(),
+      listProperties: new Map(),
+      bindings: new Map(),
+    };
     for (const [object, original] of this.objects) {
       path.objects.set(object, object.entries);
       object.entries = [...original];
     }
     for (const [list, original] of this.lists) {
       path.lists.set(list, list.items);
+      path.listProperties.set(list, list.properties);
       list.items = [...original];
+      list.properties = this.listProperties.get(list);
     }
     for (const [values, originals] of this.bindings) {
       const pathValues = new Map<string, StaticValue>();
@@ -117,6 +150,16 @@ export class HeapJournal {
         joinObjectEntries(original, pathEntries, reason, location, preferredPath);
     }
     for (const [list, original] of this.lists) {
+      list.properties = joinListProperties(
+        this.paths.map((path) =>
+          path.listProperties.has(list)
+            ? path.listProperties.get(list)
+            : this.listProperties.get(list),
+        ),
+        reason,
+        location,
+        preferredPath,
+      );
       const pathItems = this.paths.map((path) => path.lists.get(list) ?? original);
       if (isUnchanged(pathItems, original)) continue;
       const agreedItems = getAgreedState(pathItems);

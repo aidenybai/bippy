@@ -703,6 +703,44 @@
         ]
       },
       "notes": "The start script pins PORT=5000. Everything on the dashboard route is local mock data (src/data/mockData.js); the charts are nivo components."
+    },
+    {
+      "id": "regex-vis",
+      "repository": "https://github.com/Bowen7/regex-vis",
+      "revision": "a6d920601ca44ab2d4e9cd02306510ab6d5e4b38",
+      "description": "Regex Vis (Vite 5 SPA, React 18, react-router-dom 6 declarative routes, jotai, radix/shadcn ui, i18next over HTTP backend)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "dev": "pnpm start --port 5173 --strictPort",
+      "url": "http://localhost:5173/",
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.tsx",
+        "route": "/",
+        "aliases": {
+          "tailwind.config": "tailwind.config.ts"
+        },
+        "envFiles": [],
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "jotai",
+          "jotai-immer",
+          "nanoid",
+          "react-i18next",
+        "i18next-http-backend",
+        "i18next-browser-languagedetector",
+          "i18next",
+          "react-use",
+          "usehooks-ts",
+          "lodash.debounce",
+          "class-variance-authority",
+          "clsx",
+          "tailwind-merge"
+        ]
+      },
+      "notes": "vite.config.ts aliases `tailwind.config` to tailwind.config.ts and defines SENTRY_DSN from an unset env var; the app reads import.meta.env.SENTRY_DSN (no VITE_ prefix, so undefined). Translations load from public/locales through i18next-http-backend at runtime."
     }
   ]
 }

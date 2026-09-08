@@ -166,6 +166,17 @@ const forwardTo = (target: ModeledPromise): PromiseReaction => ({
   escape: (markEscaped) => escapePromise(target, markEscaped),
 });
 
+/** Runs `onSettled` once `promise` settles, or once it escapes, when it may settle at any time. */
+export const onPromiseSettled = (
+  promise: ModeledPromise,
+  onSettled: (isEscaped: boolean) => void,
+  queueMicrotask: PromiseTools["queueMicrotask"],
+): void => {
+  if (promise.settled) queueMicrotask(() => onSettled(false));
+  else if (promise.isEscaped) onSettled(true);
+  else promise.reactions.push({ run: () => onSettled(false), escape: () => onSettled(true) });
+};
+
 const subscribe = (
   promise: ModeledPromise,
   reaction: PromiseReaction,

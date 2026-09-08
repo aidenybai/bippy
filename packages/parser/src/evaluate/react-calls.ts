@@ -422,8 +422,8 @@ export const evaluateReactApiCall = (
         nameHint ?? "useReducer",
         computeInitial,
         (action, current, tools) =>
-          first && action
-            ? tools.call(first, [current, action])
+          first
+            ? tools.call(first, [current, action ?? UNDEFINED_VALUE])
             : unknownValue("reducer state after dispatch"),
       );
     }

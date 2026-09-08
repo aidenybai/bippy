@@ -3,6 +3,7 @@ import { isCompilerHelperPackage } from "../graph/helper-packages.js";
 import { hasExportedName } from "../graph/module-record.js";
 import { getBuiltinGlobal, getTypeofValue } from "./builtin-calls.js";
 import {
+  describeValue,
   getObjectProperty,
   getTruthiness,
   isKnownList,
@@ -10,6 +11,7 @@ import {
   objectValue,
   omitObjectKeys,
   primitiveValue,
+  TRUE_VALUE,
   UNDEFINED_VALUE,
   unknownValue,
 } from "./values.js";
@@ -48,10 +50,54 @@ const interopRequireWildcard: HelperImplementation = ([moduleValue]) => {
   ]);
 };
 
-const assign: HelperImplementation = (args, tools) => {
-  const objectAssign = getBuiltinGlobal("Object.assign");
-  return objectAssign ? tools.call(objectAssign, args) : unknownValue("Object.assign helper");
+const callGlobal = (name: string, args: StaticValue[], tools: StubRenderTools): StaticValue => {
+  const global = getBuiltinGlobal(name);
+  return global ? tools.call(global, args) : unknownValue(`${name} helper`);
 };
+
+const assign: HelperImplementation = (args, tools) => callGlobal("Object.assign", args, tools);
+
+const getPrototypeOf: HelperImplementation = (args, tools) =>
+  callGlobal("Object.getPrototypeOf", args, tools);
+
+const possibleConstructorReturn: HelperImplementation = ([self, call]) => {
+  if (!self) return UNDEFINED_VALUE;
+  if (!call || call.kind === "primitive") return self;
+  return call;
+};
+
+/**
+ * `super(...)` as Babel lowers it: `_callSuper(this, Derived, args)` and
+ * `_createSuper(Derived)` construct the parent through `Reflect.construct`
+ * from the derived constructor, whose `this` the interpreter is constructing.
+ */
+const constructParent = (
+  derived: StaticValue,
+  constructArguments: StaticValue,
+  tools: StubRenderTools,
+): StaticValue =>
+  callGlobal(
+    "Reflect.construct",
+    [getPrototypeOf([derived], tools), constructArguments, derived],
+    tools,
+  );
+
+const callSuper: HelperImplementation = ([self, derived, constructArguments], tools) =>
+  self && derived
+    ? possibleConstructorReturn(
+        [self, constructParent(derived, constructArguments ?? listValue([]), tools)],
+        tools,
+      )
+    : UNDEFINED_VALUE;
+
+const createSuper: HelperImplementation = ([derived]) =>
+  derived
+    ? {
+        kind: "native-function",
+        name: "_createSuperInternal",
+        call: (args, tools) => constructParent(derived, listValue(args), tools),
+      }
+    : UNDEFINED_VALUE;
 
 const identity: HelperImplementation = ([value]) => value ?? UNDEFINED_VALUE;
 
@@ -81,16 +127,39 @@ const objectWithoutProperties: HelperImplementation = ([source, excluded]) => {
   return omitObjectKeys(source, omitted);
 };
 
-const defineProperty: HelperImplementation = ([target, key, value]) => {
+const defineProperty: HelperImplementation = ([target, key, value], tools) => {
   if (!target) return UNDEFINED_VALUE;
-  if (target.kind === "object" && key?.kind === "primitive" && value) {
-    target.entries.push({ kind: "property", key: String(key.value), value });
+  if (key?.kind !== "primitive" || !value) return target;
+  const propertyName = String(key.value);
+  if (target.kind === "object") tools.setProperty(target, propertyName, value);
+  if (target.kind === "function" || target.kind === "class") {
+    target.properties.set(propertyName, value);
   }
   return target;
 };
 
+const toPropertyKey: HelperImplementation = ([key]) => {
+  if (!key) return primitiveValue("undefined");
+  if (key.kind === "symbol") return key;
+  if (key.kind === "primitive" && typeof key.value !== "symbol") {
+    return primitiveValue(String(key.value));
+  }
+  return unknownValue("property key of a dynamic value");
+};
+
 const typeOf: HelperImplementation = ([value]) =>
   value ? getTypeofValue(value, null) : primitiveValue("undefined");
+
+/** A lowered class already carries its parent; a plain constructor function gets a prototype the analysis does not model. */
+const inherits: HelperImplementation = ([subClass, superClass]) => {
+  if (subClass?.kind === "function" && superClass) {
+    subClass.properties.set(
+      "prototype",
+      unknownValue(`prototype inheriting from ${describeValue(superClass)}`),
+    );
+  }
+  return UNDEFINED_VALUE;
+};
 
 const HELPERS: Record<string, HelperImplementation> = {
   typeof: typeOf,
@@ -120,10 +189,28 @@ const HELPERS: Record<string, HelperImplementation> = {
   _object_without_properties: objectWithoutProperties,
   defineProperty,
   _define_property: defineProperty,
+  toPropertyKey,
+  _to_property_key: toPropertyKey,
   taggedTemplateLiteral: identity,
   _tagged_template_literal: identity,
   classCallCheck: () => UNDEFINED_VALUE,
   _class_call_check: () => UNDEFINED_VALUE,
+  assertThisInitialized: identity,
+  _assert_this_initialized: identity,
+  getPrototypeOf,
+  _get_prototype_of: getPrototypeOf,
+  setPrototypeOf: (args, tools) => callGlobal("Object.setPrototypeOf", args, tools),
+  _set_prototype_of: (args, tools) => callGlobal("Object.setPrototypeOf", args, tools),
+  isNativeReflectConstruct: () => TRUE_VALUE,
+  _is_native_reflect_construct: () => TRUE_VALUE,
+  possibleConstructorReturn,
+  _possible_constructor_return: possibleConstructorReturn,
+  callSuper,
+  _call_super: callSuper,
+  createSuper,
+  _create_super: createSuper,
+  inherits,
+  _inherits: inherits,
 };
 
 const getHelperName = (packageName: string, specifier: string, importedName: string): string => {
@@ -138,7 +225,7 @@ const getHelperName = (packageName: string, specifier: string, importedName: str
  */
 export const getInlineCompilerHelper = (functionName: string): StaticNativeFunctionValue | null => {
   if (!functionName.startsWith("_")) return null;
-  const implementation = HELPERS[functionName.slice(1)];
+  const implementation = HELPERS[functionName.slice(1).replace(/\$\d+$/, "")];
   return implementation
     ? { kind: "native-function", name: functionName, call: implementation }
     : null;

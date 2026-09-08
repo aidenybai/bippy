@@ -84,29 +84,30 @@ const MUTATING_METHODS = new Set([
   "copyWithin",
 ]);
 
+export const THIS_MUTATION = "this";
+
+/** The variable a member expression roots in; `this` members report `THIS_MUTATION`. */
+const getMemberObjectName = (node: Node): string | null => {
+  if (node.type !== "MemberExpression") return null;
+  if (node.object.type === "Identifier") return node.object.name;
+  return node.object.type === "ThisExpression" ? THIS_MUTATION : null;
+};
+
 const getMutatedObjectName = (node: Node): string | null => {
   switch (node.type) {
     case "CallExpression": {
       const callee = node.callee;
-      if (callee.type !== "MemberExpression" || callee.object.type !== "Identifier") return null;
+      if (callee.type !== "MemberExpression") return null;
       const method = callee.computed ? null : callee.property;
       return method?.type === "Identifier" && MUTATING_METHODS.has(method.name)
-        ? callee.object.name
+        ? getMemberObjectName(callee)
         : null;
     }
     case "AssignmentExpression":
-    case "UpdateExpression": {
-      const target = node.type === "AssignmentExpression" ? node.left : node.argument;
-      return target.type === "MemberExpression" && target.object.type === "Identifier"
-        ? target.object.name
-        : null;
-    }
+    case "UpdateExpression":
+      return getMemberObjectName(node.type === "AssignmentExpression" ? node.left : node.argument);
     case "UnaryExpression":
-      return node.operator === "delete" &&
-        node.argument.type === "MemberExpression" &&
-        node.argument.object.type === "Identifier"
-        ? node.argument.object.name
-        : null;
+      return node.operator === "delete" ? getMemberObjectName(node.argument) : null;
     default:
       return null;
   }

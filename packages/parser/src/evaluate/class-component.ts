@@ -544,12 +544,16 @@ const constructLayer = (
       construct: isDerived ? constructParent : null,
       parent: layer.current.body.superValue,
     };
+    const outerSuperBinding = interpreter.pendingSuperBindings.get(instance);
+    interpreter.pendingSuperBindings.set(instance, superBinding);
     interpreter.callFunction(
       { ...layer.members.constructor, superBinding },
       args,
       { ...layer.methodContext, superBinding },
       { thisValue: instance },
     );
+    if (outerSuperBinding) interpreter.pendingSuperBindings.set(instance, outerSuperBinding);
+    else interpreter.pendingSuperBindings.delete(instance);
   }
   if (isDerived) constructParent(args);
 };

@@ -18,10 +18,12 @@ import type { ClassMember } from "../types.js";
 
 /**
  * A class as Babel and TypeScript lower it for targets without class syntax:
- * `(function (_Base) { …; function X() {} …; return X; })(Base)`, where the
- * wrapper declares the constructor as a function, attaches members to its
- * prototype (directly, through a `_proto` alias, `Object.defineProperty` or a
- * `_createClass` descriptor list) and returns it.
+ * `(function (_Base) { …; function X() {} …; return X; })(Base)` (or a
+ * parameterless wrapper for a class without a base, told apart from a wrapped
+ * function component by its prototype members), where the wrapper declares the
+ * constructor as a function, attaches members to its prototype (directly,
+ * through a `_proto` alias, `Object.defineProperty` or a `_createClass`
+ * descriptor list) and returns it.
  */
 export interface CompiledClass {
   name: string;
@@ -243,7 +245,7 @@ const toExpressionStatement = (expression: Expression): Statement => ({
 export const getCompiledClass = (call: CallExpression): CompiledClass | null => {
   const wrapper = unwrapExpression(call.callee);
   if (wrapper.type !== "FunctionExpression") return null;
-  if (wrapper.params.length !== 1 || call.arguments.length !== 1) return null;
+  if (wrapper.params.length > 1 || call.arguments.length !== wrapper.params.length) return null;
   const statements = getFunctionStatements(wrapper);
   if (!statements) return null;
   const returned = getReturnedClass(statements);
@@ -273,6 +275,10 @@ export const getCompiledClass = (call: CallExpression): CompiledClass | null => 
       continue;
     setup.push(statement);
   }
-  if (collector.members.length === 1) return null;
+  const hasPrototypeMembers = collector.members.some(
+    (member) => member.kind !== "constructor" && !member.isStatic,
+  );
+  if (collector.members.length === 1 || (wrapper.params.length === 0 && !hasPrototypeMembers))
+    return null;
   return { name, wrapper, members: collector.members, setup };
 };

@@ -7,7 +7,9 @@ import {
   FRAMER_MOTION_PACKAGES,
   framerMotionValue,
 } from "./framer-motion.js";
+import { IMMER_PACKAGES, immerValue } from "./immer.js";
 import { JED_PACKAGES, jedValue } from "./jed.js";
+import { JOTAI_MODELED_EXPORTS, JOTAI_PACKAGES, jotaiValue } from "./jotai.js";
 import { KEA_PACKAGES, keaValue } from "./kea.js";
 import { LINGUI_PACKAGES, linguiValue } from "./lingui.js";
 import { LODASH_MODELED_EXPORTS, LODASH_PACKAGES, lodashValue } from "./lodash.js";
@@ -50,7 +52,9 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     getValue: framerMotionValue,
     modeledExports: FRAMER_MOTION_MODELED_EXPORTS,
   },
+  { packages: IMMER_PACKAGES, getValue: immerValue },
   { packages: JED_PACKAGES, getValue: jedValue },
+  { packages: JOTAI_PACKAGES, getValue: jotaiValue, modeledExports: JOTAI_MODELED_EXPORTS },
   { packages: KEA_PACKAGES, getValue: keaValue },
   { packages: LINGUI_PACKAGES, getValue: linguiValue },
   {

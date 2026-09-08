@@ -263,7 +263,8 @@ export interface StubRenderTools {
   readContext: (context: ContextDefinition) => StaticValue;
   /** Calls a function whose promise the framework awaits (route `lazy`), with `await x` read as `x`. */
   callAwaited: (callee: StaticValue, args: StaticValue[]) => StaticValue;
-  call: (callee: StaticValue, args: StaticValue[]) => StaticValue;
+  /** Calls `callee` with `thisValue` as its receiver, as `callee.call(thisValue, ...args)` would. */
+  call: (callee: StaticValue, args: StaticValue[], thisValue?: StaticValue) => StaticValue;
   /** A value recorded from the running page, with references to the project's module exports evaluated. */
   captured: (captured: CapturedValue, name: string) => StaticValue;
   /** Records that `value` reached code the analysis cannot see, so its later mutations are uncertain. */
