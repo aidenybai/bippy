@@ -287,6 +287,7 @@ interface PatternLeafAssigner {
 const UNKNOWN_PROJECT: ProjectContext = {
   rootDirectory: null,
   hasDeclaredDependency: () => false,
+  readPackageVersion: () => null,
   readServedAsset: () => null,
   findQuery: () => null,
   findMutations: () => null,

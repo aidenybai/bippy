@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
+import type { ModuleResolver } from "./module-resolver.js";
 import { EMPTY_OBSERVATIONS } from "../observations.js";
 import { readPackageManifest } from "../package-manifest.js";
 import type { ProjectContext, RuntimeObservations } from "../types.js";
@@ -32,6 +33,17 @@ const readDeclaredDependencies = (manifestPath: string): string[] => {
   });
 };
 
+/** The version of the package the project's own resolution reaches, as its manifest declares it. */
+export const readPackageVersion = (
+  resolver: ModuleResolver,
+  rootDirectory: string,
+  packageName: string,
+): string | null => {
+  const resolution = resolver.resolve(`${packageName}/package.json`, `${rootDirectory}/index.js`);
+  if (resolution.kind !== "external" || !resolution.filePath) return null;
+  return readPackageManifest(resolution.filePath).version ?? null;
+};
+
 /**
  * Build tooling (babel/swc plugins) is never imported and, being pulled in
  * transitively by the libraries it serves, is installed in projects that do not
@@ -40,6 +52,7 @@ const readDeclaredDependencies = (manifestPath: string): string[] => {
  */
 export const createProjectContext = (
   rootDirectory: string,
+  resolver: ModuleResolver,
   observations: RuntimeObservations = EMPTY_OBSERVATIONS,
   origin: string | null = null,
 ): ProjectContext => {
@@ -55,6 +68,7 @@ export const createProjectContext = (
   return {
     rootDirectory,
     hasDeclaredDependency: (packageName) => declared.has(packageName),
+    readPackageVersion: (packageName) => readPackageVersion(resolver, rootDirectory, packageName),
     readServedAsset: (url) => readServedAsset(rootDirectory, origin, url),
     findQuery: (queryHash) => queries.get(queryHash) ?? null,
     findMutations: (mutationHash) =>

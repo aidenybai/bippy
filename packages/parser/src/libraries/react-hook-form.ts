@@ -1,3 +1,4 @@
+import semver from "semver";
 import {
   FALSE_VALUE,
   NULL_VALUE,
@@ -27,6 +28,8 @@ import { element, nativeFunction, omitProps, stubValue } from "../frameworks/stu
 import type {
   ContextDefinition,
   ExternalValueProvider,
+  LibraryValueProvider,
+  ProjectContext,
   ReactApi,
   StaticObjectEntry,
   StaticObjectValue,
@@ -45,12 +48,18 @@ import type {
 
 export const REACT_HOOK_FORM_PACKAGES = ["react-hook-form"];
 
-const HOOK_FORM_CONTEXT: ContextDefinition = {
+/** `HookFormContext.displayName` is assigned since 7.58.0 (src/useFormContext.tsx). */
+const NAMED_CONTEXT_VERSIONS = ">=7.58.0";
+
+const createHookFormContext = (version: string | null): ContextDefinition => ({
   name: "HookFormContext",
-  displayName: "HookFormContext",
+  displayName:
+    version === null || semver.satisfies(version, NAMED_CONTEXT_VERSIONS, { includePrerelease: true })
+      ? "HookFormContext"
+      : null,
   defaultValue: NULL_VALUE,
   location: null,
-};
+});
 
 const ROOT_PROXY_KEYS = [
   "isDirty",
@@ -1431,11 +1440,12 @@ const useEffectHook = (
 const resolveControl = (
   props: StaticValue | undefined,
   tools: StubRenderTools,
+  context: ContextDefinition,
 ): FormControl | null => {
   const explicit = propertyOf(props, "control");
   if (explicit.kind === "object") return formControls.get(explicit) ?? null;
   if (!isUndefined(explicit)) return null;
-  const methods = tools.readContext(HOOK_FORM_CONTEXT);
+  const methods = tools.readContext(context);
   const fromContext = propertyOf(methods, "control");
   return fromContext.kind === "object" ? (formControls.get(fromContext) ?? null) : null;
 };
@@ -1545,12 +1555,12 @@ const useForm = nativeFunction("useForm", ([propsArg], tools) => {
   return control.methods;
 });
 
-const useFormContext = nativeFunction("useFormContext", (_args, tools) =>
-  tools.readContext(HOOK_FORM_CONTEXT),
-);
+const createUseFormContext = (context: ContextDefinition): StaticValue =>
+  nativeFunction("useFormContext", (_args, tools) => tools.readContext(context));
 
-const useWatch = nativeFunction("useWatch", ([props], tools) => {
-  const control = resolveControl(props, tools);
+const createUseWatch = (context: ContextDefinition): StaticValue =>
+  nativeFunction("useWatch", ([props], tools) => {
+  const control = resolveControl(props, tools, context);
   if (!control) return missingControl("useWatch", props);
   const name = propertyOf(props, "name");
   const disabled = propertyOf(props, "disabled");
@@ -1598,10 +1608,11 @@ const useWatch = nativeFunction("useWatch", ([props], tools) => {
       }),
   );
   return value;
-});
+  });
 
-const useFormState = nativeFunction("useFormState", ([props], tools) => {
-  const control = resolveControl(props, tools);
+const createUseFormState = (context: ContextDefinition): StaticValue =>
+  nativeFunction("useFormState", ([props], tools) => {
+  const control = resolveControl(props, tools, context);
   if (!control) return missingControl("useFormState", props);
   const name = propertyOf(props, "name");
   const disabled = propertyOf(props, "disabled");
@@ -1630,10 +1641,15 @@ const useFormState = nativeFunction("useFormState", ([props], tools) => {
     if (localProxy.get("isValid")) setValid(control, true, effectTools);
   });
   return getProxyFormState(formState, control, localProxy, false);
-});
+  });
 
-const useController = nativeFunction("useController", ([props], tools) => {
-  const control = resolveControl(props, tools);
+const createUseController = (
+  context: ContextDefinition,
+  useWatch: StaticValue,
+  useFormState: StaticValue,
+): StaticValue =>
+  nativeFunction("useController", ([props], tools) => {
+  const control = resolveControl(props, tools, context);
   if (!control) return missingControl("useController", props);
   const nameValue = propertyOf(props, "name");
   const name = knownString(nameValue);
@@ -1774,7 +1790,7 @@ const useController = nativeFunction("useController", ([props], tools) => {
     if (name !== null) setDisabledField(control, name, disabled);
   });
   return objectFromRecord({ field, formState, fieldState });
-});
+  });
 
 const eventValue = (event: StaticValue | undefined): StaticValue => {
   if (event === undefined) return UNDEFINED_VALUE;
@@ -1786,7 +1802,7 @@ const eventValue = (event: StaticValue | undefined): StaticValue => {
     : getObjectProperty(target, "value");
 };
 
-const CONTROLLER_STUB: StubComponent = {
+const createControllerStub = (useController: StaticValue): StubComponent => ({
   displayName: "Controller",
   render: (props, tools) => {
     const render = getObjectProperty(props, "render");
@@ -1795,15 +1811,15 @@ const CONTROLLER_STUB: StubComponent = {
       ? tools.call(render, [controller])
       : unknownValue(`Controller render prop is ${describeValue(render)}`);
   },
-};
+});
 
-const FORM_PROVIDER_STUB: StubComponent = {
+const createFormProviderStub = (context: ContextDefinition): StubComponent => ({
   displayName: "FormProvider",
   render: (props) =>
     element(
       {
         kind: "context-provider",
-        context: HOOK_FORM_CONTEXT,
+        context,
         displayName: null,
       },
       objectFromRecord({
@@ -1811,13 +1827,14 @@ const FORM_PROVIDER_STUB: StubComponent = {
         children: getObjectProperty(props, "children"),
       }),
     ),
-};
+});
 
 const generateId = (): StaticValue =>
   unknownPrimitiveValue("string", "field array id from crypto.randomUUID");
 
-const useFieldArray = nativeFunction("useFieldArray", ([props], tools) => {
-  const control = resolveControl(props, tools);
+const createUseFieldArray = (context: ContextDefinition): StaticValue =>
+  nativeFunction("useFieldArray", ([props], tools) => {
+  const control = resolveControl(props, tools, context);
   if (!control) return missingControl("useFieldArray", props);
   const nameValue = propertyOf(props, "name");
   const name = knownString(nameValue);
@@ -1998,34 +2015,42 @@ const useFieldArray = nativeFunction("useFieldArray", ([props], tools) => {
           )
         : fields,
   });
+  });
+
+const get = nativeFunction("get", ([object, path, defaultValue]) => {
+  const name = knownString(path);
+  if (object === undefined || name === null) return defaultValue ?? UNDEFINED_VALUE;
+  return readPath(object, name, defaultValue);
 });
 
-export const reactHookFormValue: ExternalValueProvider = (specifier, importedName) => {
+const createHookFormLibrary = (context: ContextDefinition): ExternalValueProvider => {
+  const useWatch = createUseWatch(context);
+  const useFormState = createUseFormState(context);
+  const useController = createUseController(context, useWatch, useFormState);
+  const exports = new Map<string, StaticValue>([
+    ["useForm", useForm],
+    ["useFormContext", createUseFormContext(context)],
+    ["useWatch", useWatch],
+    ["useFormState", useFormState],
+    ["useController", useController],
+    ["useFieldArray", createUseFieldArray(context)],
+    ["Controller", stubValue(createControllerStub(useController))],
+    ["FormProvider", stubValue(createFormProviderStub(context))],
+    ["get", get],
+  ]);
+  return (_specifier, importedName) => exports.get(importedName) ?? null;
+};
+
+const libraries = new WeakMap<ProjectContext, ExternalValueProvider>();
+
+export const reactHookFormValue: LibraryValueProvider = (specifier, importedName, project) => {
   if (!REACT_HOOK_FORM_PACKAGES.includes(specifier)) return null;
-  switch (importedName) {
-    case "useForm":
-      return useForm;
-    case "useFormContext":
-      return useFormContext;
-    case "useWatch":
-      return useWatch;
-    case "useFormState":
-      return useFormState;
-    case "useController":
-      return useController;
-    case "useFieldArray":
-      return useFieldArray;
-    case "Controller":
-      return stubValue(CONTROLLER_STUB);
-    case "FormProvider":
-      return stubValue(FORM_PROVIDER_STUB);
-    case "get":
-      return nativeFunction("get", ([object, path, defaultValue]) => {
-        const name = knownString(path);
-        if (object === undefined || name === null) return defaultValue ?? UNDEFINED_VALUE;
-        return readPath(object, name, defaultValue);
-      });
-    default:
-      return null;
+  let library = libraries.get(project);
+  if (!library) {
+    library = createHookFormLibrary(
+      createHookFormContext(project.readPackageVersion("react-hook-form")),
+    );
+    libraries.set(project, library);
   }
+  return library(specifier, importedName);
 };

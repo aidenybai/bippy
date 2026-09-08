@@ -14,7 +14,6 @@ import {
 import { Materializer } from "../materialize/materializer.js";
 import { mountNode } from "../materialize/mount.js";
 import { loadReactRuntime, type ReactRuntime } from "../materialize/react-runtime.js";
-import { readReactVersion } from "../react/element-shape.js";
 import { toElementType } from "../react/element-type.js";
 import type {
   Diagnostic,
@@ -78,12 +77,13 @@ export class StaticRenderer {
       conditionNames: options.conditionNames,
       rootDirectory: this.options.rootDirectory,
     });
-    this.reactVersion = readReactVersion(this.resolver, this.options.rootDirectory);
     this.project = createProjectContext(
       this.options.rootDirectory,
+      this.resolver,
       this.options.observations,
       this.options.origin ?? null,
     );
+    this.reactVersion = this.project.readPackageVersion("react");
     this.graph = new ModuleGraph({
       resolver: this.resolver,
       resolveExternalPackages: options.resolveExternalPackages,

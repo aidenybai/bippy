@@ -1,6 +1,3 @@
-import type { ModuleResolver } from "../graph/module-resolver.js";
-import { readPackageManifest } from "../package-manifest.js";
-
 /** Own keys of a development-mode `ReactElement` (react/src/jsx/ReactJSXElement.js). */
 export const REACT_ELEMENT_OWN_KEYS = new Set([
   "$$typeof",
@@ -40,12 +37,3 @@ export const getReactElementSymbolKey = (reactVersion: string | null): string =>
   reactVersion && Number(reactVersion.split(".")[0]) < 19
     ? "react.element"
     : "react.transitional.element";
-
-export const readReactVersion = (
-  resolver: ModuleResolver,
-  rootDirectory: string,
-): string | null => {
-  const resolution = resolver.resolve("react/package.json", `${rootDirectory}/index.js`);
-  if (resolution.kind !== "external" || !resolution.filePath) return null;
-  return readPackageManifest(resolution.filePath).version ?? null;
-};

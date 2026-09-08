@@ -321,6 +321,8 @@ export interface ProjectContext {
   /** Directory the analyzed app is served from (`process.cwd()` of its dev server); `null` when analyzing loose modules. */
   rootDirectory: string | null;
   hasDeclaredDependency: (packageName: string) => boolean;
+  /** The installed version of a package as resolved from the root; `null` when it is not installed. */
+  readPackageVersion: (packageName: string) => string | null;
   /** The text the dev server serves for a same-origin or root-relative URL from the project's static directory; `null` when it serves none. */
   readServedAsset: (url: string) => string | null;
   /** The captured TanStack Query cache entry for a query hash (`hashKey(queryKey)`), if the page held one. */
