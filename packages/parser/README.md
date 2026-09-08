@@ -155,20 +155,25 @@ framework internals; application mismatches are never hidden this way.
   entries, Redux/Kea store state, Lingui catalogs, router location and the identity of exported
   values (`module-exports.ts`). A saved capture replays with `--static-only`, and the static render
   takes the observations as inputs so dynamic data the page actually had is not guessed.
-- `compareStaticToRuntime` reads the materialized fiber tree back into a pattern (`static-pattern.ts`:
-  marker fibers become branch/repeat/opaque/wildcard nodes, everything else is a concrete fiber)
-  and matches it against the runtime tree: hierarchy, tags, names, keys, host elements, text.
-  A marker-free tree is a plain fiber-by-fiber diff. Branches try each alternative;
-  repeats absorb any count; `opaque` subtrees match one runtime subtree (by name, or an anonymous /
-  bundler-placeholder name such as esbuild's `_a2`) and slot their passed children back in;
-  `unknown` is a wildcard. The report carries a tally (matched, absorbed,
-  opaque, unknown), coverage, and the first divergence path with source location.
+- `enumerateStaticStates` reads each committed materialized tree back into a pattern
+  (`static-pattern.ts`: marker fibers become branch/repeat/opaque/wildcard nodes, everything else
+  is a concrete fiber) and expands it into the set of concrete reachable states
+  (`state-space.ts`): one per assignment of the branch predicates and repeat cardinalities, and
+  one per distinct committed tree. Branches sharing a predicate are decided together, repeats
+  enumerate bounded counts, and whatever the `StateSpaceBudget` cuts off is recorded in `omitted`
+  rather than dropped (see `docs/exhaustive-states.md`).
+- `compareStaticToRuntime` checks the runtime tree for membership in that set: hierarchy, tags,
+  names, keys, host elements, text. `opaque` subtrees match one runtime subtree (by name, or an
+  anonymous / bundler-placeholder name such as esbuild's `_a2`) and slot their passed children
+  back in; `unknown` is a wildcard. The report carries a tally (matched, absorbed, opaque,
+  unknown), coverage, the matched state's conditions, the states never observed, the omissions,
+  and on a mismatch the first divergence path with the closest enumerated state.
 
-Statuses: `exact` (all static fibers matched, no uncertainty consumed), `partial` (matched, but
-branches, repeats, opaque subtrees or wildcards were needed), `mismatch` (a divergence),
-`unresolved` (the static side did not produce a component tree), `skipped` (no runtime root or
-anchor). The harness chooses the runtime root by explicit index, then anchor search, then the
-largest root.
+Statuses: `exact` (the runtime equals one enumerated state and nothing was omitted), `truncated`
+(the runtime matched but the state space is incomplete), `partial` (matched through opaque
+subtrees or wildcards), `mismatch` (no state matches), `unresolved` (the static side did not
+produce a component tree), `skipped` (no runtime root or anchor). The harness chooses the runtime
+root by explicit index, then anchor search, then the largest root.
 
 ## Corpus
 
