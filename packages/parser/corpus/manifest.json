@@ -646,6 +646,171 @@
         "maxFiberCount": 20000
       },
       "notes": "Django normally renders index.html with window.POSTHOG_APP_CONTEXT and points the module scripts at the Vite dev server; corpus/scripts/posthog-app-server.ts stands in for it with an anonymous app context and the checked-in _preflight fixture, answering the API calls the login scene makes. The kea store the page builds is captured through the Redux DevTools compose hook and replayed into the static render; the app server's stand-in API returns 404 for the endpoints it does not model, which the page logs."
+    },
+    {
+      "id": "remix-shadcn",
+      "repository": "https://github.com/jacob-ebey/remix-shadcn",
+      "revision": "cf1652b60fe33a89ef77d6341894b02533cd3a15",
+      "description": "remix-shadcn (Remix v2 Vite plugin, default flat-file routes, shadcn/ui, Express server)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --legacy-peer-deps",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/"
+      }
+    },
+    {
+      "id": "react-router-better-auth",
+      "repository": "https://github.com/lukexlau/react-router-v7-better-auth",
+      "revision": "c5aa2949a4090d7706eae7c5907f6ccfad46df64",
+      "description": "React Router v7 framework mode on Cloudflare Workers (vite cloudflare plugin, Better Auth, Drizzle over local D1)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace && pnpm add --ignore-workspace \"react-router-dom@$(node -p \"require('react-router/package.json').version\")\"",
+      "setup": [
+        "test -f .env || cp .env.example .env",
+        "test -f wrangler.jsonc || cp wrangler.jsonc.example wrangler.jsonc",
+        "pnpm db:migrate:local",
+        "pnpm db:seed:local"
+      ],
+      "dev": "pnpm dev",
+      "url": "http://localhost:5173/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "app/routes.ts",
+        "route": "/"
+      },
+      "notes": "The harness clones into the bippy monorepo, whose hoisted node_modules holds react-router-dom@6 for an e2e fixture; `@react-router/dev` pre-bundles `react-router-dom` whenever `require.resolve` finds one, and rolldown-vite (vite 8) fails the dependency optimizer on the v6 package's missing exports. Installing a matching react-router-dom@7 in the app shadows the hoisted copy; nothing else is patched."
+    },
+    {
+      "id": "tanstarter",
+      "repository": "https://github.com/mugnavo/tanstarter",
+      "revision": "6f4f91831afee00019104248b88a1a2d1b457c40",
+      "description": "tanstarter (TanStack Start file routes, Better Auth, Drizzle over a local PostgreSQL container, React Compiler)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "setup": ["test -f .env || cp .env.example .env", "pnpm db push --force"],
+      "services": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-tanstarter-pg 5452 tanstarter"
+      ],
+      "env": {
+        "DATABASE_URL": "postgresql://postgres:postgres@localhost:5452/tanstarter",
+        "BETTER_AUTH_SECRET": "bippy-corpus-better-auth-secret"
+      },
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/router.tsx",
+        "route": "/"
+      }
+    },
+    {
+      "id": "elysia-react-router",
+      "repository": "https://github.com/kravetsone/elysia-react-router",
+      "revision": "3c6321cd125bae03b7d848965f7dfd576672b284",
+      "description": "elysia-react-router example (React Router v7 framework mode on Bun + Elysia, @react-router/fs-routes flatRoutes)",
+      "framework": "react-router",
+      "workingDirectory": "example",
+      "install": "bun install && bun add \"react-router-dom@$(node -p \"require('react-router/package.json').version\")\"",
+      "dev": "bun --watch ./server/index.ts",
+      "url": "http://localhost:3000/",
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": "example",
+        "entry": "app/routes.ts",
+        "route": "/"
+      },
+      "notes": "The harness clones into the bippy monorepo, whose hoisted node_modules holds react-router-dom@6 for an e2e fixture; `@react-router/dev` pre-bundles `react-router-dom` whenever `require.resolve` finds one, and rolldown-vite (vite 8) fails the dependency optimizer on the v6 package's missing exports. Installing a matching react-router-dom@7 in the app shadows the hoisted copy; nothing else is patched."
+    },
+    {
+      "id": "remix-blocks",
+      "repository": "https://github.com/AlexandroMtzG/remix-blocks",
+      "revision": "14e622c2a3f029ab0c81a6e20d1d423da9a20c9c",
+      "description": "RemixBlocks (Remix v1 classic compiler, React 17, v1 nested-folder route convention, MDX index)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm pkg delete dependencies.metronome-sh && npm install --legacy-peer-deps",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/components",
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/components"
+      },
+      "notes": "`metronome-sh` (a Remix metrics SDK listed in package.json but imported nowhere in the app) was unpublished from npm, so the install step drops it from package.json before `npm install`; nothing else is patched.",
+      "env": {
+        "SESSION_SECRET": "bippy-corpus-session-secret",
+        "APP_NAME": "RemixBlocks",
+        "SERVER_URL": "http://localhost:3000"
+      }
+    },
+    {
+      "id": "remix-fastify",
+      "repository": "https://github.com/mcansh/remix-fastify",
+      "revision": "c69fe3491774b636dd148b409c916006588e37e7",
+      "description": "remix-fastify playground example (React Router v7 framework mode served by Fastify, pnpm workspace)",
+      "framework": "react-router",
+      "workingDirectory": "examples/playground",
+      "install": "pnpm install && pnpm --filter @mcansh/remix-fastify build",
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": "examples/playground",
+        "entry": "app/routes.ts",
+        "route": "/"
+      }
+    },
+    {
+      "id": "gcn-nasa-gov",
+      "repository": "https://github.com/nasa-gcn/gcn.nasa.gov",
+      "revision": "5dd03d9d919d080d051ad9e06f8d382913a7dbe7",
+      "description": "gcn.nasa.gov (Remix v2 classic compiler on AWS Architect sandbox, USWDS, MDX routes)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm ci --ignore-scripts",
+      "dev": "npm run dev",
+      "url": "http://localhost:3333/contact",
+      "readyTimeoutMs": 900000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/contact"
+      }
+    },
+    {
+      "id": "start-ui-web",
+      "repository": "https://github.com/BearStudio/start-ui-web",
+      "revision": "61623ea2fd0ef5f2287190a072ec250956cae65b",
+      "description": "Start UI [web] (TanStack Start file routes, Better Auth, Prisma over a local PostgreSQL container)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "setup": ["test -f .env || cp .env.example .env", "pnpm db:init"],
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-startui-pg 5453 startui"],
+      "env": {
+        "DATABASE_URL": "postgres://postgres:postgres@localhost:5453/startui",
+        "AUTH_SECRET": "bippy-corpus-better-auth-secret"
+      },
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/router.tsx",
+        "route": "/"
+      }
     }
   ]
 }

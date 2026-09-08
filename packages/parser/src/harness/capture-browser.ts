@@ -84,6 +84,21 @@ const readCommitCount = (page: Page): Promise<number> =>
     return read ? read() : 0;
   });
 
+const isNavigationError = (error: unknown): boolean =>
+  error instanceof Error && /Execution context was destroyed|navigation/i.test(error.message);
+
+// Dev servers reload the page on their own (Vite re-optimizes dependencies on
+// first visit); the init script re-runs after the reload, so the counter restarts.
+const readCommitCountAcrossReloads = async (page: Page): Promise<number> => {
+  try {
+    return await readCommitCount(page);
+  } catch (error) {
+    if (!isNavigationError(error)) throw error;
+    await page.waitForLoadState("domcontentloaded");
+    return 0;
+  }
+};
+
 // Playwright's structured serializer rejects deeply nested objects; the page
 // serializes the snapshot to a string and Node parses it back.
 const readSnapshot = async (page: Page): Promise<RuntimeSnapshot | null> => {
@@ -127,11 +142,11 @@ const waitForQuietCommits = async (
   timeoutMs: number,
 ): Promise<number> => {
   const deadline = Date.now() + timeoutMs;
-  let lastCount = await readCommitCount(page);
+  let lastCount = await readCommitCountAcrossReloads(page);
   let quietSince = Date.now();
   while (Date.now() < deadline) {
     await sleep(COMMIT_POLL_INTERVAL_MS);
-    const count = await readCommitCount(page);
+    const count = await readCommitCountAcrossReloads(page);
     if (count !== lastCount) {
       lastCount = count;
       quietSince = Date.now();

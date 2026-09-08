@@ -1,6 +1,7 @@
 import {
   NULL_VALUE,
   UNDEFINED_VALUE,
+  branchValue,
   getKnownObjectKeys,
   getObjectProperty,
   isNullish,
@@ -150,19 +151,50 @@ const linkElement = (descriptor: StaticValue): StaticValue => {
   return hostElement("link", props, jsonKey(descriptor, true));
 };
 
+const mapLinkDescriptors = (links: StaticValue): StaticValue => {
+  const descriptors = flattenDescriptors(links);
+  return descriptors
+    ? listValue(descriptors.map(linkElement))
+    : unknownValue("react-router: links() result is not a static array");
+};
+
 /**
  * What `<Links>` renders: `<>{criticalCss} {criticalCssLink} {links.map(...)}</>`.
  * The two leading nulls are why the mapped array becomes an implicit Fragment
  * fiber at runtime; keep them so the static tree has the same shape.
  */
-export const renderLinkDescriptors = (links: StaticValue): StaticValue => {
-  const descriptors = flattenDescriptors(links);
-  const mapped = descriptors
-    ? listValue(descriptors.map(linkElement))
-    : unknownValue("react-router: links() result is not a static array");
+export const renderLinkDescriptors = (links: StaticValue): StaticValue =>
+  element(
+    { kind: "fragment" },
+    objectFromRecord({ children: listValue([NULL_VALUE, NULL_VALUE, mapLinkDescriptors(links)]) }),
+  );
+
+/**
+ * Remix v2's `<Links>`: `<>{criticalCss ? <style /> : null} {links.map(...)}</>`.
+ * The Vite dev server inlines the CSS of the matched modules and never clears
+ * it after hydration, so whether the `<style>` exists is a dev-server fact.
+ */
+export const renderRemixLinkDescriptors = (links: StaticValue): StaticValue => {
+  const criticalStyle = hostElement(
+    "style",
+    objectFromRecord({
+      dangerouslySetInnerHTML: objectFromRecord({
+        __html: unknownPrimitiveValue("string", "remix dev critical css"),
+      }),
+    }),
+    UNDEFINED_VALUE,
+  );
   return element(
     { kind: "fragment" },
-    objectFromRecord({ children: listValue([NULL_VALUE, NULL_VALUE, mapped]) }),
+    objectFromRecord({
+      children: listValue([
+        branchValue(
+          [criticalStyle, NULL_VALUE],
+          "remix: critical css is collected by the Vite dev server",
+        ),
+        mapLinkDescriptors(links),
+      ]),
+    }),
   );
 };
 

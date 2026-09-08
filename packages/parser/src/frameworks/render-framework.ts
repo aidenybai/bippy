@@ -15,7 +15,7 @@ export interface FrameworkRenderTarget {
   entry?: string;
   /** Page route (pathname, query and fragment) the browser is at; routed frameworks render it. */
   route?: string;
-  /** Next: the `app/` or `pages/` directory when it is not directly under the renderer root. */
+  /** The `app/` (or Next `pages/`) directory when it is not directly under the renderer root. */
   appDirectory?: string;
   /**
    * Export of `entry` that the boot code mounts when it does not pass a literal
@@ -75,7 +75,10 @@ export const renderFrameworkTarget = (
         options.observations?.router ?? null,
       );
       const renderer = createStaticRenderer({ ...options, externalValues: model.externalValues });
-      return renderReactRouterRoute(renderer, model, { routesModule: target.entry });
+      return renderReactRouterRoute(renderer, model, {
+        routesModule: target.entry,
+        appDirectory: target.appDirectory,
+      });
     }
   }
 };
