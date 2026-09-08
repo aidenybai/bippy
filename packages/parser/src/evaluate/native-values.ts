@@ -453,15 +453,7 @@ const DOCUMENT_QUERY_METHODS = new Set([
   "getElementsByName",
 ]);
 
-/** The host window is sized to the modeled browser environment, so its viewport metrics are the ones the analyzed program sees. */
-const WINDOW_NATIVE_MEMBERS = new Set([
-  "getSelection",
-  "innerWidth",
-  "innerHeight",
-  "outerWidth",
-  "outerHeight",
-  "devicePixelRatio",
-]);
+const WINDOW_NATIVE_MEMBERS = new Set(["getSelection"]);
 
 const isEmptyQueryResult = (value: unknown): boolean =>
   value === null ||

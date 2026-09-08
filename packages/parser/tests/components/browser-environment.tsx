@@ -37,19 +37,6 @@ const Responsive = () => {
   );
 };
 
-const Viewport = () => {
-  const isMobile = window.innerWidth < 768;
-  const isShort = globalThis.innerHeight < 600;
-  const isRetina = window.devicePixelRatio > 1;
-  return (
-    <header>
-      {isMobile ? <menu>mobile</menu> : <ul>desktop</ul>}
-      {isShort ? <small>short</small> : <big>tall</big>}
-      {isRetina ? <b>retina</b> : <i>standard</i>}
-    </header>
-  );
-};
-
 const readStoredMode = (raw: string | null): string => {
   if (raw === null) return "unset";
   try {
@@ -145,7 +132,6 @@ export default function BrowserEnvironment() {
       <AddToHomescreen />
       <VendorNavigatorPrompt />
       <Responsive />
-      <Viewport />
       <StoredModes />
       <CallbackRefPortal>
         <section>portaled</section>
