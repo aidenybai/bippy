@@ -13,8 +13,12 @@ const DEV_SERVER_MODE = "development";
 
 const ENVIRONMENT_OBJECTS = ["process.env", "import.meta.env"];
 
+/** Node objects webpack-style bundlers polyfill on the client while Vite leaves them undeclared. */
+const POLYFILLED_NODE_OBJECTS = new Set(["process", "Buffer"]);
+
 /** Free names some bundlers define per module (webpack's Node shims, AMD's `define`) and others leave undeclared. */
 export const BUNDLER_INJECTED_NAMES = new Set([
+  ...POLYFILLED_NODE_OBJECTS,
   "global",
   "define",
   "require",
@@ -95,13 +99,23 @@ export const isEnvironmentVariableName = (name: string): boolean =>
 export const isUnsettableDefineName = (name: string): boolean =>
   isEnvironmentVariableName(name) || BUNDLER_INJECTED_NAMES.has(name);
 
+const isBundlerObject = (name: string): boolean =>
+  name === "module" ||
+  name === "import.meta" ||
+  ENVIRONMENT_OBJECTS.includes(name) ||
+  HOT_MODULE_OBJECTS.has(name);
+
+/** `typeof` of a name the bundler itself provides; null for names it leaves to the host. */
+export const getBundlerGlobalTypeof = (name: string): string | null => {
+  if (isBundlerObject(name)) return "object";
+  return name === "import.meta.glob" ? "function" : null;
+};
+
 export const getBundlerGlobal = (
   name: string,
   environment: EnvironmentLookup = NO_ENVIRONMENT,
 ): StaticValue | null => {
-  if (name === "module" || name === "import.meta" || name === "import.meta.glob")
-    return { kind: "global", name };
-  if (ENVIRONMENT_OBJECTS.includes(name) || HOT_MODULE_OBJECTS.has(name))
+  if (isBundlerObject(name) || name === "import.meta.glob" || POLYFILLED_NODE_OBJECTS.has(name))
     return { kind: "global", name };
   for (const objectName of ENVIRONMENT_OBJECTS) {
     if (name.startsWith(`${objectName}.`))

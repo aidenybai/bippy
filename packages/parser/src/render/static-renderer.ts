@@ -6,7 +6,11 @@ import { objectValue, unknownValue } from "../evaluate/values.js";
 import { ModuleGraph } from "../graph/module-graph.js";
 import { ModuleResolver } from "../graph/module-resolver.js";
 import { createProjectContext } from "../graph/project-context.js";
-import { ensureDomGlobals, resetDomGlobals } from "../materialize/dom-environment.js";
+import {
+  createDomHostDocument,
+  ensureDomGlobals,
+  resetDomGlobals,
+} from "../materialize/dom-environment.js";
 import { Materializer } from "../materialize/materializer.js";
 import { mountNode } from "../materialize/mount.js";
 import { loadReactRuntime, type ReactRuntime } from "../materialize/react-runtime.js";
@@ -106,6 +110,8 @@ export class StaticRenderer {
       globals: this.options.globals,
       defines: this.options.defines,
       environment: this.options.environment,
+      hostPlatform: this.options.hostPlatform,
+      hostDocument: createDomHostDocument(),
       capturedGlobals: this.options.observations?.globals,
       route: this.options.route,
       origin: this.options.origin,

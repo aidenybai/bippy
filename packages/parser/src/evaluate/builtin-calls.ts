@@ -1,10 +1,10 @@
 import type {
-  RenderEnvironment,
   SourceLocation,
   StaticAccessor,
   StaticElementType,
   StaticElementValue,
   StaticFunctionValue,
+  StaticGlobalValue,
   StaticListValue,
   StaticObjectEntry,
   StaticObjectValue,
@@ -20,18 +20,31 @@ import {
   MemoComponentTag,
   SimpleMemoComponentTag,
 } from "../work-tags.js";
-import { getBrowserGlobalMember, isBrowserGlobalName, isWindowMember } from "./browser-globals.js";
+import type { HostDocument } from "../host/host-document.js";
+import type { HostRealm } from "../host/host-realm.js";
 import {
   type EnvironmentLookup,
+  BUNDLER_INJECTED_NAMES,
   callHotModuleMethod,
   getBundlerGlobal,
-  isEnvironmentObject,
+  getBundlerGlobalTypeof,
 } from "./bundler-globals.js";
+import {
+  GLOBAL_OBJECT_VALUE,
+  getHostGlobal,
+  getHostGlobalTypeof,
+  getLanguageMethodResult,
+} from "./host-globals.js";
 import { createAbortController } from "./abort-controller.js";
 import { createDomObserver, isDomObserverName } from "./dom-observers.js";
-import { createErrorValue, ERROR_CONSTRUCTOR_NAMES, isErrorConstructorName } from "./errors.js";
+import { createErrorValue, isErrorConstructorName } from "./errors.js";
 import { nativeFunction } from "../frameworks/stubs.js";
-import { constructNativeObject, isNativeConstructorName } from "./native-values.js";
+import {
+  constructNativeObject,
+  fromNativeValue,
+  isNativeConstructorName,
+  toNativeArguments,
+} from "./native-values.js";
 import { constructFunctionFromSource } from "./function-constructor.js";
 import { callImportMetaGlob } from "./import-glob.js";
 import { callEventTargetMethod } from "./event-listeners.js";
@@ -42,7 +55,6 @@ import {
   getBuiltinPrototypeName,
   getPrototypeWitness,
   isTypedArrayName,
-  TYPED_ARRAY_NAMES,
 } from "./instance-of.js";
 import { mediaQueryListValue } from "./media-query.js";
 import { getObjectTag } from "./object-tag.js";
@@ -198,146 +210,7 @@ const flattenOneLevel = (value: StaticValue, location: SourceLocation | null): S
 export const isModeledOpaqueMethodName = (name: string): boolean =>
   PROMISE_METHOD_NAMES.has(name) || ITERATION_METHOD_NAMES.has(name);
 
-const GLOBAL_NAMES = new Set([
-  "Object",
-  "Function",
-  "Array",
-  "Math",
-  "JSON",
-  "String",
-  "Number",
-  "Boolean",
-  "Date",
-  "Map",
-  "Set",
-  "WeakMap",
-  "WeakSet",
-  "Promise",
-  "Symbol",
-  ...ERROR_CONSTRUCTOR_NAMES,
-  "RegExp",
-  "Intl",
-  "Reflect",
-  "Proxy",
-  "console",
-  "window",
-  "document",
-  "globalThis",
-  "navigator",
-  "location",
-  "localStorage",
-  "sessionStorage",
-  "history",
-  "process",
-  "performance",
-  "parseInt",
-  "parseFloat",
-  "isNaN",
-  "isFinite",
-  "encodeURIComponent",
-  "decodeURIComponent",
-  "encodeURI",
-  "decodeURI",
-  "btoa",
-  "atob",
-  "Buffer",
-  "setTimeout",
-  "clearTimeout",
-  "setInterval",
-  "clearInterval",
-  "setImmediate",
-  "requestAnimationFrame",
-  "requestIdleCallback",
-  "cancelAnimationFrame",
-  "cancelIdleCallback",
-  "fetch",
-  "structuredClone",
-  "queueMicrotask",
-  "URL",
-  "URLSearchParams",
-  "Headers",
-  "Request",
-  "Response",
-  "FormData",
-  "Blob",
-  "AbortController",
-  "AbortSignal",
-  "MutationObserver",
-  "ResizeObserver",
-  "IntersectionObserver",
-  "PerformanceObserver",
-  "Event",
-  "EventTarget",
-  "TextEncoder",
-  "TextDecoder",
-  "ArrayBuffer",
-  "DataView",
-  ...TYPED_ARRAY_NAMES,
-  "Infinity",
-  "NaN",
-]);
-
-const STRING_RESULT_METHODS = new Set([
-  "toString",
-  "toLocaleString",
-  "toUpperCase",
-  "toLowerCase",
-  "trim",
-  "trimStart",
-  "trimEnd",
-  "padStart",
-  "padEnd",
-  "replace",
-  "replaceAll",
-  "substring",
-  "substr",
-  "charAt",
-  "concat",
-  "normalize",
-  "toFixed",
-  "toPrecision",
-  "join",
-  "toLocaleDateString",
-  "toLocaleTimeString",
-  "toISOString",
-  "toDateString",
-  "format",
-]);
-
-const BOOLEAN_RESULT_METHODS = new Set([
-  "includes",
-  "some",
-  "every",
-  "startsWith",
-  "endsWith",
-  "has",
-  "hasOwnProperty",
-  "test",
-  "isArray",
-]);
-
-const NUMBER_RESULT_METHODS = new Set([
-  "indexOf",
-  "lastIndexOf",
-  "findIndex",
-  "findLastIndex",
-  "localeCompare",
-  "charCodeAt",
-  "codePointAt",
-  "getTime",
-  "getFullYear",
-  "getMonth",
-  "getDate",
-  "getDay",
-  "getHours",
-  "getMinutes",
-  "getSeconds",
-  "valueOf",
-  "push",
-  "unshift",
-  "size",
-]);
-
+/** Methods whose result is a list with the items' shape preserved, so an indefinite receiver stands for its own result. */
 const LIST_PRESERVING_METHODS = new Set([
   "filter",
   "slice",
@@ -351,96 +224,10 @@ const LIST_PRESERVING_METHODS = new Set([
   "toArray",
 ]);
 
-const BROWSER_GLOBALS = new Set([
-  "window",
-  "document",
-  "navigator",
-  "location",
-  "localStorage",
-  "sessionStorage",
-  "history",
-]);
-/** Function-valued globals every rendering environment (browser or Node) provides. */
-const UNIVERSAL_FUNCTION_GLOBALS = new Set([
-  "parseInt",
-  "parseFloat",
-  "isNaN",
-  "isFinite",
-  "encodeURIComponent",
-  "decodeURIComponent",
-  "encodeURI",
-  "decodeURI",
-  "btoa",
-  "atob",
-  "setTimeout",
-  "clearTimeout",
-  "setInterval",
-  "clearInterval",
-  "queueMicrotask",
-  "structuredClone",
-  "fetch",
-  "URL",
-  "URLSearchParams",
-  "Headers",
-  "Request",
-  "Response",
-  "FormData",
-  "Blob",
-  "AbortController",
-  "AbortSignal",
-  "Event",
-  "EventTarget",
-  "TextEncoder",
-  "TextDecoder",
-  "ArrayBuffer",
-  "DataView",
-  "PerformanceObserver",
-]);
-/** Function-valued globals only browsers provide. */
-const BROWSER_FUNCTION_GLOBALS = new Set([
-  "requestAnimationFrame",
-  "cancelAnimationFrame",
-  "MutationObserver",
-  "ResizeObserver",
-  "IntersectionObserver",
-]);
-const CONSTRUCTOR_GLOBALS = new Set([
-  "Object",
-  "Function",
-  "Array",
-  "String",
-  "Number",
-  "Boolean",
-  "Date",
-  "Map",
-  "Set",
-  "WeakMap",
-  "WeakSet",
-  "Promise",
-  "Symbol",
-  ...ERROR_CONSTRUCTOR_NAMES,
-  "RegExp",
-  "Proxy",
-  ...TYPED_ARRAY_NAMES,
-]);
-
-/** `typeof <global>` as observed by the rendering environment; null when it depends on the host. */
-export const getGlobalTypeof = (
-  name: string,
-  environment: RenderEnvironment | null,
-): string | null => {
-  if (name.endsWith(".prototype") && CONSTRUCTOR_GLOBALS.has(name.slice(0, -".prototype".length)))
-    return name === "Function.prototype" ? "function" : "object";
-  if (name.includes(".")) return null;
-  if (BROWSER_GLOBALS.has(name)) return environment === "server" ? "undefined" : "object";
-  if (BROWSER_FUNCTION_GLOBALS.has(name))
-    return environment === "server" ? "undefined" : "function";
-  if (CONSTRUCTOR_GLOBALS.has(name) || UNIVERSAL_FUNCTION_GLOBALS.has(name)) return "function";
-  if (name === "performance") return "object";
-  if (name === "Infinity" || name === "NaN") return "number";
-  if (name === "Math" || name === "JSON" || name === "Intl" || name === "Reflect") return "object";
-  if (name === "globalThis" || name === "console" || name === "module") return "object";
-  return null;
+/** `typeof <global>` in the rendering host; null when its declarations leave it open, or when only the bundler could provide it. */
+export const getGlobalTypeof = (name: string, realm: HostRealm): string | null => {
+  if (BUNDLER_INJECTED_NAMES.has(name) && !realm.hasGlobal(name)) return null;
+  return getBundlerGlobalTypeof(name) ?? getHostGlobalTypeof(realm, name);
 };
 
 const getComponentTypeof = (type: StaticElementType): string | null => {
@@ -479,13 +266,10 @@ const getComponentTypeof = (type: StaticElementType): string | null => {
   }
 };
 
-export const getTypeofValue = (
-  value: StaticValue,
-  environment: RenderEnvironment | null,
-): StaticValue => {
+export const getTypeofValue = (value: StaticValue, realm: HostRealm): StaticValue => {
   switch (value.kind) {
     case "branch":
-      return mapValue(value, (alternative) => getTypeofValue(alternative, environment));
+      return mapValue(value, (alternative) => getTypeofValue(alternative, realm));
     case "primitive":
       return primitiveValue(typeof value.value);
     case "function":
@@ -502,7 +286,7 @@ export const getTypeofValue = (
         : unknownPrimitiveValue("string", `typeof ${describeValue(value)}`);
     }
     case "proxy":
-      return getTypeofValue(value.target, environment);
+      return getTypeofValue(value.target, realm);
     case "native-object":
       return primitiveValue("object");
     case "symbol":
@@ -519,7 +303,7 @@ export const getTypeofValue = (
         ? primitiveValue("object")
         : unknownPrimitiveValue("string", `typeof ${describeValue(value)}`);
     case "global": {
-      const globalType = getGlobalTypeof(value.name, environment);
+      const globalType = getGlobalTypeof(value.name, realm);
       return globalType
         ? primitiveValue(globalType)
         : unknownPrimitiveValue("string", `typeof ${describeValue(value)}`);
@@ -529,43 +313,14 @@ export const getTypeofValue = (
   }
 };
 
-const WELL_KNOWN_SYMBOL_NAMES = new Set(
-  Object.getOwnPropertyNames(Symbol).filter(
-    (name) => typeof Object.getOwnPropertyDescriptor(Symbol, name)?.value === "symbol",
-  ),
-);
-
+/** A global the bundler injects or the host declares; null when the name is undeclared in this host. */
 export const getBuiltinGlobal = (
   name: string,
+  realm: HostRealm,
+  hostDocument: HostDocument | null,
   environment?: EnvironmentLookup,
-): StaticValue | null => {
-  if (name === "NaN") return primitiveValue(Number.NaN);
-  if (name === "Infinity") return primitiveValue(Number.POSITIVE_INFINITY);
-  if (name.startsWith("Symbol.") && WELL_KNOWN_SYMBOL_NAMES.has(name.slice("Symbol.".length)))
-    return { kind: "symbol", key: name };
-  const bundlerGlobal = getBundlerGlobal(name, environment);
-  if (bundlerGlobal) return bundlerGlobal;
-  if (name.startsWith("Math.") && name !== "Math.max" && name !== "Math.min") {
-    const constant = name.slice("Math.".length);
-    if (constant === "PI") return primitiveValue(Math.PI);
-    if (constant === "E") return primitiveValue(Math.E);
-  }
-  const root = name.split(".")[0];
-  if (name === `${root}.prototype.constructor` && CONSTRUCTOR_GLOBALS.has(root))
-    return { kind: "global", name: root };
-  if (!GLOBAL_NAMES.has(root)) {
-    return root === name && isWindowMember(name)
-      ? getBrowserGlobalMember("window", name, getBuiltinGlobal)
-      : null;
-  }
-  if (root !== name && isBrowserGlobalName(root)) {
-    const member = name.slice(root.length + 1);
-    if ((root === "window" || root === "globalThis") && GLOBAL_NAMES.has(member))
-      return getBuiltinGlobal(member);
-    return getBrowserGlobalMember(root, member, getBuiltinGlobal);
-  }
-  return { kind: "global", name };
-};
+): StaticValue | null =>
+  getBundlerGlobal(name, environment) ?? getHostGlobal(realm, hostDocument, name);
 
 const toStringValue = (value: StaticValue): StaticValue => {
   if (value.kind === "primitive") return primitiveValue(String(value.value));
@@ -849,6 +604,44 @@ const callInvokedGlobal = (
   return interpreter.callValue(callee, calleeArgs, context, location);
 };
 
+/** `window.addEventListener` splits into the global object and `addEventListener`; `history.pushState` into `history` and `pushState`. */
+const splitGlobalName = (name: string): [receiver: StaticValue, memberName: string] => {
+  const separator = name.lastIndexOf(".");
+  return separator === -1
+    ? [GLOBAL_OBJECT_VALUE, name]
+    : [{ kind: "global", name: name.slice(0, separator) }, name.slice(separator + 1)];
+};
+
+/** Methods of host objects whose state the interpreter models: listeners, media queries, hot modules, history and storage. */
+const callHostObjectMethod = (
+  interpreter: Interpreter,
+  receiver: StaticGlobalValue,
+  name: string,
+  args: StaticValue[],
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): StaticValue | null => {
+  const realm = interpreter.getRealm(context.environment);
+  const listened = callEventTargetMethod(interpreter, realm, receiver, name, args);
+  if (listened) return listened;
+  if (realm.isGlobalAlias(receiver.name) && name === "matchMedia")
+    return mediaQueryListValue(args[0]);
+  const hotModuleResult = callHotModuleMethod(receiver, name);
+  if (hotModuleResult) return hotModuleResult;
+  if (isHistoryName(receiver.name))
+    return callHistoryMethod(interpreter.history, interpreter.origin, name, args, location);
+  const storageAreaName = getStorageAreaName(receiver.name);
+  return storageAreaName === null
+    ? null
+    : callStorageMethod(
+        interpreter.storageAreas[storageAreaName],
+        storageAreaName,
+        name,
+        args,
+        location,
+      );
+};
+
 const callGlobal = (
   interpreter: Interpreter,
   name: string,
@@ -857,10 +650,16 @@ const callGlobal = (
   location: SourceLocation | null,
   isConstructor: boolean,
 ): StaticValue => {
-  const invoked = isConstructor
-    ? null
-    : callInvokedGlobal(interpreter, name, args, context, location);
-  if (invoked) return invoked;
+  if (!isConstructor) {
+    const invoked = callInvokedGlobal(interpreter, name, args, context, location);
+    if (invoked) return invoked;
+    const [receiver, memberName] = splitGlobalName(name);
+    const hostResult =
+      receiver.kind === "global"
+        ? callHostObjectMethod(interpreter, receiver, memberName, args, context, location)
+        : null;
+    if (hostResult) return hostResult;
+  }
   if (isErrorConstructorName(name)) return createErrorValue(name, args, location);
   if (name === "import.meta.glob") return callImportMetaGlob(interpreter, args, context, location);
   if (isStringCodecName(name)) return callStringCodec(name, args, location);
@@ -880,7 +679,7 @@ const callGlobal = (
     case "Object": {
       if (first === undefined || (first.kind === "primitive" && isNullish(first)))
         return objectValue([]);
-      const firstTypeof = getTypeofValue(first, context.environment);
+      const firstTypeof = getTypeofValue(first, interpreter.getRealm(context.environment));
       if (
         firstTypeof.kind === "primitive" &&
         (firstTypeof.value === "object" || firstTypeof.value === "function")
@@ -1157,7 +956,7 @@ const callGlobal = (
     case "Number.isSafeInteger": {
       if (first === undefined) return FALSE_VALUE;
       if (first.kind === "primitive") return primitiveValue(NUMBER_PREDICATES[name](first.value));
-      const typeofFirst = getTypeofValue(first, context.environment);
+      const typeofFirst = getTypeofValue(first, interpreter.getRealm(context.environment));
       if (typeofFirst.kind === "primitive" && typeofFirst.value !== "number") return FALSE_VALUE;
       return unknownPrimitiveValue("boolean", name);
     }
@@ -1225,34 +1024,13 @@ const callGlobal = (
     default:
       break;
   }
+  if (name === "Math.random") return rangedNumberValue(name, { min: 0, max: 1 });
   if (name.startsWith("Math.")) {
-    if (
-      args.every((argument) => argument.kind === "primitive" && typeof argument.value === "number")
-    ) {
-      const numbers = args.map((argument) =>
-        argument.kind === "primitive" ? Number(argument.value) : 0,
-      );
-      const method = name.slice("Math.".length);
-      switch (method) {
-        case "max":
-          return primitiveValue(Math.max(...numbers));
-        case "min":
-          return primitiveValue(Math.min(...numbers));
-        case "floor":
-          return primitiveValue(Math.floor(numbers[0]));
-        case "ceil":
-          return primitiveValue(Math.ceil(numbers[0]));
-        case "round":
-          return primitiveValue(Math.round(numbers[0]));
-        case "abs":
-          return primitiveValue(Math.abs(numbers[0]));
-        case "random":
-          return rangedNumberValue(name, { min: 0, max: 1 });
-        default:
-          break;
-      }
-    }
-    return unknownPrimitiveValue("number", name);
+    const mathFunction: unknown = Reflect.get(Math, name.slice("Math.".length));
+    const natives = toNativeArguments(args, null);
+    return typeof mathFunction === "function" && natives !== null
+      ? fromNativeValue(Reflect.apply(mathFunction, Math, natives), `${name}()`, null)
+      : unknownPrimitiveValue("number", name);
   }
   if (isConstructor) return unknownValue(`new ${name}()`, location);
   return unknownValue(`${name}()`, location);
@@ -1649,9 +1427,6 @@ const fallbackMethodResult = (
   name: string,
   location: SourceLocation | null,
 ): StaticValue => {
-  if (STRING_RESULT_METHODS.has(name)) return unknownPrimitiveValue("string", `${name}()`);
-  if (BOOLEAN_RESULT_METHODS.has(name)) return unknownPrimitiveValue("boolean", `${name}()`);
-  if (NUMBER_RESULT_METHODS.has(name)) return unknownPrimitiveValue("number", `${name}()`);
   if (name === "split") return dynamicSplitResult(location);
   if (
     LIST_PRESERVING_METHODS.has(name) &&
@@ -1659,11 +1434,10 @@ const fallbackMethodResult = (
   ) {
     return receiver;
   }
-  const isStringReceiver =
-    (receiver.kind === "primitive" && typeof receiver.value === "string") ||
-    (receiver.kind === "unknown-primitive" && receiver.primitiveType === "string");
-  if (isStringReceiver && name === "slice") return unknownPrimitiveValue("string", "slice()");
-  return unknownValue(`${describeValue(receiver)}.${name}()`, location);
+  return (
+    getLanguageMethodResult(receiver, name) ??
+    unknownValue(`${describeValue(receiver)}.${name}()`, location)
+  );
 };
 
 const promiseTools = (
@@ -1767,38 +1541,17 @@ export const evaluateBuiltinCall = (
     if (ownProperty) return ownProperty;
   }
 
-  const listened = callEventTargetMethod(interpreter, receiver, name, args);
-  if (listened) return listened;
+  if (receiver.kind === "global")
+    return callGlobal(interpreter, `${receiver.name}.${name}`, args, context, location, false);
 
-  if (receiver.kind === "global") {
-    if ((receiver.name === "window" || receiver.name === "globalThis") && name === "matchMedia")
-      return mediaQueryListValue(first);
-    const hotModuleResult = callHotModuleMethod(receiver, name);
-    if (hotModuleResult) return hotModuleResult;
-    if (isHistoryName(receiver.name)) {
-      const navigated = callHistoryMethod(
-        interpreter.history,
-        interpreter.origin,
-        name,
-        args,
-        location,
-      );
-      if (navigated) return navigated;
-    }
-    const storageAreaName = getStorageAreaName(receiver.name);
-    if (storageAreaName !== null) {
-      const stored = callStorageMethod(
-        interpreter.storageAreas[storageAreaName],
-        storageAreaName,
-        name,
-        args,
-        location,
-      );
-      if (stored) return stored;
-    }
-    if (FUNCTION_INVOCATION_METHODS.has(name))
-      return callGlobal(interpreter, `${receiver.name}.${name}`, args, context, location, false);
-  }
+  const listened = callEventTargetMethod(
+    interpreter,
+    interpreter.getRealm(context.environment),
+    receiver,
+    name,
+    args,
+  );
+  if (listened) return listened;
 
   if (
     (name === "call" || name === "apply") &&
@@ -1849,10 +1602,6 @@ export const evaluateBuiltinCall = (
   if (receiver.kind === "unknown-primitive") {
     const shaped = callShapedPrimitiveMethod(receiver, name, args);
     if (shaped) return shaped;
-  }
-
-  if (receiver.kind === "global" && isEnvironmentObject(receiver.name)) {
-    return unknownPrimitiveValue("string", `${receiver.name} access`);
   }
 
   if (name === "map" && isCallable(first)) return mapList(interpreter, receiver, first, context);

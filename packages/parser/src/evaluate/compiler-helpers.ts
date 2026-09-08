@@ -51,7 +51,7 @@ const interopRequireWildcard: HelperImplementation = ([moduleValue]) => {
 };
 
 const assign: HelperImplementation = (args, tools) => {
-  const objectAssign = getBuiltinGlobal("Object.assign");
+  const objectAssign = getBuiltinGlobal("Object.assign", tools.realm, null);
   return objectAssign ? tools.call(objectAssign, args) : unknownValue("Object.assign helper");
 };
 
@@ -95,8 +95,8 @@ const defineProperty: HelperImplementation = ([target, key, value]) => {
   return target;
 };
 
-const typeOf: HelperImplementation = ([value]) =>
-  value ? getTypeofValue(value, null) : primitiveValue("undefined");
+const typeOf: HelperImplementation = ([value], tools) =>
+  value ? getTypeofValue(value, tools.realm) : primitiveValue("undefined");
 
 const HELPERS: Record<string, HelperImplementation> = {
   typeof: typeOf,

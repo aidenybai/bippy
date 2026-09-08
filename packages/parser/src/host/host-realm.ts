@@ -4,10 +4,20 @@ import {
   decodeHostRealmTable,
   GLOBAL_INTERFACE_NAME,
   GLOBAL_OBJECT_TYPE,
+  type HostInterface,
   type HostMember,
   type HostRealmTable,
   type HostType,
+  type HostValueKind,
 } from "./realm-table.js";
+
+/** Declared names include `constructor` and `toString`, which plain-object indexing would find on `Object.prototype`. */
+const getOwnEntry = <Entry>(record: Record<string, Entry>, key: string): Entry | null =>
+  Object.hasOwn(record, key) ? record[key] : null;
+
+/** `"buffer".Blob` -> `Blob`: module-scoped declarations carry their module as a qualifier. */
+const getUnqualifiedName = (interfaceName: string): string =>
+  interfaceName.replace(/^"[^"]*"\./, "");
 
 export type HostPlatform = "ecmascript" | "browser" | "node" | "react-native";
 
@@ -34,6 +44,7 @@ export const getRealmGapReportPath = (platform: HostPlatform): string =>
  */
 export class HostRealm {
   private readonly memberCache = new Map<string, HostMember | null>();
+  private memberReturnKinds: Map<string, HostValueKind | null> | null = null;
 
   constructor(
     readonly platform: HostPlatform,
@@ -63,11 +74,59 @@ export class HostRealm {
     return this.getGlobal(name) !== null;
   }
 
-  /** The `typeof` a declared global evaluates to, or `"undefined"` when the host lacks it. */
+  /** The `typeof` a declared global evaluates to, `"undefined"` for another host's global, null when open. */
   getGlobalTypeof(name: string): string | null {
     const member = this.getGlobal(name);
-    if (member === null) return "undefined";
-    return member.type.kind === "any" || member.type.isNullable ? null : member.type.kind;
+    if (member === null) return this.isForeignGlobal(name) ? "undefined" : null;
+    const kind = this.getTypeKind(member.type);
+    return kind === "any" || member.type.isNullable ? null : kind;
+  }
+
+  /**
+   * A global another host provides and this one lacks (`document` in Node), so
+   * reading it is decided. A name no host declares may still be injected by a
+   * script, so it stays open.
+   */
+  isForeignGlobal(name: string): boolean {
+    return (
+      !this.hasGlobal(name) &&
+      HOST_PLATFORMS.some(
+        (platform) => platform !== this.platform && loadHostRealm(platform).hasGlobal(name),
+      )
+    );
+  }
+
+  /** The runtime `typeof` of a declared type; `Function` and its subtypes are callable even though declarations describe them as objects. */
+  getTypeKind(type: HostType): HostValueKind {
+    return type.kind === "object" &&
+      type.interfaceName !== null &&
+      this.isSubtype(type.interfaceName, "Function")
+      ? "function"
+      : type.kind;
+  }
+
+  /** Whether the global names an instance of `ancestorName`, or a class whose instances are. */
+  isGlobalInstanceOf(name: string, ancestorName: string): boolean {
+    const member = this.getGlobal(name);
+    if (member === null) return false;
+    const instanceType = this.isGlobalObjectType(member.type)
+      ? null
+      : (this.getGlobal(`${name}.prototype`)?.type ?? member.type);
+    if (instanceType === null) {
+      return this.table.globalObjectInterfaces.some((interfaceName) =>
+        this.isSubtype(interfaceName, ancestorName),
+      );
+    }
+    return (
+      instanceType.interfaceName !== null &&
+      this.isSubtype(instanceType.interfaceName, ancestorName)
+    );
+  }
+
+  /** The `typeof` every declared method of this name returns, or null when interfaces disagree or none declares it. */
+  getMemberReturnKind(memberName: string): HostValueKind | null {
+    this.memberReturnKinds ??= this.collectMemberReturnKinds();
+    return this.memberReturnKinds.get(memberName) ?? null;
   }
 
   /** A member declared on an interface or inherited from what it extends. */
@@ -97,6 +156,10 @@ export class HostRealm {
     return normalized;
   }
 
+  getInterface(interfaceName: string): HostInterface | null {
+    return getOwnEntry(this.table.interfaces, interfaceName);
+  }
+
   isGlobalObjectType(type: HostType): boolean {
     return (
       type.interfaceName !== null &&
@@ -105,17 +168,34 @@ export class HostRealm {
     );
   }
 
+  /** Whether the interface is, or extends, one named `ancestorName` (unqualified, so a module's own `EventTarget` counts). */
   isSubtype(interfaceName: string, ancestorName: string): boolean {
     const pending = [interfaceName];
     const seen = new Set<string>();
     for (let current = pending.pop(); current !== undefined; current = pending.pop()) {
       if (seen.has(current)) continue;
       seen.add(current);
-      if (current === ancestorName) return true;
-      const record = this.table.interfaces[current];
+      if (getUnqualifiedName(current) === ancestorName) return true;
+      const record = this.getInterface(current);
       if (record) pending.push(...record.extendsNames);
     }
     return false;
+  }
+
+  private collectMemberReturnKinds(): Map<string, HostValueKind | null> {
+    const kinds = new Map<string, HostValueKind | null>();
+    for (const record of Object.values(this.table.interfaces)) {
+      for (const [memberName, member] of Object.entries(record.members)) {
+        if (member.type.kind !== "function" || member.returnType === null) continue;
+        const returnKind =
+          member.returnType.kind === "any" || member.returnType.isNullable
+            ? null
+            : this.getTypeKind(member.returnType);
+        const known = kinds.get(memberName);
+        kinds.set(memberName, known === undefined || known === returnKind ? returnKind : null);
+      }
+    }
+    return kinds;
   }
 
   private getGlobalObjectMember(key: string): HostMember | null {
@@ -134,9 +214,9 @@ export class HostRealm {
   ): HostMember | null {
     if (seen.has(interfaceName)) return null;
     seen.add(interfaceName);
-    const record = this.table.interfaces[interfaceName];
+    const record = this.getInterface(interfaceName);
     if (!record) return null;
-    const own = record.members[memberName];
+    const own = getOwnEntry(record.members, memberName);
     if (own) return own;
     for (const parent of record.extendsNames) {
       const inherited = this.findMember(parent, memberName, seen);

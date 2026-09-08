@@ -237,7 +237,11 @@ export class HostDeclarationIndex {
     return module;
   }
 
-  private report(context: ResolutionContext, reason: ResolutionGapReason, detail: string): HostType {
+  private report(
+    context: ResolutionContext,
+    reason: ResolutionGapReason,
+    detail: string,
+  ): HostType {
     if (this.probeDepth === 0) {
       const key = `${context.site}\0${reason}\0${detail}`;
       if (!this.gaps.has(key)) this.gaps.set(key, { site: context.site, reason, detail });
@@ -348,7 +352,12 @@ export class HostDeclarationIndex {
       const resolved = this.lookupInterface(heritage.name, heritage.scope);
       if (resolved === null) {
         this.report(
-          { scope: heritage.scope, bindings: EMPTY_BINDINGS, aliasChain: EMPTY_CHAIN, site: interfaceName },
+          {
+            scope: heritage.scope,
+            bindings: EMPTY_BINDINGS,
+            aliasChain: EMPTY_CHAIN,
+            site: interfaceName,
+          },
           "unresolved-name",
           `extends ${heritage.name.join(".")}`,
         );
@@ -417,7 +426,9 @@ export class HostDeclarationIndex {
         return { kind: "name", container: frame, name, isExport: false };
       }
     }
-    return name === GLOBAL_INTERFACE_NAME ? { kind: "module", container: this.catalog.global } : null;
+    return name === GLOBAL_INTERFACE_NAME
+      ? { kind: "module", container: this.catalog.global }
+      : null;
   }
 
   private resolveBinding(
@@ -476,7 +487,8 @@ export class HostDeclarationIndex {
     if (module.exportEquals) {
       const target = this.lookupPath(module.exportEquals, module.scope, "value");
       const container = target === null ? null : this.targetContainer(target);
-      if (container) return project({ kind: "name", container, name, isExport: container.isModule });
+      if (container)
+        return project({ kind: "name", container, name, isExport: container.isModule });
     }
     return null;
   }
@@ -498,7 +510,9 @@ export class HostDeclarationIndex {
   private targetContainer(target: NameTarget): ContainerRecord | null {
     if (target.kind === "module") return target.container;
     if (target.isExport) {
-      return this.throughExports(target, "container", "value", (inner) => this.targetContainer(inner));
+      return this.throughExports(target, "container", "value", (inner) =>
+        this.targetContainer(inner),
+      );
     }
     const namespace = this.catalog.namespaces.get(`${target.container.typePrefix}${target.name}`);
     if (namespace) return namespace;
@@ -513,7 +527,8 @@ export class HostDeclarationIndex {
       return this.throughExports(target, "type", "type", (inner) => this.targetType(inner));
     }
     const qualified = `${target.container.typePrefix}${target.name}`;
-    if (this.catalog.interfaces.has(qualified) || this.catalog.aliases.has(qualified)) return qualified;
+    if (this.catalog.interfaces.has(qualified) || this.catalog.aliases.has(qualified))
+      return qualified;
     const binding = target.container.imports.get(target.name);
     const bound = binding ? this.resolveBinding(binding, target.container, "type") : null;
     return bound === null ? null : this.targetType(bound);
@@ -614,23 +629,46 @@ export class HostDeclarationIndex {
     return { type, returnType: this.joinTypes(returnTypes, reportingContext, "overloads") };
   }
 
-  /** Merged declarations (`function assert` + `namespace assert`) resolve to the callable carrying the namespace's members. */
+  /**
+   * Merged declarations (`var console: Console` + `namespace console`,
+   * `function assert` + `namespace assert`) resolve to one value carrying every
+   * declaration's members; a callable among them makes the merge callable.
+   */
   private mergeDeclaredTypes(types: HostType[], context: ResolutionContext): HostType {
     const [first] = types;
     if (types.every((type) => sameType(type, first))) return first;
-    const callable = types.find((type) => type.kind === "function");
-    const carrier = types.find((type) => type.interfaceName !== null);
-    if (callable && carrier && types.every((type) => type.kind === "function" || type === carrier)) {
-      return { kind: "function", interfaceName: carrier.interfaceName, isNullable: false };
+    const isObjectLike = (type: HostType) => type.kind === "object" || type.kind === "function";
+    if (types.every(isObjectLike)) {
+      return {
+        kind: types.some((type) => type.kind === "function") ? "function" : "object",
+        interfaceName: this.intersectInterfaces(types),
+        isNullable: false,
+      };
     }
     if (types.every((type) => type.kind === first.kind)) {
-      return { kind: first.kind, interfaceName: null, isNullable: types.some((type) => type.isNullable) };
+      return {
+        kind: first.kind,
+        interfaceName: null,
+        isNullable: types.some((type) => type.isNullable),
+      };
     }
     return this.report(
       context,
       "merged-declarations",
       types.map((type) => type.interfaceName ?? type.kind).join(" & "),
     );
+  }
+
+  /** An interface with the members of every carrier, materialized once as `A & B`. */
+  private intersectInterfaces(types: HostType[]): string | null {
+    const carriers = [...new Set(types.flatMap((type) => type.interfaceName ?? []))];
+    if (carriers.length <= 1) return carriers[0] ?? null;
+    const name = carriers.join(" & ");
+    if (!this.catalog.interfaces.has(name)) {
+      this.catalog.declareInterface(name);
+      this.extendsCache.set(name, carriers);
+    }
+    return name;
   }
 
   private resolveType(type: TSType, context: ResolutionContext): HostType {
@@ -658,7 +696,11 @@ export class HostDeclarationIndex {
         return keywordType("object");
       case "TSAnyKeyword":
       case "TSUnknownKeyword":
-        return this.report(context, "declared-any", type.type === "TSAnyKeyword" ? "any" : "unknown");
+        return this.report(
+          context,
+          "declared-any",
+          type.type === "TSAnyKeyword" ? "any" : "unknown",
+        );
       case "TSLiteralType":
         return keywordType(getLiteralKind(type.literal));
       case "TSArrayType":
@@ -697,7 +739,9 @@ export class HostDeclarationIndex {
         break;
       case "TSInferType": {
         const bound = context.bindings.get(type.typeParameter.name.name);
-        return bound ?? this.report(context, "type-parameter", `infer ${type.typeParameter.name.name}`);
+        return (
+          bound ?? this.report(context, "type-parameter", `infer ${type.typeParameter.name.name}`)
+        );
       }
       case "TSTypeQuery":
         return this.resolveTypeQuery(type.exprName, context);
@@ -769,7 +813,10 @@ export class HostDeclarationIndex {
   private resolveTypeQuery(exprName: TSTypeQueryExprName, context: ResolutionContext): HostType {
     if (exprName.type === "TSImportType") {
       const value = this.lookupImportedValue(exprName, context);
-      return value?.type ?? this.report(context, "unresolved-name", `typeof import(${exprName.source.value})`);
+      return (
+        value?.type ??
+        this.report(context, "unresolved-name", `typeof import(${exprName.source.value})`)
+      );
     }
     const name = getQualifiedName(exprName);
     if (name === null) return this.report(context, "unsupported", "typeof this");
@@ -834,7 +881,9 @@ export class HostDeclarationIndex {
   }
 
   private resolveConditional(type: TSConditionalType, context: ResolutionContext): HostType {
-    const verdict = this.probe(() => this.evaluateExtends(type.checkType, type.extendsType, context));
+    const verdict = this.probe(() =>
+      this.evaluateExtends(type.checkType, type.extendsType, context),
+    );
     const bindings = new Map([...context.bindings, ...(verdict?.bindings ?? [])]);
     const branchContext = { ...context, bindings };
     if (verdict && !verdict.holds) return this.resolveType(type.falseType, branchContext);
@@ -867,7 +916,8 @@ export class HostDeclarationIndex {
         const member = this.memberOf(check, name);
         if (member === null) return check.kind === "object" ? { holds: false, bindings } : null;
         const expected = signature.typeAnnotation?.typeAnnotation;
-        if (!expected || expected.type === "TSAnyKeyword" || expected.type === "TSUnknownKeyword") continue;
+        if (!expected || expected.type === "TSAnyKeyword" || expected.type === "TSUnknownKeyword")
+          continue;
         if (expected.type === "TSInferType") {
           bindings.set(expected.typeParameter.name.name, member.type);
           continue;
@@ -884,7 +934,9 @@ export class HostDeclarationIndex {
       if (check.interfaceName !== null) {
         return { holds: this.isSubtype(check.interfaceName, expected.interfaceName), bindings };
       }
-      return check.kind === "object" || check.kind === "function" ? null : { holds: false, bindings };
+      return check.kind === "object" || check.kind === "function"
+        ? null
+        : { holds: false, bindings };
     }
     return { holds: expected.kind === check.kind, bindings };
   }
@@ -927,12 +979,18 @@ export class HostDeclarationIndex {
   }
 
   private resolveIntersection(types: TSType[], context: ResolutionContext): HostType {
-    const parts = types.map((part) => this.resolveType(part, context));
-    return (
-      parts.find((part) => this.isGlobalObjectType(part)) ??
-      parts.find((part) => part.interfaceName !== null) ??
-      parts.find((part) => part.kind !== "any") ??
-      ANY_TYPE
-    );
+    const parts = types
+      .map((part) => this.resolveType(part, context))
+      .filter((part) => part.kind !== "any");
+    const globalObject = parts.find((part) => this.isGlobalObjectType(part));
+    if (globalObject) return globalObject;
+    const primitive = parts.find((part) => part.kind !== "object" && part.kind !== "function");
+    if (primitive) return primitive;
+    if (parts.length === 0) return ANY_TYPE;
+    return {
+      kind: parts.some((part) => part.kind === "function") ? "function" : "object",
+      interfaceName: this.intersectInterfaces(parts),
+      isNullable: false,
+    };
   }
 }

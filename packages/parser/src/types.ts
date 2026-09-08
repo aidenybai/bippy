@@ -10,6 +10,8 @@ import type {
 } from "oxc-parser";
 import type { TypeScriptDeclaration } from "./evaluate/typescript-declarations.js";
 import type { RuntimeSnapshot } from "./harness/snapshot.js";
+import type { HostDocument } from "./host/host-document.js";
+import type { HostPlatform, HostRealm } from "./host/host-realm.js";
 import type { WorkTag } from "./work-tags.js";
 
 export type SourceLanguage = "js" | "jsx" | "ts" | "tsx" | "json";
@@ -279,6 +281,8 @@ export interface StubRenderTools {
   queueMicrotask: (task: () => void) => void;
   /** Assigns an own property of a modeled object, undone on the other paths of an enclosing fork like any heap write. */
   setProperty: (object: StaticObjectValue, key: string, value: StaticValue) => void;
+  /** The host whose globals the calling code sees. */
+  realm: HostRealm;
   /** Binding the call's result is assigned to, as build-time labelers (Emotion's babel/swc plugin) see it. */
   nameHint: string | null;
   /** For tagged templates, the identifier each `${expression}` is (null when not a bare identifier); null for other calls. */
@@ -659,13 +663,15 @@ export interface StaticGlobalValue {
 
 /**
  * An object native code owns: a `Date` built from known parts, or a node,
- * selection or range of the happy-dom document React renders into. Its members
- * run natively once their arguments are known; one value per object so identity
+ * selection or range of the host document React renders into. Its members run
+ * natively once their arguments are known; one value per object so identity
  * comparisons hold.
  */
 export interface StaticNativeObjectValue {
   kind: "native-object";
   value: object;
+  /** The document the object belongs to; null for a language object. */
+  host: HostDocument | null;
 }
 
 export interface StaticMethodValue {
@@ -818,6 +824,8 @@ export interface StaticRendererOptions {
   externalPackageAllowList?: string[];
   /** Apply React Server Components semantics: components outside `"use client"` modules render without a fiber. */
   serverComponents?: boolean;
+  /** The JavaScript host the client code runs on, deciding which globals exist; browser when unset. Server-side code always sees Node. */
+  hostPlatform?: HostPlatform;
   /**
    * Functions the boot code calls before mounting (registries, stores), as
    * `path#exportName` or `path#exportName(globalName, ...)` to pass `window`

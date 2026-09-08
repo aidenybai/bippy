@@ -150,7 +150,8 @@ const withTypeParameters = (
   declaration: TSTypeParameterDeclaration | null | undefined,
   thisType: string | null = scope.thisType,
 ): Scope => {
-  if (!declaration?.params.length) return thisType === scope.thisType ? scope : { ...scope, thisType };
+  if (!declaration?.params.length)
+    return thisType === scope.thisType ? scope : { ...scope, thisType };
   const typeParameters = new Set(scope.typeParameters);
   for (const parameter of declaration.params) typeParameters.add(parameter.name.name);
   return { ...scope, typeParameters, thisType };
@@ -219,6 +220,10 @@ export class DeclarationCatalog {
 
   private createScope(frames: ContainerRecord[], file: string): Scope {
     return { frames, file, typeParameters: EMPTY_TYPE_PARAMETERS, thisType: null };
+  }
+
+  declareInterface(name: string): void {
+    this.getOrCreateInterface(name);
   }
 
   private getOrCreateInterface(name: string): InterfaceRecord {
@@ -331,11 +336,7 @@ export class DeclarationCatalog {
     }
   }
 
-  private addImportEquals(
-    localName: string,
-    reference: TSModuleReference,
-    scope: Scope,
-  ): void {
+  private addImportEquals(localName: string, reference: TSModuleReference, scope: Scope): void {
     const [container] = scope.frames;
     if (reference.type === "TSExternalModuleReference") {
       container.imports.set(localName, {
@@ -348,10 +349,7 @@ export class DeclarationCatalog {
     if (name !== null) container.imports.set(localName, { form: "local", name });
   }
 
-  private addExportDefault(
-    declaration: ExportDefaultDeclarationKind,
-    scope: Scope,
-  ): void {
+  private addExportDefault(declaration: ExportDefaultDeclarationKind, scope: Scope): void {
     const [container] = scope.frames;
     switch (declaration.type) {
       case "ClassDeclaration":
@@ -386,7 +384,10 @@ export class DeclarationCatalog {
         const unwrapped = unwrapType(node.typeAnnotation);
         if (typeParameters.length === 0 && unwrapped.type === "TSTypeLiteral") {
           const record = this.getOrCreateInterface(aliasName);
-          this.addSignatures(record, aliasName, unwrapped.members, { ...scope, thisType: aliasName });
+          this.addSignatures(record, aliasName, unwrapped.members, {
+            ...scope,
+            thisType: aliasName,
+          });
           return;
         }
         this.aliases.set(aliasName, { type: node.typeAnnotation, typeParameters, scope });
@@ -433,7 +434,8 @@ export class DeclarationCatalog {
         );
         this.ambientModules.set(id.value, container);
       }
-      if (body) this.addStatements(body.body, this.createScope([container, ...scope.frames], scope.file));
+      if (body)
+        this.addStatements(body.body, this.createScope([container, ...scope.frames], scope.file));
       return;
     }
     const segments = id.type === "Identifier" ? [id.name] : getQualifiedName(id);
@@ -491,7 +493,11 @@ export class DeclarationCatalog {
       }
       const name = getSignatureName(signature);
       if (name === null) continue;
-      const declaration = this.signatureDeclaration(signature, `${interfaceName}["${name}"]`, scope);
+      const declaration = this.signatureDeclaration(
+        signature,
+        `${interfaceName}["${name}"]`,
+        scope,
+      );
       if (declaration) this.addMember(interfaceName, name, declaration);
     }
   }
@@ -533,7 +539,11 @@ export class DeclarationCatalog {
     this.addSignatures(record, literalName, unwrapped.members, { ...scope, thisType: literalName });
     return {
       form: "reference",
-      type: { kind: record.isCallable ? "function" : "object", interfaceName: literalName, isNullable: false },
+      type: {
+        kind: record.isCallable ? "function" : "object",
+        interfaceName: literalName,
+        isNullable: false,
+      },
     };
   }
 

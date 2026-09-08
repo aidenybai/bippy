@@ -967,6 +967,13 @@ export class Materializer {
     return context;
   }
 
+  /** What a ref to a host component holds after commit: the document's node, or an instance no document describes. */
+  private hostInstanceValue(node: Element | null): StaticValue {
+    if (node === null) return NULL_VALUE;
+    const host = this.interpreter.hostDocument;
+    return host ? nativeObjectValue(node, host) : unknownValue("host instance");
+  }
+
   private hostRef(
     ref: StaticValue,
     location: SourceLocation | null,
@@ -986,7 +993,7 @@ export class Materializer {
       callback: (node) => {
         this.interpreter.assignRef(
           ref,
-          node ? nativeObjectValue(node) : NULL_VALUE,
+          this.hostInstanceValue(node),
           binding.owner,
           binding.location,
         );
@@ -1229,6 +1236,7 @@ export class Materializer {
       markEscaped: (value) => this.interpreter.markEscaped(value),
       queueMicrotask: (task) => this.interpreter.timers.queueMicrotask(task),
       setProperty: (object, key, value) => this.interpreter.assignOwnProperty(object, key, value),
+      realm: this.interpreter.getRealm(context.environment),
       nameHint: null,
       templateArgumentNames: null,
     };
@@ -1325,7 +1333,7 @@ export class Materializer {
       changedCells.length === 0 &&
       previous &&
       isRetainedInput(previous.input, input) &&
-      isSamePosition(previous.context, context) &&
+      previous.context.ignoresMaybeThrows === context.ignoresMaybeThrows &&
       previous.contextReads.every((read) => this.readContext(read.definition) === read.value)
     ) {
       return this.commitRender(instance, previous, input.location);

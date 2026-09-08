@@ -41,12 +41,12 @@ export class PurePackages {
     if (exported === undefined) return null;
     const name = `${specifier}#${importedName}`;
     return typeof exported === "function"
-      ? pureNativeFunction(name, exported, undefined, () => ({
+      ? pureNativeFunction(name, exported, undefined, null, () => ({
           kind: "external",
           packageName,
           importedName: `${importedName}()`,
           origin: "derived",
         }))
-      : fromNativeValue(exported, name);
+      : fromNativeValue(exported, name, null);
   }
 }

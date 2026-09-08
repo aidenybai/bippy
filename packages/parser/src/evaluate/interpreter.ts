@@ -109,7 +109,9 @@ import {
 } from "./class-component.js";
 import { getCollectionItems, markCollectionExternallyMutable } from "./collections.js";
 import { createGeneratorValue } from "./generators.js";
-import { getPageLocationMember, isWindowAlias } from "./browser-globals.js";
+import { getPageLocationMember } from "./page-location.js";
+import type { HostDocument } from "../host/host-document.js";
+import { type HostPlatform, type HostRealm, loadHostRealm } from "../host/host-realm.js";
 import {
   type SessionHistory,
   createSessionHistory,
@@ -241,6 +243,10 @@ export interface InterpreterOptions {
   page?: CapturedPageState;
   /** The server process's environment, whole; unlisted variables are unset. */
   environment?: ProcessEnvironment;
+  /** The JavaScript host the client code runs on; browser when unset. */
+  hostPlatform?: HostPlatform;
+  /** The renderer's live document, lent to client code when its host has one. */
+  hostDocument?: HostDocument;
   /** The rendered tree may be mounted under providers that are not part of the analysis, so unprovided contexts are uncertain. */
   assumeOuterProviders?: boolean;
   /** The analyzed app's React version; decides which `$$typeof` symbol tags elements. */
@@ -282,10 +288,9 @@ const DEFAULT_MAX_STEPS = 2_000_000;
 export const STYLED_JSX_SPECIFIER = "styled-jsx/style";
 
 const MAX_INTERVAL_TICKS = 1_000;
-const WINDOW_NAME = /^(?:window|globalThis)\.name$/;
 const USE_STRICT_DIRECTIVE = "use strict";
-const NAVIGATOR_MEMBER = /^(?:(?:window|globalThis)\.)?navigator\.(userAgent|language)$/;
 const FS_URL_PREFIX = "/@fs/";
+const SERVER_HOST_PLATFORM: HostPlatform = "node";
 
 const PRIMITIVE_PROTOTYPES: Record<UnknownPrimitiveType, object | null> = {
   string: String.prototype,
@@ -525,6 +530,9 @@ export class Interpreter {
   private readonly definedEnvironmentObjects = new Set<string>();
   private readonly pageState: CapturedPageState | null;
   private readonly processEnvironment: ProcessEnvironment | null;
+  private readonly clientRealm: HostRealm;
+  private readonly serverRealm: HostRealm;
+  readonly hostDocument: HostDocument | null;
   readonly storageAreas: StorageAreas;
   readonly timers = new TimerQueue();
   /** Observable changes (state commits, heap mutations) so far; a timer tick that adds none is steady state. */
@@ -560,6 +568,9 @@ export class Interpreter {
     this.pageState = options.page ?? null;
     this.history = createSessionHistory(this.pageState, options.route ?? null);
     this.processEnvironment = options.environment ?? null;
+    this.clientRealm = loadHostRealm(options.hostPlatform ?? "browser");
+    this.serverRealm = loadHostRealm(SERVER_HOST_PLATFORM);
+    this.hostDocument = this.clientRealm.hasDocument ? (options.hostDocument ?? null) : null;
     this.storageAreas = createStorageAreas(this.pageState);
     this.purePackages =
       this.project.rootDirectory === null ? null : new PurePackages(this.project.rootDirectory);
@@ -605,6 +616,11 @@ export class Interpreter {
 
   getWindowGlobal(name: string): StaticValue {
     return this.windowGlobals.get(name) ?? unknownValue(`window.${name}`);
+  }
+
+  /** The host whose globals code in this rendering environment sees: server-rendered code runs in Node whatever the client host is. */
+  getRealm(environment: RenderEnvironment | null): HostRealm {
+    return environment === "server" ? this.serverRealm : this.clientRealm;
   }
 
   private getReactVersionExport(packageName: string, exportedName: string): StaticValue | null {
@@ -894,7 +910,7 @@ export class Interpreter {
         target.properties.set(propertyName, value);
         return target;
       case "global":
-        if (isWindowAlias(target.name)) {
+        if (this.getRealm(context.environment).isGlobalAlias(target.name)) {
           this.windowGlobals.set(
             propertyName,
             this.withUncertainAssignment(
@@ -1114,7 +1130,7 @@ export class Interpreter {
   lookupIdentifier(name: string, context: EvaluationContext): StaticValue {
     const resolved = this.resolveIdentifier(name, context);
     if (resolved) return resolved;
-    return this.isAbsentGlobal(name)
+    return this.isAbsentGlobal(name, context.environment)
       ? thrownValue(
           `\`${name}\` is not defined`,
           createErrorValue("ReferenceError", [primitiveValue(`${name} is not defined`)], null),
@@ -1137,43 +1153,69 @@ export class Interpreter {
   }
 
   /**
-   * An unbound name the captured page's `window` did not have either, so reading
-   * it throws a `ReferenceError` and `typeof` yields `"undefined"`. Names a
-   * bundler may inject per module (`global`, `define`) are not decided by the page.
+   * An unbound name reading which throws a `ReferenceError` (so `typeof` yields
+   * `"undefined"`): the captured page's `window` lacked it, or, with no page
+   * captured, only another host declares it. Names a bundler may inject per
+   * module (`global`, `define`) are decided by neither.
    */
-  private isAbsentGlobal(name: string): boolean {
-    return !BUNDLER_INJECTED_NAMES.has(name) && this.isAbsentWindowProperty(name);
-  }
-
-  private isAbsentWindowProperty(name: string): boolean {
+  private isAbsentGlobal(name: string, environment: RenderEnvironment | null): boolean {
+    if (BUNDLER_INJECTED_NAMES.has(name)) return false;
+    if (environment === "server") return this.serverRealm.isForeignGlobal(name);
+    if (this.windowGlobals.has(name)) return false;
     const windowKeys = this.pageState?.windowKeys;
-    return windowKeys !== undefined && !windowKeys.includes(name) && !this.windowGlobals.has(name);
+    return windowKeys === undefined
+      ? this.clientRealm.isForeignGlobal(name)
+      : !windowKeys.includes(name);
   }
 
   private getGlobal(name: string, renderEnvironment: RenderEnvironment | null): StaticValue | null {
     const defined = this.defines.get(name);
     if (defined) return defined;
-    if (name === "document.cookie" && this.pageState) return primitiveValue(this.pageState.cookie);
-    if (WINDOW_NAME.test(name) && this.pageState?.name !== undefined) {
-      return primitiveValue(this.pageState.name);
-    }
-    const navigatorMember = NAVIGATOR_MEMBER.exec(name)?.[1];
-    if (navigatorMember === "userAgent" || navigatorMember === "language") {
-      const captured = this.pageState?.[navigatorMember];
-      if (captured !== undefined) return primitiveValue(captured);
-    }
-    if (name === "process.cwd" && this.project.rootDirectory !== null) {
+    const realm = this.getRealm(renderEnvironment);
+    const hostName = realm.normalizeGlobalName(name);
+    const observed = realm.hasDocument ? this.getObservedPageMember(hostName) : null;
+    if (observed) return observed;
+    if (hostName === "process.cwd" && this.project.rootDirectory !== null) {
       const rootDirectory = this.project.rootDirectory;
-      return nativeFunction(name, () => primitiveValue(rootDirectory));
+      return nativeFunction(hostName, () => primitiveValue(rootDirectory));
     }
+    const pageLocationMember = realm.hasGlobal("location")
+      ? getPageLocationMember(this.origin, this.history.route, hostName)
+      : null;
     return (
-      getPageLocationMember(this.origin, this.history.route, name) ??
-      getBuiltinGlobal(name, {
-        declared: this.processEnvironment,
-        renderEnvironment,
-        definedObjects: this.definedEnvironmentObjects,
-      })
+      pageLocationMember ??
+      getBuiltinGlobal(
+        hostName,
+        realm,
+        renderEnvironment === "server" ? null : this.hostDocument,
+        {
+          declared: this.processEnvironment,
+          renderEnvironment,
+          definedObjects: this.definedEnvironmentObjects,
+        },
+      )
     );
+  }
+
+  /** Page facts recorded from the running browser: cookies, `window.name`, and the navigator strings. */
+  private getObservedPageMember(hostName: string): StaticValue | null {
+    if (this.pageState === null) return null;
+    switch (hostName) {
+      case "document.cookie":
+        return primitiveValue(this.pageState.cookie);
+      case "name":
+        return this.pageState.name === undefined ? null : primitiveValue(this.pageState.name);
+      case "navigator.userAgent":
+        return this.pageState.userAgent === undefined
+          ? null
+          : primitiveValue(this.pageState.userAgent);
+      case "navigator.language":
+        return this.pageState.language === undefined
+          ? null
+          : primitiveValue(this.pageState.language);
+      default:
+        return null;
+    }
   }
 
   private consumeStep(location: SourceLocation | null): boolean {
@@ -1601,10 +1643,13 @@ export class Interpreter {
     const target = unwrapExpression(argument);
     if (target.type === "Identifier") {
       const resolved = this.resolveIdentifier(target.name, context);
-      if (resolved) return getTypeofValue(resolved, context.environment);
-      if (this.isAbsentGlobal(target.name)) return primitiveValue("undefined");
+      if (resolved) return getTypeofValue(resolved, this.getRealm(context.environment));
+      if (this.isAbsentGlobal(target.name, context.environment)) return primitiveValue("undefined");
     }
-    return getTypeofValue(this.evaluateExpression(argument, context), context.environment);
+    return getTypeofValue(
+      this.evaluateExpression(argument, context),
+      this.getRealm(context.environment),
+    );
   }
 
   private evaluateDelete(argument: Expression, context: EvaluationContext): StaticValue {
@@ -1666,21 +1711,34 @@ export class Interpreter {
     if (node.operator === "in") {
       return (
         hasProperty(left, right) ??
-        this.hasWindowProperty(left, right) ??
+        this.hasGlobalObjectProperty(left, right, context.environment) ??
         applyBinaryOperator("in", left, right)
       );
     }
-    return applyBinaryOperator(node.operator, left, right, context.environment);
+    return applyBinaryOperator(node.operator, left, right, this.getRealm(context.environment));
   }
 
-  /** `name in window`: a name the page assigned, or one the captured browser exposed; null without a capture. */
-  private hasWindowProperty(key: StaticValue, target: StaticValue): StaticValue | null {
-    if (target.kind !== "global" || !isWindowAlias(target.name)) return null;
+  /**
+   * `name in window`: a name the page assigned, one the captured browser exposed, or,
+   * without a capture, one the host declares outright (optional members stay open).
+   */
+  private hasGlobalObjectProperty(
+    key: StaticValue,
+    target: StaticValue,
+    environment: RenderEnvironment | null,
+  ): StaticValue | null {
+    const realm = this.getRealm(environment);
+    if (target.kind !== "global" || !realm.isGlobalAlias(target.name)) return null;
     const name = getPropertyName(key);
     if (name === null) return null;
-    if (this.windowGlobals.has(name)) return TRUE_VALUE;
-    const windowKeys = this.pageState?.windowKeys;
-    return windowKeys ? primitiveValue(windowKeys.includes(name)) : null;
+    if (environment !== "server") {
+      if (this.windowGlobals.has(name)) return TRUE_VALUE;
+      const windowKeys = this.pageState?.windowKeys;
+      if (windowKeys) return primitiveValue(windowKeys.includes(name));
+    }
+    const declared = realm.getGlobal(name);
+    if (declared !== null) return declared.type.isNullable ? null : TRUE_VALUE;
+    return realm.isForeignGlobal(name) ? FALSE_VALUE : null;
   }
 
   private evaluateUpdateExpression(
@@ -2073,13 +2131,19 @@ export class Interpreter {
             getHistoryMember(this.history, key) ?? { kind: "method", receiver: object, name: key }
           );
         }
-        if (isWindowAlias(object.name)) {
-          const windowGlobal = this.windowGlobals.get(key);
+        const memberName = `${object.name}.${key}`;
+        if (this.getRealm(context.environment).isGlobalAlias(object.name)) {
+          const windowGlobal =
+            context.environment === "server" ? undefined : this.windowGlobals.get(key);
           if (windowGlobal) return windowGlobal;
-          if (isSymbolPropertyKey(key) || this.isAbsentWindowProperty(key)) return UNDEFINED_VALUE;
+          if (isSymbolPropertyKey(key) || this.isAbsentGlobal(key, context.environment))
+            return UNDEFINED_VALUE;
+          return (
+            this.getGlobal(memberName, context.environment) ?? unknownValue(memberName, location)
+          );
         }
         return (
-          this.getGlobal(`${object.name}.${key}`, context.environment) ?? {
+          this.getGlobal(memberName, context.environment) ?? {
             kind: "method",
             receiver: object,
             name: key,
@@ -2300,6 +2364,7 @@ export class Interpreter {
           markEscaped: (value) => this.markEscaped(value),
           queueMicrotask: (task) => this.timers.queueMicrotask(task),
           setProperty: (object, key, value) => this.assignOwnProperty(object, key, value),
+          realm: this.getRealm(context.environment),
           nameHint: options.nameHint ?? null,
           templateArgumentNames: options.templateArgumentNames ?? null,
         });
@@ -3254,7 +3319,7 @@ export class Interpreter {
     for (const [caseIndex, caseValue] of caseValues.entries()) {
       if (caseValue === null) continue;
       const verdict = getTruthiness(
-        applyBinaryOperator("===", discriminant, caseValue, context.environment),
+        applyBinaryOperator("===", discriminant, caseValue, this.getRealm(context.environment)),
       );
       if (verdict === true) {
         matchIndex = caseIndex;
@@ -3556,17 +3621,17 @@ const applyBinaryOperator = (
   operator: string,
   left: StaticValue,
   right: StaticValue,
-  environment: RenderEnvironment | null = null,
+  realm: HostRealm | null = null,
 ): StaticValue => {
   if (countAlternatives(left) * countAlternatives(right) <= MAX_DISTRIBUTED_ALTERNATIVES) {
     if (left.kind === "branch") {
       return mapValue(left, (alternative) =>
-        applyBinaryOperator(operator, alternative, right, environment),
+        applyBinaryOperator(operator, alternative, right, realm),
       );
     }
     if (right.kind === "branch") {
       return mapValue(right, (alternative) =>
-        applyBinaryOperator(operator, left, alternative, environment),
+        applyBinaryOperator(operator, left, alternative, realm),
       );
     }
   }
@@ -3576,7 +3641,7 @@ const applyBinaryOperator = (
     const computed = computeBinary(operator, left.value, right.value);
     if (computed !== undefined) return computed;
   }
-  const equality = compareEquality(operator, left, right, environment);
+  const equality = compareEquality(operator, left, right, realm);
   if (equality) return equality;
   if (operator === "instanceof") {
     const isInstance = isInstanceOf(left, right);
@@ -3635,15 +3700,15 @@ const mayCoerce = (value: StaticValue): boolean =>
  * React's memo cache sentinel never reaches application values, so comparing
  * it against anything the interpreter cannot see is still a definite answer.
  */
-/** Whether a host global equals `undefined`/`null`, once the rendering environment fixes its `typeof`. */
+/** Whether a host global equals `undefined`/`null`, once the host fixes its `typeof`. */
 const compareGlobalToNullish = (
   global: StaticValue,
   other: StaticValue,
-  environment: RenderEnvironment | null,
+  realm: HostRealm | null,
 ): boolean | null => {
-  if (global.kind !== "global" || other.kind !== "primitive") return null;
+  if (realm === null || global.kind !== "global" || other.kind !== "primitive") return null;
   if (other.value !== undefined && other.value !== null) return null;
-  const globalTypeof = getGlobalTypeof(global.name, environment);
+  const globalTypeof = getGlobalTypeof(global.name, realm);
   if (globalTypeof === null) return null;
   return globalTypeof === "undefined" ? other.value === undefined : false;
 };
@@ -3652,14 +3717,14 @@ const compareEquality = (
   operator: string,
   left: StaticValue,
   right: StaticValue,
-  environment: RenderEnvironment | null,
+  realm: HostRealm | null,
 ): StaticValue | null => {
   if (!EQUALITY_OPERATORS.has(operator)) return null;
   const isStrict = operator === "===" || operator === "!==";
   let isEqual =
     compareIdentity(left, right) ??
-    compareGlobalToNullish(left, right, environment) ??
-    compareGlobalToNullish(right, left, environment);
+    compareGlobalToNullish(left, right, realm) ??
+    compareGlobalToNullish(right, left, realm);
   if (isEqual === false && !isStrict && mayCoerce(left) && mayCoerce(right)) isEqual = null;
   if (isEqual === null) {
     const isSentinel = (value: StaticValue): boolean =>
