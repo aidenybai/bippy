@@ -454,6 +454,8 @@ export interface NextModelOptions {
   request?: CapturedRequest;
   /** Installed `next` release; `null` when it cannot be read (the newest modeled shapes apply). */
   nextVersion: string | null;
+  /** Installed `next-intl` release; `null` when it cannot be read or is not installed. */
+  nextIntlVersion: string | null;
 }
 
 export const createNextModel = (options: NextModelOptions): NextModel => {
@@ -464,6 +466,7 @@ export const createNextModel = (options: NextModelOptions): NextModel => {
   const intl = createNextIntlModel({
     link: linkStub,
     navigation: (importedName) => appNavigationValue(importedName, url, params),
+    version: options.nextIntlVersion,
   });
   const externalValues: ExternalValueProvider = (packageName, importedName) => {
     switch (packageName) {

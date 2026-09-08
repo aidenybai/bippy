@@ -208,6 +208,23 @@ describe("next app router with next-intl", () => {
     const { tree } = await target("/de");
     expect(tree).toContain("notFound() interrupts rendering");
   });
+
+  it("models next-intl 3.x: `locale` param from unstable_setRequestLocale, locale fallback, minified provider", async () => {
+    const legacy = (route: string) =>
+      render("next-app-intl-legacy", { framework: "next-app", route });
+    const english = await legacy("/en");
+    expect(english.errors).toEqual([]);
+    expect(english.tree).not.toContain("?unknown");
+    expect(english.tree).toMatch(/<body>\n\s+<r>\n\s+<IntlProvider>/);
+    expect(english.tree).toMatch(/<h1>\n\s+"Welcome"/);
+    expect(english.tree).toMatch(/<p>\n\s+"en"/);
+    expect(english.tree).toMatch(/<Greeting>\n\s+<p>\n\s+"Hello, Ada!"/);
+    const french = await legacy("/fr");
+    expect(french.tree).toMatch(/<h1>\n\s+"Bienvenue"/);
+    expect(french.tree).toMatch(/<p>\n\s+"fr"/);
+    expect(french.tree).toMatch(/"Bonjour, Ada !"/);
+    expect((await legacy("/de")).tree).toContain("notFound() interrupts rendering");
+  });
 });
 
 describe("next pages router", () => {

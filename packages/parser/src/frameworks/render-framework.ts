@@ -1,9 +1,9 @@
-import { createRequire } from "node:module";
 import path from "node:path";
 import { getSettleMs, type CorpusEntry } from "../corpus/manifest.js";
 import { readProcessEnvironment } from "../corpus/process-environment.js";
 import { FrameworkTargetError } from "../errors.js";
-import { readPackageManifest } from "../package-manifest.js";
+import { readInstalledPackage } from "../graph/installed-package.js";
+import { ModuleResolver } from "../graph/module-resolver.js";
 import { createStaticRenderer, type StaticRenderer } from "../render/static-renderer.js";
 import type { RuntimeObservations, StaticRenderResult, StaticRendererOptions } from "../types.js";
 import type { FrameworkKind } from "./framework-profile.js";
@@ -37,15 +37,10 @@ const requireField = (target: FrameworkRenderTarget, field: "entry" | "route"): 
   return value;
 };
 
-/** The installed `next` release as the app resolves it; null when it is not installed. */
-const readNextVersion = (rootDirectory: string): string | null => {
-  try {
-    const requireFromRoot = createRequire(path.join(rootDirectory, "package.json"));
-    return readPackageManifest(requireFromRoot.resolve("next/package.json")).version ?? null;
-  } catch {
-    return null;
-  }
-};
+/** The installed release of `packageName` as the app resolves it; null when it is not installed. */
+const readInstalledVersion = (rootDirectory: string, packageName: string): string | null =>
+  readInstalledPackage(new ModuleResolver({ rootDirectory }), rootDirectory, packageName)
+    ?.version ?? null;
 
 /**
  * Renders one framework target statically. Next app-router targets always run
@@ -67,7 +62,8 @@ export const renderFrameworkTarget = (
         route,
         origin: options.origin,
         request: options.observations?.request,
-        nextVersion: readNextVersion(options.rootDirectory),
+        nextVersion: readInstalledVersion(options.rootDirectory, "next"),
+        nextIntlVersion: readInstalledVersion(options.rootDirectory, "next-intl"),
       });
       const renderer = createStaticRenderer({
         ...options,
@@ -82,7 +78,8 @@ export const renderFrameworkTarget = (
         kind: "next-pages",
         route,
         origin: options.origin,
-        nextVersion: readNextVersion(options.rootDirectory),
+        nextVersion: readInstalledVersion(options.rootDirectory, "next"),
+        nextIntlVersion: readInstalledVersion(options.rootDirectory, "next-intl"),
       });
       const renderer = createStaticRenderer({ ...options, externalValues: model.externalValues });
       return renderNextPagesRoute(renderer, model, {
