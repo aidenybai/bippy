@@ -1,4 +1,4 @@
-import { MARKER_NAMES, SUSPENSE_BRANCH_REASON } from "../materialize/markers.js";
+import { MARKER_NAMES } from "../materialize/markers.js";
 import type { StaticRenderResult } from "../types.js";
 import type {
   RuntimeFiberSnapshot,
@@ -169,18 +169,7 @@ class PatternReader {
       case MARKER_NAMES.text:
         return [{ kind: "text", text: null }];
       case MARKER_NAMES.suspenseBoundary:
-        return fiber.children.length > 1
-          ? [
-              {
-                kind: "branch",
-                variable: `suspense#${++this.anonymousDecisions}`,
-                reason: SUSPENSE_BRANCH_REASON,
-                location: null,
-                preferredIndex: 0,
-                alternatives: fiber.children.map((boundary) => this.read([boundary])),
-              },
-            ]
-          : this.read(fiber.children);
+        return this.read(fiber.children);
       case MARKER_NAMES.suspended:
         return [];
       default:

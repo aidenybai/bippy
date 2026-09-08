@@ -2,12 +2,11 @@ import path from "node:path";
 import { getSettleMs, type CorpusEntry } from "../corpus/manifest.js";
 import { readProcessEnvironment } from "../corpus/process-environment.js";
 import { FrameworkTargetError } from "../errors.js";
-import { readInstalledPackage } from "../graph/installed-package.js";
-import { ModuleResolver } from "../graph/module-resolver.js";
 import { createStaticRenderer, type StaticRenderer } from "../render/static-renderer.js";
 import type { RuntimeObservations, StaticRenderResult, StaticRendererOptions } from "../types.js";
 import type { FrameworkKind } from "./framework-profile.js";
 import { renderNextAppRoute } from "./next-app-router.js";
+import { readInstalledVersion } from "../libraries/installed-version.js";
 import { createNextModel } from "./next-externals.js";
 import { renderNextPagesRoute } from "./next-pages-router.js";
 import { createReactRouterModel, renderReactRouterRoute } from "./react-router.js";
@@ -37,10 +36,6 @@ const requireField = (target: FrameworkRenderTarget, field: "entry" | "route"): 
   return value;
 };
 
-const readInstalledNextVersion = (rootDirectory: string): string | null =>
-  readInstalledPackage(new ModuleResolver({ rootDirectory }), rootDirectory, "next")?.version ??
-  null;
-
 /**
  * Renders one framework target statically. Next app-router targets always run
  * with server-component semantics because that is how Next renders `app/`.
@@ -61,7 +56,8 @@ export const renderFrameworkTarget = (
         route,
         origin: options.origin,
         request: options.observations?.request,
-        nextVersion: readInstalledNextVersion(options.rootDirectory),
+        version: readInstalledVersion(options.rootDirectory, "next"),
+        nextIntlVersion: readInstalledVersion(options.rootDirectory, "next-intl"),
       });
       const renderer = createStaticRenderer({
         ...options,
@@ -72,7 +68,13 @@ export const renderFrameworkTarget = (
     }
     case "next-pages": {
       const route = requireField(target, "route");
-      const model = createNextModel({ kind: "next-pages", route, origin: options.origin });
+      const model = createNextModel({
+        kind: "next-pages",
+        route,
+        origin: options.origin,
+        version: readInstalledVersion(options.rootDirectory, "next"),
+        nextIntlVersion: readInstalledVersion(options.rootDirectory, "next-intl"),
+      });
       const renderer = createStaticRenderer({ ...options, externalValues: model.externalValues });
       return renderNextPagesRoute(renderer, model, {
         route,
@@ -82,6 +84,7 @@ export const renderFrameworkTarget = (
     case "react-router": {
       const model = createReactRouterModel(
         requireField(target, "route"),
+        options.rootDirectory,
         options.observations?.router ?? null,
       );
       const renderer = createStaticRenderer({ ...options, externalValues: model.externalValues });
@@ -102,6 +105,7 @@ const renderRootComponent = (
     case "react-router": {
       const model = createReactRouterModel(
         requireField(target, "route"),
+        options.rootDirectory,
         options.observations?.router ?? null,
       );
       const renderer = createStaticRenderer({ ...options, externalValues: model.externalValues });

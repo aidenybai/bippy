@@ -23,9 +23,6 @@ export const computeRenderStats = (
       case MARKER_NAMES.branch:
         stats.branchCount++;
         break;
-      case MARKER_NAMES.suspenseBoundary:
-        if (fiber.children.length > 1) stats.branchCount++;
-        break;
       case MARKER_NAMES.repeat:
         stats.repeatCount++;
         break;

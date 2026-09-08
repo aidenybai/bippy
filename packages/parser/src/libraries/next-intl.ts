@@ -1,3 +1,4 @@
+import semver from "semver";
 import { resolvedPromiseValue } from "../evaluate/promises.js";
 import {
   branchValue,
@@ -46,6 +47,8 @@ export interface NextIntlModelOptions {
   link: StubComponent;
   /** `next/navigation` exports the navigation hooks wrap. */
   navigation: (importedName: string) => StaticValue | null;
+  /** Installed `next-intl` release; `null` when it cannot be read (the newest modeled shapes apply). */
+  version: string | null;
 }
 
 export interface NextIntlModel {
@@ -311,10 +314,22 @@ const renderClientProvider = (props: StaticObjectValue): StaticValue =>
       )
     : element({ kind: "stub", stub: INTL_PROVIDER_STUB }, props);
 
-const CLIENT_PROVIDER_STUB: StubComponent = {
-  displayName: "NextIntlClientProvider",
+/**
+ * 3.x `getConfig.js` hands `getRequestConfig` a `locale` param that already
+ * resolved the request locale and falls back to it when the config returns
+ * none; its client bundle is minified, so `NextIntlClientProvider` renders as
+ * `r`. 4.x passes only an explicit override, requires a returned locale and
+ * ships an unminified `development` build.
+ */
+const LEGACY_VERSIONS = "<4.0.0";
+
+const isLegacyVersion = (version: string | null): boolean =>
+  version !== null && semver.satisfies(version, LEGACY_VERSIONS, { includePrerelease: true });
+
+const createClientProviderStub = (isLegacy: boolean): StubComponent => ({
+  displayName: isLegacy ? "r" : "NextIntlClientProvider",
   render: renderClientProvider,
-};
+});
 
 const toRoutingConfig = (routing: StaticValue): RoutingConfig | null => {
   if (isNullish(routing) === true) {
@@ -415,6 +430,7 @@ export const createNextIntlModel = (options: NextIntlModelOptions): NextIntlMode
   let requestConfig: StaticValue | null = null;
   let requestLocale: StaticValue | null = null;
   const configCache = new Map<string | null, StaticValue>();
+  const isLegacy = isLegacyVersion(options.version);
 
   const getServerConfig = (
     tools: StubRenderTools,
@@ -437,14 +453,23 @@ export const createNextIntlModel = (options: NextIntlModelOptions): NextIntlMode
       unknownValue("the X-NEXT-INTL-LOCALE header the next-intl middleware sets");
     const runtimeConfig = tools.callAwaited(requestConfig, [
       objectFromRecord({
-        locale: localeOverride ?? UNDEFINED_VALUE,
+        locale: isLegacy ? requested : (localeOverride ?? UNDEFINED_VALUE),
         requestLocale: resolvedPromiseValue(requested),
       }),
     ]);
+    const returnedLocale =
+      runtimeConfig.kind === "object"
+        ? getObjectProperty(runtimeConfig, "locale")
+        : UNDEFINED_VALUE;
     const config =
       runtimeConfig.kind === "object"
         ? objectValue([
             ...pickConfig(runtimeConfig).entries,
+            {
+              kind: "property",
+              key: "locale",
+              value: isLegacy ? orValue(returnedLocale, requested) : returnedLocale,
+            },
             {
               kind: "property",
               key: "timeZone",
@@ -497,6 +522,7 @@ export const createNextIntlModel = (options: NextIntlModelOptions): NextIntlMode
     return isUndefined(locale) ? null : locale;
   };
 
+  const clientProviderStub = createClientProviderStub(isLegacy);
   const SERVER_PROVIDER_STUB: StubComponent = {
     displayName: "NextIntlClientProvider",
     isServerComponent: true,
@@ -512,7 +538,7 @@ export const createNextIntlModel = (options: NextIntlModelOptions): NextIntlMode
         timeZone: nullishValue(own("timeZone"), configProperty(config, "timeZone")),
       });
       return element(
-        { kind: "stub", stub: CLIENT_PROVIDER_STUB },
+        { kind: "stub", stub: clientProviderStub },
         objectValue([...inferred.entries, ...omitProps(props, PROVIDER_INFERRED_PROPS).entries]),
       );
     },
@@ -862,7 +888,8 @@ export const createNextIntlModel = (options: NextIntlModelOptions): NextIntlMode
       case "getMessages":
         return serverConfigGetter(importedName, "messages");
       case "setRequestLocale":
-        return nativeFunction("setRequestLocale", ([locale = UNDEFINED_VALUE]) => {
+      case "unstable_setRequestLocale":
+        return nativeFunction(importedName, ([locale = UNDEFINED_VALUE]) => {
           requestLocale = locale;
           return UNDEFINED_VALUE;
         });

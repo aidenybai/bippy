@@ -1,5 +1,6 @@
 import { Badge, Card } from "@/components/card";
 import { Counter } from "@/components/counter";
+import { Sonner, Toaster } from "@/components/toaster";
 import { Label, Toggle } from "@/components/toggle";
 import { getGreeting } from "@/lib/greeting";
 
@@ -14,6 +15,8 @@ export default async function HomePage() {
       <Card>
         <Badge label="new" />
       </Card>
+      <Toaster />
+      <Sonner />
       <Toggle />
       <Label text="mode" />
       <h2>{tagline}</h2>

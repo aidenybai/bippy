@@ -30,6 +30,8 @@ export interface FixtureManifest {
   entry: string;
   expectedStatus: ComparisonStatus;
   minCoverage: number;
+  /** Runtime fibers that must match without wildcards or skipped opaque subtrees. */
+  minStrictCoverage?: number;
   framework: FrameworkKind;
   /** URL pathname for routed frameworks; the runtime side navigates here before mounting. */
   route?: string;

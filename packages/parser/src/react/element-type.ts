@@ -34,6 +34,8 @@ const toClientReferenceType = (type: StaticElementType): StaticElementType => {
       return { ...type, component: { ...type.component, isClientReference: true } };
     case "memo":
       return { ...type, inner: toClientReferenceType(type.inner) };
+    case "lazy":
+      return type.inner ? { ...type, inner: toClientReferenceType(type.inner) } : type;
     default:
       return type;
   }

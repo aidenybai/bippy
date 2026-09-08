@@ -1,23 +1,24 @@
 import { Suspense } from "react";
-import { Card } from "ui-kit";
+import { Card, Stack } from "ui-kit";
 
-const Panel = ({ title }: { title: string }) => (
-  <Suspense fallback={<p>loading {title}</p>}>
-    <Card title={title}>
-      <p>inside {title}</p>
-    </Card>
-  </Suspense>
+const Skeleton = () => (
+  <Stack gap={1}>
+    <p>loading</p>
+  </Stack>
+);
+
+const Search = () => (
+  <Card title="search">
+    <input placeholder="query" />
+  </Card>
 );
 
 export const App = () => (
-  <main>
-    <h3>before</h3>
-    <Suspense fallback={<p>loading page</p>}>
-      <Card title="page">
-        <Panel title="first" />
-        <Panel title="second" />
-      </Card>
-    </Suspense>
-    <h3>after</h3>
-  </main>
+  <Suspense fallback={null}>
+    <div>
+      <Suspense fallback={<Skeleton />}>
+        <Search />
+      </Suspense>
+    </div>
+  </Suspense>
 );
