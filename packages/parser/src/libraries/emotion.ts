@@ -15,7 +15,7 @@ import {
   unknownValue,
 } from "../evaluate/values.js";
 import { element, emptyStub, nativeFunction, stubValue } from "../frameworks/stubs.js";
-import { getStubDisplayName, toElementType } from "../react/element-type.js";
+import { toElementType } from "../react/element-type.js";
 import type {
   ContextDefinition,
   LibraryValueProvider,
@@ -160,7 +160,7 @@ const describeTag = (tag: StaticValue): string => {
     case "lazy":
       return type.displayName ?? "Component";
     case "stub":
-      return getStubDisplayName(type) ?? "Component";
+      return type.stub.displayName ?? "Component";
     default:
       return describeElementType(type);
   }

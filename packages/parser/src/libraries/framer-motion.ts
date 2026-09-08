@@ -13,7 +13,7 @@ import {
   unknownValue,
 } from "../evaluate/values.js";
 import { element, emptyStub, nativeFunction, stubValue } from "../frameworks/stubs.js";
-import { getStubDisplayName, toElementType } from "../react/element-type.js";
+import { toElementType } from "../react/element-type.js";
 import type {
   ContextDefinition,
   LibraryValueProvider,
@@ -179,7 +179,7 @@ const describeWrapped = (type: StaticElementType): string => {
     case "lazy":
       return type.displayName ?? "";
     case "stub":
-      return getStubDisplayName(type) ?? "";
+      return type.stub.displayName ?? "";
     case "external":
       return type.displayName;
     default:

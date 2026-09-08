@@ -50,11 +50,9 @@ import type {
   StaticObjectValue,
   StaticValue,
   StubComponent,
-  StubElementType,
   StubHooks,
   StubRenderTools,
 } from "../types.js";
-import { getStubDisplayName } from "../react/element-type.js";
 import { ClassComponentTag, ForwardRefTag } from "../work-tags.js";
 import {
   AlternativeMarker,
@@ -452,10 +450,7 @@ export class Materializer {
     return value;
   };
   private contextReads: ContextRead[] | null = null;
-  private readonly stubProxies = new WeakMap<
-    StubComponent,
-    Map<string | null, ComponentType<ProxyProps>>
-  >();
+  private readonly stubProxies = new WeakMap<StubComponent, ComponentType<ProxyProps>>();
   private readonly suspenseBoundaryProxy: ComponentType<ProxyProps>;
   private portalContainer: Element | null = null;
   private readonly hostRefs = new WeakMap<StaticValue, HostRefBinding>();
@@ -805,7 +800,7 @@ export class Materializer {
         });
       }
       case "stub":
-        return createElement(this.getStubProxy(type), { key: reactKey, input });
+        return createElement(this.getStubProxy(type.stub), { key: reactKey, input });
       case "unknown":
         return this.unknownElementNode(
           `${type.displayName ? `<${type.displayName}>` : "element"}: ${type.reason}`,
@@ -1175,7 +1170,7 @@ export class Materializer {
       case "lazy":
         return this.getLazyType(type);
       case "stub":
-        return this.getStubProxy(type);
+        return this.getStubProxy(type.stub);
       default:
         return null;
     }
@@ -1215,32 +1210,25 @@ export class Materializer {
     return lazyType;
   }
 
-  private getStubProxy(type: StubElementType): ComponentType<ProxyProps> {
-    const { stub } = type;
-    const displayName = getStubDisplayName(type);
-    let proxiesByName = this.stubProxies.get(stub);
-    if (!proxiesByName) {
-      proxiesByName = new Map();
-      this.stubProxies.set(stub, proxiesByName);
-    }
-    let proxy = proxiesByName.get(displayName);
+  private getStubProxy(stub: StubComponent): ComponentType<ProxyProps> {
+    let proxy = this.stubProxies.get(stub);
     if (!proxy) {
       const render = setFunctionName(
         ({ input }: ProxyProps): ReactNode =>
           this.renderInsideComponent(() => this.renderStub(input, stub)),
-        displayName,
+        stub.displayName,
       );
       switch (stub.tag) {
         case ForwardRefTag:
           proxy = this.runtime.react.forwardRef<unknown, ProxyProps>(render);
           break;
         case ClassComponentTag:
-          proxy = this.getStubClassProxy(render, displayName);
+          proxy = this.getStubClassProxy(render, stub.displayName);
           break;
         default:
           proxy = render;
       }
-      proxiesByName.set(displayName, proxy);
+      this.stubProxies.set(stub, proxy);
     }
     return proxy;
   }

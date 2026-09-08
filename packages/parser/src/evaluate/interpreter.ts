@@ -63,7 +63,7 @@ import {
   getReactElementSymbolKey,
   REACT_ELEMENT_SYMBOL_KEYS,
 } from "../react/element-shape.js";
-import { getStubDisplayName, toClientReference, toElementType } from "../react/element-type.js";
+import { toClientReference, toElementType } from "../react/element-type.js";
 import {
   getExternalMember,
   isReactLikePackage,
@@ -468,6 +468,12 @@ const isSameTypePrimitive = (previous: StaticValue, next: StaticValue): boolean 
   next.kind === "primitive" &&
   typeof previous.value === typeof next.value;
 
+const hasSameProperties = (
+  previous: Map<string, StaticValue>,
+  next: Map<string, StaticValue>,
+): boolean =>
+  previous.size === next.size && [...previous].every(([key, value]) => next.get(key) === value);
+
 /**
  * A recursive call whose arguments are equivalent to those of an activation
  * already on the stack, with nothing written since that activation began,
@@ -476,7 +482,9 @@ const isSameTypePrimitive = (previous: StaticValue, next: StaticValue): boolean 
  * (`walk(node.child, depth + 1)` over an unknown `node`): every level sees
  * the same unknown data, so the result is unknown either way. A call that
  * makes progress over known data (walking a tree, re-entering a batch
- * flush after a counter changed) is followed until the call-depth limit.
+ * flush after a counter changed) is followed until the call-depth limit, as
+ * is a function re-entered after rewriting its own properties (a proxy that
+ * swaps in the real implementation on first call and calls itself again).
  */
 const isNonProgressingRecursion = (
   callStack: CallFrame[],
@@ -491,6 +499,7 @@ const isNonProgressingRecursion = (
       frame.scope === functionValue.scope &&
       frame.args.length === args.length &&
       (hasUnknownArgument || frame.changeCount === changeCount) &&
+      hasSameProperties(frame.properties, functionValue.properties) &&
       frame.args.every(
         (argument, index) =>
           areValuesEquivalent(argument, args[index]) ||
@@ -2089,11 +2098,12 @@ export class Interpreter {
       case "stub": {
         const property = type.stub.properties?.get(key);
         if (property) return property;
-        const displayName = getStubDisplayName(type);
         if (key === "displayName" || key === "name")
-            return displayName === null ? UNDEFINED_VALUE : primitiveValue(displayName);
+            return type.stub.displayName === null
+              ? UNDEFINED_VALUE
+              : primitiveValue(type.stub.displayName);
           return getStubOwnKeys(type.stub.tag).has(key)
-            ? unknownValue(`${displayName ?? "stub"}.${key}`, location)
+            ? unknownValue(`${type.stub.displayName ?? "stub"}.${key}`, location)
             : UNDEFINED_VALUE;
       }
       default:
@@ -2864,6 +2874,7 @@ export class Interpreter {
           scope: functionValue.scope,
           args,
           changeCount: this.changeCount,
+          properties: new Map(functionValue.properties),
         },
       ],
       uncertainDepth: context.uncertainDepth,

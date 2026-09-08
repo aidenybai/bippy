@@ -247,15 +247,8 @@ export type StaticElementType =
   | { kind: "context-consumer"; context: ContextDefinition | null; displayName: string | null }
   | { kind: "portal" }
   | { kind: "external"; packageName: string; importedName: string; displayName: string }
-  | StubElementType
+  | { kind: "stub"; stub: StubComponent }
   | { kind: "unknown"; displayName: string | null; reason: string };
-
-/** A modeled library component; `displayName` is what the app assigned over the stub's own name. */
-export interface StubElementType {
-  kind: "stub";
-  stub: StubComponent;
-  displayName?: string;
-}
 
 /** `React.memo`/`forwardRef`/`lazy` objects: statics assigned to them (`Button.__radixId = ...`) live on the object. */
 export interface WrapperElementType {

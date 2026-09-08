@@ -1,12 +1,4 @@
-import type {
-  ComponentDefinition,
-  StaticElementType,
-  StaticValue,
-  StubElementType,
-} from "../types.js";
-
-export const getStubDisplayName = (type: StubElementType): string | null =>
-  type.displayName ?? type.stub.displayName;
+import type { ComponentDefinition, StaticElementType, StaticValue } from "../types.js";
 
 export const createFunctionComponentDefinition = (
   value: Extract<StaticValue, { kind: "function" }>,

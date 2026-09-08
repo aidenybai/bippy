@@ -20,7 +20,6 @@ import type {
   StaticValue,
   UnknownPrimitiveType,
 } from "../types.js";
-import { getStubDisplayName } from "../react/element-type.js";
 import { getExternalMember, getReactApiTypeof } from "../react/react-api.js";
 
 export const isKnownString = (
@@ -1288,7 +1287,7 @@ export const describeElementType = (type: StaticElementType): string => {
     case "external":
       return type.displayName;
     case "stub":
-      return getStubDisplayName(type) ?? "anonymous stub";
+      return type.stub.displayName ?? "anonymous stub";
     case "unknown":
       return type.displayName ?? "unknown";
   }

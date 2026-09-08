@@ -24,6 +24,8 @@ export interface CallFrame {
   args: StaticValue[];
   /** `Interpreter.changeCount` when the activation began. */
   changeCount: number;
+  /** The callee's own properties when the activation began. */
+  properties: Map<string, StaticValue>;
 }
 
 export interface OutcomeHandler {
