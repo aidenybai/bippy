@@ -31,6 +31,12 @@ const scaled = [1, 2, 3].map(scale.bind({ factor: 10 }));
 const arrow = () => registry.size();
 const arrowBound = arrow.bind({ size: () => -1 });
 
+const collect = function (this: unknown, ...values: number[]) {
+  return (
+    [].slice.call(arguments).length + [].map.apply(values, [(value: number) => value * 2]).length
+  );
+};
+
 export default function BoundFunctions() {
   return (
     <ul>
@@ -54,6 +60,12 @@ export default function BoundFunctions() {
       </li>
       <li>
         {arrowBound()} <em>ok</em>
+      </li>
+      <li>
+        {collect(4, 5, 6)} <em>ok</em>
+      </li>
+      <li>
+        {[].slice.call(["a", "b", "c"], 1).join("")} <em>ok</em>
       </li>
     </ul>
   );

@@ -3,13 +3,15 @@ import { extname } from "node:path";
 import { parseSync } from "oxc-parser";
 import type { ParsedSourceFile, SourceLanguage } from "../types.js";
 
+// Babel and SWC (webpack, Next, CRA) accept JSX in `.js`; JSX is a strict
+// superset of JS syntax, so parsing every JS file as JSX changes nothing else.
 const EXTENSION_TO_LANG: Record<string, SourceLanguage> = {
-  ".js": "js",
+  ".js": "jsx",
   ".jsx": "jsx",
   ".ts": "ts",
   ".tsx": "tsx",
-  ".mjs": "js",
-  ".cjs": "js",
+  ".mjs": "jsx",
+  ".cjs": "jsx",
   ".mts": "ts",
   ".cts": "ts",
   ".json": "json",

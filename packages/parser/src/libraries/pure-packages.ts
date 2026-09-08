@@ -17,10 +17,31 @@ const PURE_PACKAGES: ReadonlySet<string> = new Set([
   "clsx",
   "date-fns",
   "gray-matter",
+  "hasown",
   "node:path",
+  "object.entries",
   "path",
+  "path-to-regexp",
   "tailwind-merge",
 ]);
+
+const liftExport = (
+  specifier: string,
+  exportedName: string,
+  exported: unknown,
+): StaticValue | null => {
+  const packageName = getPackageNameFromSpecifier(specifier);
+  if (packageName === null || exported === undefined) return null;
+  const name = `${specifier}#${exportedName}`;
+  return typeof exported === "function"
+    ? pureNativeFunction(name, exported, undefined, null, () => ({
+        kind: "external",
+        packageName,
+        importedName: `${exportedName}()`,
+        origin: "derived",
+      }))
+    : fromNativeValue(exported, name, null);
+};
 
 export class PurePackages {
   private readonly installed: InstalledModules;
@@ -29,24 +50,27 @@ export class PurePackages {
     this.installed = getInstalledModules(rootDirectory);
   }
 
-  getExport(specifier: string, importedName: string): StaticValue | null {
-    const packageName = getPackageNameFromSpecifier(specifier);
-    if (packageName === null || !PURE_PACKAGES.has(packageName) || importedName === "*") {
-      return null;
-    }
-    const module = this.installed.load(specifier);
+  /** `filePath` is the installed file the import resolved to, so a nested copy (a dependency's own `path-to-regexp`) is the one that runs. */
+  getExport(specifier: string, importedName: string, filePath: string | null): StaticValue | null {
+    if (importedName === "*") return null;
+    const module = this.loadPure(specifier, filePath);
     if (module === null) return null;
     const exported =
       importedName === "default" ? getDefaultExport(module) : Reflect.get(module, importedName);
-    if (exported === undefined) return null;
-    const name = `${specifier}#${importedName}`;
-    return typeof exported === "function"
-      ? pureNativeFunction(name, exported, undefined, null, () => ({
-          kind: "external",
-          packageName,
-          importedName: `${importedName}()`,
-          origin: "derived",
-        }))
-      : fromNativeValue(exported, name, null);
+    return liftExport(specifier, importedName, exported);
+  }
+
+  /** `require(specifier)`: the installed module's `module.exports`, whatever shape it has. */
+  getRequired(specifier: string, filePath: string | null): StaticValue | null {
+    const module = this.loadPure(specifier, filePath);
+    return module === null ? null : liftExport(specifier, "module.exports", module);
+  }
+
+  private loadPure(specifier: string, filePath: string | null): object | null {
+    const packageName = getPackageNameFromSpecifier(specifier);
+    if (packageName === null || !PURE_PACKAGES.has(packageName)) return null;
+    return filePath === null
+      ? this.installed.load(specifier)
+      : this.installed.loadBeside(specifier, filePath);
   }
 }

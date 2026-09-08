@@ -21,6 +21,19 @@ const isResolutionError = (error: unknown): boolean =>
   typeof error.code === "string" &&
   RESOLUTION_ERROR_CODES.has(error.code);
 
+const requireInstalled = (specifier: string, getRequire: () => NodeJS.Require): object | null => {
+  let loaded: unknown;
+  try {
+    loaded = getRequire()(specifier);
+  } catch (error) {
+    if (isResolutionError(error)) return null;
+    throw error;
+  }
+  return (typeof loaded === "object" && loaded !== null) || typeof loaded === "function"
+    ? loaded
+    : null;
+};
+
 /** The project's own installed copy of a package, loaded as the runtime would; `null` when it is not installed. */
 export class InstalledModules {
   private readonly requireFromRoot: NodeJS.Require;
@@ -32,28 +45,39 @@ export class InstalledModules {
 
   /** `specifier` as the project resolves it, or as `dependentSpecifier`'s installed copy resolves it when given. */
   load(specifier: string, dependentSpecifier?: string): object | null {
-    const cacheKey = dependentSpecifier ? `${dependentSpecifier}\u0000${specifier}` : specifier;
-    const cached = this.modules.get(cacheKey);
-    if (cached !== undefined) return cached;
-    const module = this.requireInstalled(specifier, dependentSpecifier);
-    this.modules.set(cacheKey, module);
-    return module;
+    return this.loadWith(specifier, dependentSpecifier ?? "", () =>
+      dependentSpecifier
+        ? createRequire(this.requireFromRoot.resolve(dependentSpecifier))
+        : this.requireFromRoot,
+    );
   }
 
-  private requireInstalled(specifier: string, dependentSpecifier?: string): object | null {
-    let loaded: unknown;
+  /** The file `specifier` resolves to from the project root; `null` when it is not installed. */
+  resolve(specifier: string): string | null {
     try {
-      const require = dependentSpecifier
-        ? createRequire(this.requireFromRoot.resolve(dependentSpecifier))
-        : this.requireFromRoot;
-      loaded = require(specifier);
+      return this.requireFromRoot.resolve(specifier);
     } catch (error) {
       if (isResolutionError(error)) return null;
       throw error;
     }
-    return (typeof loaded === "object" && loaded !== null) || typeof loaded === "function"
-      ? loaded
-      : null;
+  }
+
+  /** `specifier` as the module at `filePath` resolves it: the copy an analyzed dependency actually imports. */
+  loadBeside(specifier: string, filePath: string): object | null {
+    return this.loadWith(specifier, filePath, () => createRequire(filePath));
+  }
+
+  private loadWith(
+    specifier: string,
+    origin: string,
+    getRequire: () => NodeJS.Require,
+  ): object | null {
+    const cacheKey = `${origin}\u0000${specifier}`;
+    const cached = this.modules.get(cacheKey);
+    if (cached !== undefined) return cached;
+    const module = requireInstalled(specifier, getRequire);
+    this.modules.set(cacheKey, module);
+    return module;
   }
 }
 

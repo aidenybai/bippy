@@ -11,6 +11,10 @@ import type { FrameworkKind } from "../frameworks/framework-profile.js";
 export interface CorpusStaticTarget {
   /** Directory holding the tsconfig used for path aliases; relative to the clone root. */
   rootDirectory: string;
+  /** The bundler's served root (Vite `root`) relative to `rootDirectory`, when it is not `rootDirectory`. */
+  servedDirectory?: string;
+  /** Directory served as-is at the URL root (Vite `publicDir`) relative to `rootDirectory`, when not `public/` under the served root. */
+  publicDirectory?: string;
   tsconfig?: string;
   /** The bundler's `resolve.alias`, targets relative to `rootDirectory`. */
   aliases?: Record<string, string>;

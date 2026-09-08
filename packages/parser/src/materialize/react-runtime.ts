@@ -1,3 +1,4 @@
+import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { getRDTHook } from "bippy";
 import { ReactRuntimeError } from "../errors.js";
@@ -39,18 +40,50 @@ const isReactDomModule = (value: unknown): value is ReactDomModule =>
 const unwrapModule = (loaded: unknown): unknown =>
   isRecord(loaded) && "default" in loaded && isRecord(loaded.default) ? loaded.default : loaded;
 
+const RUNTIME_SPECIFIERS = ["react", "react-dom/client", "react-dom"];
+
+const resolveExternalFile = (
+  resolver: ModuleResolver | null,
+  specifier: string,
+  fromDirectory: string | null,
+): string | null => {
+  if (!resolver || !fromDirectory) return null;
+  const resolution = resolver.resolve(specifier, `${fromDirectory}/index.js`);
+  return resolution.kind === "external" && resolution.filePath ? resolution.filePath : null;
+};
+
+/**
+ * The app's installation is used only when every runtime module resolves from
+ * the package its specifier names: a subpath React 16/17 lacks (`react-dom/client`)
+ * otherwise resolves further up the directory tree to the harness's own copy,
+ * which would render one React's elements with another's reconciler.
+ */
+const isAppRuntimeComplete = (
+  resolver: ModuleResolver | null,
+  fromDirectory: string | null,
+): boolean =>
+  RUNTIME_SPECIFIERS.every((specifier) => {
+    const packageName = specifier.split("/")[0];
+    const manifestPath = resolveExternalFile(
+      resolver,
+      `${packageName}/package.json`,
+      fromDirectory,
+    );
+    const filePath = resolveExternalFile(resolver, specifier, fromDirectory);
+    return (
+      manifestPath !== null &&
+      filePath !== null &&
+      filePath.startsWith(`${path.dirname(manifestPath)}${path.sep}`)
+    );
+  });
+
 const importResolved = async (
   resolver: ModuleResolver | null,
   specifier: string,
   fromDirectory: string | null,
 ): Promise<unknown> => {
-  if (resolver && fromDirectory) {
-    const resolution = resolver.resolve(specifier, `${fromDirectory}/index.js`);
-    if (resolution.kind === "external" && resolution.filePath) {
-      return unwrapModule(await import(pathToFileURL(resolution.filePath).href));
-    }
-  }
-  return unwrapModule(await import(specifier));
+  const filePath = resolveExternalFile(resolver, specifier, fromDirectory);
+  return unwrapModule(await import(filePath ? pathToFileURL(filePath).href : specifier));
 };
 
 const hasAct = (
@@ -97,11 +130,10 @@ const load = async (
   ensureDomGlobals();
   getRDTHook();
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-  const [react, domClient, dom] = await Promise.all([
-    importResolved(resolver, "react", rootDirectory),
-    importResolved(resolver, "react-dom/client", rootDirectory),
-    importResolved(resolver, "react-dom", rootDirectory),
-  ]);
+  const appResolver = isAppRuntimeComplete(resolver, rootDirectory) ? resolver : null;
+  const [react, domClient, dom] = await Promise.all(
+    RUNTIME_SPECIFIERS.map((specifier) => importResolved(appResolver, specifier, rootDirectory)),
+  );
   if (!isReactModule(react)) throw new ReactRuntimeError("could not load react");
   if (!isReactDomClientModule(domClient)) {
     throw new ReactRuntimeError("could not load react-dom/client");
@@ -111,7 +143,7 @@ const load = async (
     react,
     domClient,
     dom,
-    act: await loadAct(react, resolver, rootDirectory),
+    act: await loadAct(react, appResolver, rootDirectory),
     version: react.version,
   };
 };

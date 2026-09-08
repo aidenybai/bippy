@@ -1,5 +1,5 @@
 import type { StaticValue } from "../types.js";
-import { getPrototypeWitness } from "./instance-of.js";
+import { getBuiltinWitness, getPrototypeWitness } from "./instance-of.js";
 import { describeValue, mapValue, primitiveValue, unknownPrimitiveValue } from "./values.js";
 
 const PRIMITIVE_WITNESSES: Record<string, unknown> = {
@@ -22,6 +22,12 @@ const getTag = (value: StaticValue): string | null => {
       return tagOf([]);
     case "namespace":
       return "[object Module]";
+    case "global": {
+      const intrinsic = getBuiltinWitness(value.name);
+      if (intrinsic !== undefined) return tagOf(intrinsic);
+      const witness = getPrototypeWitness(value);
+      return witness === null ? null : tagOf(witness);
+    }
     default: {
       const witness = getPrototypeWitness(value);
       return witness === null ? null : tagOf(witness);

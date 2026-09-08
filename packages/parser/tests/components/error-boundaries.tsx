@@ -37,9 +37,17 @@ const MaybeBroken = ({ input }: { input: string }) => {
   return <em>{input}</em>;
 };
 
+const MaybeBrokenOnHash = () => {
+  if (window.location.hash === "#boom") throw new Error("boom");
+  return <em>hash</em>;
+};
+
 export default function ErrorBoundaries() {
   return (
     <div>
+      <Boundary fallback={() => <i>caught</i>}>
+        <MaybeBrokenOnHash />
+      </Boundary>
       <Boundary fallback={(error) => <pre>{error.message}</pre>}>
         <Fine />
       </Boundary>

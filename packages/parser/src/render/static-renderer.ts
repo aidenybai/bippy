@@ -25,7 +25,7 @@ import type {
   StaticRendererOptions,
   StaticValue,
 } from "../types.js";
-import { findRootRenderCalls } from "./find-root-elements.js";
+import { findRootRenderModule } from "./find-root-elements.js";
 import { computeRenderStats } from "./render-stats.js";
 
 export interface RenderComponentOptions {
@@ -79,11 +79,13 @@ export class StaticRenderer {
       rootDirectory: this.options.rootDirectory,
     });
     this.reactVersion = readReactVersion(this.resolver, this.options.rootDirectory);
-    this.project = createProjectContext(
-      this.options.rootDirectory,
-      this.options.observations,
-      this.options.origin ?? null,
-    );
+    this.project = createProjectContext({
+      rootDirectory: this.options.rootDirectory,
+      servedDirectory: this.resolveOptionalPath(options.servedDirectory),
+      publicDirectory: this.resolveOptionalPath(options.publicDirectory),
+      observations: this.options.observations,
+      origin: this.options.origin ?? null,
+    });
     this.graph = new ModuleGraph({
       resolver: this.resolver,
       resolveExternalPackages: options.resolveExternalPackages,
@@ -95,6 +97,10 @@ export class StaticRenderer {
     return path.isAbsolute(filePath)
       ? filePath
       : path.resolve(this.options.rootDirectory, filePath);
+  }
+
+  private resolveOptionalPath(filePath: string | undefined): string | undefined {
+    return filePath === undefined ? undefined : this.resolvePath(filePath);
   }
 
   loadModule(filePath: string): ModuleRecord | null {
@@ -234,20 +240,23 @@ export class StaticRenderer {
   /**
    * Evaluates the element handed to the root render call of an entry module
    * (`createRoot().render(<App />)`, `hydrateRoot(document, <App />)`), together
-   * with the statements that lead up to it. Null (with a diagnostic) when the
-   * module has no such call.
+   * with the statements that lead up to it. When the call lives in a module the
+   * entry imports, the entry's imports run first, in ESM order, so registrations
+   * made by side-effect imports are visible to the mounted tree. Null (with a
+   * diagnostic) when the module has no such call.
    */
-  evaluateEntryElement(interpreter: Interpreter, module: ModuleRecord): StaticValue | null {
-    const rootCalls = findRootRenderCalls(module);
-    if (rootCalls.length === 0) {
+  evaluateEntryElement(interpreter: Interpreter, entry: ModuleRecord): StaticValue | null {
+    const found = findRootRenderModule(this.graph, entry);
+    if (!found) {
       interpreter.report(
         "no-root-render",
-        `no createRoot().render / hydrateRoot / ReactDOM.render call found in ${module.filePath}`,
+        `no createRoot().render / hydrateRoot / ReactDOM.render call found in ${entry.filePath} or its imports`,
         null,
         "error",
       );
       return null;
     }
+    const { module, calls: rootCalls } = found;
     if (rootCalls.length > 1) {
       interpreter.report(
         "multiple-root-renders",
@@ -257,6 +266,7 @@ export class StaticRenderer {
       );
     }
     const rootCall = rootCalls[0];
+    if (module !== entry) interpreter.initializeDependencies(entry);
     interpreter.initializeModule(
       module,
       module.sideEffectStatements.filter((statement) => statement.end <= rootCall.call.start),

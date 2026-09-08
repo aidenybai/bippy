@@ -73,6 +73,7 @@ import {
   type PromiseTools,
 } from "./promises.js";
 import { callShapedPrimitiveMethod, rangedNumberValue } from "./primitive-shapes.js";
+import { isArrayValue } from "./type-predicates.js";
 import { createSearchParamsValue } from "./url-search-params.js";
 import {
   callStringCodec,
@@ -81,7 +82,11 @@ import {
   isStringCodecName,
 } from "./text-encoding.js";
 import { createUrlValue } from "./url.js";
-import { getClassPrototypeObject, isBaseClassPrototype } from "./class-component.js";
+import {
+  getClassPrototypeObject,
+  isBaseClassPrototype,
+  isClassPrototype,
+} from "./class-component.js";
 import type { Interpreter } from "./interpreter.js";
 import {
   accessorEntry,
@@ -101,6 +106,7 @@ import {
   compareIdentity,
   isSymbolPropertyKey,
   hasDefiniteItems,
+  hasOwnKey,
   isIndefiniteItem,
   isKnownList,
   jsonValue,
@@ -308,6 +314,10 @@ export const getTypeofValue = (value: StaticValue, realm: HostRealm): StaticValu
         ? primitiveValue(globalType)
         : unknownPrimitiveValue("string", `typeof ${describeValue(value)}`);
     }
+    case "unknown-primitive":
+      return value.primitiveType === "any"
+        ? unknownPrimitiveValue("string", `typeof ${describeValue(value)}`)
+        : primitiveValue(value.primitiveType);
     default:
       return unknownPrimitiveValue("string", `typeof ${describeValue(value)}`);
   }
@@ -487,13 +497,13 @@ const hasOwnProperty = (
   if (receiver.kind === "object" || receiver.kind === "list") {
     if (receiver.kind === "list" && propertyName === "length")
       return primitiveValue(name === "hasOwnProperty");
-    const ownKeys =
-      receiver.kind === "object" && isSymbolPropertyKey(propertyName)
-        ? getKnownObjectSymbols(receiver)?.map(getSymbolPropertyKey)
-        : getOwnEnumerableEntries(receiver)?.map(([ownKey]) => ownKey);
-    return ownKeys
-      ? primitiveValue(ownKeys.includes(propertyName))
-      : unknownPrimitiveValue("boolean", `${name} of a partially known target`);
+    const isOwn =
+      receiver.kind === "object"
+        ? hasOwnKey(receiver, propertyName)
+        : (getOwnEnumerableEntries(receiver)?.some(([ownKey]) => ownKey === propertyName) ?? null);
+    return isOwn === null
+      ? unknownPrimitiveValue("boolean", `${name} of a partially known target`)
+      : primitiveValue(isOwn);
   }
   if (receiver.kind === "function" || receiver.kind === "class") {
     if (receiver.properties.has(propertyName)) {
@@ -562,6 +572,28 @@ const getFunctionSourceText = (receiver: StaticValue): string | null => {
   }
 };
 
+/** `Function.prototype.toString.call(value)`: a `TypeError` for non-callables, an unknown string when the text is not statically known. */
+const getInvokedFunctionSource = (
+  value: StaticValue,
+  location: SourceLocation | null,
+): StaticValue =>
+  mapValue(value, (alternative) => {
+    if (alternative.kind === "primitive" || alternative.kind === "symbol")
+      return thrownValue(
+        "Function.prototype.toString on a non-callable",
+        createErrorValue(
+          "TypeError",
+          [primitiveValue("Function.prototype.toString requires that 'this' be a Function")],
+          location,
+        ),
+        location,
+      );
+    const sourceText = getFunctionSourceText(alternative);
+    return sourceText === null
+      ? unknownPrimitiveValue("string", `source text of ${describeValue(alternative)}`)
+      : primitiveValue(sourceText);
+  });
+
 const PROTOTYPE_SEGMENT = ".prototype.";
 
 /** A builtin invoked through `Function.prototype`, as compiled helpers do: `Object.assign.apply(this, args)`, `Object.prototype.hasOwnProperty.call(o, k)`. */
@@ -578,6 +610,8 @@ const callInvokedGlobal = (
   const target = name.slice(0, separator);
   if (target === "Object.prototype.toString" && invocation !== "bind")
     return getObjectTag(args[0] ?? UNDEFINED_VALUE);
+  if (target === "Function.prototype.toString" && invocation !== "bind")
+    return getInvokedFunctionSource(args[0] ?? UNDEFINED_VALUE, location);
   const prototypeIndex = target.indexOf(PROTOTYPE_SEGMENT);
   const callee: StaticValue =
     prototypeIndex === -1
@@ -629,7 +663,14 @@ const callHostObjectMethod = (
   const hotModuleResult = callHotModuleMethod(receiver, name);
   if (hotModuleResult) return hotModuleResult;
   if (isHistoryName(receiver.name))
-    return callHistoryMethod(interpreter.history, interpreter.origin, name, args, location);
+    return callHistoryMethod(
+      interpreter.history,
+      interpreter.origin,
+      name,
+      args,
+      location,
+      (listener) => interpreter.markEscaped(listener),
+    );
   const storageAreaName = getStorageAreaName(receiver.name);
   return storageAreaName === null
     ? null
@@ -641,6 +682,22 @@ const callHostObjectMethod = (
         location,
       );
 };
+
+/** `Object(value)`: objects pass through, nullish values become `{}`, primitives box into wrappers. */
+const toObjectValue = (value: StaticValue, location: SourceLocation | null): StaticValue =>
+  mapValue(value, (alternative) => {
+    switch (alternative.kind) {
+      case "primitive":
+        return alternative.value === null || alternative.value === undefined
+          ? objectValue([])
+          : unknownValue(`boxed ${typeof alternative.value}`, location);
+      case "unknown-primitive":
+      case "symbol":
+        return unknownValue(`boxed ${describeValue(alternative)}`, location);
+      default:
+        return alternative;
+    }
+  });
 
 const callGlobal = (
   interpreter: Interpreter,
@@ -676,17 +733,8 @@ const callGlobal = (
   switch (name) {
     case "Function":
       return constructFunctionFromSource(interpreter, args, location);
-    case "Object": {
-      if (first === undefined || (first.kind === "primitive" && isNullish(first)))
-        return objectValue([]);
-      const firstTypeof = getTypeofValue(first, interpreter.getRealm(context.environment));
-      if (
-        firstTypeof.kind === "primitive" &&
-        (firstTypeof.value === "object" || firstTypeof.value === "function")
-      )
-        return first;
-      break;
-    }
+    case "Object":
+      return first ? toObjectValue(first, location) : objectValue([]);
     case "String":
       return first ? toStringValue(first) : primitiveValue("");
     case "Number":
@@ -748,13 +796,12 @@ const callGlobal = (
       return first?.kind === "list"
         ? combinePromises(first.items, promiseTools(interpreter, context, location), location)
         : unknownValue("Promise.all", location);
-    case "Array.isArray":
-      if (!first) return FALSE_VALUE;
-      if (first.kind === "list" || first.kind === "repeat") return TRUE_VALUE;
-      if (first.kind === "unknown" || first.kind === "branch") {
-        return unknownPrimitiveValue("boolean", "Array.isArray on dynamic value");
-      }
-      return FALSE_VALUE;
+    case "Array.isArray": {
+      const verdict = first ? isArrayValue(first) : false;
+      return verdict === null
+        ? unknownPrimitiveValue("boolean", "Array.isArray on dynamic value")
+        : primitiveValue(verdict);
+    }
     case "Array.from": {
       const source =
         first?.kind === "object" ? (getCollectionItems(first) ?? arrayLikeToList(first)) : first;
@@ -829,7 +876,7 @@ const callGlobal = (
       if (first?.kind === "object" && first.hasNullPrototype) return NULL_VALUE;
       if (first?.kind === "object" && first.constructedBy)
         return getClassPrototypeObject(interpreter, first.constructedBy, context);
-      if (first?.kind === "object" && isBaseClassPrototype(first))
+      if (first?.kind === "object" && (isBaseClassPrototype(first) || !isClassPrototype(first)))
         return { kind: "global", name: "Object.prototype" };
       return getWitnessedPrototype(first, name, location);
     case "Object.getOwnPropertyNames":
@@ -1567,10 +1614,14 @@ export const evaluateBuiltinCall = (
     receiver.kind === "native-function" ||
     receiver.kind === "method"
   ) {
-    if (name === "call") return interpreter.callValue(receiver, args.slice(1), context, location);
+    const invoked: StaticValue =
+      receiver.kind === "method" && (name === "call" || name === "apply")
+        ? { kind: "method", receiver: first ?? UNDEFINED_VALUE, name: receiver.name }
+        : receiver;
+    if (name === "call") return interpreter.callValue(invoked, args.slice(1), context, location);
     if (name === "apply") {
       return interpreter.callValue(
-        receiver,
+        invoked,
         second?.kind === "list" ? second.items : [unknownValue("apply arguments")],
         context,
         location,

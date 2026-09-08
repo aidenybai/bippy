@@ -1,4 +1,5 @@
 import type {
+  Argument,
   CallExpression,
   ExportDefaultDeclaration,
   ExportNamedDeclaration,
@@ -183,6 +184,7 @@ const collectDefaultExport = (
 };
 
 const isCommonJsExportStatement = (statement: Statement): boolean => {
+  if (statement.type === "ReturnStatement") return true;
   if (statement.type !== "ExpressionStatement") return false;
   const { expression } = statement;
   if (expression.type === "AssignmentExpression") {
@@ -221,6 +223,30 @@ const DECLARATION_STATEMENT_TYPES = new Set<Statement["type"]>([
 
 const isSideEffectStatement = (statement: Statement): boolean =>
   !DECLARATION_STATEMENT_TYPES.has(statement.type) && !isCommonJsExportStatement(statement);
+
+const isOutParameterCall = (
+  init: Expression | null,
+  bindings: ReadonlyMap<string, TopLevelBinding>,
+): boolean =>
+  (init?.type === "CallExpression" || init?.type === "NewExpression") &&
+  init.arguments.some((argument) => {
+    if (argument.type !== "Identifier") return false;
+    const kind = bindings.get(argument.name)?.kind;
+    return kind === "variable" || kind === "destructured";
+  });
+
+const collectOutParameterBindings = (bindings: ReadonlyMap<string, TopLevelBinding>): string[] => {
+  const names: string[] = [];
+  for (const binding of bindings.values()) {
+    if (
+      (binding.kind === "variable" || binding.kind === "destructured") &&
+      isOutParameterCall(binding.init, bindings)
+    ) {
+      names.push(binding.name);
+    }
+  }
+  return names;
+};
 
 const collectStatement = (
   statement: Statement,
@@ -352,22 +378,74 @@ const getWrappedRequiredSpecifier = (node: Expression): string | null => {
 const isVoidZero = (node: Expression): boolean =>
   node.type === "UnaryExpression" && node.operator === "void";
 
-/** The body of a parameterless IIFE such as `(function () { ... })()` or `!function () { ... }()`. */
+const getParameterlessBody = (node: Expression | Argument): Statement[] | null =>
+  (node.type === "FunctionExpression" || node.type === "ArrowFunctionExpression") &&
+  node.params.length === 0 &&
+  node.body?.type === "BlockStatement"
+    ? node.body.body
+    : null;
+
+/** Parameter names the wrapper body calls as `module.exports = name()`, through `if` branches. */
+const collectFactoryParameterNames = (statements: Statement[], names: Set<string>): void => {
+  for (const statement of statements) {
+    if (statement.type === "IfStatement") {
+      collectFactoryParameterNames(getBranchBody(statement.consequent), names);
+      if (statement.alternate)
+        collectFactoryParameterNames(getBranchBody(statement.alternate), names);
+      continue;
+    }
+    if (statement.type !== "ExpressionStatement") continue;
+    const { expression } = statement;
+    if (
+      expression.type === "AssignmentExpression" &&
+      expression.operator === "=" &&
+      (expression.left.type === "Identifier" || expression.left.type === "MemberExpression") &&
+      isExportsObject(expression.left) &&
+      expression.right.type === "CallExpression" &&
+      expression.right.callee.type === "Identifier" &&
+      expression.right.arguments.length === 0
+    ) {
+      names.add(expression.right.callee.name);
+    }
+  }
+};
+
+/**
+ * The body of the factory a UMD wrapper hands to `module.exports`:
+ * `(function (name, root, definition) { ... module.exports = definition() ... })("x", this, function () { ... })`.
+ * Its `return` becomes the module's `module.exports`.
+ */
+const getUmdFactoryBody = (call: CallExpression, wrapperBody: Statement[]): Statement[] | null => {
+  const callee = unwrapParentheses(call.callee);
+  if (callee.type !== "FunctionExpression" && callee.type !== "ArrowFunctionExpression")
+    return null;
+  if (callee.params.length !== call.arguments.length) return null;
+  const factoryNames = new Set<string>();
+  collectFactoryParameterNames(wrapperBody, factoryNames);
+  const factories = callee.params.flatMap((parameter, index) => {
+    if (parameter.type !== "Identifier" || !factoryNames.has(parameter.name)) return [];
+    const body = getParameterlessBody(call.arguments[index]);
+    return body ? [body] : [];
+  });
+  return factories.length === 1 ? factories[0] : null;
+};
+
+/** The body of a parameterless IIFE such as `(function () { ... })()` or `!function () { ... }()`, or of a UMD factory. */
 const getModuleWrapperBody = (statement: Statement): Statement[] | null => {
   if (statement.type !== "ExpressionStatement") return null;
   let { expression } = statement;
   while (expression.type === "UnaryExpression") expression = expression.argument;
-  if (expression.type !== "CallExpression" || expression.arguments.length !== 0) return null;
+  if (expression.type !== "CallExpression") return null;
   const callee = unwrapParentheses(expression.callee);
   if (
     (callee.type !== "FunctionExpression" && callee.type !== "ArrowFunctionExpression") ||
-    callee.params.length !== 0 ||
     !callee.body ||
     callee.body.type !== "BlockStatement"
   ) {
     return null;
   }
-  return callee.body.body;
+  if (expression.arguments.length === 0 && callee.params.length === 0) return callee.body.body;
+  return getUmdFactoryBody(expression, callee.body.body);
 };
 
 const unwrapParentheses = (node: Expression): Expression =>
@@ -574,6 +652,10 @@ class CommonJsCollector {
   }
 
   collectStatement(statement: Statement): void {
+    if (statement.type === "ReturnStatement") {
+      if (statement.argument) this.setModuleExports(statement.argument);
+      return;
+    }
     if (statement.type === "IfStatement") {
       for (const branch of getBranchBody(statement.consequent)) this.collectStatement(branch);
       if (statement.alternate) {
@@ -682,6 +764,7 @@ export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
     bindings,
     dependencies,
     sideEffectStatements,
+    outParameterBindings: collectOutParameterBindings(bindings),
     isCommonJs: commonJs !== null,
     replacesModuleExports: commonJs?.replacesModuleExports ?? false,
   };

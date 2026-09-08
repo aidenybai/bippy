@@ -41,6 +41,26 @@ const Other = ({ level }: { level: number }) => (
   </div>
 );
 
+interface SelfReplacingSelector {
+  (state: { label: string }): { label: string };
+  select: (state: { label: string }) => { label: string };
+}
+
+// react-redux's `mapToPropsProxy`: swaps its own `select` property, then recurses with the same arguments.
+const createSelector = (select: (state: { label: string }) => { label: string }) => {
+  const proxy: SelfReplacingSelector = (state) => proxy.select(state);
+  proxy.select = (state) => {
+    proxy.select = select;
+    return proxy(state);
+  };
+  return proxy;
+};
+
+const selectLabel = createSelector((state) => ({ label: state.label.toUpperCase() }));
+
+const Selected = () =>
+  selectLabel({ label: "store" }).label === "STORE" ? <output>upper</output> : <i>lower</i>;
+
 export default function Recursion() {
   return (
     <section>
@@ -49,6 +69,7 @@ export default function Recursion() {
       </ul>
       <Countdown from={3} />
       <Mutual level={0} />
+      <Selected />
     </section>
   );
 }

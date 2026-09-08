@@ -21,6 +21,7 @@ import { hashKey } from "../observations.js";
 import type {
   CapturedValue,
   LibraryValueProvider,
+  ModeledExports,
   ProjectContext,
   StaticObjectValue,
   StaticSymbolValue,
@@ -33,6 +34,13 @@ export const REDUX_TOOLKIT_PACKAGES = [
   "@reduxjs/toolkit/query",
   "@reduxjs/toolkit/query/react",
 ];
+
+/** Plain `redux` stores are as opaque as toolkit ones: their state is whatever the page recorded. */
+export const REDUX_PACKAGES = ["redux"];
+
+export const REDUX_MODELED_EXPORTS: ModeledExports = {
+  redux: ["createStore", "legacy_createStore", "combineReducers"],
+};
 
 const SKIP_TOKEN: StaticSymbolValue = { kind: "symbol", key: "@reduxjs/toolkit/query/skipToken" };
 
@@ -176,26 +184,34 @@ const bindActionCreators = nativeFunction("bindActionCreators", ([creators, disp
   );
 });
 
-const configureStore = (project: ProjectContext): StaticValue =>
-  nativeFunction("configureStore", ([options]) => {
-    const reducerKeys = getReducerKeys(getOptionalProperty(options, "reducer"));
-    const state =
-      reducerKeys && project.storeStates
-        ? findStoreState(project.storeStates, reducerKeys)
-        : undefined;
-    return objectFromRecord({
-      getState: nativeFunction("getState", (_args, tools) =>
-        state === undefined
-          ? unknownValue("state of a Redux store the page did not record")
-          : tools.captured(state, "the Redux store's state"),
-      ),
-      dispatch: nativeFunction("dispatch", () => unknownValue("result of dispatching at runtime")),
-      subscribe: nativeFunction("subscribe", () =>
-        nativeFunction("unsubscribe", () => UNDEFINED_VALUE),
-      ),
-      replaceReducer: nativeFunction("replaceReducer", () => UNDEFINED_VALUE),
-    });
+/** A store whose state is the one the page recorded for exactly these reducer keys; the store is otherwise opaque. */
+const storeValue = (project: ProjectContext, reducer: StaticValue): StaticValue => {
+  const reducerKeys = getReducerKeys(reducer);
+  const state =
+    reducerKeys && project.storeStates
+      ? findStoreState(project.storeStates, reducerKeys)
+      : undefined;
+  return objectFromRecord({
+    getState: nativeFunction("getState", (_args, tools) =>
+      state === undefined
+        ? unknownValue("state of a Redux store the page did not record")
+        : tools.captured(state, "the Redux store's state"),
+    ),
+    dispatch: nativeFunction("dispatch", () => unknownValue("result of dispatching at runtime")),
+    subscribe: nativeFunction("subscribe", () =>
+      nativeFunction("unsubscribe", () => UNDEFINED_VALUE),
+    ),
+    replaceReducer: nativeFunction("replaceReducer", () => UNDEFINED_VALUE),
   });
+};
+
+const configureStore = (project: ProjectContext): StaticValue =>
+  nativeFunction("configureStore", ([options]) =>
+    storeValue(project, getOptionalProperty(options, "reducer")),
+  );
+
+const createStore = (project: ProjectContext, name: string): StaticValue =>
+  nativeFunction(name, ([reducer = UNDEFINED_VALUE]) => storeValue(project, reducer));
 
 const baseQueryFactory = (name: string): StaticValue =>
   nativeFunction(name, () =>
@@ -430,6 +446,19 @@ const createApi = (project: ProjectContext): StaticValue =>
     };
     return lazyProperties(objectValue(), (key) => apiProperty(api, key));
   });
+
+export const reduxValue: LibraryValueProvider = (specifier, importedName, project) => {
+  if (!REDUX_PACKAGES.includes(specifier)) return null;
+  switch (importedName) {
+    case "combineReducers":
+      return combineReducers;
+    case "createStore":
+    case "legacy_createStore":
+      return createStore(project, importedName);
+    default:
+      return null;
+  }
+};
 
 export const reduxToolkitValue: LibraryValueProvider = (specifier, importedName, project) => {
   if (!REDUX_TOOLKIT_PACKAGES.includes(specifier)) return null;

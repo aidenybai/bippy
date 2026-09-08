@@ -98,6 +98,7 @@ const capturedPageStateSchema: z.ZodType<CapturedPageState> = z.object({
   windowKeys: z.array(z.string()).optional(),
   userAgent: z.string().optional(),
   language: z.string().optional(),
+  maxTouchPoints: z.number().optional(),
   localStorage: stringRecordSchema,
   sessionStorage: stringRecordSchema,
 });

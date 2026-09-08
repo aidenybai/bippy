@@ -1,4 +1,5 @@
 import type { CallExpression, Expression, Node, Statement } from "oxc-parser";
+import { isModuleRecord, type ModuleGraph } from "../graph/module-graph.js";
 import { forEachChildNode, unwrapExpression } from "../parse/ast-walk.js";
 import type { ModuleRecord } from "../types.js";
 
@@ -97,4 +98,36 @@ export const findRootRenderCalls = (module: ModuleRecord): RootRenderCall[] => {
     if (node.type === "CallExpression") collectCall(node, enclosingStatements, calls);
   });
   return calls;
+};
+
+export interface RootRenderModule {
+  module: ModuleRecord;
+  calls: RootRenderCall[];
+}
+
+/**
+ * The module that mounts the app: the entry itself, or else the first module
+ * reachable through its static imports (breadth first, in source order) that
+ * holds a root render call, the way an `index.tsx` that only calls an imported
+ * `initApp()` mounts.
+ */
+export const findRootRenderModule = (
+  graph: ModuleGraph,
+  entry: ModuleRecord,
+): RootRenderModule | null => {
+  const visited = new Set<string>([entry.filePath]);
+  const queue = [entry];
+  for (let index = 0; index < queue.length; index += 1) {
+    const module = queue[index];
+    const calls = findRootRenderCalls(module);
+    if (calls.length > 0) return { module, calls };
+    for (const specifier of module.dependencies) {
+      const target = graph.resolveImportedModule(specifier, module);
+      if (isModuleRecord(target) && !visited.has(target.filePath)) {
+        visited.add(target.filePath);
+        queue.push(target);
+      }
+    }
+  }
+  return null;
 };

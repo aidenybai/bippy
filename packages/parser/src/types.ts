@@ -113,6 +113,8 @@ export interface ModuleRecord {
   dependencies: string[];
   /** Top-level statements that run when the module is evaluated (`X.displayName = ...`, `registry.set(...)`). */
   sideEffectStatements: Statement[];
+  /** Bindings whose initializer hands another top-level binding to a call (`const re = pathToRegexp(path, keys)`), which may fill it in: they are initialized with the module. */
+  outParameterBindings: string[];
   /** Exports were collected from `exports.x = ` / `module.exports` assignments rather than ESM syntax. */
   isCommonJs: boolean;
   /** `module.exports = value` replaced the exports object, so `require()` yields the `default` export. */
@@ -138,9 +140,18 @@ export interface BuiltinModuleResolution {
 
 export type ResolvedSymbol =
   | { kind: "binding"; module: ModuleRecord; binding: TopLevelBinding }
-  | { kind: "expression"; module: ModuleRecord; expression: Expression }
+  | { kind: "expression"; module: ModuleRecord; exportedName: string; expression: Expression }
   | { kind: "namespace"; module: ModuleRecord }
-  | { kind: "external"; packageName: string; imported: ImportedName; specifier: string }
+  | {
+      kind: "external";
+      packageName: string;
+      imported: ImportedName;
+      specifier: string;
+      /** The installed file the import resolves to; null when the package is not installed. */
+      filePath: string | null;
+    }
+  | { kind: "stylesheet"; filePath: string; imported: ImportedName }
+  | { kind: "asset"; filePath: string; imported: ImportedName }
   | { kind: "unresolved"; reason: string };
 
 export interface ComponentDefinition {
@@ -283,6 +294,8 @@ export interface StubRenderTools {
   setProperty: (object: StaticObjectValue, key: string, value: StaticValue) => void;
   /** The host whose globals the calling code sees. */
   realm: HostRealm;
+  /** Appends to a modeled list as `Array.prototype.push` would, undone on the other paths of an enclosing fork like any heap write. */
+  pushItems: (list: StaticListValue, items: readonly StaticValue[]) => void;
   /** Binding the call's result is assigned to, as build-time labelers (Emotion's babel/swc plugin) see it. */
   nameHint: string | null;
   /** For tagged templates, the identifier each `${expression}` is (null when not a bare identifier); null for other calls. */
@@ -303,8 +316,12 @@ export interface ExternalValueProvider {
 export interface ProjectContext {
   /** Directory the analyzed app is served from (`process.cwd()` of its dev server); `null` when analyzing loose modules. */
   rootDirectory: string | null;
+  /** Directory the dev server serves at the URL root (Vite `root`); `null` when analyzing loose modules. */
+  servedDirectory: string | null;
   hasDeclaredDependency: (packageName: string) => boolean;
-  /** The text the dev server serves for a same-origin or root-relative URL from the project's static directory; `null` when it serves none. */
+  /** The value an `import` of a static asset file (image, font, ...) evaluates to: the URL the bundler serves it at. */
+  getImportedAssetUrl: (filePath: string) => StaticValue;
+  /** The text the dev server serves for a same-origin or root-relative URL; `null` when it serves none. */
   readServedAsset: (url: string) => string | null;
   /** The captured TanStack Query cache entry for a query hash (`hashKey(queryKey)`), if the page held one. */
   findQuery: (queryHash: string) => CapturedQuery | null;
@@ -432,9 +449,10 @@ export interface CapturedPageState {
   historyState?: CapturedValue;
   /** Every name `in window` before the page's first script ran (feature detection); absent in older captures. */
   windowKeys?: string[];
-  /** `navigator.userAgent` and `navigator.language`; absent in older captures. */
+  /** `navigator.userAgent`, `navigator.language` and `navigator.maxTouchPoints`; absent in older captures. */
   userAgent?: string;
   language?: string;
+  maxTouchPoints?: number;
   localStorage: Record<string, string>;
   sessionStorage: Record<string, string>;
 }
@@ -706,6 +724,8 @@ export interface StaticNativeFunctionValue {
   call: (args: StaticValue[], tools: StubRenderTools) => StaticValue;
   /** Invoked when the value flows into code the evaluator does not follow. */
   onEscape?: () => void;
+  /** An own property of the function this stands for (`pathToRegexp.parse`); `undefined` when it has none by that name. */
+  getOwnProperty?: (key: string) => StaticValue | undefined;
 }
 
 export type StaticValue =
@@ -778,6 +798,7 @@ export type ReactApi =
   | "startTransition"
   | "createPortal"
   | "flushSync"
+  | "batchedUpdates"
   | "createRoot"
   | "hydrateRoot"
   | "render"
@@ -810,6 +831,10 @@ export interface StaticRenderResult {
 
 export interface StaticRendererOptions {
   rootDirectory: string;
+  /** The bundler's served root (Vite `root`), relative to `rootDirectory`; `rootDirectory` itself by default. */
+  servedDirectory?: string;
+  /** Directory served as-is at the URL root (Vite `publicDir`), relative to `rootDirectory`; `public/` under the served root by default. */
+  publicDirectory?: string;
   tsconfigPath?: string;
   /** Bundler `resolve.alias` entries, targets relative to `rootDirectory`. */
   aliases?: Record<string, string>;

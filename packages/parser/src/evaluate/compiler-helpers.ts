@@ -87,12 +87,11 @@ const objectWithoutProperties: HelperImplementation = ([source, excluded]) => {
   });
 };
 
-const defineProperty: HelperImplementation = ([target, key, value]) => {
+const defineProperty: HelperImplementation = ([target, key, value], tools) => {
   if (!target) return UNDEFINED_VALUE;
-  if (target.kind === "object" && key?.kind === "primitive" && value) {
-    target.entries.push({ kind: "property", key: String(key.value), value });
-  }
-  return target;
+  if (!key || !value) return target;
+  const descriptor = objectValue([{ kind: "property", key: "value", value }]);
+  return tools.call({ kind: "global", name: "Object.defineProperty" }, [target, key, descriptor]);
 };
 
 const typeOf: HelperImplementation = ([value], tools) =>

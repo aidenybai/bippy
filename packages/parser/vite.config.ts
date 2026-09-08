@@ -1,6 +1,6 @@
 import { existsSync, statSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
-import { defineConfig, type Plugin } from "vite-plus";
+import { defineConfig, transformWithOxc, type Plugin } from "vite-plus";
 
 const parserDirectory = import.meta.dirname;
 const bippyDirectory = resolve(parserDirectory, "../bippy");
@@ -56,9 +56,19 @@ const fixtureAliasPlugin = (): Plugin => ({
   },
 });
 
+// Babel-based fixtures write JSX in `.js`, which Vite's own transform pass rejects.
+const fixtureJsxInJsPlugin = (): Plugin => ({
+  name: "bippy-parser-fixture-jsx-in-js",
+  enforce: "pre",
+  transform(code, id) {
+    if (!id.endsWith(".js") || relative(fixturesDirectory, id).startsWith("..")) return null;
+    return transformWithOxc(code, id, { lang: "jsx", jsx: { runtime: "automatic" } });
+  },
+});
+
 export default defineConfig({
   root: parserDirectory,
-  plugins: [fixtureAliasPlugin()],
+  plugins: [fixtureAliasPlugin(), fixtureJsxInJsPlugin()],
   resolve: {
     alias: [{ find: /^bippy$/, replacement: resolve(bippyDirectory, "src/index.ts") }],
   },
@@ -84,6 +94,7 @@ export default defineConfig({
     },
     include: ["tests/**/*.test.{ts,tsx}"],
     setupFiles: ["./tests/setup.ts"],
+    css: { include: [/\.module\.css$/] },
     testTimeout: 20_000,
   },
 });

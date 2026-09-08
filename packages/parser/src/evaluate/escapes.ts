@@ -11,6 +11,11 @@ import { getObjectProperty } from "./values.js";
 
 const MAX_ESCAPE_SCAN_DEPTH = 4;
 
+interface MutatedMember {
+  name: string;
+  key: string | null;
+}
+
 const freeIdentifiersCache = new WeakMap<FunctionLikeNode, Set<string>>();
 
 const collectIdentifiers = (node: Node, names: Set<string>): void => {
@@ -84,50 +89,78 @@ const MUTATING_METHODS = new Set([
   "copyWithin",
 ]);
 
-const getMutatedObjectName = (node: Node): string | null => {
+/** The key a member write touches; null when it is computed. */
+const getWrittenKey = (target: Node): string | null =>
+  target.type === "MemberExpression" && !target.computed && target.property.type === "Identifier"
+    ? target.property.name
+    : null;
+
+const getMutatedMember = (node: Node): MutatedMember | null => {
   switch (node.type) {
     case "CallExpression": {
       const callee = node.callee;
       if (callee.type !== "MemberExpression" || callee.object.type !== "Identifier") return null;
       const method = callee.computed ? null : callee.property;
       return method?.type === "Identifier" && MUTATING_METHODS.has(method.name)
-        ? callee.object.name
+        ? { name: callee.object.name, key: null }
         : null;
     }
     case "AssignmentExpression":
     case "UpdateExpression": {
       const target = node.type === "AssignmentExpression" ? node.left : node.argument;
       return target.type === "MemberExpression" && target.object.type === "Identifier"
-        ? target.object.name
+        ? { name: target.object.name, key: getWrittenKey(target) }
         : null;
     }
     case "UnaryExpression":
       return node.operator === "delete" &&
         node.argument.type === "MemberExpression" &&
         node.argument.object.type === "Identifier"
-        ? node.argument.object.name
+        ? { name: node.argument.object.name, key: getWrittenKey(node.argument) }
         : null;
     default:
       return null;
   }
 };
 
-const collectMutatedIdentifiers = (node: Node, names: Set<string>): void => {
-  const name = getMutatedObjectName(node);
-  if (name !== null) names.add(name);
-  forEachChildNode(node, (child) => collectMutatedIdentifiers(child, names));
+/** Records that `name` may be written at `key`, or anywhere when `key` is null. */
+export const addMutatedKey = (
+  mutations: Map<string, Set<string> | null>,
+  name: string,
+  key: string | null,
+): void => {
+  const keys = mutations.get(name);
+  if (keys === null) return;
+  if (key === null) {
+    mutations.set(name, null);
+    return;
+  }
+  if (keys) keys.add(key);
+  else mutations.set(name, new Set([key]));
 };
 
-const mutatedIdentifiersCache = new WeakMap<FunctionLikeNode, Set<string>>();
+const collectMutatedMembers = (node: Node, mutations: Map<string, Set<string> | null>): void => {
+  const member = getMutatedMember(node);
+  if (member !== null) addMutatedKey(mutations, member.name, member.key);
+  forEachChildNode(node, (child) => collectMutatedMembers(child, mutations));
+};
 
-/** Identifiers whose object a function (or a function nested in it) mutates in place: `cache.set(...)`, `state.count++`. */
-export const getMutatedIdentifiers = (functionNode: FunctionLikeNode): Set<string> => {
-  const cached = mutatedIdentifiersCache.get(functionNode);
+const mutatedMembersCache = new WeakMap<FunctionLikeNode, Map<string, Set<string> | null>>();
+
+/**
+ * Identifiers whose object a function (or a function nested in it) mutates in
+ * place, with the keys it writes: `state.count++` writes `count`, while
+ * `cache.set(...)` or `state[key] = ...` (null) may touch any key.
+ */
+export const getMutatedMembers = (
+  functionNode: FunctionLikeNode,
+): Map<string, Set<string> | null> => {
+  const cached = mutatedMembersCache.get(functionNode);
   if (cached) return cached;
-  const names = new Set<string>();
-  collectMutatedIdentifiers(functionNode, names);
-  mutatedIdentifiersCache.set(functionNode, names);
-  return names;
+  const mutations = new Map<string, Set<string> | null>();
+  collectMutatedMembers(functionNode, mutations);
+  mutatedMembersCache.set(functionNode, mutations);
+  return mutations;
 };
 
 /**

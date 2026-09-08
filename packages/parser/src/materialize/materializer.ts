@@ -51,7 +51,7 @@ import type {
   StubComponent,
   StubRenderTools,
 } from "../types.js";
-import { ForwardRefTag } from "../work-tags.js";
+import { ClassComponentTag, ForwardRefTag, type WorkTag } from "../work-tags.js";
 import {
   AlternativeMarker,
   BranchMarker,
@@ -217,8 +217,11 @@ interface StatefulRender extends EffectPhaseWork {
 }
 
 /** How a class proxy instance hands its persistent state and commit hooks to the materializer. */
+/** Which of an error boundary's renders a proxy instance belongs to; each keeps its own hook frame. */
+type BoundaryRenderPath = "rendered" | "ignoring-maybe-throws" | "caught";
+
 interface ClassProxyHost {
-  getInstance: (caughtError: boolean) => ProxyInstance;
+  getInstance: (path: BoundaryRenderPath) => ProxyInstance;
   rerender: () => void;
   queueCommitWork: (work: EffectPhaseWork) => void;
 }
@@ -1041,15 +1044,15 @@ export class Materializer {
         );
       class ClassProxy extends this.runtime.react.Component<ProxyProps, ErrorBoundaryState> {
         state: ErrorBoundaryState = { caught: null };
-        private readonly instances = new Map<boolean, ProxyInstance>();
+        private readonly instances = new Map<BoundaryRenderPath, ProxyInstance>();
         private pendingWork: EffectPhaseWork[] = [];
         private committedWork: EffectPhaseWork[] = [];
         private readonly host: ClassProxyHost = {
-          getInstance: (caughtError) => {
-            let instance = this.instances.get(caughtError);
+          getInstance: (path) => {
+            let instance = this.instances.get(path);
             if (!instance) {
               instance = createProxyInstance(this.props.input.context);
-              this.instances.set(caughtError, instance);
+              this.instances.set(path, instance);
             }
             return instance;
           },
@@ -1196,18 +1199,25 @@ export class Materializer {
   private getStubProxy(stub: StubComponent): ComponentType<ProxyProps> {
     let proxy = this.stubProxies.get(stub);
     if (!proxy) {
-      const render = setFunctionName(
-        ({ input }: ProxyProps): ReactNode =>
-          this.renderInsideComponent(() => this.renderStub(input, stub)),
-        stub.displayName,
-      );
-      proxy =
-        stub.tag === ForwardRefTag
-          ? this.runtime.react.forwardRef<unknown, ProxyProps>(render)
-          : render;
+      const render = ({ input }: ProxyProps): ReactNode =>
+        this.renderInsideComponent(() => this.renderStub(input, stub));
+      proxy = setFunctionName(this.wrapStubRender(render, stub.tag), stub.displayName);
       this.stubProxies.set(stub, proxy);
     }
     return proxy;
+  }
+
+  private wrapStubRender(
+    render: (props: ProxyProps) => ReactNode,
+    tag: WorkTag | undefined,
+  ): ComponentType<ProxyProps> {
+    if (tag === ForwardRefTag) return this.runtime.react.forwardRef<unknown, ProxyProps>(render);
+    if (tag !== ClassComponentTag) return render;
+    return class StubClassProxy extends this.runtime.react.Component<ProxyProps> {
+      render(): ReactNode {
+        return render(this.props);
+      }
+    };
   }
 
   private renderInsideComponent<T>(render: () => T): T {
@@ -1237,6 +1247,7 @@ export class Materializer {
       queueMicrotask: (task) => this.interpreter.timers.queueMicrotask(task),
       setProperty: (object, key, value) => this.interpreter.assignOwnProperty(object, key, value),
       realm: this.interpreter.getRealm(context.environment),
+      pushItems: (list, items) => this.interpreter.pushItems(list, items),
       nameHint: null,
       templateArgumentNames: null,
     };
@@ -1447,11 +1458,16 @@ export class Materializer {
       caughtError: boolean,
       boundaryContext: MaterializeContext,
     ): ReactNode => {
+      const path: BoundaryRenderPath = caughtError
+        ? "caught"
+        : boundaryContext.ignoresMaybeThrows
+          ? "ignoring-maybe-throws"
+          : "rendered";
       const { node, mount, unmount } = this.renderStateful(
         input,
         boundaryContext,
         component,
-        host.getInstance(caughtError),
+        host.getInstance(path),
         host.rerender,
         (frame) =>
           this.evaluateComposite(

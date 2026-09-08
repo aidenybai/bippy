@@ -2,7 +2,6 @@ import isPropValid from "@emotion/is-prop-valid";
 import {
   UNDEFINED_VALUE,
   branchValue,
-  describeElementType,
   getObjectProperty,
   getTruthiness,
   isNullish,
@@ -14,6 +13,7 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
+import { hasProperty } from "../evaluate/has-property.js";
 import { element, emptyStub, nativeFunction, stubValue } from "../frameworks/stubs.js";
 import { toElementType } from "../react/element-type.js";
 import type {
@@ -27,6 +27,7 @@ import type {
   StubRenderTools,
 } from "../types.js";
 import { ForwardRefTag } from "../work-tags.js";
+import { describeTag } from "./component-name.js";
 
 // Emotion 11's fiber-visible surface. A styled component is a `forwardRef`
 // (`withEmotionCache`) rendering `<Insertion/>` (returns null; the styles go to a
@@ -41,7 +42,11 @@ import { ForwardRefTag } from "../work-tags.js";
 
 export const EMOTION_PACKAGES = ["@emotion/react", "@emotion/styled", "@emotion/is-prop-valid"];
 
-const LABEL_PLUGIN_PACKAGES = ["@emotion/babel-plugin", "@swc/plugin-emotion"];
+const LABEL_PLUGIN_PACKAGES = [
+  "@emotion/babel-plugin",
+  "@emotion/babel-preset-css-prop",
+  "@swc/plugin-emotion",
+];
 
 const THEME_CONTEXT: ContextDefinition = {
   name: "ThemeContext",
@@ -132,38 +137,6 @@ const forwardsProp = (
     if (verdict === null) isUnknown = true;
   }
   return isUnknown ? null : true;
-};
-
-const getStringProperty = (
-  properties: ReadonlyMap<string, StaticValue>,
-  key: string,
-): string | null => {
-  const value = properties.get(key);
-  return value?.kind === "primitive" && typeof value.value === "string" ? value.value : null;
-};
-
-/** `tag.displayName || tag.name || 'Component'`: wrapper objects have no `name`. */
-const describeTag = (tag: StaticValue): string => {
-  const type = toElementType(tag, null);
-  switch (type.kind) {
-    case "host":
-      return type.tagName;
-    case "function":
-    case "class":
-      return (
-        getStringProperty(type.component.properties, "displayName") ??
-        type.component.name ??
-        "Component"
-      );
-    case "memo":
-    case "forward-ref":
-    case "lazy":
-      return type.displayName ?? "Component";
-    case "stub":
-      return type.stub.displayName ?? "Component";
-    default:
-      return describeElementType(type);
-  }
 };
 
 const forwardedProps = (
@@ -324,6 +297,49 @@ const CLASS_NAMES_STUB: StubComponent = {
   },
 };
 
+const CSS_PROP_TYPE_KEY = "__EMOTION_TYPE_PLEASE_DO_NOT_USE__";
+
+/** `EmotionCssPropInternal`: the element `jsx()` swaps in when props carry `css`. */
+const CSS_PROP_STUB: StubComponent = {
+  displayName: "EmotionCssPropInternal",
+  tag: ForwardRefTag,
+  render: (props) => {
+    const entries: StaticObjectEntry[] = props.entries.filter(
+      (entry) =>
+        entry.kind === "spread" || (entry.key !== "css" && entry.key !== CSS_PROP_TYPE_KEY),
+    );
+    entries.push({ kind: "property", key: "className", value: classNameValue() });
+    const wrapped = toElementType(getObjectProperty(props, CSS_PROP_TYPE_KEY), null);
+    return fragmentOf([insertion(), element(wrapped, objectValue(entries))]);
+  },
+};
+
+/**
+ * Emotion's element factories (`jsx` pragma, `jsx`/`jsxs`/`jsxDEV` runtime): React's
+ * own factory unless `props` has an own `css` key, in which case the element is
+ * `EmotionCssPropInternal` carrying the type as a prop.
+ */
+const elementFactory = (api: "createElement" | "jsx" | "jsxs" | "jsxDEV"): StaticValue =>
+  nativeFunction(api, ([type = UNDEFINED_VALUE, props = UNDEFINED_VALUE, ...rest], tools) => {
+    const reactFactory: StaticValue = { kind: "react-api", api };
+    const createPlain = (): StaticValue => tools.call(reactFactory, [type, props, ...rest]);
+    const createCssProp = (): StaticValue =>
+      tools.call(reactFactory, [
+        stubValue(CSS_PROP_STUB),
+        objectValue([
+          { kind: "spread", value: props },
+          { kind: "property", key: CSS_PROP_TYPE_KEY, value: type },
+        ]),
+        ...rest,
+      ]);
+    const hasCss =
+      isNullish(props) === true ? primitiveValue(false) : hasProperty(primitiveValue("css"), props);
+    const verdict = hasCss === null ? null : getTruthiness(hasCss);
+    if (verdict === true) return createCssProp();
+    if (verdict === false) return createPlain();
+    return branchValue([createPlain(), createCssProp()], "whether props carry a css prop", null);
+  });
+
 const withTheme = (): StaticValue =>
   nativeFunction("withTheme", ([component = UNDEFINED_VALUE]) => {
     const inner = toElementType(component, null);
@@ -372,13 +388,28 @@ const reactValue = (importedName: string): StaticValue | null => {
       return nativeFunction(importedName, serializedStyles);
     case "Fragment":
       return { kind: "react-api", api: "Fragment" };
+    case "jsx":
+      return elementFactory("createElement");
+    default:
+      return null;
+  }
+};
+
+const jsxRuntimeValue = (importedName: string): StaticValue | null => {
+  switch (importedName) {
+    case "jsx":
+    case "jsxs":
+    case "jsxDEV":
+      return elementFactory(importedName);
+    case "Fragment":
+      return { kind: "react-api", api: "Fragment" };
     default:
       return null;
   }
 };
 
 export const emotionValue: LibraryValueProvider = (specifier, importedName, project) => {
-  if (specifier === "@emotion/styled") {
+  if (specifier === "@emotion/styled" || specifier === "@emotion/styled/base") {
     if (importedName !== "default") return null;
     return styledValue({
       hasAutoLabel: LABEL_PLUGIN_PACKAGES.some((packageName) =>
@@ -387,6 +418,12 @@ export const emotionValue: LibraryValueProvider = (specifier, importedName, proj
     });
   }
   if (specifier === "@emotion/react") return reactValue(importedName);
+  if (
+    specifier === "@emotion/react/jsx-runtime" ||
+    specifier === "@emotion/react/jsx-dev-runtime"
+  ) {
+    return jsxRuntimeValue(importedName);
+  }
   if (specifier === "@emotion/is-prop-valid" && importedName === "default") {
     return nativeFunction("isPropValid", ([key]) =>
       key?.kind === "primitive" && typeof key.value === "string"

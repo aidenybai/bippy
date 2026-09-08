@@ -5,7 +5,7 @@ import type {
   StaticObjectValue,
   StaticValue,
 } from "../types.js";
-import { branchValue, getAllocationCount, joinObjectEntries } from "./values.js";
+import { branchValue, getAllocationCount, isSameValue, joinObjectEntries } from "./values.js";
 
 export type MutableHeapValue = StaticObjectValue | StaticListValue;
 
@@ -22,18 +22,40 @@ interface HeapPath {
   bindings: ModuleBindingStates;
 }
 
-const isExtensionOf = <Item>(items: Item[], prefix: Item[]): boolean =>
-  items.length >= prefix.length && prefix.every((item, index) => items[index] === item);
+type IsSameItem<Item> = (left: Item, right: Item) => boolean;
 
-const isSameState = <Item>(items: Item[], other: Item[]): boolean =>
-  items.length === other.length && isExtensionOf(items, other);
+const isSameReference = <Item>(left: Item, right: Item): boolean => left === right;
+
+const isExtensionOf = <Item>(
+  items: Item[],
+  prefix: Item[],
+  isSameItem: IsSameItem<Item> = isSameReference,
+): boolean =>
+  items.length >= prefix.length &&
+  prefix.every((item, index) => {
+    const candidate = items[index];
+    return candidate !== undefined && isSameItem(candidate, item);
+  });
+
+const isSameState = <Item>(
+  items: Item[],
+  other: Item[],
+  isSameItem: IsSameItem<Item> = isSameReference,
+): boolean => items.length === other.length && isExtensionOf(items, other, isSameItem);
 
 const isUnchanged = <Item>(paths: Item[][], original: Item[]): boolean =>
   paths.every((items) => isSameState(items, original));
 
 /** The state every path left, when the paths agree on it. */
-const getAgreedState = <Item>(paths: Item[][]): Item[] | null =>
-  paths.every((items) => isSameState(items, paths[0])) ? paths[0] : null;
+const getAgreedState = <Item>(
+  paths: Item[][],
+  isSameItem: IsSameItem<Item> = isSameReference,
+): Item[] | null => {
+  const [first] = paths;
+  return first !== undefined && paths.every((items) => isSameState(items, first, isSameItem))
+    ? first
+    : null;
+};
 
 /**
  * Scope bindings are restored and joined around every fork, but objects and
@@ -48,7 +70,7 @@ export class HeapJournal {
   private readonly objects = new Map<StaticObjectValue, StaticObjectEntry[]>();
   private readonly lists = new Map<StaticListValue, StaticValue[]>();
   private readonly bindings: ModuleBindingStates = new Map();
-  private readonly paths: HeapPath[] = [];
+  private paths: HeapPath[] = [];
   private readonly entryAllocation = getAllocationCount();
 
   /** Whether `target` predates the fork, so its mutations must be journaled. */
@@ -96,11 +118,34 @@ export class HeapJournal {
   }
 
   join(reason: string, location: SourceLocation | null, preferredPath: number): void {
+    this.applyJoin(this.paths, reason, location, preferredPath);
+  }
+
+  /**
+   * The code after a fork runs once for every path that completes, so those
+   * paths collapse into the live state it starts from and end again as one
+   * path once it has run; the paths that jumped away stay separate.
+   */
+  continueFrom(
+    indices: number[],
+    reason: string,
+    location: SourceLocation | null,
+    preferredPath: number,
+  ): void {
+    const selected = indices.map((index) => this.paths[index]);
+    this.paths = this.paths.filter((_, index) => !indices.includes(index));
+    this.applyJoin(selected, reason, location, preferredPath);
+  }
+
+  private applyJoin(
+    paths: HeapPath[],
+    reason: string,
+    location: SourceLocation | null,
+    preferredPath: number,
+  ): void {
     for (const [values, originals] of this.bindings) {
       for (const [name, original] of originals) {
-        const pathValues = this.paths.map(
-          (path) => path.bindings.get(values)?.get(name) ?? original,
-        );
+        const pathValues = paths.map((path) => path.bindings.get(values)?.get(name) ?? original);
         values.set(
           name,
           pathValues.every((value) => value === pathValues[0])
@@ -110,16 +155,16 @@ export class HeapJournal {
       }
     }
     for (const [object, original] of this.objects) {
-      const pathEntries = this.paths.map((path) => path.objects.get(object) ?? original);
+      const pathEntries = paths.map((path) => path.objects.get(object) ?? original);
       if (isUnchanged(pathEntries, original)) continue;
       object.entries =
         getAgreedState(pathEntries) ??
         joinObjectEntries(original, pathEntries, reason, location, preferredPath);
     }
     for (const [list, original] of this.lists) {
-      const pathItems = this.paths.map((path) => path.lists.get(list) ?? original);
+      const pathItems = paths.map((path) => path.lists.get(list) ?? original);
       if (isUnchanged(pathItems, original)) continue;
-      const agreedItems = getAgreedState(pathItems);
+      const agreedItems = getAgreedState(pathItems, isSameValue);
       if (agreedItems) {
         list.items = agreedItems;
         continue;

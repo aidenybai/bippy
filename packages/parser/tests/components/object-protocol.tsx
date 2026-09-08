@@ -40,6 +40,19 @@ const plainness = [{}, Object.create(null), new Route(), [], new Map(), "text"].
   isPlainObject(value) ? "plain" : "other",
 );
 
+const isPlainPrototype = (value: object): boolean => {
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === null || prototype === Object.prototype;
+};
+const mergeable = [
+  { theme: 1 },
+  Object.create(null),
+  new Route(),
+  [1],
+  Object.create({ base: 1 }),
+].map((value) => (isPlainPrototype(value) ? "plain" : "other"));
+const listPrototype = Object.getPrototypeOf([1]) === Array.prototype ? "array" : "other";
+
 const bareParams: Record<string, string> = Object.create(null);
 bareParams.postId = "42";
 const bareKeys = Object.keys(bareParams).join(",");
@@ -59,13 +72,24 @@ const bufferText = Array.from(buffer).join("-");
 history.replaceState({ page: 2 }, "");
 const historyPage = (history.state as { page: number }).page;
 
+/** Whether a spread source carries a key is as undecided as the source itself. */
+const maybeExtra = window.location.hash === "#extra" ? { extra: 1 } : {};
+const merged = Object.assign({ base: 0 }, maybeExtra);
+const hasExtra = Object.prototype.hasOwnProperty.call(merged, "extra") || "extra" in merged;
+
 export default function ObjectProtocol() {
   return (
     <dl>
+      <dt>maybe own</dt>
+      <dd>{hasExtra ? <mark>extra</mark> : <s>base only</s>}</dd>
       <dt>tags</dt>
       <dd>{tagged.map((value) => Object.prototype.toString.call(value)).join(" ")}</dd>
       <dt>plainness</dt>
       <dd>{plainness.join(" ")}</dd>
+      <dt>prototypes</dt>
+      <dd>
+        {mergeable.join(" ")}/{listPrototype}
+      </dd>
       <dt>null prototype</dt>
       <dd>
         {bareKeys}/{hasHasOwn}/{hasConstructor}

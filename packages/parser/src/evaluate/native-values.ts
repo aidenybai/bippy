@@ -1,8 +1,10 @@
 import type {
   StaticListValue,
+  StaticNativeFunctionValue,
   StaticNativeObjectValue,
   StaticObjectEntry,
   StaticValue,
+  StubRenderTools,
 } from "../types.js";
 import { element, nativeFunction } from "../frameworks/stubs.js";
 import type { HostDocument } from "../host/host-document.js";
@@ -169,6 +171,26 @@ export interface NativeCallFallback {
   (args: StaticValue[]): StaticValue;
 }
 
+/** Items a callee appended to an array argument (`pathToRegexp(path, keys)`), written back to the list it stood for. */
+const writeBackAppendedItems = (
+  args: StaticValue[],
+  natives: unknown[],
+  name: string,
+  host: HostDocument | null,
+  tools: StubRenderTools,
+): void => {
+  args.forEach((argument, index) => {
+    const native = natives[index];
+    if (argument.kind !== "list" || !Array.isArray(native)) return;
+    const appended = native
+      .slice(argument.items.length)
+      .map((item, offset) =>
+        fromNativeValue(item, `${name}()[${argument.items.length + offset}]`, host),
+      );
+    if (appended.length > 0) tools.pushItems(argument, appended);
+  });
+};
+
 /**
  * `callee` as a function the interpreter may invoke: it runs natively once every
  * argument is known, and yields `onUncertain(args)` otherwise. Exceptions are
@@ -181,19 +203,28 @@ export const pureNativeFunction = (
   thisValue: unknown,
   host: HostDocument | null,
   onUncertain: NativeCallFallback,
-): StaticValue =>
-  nativeFunction(name, (args, tools) => {
+): StaticNativeFunctionValue => ({
+  kind: "native-function",
+  name,
+  call: (args, tools) => {
     const natives = toNativeArguments(args, host);
     if (natives === null) {
       for (const argument of args) tools.markEscaped(argument);
       return onUncertain(args);
     }
     try {
-      return fromNativeValue(Reflect.apply(callee, thisValue, natives), `${name}()`, host);
+      const result = fromNativeValue(Reflect.apply(callee, thisValue, natives), `${name}()`, host);
+      writeBackAppendedItems(args, natives, name, host, tools);
+      return result;
     } catch (error) {
       return unknownValue(`${name}() threw: ${describeError(error)}`);
     }
-  });
+  },
+  getOwnProperty: (key) =>
+    Object.prototype.propertyIsEnumerable.call(callee, key)
+      ? fromNativeValue(Reflect.get(callee, key), `${name}.${key}`, host)
+      : undefined,
+});
 
 const isReactElementTag = (tag: unknown): boolean =>
   typeof tag === "symbol" &&

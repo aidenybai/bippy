@@ -71,6 +71,9 @@ const FOCUS_EVENTS = new Set([
   "selectstart",
 ]);
 
+/** The session history is traversed only by the user (back/forward) or a script's `history.back()`/`go()`, which escapes these listeners then (see `callHistoryMethod`). */
+const HISTORY_TRAVERSAL_EVENTS = new Set(["popstate", "hashchange"]);
+
 /** Browser-dispatched event types are bare words; namespaced names are app-defined and only fire on `dispatchEvent`. */
 const isCustomEventType = (type: string): boolean => /[^a-zA-Z]/.test(type);
 
@@ -175,6 +178,17 @@ const isEventBeforeCapture = (
   );
 };
 
+const isHistoryTraversalListener = (
+  realm: HostRealm,
+  receiver: StaticValue,
+  type: StaticValue | undefined,
+): boolean =>
+  receiver.kind === "global" &&
+  realm.isGlobalAlias(receiver.name) &&
+  type?.kind === "primitive" &&
+  typeof type.value === "string" &&
+  HISTORY_TRAVERSAL_EVENTS.has(type.value);
+
 /** Listener registration on `window`/`document`/DOM nodes/`MediaQueryList`; only listeners that may fire before capture escape. */
 export const callEventTargetMethod = (
   interpreter: Interpreter,
@@ -187,6 +201,11 @@ export const callEventTargetMethod = (
   const [type, listener] = args;
   if (!listener) return UNDEFINED_VALUE;
   const isRegistration = name === "addEventListener" || name === "addListener";
+  if (isHistoryTraversalListener(realm, receiver, type)) {
+    if (isRegistration) interpreter.history.traversalListeners.add(listener);
+    else interpreter.history.traversalListeners.delete(listener);
+    return UNDEFINED_VALUE;
+  }
   if (isRegistration && isEventBeforeCapture(realm, receiver, type))
     interpreter.markEscaped(listener);
   const target = toNativeEventTarget(receiver, interpreter.hostDocument);

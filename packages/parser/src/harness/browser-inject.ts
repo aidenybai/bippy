@@ -56,6 +56,7 @@ const readPageState = (): CapturedPageState => ({
   windowKeys: initialWindowKeys,
   userAgent: navigator.userAgent,
   language: navigator.language,
+  maxTouchPoints: navigator.maxTouchPoints,
   localStorage: readStorageArea(localStorage),
   sessionStorage: readStorageArea(sessionStorage),
 });

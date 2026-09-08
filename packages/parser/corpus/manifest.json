@@ -661,6 +661,265 @@
         "maxFiberCount": 20000
       },
       "notes": "Django normally renders index.html with window.POSTHOG_APP_CONTEXT and points the module scripts at the Vite dev server; corpus/scripts/posthog-app-server.ts stands in for it with an anonymous app context and the checked-in _preflight fixture, answering the API calls the login scene makes. The kea store the page builds is captured through the Redux DevTools compose hook and replayed into the static render; the app server's stand-in API returns 404 for the endpoints it does not model, which the page logs."
+    },
+    {
+      "id": "mini-dashboard",
+      "repository": "https://github.com/meilisearch/mini-dashboard",
+      "revision": "db4553b9aff43c0aa96ebc768a1c384be9099380",
+      "description": "Meilisearch mini-dashboard (React 18 SPA on styled-components + reakit, Vite dev server) against a throwaway Meilisearch container with no indexes",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "yarn install",
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/meilisearch.sh\" bippy-corpus-meilisearch 7700"],
+      "dev": "yarn dev",
+      "env": {
+        "BROWSER": "none",
+        "VITE_MEILI_SERVER_ADDRESS": "http://localhost:7700"
+      },
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 5000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "jsconfig.json",
+        "entry": "src/index.jsx",
+        "externalPackageAllowList": ["reakit", "reakit-system", "reakit-utils"]
+      }
+    },
+    {
+      "id": "flowise",
+      "repository": "https://github.com/FlowiseAI/Flowise",
+      "revision": "9ae635b434d4410e17186d3f267f89bf6aa7d556",
+      "description": "Flowise UI sign-in page (React 18 SPA on MUI + react-redux + react-router v6, Vite dev server without the API server)",
+      "framework": "spa",
+      "workingDirectory": "packages/ui",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 20 npx -y pnpm@10.26.0 install --frozen-lockfile --filter flowise-ui",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 20 npx -y pnpm@10.26.0 exec vite --port 8081",
+      "env": {
+        "BROWSER": "none"
+      },
+      "url": "http://localhost:8081/signin",
+      "readyTimeoutMs": 600000,
+      "settleMs": 5000,
+      "static": {
+        "rootDirectory": "packages/ui",
+        "tsconfig": "jsconfig.json",
+        "entry": "src/index.jsx",
+        "aliases": {
+          "@": "src"
+        },
+        "externalPackageAllowList": [
+          "notistack",
+          "react-router-dom",
+          "react-router",
+          "react-redux",
+          "redux",
+          "@mui/*",
+          "@emotion/*",
+          "@babel/runtime/*",
+          "history",
+          "@tabler/icons-react",
+          "react-transition-group"
+        ]
+      },
+      "notes": "The UI dev server proxies /api to a Flowise server that is not started here; the sign-in page renders without it and logs the failed platform-settings request."
+    },
+    {
+      "id": "reactive-trader",
+      "repository": "https://github.com/AdaptiveConsulting/ReactiveTraderCloud",
+      "revision": "4a31f016e6336c438ae9ab3731674af5d5c9203a",
+      "description": "Reactive Trader Cloud web client (React 18 SPA on styled-components + react-rxjs + react-router v6, Vite dev server against the public demo Hydra gateway)",
+      "framework": "spa",
+      "workingDirectory": "packages/client",
+      "install": "cd packages/client && npm install --no-audit --no-fund",
+      "dev": "npm start",
+      "env": {
+        "BROWSER": "none"
+      },
+      "url": "http://localhost:1917/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": "packages/client",
+        "entry": "src/client/index.tsx",
+        "externalPackageAllowList": ["react-router-dom", "react-router", "@remix-run/router"]
+      }
+    },
+    {
+      "id": "flagsmith",
+      "repository": "https://github.com/Flagsmith/flagsmith",
+      "revision": "8f8b83775642ffea54551121f64f38978191b244",
+      "description": "Flagsmith frontend login page (React 19 SPA on react-router v5 + Redux Toolkit, rspack dev server without the Django API)",
+      "framework": "spa",
+      "workingDirectory": "frontend",
+      "install": "cd frontend && npm install --no-audit --no-fund",
+      "dev": "npm run dev",
+      "env": {
+        "PORT": "8090"
+      },
+      "url": "http://localhost:8090/login",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "capturedGlobals": ["projectOverrides"],
+      "static": {
+        "rootDirectory": "frontend",
+        "entry": "web/main.js",
+        "externalPackageAllowList": [
+          "react-router-dom",
+          "react-router",
+          "react-redux",
+          "history",
+          "mini-create-react-context",
+          "hoist-non-react-statics",
+          "react-is"
+        ]
+      },
+      "notes": "The dev server targets the API at localhost:8000 which is not started here; the public login page renders and logs the failed requests. The Express dev server serves /config/project-overrides.js, which sets window.projectOverrides from its environment; it is captured and replayed into `common/project`."
+    },
+    {
+      "id": "decap-cms",
+      "repository": "https://github.com/decaporg/decap-cms",
+      "revision": "d4d4cd4bb9728c6e20bdcd06de69747d06d09175",
+      "description": "Decap CMS dev-test app (React 19 on react-redux + react-router v5 + Emotion, webpack dev server serving dev-test/ with the in-memory test-repo backend)",
+      "framework": "spa",
+      "workingDirectory": "packages/decap-cms",
+      "install": "npm install --no-audit --no-fund && npm run build:esm",
+      "dev": "npm run develop",
+      "env": {
+        "DECAP_CMS_DEV_SERVER_PORT": "8091"
+      },
+      "url": "http://localhost:8091/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": "packages/decap-cms",
+        "entry": "src/index.js",
+        "externalPackageAllowList": [
+          "decap-cms-*",
+          "lodash",
+          "lodash/*",
+          "react-redux",
+          "react-router-dom",
+          "react-router",
+          "history",
+          "hoist-non-react-statics",
+          "react-is",
+          "react-polyglot",
+          "node-polyglot",
+          "react-toastify"
+        ]
+      }
+    },
+    {
+      "id": "saleor-dashboard",
+      "repository": "https://github.com/saleor/saleor-dashboard",
+      "revision": "845a10414c17b84c35c69d5c7808587cc0031b03",
+      "description": "Saleor Dashboard login page (React 18 SPA on Apollo + react-router v5 + macaw-ui, Vite dev server without the Saleor API)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.28.2 install --frozen-lockfile",
+      "setup": [
+        "cp -n .env.template .env; true",
+        "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.28.2 run generate"
+      ],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.28.2 exec vite --host",
+      "url": "http://localhost:9000/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "capturedGlobals": ["__SALEOR_CONFIG__"],
+      "static": {
+        "rootDirectory": ".",
+        "servedDirectory": "src",
+        "publicDirectory": "public",
+        "entry": "src/index.tsx",
+        "envFiles": [".env"],
+        "externalPackageAllowList": [
+          "react-helmet",
+          "react-side-effect",
+          "react-router-dom",
+          "react-router",
+          "history",
+          "mini-create-react-context",
+          "hoist-non-react-statics",
+          "react-is",
+          "url-join"
+        ],
+        "defines": {
+          "FLAGS_SERVICE_ENABLED": false,
+          "FLAGS": { "FF_USE_STAGING_SCHEMA": "false" },
+          "process.env.NODE_ENV": "development",
+          "process.env.API_URL": "http://localhost:8000/graphql/",
+          "process.env.SW_INTERVAL": null,
+          "process.env.IS_CLOUD_INSTANCE": null,
+          "process.env.APP_MOUNT_URI": "/",
+          "process.env.SENTRY_DSN": null,
+          "process.env.ENVIRONMENT": null,
+          "process.env.CUSTOM_VERSION": null,
+          "process.env.LOCALE_CODE": "EN",
+          "process.env.SENTRY_RELEASE": null,
+          "process.env.STATIC_URL": null,
+          "process.env.POSTHOG_KEY": null,
+          "process.env.POSTHOG_EXCLUDED_DOMAINS": null,
+          "process.env.POSTHOG_HOST": null,
+          "process.env.ENABLED_SERVICE_NAME_HEADER": null,
+          "process.env.ONBOARDING_USER_JOINED_DATE_THRESHOLD": "2024-07-01",
+          "process.env.FF_USE_STAGING_SCHEMA": "false",
+          "process.env.RELEASE_NAME": null
+        }
+      },
+      "notes": "API_URL points at localhost:8000 which is not started here; the login page renders and logs the failed GraphQL requests. `defines` mirrors the `define` block of `vite.config.js` (`process.env.*` from the repository `.env`, `FLAGS*` from the `FF_*` variables); `envFiles` makes `import.meta.env.VITE_*` whole; `servedDirectory`/`publicDirectory` mirror its `root`/`publicDir`."
+    },
+    {
+      "id": "redash",
+      "repository": "https://github.com/getredash/redash",
+      "revision": "4956e6d17cf429cbf2a2ac4330855cff1b98d92a",
+      "description": "Redash client (React 16 on antd + react-router-less custom routing, webpack dev server without the Flask backend)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.30.3 install --frozen-lockfile",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.30.3 run build:viz"],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.30.3 exec webpack-dev-server --port 8092",
+      "url": "http://localhost:8092/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "client/tsconfig.json",
+        "entry": "client/app/index.js",
+        "aliases": {
+          "@": "client/app"
+        }
+      },
+      "notes": "Static-only: react-doctor scanned viz-lib, a visualization library; the runnable app is the client/ webpack app at the repository root, which depends on it as @redash/viz (built by the setup step). Without the Flask backend (Postgres + Redis + `redash create_db`) the session request fails and the client hard-navigates to the server-rendered /login?next=/ page, which the dev server proxies to the missing backend (504), so no React commit is observable."
+    },
+    {
+      "id": "tooljet",
+      "repository": "https://github.com/ToolJet/ToolJet",
+      "revision": "f33ff86cbb2c5a1bc3ff7d62ff4fc6ab00e8358b",
+      "description": "ToolJet frontend login page (React 18 SPA on react-router v6 + zustand, webpack dev server)",
+      "framework": "spa",
+      "workingDirectory": "frontend",
+      "install": "cd frontend && npm install --no-audit --no-fund",
+      "setup": [
+        "cd ../plugins && npm install --no-audit --no-fund --ignore-scripts && node create-client-entry.js"
+      ],
+      "dev": "npm start",
+      "url": "http://localhost:8082/login",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": "frontend",
+        "entry": "src/index.jsx",
+        "aliases": {
+          "@": "src",
+          "@ee": "ee",
+          "@cloud": "cloud",
+          "@assets": "assets",
+          "@white-label": "src/_helpers/white-label"
+        },
+        "tsconfig": "jsconfig.json"
+      },
+      "notes": "Static-only: src/index.jsx only calls render() after appService.getConfig() (GET /api/config, proxied to the NestJS server on localhost:3000) resolves, so without the server, its Postgres database and migrations no React commit ever happens (the page stays on the static 'Loading...' shell). The frontend also imports @tooljet/plugins/client, a generated entry over the checked-in plugin manifests; the setup step installs the plugins workspace and generates that entry so the webpack dev server compiles."
     }
   ]
 }

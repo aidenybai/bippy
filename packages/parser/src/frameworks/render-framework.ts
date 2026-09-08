@@ -116,6 +116,8 @@ const rendererOptionsForEntry = (
   const rootDirectory = path.join(cloneDirectory, entry.static.rootDirectory);
   return {
     rootDirectory,
+    servedDirectory: entry.static.servedDirectory,
+    publicDirectory: entry.static.publicDirectory,
     tsconfigPath: path.join(rootDirectory, entry.static.tsconfig ?? "tsconfig.json"),
     aliases: entry.static.aliases,
     externalPackageAllowList: entry.static.externalPackageAllowList,

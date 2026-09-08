@@ -90,13 +90,18 @@ const getMember = (current: unknown, member: string): unknown =>
     ? Reflect.get(current, member)
     : undefined;
 
-/** `Function.prototype.toString` of the native function a dotted global such as `Object.prototype.hasOwnProperty` denotes, or null. */
-export const getBuiltinFunctionSource = (globalName: string): string | null => {
+/** The native value a dotted builtin global such as `Object.prototype.hasOwnProperty` denotes, or undefined when it is not a modeled builtin. */
+export const getBuiltinWitness = (globalName: string): unknown => {
   const [rootName = "", ...members] = globalName.split(".");
-  const witness = members.reduce<unknown>(
+  return members.reduce<unknown>(
     getMember,
     BUILTIN_CONSTRUCTORS[rootName] ?? NAMESPACE_GLOBALS[rootName],
   );
+};
+
+/** `Function.prototype.toString` of the native function a dotted global denotes, or null. */
+export const getBuiltinFunctionSource = (globalName: string): string | null => {
+  const witness = getBuiltinWitness(globalName);
   return typeof witness === "function" ? Function.prototype.toString.call(witness) : null;
 };
 
@@ -194,6 +199,16 @@ const isInstanceOfFunction = (left: StaticValue, fn: StaticFunctionValue): boole
 export const isInstanceOf = (left: StaticValue, right: StaticValue): boolean | null => {
   if (right.kind === "class") return isInstanceOfClass(left, right);
   if (right.kind === "function") return isInstanceOfFunction(left, right);
+  if (right.kind === "external") {
+    if (right.origin !== "binding") return null;
+    if (isPrimitiveLike(left)) return false;
+    return left.kind === "external" &&
+      left.origin === "instance" &&
+      left.packageName === right.packageName &&
+      left.importedName === `new ${right.importedName}`
+      ? true
+      : null;
+  }
   if (right.kind !== "global") return null;
   const constructor = BUILTIN_CONSTRUCTORS[right.name];
   if (!constructor)
