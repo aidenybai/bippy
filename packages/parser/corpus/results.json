@@ -256,6 +256,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 46,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -268,7 +269,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 46,
         "staticFibers": 46,
         "coverage": 1,
@@ -319,6 +319,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 938,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -331,7 +332,6 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 938,
         "staticFibers": 938,
         "coverage": 1,
@@ -718,8 +718,8 @@
       "id": "data-table-filters",
       "revision": "27e165378fa6f58dab0486cd06b078b6956230f2",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:17:46.997Z",
-      "durationMs": 4738,
+      "capturedAt": "2026-09-08T23:53:51.002Z",
+      "durationMs": 10589,
       "runtime": {
         "reactVersion": "19.3.0-canary-52684925-20251110",
         "rendererName": "react-dom",
@@ -732,21 +732,29 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 3386,
-          "textCount": 122,
+          "fiberCount": 3357,
+          "textCount": 118,
           "branchCount": 219,
           "repeatCount": 2,
           "opaqueCount": 103,
-          "unknownCount": 122,
+          "unknownCount": 123,
           "modulesLoaded": 1720
         },
         "diagnostics": [
+          {
+            "code": "budget-exhausted",
+            "count": 50
+          },
           {
             "code": "dynamic-key",
             "count": 2
           },
           {
             "code": "dynamic-props",
+            "count": 1
+          },
+          {
+            "code": "unsettled-state",
             "count": 1
           }
         ]
@@ -789,8 +797,8 @@
           "conditions": [
             {
               "kind": "transition",
-              "commit": 1,
-              "commitCount": 5
+              "commit": 2,
+              "commitCount": 7
             },
             {
               "kind": "branch",
@@ -827,7 +835,7 @@
                 {
                   "kind": "transition",
                   "commit": 0,
-                  "commitCount": 5
+                  "commitCount": 7
                 },
                 {
                   "kind": "branch",
@@ -3181,6 +3189,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 689,
         "matchedText": 4,
         "opaqueSubtrees": 0,
@@ -3193,7 +3202,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 693,
         "staticFibers": 693,
         "coverage": 1,
@@ -3504,6 +3512,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 376,
         "matchedText": 2,
         "opaqueSubtrees": 0,
@@ -3516,7 +3525,6 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 378,
         "staticFibers": 405,
         "coverage": 1,
@@ -3649,6 +3657,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 1093,
         "matchedText": 51,
         "opaqueSubtrees": 0,
@@ -3661,7 +3670,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 1144,
         "staticFibers": 1144,
         "coverage": 1,
@@ -3863,6 +3871,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 225,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -3875,7 +3884,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 225,
         "staticFibers": 225,
         "coverage": 1,
@@ -4087,8 +4095,8 @@
       "id": "magic-portfolio",
       "revision": "2a55890c38f18e0ad1e267748373bfb703ce146a",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:17:37.378Z",
-      "durationMs": 2692,
+      "capturedAt": "2026-09-08T23:53:43.588Z",
+      "durationMs": 2552,
       "runtime": {
         "reactVersion": "19.3.0-canary-f93b9fd4-20251217",
         "rendererName": "react-dom",
@@ -5235,8 +5243,8 @@
       "id": "magicui-portfolio",
       "revision": "5ef12e4c8bd0de3e22e89c2181ee77a35925ec8b",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:17:34.950Z",
-      "durationMs": 1163,
+      "capturedAt": "2026-09-08T23:53:41.357Z",
+      "durationMs": 1121,
       "runtime": {
         "reactVersion": "19.3.0-canary-f93b9fd4-20251217",
         "rendererName": "react-dom",
@@ -6680,8 +6688,8 @@
       "id": "next-landing-starter",
       "revision": "cd6694e6c69efad1128c1ed732188389182789df",
       "framework": "next-pages",
-      "capturedAt": "2026-09-08T23:17:41.318Z",
-      "durationMs": 392,
+      "capturedAt": "2026-09-08T23:53:47.290Z",
+      "durationMs": 371,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -6734,7 +6742,7 @@
             {
               "kind": "branch",
               "variable": "branch#1",
-              "reason": "next.config reactStrictMode is unknown(next.config is @next/bundle-analyzer#*()())",
+              "reason": "next.config reactStrictMode is unknown(next.config is @next/bundle-analyzer#*()().default)",
               "location": null,
               "alternativeIndex": 0,
               "alternativeCount": 2
@@ -7022,6 +7030,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 139,
         "matchedText": 23,
         "opaqueSubtrees": 0,
@@ -7034,7 +7043,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 162,
         "staticFibers": 162,
         "coverage": 1,
@@ -7085,6 +7093,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 77,
         "matchedText": 6,
         "opaqueSubtrees": 0,
@@ -7097,7 +7106,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 83,
         "staticFibers": 83,
         "coverage": 1,
@@ -7677,6 +7685,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 184,
         "matchedText": 7,
         "opaqueSubtrees": 0,
@@ -7689,7 +7698,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 191,
         "staticFibers": 191,
         "coverage": 1,
@@ -7746,6 +7754,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 444,
         "matchedText": 6,
         "opaqueSubtrees": 0,
@@ -7758,7 +7767,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 450,
         "staticFibers": 450,
         "coverage": 1,
@@ -7824,6 +7832,7 @@
         ]
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 33,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -7845,7 +7854,6 @@
         ],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 5571,
         "staticFibers": 33,
         "coverage": 1,
@@ -8072,8 +8080,8 @@
       "id": "react-router-templates",
       "revision": "b68be71489a22315c7a734a86a18347745b393d2",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:45:41.667Z",
-      "durationMs": 136,
+      "capturedAt": "2026-09-08T23:54:13.826Z",
+      "durationMs": 11073,
       "runtime": {
         "reactVersion": "19.2.7",
         "rendererName": "react-dom",
@@ -8092,11 +8100,12 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 5
+          "modulesLoaded": 7
         },
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 48,
         "matchedText": 2,
         "opaqueSubtrees": 0,
@@ -8109,7 +8118,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 50,
         "staticFibers": 50,
         "coverage": 1,
@@ -8134,7 +8142,7 @@
         "omitted": null
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-08T11:39:09.076Z",
+      "note": null,
       "failure": null
     },
     {
@@ -8306,6 +8314,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 6,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -8318,7 +8327,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 6,
         "staticFibers": 6,
         "coverage": 1,
@@ -8792,6 +8800,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 558,
         "matchedText": 8,
         "opaqueSubtrees": 0,
@@ -8804,7 +8813,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 566,
         "staticFibers": 566,
         "coverage": 1,
@@ -8836,8 +8844,8 @@
       "id": "shadcn-chat",
       "revision": "47e5f8af020b6eacbd4cbd6ad5f6ff8d60e76aa8",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:17:52.950Z",
-      "durationMs": 955,
+      "capturedAt": "2026-09-08T23:54:03.213Z",
+      "durationMs": 1667,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
@@ -8867,12 +8875,12 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 661,
+          "fiberCount": 700,
           "textCount": 22,
-          "branchCount": 23,
+          "branchCount": 26,
           "repeatCount": 6,
-          "opaqueCount": 32,
-          "unknownCount": 7,
+          "opaqueCount": 48,
+          "unknownCount": 9,
           "modulesLoaded": 1762
         },
         "diagnostics": [
@@ -8883,27 +8891,16 @@
         ]
       },
       "report": {
-        "matchedFibers": 241,
+        "status": "partial",
+        "matchedFibers": 398,
         "matchedText": 17,
-        "opaqueSubtrees": 10,
-        "opaqueSkippedFibers": 571,
-        "slotsMatched": 8,
-        "slotsUnmatched": 1,
+        "opaqueSubtrees": 76,
+        "opaqueSkippedFibers": -28,
+        "slotsMatched": 38,
+        "slotsUnmatched": 0,
         "opaqueRenamed": 3,
-        "unmatchedSlots": [
-          {
-            "path": "root > <body> [HostComponent] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <main> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <ChatLayout> [FunctionComponent] > <ResizablePanelGroup> [FunctionComponent] > <ResizablePrimitive.PanelGroup> (opaque) > <ResizablePanel> (opaque)",
-            "reason": "Panel from react-resizable-panels is not analyzed",
-            "head": "<forwardRef(Panel)> [ForwardRef]",
-            "skippedFibers": 529,
-            "divergence": {
-              "path": "root > <body> [HostComponent] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <main> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <ChatLayout> [FunctionComponent] > <ResizablePanelGroup> [FunctionComponent] > <ResizablePrimitive.PanelGroup> (opaque) > <ResizablePanel> (opaque) > <Chat> [FunctionComponent] > <div> [HostComponent] > <ChatBottombar> [FunctionComponent] > <div> [HostComponent] > <AnimatePresence> [FunctionComponent] > <PresenceChild> key=\"input\" [FunctionComponent][0]",
-              "expected": "<motion.div> key=\"input\" [ForwardRef]",
-              "actual": "<MotionComponent> key=\"input\" [ForwardRef]"
-            }
-          }
-        ],
-        "wildcardAbsorbedFibers": 20,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 56,
         "wildcards": [
           {
             "path": "root > <body> [HostComponent] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <main> [HostComponent] > <ChatSupport> [FunctionComponent] > <ExpandableChat> (opaque) > <ExpandableChatBody> (opaque) > <ChatMessageList> (opaque) > <AnimatePresence> [FunctionComponent] > <PresenceChild> [FunctionComponent]",
@@ -8912,17 +8909,88 @@
             "heads": [
               "<MotionComponent> key=\"0\" [ForwardRef]"
             ]
+          },
+          {
+            "path": "root > <body> [HostComponent] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <main> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <ChatLayout> [FunctionComponent] > <ResizablePanelGroup> [FunctionComponent] > <ResizablePrimitive.PanelGroup> (opaque) > <ResizablePanel> (opaque) > <Chat> [FunctionComponent] > <div> [HostComponent] > <ChatList> [FunctionComponent] > <div> [HostComponent] > <ChatMessageList> (opaque) > <AnimatePresence> [FunctionComponent] > <PresenceChild> [FunctionComponent] > <MotionComponent> [ForwardRef] > <div> [HostComponent] > <ChatBubble> (opaque) > <ChatBubbleMessage> (opaque)",
+            "reason": "item of zustand#create()()()",
+            "absorbedFibers": 4,
+            "heads": [
+              "<div> [HostComponent]"
+            ]
+          },
+          {
+            "path": "root > <body> [HostComponent] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <main> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <ChatLayout> [FunctionComponent] > <ResizablePanelGroup> [FunctionComponent] > <ResizablePrimitive.PanelGroup> (opaque) > <ResizablePanel> (opaque) > <Chat> [FunctionComponent] > <div> [HostComponent] > <ChatList> [FunctionComponent] > <div> [HostComponent] > <ChatMessageList> (opaque) > <AnimatePresence> [FunctionComponent] > <PresenceChild> [FunctionComponent] > <MotionComponent> [ForwardRef] > <div> [HostComponent] > <ChatBubble> (opaque) > <ChatBubbleMessage> (opaque)",
+            "reason": "item of zustand#create()()()",
+            "absorbedFibers": 4,
+            "heads": [
+              "<div> [HostComponent]"
+            ]
+          },
+          {
+            "path": "root > <body> [HostComponent] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <main> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <ChatLayout> [FunctionComponent] > <ResizablePanelGroup> [FunctionComponent] > <ResizablePrimitive.PanelGroup> (opaque) > <ResizablePanel> (opaque) > <Chat> [FunctionComponent] > <div> [HostComponent] > <ChatList> [FunctionComponent] > <div> [HostComponent] > <ChatMessageList> (opaque) > <AnimatePresence> [FunctionComponent] > <PresenceChild> [FunctionComponent] > <MotionComponent> [ForwardRef] > <div> [HostComponent] > <ChatBubble> (opaque) > <ChatBubbleMessage> (opaque)",
+            "reason": "item of zustand#create()()()",
+            "absorbedFibers": 4,
+            "heads": [
+              "<div> [HostComponent]"
+            ]
+          },
+          {
+            "path": "root > <body> [HostComponent] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <main> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <ChatLayout> [FunctionComponent] > <ResizablePanelGroup> [FunctionComponent] > <ResizablePrimitive.PanelGroup> (opaque) > <ResizablePanel> (opaque) > <Chat> [FunctionComponent] > <div> [HostComponent] > <ChatList> [FunctionComponent] > <div> [HostComponent] > <ChatMessageList> (opaque) > <AnimatePresence> [FunctionComponent] > <PresenceChild> [FunctionComponent] > <MotionComponent> [ForwardRef] > <div> [HostComponent] > <ChatBubble> (opaque) > <ChatBubbleMessage> (opaque)",
+            "reason": "item of zustand#create()()()",
+            "absorbedFibers": 4,
+            "heads": [
+              "<div> [HostComponent]"
+            ]
+          },
+          {
+            "path": "root > <body> [HostComponent] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <main> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <ChatLayout> [FunctionComponent] > <ResizablePanelGroup> [FunctionComponent] > <ResizablePrimitive.PanelGroup> (opaque) > <ResizablePanel> (opaque) > <Chat> [FunctionComponent] > <div> [HostComponent] > <ChatList> [FunctionComponent] > <div> [HostComponent] > <ChatMessageList> (opaque) > <AnimatePresence> [FunctionComponent] > <PresenceChild> [FunctionComponent] > <MotionComponent> [ForwardRef] > <div> [HostComponent] > <ChatBubble> (opaque) > <ChatBubbleMessage> (opaque)",
+            "reason": "item of zustand#create()()()",
+            "absorbedFibers": 4,
+            "heads": [
+              "<div> [HostComponent]"
+            ]
+          },
+          {
+            "path": "root > <body> [HostComponent] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <main> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <ChatLayout> [FunctionComponent] > <ResizablePanelGroup> [FunctionComponent] > <ResizablePrimitive.PanelGroup> (opaque) > <ResizablePanel> (opaque) > <Chat> [FunctionComponent] > <div> [HostComponent] > <ChatList> [FunctionComponent] > <div> [HostComponent] > <ChatMessageList> (opaque) > <AnimatePresence> [FunctionComponent] > <PresenceChild> [FunctionComponent] > <MotionComponent> [ForwardRef] > <div> [HostComponent] > <ChatBubble> (opaque) > <ChatBubbleMessage> (opaque)",
+            "reason": "item of zustand#create()()()",
+            "absorbedFibers": 4,
+            "heads": [
+              "<div> [HostComponent]"
+            ]
+          },
+          {
+            "path": "root > <body> [HostComponent] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <main> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <ChatLayout> [FunctionComponent] > <ResizablePanelGroup> [FunctionComponent] > <ResizablePrimitive.PanelGroup> (opaque) > <ResizablePanel> (opaque) > <Chat> [FunctionComponent] > <div> [HostComponent] > <ChatList> [FunctionComponent] > <div> [HostComponent] > <ChatMessageList> (opaque) > <AnimatePresence> [FunctionComponent] > <PresenceChild> [FunctionComponent] > <MotionComponent> [ForwardRef] > <div> [HostComponent] > <ChatBubble> (opaque) > <ChatBubbleMessage> (opaque)",
+            "reason": "item of zustand#create()()()",
+            "absorbedFibers": 4,
+            "heads": [
+              "<div> [HostComponent]"
+            ]
+          },
+          {
+            "path": "root > <body> [HostComponent] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <main> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <ChatLayout> [FunctionComponent] > <ResizablePanelGroup> [FunctionComponent] > <ResizablePrimitive.PanelGroup> (opaque) > <ResizablePanel> (opaque) > <Chat> [FunctionComponent] > <div> [HostComponent] > <ChatList> [FunctionComponent] > <div> [HostComponent] > <ChatMessageList> (opaque) > <AnimatePresence> [FunctionComponent] > <PresenceChild> [FunctionComponent] > <MotionComponent> [ForwardRef] > <div> [HostComponent] > <ChatBubble> (opaque) > <ChatBubbleMessage> (opaque)",
+            "reason": "item of zustand#create()()()",
+            "absorbedFibers": 4,
+            "heads": [
+              "<div> [HostComponent]"
+            ]
+          },
+          {
+            "path": "root > <body> [HostComponent] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <main> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <ChatLayout> [FunctionComponent] > <ResizablePanelGroup> [FunctionComponent] > <ResizablePrimitive.PanelGroup> (opaque) > <ResizablePanel> (opaque) > <Chat> [FunctionComponent] > <div> [HostComponent] > <ChatList> [FunctionComponent] > <div> [HostComponent] > <ChatMessageList> (opaque) > <AnimatePresence> [FunctionComponent] > <PresenceChild> [FunctionComponent] > <MotionComponent> [ForwardRef] > <div> [HostComponent] > <ChatBubble> (opaque) > <ChatBubbleMessage> (opaque)",
+            "reason": "item of zustand#create()()()",
+            "absorbedFibers": 4,
+            "heads": [
+              "<div> [HostComponent]"
+            ]
           }
         ],
-        "branchesResolved": 13,
-        "repeatIterations": 5,
-        "status": "partial",
+        "branchesResolved": 35,
+        "repeatIterations": 14,
         "runtimeFibers": 849,
         "staticFibers": 453,
-        "coverage": 1,
-        "strictCoverage": 0.303886925795053,
+        "coverage": 0.5054811205846529,
+        "strictCoverage": 0.48881036513545345,
         "divergence": null,
-        "stepsUsed": 477,
+        "stepsUsed": 1785,
         "budgetExhausted": false
       },
       "stateSpace": {
@@ -9042,6 +9110,188 @@
               "variable": "truthy(139)",
               "reason": "conditional on branch(false | true)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(81)",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(95)",
+              "reason": "conditional on <number: Map.size>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:164:55",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(92)@repeat#3[0]",
+              "reason": "conditional on <boolean: Map.has() with a dynamic key>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:157:16",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(83)@repeat#3[0]",
+              "reason": "&& on unknown(item of zustand#create()()())",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(92)@repeat#3[1]",
+              "reason": "conditional on <boolean: Map.has() with a dynamic key>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:157:16",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(83)@repeat#3[1]",
+              "reason": "&& on unknown(item of zustand#create()()())",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(92)@repeat#3[2]",
+              "reason": "conditional on <boolean: Map.has() with a dynamic key>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:157:16",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(83)@repeat#3[2]",
+              "reason": "&& on unknown(item of zustand#create()()())",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(92)@repeat#3[3]",
+              "reason": "conditional on <boolean: Map.has() with a dynamic key>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:157:16",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(83)@repeat#3[3]",
+              "reason": "&& on unknown(item of zustand#create()()())",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(92)@repeat#3[4]",
+              "reason": "conditional on <boolean: Map.has() with a dynamic key>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:157:16",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(83)@repeat#3[4]",
+              "reason": "&& on unknown(item of zustand#create()()())",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(92)@repeat#3[5]",
+              "reason": "conditional on <boolean: Map.has() with a dynamic key>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:157:16",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(83)@repeat#3[5]",
+              "reason": "&& on unknown(item of zustand#create()()())",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(92)@repeat#3[6]",
+              "reason": "conditional on <boolean: Map.has() with a dynamic key>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:157:16",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(83)@repeat#3[6]",
+              "reason": "&& on unknown(item of zustand#create()()())",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(92)@repeat#3[7]",
+              "reason": "conditional on <boolean: Map.has() with a dynamic key>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:157:16",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(83)@repeat#3[7]",
+              "reason": "&& on unknown(item of zustand#create()()())",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(92)@repeat#3[8]",
+              "reason": "conditional on <boolean: Map.has() with a dynamic key>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:157:16",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(83)@repeat#3[8]",
+              "reason": "&& on unknown(item of zustand#create()()())",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#3",
+              "location": null,
+              "count": 9
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(143)",
+              "reason": "&& on branch(<boolean> | undefined)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-bottombar.tsx:174:10",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(144)",
+              "reason": "conditional on branch(\"\" | unknown)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-bottombar.tsx:229:10",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
@@ -9516,8 +9766,8 @@
       "id": "shadcn-landing-page",
       "revision": "ae3716dbce5c8a26815222bb743994b5717938f1",
       "framework": "spa",
-      "capturedAt": "2026-09-08T23:17:30.198Z",
-      "durationMs": 1082,
+      "capturedAt": "2026-09-08T23:53:35.957Z",
+      "durationMs": 983,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -10035,8 +10285,8 @@
       "id": "shadcn-landing-page-nobruf",
       "revision": "ec8e18e8ed56ed6636023ced09948515c19258cc",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:17:32.511Z",
-      "durationMs": 1104,
+      "capturedAt": "2026-09-08T23:53:38.449Z",
+      "durationMs": 1784,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
@@ -10852,8 +11102,8 @@
       "id": "sonner",
       "revision": "8e4662b39255120b62138312058f5d77c0139a5e",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:45:42.040Z",
-      "durationMs": 73,
+      "capturedAt": "2026-09-08T23:56:13.802Z",
+      "durationMs": 18686,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
@@ -10877,6 +11127,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 44,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -10889,7 +11140,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 44,
         "staticFibers": 44,
         "coverage": 1,
@@ -10908,7 +11158,7 @@
         "omitted": null
       },
       "anchor": "body",
-      "note": "runtime replayed from 2026-09-08T11:14:51.057Z",
+      "note": null,
       "failure": null
     },
     {
@@ -10940,6 +11190,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 215,
         "matchedText": 2,
         "opaqueSubtrees": 0,
@@ -10952,7 +11203,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 217,
         "staticFibers": 217,
         "coverage": 1,
@@ -11003,6 +11253,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 45,
         "matchedText": 3,
         "opaqueSubtrees": 0,
@@ -11015,7 +11266,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 48,
         "staticFibers": 48,
         "coverage": 1,
@@ -11520,8 +11770,8 @@
       "id": "tremor-dashboard",
       "revision": "a20f619680e4582122c331bacf2efdef6daf460f",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:17:43.348Z",
-      "durationMs": 1951,
+      "capturedAt": "2026-09-08T23:53:48.758Z",
+      "durationMs": 1149,
       "runtime": {
         "reactVersion": "18.3.0-canary-178c267a4e-20241218",
         "rendererName": "react-dom",
@@ -11576,7 +11826,7 @@
         "coverage": 1,
         "strictCoverage": 0.5452488687782805,
         "divergence": null,
-        "stepsUsed": 633,
+        "stepsUsed": 5289,
         "budgetExhausted": false
       },
       "stateSpace": {
