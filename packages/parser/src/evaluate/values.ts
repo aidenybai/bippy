@@ -1104,6 +1104,10 @@ export const getListItem = (
 
 const MAX_DESCRIPTION_DEPTH = 3;
 
+/** The interface name from the prototype chain: a `Proxy`-backed object (`dataset`) hides `constructor` on the instance. */
+export const getInterfaceName = (value: object): string =>
+  Object.getPrototypeOf(value)?.constructor?.name ?? "Object";
+
 export const describeValue = (value: StaticValue, depth = 0): string => {
   if (depth >= MAX_DESCRIPTION_DEPTH) return "…";
   const describeNested = (nested: StaticValue): string => describeValue(nested, depth + 1);
@@ -1153,7 +1157,7 @@ export const describeValue = (value: StaticValue, depth = 0): string => {
     case "native-function":
       return `native ${value.name}`;
     case "native-object":
-      return `native ${value.value.constructor.name}`;
+      return `native ${getInterfaceName(value.value)}`;
     case "proxy":
       return `proxy of ${describeNested(value.target)}`;
     case "unknown":

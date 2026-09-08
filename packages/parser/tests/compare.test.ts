@@ -60,6 +60,26 @@ describe("transparent runtime fibers", () => {
     expect(report.strictCoverage).toBe(1);
   });
 
+  it("splices empty wrappers trailing the last application fiber", () => {
+    const runtime = [
+      host("main", [
+        host("article"),
+        runtimeFiber("ErrorBoundary", [runtimeFiber("Root")]),
+        runtimeFiber("Root"),
+      ]),
+    ];
+    const report = comparePatternToRuntime(
+      [patternHost("main", [patternHost("article")])],
+      runtime,
+      {
+        transparentRuntimeFibers: WRAPPERS,
+      },
+    );
+    expect(report.status).toBe("exact");
+    expect(report.transparentFibers).toBe(3);
+    expect(report.runtimeFibers).toBe(2);
+  });
+
   it("reports the divergence past a spliced wrapper", () => {
     const runtime = [runtimeFiber("Root", [host("main", [host("h2")])])];
     const report = comparePatternToRuntime([patternHost("main", [patternHost("h1")])], runtime, {

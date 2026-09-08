@@ -658,11 +658,28 @@ class Matcher {
     actual: RuntimeFiberSnapshot,
     path: string[],
   ): ComparisonTally | null {
-    return this.matchList(pattern.children, 0, actual.children, 0, path, (runtime, nextIndex) => {
-      if (nextIndex === runtime.length) return EMPTY_TALLY;
-      this.recordFailure(path, runtime, nextIndex, null);
-      return null;
-    });
+    return this.matchList(pattern.children, 0, actual.children, 0, path, (runtime, nextIndex) =>
+      this.matchEnd(runtime, nextIndex, path),
+    );
+  }
+
+  /** The pattern is exhausted: only framework wrappers with nothing left inside may remain. */
+  matchEnd(
+    runtime: RuntimeFiberSnapshot[],
+    runtimeIndex: number,
+    path: string[],
+  ): ComparisonTally | null {
+    if (runtimeIndex === runtime.length) return EMPTY_TALLY;
+    if (this.isTransparentRuntimeFiber(runtime[runtimeIndex])) {
+      const rest = this.matchEnd(
+        this.spliceTransparentFiber(runtime, runtimeIndex),
+        runtimeIndex,
+        path,
+      );
+      if (rest) return addTally(rest, { transparentFibers: 1 });
+    }
+    this.recordFailure(path, runtime, runtimeIndex, null);
+    return null;
   }
 }
 
@@ -686,11 +703,9 @@ export const comparePatternToRuntime = (
   let tally: ComparisonTally | null = null;
   let budgetExhausted = false;
   try {
-    tally = matcher.matchList(patterns, 0, runtime, 0, ["root"], (rest, nextIndex) => {
-      if (nextIndex === rest.length) return EMPTY_TALLY;
-      matcher.recordFailure(["root"], rest, nextIndex, null);
-      return null;
-    });
+    tally = matcher.matchList(patterns, 0, runtime, 0, ["root"], (rest, nextIndex) =>
+      matcher.matchEnd(rest, nextIndex, ["root"]),
+    );
   } catch (error) {
     if (!(error instanceof BudgetExceeded)) throw error;
     budgetExhausted = true;

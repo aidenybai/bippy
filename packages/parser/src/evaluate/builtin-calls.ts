@@ -423,21 +423,39 @@ const CONSTRUCTOR_GLOBALS = new Set([
   ...TYPED_ARRAY_NAMES,
 ]);
 
+const STANDARD_NAMESPACE_GLOBALS = new Set(["Math", "JSON", "Intl", "Reflect"]);
+
+/**
+ * `typeof Object.keys`, `typeof Array.prototype.at`: a member the language
+ * standardizes on a builtin is what the host has; a member the host lacks may
+ * exist where the app runs, so feature detection stays undecided.
+ */
+const getStandardMemberTypeof = (name: string): string | null => {
+  const [root, ...path] = name.split(".");
+  if (!CONSTRUCTOR_GLOBALS.has(root) && !STANDARD_NAMESPACE_GLOBALS.has(root)) return null;
+  let current: unknown = Reflect.get(globalThis, root);
+  for (const key of path) {
+    if (current === null || (typeof current !== "object" && typeof current !== "function")) {
+      return null;
+    }
+    current = Reflect.get(current, key);
+  }
+  return current === undefined ? null : typeof current;
+};
+
 /** `typeof <global>` as observed by the rendering environment; null when it depends on the host. */
 export const getGlobalTypeof = (
   name: string,
   environment: RenderEnvironment | null,
 ): string | null => {
-  if (name.endsWith(".prototype") && CONSTRUCTOR_GLOBALS.has(name.slice(0, -".prototype".length)))
-    return name === "Function.prototype" ? "function" : "object";
-  if (name.includes(".")) return null;
+  if (name.includes(".")) return getStandardMemberTypeof(name);
   if (BROWSER_GLOBALS.has(name)) return environment === "server" ? "undefined" : "object";
   if (BROWSER_FUNCTION_GLOBALS.has(name))
     return environment === "server" ? "undefined" : "function";
   if (CONSTRUCTOR_GLOBALS.has(name) || UNIVERSAL_FUNCTION_GLOBALS.has(name)) return "function";
   if (name === "performance") return "object";
   if (name === "Infinity" || name === "NaN") return "number";
-  if (name === "Math" || name === "JSON" || name === "Intl" || name === "Reflect") return "object";
+  if (STANDARD_NAMESPACE_GLOBALS.has(name)) return "object";
   if (name === "globalThis" || name === "console" || name === "module") return "object";
   return null;
 };

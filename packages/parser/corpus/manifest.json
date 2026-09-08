@@ -451,7 +451,11 @@
           "sonner",
           "lucide-react",
           "@tabler/icons-react",
-          "@hugeicons/react"
+          "@hugeicons/*",
+          "@vercel/analytics",
+          "@ai-sdk/*",
+          "ai",
+          "zod"
         ],
         "maxFiberCount": 20000
       }
