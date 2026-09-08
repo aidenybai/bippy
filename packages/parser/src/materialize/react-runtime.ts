@@ -1,6 +1,7 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { getRDTHook } from "bippy";
+import { ReactRuntimeError } from "../errors.js";
 import type { ModuleResolver } from "../graph/module-resolver.js";
 import { ensureDomGlobals } from "./dom-environment.js";
 
@@ -132,7 +133,7 @@ const loadAct = async (
     resolveAppFile(resolver, "react-dom/test-utils", fromDirectory),
   );
   if (hasAct(testUtils)) return testUtils.act;
-  throw new Error("neither React.act nor react-dom/test-utils act is available");
+  throw new ReactRuntimeError("neither React.act nor react-dom/test-utils act is available");
 };
 
 export interface LoadReactRuntimeOptions {
@@ -164,9 +165,11 @@ const load = async (
   getRDTHook();
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   const { react, domClient, dom } = await loadReactModules(resolver, rootDirectory);
-  if (!isReactModule(react)) throw new Error("could not load react");
-  if (!isReactDomClientModule(domClient)) throw new Error("could not load react-dom/client");
-  if (!isReactDomModule(dom)) throw new Error("could not load react-dom");
+  if (!isReactModule(react)) throw new ReactRuntimeError("could not load react");
+  if (!isReactDomClientModule(domClient)) {
+    throw new ReactRuntimeError("could not load react-dom/client");
+  }
+  if (!isReactDomModule(dom)) throw new ReactRuntimeError("could not load react-dom");
   return {
     react,
     domClient,

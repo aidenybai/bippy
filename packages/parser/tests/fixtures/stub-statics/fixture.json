@@ -1,0 +1,7 @@
+{
+  "framework": "react-router",
+  "route": "/",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "A Radix-style Slot inspects statics on a framework-modeled component (react-router's Link stub): `\"__radixId\" in child.type` and `child.type.__radixId` are decided from the stub's declared statics and work tag instead of staying unknown."
+}

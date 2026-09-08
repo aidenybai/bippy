@@ -3,14 +3,20 @@ import path from "node:path";
 import { Interpreter } from "../evaluate/interpreter.js";
 import { createScope } from "../evaluate/scope.js";
 import { objectValue, unknownValue } from "../evaluate/values.js";
+import { detectModuleTranspiler } from "../graph/module-transpiler.js";
 import { ModuleGraph } from "../graph/module-graph.js";
 import { ModuleResolver } from "../graph/module-resolver.js";
 import { createProjectContext } from "../graph/project-context.js";
-import { ensureDomGlobals, resetDomGlobals } from "../materialize/dom-environment.js";
+import { createSvgrSourceTransform } from "../graph/svgr-modules.js";
+import {
+  createDomHostDocument,
+  ensureDomGlobals,
+  resetDomGlobals,
+} from "../materialize/dom-environment.js";
 import { Materializer } from "../materialize/materializer.js";
 import { mountNode } from "../materialize/mount.js";
 import { loadReactRuntime, type ReactRuntime } from "../materialize/react-runtime.js";
-import { readReactVersion } from "../react/element-shape.js";
+import { SourceFileCache } from "../parse/parse-source-file.js";
 import { toElementType } from "../react/element-type.js";
 import type {
   Diagnostic,
@@ -74,14 +80,19 @@ export class StaticRenderer {
       conditionNames: options.conditionNames,
       rootDirectory: this.options.rootDirectory,
     });
-    this.reactVersion = readReactVersion(this.resolver, this.options.rootDirectory);
+    const { rootDirectory } = this.options;
     this.project = createProjectContext(
-      this.options.rootDirectory,
+      rootDirectory,
+      this.resolver,
       this.options.observations,
       this.options.origin ?? null,
+      this.options.transpiler ?? detectModuleTranspiler(this.resolver, rootDirectory),
     );
+    this.reactVersion = this.project.readPackageVersion("react");
+    const svgrTransform = createSvgrSourceTransform(this.resolver, rootDirectory);
     this.graph = new ModuleGraph({
       resolver: this.resolver,
+      sourceFileCache: new SourceFileCache(svgrTransform ? [svgrTransform] : []),
       resolveExternalPackages: options.resolveExternalPackages,
       externalPackageAllowList: options.externalPackageAllowList,
     });
@@ -106,6 +117,8 @@ export class StaticRenderer {
       globals: this.options.globals,
       defines: this.options.defines,
       environment: this.options.environment,
+      hostPlatform: this.options.hostPlatform,
+      hostDocument: createDomHostDocument(),
       capturedGlobals: this.options.observations?.globals,
       route: this.options.route,
       origin: this.options.origin,
@@ -113,6 +126,8 @@ export class StaticRenderer {
       assumeOuterProviders,
       reactVersion: this.reactVersion,
       project: this.project,
+      settleMs: this.options.settleMs,
+      timerUnderrunMs: this.options.timerUnderrunMs,
     });
     for (const bootstrap of this.options.bootstrap ?? []) this.runBootstrap(interpreter, bootstrap);
     return interpreter;
@@ -161,7 +176,15 @@ export class StaticRenderer {
     });
     const rootNode = materializer.toRootNode(rootValue);
     interpreter.timers.drainMicrotasks();
-    const mounted = await mountNode(runtime, rootNode, () => interpreter.timers.flush());
+    const mounted = await mountNode(runtime, rootNode, interpreter.timers);
+    if (interpreter.timers.hasTasks()) {
+      interpreter.report(
+        "timers-unsettled",
+        "timer tasks were still queueing more tasks when the settle rounds ran out",
+        null,
+        "warning",
+      );
+    }
     for (const error of mounted.uncaughtErrors) {
       interpreter.report(
         "render-error",
