@@ -1,0 +1,9 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "truncated",
+  "minCoverage": 1,
+  "stateSpaceBudget": { "maxStates": 4 },
+  "expectedStates": 4,
+  "expectOmitted": true,
+  "notes": "Four independent flags reach sixteen states but the budget allows four. The remaining alternatives are reported as omitted, and a runtime match against the bounded space is truncated, never exact."
+}

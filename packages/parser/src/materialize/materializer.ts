@@ -53,14 +53,14 @@ import type {
   StubHooks,
   StubRenderTools,
 } from "../types.js";
-import { ClassComponentTag, ForwardRefTag } from "../work-tags.js";
+import { ClassComponentTag, ForwardRefTag, type WorkTag } from "../work-tags.js";
 import {
   AlternativeMarker,
   BranchMarker,
+  createSuspendedMarker,
   MARKER_NAMES,
   OpaqueMarker,
   RepeatMarker,
-  SuspendedMarker,
   TEXT_PLACEHOLDER,
   TextMarker,
   UnknownMarker,
@@ -374,6 +374,7 @@ const toFunctionValue = (component: ComponentDefinition): StaticFunctionValue =>
     properties: component.properties,
     boundArgs: component.boundArgs,
     boundThis: component.boundThis,
+    isClientReference: component.isClientReference,
   };
 };
 
@@ -389,6 +390,7 @@ const toClassValue = (component: ComponentDefinition): StaticClassValue => {
     module: component.module,
     name: component.name,
     properties: component.properties,
+    isClientReference: component.isClientReference,
   };
 };
 
@@ -452,6 +454,7 @@ export class Materializer {
   private contextReads: ContextRead[] | null = null;
   private readonly stubProxies = new WeakMap<StubComponent, ComponentType<ProxyProps>>();
   private readonly suspenseBoundaryProxy: ComponentType<ProxyProps>;
+  private readonly suspendedMarker: ComponentType;
   private portalContainer: Element | null = null;
   private readonly hostRefs = new WeakMap<StaticValue, HostRefBinding>();
   private readonly materializedElements = new WeakMap<StaticElementValue, MaterializedElement[]>();
@@ -469,6 +472,7 @@ export class Materializer {
       ({ input }: ProxyProps): ReactNode => this.renderSuspenseBoundary(input),
       MARKER_NAMES.suspenseBoundary,
     );
+    this.suspendedMarker = createSuspendedMarker(runtime.react.use);
   }
 
   createRootContext(): MaterializeContext {
@@ -516,6 +520,9 @@ export class Materializer {
         return value.items.map((item) => this.toNode(item, context, false));
       case "repeat":
         return this.runtime.react.createElement(RepeatMarker, {
+          location: value.location && formatSourceLocation(value.location),
+          countMin: value.count?.min ?? 0,
+          countMax: value.count?.max ?? null,
           children: [this.toNode(value.item, context, false)],
         });
       case "branch":
@@ -527,6 +534,7 @@ export class Materializer {
           value.preferredIndex,
           isTopLevel,
           value.location,
+          value.predicate,
         );
       case "optional":
         return this.branchNode(
@@ -558,6 +566,7 @@ export class Materializer {
     if (context.alternativeDepth >= MAX_ALTERNATIVE_DEPTH) {
       return this.unknownNode(
         `alternative nested ${MAX_ALTERNATIVE_DEPTH} branches away from the preferred path`,
+        true,
       );
     }
     return this.toNode(
@@ -573,20 +582,22 @@ export class Materializer {
     preferredIndex: number | null,
     isTopLevel: boolean,
     location: SourceLocation | null = null,
+    predicate: string | null = null,
   ): ReactNode {
     const { createElement } = this.runtime.react;
     return createElement(BranchMarker, {
       reason,
       location: location && formatSourceLocation(location),
       preferredIndex,
+      predicate,
       children: alternatives.map((node, index) =>
         createElement(AlternativeMarker, { key: index, children: isTopLevel ? node : [node] }),
       ),
     });
   }
 
-  private unknownNode(reason: string): ReactNode {
-    return this.runtime.react.createElement(UnknownMarker, { reason });
+  private unknownNode(reason: string, isTruncated = false): ReactNode {
+    return this.runtime.react.createElement(UnknownMarker, { reason, isTruncated });
   }
 
   /** An element whose component is not known may suspend (a `use()` or lazy inside it). */
@@ -684,7 +695,7 @@ export class Materializer {
           "warning",
         );
       }
-      return this.unknownNode("element budget exhausted");
+      return this.unknownNode("element budget exhausted", true);
     }
     const reactKey = this.keyToString(key, location);
     const children = getObjectProperty(props, "children");
@@ -1218,27 +1229,30 @@ export class Materializer {
           this.renderInsideComponent(() => this.renderStub(input, stub)),
         stub.displayName,
       );
-      proxy =
-        stub.tag === ForwardRefTag
-          ? this.runtime.react.forwardRef<unknown, ProxyProps>(render)
-          : stub.tag === ClassComponentTag
-            ? this.createClassStubProxy(render, stub.displayName)
-            : render;
+      proxy = this.stubProxyForTag(stub.tag, render);
       this.stubProxies.set(stub, proxy);
     }
     return proxy;
   }
 
-  private createClassStubProxy(
+  private stubProxyForTag(
+    tag: WorkTag | undefined,
     render: (props: ProxyProps) => ReactNode,
-    displayName: string | null,
-  ): ComponentClass<ProxyProps> {
-    class ClassStubProxy extends this.runtime.react.Component<ProxyProps> {
-      render(): ReactNode {
-        return render(this.props);
+  ): ComponentType<ProxyProps> {
+    switch (tag) {
+      case ForwardRefTag:
+        return this.runtime.react.forwardRef<unknown, ProxyProps>(render);
+      case ClassComponentTag: {
+        class StubClassProxy extends this.runtime.react.Component<ProxyProps> {
+          render(): ReactNode {
+            return render(this.props);
+          }
+        }
+        return setFunctionName(StubClassProxy, render.name);
       }
+      default:
+        return render;
     }
-    return setFunctionName(ClassStubProxy, displayName);
   }
 
   private renderInsideComponent<T>(render: () => T): T {
@@ -1295,6 +1309,7 @@ export class Materializer {
       queueMicrotask: (task) => this.interpreter.timers.queueMicrotask(task),
       isDeferred: () => this.interpreter.timers.isDeferred,
       setProperty: (object, key, value) => this.interpreter.assignOwnProperty(object, key, value),
+      recordStateMutation: (state) => this.interpreter.recordStateMutation(state),
       realm: this.interpreter.getRealm(context.environment),
       nameHint: null,
       templateArgumentNames: null,
@@ -1705,7 +1720,7 @@ export class Materializer {
     const content = createElement(Suspense, { fallback }, primary);
     if (!isSuspendable) return content;
     return this.branchNode(
-      [content, createElement(Suspense, { fallback }, createElement(SuspendedMarker))],
+      [content, createElement(Suspense, { fallback }, createElement(this.suspendedMarker))],
       "Suspense boundary may be suspended when observed",
       0,
       true,

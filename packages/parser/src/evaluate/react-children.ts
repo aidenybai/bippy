@@ -1,8 +1,7 @@
 import type { StaticElementValue, StaticValue } from "../types.js";
-import type { CallableValue } from "./builtin-calls.js";
 import type { EvaluationContext } from "./context.js";
 import type { Interpreter } from "./interpreter.js";
-import { isNullish, listValue, mapValue, primitiveValue } from "./values.js";
+import { type CallableValue, isNullish, listValue, mapValue, primitiveValue } from "./values.js";
 
 /** Mirrors react/src/ReactChildren.js: `mapIntoArray` flattens nested arrays and assigns `.0`, `.1:0`, `$key/…` keys. */
 

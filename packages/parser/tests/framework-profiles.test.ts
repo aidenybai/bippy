@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vite-plus/test";
-import { flattenTransparentFibers, NEXT_PAGES_PROFILE } from "../src/frameworks/index.js";
+import {
+  flattenTransparentFibers,
+  NEXT_APP_PROFILE,
+  NEXT_PAGES_PROFILE,
+} from "../src/frameworks/index.js";
 import type { RuntimeFiberSnapshot, RuntimeSnapshot } from "../src/harness/snapshot.js";
 
 const fiber = (
@@ -66,6 +70,45 @@ describe("next pages runtime profile", () => {
       "  SideEffect",
       "Portal",
       "  Dialog",
+    ]);
+  });
+});
+
+describe("next app runtime profile", () => {
+  const segment = (children: RuntimeFiberSnapshot[]): RuntimeFiberSnapshot =>
+    fiber(
+      "Activity",
+      [fiber("Offscreen", children, {}, "OffscreenComponent")],
+      {},
+      "ActivityComponent",
+    );
+
+  it("splices out the Activity/Offscreen pair OuterLayoutRouter keeps a segment in", () => {
+    const flattened = flattenTransparentFibers(
+      snapshotOf([
+        fiber("OuterLayoutRouter", [
+          segment([fiber("Page", [fiber("main", [], {}, "HostComponent")])]),
+        ]),
+      ]),
+      NEXT_APP_PROFILE,
+    );
+    expect(describeTree(flattened.roots[0].children)).toEqual(["Page", "  main"]);
+  });
+
+  it("keeps an Activity the application renders itself", () => {
+    const flattened = flattenTransparentFibers(
+      snapshotOf([
+        fiber("OuterLayoutRouter", [
+          fiber("Page", [segment([fiber("aside", [], {}, "HostComponent")])]),
+        ]),
+      ]),
+      NEXT_APP_PROFILE,
+    );
+    expect(describeTree(flattened.roots[0].children)).toEqual([
+      "Page",
+      "  Activity",
+      "    Offscreen",
+      "      aside",
     ]);
   });
 });

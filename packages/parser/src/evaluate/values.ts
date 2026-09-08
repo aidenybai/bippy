@@ -321,10 +321,17 @@ const lookupObjectProperty = (object: StaticObjectValue, key: string): StaticVal
         spread.reason,
         spread.location,
         spread.preferredIndex,
+        spread.predicate,
       );
     }
+    const inherited = getInheritedProperty(object, key);
+    if (isPresent(inherited)) return inherited;
     return unknownValue(`property "${key}" may come from a spread of ${describeValue(spread)}`);
   }
+  return getInheritedProperty(object, key);
+};
+
+const getInheritedProperty = (object: StaticObjectValue, key: string): StaticValue => {
   if (key === "constructor" && object.constructedBy) return object.constructedBy;
   return object.prototype ? getObjectProperty(object.prototype, key) : UNDEFINED_VALUE;
 };
@@ -476,6 +483,7 @@ export const joinObjectEntries = (
   reason: string,
   location: SourceLocation | null,
   preferredIndex: number,
+  predicate: string | null,
 ): StaticObjectEntry[] => {
   const isExtension = (entries: StaticObjectEntry[]): boolean =>
     entries.length >= original.length && original.every((entry, index) => entries[index] === entry);
@@ -490,7 +498,10 @@ export const joinObjectEntries = (
       );
       return [
         ...original,
-        { kind: "spread", value: branchValue(alternatives, reason, location, preferredIndex) },
+        {
+          kind: "spread",
+          value: branchValue(alternatives, reason, location, preferredIndex, predicate),
+        },
       ];
     }
     for (const entry of entries) if (entry.kind === "property") keys.add(entry.key);
@@ -509,6 +520,7 @@ export const joinObjectEntries = (
         reason,
         location,
         preferredIndex,
+        predicate,
       ),
     })),
   ];
@@ -900,6 +912,7 @@ const areInterchangeableThrownObjects = (
 /** Alternatives analysis could never tell apart, so a branch keeps only one of them. */
 const isInterchangeable = (left: StaticValue, right: StaticValue): boolean => {
   if (isSameValue(left, right)) return true;
+  if (left === CHAIN_SHORT_CIRCUIT || right === CHAIN_SHORT_CIRCUIT) return false;
   if (left.kind === "unknown" && right.kind === "unknown") {
     if (left.thrown === undefined || right.thrown === undefined)
       return left.thrown === right.thrown;
@@ -925,6 +938,7 @@ export const branchValue = (
   reason: string,
   location: SourceLocation | null = null,
   preferredIndex = 0,
+  predicate: string | null = null,
 ): StaticValue => {
   const flattened: StaticValue[] = [];
   let resolvedPreferred = 0;
@@ -948,12 +962,16 @@ export const branchValue = (
     }
   });
   if (flattened.length === 1) return flattened[0];
+  const isPositional =
+    flattened.length === alternatives.length &&
+    alternatives.every((alternative) => alternative.kind !== "branch");
   return {
     kind: "branch",
     alternatives: flattened,
     preferredIndex: resolvedPreferred,
     reason,
     location,
+    predicate: isPositional ? predicate : null,
   };
 };
 
@@ -1028,6 +1046,14 @@ export const getPreferredTruthiness = (value: StaticValue): boolean | null =>
     ? getPreferredTruthiness(value.alternatives[value.preferredIndex])
     : getTruthiness(value);
 
+export type CallableValue = Extract<
+  StaticValue,
+  { kind: "function" | "native-function" | "global" }
+>;
+
+export const isCallable = (value: StaticValue | undefined): value is CallableValue =>
+  value?.kind === "function" || value?.kind === "native-function" || value?.kind === "global";
+
 export const isNullish = (value: StaticValue): boolean | null => {
   if (value.kind === "primitive") return value.value === null || value.value === undefined;
   if (value.kind === "unknown" || value.kind === "branch") return null;
@@ -1062,6 +1088,7 @@ export const mapValue = (
     value.reason,
     value.location,
     value.preferredIndex,
+    value.predicate,
   );
 };
 
@@ -1119,6 +1146,7 @@ export const spreadListItems = (
           value.reason,
           value.location,
           value.preferredIndex,
+          value.predicate,
         ),
       );
     }

@@ -6,6 +6,7 @@ import {
   compareShallowly,
   getObjectProperty,
   getTruthiness,
+  isCallable,
   isNullish,
   mapValue,
   objectFromRecord,
@@ -52,9 +53,6 @@ interface ModeledAtom {
 let trackingStack: ModeledAtom[] = [];
 let batchDepth = 0;
 const queuedNotifications: Array<() => void> = [];
-
-const isCallable = (value: StaticValue | undefined): value is StaticValue =>
-  value?.kind === "function" || value?.kind === "native-function";
 
 const isUndefined = (value: StaticValue): boolean =>
   value.kind === "primitive" && value.value === undefined;

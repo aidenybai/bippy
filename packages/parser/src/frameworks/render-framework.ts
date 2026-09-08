@@ -6,6 +6,7 @@ import { createStaticRenderer, type StaticRenderer } from "../render/static-rend
 import type { RuntimeObservations, StaticRenderResult, StaticRendererOptions } from "../types.js";
 import type { FrameworkKind } from "./framework-profile.js";
 import { renderNextAppRoute } from "./next-app-router.js";
+import { readInstalledVersion } from "../libraries/installed-version.js";
 import { createNextModel } from "./next-externals.js";
 import { renderNextPagesRoute } from "./next-pages-router.js";
 import { createReactRouterModel, renderReactRouterRoute } from "./react-router.js";
@@ -55,7 +56,8 @@ export const renderFrameworkTarget = (
         route,
         origin: options.origin,
         request: options.observations?.request,
-        rootDirectory: options.rootDirectory,
+        version: readInstalledVersion(options.rootDirectory, "next"),
+        nextIntlVersion: readInstalledVersion(options.rootDirectory, "next-intl"),
       });
       const renderer = createStaticRenderer({
         ...options,
@@ -70,7 +72,8 @@ export const renderFrameworkTarget = (
         kind: "next-pages",
         route,
         origin: options.origin,
-        rootDirectory: options.rootDirectory,
+        version: readInstalledVersion(options.rootDirectory, "next"),
+        nextIntlVersion: readInstalledVersion(options.rootDirectory, "next-intl"),
       });
       const renderer = createStaticRenderer({ ...options, externalValues: model.externalValues });
       return renderNextPagesRoute(renderer, model, {
@@ -81,6 +84,7 @@ export const renderFrameworkTarget = (
     case "react-router": {
       const model = createReactRouterModel(
         requireField(target, "route"),
+        options.rootDirectory,
         options.observations?.router ?? null,
       );
       const renderer = createStaticRenderer({ ...options, externalValues: model.externalValues });
@@ -101,6 +105,7 @@ const renderRootComponent = (
     case "react-router": {
       const model = createReactRouterModel(
         requireField(target, "route"),
+        options.rootDirectory,
         options.observations?.router ?? null,
       );
       const renderer = createStaticRenderer({ ...options, externalValues: model.externalValues });

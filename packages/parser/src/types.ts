@@ -126,8 +126,8 @@ export interface ModuleRecord {
   sideEffectStatements: Statement[];
   /** Exports were collected from `exports.x = ` / `module.exports` assignments rather than ESM syntax. */
   isCommonJs: boolean;
-  /** `module.exports = value` replaced the exports object, so `require()` yields the `default` export. */
-  replacesModuleExports: boolean;
+  /** The `value` of `module.exports = value`, whose runtime members are the exports a bundler imports. */
+  moduleExports: Expression | null;
 }
 
 export type ModuleResolution =
@@ -161,6 +161,13 @@ export type ResolvedSymbol =
       isClientReference: boolean;
     }
   | { kind: "namespace"; module: ModuleRecord }
+  /** A member of a CommonJS module's evaluated `module.exports`, read as bundlers do. */
+  | {
+      kind: "module-exports";
+      module: ModuleRecord;
+      exportedName: string;
+      isClientReference: boolean;
+    }
   | { kind: "external"; packageName: string; imported: ImportedName; specifier: string }
   | { kind: "unresolved"; reason: string };
 
@@ -299,6 +306,22 @@ export interface StubHooks {
   useEffect: (effect: () => void | (() => void), dependencies: unknown[]) => void;
 }
 
+/**
+ * Heap state a fork cannot see through a value's own fields (a `Map`'s
+ * entries): the owner captures and restores it, and joins one capture per path.
+ */
+export interface JournaledState<Snapshot> {
+  readonly allocation: number;
+  capture(): Snapshot;
+  restore(snapshot: Snapshot): void;
+  join(
+    snapshots: Snapshot[],
+    reason: string,
+    location: SourceLocation | null,
+    preferredPath: number,
+  ): void;
+}
+
 export interface StubRenderTools {
   /** Reads a context value as `useContext` would from the stub's position in the tree. */
   readContext: (context: ContextDefinition) => StaticValue;
@@ -319,6 +342,8 @@ export interface StubRenderTools {
   isDeferred: () => boolean;
   /** Assigns an own property of a modeled object, undone on the other paths of an enclosing fork like any heap write. */
   setProperty: (object: StaticObjectValue, key: string, value: StaticValue) => void;
+  /** Journals hidden state before a mutation, undone on the other paths of an enclosing fork like any heap write. */
+  recordStateMutation: (state: JournaledState<unknown>) => void;
   /** The host whose globals the calling code sees. */
   realm: HostRealm;
   /** Binding the call's result is assigned to, as build-time labelers (Emotion's babel/swc plugin) see it. */
@@ -635,6 +660,8 @@ export interface StaticRepeatValue {
   kind: "repeat";
   item: StaticValue;
   location: SourceLocation | null;
+  /** Inclusive bounds of the item count when the interpreter knows them. */
+  count?: NumberRange;
 }
 
 export interface StaticBranchValue {
@@ -643,6 +670,11 @@ export interface StaticBranchValue {
   preferredIndex: number;
   reason: string;
   location: SourceLocation | null;
+  /**
+   * Identity of the decision that selects an alternative. Branches sharing a
+   * predicate take the same alternative index in any one reachable state.
+   */
+  predicate: string | null;
 }
 
 export interface StaticFunctionValue {
@@ -667,6 +699,7 @@ export interface StaticClassValue {
   module: ModuleRecord;
   name: string | null;
   properties: Map<string, StaticValue>;
+  isClientReference?: boolean;
 }
 
 /** A list item (or child) that is present on some paths and absent on others, as `filter` produces. */
@@ -779,8 +812,13 @@ export interface StaticNativeFunctionValue {
   kind: "native-function";
   name: string;
   call: (args: StaticValue[], tools: StubRenderTools) => StaticValue;
-  /** Invoked when the value flows into code the evaluator does not follow. */
-  onEscape?: () => void;
+  /**
+   * Invoked when the value flows into code the evaluator does not follow: with
+   * the arguments of the call that code makes where the escape walk sees the
+   * call site (null entries for arguments it cannot tell), or null when the
+   * function is handed over as a value and may be called with anything.
+   */
+  onEscape?: (argumentValues: (StaticValue | null)[] | null) => void;
 }
 
 export type StaticValue =
@@ -836,6 +874,7 @@ export type ReactApi =
   | "useMemo"
   | "useCallback"
   | "useRef"
+  | "createRef"
   | "useContext"
   | "use"
   | "useEffect"
@@ -879,6 +918,8 @@ export interface StaticRenderStats {
 export interface StaticRenderResult {
   /** The fiber tree React committed for the materialized element, as bippy observed it. */
   snapshot: RuntimeSnapshot;
+  /** Every tree committed while effects, state updates and timers settled, in commit order. */
+  commits: RuntimeSnapshot[];
   diagnostics: Diagnostic[];
   stats: StaticRenderStats;
 }
