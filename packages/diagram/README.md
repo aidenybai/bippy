@@ -20,6 +20,8 @@ The sidebar, board/preview arrangement, and selected controls are adapted from `
 
 Controls use shadcn-style named exports, `data-slot`, native props/React 19 refs, and StyleX `css` overrides. There is no second control stylesheet or imported component registry. The board retains plain 325px specimens, 16px gaps, small titles, and bounded tree frames. The theme switch persists the selected mode and initially follows the system preference.
 
+Board chrome uses million-ui's light/dark neutral values, including its local `--board-canvas` override, input fills and hairlines, button edges, scrollbar thumbs, and fixed dark tooltip palette. These are separate from the diagram's semantic colors. Keyboard outlines remain high-contrast rather than adopting the upstream faint focus treatment.
+
 ## Tree
 
 Virtualization is built into the normal tree. There is no separate `VirtualTree` component or opt-in flag.
@@ -129,7 +131,7 @@ Unrelated elements remain readable neutral colors rather than fading. Keyboard f
 
 Callable labels use `ƒ`. Hooks and callbacks receive it automatically; `isCallable` marks known function-valued props and store methods without changing node kind or inventing update edges. `componentType` distinguishes known function components, classes, memo, and forward-ref wrappers. Classes use squares; wrappers use diamonds. Names alone never determine implementation. Symbols are hidden from assistive technology; names/typeahead remain unchanged and descriptions carry the distinctions.
 
-Pass ID-based `dataflowEdges` to a tree root or preset. Hook/prop rows attach through `componentId` and parent/owner IDs; they are metadata, not extra React fibers. Incoming and outgoing tracing are independent and cycle-safe. Bounded lanes and surface-colored crossing halos separate overlapping paths. Arrows keep 3px clearance from component glyphs and 4px from detail text.
+Pass ID-based `dataflowEdges` to a tree root or preset. Hook/prop rows attach through `componentId` and parent/owner IDs; they are metadata, not extra React fibers. Incoming and outgoing tracing are independent and cycle-safe. Bounded lanes and surface-colored crossing halos separate overlapping paths. Flow labels occupy distinct gaps between rows, follow their curve at that height, and paint after the wires. Optional labels that cannot fit a gap or the viewport are omitted rather than colliding; the connections and textual relationships remain. Arrows keep 3px clearance from component glyphs and 4px from detail text.
 
 Owner inspection shows direct creations in the parent projection and the ownership subtree in the owner projection. Boundary scopes include nested boundary nodes but exclude their handled descendants. Provider scopes appear only while the provider is active. Callback edges represent invocation back to an updater, not another prop-value transfer. Boundary regions describe render-time containment, not event-handler or external-store error handling.
 
@@ -141,7 +143,7 @@ Arrows navigate and expand/collapse, Home/End jump, locale-aware typeahead searc
 
 Base UI supplies the HTML controls, tooltips, and scrolling primitives. The custom SVG tree retains React Aria's press, focus-visibility, locale, and slot utilities; Base UI does not supply an SVG tree primitive.
 
-Automated Chromium, Firefox, and WebKit checks cover keyboard/touch interaction, controlled state, slots, focus retention, windowing, sidebar navigation, tooltips, and axe rules. SVG paint checks cover both themes, including colored glyphs. Forced-colors emulation and the combined CSS-zoom check remain Chromium-only. This does not establish full WCAG conformance or screen-reader compatibility. See [manual checks and limits](docs/accessibility.md).
+Automated Chromium, Firefox, and WebKit checks cover keyboard/touch interaction, controlled state, slots, focus retention, windowing, sidebar navigation, tooltips, and axe rules. SVG paint checks cover both themes, including colored glyphs. Regression checks compare the board's neutral paints with million-ui and detect flow-label collisions with row text, glyphs, focus underlines, and other labels in both projections. Forced-colors emulation and the combined CSS-zoom check remain Chromium-only. This does not establish full WCAG conformance or screen-reader compatibility. See [manual checks and limits](docs/accessibility.md).
 
 ```sh
 pnpm --filter diagram typecheck

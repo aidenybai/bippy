@@ -3,7 +3,7 @@
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import * as stylex from "@stylexjs/stylex";
 import { createContext, useContext, useId } from "react";
-import { colors as tailwindColors } from "tailwind-stylex/tokens.stylex";
+import { colors } from "../../diagram/tokens.stylex";
 import { mergeClassNames } from "../../diagram/dom-props";
 
 export interface TooltipProps extends TooltipPrimitive.Root.Props {
@@ -24,8 +24,8 @@ const styles = stylex.create({
   content: {
     maxWidth: 320,
     borderRadius: 7,
-    backgroundColor: tailwindColors.neutral900,
-    color: tailwindColors.neutral100,
+    backgroundColor: colors.tooltip,
+    color: colors.tooltipText,
     paddingInline: 7,
     paddingBlock: 2,
     fontFamily: "system-ui, sans-serif",

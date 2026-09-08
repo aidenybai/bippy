@@ -15,6 +15,8 @@ The automated Chromium, Firefox, and WebKit suites cover:
 - Touch activation without duplicate callbacks or disappearing inspection traces.
 - Search/reveal through collapsed ancestors, per-view bulk expansion, shared activation, and bounded virtual mounting.
 - Semantic-color glyph contrast and callable descriptions without polluting accessible names.
+- Flow-label separation from row text, glyphs, focus underlines, and other labels in both projections. Text checks compare transformed SVG glyph boxes, excluding decorative surface-colored halos that Firefox includes in screen bounds.
+- Light/dark board and control palette parity with million-ui, with high-contrast keyboard outlines retained.
 - Controlled activation surviving repeated native SVG focus events, including WebKit restoration.
 - Keyboard focus under Chromium-only forced-colors emulation and 200% CSS zoom.
 

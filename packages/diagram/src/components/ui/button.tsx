@@ -29,9 +29,9 @@ const styles = stylex.create({
     gap: 6,
     cursor: "pointer",
     color: { default: colors.text, ":disabled": colors.muted },
-    backgroundColor: { default: colors.surface, ":hover:not(:disabled)": colors.canvas },
-    boxShadow: `0 0 0 0.5px ${colors.border}`,
-    outline: { default: "none", ":focus-visible": `2px solid ${colors.blue}` },
+    backgroundColor: { default: colors.control, ":hover:not(:disabled)": colors.controlHover },
+    boxShadow: `0 0 0 0.5px ${colors.buttonEdge}`,
+    outline: { default: "none", ":focus-visible": `2px solid ${colors.text}` },
     outlineOffset: 2,
     "@media (forced-colors: active)": { outlineColor: "Highlight" },
   },
@@ -40,8 +40,7 @@ const styles = stylex.create({
   "icon-xs": { width: 24, height: 24, padding: 0 },
   ghost: {
     boxShadow: "none",
-    backgroundColor: { default: "transparent", ":hover:not(:disabled)": colors.canvas },
-    color: { default: colors.muted, ":hover:not(:disabled)": colors.text },
+    backgroundColor: { default: "transparent", ":hover:not(:disabled)": colors.ghostHover },
   },
 });
 

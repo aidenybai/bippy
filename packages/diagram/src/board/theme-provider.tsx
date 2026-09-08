@@ -29,7 +29,7 @@ const styles = stylex.create({
     display: "flex",
     color: { default: colors.muted, ":hover": colors.text },
     backgroundColor: "transparent",
-    outline: { default: "none", ":focus-visible": `1px solid ${colors.blue}` },
+    outline: { default: "none", ":focus-visible": `2px solid ${colors.text}` },
     cursor: "pointer",
     outlineOffset: 2,
   },

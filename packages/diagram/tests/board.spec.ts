@@ -14,7 +14,7 @@ test("uses the million-ui sidebar and fixed-size specimen board", async ({ page 
   const first = page.locator("main section").first();
   await expect(first).toHaveCSS("width", "325px");
   await expect(first).toHaveCSS("height", "325px");
-  await expect(first).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(first).toHaveCSS("background-color", "oklch(1 0 0)");
   await expect(first).toHaveCSS("border-radius", "0px");
   const firstBounds = await first.boundingBox();
   const secondBounds = await page.locator("main section").nth(1).boundingBox();
@@ -43,7 +43,7 @@ test("keeps SVG typography and geometry at native size", async ({ page }) => {
   }
   const fontSizes = await page
     .locator(
-      "[data-node-id] text, [data-node-id] tspan, [data-edge-from] text, [data-scope-kind] text",
+      "[data-node-id] text, [data-node-id] tspan, [data-edge-from] text, [data-edge-label-for], [data-scope-kind] text",
     )
     .evaluateAll((elements) => elements.map((element) => getComputedStyle(element).fontSize));
   expect(new Set(fontSizes)).toEqual(new Set([`${diagramMetrics.fontSize}px`]));

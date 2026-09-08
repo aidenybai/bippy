@@ -57,7 +57,7 @@ test("keeps inline data neutral, distinguishes flow kinds, and preserves arrow c
     expect(endpoint.gap).toBeCloseTo(diagramMetrics.detailPortGap);
     expect(endpoint.verticalOffset).toBeCloseTo(0);
     const positions = await parent
-      .locator('[data-edge-id="store-subscribe"] > text, [data-edge-id="snapshot-changed"] > text')
+      .locator('[data-edge-label-for="store-subscribe"], [data-edge-label-for="snapshot-changed"]')
       .evaluateAll((elements) => elements.map((element) => Number(element.getAttribute("y"))));
     expect(Math.abs(positions[0] - positions[1])).toBeGreaterThan(diagramMetrics.fontSize);
     await page

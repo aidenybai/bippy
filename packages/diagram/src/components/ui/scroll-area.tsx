@@ -24,7 +24,7 @@ const styles = stylex.create({
   viewport: {
     width: "100%",
     height: "100%",
-    outline: { default: "none", ":focus-visible": `2px solid ${colors.blue}` },
+    outline: { default: "none", ":focus-visible": `2px solid ${colors.text}` },
     outlineOffset: -2,
   },
   scrollbar: {
@@ -37,7 +37,7 @@ const styles = stylex.create({
   },
   vertical: { width: 14 },
   horizontal: { height: 14 },
-  thumb: { flex: 1, borderRadius: 3, backgroundColor: colors.line },
+  thumb: { flex: 1, borderRadius: 3, backgroundColor: colors.scrollThumb },
 });
 
 export const ScrollArea = ({

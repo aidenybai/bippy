@@ -73,7 +73,7 @@ const styles = stylex.create({
     color: { default: colors.muted, ":hover": colors.text },
     textDecoration: "none",
     textUnderlineOffset: 3,
-    outline: { default: "none", ":focus-visible": `2px solid ${colors.blue}` },
+    outline: { default: "none", ":focus-visible": `2px solid ${colors.text}` },
     outlineOffset: 2,
   },
   active: { color: colors.text, textDecoration: "underline" },

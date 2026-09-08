@@ -8,6 +8,8 @@ export default defineConfig(config, {
     "**/tree-controls.spec.ts",
     "**/function-symbol.spec.ts",
     "**/board-shell.spec.ts",
+    "**/theme-parity.spec.ts",
+    "**/tree-overlap.spec.ts",
   ],
   projects: [
     { name: "chromium", use: { browserName: "chromium" } },

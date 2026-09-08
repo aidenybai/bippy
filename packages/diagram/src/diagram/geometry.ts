@@ -85,6 +85,18 @@ export const getEdgePath = ({
   return `M ${from.x} ${from.y} A ${radius} ${radius} 0 0 ${sweep} ${to.x} ${to.y}`;
 };
 
+export const getCurvePoint = (
+  { from, to, bend = 40, side = "left" }: EdgeGeometry,
+  progress: number,
+): Point => {
+  const controlX = side === "left" ? Math.min(from.x, to.x) - bend : Math.max(from.x, to.x) + bend;
+  const remaining = 1 - progress;
+  return {
+    x: remaining ** 3 * from.x + 3 * remaining * progress * controlX + progress ** 3 * to.x,
+    y: from.y + (to.y - from.y) * progress ** 2 * (3 - 2 * progress),
+  };
+};
+
 export const getEdgeLabelPosition = ({
   from,
   to,
@@ -97,9 +109,8 @@ export const getEdgeLabelPosition = ({
 }: EdgeGeometry): Point => {
   if (labelPosition) return labelPosition;
   if (shape === "curve") {
-    const controlX =
-      side === "left" ? Math.min(from.x, to.x) - bend : Math.max(from.x, to.x) + bend;
-    return { x: (from.x + to.x) / 8 + controlX * 0.75, y: (from.y + to.y) / 2 - 6 };
+    const point = getCurvePoint({ from, to, bend, side }, 0.5);
+    return { x: point.x, y: point.y - 6 };
   }
   if (waypoints || kind === "data" || kind === "update" || kind === "subscription") {
     const middleX = (from.x + to.x) / 2;

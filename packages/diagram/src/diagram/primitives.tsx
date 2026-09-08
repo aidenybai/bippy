@@ -65,6 +65,18 @@ export interface DiagramEdgeProps
   toId?: string;
 }
 
+interface DiagramEdgeLabelProps extends Point {
+  label: string;
+  kind?: EdgeGeometry["kind"];
+  isActive?: boolean;
+  edgeId?: string;
+}
+
+const getIsContextEdge = (kind: EdgeGeometry["kind"]) =>
+  kind === "context" || kind === "subscription";
+const getIsUpdateEdge = (kind: EdgeGeometry["kind"]) =>
+  kind === "update" || kind === "owner" || kind === "reference" || kind === "portal";
+
 export interface DiagramScopeProps
   extends Point, Omit<ComponentPropsWithRef<"g">, "x" | "y" | "children"> {
   nodeId?: string;
@@ -391,6 +403,31 @@ export const DiagramNode = ({
   );
 };
 
+export const DiagramEdgeLabel = ({
+  label,
+  kind,
+  isActive,
+  edgeId,
+  x,
+  y,
+}: DiagramEdgeLabelProps) => (
+  <text
+    data-slot="diagram-edge-label"
+    data-edge-label-for={edgeId}
+    aria-hidden="true"
+    x={x}
+    y={y}
+    {...stylex.props(
+      drawing.annotation,
+      isActive && styles.activeLabel,
+      isActive && getIsContextEdge(kind) && styles.contextLabel,
+      isActive && getIsUpdateEdge(kind) && styles.updateLabel,
+    )}
+  >
+    {label}
+  </text>
+);
+
 export const DiagramEdge = (props: DiagramEdgeProps) => {
   const {
     kind = "parent",
@@ -430,9 +467,8 @@ export const DiagramEdge = (props: DiagramEdgeProps) => {
     interaction.mode !== "boundary" &&
     kind !== "parent" &&
     !isDimmed;
-  const isContext = kind === "context" || kind === "subscription";
-  const isUpdate =
-    kind === "update" || kind === "owner" || kind === "reference" || kind === "portal";
+  const isContext = getIsContextEdge(kind);
+  const isUpdate = getIsUpdateEdge(kind);
   return (
     <g
       data-slot="diagram-edge"
@@ -481,18 +517,13 @@ export const DiagramEdge = (props: DiagramEdgeProps) => {
         )}
       />
       {label && (
-        <text
-          x={labelPosition.x}
-          y={labelPosition.y}
-          {...stylex.props(
-            drawing.annotation,
-            isActive && styles.activeLabel,
-            isActive && isContext && styles.contextLabel,
-            isActive && isUpdate && styles.updateLabel,
-          )}
-        >
-          {label}
-        </text>
+        <DiagramEdgeLabel
+          {...labelPosition}
+          label={label}
+          kind={kind}
+          isActive={isActive}
+          edgeId={id}
+        />
       )}
     </g>
   );
