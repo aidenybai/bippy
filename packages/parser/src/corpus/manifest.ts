@@ -10,6 +10,8 @@ export interface CorpusStaticTarget {
   /** Directory holding the tsconfig used for path aliases; relative to the clone root. */
   rootDirectory: string;
   tsconfig?: string;
+  /** The bundler's `resolve.alias`, targets relative to `rootDirectory`. */
+  aliases?: Record<string, string>;
   /** SPA only: module containing the `createRoot().render()` call. */
   entry?: string;
   /** Export of `entry` mounted by the boot code when the root render call is not literal. */
@@ -227,6 +229,7 @@ const readFramework = (reader: ManifestReader): FrameworkKind => {
 const readStaticTarget = (reader: ManifestReader): CorpusStaticTarget => ({
   rootDirectory: reader.string("rootDirectory"),
   tsconfig: reader.optionalString("tsconfig"),
+  aliases: reader.optionalStringRecord("aliases"),
   entry: reader.optionalString("entry"),
   rootComponent: reader.optionalString("rootComponent"),
   route: reader.optionalString("route"),

@@ -12,7 +12,13 @@ import type {
 } from "../types.js";
 import { callUncertainCallback } from "./builtin-calls.js";
 import type { EvaluationContext } from "./context.js";
-import { invokeHookFactory, nextMemoCell, nextStateCell, queueStateUpdate } from "./hooks.js";
+import {
+  escapeStateCell,
+  invokeHookFactory,
+  nextMemoCell,
+  nextStateCell,
+  queueStateUpdate,
+} from "./hooks.js";
 import { awaitedValue } from "./promises.js";
 import type { Interpreter } from "./interpreter.js";
 import {
@@ -63,9 +69,7 @@ const stateHook = (
       queueStateUpdate(frame, cell, reduce(action, cell.next ?? cell.current, tools));
       return UNDEFINED_VALUE;
     },
-    onEscape: () => {
-      cell.isEscaped = true;
-    },
+    onEscape: () => escapeStateCell(frame, cell),
   };
   return listValue([cell.current, cell.setter]);
 };

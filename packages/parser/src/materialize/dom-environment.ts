@@ -21,6 +21,9 @@ export const observePreloadLinks = (): void => {
   }).observe(document, { childList: true, subtree: true });
 };
 
+let installedWindow: Window | null = null;
+const installedKeys = new Set<string>();
+
 /**
  * Installs a happy-dom window as the global DOM when none is present (scripts
  * and the corpus runner; vitest provides its own). React DOM reads `document`
@@ -28,6 +31,21 @@ export const observePreloadLinks = (): void => {
  */
 export const ensureDomGlobals = (): void => {
   if (typeof globalThis.document !== "undefined") return;
+  installWindow();
+};
+
+/**
+ * Replaces an installed window with a fresh one. Interpreted code mutates the
+ * real document (`document.body.classList`, expando properties, history), so
+ * each analyzed program must start from the DOM a browser would give it, not
+ * from what the previous program left behind.
+ */
+export const resetDomGlobals = (): void => {
+  if (installedWindow !== null || typeof globalThis.document === "undefined") installWindow();
+};
+
+const installWindow = (): void => {
+  void installedWindow?.happyDOM.abort();
   const window = new Window({
     url: "http://localhost:3000",
     width: DEFAULT_BROWSER_ENVIRONMENT.viewportWidth,
@@ -40,7 +58,7 @@ export const ensureDomGlobals = (): void => {
     },
   });
   for (const key of collectPropertyNames(window)) {
-    if (!WINDOW_GLOBALS.includes(key) && key in globalThis) continue;
+    if (!WINDOW_GLOBALS.includes(key) && !installedKeys.has(key) && key in globalThis) continue;
     const existing = Object.getOwnPropertyDescriptor(globalThis, key);
     if (existing && !existing.configurable) continue;
     const value: unknown = Reflect.get(window, key);
@@ -49,7 +67,9 @@ export const ensureDomGlobals = (): void => {
       configurable: true,
       writable: true,
     });
+    installedKeys.add(key);
   }
+  installedWindow = window;
   observePreloadLinks();
 };
 

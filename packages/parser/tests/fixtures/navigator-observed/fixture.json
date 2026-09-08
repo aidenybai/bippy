@@ -1,0 +1,17 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "navigator.userAgent and navigator.language are read from the captured page state, so platform and locale conditionals resolve to the branch the browser actually took.",
+  "observations": {
+    "globals": {},
+    "queries": [],
+    "page": {
+      "cookie": "",
+      "localStorage": {},
+      "sessionStorage": {},
+      "userAgent": "Mozilla/5.0 (X11; Linux x64) AppleWebKit/537.36 (KHTML, like Gecko) HappyDOM/20.11.6",
+      "language": "en-US"
+    }
+  }
+}

@@ -3,7 +3,7 @@ import {
   TRUE_VALUE,
   UNDEFINED_VALUE,
   compareIdentity,
-  getKnownObjectKeys,
+  compareShallowly,
   getObjectProperty,
   getTruthiness,
   isNullish,
@@ -237,31 +237,10 @@ const useStore = nativeFunction("useStore", ([store, selector], tools) => {
 const booleanValue = (value: boolean | null, reason: string): StaticValue =>
   value === null ? unknownPrimitiveValue("boolean", reason) : value ? TRUE_VALUE : FALSE_VALUE;
 
-const shallowEqual = (left: StaticValue, right: StaticValue): boolean | null => {
-  const identity = compareIdentity(left, right);
-  if (identity === true) return true;
-  if (left.kind !== "object" || right.kind !== "object") {
-    return left.kind === "primitive" || right.kind === "primitive" ? false : identity;
-  }
-  const leftKeys = getKnownObjectKeys(left);
-  const rightKeys = getKnownObjectKeys(right);
-  if (!leftKeys || !rightKeys) return null;
-  if (leftKeys.length !== rightKeys.length || !leftKeys.every((key) => rightKeys.includes(key))) {
-    return false;
-  }
-  let isEqual: boolean | null = true;
-  for (const key of leftKeys) {
-    const same = compareIdentity(getObjectProperty(left, key), getObjectProperty(right, key));
-    if (same === false) return false;
-    if (same === null) isEqual = null;
-  }
-  return isEqual;
-};
-
 const shallow = nativeFunction("shallow", ([left, right]) =>
   left === undefined || right === undefined
     ? FALSE_VALUE
-    : booleanValue(shallowEqual(left, right), "shallow comparison of two objects"),
+    : booleanValue(compareShallowly(left, right), "shallow comparison of two objects"),
 );
 
 export const tanstackStoreValue: ExternalValueProvider = (specifier, importedName) => {

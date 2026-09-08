@@ -6,7 +6,7 @@ import { objectValue, unknownValue } from "../evaluate/values.js";
 import { ModuleGraph } from "../graph/module-graph.js";
 import { ModuleResolver } from "../graph/module-resolver.js";
 import { createProjectContext } from "../graph/project-context.js";
-import { ensureDomGlobals } from "../materialize/dom-environment.js";
+import { ensureDomGlobals, resetDomGlobals } from "../materialize/dom-environment.js";
 import { Materializer } from "../materialize/materializer.js";
 import { mountNode } from "../materialize/mount.js";
 import { loadReactRuntime, type ReactRuntime } from "../materialize/react-runtime.js";
@@ -65,6 +65,12 @@ export class StaticRenderer {
     this.options = { ...options, rootDirectory: realpathSync(options.rootDirectory) };
     this.resolver = new ModuleResolver({
       tsconfigPath: options.tsconfigPath,
+      aliases: Object.fromEntries(
+        Object.entries(options.aliases ?? {}).map(([specifier, target]) => [
+          specifier,
+          path.resolve(this.options.rootDirectory, target),
+        ]),
+      ),
       conditionNames: options.conditionNames,
       rootDirectory: this.options.rootDirectory,
     });
@@ -92,7 +98,7 @@ export class StaticRenderer {
   }
 
   private createInterpreter(assumeOuterProviders = false): Interpreter {
-    ensureDomGlobals();
+    resetDomGlobals();
     const interpreter = new Interpreter(this.graph, {
       maxCallDepth: this.options.maxCallDepth,
       maxSteps: this.options.maxSteps,

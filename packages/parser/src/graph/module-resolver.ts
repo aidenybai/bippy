@@ -5,6 +5,8 @@ import type { ModuleResolution } from "../types.js";
 
 export interface ModuleResolverOptions {
   tsconfigPath?: string;
+  /** Bundler `resolve.alias`: a specifier (or its subpaths) resolved from another absolute path. */
+  aliases?: Record<string, string>;
   conditionNames?: string[];
   requireConditionNames?: string[];
   /**
@@ -69,6 +71,9 @@ export class ModuleResolver {
       const baseOptions = {
         extensions: SOURCE_EXTENSIONS,
         extensionAlias: EXTENSION_ALIAS,
+        alias: Object.fromEntries(
+          Object.entries(options.aliases ?? {}).map(([specifier, target]) => [specifier, [target]]),
+        ),
         conditionNames,
         mainFields: ["browser", "module", "main"],
         nodePath: false,

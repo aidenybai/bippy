@@ -276,6 +276,7 @@ export const STYLED_JSX_SPECIFIER = "styled-jsx/style";
 
 const MAX_INTERVAL_TICKS = 1_000;
 const WINDOW_NAME = /^(?:window|globalThis)\.name$/;
+const NAVIGATOR_MEMBER = /^(?:(?:window|globalThis)\.)?navigator\.(userAgent|language)$/;
 const FS_URL_PREFIX = "/@fs/";
 
 const PRIMITIVE_PROTOTYPES: Record<UnknownPrimitiveType, object | null> = {
@@ -816,7 +817,8 @@ export class Interpreter {
     }
   }
 
-  private assignProperty(
+  /** `target[propertyName] = value`; returns the value the binding should now hold (wrappers are re-created for `displayName`). */
+  assignProperty(
     target: StaticValue,
     propertyName: string,
     value: StaticValue,
@@ -1074,6 +1076,11 @@ export class Interpreter {
     if (name === "document.cookie" && this.pageState) return primitiveValue(this.pageState.cookie);
     if (WINDOW_NAME.test(name) && this.pageState?.name !== undefined) {
       return primitiveValue(this.pageState.name);
+    }
+    const navigatorMember = NAVIGATOR_MEMBER.exec(name)?.[1];
+    if (navigatorMember === "userAgent" || navigatorMember === "language") {
+      const captured = this.pageState?.[navigatorMember];
+      if (captured !== undefined) return primitiveValue(captured);
     }
     if (name === "process.cwd" && this.project.rootDirectory !== null) {
       const rootDirectory = this.project.rootDirectory;

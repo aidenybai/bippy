@@ -1,3 +1,10 @@
+import { Dashboard } from "@/components/dashboard";
+
 export default function AboutPage() {
-  return <h1>About</h1>;
+  return (
+    <main>
+      <h1>About</h1>
+      <Dashboard />
+    </main>
+  );
 }

@@ -97,6 +97,15 @@ describe("runtime observations", () => {
       globals: {},
       queries: [],
     });
+    const browser = { ...page, userAgent: "Mozilla/5.0 (Macintosh)", language: "en-US" };
+    expect(readObservationsJson({ globals: {}, queries: [], page: browser })).toEqual({
+      globals: {},
+      queries: [],
+      page: browser,
+    });
+    expect(
+      readObservationsJson({ globals: {}, queries: [], page: { ...page, userAgent: null } }),
+    ).toEqual({ globals: {}, queries: [] });
   });
 
   it("hashes query keys exactly like @tanstack/query-core", () => {

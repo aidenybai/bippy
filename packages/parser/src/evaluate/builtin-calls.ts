@@ -6,6 +6,7 @@ import type {
   StaticElementValue,
   StaticFunctionValue,
   StaticListValue,
+  StaticObjectEntry,
   StaticObjectValue,
   StaticPrimitive,
   StaticRegExpValue,
@@ -52,6 +53,12 @@ import {
 } from "./promises.js";
 import { callShapedPrimitiveMethod, rangedNumberValue } from "./primitive-shapes.js";
 import { createSearchParamsValue } from "./url-search-params.js";
+import {
+  callStringCodec,
+  createBufferValue,
+  getBufferByteLength,
+  isStringCodecName,
+} from "./text-encoding.js";
 import { createUrlValue } from "./url.js";
 import { getClassPrototypeObject, isBaseClassPrototype } from "./class-component.js";
 import type { Interpreter } from "./interpreter.js";
@@ -104,6 +111,43 @@ const NUMBER_PREDICATES: Record<string, (value: StaticPrimitive) => boolean> = {
 };
 
 export const isPromiseMethodName = (name: string): boolean => PROMISE_METHOD_NAMES.has(name);
+
+/**
+ * The object entry one `Object.fromEntries` pair contributes: a pair that may
+ * be absent or take several shapes becomes a spread over the objects it could
+ * produce (including `{}`), so later reads stay per-key branches.
+ */
+const getEntryFromPair = (pair: StaticValue): StaticObjectEntry | null => {
+  if (pair.kind === "optional") {
+    const present = getEntryFromPair(pair.value);
+    if (!present) return null;
+    return {
+      kind: "spread",
+      value: branchValue([objectValue([present]), objectValue([])], pair.reason, pair.location),
+    };
+  }
+  if (pair.kind === "branch") {
+    const alternatives: StaticObjectEntry[] = [];
+    for (const alternative of pair.alternatives) {
+      const entry = getEntryFromPair(alternative);
+      if (!entry) return null;
+      alternatives.push(entry);
+    }
+    return {
+      kind: "spread",
+      value: branchValue(
+        alternatives.map((entry) => objectValue([entry])),
+        pair.reason,
+        pair.location,
+        pair.preferredIndex,
+      ),
+    };
+  }
+  if (!hasDefiniteItems(pair)) return null;
+  const [key, value = UNDEFINED_VALUE] = pair.items;
+  if (key?.kind !== "primitive") return null;
+  return { kind: "property", key: String(key.value), value };
+};
 
 const ITERATION_METHOD_NAMES = new Set(["map", "forEach", "flatMap", "filter"]);
 
@@ -162,6 +206,9 @@ const GLOBAL_NAMES = new Set([
   "decodeURIComponent",
   "encodeURI",
   "decodeURI",
+  "btoa",
+  "atob",
+  "Buffer",
   "setTimeout",
   "clearTimeout",
   "setInterval",
@@ -291,6 +338,8 @@ const UNIVERSAL_FUNCTION_GLOBALS = new Set([
   "decodeURIComponent",
   "encodeURI",
   "decodeURI",
+  "btoa",
+  "atob",
   "setTimeout",
   "clearTimeout",
   "setInterval",
@@ -741,6 +790,9 @@ const callGlobal = (
     : callInvokedGlobal(interpreter, name, args, context, location);
   if (invoked) return invoked;
   if (isErrorConstructorName(name)) return createErrorValue(name, args, location);
+  if (isStringCodecName(name)) return callStringCodec(name, args, location);
+  if (name === "Buffer.from") return createBufferValue(args, location);
+  if (name === "Buffer.byteLength") return getBufferByteLength(args);
   const [first, second] = args;
   if (isConstructor && isTypedArrayName(name)) return constructTypedArray(name, first, location);
   if (isConstructor && isDomObserverName(name))
@@ -839,14 +891,24 @@ const callGlobal = (
       return listValue(ownEntries.map(([key, value]) => listValue([primitiveValue(key), value])));
     }
     case "Object.assign":
-      if (first?.kind === "function" || first?.kind === "class") {
+      if (
+        first?.kind === "function" ||
+        first?.kind === "class" ||
+        first?.kind === "component-reference"
+      ) {
+        let target: StaticValue = first;
         for (const source of args.slice(1)) {
           if (source.kind !== "object") continue;
           for (const key of getKnownObjectKeys(source) ?? []) {
-            first.properties.set(key, getObjectProperty(source, key));
+            target = interpreter.assignProperty(
+              target,
+              key,
+              getObjectProperty(source, key),
+              context,
+            );
           }
         }
-        return first;
+        return target;
       }
       if (first?.kind === "object") {
         interpreter.recordHeapMutation(first);
@@ -858,6 +920,16 @@ const callGlobal = (
     case "Object.freeze":
       if (first?.kind === "object" || first?.kind === "list") first.isFrozen = true;
       return first ?? UNDEFINED_VALUE;
+    case "Object.is": {
+      const left = first ?? UNDEFINED_VALUE;
+      const right = second ?? UNDEFINED_VALUE;
+      if (left.kind === "primitive" && right.kind === "primitive")
+        return primitiveValue(Object.is(left.value, right.value));
+      const isSame = compareIdentity(left, right);
+      return isSame === null
+        ? unknownPrimitiveValue("boolean", "Object.is on dynamic values")
+        : primitiveValue(isSame);
+    }
     case "Object.isFrozen":
       if (first?.kind === "object" || first?.kind === "list")
         return primitiveValue(first.isFrozen === true);
@@ -960,19 +1032,18 @@ const callGlobal = (
       defineOwnProperties(interpreter, first, second, context, location);
       return first;
     }
-    case "Object.fromEntries":
-      if (first && isKnownList(first)) {
-        const entries = first.items.map((entry) => {
-          const key = entry.kind === "list" ? entry.items[0] : null;
-          const value = entry.kind === "list" ? entry.items[1] : null;
-          if (key?.kind === "primitive" && value) {
-            return { kind: "property" as const, key: String(key.value), value };
-          }
-          return { kind: "spread" as const, value: unknownValue("dynamic entry") };
-        });
-        return objectValue(entries);
+    case "Object.fromEntries": {
+      const entries = first?.kind === "object" ? (getCollectionItems(first) ?? first) : first;
+      if (entries?.kind === "list" && !entries.items.some((item) => item.kind === "repeat")) {
+        return objectValue(
+          entries.items.map(
+            (pair) =>
+              getEntryFromPair(pair) ?? { kind: "spread", value: unknownValue("dynamic entry") },
+          ),
+        );
       }
       return unknownValue("Object.fromEntries of dynamic entries", location);
+    }
     case "parseInt":
     case "Number.parseInt":
       if (
@@ -1460,6 +1531,11 @@ const callRegExpMethod = (
   const regExp = toRegExp(receiver);
   if (!regExp) return unknownValue(`invalid RegExp /${receiver.pattern}/`, location);
   if (name !== "test" && name !== "exec") return unknownValue(`RegExp.${name}()`, location);
+  if (first?.kind === "branch" && !regExp.global && !regExp.sticky) {
+    return mapValue(first, (alternative) =>
+      callRegExpMethod(receiver, name, [alternative], location),
+    );
+  }
   if (first?.kind !== "primitive") {
     return name === "test"
       ? unknownPrimitiveValue("boolean", "RegExp.test() on a dynamic string")

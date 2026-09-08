@@ -122,6 +122,8 @@ const isCapturedPageState = (value: unknown): value is CapturedPageState =>
   (value.windowKeys === undefined ||
     (Array.isArray(value.windowKeys) &&
       value.windowKeys.every((key) => typeof key === "string"))) &&
+  (value.userAgent === undefined || typeof value.userAgent === "string") &&
+  (value.language === undefined || typeof value.language === "string") &&
   isStringRecord(value.localStorage) &&
   isStringRecord(value.sessionStorage);
 

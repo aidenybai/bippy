@@ -252,7 +252,44 @@ export const accessorEntry = (
   accessor,
 });
 
+/**
+ * Results of the lookup in progress. Objects spread through many branches
+ * (`state = cond ? {...state, ...next} : state` repeated) are reached once per
+ * path otherwise, and nothing mutates while a lookup runs.
+ */
+let lookupMemo: Map<StaticObjectValue, Map<string, StaticValue>> | null = null;
+
 export const getObjectProperty = (object: StaticObjectValue, key: string): StaticValue => {
+  if (lookupMemo) return getMemoizedObjectProperty(lookupMemo, object, key);
+  lookupMemo = new Map();
+  try {
+    return getMemoizedObjectProperty(lookupMemo, object, key);
+  } finally {
+    lookupMemo = null;
+  }
+};
+
+const getMemoizedObjectProperty = (
+  memo: Map<StaticObjectValue, Map<string, StaticValue>>,
+  object: StaticObjectValue,
+  key: string,
+): StaticValue => {
+  let properties = memo.get(object);
+  const memoized = properties?.get(key);
+  if (memoized) return memoized;
+  const value = lookupObjectProperty(object, key);
+  if (!properties) {
+    properties = new Map();
+    memo.set(object, properties);
+  }
+  properties.set(key, value);
+  return value;
+};
+
+const isPresent = (value: StaticValue): boolean =>
+  value.kind !== "primitive" || value.value !== undefined;
+
+const lookupObjectProperty = (object: StaticObjectValue, key: string): StaticValue => {
   for (let index = object.entries.length - 1; index >= 0; index--) {
     const entry = object.entries[index];
     if (entry.kind === "property") {
@@ -262,7 +299,7 @@ export const getObjectProperty = (object: StaticObjectValue, key: string): Stati
     const spread = entry.value;
     if (spread.kind === "object") {
       const nested = getObjectProperty(spread, key);
-      if (nested.kind !== "primitive" || nested.value !== undefined) return nested;
+      if (isPresent(nested)) return nested;
       continue;
     }
     if (spread.kind === "primitive" || spread.kind === "function" || spread.kind === "class")
@@ -273,8 +310,8 @@ export const getObjectProperty = (object: StaticObjectValue, key: string): Stati
       let fromEarlier: StaticValue | null = null;
       return branchValue(
         spread.alternatives.map((alternative) => {
-          const own = getObjectProperty(objectValue([{ kind: "spread", value: alternative }]), key);
-          if (own.kind !== "primitive" || own.value !== undefined) return own;
+          const own = getSpreadProperty(alternative, key);
+          if (isPresent(own)) return own;
           fromEarlier ??= getObjectProperty(objectValue(object.entries.slice(0, index)), key);
           return fromEarlier;
         }),
@@ -288,6 +325,11 @@ export const getObjectProperty = (object: StaticObjectValue, key: string): Stati
   if (key === "constructor" && object.constructedBy) return object.constructedBy;
   return object.prototype ? getObjectProperty(object.prototype, key) : UNDEFINED_VALUE;
 };
+
+const getSpreadProperty = (spread: StaticValue, key: string): StaticValue =>
+  spread.kind === "object"
+    ? getObjectProperty(spread, key)
+    : getObjectProperty(objectValue([{ kind: "spread", value: spread }]), key);
 
 /** `fn.prototype` of a constructor function, created on first access like engines do. */
 export const getFunctionPrototype = (fn: StaticFunctionValue): StaticValue => {
@@ -580,6 +622,15 @@ const compareGlobalToPrimitive = (global: StaticValue, other: StaticValue): bool
   return other.value === undefined ? null : false;
 };
 
+/** `===` decided the same way against every alternative, else undecided. */
+const compareIdentityAcross = (alternatives: StaticValue[], other: StaticValue): boolean | null => {
+  const first = compareIdentity(alternatives[0], other);
+  if (first === null) return null;
+  return alternatives.every((alternative) => compareIdentity(alternative, other) === first)
+    ? first
+    : null;
+};
+
 /**
  * `===` between two values, or null when analysis cannot decide. Import
  * bindings of the same external export are the same object; a primitive can
@@ -588,6 +639,8 @@ const compareGlobalToPrimitive = (global: StaticValue, other: StaticValue): bool
 export const compareIdentity = (left: StaticValue, right: StaticValue): boolean | null => {
   if (left.kind === "primitive" && right.kind === "primitive") return left.value === right.value;
   if (left === right) return true;
+  if (left.kind === "branch") return compareIdentityAcross(left.alternatives, right);
+  if (right.kind === "branch") return compareIdentityAcross(right.alternatives, left);
   if (isHeapValue(left) && isHeapValue(right) && left.allocation && right.allocation) {
     return left.allocation === right.allocation;
   }
@@ -625,6 +678,25 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
   const rightClass = getIdentityClass(right);
   if (leftClass && rightClass && leftClass !== rightClass) return false;
   return null;
+};
+
+/** `shallowEqual` as React and TanStack Store define it: same known keys, each identical (`Object.is`). */
+export const compareShallowly = (left: StaticValue, right: StaticValue): boolean | null => {
+  const identity = compareIdentity(left, right);
+  if (identity === true || left.kind !== "object" || right.kind !== "object") return identity;
+  const leftKeys = getKnownObjectKeys(left);
+  const rightKeys = getKnownObjectKeys(right);
+  if (!leftKeys || !rightKeys) return null;
+  if (leftKeys.length !== rightKeys.length || !leftKeys.every((key) => rightKeys.includes(key))) {
+    return false;
+  }
+  let isEqual: boolean | null = true;
+  for (const key of leftKeys) {
+    const same = compareIdentity(getObjectProperty(left, key), getObjectProperty(right, key));
+    if (same === false) return false;
+    if (same === null) isEqual = null;
+  }
+  return isEqual;
 };
 
 const MAX_EQUIVALENCE_DEPTH = 6;

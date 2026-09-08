@@ -66,6 +66,14 @@ describe("next app router", () => {
     expect(tree).toMatch(/<main>\n\s+<h1>/);
   });
 
+  it("models next/dynamic as the loaded LoadableComponent tree", async () => {
+    const { tree } = await render("next-app", { framework: "next-app", route: "/about" });
+    expect(tree).toMatch(
+      /<LoadableComponent>\n\s+<Fragment>\n\s+<Chart>\n\s+<figure>\n\s+<LoadableComponent>\n\s+<Suspense>\n\s+<Offscreen>\n\s+<BailoutToCSR>\n\s+<Chart>\n\s+<figure>/,
+    );
+    expect(tree).not.toContain("next/dynamic");
+  });
+
   it("reports a missing page instead of guessing", async () => {
     const { result, errors } = await render("next-app", {
       framework: "next-app",
@@ -81,6 +89,11 @@ describe("next pages router", () => {
     const { tree, errors } = await render("next-pages", { framework: "next-pages", route: "/" });
     expect(errors).toEqual([]);
     expect(tree).toMatch(/<App>\n\s+<div>\n\s+<Home>\n\s+<h1>/);
+  });
+
+  it("models next/dynamic as a forwardRef LoadableComponent rendering the loaded module", async () => {
+    const { tree } = await render("next-pages", { framework: "next-pages", route: "/" });
+    expect(tree).toMatch(/<h1>\n\s+<LoadableComponent>\n\s+<Widget>\n\s+<aside>/);
   });
 
   it("feeds dynamic segments into useRouter().query", async () => {
@@ -111,7 +124,7 @@ describe("react router framework mode with react-router-auto-routes", () => {
     const { tree, errors } = await target("/");
     expect(errors).toEqual([]);
     expect(tree).toMatch(
-      /<HostRoot>\n\s+<HydratedRouter>\n\s+<RouterProvider>\n\s+<RenderedRoute>\n\s+<Route>\n\s+<Layout>\n\s+<html>/,
+      /<HostRoot>\n\s+<HydratedRouter>\n\s+<RouterProvider>\n\s+<Location>\n\s+<RenderedRoute>\n\s+<Route>\n\s+<Layout>\n\s+<html>/,
     );
     expect(tree).toMatch(/<ScrollRestoration>\n\s+<script>\n\s+<Scripts>/);
     expect(tree).toMatch(

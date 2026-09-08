@@ -23,6 +23,8 @@ import type { Interpreter } from "../evaluate/interpreter.js";
 import { describeThrow, getThrowCertainty, withoutThrows } from "../evaluate/thrown.js";
 import {
   areValuesEquivalent,
+  compareIdentity,
+  compareShallowly,
   describeValue,
   getObjectProperty,
   mapValue,
@@ -61,6 +63,20 @@ import {
   UnknownMarker,
 } from "./markers.js";
 import type { ReactRuntime } from "./react-runtime.js";
+
+/**
+ * Whether React would take the input for the proxy's `current` props: the same
+ * element, or for `React.memo` (`updateSimpleMemoComponent`) shallow-equal props
+ * and the same ref. The proxy receives a fresh `input` object each render, so
+ * React's own `shallowEqual` on the proxy props never bails out by itself.
+ */
+const isRetainedInput = (committed: ProxyInput, next: ProxyInput): boolean =>
+  committed === next ||
+  (next.isMemoized &&
+    compareShallowly(committed.props, next.props) === true &&
+    (committed.ref === null || next.ref === null
+      ? committed.ref === next.ref
+      : compareIdentity(committed.ref, next.ref) === true));
 
 const DEFAULT_MAX_COMPONENT_DEPTH = 512;
 const DEFAULT_MAX_ELEMENT_COUNT = 50_000;
@@ -145,6 +161,8 @@ export interface ProxyInput {
   ref: StaticValue | null;
   location: SourceLocation | null;
   context: MaterializeContext;
+  /** Wrapped in `React.memo` without a custom compare, so shallow-equal props bail out. */
+  isMemoized: boolean;
 }
 
 export interface ProxyProps {
@@ -155,16 +173,36 @@ interface ErrorBoundaryState {
   caught: StaticThrowError | null;
 }
 
-/** Per-instance bookkeeping a proxy keeps across React renders. */
 /**
+ * Per-instance bookkeeping a proxy keeps across React renders.
+ *
  * `isRenderedSinceCommit` tells the proxy's own effects apart: after a render
  * they commit the changed static effects; without one they are Strict Mode's
  * `doubleInvokeEffectsOnFiber` or a deletion, which unmount and remount them all.
+ * `rendered` is the latest render, committed or not: Strict Mode invokes the
+ * component again before React decides on `bailoutOnAlreadyFinishedWork`, and
+ * that invocation must reproduce the first one's output rather than re-evaluate.
  */
 interface ProxyInstance {
   frame: HookFrame;
   passCount: number;
   isRenderedSinceCommit: boolean;
+  committed: CommittedRender | null;
+  rendered: CommittedRender | null;
+}
+
+/** One context value a render read, so the next render can tell whether it changed. */
+interface ContextRead {
+  definition: ContextDefinition;
+  value: StaticValue | null;
+}
+
+/** What a proxy last committed (its `current`), so an update that changes nothing bails out as React's would. */
+interface CommittedRender {
+  input: ProxyInput;
+  node: ReactNode;
+  contextReads: ContextRead[];
+  componentContext: EvaluationContext | null;
 }
 
 interface EffectPhaseWork {
@@ -187,6 +225,8 @@ const createProxyInstance = (context: MaterializeContext): ProxyInstance => ({
   frame: createHookFrame(context.isStrictMode),
   passCount: 0,
   isRenderedSinceCommit: false,
+  committed: null,
+  rendered: null,
 });
 
 interface CompositeEvaluation {
@@ -386,8 +426,13 @@ export class Materializer {
   /** `use` reads a context from any render (class bodies, Consumer render props included); older Reacts only have `useContext`. */
   private readonly useStaticContext: (context: Context<StaticValue | null>) => StaticValue | null;
   /** Context values flow through React itself, so a proxy reads them at its own fiber, as the real hook would. */
-  private readonly readContext: ContextReader = (definition) =>
-    this.isInsideComponentRender ? this.useStaticContext(this.getContext(definition)) : null;
+  private readonly readContext: ContextReader = (definition) => {
+    if (!this.isInsideComponentRender) return null;
+    const value = this.useStaticContext(this.getContext(definition));
+    this.contextReads?.push({ definition, value });
+    return value;
+  };
+  private contextReads: ContextRead[] | null = null;
   private readonly stubProxies = new WeakMap<StubComponent, ComponentType<ProxyProps>>();
   private readonly suspenseBoundaryProxy: ComponentType<ProxyProps>;
   private portalContainer: Element | null = null;
@@ -614,7 +659,7 @@ export class Materializer {
     }
     const reactKey = this.keyToString(key, location);
     const children = getObjectProperty(props, "children");
-    const input: ProxyInput = { props, ref: null, location, context };
+    const input: ProxyInput = { props, ref: null, location, context, isMemoized: false };
     switch (type.kind) {
       case "host":
         return createElement(
@@ -629,7 +674,10 @@ export class Materializer {
         const memoType = this.getMemoType(type);
         if (!memoType)
           return this.unknownElementNode(`memo of ${type.inner.kind} element type`, context);
-        return createElement(memoType, { key: reactKey, input });
+        return createElement(memoType, {
+          key: reactKey,
+          input: { ...input, isMemoized: !type.hasCompare },
+        });
       }
       case "forward-ref": {
         const ref = getObjectProperty(props, "ref");
@@ -1257,6 +1305,15 @@ export class Materializer {
   ): StatefulRender {
     const { frame } = instance;
     const changedCells = commitHookPass(frame);
+    const previous = instance.rendered;
+    if (
+      changedCells.length === 0 &&
+      previous &&
+      isRetainedInput(previous.input, input) &&
+      previous.contextReads.every((read) => this.readContext(read.definition) === read.value)
+    ) {
+      return this.commitRender(instance, previous, input.location);
+    }
     if (changedCells.length > 0) {
       instance.passCount++;
       if (instance.passCount >= MAX_RENDER_PASSES) {
@@ -1271,37 +1328,26 @@ export class Materializer {
         giveUpOnHookPass(frame, changedCells);
       }
     }
-    beginHookPass(frame);
-    let evaluation = evaluate(frame);
+    const contextReads: ContextRead[] = [];
+    const evaluatePass = (): CompositeEvaluation => {
+      beginHookPass(frame);
+      contextReads.length = 0;
+      this.contextReads = contextReads;
+      try {
+        return evaluate(frame);
+      } finally {
+        this.contextReads = null;
+      }
+    };
+    let evaluation = evaluatePass();
     for (
       let renderPhaseUpdates = 0;
       renderPhaseUpdates < MAX_RENDER_PHASE_UPDATES && commitHookPass(frame).length > 0;
       renderPhaseUpdates++
     ) {
-      beginHookPass(frame);
-      evaluation = evaluate(frame);
+      evaluation = evaluatePass();
     }
     frame.isRendering = false;
-    instance.isRenderedSinceCommit = true;
-    const withEffectCall = (run: (call: EffectCall) => void): void => {
-      const { componentContext } = evaluation;
-      if (!componentContext) return;
-      run((callback) => this.interpreter.callValue(callback, [], componentContext, input.location));
-    };
-    const mount = (isLayout: boolean): void =>
-      withEffectCall((call) => {
-        if (instance.isRenderedSinceCommit) runChangedEffects(frame, isLayout, call);
-        else mountAllEffects(frame, isLayout, call);
-        if (isLayout) return;
-        commitEffects(frame);
-        instance.isRenderedSinceCommit = false;
-      });
-    const unmount = (isLayout: boolean): void =>
-      withEffectCall((call) => {
-        if (instance.isRenderedSinceCommit) return;
-        if (isLayout) unmountClassInstance(frame, call);
-        unmountAllEffects(frame, isLayout, call);
-      });
     // The update reaches React at once, which picks its lane from the phase that
     // raised it: synchronous from the layout phase, default otherwise. Like
     // `nestedUpdateCount`, only chains of such updates count toward the limit,
@@ -1313,11 +1359,51 @@ export class Materializer {
       if (this.isPassivePhasePending) this.isSyncRenderScheduled = true;
       rerender();
     };
-    return {
-      node: this.finishRender(evaluation.rendered, evaluation.childContext, input),
-      mount,
-      unmount,
+    const node = this.finishRender(evaluation.rendered, evaluation.childContext, input);
+    instance.rendered = {
+      input,
+      node,
+      contextReads,
+      componentContext: evaluation.componentContext,
     };
+    return this.commitRender(instance, instance.rendered, input.location);
+  }
+
+  /**
+   * The proxy's own effects drive the static ones: after a render they commit
+   * the changed static effects; a bailout (`bailoutHooks`) keeps the previous
+   * ones untouched.
+   */
+  private commitRender(
+    instance: ProxyInstance,
+    rendered: CommittedRender,
+    location: SourceLocation | null,
+  ): StatefulRender {
+    const { frame } = instance;
+    const isBailout = rendered === instance.committed;
+    instance.isRenderedSinceCommit = true;
+    const withEffectCall = (run: (call: EffectCall) => void): void => {
+      const { componentContext } = rendered;
+      if (!componentContext) return;
+      run((callback) => this.interpreter.callValue(callback, [], componentContext, location));
+    };
+    const mount = (isLayout: boolean): void => {
+      instance.committed = rendered;
+      withEffectCall((call) => {
+        if (!instance.isRenderedSinceCommit) mountAllEffects(frame, isLayout, call);
+        else if (!isBailout) runChangedEffects(frame, isLayout, call);
+        if (isLayout) return;
+        commitEffects(frame);
+        instance.isRenderedSinceCommit = false;
+      });
+    };
+    const unmount = (isLayout: boolean): void =>
+      withEffectCall((call) => {
+        if (instance.isRenderedSinceCommit) return;
+        if (isLayout) unmountClassInstance(frame, call);
+        unmountAllEffects(frame, isLayout, call);
+      });
+    return { node: rendered.node, mount, unmount };
   }
 
   renderClassProxy(

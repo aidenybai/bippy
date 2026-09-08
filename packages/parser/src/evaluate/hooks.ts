@@ -146,13 +146,21 @@ export const escapedStateValue = (cell: StateCell): StaticValue =>
  * value it may take, so further updates cannot change it either.
  */
 export const queueStateUpdate = (frame: HookFrame, cell: StateCell, value: StaticValue): void => {
-  if (frame.isDeferred) {
-    cell.isEscaped = true;
-  } else {
-    if (cell.next === null && isSameHookValue(value, cell.current)) return;
-    if (!cell.isEscaped) cell.next = value;
-  }
-  if (cell.isEscaped && isSameHookValue(escapedStateValue(cell), cell.current)) return;
+  if (frame.isDeferred) return escapeStateCell(frame, cell);
+  if (cell.isEscaped) return;
+  if (cell.next === null && isSameHookValue(value, cell.current)) return;
+  cell.next = value;
+  if (!frame.isRendering) frame.requestRender?.();
+};
+
+/**
+ * A setter handed to code the analysis does not follow may fire at any time, so
+ * the cell commits to every value it may take and re-renders once to show them.
+ */
+export const escapeStateCell = (frame: HookFrame, cell: StateCell): void => {
+  if (cell.isEscaped) return;
+  cell.isEscaped = true;
+  if (isSameHookValue(escapedStateValue(cell), cell.current)) return;
   if (!frame.isRendering) frame.requestRender?.();
 };
 

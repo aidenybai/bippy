@@ -4,7 +4,9 @@ import {
   NULL_VALUE,
   UNDEFINED_VALUE,
   getObjectProperty,
+  getTruthiness,
   isKnownString,
+  listValue,
   objectFromRecord,
   primitiveValue,
   thrownValue,
@@ -14,12 +16,15 @@ import type {
   CapturedRequest,
   ContextDefinition,
   ExternalValueProvider,
+  StaticElementType,
   StaticObjectValue,
   StaticValue,
   StubComponent,
+  StubRenderTools,
 } from "../types.js";
 import { ForwardRefTag } from "../work-tags.js";
 import type { FrameworkKind } from "./framework-profile.js";
+import { toElementType } from "../react/element-type.js";
 import { nextRequestValue } from "./next-request.js";
 import {
   element,
@@ -27,6 +32,7 @@ import {
   hostElement,
   nativeFunction,
   omitProps,
+  passthroughStub,
   stubElement,
   stubValue,
 } from "./stubs.js";
@@ -199,6 +205,82 @@ const SCRIPT_STUB: StubComponent = {
   },
 };
 
+const BAILOUT_TO_CSR_STUB = passthroughStub("BailoutToCSR");
+
+/**
+ * `next/dynamic` at the time the page is captured: the chunk has loaded, so the
+ * App Router's `LoadableComponent` commits Fragment/Suspense -> `<Lazy>` (the
+ * `PreloadChunks` slot is null on the client) and the Pages Router's forwardRef
+ * `LoadableComponent` renders the loaded module's default export directly.
+ */
+const dynamicComponent = (
+  kind: NextRouterKind,
+  [first, second]: StaticValue[],
+  tools: StubRenderTools,
+): StaticValue => {
+  const options = [first, second].filter((option) => option?.kind === "object");
+  const readOption = (name: string): StaticValue =>
+    options.reduce<StaticValue>((current, option) => {
+      const value = getObjectProperty(option, name);
+      return value.kind === "primitive" && value.value === undefined ? current : value;
+    }, UNDEFINED_VALUE);
+  const loader = first?.kind === "function" ? first : readOption("loader");
+  const lazy = tools.call({ kind: "react-api", api: "lazy" }, [loader]);
+  if (lazy.kind !== "component-reference" || lazy.type.kind !== "lazy") {
+    return unknownValue("next/dynamic loader is not a statically known module");
+  }
+  const lazyType: StaticElementType = lazy.type;
+  if (kind === "next-pages") {
+    return stubValue({
+      displayName: "LoadableComponent",
+      tag: ForwardRefTag,
+      render: (props) =>
+        lazyType.inner
+          ? element(lazyType.inner, props)
+          : unknownValue("next/dynamic loader did not resolve to a component"),
+    });
+  }
+  const ssrOption = readOption("ssr");
+  const isSsr =
+    ssrOption.kind === "primitive" && ssrOption.value === undefined
+      ? true
+      : getTruthiness(ssrOption);
+  const loading = readOption("loading");
+  const hasLoading = getTruthiness(loading);
+  if (isSsr === null || hasLoading === null) {
+    return unknownValue("next/dynamic options decide its suspense boundary");
+  }
+  return stubValue({
+    displayName: "LoadableComponent",
+    render: (props) => {
+      const lazyElement = element(lazyType, props);
+      const children = isSsr
+        ? element(
+            { kind: "fragment" },
+            objectFromRecord({ children: listValue([NULL_VALUE, lazyElement]) }),
+          )
+        : stubElement(BAILOUT_TO_CSR_STUB, {
+            reason: primitiveValue("next/dynamic"),
+            children: lazyElement,
+          });
+      if (!isSsr || hasLoading) {
+        const fallback = hasLoading
+          ? element(
+              toElementType(loading, null),
+              objectFromRecord({
+                isLoading: primitiveValue(true),
+                pastDelay: primitiveValue(true),
+                error: NULL_VALUE,
+              }),
+            )
+          : NULL_VALUE;
+        return element({ kind: "suspense" }, objectFromRecord({ fallback, children }));
+      }
+      return element({ kind: "fragment" }, objectFromRecord({ children }));
+    },
+  });
+};
+
 const routerMethods = (names: string[]): [string, StaticValue][] =>
   names.map((name) => [name, nativeFunction(name, () => UNDEFINED_VALUE)]);
 
@@ -323,9 +405,7 @@ export const createNextModel = (options: NextModelOptions): NextModel => {
         return importedName === "default" ? stubValue(SCRIPT_STUB) : null;
       case "next/dynamic":
         return importedName === "default"
-          ? nativeFunction("dynamic", () =>
-              unknownValue("next/dynamic loads its component asynchronously"),
-            )
+          ? nativeFunction("dynamic", (args, tools) => dynamicComponent(options.kind, args, tools))
           : null;
       case "next/font/google":
       case "next/font/local":

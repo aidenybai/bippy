@@ -421,6 +421,9 @@ export interface CapturedPageState {
   historyState?: CapturedValue;
   /** Every name `in window` before the page's first script ran (feature detection); absent in older captures. */
   windowKeys?: string[];
+  /** `navigator.userAgent` and `navigator.language`; absent in older captures. */
+  userAgent?: string;
+  language?: string;
   localStorage: Record<string, string>;
   sessionStorage: Record<string, string>;
 }
@@ -795,6 +798,8 @@ export interface StaticRenderResult {
 export interface StaticRendererOptions {
   rootDirectory: string;
   tsconfigPath?: string;
+  /** Bundler `resolve.alias` entries, targets relative to `rootDirectory`. */
+  aliases?: Record<string, string>;
   conditionNames?: string[];
   maxComponentDepth?: number;
   maxFiberCount?: number;

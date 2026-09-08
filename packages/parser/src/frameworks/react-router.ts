@@ -48,7 +48,6 @@ import {
   emptyStub,
   nativeFunction,
   omitProps,
-  passthroughStub,
   stubValue,
 } from "./stubs.js";
 
@@ -121,6 +120,17 @@ const ROUTE_CONFIG_PACKAGE = "@react-router/dev/routes";
 export const ROUTE_CONTEXT: ContextDefinition = {
   name: "RouteContext",
   displayName: "Route",
+  defaultValue: NULL_VALUE,
+  location: null,
+};
+
+/**
+ * Mirrors `LocationContext` (displayName `Location`): every router component
+ * provides it, and `useInRouterContext` is whether it is provided.
+ */
+const LOCATION_CONTEXT: ContextDefinition = {
+  name: "LocationContext",
+  displayName: "Location",
   defaultValue: NULL_VALUE,
   location: null,
 };
@@ -621,6 +631,32 @@ const observedHookValue = (
   }
 };
 
+const locationValue = (pathname: string, observed: ObservedRouterState | null): StaticValue =>
+  observed?.location ??
+  objectFromRecord({
+    pathname: primitiveValue(pathname),
+    search: primitiveValue(""),
+    hash: primitiveValue(""),
+    state: NULL_VALUE,
+    key: unknownValue("location key is assigned at runtime"),
+  });
+
+const withinRouter = (
+  children: StaticValue,
+  pathname: string,
+  observed: ObservedRouterState | null,
+): StaticElementValue =>
+  element(
+    { kind: "context-provider", context: LOCATION_CONTEXT, displayName: "Location" },
+    objectFromRecord({
+      value: objectFromRecord({
+        location: locationValue(pathname, observed),
+        navigationType: primitiveValue("POP"),
+      }),
+      children,
+    }),
+  );
+
 const routerHookValue = (
   importedName: string,
   pathname: string,
@@ -634,24 +670,15 @@ const routerHookValue = (
     case "useOutletContext":
       return nativeFunction(importedName, (_args, tools) => tools.readContext(OUTLET_CONTEXT));
     case "useLocation":
-      return nativeFunction(
-        importedName,
-        () =>
-          observed?.location ??
-          objectFromRecord({
-            pathname: primitiveValue(pathname),
-            search: primitiveValue(""),
-            hash: primitiveValue(""),
-            state: NULL_VALUE,
-            key: unknownValue("location key is assigned at runtime"),
-          }),
-      );
+      return nativeFunction(importedName, () => locationValue(pathname, observed));
     case "useNavigate":
       return nativeFunction(importedName, () => nativeFunction("navigate", () => UNDEFINED_VALUE));
     case "useNavigationType":
       return nativeFunction(importedName, () => primitiveValue("POP"));
     case "useInRouterContext":
-      return nativeFunction(importedName, () => primitiveValue(true));
+      return nativeFunction(importedName, (_args, tools) =>
+        primitiveValue(tools.readContext(LOCATION_CONTEXT).kind !== "primitive"),
+      );
     default:
       if (!RUNTIME_ONLY_HOOKS.has(importedName)) return null;
       return (
@@ -716,7 +743,7 @@ export const createReactRouterModel = (
   // only the latter is kept as a fiber so SPA and framework trees line up.
   const routerProviderShell: StubComponent = {
     displayName: "RouterProvider",
-    render: (props) => getObjectProperty(props, "children"),
+    render: (props) => withinRouter(getObjectProperty(props, "children"), pathname, observed),
   };
   const hydratedRouterStub: StubComponent = {
     displayName: "HydratedRouter",
@@ -782,12 +809,17 @@ export const createReactRouterModel = (
         return unknownValue("react-router: router object was not created statically");
       }
       const resolveLazy: LazyResolver = (lazy) => tools.callAwaited(lazy, []);
-      return renderMatchedRoutes(
-        readRouteList(getObjectProperty(router, "routes"), resolveLazy),
+      return withinRouter(
+        renderMatchedRoutes(readRouteList(getObjectProperty(router, "routes"), resolveLazy), pathname),
         pathname,
+        observed,
       );
     },
   };
+  const routerStub = (displayName: string): StubComponent => ({
+    displayName,
+    render: (props) => withinRouter(getObjectProperty(props, "children"), pathname, observed),
+  });
   const routesStub: StubComponent = {
     displayName: "Routes",
     render: (props, tools) =>
@@ -825,7 +857,7 @@ export const createReactRouterModel = (
       case "MemoryRouter":
       case "Router":
       case "unstable_HistoryRouter":
-        return stubValue(passthroughStub(importedName));
+        return stubValue(routerStub(importedName));
       case "HydratedRouter":
         return stubValue(hydratedRouterStub);
       case "Meta":

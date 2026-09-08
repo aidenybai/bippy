@@ -54,8 +54,12 @@
       "framework": "next-app",
       "workingDirectory": "apps/web",
       "install": "yarn install",
-      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/cal-diy-setup.sh\""],
-      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-cal-pg 5450 calendso"],
+      "setup": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/cal-diy-setup.sh\""
+      ],
+      "services": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-cal-pg 5450 calendso"
+      ],
       "dev": "yarn dev",
       "url": "http://localhost:3000/auth/login",
       "readyTimeoutMs": 900000,
@@ -67,6 +71,7 @@
           "@calcom/*",
           "@coss/*",
           "@base-ui/*",
+          "@floating-ui/*",
           "@radix-ui/*",
           "next-auth",
           "@tanstack/react-query",
@@ -84,7 +89,9 @@
         "defines": {
           "process.env.NEXT_PUBLIC_CALCOM_VERSION": "6.2.0"
         },
-        "envFiles": ["../../.env"],
+        "envFiles": [
+          "../../.env"
+        ],
         "maxFiberCount": 20000
       },
       "notes": "`next.config.ts` loads the repository `.env` (written by the setup script) and sets `NEXT_PUBLIC_CALCOM_VERSION` from the root package version, which is the one define. The seeded database comes from cal.diy's own `db-seed`; `/` redirects unauthenticated visitors to the login page, which is captured directly."
@@ -154,9 +161,14 @@
         "rootDirectory": "packages/graphiql",
         "entry": "src/e2e.ts",
         "externalPackageAllowList": [
-          "@graphiql/react",
-          "@graphiql/plugin-explorer",
-          "@radix-ui/react-tooltip"
+          "@graphiql/*",
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "framer-motion",
+          "motion-dom",
+          "motion-utils",
+          "zustand",
+          "zustand/*"
         ],
         "maxFiberCount": 20000
       },
@@ -263,6 +275,9 @@
         "tsconfig": "apps/demo/tsconfig.json",
         "appDirectory": "apps/demo/app",
         "route": "/",
+        "externalPackageAllowList": [
+          "lucide-react"
+        ],
         "maxFiberCount": 20000
       }
     },
@@ -271,7 +286,7 @@
       "repository": "https://github.com/marmelab/react-admin",
       "revision": "fa7ede4a25d36917b41f9b9e9936e9e7ab8fa8ab",
       "description": "react-admin simple example (Vite SPA, react-admin framework, Yarn 4 workspaces)",
-      "framework": "spa",
+      "framework": "react-router",
       "workingDirectory": "examples/simple",
       "install": "yarn install",
       "dev": "yarn dev",
@@ -280,7 +295,74 @@
       "settleMs": 8000,
       "static": {
         "rootDirectory": "examples/simple",
+        "aliases": {
+          "react-admin": "../../packages/react-admin/src",
+          "ra-core": "../../packages/ra-core/src",
+          "ra-ui-materialui": "../../packages/ra-ui-materialui/src",
+          "ra-i18n-polyglot": "../../packages/ra-i18n-polyglot/src",
+          "ra-language-english": "../../packages/ra-language-english/src",
+          "ra-language-french": "../../packages/ra-language-french/src",
+          "ra-data-fakerest": "../../packages/ra-data-fakerest/src",
+          "ra-input-rich-text": "../../packages/ra-input-rich-text/src"
+        },
         "entry": "src/index.tsx",
+        "route": "/posts",
+        "defines": {
+          "process.env": {}
+        },
+        "externalPackageAllowList": [
+          "react-admin",
+          "ra-core",
+          "ra-ui-materialui",
+          "ra-i18n-polyglot",
+          "ra-language-english",
+          "ra-language-french",
+          "ra-data-fakerest",
+          "fakerest",
+          "ra-input-rich-text",
+          "@mui/*",
+          "@emotion/*",
+          "@babel/runtime/*",
+          "react-hook-form",
+          "inflection",
+          "query-string",
+          "decode-uri-component",
+          "filter-obj",
+          "split-on-first",
+          "lodash",
+          "lodash/*",
+          "jsonexport",
+          "clsx",
+          "prop-types",
+          "react-is",
+          "hoist-non-react-statics",
+          "react-transition-group",
+          "@popperjs/*",
+          "react-error-boundary",
+          "eventemitter3",
+          "node-polyglot",
+          "warning",
+          "object-assign",
+          "hasown",
+          "has-symbols",
+          "dompurify",
+          "react-dropzone",
+          "attr-accept",
+          "file-selector",
+          "tslib",
+          "little-state-machine",
+          "react-simple-animate",
+          "@hookform/*",
+          "@tanstack/*",
+          "stylis",
+          "@floating-ui/*",
+          "fake-rest",
+          "sinon",
+          "@sinonjs/*",
+          "lodash.*",
+          "date-fns",
+          "date-fns/*"
+        ],
         "maxFiberCount": 20000
       },
       "notes": "react-admin's <Admin> owns routing and data loading; everything below it is an opaque dependency for the static side."
@@ -339,7 +421,9 @@
       "static": {
         "rootDirectory": "examples/query/react/basic",
         "entry": "src/index.tsx",
-        "externalPackageAllowList": ["react-redux"]
+        "externalPackageAllowList": [
+          "react-redux"
+        ]
       }
     },
     {
@@ -375,7 +459,9 @@
       "static": {
         "rootDirectory": "test",
         "route": "/",
-        "externalPackageAllowList": ["sonner"]
+        "externalPackageAllowList": [
+          "sonner"
+        ]
       },
       "notes": "Live: Next 14 (React 18.3 canary). Same profile normalization as nextjs-examples; the toaster state is runtime-only (partial)."
     },
@@ -460,13 +546,19 @@
       "framework": "react-router",
       "workingDirectory": ".",
       "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npm install --no-audit --no-fund",
-      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/documenso-setup.sh\""],
-      "services": ["docker compose -f docker/development/compose.yml up -d database redis"],
+      "setup": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/documenso-setup.sh\""
+      ],
+      "services": [
+        "docker compose -f docker/development/compose.yml up -d database redis"
+      ],
       "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npm run dev:remix",
       "url": "http://localhost:3000/signin",
       "readyTimeoutMs": 900000,
       "settleMs": 10000,
-      "capturedGlobals": ["__ENV__"],
+      "capturedGlobals": [
+        "__ENV__"
+      ],
       "static": {
         "rootDirectory": "apps/remix",
         "entry": "app/routes.ts",
@@ -501,7 +593,9 @@
       "url": "https://localhost:7999/auth/login/",
       "readyTimeoutMs": 900000,
       "settleMs": 10000,
-      "capturedGlobals": ["__initialData"],
+      "capturedGlobals": [
+        "__initialData"
+      ],
       "static": {
         "rootDirectory": ".",
         "entry": "static/app/main.tsx",
@@ -548,7 +642,11 @@
       "url": "http://localhost:8000/login",
       "readyTimeoutMs": 900000,
       "settleMs": 10000,
-      "capturedGlobals": ["POSTHOG_APP_CONTEXT", "JS_URL", "JS_CAPTURE_TIME_TO_SEE_DATA"],
+      "capturedGlobals": [
+        "POSTHOG_APP_CONTEXT",
+        "JS_URL",
+        "JS_CAPTURE_TIME_TO_SEE_DATA"
+      ],
       "static": {
         "rootDirectory": "frontend",
         "entry": "src/index.tsx",

@@ -15,6 +15,7 @@ import type { EvaluationContext } from "./context.js";
 import {
   applyPendingState,
   createHookFrame,
+  escapeStateCell,
   type EffectCall,
   type HookFrame,
   nextStateCell,
@@ -333,9 +334,7 @@ const mountClassInstance = (
       queueStateUpdate(frame, stateCell, mergeState(previousState, resolvedPartial));
       return UNDEFINED_VALUE;
     },
-    onEscape: () => {
-      stateCell.isEscaped = true;
-    },
+    onEscape: () => escapeStateCell(frame, stateCell),
   };
   setObjectProperty(instance, "setState", setState);
   setObjectProperty(instance, "forceUpdate", {

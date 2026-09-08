@@ -124,7 +124,9 @@ export const NEXT_PAGES_PROFILE: FrameworkProfile = {
 // suite). The static adapter models the per-match structure itself
 // (`RouterProvider`/`Routes` -> `RenderedRoute` -> `Route` provider -> component,
 // `Outlet` -> anonymous OutletContext provider, `NavLink` -> `Link` -> `a`), so
-// only the router's own context stack and error boundary are transparent.
+// only the router's own context stack and error boundary are transparent. The
+// static side provides `Location` itself (it backs `useInRouterContext`), so
+// that one is transparent on both sides.
 const REACT_ROUTER_RUNTIME_WRAPPERS = [
   "Router",
   "DataRoutes",
@@ -159,7 +161,7 @@ const REACT_ROUTER_RUNTIME_WRAPPERS = [
 export const REACT_ROUTER_PROFILE: FrameworkProfile = {
   kind: "react-router",
   transparentRuntimeFibers: new Set(REACT_ROUTER_RUNTIME_WRAPPERS),
-  transparentStaticFibers: new Set(),
+  transparentStaticFibers: new Set(["Location"]),
   isInjectedRuntimeFiber: neverInjected,
   defaultAnchor: null,
 };
