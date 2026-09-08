@@ -52,6 +52,53 @@ export const sliceWithTwoBranches = () => {
 };
 `;
 
+const MUTATION_SOURCE = `
+declare const outerSize: number;
+declare const items: number[];
+
+export const indexAssignmentAppends = () => {
+  const list: number[] = [];
+  for (let index = 0; index < 3; index++) list[index] = index * 10;
+  return [list.length, list[2]];
+};
+
+export const indexAssignmentFillsHoles = () => {
+  const list = [1];
+  list[3] = 4;
+  return list;
+};
+
+export const lengthAssignmentTruncates = () => {
+  const list = [1, 2, 3];
+  list.length = 1;
+  return list;
+};
+
+export const indexAssignmentPastRepeatIsDropped = () => {
+  const list = [0, ...items];
+  list[0] = 9;
+  list[1] = 8;
+  return list;
+};
+
+export const loopCarriedCounter = () => {
+  let count = 0;
+  let offset = 0;
+  while (offset < outerSize) {
+    offset += 100;
+    count++;
+  }
+  return count;
+};
+
+export const loopInvariantStaysExact = () => {
+  const label = "row";
+  let offset = 0;
+  while (offset < outerSize) offset += 100;
+  return label;
+};
+`;
+
 const evaluateExports = async (
   source: string,
   exportNames: string[],
@@ -102,6 +149,34 @@ describe("branch-valued primitives", () => {
       matchWithBranch: 'branch(["aaa"] | ["b"])',
       startsWithBranch: "branch(true | false)",
       sliceWithTwoBranches: "<string: slice()>",
+    });
+  });
+});
+
+describe("list mutation and uncertain loops", () => {
+  it("grows a list through index and length assignment", async () => {
+    const results = await evaluateExports(MUTATION_SOURCE, [
+      "indexAssignmentAppends",
+      "indexAssignmentFillsHoles",
+      "lengthAssignmentTruncates",
+      "indexAssignmentPastRepeatIsDropped",
+    ]);
+    expect(results).toEqual({
+      indexAssignmentAppends: "[3, 20]",
+      indexAssignmentFillsHoles: "[1, undefined, undefined, 4]",
+      lengthAssignmentTruncates: "[1]",
+      indexAssignmentPastRepeatIsDropped: "[9, repeat(unknown)]",
+    });
+  });
+
+  it("widens bindings a loop of unknown length keeps changing", async () => {
+    const results = await evaluateExports(MUTATION_SOURCE, [
+      "loopCarriedCounter",
+      "loopInvariantStaysExact",
+    ]);
+    expect(results).toEqual({
+      loopCarriedCounter: "<number: loop-carried value>",
+      loopInvariantStaysExact: '"row"',
     });
   });
 });

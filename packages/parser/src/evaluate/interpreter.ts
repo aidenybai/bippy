@@ -82,6 +82,7 @@ import type {
   StaticElementValue,
   StaticFunctionValue,
   StaticAccessor,
+  StaticListValue,
   StaticObjectEntry,
   StaticObjectValue,
   StaticPrimitive,
@@ -216,6 +217,7 @@ import {
   spreadListItems,
   TRUE_VALUE,
   UNDEFINED_VALUE,
+  isIndefiniteItem,
   unknownPrimitiveValue,
   thrownValue,
   unknownValue,
@@ -843,16 +845,22 @@ export class Interpreter {
         return target;
       }
       case "list": {
-        const index = Number(propertyName);
-        if (
-          !target.isFrozen &&
-          Number.isInteger(index) &&
-          index >= 0 &&
-          index < target.items.length
-        ) {
+        if (target.isFrozen) return target;
+        const definiteLength = getDefiniteListPrefix(target);
+        if (propertyName === "length") {
+          const length = value.kind === "primitive" ? value.value : undefined;
+          if (typeof length !== "number" || !Number.isInteger(length) || length < 0) return target;
+          if (definiteLength !== null && length > definiteLength) return target;
           this.recordHeapMutation(target);
-          target.items[index] = value;
+          resizeListItems(target, length);
+          return target;
         }
+        const index = Number(propertyName);
+        if (!Number.isInteger(index) || index < 0) return target;
+        if (definiteLength !== null && index >= definiteLength) return target;
+        this.recordHeapMutation(target);
+        resizeListItems(target, Math.max(target.items.length, index + 1));
+        target.items[index] = value;
         return target;
       }
       case "function":
@@ -3075,6 +3083,28 @@ export class Interpreter {
   }
 
   /**
+   * Runs `run` once more from the state `runMaybe` left behind and discards
+   * everything it does, keeping only which bindings it would move again. A
+   * binding that still changes is loop-carried (a counter, an accumulator):
+   * after an unknown number of iterations it holds none of the enumerated
+   * alternatives in particular, so it widens to an unknown of its type.
+   */
+  widenLoopCarriedBindings(scope: Scope, run: () => void, location: SourceLocation): void {
+    const entrySnapshot = snapshotScopes(scope);
+    const journal = new HeapJournal();
+    this.heapJournals.push(journal);
+    try {
+      run();
+    } finally {
+      const ranSnapshot = snapshotScopes(scope);
+      journal.endPath();
+      this.heapJournals.pop();
+      restoreScopes(entrySnapshot);
+      widenMovedBindings(entrySnapshot, ranSnapshot, location);
+    }
+  }
+
+  /**
    * Runs each path from the same scope state, then joins the states of the
    * paths that complete normally (bindings that differ become branch values,
    * like SSA phis) and continues with the rest of the function exactly once.
@@ -3402,6 +3432,22 @@ const restoreScopes = (snapshots: ScopeSnapshot[]): void => {
   }
 };
 
+const widenMovedBindings = (
+  entryPath: ScopeSnapshot[],
+  ranPath: ScopeSnapshot[],
+  location: SourceLocation,
+): void => {
+  entryPath.forEach((snapshot, scopeIndex) => {
+    for (const [name, before] of snapshot.bindings) {
+      const after = ranPath[scopeIndex].bindings.get(name);
+      if (after === undefined || after === before) continue;
+      const joined = branchValue([before, after], "loop-carried value", location);
+      if (countAlternatives(joined) === countAlternatives(before)) continue;
+      snapshot.scope.bindings.set(name, widenValue(joined, location));
+    }
+  });
+};
+
 const joinScopes = (
   paths: ScopeSnapshot[][],
   reason: string,
@@ -3434,6 +3480,33 @@ const MAX_DISTRIBUTED_ALTERNATIVES = 16;
 
 const countAlternatives = (value: StaticValue): number =>
   value.kind === "branch" ? value.alternatives.length : 1;
+
+/** Items before the first repeat/optional entry; `null` when every item is definite. */
+const getDefiniteListPrefix = (list: StaticListValue): number | null => {
+  const index = list.items.findIndex(isIndefiniteItem);
+  return index === -1 ? null : index;
+};
+
+const resizeListItems = (list: StaticListValue, length: number): void => {
+  list.items.length = Math.min(list.items.length, length);
+  while (list.items.length < length) list.items.push(UNDEFINED_VALUE);
+};
+
+const getPrimitiveType = (value: StaticValue): UnknownPrimitiveType | null => {
+  if (value.kind === "unknown-primitive") return value.primitiveType;
+  if (value.kind !== "primitive") return null;
+  const type = typeof value.value;
+  return type === "string" || type === "number" || type === "boolean" ? type : null;
+};
+
+const widenValue = (value: StaticValue, location: SourceLocation): StaticValue => {
+  const alternatives = value.kind === "branch" ? value.alternatives : [value];
+  const types = new Set(alternatives.map(getPrimitiveType));
+  const [type] = types;
+  return types.size === 1 && type
+    ? unknownPrimitiveValue(type, "loop-carried value")
+    : unknownValue("loop-carried value", location);
+};
 
 const applyUnaryOperator = (
   operator: Exclude<UnaryOperator, "typeof" | "void" | "delete">,
