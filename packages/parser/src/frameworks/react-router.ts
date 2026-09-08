@@ -43,13 +43,7 @@ import type {
 } from "../types.js";
 import { ForwardRefTag } from "../work-tags.js";
 import { routeIdFromFile, splitPathname } from "./route-files.js";
-import {
-  element,
-  emptyStub,
-  nativeFunction,
-  omitProps,
-  stubValue,
-} from "./stubs.js";
+import { element, emptyStub, nativeFunction, omitProps, stubValue } from "./stubs.js";
 
 const SCROLL_RESTORATION_PROPS: ReadonlySet<string> = new Set(["getKey", "storageKey"]);
 
@@ -810,7 +804,10 @@ export const createReactRouterModel = (
       }
       const resolveLazy: LazyResolver = (lazy) => tools.callAwaited(lazy, []);
       return withinRouter(
-        renderMatchedRoutes(readRouteList(getObjectProperty(router, "routes"), resolveLazy), pathname),
+        renderMatchedRoutes(
+          readRouteList(getObjectProperty(router, "routes"), resolveLazy),
+          pathname,
+        ),
         pathname,
         observed,
       );
