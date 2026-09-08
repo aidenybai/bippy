@@ -2,10 +2,7 @@ import { pathToFileURL } from "node:url";
 import { getRDTHook } from "bippy";
 import type { ReactNode } from "react";
 import { ReactRuntimeError } from "../errors.js";
-import {
-  getPackageDirectoryFromFilePath,
-  type ModuleResolver,
-} from "../graph/module-resolver.js";
+import { getPackageDirectoryFromFilePath, type ModuleResolver } from "../graph/module-resolver.js";
 import { ensureDomGlobals } from "./dom-environment.js";
 
 export type ReactModule = typeof import("react");

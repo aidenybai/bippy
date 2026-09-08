@@ -3,9 +3,8 @@ import { Badge, Card, LabelContext } from "cjs-kit";
 import { Spinner, useDelayed } from "umd-kit";
 import { createRegistry, Stack, version as umdVersion } from "umd-return-kit";
 
-const registry = createRegistry(
-  (state: Stack<string> | undefined, action) =>
-    (state ?? new Stack<string>([])).push(typeof action.type === "string" ? "init" : "missing"),
+const registry = createRegistry((state: Stack<string> | undefined, action) =>
+  (state ?? new Stack<string>([])).push(typeof action.type === "string" ? "init" : "missing"),
 );
 
 export const App = () => {

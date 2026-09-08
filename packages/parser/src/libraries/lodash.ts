@@ -1,5 +1,10 @@
 import { hasNamedProperty } from "../evaluate/has-property.js";
-import { getObjectProperty, getTruthiness, UNDEFINED_VALUE, unknownValue } from "../evaluate/values.js";
+import {
+  getObjectProperty,
+  getTruthiness,
+  UNDEFINED_VALUE,
+  unknownValue,
+} from "../evaluate/values.js";
 import { nativeFunction } from "../frameworks/stubs.js";
 import type { ExternalValueProvider, ModeledExports, StaticValue } from "../types.js";
 
@@ -34,7 +39,10 @@ const transparentWrapper = (name: string): StaticValue =>
  * defaults it to true unless `'leading' in options`. Null when the options'
  * shape is not decided by the source.
  */
-const readLeadingOption = (helperName: string, options: StaticValue | undefined): boolean | null => {
+const readLeadingOption = (
+  helperName: string,
+  options: StaticValue | undefined,
+): boolean | null => {
   const isThrottle = helperName === "throttle";
   if (options === undefined || options.kind === "primitive") return isThrottle;
   if (options.kind !== "object") return null;

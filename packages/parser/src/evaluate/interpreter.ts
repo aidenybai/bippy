@@ -530,7 +530,8 @@ const markExternallyMutable = (
     value.entries.push({ kind: "spread", value: unknownValue(reason) });
     return;
   }
-  for (const key of keys) value.entries.push({ kind: "property", key, value: unknownValue(reason) });
+  for (const key of keys)
+    value.entries.push({ kind: "property", key, value: unknownValue(reason) });
 };
 
 const mergeMutatedKeys = (
@@ -2099,12 +2100,12 @@ export class Interpreter {
         const property = type.stub.properties?.get(key);
         if (property) return property;
         if (key === "displayName" || key === "name")
-            return type.stub.displayName === null
-              ? UNDEFINED_VALUE
-              : primitiveValue(type.stub.displayName);
-          return getStubOwnKeys(type.stub.tag).has(key)
-            ? unknownValue(`${type.stub.displayName ?? "stub"}.${key}`, location)
-            : UNDEFINED_VALUE;
+          return type.stub.displayName === null
+            ? UNDEFINED_VALUE
+            : primitiveValue(type.stub.displayName);
+        return getStubOwnKeys(type.stub.tag).has(key)
+          ? unknownValue(`${type.stub.displayName ?? "stub"}.${key}`, location)
+          : UNDEFINED_VALUE;
       }
       default:
         return key === "displayName" || key === "name"
