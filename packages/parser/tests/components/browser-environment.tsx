@@ -91,6 +91,21 @@ const Aborts = () => {
   );
 };
 
+const describeDataset = (): string => {
+  const marker = document.createElement("style");
+  marker.dataset.cssOrder = "prepend";
+  marker.dataset.hashPriority = "low";
+  const keys = Object.keys(marker.dataset).sort().join(",");
+  return `${marker.getAttribute("data-css-order")}|${marker.dataset.hashPriority}|${keys}|${"missing" in marker.dataset}`;
+};
+
+const DatasetMarkers = () => (
+  <p>
+    {describeDataset()}
+    {document.body.dataset.theme === undefined ? <b>unthemed</b> : <i>themed</i>}
+  </p>
+);
+
 export default function BrowserEnvironment() {
   return (
     <main>
@@ -102,6 +117,7 @@ export default function BrowserEnvironment() {
       <LayoutEffectContainer />
       <ObjectRef />
       <Aborts />
+      <DatasetMarkers />
     </main>
   );
 }

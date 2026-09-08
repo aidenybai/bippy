@@ -8,6 +8,7 @@ import { element, nativeFunction } from "../frameworks/stubs.js";
 import { REACT_ELEMENT_SYMBOL_KEYS } from "../react/element-shape.js";
 import { EVENT_LISTENER_METHODS } from "./event-listeners.js";
 import {
+  describeConstructor,
   getKnownObjectKeys,
   getObjectProperty,
   hasDefiniteItems,
@@ -179,6 +180,19 @@ const isPlainObject = (value: object): boolean => {
   return prototype === Object.prototype || prototype === null;
 };
 
+const isGlobalDomObject = (value: object): boolean =>
+  (typeof document !== "undefined" && value === document) ||
+  (typeof window !== "undefined" && value === window);
+
+// happy-dom serves some members (`dataset`) as proxies of interfaces it does not
+// expose as globals, so any platform object reached through a native one is one.
+const isPlatformObjectMember = (member: unknown): member is object =>
+  typeof member === "object" &&
+  member !== null &&
+  !Array.isArray(member) &&
+  !isPlainObject(member) &&
+  !isGlobalDomObject(member);
+
 const describeError = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
@@ -233,16 +247,15 @@ const liftObject = (value: object, name: string, ancestors: ReadonlySet<object>)
   if (Array.isArray(value)) {
     return listValue(value.map((item, index) => liftValue(item, `${name}[${index}]`, path)));
   }
-  if (typeof document !== "undefined" && value === document) {
-    return { kind: "global", name: "document" };
+  if (isGlobalDomObject(value)) {
+    return { kind: "global", name: value === window ? "window" : "document" };
   }
-  if (typeof window !== "undefined" && value === window) return { kind: "global", name: "window" };
   if (value instanceof Date || isDomObject(value)) return nativeObjectValue(value);
   if (value instanceof RegExp) {
     return { kind: "regexp", pattern: value.source, flags: value.flags, lastIndex: 0 };
   }
   if (!isPlainObject(value)) {
-    return unknownValue(`${name}: ${value.constructor.name} from native code`);
+    return unknownValue(`${name}: ${describeConstructor(value)} from native code`);
   }
   if (isReactElementTag(Reflect.get(value, "$$typeof"))) {
     const type: unknown = Reflect.get(value, "type");
@@ -284,7 +297,7 @@ export const fromNativeValue = (value: unknown, name: string): StaticValue =>
   liftValue(value, name, new Set());
 
 const describeMember = (object: StaticNativeObjectValue, key: string): string =>
-  `${object.value.constructor.name}.${key}`;
+  `${describeConstructor(object.value)}.${key}`;
 
 /**
  * A property of a native object, with methods bound so they run natively when
@@ -313,6 +326,7 @@ export const getNativeObjectMember = (
       ? nativeFunction(name, () => unknownValue(`${name}() depends on layout`))
       : unknownPrimitiveValue("number", `${name} depends on layout`);
   }
+  if (isPlatformObjectMember(member)) return nativeObjectValue(member);
   if (typeof member !== "function") return fromNativeValue(member, name);
   return pureNativeFunction(name, member, object.value, () => {
     if (!isPureMethodName(key)) uncertainNativeObjects.add(object.value);
@@ -321,15 +335,20 @@ export const getNativeObjectMember = (
 };
 
 /**
- * `object.key = value`: native properties take the native form of a known
- * value (a dynamic one makes the object unknown); any other key is an expando
- * kept on the interpreter's side.
+ * `object.key = value`: primitives and native properties take their native
+ * form on the object itself (a dynamic value on a native property makes the
+ * object unknown); any other key is an expando kept on the interpreter's side.
  */
 export const setNativeObjectMember = (
   object: StaticNativeObjectValue,
   key: string,
   value: StaticValue,
 ): void => {
+  if (value.kind === "primitive") {
+    Reflect.set(object.value, key, value.value);
+    expandoProperties.get(object.value)?.delete(key);
+    return;
+  }
   if (key in object.value) {
     const native = toNative(value);
     if (native === UNCERTAIN) uncertainNativeObjects.add(object.value);
@@ -346,15 +365,31 @@ export const setNativeObjectMember = (
 
 export const deleteNativeObjectMember = (object: StaticNativeObjectValue, key: string): void => {
   expandoProperties.get(object.value)?.delete(key);
+  Reflect.deleteProperty(object.value, key);
 };
 
 export const hasNativeObjectMember = (object: StaticNativeObjectValue, key: string): boolean =>
   expandoProperties.get(object.value)?.has(key) === true || key in object.value;
 
+/** What `Object.keys`/`entries` see of a native object; null once a mutation on dynamic arguments ran. */
+export const getNativeOwnEntries = (
+  object: StaticNativeObjectValue,
+): [key: string, value: StaticValue][] | null => {
+  if (uncertainNativeObjects.has(object.value)) return null;
+  const name = describeConstructor(object.value);
+  return [
+    ...Object.entries(object.value).map(([key, item]): [string, StaticValue] => [
+      key,
+      fromNativeValue(item, `${name}.${key}`),
+    ]),
+    ...(expandoProperties.get(object.value) ?? []),
+  ];
+};
+
 /** What `for..of`, spread and `Array.from` see of a native iterable (`NodeList`, `DOMTokenList`); null for other objects. */
 export const getNativeIterableItems = (object: StaticNativeObjectValue): StaticListValue | null => {
   if (uncertainNativeObjects.has(object.value) || !isIterable(object.value)) return null;
-  const name = object.value.constructor.name;
+  const name = describeConstructor(object.value);
   return listValue(
     Array.from(object.value, (item, index) => fromNativeValue(item, `${name}[${index}]`)),
   );

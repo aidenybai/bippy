@@ -228,12 +228,17 @@ export class StaticRenderer {
   /**
    * Evaluates the element handed to the root render call of an entry module
    * (`createRoot().render(<App />)`, `hydrateRoot(document, <App />)`), together
-   * with the statements that lead up to it. Null (with a diagnostic) when the
-   * module has no such call.
+   * with the statements that lead up to it. An entry without such a call (it
+   * mounts through an imported function) runs whole, and the element the first
+   * evaluated root render received is used. Null (with a diagnostic) when no
+   * root render happens.
    */
   evaluateEntryElement(interpreter: Interpreter, module: ModuleRecord): StaticValue | null {
     const rootCalls = findRootRenderCalls(module);
     if (rootCalls.length === 0) {
+      interpreter.initializeModule(module);
+      const [rootElement] = interpreter.rootRenders;
+      if (rootElement) return rootElement;
       interpreter.report(
         "no-root-render",
         `no createRoot().render / hydrateRoot / ReactDOM.render call found in ${module.filePath}`,

@@ -31,7 +31,7 @@ import { createAbortController } from "./abort-controller.js";
 import { createDomObserver, isDomObserverName } from "./dom-observers.js";
 import { createErrorValue, ERROR_CONSTRUCTOR_NAMES, isErrorConstructorName } from "./errors.js";
 import { nativeFunction } from "../frameworks/stubs.js";
-import { constructNativeDate } from "./native-values.js";
+import { constructNativeDate, getNativeOwnEntries } from "./native-values.js";
 import { callEventTargetMethod } from "./event-listeners.js";
 import { hasProperty, isIntrinsicFunctionKey } from "./has-property.js";
 import { getBuiltinPrototype, isTypedArrayName, TYPED_ARRAY_NAMES } from "./instance-of.js";
@@ -668,6 +668,7 @@ const getOwnEnumerableEntries = (
   if (target.kind === "object") {
     return getKnownObjectKeys(target)?.map((key) => [key, getObjectProperty(target, key)]) ?? null;
   }
+  if (target.kind === "native-object") return getNativeOwnEntries(target);
   if (!hasDefiniteItems(target)) return null;
   return [
     ...target.items.map((item, index): [string, StaticValue] => [String(index), item]),

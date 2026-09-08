@@ -518,6 +518,8 @@ export class Interpreter {
   private readonly processEnvironment: ProcessEnvironment | null;
   readonly storageAreas: StorageAreas;
   readonly timers = new TimerQueue();
+  /** Elements handed to `createRoot().render`/`hydrateRoot`/`ReactDOM.render` calls that were evaluated. */
+  readonly rootRenders: StaticValue[] = [];
   /** Observable changes (state commits, heap mutations) so far; a timer tick that adds none is steady state. */
   changeCount = 0;
   private readonly heapJournals: HeapJournal[] = [];

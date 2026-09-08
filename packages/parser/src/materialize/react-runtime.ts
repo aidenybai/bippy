@@ -38,18 +38,47 @@ const isReactDomModule = (value: unknown): value is ReactDomModule =>
 const unwrapModule = (loaded: unknown): unknown =>
   isRecord(loaded) && "default" in loaded && isRecord(loaded.default) ? loaded.default : loaded;
 
+const resolveFromApp = (
+  resolver: ModuleResolver | null,
+  specifier: string,
+  fromDirectory: string | null,
+): string | null => {
+  if (!resolver || !fromDirectory) return null;
+  const resolution = resolver.resolve(specifier, `${fromDirectory}/index.js`);
+  return resolution.kind === "external" && resolution.filePath ? resolution.filePath : null;
+};
+
 const importResolved = async (
   resolver: ModuleResolver | null,
   specifier: string,
   fromDirectory: string | null,
 ): Promise<unknown> => {
-  if (resolver && fromDirectory) {
-    const resolution = resolver.resolve(specifier, `${fromDirectory}/index.js`);
-    if (resolution.kind === "external" && resolution.filePath) {
-      return unwrapModule(await import(pathToFileURL(resolution.filePath).href));
-    }
-  }
-  return unwrapModule(await import(specifier));
+  const filePath = resolveFromApp(resolver, specifier, fromDirectory);
+  return unwrapModule(
+    await (filePath === null ? import(specifier) : import(pathToFileURL(filePath).href)),
+  );
+};
+
+const REACT_DOM_PACKAGE_SEGMENT = "/node_modules/react-dom/";
+
+const getReactDomPackageDirectory = (filePath: string): string | null => {
+  const posixPath = filePath.replaceAll("\\", "/");
+  const index = posixPath.lastIndexOf(REACT_DOM_PACKAGE_SEGMENT);
+  return index === -1 ? null : posixPath.slice(0, index + REACT_DOM_PACKAGE_SEGMENT.length);
+};
+
+/** React < 18 has no `react-dom/client`; a clone nested under another project would resolve that project's. */
+const hasOwnReactDomClient = (
+  resolver: ModuleResolver | null,
+  fromDirectory: string | null,
+): boolean => {
+  const domClient = resolveFromApp(resolver, "react-dom/client", fromDirectory);
+  const dom = resolveFromApp(resolver, "react-dom", fromDirectory);
+  return (
+    domClient !== null &&
+    dom !== null &&
+    getReactDomPackageDirectory(domClient) === getReactDomPackageDirectory(dom)
+  );
 };
 
 const hasAct = (
@@ -96,10 +125,11 @@ const load = async (
   ensureDomGlobals();
   getRDTHook();
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  const appResolver = hasOwnReactDomClient(resolver, rootDirectory) ? resolver : null;
   const [react, domClient, dom] = await Promise.all([
-    importResolved(resolver, "react", rootDirectory),
-    importResolved(resolver, "react-dom/client", rootDirectory),
-    importResolved(resolver, "react-dom", rootDirectory),
+    importResolved(appResolver, "react", rootDirectory),
+    importResolved(appResolver, "react-dom/client", rootDirectory),
+    importResolved(appResolver, "react-dom", rootDirectory),
   ]);
   if (!isReactModule(react)) throw new Error("could not load react");
   if (!isReactDomClientModule(domClient)) throw new Error("could not load react-dom/client");
@@ -108,7 +138,7 @@ const load = async (
     react,
     domClient,
     dom,
-    act: await loadAct(react, resolver, rootDirectory),
+    act: await loadAct(react, appResolver, rootDirectory),
     version: react.version,
   };
 };

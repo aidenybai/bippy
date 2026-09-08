@@ -18,6 +18,10 @@ if [ "$current_major" != "$required_major" ]; then
   source "$nvm_script"
   nvm install "$required_major" >/dev/null
   nvm use "$required_major" >/dev/null
+  # HACK: `nvm use` swaps an nvm path already present in PATH in place, which
+  # keeps an earlier system node ahead of it.
+  PATH="$(dirname "$(nvm which "$required_major")"):$PATH"
+  export PATH
 fi
 
 exec "$@"

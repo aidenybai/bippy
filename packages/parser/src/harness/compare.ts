@@ -14,6 +14,14 @@ const BUNDLER_PLACEHOLDER_NAME = /^_[a-z]\d*$/;
 
 const isBundlerPlaceholderName = (name: string): boolean => BUNDLER_PLACEHOLDER_NAME.test(name);
 
+// esbuild dedupes a binding that collides with one in its enclosing scope (Babel's
+// `var X = function () { function X() {} … }`) by appending a counter: `X2`, `X3`.
+const BUNDLER_DEDUPE_COUNTER = /^[1-9]\d*$/;
+
+const isBundlerRenameOf = (staticName: string, runtimeName: string): boolean =>
+  runtimeName.startsWith(staticName) &&
+  BUNDLER_DEDUPE_COUNTER.test(runtimeName.slice(staticName.length));
+
 export interface ComparisonOptions {
   compareKeys?: boolean;
   compareTags?: boolean;
@@ -169,6 +177,22 @@ interface FurthestSlotDivergence {
 }
 
 class BudgetExceeded extends Error {}
+
+// Any non-host fiber passes an opaque head check, so a slot candidate that
+// merely leaves its own slots unmatched is only a fallback; the candidate
+// explaining the most runtime fibers is the library's real slot.
+const isSettledSlotMatch = ({ tally }: SlotMatch): boolean =>
+  tally.slotsUnmatched === 0 && tally.opaqueRenamed === 0;
+
+const isBetterSlotMatch = (candidate: SlotMatch, best: SlotMatch): boolean => {
+  const matched = candidate.tally.matchedFibers + candidate.tally.matchedText;
+  const bestMatched = best.tally.matchedFibers + best.tally.matchedText;
+  if (matched !== bestMatched) return matched > bestMatched;
+  if (candidate.tally.slotsUnmatched !== best.tally.slotsUnmatched) {
+    return candidate.tally.slotsUnmatched < best.tally.slotsUnmatched;
+  }
+  return candidate.tally.opaqueRenamed < best.tally.opaqueRenamed;
+};
 
 export const describeRuntimeFiber = (fiber: RuntimeFiberSnapshot | undefined): string => {
   if (!fiber) return "<end of children>";
@@ -497,6 +521,7 @@ class Matcher {
     )
       return false;
     if (pattern.name === null || actual.name === null || pattern.name === actual.name) return true;
+    if (isBundlerRenameOf(pattern.name, actual.name)) return true;
     return isClassTag(actual.tag) && isBundlerPlaceholderName(actual.name);
   }
 
@@ -514,7 +539,11 @@ class Matcher {
 
   private opaqueNameAgrees(pattern: PatternOpaque, actual: RuntimeFiberSnapshot): boolean {
     if (actual.name === null || isBundlerPlaceholderName(actual.name)) return true;
-    return pattern.runtimeNames === null || pattern.runtimeNames.includes(actual.name);
+    if (pattern.runtimeNames === null) return true;
+    const runtimeName = actual.name;
+    return pattern.runtimeNames.some(
+      (name) => name === runtimeName || isBundlerRenameOf(name, runtimeName),
+    );
   }
 
   // Searches the library's runtime subtree for the place where it rendered the
@@ -528,13 +557,18 @@ class Matcher {
   ): SlotSearchResult {
     const queue: SlotSearchFrame[] = [{ fiber: actual, depth: 0 }];
     let best: FurthestSlotDivergence | null = null;
+    let bestMatch: SlotMatch | null = null;
     for (let queueIndex = 0; queueIndex < queue.length; queueIndex++) {
       const { fiber, depth } = queue[queueIndex];
       for (let start = 0; start < fiber.children.length; start++) {
         const { result, failure } = this.attempt(() =>
           this.matchSlotAt(pattern, fiber.children, start, path),
         );
-        if (result) return { match: result, divergence: null };
+        if (result) {
+          if (isSettledSlotMatch(result)) return { match: result, divergence: null };
+          if (!bestMatch || isBetterSlotMatch(result, bestMatch)) bestMatch = result;
+          continue;
+        }
         const startPosition = this.positions.start.get(fiber.children[start]) ?? 0;
         if (failure && (!best || failure.position - startPosition > best.progress)) {
           best = { progress: failure.position - startPosition, divergence: failure.divergence };
@@ -544,6 +578,7 @@ class Matcher {
         for (const child of fiber.children) queue.push({ fiber: child, depth: depth + 1 });
       }
     }
+    if (bestMatch) return { match: bestMatch, divergence: null };
     // Passed children that evaluate to nothing (all-empty branches) leave no
     // runtime trace to find; they match against an empty sibling list.
     const empty = this.attempt(() => this.matchSlotAt(pattern, [], 0, path));

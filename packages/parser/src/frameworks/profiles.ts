@@ -69,6 +69,8 @@ const NEXT_APP_RUNTIME_WRAPPERS = [
 // from `render-css-resource`).
 const NEXT_APP_INJECTED_FIBERS = new Set([
   "__next_outlet_boundary__",
+  "__next_metadata_boundary__",
+  "__next_viewport_boundary__",
   "SegmentBoundaryTriggerNode",
   "RouterAnnouncer",
 ]);
@@ -125,8 +127,9 @@ export const NEXT_PAGES_PROFILE: FrameworkProfile = {
 // (`RouterProvider`/`Routes` -> `RenderedRoute` -> `Route` provider -> component,
 // `Outlet` -> anonymous OutletContext provider, `NavLink` -> `Link` -> `a`), so
 // only the router's own context stack and error boundary are transparent. The
-// static side provides `Location` itself (it backs `useInRouterContext`), so
-// that one is transparent on both sides.
+// same names are transparent on the static side: it provides `Location` itself
+// (it backs `useInRouterContext`), and an application component sharing a
+// wrapper's name (`Router`) is spliced from both trees alike.
 const REACT_ROUTER_RUNTIME_WRAPPERS = [
   "Router",
   "DataRoutes",
@@ -161,7 +164,7 @@ const REACT_ROUTER_RUNTIME_WRAPPERS = [
 export const REACT_ROUTER_PROFILE: FrameworkProfile = {
   kind: "react-router",
   transparentRuntimeFibers: new Set(REACT_ROUTER_RUNTIME_WRAPPERS),
-  transparentStaticFibers: new Set(["Location"]),
+  transparentStaticFibers: new Set(REACT_ROUTER_RUNTIME_WRAPPERS),
   isInjectedRuntimeFiber: neverInjected,
   defaultAnchor: null,
 };

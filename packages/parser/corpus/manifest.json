@@ -646,6 +646,167 @@
         "maxFiberCount": 20000
       },
       "notes": "Django normally renders index.html with window.POSTHOG_APP_CONTEXT and points the module scripts at the Vite dev server; corpus/scripts/posthog-app-server.ts stands in for it with an anonymous app context and the checked-in _preflight fixture, answering the API calls the login scene makes. The kea store the page builds is captured through the Redux DevTools compose hook and replayed into the static render; the app server's stand-in API returns 404 for the endpoints it does not model, which the page logs."
+    },
+    {
+      "id": "material-kit-react",
+      "repository": "https://github.com/minimal-ui-kit/material-kit-react",
+      "revision": "69e780a40c455d664b2e13c525faf1d492a072a7",
+      "description": "Minimal UI material-kit-react (Vite SPA, MUI v7, createBrowserRouter data router with lazy pages)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "yarn install",
+      "dev": "yarn dev",
+      "url": "http://localhost:3039/",
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "route": "/",
+        "aliases": {
+          "src": "src"
+        }
+      }
+    },
+    {
+      "id": "admin-one-react-tailwind",
+      "repository": "https://github.com/justboil/admin-one-react-tailwind",
+      "revision": "251841fff0a36e4ac1eb96836adcd2858a66c3ac",
+      "description": "JustBoil Admin One (Next 15 app router, Tailwind 4, Redux Toolkit store, basePath /admin-one-react-tailwind)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/admin-one-react-tailwind/dashboard",
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/dashboard",
+        "externalPackageAllowList": ["react-redux"]
+      }
+    },
+    {
+      "id": "mantine-admin",
+      "repository": "https://github.com/jotyy/Mantine-Admin",
+      "revision": "8b6f5dcdda08d355b9bb91a0355303ff18593995",
+      "description": "Mantine Admin dashboard (Next 14 app router, Mantine 7 AppShell, TanStack Query)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "bun install",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/dashboard",
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/dashboard"
+      }
+    },
+    {
+      "id": "hooks-admin",
+      "repository": "https://github.com/HalseySpicy/Hooks-Admin",
+      "revision": "0f0735266b71ca70d619d6ccb47e9a988d992034",
+      "description": "Hooks-Admin (Vite 2 SPA, legacy ReactDOM.render, Redux + redux-persist, antd ConfigProvider, HashRouter + useRoutes)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --legacy-peer-deps",
+      "dev": "npm run dev",
+      "env": {
+        "VITE_OPEN": "false"
+      },
+      "url": "http://localhost:3301/#/login",
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "route": "/login",
+        "externalPackageAllowList": ["react-redux", "hoist-non-react-statics", "redux-persist"]
+      }
+    },
+    {
+      "id": "react-material-admin",
+      "repository": "https://github.com/flatlogic/react-material-admin",
+      "revision": "dd136027c2253253cfb5b8a4cb698696fb63f8cd",
+      "description": "Flatlogic react-material-admin (Vite SPA, MUI v7, JSX in .js files, declarative BrowserRouter routes, context-based auth)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/login",
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "jsconfig.json",
+        "entry": "src/index.js",
+        "route": "/login",
+        "aliases": {
+          "@": "src"
+        }
+      }
+    },
+    {
+      "id": "react-admin-dashboard",
+      "repository": "https://github.com/llorentegerman/react-admin-dashboard",
+      "revision": "c7bf047a09745c744d020bb4e6e0da54b21378cd",
+      "description": "react-admin-dashboard (CRA 3 / React 16, legacy ReactDOM.render, react-router-dom v5 Switch/Route, react-jss)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npx yarn@1.22.22 install --frozen-lockfile",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npx react-scripts start",
+      "env": {
+        "BROWSER": "none",
+        "CI": "true",
+        "PORT": "3006",
+        "SKIP_PREFLIGHT_CHECK": "true",
+        "SKIP_YARN_COREPACK_CHECK": "1"
+      },
+      "url": "http://localhost:3006/dashboard",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "jsconfig.json",
+        "entry": "src/index.js",
+        "route": "/dashboard"
+      },
+      "notes": "react-scripts 3 exits when its stdin closes unless CI=true; webpack 4 needs Node 16 (ERR_OSSL_EVP_UNSUPPORTED on newer OpenSSL), and the ambient yarn is a corepack shim that refuses to run under Node 16 (yarn 1 itself balks at the parent bippy package.json's packageManager field without SKIP_YARN_COREPACK_CHECK), so both commands go through npx."
+    },
+    {
+      "id": "shadcn-crm-dashboard",
+      "repository": "https://github.com/KaraBharat/shadcn-crm-dashboard",
+      "revision": "f262d7570fbf315992516fc6a90257c5e4ad812e",
+      "description": "shadcn-crm-dashboard (Next 15 app router, shadcn/ui + Radix, next-themes, /dashboard redirects to /dashboard/overview)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace --frozen-lockfile",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/dashboard/overview",
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/dashboard/overview",
+        "externalPackageAllowList": ["@uidotdev/usehooks"]
+      }
+    },
+    {
+      "id": "graphic-walker",
+      "repository": "https://github.com/Kanaries/graphic-walker",
+      "revision": "538029764c2a9cfbb6b9a59a83f7d13ae30089ac",
+      "description": "Kanaries graphic-walker playground (Vite SPA mounting the workspace library through embedGraphicWalker; MobX stores)",
+      "framework": "spa",
+      "workingDirectory": "packages/playground",
+      "install": "yarn install && yarn workspace @kanaries/graphic-walker vite build --minify false",
+      "dev": "yarn dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "packages/playground",
+        "entry": "src/main.tsx",
+        "aliases": {
+          "@kanaries/graphic-walker": "../graphic-walker/src/index.tsx"
+        },
+        "externalPackageAllowList": ["@kanaries/graphic-walker"]
+      },
+      "notes": "The playground resolves @kanaries/graphic-walker to the workspace build output, so the install builds the library; the package build minifies by default (vite.config.ts minify: esbuild), which would leave only mangled component names in the runtime tree, so the build runs with --minify false. The static side aliases the package to the library sources."
     }
   ]
 }

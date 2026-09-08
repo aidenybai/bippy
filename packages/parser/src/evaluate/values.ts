@@ -1100,6 +1100,14 @@ export const getListItem = (
 
 const MAX_DESCRIPTION_DEPTH = 3;
 
+/** The interface name of a native object; proxies without a reachable constructor fall back to their tag. */
+export const describeConstructor = (value: object): string => {
+  const constructor: unknown = Reflect.get(value, "constructor");
+  return typeof constructor === "function"
+    ? constructor.name
+    : Object.prototype.toString.call(value);
+};
+
 export const describeValue = (value: StaticValue, depth = 0): string => {
   if (depth >= MAX_DESCRIPTION_DEPTH) return "…";
   const describeNested = (nested: StaticValue): string => describeValue(nested, depth + 1);
@@ -1149,7 +1157,7 @@ export const describeValue = (value: StaticValue, depth = 0): string => {
     case "native-function":
       return `native ${value.name}`;
     case "native-object":
-      return `native ${value.value.constructor.name}`;
+      return `native ${describeConstructor(value.value)}`;
     case "proxy":
       return `proxy of ${describeNested(value.target)}`;
     case "unknown":

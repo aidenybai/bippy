@@ -28,6 +28,7 @@ import {
   renderMetaDescriptors,
 } from "./react-router-document.js";
 import type { Interpreter } from "../evaluate/interpreter.js";
+import { getInstalledModules } from "../libraries/installed-modules.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
 import type {
   CapturedRouterState,
@@ -396,6 +397,15 @@ const paramsValue = (params: RouteParams): StaticValue =>
     ),
   );
 
+const routeContextProvider = (
+  routeContext: StaticValue,
+  children: StaticValue,
+): StaticElementValue =>
+  element(
+    { kind: "context-provider", context: ROUTE_CONTEXT, displayName: ROUTE_CONTEXT.displayName },
+    objectFromRecord({ value: routeContext, children }),
+  );
+
 /**
  * `RenderedRoute` is the function component React Router renders per match; it
  * provides `RouteContext` with the outlet for the next match.
@@ -403,13 +413,19 @@ const paramsValue = (params: RouteParams): StaticValue =>
 const RENDERED_ROUTE_STUB: StubComponent = {
   displayName: "RenderedRoute",
   render: (props) =>
-    element(
-      { kind: "context-provider", context: ROUTE_CONTEXT, displayName: ROUTE_CONTEXT.displayName },
-      objectFromRecord({
-        value: getObjectProperty(props, "routeContext"),
-        children: getObjectProperty(props, "children"),
-      }),
+    routeContextProvider(
+      getObjectProperty(props, "routeContext"),
+      getObjectProperty(props, "children"),
     ),
+};
+
+/**
+ * React Router 6.4 introduced data routers and with them `RenderedRoute`; up to
+ * 6.3 `_renderMatches` created the `RouteContext` provider directly.
+ */
+const hasRenderedRoute = (rootDirectory: string): boolean => {
+  const installed = getInstalledModules(rootDirectory).load("react-router");
+  return installed === null || "RouterProvider" in installed;
 };
 
 const renderedRoute = (
@@ -417,18 +433,20 @@ const renderedRoute = (
   params: RouteParams,
   children: StaticValue,
   routeId: string | null,
-): StaticElementValue =>
-  element(
-    { kind: "stub", stub: RENDERED_ROUTE_STUB },
-    objectFromRecord({
-      routeContext: objectFromRecord({
-        outlet,
-        params: paramsValue(params),
-        id: routeId === null ? UNDEFINED_VALUE : primitiveValue(routeId),
-      }),
-      children,
-    }),
-  );
+  withRenderedRoute = true,
+): StaticElementValue => {
+  const routeContext = objectFromRecord({
+    outlet,
+    params: paramsValue(params),
+    id: routeId === null ? UNDEFINED_VALUE : primitiveValue(routeId),
+  });
+  return withRenderedRoute
+    ? element(
+        { kind: "stub", stub: RENDERED_ROUTE_STUB },
+        objectFromRecord({ routeContext, children }),
+      )
+    : routeContextProvider(routeContext, children);
+};
 
 /**
  * Builds the element for a matched chain exactly like `_renderMatches`: each
@@ -438,6 +456,7 @@ const renderedRoute = (
 const composeChain = (
   chain: RouteMatch[],
   renderRoute: (route: RouteRecord, outlet: StaticValue) => StaticValue,
+  withRenderedRoute = true,
 ): StaticValue => {
   let outlet: StaticValue = NULL_VALUE;
   for (let index = chain.length - 1; index >= 0; index -= 1) {
@@ -446,7 +465,7 @@ const composeChain = (
       outlet = unknownValue(`react-router: ${route.uncertainty}`);
       continue;
     }
-    outlet = renderedRoute(outlet, params, renderRoute(route, outlet), route.id);
+    outlet = renderedRoute(outlet, params, renderRoute(route, outlet), route.id, withRenderedRoute);
   }
   return outlet;
 };
@@ -462,7 +481,11 @@ const renderDataRoute = (route: RouteRecord, outlet: StaticValue): StaticValue =
  * object) may rank above any statically matched route, so a match found next
  * to them is only the preferred alternative.
  */
-const renderMatchedRoutes = (routes: RouteRecord[], pathname: string): StaticValue => {
+const renderMatchedRoutes = (
+  routes: RouteRecord[],
+  pathname: string,
+  withRenderedRoute: boolean,
+): StaticValue => {
   const unreadable = routes.filter((route) => route.uncertainty !== null && route.path === null);
   const chain = bestMatch(routes, pathname);
   if (!chain) {
@@ -472,7 +495,7 @@ const renderMatchedRoutes = (routes: RouteRecord[], pathname: string): StaticVal
         : `react-router: no route matches ${pathname}`,
     );
   }
-  const matched = composeChain(chain, renderDataRoute);
+  const matched = composeChain(chain, renderDataRoute, withRenderedRoute);
   if (unreadable.length === 0) return matched;
   return branchValue(
     [matched, unknownValue(`react-router: ${unreadable[0].uncertainty}`)],
@@ -729,10 +752,12 @@ const routeConfigValue = (name: string): StaticValue | null => {
 
 export const createReactRouterModel = (
   pathname: string,
+  rootDirectory: string,
   routerState: CapturedRouterState | null = null,
 ): ReactRouterModel => {
   const framework: FrameworkState = { routeTree: null, meta: null, links: null, ssr: null };
   const observed = observeRouterState(routerState, pathname);
+  const withRenderedRoute = hasRenderedRoute(rootDirectory);
   // `RouterProvider$1` from `react-router/dom` wraps the core `RouterProvider`;
   // only the latter is kept as a fiber so SPA and framework trees line up.
   const routerProviderShell: StubComponent = {
@@ -807,6 +832,7 @@ export const createReactRouterModel = (
         renderMatchedRoutes(
           readRouteList(getObjectProperty(router, "routes"), resolveLazy),
           pathname,
+          withRenderedRoute,
         ),
         pathname,
         observed,
@@ -825,6 +851,7 @@ export const createReactRouterModel = (
           tools.callAwaited(lazy, []),
         ),
         pathname,
+        withRenderedRoute,
       ),
   };
 
@@ -839,6 +866,14 @@ export const createReactRouterModel = (
         return stubValue(routerProviderStub);
       case "Routes":
         return stubValue(routesStub);
+      case "useRoutes":
+        return nativeFunction(importedName, (args, tools) =>
+          renderMatchedRoutes(
+            readRouteList(args[0] ?? listValue([]), (lazy) => tools.callAwaited(lazy, [])),
+            pathname,
+            withRenderedRoute,
+          ),
+        );
       case "Route":
         return stubValue(ROUTE_STUB);
       case "Outlet":
