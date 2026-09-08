@@ -1,5 +1,6 @@
 import type {
   CapturedExportReference,
+  CapturedFetcher,
   CapturedLinguiCatalog,
   CapturedMutation,
   CapturedPageState,
@@ -97,8 +98,22 @@ const isCapturedRouteMatch = (value: unknown): value is CapturedRouteMatch =>
   typeof value.pathname === "string" &&
   isStringRecord(value.params);
 
+const isOptionalString = (value: unknown): value is string | undefined =>
+  value === undefined || typeof value === "string";
+
+const isCapturedFetcher = (value: unknown): value is CapturedFetcher =>
+  isRecord(value) &&
+  typeof value.key === "string" &&
+  (value.state === "idle" || value.state === "loading" || value.state === "submitting") &&
+  isOptionalString(value.formMethod) &&
+  isOptionalString(value.formAction) &&
+  isOptionalString(value.formEncType) &&
+  isOptionalCapturedValue(value.data);
+
 const isCapturedRouterState = (value: unknown): value is CapturedRouterState =>
   isRecord(value) &&
+  (value.fetchers === undefined ||
+    (Array.isArray(value.fetchers) && value.fetchers.every(isCapturedFetcher))) &&
   isStringRecord(value.location) &&
   typeof value.location.pathname === "string" &&
   typeof value.location.search === "string" &&

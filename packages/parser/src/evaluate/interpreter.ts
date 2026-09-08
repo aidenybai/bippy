@@ -482,9 +482,11 @@ const isNonProgressingRecursion = (
   );
 };
 
-/** An unknown, or a branch one of whose paths is: `paths.slice(0, -1)` of such a value is no more precise. */
+/** An unknown, a member/result of an unanalyzed external, or a branch holding one: further recursion cannot make it more precise. */
 const mayBeUnknown = (value: StaticValue): boolean =>
-  value.kind === "unknown" || (value.kind === "branch" && value.alternatives.some(mayBeUnknown));
+  value.kind === "unknown" ||
+  (value.kind === "external" && value.origin === "derived") ||
+  (value.kind === "branch" && value.alternatives.some(mayBeUnknown));
 
 const describeEscapedMutation = (name: string): string =>
   `"${name}" is mutated by code the analysis did not run`;
@@ -1066,7 +1068,9 @@ export class Interpreter {
       if (name === "module") return objectFromRecord({ exports: exportsValue });
     }
     return (
-      this.getGlobal(name, context.environment) ?? unknownValue(`unbound identifier "${name}"`)
+      this.getGlobal(name, context.environment) ??
+      this.windowGlobals.get(name) ??
+      unknownValue(`unbound identifier "${name}"`)
     );
   }
 

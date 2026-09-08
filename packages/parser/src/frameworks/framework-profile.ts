@@ -13,8 +13,11 @@ export interface FrameworkProfile {
   transparentRuntimeFibers: ReadonlySet<string>;
   transparentStaticFibers: ReadonlySet<string>;
   /**
-   * Runtime fibers (with their subtrees) the framework injects with no
-   * application counterpart: outlet boundaries, route announcers, asset scripts.
+   * Runtime fibers (with their subtrees) the framework or its dev tooling
+   * injects with no application counterpart: outlet boundaries, route
+   * announcers, asset scripts, devtools panels. A tool that mounts one next to
+   * an application element does so from an anonymous wrapper of its own, which
+   * is spliced out along with the injection.
    */
   isInjectedRuntimeFiber: (fiber: RuntimeFiberSnapshot) => boolean;
   /** Fiber name both trees are aligned on when the corpus entry does not name one. */
@@ -27,7 +30,11 @@ const flattenFiber = (
 ): RuntimeFiberSnapshot[] => {
   if (profile.isInjectedRuntimeFiber(fiber)) return [];
   const children = flattenList(fiber.children, profile);
-  if (profile.transparentRuntimeFibers.has(fiber.name ?? fiber.tag)) return children;
+  const isInjectionWrapper =
+    fiber.name === null && fiber.children.some(profile.isInjectedRuntimeFiber);
+  if (isInjectionWrapper || profile.transparentRuntimeFibers.has(fiber.name ?? fiber.tag)) {
+    return children;
+  }
   return [{ ...fiber, children }];
 };
 

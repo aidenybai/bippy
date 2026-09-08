@@ -158,11 +158,19 @@ const REACT_ROUTER_RUNTIME_WRAPPERS = [
   "RSCRouterGlobalErrorBoundary",
 ];
 
+// `react-router-devtools`' Vite plugin rewrites the root route module in
+// development so its default export renders next to the devtools panel
+// (`withViteDevTools` in `react-router-devtools/client`).
+const REACT_ROUTER_INJECTED_FIBERS = new Set(["TanStackDevtools"]);
+
+const isReactRouterInjectedFiber = (fiber: RuntimeFiberSnapshot): boolean =>
+  fiber.name !== null && REACT_ROUTER_INJECTED_FIBERS.has(fiber.name);
+
 export const REACT_ROUTER_PROFILE: FrameworkProfile = {
   kind: "react-router",
   transparentRuntimeFibers: new Set(REACT_ROUTER_RUNTIME_WRAPPERS),
   transparentStaticFibers: new Set(["Location"]),
-  isInjectedRuntimeFiber: neverInjected,
+  isInjectedRuntimeFiber: isReactRouterInjectedFiber,
   defaultAnchor: null,
 };
 

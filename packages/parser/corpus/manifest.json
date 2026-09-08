@@ -107,12 +107,20 @@
       "url": "http://localhost:3000/",
       "readyTimeoutMs": 600000,
       "settleMs": 6000,
+      "capturedGlobals": ["ENV"],
       "static": {
         "rootDirectory": ".",
         "entry": "app/routes.ts",
-        "route": "/"
+        "route": "/",
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "remix-utils",
+          "openimg",
+          "sonner",
+          "spin-delay"
+        ]
       },
-      "notes": "routes.ts delegates to react-router-auto-routes; the static side mirrors its file conventions (_layout nesting, pathless _groups, $params, [.] escapes, trailing-underscore opt-outs) to rebuild the route table without running the generator. Loader data, honeypot and theme values stay unknown."
+      "notes": "routes.ts delegates to react-router-auto-routes; the static side mirrors its file conventions (_layout nesting, pathless _groups, $params, [.] escapes, trailing-underscore opt-outs) to rebuild the route table without running the generator. Loader data, honeypot and theme values stay unknown. @radix-ui, remix-utils, openimg, sonner and spin-delay are analyzed from source (each would otherwise leave opaque fibers or a branch); @conform-to, @epic-web and @nasa-gcn/remix-seo analyze cleanly but change no fiber, so they stay external."
     },
     {
       "id": "excalidraw",

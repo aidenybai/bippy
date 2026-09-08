@@ -1,6 +1,7 @@
 import type { Fiber, FiberRoot } from "bippy";
 import { traverseFiber } from "bippy";
 import type {
+  CapturedFetcher,
   CapturedLinguiCatalog,
   CapturedRouteMatch,
   CapturedRouterState,
@@ -27,12 +28,21 @@ interface RouterMatchLike {
   params: Record<string, string | undefined>;
 }
 
+interface FetcherLike {
+  state: CapturedFetcher["state"];
+  formMethod?: string;
+  formAction?: string;
+  formEncType?: string;
+  data?: unknown;
+}
+
 interface DataRouterStateLike {
   location: RouterLocationLike;
   matches: RouterMatchLike[];
   loaderData: Record<string, unknown>;
   navigation: { state: CapturedRouterState["navigationState"] };
   revalidation: CapturedRouterState["revalidationState"];
+  fetchers: Map<string, FetcherLike>;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -58,6 +68,23 @@ const isRouteMatch = (value: unknown): value is RouterMatchLike =>
   typeof value.pathname === "string" &&
   isRecord(value.params);
 
+const isOptionalString = (value: unknown): value is string | undefined =>
+  value === undefined || typeof value === "string";
+
+const isRouterActivityState = (value: unknown): value is CapturedFetcher["state"] =>
+  value === "idle" || value === "loading" || value === "submitting";
+
+const isFetcher = (value: unknown): value is FetcherLike =>
+  isRecord(value) &&
+  isRouterActivityState(value.state) &&
+  isOptionalString(value.formMethod) &&
+  isOptionalString(value.formAction) &&
+  isOptionalString(value.formEncType);
+
+const isFetcherMap = (value: unknown): value is Map<string, FetcherLike> =>
+  value instanceof Map &&
+  [...value].every(([key, fetcher]) => typeof key === "string" && isFetcher(fetcher));
+
 const isDataRouterState = (value: unknown): value is DataRouterStateLike =>
   isRecord(value) &&
   isLocation(value.location) &&
@@ -65,10 +92,9 @@ const isDataRouterState = (value: unknown): value is DataRouterStateLike =>
   value.matches.every(isRouteMatch) &&
   isRecord(value.loaderData) &&
   isRecord(value.navigation) &&
-  (value.navigation.state === "idle" ||
-    value.navigation.state === "loading" ||
-    value.navigation.state === "submitting") &&
-  (value.revalidation === "idle" || value.revalidation === "loading");
+  isRouterActivityState(value.navigation.state) &&
+  (value.revalidation === "idle" || value.revalidation === "loading") &&
+  isFetcherMap(value.fetchers);
 
 const getProviderValue = (fiber: Fiber): unknown =>
   isRecord(fiber.memoizedProps) ? fiber.memoizedProps.value : undefined;
@@ -90,6 +116,15 @@ const captureMatch = (match: RouterMatchLike): CapturedRouteMatch => {
   return { id: match.route.id, pathname: match.pathname, params };
 };
 
+const captureFetcher = (key: string, fetcher: FetcherLike): CapturedFetcher => ({
+  key,
+  state: fetcher.state,
+  formMethod: fetcher.formMethod,
+  formAction: fetcher.formAction,
+  formEncType: fetcher.formEncType,
+  data: toCapturedValue(fetcher.data),
+});
+
 const captureLingui = (context: LinguiContextLike): CapturedLinguiCatalog => ({
   locale: context.i18n.locale,
   messages: captureRecord(context.i18n.messages),
@@ -105,6 +140,7 @@ const captureRouterState = (state: DataRouterStateLike): CapturedRouterState => 
   loaderData: captureRecord(state.loaderData),
   navigationState: state.navigation.state,
   revalidationState: state.revalidation,
+  fetchers: [...state.fetchers].map(([key, fetcher]) => captureFetcher(key, fetcher)),
 });
 
 /**

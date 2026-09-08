@@ -14,6 +14,14 @@ const BUNDLER_PLACEHOLDER_NAME = /^_[a-z]\d*$/;
 
 const isBundlerPlaceholderName = (name: string): boolean => BUNDLER_PLACEHOLDER_NAME.test(name);
 
+// A binding that collides with another in the bundled scope is renamed with a
+// counter: `Toaster2` by esbuild (Vite dev pre-bundling), `Toaster$1` by rollup.
+const BUNDLER_DEDUPE_SUFFIX = /^\$?\d+$/;
+
+const isBundlerDedupedName = (sourceName: string, runtimeName: string): boolean =>
+  runtimeName.startsWith(sourceName) &&
+  BUNDLER_DEDUPE_SUFFIX.test(runtimeName.slice(sourceName.length));
+
 export interface ComparisonOptions {
   compareKeys?: boolean;
   compareTags?: boolean;
@@ -497,7 +505,10 @@ class Matcher {
     )
       return false;
     if (pattern.name === null || actual.name === null || pattern.name === actual.name) return true;
-    return isClassTag(actual.tag) && isBundlerPlaceholderName(actual.name);
+    return (
+      isBundlerDedupedName(pattern.name, actual.name) ||
+      (isClassTag(actual.tag) && isBundlerPlaceholderName(actual.name))
+    );
   }
 
   // An opaque component's runtime identity is whatever non-host fiber sits in its

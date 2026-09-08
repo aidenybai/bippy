@@ -211,18 +211,27 @@
       "id": "epic-stack",
       "revision": "8473afd804b66dba6a23f317908dc35d1535e90d",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T03:55:40.453Z",
-      "durationMs": 135,
-      "runtime": null,
+      "capturedAt": "2026-09-08T06:27:18.659Z",
+      "durationMs": 15881,
+      "runtime": {
+        "reactVersion": "19.2.4",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 1989,
+        "commits": 8,
+        "pageErrors": [],
+        "title": "Epic Notes"
+      },
       "static": {
         "stats": {
-          "fiberCount": 480,
-          "textCount": 30,
-          "branchCount": 7,
+          "fiberCount": 695,
+          "textCount": 4,
+          "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 101,
-          "unknownCount": 2,
-          "modulesLoaded": 44
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 91
         },
         "diagnostics": [
           {
@@ -231,9 +240,31 @@
           }
         ]
       },
-      "report": null,
+      "report": {
+        "matchedFibers": 689,
+        "matchedText": 4,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "exact",
+        "runtimeFibers": 693,
+        "staticFibers": 693,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 693,
+        "budgetExhausted": false
+      },
       "anchor": null,
-      "note": "static only",
+      "note": null,
       "failure": null
     },
     {
