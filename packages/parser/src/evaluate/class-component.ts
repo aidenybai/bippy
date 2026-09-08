@@ -30,6 +30,7 @@ import {
   describeValue,
   getObjectProperty,
   getTruthiness,
+  isCallable,
   isNullish,
   NULL_VALUE,
   objectFromRecord,
@@ -345,10 +346,9 @@ const mountClassInstance = (
     name: "setState",
     call: ([partialState, callback], tools) => {
       const previousState = stateCell.next ?? stateCell.current;
-      const resolvedPartial =
-        partialState?.kind === "function" || partialState?.kind === "native-function"
-          ? tools.call(partialState, [previousState, getObjectProperty(instance, "props")])
-          : (partialState ?? UNDEFINED_VALUE);
+      const resolvedPartial = isCallable(partialState)
+        ? tools.call(partialState, [previousState, getObjectProperty(instance, "props")])
+        : (partialState ?? UNDEFINED_VALUE);
       if (callback) record.pendingCallbacks.push(callback);
       queueStateUpdate(
         frame,
@@ -358,7 +358,16 @@ const mountClassInstance = (
       );
       return UNDEFINED_VALUE;
     },
-    onEscape: () => escapeStateCell(frame, stateCell),
+    onEscape: (argumentValues) => {
+      const partialState = argumentValues?.[0];
+      escapeStateCell(
+        frame,
+        stateCell,
+        partialState === null || isCallable(partialState)
+          ? null
+          : mergeState(stateCell.next ?? stateCell.current, partialState ?? UNDEFINED_VALUE),
+      );
+    },
   };
   setObjectProperty(instance, "setState", setState);
   setObjectProperty(instance, "forceUpdate", {

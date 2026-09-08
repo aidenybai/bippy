@@ -1297,6 +1297,7 @@ export class Materializer {
       queueMicrotask: (task) => this.interpreter.timers.queueMicrotask(task),
       isDeferred: () => this.interpreter.timers.isDeferred,
       setProperty: (object, key, value) => this.interpreter.assignOwnProperty(object, key, value),
+      recordStateMutation: (state) => this.interpreter.recordStateMutation(state),
       realm: this.interpreter.getRealm(context.environment),
       pushItems: (list, items) => this.interpreter.pushItems(list, items),
       nameHint: null,

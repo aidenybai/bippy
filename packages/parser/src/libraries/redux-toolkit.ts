@@ -7,6 +7,7 @@ import {
   getKnownObjectKeys,
   getObjectProperty,
   getTruthiness,
+  isCallable,
   isKnownString,
   mapValue,
   objectFromRecord,
@@ -86,9 +87,6 @@ const combineReducers = nativeFunction("combineReducers", ([reducers]) => {
   if (keys) reducerKeysByReducer.set(combined, keys);
   return combined;
 });
-
-const isCallable = (value: StaticValue): boolean =>
-  value.kind === "function" || value.kind === "native-function";
 
 const actionCreator = (type: string, prepare: StaticValue | null): StaticValue =>
   nativeFunction(type, (args, tools) => {

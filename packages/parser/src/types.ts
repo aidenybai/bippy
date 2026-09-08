@@ -311,6 +311,22 @@ export interface StubHooks {
   useEffect: (effect: () => void | (() => void), dependencies: unknown[]) => void;
 }
 
+/**
+ * Heap state a fork cannot see through a value's own fields (a `Map`'s
+ * entries): the owner captures and restores it, and joins one capture per path.
+ */
+export interface JournaledState<Snapshot> {
+  readonly allocation: number;
+  capture(): Snapshot;
+  restore(snapshot: Snapshot): void;
+  join(
+    snapshots: Snapshot[],
+    reason: string,
+    location: SourceLocation | null,
+    preferredPath: number,
+  ): void;
+}
+
 export interface StubRenderTools {
   /** Reads a context value as `useContext` would from the stub's position in the tree. */
   readContext: (context: ContextDefinition) => StaticValue;
@@ -331,6 +347,8 @@ export interface StubRenderTools {
   isDeferred: () => boolean;
   /** Assigns an own property of a modeled object, undone on the other paths of an enclosing fork like any heap write. */
   setProperty: (object: StaticObjectValue, key: string, value: StaticValue) => void;
+  /** Journals hidden state before a mutation, undone on the other paths of an enclosing fork like any heap write. */
+  recordStateMutation: (state: JournaledState<unknown>) => void;
   /** The host whose globals the calling code sees. */
   realm: HostRealm;
   /** Appends to a modeled list as `Array.prototype.push` would, undone on the other paths of an enclosing fork like any heap write. */
@@ -798,8 +816,13 @@ export interface StaticNativeFunctionValue {
   kind: "native-function";
   name: string;
   call: (args: StaticValue[], tools: StubRenderTools) => StaticValue;
-  /** Invoked when the value flows into code the evaluator does not follow. */
-  onEscape?: () => void;
+  /**
+   * Invoked when the value flows into code the evaluator does not follow: with
+   * the arguments of the call that code makes where the escape walk sees the
+   * call site (null entries for arguments it cannot tell), or null when the
+   * function is handed over as a value and may be called with anything.
+   */
+  onEscape?: (argumentValues: (StaticValue | null)[] | null) => void;
   /** An own property of the function this stands for (`pathToRegexp.parse`); `undefined` when it has none by that name. */
   getOwnProperty?: (key: string) => StaticValue | undefined;
 }
@@ -857,6 +880,7 @@ export type ReactApi =
   | "useMemo"
   | "useCallback"
   | "useRef"
+  | "createRef"
   | "useContext"
   | "use"
   | "useEffect"
