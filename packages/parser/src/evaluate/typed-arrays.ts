@@ -235,7 +235,8 @@ export const fillBinaryUnknown = (list: StaticListValue, reason: string): void =
   list.items.splice(0, list.items.length, ...unknownElements(kind, list.items.length, reason));
 };
 
-const toIndex = (value: StaticValue | undefined, fallback: number): number | null => {
+/** A known numeric index argument, `fallback` when omitted or `undefined`, null when dynamic. */
+export const toIndex = (value: StaticValue | undefined, fallback: number): number | null => {
   if (value === undefined || (value.kind === "primitive" && value.value === undefined))
     return fallback;
   return value.kind === "primitive" && typeof value.value === "number" ? value.value : null;

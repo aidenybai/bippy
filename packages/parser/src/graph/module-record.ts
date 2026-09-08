@@ -5,6 +5,7 @@ import type {
   Expression,
   FunctionBody,
   ImportDeclaration,
+  MemberExpression,
   ModuleExportName,
   ObjectExpression,
   ParamPattern,
@@ -31,6 +32,11 @@ import type {
 interface BlockFunction {
   params: ParamPattern[];
   body: FunctionBody;
+}
+
+interface MemberAssignment {
+  name: string;
+  value: Expression;
 }
 
 const getModuleExportName = (name: ModuleExportName): string =>
@@ -574,6 +580,9 @@ class CommonJsCollector {
   readonly reExportAll: string[] = [];
   isCommonJs = false;
   replacesModuleExports = false;
+  /** The local binding `module.exports = name` exposes; members assigned onto it are named exports. */
+  private moduleExportsBinding: string | null = null;
+  private readonly memberAssignments = new Map<string, MemberAssignment[]>();
 
   constructor(
     private readonly requiredBindings: Map<string, string>,
@@ -624,6 +633,26 @@ class CommonJsCollector {
     this.setExpression("default", value);
     const object = this.getConstantObject(value);
     if (object) this.collectObjectMembers(object);
+    if (value.type !== "Identifier" || !this.bindings.has(value.name)) return;
+    this.moduleExportsBinding = value.name;
+    for (const assignment of this.memberAssignments.get(value.name) ?? []) {
+      this.setExpression(assignment.name, assignment.value);
+    }
+  }
+
+  /** `name.member = value` at the top level: a static of the binding `module.exports` may expose. */
+  private collectMemberAssignment(target: MemberExpression, value: Expression): void {
+    if (target.object.type !== "Identifier" || !this.bindings.has(target.object.name)) return;
+    const name = getStaticPropertyName(target.property, target.computed);
+    if (name === null) return;
+    const bindingName = target.object.name;
+    if (bindingName === this.moduleExportsBinding) {
+      this.setExpression(name, value);
+      return;
+    }
+    const assignments = this.memberAssignments.get(bindingName) ?? [];
+    assignments.push({ name, value });
+    this.memberAssignments.set(bindingName, assignments);
   }
 
   /** The literal behind `module.exports = value`: the expression itself or the `const` it names. */
@@ -660,7 +689,12 @@ class CommonJsCollector {
       return value;
     }
     const exportedName = getExportedMemberName(expression.left);
-    if (exportedName === null) return value;
+    if (exportedName === null) {
+      if (expression.left.type === "MemberExpression") {
+        this.collectMemberAssignment(expression.left, value);
+      }
+      return value;
+    }
     if (localName !== null) {
       this.setExport({ kind: "local", exportedName, localName });
     } else {

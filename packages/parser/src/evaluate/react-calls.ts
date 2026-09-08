@@ -55,6 +55,31 @@ const isValidElementValue = (value: StaticValue): StaticValue => {
     : primitiveValue(verdict);
 };
 
+const cloneElementValue = (
+  element: StaticValue,
+  props: StaticValue | undefined,
+  children: StaticValue[],
+  location: SourceLocation | null,
+): StaticValue => {
+  if (element.kind !== "element") {
+    return unknownValue(`cloneElement of ${describeValue(element)}`, location);
+  }
+  const { entries, key } = propsFromValue(props, true);
+  const merged = objectValue([{ kind: "spread", value: element.props }, ...entries]);
+  if (children.length === 1)
+    merged.entries.push({ kind: "property", key: "children", value: children[0] });
+  if (children.length > 1)
+    merged.entries.push({ kind: "property", key: "children", value: listValue(children) });
+  return {
+    kind: "element",
+    type: element.type,
+    key: key ?? element.key,
+    props: merged,
+    location: element.location,
+    environment: element.environment,
+  };
+};
+
 /** `mountState`/`mountReducer`: the initializer runs on mount only, twice under Strict Mode. */
 const stateHook = (
   context: EvaluationContext,
@@ -351,28 +376,10 @@ export const evaluateReactApiCall = (
         context,
       );
     }
-    case "cloneElement": {
-      if (first?.kind !== "element")
-        return unknownValue(
-          `cloneElement of ${first ? describeValue(first) : "nothing"}`,
-          location,
-        );
-      const { entries, key } = propsFromValue(second, true);
-      const merged = objectValue([{ kind: "spread", value: first.props }, ...entries]);
-      const children = args.slice(2);
-      if (children.length === 1)
-        merged.entries.push({ kind: "property", key: "children", value: children[0] });
-      if (children.length > 1)
-        merged.entries.push({ kind: "property", key: "children", value: listValue(children) });
-      return {
-        kind: "element",
-        type: first.type,
-        key: key ?? first.key,
-        props: merged,
-        location: first.location,
-        environment: first.environment,
-      };
-    }
+    case "cloneElement":
+      return mapValue(first ?? UNDEFINED_VALUE, (element) =>
+        cloneElementValue(element, second, args.slice(2), location),
+      );
     case "isValidElement":
       return first ? mapValue(first, isValidElementValue) : FALSE_VALUE;
     case "memo": {

@@ -66,6 +66,7 @@ import {
   constructBinary,
   isBinaryView,
   isTypedArrayName,
+  toIndex,
 } from "./typed-arrays.js";
 import { callWebCryptoMethod, isWebCryptoName } from "./web-crypto.js";
 import { mediaQueryListValue } from "./media-query.js";
@@ -1990,9 +1991,9 @@ export const evaluateBuiltinCall = (
         return receiver;
       case "slice": {
         if (!isKnownList(receiver)) return receiver;
-        const start = first?.kind === "primitive" ? Number(first.value) : undefined;
-        const end = second?.kind === "primitive" ? Number(second.value) : undefined;
-        if (first && start === undefined)
+        const start = toIndex(first, 0);
+        const end = toIndex(second, receiver.items.length);
+        if (start === null || end === null)
           return unknownValue("slice with dynamic bounds", location);
         return listValue(receiver.items.slice(start, end));
       }

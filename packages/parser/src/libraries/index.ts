@@ -123,10 +123,12 @@ export const getLibraryValue: LibraryValueProvider = (specifier, importedName, p
     const value = model.getValue(specifier, importedName, project);
     if (value) return value;
   }
-  return importedName === "*" && MODELED_PACKAGES.has(specifier)
-    ? lazyProperties(
-        objectValue(),
-        (key) => getLibraryValue(specifier, key, project) ?? UNDEFINED_VALUE,
-      )
-    : null;
+  if (importedName !== "*" || !MODELED_PACKAGES.has(specifier)) return null;
+  const defaultExport = getLibraryValue(specifier, "default", project);
+  return lazyProperties(
+    defaultExport?.kind === "native-function" || defaultExport?.kind === "function"
+      ? defaultExport
+      : objectValue(),
+    (key) => getLibraryValue(specifier, key, project) ?? UNDEFINED_VALUE,
+  );
 };

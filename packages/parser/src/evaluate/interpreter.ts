@@ -1090,6 +1090,18 @@ export class Interpreter {
           this.assignProperty(alternative, propertyName, value, context);
         }
         return target;
+      case "namespace": {
+        if (!target.module.replacesModuleExports) return target;
+        const replacement = this.evaluateModuleExport(target.module, "default");
+        if (
+          replacement.kind === "function" ||
+          replacement.kind === "class" ||
+          replacement.kind === "object"
+        ) {
+          this.assignProperty(replacement, propertyName, value, context);
+        }
+        return target;
+      }
       case "unknown":
       case "unknown-primitive":
       case "external":

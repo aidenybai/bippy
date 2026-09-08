@@ -3,6 +3,7 @@ import path from "node:path";
 import { EMPTY_OBSERVATIONS } from "../observations.js";
 import { readPackageManifest } from "../package-manifest.js";
 import type { ModuleTranspiler, ProjectContext, RuntimeObservations } from "../types.js";
+import { findInstallRoot } from "./install-root.js";
 import { readInstalledPackage } from "./installed-package.js";
 import type { ModuleResolver } from "./module-resolver.js";
 import { createServedAssets } from "./served-assets.js";
@@ -49,11 +50,12 @@ export const createProjectContext = (options: ProjectContextOptions): ProjectCon
   const servedDirectory = options.servedDirectory ?? rootDirectory;
   const publicDirectory = options.publicDirectory ?? path.join(servedDirectory, PUBLIC_DIRECTORY);
   const declared = new Set<string>();
+  const installRoot = findInstallRoot(rootDirectory);
   for (let directory = rootDirectory; ; directory = path.dirname(directory)) {
     for (const packageName of readDeclaredDependencies(path.join(directory, "package.json"))) {
       declared.add(packageName);
     }
-    if (path.dirname(directory) === directory) break;
+    if (directory === installRoot || path.dirname(directory) === directory) break;
   }
   const queries = new Map(observations.queries.map((query) => [query.queryHash, query]));
   const { mutations, stores } = observations;
