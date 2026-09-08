@@ -112,6 +112,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 260,
         "matchedText": 46,
         "opaqueSubtrees": 0,
@@ -123,9 +124,7 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 306,
         "staticFibers": 306,
         "coverage": 1,
@@ -134,6 +133,7 @@
         "stepsUsed": 306,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": "body",
       "note": "runtime replayed from 2026-09-08T07:15:09.404Z",
       "failure": null
@@ -142,8 +142,8 @@
       "id": "bulletproof-react",
       "revision": "9506629ed003a561c6627735480cce4994244bb4",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:06:24.187Z",
-      "durationMs": 583,
+      "capturedAt": "2026-09-08T23:36:08.860Z",
+      "durationMs": 438,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -205,8 +205,8 @@
       "id": "cal-diy",
       "revision": "abffde336e744e15cf69626c10e436d6172bc406",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:06:24.781Z",
-      "durationMs": 1220,
+      "capturedAt": "2026-09-08T23:36:09.311Z",
+      "durationMs": 1482,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
@@ -316,6 +316,7 @@
         ]
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 350,
         "matchedText": 0,
         "opaqueSubtrees": 1,
@@ -327,105 +328,7 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 22,
-        "branchDeviations": [
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent]",
-            "reason": "if (<boolean: negation of unknown>)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent][0]",
-              "expected": "<Sheet> [FunctionComponent]",
-              "actual": "<div> [HostComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <SidebarHistory> [FunctionComponent]",
-            "reason": "if (<boolean: negation of unknown>)",
-            "preferredIndex": 0,
-            "chosenIndex": 2,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <SidebarHistory> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent][0]",
-              "expected": "<SidebarGroupContent> [FunctionComponent]",
-              "actual": "<SidebarGroupLabel> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarFooter> [FunctionComponent] > <div> [HostComponent] > <SidebarUserNav> [FunctionComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuProvider> [FunctionComponent] > <Menu> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <DropdownMenuTrigger> [FunctionComponent] > <DropdownMenuTrigger> [ForwardRef] > <MenuAnchor> [ForwardRef] > <PopperAnchor> [ForwardRef] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <Primitive.button.Slot> [ForwardRef] > <Primitive.button.SlotClone> [ForwardRef] > <SidebarMenuButton> [FunctionComponent] > <button> [HostComponent]",
-            "reason": "loop iterations are uncertain",
-            "preferredIndex": 0,
-            "chosenIndex": 3,
-            "divergence": null
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarFooter> [FunctionComponent] > <div> [HostComponent] > <SidebarUserNav> [FunctionComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuProvider> [FunctionComponent] > <Menu> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <DropdownMenuContent> [FunctionComponent] > <DropdownMenuPortal> [FunctionComponent] > <MenuPortal> [FunctionComponent] > <MenuPortalProvider> [FunctionComponent] > <Presence> [FunctionComponent]",
-            "reason": "conditional on <boolean: includes()>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarFooter> [FunctionComponent] > <div> [HostComponent] > <SidebarUserNav> [FunctionComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuProvider> [FunctionComponent] > <Menu> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <DropdownMenuContent> [FunctionComponent] > <DropdownMenuPortal> [FunctionComponent] > <MenuPortal> [FunctionComponent] > <MenuPortalProvider> [FunctionComponent] > <Presence> [FunctionComponent][0]",
-              "expected": "<Portal> [ForwardRef]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <SidebarInset> [FunctionComponent] > <main> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <ActiveChatProvider> [FunctionComponent] > <ChatShell> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <PureMessages> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent]",
-            "reason": "&& on branch(<boolean> | false)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <SidebarInset> [FunctionComponent] > <main> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <ActiveChatProvider> [FunctionComponent] > <ChatShell> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <PureMessages> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent][0]",
-              "expected": "<ThinkingMessage> [FunctionComponent]",
-              "actual": "<div> [HostComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <SidebarInset> [FunctionComponent] > <main> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <ActiveChatProvider> [FunctionComponent] > <ChatShell> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <PureMultimodalInput> [MemoComponent] > <PureMultimodalInput> [FunctionComponent] > <div> [HostComponent] > <PromptInput> [FunctionComponent] > <form> [HostComponent] > <InputGroup> [FunctionComponent] > <div> [HostComponent] > <PromptInputFooter> [FunctionComponent] > <InputGroupAddon> [FunctionComponent] > <div> [HostComponent] > <PromptInputTools> [FunctionComponent] > <div> [HostComponent] > <PureModelSelectorCompact> [SimpleMemoComponent] > <ModelSelector> [FunctionComponent] > <PopoverRoot> [FunctionComponent] > <Popover> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <PopoverProvider> [FunctionComponent] > <ModelSelectorContent> [FunctionComponent] > <PopoverContent> [FunctionComponent] > <PopoverPortal> [FunctionComponent] > <PopoverPortalProvider> [FunctionComponent] > <Presence> [FunctionComponent]",
-            "reason": "conditional on <boolean: includes()>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <SidebarInset> [FunctionComponent] > <main> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <ActiveChatProvider> [FunctionComponent] > <ChatShell> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <PureMultimodalInput> [MemoComponent] > <PureMultimodalInput> [FunctionComponent] > <div> [HostComponent] > <PromptInput> [FunctionComponent] > <form> [HostComponent] > <InputGroup> [FunctionComponent] > <div> [HostComponent] > <PromptInputFooter> [FunctionComponent] > <InputGroupAddon> [FunctionComponent] > <div> [HostComponent] > <PromptInputTools> [FunctionComponent] > <div> [HostComponent] > <PureModelSelectorCompact> [SimpleMemoComponent] > <ModelSelector> [FunctionComponent] > <PopoverRoot> [FunctionComponent] > <Popover> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <PopoverProvider> [FunctionComponent] > <ModelSelectorContent> [FunctionComponent] > <PopoverContent> [FunctionComponent] > <PopoverPortal> [FunctionComponent] > <PopoverPortalProvider> [FunctionComponent] > <Presence> [FunctionComponent][0]",
-              "expected": "<Portal> [ForwardRef]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <SidebarInset> [FunctionComponent] > <main> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <ActiveChatProvider> [FunctionComponent] > <ChatShell> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <PureMultimodalInput> [MemoComponent] > <PureMultimodalInput> [FunctionComponent] > <div> [HostComponent] > <PromptInput> [FunctionComponent] > <form> [HostComponent] > <InputGroup> [FunctionComponent] > <div> [HostComponent] > <PromptInputFooter> [FunctionComponent] > <InputGroupAddon> [FunctionComponent] > <div> [HostComponent]",
-            "reason": "conditional on <boolean: === on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <SidebarInset> [FunctionComponent] > <main> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <ActiveChatProvider> [FunctionComponent] > <ChatShell> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <PureMultimodalInput> [MemoComponent] > <PureMultimodalInput> [FunctionComponent] > <div> [HostComponent] > <PromptInput> [FunctionComponent] > <form> [HostComponent] > <InputGroup> [FunctionComponent] > <div> [HostComponent] > <PromptInputFooter> [FunctionComponent] > <InputGroupAddon> [FunctionComponent] > <div> [HostComponent][1]",
-              "expected": "<PureStopButton> [SimpleMemoComponent]",
-              "actual": "<PromptInputSubmit> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <SidebarInset> [FunctionComponent] > <main> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <ActiveChatProvider> [FunctionComponent] > <ChatShell> [FunctionComponent] > <AlertDialog> [FunctionComponent] > <AlertDialog> [FunctionComponent] > <Dialog> [FunctionComponent] > <DialogProvider> [FunctionComponent] > <AlertDialogContent> [FunctionComponent] > <AlertDialogPortal> [FunctionComponent] > <AlertDialogPortal> [FunctionComponent] > <DialogPortal> [FunctionComponent] > <DialogPortalProvider> [FunctionComponent] > <Presence> key=\".0\" [FunctionComponent]",
-            "reason": "conditional on <boolean: includes()>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <SidebarInset> [FunctionComponent] > <main> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <ActiveChatProvider> [FunctionComponent] > <ChatShell> [FunctionComponent] > <AlertDialog> [FunctionComponent] > <AlertDialog> [FunctionComponent] > <Dialog> [FunctionComponent] > <DialogProvider> [FunctionComponent] > <AlertDialogContent> [FunctionComponent] > <AlertDialogPortal> [FunctionComponent] > <AlertDialogPortal> [FunctionComponent] > <DialogPortal> [FunctionComponent] > <DialogPortalProvider> [FunctionComponent] > <Presence> key=\".0\" [FunctionComponent][0]",
-              "expected": "<Portal> [ForwardRef]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <SidebarInset> [FunctionComponent] > <main> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <ActiveChatProvider> [FunctionComponent] > <ChatShell> [FunctionComponent] > <AlertDialog> [FunctionComponent] > <AlertDialog> [FunctionComponent] > <Dialog> [FunctionComponent] > <DialogProvider> [FunctionComponent] > <AlertDialogContent> [FunctionComponent] > <AlertDialogPortal> [FunctionComponent] > <AlertDialogPortal> [FunctionComponent] > <DialogPortal> [FunctionComponent] > <DialogPortalProvider> [FunctionComponent] > <Presence> key=\".1\" [FunctionComponent]",
-            "reason": "conditional on <boolean: includes()>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <SidebarInset> [FunctionComponent] > <main> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <ActiveChatProvider> [FunctionComponent] > <ChatShell> [FunctionComponent] > <AlertDialog> [FunctionComponent] > <AlertDialog> [FunctionComponent] > <Dialog> [FunctionComponent] > <DialogProvider> [FunctionComponent] > <AlertDialogContent> [FunctionComponent] > <AlertDialogPortal> [FunctionComponent] > <AlertDialogPortal> [FunctionComponent] > <DialogPortal> [FunctionComponent] > <DialogPortalProvider> [FunctionComponent] > <Presence> key=\".1\" [FunctionComponent][0]",
-              "expected": "<Portal> [ForwardRef]",
-              "actual": "<end of children>"
-            }
-          }
-        ],
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 351,
         "staticFibers": 990,
         "coverage": 1,
@@ -434,6 +337,7 @@
         "stepsUsed": 397,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": "body",
       "note": "runtime replayed from 2026-09-08T08:02:12.317Z",
       "failure": null
@@ -463,6 +367,7 @@
         ]
       },
       "report": null,
+      "stateSpace": null,
       "anchor": null,
       "note": "static only",
       "failure": null
@@ -496,6 +401,7 @@
         ]
       },
       "report": null,
+      "stateSpace": null,
       "anchor": null,
       "note": "static only",
       "failure": null
@@ -600,8 +506,8 @@
       "id": "documenso",
       "revision": "2cac63a000e22422bdea449f68b8025e709aa73a",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:06:49.414Z",
-      "durationMs": 635,
+      "capturedAt": "2026-09-08T23:36:35.540Z",
+      "durationMs": 704,
       "runtime": {
         "reactVersion": "19.2.8",
         "rendererName": "react-dom",
@@ -678,8 +584,8 @@
       "id": "epic-stack",
       "revision": "8473afd804b66dba6a23f317908dc35d1535e90d",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:06:26.005Z",
-      "durationMs": 559,
+      "capturedAt": "2026-09-08T23:36:10.801Z",
+      "durationMs": 528,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -916,8 +822,8 @@
       "id": "graphiql",
       "revision": "fd32cea3e191eb6eb41b785e157403308d787b12",
       "framework": "spa",
-      "capturedAt": "2026-09-08T23:06:26.569Z",
-      "durationMs": 1826,
+      "capturedAt": "2026-09-08T23:36:11.334Z",
+      "durationMs": 2111,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -1002,8 +908,8 @@
       "id": "invoify",
       "revision": "3859b3cbae28ca4ec559db5ef87e41b798740340",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:06:28.398Z",
-      "durationMs": 1715,
+      "capturedAt": "2026-09-08T23:36:13.449Z",
+      "durationMs": 1548,
       "runtime": {
         "reactVersion": "19.2.0-canary-3fbfb9ba-20250409",
         "rendererName": "react-dom",
@@ -1209,8 +1115,8 @@
       "id": "lexical",
       "revision": "c3b629dcf6b5111811bb9ca5a3db0665099b2856",
       "framework": "spa",
-      "capturedAt": "2026-09-08T23:06:30.122Z",
-      "durationMs": 3220,
+      "capturedAt": "2026-09-08T23:36:15.006Z",
+      "durationMs": 3621,
       "runtime": {
         "reactVersion": "19.2.5",
         "rendererName": "react-dom",
@@ -1492,6 +1398,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 10,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -1532,9 +1439,7 @@
           }
         ],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 70,
         "staticFibers": 10,
         "coverage": 1,
@@ -1543,6 +1448,7 @@
         "stepsUsed": 11,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": "body",
       "note": "runtime replayed from 2026-09-08T07:21:29.586Z",
       "failure": null
@@ -1576,6 +1482,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 35,
         "matchedText": 8,
         "opaqueSubtrees": 0,
@@ -1600,21 +1507,7 @@
           }
         ],
         "branchesResolved": 2,
-        "branchDeviations": [
-          {
-            "path": "root > <MyApp> [FunctionComponent] > <Index> [FunctionComponent] > <Main> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <BlogGallery> [FunctionComponent] > <Pagination> [FunctionComponent] > <div> [HostComponent]",
-            "reason": "&& on unknown(property \"pagination\" may come from a spread of unknown(pageProps come from data fetching at request time))",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <MyApp> [FunctionComponent] > <Index> [FunctionComponent] > <Main> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <BlogGallery> [FunctionComponent] > <Pagination> [FunctionComponent] > <div> [HostComponent][1]",
-              "expected": "<div> [HostComponent]",
-              "actual": "<end of children>"
-            }
-          }
-        ],
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 68,
         "staticFibers": 46,
         "coverage": 1,
@@ -1623,6 +1516,7 @@
         "stepsUsed": 47,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T07:28:00.770Z",
       "failure": null
@@ -1631,8 +1525,8 @@
       "id": "nextjs-boilerplate",
       "revision": "1dffa39a32450300c8b01d8cfd3819f9b6e95842",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:06:33.344Z",
-      "durationMs": 118,
+      "capturedAt": "2026-09-08T23:36:18.630Z",
+      "durationMs": 89,
       "runtime": {
         "reactVersion": "19.3.0-canary-cbb046ab-20260731",
         "rendererName": "react-dom",
@@ -1694,8 +1588,8 @@
       "id": "nextjs-examples",
       "revision": "4fed8eaf197aaa60fd85371352482199a4c2107f",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:06:33.464Z",
-      "durationMs": 141,
+      "capturedAt": "2026-09-08T23:36:18.722Z",
+      "durationMs": 164,
       "runtime": {
         "reactVersion": "19.3.0-canary-cbb046ab-20260731",
         "rendererName": "react-dom",
@@ -1841,6 +1735,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "mismatch",
         "matchedFibers": 0,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -1852,9 +1747,7 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
-        "status": "mismatch",
         "runtimeFibers": 1,
         "staticFibers": 929,
         "coverage": 0,
@@ -1867,6 +1760,7 @@
         "stepsUsed": 2,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": "body",
       "note": "runtime replayed from 2026-09-08T07:59:38.410Z",
       "failure": null
@@ -2125,8 +2019,8 @@
       "id": "posthog",
       "revision": "09c5fbd37b2714276d4206debd3aeb253ce0e43a",
       "framework": "spa",
-      "capturedAt": "2026-09-08T23:06:55.576Z",
-      "durationMs": 3690,
+      "capturedAt": "2026-09-08T23:36:42.301Z",
+      "durationMs": 4415,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -2202,8 +2096,8 @@
       "id": "puck",
       "revision": "74a42c74db2b52da13ce1fc49087a07a6653dac8",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:06:33.607Z",
-      "durationMs": 10111,
+      "capturedAt": "2026-09-08T23:36:18.888Z",
+      "durationMs": 10618,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
@@ -2271,8 +2165,8 @@
       "id": "react-admin",
       "revision": "fa7ede4a25d36917b41f9b9e9936e9e7ab8fa8ab",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:06:43.721Z",
-      "durationMs": 4764,
+      "capturedAt": "2026-09-08T23:36:29.512Z",
+      "durationMs": 5228,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -2383,8 +2277,8 @@
       "id": "react-router-templates",
       "revision": "b68be71489a22315c7a734a86a18347745b393d2",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:06:48.487Z",
-      "durationMs": 85,
+      "capturedAt": "2026-09-08T23:36:34.743Z",
+      "durationMs": 89,
       "runtime": {
         "reactVersion": "19.2.7",
         "rendererName": "react-dom",
@@ -2592,8 +2486,8 @@
       "id": "redux-toolkit",
       "revision": "e99fe6135188219f031c5028f653fb82e671de24",
       "framework": "spa",
-      "capturedAt": "2026-09-08T23:06:48.574Z",
-      "durationMs": 438,
+      "capturedAt": "2026-09-08T23:36:34.835Z",
+      "durationMs": 317,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -2655,8 +2549,8 @@
       "id": "sentry",
       "revision": "a7b4a8a2a78a666418e527d812e81528147789da",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:06:50.051Z",
-      "durationMs": 5521,
+      "capturedAt": "2026-09-08T23:36:36.247Z",
+      "durationMs": 6050,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -2828,8 +2722,8 @@
       "id": "sonner",
       "revision": "8e4662b39255120b62138312058f5d77c0139a5e",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:06:49.014Z",
-      "durationMs": 73,
+      "capturedAt": "2026-09-08T23:36:35.155Z",
+      "durationMs": 75,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
@@ -2891,8 +2785,8 @@
       "id": "tanstack-query",
       "revision": "1893a965d219032207cbe147880d0e9f757a5a56",
       "framework": "spa",
-      "capturedAt": "2026-09-08T23:06:49.089Z",
-      "durationMs": 119,
+      "capturedAt": "2026-09-08T23:36:35.232Z",
+      "durationMs": 101,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -2954,8 +2848,8 @@
       "id": "tanstack-router",
       "revision": "cf166d160e6397007a979bfc7065b45ff69ea543",
       "framework": "spa",
-      "capturedAt": "2026-09-08T23:06:49.210Z",
-      "durationMs": 202,
+      "capturedAt": "2026-09-08T23:36:35.336Z",
+      "durationMs": 201,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -3048,6 +2942,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 176,
         "matchedText": 15,
         "opaqueSubtrees": 0,
@@ -3059,9 +2954,7 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 1,
-        "branchDeviations": [],
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 191,
         "staticFibers": 201,
         "coverage": 1,
@@ -3070,6 +2963,7 @@
         "stepsUsed": 192,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": "body",
       "note": "runtime replayed from 2026-09-08T08:16:25.361Z",
       "failure": null
