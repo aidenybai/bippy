@@ -62,6 +62,14 @@ const Accent = () => {
   return <strong>{css({ color: current.accent }).name.length > 0 ? "on" : "off"}</strong>;
 };
 
+const Statics = ({ component }: { component: object }) => (
+  <dl>
+    {"__radixId" in component ? <dt>slottable</dt> : <dd>plain</dd>}
+    {"render" in component ? <dt>forwardRef</dt> : <dd>function</dd>}
+    {"withComponent" in component ? <dt>styled</dt> : <dd>bare</dd>}
+  </dl>
+);
+
 export default function Emotion() {
   return (
     <ThemeProvider theme={theme}>
@@ -79,6 +87,8 @@ export default function Emotion() {
         <Themed />
         <Accent />
         <Slot>slot</Slot>
+        <Statics component={Card} />
+        <Statics component={Anchor} />
       </Card>
     </ThemeProvider>
   );

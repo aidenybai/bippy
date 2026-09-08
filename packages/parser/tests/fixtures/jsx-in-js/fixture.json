@@ -1,6 +1,6 @@
 {
-  "entry": "src/main.js",
+  "entry": "src/index.js",
   "expectedStatus": "exact",
   "minCoverage": 1,
-  "notes": "JSX in .js files (Babel/SWC/webpack projects) and a root render deferred to a timer."
+  "notes": "Create React App style: JSX in .js modules and a two-step createRoot()/root.render()."
 }

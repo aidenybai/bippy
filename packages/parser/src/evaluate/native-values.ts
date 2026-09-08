@@ -390,6 +390,21 @@ export const deleteNativeObjectMember = (object: StaticNativeObjectValue, key: s
 export const hasNativeObjectMember = (object: StaticNativeObjectValue, key: string): boolean =>
   expandoProperties.get(object.value)?.has(key) === true || key in object.value;
 
+/** What `Object.keys`/`entries` see of a native object; null once a mutation on dynamic arguments ran. */
+export const getNativeOwnEntries = (
+  object: StaticNativeObjectValue,
+): [key: string, value: StaticValue][] | null => {
+  if (uncertainNativeObjects.has(object.value)) return null;
+  const name = getNativeInterfaceName(object.value);
+  return [
+    ...Object.entries(object.value).map(([key, item]): [string, StaticValue] => [
+      key,
+      fromNativeValue(item, `${name}.${key}`, object.host),
+    ]),
+    ...(expandoProperties.get(object.value) ?? []),
+  ];
+};
+
 /** What `for..of`, spread and `Array.from` see of a native iterable (`NodeList`, `DOMTokenList`); null for other objects. */
 export const getNativeIterableItems = (object: StaticNativeObjectValue): StaticListValue | null => {
   if (uncertainNativeObjects.has(object.value) || !isIterable(object.value)) return null;

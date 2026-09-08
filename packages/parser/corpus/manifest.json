@@ -1165,6 +1165,545 @@
       "notes": "Nx loads the repository `.env` into every task, so the setup script copies `.env.dev.example` to `.env` with the corpus PostgreSQL URL and runs the Prisma migrations through `nx migrate:deploy prisma`. `nx dev builder` builds `@typebot.io/react` first and then runs `next dev` on :3000; the viewer, MinIO and Redis from `docker-compose.dev.yml` are not started."
     },
     {
+      "id": "commerce",
+      "repository": "https://github.com/vercel/commerce",
+      "revision": "1df2cf6f6c935f4782eed27351fa18f276917a4d",
+      "description": "Next.js Commerce home page (Next 15 canary app router, Shopify Storefront API, pnpm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/"
+      },
+      "notes": "Cannot run here: every server component awaits the Shopify Storefront GraphQL API (lib/shopify/index.ts reads SHOPIFY_STORE_DOMAIN and SHOPIFY_STOREFRONT_ACCESS_TOKEN and throws without them), so the dev server only renders the error overlay. Recorded static-only."
+    },
+    {
+      "id": "app-router-playground",
+      "repository": "https://github.com/vercel/next-app-router-playground",
+      "revision": "e7414970453d7fe2415adca2f34fc4d83ad2f46f",
+      "description": "Next.js App Router playground home page (Next 16 canary, MDX, pnpm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": ["@heroicons/react"]
+      }
+    },
+    {
+      "id": "chatbot",
+      "repository": "https://github.com/vercel/chatbot",
+      "revision": "107a43a8039bb4f19d0ced4ff3445e2523d14305",
+      "description": "Vercel AI Chatbot new-chat page (Next 16 app router, Auth.js guest session, Drizzle over a local PostgreSQL container, pnpm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/chatbot-setup.sh\""],
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-chatbot-pg 5451 chatbot"],
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "maxFiberCount": 20000,
+        "externalPackageAllowList": [
+          "radix-ui",
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "cmdk",
+          "sonner",
+          "next-themes"
+        ]
+      }
+    },
+    {
+      "id": "next-mdx-blog",
+      "repository": "https://github.com/leerob/next-mdx-blog",
+      "revision": "90d71ae00cc1518394e6f0fa635bc3d9e3adbff9",
+      "description": "leerob/next-mdx-blog home page (Next 16 app router, @next/mdx pages, pnpm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": ["@vercel/analytics"]
+      }
+    },
+    {
+      "id": "taxonomy",
+      "repository": "https://github.com/shadcn-ui/taxonomy",
+      "revision": "298a8857c7128a0d121e7f699dfd729f23b3966d",
+      "description": "shadcn/taxonomy marketing page (Next 13.3 canary app router, contentlayer, next-auth, Prisma, pnpm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/taxonomy-setup.sh\""],
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "envFiles": [".env"],
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "next-themes",
+          "@vercel/analytics"
+        ]
+      }
+    },
+    {
+      "id": "novel",
+      "repository": "https://github.com/steven-tey/novel",
+      "revision": "fa95098e66476c466faebb8211baa5869c101a9c",
+      "description": "Novel editor demo app (Next 15 app router over the novel workspace package, pnpm + turbo)",
+      "framework": "next-app",
+      "workingDirectory": "apps/web",
+      "install": "pnpm install && pnpm --filter novel build",
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "apps/web",
+        "route": "/",
+        "externalPackageAllowList": ["novel"]
+      },
+      "notes": "Live capture crashes: the editor's default content embeds a tweet and react-tweet@3.2.1 (node_modules/react-tweet/dist/utils.js addEntities) throws `TypeError: entities is not iterable` on the payload Twitter's syndication API returns today, so the page commits only the Next error overlay. Not patched (library/API drift, not a parser gap)."
+    },
+    {
+      "id": "contentful-blog",
+      "repository": "https://github.com/contentful/template-blog-webapp-nextjs",
+      "revision": "e7e4a7be787d2957d87109395cb9ff2231370091",
+      "description": "Contentful blog starter landing page (Next 14 app router under src/, react-i18next, GraphQL codegen SDK, Yarn 1)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "yarn install --ignore-engines",
+      "dev": "yarn dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/en-US"
+      },
+      "notes": "Cannot run here: the landing page fetches the Contentful GraphQL API through src/lib/client.ts, which needs CONTENTFUL_SPACE_ID and CONTENTFUL_ACCESS_TOKEN. Recorded static-only. next-i18n-router middleware rewrites / to /en-US, so the static route is the rewritten one."
+    },
+    {
+      "id": "nextjs-blog-boilerplate",
+      "repository": "https://github.com/ixartz/Next-js-Blog-Boilerplate",
+      "revision": "8b29f57b8da07127bf59fcdad68b9b4e9e1d8770",
+      "description": "Next-js-Blog-Boilerplate home page (Next 12 pages router, React 17, markdown posts, npm)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/"
+      }
+    },
+    {
+      "id": "material-kit-react",
+      "repository": "https://github.com/minimal-ui-kit/material-kit-react",
+      "revision": "69e780a40c455d664b2e13c525faf1d492a072a7",
+      "description": "Minimal UI material-kit-react (Vite SPA, MUI v7, createBrowserRouter data router with lazy pages)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "yarn install",
+      "dev": "yarn dev",
+      "url": "http://localhost:3039/",
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "route": "/",
+        "aliases": {
+          "src": "src"
+        }
+      }
+    },
+    {
+      "id": "admin-one-react-tailwind",
+      "repository": "https://github.com/justboil/admin-one-react-tailwind",
+      "revision": "251841fff0a36e4ac1eb96836adcd2858a66c3ac",
+      "description": "JustBoil Admin One (Next 15 app router, Tailwind 4, Redux Toolkit store, basePath /admin-one-react-tailwind)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/admin-one-react-tailwind/dashboard",
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/dashboard",
+        "externalPackageAllowList": ["react-redux"]
+      }
+    },
+    {
+      "id": "mantine-admin",
+      "repository": "https://github.com/jotyy/Mantine-Admin",
+      "revision": "8b6f5dcdda08d355b9bb91a0355303ff18593995",
+      "description": "Mantine Admin dashboard (Next 14 app router, Mantine 7 AppShell, TanStack Query)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "bun install",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/dashboard",
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/dashboard"
+      }
+    },
+    {
+      "id": "hooks-admin",
+      "repository": "https://github.com/HalseySpicy/Hooks-Admin",
+      "revision": "0f0735266b71ca70d619d6ccb47e9a988d992034",
+      "description": "Hooks-Admin (Vite 2 SPA, legacy ReactDOM.render, Redux + redux-persist, antd ConfigProvider, HashRouter + useRoutes)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --legacy-peer-deps",
+      "dev": "npm run dev",
+      "env": {
+        "VITE_OPEN": "false"
+      },
+      "url": "http://localhost:3301/#/login",
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "route": "/login",
+        "externalPackageAllowList": ["react-redux", "hoist-non-react-statics", "redux-persist"]
+      }
+    },
+    {
+      "id": "react-material-admin",
+      "repository": "https://github.com/flatlogic/react-material-admin",
+      "revision": "dd136027c2253253cfb5b8a4cb698696fb63f8cd",
+      "description": "Flatlogic react-material-admin (Vite SPA, MUI v7, JSX in .js files, declarative BrowserRouter routes, context-based auth)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/login",
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "jsconfig.json",
+        "entry": "src/index.js",
+        "route": "/login",
+        "aliases": {
+          "@": "src"
+        }
+      }
+    },
+    {
+      "id": "react-admin-dashboard",
+      "repository": "https://github.com/llorentegerman/react-admin-dashboard",
+      "revision": "c7bf047a09745c744d020bb4e6e0da54b21378cd",
+      "description": "react-admin-dashboard (CRA 3 / React 16, legacy ReactDOM.render, react-router-dom v5 Switch/Route, react-jss)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npx yarn@1.22.22 install --frozen-lockfile",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npx react-scripts start",
+      "env": {
+        "BROWSER": "none",
+        "CI": "true",
+        "PORT": "3006",
+        "SKIP_PREFLIGHT_CHECK": "true",
+        "SKIP_YARN_COREPACK_CHECK": "1"
+      },
+      "url": "http://localhost:3006/dashboard",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "jsconfig.json",
+        "entry": "src/index.js",
+        "route": "/dashboard"
+      },
+      "notes": "react-scripts 3 exits when its stdin closes unless CI=true; webpack 4 needs Node 16 (ERR_OSSL_EVP_UNSUPPORTED on newer OpenSSL), and the ambient yarn is a corepack shim that refuses to run under Node 16 (yarn 1 itself balks at the parent bippy package.json's packageManager field without SKIP_YARN_COREPACK_CHECK), so both commands go through npx."
+    },
+    {
+      "id": "shadcn-crm-dashboard",
+      "repository": "https://github.com/KaraBharat/shadcn-crm-dashboard",
+      "revision": "f262d7570fbf315992516fc6a90257c5e4ad812e",
+      "description": "shadcn-crm-dashboard (Next 15 app router, shadcn/ui + Radix, next-themes, /dashboard redirects to /dashboard/overview)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace --frozen-lockfile",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/dashboard/overview",
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/dashboard/overview",
+        "externalPackageAllowList": ["@uidotdev/usehooks"]
+      }
+    },
+    {
+      "id": "graphic-walker",
+      "repository": "https://github.com/Kanaries/graphic-walker",
+      "revision": "538029764c2a9cfbb6b9a59a83f7d13ae30089ac",
+      "description": "Kanaries graphic-walker playground (Vite SPA mounting the workspace library through embedGraphicWalker; MobX stores)",
+      "framework": "spa",
+      "workingDirectory": "packages/playground",
+      "install": "yarn install && yarn workspace @kanaries/graphic-walker vite build --minify false",
+      "dev": "yarn dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "packages/playground",
+        "entry": "src/main.tsx",
+        "aliases": {
+          "@kanaries/graphic-walker": "../graphic-walker/src/index.tsx"
+        },
+        "externalPackageAllowList": ["@kanaries/graphic-walker"]
+      },
+      "notes": "The playground resolves @kanaries/graphic-walker to the workspace build output, so the install builds the library; the package build minifies by default (vite.config.ts minify: esbuild), which would leave only mangled component names in the runtime tree, so the build runs with --minify false. The static side aliases the package to the library sources."
+    },
+    {
+      "id": "next-enterprise",
+      "repository": "https://github.com/Blazity/next-enterprise",
+      "revision": "e5e9735e943cd93c17bf99e26dfee6d351e855f7",
+      "description": "next-enterprise boilerplate landing page (Next app router, Turbopack, Tailwind v4, t3-env, pnpm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/"
+      }
+    },
+    {
+      "id": "saas-boilerplate",
+      "repository": "https://github.com/ixartz/SaaS-Boilerplate",
+      "revision": "4d81106bd2abf2f1309a6c73f97be4c63c54b700",
+      "description": "SaaS Boilerplate landing page (Next 14 app router, next-intl locale routing, Clerk, Drizzle over PGlite, npm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "dev": "npm run dev:next",
+      "env": {
+        "CLERK_SECRET_KEY": "sk_test_bippy_corpus_placeholder",
+        "STRIPE_SECRET_KEY": "sk_test_bippy_corpus_placeholder",
+        "STRIPE_WEBHOOK_SECRET": "whsec_bippy_corpus_placeholder",
+        "BILLING_PLAN_ENV": "dev"
+      },
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/en",
+        "externalPackageAllowList": ["@radix-ui/*", "lucide-react"]
+      },
+      "notes": "`src/libs/Env.ts` requires the Clerk/Stripe server secrets to be non-empty strings, so placeholders are passed via `env`; the landing page never calls those services. The next-intl middleware rewrites `/` to the `[locale]` segment with the default `en` locale, so the static route is `/en` while the browser stays on `/`. The database falls back to an in-process PGlite when `DATABASE_URL` is unset."
+    },
+    {
+      "id": "nextjs-saas-starter",
+      "repository": "https://github.com/nextjs/saas-starter",
+      "revision": "6e33e58b1e553a41fe22e6b941a7229a002de361",
+      "description": "Next.js SaaS Starter landing page (Next 15 canary app router, Drizzle over a local PostgreSQL container, Stripe, pnpm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "setup": [
+        "printf 'POSTGRES_URL=postgresql://postgres:postgres@localhost:5451/saas_starter\\nBASE_URL=http://localhost:3000\\nAUTH_SECRET=bippy-corpus-auth-secret\\nSTRIPE_SECRET_KEY=sk_test_bippy_corpus_placeholder\\nSTRIPE_WEBHOOK_SECRET=whsec_bippy_corpus_placeholder\\n' > .env",
+        "pnpm db:migrate"
+      ],
+      "services": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-saas-starter-pg 5451 saas_starter"
+      ],
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": ["swr", "radix-ui", "@radix-ui/*", "lucide-react"]
+      },
+      "notes": "The root layout preloads `/api/user` and `/api/team` through `getUser()`/`getTeamForUser()`, which query the database, so a throwaway Postgres is migrated with the app's own `db:migrate`. Stripe keys are placeholders; the landing page only imports the Stripe client without calling it."
+    },
+    {
+      "id": "next-forge",
+      "repository": "https://github.com/vercel/next-forge",
+      "revision": "9aad7123ef8accc79d6ece399f249c46bdb6b138",
+      "description": "next-forge marketing site apps/web (Next 16 app router, Turborepo + Bun workspaces, Clerk keyless, t3-env)",
+      "framework": "next-app",
+      "workingDirectory": "apps/web",
+      "install": "bun install",
+      "setup": ["grep -v '=\"\"$' .env.example > .env.local"],
+      "dev": "bun --bun next dev -p 3001",
+      "url": "http://localhost:3001/en",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": "apps/web",
+        "route": "/en",
+        "externalPackageAllowList": ["@repo/*", "@radix-ui/*", "lucide-react"]
+      },
+      "notes": "Static-only: `app/[locale]/layout.tsx` renders `Toolbar` from `basehub/next-toolbar`, whose `getStuffFromEnv` throws `Token not found` without `BASEHUB_TOKEN` and `Failed to resolve ref: Unauthorized` with a placeholder `bshb_pk_*` token (it resolves the ref against api.basehub.com), so every `/en` request answers 500 without real BaseHub credentials. The other keys in `apps/web/.env.example` are optional, but its empty strings fail the `z.url().optional()` schemas, so `.env.local` keeps only the non-empty lines. The marketing home lives under `app/[locale]/(home)`; the bare `/` answers 404 in this setup instead of being rewritten by the next-international proxy."
+    },
+    {
+      "id": "nextjs-starter-kit",
+      "repository": "https://github.com/michaelshimeles/nextjs-starter-kit",
+      "revision": "6b6deebe61d8ac37738fa53ada43033465e42c22",
+      "description": "Next.js Starter Kit landing page (Next 15 app router, Better Auth + Polar, Drizzle over neon-http, npm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "setup": ["cp .env.example .env.local"],
+      "dev": "npm run dev",
+      "env": {
+        "DATABASE_URL": "postgresql://postgres:postgres@localhost:5453/starter_kit",
+        "BETTER_AUTH_SECRET": "bippy-corpus-auth-secret",
+        "BETTER_AUTH_URL": "http://localhost:3000",
+        "NEXT_PUBLIC_APP_URL": "http://localhost:3000",
+        "POLAR_ACCESS_TOKEN": "polar_bippy_corpus_placeholder",
+        "POLAR_WEBHOOK_SECRET": "bippy-corpus-placeholder",
+        "NEXT_PUBLIC_STARTER_TIER": "starter",
+        "NEXT_PUBLIC_STARTER_SLUG": "starter"
+      },
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "next-themes",
+          "lucide-react",
+          "sonner",
+          "@vercel/analytics"
+        ]
+      },
+      "notes": "`db/drizzle.ts` constructs a neon-http client eagerly, so `DATABASE_URL` only needs to be a syntactically valid Postgres URL; the landing page's `getSubscriptionDetails()` returns early when Better Auth finds no session cookie, so no database is contacted."
+    },
+    {
+      "id": "chadnext",
+      "repository": "https://github.com/moinulmoin/chadnext",
+      "revision": "1a1f25a6de88453bd3c80efa8c3f61f9c159661c",
+      "description": "ChadNext landing page (Next 16 app router + Turbopack, next-international locale routing, Prisma over a local PostgreSQL container, pnpm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "setup": [
+        "printf 'DB_PRISMA_URL=postgresql://postgres:postgres@localhost:5452/chadnext\\nDB_URL_NON_POOLING=postgresql://postgres:postgres@localhost:5452/chadnext\\nNEXT_PUBLIC_APP_URL=http://localhost:3000\\nUPLOADTHING_URL=http://localhost:3000\\nSTRIPE_SECRET_KEY=sk_test_bippy_corpus_placeholder\\n' > .env",
+        "pnpm prisma db push --skip-generate",
+        "pnpm build:content"
+      ],
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-chadnext-pg 5452 chadnext"],
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/en",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/en",
+        "externalPackageAllowList": [
+          "next-themes",
+          "next-international",
+          "@radix-ui/*",
+          "lucide-react"
+        ]
+      },
+      "notes": "The pricing section calls `getCurrentSession()`, which reads the session through Prisma, so a throwaway Postgres receives the schema via `prisma db push`; it also imports `lib/server/payment.ts`, whose module-level `new Stripe(process.env.STRIPE_SECRET_KEY)` only needs a non-empty key (no Stripe call happens without a signed-in user). `/` is redirected to the default `en` locale by the next-international middleware. `velite build` generates the `.velite` content imported by the docs routes."
+    },
+    {
+      "id": "saasfly",
+      "repository": "https://github.com/nextify-limited/saasfly",
+      "revision": "49f7e28f69eae9cd9eed84221e13a3dbae87da67",
+      "description": "Saasfly marketing page apps/nextjs (Next 14 app router, Turborepo + Bun workspaces, Clerk keyless, Prisma/Kysely, t3-env)",
+      "framework": "next-app",
+      "workingDirectory": "apps/nextjs",
+      "install": "bun install",
+      "setup": [
+        "grep -v CLERK ../../.env.example > ../../.env.local",
+        "bun run --cwd ../../packages/db db:generate"
+      ],
+      "dev": "bun with-env next dev",
+      "url": "http://localhost:3000/en",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": "apps/nextjs",
+        "route": "/en",
+        "externalPackageAllowList": [
+          "@saasfly/*",
+          "next-themes",
+          "@radix-ui/*",
+          "lucide-react",
+          "@vercel/analytics",
+          "@vercel/speed-insights",
+          "@next-devtools/core"
+        ]
+      },
+      "notes": "`.env.example` ships placeholder values for every required server variable except that its Clerk keys (`'1'`) are not parseable publishable keys, so they are dropped from `.env.local` and Clerk runs in keyless development mode. `/en` is a public route in `src/utils/clerk.ts`; `getCurrentUser()` resolves to null without a session."
+    },
+    {
+      "id": "next-shadcn-dashboard-starter",
+      "repository": "https://github.com/Kiranism/next-shadcn-dashboard-starter",
+      "revision": "621cae9b49baa4f3ce9508c62525ee54c4180fa5",
+      "description": "next-shadcn-dashboard-starter sign-in page (Next 16 app router, Clerk keyless, shadcn/ui, nuqs, npm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/auth/sign-in",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/auth/sign-in",
+        "externalPackageAllowList": [
+          "nuqs",
+          "next-themes",
+          "@tanstack/react-query",
+          "@tanstack/react-query-devtools",
+          "sonner",
+          "nextjs-toploader",
+          "@radix-ui/*",
+          "radix-ui",
+          "lucide-react",
+          "@tabler/icons-react"
+        ]
+      },
+      "notes": "`/` redirects unauthenticated visitors to `/auth/sign-in` (`src/app/page.tsx`), which is captured directly. Clerk runs in keyless development mode; the embedded `<SignIn />` is a third-party opaque subtree."
+    },
+    {
       "id": "mini-dashboard",
       "repository": "https://github.com/meilisearch/mini-dashboard",
       "revision": "db4553b9aff43c0aa96ebc768a1c384be9099380",

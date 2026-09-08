@@ -27,7 +27,7 @@ import type {
   StaticRendererOptions,
   StaticValue,
 } from "../types.js";
-import { findRootRenderModule } from "./find-root-elements.js";
+import { findRootRenderCalls } from "./find-root-elements.js";
 import { computeRenderStats } from "./render-stats.js";
 
 export interface RenderComponentOptions {
@@ -258,23 +258,25 @@ export class StaticRenderer {
   /**
    * Evaluates the element handed to the root render call of an entry module
    * (`createRoot().render(<App />)`, `hydrateRoot(document, <App />)`), together
-   * with the statements that lead up to it. When the call lives in a module the
-   * entry imports, the entry's imports run first, in ESM order, so registrations
-   * made by side-effect imports are visible to the mounted tree. Null (with a
-   * diagnostic) when the module has no such call.
+   * with the statements that lead up to it. An entry without such a call (it
+   * mounts through an imported function) runs whole, and the element the first
+   * evaluated root render received is used. Null (with a diagnostic) when no
+   * root render happens.
    */
-  evaluateEntryElement(interpreter: Interpreter, entry: ModuleRecord): StaticValue | null {
-    const found = findRootRenderModule(this.graph, entry);
-    if (!found) {
+  evaluateEntryElement(interpreter: Interpreter, module: ModuleRecord): StaticValue | null {
+    const rootCalls = findRootRenderCalls(module);
+    if (rootCalls.length === 0) {
+      interpreter.initializeModule(module);
+      const [rootElement] = interpreter.rootRenders;
+      if (rootElement) return rootElement;
       interpreter.report(
         "no-root-render",
-        `no createRoot().render / hydrateRoot / ReactDOM.render call found in ${entry.filePath} or its imports`,
+        `no createRoot().render / hydrateRoot / ReactDOM.render call found in ${module.filePath}`,
         null,
         "error",
       );
       return null;
     }
-    const { module, calls: rootCalls } = found;
     if (rootCalls.length > 1) {
       interpreter.report(
         "multiple-root-renders",
@@ -284,7 +286,6 @@ export class StaticRenderer {
       );
     }
     const rootCall = rootCalls[0];
-    if (module !== entry) interpreter.initializeDependencies(entry);
     interpreter.initializeModule(
       module,
       module.sideEffectStatements.filter((statement) => statement.end <= rootCall.call.start),

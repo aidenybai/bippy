@@ -9,7 +9,9 @@ import {
   classifySegment,
   type DynamicSegment,
   findFirstDirectory,
+  findPageFile,
   findRouteFile,
+  isContentRouteFile,
   listSubdirectories,
   segmentSpecificity,
   splitPathname,
@@ -62,7 +64,7 @@ const collectRouteChildren = (directory: string, groups: string[]): RouteChild[]
 
 /** Directory chain from `directory` down to the one owning `page.*`, descending only through route groups. */
 const findPageThroughGroups = (directory: string): string[] | null => {
-  if (findRouteFile(directory, "page")) return [directory];
+  if (findPageFile(directory)) return [directory];
   for (const name of listSubdirectories(directory).filter(isRouteGroup)) {
     const chain = findPageThroughGroups(path.join(directory, name));
     if (chain) return [directory, ...chain];
@@ -151,7 +153,10 @@ const loadDefaultExport = (
     interpreter.report("next-app-parse", `could not parse ${filePath}`, null, "error");
     return null;
   }
-  return { module, component: interpreter.evaluateModuleExport(module, "default") };
+  return {
+    module,
+    component: interpreter.evaluateModuleExport(module, "default"),
+  };
 };
 
 const componentName = (filePath: string): string => path.basename(filePath, path.extname(filePath));
@@ -226,10 +231,8 @@ export const renderNextAppRoute = (
     const leaf = segments[segments.length - 1];
     Object.assign(model.params, leaf.params);
     loadNextConfig(renderer, interpreter, model);
-    const pagePath = findRouteFile(leaf.directory, "page");
+    const pagePath = findPageFile(leaf.directory);
     if (!pagePath) return unknownValue(`no page for ${options.route}`);
-    const page = loadDefaultExport(renderer, interpreter, pagePath);
-    if (!page) return unknownValue("unparsable page module");
 
     // Next 15+ hands these to pages and layouts as promises; the interpreter
     // unwraps `await` of a plain object, so the resolved shape is used directly.
@@ -239,25 +242,42 @@ export const renderNextAppRoute = (
       children: StaticValue | null,
     ): StaticObjectValue => {
       const entries = objectValue([
-        { kind: "property", key: "params", value: stringRecordValue(segment.params) },
+        {
+          kind: "property",
+          key: "params",
+          value: stringRecordValue(segment.params),
+        },
         { kind: "property", key: "searchParams", value: searchParams },
       ]);
-      if (children) entries.entries.push({ kind: "property", key: "children", value: children });
+      if (children)
+        entries.entries.push({
+          kind: "property",
+          key: "children",
+          value: children,
+        });
       return entries;
     };
 
     const serverContext = (module: ModuleRecord) =>
       interpreter.createModuleContext(module, undefined, "server");
 
-    let element: StaticValue = interpreter.createElement(
-      page.component,
-      withRouteProps(leaf, null),
-      null,
-      [],
-      null,
-      componentName(pagePath),
-      serverContext(page.module),
-    );
+    const pageElement = (): StaticValue => {
+      if (isContentRouteFile(pagePath)) {
+        return unknownValue(`${path.basename(pagePath)} is compiled by the bundler's MDX loader`);
+      }
+      const page = loadDefaultExport(renderer, interpreter, pagePath);
+      if (!page) return unknownValue("unparsable page module");
+      return interpreter.createElement(
+        page.component,
+        withRouteProps(leaf, null),
+        null,
+        [],
+        null,
+        componentName(pagePath),
+        serverContext(page.module),
+      );
+    };
+    let element = pageElement();
 
     for (let index = segments.length - 1; index >= 0; index -= 1) {
       const segment = segments[index];

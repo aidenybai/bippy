@@ -53,6 +53,7 @@ import {
   getLeadingAwait,
   getPatternNames,
   getVariableDeclaration,
+  isFunctionLikeExpression,
   type LeadingAwaitOracle,
   unwrapExpression,
 } from "../parse/ast-walk.js";
@@ -73,7 +74,7 @@ import {
   resolveReactApi,
   resolveReactApiMember,
 } from "../react/react-api.js";
-import { getCompilerHelper, getInlineCompilerHelper } from "./compiler-helpers.js";
+import { getCompilerHelper, getInlineCompilerHelper, isEsModuleLike } from "./compiler-helpers.js";
 import { createErrorValue } from "./errors.js";
 import type {
   ClassBody,
@@ -625,6 +626,8 @@ export class Interpreter {
   readonly storageAreas: StorageAreas;
   readonly indexedDb = createIndexedDbFactory();
   readonly timers: TimerQueue;
+  /** Elements handed to `createRoot().render`/`hydrateRoot`/`ReactDOM.render` calls that were evaluated. */
+  readonly rootRenders: StaticValue[] = [];
   /** Observable changes (state commits, heap mutations) so far; a timer tick that adds none is steady state. */
   changeCount = 0;
   private readonly heapJournals: HeapJournal[] = [];
@@ -769,6 +772,27 @@ export class Interpreter {
     return this.resolvedSymbolToValue(this.graph.resolveExport(module, exportedName), exportedName);
   }
 
+  /** Bundler interop: a default import is `module.exports` itself unless it is flagged `__esModule`. */
+  private evaluateModuleExportsMember(module: ModuleRecord, exportedName: string): StaticValue {
+    const moduleExports = this.evaluateModuleExports(module);
+    if (exportedName === "default" && !isEsModuleLike(moduleExports)) return moduleExports;
+    return this.getProperty(moduleExports, exportedName, this.createModuleContext(module), null);
+  }
+
+  private evaluateModuleExports(module: ModuleRecord): StaticValue {
+    if (!module.moduleExports) return { kind: "namespace", module };
+    return this.resolvedSymbolToValue(
+      {
+        kind: "expression",
+        module,
+        exportedName: "default",
+        expression: module.moduleExports,
+        isClientReference: false,
+      },
+      "default",
+    );
+  }
+
   /**
    * A name a namespace lacks is `undefined` when its export list is complete:
    * an ESM module whose `export *` sources are all analyzed, or a CommonJS
@@ -778,7 +802,7 @@ export class Interpreter {
   private getNamespaceMember(module: ModuleRecord, key: string): StaticValue {
     if (hasExportedName(module, key)) return this.evaluateModuleExport(module, key);
     if (key === "__esModule") return module.isCommonJs ? UNDEFINED_VALUE : TRUE_VALUE;
-    if (module.isCommonJs && !module.replacesModuleExports) {
+    if (module.isCommonJs && module.moduleExports === null) {
       return this.evaluateModuleExport(module, key);
     }
     const { names, complete } = this.graph.collectExportNames(module);
@@ -903,7 +927,7 @@ export class Interpreter {
     for (const name of module.outParameterBindings) this.evaluateModuleBinding(module, name);
   }
 
-  initializeDependencies(module: ModuleRecord): void {
+  private initializeDependencies(module: ModuleRecord): void {
     for (const specifier of module.dependencies) {
       const target = this.graph.resolveImportedModule(specifier, module);
       if (isModuleRecord(target)) this.initializeModule(target);
@@ -927,6 +951,10 @@ export class Interpreter {
       }
       case "namespace":
         return { kind: "namespace", module: symbol.module };
+      case "module-exports": {
+        const value = this.evaluateModuleExportsMember(symbol.module, symbol.exportedName);
+        return symbol.isClientReference ? toClientReference(value) : value;
+      }
       case "external": {
         const importedName =
           symbol.imported.kind === "named"
@@ -1158,7 +1186,7 @@ export class Interpreter {
         }
         return target;
       case "namespace": {
-        if (!target.module.replacesModuleExports) return target;
+        if (target.module.moduleExports === null) return target;
         const replacement = this.evaluateModuleExport(target.module, "default");
         if (
           replacement.kind === "function" ||
@@ -1186,12 +1214,15 @@ export class Interpreter {
   ): StaticValue {
     switch (binding.kind) {
       case "variable":
-        return binding.init
-          ? this.evaluateExpression(binding.init, context, binding.name)
-          : UNDEFINED_VALUE;
+        if (!binding.init) return UNDEFINED_VALUE;
+        return (
+          (isFunctionLikeExpression(binding.init)
+            ? getInlineCompilerHelper(binding.name, binding.init)
+            : null) ?? this.evaluateExpression(binding.init, context, binding.name)
+        );
       case "function":
         return (
-          getInlineCompilerHelper(binding.name) ??
+          getInlineCompilerHelper(binding.name, binding.node) ??
           this.createFunctionValue(binding.node, context, binding.name)
         );
       case "class":
@@ -2511,10 +2542,7 @@ export class Interpreter {
   ): StaticValue {
     const target = this.graph.resolveImportedModule(specifier, context.module);
     if (isModuleRecord(target)) {
-      if (isRequire && target.replacesModuleExports) {
-        return this.evaluateModuleExport(target, "default");
-      }
-      return { kind: "namespace", module: target };
+      return isRequire ? this.evaluateModuleExports(target) : { kind: "namespace", module: target };
     }
     if (target.kind === "external" || target.kind === "builtin") {
       const packageName = target.kind === "external" ? target.packageName : target.specifier;

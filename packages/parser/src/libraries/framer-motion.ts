@@ -1,3 +1,4 @@
+import semver from "semver";
 import { evaluateMediaQuery } from "../evaluate/media-query.js";
 import {
   NULL_VALUE,
@@ -18,6 +19,7 @@ import type {
   ContextDefinition,
   LibraryValueProvider,
   ModeledExports,
+  ProjectContext,
   StaticElementType,
   StaticObjectEntry,
   StaticObjectValue,
@@ -29,7 +31,8 @@ import { ClassComponentTag, ForwardRefTag } from "../work-tags.js";
 // Motion components and motion values are modeled; `AnimatePresence`, `MotionConfig`,
 // `LayoutGroup` and the rest of the package are plain React and analyzed from source.
 // A motion component (`createMotionComponent`) is a `forwardRef` named
-// `motion.<tag>` / `motion.create(<name>)` rendering `MotionContext.Provider`
+// `motion.<tag>` / `motion.create(<name>)` since 11.16.1 (before that only its
+// render function `MotionComponent` names it) rendering `MotionContext.Provider`
 // around an optional `MeasureLayout` (only with `layout`/`layoutId`/`drag`/
 // `dragControls`) and the wrapped component with the motion props filtered out
 // (`filterProps`). A motion value's current value is animation state only the
@@ -246,11 +249,23 @@ const measureLayoutElement = (props: StaticObjectValue): StaticValue => {
   );
 };
 
-const createMotionComponent = (wrapped: StaticValue, forwardMotionProps: boolean): StaticValue => {
+const describeMotionComponent = (
+  wrappedType: StaticElementType,
+  hasDisplayName: boolean,
+): string => {
+  if (!hasDisplayName) return "MotionComponent";
+  const wrapped = describeWrapped(wrappedType);
+  return wrappedType.kind === "host" ? `motion.${wrapped}` : `motion.create(${wrapped})`;
+};
+
+const createMotionComponent = (
+  wrapped: StaticValue,
+  forwardMotionProps: boolean,
+  hasDisplayName: boolean,
+): StaticValue => {
   const wrappedType = toElementType(wrapped, null);
-  const isHost = wrappedType.kind === "host";
   const stub: StubComponent = {
-    displayName: `motion.${isHost ? describeWrapped(wrappedType) : `create(${describeWrapped(wrappedType)})`}`,
+    displayName: describeMotionComponent(wrappedType, hasDisplayName),
     tag: ForwardRefTag,
     render: (props) => {
       const children = getObjectProperty(props, "children");
@@ -282,10 +297,22 @@ const forwardsMotionProps = (options: StaticValue | undefined): boolean =>
   options?.kind === "object" &&
   getTruthiness(getObjectProperty(options, "forwardMotionProps")) === true;
 
+/** `motion/index.mjs` names the component (`motion.div`) since 11.16.1; before, only the render function (`MotionComponent`). */
+const NAMED_MOTION_COMPONENT_VERSIONS = ">=11.16.1";
+
+const hasMotionDisplayName = (specifier: string, project: ProjectContext): boolean => {
+  const version = project.readPackageVersion(specifier.split("/")[0]);
+  return (
+    version === null ||
+    semver.satisfies(version, NAMED_MOTION_COMPONENT_VERSIONS, { includePrerelease: true })
+  );
+};
+
 /** `motion.div`, `motion.create(Component, options?)`, and the deprecated `motion(Component)`. */
-const motionProxy = (): StaticValue => {
+const motionProxy = (specifier: string, project: ProjectContext): StaticValue => {
+  const hasDisplayName = hasMotionDisplayName(specifier, project);
   const create = nativeFunction("motion.create", ([wrapped = UNDEFINED_VALUE, options]) =>
-    createMotionComponent(wrapped, forwardsMotionProps(options)),
+    createMotionComponent(wrapped, forwardsMotionProps(options), hasDisplayName),
   );
   return {
     kind: "proxy",
@@ -296,7 +323,7 @@ const motionProxy = (): StaticValue => {
           return unknownValue("motion tag name");
         return key.value === "create"
           ? create
-          : createMotionComponent(primitiveValue(key.value), false);
+          : createMotionComponent(primitiveValue(key.value), false, hasDisplayName);
       }),
     }),
   };
@@ -316,14 +343,14 @@ const useAnimate = (): StaticValue =>
     nativeFunction("animate", () => unknownValue("animation playback controls")),
   ]);
 
-export const framerMotionValue: LibraryValueProvider = (specifier, importedName) => {
+export const framerMotionValue: LibraryValueProvider = (specifier, importedName, project) => {
   if (!FRAMER_MOTION_SPECIFIERS.has(specifier)) return null;
   if (MOTION_VALUE_HOOKS.includes(importedName))
     return nativeFunction(importedName, () => motionValue(importedName));
   switch (importedName) {
     case "motion":
     case "m":
-      return motionProxy();
+      return motionProxy(specifier, project);
     case "useReducedMotion":
       return nativeFunction("useReducedMotion", () =>
         primitiveValue(evaluateMediaQuery("(prefers-reduced-motion)") === true),

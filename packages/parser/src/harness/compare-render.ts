@@ -71,6 +71,11 @@ const findPatternFiber = (
         if (inner) return inner;
         break;
       }
+      case "opaque": {
+        const inner = findPatternFiber(node.passedChildren, predicate);
+        if (inner) return inner;
+        break;
+      }
       default:
         break;
     }
