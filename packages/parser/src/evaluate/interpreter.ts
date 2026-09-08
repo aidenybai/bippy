@@ -11,6 +11,7 @@ import type {
   CallExpression,
   Class,
   Expression,
+  Function as FunctionNode,
   JSXAttributeItem,
   JSXChild,
   JSXElement,
@@ -38,21 +39,29 @@ import type {
   VariableDeclarator,
 } from "oxc-parser";
 import path from "node:path";
+import { getEsbuildDeclarationName } from "../graph/esbuild-symbol-names.js";
 import { isModuleRecord, type ModuleGraph } from "../graph/module-graph.js";
 import { hasExportedName } from "../graph/module-record.js";
 import { nativeFunction } from "../frameworks/stubs.js";
 import { getLibraryValue } from "../libraries/index.js";
 import { PurePackages } from "../libraries/pure-packages.js";
-import { getHoistedVarNames, getPatternNames, unwrapExpression } from "../parse/ast-walk.js";
+import {
+  getDeclaredNames,
+  getHoistedVarNames,
+  getPatternNames,
+  getVariableDeclaration,
+  unwrapExpression,
+} from "../parse/ast-walk.js";
 import { getSourceLocation } from "../parse/source-location.js";
 import {
   FUNCTION_OWN_KEYS,
+  getStubOwnKeys,
   REACT_ELEMENT_OWN_KEYS,
   WRAPPER_OWN_KEYS,
   getReactElementSymbolKey,
   REACT_ELEMENT_SYMBOL_KEYS,
 } from "../react/element-shape.js";
-import { toElementType } from "../react/element-type.js";
+import { toClientReference, toElementType } from "../react/element-type.js";
 import {
   getExternalMember,
   isReactLikePackage,
@@ -156,7 +165,7 @@ import {
 } from "./web-storage.js";
 import { type CompiledClass, getCompiledClass } from "./compiled-class.js";
 import type { CallFrame, ContextReader, EvaluationContext } from "./context.js";
-import type { HookFrame } from "./hooks.js";
+import type { HookFrame, StateCell } from "./hooks.js";
 import { NO_PROVIDERS, withOutcomeHandler, withScope, withoutSuspension } from "./context.js";
 import { decodeJsxEntities } from "./jsx-entities.js";
 import { cleanJsxText } from "./jsx-text.js";
@@ -274,6 +283,7 @@ interface PatternLeafAssigner {
 const UNKNOWN_PROJECT: ProjectContext = {
   rootDirectory: null,
   hasDeclaredDependency: () => false,
+  transpiler: "name-preserving",
   readServedAsset: () => null,
   findQuery: () => null,
   findMutations: () => null,
@@ -281,6 +291,9 @@ const UNKNOWN_PROJECT: ProjectContext = {
   routerState: null,
   storeStates: null,
 };
+
+/** Vite's `vite:esbuild` default `include` filter; plain `.js` is served untransformed. */
+const ESBUILD_TRANSFORMED_FILE = /\.(m?ts|[jt]sx)$/;
 
 const DEFAULT_MAX_CALL_DEPTH = 128;
 const DEFAULT_MAX_FORK_DEPTH = 5;
@@ -304,6 +317,10 @@ const FUNCTION_INSTANCE_KEYS = new Set(["length", "prototype", "arguments", "cal
 /** Names a function has without the analyzed code assigning them; any other name reads `undefined`. */
 const isFunctionOwnOrInheritedKey = (key: string): boolean =>
   isSymbolPropertyKey(key) || FUNCTION_INSTANCE_KEYS.has(key) || key in Function.prototype;
+
+/** Methods every callable inherits from `Function.prototype` and `Object.prototype`. */
+const isCallableProtocolKey = (key: string): boolean =>
+  key === "call" || key === "apply" || key === "bind" || OBJECT_PROTOTYPE_METHODS.has(key);
 
 /** A member read on a value whose prototype chain is fully known: absent names are `undefined`. */
 const prototypeMember = (
@@ -740,6 +757,7 @@ export class Interpreter {
       this.createModuleContext(module),
     );
     values.set(name, value);
+    this.journalLazyBindingValue(value);
     if (this.escapedMutations.get(module.filePath)?.has(name)) {
       markExternallyMutable(value, describeEscapedMutation(name));
     }
@@ -747,9 +765,20 @@ export class Interpreter {
   }
 
   /**
+   * A top-level binding first read inside a fork was declared before the fork
+   * began, so a path mutating it must not leak that mutation into the others.
+   */
+  private journalLazyBindingValue(value: StaticValue): void {
+    if (value.kind !== "object" && value.kind !== "list") return;
+    for (const journal of this.heapJournals) journal.record(value);
+  }
+
+  /**
    * Runs a module's top-level statements once, after those of its static
    * imports, in ESM evaluation order: `X.displayName = ...`, registry
    * registrations and polyfills land before anything reads their targets.
+   * Call-initialized declarations go through the module value cache so the
+   * call runs exactly once and its bindings keep their identity.
    */
   initializeModule(
     module: ModuleRecord,
@@ -758,9 +787,23 @@ export class Interpreter {
     if (this.initializedModules.has(module.filePath)) return;
     this.initializedModules.add(module.filePath);
     this.initializeDependencies(module);
-    if (sideEffectStatements.length > 0) {
-      this.evaluateBlock(sideEffectStatements, this.createModuleContext(module), false);
+    const context = this.createModuleContext(module);
+    let pendingStatements: Statement[] = [];
+    const flushPendingStatements = (): void => {
+      if (pendingStatements.length === 0) return;
+      this.evaluateBlock(pendingStatements, context, false);
+      pendingStatements = [];
+    };
+    for (const statement of sideEffectStatements) {
+      const declaration = getVariableDeclaration(statement);
+      if (!declaration) {
+        pendingStatements.push(statement);
+        continue;
+      }
+      flushPendingStatements();
+      for (const name of getDeclaredNames(declaration)) this.evaluateModuleBinding(module, name);
     }
+    flushPendingStatements();
   }
 
   private initializeDependencies(module: ModuleRecord): void {
@@ -772,14 +815,19 @@ export class Interpreter {
 
   resolvedSymbolToValue(symbol: ResolvedSymbol, nameHint: string | null): StaticValue {
     switch (symbol.kind) {
-      case "binding":
-        return this.evaluateModuleBinding(symbol.module, symbol.binding.name) ?? UNDEFINED_VALUE;
-      case "expression":
-        return this.evaluateExportExpression(
+      case "binding": {
+        const value =
+          this.evaluateModuleBinding(symbol.module, symbol.binding.name) ?? UNDEFINED_VALUE;
+        return symbol.isClientReference ? toClientReference(value) : value;
+      }
+      case "expression": {
+        const value = this.evaluateExportExpression(
           symbol.module,
           symbol.expression,
           symbol.module.isCommonJs ? nameHint : "default",
         );
+        return symbol.isClientReference ? toClientReference(value) : value;
+      }
       case "namespace":
         return { kind: "namespace", module: symbol.module };
       case "external": {
@@ -893,16 +941,19 @@ export class Interpreter {
         return target;
       }
       case "list": {
+        if (target.isFrozen) return target;
         const index = Number(propertyName);
-        if (
-          !target.isFrozen &&
-          Number.isInteger(index) &&
-          index >= 0 &&
-          index < target.items.length
-        ) {
-          this.recordHeapMutation(target);
-          target.items[index] = value;
+        if (Number.isInteger(index) && index >= 0) {
+          if (index < target.items.length) {
+            this.recordHeapMutation(target);
+            target.items[index] = value;
+          }
+          return target;
         }
+        if (propertyName === "length") return target;
+        this.recordHeapMutation(target);
+        target.properties ??= new Map();
+        target.properties.set(propertyName, value);
         return target;
       }
       case "function":
@@ -1049,7 +1100,8 @@ export class Interpreter {
     context: EvaluationContext,
     nameHint: string | null,
   ): StaticValue {
-    const explicitName = node.type === "ArrowFunctionExpression" ? null : (node.id?.name ?? null);
+    const explicitName =
+      node.type === "ArrowFunctionExpression" ? null : this.getDeclaredName(node, context.module);
     return {
       kind: "function",
       node,
@@ -1060,6 +1112,13 @@ export class Interpreter {
       name: explicitName ?? nameHint,
       properties: new Map(),
     };
+  }
+
+  private getDeclaredName(node: FunctionNode | Class, module: ModuleRecord): string | null {
+    if (!node.id) return null;
+    return this.project.transpiler === "esbuild" && ESBUILD_TRANSFORMED_FILE.test(module.filePath)
+      ? getEsbuildDeclarationName(module.file.program, node)
+      : node.id.name;
   }
 
   private createClassValue(
@@ -1074,7 +1133,7 @@ export class Interpreter {
       node,
       { members: collectClassMembers(node), superValue },
       context,
-      node.id?.name ?? nameHint,
+      this.getDeclaredName(node, context.module) ?? nameHint,
     );
   }
 
@@ -1415,6 +1474,11 @@ export class Interpreter {
       if (!journal.isPreexisting(target)) return;
       journal.record(target);
     }
+  }
+
+  /** A state update queued on one path of an enclosing fork is pending on that path only. */
+  recordStateUpdate(cell: StateCell): void {
+    for (const journal of this.heapJournals) journal.recordStateUpdate(cell);
   }
 
   private evaluatePropertyKey(
@@ -1978,7 +2042,9 @@ export class Interpreter {
           return type.stub.displayName === null
             ? UNDEFINED_VALUE
             : primitiveValue(type.stub.displayName);
-        return unknownValue(`${type.stub.displayName ?? "stub"}.${key}`, location);
+        return getStubOwnKeys(type.stub.tag).has(key)
+          ? unknownValue(`${type.stub.displayName ?? "stub"}.${key}`, location)
+          : UNDEFINED_VALUE;
       }
       default:
         return key === "displayName" || key === "name"
@@ -2080,8 +2146,7 @@ export class Interpreter {
         }
         return unknownValue(`context property "${key}"`, location);
       case "react-api": {
-        if (key === "call" || key === "apply" || key === "bind")
-          return { kind: "method", receiver: object, name: key };
+        if (isCallableProtocolKey(key)) return { kind: "method", receiver: object, name: key };
         const member = resolveReactApiMember(object.api, key);
         if (member) return member;
         return unknownValue(`React.${object.api}.${key}`, location);
@@ -2157,8 +2222,7 @@ export class Interpreter {
         const property =
           object.kind === "class" ? getStaticProperty(object, key) : object.properties.get(key);
         if (property) return property;
-        if (key === "call" || key === "apply" || key === "bind")
-          return { kind: "method", receiver: object, name: key };
+        if (isCallableProtocolKey(key)) return { kind: "method", receiver: object, name: key };
         if (object.kind === "class") {
           if (key === "prototype") return getClassPrototypeObject(this, object, context);
           if (key === "__proto__") return getClassPrototype(object);
@@ -2709,6 +2773,9 @@ export class Interpreter {
       hooks: context.hooks,
       suspension: asyncCall ? { call: asyncCall, outcomeHandlers: [] } : null,
     };
+    if (functionValue.node.type === "FunctionExpression" && functionValue.node.id) {
+      declareInScope(scope, functionValue.node.id.name, functionValue);
+    }
     this.bindParameters(functionValue.node.params, args, scope, callContext);
     if (functionValue.node.type !== "ArrowFunctionExpression") {
       declareInScope(scope, "arguments", listValue(args));

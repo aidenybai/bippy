@@ -3,6 +3,7 @@ import {
   NULL_VALUE,
   UNDEFINED_VALUE,
   branchValue,
+  describeValue,
   getObjectProperty,
   getTruthiness,
   listValue,
@@ -35,6 +36,7 @@ import type {
   ExternalValueProvider,
   ModuleRecord,
   StaticElementValue,
+  StaticListValue,
   StaticObjectValue,
   StaticRenderResult,
   StaticValue,
@@ -181,6 +183,19 @@ interface RouteContent {
   uncertainty: string | null;
 }
 
+interface RoutePath {
+  path: string | null;
+  uncertainty: string | null;
+}
+
+/** A route's `path`: a literal, absent, or (a computed value) unreadable, in which case any URL may match it. */
+const readRoutePath = (fields: StaticObjectValue): RoutePath => {
+  const value = getObjectProperty(fields, "path");
+  const literal = readString(value);
+  if (literal !== null || !isDefined(value)) return { path: literal, uncertainty: null };
+  return { path: null, uncertainty: `route path is ${describeValue(value)}` };
+};
+
 /** Route module fields (`element`, `Component`), taking `lazy`'s awaited module as a fallback source. */
 const readRouteContent = (
   fields: StaticObjectValue,
@@ -229,15 +244,18 @@ const readRouteObject = (
   if (value.kind !== "object") return uncertainRoute(`route is ${value.kind}`);
   const hasSpread = value.entries.some((entry) => entry.kind === "spread");
   const content = readRouteContent(value, getObjectProperty(value, "lazy"), resolveLazy);
+  const routePath = readRoutePath(value);
   return {
     id: readRouteId(value, treePath),
-    path: readString(getObjectProperty(value, "path")),
+    path: routePath.path,
     index: getTruthiness(getObjectProperty(value, "index")) === true,
     element: content.element,
     component: content.component,
     file: readString(getObjectProperty(value, "file")),
     children: readRouteList(getObjectProperty(value, "children"), resolveLazy, treePath),
-    uncertainty: hasSpread ? "route object has a spread" : content.uncertainty,
+    uncertainty: hasSpread
+      ? "route object has a spread"
+      : (routePath.uncertainty ?? content.uncertainty),
   };
 };
 
@@ -271,15 +289,16 @@ const readRouteElements = (
     if (item.kind === "element" && item.type.kind === "stub" && item.type.stub === ROUTE_STUB) {
       const props = item.props;
       const content = readRouteContent(props, getObjectProperty(props, "lazy"), resolveLazy);
+      const routePath = readRoutePath(props);
       routes.push({
         id: readRouteId(props, treePath),
-        path: readString(getObjectProperty(props, "path")),
+        path: routePath.path,
         index: getTruthiness(getObjectProperty(props, "index")) === true,
         element: content.element,
         component: content.component,
         file: null,
         children: readRouteElements(getObjectProperty(props, "children"), resolveLazy, treePath),
-        uncertainty: content.uncertainty,
+        uncertainty: routePath.uncertainty ?? content.uncertainty,
       });
     } else if (item.kind === "element" && item.type.kind === "fragment") {
       routes.push(
@@ -498,15 +517,24 @@ const renderDataRoute = (route: RouteRecord, outlet: StaticValue): StaticValue =
 
 /**
  * Routes whose path is unknown (a spread of a computed list, a dynamic
- * object) may rank above any statically matched route, so a match found next
- * to them is only the preferred alternative.
+ * object, a computed `path`) may rank above any statically matched route, so a
+ * match found next to them, at any depth under matching parents, is only the
+ * preferred alternative.
  */
+const collectUnreadableRoutes = (routes: RouteRecord[], remaining: string[]): RouteRecord[] =>
+  routes.flatMap((route) => {
+    if (route.uncertainty !== null && route.path === null) return [route];
+    const own = matchOwnPath(route.path, remaining);
+    return own ? collectUnreadableRoutes(route.children, own.rest) : [];
+  });
+
 const renderMatchedRoutes = (
   routes: RouteRecord[],
   pathname: string,
   parent: ParentMatch,
 ): StaticValue => {
-  const unreadable = routes.filter((route) => route.uncertainty !== null && route.path === null);
+  const remaining = splitPathname(pathname).slice(splitPathname(parent.pathnameBase).length);
+  const unreadable = collectUnreadableRoutes(routes, remaining);
   const chain = bestMatch(routes, pathname, parent);
   if (!chain) {
     return unknownValue(
@@ -615,6 +643,61 @@ const FORM_STUB: StubComponent = {
 
 const createRouterFactory = (name: string): StaticValue =>
   nativeFunction(name, (args) => objectFromRecord({ routes: args[0] ?? listValue([]) }));
+
+/**
+ * `createRoutesFromChildren`: `<Route>` elements (fragments flattened) become
+ * route objects whose id is the explicit `id` or the tree path joined with `-`.
+ * Children that are not static elements stay in the list so the route reader
+ * reports them as uncertain instead of dropping them.
+ */
+const routeObjectsFromElements = (
+  children: StaticValue,
+  parentPath: number[] = [],
+): StaticListValue => {
+  const items = children.kind === "list" ? children.items : [children];
+  const routes: StaticValue[] = [];
+  items.forEach((item, index) => {
+    if (item.kind === "primitive") return;
+    const treePath = [...parentPath, index];
+    if (item.kind === "element" && item.type.kind === "fragment") {
+      routes.push(
+        ...routeObjectsFromElements(getObjectProperty(item.props, "children"), treePath).items,
+      );
+      return;
+    }
+    if (item.kind !== "element" || item.type.kind !== "stub" || item.type.stub !== ROUTE_STUB) {
+      routes.push(item);
+      return;
+    }
+    const props = item.props;
+    const nestedChildren = getObjectProperty(props, "children");
+    const id = getObjectProperty(props, "id");
+    const errorElement = getObjectProperty(props, "errorElement");
+    const errorBoundary = getObjectProperty(props, "ErrorBoundary");
+    routes.push(
+      objectFromRecord({
+        id: getTruthiness(id) === true ? id : primitiveValue(treePath.join("-")),
+        caseSensitive: getObjectProperty(props, "caseSensitive"),
+        element: getObjectProperty(props, "element"),
+        Component: getObjectProperty(props, "Component"),
+        index: getObjectProperty(props, "index"),
+        path: getObjectProperty(props, "path"),
+        loader: getObjectProperty(props, "loader"),
+        action: getObjectProperty(props, "action"),
+        errorElement,
+        ErrorBoundary: errorBoundary,
+        hasErrorBoundary: primitiveValue(isDefined(errorBoundary) || isDefined(errorElement)),
+        shouldRevalidate: getObjectProperty(props, "shouldRevalidate"),
+        handle: getObjectProperty(props, "handle"),
+        lazy: getObjectProperty(props, "lazy"),
+        children: isDefined(nestedChildren)
+          ? routeObjectsFromElements(nestedChildren, treePath)
+          : UNDEFINED_VALUE,
+      }),
+    );
+  });
+  return listValue(routes);
+};
 
 /** Values only the running router knows; each is a hook returning an explicit unknown. */
 const RUNTIME_ONLY_HOOKS = new Set([
@@ -905,6 +988,11 @@ export const createReactRouterModel = (
       case "createMemoryRouter":
       case "createStaticRouter":
         return createRouterFactory(importedName);
+      case "createRoutesFromElements":
+      case "createRoutesFromChildren":
+        return nativeFunction(importedName, (args) =>
+          routeObjectsFromElements(args[0] ?? UNDEFINED_VALUE),
+        );
       case "RouterProvider":
         return stubValue(routerProviderStub);
       case "Routes":

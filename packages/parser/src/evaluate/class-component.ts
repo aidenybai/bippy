@@ -187,11 +187,13 @@ export const getSuperObject = (
 const classPrototypes = new WeakMap<StaticClassValue, StaticObjectValue>();
 const prototypeOwners = new WeakMap<StaticObjectValue, StaticClassValue>();
 
+/** The class whose `.prototype` this object is, or null for any other object. */
+export const getPrototypeOwner = (value: StaticObjectValue): StaticClassValue | null =>
+  prototypeOwners.get(value) ?? null;
+
 /** `Object.getPrototypeOf(Base.prototype)` is `Object.prototype` when `Base` has no `extends` clause. */
-export const isBaseClassPrototype = (value: StaticObjectValue): boolean => {
-  const owner = prototypeOwners.get(value);
-  return owner !== undefined && owner.body.superValue === null;
-};
+export const isBaseClassPrototype = (value: StaticObjectValue): boolean =>
+  getPrototypeOwner(value)?.body.superValue === null;
 
 /**
  * `Class.prototype`: the chain's methods and accessors with the prototype as

@@ -35,7 +35,8 @@ export interface EffectCall {
  * changing hold unknown values and further updates no longer schedule passes.
  * `requestRender` is the owner's `scheduleUpdateOnFiber`: an update queued
  * outside its render (from another component's effect, a store listener) must
- * still produce a pass.
+ * still produce a pass. `recordUpdate` journals a cell's pending update like a
+ * heap write, so an update queued on one path of a fork is undone on the others.
  */
 export interface HookFrame {
   cells: StateCell[];
@@ -49,9 +50,13 @@ export interface HookFrame {
   isFrozen: boolean;
   isStrictMode: boolean;
   requestRender: (() => void) | null;
+  recordUpdate: ((cell: StateCell) => void) | null;
 }
 
-export const createHookFrame = (isStrictMode = false): HookFrame => ({
+export const createHookFrame = (
+  isStrictMode = false,
+  recordUpdate: HookFrame["recordUpdate"] = null,
+): HookFrame => ({
   cells: [],
   cursor: 0,
   memoCells: [],
@@ -63,6 +68,7 @@ export const createHookFrame = (isStrictMode = false): HookFrame => ({
   isFrozen: false,
   isStrictMode,
   requestRender: null,
+  recordUpdate,
 });
 
 /**
@@ -149,6 +155,7 @@ export const queueStateUpdate = (frame: HookFrame, cell: StateCell, value: Stati
   if (frame.isDeferred) return escapeStateCell(frame, cell);
   if (cell.isEscaped) return;
   if (cell.next === null && isSameHookValue(value, cell.current)) return;
+  frame.recordUpdate?.(cell);
   cell.next = value;
   if (!frame.isRendering) frame.requestRender?.();
 };

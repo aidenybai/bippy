@@ -162,6 +162,13 @@ const isPlainObject = (value: object): boolean => {
   return prototype === Object.prototype || prototype === null;
 };
 
+/** Exotic objects (proxies, null-prototype class instances) may expose no `constructor`; fall back to the `toString` tag. */
+const describeNativeConstructor = (value: object): string => {
+  const constructor: unknown = Reflect.get(value, "constructor");
+  if (typeof constructor === "function" && constructor.name) return constructor.name;
+  return Object.prototype.toString.call(value).slice("[object ".length, -1);
+};
+
 const describeError = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
@@ -233,7 +240,7 @@ const liftObject = (
     return { kind: "regexp", pattern: value.source, flags: value.flags, lastIndex: 0 };
   }
   if (!isPlainObject(value)) {
-    return unknownValue(`${name}: ${value.constructor.name} from native code`);
+    return unknownValue(`${name}: ${describeNativeConstructor(value)} from native code`);
   }
   if (isReactElementTag(Reflect.get(value, "$$typeof"))) {
     const type: unknown = Reflect.get(value, "type");
@@ -283,7 +290,7 @@ export const fromNativeValue = (
 ): StaticValue => liftValue(value, name, host, new Set());
 
 const describeMember = (object: StaticNativeObjectValue, key: string): string =>
-  `${object.value.constructor.name}.${key}`;
+  `${describeNativeConstructor(object.value)}.${key}`;
 
 /**
  * A property of a native object, with methods bound so they run natively when
@@ -353,7 +360,7 @@ export const hasNativeObjectMember = (object: StaticNativeObjectValue, key: stri
 /** What `for..of`, spread and `Array.from` see of a native iterable (`NodeList`, `DOMTokenList`); null for other objects. */
 export const getNativeIterableItems = (object: StaticNativeObjectValue): StaticListValue | null => {
   if (uncertainNativeObjects.has(object.value) || !isIterable(object.value)) return null;
-  const name = object.value.constructor.name;
+  const name = describeNativeConstructor(object.value);
   return listValue(
     Array.from(object.value, (item, index) =>
       fromNativeValue(item, `${name}[${index}]`, object.host),

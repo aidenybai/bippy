@@ -94,6 +94,7 @@ export const NEXT_APP_PROFILE: FrameworkProfile = {
 
 const NEXT_PAGES_RUNTIME_WRAPPERS = [
   "Root",
+  "StrictMode",
   "AppContainer",
   "Container",
   "PathnameContextProviderAdapter",
@@ -108,15 +109,29 @@ const NEXT_PAGES_RUNTIME_WRAPPERS = [
   "HotReload",
   "ReactDevOverlay",
   "PagesDevOverlay",
+  "PagesDevOverlayBridge",
   "PagesDevOverlayErrorBoundary",
   "Fragment",
 ];
+
+// `next/dist/client/index` renders a childless `<Head callback>` next to the
+// app (the application's `next/head` always has a `SideEffect` child) and the
+// route announcer inside a `<Portal type="next-route-announcer">`;
+// `PagesDevOverlay` adds its font styles and overlay after the error boundary.
+const NEXT_PAGES_INJECTED_FIBERS = new Set(["FontStyles", "DevOverlay"]);
+
+const isNextPagesInjectedFiber = (fiber: RuntimeFiberSnapshot): boolean => {
+  if (fiber.name === null) return false;
+  if (NEXT_PAGES_INJECTED_FIBERS.has(fiber.name)) return true;
+  if (fiber.name === "Head") return fiber.children.length === 0 && "callback" in fiber.props;
+  return fiber.name === "Portal" && fiber.props.type === "next-route-announcer";
+};
 
 export const NEXT_PAGES_PROFILE: FrameworkProfile = {
   kind: "next-pages",
   transparentRuntimeFibers: new Set(NEXT_PAGES_RUNTIME_WRAPPERS),
   transparentStaticFibers: new Set(["Fragment"]),
-  isInjectedRuntimeFiber: neverInjected,
+  isInjectedRuntimeFiber: isNextPagesInjectedFiber,
   defaultAnchor: null,
 };
 

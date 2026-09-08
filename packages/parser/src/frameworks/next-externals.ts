@@ -189,10 +189,15 @@ const HEAD_STUB: StubComponent = {
   render: () => stubElement(emptyStub("SideEffect"), {}),
 };
 
-/** `next/script` renders a `<script>` only for `beforeInteractive`; every other strategy returns null. */
-const SCRIPT_STUB: StubComponent = {
+/**
+ * `next/script` commits a `<script>` only for `beforeInteractive` in the App
+ * Router; the Pages Router hands every strategy to the head manager and
+ * renders nothing.
+ */
+const scriptStub = (kind: NextRouterKind): StubComponent => ({
   displayName: "Script",
   render: (props) => {
+    if (kind === "next-pages") return NULL_VALUE;
     const strategy = getObjectProperty(props, "strategy");
     if (strategy.kind === "primitive" && strategy.value === "beforeInteractive") {
       return hostElement("script", {
@@ -203,7 +208,7 @@ const SCRIPT_STUB: StubComponent = {
     if (strategy.kind === "unknown") return unknownValue("script strategy decides host output");
     return NULL_VALUE;
   },
-};
+});
 
 const BAILOUT_TO_CSR_STUB = passthroughStub("BailoutToCSR");
 
@@ -402,7 +407,7 @@ export const createNextModel = (options: NextModelOptions): NextModel => {
       case "next/head":
         return importedName === "default" ? stubValue(HEAD_STUB) : null;
       case "next/script":
-        return importedName === "default" ? stubValue(SCRIPT_STUB) : null;
+        return importedName === "default" ? stubValue(scriptStub(options.kind)) : null;
       case "next/dynamic":
         return importedName === "default"
           ? nativeFunction("dynamic", (args, tools) => dynamicComponent(options.kind, args, tools))

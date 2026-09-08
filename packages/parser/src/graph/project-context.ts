@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { EMPTY_OBSERVATIONS } from "../observations.js";
 import { readPackageManifest } from "../package-manifest.js";
-import type { ProjectContext, RuntimeObservations } from "../types.js";
+import type { ModuleTranspiler, ProjectContext, RuntimeObservations } from "../types.js";
 
 /** Where Next, Vite and CRA dev servers serve static files from, at the URL root. */
 const PUBLIC_DIRECTORY = "public";
@@ -42,6 +42,7 @@ export const createProjectContext = (
   rootDirectory: string,
   observations: RuntimeObservations = EMPTY_OBSERVATIONS,
   origin: string | null = null,
+  transpiler: ModuleTranspiler = "name-preserving",
 ): ProjectContext => {
   const declared = new Set<string>();
   for (let directory = rootDirectory; ; directory = path.dirname(directory)) {
@@ -55,6 +56,7 @@ export const createProjectContext = (
   return {
     rootDirectory,
     hasDeclaredDependency: (packageName) => declared.has(packageName),
+    transpiler,
     readServedAsset: (url) => readServedAsset(rootDirectory, origin, url),
     findQuery: (queryHash) => queries.get(queryHash) ?? null,
     findMutations: (mutationHash) =>

@@ -11,6 +11,7 @@ export const createFunctionComponentDefinition = (
   properties: value.properties,
   boundArgs: value.boundArgs,
   boundThis: value.boundThis,
+  isClientReference: value.isClientReference ?? false,
 });
 
 export const createClassComponentDefinition = (
@@ -22,7 +23,32 @@ export const createClassComponentDefinition = (
   scope: value.scope,
   classBody: value.body,
   properties: value.properties,
+  isClientReference: false,
 });
+
+const toClientReferenceType = (type: StaticElementType): StaticElementType => {
+  switch (type.kind) {
+    case "function":
+    case "forward-ref":
+      return { ...type, component: { ...type.component, isClientReference: true } };
+    case "memo":
+      return { ...type, inner: toClientReferenceType(type.inner) };
+    default:
+      return type;
+  }
+};
+
+/** The value as server code sees it once imported through a `"use client"` module. */
+export const toClientReference = (value: StaticValue): StaticValue => {
+  switch (value.kind) {
+    case "function":
+      return { ...value, isClientReference: true };
+    case "component-reference":
+      return { kind: "component-reference", type: toClientReferenceType(value.type) };
+    default:
+      return value;
+  }
+};
 
 export const toElementType = (value: StaticValue, nameHint: string | null): StaticElementType => {
   switch (value.kind) {
@@ -103,5 +129,17 @@ export const toElementType = (value: StaticValue, nameHint: string | null): Stat
         displayName: nameHint,
         reason: `invalid element type (${value.kind})`,
       };
+  }
+};
+
+export const getFunctionComponent = (type: StaticElementType): ComponentDefinition | null => {
+  switch (type.kind) {
+    case "function":
+    case "forward-ref":
+      return type.component;
+    case "memo":
+      return getFunctionComponent(type.inner);
+    default:
+      return null;
   }
 };
