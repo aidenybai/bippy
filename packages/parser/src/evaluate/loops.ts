@@ -206,7 +206,9 @@ const evaluateUncertainTail = (
       interpreter.bindDeclarator(
         statement.init.kind,
         declarator.id,
-        unknownPrimitiveValue("number", "loop counter"),
+        declarator.init?.type === "Literal" && typeof declarator.init.value === "number"
+          ? unknownPrimitiveValue("number", "loop counter")
+          : unknownValue("loop variable"),
         loopContext,
       );
     }

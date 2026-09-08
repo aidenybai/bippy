@@ -34,6 +34,8 @@ import {
   getHostGlobal,
   getHostGlobalTypeof,
   getLanguageMethodResult,
+  getLanguageObject,
+  toLanguagePropertyKey,
 } from "./host-globals.js";
 import { createAbortController } from "./abort-controller.js";
 import { createDomObserver, isDomObserverName } from "./dom-observers.js";
@@ -53,7 +55,6 @@ import { callEventTargetMethod } from "./event-listeners.js";
 import { hasProperty, isIntrinsicFunctionKey } from "./has-property.js";
 import {
   getBuiltinFunctionSource,
-  getBuiltinPrototype,
   getBuiltinPrototypeName,
   getPrototypeWitness,
 } from "./instance-of.js";
@@ -531,12 +532,13 @@ const hasOwnProperty = (
     );
   }
   if (receiver.kind === "global") {
-    const builtinPrototype = getBuiltinPrototype(receiver.name);
-    if (!builtinPrototype || isSymbolPropertyKey(propertyName)) return null;
+    const languageObject = getLanguageObject(receiver.name);
+    const propertyKey = toLanguagePropertyKey(propertyName);
+    if (languageObject === null || propertyKey === null) return null;
     return primitiveValue(
       name === "hasOwnProperty"
-        ? Object.hasOwn(builtinPrototype, propertyName)
-        : Object.prototype.propertyIsEnumerable.call(builtinPrototype, propertyName),
+        ? Object.hasOwn(languageObject, propertyKey)
+        : Object.prototype.propertyIsEnumerable.call(languageObject, propertyKey),
     );
   }
   return null;
@@ -610,9 +612,11 @@ const callInvokedGlobal = (
           name: target.slice(prototypeIndex + PROTOTYPE_SEGMENT.length),
         };
   if (invocation === "bind") {
-    return callee.kind === "global" && args.length <= 1
-      ? callee
-      : unknownValue(`${name}()`, location);
+    const boundArgs = args.slice(1);
+    if (callee.kind === "global" && boundArgs.length === 0) return callee;
+    return nativeFunction(`bound ${target}`, (callArgs, tools) =>
+      tools.call(callee, [...boundArgs, ...callArgs]),
+    );
   }
   const [, second] = args;
   const calleeArgs =

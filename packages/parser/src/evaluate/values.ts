@@ -358,9 +358,13 @@ export const getSymbolDescription = (symbol: StaticSymbolValue): string | undefi
   unregisteredSymbols.has(symbol.key) ? symbol.description : symbol.key;
 
 /** Symbol-keyed properties are stored under an `@@` key; enumeration skips them like `Object.keys` does. */
-export const getSymbolPropertyKey = (symbol: StaticSymbolValue): string => `@@${symbol.key}`;
+export const SYMBOL_PROPERTY_KEY_PREFIX = "@@";
 
-export const isSymbolPropertyKey = (key: string): boolean => key.startsWith("@@");
+export const getSymbolPropertyKey = (symbol: StaticSymbolValue): string =>
+  `${SYMBOL_PROPERTY_KEY_PREFIX}${symbol.key}`;
+
+export const isSymbolPropertyKey = (key: string): boolean =>
+  key.startsWith(SYMBOL_PROPERTY_KEY_PREFIX);
 
 /** The property name a computed key denotes, or `null` when the key is not statically known. */
 export const getPropertyName = (key: StaticValue): string | null => {
@@ -415,7 +419,7 @@ export const getOwnPropertyDescriptor = (
 /** The symbols keying own properties, as `Object.getOwnPropertySymbols` lists them. */
 export const getKnownObjectSymbols = (object: StaticObjectValue): StaticSymbolValue[] | null =>
   getKnownOwnKeys(object, isSymbolPropertyKey)?.map((propertyKey) => {
-    const key = propertyKey.slice("@@".length);
+    const key = propertyKey.slice(SYMBOL_PROPERTY_KEY_PREFIX.length);
     return unregisteredSymbols.get(key) ?? { kind: "symbol", key };
   }) ?? null;
 

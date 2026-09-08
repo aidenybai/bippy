@@ -53,7 +53,7 @@ const BUILTIN_CONSTRUCTORS: Record<string, BuiltinConstructor> = {
 };
 
 /** The native prototype object a `<Constructor>.prototype` global denotes, or null for other names. */
-export const getBuiltinPrototype = (globalName: string): object | null => {
+const getBuiltinPrototype = (globalName: string): object | null => {
   const [constructorName, member, ...rest] = globalName.split(".");
   if (member !== "prototype" || rest.length > 0 || constructorName === undefined) return null;
   return BUILTIN_CONSTRUCTORS[constructorName]?.prototype ?? null;
