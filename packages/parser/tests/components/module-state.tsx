@@ -21,9 +21,22 @@ if (document.referrer.length > 0) {
   boot();
 }
 
+const providers = [{ id: "credentials" }];
+if (document.referrer.includes("provider=oauth")) {
+  providers.push({ id: "oauth" });
+}
+const oauthProviders = providers.filter((provider) => provider.id !== "credentials");
+
 const Frame = () => (isEmbedded || isFramed ? <iframe title="embedded" /> : <main>top level</main>);
 
 const Theme = () => (referrerTheme === "dark" ? <b>dark</b> : <i>light</i>);
+
+const Providers = () => (
+  <ul>
+    {oauthProviders.length > 0 && <li>oauth</li>}
+    <li>credentials</li>
+  </ul>
+);
 
 const Boots = () => (
   <ol>
@@ -39,6 +52,7 @@ export default function ModuleState() {
       <Frame />
       <Theme />
       <Boots />
+      <Providers />
     </div>
   );
 }

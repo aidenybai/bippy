@@ -5,6 +5,8 @@ import type {
   StaticValue,
 } from "../types.js";
 import { element, nativeFunction } from "../frameworks/stubs.js";
+import type { HostDocument } from "../host/host-document.js";
+import { GLOBAL_INTERFACE_NAME } from "../host/realm-table.js";
 import { REACT_ELEMENT_SYMBOL_KEYS } from "../react/element-shape.js";
 import { EVENT_LISTENER_METHODS } from "./event-listeners.js";
 import {
@@ -16,7 +18,6 @@ import {
   primitiveValue,
   unknownPrimitiveValue,
   unknownValue,
-  getNativeConstructorName,
 } from "./values.js";
 
 const UNCERTAIN = Symbol("uncertain");
@@ -29,18 +30,6 @@ const nativeObjectValues = new WeakMap<object, StaticNativeObjectValue>();
 
 /** Properties the program adds to DOM nodes (`node.__lexicalKey`): interpreter values that never reach the native object. */
 const expandoProperties = new WeakMap<object, Map<string, StaticValue>>();
-
-const DOM_INTERFACE_NAMES = [
-  "Node",
-  "AbstractRange",
-  "Selection",
-  "DOMTokenList",
-  "CSSStyleDeclaration",
-  "NodeList",
-  "HTMLCollection",
-  "NamedNodeMap",
-  "DOMStringMap",
-];
 
 /**
  * Members whose runtime value depends on layout, which the static document
@@ -100,17 +89,14 @@ const PURE_METHOD_PREFIXES = [
   "valueOf",
 ];
 
-const getDomInterface = (name: string): Function | null => {
-  const iface: unknown = Reflect.get(globalThis, name);
-  return typeof iface === "function" ? iface : null;
+/** The interface name of a native object, read off its prototype: a `Proxy` over a DOM map (`dataset`) answers `constructor` as a lookup. */
+export const getNativeInterfaceName = (value: object): string => {
+  const prototype = Reflect.getPrototypeOf(value);
+  const constructor: unknown =
+    prototype === null ? undefined : Reflect.get(prototype, "constructor");
+  if (typeof constructor === "function" && constructor.name) return constructor.name;
+  return Object.prototype.toString.call(value).slice("[object ".length, -1);
 };
-
-// happy-dom leaves some interfaces (`DOMStringMap`) off the window, so fall back to the prototype's name.
-const isDomObject = (value: object): boolean =>
-  DOM_INTERFACE_NAMES.some((name) => {
-    const iface = getDomInterface(name);
-    return iface !== null ? value instanceof iface : getNativeConstructorName(value) === name;
-  });
 
 const isIterable = (value: object): value is Iterable<unknown> =>
   typeof Reflect.get(value, Symbol.iterator) === "function";
@@ -118,16 +104,19 @@ const isIterable = (value: object): value is Iterable<unknown> =>
 const isPureMethodName = (name: string): boolean =>
   PURE_METHOD_PREFIXES.some((prefix) => name.startsWith(prefix));
 
-export const nativeObjectValue = (value: object): StaticNativeObjectValue => {
+export const nativeObjectValue = (
+  value: object,
+  host: HostDocument | null,
+): StaticNativeObjectValue => {
   let lifted = nativeObjectValues.get(value);
   if (!lifted) {
-    lifted = { kind: "native-object", value };
+    lifted = { kind: "native-object", value, host };
     nativeObjectValues.set(value, lifted);
   }
   return lifted;
 };
 
-const toNative = (value: StaticValue): unknown => {
+const toNative = (value: StaticValue, host: HostDocument | null): unknown => {
   switch (value.kind) {
     case "primitive":
       return value.value;
@@ -135,7 +124,7 @@ const toNative = (value: StaticValue): unknown => {
       if (!hasDefiniteItems(value)) return UNCERTAIN;
       const items: unknown[] = [];
       for (const item of value.items) {
-        const native = toNative(item);
+        const native = toNative(item, host);
         if (native === UNCERTAIN) return UNCERTAIN;
         items.push(native);
       }
@@ -146,7 +135,7 @@ const toNative = (value: StaticValue): unknown => {
       if (keys === null) return UNCERTAIN;
       const record: Record<string, unknown> = {};
       for (const key of keys) {
-        const native = toNative(getObjectProperty(value, key));
+        const native = toNative(getObjectProperty(value, key), host);
         if (native === UNCERTAIN) return UNCERTAIN;
         record[key] = native;
       }
@@ -157,19 +146,20 @@ const toNative = (value: StaticValue): unknown => {
     case "native-object":
       return uncertainNativeObjects.has(value.value) ? UNCERTAIN : value.value;
     case "global":
-      if (value.name === "document" && typeof document !== "undefined") return document;
-      if (value.name === "window" && typeof window !== "undefined") return window;
-      return UNCERTAIN;
+      return value.name === "document" && host !== null ? host.document : UNCERTAIN;
     default:
       return UNCERTAIN;
   }
 };
 
 /** The JavaScript values `args` stand for; null when any part of one is uncertain. */
-export const toNativeArguments = (args: StaticValue[]): unknown[] | null => {
+export const toNativeArguments = (
+  args: StaticValue[],
+  host: HostDocument | null,
+): unknown[] | null => {
   const natives: unknown[] = [];
   for (const argument of args) {
-    const native = toNative(argument);
+    const native = toNative(argument, host);
     if (native === UNCERTAIN) return null;
     natives.push(native);
   }
@@ -198,16 +188,17 @@ export const pureNativeFunction = (
   name: string,
   callee: Function,
   thisValue: unknown,
+  host: HostDocument | null,
   onUncertain: NativeCallFallback,
 ): StaticValue =>
   nativeFunction(name, (args, tools) => {
-    const natives = toNativeArguments(args);
+    const natives = toNativeArguments(args, host);
     if (natives === null) {
       for (const argument of args) tools.markEscaped(argument);
       return onUncertain(args);
     }
     try {
-      return fromNativeValue(Reflect.apply(callee, thisValue, natives), `${name}()`);
+      return fromNativeValue(Reflect.apply(callee, thisValue, natives), `${name}()`, host);
     } catch (error) {
       return unknownValue(`${name}() threw: ${describeError(error)}`);
     }
@@ -221,30 +212,37 @@ const isReactElementTag = (tag: unknown): boolean =>
 const liftProperties = (
   value: object,
   name: string,
+  host: HostDocument | null,
   ancestors: ReadonlySet<object>,
 ): StaticObjectEntry[] =>
   Object.entries(value).map(([key, item]): StaticObjectEntry => ({
     kind: "property",
     key,
-    value: liftValue(item, `${name}.${key}`, ancestors),
+    value: liftValue(item, `${name}.${key}`, host, ancestors),
   }));
 
-const liftObject = (value: object, name: string, ancestors: ReadonlySet<object>): StaticValue => {
+const liftObject = (
+  value: object,
+  name: string,
+  host: HostDocument | null,
+  ancestors: ReadonlySet<object>,
+): StaticValue => {
   if (ancestors.has(value)) return unknownValue(`${name}: cyclic native value`);
   const path = new Set(ancestors).add(value);
   if (Array.isArray(value)) {
-    return listValue(value.map((item, index) => liftValue(item, `${name}[${index}]`, path)));
+    return listValue(value.map((item, index) => liftValue(item, `${name}[${index}]`, host, path)));
   }
-  if (typeof document !== "undefined" && value === document) {
-    return { kind: "global", name: "document" };
+  if (value instanceof Date) return nativeObjectValue(value, null);
+  if (host !== null) {
+    if (value === host.document) return { kind: "global", name: "document" };
+    if (value === host.globalObject) return { kind: "global", name: GLOBAL_INTERFACE_NAME };
+    if (host.ownsObject(value)) return nativeObjectValue(value, host);
   }
-  if (typeof window !== "undefined" && value === window) return { kind: "global", name: "window" };
-  if (value instanceof Date || isDomObject(value)) return nativeObjectValue(value);
   if (value instanceof RegExp) {
     return { kind: "regexp", pattern: value.source, flags: value.flags, lastIndex: 0 };
   }
   if (!isPlainObject(value)) {
-    return unknownValue(`${name}: ${getNativeConstructorName(value)} from native code`);
+    return unknownValue(`${name}: ${getNativeInterfaceName(value)} from native code`);
   }
   if (isReactElementTag(Reflect.get(value, "$$typeof"))) {
     const type: unknown = Reflect.get(value, "type");
@@ -255,14 +253,19 @@ const liftObject = (value: object, name: string, ancestors: ReadonlySet<object>)
     }
     return element(
       { kind: "host", tagName: type },
-      objectValue(liftProperties(props, `${name}.props`, path)),
+      objectValue(liftProperties(props, `${name}.props`, host, path)),
       typeof key === "string" ? primitiveValue(key) : null,
     );
   }
-  return objectValue(liftProperties(value, name, path));
+  return objectValue(liftProperties(value, name, host, path));
 };
 
-const liftValue = (value: unknown, name: string, ancestors: ReadonlySet<object>): StaticValue => {
+const liftValue = (
+  value: unknown,
+  name: string,
+  host: HostDocument | null,
+  ancestors: ReadonlySet<object>,
+): StaticValue => {
   switch (typeof value) {
     case "string":
     case "number":
@@ -273,20 +276,23 @@ const liftValue = (value: unknown, name: string, ancestors: ReadonlySet<object>)
     case "symbol":
       return unknownValue(`${name}: symbol from native code`);
     case "function":
-      return pureNativeFunction(name, value, undefined, () =>
+      return pureNativeFunction(name, value, undefined, host, () =>
         unknownValue(`${name}() on dynamic arguments`),
       );
     case "object":
-      return value === null ? primitiveValue(null) : liftObject(value, name, ancestors);
+      return value === null ? primitiveValue(null) : liftObject(value, name, host, ancestors);
   }
 };
 
-/** `value`, as native code produced it, in the interpreter's terms. */
-export const fromNativeValue = (value: unknown, name: string): StaticValue =>
-  liftValue(value, name, new Set());
+/** `value`, as native code produced it, in the interpreter's terms; `host` owns any document objects among it. */
+export const fromNativeValue = (
+  value: unknown,
+  name: string,
+  host: HostDocument | null,
+): StaticValue => liftValue(value, name, host, new Set());
 
 const describeMember = (object: StaticNativeObjectValue, key: string): string =>
-  `${getNativeConstructorName(object.value)}.${key}`;
+  `${getNativeInterfaceName(object.value)}.${key}`;
 
 /**
  * A property of a native object, with methods bound so they run natively when
@@ -315,8 +321,8 @@ export const getNativeObjectMember = (
       ? nativeFunction(name, () => unknownValue(`${name}() depends on layout`))
       : unknownPrimitiveValue("number", `${name} depends on layout`);
   }
-  if (typeof member !== "function") return fromNativeValue(member, name);
-  return pureNativeFunction(name, member, object.value, () => {
+  if (typeof member !== "function") return fromNativeValue(member, name, object.host);
+  return pureNativeFunction(name, member, object.value, object.host, () => {
     if (!isPureMethodName(key)) uncertainNativeObjects.add(object.value);
     return unknownValue(`${name}() on dynamic arguments`);
   });
@@ -332,8 +338,8 @@ export const setNativeObjectMember = (
   key: string,
   value: StaticValue,
 ): void => {
-  if (key in object.value) {
-    const native = toNative(value);
+  if (key in object.value || getNativeInterfaceName(object.value) === "DOMStringMap") {
+    const native = toNative(value, object.host);
     if (native === UNCERTAIN) uncertainNativeObjects.add(object.value);
     else Reflect.set(object.value, key, native);
     return;
@@ -356,27 +362,39 @@ export const hasNativeObjectMember = (object: StaticNativeObjectValue, key: stri
 /** What `for..of`, spread and `Array.from` see of a native iterable (`NodeList`, `DOMTokenList`); null for other objects. */
 export const getNativeIterableItems = (object: StaticNativeObjectValue): StaticListValue | null => {
   if (uncertainNativeObjects.has(object.value) || !isIterable(object.value)) return null;
-  const name = getNativeConstructorName(object.value);
+  const name = getNativeInterfaceName(object.value);
   return listValue(
-    Array.from(object.value, (item, index) => fromNativeValue(item, `${name}[${index}]`)),
+    Array.from(object.value, (item, index) =>
+      fromNativeValue(item, `${name}[${index}]`, object.host),
+    ),
   );
 };
 
-/** `value instanceof Interface` for a DOM interface (`HTMLElement`, `Node`); null when the name is not one. */
+/** `value instanceof Interface` against the constructor the object's own document installed; null when it has none by that name. */
 export const isNativeInstanceOf = (
   object: StaticNativeObjectValue,
   interfaceName: string,
-): boolean | null => {
-  const iface = getDomInterface(interfaceName);
-  return iface === null ? null : object.value instanceof iface;
-};
+): boolean | null => object.host?.isInstanceOf(object.value, interfaceName) ?? null;
 
-/** `new Date(...)` from known parts; null when a part is uncertain or no parts are given (the clock decides then). */
-export const constructNativeDate = (args: StaticValue[]): StaticValue | null => {
-  if (args.length === 0) return null;
-  const natives = toNativeArguments(args);
+const NATIVE_CONSTRUCTORS = { Date, ArrayBuffer, DataView } satisfies Record<string, Function>;
+
+export type NativeConstructorName = keyof typeof NATIVE_CONSTRUCTORS;
+
+export const isNativeConstructorName = (name: string): name is NativeConstructorName =>
+  Object.hasOwn(NATIVE_CONSTRUCTORS, name);
+
+/** `new <name>(...args)` run natively; null when an argument is uncertain or the construction throws. */
+export const constructNativeObject = (
+  name: NativeConstructorName,
+  args: StaticValue[],
+): StaticValue | null => {
+  const natives = toNativeArguments(args, null);
   if (natives === null) return null;
-  return fromNativeValue(Reflect.construct(Date, natives), "Date");
+  try {
+    return fromNativeValue(Reflect.construct(NATIVE_CONSTRUCTORS[name], natives), name, null);
+  } catch {
+    return null;
+  }
 };
 
 const DOCUMENT_NATIVE_MEMBERS = new Set([
@@ -423,32 +441,37 @@ const isEmptyQueryResult = (value: unknown): boolean =>
   (typeof value === "object" && value !== null && Reflect.get(value, "length") === 0);
 
 /**
- * A member of `document`/`window` served by the happy-dom document React renders
- * into, so nodes, ranges and selections the program creates are the real ones;
- * null for members the interpreter models itself.
+ * A member of `document` or the global object (`objectPath` empty) served by the
+ * host document React renders into, so nodes, ranges and selections the program
+ * creates are the real ones; null for members the interpreter models itself.
  */
-export const getDomGlobalMember = (globalName: string, member: string): StaticValue | null => {
-  const isDocument = globalName === "document";
-  if (!isDocument && globalName !== "window" && globalName !== "globalThis") return null;
-  if (typeof document === "undefined") return null;
-  const target: object = isDocument ? document : window;
-  const name = `${globalName}.${member}`;
+export const getHostDocumentMember = (
+  host: HostDocument,
+  objectPath: string,
+  member: string,
+): StaticValue | null => {
+  const isDocument = objectPath === "document";
+  if (!isDocument && objectPath !== "") return null;
+  const target = isDocument ? host.document : host.globalObject;
+  const name = isDocument ? `document.${member}` : member;
   if (isDocument && DOCUMENT_QUERY_METHODS.has(member)) {
     const query: unknown = Reflect.get(target, member);
     if (typeof query !== "function") return null;
     return nativeFunction(name, (args) => {
-      const natives = toNativeArguments(args);
+      const natives = toNativeArguments(args, host);
       if (natives === null) return unknownValue(`${name}() on dynamic arguments`);
       const found: unknown = Reflect.apply(query, target, natives);
       return isEmptyQueryResult(found)
         ? unknownValue(`${name}() finds nothing in the static document`)
-        : fromNativeValue(found, `${name}()`);
+        : fromNativeValue(found, `${name}()`, host);
     });
   }
   if (!(isDocument ? DOCUMENT_NATIVE_MEMBERS : WINDOW_NATIVE_MEMBERS).has(member)) return null;
   const value: unknown = Reflect.get(target, member);
   if (value === undefined) return null;
   return typeof value === "function"
-    ? pureNativeFunction(name, value, target, () => unknownValue(`${name}() on dynamic arguments`))
-    : fromNativeValue(value, name);
+    ? pureNativeFunction(name, value, target, host, () =>
+        unknownValue(`${name}() on dynamic arguments`),
+      )
+    : fromNativeValue(value, name, host);
 };

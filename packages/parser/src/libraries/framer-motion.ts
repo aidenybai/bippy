@@ -1,3 +1,4 @@
+import semver from "semver";
 import { evaluateMediaQuery } from "../evaluate/media-query.js";
 import {
   NULL_VALUE,
@@ -12,10 +13,6 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
-import {
-  isAtLeastVersion,
-  readInstalledPackageVersion,
-} from "../frameworks/installed-package-version.js";
 import { element, emptyStub, nativeFunction, stubValue } from "../frameworks/stubs.js";
 import { toElementType } from "../react/element-type.js";
 import type {
@@ -300,14 +297,16 @@ const forwardsMotionProps = (options: StaticValue | undefined): boolean =>
   options?.kind === "object" &&
   getTruthiness(getObjectProperty(options, "forwardMotionProps")) === true;
 
-const hasMotionDisplayName = (specifier: string, project: ProjectContext): boolean =>
-  project.rootDirectory === null ||
-  isAtLeastVersion(
-    readInstalledPackageVersion(project.rootDirectory, specifier.split("/")[0]),
-    11,
-    16,
-    1,
+/** `motion/index.mjs` names the component (`motion.div`) since 11.16.1; before, only the render function (`MotionComponent`). */
+const NAMED_MOTION_COMPONENT_VERSIONS = ">=11.16.1";
+
+const hasMotionDisplayName = (specifier: string, project: ProjectContext): boolean => {
+  const version = project.readPackageVersion(specifier.split("/")[0]);
+  return (
+    version === null ||
+    semver.satisfies(version, NAMED_MOTION_COMPONENT_VERSIONS, { includePrerelease: true })
   );
+};
 
 /** `motion.div`, `motion.create(Component, options?)`, and the deprecated `motion(Component)`. */
 const motionProxy = (specifier: string, project: ProjectContext): StaticValue => {

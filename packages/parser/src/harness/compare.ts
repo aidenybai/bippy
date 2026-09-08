@@ -14,6 +14,14 @@ const BUNDLER_PLACEHOLDER_NAME = /^_[a-z]\d*$/;
 
 const isBundlerPlaceholderName = (name: string): boolean => BUNDLER_PLACEHOLDER_NAME.test(name);
 
+// A binding that collides with another in the bundled scope is renamed with a
+// counter: `Toaster2` by esbuild (Vite dev pre-bundling), `Toaster$1` by rollup.
+const BUNDLER_DEDUPE_SUFFIX = /^\$?\d+$/;
+
+const isBundlerDedupedName = (sourceName: string, runtimeName: string): boolean =>
+  runtimeName.startsWith(sourceName) &&
+  BUNDLER_DEDUPE_SUFFIX.test(runtimeName.slice(sourceName.length));
+
 export interface ComparisonOptions {
   compareKeys?: boolean;
   compareTags?: boolean;
@@ -489,6 +497,7 @@ class Matcher {
     )
       return false;
     if (pattern.name === null || actual.name === null || pattern.name === actual.name) return true;
+    if (isBundlerDedupedName(pattern.name, actual.name)) return true;
     return isClassTag(actual.tag) && isBundlerPlaceholderName(actual.name);
   }
 
@@ -506,7 +515,11 @@ class Matcher {
 
   private opaqueNameAgrees(pattern: PatternOpaque, actual: RuntimeFiberSnapshot): boolean {
     if (actual.name === null || isBundlerPlaceholderName(actual.name)) return true;
-    return pattern.runtimeNames === null || pattern.runtimeNames.includes(actual.name);
+    if (pattern.runtimeNames === null) return true;
+    const runtimeName = actual.name;
+    return pattern.runtimeNames.some(
+      (name) => name === runtimeName || isBundlerDedupedName(name, runtimeName),
+    );
   }
 
   // Searches the library's runtime subtree breadth-first for the place where it

@@ -1,10 +1,12 @@
+import { createRequire } from "node:module";
 import path from "node:path";
-import type { CorpusEntry } from "../corpus/manifest.js";
+import { getSettleMs, type CorpusEntry } from "../corpus/manifest.js";
 import { readProcessEnvironment } from "../corpus/process-environment.js";
+import { FrameworkTargetError } from "../errors.js";
+import { readPackageManifest } from "../package-manifest.js";
 import { createStaticRenderer, type StaticRenderer } from "../render/static-renderer.js";
 import type { RuntimeObservations, StaticRenderResult, StaticRendererOptions } from "../types.js";
 import type { FrameworkKind } from "./framework-profile.js";
-import { readInstalledPackageVersion } from "./installed-package-version.js";
 import { renderNextAppRoute } from "./next-app-router.js";
 import { createNextModel } from "./next-externals.js";
 import { renderNextPagesRoute } from "./next-pages-router.js";
@@ -28,9 +30,21 @@ export interface FrameworkRenderTarget {
 const requireField = (target: FrameworkRenderTarget, field: "entry" | "route"): string => {
   const value = target[field];
   if (value === undefined) {
-    throw new Error(`${target.framework} static rendering needs a "${field}" target`);
+    throw new FrameworkTargetError(
+      `${target.framework} static rendering needs a "${field}" target`,
+    );
   }
   return value;
+};
+
+/** The installed `next` release as the app resolves it; null when it is not installed. */
+const readNextVersion = (rootDirectory: string): string | null => {
+  try {
+    const requireFromRoot = createRequire(path.join(rootDirectory, "package.json"));
+    return readPackageManifest(requireFromRoot.resolve("next/package.json")).version ?? null;
+  } catch {
+    return null;
+  }
 };
 
 /**
@@ -53,7 +67,7 @@ export const renderFrameworkTarget = (
         route,
         origin: options.origin,
         request: options.observations?.request,
-        nextVersion: readInstalledPackageVersion(options.rootDirectory, "next"),
+        nextVersion: readNextVersion(options.rootDirectory),
       });
       const renderer = createStaticRenderer({
         ...options,
@@ -68,7 +82,7 @@ export const renderFrameworkTarget = (
         kind: "next-pages",
         route,
         origin: options.origin,
-        nextVersion: readInstalledPackageVersion(options.rootDirectory, "next"),
+        nextVersion: readNextVersion(options.rootDirectory),
       });
       const renderer = createStaticRenderer({ ...options, externalValues: model.externalValues });
       return renderNextPagesRoute(renderer, model, {
@@ -106,7 +120,9 @@ const renderRootComponent = (
     }
     case "next-app":
     case "next-pages":
-      throw new Error(`${target.framework} targets render routes, not a "rootComponent"`);
+      throw new FrameworkTargetError(
+        `${target.framework} targets render routes, not a "rootComponent"`,
+      );
   }
 };
 
@@ -127,8 +143,10 @@ const rendererOptionsForEntry = (
     environment: readProcessEnvironment(entry, rootDirectory),
     origin: new URL(entry.url).origin,
     observations,
+    maxSteps: entry.static.maxSteps,
     maxFiberCount: entry.static.maxFiberCount,
     maxComponentDepth: entry.static.maxComponentDepth,
+    settleMs: getSettleMs(entry),
   };
 };
 

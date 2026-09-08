@@ -3,9 +3,11 @@ import type {
   ExportDefaultDeclaration,
   ExportNamedDeclaration,
   Expression,
+  FunctionBody,
   ImportDeclaration,
   ModuleExportName,
   ObjectExpression,
+  ParamPattern,
   PropertyKey,
   Statement,
   VariableDeclaration,
@@ -14,7 +16,7 @@ import {
   getTypeScriptDeclarationName,
   type TypeScriptDeclaration,
 } from "../evaluate/typescript-declarations.js";
-import { getPatternNames } from "../parse/ast-walk.js";
+import { getPatternNames, getVariableDeclaration, unwrapExpression } from "../parse/ast-walk.js";
 import type {
   ExportEntry,
   ImportBinding,
@@ -24,6 +26,12 @@ import type {
   ReExportAll,
   TopLevelBinding,
 } from "../types.js";
+
+/** A function expression with a block body, as UMD/IIFE module wrappers are. */
+interface BlockFunction {
+  params: ParamPattern[];
+  body: FunctionBody;
+}
 
 const getModuleExportName = (name: ModuleExportName): string =>
   name.type === "Literal" ? name.value : name.name;
@@ -219,8 +227,19 @@ const DECLARATION_STATEMENT_TYPES = new Set<Statement["type"]>([
   "EmptyStatement",
 ]);
 
+const CALL_LIKE_EXPRESSION_TYPES = new Set<Expression["type"]>(["CallExpression", "NewExpression"]);
+
+/** `const [Provider, useX] = createContext()` runs when the module does: the call may mutate state its siblings close over. */
+const isCallInitializedDeclaration = (statement: Statement): boolean =>
+  getVariableDeclaration(statement)?.declarations.some(
+    (declarator) =>
+      declarator.init !== null &&
+      CALL_LIKE_EXPRESSION_TYPES.has(unwrapExpression(declarator.init).type),
+  ) === true;
+
 const isSideEffectStatement = (statement: Statement): boolean =>
-  !DECLARATION_STATEMENT_TYPES.has(statement.type) && !isCommonJsExportStatement(statement);
+  isCallInitializedDeclaration(statement) ||
+  (!DECLARATION_STATEMENT_TYPES.has(statement.type) && !isCommonJsExportStatement(statement));
 
 const collectStatement = (
   statement: Statement,
@@ -362,32 +381,119 @@ const getCommonJsNamespace = (node: Expression): Expression =>
     ? node.arguments[0]
     : node;
 
-/** The body of a parameterless IIFE such as `(function () { ... })()` or `!function () { ... }()`. */
-const getModuleWrapperBody = (statement: Statement): Statement[] | null => {
-  if (statement.type !== "ExpressionStatement") return null;
-  let { expression } = statement;
-  while (expression.type === "UnaryExpression") expression = expression.argument;
-  if (expression.type !== "CallExpression" || expression.arguments.length !== 0) return null;
-  const callee = unwrapParentheses(expression.callee);
-  if (
-    (callee.type !== "FunctionExpression" && callee.type !== "ArrowFunctionExpression") ||
-    callee.params.length !== 0 ||
-    !callee.body ||
-    callee.body.type !== "BlockStatement"
-  ) {
-    return null;
-  }
-  return callee.body.body;
-};
-
 const unwrapParentheses = (node: Expression): Expression =>
   node.type === "ParenthesizedExpression" ? unwrapParentheses(node.expression) : node;
 
+const getBlockFunction = (node: Expression): BlockFunction | null => {
+  const unwrapped = unwrapParentheses(node);
+  if (unwrapped.type !== "FunctionExpression" && unwrapped.type !== "ArrowFunctionExpression") {
+    return null;
+  }
+  const { params, body } = unwrapped;
+  return body?.type === "BlockStatement" ? { params, body } : null;
+};
+
+const getWrapperCall = (statement: Statement): CallExpression | null => {
+  if (statement.type !== "ExpressionStatement") return null;
+  let expression = unwrapParentheses(statement.expression);
+  while (expression.type === "UnaryExpression") expression = unwrapParentheses(expression.argument);
+  return expression.type === "CallExpression" ? expression : null;
+};
+
+/** The body of a parameterless IIFE such as `(function () { ... })()` or `!function () { ... }()`. */
+const getModuleWrapperBody = (statement: Statement): Statement[] | null => {
+  const call = getWrapperCall(statement);
+  if (!call || call.arguments.length !== 0) return null;
+  const callee = getBlockFunction(call.callee);
+  return callee && callee.params.length === 0 ? callee.body.body : null;
+};
+
+/** The `factory(exports, require("x"), …)` call on the CommonJS path of a UMD wrapper body. */
+const findFactoryCall = (
+  node: Expression | Statement,
+  factoryName: string,
+): CallExpression | null => {
+  switch (node.type) {
+    case "ExpressionStatement":
+      return findFactoryCall(node.expression, factoryName);
+    case "IfStatement":
+      return (
+        findFactoryCall(node.consequent, factoryName) ??
+        (node.alternate ? findFactoryCall(node.alternate, factoryName) : null)
+      );
+    case "BlockStatement":
+      for (const statement of node.body) {
+        const call = findFactoryCall(statement, factoryName);
+        if (call) return call;
+      }
+      return null;
+    case "ConditionalExpression":
+      return (
+        findFactoryCall(node.consequent, factoryName) ??
+        findFactoryCall(node.alternate, factoryName)
+      );
+    case "SequenceExpression":
+      for (const expression of node.expressions) {
+        const call = findFactoryCall(expression, factoryName);
+        if (call) return call;
+      }
+      return null;
+    case "AssignmentExpression":
+      return findFactoryCall(node.right, factoryName);
+    case "CallExpression":
+      return node.callee.type === "Identifier" &&
+        node.callee.name === factoryName &&
+        node.arguments.some(
+          (argument) => argument.type !== "SpreadElement" && isExportsObject(argument),
+        )
+        ? node
+        : null;
+    default:
+      return null;
+  }
+};
+
+/**
+ * The factory body of a `(function (global, factory) { … })(this, function (exports, react) { … })`
+ * UMD wrapper, binding each factory parameter to the argument the CommonJS path passes it
+ * (`exports` to the exports object, `react` to `require("react")`).
+ */
+const getUmdFactoryBody = (
+  statement: Statement,
+  factoryArguments: Map<string, Expression>,
+): Statement[] | null => {
+  const call = getWrapperCall(statement);
+  if (!call || call.arguments.length !== 2) return null;
+  const wrapper = getBlockFunction(call.callee);
+  const [, factoryArgument] = call.arguments;
+  const factory =
+    factoryArgument.type === "SpreadElement" ? null : getBlockFunction(factoryArgument);
+  const factoryParameter = wrapper?.params[1];
+  if (!wrapper || !factory || factoryParameter?.type !== "Identifier") return null;
+  const factoryCall = findFactoryCall(wrapper.body, factoryParameter.name);
+  if (!factoryCall || factoryCall.arguments.length !== factory.params.length) return null;
+  const bound = new Map<string, Expression>();
+  for (const [index, parameter] of factory.params.entries()) {
+    const argument = factoryCall.arguments[index];
+    if (parameter.type !== "Identifier" || argument.type === "SpreadElement") return null;
+    if (isExportsObject(argument)) {
+      if (parameter.name !== "exports") return null;
+      continue;
+    }
+    bound.set(parameter.name, argument);
+  }
+  for (const [name, argument] of bound) factoryArguments.set(name, argument);
+  return factory.body.body;
+};
+
 /** Module-level statements, with UMD/IIFE wrappers flattened so their declarations become module bindings. */
-const getModuleStatements = (statements: Statement[]): Statement[] =>
+const getModuleStatements = (
+  statements: Statement[],
+  factoryArguments: Map<string, Expression>,
+): Statement[] =>
   statements.flatMap((statement) => {
-    const body = getModuleWrapperBody(statement);
-    return body ? getModuleStatements(body) : [statement];
+    const body = getModuleWrapperBody(statement) ?? getUmdFactoryBody(statement, factoryArguments);
+    return body ? getModuleStatements(body, factoryArguments) : [statement];
   });
 
 /** Return expression of a `get() { return x; }` accessor or `() => x`. */
@@ -668,6 +774,11 @@ const collectCommonJsExports = (
   return collector;
 };
 
+const USE_CLIENT_DIRECTIVE = "use client";
+
+export const isClientModule = (module: ModuleRecord): boolean =>
+  module.directives.includes(USE_CLIENT_DIRECTIVE);
+
 export const hasExportedName = (module: ModuleRecord, exportedName: string): boolean =>
   module.exports.some((entry) => "exportedName" in entry && entry.exportedName === exportedName);
 
@@ -678,7 +789,17 @@ export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
   const dependencies: string[] = [];
   const sideEffectStatements: Statement[] = [];
   const directives: string[] = [];
-  const statements = getModuleStatements(file.program.body);
+  const factoryArguments = new Map<string, Expression>();
+  const statements = getModuleStatements(file.program.body, factoryArguments);
+  for (const [name, argument] of factoryArguments) {
+    bindings.set(name, {
+      kind: "variable",
+      name,
+      init: argument,
+      declarationKind: "const",
+      span: argument,
+    });
+  }
   for (const statement of statements) {
     if (
       statement.type === "ExpressionStatement" &&

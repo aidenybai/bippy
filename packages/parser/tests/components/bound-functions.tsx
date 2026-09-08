@@ -30,6 +30,12 @@ const scale = function (this: { factor: number }, value: number) {
 const scaled = [1, 2, 3].map(scale.bind({ factor: 10 }));
 const arrow = () => registry.size();
 const arrowBound = arrow.bind({ size: () => -1 });
+const toList = function (this: unknown) {
+  return [].slice.call(arguments) as number[];
+};
+const flattened = ([] as number[]).concat.apply([], [[1], [2, 3]]);
+const shout = "".toUpperCase.call("abc");
+const firstOf = [].at.bind(["x", "y"], 0);
 
 export default function BoundFunctions() {
   return (
@@ -54,6 +60,18 @@ export default function BoundFunctions() {
       </li>
       <li>
         {arrowBound()} <em>ok</em>
+      </li>
+      <li>
+        {toList(1, 2, 3).join(",")} <em>ok</em>
+      </li>
+      <li>
+        {flattened.join(",")} <em>ok</em>
+      </li>
+      <li>
+        {shout} <em>ok</em>
+      </li>
+      <li>
+        {firstOf()} <em>ok</em>
       </li>
     </ul>
   );
