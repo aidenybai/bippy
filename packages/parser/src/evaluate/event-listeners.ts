@@ -1,10 +1,18 @@
 import type { StaticValue } from "../types.js";
-import { isWindowAlias } from "./browser-globals.js";
+import type { HostDocument } from "../host/host-document.js";
+import type { HostRealm } from "../host/host-realm.js";
 import type { Interpreter } from "./interpreter.js";
 import { toNativeArguments } from "./native-values.js";
+import { HISTORY_TRAVERSAL_EVENTS } from "./session-history.js";
 import { UNDEFINED_VALUE } from "./values.js";
 
-/** Events only a user gesture dispatches; none fires before the runtime snapshot is captured. */
+/**
+ * Events only a user gesture dispatches; none fires before the runtime snapshot
+ * is captured. Pointer arrival events (`pointerover`, `pointerenter`,
+ * `pointermove` and their mouse twins) are not among them: once a page has
+ * loaded, the browser reports the resting pointer position to the element
+ * under it, so a listener registered by then runs before the snapshot.
+ */
 const USER_GESTURE_EVENTS = new Set([
   "keydown",
   "keyup",
@@ -15,17 +23,11 @@ const USER_GESTURE_EVENTS = new Set([
   "contextmenu",
   "mousedown",
   "mouseup",
-  "mousemove",
-  "mouseenter",
   "mouseleave",
-  "mouseover",
   "mouseout",
   "pointerdown",
   "pointerup",
-  "pointermove",
-  "pointerenter",
   "pointerleave",
-  "pointerover",
   "pointerout",
   "pointercancel",
   "touchstart",
@@ -62,6 +64,9 @@ const FULLSCREEN_EVENTS = new Set(["fullscreenchange", "webkitfullscreenchange"]
 
 /** The capture viewport never changes, so `window` never fires these before the snapshot. */
 const VIEWPORT_EVENTS = new Set(["resize", "orientationchange"]);
+
+/** The captured page stays the visible, foreground tab from load to snapshot. */
+const DOCUMENT_VISIBILITY_EVENTS = new Set(["visibilitychange"]);
 
 /** A freshly loaded page sits at its initial scroll offset until a user or script scrolls it. */
 const SCROLL_EVENTS = new Set(["scroll", "scrollend"]);
@@ -103,8 +108,6 @@ export const isUserDrivenEventHandlerProp = (name: string): boolean => {
   return isUserDrivenEventType(type) && !VALUE_EVENTS.has(type);
 };
 
-const EVENT_TARGET_GLOBALS = new Set(["window", "globalThis", "document", "MediaQueryList"]);
-
 export interface NativeEventTarget {
   addEventListener(type: string, listener: () => void): void;
   removeEventListener(type: string, listener: () => void): void;
@@ -122,8 +125,11 @@ const isNativeEventTargetObject = (value: unknown): value is NativeEventTarget =
 const isNativeEventTarget = (receiver: StaticValue): boolean =>
   receiver.kind === "native-object" && isNativeEventTargetObject(receiver.value);
 
-const toNativeEventTarget = (receiver: StaticValue): NativeEventTarget | null => {
-  const [native] = toNativeArguments([receiver]) ?? [];
+const toNativeEventTarget = (
+  receiver: StaticValue,
+  host: HostDocument | null,
+): NativeEventTarget | null => {
+  const [native] = toNativeArguments([receiver], host) ?? [];
   return isNativeEventTargetObject(native) ? native : null;
 };
 
@@ -176,36 +182,65 @@ export const EVENT_LISTENER_METHODS = new Set([
   "removeListener",
 ]);
 
-export const isEventTarget = (receiver: StaticValue): boolean =>
+export const isEventTarget = (realm: HostRealm, receiver: StaticValue): boolean =>
   isNativeEventTarget(receiver) ||
-  (receiver.kind === "global" && EVENT_TARGET_GLOBALS.has(receiver.name));
+  (receiver.kind === "global" && realm.isGlobalInstanceOf(receiver.name, "EventTarget"));
 
-const isEventBeforeCapture = (receiver: StaticValue, type: StaticValue | undefined): boolean => {
+const isEventBeforeCapture = (
+  realm: HostRealm,
+  receiver: StaticValue,
+  type: StaticValue | undefined,
+): boolean => {
   if (receiver.kind === "global" && receiver.name === "MediaQueryList") return false;
   if (type?.kind !== "primitive" || typeof type.value !== "string") return true;
   if (
     receiver.kind === "global" &&
-    isWindowAlias(receiver.name) &&
+    realm.isGlobalAlias(receiver.name) &&
     VIEWPORT_EVENTS.has(type.value)
+  ) {
+    return false;
+  }
+  if (
+    receiver.kind === "global" &&
+    receiver.name === "document" &&
+    DOCUMENT_VISIBILITY_EVENTS.has(type.value)
   ) {
     return false;
   }
   return !(isUserDrivenEventType(type.value) || isCustomEventType(type.value));
 };
 
+const isHistoryTraversalListener = (
+  realm: HostRealm,
+  receiver: StaticValue,
+  type: StaticValue | undefined,
+): boolean =>
+  receiver.kind === "global" &&
+  realm.isGlobalAlias(receiver.name) &&
+  type?.kind === "primitive" &&
+  typeof type.value === "string" &&
+  HISTORY_TRAVERSAL_EVENTS.has(type.value);
+
 /** Listener registration on `window`/`document`/DOM nodes/`MediaQueryList`; only listeners that may fire before capture escape. */
 export const callEventTargetMethod = (
   interpreter: Interpreter,
+  realm: HostRealm,
   receiver: StaticValue,
   name: string,
   args: StaticValue[],
 ): StaticValue | null => {
-  if (!EVENT_LISTENER_METHODS.has(name) || !isEventTarget(receiver)) return null;
+  if (!EVENT_LISTENER_METHODS.has(name) || !isEventTarget(realm, receiver)) return null;
   const [type, listener] = args;
   if (!listener) return UNDEFINED_VALUE;
   const isRegistration = name === "addEventListener" || name === "addListener";
-  if (isRegistration && isEventBeforeCapture(receiver, type)) interpreter.markEscaped(listener);
-  const target = toNativeEventTarget(receiver);
+  if (isHistoryTraversalListener(realm, receiver, type)) {
+    if (isRegistration) interpreter.history.traversalListeners.add(listener);
+    else interpreter.history.traversalListeners.delete(listener);
+    return UNDEFINED_VALUE;
+  }
+  if (isRegistration && isEventBeforeCapture(realm, receiver, type))
+    interpreter.markEscaped(listener);
+  const target = toNativeEventTarget(receiver, interpreter.hostDocument);
   if (target && type?.kind === "primitive" && typeof type.value === "string") {
     if (isRegistration) attachNativeListener(interpreter, target, type.value, listener);
     else detachNativeListener(target, type.value, listener);

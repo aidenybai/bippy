@@ -18,6 +18,10 @@ if [ "$current_major" != "$required_major" ]; then
   source "$nvm_script"
   nvm install "$required_major" >/dev/null
   nvm use "$required_major" >/dev/null
+  # HACK: nvm splices its bin directory into the middle of PATH when another
+  # node install precedes it, so the selected version must be prepended explicitly.
+  PATH="$(dirname "$(nvm which "$required_major")"):$PATH"
+  export PATH
 fi
 
 exec "$@"

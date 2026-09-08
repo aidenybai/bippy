@@ -1,0 +1,637 @@
+{
+  "total": 125,
+  "byReason": {
+    "type-parameter": 94,
+    "overloads": 9,
+    "declared-any": 20,
+    "mixed-union": 1,
+    "conditional": 1
+  },
+  "gaps": [
+    {
+      "site": "\"typescript/lib/lib.esnext.iterator\".Iterator.next",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "\"typescript/lib/lib.esnext.iterator\".Iterator.next",
+      "reason": "type-parameter",
+      "detail": "TResult"
+    },
+    {
+      "site": "Array.at",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "Array.find",
+      "reason": "type-parameter",
+      "detail": "S"
+    },
+    {
+      "site": "Array.find",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "Array.findLast",
+      "reason": "type-parameter",
+      "detail": "S"
+    },
+    {
+      "site": "Array.findLast",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "Array.pop",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "Array.reduce",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "Array.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Array.shift",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "AsyncDisposableStack.adopt",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "AsyncDisposableStack.use",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "Atomics.add",
+      "reason": "overloads",
+      "detail": "number | bigint"
+    },
+    {
+      "site": "Atomics.and",
+      "reason": "overloads",
+      "detail": "number | bigint"
+    },
+    {
+      "site": "Atomics.compareExchange",
+      "reason": "overloads",
+      "detail": "number | bigint"
+    },
+    {
+      "site": "Atomics.exchange",
+      "reason": "overloads",
+      "detail": "number | bigint"
+    },
+    {
+      "site": "Atomics.load",
+      "reason": "overloads",
+      "detail": "number | bigint"
+    },
+    {
+      "site": "Atomics.or",
+      "reason": "overloads",
+      "detail": "number | bigint"
+    },
+    {
+      "site": "Atomics.store",
+      "reason": "overloads",
+      "detail": "number | bigint"
+    },
+    {
+      "site": "Atomics.sub",
+      "reason": "overloads",
+      "detail": "number | bigint"
+    },
+    {
+      "site": "Atomics.xor",
+      "reason": "overloads",
+      "detail": "number | bigint"
+    },
+    {
+      "site": "BigInt64Array.buffer",
+      "reason": "type-parameter",
+      "detail": "TArrayBuffer"
+    },
+    {
+      "site": "BigInt64Array.findLast",
+      "reason": "type-parameter",
+      "detail": "S"
+    },
+    {
+      "site": "BigInt64Array.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "BigInt64Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "BigUint64Array.buffer",
+      "reason": "type-parameter",
+      "detail": "TArrayBuffer"
+    },
+    {
+      "site": "BigUint64Array.findLast",
+      "reason": "type-parameter",
+      "detail": "S"
+    },
+    {
+      "site": "BigUint64Array.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "BigUint64Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "DataView.buffer",
+      "reason": "type-parameter",
+      "detail": "TArrayBuffer"
+    },
+    {
+      "site": "DisposableStack.adopt",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "DisposableStack.use",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "Error.cause",
+      "reason": "declared-any",
+      "detail": "unknown"
+    },
+    {
+      "site": "Float16Array.buffer",
+      "reason": "type-parameter",
+      "detail": "TArrayBuffer"
+    },
+    {
+      "site": "Float16Array.findLast",
+      "reason": "type-parameter",
+      "detail": "S"
+    },
+    {
+      "site": "Float16Array.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Float16Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Float32Array.buffer",
+      "reason": "type-parameter",
+      "detail": "TArrayBuffer"
+    },
+    {
+      "site": "Float32Array.findLast",
+      "reason": "type-parameter",
+      "detail": "S"
+    },
+    {
+      "site": "Float32Array.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Float32Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Float64Array.buffer",
+      "reason": "type-parameter",
+      "detail": "TArrayBuffer"
+    },
+    {
+      "site": "Float64Array.findLast",
+      "reason": "type-parameter",
+      "detail": "S"
+    },
+    {
+      "site": "Float64Array.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Float64Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Function.apply",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "Function.arguments",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "Function.bind",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "Function.call",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "Function.prototype",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "globalThis.eval",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "Int16Array.buffer",
+      "reason": "type-parameter",
+      "detail": "TArrayBuffer"
+    },
+    {
+      "site": "Int16Array.findLast",
+      "reason": "type-parameter",
+      "detail": "S"
+    },
+    {
+      "site": "Int16Array.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Int16Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Int32Array.buffer",
+      "reason": "type-parameter",
+      "detail": "TArrayBuffer"
+    },
+    {
+      "site": "Int32Array.findLast",
+      "reason": "type-parameter",
+      "detail": "S"
+    },
+    {
+      "site": "Int32Array.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Int32Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Int8Array.buffer",
+      "reason": "type-parameter",
+      "detail": "TArrayBuffer"
+    },
+    {
+      "site": "Int8Array.findLast",
+      "reason": "type-parameter",
+      "detail": "S"
+    },
+    {
+      "site": "Int8Array.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Int8Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Intl.ResolvedNumberFormatOptions.useGrouping",
+      "reason": "mixed-union",
+      "detail": "string | boolean"
+    },
+    {
+      "site": "Intl.ResolvedNumberFormatOptions.useGrouping",
+      "reason": "conditional",
+      "detail": "boolean : any"
+    },
+    {
+      "site": "Iterator.next",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "Iterator.next",
+      "reason": "type-parameter",
+      "detail": "TReturn"
+    },
+    {
+      "site": "Iterator.return",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "Iterator.return",
+      "reason": "type-parameter",
+      "detail": "TReturn"
+    },
+    {
+      "site": "Iterator.throw",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "Iterator.throw",
+      "reason": "type-parameter",
+      "detail": "TReturn"
+    },
+    {
+      "site": "IteratorObject.find",
+      "reason": "type-parameter",
+      "detail": "S"
+    },
+    {
+      "site": "IteratorObject.find",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "IteratorObject.reduce",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "IteratorObject.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "JSON.parse",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "Map.get",
+      "reason": "type-parameter",
+      "detail": "V"
+    },
+    {
+      "site": "namespace Reflect.apply",
+      "reason": "type-parameter",
+      "detail": "R"
+    },
+    {
+      "site": "namespace Reflect.apply",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "namespace Reflect.construct",
+      "reason": "type-parameter",
+      "detail": "R"
+    },
+    {
+      "site": "namespace Reflect.construct",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "namespace Reflect.get",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "namespace Reflect.get",
+      "reason": "type-parameter",
+      "detail": "P"
+    },
+    {
+      "site": "namespace Reflect.get",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "ObjectConstructor.assign",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "ObjectConstructor.assign",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "ObjectConstructor.assign",
+      "reason": "type-parameter",
+      "detail": "V"
+    },
+    {
+      "site": "ObjectConstructor.assign",
+      "reason": "type-parameter",
+      "detail": "W"
+    },
+    {
+      "site": "ObjectConstructor.assign",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "ObjectConstructor.create",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "ObjectConstructor.defineProperties",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "ObjectConstructor.defineProperty",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "ObjectConstructor.freeze",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "ObjectConstructor.fromEntries",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "ObjectConstructor.getPrototypeOf",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "ObjectConstructor.groupBy",
+      "reason": "type-parameter",
+      "detail": "K"
+    },
+    {
+      "site": "ObjectConstructor.preventExtensions",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "ObjectConstructor.seal",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "ObjectConstructor.setPrototypeOf",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "PropertyDescriptor.get",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "PropertyDescriptor.value",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "SuppressedError.error",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "SuppressedError.suppressed",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "TypedPropertyDescriptor.value",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "Uint16Array.buffer",
+      "reason": "type-parameter",
+      "detail": "TArrayBuffer"
+    },
+    {
+      "site": "Uint16Array.findLast",
+      "reason": "type-parameter",
+      "detail": "S"
+    },
+    {
+      "site": "Uint16Array.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Uint16Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Uint32Array.buffer",
+      "reason": "type-parameter",
+      "detail": "TArrayBuffer"
+    },
+    {
+      "site": "Uint32Array.findLast",
+      "reason": "type-parameter",
+      "detail": "S"
+    },
+    {
+      "site": "Uint32Array.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Uint32Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Uint8Array.buffer",
+      "reason": "type-parameter",
+      "detail": "TArrayBuffer"
+    },
+    {
+      "site": "Uint8Array.findLast",
+      "reason": "type-parameter",
+      "detail": "S"
+    },
+    {
+      "site": "Uint8Array.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Uint8Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Uint8ClampedArray.buffer",
+      "reason": "type-parameter",
+      "detail": "TArrayBuffer"
+    },
+    {
+      "site": "Uint8ClampedArray.findLast",
+      "reason": "type-parameter",
+      "detail": "S"
+    },
+    {
+      "site": "Uint8ClampedArray.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Uint8ClampedArray.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "WeakMap.get",
+      "reason": "type-parameter",
+      "detail": "V"
+    },
+    {
+      "site": "WeakRef.deref",
+      "reason": "type-parameter",
+      "detail": "T"
+    }
+  ]
+}
