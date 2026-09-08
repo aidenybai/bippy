@@ -52,6 +52,7 @@ export const renderFrameworkTarget = (
         route,
         origin: options.origin,
         request: options.observations?.request,
+        rootDirectory: options.rootDirectory,
       });
       const renderer = createStaticRenderer({
         ...options,
@@ -62,7 +63,12 @@ export const renderFrameworkTarget = (
     }
     case "next-pages": {
       const route = requireField(target, "route");
-      const model = createNextModel({ kind: "next-pages", route, origin: options.origin });
+      const model = createNextModel({
+        kind: "next-pages",
+        route,
+        origin: options.origin,
+        rootDirectory: options.rootDirectory,
+      });
       const renderer = createStaticRenderer({ ...options, externalValues: model.externalValues });
       return renderNextPagesRoute(renderer, model, {
         route,

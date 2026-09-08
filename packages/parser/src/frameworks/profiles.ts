@@ -110,13 +110,31 @@ const NEXT_PAGES_RUNTIME_WRAPPERS = [
   "PagesDevOverlay",
   "PagesDevOverlayErrorBoundary",
   "Fragment",
+  "StrictMode",
 ];
+
+// `client/index.tsx` renders `<Head callback />` (a childless dummy toggling
+// styles on commit; the application's `next/head` always renders `SideEffect`)
+// and `<Portal type="next-route-announcer"><RouteAnnouncer /></Portal>` next
+// to the application.
+const isNextPagesHeadCommitHook = (fiber: RuntimeFiberSnapshot): boolean =>
+  fiber.name === "Head" && fiber.tag === "FunctionComponent" && fiber.children.length === 0;
+
+const isNextPagesRouteAnnouncerPortal = (fiber: RuntimeFiberSnapshot): boolean =>
+  fiber.name === "Portal" &&
+  fiber.tag === "FunctionComponent" &&
+  fiber.children.some((hostPortal) =>
+    hostPortal.children.some((child) => child.name === "RouteAnnouncer"),
+  );
+
+const isNextPagesInjectedFiber = (fiber: RuntimeFiberSnapshot): boolean =>
+  isNextPagesHeadCommitHook(fiber) || isNextPagesRouteAnnouncerPortal(fiber);
 
 export const NEXT_PAGES_PROFILE: FrameworkProfile = {
   kind: "next-pages",
   transparentRuntimeFibers: new Set(NEXT_PAGES_RUNTIME_WRAPPERS),
-  transparentStaticFibers: new Set(["Fragment"]),
-  isInjectedRuntimeFiber: neverInjected,
+  transparentStaticFibers: new Set(["Fragment", "StrictMode"]),
+  isInjectedRuntimeFiber: isNextPagesInjectedFiber,
   defaultAnchor: null,
 };
 

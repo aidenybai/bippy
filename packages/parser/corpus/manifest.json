@@ -646,6 +646,191 @@
         "maxFiberCount": 20000
       },
       "notes": "Django normally renders index.html with window.POSTHOG_APP_CONTEXT and points the module scripts at the Vite dev server; corpus/scripts/posthog-app-server.ts stands in for it with an anonymous app context and the checked-in _preflight fixture, answering the API calls the login scene makes. The kea store the page builds is captured through the Redux DevTools compose hook and replayed into the static render; the app server's stand-in API returns 404 for the endpoints it does not model, which the page logs."
+    },
+    {
+      "id": "glide-data-grid",
+      "repository": "https://github.com/glideapps/glide-data-grid",
+      "revision": "0875d78cc41535a39f8b417ff88ce1ebe129c363",
+      "description": "Glide Data Grid next-gdg test project (Next 12 pages router, React 17)",
+      "framework": "next-pages",
+      "workingDirectory": "test-projects/next-gdg",
+      "install": "npm install --no-audit --no-fund && npm run build -w packages/core",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/glide-data-grid-setup.sh\""],
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "static": {
+        "rootDirectory": "test-projects/next-gdg",
+        "route": "/",
+        "aliases": { "@glideapps/glide-data-grid": "../../packages/core/src" },
+        "externalPackageAllowList": [
+          "@glideapps/glide-data-grid",
+          "@linaria/react",
+          "canvas-hypertxt",
+          "react-number-format",
+          "marked",
+          "react-responsive-carousel",
+          "lodash",
+          "lodash/*"
+        ]
+      },
+      "notes": "The project's package-lock pins the published @glideapps/glide-data-grid@3.4.1, which no longer exports the dist/index.css _app.tsx imports, so like test-projects/bootstrap-projects.sh the setup symlinks the built packages/core into node_modules (`--legacy-peer-deps`: the lock pairs marked@16 with a marked@^4 peer range) and additionally aliases react/react-dom in next.config.js to the project's React 17 so core's dist does not load the repository root's React 19. The static side aliases the package to packages/core/src so both trees come from the same revision."
+    },
+    {
+      "id": "react-datasheet-grid",
+      "repository": "https://github.com/nick-keller/react-datasheet-grid",
+      "revision": "862a1bb7777550fa04445fb283fa035a759c7c22",
+      "description": "react-datasheet-grid example app (Vite, React 18) importing the library from ../../src",
+      "framework": "spa",
+      "workingDirectory": "example",
+      "install": "npm install --no-audit --no-fund && cd example && npm install --no-audit --no-fund",
+      "dev": "npm run dev",
+      "url": "http://localhost:5173/",
+      "static": {
+        "rootDirectory": "example",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["@tanstack/react-virtual", "react-resize-detector"]
+      }
+    },
+    {
+      "id": "material-react-table",
+      "repository": "https://github.com/KevinVandy/material-react-table",
+      "revision": "a16bafe78a547c423a72eff1dd000f3875885f86",
+      "description": "Material React Table docs site home page (Next 14 pages router, React 19, MUI)",
+      "framework": "next-pages",
+      "workingDirectory": "apps/material-react-table-docs",
+      "install": "pnpm install && pnpm --use-node-version=20.19.5 --filter material-react-table lib:build-lib",
+      "dev": "pnpm docs:dev",
+      "url": "http://localhost:3000/",
+      "static": {
+        "rootDirectory": "apps/material-react-table-docs",
+        "route": "/",
+        "aliases": { "material-react-table": "../../packages/material-react-table/src" },
+        "externalPackageAllowList": [
+          "material-react-table",
+          "@mui/*",
+          "@emotion/*",
+          "@tanstack/*",
+          "highlight-words"
+        ],
+        "maxFiberCount": 20000
+      },
+      "notes": "The docs app consumes the workspace package's dist build, whose rollup config uses `assert { type: 'json' }` import assertions that Node 22 rejects, so the library is built under Node 20; the static side aliases material-react-table to packages/material-react-table/src."
+    },
+    {
+      "id": "mantine-react-table",
+      "repository": "https://github.com/KevinVandy/mantine-react-table",
+      "revision": "d338579598b52a93045a96c55eacadfc8db331bb",
+      "description": "Mantine React Table docs site home page (Next 14 pages router, React 18, Mantine)",
+      "framework": "next-pages",
+      "workingDirectory": "apps/mantine-react-table-docs",
+      "install": "pnpm install && pnpm --use-node-version=20.19.5 --filter mantine-react-table lib:build-lib",
+      "dev": "pnpm docs:dev",
+      "url": "http://localhost:3001/",
+      "static": {
+        "rootDirectory": "apps/mantine-react-table-docs",
+        "route": "/",
+        "aliases": { "mantine-react-table": "../../packages/mantine-react-table/src" },
+        "externalPackageAllowList": [
+          "mantine-react-table",
+          "@mantine/*",
+          "@tabler/icons-react",
+          "@tanstack/*",
+          "clsx",
+          "dayjs"
+        ],
+        "maxFiberCount": 20000
+      },
+      "notes": "The docs app consumes the workspace package's dist build, whose rollup config uses `assert { type: 'json' }` import assertions that Node 22 rejects, so the library is built under Node 20; the static side aliases mantine-react-table to packages/mantine-react-table/src."
+    },
+    {
+      "id": "react-data-table-component",
+      "repository": "https://github.com/jbetancur/react-data-table-component",
+      "revision": "3c080557be7723f6815a7dc9555f21df1164c11f",
+      "description": "react-data-table-component Storybook story rendered in the preview iframe (Storybook 7, React 18)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npm run storybook -- --ci --no-open",
+      "url": "http://localhost:6006/iframe.html?id=sorting-basic--basic&viewMode=story",
+      "static": {
+        "rootDirectory": ".",
+        "entry": "stories/DataTable/sorting/basic.stories.js",
+        "rootComponent": "Basic",
+        "anchor": "DataTable"
+      },
+      "notes": "The repository has no app; Storybook's preview iframe is the only runnable React root. Both trees are anchored on the library's DataTable component so Storybook's decorators stay outside the comparison."
+    },
+    {
+      "id": "react-arborist",
+      "repository": "https://github.com/jameskerr/react-arborist",
+      "revision": "ab6a0031f536ec7a411b01dc26012065e2ae849b",
+      "description": "react-arborist showcase cities demo (Next 14 pages router, React 18)",
+      "framework": "next-pages",
+      "workingDirectory": "modules/showcase",
+      "install": "yarn install && yarn build-lib",
+      "dev": "yarn start",
+      "url": "http://localhost:3000/cities",
+      "static": {
+        "rootDirectory": "modules/showcase",
+        "route": "/cities",
+        "aliases": { "react-arborist": "../react-arborist/src" },
+        "externalPackageAllowList": [
+          "react-arborist",
+          "react-window",
+          "react-dnd",
+          "react-dnd-html5-backend",
+          "dnd-core",
+          "redux",
+          "use-sync-external-store",
+          "react-icons",
+          "react-icons/*",
+          "clsx"
+        ]
+      },
+      "notes": "The showcase consumes the workspace package's dist build; the static side aliases react-arborist to modules/react-arborist/src."
+    },
+    {
+      "id": "react-virtuoso",
+      "repository": "https://github.com/petyosi/react-virtuoso",
+      "revision": "b7feb0c2415044a99c75c7c8d03f5f7c14342038",
+      "description": "react-virtuoso hello example rendered by Ladle in preview mode (React 19)",
+      "framework": "spa",
+      "workingDirectory": "packages/react-virtuoso",
+      "install": "pnpm install",
+      "dev": "pnpm ladle",
+      "url": "http://localhost:61000/?story=hello--example&mode=preview",
+      "static": {
+        "rootDirectory": "packages/react-virtuoso",
+        "entry": "examples/hello.tsx",
+        "rootComponent": "Example",
+        "anchor": "Example"
+      },
+      "notes": "The repository has no app; the library's Ladle examples are the runnable React roots. Both trees are anchored on the example component so Ladle's providers stay outside the comparison."
+    },
+    {
+      "id": "tanstack-table",
+      "repository": "https://github.com/TanStack/table",
+      "revision": "05f3ed11f36b83bcd0991e25e3d4e78c143e6df4",
+      "description": "TanStack Table v9 composable-tables example (Vite, React 19, React Compiler)",
+      "framework": "spa",
+      "workingDirectory": "examples/react/composable-tables",
+      "install": "pnpm install",
+      "setup": [
+        "CI=1 NX_DAEMON=false pnpm nx run-many --target=build --projects=@tanstack/react-table,@tanstack/table-core --skipRemoteCache"
+      ],
+      "dev": "pnpm dev",
+      "url": "http://localhost:5173/",
+      "static": {
+        "rootDirectory": "examples/react/composable-tables",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": [
+          "@tanstack/react-table",
+          "@tanstack/table-core",
+          "@tanstack/react-store",
+          "@tanstack/store"
+        ]
+      },
+      "notes": "Workspace packages must be built before Vite can resolve @tanstack/react-table; the setup builds the example's dependency closure."
     }
   ]
 }

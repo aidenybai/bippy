@@ -22,12 +22,15 @@
     "esbuild": "^0.28.2",
     "oxc-parser": "^0.148.0",
     "oxc-resolver": "^11.24.2",
-    "playwright": "^1.63.0"
+    "playwright": "^1.63.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@babel/runtime": "^7.29.7",
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.1",
+    "@linaria/core": "6.3.0",
+    "@linaria/react": "6.3.0",
     "@lingui/core": "5.6.0",
     "@lingui/react": "5.6.0",
     "@reduxjs/toolkit": "2.12.0",

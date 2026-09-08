@@ -50,7 +50,7 @@ import type {
   StubComponent,
   StubRenderTools,
 } from "../types.js";
-import { ForwardRefTag } from "../work-tags.js";
+import { ClassComponentTag, ForwardRefTag } from "../work-tags.js";
 import {
   AlternativeMarker,
   BranchMarker,
@@ -1184,10 +1184,24 @@ export class Materializer {
       proxy =
         stub.tag === ForwardRefTag
           ? this.runtime.react.forwardRef<unknown, ProxyProps>(render)
-          : render;
+          : stub.tag === ClassComponentTag
+            ? this.createClassStubProxy(render, stub.displayName)
+            : render;
       this.stubProxies.set(stub, proxy);
     }
     return proxy;
+  }
+
+  private createClassStubProxy(
+    render: (props: ProxyProps) => ReactNode,
+    displayName: string | null,
+  ): ComponentClass<ProxyProps> {
+    class ClassStubProxy extends this.runtime.react.Component<ProxyProps> {
+      render(): ReactNode {
+        return render(this.props);
+      }
+    }
+    return setFunctionName(ClassStubProxy, displayName);
   }
 
   private renderInsideComponent<T>(render: () => T): T {

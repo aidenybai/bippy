@@ -1,7 +1,20 @@
+import { cp, mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
-import { renderFrameworkTarget, type FrameworkRenderTarget } from "../src/frameworks/index.js";
-import { formatPattern, getRenderPattern, getRenderRootChildren } from "../src/harness/index.js";
+import {
+  flattenTransparentFibers,
+  getFrameworkProfile,
+  renderFrameworkTarget,
+  type FrameworkRenderTarget,
+} from "../src/frameworks/index.js";
+import {
+  formatPattern,
+  getRenderPattern,
+  getRenderRootChildren,
+  type PatternNode,
+} from "../src/harness/index.js";
+import type { RuntimeFiberSnapshot, SnapshotWorkTag } from "../src/harness/snapshot.js";
 
 // Next.js cannot mount inside happy-dom, so its adapters are checked
 // structurally here; reality checks for Next run through the corpus (browser
@@ -23,6 +36,30 @@ const render = async (fixture: string, target: FrameworkRenderTarget) => {
 };
 
 const lines = (tree: string): string[] => tree.split("\n").map((line) => line.trim());
+
+/** A copy of `fixture` whose `node_modules/<packageName>/package.json` reports `version`. */
+const withInstalledPackage = async (
+  fixture: string,
+  packageName: string,
+  version: string,
+): Promise<string> => {
+  const rootDirectory = await mkdtemp(join(tmpdir(), `bippy-${fixture}-`));
+  await cp(join(FIXTURES, fixture), rootDirectory, { recursive: true });
+  const packageDirectory = join(rootDirectory, "node_modules", packageName);
+  await mkdir(packageDirectory, { recursive: true });
+  await writeFile(
+    join(packageDirectory, "package.json"),
+    JSON.stringify({ name: packageName, version }),
+  );
+  return rootDirectory;
+};
+
+const findFiberTags = (nodes: PatternNode[], name: string): SnapshotWorkTag[] =>
+  nodes.flatMap((node) =>
+    node.kind === "fiber"
+      ? [...(node.name === name ? [node.tag] : []), ...findFiberTags(node.children, name)]
+      : [],
+  );
 
 describe("next app router", () => {
   it("composes root layout, elides server components, keeps client boundaries", async () => {
@@ -113,6 +150,73 @@ describe("next pages router", () => {
   it("never renders api routes", async () => {
     const { errors } = await render("next-pages", { framework: "next-pages", route: "/api/hello" });
     expect(errors.map((diagnostic) => diagnostic.code)).toEqual(["next-pages-no-page"]);
+  });
+
+  it("models next/head, next/image and next/legacy/image after the current next", async () => {
+    const { tree, errors } = await render("next-pages", { framework: "next-pages", route: "/media" });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<Head>\n\s+<SideEffect>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>/);
+    expect(tree).toMatch(
+      /<Image>\n\s+<span>\n\s+<span>\n\s+<img>\n\s+<ImageElement>\n\s+<img>\n\s+<noscript>/,
+    );
+    expect(tree).toMatch(/<Image>\n\s+<span>\n\s+<ImageElement>\n\s+<img>\n\s+<Head>\n\s+<SideEffect>/);
+  });
+
+  it("follows the installed next version: 12.1 renders head through a class and images inline", async () => {
+    const rootDirectory = await withInstalledPackage("next-pages", "next", "12.1.0");
+    const result = await renderFrameworkTarget(
+      { framework: "next-pages", route: "/media" },
+      { rootDirectory, tsconfigPath: join(rootDirectory, "tsconfig.json") },
+    );
+    const pattern = getRenderPattern(result);
+    const tree = formatPattern(pattern);
+    expect(tree).toMatch(/<Head>\n\s+<_class>\n\s+<Image>\n\s+<span>\n\s+<span>\n\s+<img>\n\s+<img>\n\s+<noscript>/);
+    expect(tree).toMatch(/<Image>\n\s+<span>\n\s+<img>\n\s+<Head>\n\s+<_class>/);
+    expect(tree).not.toContain("<ImageElement>");
+    expect(findFiberTags(pattern, "_class")).toEqual(["ClassComponent", "ClassComponent"]);
+  });
+
+  it("splices out the client bootstrap around _app: StrictMode, the head commit hook and the route announcer portal", () => {
+    const fiber = (
+      name: string,
+      tag: SnapshotWorkTag,
+      children: RuntimeFiberSnapshot[] = [],
+    ): RuntimeFiberSnapshot => ({ tag, name, key: null, text: null, props: {}, children });
+    const appHead = fiber("Head", "FunctionComponent", [fiber("SideEffect", "FunctionComponent")]);
+    const page = fiber("Home", "FunctionComponent", [fiber("div", "HostComponent")]);
+    const runtime = {
+      reactVersion: null,
+      rendererName: null,
+      buildType: null,
+      capturedAt: "",
+      roots: [
+        fiber("HostRoot", "HostRoot", [
+          fiber("Root", "FunctionComponent", [
+            fiber("StrictMode", "Mode", [
+              fiber("Head", "FunctionComponent"),
+              fiber("AppContainer", "FunctionComponent", [
+                fiber("Container", "ClassComponent", [
+                  fiber("RouterContext", "ContextProvider", [
+                    fiber("MyApp", "FunctionComponent", [appHead, page]),
+                    fiber("Portal", "FunctionComponent", [
+                      fiber("Portal", "HostPortal", [
+                        fiber("RouteAnnouncer", "FunctionComponent", [
+                          fiber("p", "HostComponent"),
+                        ]),
+                      ]),
+                    ]),
+                  ]),
+                ]),
+              ]),
+            ]),
+          ]),
+        ]),
+      ],
+    };
+    const flattened = flattenTransparentFibers(runtime, getFrameworkProfile("next-pages"));
+    expect(flattened.roots[0].children).toEqual([
+      fiber("MyApp", "FunctionComponent", [appHead, page]),
+    ]);
   });
 });
 

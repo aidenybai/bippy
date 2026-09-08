@@ -2589,7 +2589,22 @@ export class Interpreter {
       }
       const pattern = param.type === "TSParameterProperty" ? param.parameter : param;
       this.bindPattern(pattern, args[index] ?? UNDEFINED_VALUE, scope, context);
+      if (param.type === "TSParameterProperty") {
+        this.assignParameterProperty(pattern, scope, context);
+      }
     });
+  }
+
+  /** `constructor(public x = 1)` declares `x` and assigns `this.x` when the constructor runs. */
+  private assignParameterProperty(
+    pattern: BindingPattern,
+    scope: Scope,
+    context: EvaluationContext,
+  ): void {
+    const target = pattern.type === "AssignmentPattern" ? pattern.left : pattern;
+    if (target.type !== "Identifier" || context.thisValue === null) return;
+    const value = lookupScope(scope, target.name);
+    if (value) this.assignProperty(context.thisValue, target.name, value, context);
   }
 
   /** `var` bindings live in the hoisted function scope; `let`/`const` in the current block. */

@@ -22,9 +22,15 @@ import type {
   StubComponent,
   StubRenderTools,
 } from "../types.js";
-import { ForwardRefTag } from "../work-tags.js";
+import {
+  isVersionAtLeast,
+  parsePackageVersion,
+  readInstalledVersion,
+} from "../graph/package-version.js";
+import { ClassComponentTag, ForwardRefTag } from "../work-tags.js";
 import type { FrameworkKind } from "./framework-profile.js";
 import { toElementType } from "../react/element-type.js";
+import { legacyImageStub } from "./next-legacy-image.js";
 import { nextRequestValue } from "./next-request.js";
 import {
   element,
@@ -183,10 +189,38 @@ const propEntries = (props: StaticObjectValue): [string, StaticValue][] => {
   return entries;
 };
 
-/** `next/head` renders its children into `<head>` through a `SideEffect` that returns null. */
-const HEAD_STUB: StubComponent = {
-  displayName: "Head",
-  render: () => stubElement(emptyStub("SideEffect"), {}),
+/**
+ * `next/head` renders its children into `<head>` through a side effect that
+ * returns null: the `SideEffect` function since 12.2 (shared/lib/side-effect.tsx),
+ * before that an anonymous class React names after the compiled binding.
+ */
+const headSideEffectStub = (nextVersion: string | null): StubComponent => {
+  const version = parsePackageVersion(nextVersion);
+  if (version === null || isVersionAtLeast(version, 12, 2)) return emptyStub("SideEffect");
+  return {
+    ...emptyStub(isVersionAtLeast(version, 11, 1) ? "_class" : "_default"),
+    tag: ClassComponentTag,
+  };
+};
+
+const headStub = (nextVersion: string | null): StubComponent => {
+  const sideEffect = headSideEffectStub(nextVersion);
+  return { displayName: "Head", render: () => stubElement(sideEffect, {}) };
+};
+
+interface NextImageStubs {
+  image: StaticValue;
+  legacyImage: StaticValue;
+}
+
+const imageStubs = (nextVersion: string | null, head: StubComponent): NextImageStubs => {
+  const version = parsePackageVersion(nextVersion);
+  const hasImageElement = version === null || isVersionAtLeast(version, 12, 2);
+  const legacyImage = stubValue(legacyImageStub({ hasImageElement, head }));
+  return {
+    image: version !== null && !isVersionAtLeast(version, 13, 0) ? legacyImage : stubValue(IMAGE_STUB),
+    legacyImage,
+  };
 };
 
 /** `next/script` renders a `<script>` only for `beforeInteractive`; every other strategy returns null. */
@@ -385,11 +419,18 @@ export interface NextModelOptions {
   origin?: string;
   /** The document request the server rendered, when captured. */
   request?: CapturedRequest;
+  /** Directory the app's `next` is installed under; its version decides what the framework components render. */
+  rootDirectory?: string;
 }
 
 export const createNextModel = (options: NextModelOptions): NextModel => {
   const url = new URL(options.route, options.origin ?? "http://static.invalid");
   const params: Record<string, string> = {};
+  const nextVersion =
+    options.rootDirectory === undefined ? null : readInstalledVersion(options.rootDirectory, "next");
+  const head = headStub(nextVersion);
+  const headValue = stubValue(head);
+  const images = imageStubs(nextVersion, head);
   const externalValues: ExternalValueProvider = (packageName, importedName) => {
     switch (packageName) {
       case "next/link":
@@ -397,10 +438,11 @@ export const createNextModel = (options: NextModelOptions): NextModel => {
           ? stubValue(options.kind === "next-app" ? APP_LINK_STUB : PAGES_LINK_STUB)
           : null;
       case "next/image":
+        return importedName === "default" ? images.image : null;
       case "next/legacy/image":
-        return importedName === "default" ? stubValue(IMAGE_STUB) : null;
+        return importedName === "default" ? images.legacyImage : null;
       case "next/head":
-        return importedName === "default" ? stubValue(HEAD_STUB) : null;
+        return importedName === "default" ? headValue : null;
       case "next/script":
         return importedName === "default" ? stubValue(SCRIPT_STUB) : null;
       case "next/dynamic":

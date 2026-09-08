@@ -1,5 +1,5 @@
-import { readFileSync } from "node:fs";
 import type { ModuleResolver } from "../graph/module-resolver.js";
+import { readPackageVersion } from "../graph/package-version.js";
 
 /** Own keys of a development-mode `ReactElement` (react/src/jsx/ReactJSXElement.js). */
 export const REACT_ELEMENT_OWN_KEYS = new Set([
@@ -46,16 +46,7 @@ export const readReactVersion = (
   rootDirectory: string,
 ): string | null => {
   const resolution = resolver.resolve("react/package.json", `${rootDirectory}/index.js`);
-  if (resolution.kind !== "external" || !resolution.filePath) return null;
-  try {
-    const manifest: unknown = JSON.parse(readFileSync(resolution.filePath, "utf8"));
-    return typeof manifest === "object" &&
-      manifest !== null &&
-      "version" in manifest &&
-      typeof manifest.version === "string"
-      ? manifest.version
-      : null;
-  } catch {
-    return null;
-  }
+  return resolution.kind === "external" && resolution.filePath
+    ? readPackageVersion(resolution.filePath)
+    : null;
 };

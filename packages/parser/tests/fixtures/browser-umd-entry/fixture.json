@@ -1,0 +1,4 @@
+{
+  "externalPackages": ["umd-kit"],
+  "notes": "A dependency whose `browser` field points at a UMD bundle while `module` points at ESM: Vite reads the browser entry, finds no ESM syntax and resolves the `module` entry instead."
+}
