@@ -1,6 +1,7 @@
 import path from "node:path";
 import type { CorpusEntry } from "../corpus/manifest.js";
 import { readProcessEnvironment } from "../corpus/process-environment.js";
+import { readInstalledVersion } from "../graph/installed-version.js";
 import { createStaticRenderer, type StaticRenderer } from "../render/static-renderer.js";
 import type { RuntimeObservations, StaticRenderResult, StaticRendererOptions } from "../types.js";
 import type { FrameworkKind } from "./framework-profile.js";
@@ -52,6 +53,7 @@ export const renderFrameworkTarget = (
         route,
         origin: options.origin,
         request: options.observations?.request,
+        nextVersion: readInstalledVersion(options.rootDirectory, "next"),
       });
       const renderer = createStaticRenderer({
         ...options,

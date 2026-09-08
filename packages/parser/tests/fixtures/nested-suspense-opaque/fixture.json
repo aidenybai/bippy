@@ -1,0 +1,5 @@
+{
+  "expectedStatus": "partial",
+  "minCoverage": 0.4,
+  "notes": "Nested boundaries whose content is opaque may each be suspended when observed; the inner boundary is inside the outer one's content alternative, so it must stay mounted when the outer one turns suspendable."
+}

@@ -640,6 +640,11 @@ const collectCommonJsExports = (
 export const hasExportedName = (module: ModuleRecord, exportedName: string): boolean =>
   module.exports.some((entry) => "exportedName" in entry && entry.exportedName === exportedName);
 
+const USE_CLIENT_DIRECTIVE = "use client";
+
+export const isClientModule = (module: ModuleRecord): boolean =>
+  module.directives.includes(USE_CLIENT_DIRECTIVE);
+
 export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
   const imports: ImportBinding[] = [];
   const exports: ExportEntry[] = [];

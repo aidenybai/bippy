@@ -97,6 +97,7 @@ const NEXT_PAGES_RUNTIME_WRAPPERS = [
   "AppContainer",
   "Container",
   "PathnameContextProviderAdapter",
+  "_PathnameContextProviderAdapter",
   "RouterContext",
   "HeadManagerContext",
   "ImageConfigContext",
@@ -112,11 +113,17 @@ const NEXT_PAGES_RUNTIME_WRAPPERS = [
   "Fragment",
 ];
 
+// The pages client (`next/dist/client/index`) renders a head-commit callback
+// component and the route announcer portal next to `_app`.
+const isNextPagesInjectedFiber = (fiber: RuntimeFiberSnapshot): boolean =>
+  (fiber.name === "Head" && fiber.children.length === 0 && "callback" in fiber.props) ||
+  (fiber.name === "Portal" && fiber.props.type === "next-route-announcer");
+
 export const NEXT_PAGES_PROFILE: FrameworkProfile = {
   kind: "next-pages",
   transparentRuntimeFibers: new Set(NEXT_PAGES_RUNTIME_WRAPPERS),
   transparentStaticFibers: new Set(["Fragment"]),
-  isInjectedRuntimeFiber: neverInjected,
+  isInjectedRuntimeFiber: isNextPagesInjectedFiber,
   defaultAnchor: null,
 };
 

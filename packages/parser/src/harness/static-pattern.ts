@@ -1,4 +1,4 @@
-import { MARKER_NAMES } from "../materialize/markers.js";
+import { MARKER_NAMES, SUSPENSE_BRANCH_REASON } from "../materialize/markers.js";
 import type { StaticRenderResult } from "../types.js";
 import type { RuntimeFiberSnapshot, SnapshotPropValue, SnapshotWorkTag } from "./snapshot.js";
 
@@ -112,7 +112,17 @@ const toPatternNode = (fiber: RuntimeFiberSnapshot): PatternNode[] => {
     case MARKER_NAMES.text:
       return [{ kind: "text", text: null }];
     case MARKER_NAMES.suspenseBoundary:
-      return snapshotToPattern(fiber.children);
+      return fiber.children.length > 1
+        ? [
+            {
+              kind: "branch",
+              reason: SUSPENSE_BRANCH_REASON,
+              location: null,
+              preferredIndex: 0,
+              alternatives: fiber.children.map((boundary) => snapshotToPattern([boundary])),
+            },
+          ]
+        : snapshotToPattern(fiber.children);
     case MARKER_NAMES.suspended:
       return [];
     default:

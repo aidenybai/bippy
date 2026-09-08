@@ -52,7 +52,7 @@ import {
   getReactElementSymbolKey,
   REACT_ELEMENT_SYMBOL_KEYS,
 } from "../react/element-shape.js";
-import { toElementType } from "../react/element-type.js";
+import { toClientReference, toElementType } from "../react/element-type.js";
 import {
   getExternalMember,
   isReactLikePackage,
@@ -948,11 +948,15 @@ export class Interpreter {
         return this.createClassValue(binding.node, context, binding.name);
       case "typescript":
         return evaluateTypeScriptDeclaration(this, binding.node, context);
-      case "import":
-        return this.resolvedSymbolToValue(
+      case "import": {
+        const imported = this.resolvedSymbolToValue(
           this.graph.resolveImport(binding.binding, module),
           binding.name,
         );
+        return this.graph.crossesClientBoundary(binding.binding.specifier, module)
+          ? toClientReference(imported)
+          : imported;
+      }
       case "destructured": {
         const initValue = binding.init
           ? this.evaluateDestructuredInit(binding.init, context)

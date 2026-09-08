@@ -151,6 +151,8 @@ export interface ComponentDefinition {
   /** Present for class components. */
   classBody: ClassBody | null;
   properties: Map<string, StaticValue>;
+  /** Reached from the server graph through a `"use client"` module's export. */
+  isClientReference?: boolean;
 }
 
 export interface ClassMemberBase {
@@ -573,6 +575,7 @@ export interface StaticFunctionValue {
   properties: Map<string, StaticValue>;
   boundArgs?: StaticValue[];
   boundThis?: StaticValue;
+  isClientReference?: boolean;
 }
 
 export interface StaticClassValue {
@@ -583,6 +586,7 @@ export interface StaticClassValue {
   module: ModuleRecord;
   name: string | null;
   properties: Map<string, StaticValue>;
+  isClientReference?: boolean;
 }
 
 /** A list item (or child) that is present on some paths and absent on others, as `filter` produces. */

@@ -33,11 +33,11 @@ import {
   unknownValue,
 } from "../evaluate/values.js";
 import { nativeObjectValue } from "../evaluate/native-values.js";
+import { isClientModule } from "../graph/module-record.js";
 import { formatSourceLocation } from "../parse/source-location.js";
 import type {
   ComponentDefinition,
   ContextDefinition,
-  ModuleRecord,
   RenderEnvironment,
   Scope,
   SourceLocation,
@@ -63,6 +63,7 @@ import {
   UnknownMarker,
 } from "./markers.js";
 import type { ReactRuntime } from "./react-runtime.js";
+import { ServerEnvironmentStamper } from "./server-environment.js";
 
 /**
  * Whether React would take the input for the proxy's `current` props: the same
@@ -86,7 +87,6 @@ const MAX_RENDER_PHASE_UPDATES = 25;
 // Every alternative of a branch is materialized, so nested branches multiply the
 // work; deviations from the preferred path deeper than this become wildcards.
 const MAX_ALTERNATIVE_DEPTH = 2;
-const USE_CLIENT_DIRECTIVE = "use client";
 
 /** Tags whose `children` React DOM either rejects (void elements) or never reconciles (`textarea`, `noscript`). */
 const CHILDLESS_HOST_TAGS = new Set([
@@ -273,11 +273,24 @@ export class StaticThrowError extends Error {
   }
 }
 
-const isClientModule = (module: ModuleRecord): boolean =>
-  module.directives.includes(USE_CLIENT_DIRECTIVE);
+const isClientComponent = (component: ComponentDefinition): boolean =>
+  component.isClientReference === true || isClientModule(component.module);
 
 const isClassNode = (node: ComponentDefinition["node"]): node is Class =>
   node.type === "ClassDeclaration" || node.type === "ClassExpression";
+
+/** Flight renders `memo` and `forwardRef` wrappers by calling the wrapped function on the server. */
+const getServerRenderedComponent = (type: StaticElementType): ComponentDefinition | null => {
+  switch (type.kind) {
+    case "function":
+    case "forward-ref":
+      return type.component;
+    case "memo":
+      return getServerRenderedComponent(type.inner);
+    default:
+      return null;
+  }
+};
 
 /**
  * A component's React identity is its closure: the same function node evaluated
@@ -406,6 +419,7 @@ export class Materializer {
   private readonly maxElementCount: number;
   private readonly maxRecursionPerComponent: number;
   private readonly serverComponents: boolean;
+  private readonly serverEnvironment = new ServerEnvironmentStamper();
   private isBudgetExhausted = false;
   /** Set by the first layout effect of a commit, cleared by its first passive effect. */
   private isPassivePhasePending = false;
@@ -616,8 +630,8 @@ export class Materializer {
     context: MaterializeContext,
     isTopLevel: boolean,
   ): ReactNode {
-    if (element.type.kind === "function" && this.isServerComponentElement(element, context)) {
-      const component = element.type.component;
+    const component = this.getServerComponent(element, context);
+    if (component) {
       const server = this.evaluateComposite(
         component,
         element.props,
@@ -634,7 +648,23 @@ export class Materializer {
       );
       return this.toNode(server.rendered, server.childContext, isTopLevel);
     }
-    return this.createNode(element.type, element.key, element.props, element.location, context);
+    if ((element.environment ?? context.environment) !== "server") {
+      return this.createNode(element.type, element.key, element.props, element.location, context);
+    }
+    if (this.isFlightUnwrappedFragment(element)) {
+      return this.toNode(getObjectProperty(element.props, "children"), context, isTopLevel);
+    }
+    const props = this.serverEnvironment.stampProps(element.props);
+    return this.createNode(element.type, element.key, props, element.location, context);
+  }
+
+  /** Flight serializes a key-less server `<>...</>` as its children, so the client never sees the fragment. */
+  private isFlightUnwrappedFragment(element: StaticElementValue): boolean {
+    return (
+      this.serverComponents &&
+      element.type.kind === "fragment" &&
+      this.keyToString(element.key, element.location) === undefined
+    );
   }
 
   private createNode(
@@ -1542,13 +1572,14 @@ export class Materializer {
    * unless its module (or the module that created the element) opted into the
    * client bundle with `"use client"`.
    */
-  private isServerComponentElement(
+  private getServerComponent(
     element: StaticElementValue,
     context: MaterializeContext,
-  ): boolean {
-    if (!this.serverComponents || element.type.kind !== "function") return false;
+  ): ComponentDefinition | null {
+    if (!this.serverComponents) return null;
+    const component = getServerRenderedComponent(element.type);
     const createdIn = element.environment ?? context.environment;
-    return createdIn !== "client" && !isClientModule(element.type.component.module);
+    return component && createdIn !== "client" && !isClientComponent(component) ? component : null;
   }
 
   private componentEnvironment(
@@ -1556,7 +1587,7 @@ export class Materializer {
     context: MaterializeContext,
   ): RenderEnvironment | null {
     if (!this.serverComponents) return null;
-    if (context.environment === "client" || isClientModule(component.module)) return "client";
+    if (context.environment === "client" || isClientComponent(component)) return "client";
     return isClassNode(component.node) ? "client" : "server";
   }
 
@@ -1593,10 +1624,13 @@ export class Materializer {
    * page has settled (external or unknown content; a resolved `lazy` has loaded
    * by then) is observed either showing its content or its fallback; the second
    * alternative really suspends so React lays out the hidden primary tree and
-   * the fallback itself.
+   * the fallback itself. Both alternatives are direct children of the marker so
+   * turning suspendable keeps the primary tree mounted: React 19 retries two
+   * pending boundaries mounted in separate commits against each other forever.
    */
   renderSuspenseBoundary(input: ProxyInput): ReactNode {
-    const { useRef, useState, useLayoutEffect, createElement, Suspense } = this.runtime.react;
+    const { useRef, useState, useLayoutEffect, createElement, Fragment, Suspense } =
+      this.runtime.react;
     const scopeRef = useRef<SuspenseScope | null>(null);
     scopeRef.current ??= { maySuspend: false, commit: noop };
     const scope = scopeRef.current;
@@ -1613,12 +1647,12 @@ export class Materializer {
       true,
     );
     const content = createElement(Suspense, { fallback }, primary);
-    if (!isSuspendable) return content;
-    return this.branchNode(
-      [content, createElement(Suspense, { fallback }, createElement(SuspendedMarker))],
-      "Suspense boundary may be suspended when observed",
-      0,
-      true,
+    if (!isSuspendable) return createElement(Fragment, null, content);
+    return createElement(
+      Fragment,
+      null,
+      content,
+      createElement(Suspense, { fallback }, createElement(SuspendedMarker)),
     );
   }
 }

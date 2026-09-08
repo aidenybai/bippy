@@ -10,7 +10,7 @@ import type {
 } from "../types.js";
 import { isModeledLibraryExport, isModeledLibraryPackage } from "../libraries/index.js";
 import { isCompilerHelperPackage } from "./helper-packages.js";
-import { createModuleRecord } from "./module-record.js";
+import { createModuleRecord, isClientModule } from "./module-record.js";
 import { ModuleResolver } from "./module-resolver.js";
 
 export interface ExportNameSet {
@@ -92,6 +92,12 @@ export class ModuleGraph {
     fromModule: ModuleRecord,
   ): ModuleRecord | ModuleResolution {
     return this.getResolvedModule(this.resolveSpecifier(specifier, fromModule));
+  }
+
+  crossesClientBoundary(specifier: string, fromModule: ModuleRecord): boolean {
+    if (isClientModule(fromModule)) return false;
+    const target = this.resolveImportedModule(specifier, fromModule);
+    return isModuleRecord(target) && isClientModule(target);
   }
 
   private getResolvedModule(resolution: ModuleResolution): ModuleRecord | ModuleResolution {

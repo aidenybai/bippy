@@ -10,6 +10,7 @@ export const createFunctionComponentDefinition = (
   scope: value.scope,
   classBody: null,
   properties: value.properties,
+  isClientReference: value.isClientReference,
 });
 
 export const createClassComponentDefinition = (
@@ -22,7 +23,33 @@ export const createClassComponentDefinition = (
   scope: value.scope,
   classBody: value.body,
   properties: value.properties,
+  isClientReference: value.isClientReference,
 });
+
+export const toClientReference = (value: StaticValue): StaticValue => {
+  switch (value.kind) {
+    case "function":
+    case "class":
+      return { ...value, isClientReference: true };
+    case "component-reference":
+      return { ...value, type: elementTypeToClientReference(value.type) };
+    default:
+      return value;
+  }
+};
+
+const elementTypeToClientReference = (type: StaticElementType): StaticElementType => {
+  switch (type.kind) {
+    case "function":
+    case "class":
+    case "forward-ref":
+      return { ...type, component: { ...type.component, isClientReference: true } };
+    case "memo":
+      return { ...type, inner: elementTypeToClientReference(type.inner) };
+    default:
+      return type;
+  }
+};
 
 export const toElementType = (value: StaticValue, nameHint: string | null): StaticElementType => {
   switch (value.kind) {

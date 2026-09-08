@@ -24,6 +24,7 @@ import type {
 } from "../types.js";
 import { ForwardRefTag } from "../work-tags.js";
 import type { FrameworkKind } from "./framework-profile.js";
+import { isVersionAtLeast } from "../graph/installed-version.js";
 import { toElementType } from "../react/element-type.js";
 import { nextRequestValue } from "./next-request.js";
 import {
@@ -37,12 +38,13 @@ import {
   stubValue,
 } from "./stubs.js";
 
-// Static stand-ins for the `next/*` client surface (next@15). Shapes follow the
-// fiber trees the real components commit: `next/link` in the App Router is
-// `LinkComponent` -> LinkStatusContext provider -> <a>; in the Pages Router a
-// `forwardRef` -> <a>. `next/image` is a forwardRef wrapping a forwardRef
-// `ImageElement` -> <img>. Router hooks resolve from the URL being rendered;
-// anything only the running router knows is an explicit unknown.
+// Static stand-ins for the `next/*` client surface. Shapes follow the fiber
+// trees the real components commit: `next/link` in the App Router since 15.3
+// (client/app-dir/link.tsx) is `LinkComponent` -> LinkStatusContext provider ->
+// <a>; before that, and in the Pages Router, a `forwardRef` -> <a>. `next/image`
+// is a forwardRef wrapping a forwardRef `ImageElement` -> <img>. Router hooks
+// resolve from the URL being rendered; anything only the running router knows
+// is an explicit unknown.
 
 export interface NextModel {
   externalValues: ExternalValueProvider;
@@ -138,11 +140,21 @@ const APP_LINK_STUB: StubComponent = {
     ),
 };
 
-const PAGES_LINK_STUB: StubComponent = {
+const FORWARD_REF_LINK_STUB: StubComponent = {
   displayName: "LinkComponent",
   tag: ForwardRefTag,
   render: anchorForLink,
 };
+
+const LINK_STATUS_MIN_VERSION = "15.3.0";
+
+const selectLinkStub = (options: NextModelOptions): StubComponent =>
+  options.kind === "next-app" &&
+  (options.nextVersion === undefined ||
+    options.nextVersion === null ||
+    isVersionAtLeast(options.nextVersion, LINK_STATUS_MIN_VERSION))
+    ? APP_LINK_STUB
+    : FORWARD_REF_LINK_STUB;
 
 const IMAGE_ELEMENT_STUB: StubComponent = {
   displayName: null,
@@ -385,6 +397,8 @@ export interface NextModelOptions {
   origin?: string;
   /** The document request the server rendered, when captured. */
   request?: CapturedRequest;
+  /** The installed `next` version; `null` when unknown, which models the latest. */
+  nextVersion?: string | null;
 }
 
 export const createNextModel = (options: NextModelOptions): NextModel => {
@@ -393,9 +407,7 @@ export const createNextModel = (options: NextModelOptions): NextModel => {
   const externalValues: ExternalValueProvider = (packageName, importedName) => {
     switch (packageName) {
       case "next/link":
-        return importedName === "default"
-          ? stubValue(options.kind === "next-app" ? APP_LINK_STUB : PAGES_LINK_STUB)
-          : null;
+        return importedName === "default" ? stubValue(selectLinkStub(options)) : null;
       case "next/image":
       case "next/legacy/image":
         return importedName === "default" ? stubValue(IMAGE_STUB) : null;

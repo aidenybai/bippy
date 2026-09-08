@@ -18,6 +18,9 @@ export const MARKER_NAMES = {
 
 export type MarkerName = (typeof MARKER_NAMES)[keyof typeof MARKER_NAMES];
 
+/** A `$SuspenseBoundary` with two children is a branch between its content and its fallback. */
+export const SUSPENSE_BRANCH_REASON = "Suspense boundary may be suspended when observed";
+
 const markerNames: ReadonlySet<string> = new Set(Object.values(MARKER_NAMES));
 
 export const isMarkerName = (name: string | null): name is MarkerName =>
