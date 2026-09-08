@@ -72,6 +72,12 @@ export interface CorpusManifest {
   entries: CorpusEntry[];
 }
 
+const DEFAULT_CORPUS_SETTLE_MS = 3_000;
+
+/** The quiet window the entry's runtime capture waits for, which the static render models timers against. */
+export const getSettleMs = (entry: CorpusEntry): number =>
+  entry.settleMs ?? DEFAULT_CORPUS_SETTLE_MS;
+
 export interface CorpusRuntimeSummary {
   reactVersion: string | null;
   rendererName: string | null;

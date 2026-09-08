@@ -80,10 +80,38 @@ export interface ReactRouterModel {
 interface FrameworkState extends FrameworkDocument {
   /** The matched route tree `HydratedRouter` mounts (root `RenderedRoute` inwards). */
   routeTree: StaticValue | null;
+  /** Every route below the root, as the server matches manifest requests against them. */
+  routes: RouteRecord[] | null;
   /** `react-router.config.ts` settings; null outside framework mode. */
   config: FrameworkConfig | null;
   /** Dev-server URLs of the matched route modules, root first, as `<Scripts>` preloads them. */
   routeModuleUrls: string[];
+  /** Where the rendered `<Link>`s and `<Form>`s point, which eager route discovery fetches manifest patches for. */
+  discoveredTargets: DiscoveredTargets;
+  /** Whether hydration is followed by a router re-render, which drops the `<Scripts>` preloads. */
+  isRerenderedAfterHydration: UncertainFlag;
+}
+
+interface DiscoveredTargets {
+  pathnames: Set<string>;
+  hasDynamicPathname: boolean;
+}
+
+interface UncertainFlag {
+  value: boolean | null;
+  /** Why the value is null. */
+  reason: string;
+}
+
+/** A link target `resolveTo` resolved against its route, or null when it is not static. */
+interface ResolvedTarget {
+  pathname: string;
+  href: string;
+}
+
+/** `Link`/`Form` targets that React Router marks with `data-discover` for the fog-of-war observer. */
+interface DiscoveryRegistry {
+  register: (target: ResolvedTarget | null) => void;
 }
 
 /** Config flags the document components branch on; null when not static. */
@@ -138,6 +166,26 @@ export const ROUTE_CONTEXT: ContextDefinition = {
 const LOCATION_CONTEXT: ContextDefinition = {
   name: "LocationContext",
   displayName: "Location",
+  defaultValue: NULL_VALUE,
+  location: null,
+};
+
+/**
+ * `DataRouterStateContext`: the router's state, republished on every state
+ * update so that `<Scripts>` re-renders (and drops its preloads) when route
+ * discovery patches the manifest.
+ */
+const DATA_ROUTER_STATE_CONTEXT: ContextDefinition = {
+  name: "DataRouterStateContext",
+  displayName: "DataRouterState",
+  defaultValue: NULL_VALUE,
+  location: null,
+};
+
+/** `FrameworkContext`: the manifest, route modules and the critical CSS `HydratedRouter` clears once hydrated. */
+const FRAMEWORK_CONTEXT: ContextDefinition = {
+  name: "FrameworkContext",
+  displayName: "FrameworkContext",
   defaultValue: NULL_VALUE,
   location: null,
 };
@@ -585,67 +633,159 @@ const OUTLET_STUB: StubComponent = {
     ),
 };
 
-const LINK_STUB: StubComponent = {
-  displayName: "Link",
-  tag: ForwardRefTag,
-  render: (props) =>
-    element(
-      { kind: "host", tagName: "a" },
-      objectFromRecord({
-        href: unknownValue("href is resolved by the router"),
-        children: getObjectProperty(props, "children"),
-      }),
-    ),
+const ABSOLUTE_URL = /^(?:[a-z][a-z0-9+.-]*:|[\\/]{2})/i;
+
+const resolvePathnameFrom = (relativePath: string, fromPathname: string): string => {
+  const segments = fromPathname.replace(/\/+$/, "").split("/");
+  for (const segment of relativePath.split("/")) {
+    if (segment === "..") {
+      if (segments.length > 1) segments.pop();
+    } else if (segment !== ".") {
+      segments.push(segment);
+    }
+  }
+  return segments.length > 1 ? segments.join("/") : "/";
 };
 
-/** `NavLink` renders a `Link` after computing its active state; `children` may be a render function. */
-const NAV_LINK_STUB: StubComponent = {
-  displayName: "NavLink",
-  tag: ForwardRefTag,
-  render: (props) => {
-    const children = getObjectProperty(props, "children");
-    return element(
-      { kind: "stub", stub: LINK_STUB },
-      objectFromRecord({
-        children:
-          children.kind === "function"
-            ? unknownValue("NavLink children render function")
-            : children,
-      }),
-    );
-  },
+/**
+ * `resolveTo` for a `to`/`action` string or `{ pathname }` object: relative
+ * paths resolve against the enclosing route, `..` walks up the route matches
+ * (which needs the ancestor list this context does not carry, so stays unknown).
+ */
+const resolveTarget = (
+  target: StaticValue,
+  parent: ParentMatch | null,
+  locationPathname: string,
+): ResolvedTarget | null => {
+  if (!parent) return null;
+  const targetPathname = target.kind === "object" ? getObjectProperty(target, "pathname") : target;
+  if (!isDefined(targetPathname)) {
+    return { pathname: locationPathname, href: locationPathname };
+  }
+  const text = readString(targetPathname);
+  if (text === null) return null;
+  const restIndex = text.search(/[?#]/);
+  const toPathname = restIndex === -1 ? text : text.slice(0, restIndex);
+  const rest = restIndex === -1 ? "" : text.slice(restIndex);
+  if (toPathname.startsWith("..")) return null;
+  const pathname =
+    toPathname === ""
+      ? text === ""
+        ? parent.pathnameBase
+        : locationPathname
+      : toPathname.startsWith("/")
+        ? resolvePathnameFrom(toPathname.slice(1), "/")
+        : resolvePathnameFrom(toPathname, parent.pathnameBase);
+  return { pathname, href: `${pathname}${rest}` };
 };
 
-const FORM_STUB: StubComponent = {
-  displayName: "Form",
-  tag: ForwardRefTag,
-  render: (props) =>
-    element(
-      { kind: "host", tagName: "form" },
-      objectFromRecord({ children: getObjectProperty(props, "children") }),
-    ),
+const createLinkStubs = (
+  discovery: DiscoveryRegistry,
+  locationPathname: string,
+): {
+  link: StubComponent;
+  navLink: StubComponent;
+  form: StubComponent;
+  fetcherForm: StubComponent;
+} => {
+  const discover = (
+    target: StaticValue,
+    tools: StubRenderTools,
+    discoverProp: StaticValue,
+  ): ResolvedTarget | null => {
+    const resolved = resolveTarget(target, readParentMatch(tools), locationPathname);
+    const mode = isDefined(discoverProp) ? readString(discoverProp) : "render";
+    if (mode === null) {
+      discovery.register(null);
+    } else if (mode === "render") {
+      discovery.register(resolved);
+    }
+    return resolved;
+  };
+  const link: StubComponent = {
+    displayName: "Link",
+    tag: ForwardRefTag,
+    render: (props, tools) => {
+      const to = getObjectProperty(props, "to");
+      const absoluteHref = readString(to);
+      const isAbsolute = absoluteHref !== null && ABSOLUTE_URL.test(absoluteHref);
+      const resolved = isAbsolute
+        ? null
+        : discover(to, tools, getObjectProperty(props, "discover"));
+      return element(
+        { kind: "host", tagName: "a" },
+        objectFromRecord({
+          href: isAbsolute
+            ? primitiveValue(absoluteHref)
+            : resolved
+              ? primitiveValue(resolved.href)
+              : unknownPrimitiveValue("string", "href is resolved by the router"),
+          children: getObjectProperty(props, "children"),
+        }),
+      );
+    },
+  };
+  const navLink: StubComponent = {
+    displayName: "NavLink",
+    tag: ForwardRefTag,
+    render: (props) => {
+      const children = getObjectProperty(props, "children");
+      return element(
+        { kind: "stub", stub: link },
+        objectValue([
+          { kind: "spread", value: omitProps(props, NAV_LINK_PROPS) },
+          {
+            kind: "property",
+            key: "children",
+            value:
+              children.kind === "function"
+                ? unknownValue("NavLink children render function")
+                : children,
+          },
+        ]),
+      );
+    },
+  };
+  const form: StubComponent = {
+    displayName: "Form",
+    tag: ForwardRefTag,
+    render: (props, tools) => {
+      const action = getObjectProperty(props, "action");
+      discover(
+        isDefined(action) ? action : primitiveValue("."),
+        tools,
+        getObjectProperty(props, "discover"),
+      );
+      return element(
+        { kind: "host", tagName: "form" },
+        objectFromRecord({ children: getObjectProperty(props, "children") }),
+      );
+    },
+  };
+  const fetcherForm: StubComponent = {
+    displayName: "fetcher.Form",
+    tag: ForwardRefTag,
+    render: (props) =>
+      element(
+        { kind: "stub", stub: form },
+        objectValue([
+          { kind: "spread", value: props },
+          { kind: "property", key: "navigate", value: primitiveValue(false) },
+        ]),
+      ),
+  };
+  return { link, navLink, form, fetcherForm };
 };
 
-const FETCHER_FORM_STUB: StubComponent = {
-  displayName: "fetcher.Form",
-  tag: ForwardRefTag,
-  render: (props) =>
-    element(
-      { kind: "stub", stub: FORM_STUB },
-      objectValue([
-        { kind: "spread", value: props },
-        { kind: "property", key: "navigate", value: primitiveValue(false) },
-      ]),
-    ),
-};
+const NAV_LINK_PROPS = new Set(["className", "style", "end", "caseSensitive", "children"]);
 
 const FETCHER_METHODS = ["submit", "load", "reset"];
 
 /** `useFetcher()`: a fixed `Form` and imperative API around whatever fetcher state the router holds. */
-const fetcherValue = (state: StaticValue): StaticValue =>
+const fetcherValue = (state: StaticValue, fetcherForm: StubComponent): StaticValue =>
   objectValue([
     { kind: "spread", value: state },
-    { kind: "property", key: "Form", value: stubValue(FETCHER_FORM_STUB) },
+    { kind: "property", key: "Form", value: stubValue(fetcherForm) },
     ...FETCHER_METHODS.map((method): StaticObjectEntry => ({
       kind: "property",
       key: method,
@@ -739,26 +879,35 @@ const locationValue = (pathname: string, observed: ObservedRouterState | null): 
     key: unknownValue("location key is assigned at runtime"),
   });
 
+const provide = (
+  context: ContextDefinition,
+  value: StaticValue,
+  children: StaticValue,
+): StaticElementValue =>
+  element(
+    { kind: "context-provider", context, displayName: context.displayName },
+    objectFromRecord({ value, children }),
+  );
+
 const withinRouter = (
   children: StaticValue,
   pathname: string,
   observed: ObservedRouterState | null,
 ): StaticElementValue =>
-  element(
-    { kind: "context-provider", context: LOCATION_CONTEXT, displayName: "Location" },
+  provide(
+    LOCATION_CONTEXT,
     objectFromRecord({
-      value: objectFromRecord({
-        location: locationValue(pathname, observed),
-        navigationType: primitiveValue("POP"),
-      }),
-      children,
+      location: locationValue(pathname, observed),
+      navigationType: primitiveValue("POP"),
     }),
+    children,
   );
 
 const routerHookValue = (
   importedName: string,
   pathname: string,
   observed: ObservedRouterState | null,
+  fetcherForm: StubComponent,
 ): StaticValue | null => {
   switch (importedName) {
     case "useParams":
@@ -781,6 +930,7 @@ const routerHookValue = (
       return nativeFunction(importedName, () =>
         fetcherValue(
           observed?.fetcher ?? unknownValue("react-router fetcher state is only known at runtime"),
+          fetcherForm,
         ),
       );
     default:
@@ -837,27 +987,107 @@ const routeConfigValue = (name: string): StaticValue | null => {
   }
 };
 
+const CRITICAL_CSS_REASON =
+  "whether the dev server inlined critical CSS is only known from a capture";
+
+const eitherFlag = (left: UncertainFlag, right: UncertainFlag): UncertainFlag => {
+  if (left.value === true || right.value === true) return { value: true, reason: "" };
+  return left.value === null ? left : right;
+};
+
+/** `getPathsWithAncestors`: the manifest covers a path together with every ancestor path. */
+const pathsWithAncestors = (pathname: string): string[] => {
+  const segments = splitPathname(pathname);
+  return ["/", ...segments.map((_segment, index) => `/${segments.slice(0, index + 1).join("/")}`)];
+};
+
+const matchedRouteIds = (routes: RouteRecord[], pathname: string): Array<string | null> =>
+  (bestMatch(routes, pathname, ROOT_PARENT_MATCH) ?? []).map((match) => match.route.id);
+
+/**
+ * Whether `useFogOFWarDiscovery` patches the manifest right after hydration: it
+ * asks the server for the routes of every discoverable link target and only
+ * re-renders the router when one is missing from the manifest the page loaded
+ * with (`getPartialManifest`: the routes matching the URL and its ancestors).
+ */
+const discoversNewRoutes = (framework: FrameworkState, locationPathname: string): UncertainFlag => {
+  const { config, routes, discoveredTargets } = framework;
+  if (!config || !routes || config.isFogOfWar === false) return { value: false, reason: "" };
+  if (config.isFogOfWar === null) {
+    return { value: null, reason: "react-router.config `routeDiscovery` is not static" };
+  }
+  const knownRouteIds = new Set(
+    pathsWithAncestors(locationPathname).flatMap((path) => matchedRouteIds(routes, path)),
+  );
+  const discoveredRouteIds = [...discoveredTargets.pathnames]
+    .flatMap(pathsWithAncestors)
+    .flatMap((path) => matchedRouteIds(routes, path));
+  if (discoveredRouteIds.some((routeId) => routeId !== null && !knownRouteIds.has(routeId))) {
+    return { value: true, reason: "" };
+  }
+  if (discoveredTargets.hasDynamicPathname || discoveredRouteIds.includes(null)) {
+    return { value: null, reason: "a discoverable link's target route is not static" };
+  }
+  return { value: false, reason: "" };
+};
+
 export const createReactRouterModel = (
   pathname: string,
   routerState: CapturedRouterState | null = null,
 ): ReactRouterModel => {
+  const observed = observeRouterState(routerState, pathname);
+  const hasCriticalCss = observed?.hasCriticalCss ?? null;
   const framework: FrameworkState = {
     routeTree: null,
+    routes: null,
     meta: null,
     links: null,
     config: null,
     routeModuleUrls: [],
+    discoveredTargets: { pathnames: new Set(), hasDynamicPathname: false },
+    isRerenderedAfterHydration: { value: hasCriticalCss, reason: CRITICAL_CSS_REASON },
   };
-  const observed = observeRouterState(routerState, pathname);
+  const linkStubs = createLinkStubs(
+    {
+      register: (target) => {
+        if (target) framework.discoveredTargets.pathnames.add(target.pathname);
+        else framework.discoveredTargets.hasDynamicPathname = true;
+      },
+    },
+    pathname,
+  );
   // `RouterProvider$1` from `react-router/dom` wraps the core `RouterProvider`;
   // only the latter is kept as a fiber so SPA and framework trees line up.
+  // Route discovery's manifest patch lands as a router state update here, which
+  // reaches `<Scripts>` through `DataRouterStateContext`.
   const routerProviderShell: StubComponent = {
     displayName: "RouterProvider",
-    render: (props) => withinRouter(getObjectProperty(props, "children"), pathname, observed),
+    render: (props, tools) => {
+      const routerState = tools.hooks?.useState(objectValue());
+      tools.hooks?.useEffect(() => {
+        const discovered = discoversNewRoutes(framework, pathname);
+        framework.isRerenderedAfterHydration = eitherFlag(
+          framework.isRerenderedAfterHydration,
+          discovered,
+        );
+        if (discovered.value !== false) routerState?.[1](objectValue());
+      }, []);
+      return provide(
+        DATA_ROUTER_STATE_CONTEXT,
+        routerState?.[0] ?? objectValue(),
+        withinRouter(getObjectProperty(props, "children"), pathname, observed),
+      );
+    },
   };
   const hydratedRouterStub: StubComponent = {
     displayName: "HydratedRouter",
-    render: () => {
+    render: (_props, tools) => {
+      const criticalCss = tools.hooks?.useState(
+        hasCriticalCss === false
+          ? UNDEFINED_VALUE
+          : unknownPrimitiveValue("string", "critical CSS inlined by the dev server"),
+      );
+      tools.hooks?.useEffect(() => criticalCss?.[1](UNDEFINED_VALUE), []);
       if (!framework.routeTree) {
         return unknownValue(
           "react-router: HydratedRouter mounts routes only known to framework mode",
@@ -867,9 +1097,13 @@ export const createReactRouterModel = (
         { kind: "fragment" },
         objectFromRecord({
           children: listValue([
-            element(
-              { kind: "stub", stub: routerProviderShell },
-              objectFromRecord({ children: framework.routeTree }),
+            provide(
+              FRAMEWORK_CONTEXT,
+              objectFromRecord({ criticalCss: criticalCss?.[0] ?? UNDEFINED_VALUE }),
+              element(
+                { kind: "stub", stub: routerProviderShell },
+                objectFromRecord({ children: framework.routeTree }),
+              ),
             ),
             element({ kind: "fragment" }, objectValue()),
           ]),
@@ -901,11 +1135,17 @@ export const createReactRouterModel = (
       );
     },
   };
-  // `<Scripts>` renders the module preloads and boot scripts until the first
-  // hydration effect runs; the fibers stay until something re-renders it.
+  // `<Scripts>` renders the module preloads and boot scripts until its
+  // hydration effect runs; the fibers stay until something above re-renders it.
   const scriptsStub: StubComponent = {
     displayName: "Scripts",
-    render: (props) => {
+    render: (props, tools) => {
+      tools.readContext(FRAMEWORK_CONTEXT);
+      tools.readContext(DATA_ROUTER_STATE_CONTEXT);
+      const isHydrated = tools.hooks?.useRef(false);
+      tools.hooks?.useEffect(() => {
+        if (isHydrated) isHydrated.current = true;
+      }, []);
       const { config } = framework;
       if (!config) return NULL_VALUE;
       const preloadUrl = (asset: string) =>
@@ -922,7 +1162,7 @@ export const createReactRouterModel = (
           }),
           key,
         );
-      return listValue([
+      const firstRender = listValue([
         whenFlag(
           config.hasSubResourceIntegrity === false ? false : null,
           inlineScript(props, "subresource integrity import map", {
@@ -956,6 +1196,9 @@ export const createReactRouterModel = (
           }),
         ),
       ]);
+      if (!isHydrated?.current) return firstRender;
+      const { value, reason } = framework.isRerenderedAfterHydration;
+      return value === null ? branchValue([firstRender, NULL_VALUE], reason, null) : NULL_VALUE;
     },
   };
   const routerProviderStub: StubComponent = {
@@ -1014,11 +1257,11 @@ export const createReactRouterModel = (
       case "Outlet":
         return stubValue(OUTLET_STUB);
       case "Link":
-        return stubValue(LINK_STUB);
+        return stubValue(linkStubs.link);
       case "NavLink":
-        return stubValue(NAV_LINK_STUB);
+        return stubValue(linkStubs.navLink);
       case "Form":
-        return stubValue(FORM_STUB);
+        return stubValue(linkStubs.form);
       case "BrowserRouter":
       case "HashRouter":
       case "MemoryRouter":
@@ -1039,7 +1282,7 @@ export const createReactRouterModel = (
       case "PrefetchPageLinks":
         return stubValue(emptyStub(importedName));
       default:
-        return routerHookValue(importedName, pathname, observed);
+        return routerHookValue(importedName, pathname, observed, linkStubs.fetcherForm);
     }
   };
 
@@ -1221,6 +1464,7 @@ const renderFrameworkRoutes = (
       leafMeta = callExport(module, "meta", [metaArgs]) ?? leafMeta;
     }
     model.framework.config = readFrameworkConfig(interpreter, configModule ?? null);
+    model.framework.routes = routes;
     model.framework.routeModuleUrls = [
       ...new Set(
         matchedModules.map(

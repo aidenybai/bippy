@@ -43,7 +43,13 @@ import { hasExportedName } from "../graph/module-record.js";
 import { nativeFunction } from "../frameworks/stubs.js";
 import { getLibraryValue } from "../libraries/index.js";
 import { PurePackages } from "../libraries/pure-packages.js";
-import { getHoistedVarNames, getPatternNames, unwrapExpression } from "../parse/ast-walk.js";
+import {
+  getHoistedVarNames,
+  getLeadingAwait,
+  getPatternNames,
+  type LeadingAwaitOracle,
+  unwrapExpression,
+} from "../parse/ast-walk.js";
 import { getSourceLocation } from "../parse/source-location.js";
 import {
   FUNCTION_OWN_KEYS,
@@ -125,7 +131,11 @@ import {
 } from "./bundler-globals.js";
 import { hasProperty, OBJECT_PROTOTYPE_METHODS } from "./has-property.js";
 import { isInstanceOf } from "./instance-of.js";
+import { createIndexedDbFactory, isIndexedDbName } from "./indexed-db.js";
+import { getBinaryMember, getBinaryWitness } from "./typed-arrays.js";
+import { getWebCryptoMember, isWebCryptoName } from "./web-crypto.js";
 import {
+  applyNumberRangeOperator,
   compareNumberRanges,
   concatenateStrings,
   getShapedStringLength,
@@ -156,7 +166,6 @@ import {
 } from "./web-storage.js";
 import { type CompiledClass, getCompiledClass } from "./compiled-class.js";
 import type { CallFrame, ContextReader, EvaluationContext } from "./context.js";
-import type { HookFrame } from "./hooks.js";
 import { NO_PROVIDERS, withOutcomeHandler, withScope, withoutSuspension } from "./context.js";
 import { decodeJsxEntities } from "./jsx-entities.js";
 import { cleanJsxText } from "./jsx-text.js";
@@ -165,6 +174,7 @@ import { forEachEscapedCallable, getMutatedIdentifiers } from "./escapes.js";
 import {
   type AsyncCall,
   awaitedValue,
+  escapedPromiseValue,
   getModeledPromise,
   getPendingPromise,
   isAwaitDeferred,
@@ -251,6 +261,9 @@ export interface InterpreterOptions {
   assumeOuterProviders?: boolean;
   /** The analyzed app's React version; decides which `$$typeof` symbol tags elements. */
   reactVersion?: string | null;
+  /** Quiet window (no React commit) after which the runtime snapshot is taken; timers delayed at least this long have not fired by then. */
+  settleMs?: number;
+  timerUnderrunMs?: number;
   project?: ProjectContext;
 }
 
@@ -428,34 +441,6 @@ export const mergeOutcomes = (
   };
 };
 
-/**
- * The `await` a statement evaluates before anything else, so the statement can
- * be left at it and re-evaluated with the outcome once the promise settles.
- */
-const getLeadingAwait = (statement: Statement): AwaitExpression | null => {
-  const leading = (expression: Expression | null | undefined): AwaitExpression | null => {
-    const unwrapped = expression ? unwrapExpression(expression) : null;
-    return unwrapped?.type === "AwaitExpression" ? unwrapped : null;
-  };
-  switch (statement.type) {
-    case "ExpressionStatement": {
-      const expression = statement.expression;
-      if (expression.type === "AssignmentExpression" && expression.operator === "=") {
-        return leading(expression.right);
-      }
-      return leading(expression);
-    }
-    case "VariableDeclaration":
-      return leading(statement.declarations[0]?.init);
-    case "ReturnStatement":
-      return leading(statement.argument);
-    case "IfStatement":
-      return leading(statement.test);
-    default:
-      return null;
-  }
-};
-
 /** A counter or flag threaded through a recursion; it only bounds a walk whose data the analysis cannot see. */
 const isSameTypePrimitive = (previous: StaticValue, next: StaticValue): boolean =>
   previous.kind === "primitive" &&
@@ -536,12 +521,13 @@ export class Interpreter {
   private readonly serverRealm: HostRealm;
   readonly hostDocument: HostDocument | null;
   readonly storageAreas: StorageAreas;
-  readonly timers = new TimerQueue();
+  readonly indexedDb = createIndexedDbFactory();
+  readonly timers: TimerQueue;
   /** Observable changes (state commits, heap mutations) so far; a timer tick that adds none is steady state. */
   changeCount = 0;
   private readonly heapJournals: HeapJournal[] = [];
-  /** The outcome of the `await` a statement is being (re-)evaluated with, consumed by that `await`. */
-  private resolvedAwait: { node: AwaitExpression; value: StaticValue } | null = null;
+  /** The outcomes of the `await`s a statement is being (re-)evaluated with, each consumed by its `await`. */
+  private resolvedAwaits = new Map<AwaitExpression, StaticValue>();
   private readonly generatorYields: StaticValue[][] = [];
   private readonly elementSymbolKey: string;
   private readonly reactVersion: string | null;
@@ -561,6 +547,7 @@ export class Interpreter {
 
   constructor(graph: ModuleGraph, options: InterpreterOptions = {}) {
     this.graph = graph;
+    this.timers = new TimerQueue(options.settleMs, options.timerUnderrunMs);
     this.maxCallDepth = options.maxCallDepth ?? DEFAULT_MAX_CALL_DEPTH;
     this.maxForkDepth = options.maxForkDepth ?? DEFAULT_MAX_FORK_DEPTH;
     this.remainingSteps = options.maxSteps ?? DEFAULT_MAX_STEPS;
@@ -2029,12 +2016,17 @@ export class Interpreter {
         return property;
       }
       case "list": {
+        const binaryMember = getBinaryMember(object, key);
+        if (binaryMember) return binaryMember;
         if (key === "length") return getListLength(object);
         const index = Number(key);
         if (Number.isInteger(index) && index >= 0) {
           return getListItem(object.items, index, location);
         }
-        return object.properties?.get(key) ?? prototypeMember(object, Array.prototype, key);
+        return (
+          object.properties?.get(key) ??
+          prototypeMember(object, getBinaryWitness(object) ?? Array.prototype, key)
+        );
       }
       case "optional":
         return branchValue(
@@ -2136,6 +2128,10 @@ export class Interpreter {
           return (
             getHistoryMember(this.history, key) ?? { kind: "method", receiver: object, name: key }
           );
+        }
+        if (isIndexedDbName(object.name)) return { kind: "method", receiver: object, name: key };
+        if (isWebCryptoName(object.name)) {
+          return getWebCryptoMember(object.name, key) ?? UNDEFINED_VALUE;
         }
         const memberName = `${object.name}.${key}`;
         if (this.getRealm(context.environment).isGlobalAlias(object.name)) {
@@ -2363,16 +2359,21 @@ export class Interpreter {
       case "native-function":
         return callee.call(args, {
           readContext: (definition) => context.readContext(definition) ?? definition.defaultValue,
+          hooks: null,
           callAwaited: (callee, calleeArgs) =>
             this.callAwaited(callee, calleeArgs, context, location),
           call: (callee, calleeArgs) => this.callValue(callee, calleeArgs, context, location),
+          callDeferred: (callee, calleeArgs) =>
+            this.callDeferred(callee, calleeArgs, context, location),
           captured: (captured, name) => this.captured(captured, name),
           markEscaped: (value) => this.markEscaped(value),
           queueMicrotask: (task) => this.timers.queueMicrotask(task),
+          isDeferred: () => this.timers.isDeferred || (context.hooks?.isDeferred ?? false),
           setProperty: (object, key, value) => this.assignOwnProperty(object, key, value),
           realm: this.getRealm(context.environment),
           nameHint: options.nameHint ?? null,
           templateArgumentNames: options.templateArgumentNames ?? null,
+          environment: context.environment,
         });
       case "class":
         return unknownValue(`class ${callee.name ?? ""} called without new`, location);
@@ -2512,13 +2513,15 @@ export class Interpreter {
     handle: StaticValue,
     context: EvaluationContext,
     location: SourceLocation | null,
+    isDeferred: boolean,
   ): void {
     const wasSettled = this.timers.isClockSettled;
     this.timers.isClockSettled = true;
     try {
       for (let tick = 0; tick < MAX_INTERVAL_TICKS; tick++) {
         const changesBefore = this.changeCount;
-        this.callValue(callback, [], context, location);
+        if (isDeferred) this.callDeferred(callback, [], context, location);
+        else this.callValue(callback, [], context, location);
         if (this.timers.isCleared(handle) || this.changeCount === changesBefore) return;
       }
     } finally {
@@ -2529,38 +2532,61 @@ export class Interpreter {
 
   /** Calls a promise continuation: updates it queues land after the captured commit. */
   callDeferred(
-    functionValue: Extract<StaticValue, { kind: "function" }>,
+    callee: StaticValue,
     args: StaticValue[],
     context: EvaluationContext,
+    location: SourceLocation | null,
   ): StaticValue {
-    return this.runDeferred(context.hooks, () => this.callFunction(functionValue, args, context));
-  }
-
-  private runDeferred<Result>(frame: HookFrame | null, run: () => Result): Result {
-    if (!frame) return run();
-    const wasDeferred = frame.isDeferred;
-    frame.isDeferred = true;
-    try {
-      return run();
-    } finally {
-      frame.isDeferred = wasDeferred;
-    }
-  }
-
-  private takeResolvedAwait(node: AwaitExpression): StaticValue | null {
-    const resolved = this.resolvedAwait;
-    if (resolved?.node !== node) return null;
-    this.resolvedAwait = null;
-    return resolved.value;
+    return this.runDeferred(context, location, () =>
+      this.callValue(callee, args, context, location),
+    );
   }
 
   /**
-   * Evaluates the `await` a statement starts with. On a promise that is still
-   * pending the async body suspends: the statement is re-evaluated with the
-   * outcome once the promise settles, and the rest of the list follows, its
-   * outcome passing through the enclosing `try` statements before it settles
-   * the call's result. Otherwise the outcome is left for the statement's own
-   * evaluation to pick up.
+   * Runs a continuation of a promise the analysis cannot see settle. It runs at
+   * an unknown time, so like the state updates it queues, the bindings and heap
+   * it writes may or may not have changed by the captured commit, untouched
+   * preferred.
+   */
+  private runDeferred<Result>(
+    context: EvaluationContext,
+    location: SourceLocation | null,
+    run: () => Result,
+  ): Result {
+    return this.timers.runDeferred(() =>
+      this.runMaybe(
+        context.scope,
+        run,
+        "continuation of a promise that settles outside the analysis",
+        location,
+        false,
+      ),
+    );
+  }
+
+  private takeResolvedAwait(node: AwaitExpression): StaticValue | null {
+    const resolved = this.resolvedAwaits.get(node) ?? null;
+    this.resolvedAwaits.delete(node);
+    return resolved;
+  }
+
+  /** Evaluates a side-effect-free expression without consuming the resolved `await`s it reads. */
+  private peekExpression(expression: Expression, context: EvaluationContext): StaticValue {
+    const resolvedAwaits = new Map(this.resolvedAwaits);
+    try {
+      return this.evaluateExpression(expression, context);
+    } finally {
+      this.resolvedAwaits = resolvedAwaits;
+    }
+  }
+
+  /**
+   * Evaluates the `await`s a statement reaches before anything it cannot replay.
+   * On a promise that is still pending the async body suspends: the statement
+   * is re-evaluated with the outcome once the promise settles, and the rest of
+   * the list follows, its outcome passing through the enclosing `try`
+   * statements before it settles the call's result. Settled outcomes are left
+   * for the statement's own evaluation to pick up.
    */
   private suspendOnLeadingAwait(
     statement: Statement,
@@ -2568,34 +2594,42 @@ export class Interpreter {
     resumeStatement: () => StatementOutcome,
   ): boolean {
     const suspension = context.suspension;
-    const node = suspension && getLeadingAwait(statement);
-    if (!node || this.resolvedAwait?.node === node) return false;
-    const location = this.locate(context.module, node);
-    const value = this.evaluateExpression(node.argument, context);
-    const pending = getPendingPromise(value, () => this.timers.drainMicrotasks());
-    if (!pending) {
-      const awaited = awaitedValue(value, location, () => this.timers.drainMicrotasks());
+    if (!suspension) return false;
+    const oracle: LeadingAwaitOracle = {
+      getTruthiness: (expression) => getTruthiness(this.peekExpression(expression, context)),
+      isNullish: (expression) => isNullish(this.peekExpression(expression, context)),
+      isResolved: (awaitNode) => this.resolvedAwaits.has(awaitNode),
+    };
+    const drainMicrotasks = () => this.timers.drainMicrotasks();
+    for (;;) {
+      const node = getLeadingAwait(statement, oracle);
+      if (!node) return false;
+      const location = this.locate(context.module, node);
+      const value = this.evaluateExpression(node.argument, context);
+      const pending = getPendingPromise(value, drainMicrotasks);
+      if (pending) {
+        suspendOnPromise(
+          suspension.call,
+          pending,
+          (outcome, isEscaped) => {
+            this.resolvedAwaits.set(node, outcome);
+            let resumed = isEscaped
+              ? this.runDeferred(context, location, resumeStatement)
+              : resumeStatement();
+            for (const handler of suspension.outcomeHandlers.toReversed()) {
+              if (resumed.isSuspended) return null;
+              resumed = handler(resumed);
+            }
+            return resumed.isSuspended ? null : outcomeToReturnValue(resumed, location);
+          },
+          location,
+        );
+        return true;
+      }
+      const awaited = awaitedValue(value, location, drainMicrotasks);
       if (context.hooks && isAwaitDeferred(value, awaited)) context.hooks.isDeferred = true;
-      this.resolvedAwait = { node, value: awaited };
-      return false;
+      this.resolvedAwaits.set(node, awaited);
     }
-    suspendOnPromise(
-      suspension.call,
-      pending,
-      (outcome, isEscaped) => {
-        this.resolvedAwait = { node, value: outcome };
-        let resumed = isEscaped
-          ? this.runDeferred(context.hooks, resumeStatement)
-          : resumeStatement();
-        for (const handler of suspension.outcomeHandlers.toReversed()) {
-          if (resumed.isSuspended) return null;
-          resumed = handler(resumed);
-        }
-        return resumed.isSuspended ? null : outcomeToReturnValue(resumed, location);
-      },
-      location,
-    );
-    return true;
   }
 
   /** Calls `callee` as a framework does when it awaits the returned promise. */
@@ -2659,7 +2693,7 @@ export class Interpreter {
     if (!asyncCall || asyncCall.result) return result;
     if (frame && frame.isDeferred && !wasDeferred) {
       frame.isDeferred = wasDeferred;
-      return unknownValue("promise settled asynchronously", location);
+      return escapedPromiseValue();
     }
     return resolvedPromiseValue(result);
   }
@@ -3205,13 +3239,15 @@ export class Interpreter {
    * Runs `run` as code that may or may not execute from the current state (an
    * iteration of a loop whose count is unknown, a callback for an item that
    * may not exist). Reads inside see its own writes; afterwards every binding,
-   * object and list it changed holds both the changed and the untouched state.
+   * object and list it changed holds both the changed and the untouched state,
+   * the changed one preferred unless `isLikelyRun` is false.
    */
   runMaybe<Result>(
     scope: Scope,
     run: () => Result,
     reason: string,
     location: SourceLocation | null,
+    isLikelyRun = true,
   ): Result {
     const entrySnapshot = snapshotScopes(scope);
     const journal = new HeapJournal();
@@ -3224,8 +3260,9 @@ export class Interpreter {
       restoreScopes(entrySnapshot);
       journal.endPath();
       this.heapJournals.pop();
-      journal.join(reason, location, 0);
-      joinScopes([ranSnapshot, entrySnapshot], reason, location);
+      const preferredPath = isLikelyRun ? 0 : 1;
+      journal.join(reason, location, preferredPath);
+      joinScopes([ranSnapshot, entrySnapshot], reason, location, preferredPath);
     }
   }
 
@@ -3568,6 +3605,7 @@ const joinScopes = (
   paths: ScopeSnapshot[][],
   reason: string,
   location: SourceLocation | null,
+  preferredPath = 0,
 ): void => {
   const [firstPath, ...otherPaths] = paths;
   firstPath.forEach((snapshot, scopeIndex) => {
@@ -3581,7 +3619,7 @@ const joinScopes = (
       const values = [snapshot.bindings, ...siblings].map(
         (bindings) => bindings.get(name) ?? UNDEFINED_VALUE,
       );
-      snapshot.scope.bindings.set(name, branchValue(values, reason, location));
+      snapshot.scope.bindings.set(name, branchValue(values, reason, location, preferredPath));
     }
   });
 };
@@ -3655,7 +3693,8 @@ const applyBinaryOperator = (
   }
   const timed = applyClockOperator(operator, left, right);
   if (timed) return timed;
-  const ordered = compareNumberRanges(operator, left, right);
+  const ordered =
+    compareNumberRanges(operator, left, right) ?? applyNumberRangeOperator(operator, left, right);
   if (ordered) return ordered;
   switch (operator) {
     case "==":

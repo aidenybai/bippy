@@ -645,33 +645,57 @@
       "id": "invoify",
       "revision": "3859b3cbae28ca4ec559db5ef87e41b798740340",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T03:55:46.199Z",
-      "durationMs": 582,
-      "runtime": null,
+      "capturedAt": "2026-09-08T10:06:34.010Z",
+      "durationMs": 20085,
+      "runtime": {
+        "reactVersion": "19.2.0-canary-3fbfb9ba-20250409",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 1439,
+        "commits": 27,
+        "pageErrors": [
+          "Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <Home>\n      <main className=\"container ...\">\n        <WizardProvider>\n          <InvoiceMain>\n            <FormProvider control={{...}} subscribe={function subscribe} trigger={function trigger} ...>\n              <form onSubmit={function}>\n                <div className=\"grid grid-...\">\n                  <InvoiceForm>\n                    <div className=\"@container...\">\n                      <div className=\"mx-auto ma...\">\n                        <div className=\"mb-4 flex ...\">\n                          <AutosaveIndicator>\n                          <span\n+                           className=\"text-sm font-medium text-muted-foreground\"\n-                           className=\"flex items-center gap-1.5 text-xs text-muted-foreground\"\n                          >\n+                           New Invoice\n-                           Saved · just now\n                        ...\n                  ...\n                ...\n      ...\n    ...\n"
+        ],
+        "title": "Free Invoice Generator | Invoify"
+      },
       "static": {
         "stats": {
-          "fiberCount": 7169,
-          "textCount": 308,
-          "branchCount": 724,
-          "repeatCount": 42,
-          "opaqueCount": 603,
-          "unknownCount": 1091,
-          "modulesLoaded": 128
+          "fiberCount": 1261,
+          "textCount": 51,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1451
         },
-        "diagnostics": [
-          {
-            "code": "dynamic-key",
-            "count": 24
-          },
-          {
-            "code": "dynamic-props",
-            "count": 2
-          }
-        ]
+        "diagnostics": []
       },
-      "report": null,
-      "anchor": null,
-      "note": "static only",
+      "report": {
+        "matchedFibers": 1093,
+        "matchedText": 51,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "exact",
+        "runtimeFibers": 1144,
+        "staticFibers": 1144,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 1144,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": null,
       "failure": null
     },
     {
@@ -820,29 +844,55 @@
       "id": "nextjs-boilerplate",
       "revision": "1dffa39a32450300c8b01d8cfd3819f9b6e95842",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T03:55:49.472Z",
-      "durationMs": 67,
-      "runtime": null,
+      "capturedAt": "2026-09-08T10:06:59.352Z",
+      "durationMs": 11658,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-cbb046ab-20260731",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 353,
+        "commits": 10,
+        "pageErrors": [],
+        "title": "Next.js Boilerplate Presentation"
+      },
       "static": {
         "stats": {
-          "fiberCount": 162,
-          "textCount": 22,
-          "branchCount": 1,
-          "repeatCount": 1,
-          "opaqueCount": 8,
-          "unknownCount": 11,
-          "modulesLoaded": 11
+          "fiberCount": 174,
+          "textCount": 24,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 15
         },
-        "diagnostics": [
-          {
-            "code": "dynamic-key",
-            "count": 1
-          }
-        ]
+        "diagnostics": []
       },
-      "report": null,
-      "anchor": null,
-      "note": "static only",
+      "report": {
+        "matchedFibers": 139,
+        "matchedText": 23,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "exact",
+        "runtimeFibers": 162,
+        "staticFibers": 162,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 162,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": null,
       "failure": null
     },
     {

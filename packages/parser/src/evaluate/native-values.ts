@@ -89,6 +89,14 @@ const PURE_METHOD_PREFIXES = [
   "valueOf",
 ];
 
+/** The interface name of a native object, read off its prototype: a `Proxy` over a DOM map (`dataset`) answers `constructor` as a lookup. */
+export const getNativeInterfaceName = (value: object): string => {
+  const prototype = Reflect.getPrototypeOf(value);
+  const constructor: unknown =
+    prototype === null ? undefined : Reflect.get(prototype, "constructor");
+  return typeof constructor === "function" ? constructor.name : "Object";
+};
+
 const isIterable = (value: object): value is Iterable<unknown> =>
   typeof Reflect.get(value, Symbol.iterator) === "function";
 
@@ -233,7 +241,7 @@ const liftObject = (
     return { kind: "regexp", pattern: value.source, flags: value.flags, lastIndex: 0 };
   }
   if (!isPlainObject(value)) {
-    return unknownValue(`${name}: ${value.constructor.name} from native code`);
+    return unknownValue(`${name}: ${getNativeInterfaceName(value)} from native code`);
   }
   if (isReactElementTag(Reflect.get(value, "$$typeof"))) {
     const type: unknown = Reflect.get(value, "type");
@@ -283,7 +291,7 @@ export const fromNativeValue = (
 ): StaticValue => liftValue(value, name, host, new Set());
 
 const describeMember = (object: StaticNativeObjectValue, key: string): string =>
-  `${object.value.constructor.name}.${key}`;
+  `${getNativeInterfaceName(object.value)}.${key}`;
 
 /**
  * A property of a native object, with methods bound so they run natively when
@@ -329,7 +337,7 @@ export const setNativeObjectMember = (
   key: string,
   value: StaticValue,
 ): void => {
-  if (key in object.value) {
+  if (key in object.value || getNativeInterfaceName(object.value) === "DOMStringMap") {
     const native = toNative(value, object.host);
     if (native === UNCERTAIN) uncertainNativeObjects.add(object.value);
     else Reflect.set(object.value, key, native);
@@ -353,7 +361,7 @@ export const hasNativeObjectMember = (object: StaticNativeObjectValue, key: stri
 /** What `for..of`, spread and `Array.from` see of a native iterable (`NodeList`, `DOMTokenList`); null for other objects. */
 export const getNativeIterableItems = (object: StaticNativeObjectValue): StaticListValue | null => {
   if (uncertainNativeObjects.has(object.value) || !isIterable(object.value)) return null;
-  const name = object.value.constructor.name;
+  const name = getNativeInterfaceName(object.value);
   return listValue(
     Array.from(object.value, (item, index) =>
       fromNativeValue(item, `${name}[${index}]`, object.host),

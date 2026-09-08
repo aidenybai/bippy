@@ -13,6 +13,7 @@ import { KEA_PACKAGES, keaValue } from "./kea.js";
 import { LINGUI_PACKAGES, linguiValue } from "./lingui.js";
 import { LODASH_MODELED_EXPORTS, LODASH_PACKAGES, lodashValue } from "./lodash.js";
 import { NODE_FS_PACKAGES, nodeFsValue } from "./node-fs.js";
+import { REACT_HOOK_FORM_PACKAGES, reactHookFormValue } from "./react-hook-form.js";
 import {
   REACT_INLINESVG_MODELED_EXPORTS,
   REACT_INLINESVG_PACKAGES,
@@ -61,6 +62,7 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     modeledExports: LODASH_MODELED_EXPORTS,
   },
   { packages: NODE_FS_PACKAGES, getValue: nodeFsValue },
+  { packages: REACT_HOOK_FORM_PACKAGES, getValue: reactHookFormValue },
   {
     packages: REACT_INLINESVG_PACKAGES,
     getValue: reactInlineSvgValue,

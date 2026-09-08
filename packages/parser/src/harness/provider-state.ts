@@ -49,6 +49,10 @@ const dataRouterStateSchema = z.object({
   fetchers: z.map(z.string(), fetcherSchema),
 });
 
+const serverHandoffGlobalSchema = z.object({
+  __reactRouterContext: z.object({ criticalCss: z.unknown().optional() }),
+});
+
 interface LinguiContextLike extends z.infer<typeof linguiContextSchema> {}
 
 interface RouterMatchLike extends z.infer<typeof routeMatchSchema> {}
@@ -93,18 +97,25 @@ const captureLingui = (context: LinguiContextLike): CapturedLinguiCatalog => ({
   messages: captureRecord(context.i18n.messages),
 });
 
-const captureRouterState = (state: DataRouterStateLike): CapturedRouterState => ({
-  location: {
-    pathname: state.location.pathname,
-    search: state.location.search,
-    hash: state.location.hash,
-  },
-  matches: state.matches.map(captureMatch),
-  loaderData: captureRecord(state.loaderData),
-  navigationState: state.navigation.state,
-  revalidationState: state.revalidation,
-  fetchers: [...state.fetchers].map(([key, fetcher]) => captureFetcher(key, fetcher)),
-});
+const captureRouterState = (state: DataRouterStateLike): CapturedRouterState => {
+  const captured: CapturedRouterState = {
+    location: {
+      pathname: state.location.pathname,
+      search: state.location.search,
+      hash: state.location.hash,
+    },
+    matches: state.matches.map(captureMatch),
+    loaderData: captureRecord(state.loaderData),
+    navigationState: state.navigation.state,
+    revalidationState: state.revalidation,
+    fetchers: [...state.fetchers].map(([key, fetcher]) => captureFetcher(key, fetcher)),
+  };
+  const handoff = serverHandoffGlobalSchema.safeParse(globalThis);
+  if (handoff.success) {
+    captured.hasCriticalCss = handoff.data.__reactRouterContext.criticalCss !== undefined;
+  }
+  return captured;
+};
 
 /**
  * Library state the page's code reads at render, taken from the providers

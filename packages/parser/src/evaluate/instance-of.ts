@@ -1,31 +1,17 @@
 import type { StaticClassValue, StaticFunctionValue, StaticValue } from "../types.js";
 import { getAbortWitness } from "./abort-controller.js";
+import { isBlobValue } from "./blob.js";
+import { isClockDateValue } from "./clock-date.js";
 import { getCollectionKind } from "./collections.js";
 import { getErrorWitness } from "./errors.js";
 import { isNativeInstanceOf } from "./native-values.js";
 import { getModeledPromise } from "./promises.js";
+import { getBinaryWitness, TYPED_ARRAY_CONSTRUCTORS } from "./typed-arrays.js";
 import { isSearchParamsValue } from "./url-search-params.js";
 import { isUrlValue } from "./url.js";
 import { getObjectProperty } from "./values.js";
 
 type BuiltinConstructor = abstract new (...args: never[]) => unknown;
-
-export const TYPED_ARRAY_CONSTRUCTORS = {
-  Int8Array,
-  Uint8Array,
-  Uint8ClampedArray,
-  Int16Array,
-  Uint16Array,
-  Int32Array,
-  Uint32Array,
-  Float32Array,
-  Float64Array,
-};
-
-export const TYPED_ARRAY_NAMES = Object.keys(TYPED_ARRAY_CONSTRUCTORS);
-
-export const isTypedArrayName = (name: string): name is keyof typeof TYPED_ARRAY_CONSTRUCTORS =>
-  Object.hasOwn(TYPED_ARRAY_CONSTRUCTORS, name);
 
 const BUILTIN_CONSTRUCTORS: Record<string, BuiltinConstructor> = {
   Object,
@@ -115,13 +101,15 @@ const COLLECTION_WITNESSES: Record<string, object> = {
 export const getPrototypeWitness = (value: StaticValue): object | null => {
   switch (value.kind) {
     case "list":
-      return [];
+      return getBinaryWitness(value) ?? [];
     case "object": {
       if (value.hasNullPrototype) return Object.create(null);
       const collectionKind = getCollectionKind(value);
       if (collectionKind !== null) return COLLECTION_WITNESSES[collectionKind];
       if (isSearchParamsValue(value)) return new URLSearchParams();
       if (isUrlValue(value)) return new URL("http://witness.invalid");
+      if (isClockDateValue(value)) return new Date(0);
+      if (isBlobValue(value)) return new Blob();
       const errorWitness = getErrorWitness(value);
       if (errorWitness) return errorWitness;
       const abortWitness = getAbortWitness(value);

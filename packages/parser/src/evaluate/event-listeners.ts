@@ -3,6 +3,7 @@ import type { HostDocument } from "../host/host-document.js";
 import type { HostRealm } from "../host/host-realm.js";
 import type { Interpreter } from "./interpreter.js";
 import { toNativeArguments } from "./native-values.js";
+import { HISTORY_TRAVERSAL_EVENTS } from "./session-history.js";
 import { UNDEFINED_VALUE } from "./values.js";
 
 /** Events only a user gesture dispatches; none fires before the runtime snapshot is captured. */
@@ -57,6 +58,9 @@ const PAGE_UNLOAD_EVENTS = new Set(["pagehide", "beforeunload", "unload"]);
 
 /** The capture viewport never changes, so `window` never fires these before the snapshot. */
 const VIEWPORT_EVENTS = new Set(["resize", "orientationchange"]);
+
+/** The captured page stays the visible, foreground tab from load to snapshot. */
+const DOCUMENT_VISIBILITY_EVENTS = new Set(["visibilitychange"]);
 
 /** A freshly loaded page sits at its initial scroll offset until a user or script scrolls it. */
 const SCROLL_EVENTS = new Set(["scroll", "scrollend"]);
@@ -166,6 +170,13 @@ const isEventBeforeCapture = (
   ) {
     return false;
   }
+  if (
+    receiver.kind === "global" &&
+    receiver.name === "document" &&
+    DOCUMENT_VISIBILITY_EVENTS.has(type.value)
+  ) {
+    return false;
+  }
   return !(
     USER_GESTURE_EVENTS.has(type.value) ||
     PAGE_UNLOAD_EVENTS.has(type.value) ||
@@ -174,6 +185,17 @@ const isEventBeforeCapture = (
     isCustomEventType(type.value)
   );
 };
+
+const isHistoryTraversalListener = (
+  realm: HostRealm,
+  receiver: StaticValue,
+  type: StaticValue | undefined,
+): boolean =>
+  receiver.kind === "global" &&
+  realm.isGlobalAlias(receiver.name) &&
+  type?.kind === "primitive" &&
+  typeof type.value === "string" &&
+  HISTORY_TRAVERSAL_EVENTS.has(type.value);
 
 /** Listener registration on `window`/`document`/DOM nodes/`MediaQueryList`; only listeners that may fire before capture escape. */
 export const callEventTargetMethod = (
@@ -187,6 +209,11 @@ export const callEventTargetMethod = (
   const [type, listener] = args;
   if (!listener) return UNDEFINED_VALUE;
   const isRegistration = name === "addEventListener" || name === "addListener";
+  if (isHistoryTraversalListener(realm, receiver, type)) {
+    if (isRegistration) interpreter.history.traversalListeners.add(listener);
+    else interpreter.history.traversalListeners.delete(listener);
+    return UNDEFINED_VALUE;
+  }
   if (isRegistration && isEventBeforeCapture(realm, receiver, type))
     interpreter.markEscaped(listener);
   const target = toNativeEventTarget(receiver, interpreter.hostDocument);

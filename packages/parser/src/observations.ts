@@ -102,6 +102,7 @@ const capturedRouterStateSchema: z.ZodType<CapturedRouterState> = z.object({
   navigationState: routerActivityStateSchema,
   revalidationState: z.enum(["idle", "loading"]),
   fetchers: z.array(capturedFetcherSchema).optional(),
+  hasCriticalCss: z.boolean().optional(),
 });
 
 const capturedPageStateSchema: z.ZodType<CapturedPageState> = z.object({

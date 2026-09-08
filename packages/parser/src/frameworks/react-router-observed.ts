@@ -29,6 +29,8 @@ export interface ObservedRouterState {
    * fetcher keyed by `useId` cannot be told apart from the captured ones.
    */
   fetcher: StaticValue;
+  /** `HydratedRouter` re-renders after hydration only to drop dev-server critical CSS. */
+  hasCriticalCss: boolean | null;
 }
 
 const SUBMISSION_FIELDS = ["formMethod", "formAction", "formEncType", "formData", "json", "text"];
@@ -115,5 +117,6 @@ export const observeRouterState = (
       state.fetchers?.length === 0
         ? idleFetcher()
         : unknownValue("react-router fetcher state is only known at runtime"),
+    hasCriticalCss: state.hasCriticalCss ?? null,
   };
 };

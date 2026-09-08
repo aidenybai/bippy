@@ -138,8 +138,9 @@ export const NEXT_PAGES_PROFILE: FrameworkProfile = {
 // (`RouterProvider`/`Routes` -> `RenderedRoute` -> `Route` provider -> component,
 // `Outlet` -> anonymous OutletContext provider, `NavLink` -> `Link` -> `a`), so
 // only the router's own context stack and error boundary are transparent. The
-// static side provides `Location` itself (it backs `useInRouterContext`), so
-// that one is transparent on both sides.
+// static side provides `Location` (it backs `useInRouterContext`) and the
+// `DataRouterState`/`FrameworkContext` re-render paths itself, so those are
+// transparent on both sides.
 const REACT_ROUTER_RUNTIME_WRAPPERS = [
   "Router",
   "DataRoutes",
@@ -186,7 +187,7 @@ export const REACT_ROUTER_PROFILE: FrameworkProfile = {
   kind: "react-router",
   transparentRuntimeFibers: new Set(REACT_ROUTER_RUNTIME_WRAPPERS),
   transparentRuntimeProviders: new Set(REACT_ROUTER_RUNTIME_PROVIDERS),
-  transparentStaticFibers: new Set(["Location"]),
+  transparentStaticFibers: new Set(["Location", "DataRouterState", "FrameworkContext"]),
   isInjectedRuntimeFiber: isReactRouterInjectedFiber,
   defaultAnchor: null,
 };

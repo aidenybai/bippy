@@ -21,6 +21,7 @@ import {
   type RuntimeFiberSnapshot,
   type RuntimeSnapshot,
 } from "../../src/harness/index.js";
+import { NODE_TIMER_UNDERRUN_MS } from "../../src/evaluate/timers.js";
 import { installReduxStoreHook } from "../../src/harness/redux-store.js";
 
 export interface FixtureManifest {
@@ -142,6 +143,8 @@ export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult
       tsconfigPath: join(fixture.directory, "tsconfig.json"),
       externalPackageAllowList: fixture.manifest.externalPackages,
       observations: fixture.manifest.observations,
+      settleMs: SETTLE_QUIET_MS,
+      timerUnderrunMs: NODE_TIMER_UNDERRUN_MS,
     },
   );
   if (fixture.manifest.skipRuntime) {

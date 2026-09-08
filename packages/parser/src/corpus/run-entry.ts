@@ -14,11 +14,12 @@ import { formatPattern, getRenderPattern } from "../harness/static-pattern.js";
 import { readObservationsJson } from "../observations.js";
 import type { Diagnostic, StaticRenderResult } from "../types.js";
 import { DevServer, runCommand } from "./dev-server.js";
-import type {
-  CorpusEntry,
-  CorpusResult,
-  CorpusRuntimeSummary,
-  DiagnosticCount,
+import {
+  getSettleMs,
+  type CorpusEntry,
+  type CorpusResult,
+  type CorpusRuntimeSummary,
+  type DiagnosticCount,
 } from "./manifest.js";
 
 export interface RunEntryOptions {
@@ -40,7 +41,6 @@ const getCommandEnv = (entry: CorpusEntry, scriptsDirectory: string): Record<str
   BIPPY_CORPUS_SCRIPTS: scriptsDirectory,
 });
 const DEFAULT_READY_TIMEOUT_MS = 5 * 60_000;
-const DEFAULT_SETTLE_MS = 3_000;
 const CAPTURE_TIMEOUT_MS = 120_000;
 const MAX_RECORDED_WILDCARDS = 10;
 
@@ -214,7 +214,7 @@ const captureLive = async (
     return await options.capturer.capture({
       url: entry.url,
       waitForSelector: entry.waitForSelector,
-      settleMs: entry.settleMs ?? DEFAULT_SETTLE_MS,
+      settleMs: getSettleMs(entry),
       timeoutMs: CAPTURE_TIMEOUT_MS,
       globals: entry.capturedGlobals,
     });

@@ -1,3 +1,4 @@
+import "fake-indexeddb/auto";
 import "../../bippy/src/install-hook-only.js";
 
 // happy-dom never fires load/error on `<link rel="preload">`, but React DOM

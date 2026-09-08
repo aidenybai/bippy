@@ -74,6 +74,14 @@ describe("next app router", () => {
     expect(tree).not.toContain("next/dynamic");
   });
 
+  it("models next/image priority as ImagePreload -> null, otherwise no preload, unknown priority as a branch", async () => {
+    const { tree, errors } = await render("next-app", { framework: "next-app", route: "/gallery" });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<figure>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>\n\s+<ImagePreload>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>\n\s+\?branch\(priority decides whether the image preloads\)\n\s+\|0 \(preferred\)\n\s+\|1\n\s+<ImagePreload>$/,
+    );
+  });
+
   it("reports a missing page instead of guessing", async () => {
     const { result, errors } = await render("next-app", {
       framework: "next-app",
@@ -81,6 +89,70 @@ describe("next app router", () => {
     });
     expect(errors.map((diagnostic) => diagnostic.code)).toEqual(["next-app-no-page"]);
     expect(getRenderRootChildren(result)).toEqual([expect.objectContaining({ kind: "wildcard" })]);
+  });
+});
+
+describe("next app router with next-intl", () => {
+  const target = (route: string) => render("next-app-intl", { framework: "next-app", route });
+
+  it("loads the request config named by the next.config plugin and resolves the locale", async () => {
+    const { tree, errors } = await target("/en");
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<html>\n\s+<body>\n\s+<NextIntlClientProvider>\n\s+<IntlProvider>\n\s+<ContextProvider>\n\s+<main>/,
+    );
+    expect(tree).not.toContain("?unknown");
+    expect(tree).not.toContain("request configuration");
+  });
+
+  it("translates server (getTranslations) and client (useTranslations) messages per locale", async () => {
+    const english = (await target("/en")).tree;
+    expect(english).toMatch(/<h1>\n\s+"Hello, Ada!"\n\s+<br>/);
+    expect(english).toMatch(/"2 visitors"\n\s+<br>\n\s+"No visitors"/);
+    const french = (await target("/fr")).tree;
+    expect(french).toMatch(/<h1>\n\s+"Bonjour, Ada !"\n\s+<br>/);
+    expect(french).toMatch(/"2 visiteurs"\n\s+<br>\n\s+"Aucun visiteur"/);
+  });
+
+  it("keeps ICU interpolations of unknown values as text uncertainty, not fabricated text", async () => {
+    const { tree } = await target("/en");
+    expect(tree).toMatch(/"No visitors"\n\s+<br>\n\s+#text\(\?\)/);
+    expect(tree).not.toContain("?branch");
+  });
+
+  it("renders rich text chunks with next-intl's key scheme", async () => {
+    const { tree } = await target("/en");
+    expect(tree).toMatch(/"Read the "\n\s+<a> key="docs0"\n\s+"guide"\n\s+" first"/);
+  });
+
+  it("prefixes createNavigation links per localePrefix", async () => {
+    const hrefs = (route: string) =>
+      target(route).then(({ result }) => {
+        const anchors: string[] = [];
+        const visit = (fiber: (typeof result.snapshot.roots)[number]) => {
+          if (fiber.name === "a" && typeof fiber.props.href === "string")
+            anchors.push(fiber.props.href);
+          fiber.children.forEach(visit);
+        };
+        result.snapshot.roots.forEach(visit);
+        return anchors;
+      });
+    expect(await hrefs("/en")).toEqual(["/", "/about", "/docs"]);
+    expect(await hrefs("/fr")).toEqual(["/fr", "/fr/about", "/docs"]);
+    const { tree } = await target("/en");
+    expect(tree).toMatch(/<BaseLink>\n\s+<LinkComponent>\n\s+<ContextProvider>\n\s+<a>/);
+  });
+
+  it("uses useTranslations inside server components and elides them", async () => {
+    const { tree, errors } = await target("/fr/about");
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<ContextProvider>\n\s+<h1>\n\s+<LocaleSwitcher>/);
+    expect(tree).not.toContain("<AboutPage>");
+  });
+
+  it("keeps notFound() for an unsupported locale as control-flow uncertainty", async () => {
+    const { tree } = await target("/de");
+    expect(tree).toContain("notFound() interrupts rendering");
   });
 });
 
@@ -94,6 +166,17 @@ describe("next pages router", () => {
   it("models next/dynamic as a forwardRef LoadableComponent rendering the loaded module", async () => {
     const { tree } = await render("next-pages", { framework: "next-pages", route: "/" });
     expect(tree).toMatch(/<h1>\n\s+<LoadableComponent>\n\s+<Widget>\n\s+<aside>/);
+  });
+
+  it("models next/image priority as ImagePreload -> Head -> SideEffect", async () => {
+    const { tree, errors } = await render("next-pages", {
+      framework: "next-pages",
+      route: "/gallery",
+    });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<figure>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>\n\s+<ImagePreload>\n\s+<Head>\n\s+<SideEffect>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>$/,
+    );
   });
 
   it("feeds dynamic segments into useRouter().query", async () => {
@@ -124,7 +207,7 @@ describe("react router framework mode with react-router-auto-routes", () => {
     const { tree, errors } = await target("/");
     expect(errors).toEqual([]);
     expect(tree).toMatch(
-      /<HostRoot>\n\s+<HydratedRouter>\n\s+<RouterProvider>\n\s+<Location>\n\s+<RenderedRoute>\n\s+<Route>\n\s+<Layout>\n\s+<html>/,
+      /<HostRoot>\n\s+<HydratedRouter>\n\s+<FrameworkContext>\n\s+<RouterProvider>\n\s+<DataRouterState>\n\s+<Location>\n\s+<RenderedRoute>\n\s+<Route>\n\s+<Layout>\n\s+<html>/,
     );
     expect(tree).toMatch(/<ScrollRestoration>\n\s+<script>\n\s+<Scripts>/);
     expect(tree).toMatch(
@@ -182,7 +265,7 @@ describe("react router framework mode with react-router-auto-routes", () => {
   it("renders <Scripts> as the pre-hydration preloads and boot scripts, lazy route discovery by default", async () => {
     const { tree } = await target("/");
     expect(tree).toMatch(
-      /<Scripts>\n\s+<link>\n\s+<Fragment>\n\s+<link> key="\/app\/root.tsx"\n\s+<link> key="\/app\/routes\/_marketing\/index.tsx"\n\s+<Fragment>\n\s+<script>\n\s+<script>\n/,
+      /<Scripts>\n\s+\?branch\(whether the dev server inlined critical CSS[^\n]*\n\s+\|0 \(preferred\)\n\s+<link>\n\s+<Fragment>\n\s+<link> key="\/app\/root.tsx"\n\s+<link> key="\/app\/routes\/_marketing\/index.tsx"\n\s+<Fragment>\n\s+<script>\n\s+<script>\n\s+\|1\n/,
     );
     expect(tree).not.toContain("subresource integrity");
   });
@@ -207,10 +290,10 @@ describe("react router framework mode config", () => {
     });
     expect(errors).toEqual([]);
     expect(tree).toMatch(
-      /<ScrollRestoration>\n\s+<script>\n\s+<Scripts>\n\s+\?branch\(the subresource integrity/,
+      /<ScrollRestoration>\n\s+<script>\n\s+<Scripts>\n\s+\?branch\(whether the dev server inlined critical CSS[^\n]*\n\s+\|0 \(preferred\)\n\s+\?branch\(the subresource integrity/,
     );
     expect(tree).toMatch(
-      /<Scripts>\n\s+\?branch[^\n]*\n\s+\|0 \(preferred\)\n\s+<script>\n\s+\|1\n\s+<link>\n\s+<link>\n\s+<Fragment>\n\s+<link> key="\/app\/root.tsx"\n\s+<link> key="\/app\/routes\/home.tsx"\n\s+<Fragment>\n\s+<script>\n\s+<script>\n/,
+      /\?branch\(the subresource integrity[^\n]*\n\s+\|0 \(preferred\)\n\s+<script>\n\s+\|1\n\s+<link>\n\s+<link>\n\s+<Fragment>\n\s+<link> key="\/app\/root.tsx"\n\s+<link> key="\/app\/routes\/home.tsx"\n\s+<Fragment>\n\s+<script>\n\s+<script>\n/,
     );
   });
 });

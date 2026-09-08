@@ -119,6 +119,8 @@ export class StaticRenderer {
       assumeOuterProviders,
       reactVersion: this.reactVersion,
       project: this.project,
+      settleMs: this.options.settleMs,
+      timerUnderrunMs: this.options.timerUnderrunMs,
     });
     for (const bootstrap of this.options.bootstrap ?? []) this.runBootstrap(interpreter, bootstrap);
     return interpreter;
@@ -167,7 +169,15 @@ export class StaticRenderer {
     });
     const rootNode = materializer.toRootNode(rootValue);
     interpreter.timers.drainMicrotasks();
-    const mounted = await mountNode(runtime, rootNode, () => interpreter.timers.flush());
+    const mounted = await mountNode(runtime, rootNode, interpreter.timers);
+    if (interpreter.timers.hasTasks()) {
+      interpreter.report(
+        "timers-unsettled",
+        "timer tasks were still queueing more tasks when the settle rounds ran out",
+        null,
+        "warning",
+      );
+    }
     for (const error of mounted.uncaughtErrors) {
       interpreter.report(
         "render-error",
