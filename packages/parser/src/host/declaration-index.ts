@@ -1,23 +1,28 @@
-import { readFileSync } from "node:fs";
 import path from "node:path";
 import type {
-  Class,
-  Declaration,
-  Directive,
-  Expression,
-  Function,
-  Statement,
-  TSInterfaceDeclaration,
+  Node,
+  TSConditionalType,
+  TSImportType,
+  TSImportTypeQualifier,
   TSLiteral,
-  TSModuleBlock,
-  TSModuleDeclaration,
   TSSignature,
   TSType,
-  TSTypeName,
+  TSTypeParameterInstantiation,
   TSTypeQueryExprName,
-  VariableDeclaration,
 } from "oxc-parser";
-import { parseSync } from "oxc-parser";
+import { DeclarationModuleError } from "../errors.js";
+import { forEachChildNode } from "../parse/ast-walk.js";
+import {
+  type ContainerRecord,
+  DeclarationCatalog,
+  getQualifiedName,
+  type MemberDeclaration,
+  type ModuleReference,
+  type NameBinding,
+  type Scope,
+  STATIC_PREFIX,
+} from "./declaration-catalog.js";
+import { DeclarationFileLoader } from "./declaration-files.js";
 import {
   ANY_TYPE,
   FUNCTION_TYPE,
@@ -30,21 +35,61 @@ import {
   type HostValueKind,
 } from "./realm-table.js";
 
-type MemberDeclaration =
-  | { form: "property"; type: TSType | null }
-  | { form: "method"; returnType: TSType | null }
-  | { form: "class"; interfaceName: string }
-  | { form: "namespace"; interfaceName: string };
+export type ResolutionGapReason =
+  | "declared-any"
+  | "unresolved-name"
+  | "type-parameter"
+  | "conditional"
+  | "overloads"
+  | "merged-declarations"
+  | "mixed-union"
+  | "unsupported";
 
-interface InterfaceRecord {
-  extendsNames: string[];
-  members: Map<string, MemberDeclaration[]>;
-  isCallable: boolean;
+/** A member that ships as `any` in the realm table, and why the declarations did not pin it down. */
+export interface ResolutionGap {
+  site: string;
+  reason: ResolutionGapReason;
+  detail: string;
 }
 
-const NAMESPACE_PREFIX = "namespace ";
+export interface HostRealmBuild {
+  table: HostRealmTable;
+  gaps: ResolutionGap[];
+}
 
-const REFERENCE_DIRECTIVE = /^\/\/\/\s*<reference\s+(lib|path)="([^"]+)"/gm;
+interface ResolutionContext {
+  scope: Scope;
+  /** `infer` and alias type-parameter bindings in effect. */
+  bindings: ReadonlyMap<string, HostType>;
+  aliasChain: ReadonlySet<string>;
+  site: string;
+}
+
+interface NameReference {
+  kind: "name";
+  container: ContainerRecord;
+  name: string;
+  /** Resolve through the module's export surface rather than its lexical scope. */
+  isExport: boolean;
+}
+
+interface ModuleTarget {
+  kind: "module";
+  container: ContainerRecord;
+}
+
+type NameTarget = NameReference | ModuleTarget;
+
+/** Which declaration space a name is looked up in; a `var` never shadows a same-named interface. */
+type SymbolMeaning = "type" | "value";
+
+interface ExtendsVerdict {
+  holds: boolean;
+  bindings: Map<string, HostType>;
+}
+
+const EMPTY_BINDINGS: ReadonlyMap<string, HostType> = new Map();
+const EMPTY_CHAIN: ReadonlySet<string> = new Set();
 
 const keywordType = (kind: HostValueKind): HostType => ({
   kind,
@@ -52,28 +97,26 @@ const keywordType = (kind: HostValueKind): HostType => ({
   isNullable: false,
 });
 
-const getSignatureName = (signature: TSSignature): string | null => {
-  if (signature.type !== "TSPropertySignature" && signature.type !== "TSMethodSignature")
-    return null;
-  if (signature.computed) return null;
-  const { key } = signature;
-  if (key.type === "Identifier") return key.name;
-  return key.type === "Literal" && typeof key.value === "string" ? key.value : null;
+const interfaceType = (interfaceName: string, isCallable: boolean): HostType => ({
+  kind: isCallable ? "function" : "object",
+  interfaceName,
+  isNullable: false,
+});
+
+const getInferredNames = (type: TSType): string[] => {
+  const names: string[] = [];
+  const visit = (node: Node): void => {
+    if (node.type === "TSInferType") names.push(node.typeParameter.name.name);
+    forEachChildNode(node, visit);
+  };
+  visit(type);
+  return names;
 };
 
-const getQualifiedName = (typeName: TSTypeName): string | null => {
-  if (typeName.type === "Identifier") return typeName.name;
-  if (typeName.type === "ThisExpression") return null;
-  const left = getQualifiedName(typeName.left);
-  return left === null ? null : `${left}.${typeName.right.name}`;
-};
-
-const getExpressionName = (expression: Expression): string | null => {
-  if (expression.type === "Identifier") return expression.name;
-  if (expression.type !== "MemberExpression" || expression.computed) return null;
-  const objectName = getExpressionName(expression.object);
-  return objectName === null ? null : `${objectName}.${expression.property.name}`;
-};
+const sameType = (left: HostType, right: HostType): boolean =>
+  left.kind === right.kind &&
+  left.interfaceName === right.interfaceName &&
+  left.isNullable === right.isNullable;
 
 const getLiteralKind = (literal: TSLiteral): HostValueKind => {
   switch (literal.type) {
@@ -97,287 +140,167 @@ const getLiteralKind = (literal: TSLiteral): HostValueKind => {
   }
 };
 
-const isGlobalThisQuery = (type: TSType): boolean =>
-  type.type === "TSTypeQuery" &&
-  type.exprName.type === "Identifier" &&
-  type.exprName.name === GLOBAL_INTERFACE_NAME;
+const getImportQualifier = (qualifier: TSImportTypeQualifier): string[] =>
+  qualifier.type === "Identifier"
+    ? [qualifier.name]
+    : [...getImportQualifier(qualifier.left), qualifier.right.name];
 
-const sameType = (left: HostType, right: HostType): boolean =>
-  left.kind === right.kind &&
-  left.interfaceName === right.interfaceName &&
-  left.isNullable === right.isNullable;
+const getSignatureName = (signature: TSSignature): string | null => {
+  if (signature.type !== "TSPropertySignature" || signature.computed) return null;
+  const { key } = signature;
+  if (key.type === "Identifier") return key.name;
+  return key.type === "Literal" && typeof key.value === "string" ? key.value : null;
+};
 
 /**
- * Value declarations read from `.d.ts` files the way the type checker reads
- * `lib.*.d.ts` and `@types/*`: interfaces merge, `declare global` blocks and
- * top-level declarations contribute to `globalThis`, namespaces become objects
- * and `/// <reference>` directives pull in their targets. Only value shapes are
- * resolved: which `typeof` a member has and which interface it implements.
- * Runs at build time; `toTable()` is what ships.
+ * Resolves what the checker would for value declarations in `lib.*.d.ts` and
+ * `@types/*`: the `typeof` of every global and member and the interface it
+ * implements, following aliases, imports, re-exports, `export =`, class
+ * statics, `typeof` queries, indexed access and conditional types such as
+ * Node's `typeof globalThis extends { onmessage: any; URL: infer T } ? T : typeof _URL`.
+ * Whatever still ends up `any` is reported as a `ResolutionGap`. Runs at build
+ * time; `build()` produces the table that ships.
  */
 export class HostDeclarationIndex {
-  private readonly interfaces = new Map<string, InterfaceRecord>();
-  private readonly aliases = new Map<string, TSType>();
+  private readonly loader: DeclarationFileLoader;
+  private readonly catalog = new DeclarationCatalog();
   private readonly loadedFiles = new Set<string>();
   private readonly memberCache = new Map<string, HostMember | null>();
-  /** Interfaces a `declare var x: X & typeof globalThis` names: the global object implements them (`Window`). */
-  private readonly globalObjectInterfaces = new Set<string>();
+  private readonly extendsCache = new Map<string, string[]>();
+  private readonly activeLookups = new Set<string>();
+  private readonly gaps = new Map<string, ResolutionGap>();
+  private globalObjectInterfaces: string[] | null = null;
+  private probeDepth = 0;
 
-  /** `libDirectory` holds TypeScript's `lib.*.d.ts` files that `/// <reference lib>` directives name. */
-  constructor(private readonly libDirectory: string) {}
+  constructor(libDirectory: string, rootDirectory: string) {
+    this.loader = new DeclarationFileLoader(libDirectory, rootDirectory);
+  }
 
   addFile(filePath: string): void {
     const resolved = path.resolve(filePath);
     if (this.loadedFiles.has(resolved)) return;
     this.loadedFiles.add(resolved);
-    const sourceText = readFileSync(resolved, "utf8");
-    for (const [, directive, target] of sourceText.matchAll(REFERENCE_DIRECTIVE)) {
-      this.addFile(
-        directive === "lib"
-          ? path.join(this.libDirectory, `lib.${target}.d.ts`)
-          : path.resolve(path.dirname(resolved), target),
-      );
-    }
-    this.addSource(resolved, sourceText);
+    const file = this.loader.load(resolved);
+    for (const reference of file.references) this.addFile(reference);
+    this.catalog.addFile(file);
   }
 
   addSource(fileName: string, sourceText: string): void {
-    const { program } = parseSync(fileName, sourceText, {
-      lang: "ts",
-      sourceType: "module",
-      astType: "ts",
-    });
-    this.addStatements(program.body, GLOBAL_INTERFACE_NAME);
-    this.memberCache.clear();
+    this.catalog.addFile(this.loader.fromSource(fileName, sourceText));
   }
 
-  toTable(): HostRealmTable {
+  build(): HostRealmBuild {
+    this.loadPendingModules();
+    const globalObjectInterfaces = this.getGlobalObjectInterfaces();
     const interfaces: Record<string, HostInterface> = {};
-    for (const [interfaceName, record] of this.interfaces) {
-      const members: Record<string, HostMember> = {};
-      for (const [memberName, declarations] of record.members) {
-        members[memberName] = this.resolveDeclarations(interfaceName, declarations);
+    const pending = [GLOBAL_INTERFACE_NAME, ...globalObjectInterfaces];
+    const visit = (type: HostType | null) => {
+      if (type?.interfaceName && !(type.interfaceName in interfaces)) {
+        pending.push(type.interfaceName);
       }
-      interfaces[interfaceName] = { extendsNames: record.extendsNames, members };
+    };
+    for (let name = pending.pop(); name !== undefined; name = pending.pop()) {
+      const record = this.catalog.interfaces.get(name);
+      if (!record || name in interfaces) continue;
+      const members: Record<string, HostMember> = {};
+      interfaces[name] = { extendsNames: this.getExtendsNames(name), members };
+      for (const parent of interfaces[name].extendsNames) pending.push(parent);
+      for (const [memberName, declarations] of record.members) {
+        const member = this.resolveDeclarations(name, memberName, declarations);
+        members[memberName] = member;
+        visit(member.type);
+        visit(member.returnType);
+      }
     }
-    return { globalObjectInterfaces: [...this.globalObjectInterfaces], interfaces };
+    return {
+      table: { globalObjectInterfaces, interfaces },
+      gaps: [...this.gaps.values()].sort((left, right) => left.site.localeCompare(right.site)),
+    };
   }
 
-  private getGlobal(name: string): HostMember | null {
-    let member: HostMember | null = { type: GLOBAL_OBJECT_TYPE, returnType: null };
-    for (const key of name.split(".")) {
-      const interfaceName: string | null = member.type.interfaceName;
-      if (interfaceName === null) return null;
-      member =
-        interfaceName === GLOBAL_INTERFACE_NAME
-          ? this.getGlobalObjectMember(key)
-          : this.getMember(interfaceName, key);
-      if (member === null) return null;
+  private loadPendingModules(): void {
+    const { pendingModules } = this.catalog;
+    for (let reference = pendingModules.pop(); reference; reference = pendingModules.pop()) {
+      this.getModule(reference);
     }
-    return member;
   }
 
-  private getMember(interfaceName: string, memberName: string): HostMember | null {
-    const cacheKey = `${interfaceName}\0${memberName}`;
-    const cached = this.memberCache.get(cacheKey);
-    if (cached !== undefined) return cached;
-    const declarations = this.findDeclarations(interfaceName, memberName, new Set());
-    const member = declarations ? this.resolveDeclarations(interfaceName, declarations) : null;
-    this.memberCache.set(cacheKey, member);
-    return member;
+  private getModule(reference: ModuleReference): ContainerRecord {
+    const ambient = this.catalog.ambientModules.get(reference.specifier);
+    if (ambient) return ambient;
+    const filePath = this.loader.resolveSpecifier(reference.specifier, reference.fromFile);
+    this.addFile(filePath);
+    const module = this.catalog.fileModules.get(filePath);
+    if (!module) {
+      throw new DeclarationModuleError(reference.specifier, reference.fromFile, "not a module");
+    }
+    return module;
+  }
+
+  private report(context: ResolutionContext, reason: ResolutionGapReason, detail: string): HostType {
+    if (this.probeDepth === 0) {
+      const key = `${context.site}\0${reason}\0${detail}`;
+      if (!this.gaps.has(key)) this.gaps.set(key, { site: context.site, reason, detail });
+    }
+    return ANY_TYPE;
+  }
+
+  /** Resolve without recording gaps: used while deciding a conditional type's check. */
+  private probe<Result>(compute: () => Result): Result {
+    this.probeDepth += 1;
+    try {
+      return compute();
+    } finally {
+      this.probeDepth -= 1;
+    }
+  }
+
+  private getGlobalObjectInterfaces(): string[] {
+    if (this.globalObjectInterfaces) return this.globalObjectInterfaces;
+    const names = new Set<string>();
+    for (const heritage of this.catalog.globalObjectHeritage) {
+      const interfaceName = this.lookupInterface(heritage.name, heritage.scope);
+      if (interfaceName !== null) names.add(interfaceName);
+    }
+    this.globalObjectInterfaces = [...names];
+    return this.globalObjectInterfaces;
   }
 
   private isGlobalObjectType(type: HostType): boolean {
     return (
       type.interfaceName !== null &&
       (type.interfaceName === GLOBAL_INTERFACE_NAME ||
-        this.globalObjectInterfaces.has(type.interfaceName))
+        this.getGlobalObjectInterfaces().includes(type.interfaceName))
     );
   }
 
-  /** The interface the global object implements declares its members more precisely than the bare `var` duplicates. */
-  private getGlobalObjectMember(key: string): HostMember | null {
-    if (key === GLOBAL_INTERFACE_NAME) return { type: GLOBAL_OBJECT_TYPE, returnType: null };
-    for (const interfaceName of this.globalObjectInterfaces) {
-      const member = this.getMember(interfaceName, key);
+  private getGlobalObjectMember(memberName: string): HostMember | null {
+    if (memberName === GLOBAL_INTERFACE_NAME) return { type: GLOBAL_OBJECT_TYPE, returnType: null };
+    for (const interfaceName of this.getGlobalObjectInterfaces()) {
+      const member = this.getMember(interfaceName, memberName);
       if (member) return member;
     }
-    return this.getMember(GLOBAL_INTERFACE_NAME, key);
+    return this.getMember(GLOBAL_INTERFACE_NAME, memberName);
   }
 
-  private getOrCreateInterface(name: string): InterfaceRecord {
-    let record = this.interfaces.get(name);
-    if (!record) {
-      record = { extendsNames: [], members: new Map(), isCallable: false };
-      this.interfaces.set(name, record);
-    }
-    return record;
+  private getMember(interfaceName: string, memberName: string): HostMember | null {
+    const cacheKey = `${interfaceName}\0${memberName}`;
+    const cached = this.memberCache.get(cacheKey);
+    if (cached !== undefined) return cached;
+    if (this.activeLookups.has(cacheKey)) return null;
+    this.activeLookups.add(cacheKey);
+    const declarations = this.findDeclarations(interfaceName, memberName, new Set());
+    const member = declarations
+      ? this.resolveDeclarations(interfaceName, memberName, declarations)
+      : null;
+    this.activeLookups.delete(cacheKey);
+    if (this.probeDepth === 0) this.memberCache.set(cacheKey, member);
+    return member;
   }
 
-  private addMember(interfaceName: string, memberName: string, declaration: MemberDeclaration) {
-    const record = this.getOrCreateInterface(interfaceName);
-    const existing = record.members.get(memberName);
-    if (existing) existing.push(declaration);
-    else record.members.set(memberName, [declaration]);
-  }
-
-  private addStatements(statements: (Statement | Directive)[], scope: string): void {
-    const isNamespace = scope !== GLOBAL_INTERFACE_NAME;
-    for (const statement of statements) {
-      if (statement.type === "ExportNamedDeclaration") {
-        if (isNamespace && statement.declaration) {
-          this.addDeclaration(statement.declaration, scope);
-        }
-      } else {
-        this.addDeclaration(statement, scope);
-      }
-    }
-  }
-
-  private addDeclaration(node: Statement | Directive | Declaration, scope: string): void {
-    switch (node.type) {
-      case "TSInterfaceDeclaration":
-        this.addInterface(node, scope);
-        return;
-      case "TSTypeAliasDeclaration":
-        this.aliases.set(this.qualify(scope, node.id.name), node.typeAnnotation);
-        return;
-      case "VariableDeclaration":
-        this.addVariables(node, scope);
-        return;
-      case "FunctionDeclaration":
-      case "TSDeclareFunction":
-        this.addFunction(node, scope);
-        return;
-      case "ClassDeclaration":
-        this.addClass(node, scope);
-        return;
-      case "TSModuleDeclaration":
-        if (node.kind === "global") this.addStatements(node.body.body, GLOBAL_INTERFACE_NAME);
-        else this.addModule(node.id, node.body, scope);
-        return;
-      default:
-        return;
-    }
-  }
-
-  private addModule(id: TSModuleDeclaration["id"], body: TSModuleBlock | null, scope: string) {
-    if (!body) return;
-    if (id.type === "Literal") {
-      for (const statement of body.body) {
-        if (statement.type === "TSModuleDeclaration" && statement.kind === "global") {
-          this.addStatements(statement.body.body, GLOBAL_INTERFACE_NAME);
-        }
-      }
-      return;
-    }
-    const name = id.type === "Identifier" ? id.name : getQualifiedName(id);
-    if (name === null) return;
-    const qualified = this.qualify(scope, name);
-    const namespaceInterface = `${NAMESPACE_PREFIX}${qualified}`;
-    this.getOrCreateInterface(namespaceInterface);
-    if (!this.getOrCreateInterface(this.scopeInterface(scope)).members.has(name)) {
-      this.addMember(this.scopeInterface(scope), name, {
-        form: "namespace",
-        interfaceName: namespaceInterface,
-      });
-    }
-    this.addStatements(body.body, qualified);
-  }
-
-  private qualify(scope: string, name: string): string {
-    return scope === GLOBAL_INTERFACE_NAME ? name : `${scope}.${name}`;
-  }
-
-  private scopeInterface(scope: string): string {
-    return scope === GLOBAL_INTERFACE_NAME ? scope : `${NAMESPACE_PREFIX}${scope}`;
-  }
-
-  private addInterface(node: TSInterfaceDeclaration, scope: string): void {
-    const record = this.getOrCreateInterface(this.qualify(scope, node.id.name));
-    for (const heritage of node.extends) {
-      const name = getExpressionName(heritage.expression);
-      if (name !== null) record.extendsNames.push(this.resolveNamespacedName(name, scope));
-    }
-    for (const signature of node.body.body) {
-      if (
-        signature.type === "TSCallSignatureDeclaration" ||
-        signature.type === "TSConstructSignatureDeclaration"
-      ) {
-        record.isCallable = true;
-        continue;
-      }
-      const name = getSignatureName(signature);
-      if (name === null) continue;
-      const declaration = this.signatureDeclaration(signature);
-      if (!declaration) continue;
-      const existing = record.members.get(name);
-      if (existing) existing.push(declaration);
-      else record.members.set(name, [declaration]);
-    }
-  }
-
-  private signatureDeclaration(signature: TSSignature): MemberDeclaration | null {
-    if (signature.type === "TSPropertySignature") {
-      return { form: "property", type: signature.typeAnnotation?.typeAnnotation ?? null };
-    }
-    if (signature.type !== "TSMethodSignature") return null;
-    switch (signature.kind) {
-      case "method":
-        return { form: "method", returnType: signature.returnType?.typeAnnotation ?? null };
-      case "get":
-        return { form: "property", type: signature.returnType?.typeAnnotation ?? null };
-      case "set":
-        return null;
-    }
-  }
-
-  private resolveNamespacedName(name: string, scope: string): string {
-    for (let namespace = scope; namespace !== GLOBAL_INTERFACE_NAME;) {
-      const qualified = `${namespace}.${name}`;
-      if (this.interfaces.has(qualified) || this.aliases.has(qualified)) return qualified;
-      const separator = namespace.lastIndexOf(".");
-      namespace = separator === -1 ? GLOBAL_INTERFACE_NAME : namespace.slice(0, separator);
-    }
-    return name;
-  }
-
-  private addVariables(node: VariableDeclaration, scope: string): void {
-    for (const declarator of node.declarations) {
-      if (declarator.id.type !== "Identifier") continue;
-      const type = declarator.id.typeAnnotation?.typeAnnotation ?? null;
-      if (scope === GLOBAL_INTERFACE_NAME && type?.type === "TSIntersectionType") {
-        this.recordGlobalObjectInterfaces(type.types);
-      }
-      this.addMember(this.scopeInterface(scope), declarator.id.name, { form: "property", type });
-    }
-  }
-
-  private recordGlobalObjectInterfaces(parts: TSType[]): void {
-    if (!parts.some(isGlobalThisQuery)) return;
-    for (const part of parts) {
-      if (part.type !== "TSTypeReference") continue;
-      const name = getQualifiedName(part.typeName);
-      if (name !== null) this.globalObjectInterfaces.add(name);
-    }
-  }
-
-  private addFunction(node: Function, scope: string): void {
-    if (!node.id) return;
-    this.addMember(this.scopeInterface(scope), node.id.name, {
-      form: "method",
-      returnType: node.returnType?.typeAnnotation ?? null,
-    });
-  }
-
-  private addClass(node: Class, scope: string): void {
-    if (!node.id) return;
-    const qualified = this.qualify(scope, node.id.name);
-    this.getOrCreateInterface(qualified);
-    this.addMember(this.scopeInterface(scope), node.id.name, {
-      form: "class",
-      interfaceName: qualified,
-    });
+  private memberOf(value: HostType, memberName: string): HostMember | null {
+    if (this.isGlobalObjectType(value)) return this.getGlobalObjectMember(memberName);
+    return value.interfaceName === null ? null : this.getMember(value.interfaceName, memberName);
   }
 
   private findDeclarations(
@@ -387,63 +310,333 @@ export class HostDeclarationIndex {
   ): MemberDeclaration[] | null {
     if (seen.has(interfaceName)) return null;
     seen.add(interfaceName);
-    const record = this.interfaces.get(interfaceName);
+    const record = this.catalog.interfaces.get(interfaceName);
     if (!record) {
-      const alias = this.aliases.get(interfaceName);
-      if (!alias) return null;
-      const resolved = this.resolveType(alias, GLOBAL_INTERFACE_NAME, new Set([interfaceName]));
-      return resolved.interfaceName === null
-        ? null
-        : this.findDeclarations(resolved.interfaceName, memberName, seen);
+      const resolved = this.aliasInterface(interfaceName);
+      return resolved === null ? null : this.findDeclarations(resolved, memberName, seen);
     }
     const own = record.members.get(memberName);
     if (own) return own;
-    for (const parent of record.extendsNames) {
+    for (const parent of this.getExtendsNames(interfaceName)) {
       const inherited = this.findDeclarations(parent, memberName, seen);
       if (inherited) return inherited;
     }
     return null;
   }
 
-  private resolveDeclarations(
-    interfaceName: string,
-    declarations: MemberDeclaration[],
-  ): HostMember {
-    const scope = interfaceName.startsWith(NAMESPACE_PREFIX)
-      ? interfaceName.slice(NAMESPACE_PREFIX.length)
-      : interfaceName;
-    const resolveOrAny = (type: TSType | null): HostType =>
-      type ? this.resolveType(type, scope, new Set()) : ANY_TYPE;
-    if (declarations.every((declaration) => declaration.form === "method")) {
-      const returnTypes = declarations.map((declaration) =>
-        declaration.form === "method" ? resolveOrAny(declaration.returnType) : ANY_TYPE,
-      );
-      const [first] = returnTypes;
-      const isConsistent = returnTypes.every((type) => sameType(type, first));
-      return { type: FUNCTION_TYPE, returnType: isConsistent ? first : ANY_TYPE };
-    }
-    const types = declarations.map((declaration): HostType => {
-      switch (declaration.form) {
-        case "property":
-          return resolveOrAny(declaration.type);
-        case "method":
-          return FUNCTION_TYPE;
-        case "class":
-          return { kind: "function", interfaceName: declaration.interfaceName, isNullable: false };
-        case "namespace":
-          return { kind: "object", interfaceName: declaration.interfaceName, isNullable: false };
-      }
-    });
-    const [first] = types;
-    if (types.every((type) => sameType(type, first))) return { type: first, returnType: null };
-    const kind = types.every((type) => type.kind === first.kind) ? first.kind : "any";
-    return { type: { kind, interfaceName: null, isNullable: false }, returnType: null };
+  /** The interface an alias key stands for, when it names one. */
+  private aliasInterface(aliasName: string): string | null {
+    const alias = this.catalog.aliases.get(aliasName);
+    if (!alias) return null;
+    const resolved = this.probe(() =>
+      this.resolveType(alias.type, {
+        scope: alias.scope,
+        bindings: EMPTY_BINDINGS,
+        aliasChain: new Set([aliasName]),
+        site: aliasName,
+      }),
+    );
+    return resolved.interfaceName;
   }
 
-  /** `scope` names the enclosing interface or namespace: what `this` and unqualified names resolve against. */
-  private resolveType(type: TSType, scope: string, seen: Set<string>): HostType {
+  private getExtendsNames(interfaceName: string): string[] {
+    const cached = this.extendsCache.get(interfaceName);
+    if (cached) return cached;
+    const record = this.catalog.interfaces.get(interfaceName);
+    const names: string[] = [];
+    for (const heritage of record?.heritage ?? []) {
+      const resolved = this.lookupInterface(heritage.name, heritage.scope);
+      if (resolved === null) {
+        this.report(
+          { scope: heritage.scope, bindings: EMPTY_BINDINGS, aliasChain: EMPTY_CHAIN, site: interfaceName },
+          "unresolved-name",
+          `extends ${heritage.name.join(".")}`,
+        );
+        continue;
+      }
+      const parent = heritage.isStatic ? `${STATIC_PREFIX}${resolved}` : resolved;
+      if (this.catalog.interfaces.has(parent) && !names.includes(parent)) names.push(parent);
+    }
+    this.extendsCache.set(interfaceName, names);
+    return names;
+  }
+
+  private isSubtype(interfaceName: string, ancestorName: string): boolean {
+    const pending = [interfaceName];
+    const seen = new Set<string>();
+    for (let current = pending.pop(); current !== undefined; current = pending.pop()) {
+      if (seen.has(current)) continue;
+      seen.add(current);
+      if (current === ancestorName) return true;
+      pending.push(...this.getExtendsNames(current));
+    }
+    return false;
+  }
+
+  private isCallableInterface(interfaceName: string, seen = new Set<string>()): boolean {
+    if (seen.has(interfaceName)) return false;
+    seen.add(interfaceName);
+    const record = this.catalog.interfaces.get(interfaceName);
+    if (!record) return false;
+    return (
+      record.isCallable ||
+      this.getExtendsNames(interfaceName).some((parent) => this.isCallableInterface(parent, seen))
+    );
+  }
+
+  private lookupInterface(name: string[], scope: Scope): string | null {
+    const typeName = this.lookupType(name, scope);
+    if (typeName === null) return null;
+    return this.catalog.interfaces.has(typeName) ? typeName : this.aliasInterface(typeName);
+  }
+
+  private hasOwnName(container: ContainerRecord, name: string, meaning: SymbolMeaning): boolean {
+    const qualified = `${container.typePrefix}${name}`;
+    if (this.catalog.namespaces.has(qualified)) return true;
+    return meaning === "type"
+      ? (qualified !== container.valueHolder && this.catalog.interfaces.has(qualified)) ||
+          this.catalog.aliases.has(qualified)
+      : this.ownDeclarations(container, name) !== null;
+  }
+
+  private ownDeclarations(container: ContainerRecord, name: string): MemberDeclaration[] | null {
+    if (container === this.catalog.global) {
+      for (const interfaceName of this.getGlobalObjectInterfaces()) {
+        const declarations = this.findDeclarations(interfaceName, name, new Set());
+        if (declarations) return declarations;
+      }
+    }
+    return this.catalog.interfaces.get(container.valueHolder)?.members.get(name) ?? null;
+  }
+
+  private findLexical(name: string, scope: Scope, meaning: SymbolMeaning): NameTarget | null {
+    for (const frame of scope.frames) {
+      const binding = frame.imports.get(name);
+      if (binding) return this.resolveBinding(binding, frame, meaning);
+      if (this.hasOwnName(frame, name, meaning)) {
+        return { kind: "name", container: frame, name, isExport: false };
+      }
+    }
+    return name === GLOBAL_INTERFACE_NAME ? { kind: "module", container: this.catalog.global } : null;
+  }
+
+  private resolveBinding(
+    binding: NameBinding,
+    container: ContainerRecord,
+    meaning: SymbolMeaning,
+  ): NameTarget | null {
+    switch (binding.form) {
+      case "named":
+        return {
+          kind: "name",
+          container: this.getModule(binding.module),
+          name: binding.importedName,
+          isExport: true,
+        };
+      case "namespace":
+        return { kind: "module", container: this.getModule(binding.module) };
+      case "local":
+        return this.lookupPath(binding.name, container.scope, meaning);
+    }
+  }
+
+  private lookupPath(segments: string[], scope: Scope, meaning: SymbolMeaning): NameTarget | null {
+    let target = this.findLexical(segments[0], scope, segments.length === 1 ? meaning : "value");
+    for (const segment of segments.slice(1)) {
+      const container = target === null ? null : this.targetContainer(target);
+      if (container === null) return null;
+      target = { kind: "name", container, name: segment, isExport: container.isModule };
+    }
+    return target;
+  }
+
+  private lookupExport<Result>(
+    module: ContainerRecord,
+    name: string,
+    meaning: SymbolMeaning,
+    project: (target: NameTarget) => Result | null,
+    seen = new Set<ContainerRecord>(),
+  ): Result | null {
+    if (seen.has(module)) return null;
+    seen.add(module);
+    const own = project({ kind: "name", container: module, name, isExport: false });
+    if (own !== null) return own;
+    const alias = module.exportAliases.get(name);
+    if (alias) {
+      const target = this.resolveBinding(alias, module, meaning);
+      const projected = target === null ? null : project(target);
+      if (projected !== null) return projected;
+    }
+    if (name !== "default") {
+      for (const star of module.starExports) {
+        const projected = this.lookupExport(this.getModule(star), name, meaning, project, seen);
+        if (projected !== null) return projected;
+      }
+    }
+    if (module.exportEquals) {
+      const target = this.lookupPath(module.exportEquals, module.scope, "value");
+      const container = target === null ? null : this.targetContainer(target);
+      if (container) return project({ kind: "name", container, name, isExport: container.isModule });
+    }
+    return null;
+  }
+
+  private throughExports<Result>(
+    reference: NameReference,
+    kind: string,
+    meaning: SymbolMeaning,
+    project: (target: NameTarget) => Result | null,
+  ): Result | null {
+    const key = `${reference.container.valueHolder}\0${reference.name}\0${kind}`;
+    if (this.activeLookups.has(key)) return null;
+    this.activeLookups.add(key);
+    const result = this.lookupExport(reference.container, reference.name, meaning, project);
+    this.activeLookups.delete(key);
+    return result;
+  }
+
+  private targetContainer(target: NameTarget): ContainerRecord | null {
+    if (target.kind === "module") return target.container;
+    if (target.isExport) {
+      return this.throughExports(target, "container", "value", (inner) => this.targetContainer(inner));
+    }
+    const namespace = this.catalog.namespaces.get(`${target.container.typePrefix}${target.name}`);
+    if (namespace) return namespace;
+    const binding = target.container.imports.get(target.name);
+    const bound = binding ? this.resolveBinding(binding, target.container, "value") : null;
+    return bound === null ? null : this.targetContainer(bound);
+  }
+
+  private targetType(target: NameTarget): string | null {
+    if (target.kind === "module") return null;
+    if (target.isExport) {
+      return this.throughExports(target, "type", "type", (inner) => this.targetType(inner));
+    }
+    const qualified = `${target.container.typePrefix}${target.name}`;
+    if (this.catalog.interfaces.has(qualified) || this.catalog.aliases.has(qualified)) return qualified;
+    const binding = target.container.imports.get(target.name);
+    const bound = binding ? this.resolveBinding(binding, target.container, "type") : null;
+    return bound === null ? null : this.targetType(bound);
+  }
+
+  private targetValue(target: NameTarget): HostMember | null {
+    if (target.kind === "module") return this.moduleValue(target.container);
+    if (target.isExport) {
+      return this.throughExports(target, "value", "value", (inner) => this.targetValue(inner));
+    }
+    const declarations = this.ownDeclarations(target.container, target.name);
+    if (declarations) {
+      return this.resolveDeclarations(target.container.valueHolder, target.name, declarations);
+    }
+    const binding = target.container.imports.get(target.name);
+    const bound = binding ? this.resolveBinding(binding, target.container, "value") : null;
+    return bound === null ? null : this.targetValue(bound);
+  }
+
+  private moduleValue(module: ContainerRecord): HostMember | null {
+    if (module.exportEquals) {
+      const target = this.lookupPath(module.exportEquals, module.scope, "value");
+      return target === null ? null : this.targetValue(target);
+    }
+    return { type: interfaceType(module.valueHolder, false), returnType: null };
+  }
+
+  /** A type key (interface or alias) for a qualified type name. */
+  private lookupType(segments: string[], scope: Scope): string | null {
+    const target = this.lookupPath(segments, scope, "type");
+    return target === null ? null : this.targetType(target);
+  }
+
+  /** `typeof a.b.c`: namespaces and modules first, then member access on the value reached. */
+  private lookupValue(segments: string[], scope: Scope): HostMember | null {
+    let target = this.findLexical(segments[0], scope, "value");
+    if (target === null) return null;
+    let value: HostMember | null = null;
+    for (const segment of segments.slice(1)) {
+      if (value === null) {
+        const container = this.targetContainer(target);
+        if (container) {
+          target = { kind: "name", container, name: segment, isExport: container.isModule };
+          continue;
+        }
+        value = this.targetValue(target);
+        if (value === null) return null;
+      }
+      value = this.memberOf(value.type, segment);
+      if (value === null) return null;
+    }
+    return value ?? this.targetValue(target);
+  }
+
+  private resolveDeclarations(
+    holder: string,
+    memberName: string,
+    declarations: MemberDeclaration[],
+  ): HostMember {
+    const site = `${holder}.${memberName}`;
+    const contextFor = (scope: Scope): ResolutionContext => ({
+      scope,
+      bindings: EMPTY_BINDINGS,
+      aliasChain: EMPTY_CHAIN,
+      site,
+    });
+    const types: HostType[] = [];
+    const returnTypes: HostType[] = [];
+    for (const declaration of declarations) {
+      switch (declaration.form) {
+        case "property": {
+          const context = contextFor(declaration.scope);
+          types.push(
+            declaration.type
+              ? this.resolveType(declaration.type, context)
+              : this.report(context, "declared-any", "untyped declaration"),
+          );
+          break;
+        }
+        case "method": {
+          const context = contextFor(declaration.scope);
+          types.push(FUNCTION_TYPE);
+          returnTypes.push(
+            declaration.returnType
+              ? this.resolveType(declaration.returnType, context)
+              : this.report(context, "declared-any", "untyped return"),
+          );
+          break;
+        }
+        case "reference":
+          types.push(declaration.type);
+          break;
+      }
+    }
+    const reportingContext = contextFor(this.catalog.global.scope);
+    const type = this.mergeDeclaredTypes(types, reportingContext);
+    if (returnTypes.length === 0 || type.kind !== "function") return { type, returnType: null };
+    return { type, returnType: this.joinTypes(returnTypes, reportingContext, "overloads") };
+  }
+
+  /** Merged declarations (`function assert` + `namespace assert`) resolve to the callable carrying the namespace's members. */
+  private mergeDeclaredTypes(types: HostType[], context: ResolutionContext): HostType {
+    const [first] = types;
+    if (types.every((type) => sameType(type, first))) return first;
+    const callable = types.find((type) => type.kind === "function");
+    const carrier = types.find((type) => type.interfaceName !== null);
+    if (callable && carrier && types.every((type) => type.kind === "function" || type === carrier)) {
+      return { kind: "function", interfaceName: carrier.interfaceName, isNullable: false };
+    }
+    if (types.every((type) => type.kind === first.kind)) {
+      return { kind: first.kind, interfaceName: null, isNullable: types.some((type) => type.isNullable) };
+    }
+    return this.report(
+      context,
+      "merged-declarations",
+      types.map((type) => type.interfaceName ?? type.kind).join(" & "),
+    );
+  }
+
+  private resolveType(type: TSType, context: ResolutionContext): HostType {
     switch (type.type) {
       case "TSStringKeyword":
+      case "TSTemplateLiteralType":
         return keywordType("string");
       case "TSNumberKeyword":
         return keywordType("number");
@@ -456,113 +649,290 @@ export class HostDeclarationIndex {
         return keywordType("symbol");
       case "TSUndefinedKeyword":
       case "TSVoidKeyword":
+      case "TSNeverKeyword":
         return keywordType("undefined");
       case "TSNullKeyword":
         return keywordType("null");
       case "TSObjectKeyword":
+      case "TSMappedType":
         return keywordType("object");
+      case "TSAnyKeyword":
+      case "TSUnknownKeyword":
+        return this.report(context, "declared-any", type.type === "TSAnyKeyword" ? "any" : "unknown");
       case "TSLiteralType":
         return keywordType(getLiteralKind(type.literal));
-      case "TSTemplateLiteralType":
-        return keywordType("string");
       case "TSArrayType":
       case "TSTupleType":
-        return { kind: "object", interfaceName: "Array", isNullable: false };
+        return interfaceType("Array", false);
       case "TSFunctionType":
       case "TSConstructorType":
         return FUNCTION_TYPE;
-      case "TSTypeLiteral": {
-        const isCallable = type.members.some(
+      case "TSTypeLiteral":
+        return type.members.some(
           (member) =>
             member.type === "TSCallSignatureDeclaration" ||
             member.type === "TSConstructSignatureDeclaration",
-        );
-        return isCallable ? FUNCTION_TYPE : keywordType("object");
-      }
+        )
+          ? FUNCTION_TYPE
+          : keywordType("object");
       case "TSThisType":
-        return {
-          kind: "object",
-          interfaceName: scope === GLOBAL_INTERFACE_NAME ? null : scope,
-          isNullable: false,
-        };
+        return context.scope.thisType === null
+          ? this.report(context, "unsupported", "this outside an interface")
+          : interfaceType(context.scope.thisType, this.isCallableInterface(context.scope.thisType));
       case "TSParenthesizedType":
-        return this.resolveType(type.typeAnnotation, scope, seen);
+        return this.resolveType(type.typeAnnotation, context);
       case "TSTypeOperator":
-        if (type.operator === "unique") return keywordType("symbol");
-        return type.operator === "readonly"
-          ? this.resolveType(type.typeAnnotation, scope, seen)
-          : ANY_TYPE;
-      case "TSTypeQuery":
-        return this.resolveTypeQuery(type.exprName);
-      case "TSTypeReference":
-        return this.resolveReference(type.typeName, scope, seen);
-      case "TSUnionType":
-        return this.resolveUnion(type.types, scope, seen);
-      case "TSIntersectionType": {
-        const parts = type.types.map((part) => this.resolveType(part, scope, seen));
-        return (
-          parts.find((part) => this.isGlobalObjectType(part)) ??
-          parts.find((part) => part.kind !== "any") ??
-          ANY_TYPE
-        );
+        switch (type.operator) {
+          case "unique":
+            return keywordType("symbol");
+          case "readonly":
+            return this.resolveType(type.typeAnnotation, context);
+          case "keyof": {
+            const operand = this.probe(() => this.resolveType(type.typeAnnotation, context));
+            return operand.interfaceName === null
+              ? this.report(context, "unsupported", `keyof ${operand.kind}`)
+              : keywordType("string");
+          }
+        }
+        break;
+      case "TSInferType": {
+        const bound = context.bindings.get(type.typeParameter.name.name);
+        return bound ?? this.report(context, "type-parameter", `infer ${type.typeParameter.name.name}`);
       }
-      default:
-        return ANY_TYPE;
+      case "TSTypeQuery":
+        return this.resolveTypeQuery(type.exprName, context);
+      case "TSImportType": {
+        const typeName = this.lookupImportedType(type, context);
+        return typeName === null
+          ? this.report(context, "unresolved-name", `import(${type.source.value})`)
+          : this.resolveNamedType(typeName, type.typeArguments, context);
+      }
+      case "TSTypeReference":
+        return this.resolveReference(type, context);
+      case "TSIndexedAccessType":
+        return this.resolveIndexedAccess(type.objectType, type.indexType, context);
+      case "TSConditionalType":
+        return this.resolveConditional(type, context);
+      case "TSUnionType":
+        return this.resolveUnion(type.types, context);
+      case "TSIntersectionType":
+        return this.resolveIntersection(type.types, context);
     }
+    return this.report(context, "unsupported", type.type);
   }
 
-  private resolveTypeQuery(exprName: TSTypeQueryExprName): HostType {
-    if (exprName.type === "TSImportType") return ANY_TYPE;
+  private resolveReference(
+    type: Extract<TSType, { type: "TSTypeReference" }>,
+    context: ResolutionContext,
+  ): HostType {
+    const name = getQualifiedName(type.typeName);
+    if (name === null) return this.report(context, "unsupported", "this-qualified type");
+    if (name.length === 1) {
+      const bound = context.bindings.get(name[0]);
+      if (bound) return bound;
+      if (context.scope.typeParameters.has(name[0])) {
+        return this.report(context, "type-parameter", name[0]);
+      }
+    }
+    const typeName = this.lookupType(name, context.scope);
+    return typeName === null
+      ? this.report(context, "unresolved-name", name.join("."))
+      : this.resolveNamedType(typeName, type.typeArguments, context);
+  }
+
+  private resolveNamedType(
+    typeName: string,
+    typeArguments: TSTypeParameterInstantiation | null,
+    context: ResolutionContext,
+  ): HostType {
+    if (this.catalog.interfaces.has(typeName)) {
+      return interfaceType(typeName, this.isCallableInterface(typeName));
+    }
+    const alias = this.catalog.aliases.get(typeName);
+    if (!alias) return this.report(context, "unresolved-name", typeName);
+    if (context.aliasChain.has(typeName)) {
+      return this.report(context, "unsupported", `recursive alias ${typeName}`);
+    }
+    const bindings = new Map<string, HostType>();
+    alias.typeParameters.forEach((parameter, index) => {
+      const argument = typeArguments?.params[index];
+      if (argument) bindings.set(parameter, this.resolveType(argument, context));
+    });
+    return this.resolveType(alias.type, {
+      scope: alias.scope,
+      bindings,
+      aliasChain: new Set([...context.aliasChain, typeName]),
+      site: context.site,
+    });
+  }
+
+  private resolveTypeQuery(exprName: TSTypeQueryExprName, context: ResolutionContext): HostType {
+    if (exprName.type === "TSImportType") {
+      const value = this.lookupImportedValue(exprName, context);
+      return value?.type ?? this.report(context, "unresolved-name", `typeof import(${exprName.source.value})`);
+    }
     const name = getQualifiedName(exprName);
-    return name === null ? ANY_TYPE : (this.getGlobal(name)?.type ?? ANY_TYPE);
+    if (name === null) return this.report(context, "unsupported", "typeof this");
+    const value = this.lookupValue(name, context.scope);
+    return value?.type ?? this.report(context, "unresolved-name", `typeof ${name.join(".")}`);
   }
 
-  private resolveReference(typeName: TSTypeName, scope: string, seen: Set<string>): HostType {
-    const name = getQualifiedName(typeName);
-    if (name === null) return ANY_TYPE;
-    const qualified = this.resolveNamespacedName(name, scope);
-    if (this.interfaces.has(qualified)) {
-      return {
-        kind: this.isCallableInterface(qualified, new Set()) ? "function" : "object",
-        interfaceName: qualified,
-        isNullable: false,
-      };
-    }
-    const alias = this.aliases.get(qualified);
-    if (alias && !seen.has(qualified)) {
-      seen.add(qualified);
-      return this.resolveType(alias, scope, seen);
-    }
-    return ANY_TYPE;
+  private importedModule(type: TSImportType, context: ResolutionContext): ContainerRecord {
+    return this.getModule({ specifier: type.source.value, fromFile: context.scope.file });
   }
 
-  private isCallableInterface(name: string, seen: Set<string>): boolean {
-    if (seen.has(name)) return false;
-    seen.add(name);
-    const record = this.interfaces.get(name);
-    if (!record) return false;
-    return (
-      record.isCallable ||
-      record.extendsNames.some((parent) => this.isCallableInterface(parent, seen))
+  private lookupImportedType(type: TSImportType, context: ResolutionContext): string | null {
+    if (!type.qualifier) return null;
+    const [head, ...rest] = getImportQualifier(type.qualifier);
+    let target: NameTarget | null = {
+      kind: "name",
+      container: this.importedModule(type, context),
+      name: head,
+      isExport: true,
+    };
+    for (const segment of rest) {
+      const container = this.targetContainer(target);
+      if (container === null) return null;
+      target = { kind: "name", container, name: segment, isExport: container.isModule };
+    }
+    return this.targetType(target);
+  }
+
+  private lookupImportedValue(type: TSImportType, context: ResolutionContext): HostMember | null {
+    const module = this.importedModule(type, context);
+    if (!type.qualifier) return this.moduleValue(module);
+    const [head, ...rest] = getImportQualifier(type.qualifier);
+    let value = this.targetValue({ kind: "name", container: module, name: head, isExport: true });
+    for (const segment of rest) {
+      if (value === null) return null;
+      value = this.memberOf(value.type, segment);
+    }
+    return value;
+  }
+
+  private resolveIndexedAccess(
+    objectType: TSType,
+    indexType: TSType,
+    context: ResolutionContext,
+  ): HostType {
+    const object = this.resolveType(objectType, context);
+    if (indexType.type === "TSTypeReference" && indexType.typeName.type === "Identifier") {
+      const { name } = indexType.typeName;
+      if (context.scope.typeParameters.has(name) || context.bindings.has(name)) {
+        return this.report(context, "type-parameter", name);
+      }
+    }
+    if (indexType.type !== "TSLiteralType" || indexType.literal.type !== "Literal") {
+      return this.report(context, "unsupported", `indexed access by ${indexType.type}`);
+    }
+    const key = indexType.literal.value;
+    if (typeof key !== "string") {
+      return this.report(context, "unsupported", `indexed access by ${typeof key}`);
+    }
+    const member = this.memberOf(object, key);
+    return member?.type ?? this.report(context, "unresolved-name", `[${JSON.stringify(key)}]`);
+  }
+
+  private resolveConditional(type: TSConditionalType, context: ResolutionContext): HostType {
+    const verdict = this.probe(() => this.evaluateExtends(type.checkType, type.extendsType, context));
+    const bindings = new Map([...context.bindings, ...(verdict?.bindings ?? [])]);
+    const branchContext = { ...context, bindings };
+    if (verdict && !verdict.holds) return this.resolveType(type.falseType, branchContext);
+    for (const name of getInferredNames(type.extendsType)) {
+      if (!bindings.has(name)) bindings.set(name, this.report(context, "type-parameter", name));
+    }
+    if (verdict) return this.resolveType(type.trueType, branchContext);
+    const whenTrue = this.resolveType(type.trueType, branchContext);
+    const whenFalse = this.resolveType(type.falseType, branchContext);
+    return sameType(whenTrue, whenFalse)
+      ? whenTrue
+      : this.report(context, "conditional", `${whenTrue.kind} : ${whenFalse.kind}`);
+  }
+
+  private evaluateExtends(
+    checkType: TSType,
+    extendsType: TSType,
+    context: ResolutionContext,
+  ): ExtendsVerdict | null {
+    const bindings = new Map<string, HostType>();
+    if (extendsType.type === "TSAnyKeyword" || extendsType.type === "TSUnknownKeyword") {
+      return { holds: true, bindings };
+    }
+    const check = this.resolveType(checkType, context);
+    if (check.kind === "any") return null;
+    if (extendsType.type === "TSTypeLiteral") {
+      for (const signature of extendsType.members) {
+        const name = getSignatureName(signature);
+        if (signature.type !== "TSPropertySignature" || name === null) return null;
+        const member = this.memberOf(check, name);
+        if (member === null) return check.kind === "object" ? { holds: false, bindings } : null;
+        const expected = signature.typeAnnotation?.typeAnnotation;
+        if (!expected || expected.type === "TSAnyKeyword" || expected.type === "TSUnknownKeyword") continue;
+        if (expected.type === "TSInferType") {
+          bindings.set(expected.typeParameter.name.name, member.type);
+          continue;
+        }
+        const resolvedExpected = this.resolveType(expected, context);
+        if (resolvedExpected.kind === "any" || member.type.kind === "any") return null;
+        if (resolvedExpected.kind !== member.type.kind) return { holds: false, bindings };
+      }
+      return { holds: true, bindings };
+    }
+    const expected = this.resolveType(extendsType, context);
+    if (expected.kind === "any") return null;
+    if (expected.interfaceName !== null) {
+      if (check.interfaceName !== null) {
+        return { holds: this.isSubtype(check.interfaceName, expected.interfaceName), bindings };
+      }
+      return check.kind === "object" || check.kind === "function" ? null : { holds: false, bindings };
+    }
+    return { holds: expected.kind === check.kind, bindings };
+  }
+
+  private resolveUnion(types: TSType[], context: ResolutionContext): HostType {
+    return this.joinTypes(
+      types
+        .filter((part) => part.type !== "TSNeverKeyword")
+        .map((part) => this.resolveType(part, context)),
+      context,
+      "mixed-union",
     );
   }
 
-  private resolveUnion(types: TSType[], scope: string, seen: Set<string>): HostType {
+  /** The single `typeof` a set of alternatives (union members, overload returns) agrees on. */
+  private joinTypes(
+    types: HostType[],
+    context: ResolutionContext,
+    disagreement: ResolutionGapReason,
+  ): HostType {
     let isNullable = false;
     const present: HostType[] = [];
     for (const part of types) {
-      const resolved = this.resolveType(part, scope, seen);
-      if (resolved.kind === "null" || resolved.kind === "undefined") isNullable = true;
-      else present.push(resolved);
+      if (part.kind === "null" || part.kind === "undefined") isNullable = true;
+      else present.push(part);
     }
     const [first] = present;
-    if (!first) return { kind: "undefined", interfaceName: null, isNullable };
+    if (!first) return keywordType("undefined");
+    if (present.some((part) => part.kind === "any")) return ANY_TYPE;
+    if (!present.every((part) => part.kind === first.kind)) {
+      return this.report(context, disagreement, present.map((part) => part.kind).join(" | "));
+    }
     return {
-      kind: present.every((part) => part.kind === first.kind) ? first.kind : "any",
+      kind: first.kind,
       interfaceName: present.every((part) => part.interfaceName === first.interfaceName)
         ? first.interfaceName
         : null,
-      isNullable,
+      isNullable: isNullable || present.some((part) => part.isNullable),
     };
+  }
+
+  private resolveIntersection(types: TSType[], context: ResolutionContext): HostType {
+    const parts = types.map((part) => this.resolveType(part, context));
+    return (
+      parts.find((part) => this.isGlobalObjectType(part)) ??
+      parts.find((part) => part.interfaceName !== null) ??
+      parts.find((part) => part.kind !== "any") ??
+      ANY_TYPE
+    );
   }
 }

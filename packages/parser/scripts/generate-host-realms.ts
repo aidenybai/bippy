@@ -1,8 +1,9 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
-import { HostDeclarationIndex } from "../src/host/declaration-index.js";
+import { HostDeclarationIndex, type ResolutionGap } from "../src/host/declaration-index.js";
 import {
+  getRealmGapReportPath,
   getRealmTablePath,
   HOST_PLATFORMS,
   type HostPlatform,
@@ -52,8 +53,10 @@ declare var performance: ReactNativePerformance;
 declare function alert(text: string): void;
 `;
 
+const PARSER_DIRECTORY = path.resolve(import.meta.dirname, "..");
+
 const buildIndex = (platform: HostPlatform): HostDeclarationIndex => {
-  const declarations = new HostDeclarationIndex(TYPESCRIPT_LIB_DIRECTORY);
+  const declarations = new HostDeclarationIndex(TYPESCRIPT_LIB_DIRECTORY, PARSER_DIRECTORY);
   declarations.addFile(getTypescriptLib("esnext"));
   switch (platform) {
     case "ecmascript":
@@ -75,25 +78,49 @@ const buildIndex = (platform: HostPlatform): HostDeclarationIndex => {
           "globals.d.ts",
         ),
       );
-      declarations.addSource("react-native-runtime.d.ts", REACT_NATIVE_RUNTIME_GLOBALS);
+      declarations.addSource(
+        path.join(PARSER_DIRECTORY, "react-native-runtime.d.ts"),
+        REACT_NATIVE_RUNTIME_GLOBALS,
+      );
       break;
   }
   return declarations;
 };
 
-const renderTable = (platform: HostPlatform): string =>
-  `${JSON.stringify(encodeHostRealmTable(buildIndex(platform).toTable()))}\n`;
+const countBy = <Item>(items: Item[], getKey: (item: Item) => string): Record<string, number> => {
+  const counts: Record<string, number> = {};
+  for (const item of items) counts[getKey(item)] = (counts[getKey(item)] ?? 0) + 1;
+  return counts;
+};
+
+const renderGapReport = (gaps: ResolutionGap[]): string =>
+  `${JSON.stringify({ total: gaps.length, byReason: countBy(gaps, (gap) => gap.reason), gaps }, null, 2)}\n`;
+
+const writeGenerated = (filePath: string, rendered: string, isCheckMode: boolean): void => {
+  if (!isCheckMode) {
+    writeFileSync(filePath, rendered);
+    return;
+  }
+  const existing = existsSync(filePath) ? readFileSync(filePath, "utf8") : null;
+  if (existing !== rendered) throw new StaleGeneratedFileError(filePath);
+};
 
 const isCheckMode = process.argv.includes("--check");
 
 mkdirSync(REALMS_DIRECTORY, { recursive: true });
 for (const platform of HOST_PLATFORMS) {
-  const tablePath = getRealmTablePath(platform);
-  const rendered = renderTable(platform);
-  if (isCheckMode) {
-    const existing = existsSync(tablePath) ? readFileSync(tablePath, "utf8") : null;
-    if (existing !== rendered) throw new StaleGeneratedFileError(tablePath);
-  } else {
-    writeFileSync(tablePath, rendered);
-  }
+  const { table, gaps } = buildIndex(platform).build();
+  writeGenerated(
+    getRealmTablePath(platform),
+    `${JSON.stringify(encodeHostRealmTable(table))}\n`,
+    isCheckMode,
+  );
+  writeGenerated(getRealmGapReportPath(platform), renderGapReport(gaps), isCheckMode);
+  const memberCount = Object.values(table.interfaces).reduce(
+    (total, record) => total + Object.keys(record.members).length,
+    0,
+  );
+  console.log(
+    `${platform}: ${Object.keys(table.interfaces).length} interfaces, ${memberCount} members, ${gaps.length} gaps ${JSON.stringify(countBy(gaps, (gap) => gap.reason))}`,
+  );
 }

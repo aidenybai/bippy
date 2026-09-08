@@ -27,6 +27,17 @@ export const parseWithSchema = <Output>(
   return result.data;
 };
 
+/** A `.d.ts` import specifier that neither an ambient `declare module` nor module resolution provides. */
+export class DeclarationModuleError extends ParserError {
+  constructor(
+    readonly specifier: string,
+    readonly fromFile: string,
+    reason: string,
+  ) {
+    super(`cannot resolve declaration module "${specifier}" from ${fromFile}: ${reason}`);
+  }
+}
+
 export class StaleGeneratedFileError extends ParserError {
   constructor(readonly filePath: string) {
     super(`${filePath} is out of date; run the generator that owns it`);

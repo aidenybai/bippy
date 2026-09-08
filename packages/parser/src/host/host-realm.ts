@@ -1,6 +1,5 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import {
   decodeHostRealmTable,
   GLOBAL_INTERFACE_NAME,
@@ -19,10 +18,13 @@ export const HOST_PLATFORMS: readonly HostPlatform[] = [
   "react-native",
 ];
 
-export const REALMS_DIRECTORY = fileURLToPath(new URL("./realms/", import.meta.url));
+export const REALMS_DIRECTORY = path.join(import.meta.dirname, "realms");
 
 export const getRealmTablePath = (platform: HostPlatform): string =>
   path.join(REALMS_DIRECTORY, `${platform}.json`);
+
+export const getRealmGapReportPath = (platform: HostPlatform): string =>
+  path.join(REALMS_DIRECTORY, `${platform}.gaps.json`);
 
 /**
  * Which globals a JavaScript host provides and what they are, read from the
