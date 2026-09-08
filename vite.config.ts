@@ -21,6 +21,7 @@ export default defineConfig({
       "**/routeTree.gen.ts",
       "packages/bippy/src/react-internals/generated/**",
       "packages/parser/corpus/results.json",
+      "packages/parser/src/host/realms/*.json",
       reactDevToolsHookSources,
     ],
     semi: true,

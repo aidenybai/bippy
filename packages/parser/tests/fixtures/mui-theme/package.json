@@ -1,0 +1,10 @@
+{
+  "name": "fixture-mui-theme",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@emotion/react": "11.14.0",
+    "@emotion/styled": "11.14.0",
+    "@mui/material": "5.16.14"
+  }
+}

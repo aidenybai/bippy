@@ -1,10 +1,13 @@
+import semver from "semver";
 import { STYLED_JSX_SPECIFIER } from "../evaluate/interpreter.js";
 import { createSearchParamsValue } from "../evaluate/url-search-params.js";
 import {
   NULL_VALUE,
   UNDEFINED_VALUE,
+  branchValue,
   getObjectProperty,
   getTruthiness,
+  mapValue,
   isKnownString,
   listValue,
   objectFromRecord,
@@ -24,8 +27,8 @@ import type {
 } from "../types.js";
 import { ForwardRefTag } from "../work-tags.js";
 import type { FrameworkKind } from "./framework-profile.js";
-import { isVersionAtLeast } from "../graph/installed-version.js";
 import { toElementType } from "../react/element-type.js";
+import { createNextIntlModel, type NextIntlModel } from "../libraries/next-intl.js";
 import { nextRequestValue } from "./next-request.js";
 import {
   element,
@@ -54,6 +57,8 @@ export interface NextModel {
    * same match the page was composed from.
    */
   params: Record<string, string>;
+  /** `next-intl`, whose request configuration `next.config` registers through its plugin. */
+  intl: NextIntlModel;
 }
 
 export type NextRouterKind = Extract<FrameworkKind, "next-app" | "next-pages">;
@@ -146,15 +151,16 @@ const FORWARD_REF_LINK_STUB: StubComponent = {
   render: anchorForLink,
 };
 
-const LINK_STATUS_MIN_VERSION = "15.3.0";
+/** `LinkStatusContext` wraps the anchor since 15.3.0 (client/app-dir/link.js); unknown models the latest. */
+const LINK_STATUS_VERSIONS = ">=15.3.0";
 
-const selectLinkStub = (options: NextModelOptions): StubComponent =>
-  options.kind === "next-app" &&
-  (options.nextVersion === undefined ||
-    options.nextVersion === null ||
-    isVersionAtLeast(options.nextVersion, LINK_STATUS_MIN_VERSION))
-    ? APP_LINK_STUB
-    : FORWARD_REF_LINK_STUB;
+const hasLinkStatusContext = (nextVersion: string | null | undefined): boolean =>
+  nextVersion === undefined ||
+  nextVersion === null ||
+  semver.satisfies(semver.coerce(nextVersion) ?? nextVersion, LINK_STATUS_VERSIONS);
+
+const appLinkStub = (options: NextModelOptions): StubComponent =>
+  hasLinkStatusContext(options.nextVersion) ? APP_LINK_STUB : FORWARD_REF_LINK_STUB;
 
 const IMAGE_ELEMENT_STUB: StubComponent = {
   displayName: null,
@@ -181,10 +187,43 @@ const IMAGE_ELEMENT_STUB: StubComponent = {
   },
 };
 
-const IMAGE_STUB: StubComponent = {
-  displayName: null,
-  tag: ForwardRefTag,
-  render: (props) => stubElement(IMAGE_ELEMENT_STUB, Object.fromEntries(propEntries(props))),
+/** `ImagePreload` for a `priority` image: `ReactDOM.preload` and null in the App Router, a `next/head` `<link rel="preload">` in the Pages Router. */
+const imagePreloadStub = (kind: NextRouterKind): StubComponent => ({
+  displayName: "ImagePreload",
+  render: (props) =>
+    kind === "next-app"
+      ? NULL_VALUE
+      : stubElement(HEAD_STUB, {
+          children: hostElement("link", {
+            rel: primitiveValue("preload"),
+            href: getObjectProperty(props, "src"),
+          }),
+        }),
+});
+
+const imageStub = (kind: NextRouterKind): StubComponent => {
+  const preloadStub = imagePreloadStub(kind);
+  return {
+    displayName: null,
+    tag: ForwardRefTag,
+    render: (props) => {
+      const imageProps = Object.fromEntries(propEntries(props));
+      const isPriority = getTruthiness(getObjectProperty(props, "priority"));
+      const preloadElement = stubElement(preloadStub, { src: getObjectProperty(props, "src") });
+      const preload =
+        isPriority === null
+          ? branchValue([NULL_VALUE, preloadElement], "priority decides whether the image preloads")
+          : isPriority
+            ? preloadElement
+            : NULL_VALUE;
+      return element(
+        { kind: "fragment" },
+        objectFromRecord({
+          children: listValue([stubElement(IMAGE_ELEMENT_STUB, imageProps), preload]),
+        }),
+      );
+    },
+  };
 };
 
 const propEntries = (props: StaticObjectValue): [string, StaticValue][] => {
@@ -201,10 +240,15 @@ const HEAD_STUB: StubComponent = {
   render: () => stubElement(emptyStub("SideEffect"), {}),
 };
 
-/** `next/script` renders a `<script>` only for `beforeInteractive`; every other strategy returns null. */
-const SCRIPT_STUB: StubComponent = {
+/**
+ * `next/script` commits a `<script>` only for `beforeInteractive` in the App
+ * Router; the Pages Router hands every strategy to the head manager and
+ * renders nothing.
+ */
+const scriptStub = (kind: NextRouterKind): StubComponent => ({
   displayName: "Script",
   render: (props) => {
+    if (kind === "next-pages") return NULL_VALUE;
     const strategy = getObjectProperty(props, "strategy");
     if (strategy.kind === "primitive" && strategy.value === "beforeInteractive") {
       return hostElement("script", {
@@ -215,7 +259,7 @@ const SCRIPT_STUB: StubComponent = {
     if (strategy.kind === "unknown") return unknownValue("script strategy decides host output");
     return NULL_VALUE;
   },
-};
+});
 
 const BAILOUT_TO_CSR_STUB = passthroughStub("BailoutToCSR");
 
@@ -236,7 +280,16 @@ const dynamicComponent = (
       const value = getObjectProperty(option, name);
       return value.kind === "primitive" && value.value === undefined ? current : value;
     }, UNDEFINED_VALUE);
-  const loader = first?.kind === "function" ? first : readOption("loader");
+  const loader = first === undefined || first.kind === "object" ? readOption("loader") : first;
+  return mapValue(loader, (alternative) => loadableComponent(kind, alternative, readOption, tools));
+};
+
+const loadableComponent = (
+  kind: NextRouterKind,
+  loader: StaticValue,
+  readOption: (name: string) => StaticValue,
+  tools: StubRenderTools,
+): StaticValue => {
   const lazy = tools.call({ kind: "react-api", api: "lazy" }, [loader]);
   if (lazy.kind !== "component-reference" || lazy.type.kind !== "lazy") {
     return unknownValue("next/dynamic loader is not a statically known module");
@@ -404,17 +457,23 @@ export interface NextModelOptions {
 export const createNextModel = (options: NextModelOptions): NextModel => {
   const url = new URL(options.route, options.origin ?? "http://static.invalid");
   const params: Record<string, string> = {};
+  const linkStub = options.kind === "next-app" ? appLinkStub(options) : FORWARD_REF_LINK_STUB;
+  const image = imageStub(options.kind);
+  const intl = createNextIntlModel({
+    link: linkStub,
+    navigation: (importedName) => appNavigationValue(importedName, url, params),
+  });
   const externalValues: ExternalValueProvider = (packageName, importedName) => {
     switch (packageName) {
       case "next/link":
-        return importedName === "default" ? stubValue(selectLinkStub(options)) : null;
+        return importedName === "default" ? stubValue(linkStub) : null;
       case "next/image":
       case "next/legacy/image":
-        return importedName === "default" ? stubValue(IMAGE_STUB) : null;
+        return importedName === "default" ? stubValue(image) : null;
       case "next/head":
         return importedName === "default" ? stubValue(HEAD_STUB) : null;
       case "next/script":
-        return importedName === "default" ? stubValue(SCRIPT_STUB) : null;
+        return importedName === "default" ? stubValue(scriptStub(options.kind)) : null;
       case "next/dynamic":
         return importedName === "default"
           ? nativeFunction("dynamic", (args, tools) => dynamicComponent(options.kind, args, tools))
@@ -431,8 +490,8 @@ export const createNextModel = (options: NextModelOptions): NextModel => {
       case STYLED_JSX_SPECIFIER:
         return importedName === "default" ? stubValue(emptyStub("JSXStyle")) : null;
       default:
-        return null;
+        return intl.externalValues(packageName, importedName);
     }
   };
-  return { externalValues, params };
+  return { externalValues, params, intl };
 };

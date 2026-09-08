@@ -1,7 +1,9 @@
 import path from "node:path";
-import type { CorpusEntry } from "../corpus/manifest.js";
+import { getSettleMs, type CorpusEntry } from "../corpus/manifest.js";
 import { readProcessEnvironment } from "../corpus/process-environment.js";
-import { readInstalledVersion } from "../graph/installed-version.js";
+import { FrameworkTargetError } from "../errors.js";
+import { readInstalledPackage } from "../graph/installed-package.js";
+import { ModuleResolver } from "../graph/module-resolver.js";
 import { createStaticRenderer, type StaticRenderer } from "../render/static-renderer.js";
 import type { RuntimeObservations, StaticRenderResult, StaticRendererOptions } from "../types.js";
 import type { FrameworkKind } from "./framework-profile.js";
@@ -28,10 +30,16 @@ export interface FrameworkRenderTarget {
 const requireField = (target: FrameworkRenderTarget, field: "entry" | "route"): string => {
   const value = target[field];
   if (value === undefined) {
-    throw new Error(`${target.framework} static rendering needs a "${field}" target`);
+    throw new FrameworkTargetError(
+      `${target.framework} static rendering needs a "${field}" target`,
+    );
   }
   return value;
 };
+
+const readInstalledNextVersion = (rootDirectory: string): string | null =>
+  readInstalledPackage(new ModuleResolver({ rootDirectory }), rootDirectory, "next")?.version ??
+  null;
 
 /**
  * Renders one framework target statically. Next app-router targets always run
@@ -53,7 +61,7 @@ export const renderFrameworkTarget = (
         route,
         origin: options.origin,
         request: options.observations?.request,
-        nextVersion: readInstalledVersion(options.rootDirectory, "next"),
+        nextVersion: readInstalledNextVersion(options.rootDirectory),
       });
       const renderer = createStaticRenderer({
         ...options,
@@ -101,7 +109,9 @@ const renderRootComponent = (
     }
     case "next-app":
     case "next-pages":
-      throw new Error(`${target.framework} targets render routes, not a "rootComponent"`);
+      throw new FrameworkTargetError(
+        `${target.framework} targets render routes, not a "rootComponent"`,
+      );
   }
 };
 
@@ -122,8 +132,10 @@ const rendererOptionsForEntry = (
     environment: readProcessEnvironment(entry, rootDirectory),
     origin: new URL(entry.url).origin,
     observations,
+    maxSteps: entry.static.maxSteps,
     maxFiberCount: entry.static.maxFiberCount,
     maxComponentDepth: entry.static.maxComponentDepth,
+    settleMs: getSettleMs(entry),
   };
 };
 

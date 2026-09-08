@@ -1,6 +1,7 @@
 import { nativeFunction } from "../frameworks/stubs.js";
 import type { SourceLocation, StaticValue } from "../types.js";
 import { createErrorValue } from "./errors.js";
+import { bytesValue, getKnownBytes } from "./typed-arrays.js";
 import {
   objectFromRecord,
   primitiveValue,
@@ -19,6 +20,9 @@ const STRING_CODECS: Record<string, (text: string) => string> = {
 };
 
 export const isStringCodecName = (name: string): boolean => Object.hasOwn(STRING_CODECS, name);
+
+const isOmitted = (value: StaticValue | undefined): boolean =>
+  value === undefined || (value.kind === "primitive" && value.value === undefined);
 
 const toCodecInput = (value: StaticValue | undefined): string | null =>
   value === undefined
@@ -53,10 +57,9 @@ export const callStringCodec = (
 
 /** A known encoding argument (omitted counts as the default); null when it cannot be decided. */
 const getBufferEncoding = (value: StaticValue | undefined): BufferEncoding | undefined | null => {
-  if (value === undefined || (value.kind === "primitive" && value.value === undefined))
-    return undefined;
+  if (isOmitted(value)) return undefined;
   if (
-    value.kind === "primitive" &&
+    value?.kind === "primitive" &&
     typeof value.value === "string" &&
     Buffer.isEncoding(value.value)
   )
@@ -90,6 +93,60 @@ export const createBufferValue = (
       return encoding === null
         ? unknownPrimitiveValue("string", "Buffer.toString() with a dynamic encoding")
         : primitiveValue(buffer.toString(encoding));
+    }),
+  });
+};
+
+/** `new TextEncoder()`: UTF-8 bytes of a known string. */
+export const createTextEncoder = (): StaticValue =>
+  objectFromRecord({
+    encoding: primitiveValue("utf-8"),
+    encode: nativeFunction("encode", ([input]) => {
+      const text = isOmitted(input) ? "" : toCodecInput(input);
+      return text === null
+        ? unknownValue("TextEncoder.encode() of a dynamic string", null)
+        : bytesValue("Uint8Array", new TextEncoder().encode(text));
+    }),
+  });
+
+const toDecoderLabel = (value: StaticValue | undefined): string | null =>
+  isOmitted(value)
+    ? "utf-8"
+    : value?.kind === "primitive" && typeof value.value === "string"
+      ? value.value
+      : null;
+
+/** `new TextDecoder(label)`: the text of known bytes; a decoder over an unknown label decodes nothing. */
+export const createTextDecoder = (
+  label: StaticValue | undefined,
+  location: SourceLocation | null,
+): StaticValue => {
+  const encoding = toDecoderLabel(label);
+  if (encoding === null) return unknownValue("new TextDecoder() with a dynamic label", location);
+  let decoder: TextDecoder;
+  try {
+    decoder = new TextDecoder(encoding);
+  } catch {
+    return thrownValue(
+      "new TextDecoder() with an unsupported label",
+      createErrorValue(
+        "RangeError",
+        [primitiveValue(`The "${encoding}" encoding is not supported`)],
+        location,
+      ),
+      location,
+    );
+  }
+  return objectFromRecord({
+    encoding: primitiveValue(decoder.encoding),
+    fatal: primitiveValue(decoder.fatal),
+    ignoreBOM: primitiveValue(decoder.ignoreBOM),
+    decode: nativeFunction("decode", ([input]) => {
+      if (isOmitted(input)) return primitiveValue("");
+      const bytes = getKnownBytes(input);
+      return bytes === null
+        ? unknownPrimitiveValue("string", "TextDecoder.decode() of dynamic bytes")
+        : primitiveValue(decoder.decode(bytes));
     }),
   });
 };

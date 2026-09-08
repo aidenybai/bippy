@@ -1,9 +1,11 @@
+import { existsSync } from "node:fs";
 import { isBuiltin } from "node:module";
 import path from "node:path";
 import { ResolverFactory } from "oxc-resolver";
 import type { ModuleResolution } from "../types.js";
 
 export interface ModuleResolverOptions {
+  /** Path alias config; a sibling `jsconfig.json` stands in when this file does not exist. */
   tsconfigPath?: string;
   /** Bundler `resolve.alias`: a specifier (or its subpaths) resolved from another absolute path. */
   aliases?: Record<string, string>;
@@ -32,6 +34,13 @@ const DEFAULT_REQUIRE_CONDITION_NAMES = ["browser", "require", "module", "defaul
 export type ImporterKind = "esm" | "commonjs";
 
 const NODE_MODULES_SEGMENT = "/node_modules/";
+const JAVASCRIPT_CONFIG_FILE = "jsconfig.json";
+
+const getPathAliasConfigFile = (tsconfigPath: string): string => {
+  if (existsSync(tsconfigPath)) return tsconfigPath;
+  const jsconfigPath = path.join(path.dirname(tsconfigPath), JAVASCRIPT_CONFIG_FILE);
+  return existsSync(jsconfigPath) ? jsconfigPath : tsconfigPath;
+};
 
 export const getPackageNameFromSpecifier = (specifier: string): string | null => {
   if (specifier.startsWith(".") || specifier.startsWith("/") || specifier.startsWith("#")) {
@@ -63,7 +72,7 @@ interface ResolverPair {
 export class ModuleResolver {
   private readonly resolvers: Record<ImporterKind, ResolverPair>;
   private readonly cache = new Map<string, ModuleResolution>();
-  private readonly rootDirectory: string | null;
+  readonly rootDirectory: string | null;
 
   constructor(options: ModuleResolverOptions = {}) {
     this.rootDirectory = options.rootDirectory ? path.resolve(options.rootDirectory) : null;
@@ -82,7 +91,7 @@ export class ModuleResolver {
         primary: new ResolverFactory({
           ...baseOptions,
           tsconfig: options.tsconfigPath
-            ? { configFile: options.tsconfigPath, references: "auto" }
+            ? { configFile: getPathAliasConfigFile(options.tsconfigPath), references: "auto" }
             : "auto",
         }),
         fallback: new ResolverFactory(baseOptions),

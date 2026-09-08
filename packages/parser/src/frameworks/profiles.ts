@@ -1,10 +1,5 @@
 import type { RuntimeFiberSnapshot } from "../harness/snapshot.js";
-import {
-  type FrameworkKind,
-  type FrameworkProfile,
-  neverInjected,
-  SPA_PROFILE,
-} from "./framework-profile.js";
+import { type FrameworkKind, type FrameworkProfile, SPA_PROFILE } from "./framework-profile.js";
 
 // Names observed in Next 15/16 development builds (app router). Everything here
 // is framework plumbing that wraps application output without rendering host
@@ -48,6 +43,10 @@ const NEXT_APP_RUNTIME_WRAPPERS = [
   "InnerScrollAndFocusHandler",
   "InnerScrollAndFocusHandlerOld",
   "LoadingBoundary",
+  "Fragment",
+];
+
+const NEXT_APP_RUNTIME_PROVIDERS = [
   "TemplateContext",
   "LayoutRouterContext",
   "GlobalLayoutRouterContext",
@@ -58,7 +57,6 @@ const NEXT_APP_RUNTIME_WRAPPERS = [
   "SearchParamsContext",
   "HeadManagerContext",
   "SegmentStateContext",
-  "Fragment",
   "ContextProvider",
 ];
 
@@ -87,6 +85,7 @@ const isNextAppInjectedFiber = (fiber: RuntimeFiberSnapshot): boolean =>
 export const NEXT_APP_PROFILE: FrameworkProfile = {
   kind: "next-app",
   transparentRuntimeFibers: new Set(NEXT_APP_RUNTIME_WRAPPERS),
+  transparentRuntimeProviders: new Set(NEXT_APP_RUNTIME_PROVIDERS),
   transparentStaticFibers: new Set(["Fragment", "ContextProvider"]),
   isInjectedRuntimeFiber: isNextAppInjectedFiber,
   defaultAnchor: "body",
@@ -94,10 +93,21 @@ export const NEXT_APP_PROFILE: FrameworkProfile = {
 
 const NEXT_PAGES_RUNTIME_WRAPPERS = [
   "Root",
+  "StrictMode",
   "AppContainer",
   "Container",
   "PathnameContextProviderAdapter",
   "_PathnameContextProviderAdapter",
+  "ErrorBoundary",
+  "HotReload",
+  "ReactDevOverlay",
+  "PagesDevOverlay",
+  "PagesDevOverlayBridge",
+  "PagesDevOverlayErrorBoundary",
+  "Fragment",
+];
+
+const NEXT_PAGES_RUNTIME_PROVIDERS = [
   "RouterContext",
   "HeadManagerContext",
   "ImageConfigContext",
@@ -105,23 +115,26 @@ const NEXT_PAGES_RUNTIME_WRAPPERS = [
   "SearchParamsContext",
   "PathnameContext",
   "PathParamsContext",
-  "ErrorBoundary",
-  "HotReload",
-  "ReactDevOverlay",
-  "PagesDevOverlay",
-  "PagesDevOverlayErrorBoundary",
-  "Fragment",
 ];
 
-// The pages client (`next/dist/client/index`) renders a head-commit callback
-// component and the route announcer portal next to `_app`.
-const isNextPagesInjectedFiber = (fiber: RuntimeFiberSnapshot): boolean =>
-  (fiber.name === "Head" && fiber.children.length === 0 && "callback" in fiber.props) ||
-  (fiber.name === "Portal" && fiber.props.type === "next-route-announcer");
+// `next/dist/client/index.js` mounts a dummy `<Head callback>` (renders null,
+// times the head commit) and the route announcer portal next to `AppContainer`;
+// `PagesDevOverlay` adds its font styles and overlay after the error boundary.
+const NEXT_PAGES_INJECTED_FIBERS = new Set(["FontStyles", "DevOverlay"]);
+
+const isNextPagesInjectedFiber = (fiber: RuntimeFiberSnapshot): boolean => {
+  if (fiber.tag !== "FunctionComponent" || fiber.name === null) return false;
+  if (NEXT_PAGES_INJECTED_FIBERS.has(fiber.name)) return true;
+  if (fiber.name === "Head") {
+    return fiber.children.length === 0 && Object.keys(fiber.props).join() === "callback";
+  }
+  return fiber.name === "Portal" && fiber.props.type === "next-route-announcer";
+};
 
 export const NEXT_PAGES_PROFILE: FrameworkProfile = {
   kind: "next-pages",
   transparentRuntimeFibers: new Set(NEXT_PAGES_RUNTIME_WRAPPERS),
+  transparentRuntimeProviders: new Set(NEXT_PAGES_RUNTIME_PROVIDERS),
   transparentStaticFibers: new Set(["Fragment"]),
   isInjectedRuntimeFiber: isNextPagesInjectedFiber,
   defaultAnchor: null,
@@ -132,20 +145,14 @@ export const NEXT_PAGES_PROFILE: FrameworkProfile = {
 // (`RouterProvider`/`Routes` -> `RenderedRoute` -> `Route` provider -> component,
 // `Outlet` -> anonymous OutletContext provider, `NavLink` -> `Link` -> `a`), so
 // only the router's own context stack and error boundary are transparent. The
-// static side provides `Location` itself (it backs `useInRouterContext`), so
-// that one is transparent on both sides.
+// static side provides `Location` (it backs `useInRouterContext`) and the
+// `DataRouterState`/`FrameworkContext` re-render paths itself, so those are
+// transparent on both sides.
 const REACT_ROUTER_RUNTIME_WRAPPERS = [
   "Router",
   "DataRoutes",
   "DataRoutes2",
   "RenderErrorBoundary",
-  "DataRouter",
-  "DataRouterState",
-  "Fetchers",
-  "ViewTransition",
-  "Navigation",
-  "Location",
-  "RouteError",
   "AwaitContextProvider",
   // framework mode (`@react-router/dev`); `HydratedRouter` and the core
   // `RouterProvider` stay as fibers because the static side renders them. The
@@ -153,7 +160,6 @@ const REACT_ROUTER_RUNTIME_WRAPPERS = [
   // esbuild (Vite dev pre-bundling).
   "RouterProvider$1",
   "RouterProvider2",
-  "FrameworkContext",
   "RemixErrorBoundary",
   "WithComponentProps",
   "WithComponentProps2",
@@ -161,15 +167,35 @@ const REACT_ROUTER_RUNTIME_WRAPPERS = [
   "WithHydrateFallbackProps2",
   "WithErrorBoundaryProps",
   "WithErrorBoundaryProps2",
-  "RSCRouterContext",
   "RSCRouterGlobalErrorBoundary",
 ];
+
+const REACT_ROUTER_RUNTIME_PROVIDERS = [
+  "DataRouter",
+  "DataRouterState",
+  "Fetchers",
+  "ViewTransition",
+  "Navigation",
+  "Location",
+  "RouteError",
+  "FrameworkContext",
+  "RSCRouterContext",
+];
+
+// `react-router-devtools`' Vite plugin rewrites the root route module in
+// development so its default export renders next to the devtools panel
+// (`withViteDevTools` in `react-router-devtools/client`).
+const REACT_ROUTER_INJECTED_FIBERS = new Set(["TanStackDevtools"]);
+
+const isReactRouterInjectedFiber = (fiber: RuntimeFiberSnapshot): boolean =>
+  fiber.name !== null && REACT_ROUTER_INJECTED_FIBERS.has(fiber.name);
 
 export const REACT_ROUTER_PROFILE: FrameworkProfile = {
   kind: "react-router",
   transparentRuntimeFibers: new Set(REACT_ROUTER_RUNTIME_WRAPPERS),
-  transparentStaticFibers: new Set(["Location"]),
-  isInjectedRuntimeFiber: neverInjected,
+  transparentRuntimeProviders: new Set(REACT_ROUTER_RUNTIME_PROVIDERS),
+  transparentStaticFibers: new Set(["Location", "DataRouterState", "FrameworkContext"]),
+  isInjectedRuntimeFiber: isReactRouterInjectedFiber,
   defaultAnchor: null,
 };
 

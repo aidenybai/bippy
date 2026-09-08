@@ -9,7 +9,19 @@ export const getDefaultExport = (module: object): unknown =>
     ? Reflect.get(module, "default")
     : module;
 
-/** The project's own installed copy of a package, loaded as the runtime would; `null` when it is not installed or fails to load. */
+const RESOLUTION_ERROR_CODES = new Set([
+  "MODULE_NOT_FOUND",
+  "ERR_MODULE_NOT_FOUND",
+  "ERR_PACKAGE_PATH_NOT_EXPORTED",
+]);
+
+const isResolutionError = (error: unknown): boolean =>
+  error instanceof Error &&
+  "code" in error &&
+  typeof error.code === "string" &&
+  RESOLUTION_ERROR_CODES.has(error.code);
+
+/** The project's own installed copy of a package, loaded as the runtime would; `null` when it is not installed. */
 export class InstalledModules {
   private readonly requireFromRoot: NodeJS.Require;
   private readonly modules = new Map<string, object | null>();
@@ -23,20 +35,25 @@ export class InstalledModules {
     const cacheKey = dependentSpecifier ? `${dependentSpecifier}\u0000${specifier}` : specifier;
     const cached = this.modules.get(cacheKey);
     if (cached !== undefined) return cached;
-    let module: object | null = null;
+    const module = this.requireInstalled(specifier, dependentSpecifier);
+    this.modules.set(cacheKey, module);
+    return module;
+  }
+
+  private requireInstalled(specifier: string, dependentSpecifier?: string): object | null {
+    let loaded: unknown;
     try {
       const require = dependentSpecifier
         ? createRequire(this.requireFromRoot.resolve(dependentSpecifier))
         : this.requireFromRoot;
-      const loaded: unknown = require(specifier);
-      if ((typeof loaded === "object" && loaded !== null) || typeof loaded === "function") {
-        module = loaded;
-      }
-    } catch {
-      module = null;
+      loaded = require(specifier);
+    } catch (error) {
+      if (isResolutionError(error)) return null;
+      throw error;
     }
-    this.modules.set(cacheKey, module);
-    return module;
+    return (typeof loaded === "object" && loaded !== null) || typeof loaded === "function"
+      ? loaded
+      : null;
   }
 }
 
