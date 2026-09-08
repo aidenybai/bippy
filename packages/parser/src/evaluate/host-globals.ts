@@ -24,8 +24,8 @@ const PRIMITIVE_INTERFACE_NAMES: Record<string, string> = {
   bigint: "BigInt",
 };
 
-const isOwnGlobal = (name: string, value: unknown): boolean =>
-  Object.hasOwn(globalThis, name) && Reflect.get(globalThis, name) === value;
+const isLanguageGlobal = (name: string, value: unknown): boolean =>
+  loadHostRealm("ecmascript").hasGlobal(name) && Reflect.get(globalThis, name) === value;
 
 /**
  * The canonical global path of a language object reached by another path, so
@@ -34,13 +34,13 @@ const isOwnGlobal = (name: string, value: unknown): boolean =>
  */
 const getCanonicalLanguageGlobal = (value: object): StaticValue | null => {
   const ownName = Reflect.get(value, "name");
-  if (typeof ownName === "string" && isOwnGlobal(ownName, value))
+  if (typeof ownName === "string" && isLanguageGlobal(ownName, value))
     return { kind: "global", name: ownName };
   const constructor = Reflect.get(value, "constructor");
   if (
     typeof constructor === "function" &&
     constructor.prototype === value &&
-    isOwnGlobal(constructor.name, constructor)
+    isLanguageGlobal(constructor.name, constructor)
   )
     return { kind: "global", name: `${constructor.name}.prototype` };
   return null;

@@ -1,0 +1,5 @@
+{
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "A next-i18next style HOC: the wrapper component is returned through hoistNonReactStatics(), so the page's own `getLayout` static survives wrapping while React's `defaultProps` stays with the wrapped component."
+}

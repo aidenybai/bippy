@@ -57,6 +57,7 @@ import {
   getBuiltinFunctionSource,
   getBuiltinPrototypeName,
   getPrototypeWitness,
+  isPrototypeOf,
 } from "./instance-of.js";
 import { callIndexedDbMethod, isIndexedDbName, type IndexedDbHost } from "./indexed-db.js";
 import {
@@ -469,6 +470,65 @@ const defineOwnProperties = (
       defineOwnProperty(interpreter, target, key, descriptor, context, location);
     }
   }
+};
+
+const INTRINSIC_PROTOTYPE_NAMES = new Set(["Object.prototype", "Function.prototype"]);
+
+/** `Object.getOwnPropertyNames(fn)`: the intrinsic names, then the names the analyzed code assigned. */
+const getFunctionOwnNames = (callable: StaticFunctionValue): string[] => {
+  const names = ["length", "name"];
+  if (isIntrinsicFunctionKey(callable, "prototype")) names.push("prototype");
+  for (const key of callable.properties.keys()) {
+    if (!names.includes(key) && !isSymbolPropertyKey(key)) names.push(key);
+  }
+  return names;
+};
+
+const getFunctionOwnPropertyDescriptor = (
+  interpreter: Interpreter,
+  callable: StaticFunctionValue,
+  key: string,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): StaticValue => {
+  if (!getFunctionOwnNames(callable).includes(key)) return UNDEFINED_VALUE;
+  const isIntrinsic = isIntrinsicFunctionKey(callable, key);
+  return objectFromRecord({
+    value: interpreter.getProperty(callable, key, context, location),
+    writable: primitiveValue(key === "prototype" || !isIntrinsic),
+    enumerable: primitiveValue(!isIntrinsic),
+    configurable: primitiveValue(key !== "prototype"),
+  });
+};
+
+const getOwnPropertyDescriptors = (
+  interpreter: Interpreter,
+  target: StaticValue,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): StaticValue => {
+  if (target.kind === "function") {
+    return objectValue(
+      getFunctionOwnNames(target).map((key) => ({
+        kind: "property",
+        key,
+        value: getFunctionOwnPropertyDescriptor(interpreter, target, key, context, location),
+      })),
+    );
+  }
+  const ownKeys = target.kind === "object" ? getKnownObjectKeys(target) : null;
+  if (target.kind !== "object" || !ownKeys) {
+    return unknownValue(`Object.getOwnPropertyDescriptors of ${describeValue(target)}`, location);
+  }
+  const descriptors: StaticObjectEntry[] = [];
+  for (const key of ownKeys) {
+    const descriptor = getOwnPropertyDescriptor(target, key);
+    if (!descriptor) {
+      return unknownValue(`Object.getOwnPropertyDescriptors of ${describeValue(target)}`, location);
+    }
+    descriptors.push({ kind: "property", key, value: descriptor });
+  }
+  return objectValue(descriptors);
 };
 
 /** Own enumerable string-keyed entries in `Object.keys` order; null when the shape is not fully known. */
@@ -914,6 +974,7 @@ const callGlobal = (
     case "Object.getPrototypeOf":
     case "Reflect.getPrototypeOf":
       if (first?.kind === "class") return getClassPrototype(first);
+      if (first?.kind === "function") return { kind: "global", name: "Function.prototype" };
       if (first?.kind === "object" && first.prototype) return first.prototype;
       if (first?.kind === "object" && first.hasNullPrototype) return NULL_VALUE;
       if (first?.kind === "object" && first.constructedBy)
@@ -924,6 +985,13 @@ const callGlobal = (
     case "Object.getOwnPropertyNames":
     case "Object.getOwnPropertySymbols":
     case "Reflect.ownKeys": {
+      if (first?.kind === "function") {
+        return listValue(
+          name === "Object.getOwnPropertySymbols"
+            ? []
+            : getFunctionOwnNames(first).map((key) => primitiveValue(key)),
+        );
+      }
       if (first?.kind !== "object" && first?.kind !== "list")
         return unknownValue(`${name} on a dynamic target`, location);
       const ownNames =
@@ -944,6 +1012,8 @@ const callGlobal = (
       const key = second ? getPropertyName(second) : null;
       if (first?.kind === "element" && key === "ref")
         return getElementRefDescriptor(first, location);
+      if (first?.kind === "function" && key !== null)
+        return getFunctionOwnPropertyDescriptor(interpreter, first, key, context, location);
       if (first?.kind !== "object" || key === null)
         return unknownValue(`${name} on a dynamic target`, location);
       return (
@@ -955,12 +1025,14 @@ const callGlobal = (
       if (!first) break;
       return mapValue(first, (prototype) => {
         const isNull = prototype.kind === "primitive" && prototype.value === null;
-        if (!isNull && prototype.kind !== "object")
+        const isIntrinsicPrototype =
+          prototype.kind === "global" && INTRINSIC_PROTOTYPE_NAMES.has(prototype.name);
+        if (!isNull && !isIntrinsicPrototype && prototype.kind !== "object")
           return unknownValue(`Object.create with ${describeValue(prototype)}`, location);
         const created: StaticObjectValue =
           prototype.kind === "object"
             ? { ...objectValue(), prototype }
-            : { ...objectValue(), hasNullPrototype: true };
+            : { ...objectValue(), hasNullPrototype: isNull };
         if (second?.kind === "object") {
           defineOwnProperties(interpreter, created, second, context, location);
         }
@@ -998,6 +1070,10 @@ const callGlobal = (
       defineOwnProperty(interpreter, first, String(second.value), descriptor, context, location);
       return first;
     }
+    case "Object.getOwnPropertyDescriptors":
+      return first
+        ? getOwnPropertyDescriptors(interpreter, first, context, location)
+        : unknownValue(`${name} without a target`, location);
     case "Object.defineProperties": {
       if (!first || second?.kind !== "object") {
         return first ?? unknownValue("Object.defineProperties on a dynamic target", location);
@@ -1746,6 +1822,10 @@ export const evaluateBuiltinCall = (
   if ((name === "hasOwnProperty" || name === "propertyIsEnumerable") && first !== undefined) {
     const ownProperty = hasOwnProperty(receiver, first, name);
     if (ownProperty) return ownProperty;
+  }
+  if (name === "isPrototypeOf" && first !== undefined) {
+    const isOnChain = isPrototypeOf(receiver, first);
+    if (isOnChain !== null) return primitiveValue(isOnChain);
   }
 
   if (receiver.kind === "global")

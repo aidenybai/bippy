@@ -16,7 +16,7 @@ import {
   getTypeScriptDeclarationName,
   type TypeScriptDeclaration,
 } from "../evaluate/typescript-declarations.js";
-import { getPatternNames } from "../parse/ast-walk.js";
+import { getPatternNames, getVariableDeclaration, unwrapExpression } from "../parse/ast-walk.js";
 import type {
   ExportEntry,
   ImportBinding,
@@ -227,8 +227,19 @@ const DECLARATION_STATEMENT_TYPES = new Set<Statement["type"]>([
   "EmptyStatement",
 ]);
 
+const CALL_LIKE_EXPRESSION_TYPES = new Set<Expression["type"]>(["CallExpression", "NewExpression"]);
+
+/** `const [Provider, useX] = createContext()` runs when the module does: the call may mutate state its siblings close over. */
+const isCallInitializedDeclaration = (statement: Statement): boolean =>
+  getVariableDeclaration(statement)?.declarations.some(
+    (declarator) =>
+      declarator.init !== null &&
+      CALL_LIKE_EXPRESSION_TYPES.has(unwrapExpression(declarator.init).type),
+  ) === true;
+
 const isSideEffectStatement = (statement: Statement): boolean =>
-  !DECLARATION_STATEMENT_TYPES.has(statement.type) && !isCommonJsExportStatement(statement);
+  isCallInitializedDeclaration(statement) ||
+  (!DECLARATION_STATEMENT_TYPES.has(statement.type) && !isCommonJsExportStatement(statement));
 
 const collectStatement = (
   statement: Statement,
@@ -731,6 +742,11 @@ const collectCommonJsExports = (
   for (const specifier of collector.reExportAll) exports.push({ kind: "re-export-all", specifier });
   return collector;
 };
+
+const USE_CLIENT_DIRECTIVE = "use client";
+
+export const isClientModule = (module: ModuleRecord): boolean =>
+  module.directives.includes(USE_CLIENT_DIRECTIVE);
 
 export const hasExportedName = (module: ModuleRecord, exportedName: string): boolean =>
   module.exports.some((entry) => "exportedName" in entry && entry.exportedName === exportedName);

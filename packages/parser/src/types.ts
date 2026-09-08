@@ -31,6 +31,17 @@ export interface ParsedSourceFile {
   errors: string[];
 }
 
+export interface TransformedSource {
+  sourceText: string;
+  lang: SourceLanguage;
+}
+
+/** A bundler loader the app applies to a non-JavaScript file extension, producing the module the bundler links in its place. */
+export interface SourceTransform {
+  extension: string;
+  transform: (filePath: string, sourceText: string) => TransformedSource | null;
+}
+
 export type DiagnosticSeverity = "info" | "warning" | "error";
 
 export interface Diagnostic {
@@ -111,7 +122,7 @@ export interface ModuleRecord {
   bindings: Map<string, TopLevelBinding>;
   /** Specifiers of static `import`/`export ... from` declarations, in source order. */
   dependencies: string[];
-  /** Top-level statements that run when the module is evaluated (`X.displayName = ...`, `registry.set(...)`). */
+  /** Top-level statements that run when the module is evaluated (`X.displayName = ...`, `registry.set(...)`, `const x = create()`). */
   sideEffectStatements: Statement[];
   /** Exports were collected from `exports.x = ` / `module.exports` assignments rather than ESM syntax. */
   isCommonJs: boolean;
@@ -136,9 +147,19 @@ export interface BuiltinModuleResolution {
   specifier: string;
 }
 
+/**
+ * Under RSC, what server code imports from a `"use client"` module is a
+ * reference to the export, rendered on the client, wherever the value itself
+ * was defined.
+ */
 export type ResolvedSymbol =
-  | { kind: "binding"; module: ModuleRecord; binding: TopLevelBinding }
-  | { kind: "expression"; module: ModuleRecord; expression: Expression }
+  | { kind: "binding"; module: ModuleRecord; binding: TopLevelBinding; isClientReference: boolean }
+  | {
+      kind: "expression";
+      module: ModuleRecord;
+      expression: Expression;
+      isClientReference: boolean;
+    }
   | { kind: "namespace"; module: ModuleRecord }
   | { kind: "external"; packageName: string; imported: ImportedName; specifier: string }
   | { kind: "unresolved"; reason: string };
@@ -156,6 +177,8 @@ export interface ComponentDefinition {
   /** Set when the component is a `bind` result; each `bind` call is a distinct component type. */
   boundArgs?: StaticValue[];
   boundThis?: StaticValue;
+  /** Reached by server code through a `"use client"` module's export. */
+  isClientReference: boolean;
 }
 
 export interface ClassMemberBase {
@@ -316,6 +339,14 @@ export interface ExternalValueProvider {
   (specifier: string, importedName: string): StaticValue | null;
 }
 
+export interface InstalledPackage {
+  name: string;
+  version: string;
+}
+
+/** What transpiles the app's `.ts`/`.tsx`/`.jsx` modules for the browser: esbuild renumbers a declaration whose name is already bound in an enclosing scope (`Foo` → `Foo2`); the others keep source names. */
+export type ModuleTranspiler = "esbuild" | "name-preserving";
+
 /** What a library model may learn about the analyzed project: which transforms shaped the runtime, and what the running page held. */
 export interface ProjectContext {
   /** Directory the analyzed app is served from (`process.cwd()` of its dev server); `null` when analyzing loose modules. */
@@ -323,6 +354,7 @@ export interface ProjectContext {
   hasDeclaredDependency: (packageName: string) => boolean;
   /** The installed version of a package as resolved from the root; `null` when it is not installed. */
   readPackageVersion: (packageName: string) => string | null;
+  transpiler: ModuleTranspiler;
   /** The text the dev server serves for a same-origin or root-relative URL from the project's static directory; `null` when it serves none. */
   readServedAsset: (url: string) => string | null;
   /** The captured TanStack Query cache entry for a query hash (`hashKey(queryKey)`), if the page held one. */
@@ -594,8 +626,8 @@ export interface StaticListValue {
   kind: "list";
   items: StaticValue[];
   allocation?: number;
-  /** Named properties an array carries besides its indices, like `index` on a match. */
-  properties?: ReadonlyMap<string, StaticValue>;
+  /** Named properties an array carries besides its indices, like `index` on a match or `t` on a `useTranslation()` result. */
+  properties?: Map<string, StaticValue>;
   isFrozen?: boolean;
 }
 
@@ -624,6 +656,7 @@ export interface StaticFunctionValue {
   properties: Map<string, StaticValue>;
   boundArgs?: StaticValue[];
   boundThis?: StaticValue;
+  isClientReference?: boolean;
 }
 
 export interface StaticClassValue {
@@ -888,6 +921,8 @@ export interface StaticRendererOptions {
   route?: string;
   /** Origin (`http://localhost:3000`) the dev server serves the page from; `location` reads it and same-origin asset URLs resolve to its static files. */
   origin?: string;
+  /** Defaults to what the root's Vite config implies (Vite ≤ 7 without an swc/oxc React plugin transpiles with esbuild), else `name-preserving`. */
+  transpiler?: ModuleTranspiler;
   /** What a running page was observed to hold; the render takes these as its runtime inputs. */
   observations?: RuntimeObservations;
   externalValues?: ExternalValueProvider;

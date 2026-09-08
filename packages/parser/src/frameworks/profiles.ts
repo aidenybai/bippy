@@ -93,6 +93,7 @@ export const NEXT_APP_PROFILE: FrameworkProfile = {
 
 const NEXT_PAGES_RUNTIME_WRAPPERS = [
   "Root",
+  "StrictMode",
   "AppContainer",
   "Container",
   "PathnameContextProviderAdapter",
@@ -100,6 +101,7 @@ const NEXT_PAGES_RUNTIME_WRAPPERS = [
   "HotReload",
   "ReactDevOverlay",
   "PagesDevOverlay",
+  "PagesDevOverlayBridge",
   "PagesDevOverlayErrorBoundary",
   "Fragment",
 ];
@@ -115,9 +117,13 @@ const NEXT_PAGES_RUNTIME_PROVIDERS = [
 ];
 
 // `next/dist/client/index.js` mounts a dummy `<Head callback>` (renders null,
-// times the head commit) and the route announcer portal next to `AppContainer`.
+// times the head commit) and the route announcer portal next to `AppContainer`;
+// `PagesDevOverlay` adds its font styles and overlay after the error boundary.
+const NEXT_PAGES_INJECTED_FIBERS = new Set(["FontStyles", "DevOverlay"]);
+
 const isNextPagesInjectedFiber = (fiber: RuntimeFiberSnapshot): boolean => {
-  if (fiber.tag !== "FunctionComponent") return false;
+  if (fiber.tag !== "FunctionComponent" || fiber.name === null) return false;
+  if (NEXT_PAGES_INJECTED_FIBERS.has(fiber.name)) return true;
   if (fiber.name === "Head") {
     return fiber.children.length === 0 && Object.keys(fiber.props).join() === "callback";
   }

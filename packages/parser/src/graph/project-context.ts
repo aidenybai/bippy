@@ -1,9 +1,10 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import type { ModuleResolver } from "./module-resolver.js";
 import { EMPTY_OBSERVATIONS } from "../observations.js";
 import { readPackageManifest } from "../package-manifest.js";
-import type { ProjectContext, RuntimeObservations } from "../types.js";
+import type { ModuleTranspiler, ProjectContext, RuntimeObservations } from "../types.js";
+import { readInstalledPackage } from "./installed-package.js";
+import type { ModuleResolver } from "./module-resolver.js";
 
 /** Where Next, Vite and CRA dev servers serve static files from, at the URL root. */
 const PUBLIC_DIRECTORY = "public";
@@ -33,17 +34,6 @@ const readDeclaredDependencies = (manifestPath: string): string[] => {
   });
 };
 
-/** The version of the package the project's own resolution reaches, as its manifest declares it. */
-export const readPackageVersion = (
-  resolver: ModuleResolver,
-  rootDirectory: string,
-  packageName: string,
-): string | null => {
-  const resolution = resolver.resolve(`${packageName}/package.json`, `${rootDirectory}/index.js`);
-  if (resolution.kind !== "external" || !resolution.filePath) return null;
-  return readPackageManifest(resolution.filePath).version ?? null;
-};
-
 /**
  * Build tooling (babel/swc plugins) is never imported and, being pulled in
  * transitively by the libraries it serves, is installed in projects that do not
@@ -55,6 +45,7 @@ export const createProjectContext = (
   resolver: ModuleResolver,
   observations: RuntimeObservations = EMPTY_OBSERVATIONS,
   origin: string | null = null,
+  transpiler: ModuleTranspiler = "name-preserving",
 ): ProjectContext => {
   const declared = new Set<string>();
   for (let directory = rootDirectory; ; directory = path.dirname(directory)) {
@@ -68,7 +59,9 @@ export const createProjectContext = (
   return {
     rootDirectory,
     hasDeclaredDependency: (packageName) => declared.has(packageName),
-    readPackageVersion: (packageName) => readPackageVersion(resolver, rootDirectory, packageName),
+    readPackageVersion: (packageName) =>
+      readInstalledPackage(resolver, rootDirectory, packageName)?.version ?? null,
+    transpiler,
     readServedAsset: (url) => readServedAsset(rootDirectory, origin, url),
     findQuery: (queryHash) => queries.get(queryHash) ?? null,
     findMutations: (mutationHash) =>

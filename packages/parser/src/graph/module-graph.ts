@@ -11,7 +11,7 @@ import type {
 import { isModeledLibraryExport, isModeledLibraryPackage } from "../libraries/index.js";
 import { readAssetModuleSource } from "./asset-modules.js";
 import { isCompilerHelperPackage } from "./helper-packages.js";
-import { createModuleRecord } from "./module-record.js";
+import { createModuleRecord, isClientModule } from "./module-record.js";
 import { ModuleResolver } from "./module-resolver.js";
 
 export interface ExportNameSet {
@@ -192,7 +192,7 @@ export class ModuleGraph {
     const target = this.getResolvedModule(resolution, specifier);
     if (isModuleRecord(target)) {
       if (imported.kind === "namespace") return { kind: "namespace", module: target };
-      return this.resolveExportWithVisited(target, describeImportedName(imported), visited);
+      return this.resolveExportFrom(target, describeImportedName(imported), fromModule, visited);
     }
     switch (target.kind) {
       case "external":
@@ -225,7 +225,19 @@ export class ModuleGraph {
         visited,
       );
     }
-    return { kind: "binding", module, binding };
+    return { kind: "binding", module, binding, isClientReference: false };
+  }
+
+  private resolveExportFrom(
+    target: ModuleRecord,
+    exportedName: string,
+    fromModule: ModuleRecord,
+    visited: Set<string>,
+  ): ResolvedSymbol {
+    const symbol = this.resolveExportWithVisited(target, exportedName, visited);
+    return isClientModule(target) && !isClientModule(fromModule)
+      ? toClientReferenceSymbol(symbol)
+      : symbol;
   }
 
   private resolveExportWithVisited(
@@ -247,7 +259,12 @@ export class ModuleGraph {
           break;
         case "expression":
           if (entry.exportedName === exportedName) {
-            return { kind: "expression", module, expression: entry.expression };
+            return {
+              kind: "expression",
+              module,
+              expression: entry.expression,
+              isClientReference: false,
+            };
           }
           break;
         case "re-export":
@@ -272,7 +289,7 @@ export class ModuleGraph {
           }
           continue;
         }
-        const resolved = this.resolveExportWithVisited(target, exportedName, visited);
+        const resolved = this.resolveExportFrom(target, exportedName, module, visited);
         if (resolved.kind !== "unresolved") return resolved;
       }
       if (externalSources.length === 1) return externalSources[0];
@@ -289,6 +306,11 @@ export class ModuleGraph {
 
 export const isModuleRecord = (value: ModuleRecord | ModuleResolution): value is ModuleRecord =>
   "bindings" in value;
+
+const toClientReferenceSymbol = (symbol: ResolvedSymbol): ResolvedSymbol =>
+  symbol.kind === "binding" || symbol.kind === "expression"
+    ? { ...symbol, isClientReference: true }
+    : symbol;
 
 const externalSymbol = (
   target: ExternalModuleResolution | BuiltinModuleResolution,

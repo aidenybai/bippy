@@ -94,7 +94,8 @@ export const getNativeInterfaceName = (value: object): string => {
   const prototype = Reflect.getPrototypeOf(value);
   const constructor: unknown =
     prototype === null ? undefined : Reflect.get(prototype, "constructor");
-  return typeof constructor === "function" ? constructor.name : "Object";
+  if (typeof constructor === "function" && constructor.name) return constructor.name;
+  return Object.prototype.toString.call(value).slice("[object ".length, -1);
 };
 
 const isIterable = (value: object): value is Iterable<unknown> =>

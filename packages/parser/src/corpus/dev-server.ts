@@ -38,6 +38,14 @@ const probeStatus = (url: string): Promise<number> =>
   });
 const KILL_GRACE_MS = 3_000;
 
+// The corpus CLI runs under bippy's pnpm, which advertises itself through
+// `npm_config_user_agent` and friends; tools inside a clone (prisma, nx) would
+// otherwise shell out to that package manager instead of the clone's own.
+const isPackageManagerEnvKey = (key: string): boolean => /^(npm|pnpm)_/i.test(key);
+
+const inheritedEnv = (): Record<string, string | undefined> =>
+  Object.fromEntries(Object.entries(process.env).filter(([key]) => !isPackageManagerEnvKey(key)));
+
 // Race timers must not keep the process alive once the child has exited.
 const deadline = <T>(ms: number, value: T): Promise<T> => sleep(ms, value, { ref: false });
 
@@ -54,7 +62,7 @@ const spawnShell = (
     stdio: ["ignore", "pipe", "pipe"],
     // Clones live under bippy's tree, whose `packageManager` field would otherwise make
     // corepack refuse the yarn/npm commands the corpus repositories expect.
-    env: { ...process.env, ...env, FORCE_COLOR: "0", CI: "1", COREPACK_ENABLE_STRICT: "0" },
+    env: { ...inheritedEnv(), ...env, FORCE_COLOR: "0", CI: "1", COREPACK_ENABLE_STRICT: "0" },
   });
   child.stdout?.pipe(log, { end: false });
   child.stderr?.pipe(log, { end: false });

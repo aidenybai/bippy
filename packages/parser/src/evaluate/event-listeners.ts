@@ -6,7 +6,13 @@ import { toNativeArguments } from "./native-values.js";
 import { HISTORY_TRAVERSAL_EVENTS } from "./session-history.js";
 import { UNDEFINED_VALUE } from "./values.js";
 
-/** Events only a user gesture dispatches; none fires before the runtime snapshot is captured. */
+/**
+ * Events only a user gesture dispatches; none fires before the runtime snapshot
+ * is captured. Pointer arrival events (`pointerover`, `pointerenter`,
+ * `pointermove` and their mouse twins) are not among them: once a page has
+ * loaded, the browser reports the resting pointer position to the element
+ * under it, so a listener registered by then runs before the snapshot.
+ */
 const USER_GESTURE_EVENTS = new Set([
   "keydown",
   "keyup",
@@ -17,17 +23,11 @@ const USER_GESTURE_EVENTS = new Set([
   "contextmenu",
   "mousedown",
   "mouseup",
-  "mousemove",
-  "mouseenter",
   "mouseleave",
-  "mouseover",
   "mouseout",
   "pointerdown",
   "pointerup",
-  "pointermove",
-  "pointerenter",
   "pointerleave",
-  "pointerover",
   "pointerout",
   "pointercancel",
   "touchstart",

@@ -8,6 +8,7 @@ import type {
   ObjectPropertyKind,
   Statement,
   StringLiteral,
+  VariableDeclaration,
 } from "oxc-parser";
 import type { FunctionLikeNode } from "../types.js";
 
@@ -74,12 +75,24 @@ export const getPatternNames = (pattern: BindingPattern): string[] => {
   }
 };
 
+/** The declaration of `const x = ...` or `export const x = ...`; null for any other statement. */
+export const getVariableDeclaration = (statement: Statement): VariableDeclaration | null => {
+  if (statement.type === "VariableDeclaration") return statement;
+  return statement.type === "ExportNamedDeclaration" &&
+    statement.declaration?.type === "VariableDeclaration"
+    ? statement.declaration
+    : null;
+};
+
+export const getDeclaredNames = (declaration: VariableDeclaration): string[] =>
+  declaration.declarations.flatMap((declarator) => getPatternNames(declarator.id));
+
 /** Names `var` declares anywhere in a function body (nested functions excluded); they belong to the function scope. */
 export const getHoistedVarNames = (statements: Statement[]): string[] => {
   const names: string[] = [];
   const visit = (node: Node): void => {
     if (node.type === "VariableDeclaration" && node.kind === "var") {
-      for (const declarator of node.declarations) names.push(...getPatternNames(declarator.id));
+      names.push(...getDeclaredNames(node));
     }
     if (!isFunctionLikeNode(node)) forEachChildNode(node, visit);
   };

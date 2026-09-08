@@ -8,10 +8,15 @@ import {
   FRAMER_MOTION_PACKAGES,
   framerMotionValue,
 } from "./framer-motion.js";
+import {
+  HOIST_NON_REACT_STATICS_PACKAGES,
+  hoistNonReactStaticsValue,
+} from "./hoist-non-react-statics.js";
 import { JED_PACKAGES, jedValue } from "./jed.js";
 import { KEA_PACKAGES, keaValue } from "./kea.js";
 import { LINGUI_PACKAGES, linguiValue } from "./lingui.js";
 import { LODASH_MODELED_EXPORTS, LODASH_PACKAGES, lodashValue } from "./lodash.js";
+import { MOBX_PACKAGES, mobxValue } from "./mobx.js";
 import { NODE_FS_PACKAGES, nodeFsValue } from "./node-fs.js";
 import { REACT_HOOK_FORM_PACKAGES, reactHookFormValue } from "./react-hook-form.js";
 import {
@@ -53,6 +58,7 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     getValue: framerMotionValue,
     modeledExports: FRAMER_MOTION_MODELED_EXPORTS,
   },
+  { packages: HOIST_NON_REACT_STATICS_PACKAGES, getValue: hoistNonReactStaticsValue },
   { packages: JED_PACKAGES, getValue: jedValue },
   { packages: KEA_PACKAGES, getValue: keaValue },
   { packages: LINGUI_PACKAGES, getValue: linguiValue },
@@ -61,6 +67,7 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     getValue: lodashValue,
     modeledExports: LODASH_MODELED_EXPORTS,
   },
+  { packages: MOBX_PACKAGES, getValue: mobxValue },
   { packages: NODE_FS_PACKAGES, getValue: nodeFsValue },
   { packages: REACT_HOOK_FORM_PACKAGES, getValue: reactHookFormValue },
   {
