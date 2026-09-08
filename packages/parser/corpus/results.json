@@ -3227,6 +3227,523 @@
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T11:36:02.368Z",
       "failure": null
+    },
+    {
+      "id": "2048-in-react",
+      "revision": "4c27093929b4293c2c873b3ed75b18671b5be6cb",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-08T11:55:17.295Z",
+      "durationMs": 205,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 79,
+        "commits": 6,
+        "pageErrors": [
+          "Warning: Did not expect server HTML to contain a <%s> in <%s>.%s div div \n    at div\n    at div\n    at div\n    at MobileSwiper (webpack-internal:///./components/mobile-swiper.tsx:13:11)\n    at Board (webpack-internal:///./components/board.tsx:25:105)\n    at main\n    at div\n    at Home\n    at GameProvider (webpack-internal:///./context/game-context.tsx:31:11)\n    at App (webpack-internal:///./pages/_app.tsx:14:11)\n    at PathnameContextProviderAdapter (webpack-internal:///./node_modules/next/dist/shared/lib/router/adapters.js:81:11)\n    at ErrorBoundary (webpack-internal:///./node_modules/next/dist/client/components/react-dev-overlay/pages/ErrorBoundary.js:41:9)\n    at ReactDevOverlay (webpack-internal:///./node_modules/next/dist/client/components/react-dev-overlay/pages/ReactDevOverlay.js:33:11)\n    at Container (webpack-internal:///./node_modules/next/dist/client/index.js:81:1)\n    at AppContainer (webpack-internal:///./node_modules/next/dist/client/index.js:189:11)\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:413:11)",
+          "Warning: An error occurred during hydration. The server HTML was replaced with client content in <%s>. div \nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
+          "There was an error while hydrating. Because the error happened outside of a Suspense boundary, the entire root will switch to client rendering."
+        ],
+        "title": "Play 2048"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 62,
+          "textCount": 5,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 2,
+          "modulesLoaded": 13
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 54,
+        "matchedText": 5,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "exact",
+        "runtimeFibers": 59,
+        "staticFibers": 59,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 61,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T07:23:04.134Z",
+      "failure": null
+    },
+    {
+      "id": "blocknote",
+      "revision": "c255558b2d4f2be6453c67df81bb702a1a586909",
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T11:15:37.984Z",
+      "durationMs": 689,
+      "runtime": {
+        "reactVersion": "19.2.5",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 345,
+        "commits": 10,
+        "pageErrors": [
+          "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)",
+          "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)",
+          "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)"
+        ],
+        "title": "BlockNote Playground"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 365,
+          "textCount": 0,
+          "branchCount": 6,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1033
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 335,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 4,
+        "branchDeviations": [
+          {
+            "path": "root > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Root> [FunctionComponent] > <@mantine/core/MantineProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <@mantine/core/MantineThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <@mantine/core/AppShell> [FunctionComponent] > <ContextProvider> [ContextProvider] > <@mantine/core/Box> [FunctionComponent] > <div> [HostComponent] > <@mantine/core/AppShellNavbar> [FunctionComponent] > <@mantine/core/Box> [FunctionComponent] > <nav> [HostComponent] > <@mantine/core/AppShellSection> [FunctionComponent] > <@mantine/core/Box> [FunctionComponent] > <@mantine/core/ScrollArea> [FunctionComponent] > <@mantine/core/ScrollAreaRoot> [FunctionComponent] > <ContextProvider> [ContextProvider] > <@mantine/core/Box> [FunctionComponent] > <div> [HostComponent] > <@mantine/core/ScrollAreaScrollbar> [FunctionComponent] > <@mantine/core/ScrollAreaScrollbarHover> [FunctionComponent] > <@mantine/core/ScrollAreaScrollbarAuto> [FunctionComponent]",
+            "reason": "if (branch(false | unknown))",
+            "preferredIndex": 1,
+            "chosenIndex": 0,
+            "divergence": {
+              "path": "root > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Root> [FunctionComponent] > <@mantine/core/MantineProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <@mantine/core/MantineThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <@mantine/core/AppShell> [FunctionComponent] > <ContextProvider> [ContextProvider] > <@mantine/core/Box> [FunctionComponent] > <div> [HostComponent] > <@mantine/core/AppShellNavbar> [FunctionComponent] > <@mantine/core/Box> [FunctionComponent] > <nav> [HostComponent] > <@mantine/core/AppShellSection> [FunctionComponent] > <@mantine/core/Box> [FunctionComponent] > <@mantine/core/ScrollArea> [FunctionComponent] > <@mantine/core/ScrollAreaRoot> [FunctionComponent] > <ContextProvider> [ContextProvider] > <@mantine/core/Box> [FunctionComponent] > <div> [HostComponent] > <@mantine/core/ScrollAreaScrollbar> [FunctionComponent] > <@mantine/core/ScrollAreaScrollbarHover> [FunctionComponent] > <@mantine/core/ScrollAreaScrollbarAuto> [FunctionComponent][0]",
+              "expected": "<end of children>",
+              "actual": "<@mantine/core/ScrollAreaScrollbarVisible> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Root> [FunctionComponent] > <@mantine/core/MantineProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <@mantine/core/MantineThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <@mantine/core/AppShell> [FunctionComponent] > <ContextProvider> [ContextProvider] > <@mantine/core/Box> [FunctionComponent] > <div> [HostComponent] > <@mantine/core/AppShellNavbar> [FunctionComponent] > <@mantine/core/Box> [FunctionComponent] > <nav> [HostComponent] > <@mantine/core/AppShellSection> [FunctionComponent] > <@mantine/core/Box> [FunctionComponent] > <@mantine/core/ScrollArea> [FunctionComponent] > <@mantine/core/ScrollAreaRoot> [FunctionComponent] > <ContextProvider> [ContextProvider] > <@mantine/core/Box> [FunctionComponent] > <div> [HostComponent] > <@mantine/core/ScrollAreaScrollbar> [FunctionComponent] > <@mantine/core/ScrollAreaScrollbarHover> [FunctionComponent] > <@mantine/core/ScrollAreaScrollbarAuto> [FunctionComponent] > <@mantine/core/ScrollAreaScrollbarVisible> [FunctionComponent] > <@mantine/core/ScrollAreaScrollbarY> [FunctionComponent] > <Scrollbar> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <@mantine/core/ScrollAreaThumb> [FunctionComponent]",
+            "reason": "if (branch(true | false | <boolean>))",
+            "preferredIndex": 1,
+            "chosenIndex": 0,
+            "divergence": {
+              "path": "root > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Root> [FunctionComponent] > <@mantine/core/MantineProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <@mantine/core/MantineThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <@mantine/core/AppShell> [FunctionComponent] > <ContextProvider> [ContextProvider] > <@mantine/core/Box> [FunctionComponent] > <div> [HostComponent] > <@mantine/core/AppShellNavbar> [FunctionComponent] > <@mantine/core/Box> [FunctionComponent] > <nav> [HostComponent] > <@mantine/core/AppShellSection> [FunctionComponent] > <@mantine/core/Box> [FunctionComponent] > <@mantine/core/ScrollArea> [FunctionComponent] > <@mantine/core/ScrollAreaRoot> [FunctionComponent] > <ContextProvider> [ContextProvider] > <@mantine/core/Box> [FunctionComponent] > <div> [HostComponent] > <@mantine/core/ScrollAreaScrollbar> [FunctionComponent] > <@mantine/core/ScrollAreaScrollbarHover> [FunctionComponent] > <@mantine/core/ScrollAreaScrollbarAuto> [FunctionComponent] > <@mantine/core/ScrollAreaScrollbarVisible> [FunctionComponent] > <@mantine/core/ScrollAreaScrollbarY> [FunctionComponent] > <Scrollbar> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <@mantine/core/ScrollAreaThumb> [FunctionComponent][0]",
+              "expected": "<end of children>",
+              "actual": "<@mantine/core/ScrollAreaThumb> [FunctionComponent]"
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 335,
+        "staticFibers": 345,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 339,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T10:26:50.269Z",
+      "failure": null
+    },
+    {
+      "id": "draw",
+      "revision": "2d6c73c381473034b83440c66a65184084ad0f5c",
+      "framework": "spa",
+      "capturedAt": "2026-09-08T11:53:11.816Z",
+      "durationMs": 438,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 69,
+        "commits": 5,
+        "pageErrors": [
+          "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+          "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+          "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+        ],
+        "title": "Draw - The Digital Drawing Tool"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 71,
+          "textCount": 4,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1716
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 64,
+        "matchedText": 4,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "exact",
+        "runtimeFibers": 68,
+        "staticFibers": 68,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 68,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T07:22:48.985Z",
+      "failure": null
+    },
+    {
+      "id": "excalidraw-clone",
+      "revision": "c5d7b14929b18a9a5cf57dd9fae5ef2ce2a021e7",
+      "framework": "spa",
+      "capturedAt": "2026-09-08T12:04:38.683Z",
+      "durationMs": 902,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 146,
+        "commits": 3,
+        "pageErrors": [],
+        "title": "NinjaSketch"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 146,
+          "textCount": 7,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 452
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 138,
+        "matchedText": 7,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "exact",
+        "runtimeFibers": 145,
+        "staticFibers": 145,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 145,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T07:22:41.646Z",
+      "failure": null
+    },
+    {
+      "id": "mdx-editor",
+      "revision": "869f769bbe289b44ea5620f4491e90f37e3d1073",
+      "framework": "spa",
+      "capturedAt": "2026-09-08T11:15:39.653Z",
+      "durationMs": 1904,
+      "runtime": {
+        "reactVersion": "19.2.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 42,
+        "commits": 6,
+        "pageErrors": [],
+        "title": "Bare - Basics | Ladle"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 32,
+          "textCount": 0,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 220
+        },
+        "diagnostics": [
+          {
+            "code": "max-call-depth",
+            "count": 24
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 26,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 26,
+        "staticFibers": 28,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 27,
+        "budgetExhausted": false
+      },
+      "anchor": "Bare",
+      "note": "runtime replayed from 2026-09-08T10:26:17.366Z",
+      "failure": null
+    },
+    {
+      "id": "pixel-art-react",
+      "revision": "73b57b6b2305146b5a9f94ec9786ea701749c356",
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T13:48:21.026Z",
+      "durationMs": 5153,
+      "runtime": {
+        "reactVersion": "16.14.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 1092,
+        "commits": 2,
+        "pageErrors": [],
+        "title": ""
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 291,
+          "textCount": 5,
+          "branchCount": 8,
+          "repeatCount": 1,
+          "opaqueCount": 5,
+          "unknownCount": 15,
+          "modulesLoaded": 194
+        },
+        "diagnostics": [
+          {
+            "code": "budget-exhausted",
+            "count": 65
+          },
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 0,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "mismatch",
+        "runtimeFibers": 1088,
+        "staticFibers": 229,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": {
+          "path": "root > <Root> [FunctionComponent] > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <App> [ClassComponent] > <div> [HostComponent] > <Connect(Modal)> [SimpleMemoComponent] > <ReactRedux> [ContextProvider] > <Modal> [ClassComponent] > <Modal> [ClassComponent] > <Portal> [HostPortal] > <ModalPortal> [ClassComponent][0]",
+          "expected": "<div> [HostComponent]",
+          "actual": "<end of children>"
+        },
+        "stepsUsed": 214,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T07:56:39.698Z",
+      "failure": null
+    },
+    {
+      "id": "plate-playground",
+      "revision": "c59bd401b13011e418e75256a08fe7cafbfc177b",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T11:15:42.691Z",
+      "durationMs": 889,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 2,
+        "fibers": 8518,
+        "commits": 15,
+        "pageErrors": [],
+        "title": "Create Next App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 40,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 3,
+          "unknownCount": 0,
+          "modulesLoaded": 1974
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 32,
+        "matchedText": 0,
+        "opaqueSubtrees": 3,
+        "opaqueSkippedFibers": 7379,
+        "slotsMatched": 2,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 7411,
+        "staticFibers": 35,
+        "coverage": 1,
+        "strictCoverage": 0.004317905815679396,
+        "divergence": null,
+        "stepsUsed": 51,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T10:26:40.324Z",
+      "failure": null
+    },
+    {
+      "id": "word-master",
+      "revision": "5790198fd926d19d716a57cc59ed0359057733c9",
+      "framework": "spa",
+      "capturedAt": "2026-09-08T11:55:18.566Z",
+      "durationMs": 251,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 166,
+        "commits": 3,
+        "pageErrors": [],
+        "title": "Word Master"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 166,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 64
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 165,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "exact",
+        "runtimeFibers": 165,
+        "staticFibers": 165,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 165,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T07:18:28.673Z",
+      "failure": null
     }
   ]
 }

@@ -91,6 +91,9 @@ export const NEXT_APP_PROFILE: FrameworkProfile = {
   defaultAnchor: "body",
 };
 
+// Names from `next/dist/client/index.js` (pages router): `Root` wraps the tree
+// in `StrictMode` when `reactStrictMode` is on, and `AppContainer` sits below
+// a `Head` commit callback that renders null.
 const NEXT_PAGES_RUNTIME_WRAPPERS = [
   "Root",
   "StrictMode",

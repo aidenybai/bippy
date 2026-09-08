@@ -1980,6 +1980,16 @@ export const evaluateBuiltinCall = (
       }
       case "toReversed":
         return listValue([...receiver.items].reverse());
+      case "values":
+        return receiver;
+      case "keys":
+        if (!hasDefiniteItems(receiver)) break;
+        return listValue(receiver.items.map((_item, index) => primitiveValue(index)));
+      case "entries":
+        if (!hasDefiniteItems(receiver)) break;
+        return listValue(
+          receiver.items.map((item, index) => listValue([primitiveValue(index), item])),
+        );
       case "sort":
       case "toSorted":
         return receiver;

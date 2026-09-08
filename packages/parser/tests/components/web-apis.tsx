@@ -82,6 +82,21 @@ const SizedArrays = () => {
   );
 };
 
+const countMatches = (selector: string): number => {
+  try {
+    return document.querySelectorAll(selector).length;
+  } catch {
+    return -1;
+  }
+};
+
+const DomQueries = () => (
+  <ul data-matches={countMatches("<button><svg /></button>")}>
+    <li>{countMatches("main") >= 0 ? "queried" : "failed"}</li>
+    <li>{typeof document.querySelector("body > *")}</li>
+  </ul>
+);
+
 export default function WebApis() {
   return (
     <main>
@@ -89,6 +104,7 @@ export default function WebApis() {
       <SearchParams />
       <ShapedStrings />
       <SizedArrays />
+      <DomQueries />
     </main>
   );
 }

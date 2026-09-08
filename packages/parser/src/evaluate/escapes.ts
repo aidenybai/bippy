@@ -82,50 +82,64 @@ const MUTATING_METHODS = new Set([
   "copyWithin",
 ]);
 
-const getMutatedObjectName = (node: Node): string | null => {
+/** An in-place mutation of the object bound to `name`; `key` is the written member, null when the whole object may change. */
+interface MutatedMember {
+  name: string;
+  key: string | null;
+}
+
+/** Members mutated per identifier; a null set means the whole object may change. */
+export type MutatedIdentifiers = Map<string, Set<string> | null>;
+
+const getWrittenMember = (target: Node): MutatedMember | null => {
+  if (target.type !== "MemberExpression" || target.object.type !== "Identifier") return null;
+  const key =
+    !target.computed && target.property.type === "Identifier" ? target.property.name : null;
+  return { name: target.object.name, key };
+};
+
+const getMutatedMember = (node: Node): MutatedMember | null => {
   switch (node.type) {
     case "CallExpression": {
       const callee = node.callee;
       if (callee.type !== "MemberExpression" || callee.object.type !== "Identifier") return null;
       const method = callee.computed ? null : callee.property;
       return method?.type === "Identifier" && MUTATING_METHODS.has(method.name)
-        ? callee.object.name
+        ? { name: callee.object.name, key: null }
         : null;
     }
     case "AssignmentExpression":
-    case "UpdateExpression": {
-      const target = node.type === "AssignmentExpression" ? node.left : node.argument;
-      return target.type === "MemberExpression" && target.object.type === "Identifier"
-        ? target.object.name
-        : null;
-    }
+      return getWrittenMember(node.left);
+    case "UpdateExpression":
+      return getWrittenMember(node.argument);
     case "UnaryExpression":
-      return node.operator === "delete" &&
-        node.argument.type === "MemberExpression" &&
-        node.argument.object.type === "Identifier"
-        ? node.argument.object.name
-        : null;
+      return node.operator === "delete" ? getWrittenMember(node.argument) : null;
     default:
       return null;
   }
 };
 
-const collectMutatedIdentifiers = (node: Node, names: Set<string>): void => {
-  const name = getMutatedObjectName(node);
-  if (name !== null) names.add(name);
-  forEachChildNode(node, (child) => collectMutatedIdentifiers(child, names));
+const collectMutatedIdentifiers = (node: Node, mutated: MutatedIdentifiers): void => {
+  const member = getMutatedMember(node);
+  if (member !== null) {
+    const keys = mutated.get(member.name);
+    if (member.key === null || keys === null) mutated.set(member.name, null);
+    else if (keys === undefined) mutated.set(member.name, new Set([member.key]));
+    else keys.add(member.key);
+  }
+  forEachChildNode(node, (child) => collectMutatedIdentifiers(child, mutated));
 };
 
-const mutatedIdentifiersCache = new WeakMap<FunctionLikeNode, Set<string>>();
+const mutatedIdentifiersCache = new WeakMap<FunctionLikeNode, MutatedIdentifiers>();
 
 /** Identifiers whose object a function (or a function nested in it) mutates in place: `cache.set(...)`, `state.count++`. */
-export const getMutatedIdentifiers = (functionNode: FunctionLikeNode): Set<string> => {
+export const getMutatedIdentifiers = (functionNode: FunctionLikeNode): MutatedIdentifiers => {
   const cached = mutatedIdentifiersCache.get(functionNode);
   if (cached) return cached;
-  const names = new Set<string>();
-  collectMutatedIdentifiers(functionNode, names);
-  mutatedIdentifiersCache.set(functionNode, names);
-  return names;
+  const mutated: MutatedIdentifiers = new Map();
+  collectMutatedIdentifiers(functionNode, mutated);
+  mutatedIdentifiersCache.set(functionNode, mutated);
+  return mutated;
 };
 
 /**

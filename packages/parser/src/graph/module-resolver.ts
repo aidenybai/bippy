@@ -61,6 +61,16 @@ export const getPackageNameFromFilePath = (filePath: string): string | null => {
   return getPackageNameFromSpecifier(remainder);
 };
 
+/** `<...>/node_modules/<package>` for a file inside an installed package. */
+export const getPackageDirectoryFromFilePath = (filePath: string): string | null => {
+  const posixPath = filePath.replaceAll("\\", "/");
+  const index = posixPath.lastIndexOf(NODE_MODULES_SEGMENT);
+  const packageName = getPackageNameFromFilePath(filePath);
+  return packageName === null
+    ? null
+    : posixPath.slice(0, index + NODE_MODULES_SEGMENT.length + packageName.length);
+};
+
 export const isInsideNodeModules = (filePath: string): boolean =>
   filePath.replaceAll("\\", "/").includes(NODE_MODULES_SEGMENT);
 

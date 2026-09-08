@@ -10,9 +10,13 @@ export type ComparisonStatus = "exact" | "partial" | "mismatch" | "unresolved" |
 
 // esbuild lowers `class X { static … }` to `var _a; _a = class {…}`, so pre-bundled
 // library components can surface as `_a`, `_a2`, … with no identity to compare.
+// A class body that refers to its own name is lowered to `var X = class _X {…}`.
 const BUNDLER_PLACEHOLDER_NAME = /^_[a-z]\d*$/;
 
 const isBundlerPlaceholderName = (name: string): boolean => BUNDLER_PLACEHOLDER_NAME.test(name);
+
+const isBundlerClassName = (name: string, expected: string): boolean =>
+  isBundlerPlaceholderName(name) || name === `_${expected}`;
 
 // A binding that collides with another in the bundled scope is renamed with a
 // counter: `Toaster2` by esbuild (Vite dev pre-bundling), `Toaster$1` by rollup.
@@ -505,8 +509,11 @@ class Matcher {
     )
       return false;
     if (pattern.name === null || actual.name === null || pattern.name === actual.name) return true;
-    if (isBundlerDedupedName(pattern.name, actual.name)) return true;
-    return isClassTag(actual.tag) && isBundlerPlaceholderName(actual.name);
+    if (isHostTag(actual.tag)) return false;
+    return (
+      isBundlerDedupedName(pattern.name, actual.name) ||
+      (isClassTag(actual.tag) && isBundlerClassName(actual.name, pattern.name))
+    );
   }
 
   // An opaque component's runtime identity is whatever non-host fiber sits in its

@@ -1,6 +1,6 @@
 import { getObjectProperty, objectValue, primitiveValue } from "../evaluate/values.js";
 import { element, nativeFunction, passthroughStub, stubValue } from "../frameworks/stubs.js";
-import { toElementType } from "../react/element-type.js";
+import { getStubDisplayName, toElementType } from "../react/element-type.js";
 import type {
   ExternalValueProvider,
   StaticElementType,
@@ -71,7 +71,7 @@ const getComponentDisplayName = (
     case "external":
       return type.displayName;
     case "stub":
-      return type.stub.displayName ?? "unknown";
+      return getStubDisplayName(type) ?? "unknown";
     default:
       return "unknown";
   }

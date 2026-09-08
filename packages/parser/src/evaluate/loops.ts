@@ -160,11 +160,10 @@ const unrollConditional = (
     }
   }
   const test = statement.test;
-  if (!test) return null;
   const outcomes: StatementOutcome[] = [];
   let skipFirstTest = statement.type === "DoWhileStatement";
   for (let iteration = 0; iteration < MAX_UNROLLED_ITERATIONS; iteration++) {
-    if (!skipFirstTest) {
+    if (!skipFirstTest && test) {
       const truthiness = getTruthiness(interpreter.evaluateExpression(test, loopContext));
       if (truthiness === null)
         return outcomes.length > 0 || iteration > 0 ? { kind: "partial", outcomes } : null;

@@ -13,6 +13,7 @@ import {
   unknownValue,
 } from "../evaluate/values.js";
 import { nativeFunction } from "../frameworks/stubs.js";
+import { subscribeToExternalStore } from "./use-sync-external-store.js";
 import type {
   ExternalValueProvider,
   StaticObjectEntry,
@@ -228,10 +229,31 @@ const readStoreSnapshot = (store: StaticValue, tools: StubRenderTools): StaticVa
     : unknownValue("snapshot of a store the analysis did not create");
 };
 
+const subscribeToStore = (store: StaticObjectValue): StaticValue =>
+  nativeFunction("subscribe", ([listener], tools) => {
+    const subscription = tools.call(getObjectProperty(store, "subscribe"), [
+      listener ?? UNDEFINED_VALUE,
+    ]);
+    return subscription.kind === "object"
+      ? getObjectProperty(subscription, "unsubscribe")
+      : subscription;
+  });
+
 const useStore = nativeFunction("useStore", ([store, selector], tools) => {
   if (store === undefined) return UNDEFINED_VALUE;
+  const selectorOrNone = isCallable(selector) ? selector : undefined;
+  if (store.kind === "object" && isCallable(getObjectProperty(store, "subscribe"))) {
+    return subscribeToExternalStore(
+      subscribeToStore(store),
+      nativeFunction("getSnapshot", (_args, snapshotTools) =>
+        readStoreSnapshot(store, snapshotTools),
+      ),
+      selectorOrNone,
+      tools,
+    );
+  }
   const snapshot = mapValue(store, (alternative) => readStoreSnapshot(alternative, tools));
-  return isCallable(selector) ? tools.call(selector, [snapshot]) : snapshot;
+  return selectorOrNone ? tools.call(selectorOrNone, [snapshot]) : snapshot;
 });
 
 const booleanValue = (value: boolean | null, reason: string): StaticValue =>
@@ -267,6 +289,7 @@ export const tanstackStoreValue: ExternalValueProvider = (specifier, importedNam
         return UNDEFINED_VALUE;
       });
     case "useStore":
+    case "useSelector":
       return specifier === "@tanstack/react-store" ? useStore : null;
     case "shallow":
       return specifier === "@tanstack/react-store" ? shallow : null;

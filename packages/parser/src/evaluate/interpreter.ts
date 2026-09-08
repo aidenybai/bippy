@@ -63,7 +63,7 @@ import {
   getReactElementSymbolKey,
   REACT_ELEMENT_SYMBOL_KEYS,
 } from "../react/element-shape.js";
-import { toClientReference, toElementType } from "../react/element-type.js";
+import { getStubDisplayName, toClientReference, toElementType } from "../react/element-type.js";
 import {
   getExternalMember,
   isReactLikePackage,
@@ -78,6 +78,7 @@ import type {
   Diagnostic,
   ExternalValueProvider,
   FunctionLikeNode,
+  ImportBinding,
   CapturedExportReference,
   CapturedPageState,
   CapturedValue,
@@ -176,7 +177,11 @@ import { NO_PROVIDERS, withOutcomeHandler, withScope, withoutSuspension } from "
 import { decodeJsxEntities } from "./jsx-entities.js";
 import { cleanJsxText } from "./jsx-text.js";
 import { describeMacroJsxChildren, getStubExpandJsx } from "./macro-jsx.js";
-import { forEachEscapedCallable, getMutatedIdentifiers } from "./escapes.js";
+import {
+  forEachEscapedCallable,
+  getMutatedIdentifiers,
+  type MutatedIdentifiers,
+} from "./escapes.js";
 import {
   type AsyncCall,
   awaitedValue,
@@ -312,6 +317,7 @@ const DEFAULT_MAX_STEPS = 2_000_000;
 export const STYLED_JSX_SPECIFIER = "styled-jsx/style";
 
 const MAX_INTERVAL_TICKS = 1_000;
+const MAX_GROWN_LIST_LENGTH = 1_000;
 const USE_STRICT_DIRECTIVE = "use strict";
 const FS_URL_PREFIX = "/@fs/";
 const SERVER_HOST_PLATFORM: HostPlatform = "node";
@@ -504,9 +510,29 @@ const mayBeUnknown = (value: StaticValue): boolean =>
 const describeEscapedMutation = (name: string): string =>
   `"${name}" is mutated by code the analysis did not run`;
 
-const markExternallyMutable = (value: StaticValue, reason: string): void => {
+/** Escaped code writes `keys` of the object, or (null) anything on it: those reads are no longer decided by the source. */
+const markExternallyMutable = (
+  value: StaticValue,
+  reason: string,
+  keys: ReadonlySet<string> | null,
+): void => {
   if (value.kind !== "object" || markCollectionExternallyMutable(value)) return;
-  value.entries.push({ kind: "spread", value: unknownValue(reason) });
+  if (keys === null) {
+    value.entries.push({ kind: "spread", value: unknownValue(reason) });
+    return;
+  }
+  for (const key of keys) value.entries.push({ kind: "property", key, value: unknownValue(reason) });
+};
+
+const mergeMutatedKeys = (
+  mutated: MutatedIdentifiers,
+  name: string,
+  keys: ReadonlySet<string> | null,
+): void => {
+  const existing = mutated.get(name);
+  if (keys === null || existing === null) mutated.set(name, null);
+  else if (existing === undefined) mutated.set(name, new Set(keys));
+  else for (const key of keys) existing.add(key);
 };
 
 export interface CallOptions {
@@ -551,7 +577,7 @@ export class Interpreter {
   private readonly moduleValues = new Map<string, ModuleValues>();
   private readonly initializedModules = new Set<string>();
   /** Module bindings mutated by closures that escaped before the binding was evaluated. */
-  private readonly escapedMutations = new Map<string, Set<string>>();
+  private readonly escapedMutations = new Map<string, MutatedIdentifiers>();
   private readonly exportExpressionValues = new WeakMap<
     Expression,
     StaticValue | typeof IN_PROGRESS
@@ -745,8 +771,9 @@ export class Interpreter {
     );
     values.set(name, value);
     this.journalLazyBindingValue(value);
-    if (this.escapedMutations.get(module.filePath)?.has(name)) {
-      markExternallyMutable(value, describeEscapedMutation(name));
+    const escapedKeys = this.escapedMutations.get(module.filePath)?.get(name);
+    if (escapedKeys !== undefined) {
+      markExternallyMutable(value, describeEscapedMutation(name), escapedKeys);
     }
     return value;
   }
@@ -931,8 +958,9 @@ export class Interpreter {
         if (target.isFrozen) return target;
         const index = Number(propertyName);
         if (Number.isInteger(index) && index >= 0) {
-          if (index < target.items.length) {
+          if (index < MAX_GROWN_LIST_LENGTH) {
             this.recordHeapMutation(target);
+            while (target.items.length < index) target.items.push(UNDEFINED_VALUE);
             target.items[index] = value;
           }
           return target;
@@ -945,6 +973,7 @@ export class Interpreter {
       }
       case "function":
       case "class":
+        this.changeCount++;
         target.properties.set(propertyName, value);
         return target;
       case "global":
@@ -1059,10 +1088,7 @@ export class Interpreter {
       case "typescript":
         return evaluateTypeScriptDeclaration(this, binding.node, context);
       case "import":
-        return this.resolvedSymbolToValue(
-          this.graph.resolveImport(binding.binding, module),
-          binding.name,
-        );
+        return this.evaluateImportBinding(binding.binding, module);
       case "destructured": {
         const initValue = binding.init
           ? this.evaluateDestructuredInit(binding.init, context)
@@ -1072,6 +1098,35 @@ export class Interpreter {
         return scratch.bindings.get(binding.name) ?? UNDEFINED_VALUE;
       }
     }
+  }
+
+  /**
+   * An ES import of a CommonJS module whose `module.exports` is computed (a
+   * bundled build's bootstrap call) reads the export off that object as
+   * bundler interop does: named imports are its members, and the default import
+   * is its `default` when it is a compiled ES module namespace (`__esModule`).
+   */
+  private evaluateImportBinding(binding: ImportBinding, module: ModuleRecord): StaticValue {
+    const symbol = this.graph.resolveImport(binding, module);
+    const target = this.graph.resolveImportedModule(binding.specifier, module);
+    if (
+      binding.imported.kind === "namespace" ||
+      !isModuleRecord(target) ||
+      !target.replacesModuleExports ||
+      (binding.imported.kind === "named" && symbol.kind !== "unresolved")
+    ) {
+      return this.resolvedSymbolToValue(symbol, binding.localName);
+    }
+    const exported = this.evaluateModuleExport(target, "default");
+    if (binding.imported.kind === "named") {
+      return exported.kind === "object"
+        ? getObjectProperty(exported, binding.imported.name)
+        : this.resolvedSymbolToValue(symbol, binding.localName);
+    }
+    return exported.kind === "object" &&
+      getTruthiness(getObjectProperty(exported, "__esModule")) === true
+      ? getObjectProperty(exported, "default")
+      : exported;
   }
 
   private evaluateDestructuredInit(init: Expression, context: EvaluationContext): StaticValue {
@@ -2034,13 +2089,12 @@ export class Interpreter {
       case "stub": {
         const property = type.stub.properties?.get(key);
         if (property) return property;
+        const displayName = getStubDisplayName(type);
         if (key === "displayName" || key === "name")
-          return type.stub.displayName === null
-            ? UNDEFINED_VALUE
-            : primitiveValue(type.stub.displayName);
-        return getStubOwnKeys(type.stub.tag).has(key)
-          ? unknownValue(`${type.stub.displayName ?? "stub"}.${key}`, location)
-          : UNDEFINED_VALUE;
+            return displayName === null ? UNDEFINED_VALUE : primitiveValue(displayName);
+          return getStubOwnKeys(type.stub.tag).has(key)
+            ? unknownValue(`${displayName ?? "stub"}.${key}`, location)
+            : UNDEFINED_VALUE;
       }
       default:
         return key === "displayName" || key === "name"
@@ -2481,24 +2535,24 @@ export class Interpreter {
 
   private markEscapedMutations(functionValue: StaticFunctionValue): void {
     const { module } = functionValue;
-    for (const name of getMutatedIdentifiers(functionValue.node)) {
+    for (const [name, keys] of getMutatedIdentifiers(functionValue.node)) {
       const scoped = lookupScope(functionValue.scope, name);
       if (scoped) {
-        markExternallyMutable(scoped, describeEscapedMutation(name));
+        markExternallyMutable(scoped, describeEscapedMutation(name), keys);
         continue;
       }
       if (module.bindings.get(name)?.kind !== "variable") continue;
       const evaluated = this.getModuleValues(module).get(name);
       if (evaluated && evaluated !== IN_PROGRESS) {
-        markExternallyMutable(evaluated, describeEscapedMutation(name));
+        markExternallyMutable(evaluated, describeEscapedMutation(name), keys);
         continue;
       }
-      let names = this.escapedMutations.get(module.filePath);
-      if (!names) {
-        names = new Set();
-        this.escapedMutations.set(module.filePath, names);
+      let mutated = this.escapedMutations.get(module.filePath);
+      if (!mutated) {
+        mutated = new Map();
+        this.escapedMutations.set(module.filePath, mutated);
       }
-      names.add(name);
+      mergeMutatedKeys(mutated, name, keys);
     }
   }
 

@@ -1,6 +1,7 @@
-import { existsSync, statSync } from "node:fs";
-import { join, relative, resolve, sep } from "node:path";
-import { defineConfig, type Plugin } from "vite-plus";
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { basename, join, relative, resolve, sep } from "node:path";
+import { transform as transformSvgr } from "@svgr/core";
+import { defineConfig, type Plugin, transformWithOxc } from "vite-plus";
 
 const parserDirectory = import.meta.dirname;
 const bippyDirectory = resolve(parserDirectory, "../bippy");
@@ -56,9 +57,37 @@ const fixtureAliasPlugin = (): Plugin => ({
   },
 });
 
+// What `react-scripts` makes of an `.svg` import (its webpack config chains
+// `@svgr/webpack` after `file-loader`), so fixtures render the real svgr output.
+const fixtureSvgrPlugin = (): Plugin => ({
+  name: "bippy-parser-fixture-svgr",
+  enforce: "pre",
+  async load(id) {
+    if (!id.endsWith(".svg") || relative(fixturesDirectory, id).startsWith("..")) return null;
+    const componentCode = await transformSvgr(
+      readFileSync(id, "utf8"),
+      {
+        plugins: ["@svgr/plugin-jsx"],
+        svgo: false,
+        prettier: false,
+        titleProp: true,
+        ref: true,
+      },
+      {
+        filePath: id,
+        caller: {
+          name: "@svgr/webpack",
+          previousExport: `export default ${JSON.stringify(`/static/media/${basename(id)}`)}`,
+        },
+      },
+    );
+    return transformWithOxc(componentCode, `${id}.jsx`, { jsx: { runtime: "automatic" } });
+  },
+});
+
 export default defineConfig({
   root: parserDirectory,
-  plugins: [fixtureAliasPlugin()],
+  plugins: [fixtureAliasPlugin(), fixtureSvgrPlugin()],
   resolve: {
     alias: [{ find: /^bippy$/, replacement: resolve(bippyDirectory, "src/index.ts") }],
   },

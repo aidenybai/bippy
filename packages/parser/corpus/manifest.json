@@ -1162,6 +1162,202 @@
         "maxFiberCount": 20000
       },
       "notes": "Nx loads the repository `.env` into every task, so the setup script copies `.env.dev.example` to `.env` with the corpus PostgreSQL URL and runs the Prisma migrations through `nx migrate:deploy prisma`. `nx dev builder` builds `@typebot.io/react` first and then runs `next dev` on :3000; the viewer, MinIO and Redis from `docker-compose.dev.yml` are not started."
+    },
+    {
+      "id": "blocknote",
+      "description": "BlockNote playground (Vite SPA over the @blocknote/* workspace packages, pnpm workspaces, Mantine)",
+      "repository": "https://github.com/TypeCellOS/BlockNote",
+      "revision": "c255558b2d4f2be6453c67df81bb702a1a586909",
+      "framework": "react-router",
+      "workingDirectory": "playground",
+      "install": "pnpm install",
+      "dev": "pnpm dev",
+      "url": "http://localhost:5173/",
+      "static": {
+        "rootDirectory": "playground",
+        "aliases": {
+          "@blocknote/core": "../packages/core/src",
+          "@blocknote/react": "../packages/react/src",
+          "@blocknote/ariakit": "../packages/ariakit/src",
+          "@blocknote/mantine": "../packages/mantine/src",
+          "@blocknote/shadcn": "../packages/shadcn/src",
+          "@blocknote/xl-ai": "../packages/xl-ai/src",
+          "@blocknote/xl-docx-exporter": "../packages/xl-docx-exporter/src",
+          "@blocknote/xl-odt-exporter": "../packages/xl-odt-exporter/src",
+          "@blocknote/xl-pdf-exporter": "../packages/xl-pdf-exporter/src",
+          "@shared": "../shared",
+          "@blocknote/xl-multi-column": "../packages/xl-multi-column/src",
+          "@blocknote/xl-email-exporter": "../packages/xl-email-exporter/src"
+        },
+        "entry": "src/main.tsx",
+        "route": "/",
+        "externalPackageAllowList": ["@blocknote/*", "@mantine/*"],
+        "maxFiberCount": 20000
+      }
+    },
+    {
+      "id": "mdx-editor",
+      "description": "MDXEditor \"Bare\" Ladle story (Lexical editor, Gurx realm, Vite/Ladle dev server)",
+      "repository": "https://github.com/mdx-editor/editor",
+      "revision": "869f769bbe289b44ea5620f4491e90f37e3d1073",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npx ladle dev --port 61000",
+      "url": "http://localhost:61000/?story=basics--bare&mode=preview",
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/examples/basics.tsx",
+        "rootComponent": "Bare",
+        "anchor": "Bare",
+        "externalPackageAllowList": ["@mdxeditor/gurx", "lexical", "@lexical/*"],
+        "maxFiberCount": 20000
+      }
+    },
+    {
+      "id": "plate-playground",
+      "description": "Plate playground template editor page (Next app router, Slate/Plate plugins, shadcn/ui, Bun)",
+      "repository": "https://github.com/udecode/plate-playground-template",
+      "revision": "c59bd401b13011e418e75256a08fe7cafbfc177b",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "bun install --ignore-scripts",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/editor",
+      "static": {
+        "rootDirectory": ".",
+        "appDirectory": "src/app",
+        "route": "/editor",
+        "externalPackageAllowList": ["lucide-react", "radix-ui", "@radix-ui/*", "cmdk", "sonner"],
+        "maxFiberCount": 20000
+      }
+    },
+    {
+      "id": "excalidraw-clone",
+      "description": "Excalidraw clone (Vite SPA, MUI, roughjs canvas)",
+      "repository": "https://github.com/mirayatech/excalidraw-clone",
+      "revision": "c5d7b14929b18a9a5cf57dd9fae5ef2ce2a021e7",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npm run dev",
+      "url": "http://localhost:5173/",
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": [
+          "@mui/*",
+          "@emotion/*",
+          "react-icons",
+          "react-icons/*",
+          "@tippyjs/react",
+          "tippy.js"
+        ]
+      }
+    },
+    {
+      "id": "draw",
+      "description": "draw whiteboard (Vite SPA, TanStack Router + Query, Supabase client with placeholder env)",
+      "repository": "https://github.com/macintushar/draw",
+      "revision": "2d6c73c381473034b83440c66a65184084ad0f5c",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bun install",
+      "setup": [
+        "test -f .env || printf 'VITE_SUPABASE_URL=http://localhost:54321\\nVITE_SUPABASE_ANON_KEY=corpus-anon-key\\n' > .env"
+      ],
+      "dev": "npm run dev",
+      "url": "http://localhost:5173/",
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": [
+          "@tanstack/react-router",
+          "@tanstack/router-core",
+          "@tanstack/history",
+          "@tanstack/react-store",
+          "@tanstack/store",
+          "@tanstack/react-query",
+          "lucide-react",
+          "sonner",
+          "next-themes",
+          "@radix-ui/*"
+        ],
+        "envFiles": [".env"]
+      }
+    },
+    {
+      "id": "pixel-art-react",
+      "description": "Pixel Art React (webpack 5 dev server, React 16, react-redux + Immutable store, redux-undo)",
+      "repository": "https://github.com/jvalen/pixel-art-react",
+      "revision": "73b57b6b2305146b5a9f94ec9786ea701749c356",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --ignore-scripts --no-engine-strict",
+      "dev": "npx webpack-dev-server --hot --port 8087",
+      "url": "http://localhost:8087/",
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.jsx",
+        "route": "/",
+        "externalPackageAllowList": [
+          "react-redux",
+          "redux",
+          "redux-undo",
+          "immutable",
+          "react-is",
+          "hoist-non-react-statics",
+          "@babel/runtime/*",
+          "prop-types",
+          "react-color",
+          "react-cookie-consent",
+          "react-modal",
+          "exenv",
+          "warning",
+          "react-helmet",
+          "react-transition-group",
+          "react-custom-scrollbars",
+          "object-assign",
+          "tinykeys",
+          "body-scroll-lock"
+        ]
+      }
+    },
+    {
+      "id": "2048-in-react",
+      "description": "2048 in React (Next pages router, useReducer board state, react-responsive)",
+      "repository": "https://github.com/mateuszsokola/2048-in-react",
+      "revision": "4c27093929b4293c2c873b3ed75b18671b5be6cb",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": ["react-responsive"]
+      }
+    },
+    {
+      "id": "word-master",
+      "description": "Word Master (Create React App, React 17, headlessui modals, localStorage state)",
+      "repository": "https://github.com/octokatherine/word-master",
+      "revision": "5790198fd926d19d716a57cc59ed0359057733c9",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npm start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3006"
+      },
+      "url": "http://localhost:3006/",
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.tsx",
+        "externalPackageAllowList": ["@headlessui/react", "react-modal", "exenv"]
+      }
     }
   ]
 }

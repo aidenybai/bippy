@@ -247,8 +247,15 @@ export type StaticElementType =
   | { kind: "context-consumer"; context: ContextDefinition | null; displayName: string | null }
   | { kind: "portal" }
   | { kind: "external"; packageName: string; importedName: string; displayName: string }
-  | { kind: "stub"; stub: StubComponent }
+  | StubElementType
   | { kind: "unknown"; displayName: string | null; reason: string };
+
+/** A modeled library component; `displayName` is what the app assigned over the stub's own name. */
+export interface StubElementType {
+  kind: "stub";
+  stub: StubComponent;
+  displayName?: string;
+}
 
 /** `React.memo`/`forwardRef`/`lazy` objects: statics assigned to them (`Button.__radixId = ...`) live on the object. */
 export interface WrapperElementType {
@@ -487,7 +494,7 @@ export interface RootObservations extends CapturedQueryCaches {
   stores?: CapturedValue[];
 }
 
-/** The origin's persisted state (`document.cookie`, Web Storage) as the settled page held it. */
+/** The origin's persisted state: `document.cookie` as the settled page held it, Web Storage as its first script found it. */
 export interface CapturedPageState {
   cookie: string;
   /** `window.name`; absent in captures taken before it was recorded. */
