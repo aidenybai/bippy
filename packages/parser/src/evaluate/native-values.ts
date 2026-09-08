@@ -104,10 +104,18 @@ const getDomInterface = (name: string): Function | null => {
   return typeof iface === "function" ? iface : null;
 };
 
+/** The class name from the prototype: a `Proxy` (happy-dom's `DOMStringMap`) answers `value.constructor` with its own trap. */
+const constructorName = (value: object): string => {
+  const prototype: unknown = Object.getPrototypeOf(value);
+  if (typeof prototype !== "object" || prototype === null) return "Object";
+  const constructor: unknown = Reflect.get(prototype, "constructor");
+  return typeof constructor === "function" ? constructor.name : "Object";
+};
+
 const isDomObject = (value: object): boolean =>
   DOM_INTERFACE_NAMES.some((name) => {
     const iface = getDomInterface(name);
-    return iface !== null && value instanceof iface;
+    return (iface !== null && value instanceof iface) || constructorName(value) === name;
   });
 
 const isIterable = (value: object): value is Iterable<unknown> =>
@@ -239,10 +247,15 @@ const liftObject = (value: object, name: string, ancestors: ReadonlySet<object>)
   if (typeof window !== "undefined" && value === window) return { kind: "global", name: "window" };
   if (value instanceof Date || isDomObject(value)) return nativeObjectValue(value);
   if (value instanceof RegExp) {
-    return { kind: "regexp", pattern: value.source, flags: value.flags, lastIndex: 0 };
+    return {
+      kind: "regexp",
+      pattern: value.source,
+      flags: value.flags,
+      lastIndex: 0,
+    };
   }
   if (!isPlainObject(value)) {
-    return unknownValue(`${name}: ${value.constructor.name} from native code`);
+    return unknownValue(`${name}: ${constructorName(value)} from native code`);
   }
   if (isReactElementTag(Reflect.get(value, "$$typeof"))) {
     const type: unknown = Reflect.get(value, "type");
@@ -284,7 +297,7 @@ export const fromNativeValue = (value: unknown, name: string): StaticValue =>
   liftValue(value, name, new Set());
 
 const describeMember = (object: StaticNativeObjectValue, key: string): string =>
-  `${object.value.constructor.name}.${key}`;
+  `${constructorName(object.value)}.${key}`;
 
 /**
  * A property of a native object, with methods bound so they run natively when

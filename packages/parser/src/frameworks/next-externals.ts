@@ -3,6 +3,7 @@ import { createSearchParamsValue } from "../evaluate/url-search-params.js";
 import {
   NULL_VALUE,
   UNDEFINED_VALUE,
+  describeValue,
   getObjectProperty,
   getTruthiness,
   isKnownString,
@@ -22,7 +23,8 @@ import type {
   StubComponent,
   StubRenderTools,
 } from "../types.js";
-import { ForwardRefTag } from "../work-tags.js";
+import { isVersionAtLeast } from "../libraries/installed-version.js";
+import { ClassComponentTag, ForwardRefTag } from "../work-tags.js";
 import type { FrameworkKind } from "./framework-profile.js";
 import { toElementType } from "../react/element-type.js";
 import { nextRequestValue } from "./next-request.js";
@@ -94,6 +96,8 @@ const IMAGE_ONLY_PROPS: ReadonlySet<string> = new Set([
   "ref",
 ]);
 
+const FORM_ONLY_PROPS: ReadonlySet<string> = new Set(["replace", "scroll", "prefetch", "ref"]);
+
 const LINK_STATUS_CONTEXT: ContextDefinition = {
   name: "LinkStatusContext",
   displayName: null,
@@ -107,10 +111,54 @@ const linkHref = (props: StaticObjectValue): StaticValue => {
   return unknownValue("href is formatted by the router (UrlObject or basePath)");
 };
 
-const anchorForLink = (props: StaticObjectValue): StaticValue => {
+/** `legacyBehavior` wraps string children in `<a>` and otherwise clones the child element (adding `href` to a bare `<a>` or with `passHref`). */
+const legacyLinkChild = (props: StaticObjectValue): StaticValue => {
+  const children = getObjectProperty(props, "children");
+  if (
+    children.kind === "primitive" &&
+    (typeof children.value === "string" || typeof children.value === "number")
+  ) {
+    return hostElement("a", { href: linkHref(props), children });
+  }
+  if (children.kind !== "element") {
+    return unknownValue(`legacyBehavior clones ${describeValue(children)} with router props`);
+  }
+  const childHref = getObjectProperty(children.props, "href");
+  const isBareAnchor =
+    children.type.kind === "host" &&
+    children.type.tagName === "a" &&
+    childHref.kind === "primitive" &&
+    childHref.value === undefined;
+  const passHref = getTruthiness(getObjectProperty(props, "passHref"));
+  if (!isBareAnchor && passHref !== true) return children;
+  return {
+    ...children,
+    props: {
+      kind: "object",
+      entries: [
+        ...children.props.entries,
+        { kind: "property", key: "href", value: linkHref(props) },
+      ],
+    },
+  };
+};
+
+const isLegacyLinkBehavior = (
+  props: StaticObjectValue,
+  options: NextModelOptions,
+): boolean | null => {
   const legacy = getObjectProperty(props, "legacyBehavior");
-  if (legacy.kind === "primitive" && legacy.value === true) {
-    return unknownValue("legacyBehavior clones the child element with router props");
+  if (legacy.kind === "primitive" && legacy.value === undefined) {
+    return options.version !== null && !isVersionAtLeast(options.version, 13, 0);
+  }
+  return getTruthiness(legacy);
+};
+
+const anchorForLink = (props: StaticObjectValue, options: NextModelOptions): StaticValue => {
+  const isLegacy = isLegacyLinkBehavior(props, options);
+  if (isLegacy === true) return legacyLinkChild(props);
+  if (isLegacy === null) {
+    return unknownValue("legacyBehavior decides whether Link renders an <a>");
   }
   const rest = omitProps(props, LINK_ONLY_PROPS);
   return element(
@@ -120,28 +168,45 @@ const anchorForLink = (props: StaticObjectValue): StaticValue => {
       entries: [
         ...rest.entries,
         { kind: "property", key: "href", value: linkHref(props) },
-        { kind: "property", key: "children", value: getObjectProperty(props, "children") },
+        {
+          kind: "property",
+          key: "children",
+          value: getObjectProperty(props, "children"),
+        },
       ],
     },
   );
 };
 
-const APP_LINK_STUB: StubComponent = {
-  displayName: "LinkComponent",
-  render: (props) =>
-    element(
-      { kind: "context-provider", context: LINK_STATUS_CONTEXT, displayName: null },
-      objectFromRecord({
-        value: LINK_STATUS_CONTEXT.defaultValue,
-        children: anchorForLink(props),
-      }),
-    ),
-};
+/** `app-dir/link` became a plain function publishing `LinkStatusContext` in Next 15.3; before that it was the pages `forwardRef`. */
+const hasLinkStatus = (options: NextModelOptions): boolean =>
+  options.kind === "next-app" &&
+  (options.version === null || isVersionAtLeast(options.version, 15, 3));
 
-const PAGES_LINK_STUB: StubComponent = {
-  displayName: "LinkComponent",
-  tag: ForwardRefTag,
-  render: anchorForLink,
+/** Before Next 12.2 `next/link` was a plain `Link` function; since then a `forwardRef` named `LinkComponent`. */
+const createLinkStub = (options: NextModelOptions): StubComponent => {
+  const render = (props: StaticObjectValue): StaticValue => anchorForLink(props, options);
+  if (hasLinkStatus(options)) {
+    return {
+      displayName: "LinkComponent",
+      render: (props) =>
+        element(
+          {
+            kind: "context-provider",
+            context: LINK_STATUS_CONTEXT,
+            displayName: null,
+          },
+          objectFromRecord({
+            value: LINK_STATUS_CONTEXT.defaultValue,
+            children: render(props),
+          }),
+        ),
+    };
+  }
+  if (options.version !== null && !isVersionAtLeast(options.version, 12, 2)) {
+    return { displayName: "Link", render };
+  }
+  return { displayName: "LinkComponent", tag: ForwardRefTag, render };
 };
 
 const IMAGE_ELEMENT_STUB: StubComponent = {
@@ -183,11 +248,38 @@ const propEntries = (props: StaticObjectValue): [string, StaticValue][] => {
   return entries;
 };
 
-/** `next/head` renders its children into `<head>` through a `SideEffect` that returns null. */
+const formElement = (props: StaticObjectValue): StaticValue =>
+  element({ kind: "host", tagName: "form" }, omitProps(props, FORM_ONLY_PROPS));
+
+/** `next/form` is a plain `Form` -> <form> in the App Router and a forwardRef `FormComponent` -> <form> in the Pages Router. */
+const APP_FORM_STUB: StubComponent = {
+  displayName: "Form",
+  render: formElement,
+};
+
+const FORWARD_REF_FORM_STUB: StubComponent = {
+  displayName: "FormComponent",
+  tag: ForwardRefTag,
+  render: formElement,
+};
+
+/**
+ * `next/head` renders its children into `<head>` through a `SideEffect` that
+ * returns null; before Next 12.2 it was an anonymous class React names `_class`.
+ */
 const HEAD_STUB: StubComponent = {
   displayName: "Head",
   render: () => stubElement(emptyStub("SideEffect"), {}),
 };
+
+const CLASS_HEAD_STUB: StubComponent = {
+  displayName: "Head",
+  render: () =>
+    stubElement({ displayName: "_class", tag: ClassComponentTag, render: () => NULL_VALUE }, {}),
+};
+
+const hasClassSideEffect = (options: NextModelOptions): boolean =>
+  options.version !== null && !isVersionAtLeast(options.version, 12, 2);
 
 /** `next/script` renders a `<script>` only for `beforeInteractive`; every other strategy returns null. */
 const SCRIPT_STUB: StubComponent = {
@@ -313,7 +405,9 @@ const appNavigationValue = (
       return nativeFunction(importedName, () => primitiveValue(url.pathname));
     case "useSearchParams":
       return nativeFunction(importedName, () =>
-        createSearchParamsValue(primitiveValue(url.search), { isReadonly: true }),
+        createSearchParamsValue(primitiveValue(url.search), {
+          isReadonly: true,
+        }),
       );
     case "ReadonlyURLSearchParams":
       return nativeFunction(importedName, ([initial]) =>
@@ -385,22 +479,34 @@ export interface NextModelOptions {
   origin?: string;
   /** The document request the server rendered, when captured. */
   request?: CapturedRequest;
+  /** Installed `next` version; `null` models the latest release. */
+  version: string | null;
 }
 
 export const createNextModel = (options: NextModelOptions): NextModel => {
   const url = new URL(options.route, options.origin ?? "http://static.invalid");
   const params: Record<string, string> = {};
+  const linkStub = createLinkStub(options);
   const externalValues: ExternalValueProvider = (packageName, importedName) => {
     switch (packageName) {
       case "next/link":
+        if (importedName === "useLinkStatus") {
+          return nativeFunction(importedName, (_args, tools) =>
+            tools.readContext(LINK_STATUS_CONTEXT),
+          );
+        }
+        return importedName === "default" ? stubValue(linkStub) : null;
+      case "next/form":
         return importedName === "default"
-          ? stubValue(options.kind === "next-app" ? APP_LINK_STUB : PAGES_LINK_STUB)
+          ? stubValue(options.kind === "next-app" ? APP_FORM_STUB : FORWARD_REF_FORM_STUB)
           : null;
       case "next/image":
       case "next/legacy/image":
         return importedName === "default" ? stubValue(IMAGE_STUB) : null;
       case "next/head":
-        return importedName === "default" ? stubValue(HEAD_STUB) : null;
+        return importedName === "default"
+          ? stubValue(hasClassSideEffect(options) ? CLASS_HEAD_STUB : HEAD_STUB)
+          : null;
       case "next/script":
         return importedName === "default" ? stubValue(SCRIPT_STUB) : null;
       case "next/dynamic":

@@ -84,9 +84,12 @@ const isNextLayerAsset = (fiber: RuntimeFiberSnapshot): boolean => {
 const isNextAppInjectedFiber = (fiber: RuntimeFiberSnapshot): boolean =>
   (fiber.name !== null && NEXT_APP_INJECTED_FIBERS.has(fiber.name)) || isNextLayerAsset(fiber);
 
+const NEXT_SEGMENT_ACTIVITY_FIBERS: ReadonlySet<string> = new Set(["Activity", "Offscreen"]);
+
 export const NEXT_APP_PROFILE: FrameworkProfile = {
   kind: "next-app",
   transparentRuntimeFibers: new Set(NEXT_APP_RUNTIME_WRAPPERS),
+  transparentRuntimeWrapperChildren: new Map([["OuterLayoutRouter", NEXT_SEGMENT_ACTIVITY_FIBERS]]),
   transparentStaticFibers: new Set(["Fragment", "ContextProvider"]),
   isInjectedRuntimeFiber: isNextAppInjectedFiber,
   defaultAnchor: "body",
@@ -112,11 +115,25 @@ const NEXT_PAGES_RUNTIME_WRAPPERS = [
   "Fragment",
 ];
 
+// `client/index` renders `<Root>{strictMode ? <StrictMode>{elem}</StrictMode> : elem}</Root>`
+// where `elem` is `<Head callback />` (a null-rendering head-commit observer)
+// followed by `<AppContainer>`; the strict mode wrapper follows
+// `reactStrictMode` in `next.config`. The application's own `next/head` renders
+// deeper, under `AppContainer`, and keeps its fiber.
+const NEXT_PAGES_ROOT_FIBERS: ReadonlySet<string> = new Set(["StrictMode", "Head"]);
+
+// `<Portal type="next-route-announcer"><RouteAnnouncer /></Portal>` is the last
+// child of `AppContainer`; the portal component and its HostPortal have no
+// source in the application.
+const isNextRouteAnnouncerPortal = (fiber: RuntimeFiberSnapshot): boolean =>
+  fiber.name === "Portal" && fiber.props.type === "next-route-announcer";
+
 export const NEXT_PAGES_PROFILE: FrameworkProfile = {
   kind: "next-pages",
   transparentRuntimeFibers: new Set(NEXT_PAGES_RUNTIME_WRAPPERS),
+  transparentRuntimeWrapperChildren: new Map([["Root", NEXT_PAGES_ROOT_FIBERS]]),
   transparentStaticFibers: new Set(["Fragment"]),
-  isInjectedRuntimeFiber: neverInjected,
+  isInjectedRuntimeFiber: isNextRouteAnnouncerPortal,
   defaultAnchor: null,
 };
 
@@ -161,6 +178,7 @@ const REACT_ROUTER_RUNTIME_WRAPPERS = [
 export const REACT_ROUTER_PROFILE: FrameworkProfile = {
   kind: "react-router",
   transparentRuntimeFibers: new Set(REACT_ROUTER_RUNTIME_WRAPPERS),
+  transparentRuntimeWrapperChildren: new Map(),
   transparentStaticFibers: new Set(["Location"]),
   isInjectedRuntimeFiber: neverInjected,
   defaultAnchor: null,

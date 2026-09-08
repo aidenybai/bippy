@@ -1222,6 +1222,9 @@ importers:
       playwright:
         specifier: ^1.63.0
         version: 1.63.0
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@babel/runtime':
         specifier: ^7.29.7

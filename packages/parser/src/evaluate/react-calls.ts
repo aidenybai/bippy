@@ -26,6 +26,7 @@ import {
   componentReference,
   describeValue,
   FALSE_VALUE,
+  getListLength,
   getObjectProperty,
   isNullish,
   listValue,
@@ -281,6 +282,50 @@ const mapChildren = (
   };
 };
 
+const cloneElement = (
+  element: StaticValue,
+  props: StaticValue | undefined,
+  children: StaticValue[],
+  location: SourceLocation | null,
+): StaticValue => {
+  if (element.kind !== "element")
+    return unknownValue(`cloneElement of ${describeValue(element)}`, location);
+  const { entries, key } = propsFromValue(props, true);
+  const merged = objectValue([{ kind: "spread", value: element.props }, ...entries]);
+  if (children.length === 1)
+    merged.entries.push({ kind: "property", key: "children", value: children[0] });
+  if (children.length > 1)
+    merged.entries.push({ kind: "property", key: "children", value: listValue(children) });
+  return {
+    kind: "element",
+    type: element.type,
+    key: key ?? element.key,
+    props: merged,
+    location: element.location,
+    environment: element.environment,
+  };
+};
+
+const isValidElement = (value: StaticValue): StaticValue => {
+  if (value.kind === "element") return primitiveValue(true);
+  if (value.kind === "primitive" || value.kind === "list" || value.kind === "function")
+    return FALSE_VALUE;
+  return unknownPrimitiveValue("boolean", "isValidElement on dynamic value");
+};
+
+const childrenToArray = (children: StaticValue): StaticValue => {
+  if (children.kind === "list" || children.kind === "repeat") return children;
+  if (isNullish(children) === true) return listValue([]);
+  if (children.kind === "element" || children.kind === "primitive") return listValue([children]);
+  return children;
+};
+
+const countChildren = (children: StaticValue): StaticValue => {
+  const asArray = childrenToArray(children);
+  if (asArray.kind === "list") return getListLength(asArray);
+  return unknownPrimitiveValue("number", "Children.count");
+};
+
 export const evaluateReactApiCall = (
   interpreter: Interpreter,
   api: ReactApi,
@@ -321,34 +366,12 @@ export const evaluateReactApiCall = (
         context,
       );
     }
-    case "cloneElement": {
-      if (first?.kind !== "element")
-        return unknownValue(
-          `cloneElement of ${first ? describeValue(first) : "nothing"}`,
-          location,
-        );
-      const { entries, key } = propsFromValue(second, true);
-      const merged = objectValue([{ kind: "spread", value: first.props }, ...entries]);
-      const children = args.slice(2);
-      if (children.length === 1)
-        merged.entries.push({ kind: "property", key: "children", value: children[0] });
-      if (children.length > 1)
-        merged.entries.push({ kind: "property", key: "children", value: listValue(children) });
-      return {
-        kind: "element",
-        type: first.type,
-        key: key ?? first.key,
-        props: merged,
-        location: first.location,
-        environment: first.environment,
-      };
-    }
+    case "cloneElement":
+      return first
+        ? mapValue(first, (element) => cloneElement(element, second, args.slice(2), location))
+        : unknownValue("cloneElement of nothing", location);
     case "isValidElement":
-      if (!first) return FALSE_VALUE;
-      if (first.kind === "element") return primitiveValue(true);
-      if (first.kind === "primitive" || first.kind === "list" || first.kind === "function")
-        return FALSE_VALUE;
-      return unknownPrimitiveValue("boolean", "isValidElement on dynamic value");
+      return first ? mapValue(first, isValidElement) : FALSE_VALUE;
     case "memo": {
       if (!first) return unknownValue("memo without a component", location);
       const inner = toElementType(first, null);
@@ -528,16 +551,9 @@ export const evaluateReactApiCall = (
       mapChildren(interpreter, first, second, context);
       return UNDEFINED_VALUE;
     case "Children.toArray":
-      if (!first) return listValue([]);
-      if (first.kind === "list" || first.kind === "repeat") return first;
-      if (first.kind === "primitive" && (first.value === null || first.value === undefined))
-        return listValue([]);
-      if (first.kind === "element" || first.kind === "primitive") return listValue([first]);
-      return first;
+      return first ? mapValue(first, childrenToArray) : listValue([]);
     case "Children.count":
-      if (first?.kind === "list" && first.items.every((item) => item.kind !== "repeat"))
-        return primitiveValue(first.items.length);
-      return unknownPrimitiveValue("number", "Children.count");
+      return first ? mapValue(first, countChildren) : primitiveValue(0);
     case "Children.only":
       return first ?? unknownValue("Children.only without children", location);
     case "Children":

@@ -11,6 +11,13 @@ export type FrameworkKind = "spa" | "next-app" | "next-pages" | "react-router";
 export interface FrameworkProfile {
   kind: FrameworkKind;
   transparentRuntimeFibers: ReadonlySet<string>;
+  /**
+   * Fibers a transparent wrapper renders directly around its children, keyed by
+   * the wrapper's name: React's `Activity` -> `Offscreen` pair that Next's
+   * `OuterLayoutRouter` keeps each route segment in. An application's own
+   * `Activity` elsewhere stays a fiber on both sides.
+   */
+  transparentRuntimeWrapperChildren: ReadonlyMap<string, ReadonlySet<string>>;
   transparentStaticFibers: ReadonlySet<string>;
   /**
    * Runtime fibers (with their subtrees) the framework injects with no
@@ -24,19 +31,29 @@ export interface FrameworkProfile {
 const flattenFiber = (
   fiber: RuntimeFiberSnapshot,
   profile: FrameworkProfile,
+  wrapperName: string | null,
 ): RuntimeFiberSnapshot[] => {
   if (profile.isInjectedRuntimeFiber(fiber)) return [];
-  const children = flattenList(fiber.children, profile);
-  if (profile.transparentRuntimeFibers.has(fiber.name ?? fiber.tag)) return children;
-  return [{ ...fiber, children }];
+  const name = fiber.name ?? fiber.tag;
+  if (profile.transparentRuntimeFibers.has(name)) {
+    return flattenList(fiber.children, profile, name);
+  }
+  if (
+    wrapperName !== null &&
+    profile.transparentRuntimeWrapperChildren.get(wrapperName)?.has(name)
+  ) {
+    return flattenList(fiber.children, profile, wrapperName);
+  }
+  return [{ ...fiber, children: flattenList(fiber.children, profile, null) }];
 };
 
 const flattenList = (
   fibers: RuntimeFiberSnapshot[],
   profile: FrameworkProfile,
+  wrapperName: string | null,
 ): RuntimeFiberSnapshot[] => {
   const result: RuntimeFiberSnapshot[] = [];
-  for (const fiber of fibers) result.push(...flattenFiber(fiber, profile));
+  for (const fiber of fibers) result.push(...flattenFiber(fiber, profile, wrapperName));
   return result;
 };
 
@@ -48,7 +65,7 @@ export const flattenTransparentFibers = (
   ...snapshot,
   roots: snapshot.roots.map((root) => ({
     ...root,
-    children: flattenList(root.children, profile),
+    children: flattenList(root.children, profile, null),
   })),
 });
 
@@ -57,6 +74,7 @@ export const neverInjected = (): boolean => false;
 export const SPA_PROFILE: FrameworkProfile = {
   kind: "spa",
   transparentRuntimeFibers: new Set(),
+  transparentRuntimeWrapperChildren: new Map(),
   transparentStaticFibers: new Set(),
   isInjectedRuntimeFiber: neverInjected,
   defaultAnchor: null,

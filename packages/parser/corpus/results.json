@@ -30,6 +30,61 @@
       "failure": null
     },
     {
+      "id": "app-router-playground",
+      "revision": "e7414970453d7fe2415adca2f34fc4d83ad2f46f",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T09:25:56.697Z",
+      "durationMs": 168,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-404b38c7-20260408",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 478,
+        "commits": 14,
+        "pageErrors": [],
+        "title": "Next.js Playground"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 354,
+          "textCount": 46,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 334
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 260,
+        "matchedText": 46,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "exact",
+        "runtimeFibers": 306,
+        "staticFibers": 306,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 306,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T07:15:09.404Z",
+      "failure": null
+    },
+    {
       "id": "bulletproof-react",
       "revision": "9506629ed003a561c6627735480cce4994244bb4",
       "framework": "react-router",
@@ -137,6 +192,217 @@
       },
       "anchor": "body",
       "note": "runtime replayed from 2026-09-07T11:40:39.987Z",
+      "failure": null
+    },
+    {
+      "id": "chatbot",
+      "revision": "107a43a8039bb4f19d0ced4ff3445e2523d14305",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T09:26:10.028Z",
+      "durationMs": 1611,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 607,
+        "commits": 26,
+        "pageErrors": [],
+        "title": "Next.js Chatbot Template"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 2371,
+          "textCount": 17,
+          "branchCount": 114,
+          "repeatCount": 3,
+          "opaqueCount": 11,
+          "unknownCount": 86,
+          "modulesLoaded": 1705
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 3
+          },
+          {
+            "code": "dynamic-props",
+            "count": 2
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 350,
+        "matchedText": 0,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 1,
+        "slotsMatched": 1,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 20,
+        "branchDeviations": [
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent]",
+            "reason": "if (<boolean: negation of unknown>)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent][0]",
+              "expected": "<Sheet> [FunctionComponent]",
+              "actual": "<div> [HostComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <SidebarHistory> [FunctionComponent]",
+            "reason": "if (<boolean: negation of unknown>)",
+            "preferredIndex": 0,
+            "chosenIndex": 2,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <SidebarHistory> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent][0]",
+              "expected": "<SidebarGroupContent> [FunctionComponent]",
+              "actual": "<SidebarGroupLabel> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarFooter> [FunctionComponent] > <div> [HostComponent] > <SidebarUserNav> [FunctionComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuProvider> [FunctionComponent] > <Menu> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <MenuProvider> [FunctionComponent] > <DropdownMenuTrigger> [FunctionComponent] > <DropdownMenuTrigger> [ForwardRef] > <MenuAnchor> [ForwardRef] > <PopperAnchor> [ForwardRef] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <Primitive.button.Slot> [ForwardRef] > <Primitive.button.SlotClone> [ForwardRef] > <SidebarMenuButton> [FunctionComponent] > <button> [HostComponent]",
+            "reason": "loop iterations are uncertain",
+            "preferredIndex": 0,
+            "chosenIndex": 3,
+            "divergence": null
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <SidebarInset> [FunctionComponent] > <main> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <ActiveChatProvider> [FunctionComponent] > <ChatShell> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <PureMessages> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent]",
+            "reason": "&& on branch(<boolean> | false)",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <SidebarInset> [FunctionComponent] > <main> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <ActiveChatProvider> [FunctionComponent] > <ChatShell> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <PureMessages> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent][0]",
+              "expected": "<ThinkingMessage> [FunctionComponent]",
+              "actual": "<div> [HostComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <SidebarInset> [FunctionComponent] > <main> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <ActiveChatProvider> [FunctionComponent] > <ChatShell> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <PureMultimodalInput> [MemoComponent] > <PureMultimodalInput> [FunctionComponent] > <div> [HostComponent] > <PromptInput> [FunctionComponent] > <form> [HostComponent] > <InputGroup> [FunctionComponent] > <div> [HostComponent] > <PromptInputFooter> [FunctionComponent] > <InputGroupAddon> [FunctionComponent] > <div> [HostComponent] > <PromptInputTools> [FunctionComponent] > <div> [HostComponent] > <PureModelSelectorCompact> [SimpleMemoComponent] > <ModelSelector> [FunctionComponent] > <PopoverRoot> [FunctionComponent] > <Popover> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <PopoverProvider> [FunctionComponent] > <ModelSelectorContent> [FunctionComponent] > <PopoverContent> [FunctionComponent] > <PopoverPortal> [FunctionComponent] > <PopoverPortalProvider> [FunctionComponent] > <Presence> [FunctionComponent]",
+            "reason": "conditional on <boolean: includes()>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <SidebarInset> [FunctionComponent] > <main> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <ActiveChatProvider> [FunctionComponent] > <ChatShell> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <PureMultimodalInput> [MemoComponent] > <PureMultimodalInput> [FunctionComponent] > <div> [HostComponent] > <PromptInput> [FunctionComponent] > <form> [HostComponent] > <InputGroup> [FunctionComponent] > <div> [HostComponent] > <PromptInputFooter> [FunctionComponent] > <InputGroupAddon> [FunctionComponent] > <div> [HostComponent] > <PromptInputTools> [FunctionComponent] > <div> [HostComponent] > <PureModelSelectorCompact> [SimpleMemoComponent] > <ModelSelector> [FunctionComponent] > <PopoverRoot> [FunctionComponent] > <Popover> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <PopoverProvider> [FunctionComponent] > <ModelSelectorContent> [FunctionComponent] > <PopoverContent> [FunctionComponent] > <PopoverPortal> [FunctionComponent] > <PopoverPortalProvider> [FunctionComponent] > <Presence> [FunctionComponent][0]",
+              "expected": "<Portal> [ForwardRef]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <SidebarInset> [FunctionComponent] > <main> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <ActiveChatProvider> [FunctionComponent] > <ChatShell> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <PureMultimodalInput> [MemoComponent] > <PureMultimodalInput> [FunctionComponent] > <div> [HostComponent] > <PromptInput> [FunctionComponent] > <form> [HostComponent] > <InputGroup> [FunctionComponent] > <div> [HostComponent] > <PromptInputFooter> [FunctionComponent] > <InputGroupAddon> [FunctionComponent] > <div> [HostComponent]",
+            "reason": "conditional on <boolean: === on dynamic values>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <SidebarInset> [FunctionComponent] > <main> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <ActiveChatProvider> [FunctionComponent] > <ChatShell> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <PureMultimodalInput> [MemoComponent] > <PureMultimodalInput> [FunctionComponent] > <div> [HostComponent] > <PromptInput> [FunctionComponent] > <form> [HostComponent] > <InputGroup> [FunctionComponent] > <div> [HostComponent] > <PromptInputFooter> [FunctionComponent] > <InputGroupAddon> [FunctionComponent] > <div> [HostComponent][1]",
+              "expected": "<PureStopButton> [SimpleMemoComponent]",
+              "actual": "<PromptInputSubmit> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <SidebarInset> [FunctionComponent] > <main> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <ActiveChatProvider> [FunctionComponent] > <ChatShell> [FunctionComponent] > <AlertDialog> [FunctionComponent] > <AlertDialog> [FunctionComponent] > <Dialog> [FunctionComponent] > <DialogProvider> [FunctionComponent] > <AlertDialogContent> [FunctionComponent] > <AlertDialogPortal> [FunctionComponent] > <AlertDialogPortal> [FunctionComponent] > <DialogPortal> [FunctionComponent] > <DialogPortalProvider> [FunctionComponent] > <Presence> [FunctionComponent]",
+            "reason": "conditional on <boolean: includes()>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <SidebarInset> [FunctionComponent] > <main> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <ActiveChatProvider> [FunctionComponent] > <ChatShell> [FunctionComponent] > <AlertDialog> [FunctionComponent] > <AlertDialog> [FunctionComponent] > <Dialog> [FunctionComponent] > <DialogProvider> [FunctionComponent] > <AlertDialogContent> [FunctionComponent] > <AlertDialogPortal> [FunctionComponent] > <AlertDialogPortal> [FunctionComponent] > <DialogPortal> [FunctionComponent] > <DialogPortalProvider> [FunctionComponent] > <Presence> [FunctionComponent][0]",
+              "expected": "<Portal> [ForwardRef]",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <SidebarInset> [FunctionComponent] > <main> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <ActiveChatProvider> [FunctionComponent] > <ChatShell> [FunctionComponent] > <AlertDialog> [FunctionComponent] > <AlertDialog> [FunctionComponent] > <Dialog> [FunctionComponent] > <DialogProvider> [FunctionComponent] > <AlertDialogContent> [FunctionComponent] > <AlertDialogPortal> [FunctionComponent] > <AlertDialogPortal> [FunctionComponent] > <DialogPortal> [FunctionComponent] > <DialogPortalProvider> [FunctionComponent] > <Presence> [FunctionComponent]",
+            "reason": "conditional on <boolean: includes()>",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <SessionProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <DataStreamProvider> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <SidebarProvider> [FunctionComponent] > <div> [HostComponent] > <SidebarInset> [FunctionComponent] > <main> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <ActiveChatProvider> [FunctionComponent] > <ChatShell> [FunctionComponent] > <AlertDialog> [FunctionComponent] > <AlertDialog> [FunctionComponent] > <Dialog> [FunctionComponent] > <DialogProvider> [FunctionComponent] > <AlertDialogContent> [FunctionComponent] > <AlertDialogPortal> [FunctionComponent] > <AlertDialogPortal> [FunctionComponent] > <DialogPortal> [FunctionComponent] > <DialogPortalProvider> [FunctionComponent] > <Presence> [FunctionComponent][0]",
+              "expected": "<Portal> [ForwardRef]",
+              "actual": "<end of children>"
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 351,
+        "staticFibers": 910,
+        "coverage": 1,
+        "strictCoverage": 0.9971509971509972,
+        "divergence": null,
+        "stepsUsed": 394,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T08:02:12.317Z",
+      "failure": null
+    },
+    {
+      "id": "commerce",
+      "revision": "1df2cf6f6c935f4782eed27351fa18f276917a4d",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T09:26:14.009Z",
+      "durationMs": 150,
+      "runtime": null,
+      "static": {
+        "stats": {
+          "fiberCount": 368,
+          "textCount": 26,
+          "branchCount": 26,
+          "repeatCount": 3,
+          "opaqueCount": 20,
+          "unknownCount": 18,
+          "modulesLoaded": 37
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": null,
+      "anchor": null,
+      "note": "static only",
+      "failure": null
+    },
+    {
+      "id": "contentful-blog",
+      "revision": "e7e4a7be787d2957d87109395cb9ff2231370091",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T09:26:15.167Z",
+      "durationMs": 151,
+      "runtime": null,
+      "static": {
+        "stats": {
+          "fiberCount": 250,
+          "textCount": 2,
+          "branchCount": 29,
+          "repeatCount": 2,
+          "opaqueCount": 9,
+          "unknownCount": 30,
+          "modulesLoaded": 35
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          },
+          {
+            "code": "dynamic-props",
+            "count": 1
+          }
+        ]
+      },
+      "report": null,
+      "anchor": null,
+      "note": "static only",
       "failure": null
     },
     {
@@ -422,6 +688,178 @@
       "failure": null
     },
     {
+      "id": "next-mdx-blog",
+      "revision": "90d71ae00cc1518394e6f0fa635bc3d9e3adbff9",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T09:26:06.487Z",
+      "durationMs": 95,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 206,
+        "commits": 13,
+        "pageErrors": [],
+        "title": "John Smith"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 13,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 2
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 10,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 60,
+        "wildcards": [
+          {
+            "path": "root > <body> [HostSingleton] > <div> [HostComponent] > <main> [HostComponent]",
+            "reason": "page.mdx is compiled by the bundler's MDX loader",
+            "absorbedFibers": 60,
+            "heads": [
+              "<h1> [HostComponent]",
+              "\"\\n\"",
+              "<br> [HostComponent]",
+              "\"\\n\"",
+              "<p> [HostComponent]",
+              "\"\\n\"",
+              "<h2> [HostComponent]",
+              "\"\\n\"",
+              "<ul> [HostComponent]",
+              "\"\\n\"",
+              "<h2> [HostComponent]",
+              "\"\\n\"",
+              "<ul> [HostComponent]",
+              "\"\\n\"",
+              "<h2> [HostComponent]",
+              "\"\\n\"",
+              "<ul> [HostComponent]",
+              "\"\\n\"",
+              "<h2> [HostComponent]",
+              "\"\\n\"",
+              "<ul> [HostComponent]"
+            ]
+          }
+        ],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 70,
+        "staticFibers": 10,
+        "coverage": 1,
+        "strictCoverage": 0.14285714285714285,
+        "divergence": null,
+        "stepsUsed": 11,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T07:21:29.586Z",
+      "failure": null
+    },
+    {
+      "id": "nextjs-blog-boilerplate",
+      "revision": "8b29f57b8da07127bf59fcdad68b9b4e9e1d8770",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-08T09:26:07.620Z",
+      "durationMs": 108,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 83,
+        "commits": 10,
+        "pageErrors": [],
+        "title": "Made with Next.js, TypeScript, ESLint, Prettier, PostCSS, Tailwind CSS | Starter"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 55,
+          "textCount": 7,
+          "branchCount": 2,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 2,
+          "modulesLoaded": 11
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 35,
+        "matchedText": 7,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 26,
+        "wildcards": [
+          {
+            "path": "root > <MyApp> [FunctionComponent] > <Index> [FunctionComponent] > <Main> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <BlogGallery> [FunctionComponent] > <ul> [HostComponent]",
+            "reason": "call of property \"posts\" may come from a spread of unknown(pageProps come from data fetching at request time)",
+            "absorbedFibers": 25,
+            "heads": [
+              "<li> key=\"2020-08-08-my-fifth-post\" [HostComponent]",
+              "<li> key=\"2020-07-07-my-forth-post\" [HostComponent]",
+              "<li> key=\"2020-06-06-my-third-post\" [HostComponent]",
+              "<li> key=\"nextjs-blog-boilerplate-presentation\" [HostComponent]",
+              "<li> key=\"2020-03-03-my-second-post\" [HostComponent]"
+            ]
+          },
+          {
+            "path": "root > <MyApp> [FunctionComponent] > <Index> [FunctionComponent] > <Main> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent]",
+            "reason": "call of new Date()",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"2026\""
+            ]
+          }
+        ],
+        "branchesResolved": 2,
+        "branchDeviations": [
+          {
+            "path": "root > <MyApp> [FunctionComponent] > <Index> [FunctionComponent] > <Main> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <BlogGallery> [FunctionComponent] > <Pagination> [FunctionComponent] > <div> [HostComponent]",
+            "reason": "&& on unknown(property \"pagination\" may come from a spread of unknown(pageProps come from data fetching at request time))",
+            "preferredIndex": 0,
+            "chosenIndex": 1,
+            "divergence": {
+              "path": "root > <MyApp> [FunctionComponent] > <Index> [FunctionComponent] > <Main> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <BlogGallery> [FunctionComponent] > <Pagination> [FunctionComponent] > <div> [HostComponent][1]",
+              "expected": "<div> [HostComponent]",
+              "actual": "<end of children>"
+            }
+          }
+        ],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 68,
+        "staticFibers": 45,
+        "coverage": 1,
+        "strictCoverage": 0.6176470588235294,
+        "divergence": null,
+        "stepsUsed": 48,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T07:28:00.770Z",
+      "failure": null
+    },
+    {
       "id": "nextjs-boilerplate",
       "revision": "1dffa39a32450300c8b01d8cfd3819f9b6e95842",
       "framework": "next-app",
@@ -503,6 +941,69 @@
       },
       "anchor": "body",
       "note": "runtime replayed from 2026-09-06T04:55:26.311Z",
+      "failure": null
+    },
+    {
+      "id": "novel",
+      "revision": "fa95098e66476c466faebb8211baa5869c101a9c",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T09:26:08.741Z",
+      "durationMs": 274,
+      "runtime": {
+        "reactVersion": "19.0.0-rc-65e06cb7-20241218",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 126,
+        "commits": 15,
+        "pageErrors": [
+          "%o\n\n%s TypeError: entities is not iterable\n    at addEntities (webpack-internal:///(app-pages-browser)/../../node_modules/react-tweet/dist/utils.js:92:26)\n    at getEntities (webpack-internal:///(app-pages-browser)/../../node_modules/react-tweet/dist/utils.js:52:5)\n    at enrichTweet (webpack-internal:///(app-pages-browser)/../../node_modules/react-tweet/dist/utils.js:151:19)\n    at eval (webpack-internal:///(app-pages-browser)/../../node_modules/react-tweet/dist/twitter-theme/embedded-tweet.js:32:124)\n    at mountMemo (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:5715:23)\n    at Object.useMemo (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:22627:18)\n    at exports.useMemo (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react/cjs/react.development.js:1495:34)\n    at EmbeddedTweet (webpack-internal:///(app-pages-browser)/../../node_modules/react-tweet/dist/twitter-theme/embedded-tweet.js:32:65)\n    at react-stack-bottom-frame (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:23610:20)\n    at renderWithHooks (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:4646:22)\n    at updateFunctionComponent (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:8032:19)\n    at beginWork (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:9689:18)\n    at runWithFiberInDEV (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:544:16)\n    at performUnitOfWork (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:15064:22)\n    at workLoopSync (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:14888:41)\n    at renderRootSync (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:14868:11)\n    at performWorkOnRoot (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:14394:44)\n    at performSyncWorkOnRoot (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:15970:7)\n    at flushSyncWorkAcrossRoots_impl (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:15830:21)\n    at processRootScheduleInMicrotask (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:15864:7)\n    at eval (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:15986:13) The above error occurred in the <EmbeddedTweet> component. It was handled by the <ReactDevOverlay> error boundary.",
+          "Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <HotReload assetPrefix=\"\">\n      <ReactDevOverlay state={{nextId:1, ...}} dispatcher={{...}}>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <link>\n                  <RootLayout>\n                    <html lang=\"en\" suppressHydrationWarning={true}>\n                      <body\n-                       style={{overflow-x:\"hidden\",overflow-y:\"hidden\"}}\n                      >\n                        ...\n                          <f attribute=\"class\" enableSystem={true} disableTransitionOnChange={true} defaultTheme=\"system\">\n                            <script\n                              nonce={undefined}\n                              dangerouslySetInnerHTML={{\n+                               __html: \"!function(){try{var d=document.documentElement,c=d.classList;c.remove('light'...\"\n-                               __html: \"(self.__next_f=self.__next_f||[]).push([0])\"\n                              }}\n                            >\n                            <ToasterProvider>\n+                             <section\n+                               aria-label=\"Notifications alt+T\"\n+                               tabIndex={-1}\n+                               aria-live=\"polite\"\n+                               aria-relevant=\"additions text\"\n+                               aria-atomic=\"false\"\n+                             >\n-                             <script>\n                            ...\n                  ...\n        ...\n",
+          "%o\n\n%s TypeError: entities is not iterable\n    at addEntities (webpack-internal:///(app-pages-browser)/../../node_modules/react-tweet/dist/utils.js:92:26)\n    at getEntities (webpack-internal:///(app-pages-browser)/../../node_modules/react-tweet/dist/utils.js:52:5)\n    at enrichTweet (webpack-internal:///(app-pages-browser)/../../node_modules/react-tweet/dist/utils.js:151:19)\n    at eval (webpack-internal:///(app-pages-browser)/../../node_modules/react-tweet/dist/twitter-theme/embedded-tweet.js:32:124)\n    at mountMemo (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:5715:23)\n    at Object.useMemo (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:22627:18)\n    at exports.useMemo (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react/cjs/react.development.js:1495:34)\n    at EmbeddedTweet (webpack-internal:///(app-pages-browser)/../../node_modules/react-tweet/dist/twitter-theme/embedded-tweet.js:32:65)\n    at react-stack-bottom-frame (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:23610:20)\n    at renderWithHooks (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:4646:22)\n    at updateFunctionComponent (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:8032:19)\n    at beginWork (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:9689:18)\n    at runWithFiberInDEV (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:544:16)\n    at performUnitOfWork (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:15064:22)\n    at workLoopSync (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:14888:41)\n    at renderRootSync (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:14868:11)\n    at performWorkOnRoot (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:14394:44)\n    at performSyncWorkOnRoot (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:15970:7)\n    at flushSyncWorkAcrossRoots_impl (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:15830:21)\n    at processRootScheduleInMicrotask (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:15864:7)\n    at eval (webpack-internal:///(app-pages-browser)/../../node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:15986:13) The above error occurred in the <EmbeddedTweet> component. It was handled by the <ReactDevOverlay> error boundary."
+        ],
+        "title": ""
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 1486,
+          "textCount": 25,
+          "branchCount": 161,
+          "repeatCount": 0,
+          "opaqueCount": 266,
+          "unknownCount": 10,
+          "modulesLoaded": 29
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 0,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "mismatch",
+        "runtimeFibers": 1,
+        "staticFibers": 929,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": {
+          "path": "root > <body> [HostComponent][0]",
+          "expected": "<Providers> [FunctionComponent]",
+          "actual": "<end of children>"
+        },
+        "stepsUsed": 2,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T07:59:38.410Z",
       "failure": null
     },
     {
@@ -1083,6 +1584,61 @@
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-07T13:00:25.894Z",
+      "failure": null
+    },
+    {
+      "id": "taxonomy",
+      "revision": "298a8857c7128a0d121e7f699dfd729f23b3966d",
+      "framework": "next-app",
+      "capturedAt": "2026-09-08T09:26:12.664Z",
+      "durationMs": 330,
+      "runtime": {
+        "reactVersion": "18.3.0-next-6eadbe0c4-20230425",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 304,
+        "commits": 6,
+        "pageErrors": [],
+        "title": "Taxonomy"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 218,
+          "textCount": 20,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 895
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 176,
+        "matchedText": 15,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 191,
+        "staticFibers": 201,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 192,
+        "budgetExhausted": false
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T08:16:25.361Z",
       "failure": null
     },
     {

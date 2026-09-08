@@ -55,6 +55,17 @@ const ObjectRef = () => {
   return <span ref={ref}>{tag === "span" ? <strong>attached</strong> : <em>detached</em>}</span>;
 };
 
+const DatasetReader = () => {
+  const theme = document.documentElement.dataset.theme ?? "light";
+  const hint = document.body.dataset.hint;
+  return (
+    <output>
+      {theme === "light" ? <b>light</b> : <i>{theme}</i>}
+      {hint === undefined ? <small>no hint</small> : <mark>{hint}</mark>}
+    </output>
+  );
+};
+
 const describeAbort = (controller: AbortController): string => {
   const events: string[] = [];
   const onAbort = () => events.push("listener");
@@ -101,6 +112,7 @@ export default function BrowserEnvironment() {
       </CallbackRefPortal>
       <LayoutEffectContainer />
       <ObjectRef />
+      <DatasetReader />
       <Aborts />
     </main>
   );

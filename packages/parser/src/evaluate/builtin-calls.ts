@@ -12,14 +12,9 @@ import type {
   StaticRegExpValue,
   StaticValue,
 } from "../types.js";
+import { getWrapperKindForTag } from "../react/element-shape.js";
 import { getReactApiTypeof } from "../react/react-api.js";
-import {
-  ForwardRefTag,
-  FunctionComponentTag,
-  LazyComponentTag,
-  MemoComponentTag,
-  SimpleMemoComponentTag,
-} from "../work-tags.js";
+import { FunctionComponentTag } from "../work-tags.js";
 import { getBrowserGlobalMember, isBrowserGlobalName, isWindowMember } from "./browser-globals.js";
 import {
   type EnvironmentLookup,
@@ -433,15 +428,9 @@ const getComponentTypeof = (type: StaticElementType): string | null => {
     case "view-transition":
       return "symbol";
     case "stub":
-      switch (type.stub.tag ?? FunctionComponentTag) {
-        case ForwardRefTag:
-        case MemoComponentTag:
-        case SimpleMemoComponentTag:
-        case LazyComponentTag:
-          return "object";
-        default:
-          return "function";
-      }
+      return getWrapperKindForTag(type.stub.tag ?? FunctionComponentTag) === null
+        ? "function"
+        : "object";
     default:
       return null;
   }

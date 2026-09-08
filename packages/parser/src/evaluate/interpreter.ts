@@ -43,7 +43,13 @@ import { hasExportedName } from "../graph/module-record.js";
 import { nativeFunction } from "../frameworks/stubs.js";
 import { getLibraryValue } from "../libraries/index.js";
 import { PurePackages } from "../libraries/pure-packages.js";
-import { getHoistedVarNames, getPatternNames, unwrapExpression } from "../parse/ast-walk.js";
+import {
+  getHoistedVarNames,
+  getPatternNames,
+  isFunctionLikeNode,
+  someNode,
+  unwrapExpression,
+} from "../parse/ast-walk.js";
 import { getSourceLocation } from "../parse/source-location.js";
 import {
   FUNCTION_OWN_KEYS,
@@ -288,6 +294,22 @@ const PRIMITIVE_PROTOTYPES: Record<UnknownPrimitiveType, object | null> = {
 
 const FUNCTION_INSTANCE_KEYS = new Set(["length", "prototype", "arguments", "caller"]);
 
+const CALL_NODE_TYPES = new Set([
+  "CallExpression",
+  "NewExpression",
+  "TaggedTemplateExpression",
+  "AwaitExpression",
+]);
+
+const isCallInitializedBinding = (binding: TopLevelBinding): boolean =>
+  (binding.kind === "variable" || binding.kind === "destructured") &&
+  binding.init !== null &&
+  someNode(
+    binding.init,
+    (node) => CALL_NODE_TYPES.has(node.type),
+    (node) => !isFunctionLikeNode(node),
+  );
+
 /** Names a function has without the analyzed code assigning them; any other name reads `undefined`. */
 const isFunctionOwnOrInheritedKey = (key: string): boolean =>
   isSymbolPropertyKey(key) || FUNCTION_INSTANCE_KEYS.has(key) || key in Function.prototype;
@@ -530,6 +552,8 @@ export class Interpreter {
   private readonly moduleScopes = new Map<string, Scope>();
   private readonly moduleValues = new Map<string, ModuleValues>();
   private readonly initializedModules = new Set<string>();
+  private readonly callInitializedBindings = new Map<string, TopLevelBinding[]>();
+  private readonly settledDependencyModules = new Set<string>();
   /** Module bindings mutated by closures that escaped before the binding was evaluated. */
   private readonly escapedMutations = new Map<string, Set<string>>();
   private readonly exportExpressionValues = new WeakMap<
@@ -682,6 +706,7 @@ export class Interpreter {
     }
     if (cached) return cached;
     values.set(name, IN_PROGRESS);
+    this.evaluatePrecedingCallInitializedBindings(module, binding);
     const value = this.evaluateTopLevelBindingValue(
       module,
       binding,
@@ -692,6 +717,49 @@ export class Interpreter {
       markExternallyMutable(value, describeEscapedMutation(name));
     }
     return value;
+  }
+
+  /**
+   * A top-level initializer that calls into module state (`const useScope =
+   * createScope()` reading a list earlier `const [Provider] = createContext()`
+   * calls appended to) observes the calls declared above it and those of the
+   * modules it imports, so they run first even when nothing referenced their
+   * bindings yet.
+   */
+  private evaluatePrecedingCallInitializedBindings(
+    module: ModuleRecord,
+    binding: TopLevelBinding,
+  ): void {
+    if (!isCallInitializedBinding(binding)) return;
+    this.evaluateDependencyCallInitializedBindings(module);
+    for (const preceding of this.getCallInitializedBindings(module)) {
+      if (preceding.span.start >= binding.span.start) return;
+      this.evaluateModuleBinding(module, preceding.name);
+    }
+  }
+
+  private evaluateDependencyCallInitializedBindings(module: ModuleRecord): void {
+    if (this.settledDependencyModules.has(module.filePath)) return;
+    this.settledDependencyModules.add(module.filePath);
+    for (const specifier of module.dependencies) {
+      const target = this.graph.resolveImportedModule(specifier, module);
+      if (!isModuleRecord(target)) continue;
+      this.evaluateDependencyCallInitializedBindings(target);
+      for (const dependencyBinding of this.getCallInitializedBindings(target)) {
+        this.evaluateModuleBinding(target, dependencyBinding.name);
+      }
+    }
+  }
+
+  private getCallInitializedBindings(module: ModuleRecord): TopLevelBinding[] {
+    let bindings = this.callInitializedBindings.get(module.filePath);
+    if (!bindings) {
+      bindings = [...module.bindings.values()]
+        .filter(isCallInitializedBinding)
+        .sort((first, second) => first.span.start - second.span.start);
+      this.callInitializedBindings.set(module.filePath, bindings);
+    }
+    return bindings;
   }
 
   /**
