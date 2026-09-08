@@ -3,6 +3,7 @@ import type {
   ClassBody,
   ClassFunctionMember,
   ClassMember,
+  FunctionLikeNode,
   SourceLocation,
   StaticClassValue,
   StaticFunctionValue,
@@ -221,17 +222,21 @@ export const getClassPrototypeObject = (
   return prototype;
 };
 
+/** `fn.length`: the parameters before the first default or rest parameter. */
+export const getFunctionLength = (functionNode: FunctionLikeNode): number => {
+  const parameters = functionNode.params;
+  const optionalIndex = parameters.findIndex(
+    (parameter) => parameter.type === "AssignmentPattern" || parameter.type === "RestElement",
+  );
+  return optionalIndex === -1 ? parameters.length : optionalIndex;
+};
+
 /** `Class.length`: the constructor's leading parameters without defaults; 0 without a constructor. */
 export const getClassLength = (classValue: StaticClassValue): number => {
   const constructor = classValue.body.members.find(
     (member) => member.kind === "constructor" && !member.isStatic,
   );
-  if (constructor?.kind !== "constructor") return 0;
-  const parameters = constructor.functionNode.params;
-  const optionalIndex = parameters.findIndex(
-    (parameter) => parameter.type === "AssignmentPattern" || parameter.type === "RestElement",
-  );
-  return optionalIndex === -1 ? parameters.length : optionalIndex;
+  return constructor?.kind === "constructor" ? getFunctionLength(constructor.functionNode) : 0;
 };
 
 /** The class's own or inherited static property, or null when no class in the chain defines it. */

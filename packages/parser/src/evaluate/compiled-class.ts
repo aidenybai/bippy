@@ -1,5 +1,6 @@
 import type {
   Argument,
+  AssignmentExpression,
   CallExpression,
   Expression,
   Function as FunctionNode,
@@ -37,8 +38,16 @@ interface MemberTarget {
 
 interface MemberCollector {
   className: string;
+  /** Variables the wrapper assigns the constructor to, as in `(t = X).prototype = …`. */
+  classAliases: Set<string>;
   prototypeAliases: Set<string>;
   members: ClassMember[];
+}
+
+/** The returned constructor name plus the expressions a `return a = b, …, X` sequence runs first. */
+interface ReturnedClass {
+  name: string;
+  trailing: Expression[];
 }
 
 interface PropertyDescriptor {
@@ -47,11 +56,13 @@ interface PropertyDescriptor {
   getter: Expression | null;
 }
 
-const getReturnedName = (statements: Statement[]): string | null => {
+const getReturnedClass = (statements: Statement[]): ReturnedClass | null => {
   const last = statements.at(-1);
   if (last?.type !== "ReturnStatement" || !last.argument) return null;
   const returned = unwrapExpression(last.argument);
-  return returned.type === "Identifier" ? returned.name : null;
+  const sequence = returned.type === "SequenceExpression" ? returned.expressions : [returned];
+  const named = unwrapExpression(sequence.at(-1) ?? returned);
+  return named.type === "Identifier" ? { name: named.name, trailing: sequence.slice(0, -1) } : null;
 };
 
 const toMember = (target: MemberTarget, descriptor: PropertyDescriptor): ClassMember => {
@@ -103,6 +114,35 @@ const getDescriptorMembers = (
   return members;
 };
 
+/** `alias = X` naming the class (also inline, as `(t = X).prototype`): records the alias and returns true. */
+const collectClassAlias = (expression: Expression, collector: MemberCollector): boolean => {
+  const unwrapped = unwrapExpression(expression);
+  if (
+    unwrapped.type !== "AssignmentExpression" ||
+    unwrapped.operator !== "=" ||
+    unwrapped.left.type !== "Identifier" ||
+    unwrapped.right.type !== "Identifier" ||
+    !collector.classAliases.has(unwrapped.right.name)
+  )
+    return false;
+  collector.classAliases.add(unwrapped.left.name);
+  return true;
+};
+
+/** A member chain rooted at the class, normalized to the class name. */
+const getClassChain = (reference: Expression, collector: MemberCollector): string[] | null => {
+  const unwrapped = unwrapExpression(reference);
+  if (unwrapped.type === "MemberExpression" && !unwrapped.computed) {
+    if (unwrapped.property.type !== "Identifier") return null;
+    const objectChain = getClassChain(unwrapped.object, collector);
+    return objectChain ? [...objectChain, unwrapped.property.name] : null;
+  }
+  if (collectClassAlias(unwrapped, collector)) return [collector.className];
+  const chain = getMemberChain(unwrapped);
+  if (chain?.length === 1 && collector.classAliases.has(chain[0])) return [collector.className];
+  return chain;
+};
+
 const isPrototypeChain = (chain: string[], collector: MemberCollector): boolean =>
   (chain.length === 2 && chain[0] === collector.className && chain[1] === "prototype") ||
   (chain.length === 1 && collector.prototypeAliases.has(chain[0]));
@@ -111,7 +151,7 @@ const getMemberTarget = (
   reference: Expression,
   collector: MemberCollector,
 ): MemberTarget | null => {
-  const chain = getMemberChain(reference);
+  const chain = getClassChain(reference, collector);
   if (!chain) return null;
   const [root, ...path] = chain;
   if (root === collector.className) {
@@ -125,22 +165,40 @@ const getMemberTarget = (
   return null;
 };
 
+/** `X.prototype = Object.create(Base.prototype)` / `X.prototype.constructor = X`: inlined inheritance wiring. */
+const isInheritanceWiring = (
+  assignment: AssignmentExpression,
+  collector: MemberCollector,
+): boolean => {
+  if (assignment.left.type !== "MemberExpression") return false;
+  const chain = getClassChain(assignment.left, collector);
+  if (chain?.[0] !== collector.className) return false;
+  const right = unwrapExpression(assignment.right);
+  if (chain.length === 2 && chain[1] === "prototype") return right.type === "CallExpression";
+  return (
+    chain.length === 3 &&
+    chain[1] === "prototype" &&
+    chain[2] === "constructor" &&
+    right.type === "Identifier" &&
+    collector.classAliases.has(right.name)
+  );
+};
+
 const isPrototypeAliasDeclaration = (statement: Statement, collector: MemberCollector): boolean => {
   if (statement.type !== "VariableDeclaration" || statement.declarations.length !== 1) return false;
   const [declarator] = statement.declarations;
   if (declarator.id.type !== "Identifier" || !declarator.init) return false;
-  const chain = getMemberChain(declarator.init);
+  const chain = getClassChain(declarator.init, collector);
   if (!chain || !isPrototypeChain(chain, collector) || chain.length !== 2) return false;
   collector.prototypeAliases.add(declarator.id.name);
   return true;
 };
 
-const collectMemberStatement = (statement: Statement, collector: MemberCollector): boolean => {
-  if (isPrototypeAliasDeclaration(statement, collector)) return true;
-  if (statement.type !== "ExpressionStatement") return false;
-  const expression = unwrapExpression(statement.expression);
+const collectMemberExpression = (expression: Expression, collector: MemberCollector): boolean => {
+  if (collectClassAlias(expression, collector)) return true;
   if (expression.type === "AssignmentExpression") {
     if (expression.operator !== "=" || expression.left.type !== "MemberExpression") return false;
+    if (isInheritanceWiring(expression, collector)) return true;
     const target = getMemberTarget(expression.left, collector);
     if (!target) return false;
     collector.members.push(toMember(target, { key: null, value: expression.right, getter: null }));
@@ -153,14 +211,14 @@ const collectMemberStatement = (statement: Statement, collector: MemberCollector
       return false;
     }
     const descriptor = third?.type === "ObjectExpression" ? readDescriptor(third) : null;
-    const chain = getMemberChain(receiver);
+    const chain = getClassChain(receiver, collector);
     if (!descriptor || !chain) return false;
     const isClass = chain.length === 1 && chain[0] === collector.className;
     if (!isClass && !isPrototypeChain(chain, collector)) return false;
     collector.members.push(toMember({ key: second.value, isStatic: isClass }, descriptor));
     return true;
   }
-  if (receiver?.type !== "Identifier" || receiver.name !== collector.className) return false;
+  if (receiver?.type !== "Identifier" || !collector.classAliases.has(receiver.name)) return false;
   if (second === undefined) return false;
   const instanceMembers = getDescriptorMembers(second, false);
   const staticMembers = getDescriptorMembers(third, true);
@@ -169,6 +227,18 @@ const collectMemberStatement = (statement: Statement, collector: MemberCollector
   return true;
 };
 
+const collectMemberStatement = (statement: Statement, collector: MemberCollector): boolean =>
+  isPrototypeAliasDeclaration(statement, collector) ||
+  (statement.type === "ExpressionStatement" &&
+    collectMemberExpression(unwrapExpression(statement.expression), collector));
+
+const toExpressionStatement = (expression: Expression): Statement => ({
+  type: "ExpressionStatement",
+  expression,
+  start: expression.start,
+  end: expression.end,
+});
+
 /** Recognizes a lowered class wrapper call with at least one member besides the constructor. */
 export const getCompiledClass = (call: CallExpression): CompiledClass | null => {
   const wrapper = unwrapExpression(call.callee);
@@ -176,14 +246,16 @@ export const getCompiledClass = (call: CallExpression): CompiledClass | null => 
   if (wrapper.params.length !== 1 || call.arguments.length !== 1) return null;
   const statements = getFunctionStatements(wrapper);
   if (!statements) return null;
-  const name = getReturnedName(statements);
-  if (name === null) return null;
+  const returned = getReturnedClass(statements);
+  if (returned === null) return null;
+  const { name } = returned;
   const constructorDeclaration = statements.find(
     (statement) => statement.type === "FunctionDeclaration" && statement.id?.name === name,
   );
   if (constructorDeclaration?.type !== "FunctionDeclaration") return null;
   const collector: MemberCollector = {
     className: name,
+    classAliases: new Set([name]),
     prototypeAliases: new Set(),
     members: [
       {
@@ -195,7 +267,8 @@ export const getCompiledClass = (call: CallExpression): CompiledClass | null => 
     ],
   };
   const setup: Statement[] = [];
-  for (const statement of statements.slice(0, -1)) {
+  const body = [...statements.slice(0, -1), ...returned.trailing.map(toExpressionStatement)];
+  for (const statement of body) {
     if (statement === constructorDeclaration || collectMemberStatement(statement, collector))
       continue;
     setup.push(statement);

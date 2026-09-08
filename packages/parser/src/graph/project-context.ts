@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { EMPTY_OBSERVATIONS } from "../observations.js";
 import type { ProjectContext, RuntimeObservations } from "../types.js";
+import type { ModuleResolver } from "./module-resolver.js";
 
 const DEPENDENCY_FIELDS = ["dependencies", "devDependencies", "optionalDependencies"];
 
@@ -26,20 +27,38 @@ const readServedAsset = (
   }
 };
 
-const readDeclaredDependencies = (manifestPath: string): Set<string> | null => {
-  let manifest: unknown;
+const readManifest = (manifestPath: string): object | null => {
   try {
-    manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+    const manifest: unknown = JSON.parse(readFileSync(manifestPath, "utf8"));
+    return typeof manifest === "object" ? manifest : null;
   } catch {
     return null;
   }
-  if (typeof manifest !== "object" || manifest === null) return null;
+};
+
+const readDeclaredDependencies = (manifestPath: string): Set<string> | null => {
+  const manifest = readManifest(manifestPath);
+  if (manifest === null) return null;
   const declared = new Set<string>();
   for (const [field, value] of Object.entries(manifest)) {
     if (!DEPENDENCY_FIELDS.includes(field) || typeof value !== "object" || value === null) continue;
     for (const packageName of Object.keys(value)) declared.add(packageName);
   }
   return declared;
+};
+
+/** The version of the package the project's own modules would import, following the resolver like the bundler does. */
+const readInstalledVersion = (
+  resolver: ModuleResolver,
+  rootDirectory: string,
+  packageName: string,
+): string | null => {
+  const resolution = resolver.resolve(`${packageName}/package.json`, `${rootDirectory}/index.js`);
+  if (resolution.kind !== "external" || !resolution.filePath) return null;
+  const manifest = readManifest(resolution.filePath);
+  return manifest !== null && "version" in manifest && typeof manifest.version === "string"
+    ? manifest.version
+    : null;
 };
 
 /**
@@ -50,6 +69,7 @@ const readDeclaredDependencies = (manifestPath: string): Set<string> | null => {
  */
 export const createProjectContext = (
   rootDirectory: string,
+  resolver: ModuleResolver,
   observations: RuntimeObservations = EMPTY_OBSERVATIONS,
   origin: string | null = null,
 ): ProjectContext => {
@@ -61,9 +81,17 @@ export const createProjectContext = (
   }
   const queries = new Map(observations.queries.map((query) => [query.queryHash, query]));
   const { mutations, stores } = observations;
+  const installedVersions = new Map<string, string | null>();
   return {
     rootDirectory,
     hasDeclaredDependency: (packageName) => declared.has(packageName),
+    readInstalledVersion: (packageName) => {
+      const cached = installedVersions.get(packageName);
+      if (cached !== undefined) return cached;
+      const version = readInstalledVersion(resolver, rootDirectory, packageName);
+      installedVersions.set(packageName, version);
+      return version;
+    },
     readServedAsset: (url) => readServedAsset(rootDirectory, origin, url),
     findQuery: (queryHash) => queries.get(queryHash) ?? null,
     findMutations: (mutationHash) =>

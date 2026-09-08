@@ -396,6 +396,12 @@ const paramsValue = (params: RouteParams): StaticValue =>
     ),
   );
 
+const routeContextProvider = (routeContext: StaticValue, children: StaticValue): StaticElementValue =>
+  element(
+    { kind: "context-provider", context: ROUTE_CONTEXT, displayName: ROUTE_CONTEXT.displayName },
+    objectFromRecord({ value: routeContext, children }),
+  );
+
 /**
  * `RenderedRoute` is the function component React Router renders per match; it
  * provides `RouteContext` with the outlet for the next match.
@@ -403,13 +409,20 @@ const paramsValue = (params: RouteParams): StaticValue =>
 const RENDERED_ROUTE_STUB: StubComponent = {
   displayName: "RenderedRoute",
   render: (props) =>
-    element(
-      { kind: "context-provider", context: ROUTE_CONTEXT, displayName: ROUTE_CONTEXT.displayName },
-      objectFromRecord({
-        value: getObjectProperty(props, "routeContext"),
-        children: getObjectProperty(props, "children"),
-      }),
+    routeContextProvider(
+      getObjectProperty(props, "routeContext"),
+      getObjectProperty(props, "children"),
     ),
+};
+
+/** Before 6.4 (data routers), `_renderMatches` rendered the `RouteContext` provider directly. */
+const FIRST_RENDERED_ROUTE_VERSION = [6, 4];
+
+const hasRenderedRouteComponent = (routerVersion: string | null): boolean => {
+  if (routerVersion === null) return true;
+  const [major, minor] = routerVersion.split(".").map(Number);
+  const [firstMajor, firstMinor] = FIRST_RENDERED_ROUTE_VERSION;
+  return major > firstMajor || (major === firstMajor && minor >= firstMinor);
 };
 
 const renderedRoute = (
@@ -417,18 +430,20 @@ const renderedRoute = (
   params: RouteParams,
   children: StaticValue,
   routeId: string | null,
-): StaticElementValue =>
-  element(
-    { kind: "stub", stub: RENDERED_ROUTE_STUB },
-    objectFromRecord({
-      routeContext: objectFromRecord({
-        outlet,
-        params: paramsValue(params),
-        id: routeId === null ? UNDEFINED_VALUE : primitiveValue(routeId),
-      }),
-      children,
-    }),
-  );
+  hasRenderedRoute = true,
+): StaticElementValue => {
+  const routeContext = objectFromRecord({
+    outlet,
+    params: paramsValue(params),
+    id: routeId === null ? UNDEFINED_VALUE : primitiveValue(routeId),
+  });
+  return hasRenderedRoute
+    ? element(
+        { kind: "stub", stub: RENDERED_ROUTE_STUB },
+        objectFromRecord({ routeContext, children }),
+      )
+    : routeContextProvider(routeContext, children);
+};
 
 /**
  * Builds the element for a matched chain exactly like `_renderMatches`: each
@@ -438,6 +453,7 @@ const renderedRoute = (
 const composeChain = (
   chain: RouteMatch[],
   renderRoute: (route: RouteRecord, outlet: StaticValue) => StaticValue,
+  hasRenderedRoute = true,
 ): StaticValue => {
   let outlet: StaticValue = NULL_VALUE;
   for (let index = chain.length - 1; index >= 0; index -= 1) {
@@ -446,7 +462,7 @@ const composeChain = (
       outlet = unknownValue(`react-router: ${route.uncertainty}`);
       continue;
     }
-    outlet = renderedRoute(outlet, params, renderRoute(route, outlet), route.id);
+    outlet = renderedRoute(outlet, params, renderRoute(route, outlet), route.id, hasRenderedRoute);
   }
   return outlet;
 };
@@ -462,7 +478,11 @@ const renderDataRoute = (route: RouteRecord, outlet: StaticValue): StaticValue =
  * object) may rank above any statically matched route, so a match found next
  * to them is only the preferred alternative.
  */
-const renderMatchedRoutes = (routes: RouteRecord[], pathname: string): StaticValue => {
+const renderMatchedRoutes = (
+  routes: RouteRecord[],
+  pathname: string,
+  tools: StubRenderTools,
+): StaticValue => {
   const unreadable = routes.filter((route) => route.uncertainty !== null && route.path === null);
   const chain = bestMatch(routes, pathname);
   if (!chain) {
@@ -472,7 +492,11 @@ const renderMatchedRoutes = (routes: RouteRecord[], pathname: string): StaticVal
         : `react-router: no route matches ${pathname}`,
     );
   }
-  const matched = composeChain(chain, renderDataRoute);
+  const matched = composeChain(
+    chain,
+    renderDataRoute,
+    hasRenderedRouteComponent(tools.project.readInstalledVersion("react-router")),
+  );
   if (unreadable.length === 0) return matched;
   return branchValue(
     [matched, unknownValue(`react-router: ${unreadable[0].uncertainty}`)],
@@ -807,6 +831,7 @@ export const createReactRouterModel = (
         renderMatchedRoutes(
           readRouteList(getObjectProperty(router, "routes"), resolveLazy),
           pathname,
+          tools,
         ),
         pathname,
         observed,
@@ -825,6 +850,7 @@ export const createReactRouterModel = (
           tools.callAwaited(lazy, []),
         ),
         pathname,
+        tools,
       ),
   };
 

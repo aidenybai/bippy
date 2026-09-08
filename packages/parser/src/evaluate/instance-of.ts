@@ -66,6 +66,30 @@ const BUILTIN_CONSTRUCTORS: Record<string, BuiltinConstructor> = {
   ...TYPED_ARRAY_CONSTRUCTORS,
 };
 
+const BUILTIN_NAMESPACES: Record<string, object> = { Math, JSON, Reflect };
+
+const isObjectLike = (value: unknown): value is object =>
+  (typeof value === "object" || typeof value === "function") && value !== null;
+
+/** The native value a dotted builtin global names (`Object.create`, `Array.prototype.map`), or undefined for other names. */
+export const getBuiltinMember = (globalName: string): unknown => {
+  const [rootName = "", ...path] = globalName.split(".");
+  let member: unknown = BUILTIN_CONSTRUCTORS[rootName] ?? BUILTIN_NAMESPACES[rootName];
+  for (const segment of path) {
+    if (!isObjectLike(member) || !(segment in member)) return undefined;
+    member = Reflect.get(member, segment);
+  }
+  return member;
+};
+
+/** The `<Constructor>.prototype` global name of a native prototype object, or null when no builtin owns it. */
+export const getBuiltinPrototypeName = (prototype: object | null): string | null => {
+  const owner = Object.entries(BUILTIN_CONSTRUCTORS).find(
+    ([, constructor]) => constructor.prototype === prototype,
+  );
+  return owner === undefined ? null : `${owner[0]}.prototype`;
+};
+
 /** The native prototype object a `<Constructor>.prototype` global denotes, or null for other names. */
 export const getBuiltinPrototype = (globalName: string): object | null => {
   const [constructorName, member, ...rest] = globalName.split(".");
@@ -117,8 +141,10 @@ export const getPrototypeWitness = (value: StaticValue): object | null => {
     case "native-function":
     case "method":
       return () => undefined;
-    case "global":
-      return getBuiltinPrototype(value.name) ?? BUILTIN_CONSTRUCTORS[value.name] ?? null;
+    case "global": {
+      const member = getBuiltinMember(value.name);
+      return isObjectLike(member) ? member : null;
+    }
     case "proxy": {
       const trap = getObjectProperty(value.handler, "getPrototypeOf");
       return trap.kind === "primitive" && trap.value === undefined

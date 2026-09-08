@@ -39,7 +39,6 @@ import type {
 } from "oxc-parser";
 import path from "node:path";
 import { isModuleRecord, type ModuleGraph } from "../graph/module-graph.js";
-import { hasExportedName } from "../graph/module-record.js";
 import { nativeFunction } from "../frameworks/stubs.js";
 import { getLibraryValue } from "../libraries/index.js";
 import { PurePackages } from "../libraries/pure-packages.js";
@@ -101,6 +100,7 @@ import {
   collectClassMembers,
   constructClassInstance,
   getClassLength,
+  getFunctionLength,
   getClassPrototypeObject,
   getStaticProperty,
   getSuperObject,
@@ -193,6 +193,7 @@ import {
   getObjectProperty,
   getPreferredTruthiness,
   getPropertyName,
+  getStubDisplayName,
   getTruthiness,
   isNullish,
   isSymbolPropertyKey,
@@ -261,6 +262,7 @@ interface PatternLeafAssigner {
 const UNKNOWN_PROJECT: ProjectContext = {
   rootDirectory: null,
   hasDeclaredDependency: () => false,
+  readInstalledVersion: () => null,
   readServedAsset: () => null,
   findQuery: () => null,
   findMutations: () => null,
@@ -508,7 +510,7 @@ export class Interpreter {
   private readonly maxCallDepth: number;
   private readonly maxForkDepth: number;
   private readonly externalValues: ExternalValueProvider | null;
-  private readonly project: ProjectContext;
+  readonly project: ProjectContext;
   readonly origin: string | null;
   readonly history: SessionHistory;
   private readonly purePackages: PurePackages | null;
@@ -902,6 +904,10 @@ export class Interpreter {
         const type = target.type;
         if (type.kind === "function" || type.kind === "class") {
           type.component.properties.set(propertyName, value);
+          return target;
+        }
+        if (type.kind === "stub") {
+          type.stub.properties?.set(propertyName, value);
           return target;
         }
         if (type.kind !== "memo" && type.kind !== "forward-ref" && type.kind !== "lazy")
@@ -1811,7 +1817,7 @@ export class Interpreter {
           return type.stub.displayName === null
             ? UNDEFINED_VALUE
             : primitiveValue(type.stub.displayName);
-        return unknownValue(`${type.stub.displayName ?? "stub"}.${key}`, location);
+        return unknownValue(`${getStubDisplayName(type.stub) ?? "stub"}.${key}`, location);
       }
       default:
         return key === "displayName" || key === "name"
@@ -1945,12 +1951,13 @@ export class Interpreter {
         return getExternalMember(object, key);
       case "native-object":
         return getNativeObjectMember(object, key);
-      case "namespace":
-        if (key === "__esModule") {
-          if (!object.module.isCommonJs) return TRUE_VALUE;
-          if (!hasExportedName(object.module, key)) return UNDEFINED_VALUE;
-        }
-        return this.evaluateModuleExport(object.module, key);
+      case "namespace": {
+        if (key === "__esModule" && !object.module.isCommonJs) return TRUE_VALUE;
+        const exportNames = this.graph.collectExportNames(object.module);
+        return exportNames.complete && !exportNames.names.includes(key)
+          ? UNDEFINED_VALUE
+          : this.evaluateModuleExport(object.module, key);
+      }
       case "global": {
         const storageAreaName = getStorageAreaName(object.name);
         if (storageAreaName !== null) {
@@ -1967,6 +1974,8 @@ export class Interpreter {
           const windowGlobal = this.windowGlobals.get(key);
           if (windowGlobal) return windowGlobal;
           if (isSymbolPropertyKey(key)) return UNDEFINED_VALUE;
+          const windowKeys = this.pageState?.windowKeys;
+          if (windowKeys && !windowKeys.includes(key)) return UNDEFINED_VALUE;
         }
         return (
           this.getGlobal(`${object.name}.${key}`, context.environment) ?? {
@@ -1995,6 +2004,10 @@ export class Interpreter {
           if (key === "__proto__") return getClassPrototype(object);
           if (key === "length") return primitiveValue(getClassLength(object));
         } else if (key === "prototype") return getFunctionPrototype(object);
+        else if (key === "length")
+          return primitiveValue(
+            Math.max(getFunctionLength(object.node) - (object.boundArgs?.length ?? 0), 0),
+          );
         if (key === "displayName") return UNDEFINED_VALUE;
         if (key === "name") return object.name ? primitiveValue(object.name) : primitiveValue("");
         if (object.kind === "function" && !isFunctionOwnOrInheritedKey(key)) return UNDEFINED_VALUE;
@@ -2183,6 +2196,7 @@ export class Interpreter {
           markEscaped: (value) => this.markEscaped(value),
           queueMicrotask: (task) => this.timers.queueMicrotask(task),
           setProperty: (object, key, value) => this.assignOwnProperty(object, key, value),
+          project: this.project,
           nameHint: options.nameHint ?? null,
           templateArgumentNames: options.templateArgumentNames ?? null,
         });

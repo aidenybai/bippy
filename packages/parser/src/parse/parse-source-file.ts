@@ -4,7 +4,7 @@ import { parseSync } from "oxc-parser";
 import type { ParsedSourceFile, SourceLanguage } from "../types.js";
 
 const EXTENSION_TO_LANG: Record<string, SourceLanguage> = {
-  ".js": "js",
+  ".js": "jsx",
   ".jsx": "jsx",
   ".ts": "ts",
   ".tsx": "tsx",

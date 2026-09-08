@@ -27,6 +27,7 @@ import {
   compareShallowly,
   describeValue,
   getObjectProperty,
+  getStubDisplayName,
   mapValue,
   NULL_VALUE,
   omitObjectKeys,
@@ -1179,7 +1180,7 @@ export class Materializer {
       const render = setFunctionName(
         ({ input }: ProxyProps): ReactNode =>
           this.renderInsideComponent(() => this.renderStub(input, stub)),
-        stub.displayName,
+        getStubDisplayName(stub),
       );
       proxy =
         stub.tag === ForwardRefTag
@@ -1216,6 +1217,7 @@ export class Materializer {
       markEscaped: (value) => this.interpreter.markEscaped(value),
       queueMicrotask: (task) => this.interpreter.timers.queueMicrotask(task),
       setProperty: (object, key, value) => this.interpreter.assignOwnProperty(object, key, value),
+      project: this.interpreter.project,
       nameHint: null,
       templateArgumentNames: null,
     };

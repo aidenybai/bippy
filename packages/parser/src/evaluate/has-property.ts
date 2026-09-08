@@ -11,6 +11,7 @@ import type {
 } from "../types.js";
 import { getStaticProperty } from "./class-component.js";
 import { createErrorValue } from "./errors.js";
+import { getPrototypeWitness } from "./instance-of.js";
 import { hasNativeObjectMember } from "./native-values.js";
 import {
   branchValue,
@@ -35,6 +36,14 @@ export const OBJECT_PROTOTYPE_METHODS = new Set([
   "toLocaleString",
   "valueOf",
 ]);
+
+const SYMBOL_KEY_PREFIX = "@@Symbol.";
+
+const toRuntimePropertyKey = (name: string): string | symbol => {
+  if (!name.startsWith(SYMBOL_KEY_PREFIX)) return name;
+  const wellKnown = Reflect.get(Symbol, name.slice(SYMBOL_KEY_PREFIX.length));
+  return typeof wellKnown === "symbol" ? wellKnown : name;
+};
 
 /** Own keys every function object has without source assigning them; arrows have no `prototype`. */
 export const isIntrinsicFunctionKey = (
@@ -101,6 +110,11 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
       return hasNativeObjectMember(target, name) ? TRUE_VALUE : FALSE_VALUE;
     case "native-function":
       return name in Function.prototype ? TRUE_VALUE : FALSE_VALUE;
+    case "global": {
+      const witness = getPrototypeWitness(target);
+      if (witness === null) return null;
+      return toRuntimePropertyKey(name) in witness ? TRUE_VALUE : FALSE_VALUE;
+    }
     case "list": {
       if (name in Array.prototype) return TRUE_VALUE;
       const index = Number(name);

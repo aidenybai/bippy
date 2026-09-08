@@ -1,6 +1,3 @@
-import { readFileSync } from "node:fs";
-import type { ModuleResolver } from "../graph/module-resolver.js";
-
 /** Own keys of a development-mode `ReactElement` (react/src/jsx/ReactJSXElement.js). */
 export const REACT_ELEMENT_OWN_KEYS = new Set([
   "$$typeof",
@@ -41,21 +38,3 @@ export const getReactElementSymbolKey = (reactVersion: string | null): string =>
     ? "react.element"
     : "react.transitional.element";
 
-export const readReactVersion = (
-  resolver: ModuleResolver,
-  rootDirectory: string,
-): string | null => {
-  const resolution = resolver.resolve("react/package.json", `${rootDirectory}/index.js`);
-  if (resolution.kind !== "external" || !resolution.filePath) return null;
-  try {
-    const manifest: unknown = JSON.parse(readFileSync(resolution.filePath, "utf8"));
-    return typeof manifest === "object" &&
-      manifest !== null &&
-      "version" in manifest &&
-      typeof manifest.version === "string"
-      ? manifest.version
-      : null;
-  } catch {
-    return null;
-  }
-};

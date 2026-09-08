@@ -4,6 +4,7 @@ import {
   branchValue,
   describeElementType,
   getObjectProperty,
+  getStubDisplayName,
   getTruthiness,
   isNullish,
   listValue,
@@ -160,7 +161,7 @@ const describeTag = (tag: StaticValue): string => {
     case "lazy":
       return type.displayName ?? "Component";
     case "stub":
-      return type.stub.displayName ?? "Component";
+      return getStubDisplayName(type.stub) ?? "Component";
     default:
       return describeElementType(type);
   }

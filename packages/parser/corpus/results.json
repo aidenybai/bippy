@@ -691,6 +691,61 @@
       "failure": null
     },
     {
+      "id": "react-admin-dashboard",
+      "revision": "adc9e57f76b5e722bd9109a09d85035dae09d15f",
+      "framework": "react-router",
+      "capturedAt": "2026-09-08T05:46:27.053Z",
+      "durationMs": 1186,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 2105,
+        "commits": 4,
+        "pageErrors": [],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 1019,
+          "textCount": 17,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 3,
+          "unknownCount": 0,
+          "modulesLoaded": 1247
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 997,
+        "matchedText": 17,
+        "opaqueSubtrees": 3,
+        "opaqueSkippedFibers": 1087,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 3,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "branchDeviations": [],
+        "repeatIterations": 0,
+        "status": "partial",
+        "runtimeFibers": 2101,
+        "staticFibers": 1017,
+        "coverage": 1,
+        "strictCoverage": 0.4826273203236554,
+        "divergence": null,
+        "stepsUsed": 1017,
+        "budgetExhausted": false
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T04:59:36.976Z",
+      "failure": null
+    },
+    {
       "id": "react-email",
       "revision": "0f0cb94e1f15581131a2d50b80f8daa13dd1c9fc",
       "framework": "next-app",

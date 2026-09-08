@@ -94,11 +94,43 @@ var Counter = /** @class */ (function (_super) {
   return Counter;
 })(React.PureComponent);
 
+/** Minified loose mode: `_inheritsLoose` inlined into the wrapper's `return a = b, (t = n).prototype = …, n` sequence. */
+var withBadge = function (e) {
+  return (function (r) {
+    var t, i;
+    function n() {
+      return r.apply(this, arguments) || this;
+    }
+    return (
+      (i = r),
+      ((t = n).prototype = Object.create(i.prototype)),
+      (t.prototype.constructor = t),
+      Object.setPrototypeOf(t, i),
+      (n.prototype.render = function () {
+        var r = this.props,
+          label = r.label;
+        return React.createElement(
+          "div",
+          null,
+          React.createElement(e, { label: label + "!" }),
+          React.createElement("small", null, "badge"),
+        );
+      }),
+      n
+    );
+  })(React.Component);
+};
+var Label = function (props) {
+  return React.createElement("span", null, props.label);
+};
+var BadgedLabel = withBadge(Label);
+
 export default function CompiledClasses() {
   return React.createElement(
     Boundary,
     null,
     React.createElement(Greeting, null),
     React.createElement(Counter, { count: 2 }),
+    React.createElement(BadgedLabel, { label: "hi" }),
   );
 }

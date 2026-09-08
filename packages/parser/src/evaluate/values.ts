@@ -18,9 +18,11 @@ import type {
   StaticUnknownPrimitiveValue,
   StaticUnknownValue,
   StaticValue,
+  StubComponent,
   UnknownPrimitiveType,
 } from "../types.js";
 import { getExternalMember, getReactApiTypeof } from "../react/react-api.js";
+import { isWindowAlias } from "./browser-globals.js";
 
 export const isKnownString = (
   value: StaticValue,
@@ -645,7 +647,10 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
     return left.allocation === right.allocation;
   }
   if (left.kind === "symbol" && right.kind === "symbol") return left.key === right.key;
-  if (left.kind === "global" && right.kind === "global" && left.name === right.name) return true;
+  if (left.kind === "global" && right.kind === "global")
+    return left.name === right.name || (isWindowAlias(left.name) && isWindowAlias(right.name));
+  if (left.kind === "namespace" && right.kind === "namespace")
+    return left.module.filePath === right.module.filePath;
   if (
     (left.kind === "global" && isProgramAllocated(right)) ||
     (right.kind === "global" && isProgramAllocated(left))
@@ -1157,6 +1162,14 @@ export const describeValue = (value: StaticValue, depth = 0): string => {
   }
 };
 
+/** The name React reports for a stub: a `displayName` the app assigned wins over the library's. */
+export const getStubDisplayName = (stub: StubComponent): string | null => {
+  const assigned = stub.properties?.get("displayName");
+  return assigned?.kind === "primitive" && typeof assigned.value === "string"
+    ? assigned.value
+    : stub.displayName;
+};
+
 export const describeElementType = (type: StaticElementType): string => {
   switch (type.kind) {
     case "host":
@@ -1193,7 +1206,7 @@ export const describeElementType = (type: StaticElementType): string => {
     case "external":
       return type.displayName;
     case "stub":
-      return type.stub.displayName ?? "anonymous stub";
+      return getStubDisplayName(type.stub) ?? "anonymous stub";
     case "unknown":
       return type.displayName ?? "unknown";
   }

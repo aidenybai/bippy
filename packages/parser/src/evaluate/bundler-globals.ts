@@ -84,6 +84,7 @@ export const getBundlerGlobal = (
   environment: EnvironmentLookup = NO_ENVIRONMENT,
 ): StaticValue | null => {
   if (name === "module" || name === "import.meta") return { kind: "global", name };
+  if (name === "global") return { kind: "global", name: "globalThis" };
   if (ENVIRONMENT_OBJECTS.includes(name) || HOT_MODULE_OBJECTS.has(name))
     return { kind: "global", name };
   for (const objectName of ENVIRONMENT_OBJECTS) {

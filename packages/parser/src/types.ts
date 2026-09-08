@@ -234,8 +234,8 @@ export interface StubComponent {
   displayName: string | null;
   /** Work tag of the real component (e.g. `ForwardRef` for `Link`); defaults to a function component. */
   tag?: WorkTag;
-  /** Statics the library hangs on the component (`Styled.withComponent`). */
-  properties?: ReadonlyMap<string, StaticValue>;
+  /** Statics the library hangs on the component (`Styled.withComponent`); the app's own assignments (`Component.displayName = ...`) land here too. */
+  properties?: Map<string, StaticValue>;
   render: (props: StaticObjectValue, tools: StubRenderTools) => StaticValue;
   /**
    * For build-time macros (Lingui's `<Trans>`): the props of the element the
@@ -272,6 +272,7 @@ export interface StubRenderTools {
   queueMicrotask: (task: () => void) => void;
   /** Assigns an own property of a modeled object, undone on the other paths of an enclosing fork like any heap write. */
   setProperty: (object: StaticObjectValue, key: string, value: StaticValue) => void;
+  project: ProjectContext;
   /** Binding the call's result is assigned to, as build-time labelers (Emotion's babel/swc plugin) see it. */
   nameHint: string | null;
   /** For tagged templates, the identifier each `${expression}` is (null when not a bare identifier); null for other calls. */
@@ -293,6 +294,8 @@ export interface ProjectContext {
   /** Directory the analyzed app is served from (`process.cwd()` of its dev server); `null` when analyzing loose modules. */
   rootDirectory: string | null;
   hasDeclaredDependency: (packageName: string) => boolean;
+  /** The installed version of a package as the project's modules resolve it; `null` when it is not installed. */
+  readInstalledVersion: (packageName: string) => string | null;
   /** The text the dev server serves for a same-origin or root-relative URL from the project's static directory; `null` when it serves none. */
   readServedAsset: (url: string) => string | null;
   /** The captured TanStack Query cache entry for a query hash (`hashKey(queryKey)`), if the page held one. */

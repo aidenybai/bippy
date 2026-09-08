@@ -20,7 +20,12 @@ import {
   MemoComponentTag,
   SimpleMemoComponentTag,
 } from "../work-tags.js";
-import { getBrowserGlobalMember, isBrowserGlobalName, isWindowMember } from "./browser-globals.js";
+import {
+  getBrowserGlobalMember,
+  isBrowserGlobalName,
+  isWindowAlias,
+  isWindowMember,
+} from "./browser-globals.js";
 import {
   type EnvironmentLookup,
   callHotModuleMethod,
@@ -34,7 +39,14 @@ import { nativeFunction } from "../frameworks/stubs.js";
 import { constructNativeDate } from "./native-values.js";
 import { callEventTargetMethod } from "./event-listeners.js";
 import { hasProperty, isIntrinsicFunctionKey } from "./has-property.js";
-import { getBuiltinPrototype, isTypedArrayName, TYPED_ARRAY_NAMES } from "./instance-of.js";
+import {
+  getBuiltinMember,
+  getBuiltinPrototype,
+  getBuiltinPrototypeName,
+  getPrototypeWitness,
+  isTypedArrayName,
+  TYPED_ARRAY_NAMES,
+} from "./instance-of.js";
 import { mediaQueryListValue } from "./media-query.js";
 import { getObjectTag } from "./object-tag.js";
 import { callHistoryMethod, isHistoryName } from "./session-history.js";
@@ -399,7 +411,10 @@ export const getGlobalTypeof = (
 ): string | null => {
   if (name.endsWith(".prototype") && CONSTRUCTOR_GLOBALS.has(name.slice(0, -".prototype".length)))
     return name === "Function.prototype" ? "function" : "object";
-  if (name.includes(".")) return null;
+  if (name.includes(".")) {
+    const member = getBuiltinMember(name);
+    return member === undefined ? null : typeof member;
+  }
   if (BROWSER_GLOBALS.has(name)) return environment === "server" ? "undefined" : "object";
   if (BROWSER_FUNCTION_GLOBALS.has(name))
     return environment === "server" ? "undefined" : "function";
@@ -528,8 +543,7 @@ export const getBuiltinGlobal = (
   }
   if (root !== name && isBrowserGlobalName(root)) {
     const member = name.slice(root.length + 1);
-    if ((root === "window" || root === "globalThis") && GLOBAL_NAMES.has(member))
-      return getBuiltinGlobal(member);
+    if (isWindowAlias(root) && GLOBAL_NAMES.has(member)) return getBuiltinGlobal(member);
     return getBrowserGlobalMember(root, member, getBuiltinGlobal);
   }
   return { kind: "global", name };
@@ -777,6 +791,34 @@ const callInvokedGlobal = (
   return interpreter.callValue(callee, calleeArgs, context, location);
 };
 
+/** `Object.getPrototypeOf(value)` when the value's chain is a native one the analysis can name. */
+const getWitnessPrototype = (value: StaticValue | undefined): StaticValue | null => {
+  const witness = value === undefined ? null : getPrototypeWitness(value);
+  if (witness === null) return null;
+  const prototype = Object.getPrototypeOf(witness);
+  if (prototype === null) return NULL_VALUE;
+  const prototypeName = getBuiltinPrototypeName(prototype);
+  return prototypeName === null ? null : { kind: "global", name: prototypeName };
+};
+
+const TO_STRING_SUFFIX = ".toString";
+
+/** `Function.prototype.toString` of a host function: the NativeFunction form the spec mandates. */
+const getNativeFunctionSource = (receiver: StaticValue): string | null => {
+  switch (receiver.kind) {
+    case "global": {
+      if (typeof getBuiltinMember(receiver.name) !== "function") return null;
+      return `function ${receiver.name.slice(receiver.name.lastIndexOf(".") + 1)}() { [native code] }`;
+    }
+    case "method":
+      return receiver.receiver.kind === "unknown" || receiver.receiver.kind === "external"
+        ? null
+        : `function ${receiver.name}() { [native code] }`;
+    default:
+      return null;
+  }
+};
+
 const callGlobal = (
   interpreter: Interpreter,
   name: string,
@@ -789,6 +831,13 @@ const callGlobal = (
     ? null
     : callInvokedGlobal(interpreter, name, args, context, location);
   if (invoked) return invoked;
+  if (!isConstructor && args.length === 0 && name.endsWith(TO_STRING_SUFFIX)) {
+    const nativeSource = getNativeFunctionSource({
+      kind: "global",
+      name: name.slice(0, -TO_STRING_SUFFIX.length),
+    });
+    if (nativeSource !== null) return primitiveValue(nativeSource);
+  }
   if (isErrorConstructorName(name)) return createErrorValue(name, args, location);
   if (isStringCodecName(name)) return callStringCodec(name, args, location);
   if (name === "Buffer.from") return createBufferValue(args, location);
@@ -803,6 +852,14 @@ const callGlobal = (
       if (date) return date;
       break;
     }
+    case "Object":
+      if (isConstructor || first === undefined) break;
+      return mapValue(first, (argument) => {
+        if (isNullish(argument) === true) return objectValue();
+        return argument.kind === "primitive" || argument.kind === "unknown-primitive"
+          ? unknownValue(`Object(${describeValue(argument)})`, location)
+          : argument;
+      });
     case "String":
       return first ? toStringValue(first) : primitiveValue("");
     case "Number":
@@ -947,7 +1004,7 @@ const callGlobal = (
         return getClassPrototypeObject(interpreter, first.constructedBy, context);
       if (first?.kind === "object" && isBaseClassPrototype(first))
         return { kind: "global", name: "Object.prototype" };
-      return unknownValue(`${name} on a dynamic target`, location);
+      return getWitnessPrototype(first) ?? unknownValue(`${name} on a dynamic target`, location);
     case "Object.getOwnPropertyNames":
     case "Object.getOwnPropertySymbols":
     case "Reflect.ownKeys": {
@@ -1670,6 +1727,11 @@ export const evaluateBuiltinCall = (
   if ((name === "hasOwnProperty" || name === "propertyIsEnumerable") && first !== undefined) {
     const ownProperty = hasOwnProperty(receiver, first, name);
     if (ownProperty) return ownProperty;
+  }
+
+  if (name === "toString" && args.length === 0) {
+    const nativeSource = getNativeFunctionSource(receiver);
+    if (nativeSource !== null) return primitiveValue(nativeSource);
   }
 
   const listened = callEventTargetMethod(interpreter, receiver, name, args);

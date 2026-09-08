@@ -54,8 +54,12 @@
       "framework": "next-app",
       "workingDirectory": "apps/web",
       "install": "yarn install",
-      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/cal-diy-setup.sh\""],
-      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-cal-pg 5450 calendso"],
+      "setup": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/cal-diy-setup.sh\""
+      ],
+      "services": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-cal-pg 5450 calendso"
+      ],
       "dev": "yarn dev",
       "url": "http://localhost:3000/auth/login",
       "readyTimeoutMs": 900000,
@@ -85,7 +89,9 @@
         "defines": {
           "process.env.NEXT_PUBLIC_CALCOM_VERSION": "6.2.0"
         },
-        "envFiles": ["../../.env"],
+        "envFiles": [
+          "../../.env"
+        ],
         "maxFiberCount": 20000
       },
       "notes": "`next.config.ts` loads the repository `.env` (written by the setup script) and sets `NEXT_PUBLIC_CALCOM_VERSION` from the root package version, which is the one define. The seeded database comes from cal.diy's own `db-seed`; `/` redirects unauthenticated visitors to the login page, which is captured directly."
@@ -269,7 +275,9 @@
         "tsconfig": "apps/demo/tsconfig.json",
         "appDirectory": "apps/demo/app",
         "route": "/",
-        "externalPackageAllowList": ["lucide-react"],
+        "externalPackageAllowList": [
+          "lucide-react"
+        ],
         "maxFiberCount": 20000
       }
     },
@@ -413,7 +421,9 @@
       "static": {
         "rootDirectory": "examples/query/react/basic",
         "entry": "src/index.tsx",
-        "externalPackageAllowList": ["react-redux"]
+        "externalPackageAllowList": [
+          "react-redux"
+        ]
       }
     },
     {
@@ -449,7 +459,9 @@
       "static": {
         "rootDirectory": "test",
         "route": "/",
-        "externalPackageAllowList": ["sonner"]
+        "externalPackageAllowList": [
+          "sonner"
+        ]
       },
       "notes": "Live: Next 14 (React 18.3 canary). Same profile normalization as nextjs-examples; the toaster state is runtime-only (partial)."
     },
@@ -534,13 +546,19 @@
       "framework": "react-router",
       "workingDirectory": ".",
       "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npm install --no-audit --no-fund",
-      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/documenso-setup.sh\""],
-      "services": ["docker compose -f docker/development/compose.yml up -d database redis"],
+      "setup": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/documenso-setup.sh\""
+      ],
+      "services": [
+        "docker compose -f docker/development/compose.yml up -d database redis"
+      ],
       "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npm run dev:remix",
       "url": "http://localhost:3000/signin",
       "readyTimeoutMs": 900000,
       "settleMs": 10000,
-      "capturedGlobals": ["__ENV__"],
+      "capturedGlobals": [
+        "__ENV__"
+      ],
       "static": {
         "rootDirectory": "apps/remix",
         "entry": "app/routes.ts",
@@ -575,7 +593,9 @@
       "url": "https://localhost:7999/auth/login/",
       "readyTimeoutMs": 900000,
       "settleMs": 10000,
-      "capturedGlobals": ["__initialData"],
+      "capturedGlobals": [
+        "__initialData"
+      ],
       "static": {
         "rootDirectory": ".",
         "entry": "static/app/main.tsx",
@@ -622,7 +642,11 @@
       "url": "http://localhost:8000/login",
       "readyTimeoutMs": 900000,
       "settleMs": 10000,
-      "capturedGlobals": ["POSTHOG_APP_CONTEXT", "JS_URL", "JS_CAPTURE_TIME_TO_SEE_DATA"],
+      "capturedGlobals": [
+        "POSTHOG_APP_CONTEXT",
+        "JS_URL",
+        "JS_CAPTURE_TIME_TO_SEE_DATA"
+      ],
       "static": {
         "rootDirectory": "frontend",
         "entry": "src/index.tsx",
@@ -646,6 +670,39 @@
         "maxFiberCount": 20000
       },
       "notes": "Django normally renders index.html with window.POSTHOG_APP_CONTEXT and points the module scripts at the Vite dev server; corpus/scripts/posthog-app-server.ts stands in for it with an anonymous app context and the checked-in _preflight fixture, answering the API calls the login scene makes. The kea store the page builds is captured through the Redux DevTools compose hook and replayed into the static render; the app server's stand-in API returns 404 for the endpoints it does not model, which the page logs."
+    },
+    {
+      "id": "react-admin-dashboard",
+      "repository": "https://github.com/ed-roh/react-admin-dashboard",
+      "revision": "adc9e57f76b5e722bd9109a09d85035dae09d15f",
+      "description": "MUI admin dashboard (CRA 5 / webpack, React 18, react-router-dom 6 declarative routes, react-pro-sidebar, nivo charts over mock data)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npm start",
+      "env": {
+        "BROWSER": "none"
+      },
+      "url": "http://localhost:5000/",
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "route": "/",
+        "maxFiberCount": 20000,
+        "externalPackageAllowList": [
+          "@mui/*",
+          "@emotion/*",
+          "@babel/runtime/*",
+          "react-pro-sidebar",
+          "classnames",
+          "clsx",
+          "prop-types",
+          "react-is",
+          "react-transition-group",
+          "@popperjs/*"
+        ]
+      },
+      "notes": "The start script pins PORT=5000. Everything on the dashboard route is local mock data (src/data/mockData.js); the charts are nivo components."
     }
   ]
 }
