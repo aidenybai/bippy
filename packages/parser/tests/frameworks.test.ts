@@ -46,7 +46,7 @@ describe("next app router", () => {
     const { tree, errors } = await render("next-app", { framework: "next-app", route: "/" });
     expect(errors).toEqual([]);
     expect(tree).toMatch(
-      /<nav>(\n\s+<LinkComponent>[\s\S]*?<a>){2}\n\s+<NavLink>[\s\S]*?<PendingDot>\n\s+<svg>\n\s+<path>\n\s+<span>/,
+      /<nav>\n\s+<Form>\n\s+<form>\n\s+<input>(\n\s+<LinkComponent>[\s\S]*?<a>){2}\n\s+<NavLink>[\s\S]*?<PendingDot>\n\s+<svg>\n\s+<path>\n\s+<span>/,
     );
     expect(tree).not.toContain("<Badge>");
     expect(tree).toMatch(/<Counter>\n\s+<button>\n\s+"1"\n\s+<ArrowIcon>\n\s+<svg>/);
