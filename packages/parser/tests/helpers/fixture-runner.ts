@@ -139,9 +139,7 @@ export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult
     },
     {
       rootDirectory: fixture.directory,
-      tsconfigPath: existsSync(join(fixture.directory, "tsconfig.json"))
-        ? join(fixture.directory, "tsconfig.json")
-        : undefined,
+      tsconfigPath: join(fixture.directory, "tsconfig.json"),
       externalPackageAllowList: fixture.manifest.externalPackages,
       observations: fixture.manifest.observations,
     },

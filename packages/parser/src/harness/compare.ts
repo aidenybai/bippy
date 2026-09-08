@@ -14,6 +14,13 @@ const BUNDLER_PLACEHOLDER_NAME = /^_[a-z]\d*$/;
 
 const isBundlerPlaceholderName = (name: string): boolean => BUNDLER_PLACEHOLDER_NAME.test(name);
 
+// Rollup and Rolldown (Vite's dependency pre-bundler) deconflict same-named
+// top-level bindings from different modules by appending `$1`, `$2`, ….
+const BUNDLER_DECONFLICT_SUFFIX = /\$\d+$/;
+
+const namesAgree = (patternName: string, actualName: string): boolean =>
+  patternName === actualName || patternName === actualName.replace(BUNDLER_DECONFLICT_SUFFIX, "");
+
 export interface ComparisonOptions {
   compareKeys?: boolean;
   compareTags?: boolean;
@@ -496,7 +503,9 @@ class Matcher {
       pattern.key !== actual.key
     )
       return false;
-    if (pattern.name === null || actual.name === null || pattern.name === actual.name) return true;
+    if (pattern.name === null || actual.name === null || namesAgree(pattern.name, actual.name)) {
+      return true;
+    }
     return isClassTag(actual.tag) && isBundlerPlaceholderName(actual.name);
   }
 
@@ -514,7 +523,11 @@ class Matcher {
 
   private opaqueNameAgrees(pattern: PatternOpaque, actual: RuntimeFiberSnapshot): boolean {
     if (actual.name === null || isBundlerPlaceholderName(actual.name)) return true;
-    return pattern.runtimeNames === null || pattern.runtimeNames.includes(actual.name);
+    const actualName = actual.name;
+    return (
+      pattern.runtimeNames === null ||
+      pattern.runtimeNames.some((runtimeName) => namesAgree(runtimeName, actualName))
+    );
   }
 
   // Searches the library's runtime subtree for the place where it rendered the
