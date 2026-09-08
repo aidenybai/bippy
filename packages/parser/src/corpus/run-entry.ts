@@ -7,7 +7,11 @@ import { renderFramework } from "../frameworks/render-framework.js";
 import { flattenTransparentFibers } from "../frameworks/framework-profile.js";
 import { getFrameworkProfile } from "../frameworks/profiles.js";
 import { BrowserCapturer, type BrowserCaptureResult } from "../harness/capture-browser.js";
-import { compareStaticToRuntime } from "../harness/compare-render.js";
+import {
+  compareStaticToRuntime,
+  enumerateStaticStates,
+  summarizeStateSpace,
+} from "../harness/compare-render.js";
 import { rankWildcards } from "../harness/format-report.js";
 import { countSnapshotFibers, formatRuntimeSnapshot, readSnapshot } from "../harness/snapshot.js";
 import { formatPattern, getRenderPattern } from "../harness/static-pattern.js";
@@ -230,21 +234,22 @@ const compareEntry = (
   result: CorpusResult,
 ): void => {
   const profile = getFrameworkProfile(entry.framework);
+  const stateSpace = enumerateStaticStates(staticResult, {
+    anchor: entry.static.anchor ?? profile.defaultAnchor ?? undefined,
+    transparentStaticFibers: profile.transparentStaticFibers,
+  });
   const comparison = compareStaticToRuntime(
-    staticResult,
+    stateSpace,
     flattenTransparentFibers(capture.snapshot, profile),
-    {
-      ...entry.compare,
-      anchor: entry.static.anchor ?? profile.defaultAnchor ?? undefined,
-      transparentStaticFibers: profile.transparentStaticFibers,
-    },
+    entry.compare,
   );
   result.runtime = summarizeRuntime(capture);
   result.report = {
     ...comparison.report,
     wildcards: rankWildcards(comparison.report.wildcards, MAX_RECORDED_WILDCARDS),
   };
-  result.anchor = comparison.anchor;
+  result.stateSpace = summarizeStateSpace(comparison);
+  result.anchor = stateSpace.anchor;
   result.note = comparison.note;
 };
 
@@ -292,6 +297,7 @@ export const runCorpusEntry = async (
     runtime: null,
     static: null,
     report: null,
+    stateSpace: null,
     anchor: null,
     note: null,
     failure: null,

@@ -1,4 +1,5 @@
 import type { StaticNativeFunctionValue, StaticValue } from "../types.js";
+import { getStatePredicate } from "./predicates.js";
 import { areValuesEquivalent, branchValue, compareIdentity, unknownValue } from "./values.js";
 
 export interface StateCell {
@@ -140,6 +141,8 @@ const escapedStateValue = (cell: StateCell): StaticValue =>
     [cell.initial, unknownValue(`updated state of ${cell.name}`)],
     "state setter escapes to code that is not evaluated",
     null,
+    0,
+    getStatePredicate(cell),
   );
 
 /**
@@ -154,6 +157,8 @@ const pendingStateValue = (cell: StateCell): StaticValue | null => {
     [cell.next ?? cell.current, ...cell.deferred],
     "state set by a continuation that may run after the commit",
     null,
+    0,
+    getStatePredicate(cell),
   );
 };
 

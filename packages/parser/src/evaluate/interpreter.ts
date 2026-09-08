@@ -233,6 +233,7 @@ import {
   thrownValue,
   unknownValue,
 } from "./values.js";
+import { createPathPredicate, getTruthinessPredicate, recordNegation } from "./predicates.js";
 
 export interface InterpreterOptions {
   maxCallDepth?: number;
@@ -401,6 +402,12 @@ export const outcomeToReturnValue = (
 const isThrowingOutcome = (outcome: StatementOutcome): boolean =>
   outcome.returned !== null && getThrowCertainty(outcome.returned) === "always";
 
+const isPureReturn = (outcome: StatementOutcome): boolean =>
+  outcome.returned !== null && !outcome.mayComplete && outcome.jump === null;
+
+const isPureCompletion = (outcome: StatementOutcome): boolean =>
+  outcome.returned === null && outcome.mayComplete && outcome.jump === null;
+
 /** A path that certainly throws is never what a rendered tree took; prefer the first path that may produce a value. */
 const getPreferredOutcome = (outcomes: StatementOutcome[], preferredOutcome: number): number => {
   const preferred = outcomes[preferredOutcome];
@@ -419,6 +426,7 @@ export const mergeOutcomes = (
   reason: string,
   location: SourceLocation | null,
   preferredBranch = 0,
+  predicate: string | null = null,
 ): StatementOutcome => {
   const returnedValues: StaticValue[] = [];
   let preferredIndex = 0;
@@ -434,7 +442,13 @@ export const mergeOutcomes = (
   return {
     returned:
       returnedValues.length > 0
-        ? branchValue(returnedValues, reason, location, preferredIndex)
+        ? branchValue(
+            returnedValues,
+            reason,
+            location,
+            preferredIndex,
+            returnedValues.length === outcomes.length ? predicate : null,
+          )
         : null,
     mayComplete: outcomes.some((outcome) => outcome.mayComplete),
     jump: mergeJumps(outcomes),
@@ -1301,6 +1315,7 @@ export class Interpreter {
           `conditional on ${describeValue(test)}`,
           location,
           getPreferredTruthiness(test) === false ? 1 : 0,
+          getTruthinessPredicate(test),
         );
       }
       case "LogicalExpression":
@@ -1534,6 +1549,7 @@ export class Interpreter {
           `&& on ${describeValue(left)}`,
           location,
           getPreferredTruthiness(left) === false ? 1 : 0,
+          getTruthinessPredicate(left),
         );
       }
       case "||": {
@@ -1553,6 +1569,7 @@ export class Interpreter {
           `|| on ${describeValue(left)}`,
           location,
           getPreferredTruthiness(left) === false ? 1 : 0,
+          getTruthinessPredicate(left),
         );
       }
       case "??": {
@@ -3109,6 +3126,7 @@ export class Interpreter {
             `if (${describeValue(test)})`,
             location,
             getPreferredTruthiness(test) === false ? 1 : 0,
+            getTruthinessPredicate(test),
           );
         }
         case "SwitchStatement":
@@ -3262,8 +3280,9 @@ export class Interpreter {
       journal.endPath();
       this.heapJournals.pop();
       const preferredPath = isLikelyRun ? 0 : 1;
-      journal.join(reason, location, preferredPath);
-      joinScopes([ranSnapshot, entrySnapshot], reason, location, preferredPath);
+      const predicate = createPathPredicate();
+      journal.join(reason, location, preferredPath, predicate);
+      joinScopes([ranSnapshot, entrySnapshot], reason, location, preferredPath, predicate);
     }
   }
 
@@ -3281,6 +3300,7 @@ export class Interpreter {
     reason: string,
     location: SourceLocation,
     preferredBranch = 0,
+    predicate = createPathPredicate(),
   ): StatementOutcome {
     const isTooDeep = context.forkDepth >= this.maxForkDepth;
     const forkContext: EvaluationContext = {
@@ -3310,18 +3330,35 @@ export class Interpreter {
     });
     this.heapJournals.pop();
     const preferredOutcome = getPreferredOutcome(outcomes, preferredBranch);
-    journal.join(reason, location, preferredOutcome);
-    if (joinedSnapshots.length > 0) joinScopes(joinedSnapshots, reason, location);
+    journal.join(reason, location, preferredOutcome, predicate);
+    if (joinedSnapshots.length > 0) {
+      joinScopes(
+        joinedSnapshots,
+        reason,
+        location,
+        0,
+        joinedSnapshots.length === branches.length ? predicate : null,
+      );
+    }
     if (!outcomes.some((outcome) => outcome.mayComplete)) {
-      return mergeOutcomes(outcomes, reason, location, preferredOutcome);
+      return mergeOutcomes(
+        outcomes,
+        reason,
+        location,
+        preferredOutcome,
+        outcomes.every(isPureReturn) ? predicate : null,
+      );
     }
     if (context.hooks) context.hooks.cursor = completedHookCursor;
     const rest = proceed(context);
+    const isRestPositional =
+      outcomes.slice(0, -1).every(isPureReturn) && isPureCompletion(outcomes[outcomes.length - 1]);
     return mergeOutcomes(
       [...outcomes.map((outcome) => ({ ...outcome, mayComplete: false })), rest],
       reason,
       location,
       preferredOutcome,
+      isRestPositional ? predicate : null,
     );
   }
 
@@ -3606,7 +3643,8 @@ const joinScopes = (
   paths: ScopeSnapshot[][],
   reason: string,
   location: SourceLocation | null,
-  preferredPath = 0,
+  preferredPath: number,
+  predicate: string | null,
 ): void => {
   const [firstPath, ...otherPaths] = paths;
   firstPath.forEach((snapshot, scopeIndex) => {
@@ -3620,7 +3658,10 @@ const joinScopes = (
       const values = [snapshot.bindings, ...siblings].map(
         (bindings) => bindings.get(name) ?? UNDEFINED_VALUE,
       );
-      snapshot.scope.bindings.set(name, branchValue(values, reason, location, preferredPath));
+      snapshot.scope.bindings.set(
+        name,
+        branchValue(values, reason, location, preferredPath, predicate),
+      );
     }
   });
 };
@@ -3644,7 +3685,9 @@ const applyUnaryOperator = (
   switch (operator) {
     case "!": {
       const truthiness = getTruthiness(argument);
-      if (truthiness === null) return unknownPrimitiveValue("boolean", "negation of unknown");
+      if (truthiness === null) {
+        return recordNegation(unknownPrimitiveValue("boolean", "negation of unknown"), argument);
+      }
       return truthiness ? FALSE_VALUE : TRUE_VALUE;
     }
     case "-":

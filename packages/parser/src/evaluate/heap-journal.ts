@@ -95,7 +95,12 @@ export class HeapJournal {
     this.paths.push(path);
   }
 
-  join(reason: string, location: SourceLocation | null, preferredPath: number): void {
+  join(
+    reason: string,
+    location: SourceLocation | null,
+    preferredPath: number,
+    predicate: string | null,
+  ): void {
     for (const [values, originals] of this.bindings) {
       for (const [name, original] of originals) {
         const pathValues = this.paths.map(
@@ -105,7 +110,7 @@ export class HeapJournal {
           name,
           pathValues.every((value) => value === pathValues[0])
             ? pathValues[0]
-            : branchValue(pathValues, reason, location, preferredPath),
+            : branchValue(pathValues, reason, location, preferredPath, predicate),
         );
       }
     }
@@ -114,7 +119,7 @@ export class HeapJournal {
       if (isUnchanged(pathEntries, original)) continue;
       object.entries =
         getAgreedState(pathEntries) ??
-        joinObjectEntries(original, pathEntries, reason, location, preferredPath);
+        joinObjectEntries(original, pathEntries, reason, location, preferredPath, predicate);
     }
     for (const [list, original] of this.lists) {
       const pathItems = this.paths.map((path) => path.lists.get(list) ?? original);

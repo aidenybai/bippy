@@ -68,7 +68,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 232,
@@ -79,6 +78,7 @@
         "stepsUsed": 234,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": null,
       "failure": null
@@ -123,7 +123,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 46,
@@ -134,6 +133,7 @@
         "stepsUsed": 46,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-07T23:12:07.223Z",
       "failure": null
@@ -178,7 +178,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 1,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 938,
@@ -189,6 +188,7 @@
         "stepsUsed": 939,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": "body",
       "note": "runtime replayed from 2026-09-07T11:40:39.987Z",
       "failure": null
@@ -249,63 +249,6 @@
           }
         ],
         "branchesResolved": 12,
-        "branchDeviations": [
-          {
-            "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent] > <CopilotKitInspector> [FunctionComponent]",
-            "reason": "if (<boolean: negation of unknown>)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent] > <CopilotKitInspector> [FunctionComponent][0]",
-              "expected": "<end of children>",
-              "actual": "<WebInspectorElement> [ForwardRef]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent]",
-            "reason": "&& on branch(true | false)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent][4]",
-              "expected": "<LicenseWarningBanner> [FunctionComponent]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent]",
-            "reason": "&& on <boolean: === on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent][4]",
-              "expected": "<LicenseWarningBanner> [FunctionComponent]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent]",
-            "reason": "&& on <boolean: === on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent][4]",
-              "expected": "<LicenseWarningBanner> [FunctionComponent]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent]",
-            "reason": "&& on <boolean: === on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <Home> [FunctionComponent] > <CopilotKitProvider> [FunctionComponent][4]",
-              "expected": "<LicenseWarningBanner> [FunctionComponent]",
-              "actual": "<end of children>"
-            }
-          }
-        ],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 179,
@@ -316,6 +259,7 @@
         "stepsUsed": 735,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": "body",
       "note": "runtime replayed from 2026-09-08T08:02:55.873Z",
       "failure": null
@@ -340,6 +284,7 @@
         "diagnostics": []
       },
       "report": null,
+      "stateSpace": null,
       "anchor": null,
       "note": "static only",
       "failure": null
@@ -397,7 +342,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 203,
@@ -408,6 +352,7 @@
         "stepsUsed": 203,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-07T00:50:55.867Z",
       "failure": null
@@ -457,7 +402,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 693,
@@ -468,6 +412,7 @@
         "stepsUsed": 693,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": null,
       "failure": null
@@ -505,6 +450,7 @@
         ]
       },
       "report": null,
+      "stateSpace": null,
       "anchor": null,
       "note": "static only",
       "failure": null
@@ -571,7 +517,6 @@
           }
         ],
         "branchesResolved": 1,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 14,
@@ -582,6 +527,7 @@
         "stepsUsed": 7,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T07:24:29.116Z",
       "failure": null
@@ -626,7 +572,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 1,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 378,
@@ -637,6 +582,7 @@
         "stepsUsed": 379,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T03:45:17.260Z",
       "failure": null
@@ -655,7 +601,7 @@
         "fibers": 1439,
         "commits": 27,
         "pageErrors": [
-          "Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <Home>\n      <main className=\"container ...\">\n        <WizardProvider>\n          <InvoiceMain>\n            <FormProvider control={{...}} subscribe={function subscribe} trigger={function trigger} ...>\n              <form onSubmit={function}>\n                <div className=\"grid grid-...\">\n                  <InvoiceForm>\n                    <div className=\"@container...\">\n                      <div className=\"mx-auto ma...\">\n                        <div className=\"mb-4 flex ...\">\n                          <AutosaveIndicator>\n                          <span\n+                           className=\"text-sm font-medium text-muted-foreground\"\n-                           className=\"flex items-center gap-1.5 text-xs text-muted-foreground\"\n                          >\n+                           New Invoice\n-                           Saved · just now\n                        ...\n                  ...\n                ...\n      ...\n    ...\n"
+          "Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <Home>\n      <main className=\"container ...\">\n        <WizardProvider>\n          <InvoiceMain>\n            <FormProvider control={{...}} subscribe={function subscribe} trigger={function trigger} ...>\n              <form onSubmit={function}>\n                <div className=\"grid grid-...\">\n                  <InvoiceForm>\n                    <div className=\"@container...\">\n                      <div className=\"mx-auto ma...\">\n                        <div className=\"mb-4 flex ...\">\n                          <AutosaveIndicator>\n                          <span\n+                           className=\"text-sm font-medium text-muted-foreground\"\n-                           className=\"flex items-center gap-1.5 text-xs text-muted-foreground\"\n                          >\n+                           New Invoice\n-                           Saved \u00b7 just now\n                        ...\n                  ...\n                ...\n      ...\n    ...\n"
         ],
         "title": "Free Invoice Generator | Invoify"
       },
@@ -683,7 +629,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 1144,
@@ -694,6 +639,7 @@
         "stepsUsed": 1144,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": "body",
       "note": null,
       "failure": null
@@ -743,7 +689,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 225,
@@ -754,6 +699,7 @@
         "stepsUsed": 225,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-07T23:03:03.725Z",
       "failure": null
@@ -823,7 +769,6 @@
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "branchDeviations": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
@@ -836,6 +781,7 @@
         "stepsUsed": 0,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "React failed to render the materialized tree; runtime replayed from 2026-09-08T07:20:29.476Z",
       "failure": null
@@ -880,7 +826,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 162,
@@ -891,6 +836,7 @@
         "stepsUsed": 162,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": "body",
       "note": null,
       "failure": null
@@ -935,7 +881,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 83,
@@ -946,6 +891,7 @@
         "stepsUsed": 83,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": "body",
       "note": "runtime replayed from 2026-09-06T04:55:26.311Z",
       "failure": null
@@ -988,7 +934,6 @@
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "branchDeviations": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
@@ -1001,6 +946,7 @@
         "stepsUsed": 0,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "static render did not resolve to a component tree; runtime replayed from 2026-09-08T07:50:14.781Z",
       "failure": null
@@ -1082,7 +1028,6 @@
           }
         ],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 1961,
@@ -1093,6 +1038,7 @@
         "stepsUsed": 2,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T07:23:05.031Z",
       "failure": null
@@ -1161,41 +1107,6 @@
           }
         ],
         "branchesResolved": 3,
-        "branchDeviations": [
-          {
-            "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Navigation> [FunctionComponent] > <div> [HostComponent] > <nav> [HostComponent] > <HelpModal> [FunctionComponent] > <$e> [ForwardRef] > <j> [FunctionComponent] > <ContextProvider> [ContextProvider]",
-            "reason": "&& on branch(true | <boolean>)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Navigation> [FunctionComponent] > <div> [HostComponent] > <nav> [HostComponent] > <HelpModal> [FunctionComponent] > <$e> [ForwardRef] > <j> [FunctionComponent] > <ContextProvider> [ContextProvider][1]",
-              "expected": "<l> [ForwardRef]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TemplatesApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <div> [HostComponent]",
-            "reason": "callback for an item that may not occur",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TemplatesApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <Fragment> [Fragment][0]",
-              "expected": "<end of children>",
-              "actual": "<Fragment> key=\"invoice\" [Fragment]"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TemplatesApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <div> [HostComponent]",
-            "reason": "&& on branch(true | <boolean>)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TemplatesApp> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <div> [HostComponent][1]",
-              "expected": "<div> [HostComponent]",
-              "actual": "<end of children>"
-            }
-          }
-        ],
         "repeatIterations": 32,
         "status": "partial",
         "runtimeFibers": 1456,
@@ -1206,6 +1117,7 @@
         "stepsUsed": 220,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T07:35:03.692Z",
       "failure": null
@@ -1258,7 +1170,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 191,
@@ -1269,6 +1180,7 @@
         "stepsUsed": 191,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-07T05:44:44.473Z",
       "failure": null
@@ -1313,7 +1225,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 450,
@@ -1324,6 +1235,7 @@
         "stepsUsed": 450,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": "body",
       "note": "runtime replayed from 2026-09-06T14:42:06.387Z",
       "failure": null
@@ -1380,7 +1292,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 5580,
@@ -1391,6 +1302,7 @@
         "stepsUsed": 29,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-06T14:42:18.572Z",
       "failure": null
@@ -1415,6 +1327,7 @@
         "diagnostics": []
       },
       "report": null,
+      "stateSpace": null,
       "anchor": null,
       "note": "static only",
       "failure": null
@@ -1459,7 +1372,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 50,
@@ -1470,6 +1382,7 @@
         "stepsUsed": 50,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-06T04:55:32.863Z",
       "failure": null
@@ -1535,7 +1448,6 @@
           }
         ],
         "branchesResolved": 1,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 40,
@@ -1546,6 +1458,7 @@
         "stepsUsed": 19,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T07:23:55.274Z",
       "failure": null
@@ -1599,7 +1512,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 54,
@@ -1610,6 +1522,7 @@
         "stepsUsed": 54,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": "body",
       "note": "runtime replayed from 2026-09-08T07:22:45.011Z",
       "failure": null
@@ -1654,7 +1567,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 6,
@@ -1665,6 +1577,7 @@
         "stepsUsed": 6,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-07T12:12:03.185Z",
       "failure": null
@@ -1721,7 +1634,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 566,
@@ -1732,6 +1644,7 @@
         "stepsUsed": 566,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-06T23:25:35.602Z",
       "failure": null
@@ -1761,6 +1674,7 @@
         ]
       },
       "report": null,
+      "stateSpace": null,
       "anchor": null,
       "note": "static only",
       "failure": null
@@ -1808,19 +1722,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 2,
-        "branchDeviations": [
-          {
-            "path": "root > <BrowserRouter> [FunctionComponent] > <AppContainer> [FunctionComponent] > <div> [HostComponent]",
-            "reason": "conditional on branch(true | unknown)",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <BrowserRouter> [FunctionComponent] > <AppContainer> [FunctionComponent] > <div> [HostComponent][0]",
-              "expected": "<CommonLoading> [FunctionComponent]",
-              "actual": "<ErrorComponent> [FunctionComponent]"
-            }
-          }
-        ],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 5,
@@ -1831,6 +1732,7 @@
         "stepsUsed": 8,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T07:23:34.754Z",
       "failure": null
@@ -1875,7 +1777,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 44,
@@ -1886,6 +1787,7 @@
         "stepsUsed": 44,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": "body",
       "note": "runtime replayed from 2026-09-06T04:55:41.386Z",
       "failure": null
@@ -1930,7 +1832,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 217,
@@ -1941,6 +1842,7 @@
         "stepsUsed": 217,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-07T12:08:20.819Z",
       "failure": null
@@ -1985,7 +1887,6 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "exact",
         "runtimeFibers": 48,
@@ -1996,6 +1897,7 @@
         "stepsUsed": 48,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-07T13:00:25.894Z",
       "failure": null
@@ -2332,7 +2234,6 @@
           }
         ],
         "branchesResolved": 2,
-        "branchDeviations": [],
         "repeatIterations": 0,
         "status": "partial",
         "runtimeFibers": 3748,
@@ -2343,6 +2244,7 @@
         "stepsUsed": 111,
         "budgetExhausted": false
       },
+      "stateSpace": null,
       "anchor": null,
       "note": null,
       "failure": null
