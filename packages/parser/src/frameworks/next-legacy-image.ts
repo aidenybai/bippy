@@ -14,7 +14,7 @@ import type {
   StaticValue,
   StubComponent,
 } from "../types.js";
-import { element, hostElement, omitProps, stubElement } from "./stubs.js";
+import { element, hostElement, omitProps, stubElement } from "../evaluate/stubs.js";
 
 // The pre-13 `next/image` (client/image.js in next@12, client/legacy/image.js
 // since 13): a wrapper `<span>` sized by `layout`, an optional sizer `<span>`,

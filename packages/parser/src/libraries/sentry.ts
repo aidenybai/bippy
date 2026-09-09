@@ -1,5 +1,5 @@
 import { getObjectProperty, objectValue, primitiveValue } from "../evaluate/values.js";
-import { element, nativeFunction, passthroughStub, stubValue } from "../frameworks/stubs.js";
+import { element, nativeFunction, passthroughStub, stubValue } from "../evaluate/stubs.js";
 import { toElementType } from "../react/element-type.js";
 import type {
   ExternalValueProvider,

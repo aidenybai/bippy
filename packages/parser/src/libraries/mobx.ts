@@ -7,7 +7,7 @@ import {
   objectFromRecord,
   primitiveValue,
 } from "../evaluate/values.js";
-import { lazyProperties, nativeFunction, stubValue } from "../frameworks/stubs.js";
+import { lazyProperties, nativeFunction, stubValue } from "../evaluate/stubs.js";
 import type {
   ExternalValueProvider,
   StaticObjectValue,

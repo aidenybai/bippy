@@ -24,7 +24,7 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
-import { element, nativeFunction, omitProps, stubValue } from "../frameworks/stubs.js";
+import { element, nativeFunction, omitProps, stubValue } from "../evaluate/stubs.js";
 import type {
   ContextDefinition,
   ExternalValueProvider,

@@ -18,7 +18,7 @@ import type { StaticRenderer } from "../render/static-renderer.js";
 import type { StaticRenderResult, StaticValue } from "../types.js";
 import { applyNextCompilerOptions, evaluateNextConfig } from "./next-config.js";
 import type { NextModel } from "./next-externals.js";
-import { element } from "./stubs.js";
+import { element } from "../evaluate/stubs.js";
 import {
   type DynamicSegment,
   classifySegment,

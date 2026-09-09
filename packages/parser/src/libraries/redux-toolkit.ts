@@ -17,7 +17,7 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
-import { lazyProperties, nativeFunction } from "../frameworks/stubs.js";
+import { lazyProperties, nativeFunction } from "../evaluate/stubs.js";
 import { hashKey } from "../observations.js";
 import type {
   CapturedValue,

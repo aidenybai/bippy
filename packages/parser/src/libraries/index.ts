@@ -1,5 +1,5 @@
 import { objectValue, UNDEFINED_VALUE } from "../evaluate/values.js";
-import { lazyProperties } from "../frameworks/stubs.js";
+import { lazyProperties } from "../evaluate/stubs.js";
 import type { LibraryValueProvider, ModeledExports } from "../types.js";
 import { EMOTION_PACKAGES, emotionValue } from "./emotion.js";
 import { ES_SHIM_PACKAGES, esShimValue } from "./es-shims.js";

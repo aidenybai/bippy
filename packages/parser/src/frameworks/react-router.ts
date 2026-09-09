@@ -53,7 +53,14 @@ import type {
 } from "../types.js";
 import { ForwardRefTag } from "../work-tags.js";
 import { findRouteFile, routeIdFromFile, splitPathname } from "./route-files.js";
-import { element, emptyStub, hostElement, nativeFunction, omitProps, stubValue } from "./stubs.js";
+import {
+  element,
+  emptyStub,
+  hostElement,
+  nativeFunction,
+  omitProps,
+  stubValue,
+} from "../evaluate/stubs.js";
 
 const SCROLL_RESTORATION_PROPS: ReadonlySet<string> = new Set(["getKey", "storageKey"]);
 

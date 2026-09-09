@@ -12,7 +12,7 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
-import { element, nativeFunction, stubElement, stubValue } from "../frameworks/stubs.js";
+import { element, nativeFunction, stubElement, stubValue } from "../evaluate/stubs.js";
 import { toElementType } from "../react/element-type.js";
 import type {
   CapturedLinguiCatalog,

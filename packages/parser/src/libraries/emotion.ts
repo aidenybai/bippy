@@ -15,7 +15,7 @@ import {
   unknownValue,
 } from "../evaluate/values.js";
 import { hasProperty } from "../evaluate/has-property.js";
-import { element, emptyStub, nativeFunction, stubValue } from "../frameworks/stubs.js";
+import { element, emptyStub, nativeFunction, stubValue } from "../evaluate/stubs.js";
 import { toElementType } from "../react/element-type.js";
 import type {
   ContextDefinition,

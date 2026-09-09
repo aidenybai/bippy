@@ -20,7 +20,7 @@ import {
   nativeFunction,
   passthroughStub,
   stubValue,
-} from "../frameworks/stubs.js";
+} from "../evaluate/stubs.js";
 import type {
   CapturedValue,
   ContextDefinition,

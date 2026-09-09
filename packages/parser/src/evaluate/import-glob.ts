@@ -3,7 +3,7 @@ import { globSync } from "tinyglobby";
 import type { SourceLocation, StaticObjectValue, StaticValue } from "../types.js";
 import type { EvaluationContext } from "./context.js";
 import type { Interpreter } from "./interpreter.js";
-import { nativeFunction } from "../frameworks/stubs.js";
+import { nativeFunction } from "./stubs.js";
 import { isModuleRecord } from "../graph/module-graph.js";
 import { resolvedPromiseValue } from "./promises.js";
 import { describeValue, getObjectProperty, objectValue, unknownValue } from "./values.js";

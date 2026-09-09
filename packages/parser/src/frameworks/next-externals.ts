@@ -41,7 +41,7 @@ import {
   passthroughStub,
   stubElement,
   stubValue,
-} from "./stubs.js";
+} from "../evaluate/stubs.js";
 
 // Static stand-ins for the `next/*` client surface. Shapes follow the fiber
 // trees the real components commit: `next/link` in the App Router (15.3+) is

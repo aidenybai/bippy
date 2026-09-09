@@ -1,9 +1,4 @@
-import {
-  NULL_VALUE,
-  UNDEFINED_VALUE,
-  getObjectProperty,
-  objectFromRecord,
-} from "../evaluate/values.js";
+import { NULL_VALUE, UNDEFINED_VALUE, getObjectProperty, objectFromRecord } from "./values.js";
 import type {
   StaticElementType,
   StaticElementValue,

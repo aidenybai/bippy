@@ -8,7 +8,7 @@ import type {
   StringComposition,
   StubRenderTools,
 } from "../types.js";
-import { element, nativeFunction } from "../frameworks/stubs.js";
+import { element, nativeFunction } from "./stubs.js";
 import type { HostDocument } from "../host/host-document.js";
 import { GLOBAL_INTERFACE_NAME } from "../host/realm-table.js";
 import { REACT_ELEMENT_SYMBOL_KEYS } from "../react/element-shape.js";

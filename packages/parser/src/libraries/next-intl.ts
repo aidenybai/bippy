@@ -24,7 +24,7 @@ import {
   nativeFunction,
   omitProps,
   stubValue,
-} from "../frameworks/stubs.js";
+} from "../evaluate/stubs.js";
 import type {
   ContextDefinition,
   ExternalValueProvider,

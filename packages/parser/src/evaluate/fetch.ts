@@ -1,5 +1,5 @@
 import type { ProjectContext, SourceLocation, StaticValue } from "../types.js";
-import { nativeFunction } from "../frameworks/stubs.js";
+import { nativeFunction } from "./stubs.js";
 import { createErrorValue } from "./errors.js";
 import { resolvedPromiseValue } from "./promises.js";
 import {

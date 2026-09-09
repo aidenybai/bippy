@@ -1,5 +1,5 @@
 import { objectValue, UNDEFINED_VALUE } from "../evaluate/values.js";
-import { nativeFunction } from "../frameworks/stubs.js";
+import { nativeFunction } from "../evaluate/stubs.js";
 import type { ExternalValueProvider, StaticObjectEntry, StaticValue } from "../types.js";
 
 // `createStore(definition)` (reflux-core) copies the definition onto a store
