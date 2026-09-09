@@ -240,6 +240,7 @@ const compareEntry = (
   const stateSpace = enumerateStaticStates(staticResult, {
     anchor: entry.static.anchor ?? profile.defaultAnchor ?? undefined,
     transparentStaticFibers: profile.transparentStaticFibers,
+    runtimeReactVersion: capture.snapshot.reactVersion,
   });
   const comparison = compareStaticToRuntime(
     stateSpace,

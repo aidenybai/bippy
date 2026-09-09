@@ -69,6 +69,7 @@ import {
   WRAPPER_OWN_KEYS,
   doesStrictModeDoubleInvokeHookFactories,
   getReactElementSymbolKey,
+  hasLegacyContext,
   REACT_ELEMENT_SYMBOL_KEYS,
 } from "../react/element-shape.js";
 import { toClientReference, toElementKey, toElementType } from "../react/element-type.js";
@@ -127,6 +128,7 @@ import {
   getClassLength,
   getClassPrototypeObject,
   getFunctionLength,
+  getReactBaseClassPrototype,
   getStaticProperty,
   getSuperObject,
   hasKnownStaticChain,
@@ -150,6 +152,7 @@ import {
   getInlinedNodeEnv,
   isEnvironmentObject,
   isUnsettableDefineName,
+  isWebpackRequireName,
 } from "./bundler-globals.js";
 import { hasProperty, OBJECT_PROTOTYPE_METHODS } from "./has-property.js";
 import { getBuiltinWitness, isInstanceOf } from "./instance-of.js";
@@ -274,6 +277,7 @@ import {
   mapValue,
   distributeBinary,
   NULL_VALUE,
+  SYMBOL_PROPERTY_KEY_PREFIX,
   capturedValue,
   isJsonRecord,
   jsonValue,
@@ -409,9 +413,13 @@ const isAnonymousFunctionOrClass = (node: Expression): boolean => {
 const isReceiverIndependent = (callee: StaticValue): boolean =>
   callee.kind === "react-api" || callee.kind === "native-function";
 
-/** Names a function has without the analyzed code assigning them; any other name reads `undefined`. */
+const FUNCTION_HAS_INSTANCE_KEY = `${SYMBOL_PROPERTY_KEY_PREFIX}Symbol.hasInstance`;
+
+/** Names a function has without the analyzed code assigning them; any other name (well-known symbols included) reads `undefined`. */
 const isFunctionOwnOrInheritedKey = (key: string): boolean =>
-  isSymbolPropertyKey(key) || FUNCTION_INSTANCE_KEYS.has(key) || key in Function.prototype;
+  isSymbolPropertyKey(key)
+    ? key === FUNCTION_HAS_INSTANCE_KEY
+    : FUNCTION_INSTANCE_KEYS.has(key) || key in Function.prototype;
 
 /** Methods every callable inherits from `Function.prototype` and `Object.prototype`. */
 const isCallableProtocolKey = (key: string): boolean =>
@@ -716,6 +724,8 @@ export class Interpreter {
   private readonly elementSymbolKey: string;
   private readonly reactVersion: string | null;
   readonly doesStrictModeDoubleInvokeHookFactories: boolean;
+  /** Whether class components still receive `contextTypes`-masked legacy context (`disableLegacyContext`). */
+  readonly hasLegacyContext: boolean;
   private readonly maxSteps: number;
   private readonly moduleScopes = new Map<string, Scope>();
   private readonly moduleValues = new Map<string, ModuleValues>();
@@ -778,6 +788,7 @@ export class Interpreter {
     this.doesStrictModeDoubleInvokeHookFactories = doesStrictModeDoubleInvokeHookFactories(
       this.reactVersion,
     );
+    this.hasLegacyContext = hasLegacyContext(this.reactVersion);
     this.assumeOuterProviders = options.assumeOuterProviders ?? false;
     this.styledComponentsTransform = this.project.hasDeclaredDependency(
       "babel-plugin-styled-components",
@@ -1002,6 +1013,11 @@ export class Interpreter {
     this.initializedModules.add(module.filePath);
     this.initializeDependencies(module);
     const context = this.createModuleContext(module);
+    for (const name of getHoistedVarNames(sideEffectStatements)) {
+      if (!module.bindings.has(name) && !context.scope.bindings.has(name)) {
+        declareInScope(context.scope, name, UNDEFINED_VALUE);
+      }
+    }
     let pendingStatements: Statement[] = [];
     const flushPendingStatements = (): void => {
       if (pendingStatements.length === 0) return;
@@ -1505,9 +1521,18 @@ export class Interpreter {
       : !windowKeys.includes(name);
   }
 
+  /** Webpack (also behind react-scripts, Next...) shims `global` per module; a declared or installed webpack marks that build. */
+  private isBuiltWithWebpack(): boolean {
+    return (
+      this.project.hasDeclaredDependency("webpack") ||
+      this.project.readPackageVersion("webpack") !== null
+    );
+  }
+
   private getGlobal(name: string, renderEnvironment: RenderEnvironment | null): StaticValue | null {
     const defined = this.defines.get(name);
     if (defined) return defined;
+    if (isWebpackRequireName(name) && this.isBuiltWithWebpack()) return { kind: "global", name };
     if (renderEnvironment !== "server" && isBundlerUndeclaredName(this.project.bundler, name)) {
       return null;
     }
@@ -1516,8 +1541,7 @@ export class Interpreter {
     const observed = realm.hasDocument ? this.getObservedPageMember(hostName) : null;
     if (observed) return observed;
     if (renderEnvironment !== "server") {
-      if (hostName === "global" && this.project.hasDeclaredDependency("webpack"))
-        return GLOBAL_OBJECT_VALUE;
+      if (hostName === "global" && this.isBuiltWithWebpack()) return GLOBAL_OBJECT_VALUE;
       const windowGlobal = this.windowGlobals.get(hostName);
       if (windowGlobal) return windowGlobal;
     }
@@ -2659,6 +2683,8 @@ export class Interpreter {
         return prototypeMember(object, Object.prototype, key);
       case "react-api": {
         if (isCallableProtocolKey(key)) return { kind: "method", receiver: object, name: key };
+        if (key === "prototype" && (object.api === "Component" || object.api === "PureComponent"))
+          return getReactBaseClassPrototype(object.api);
         const member = resolveReactApiMember(object.api, key);
         if (member) return member;
         return unknownValue(`React.${object.api}.${key}`, location);
@@ -3529,6 +3555,21 @@ export class Interpreter {
     declareInScope(scope, compiled.name, classValue);
     this.evaluateBlock(compiled.setup, wrapperContext, false);
     return classValue;
+  }
+
+  /** Parameters of a callback whose caller is not analyzed: each argument is unknown. */
+  bindUnknownParameters(
+    params: ParamPattern[],
+    scope: Scope,
+    context: EvaluationContext,
+    reason: string,
+  ): void {
+    this.bindParameters(
+      params,
+      getValueParams(params).map(() => unknownValue(reason)),
+      scope,
+      context,
+    );
   }
 
   private bindParameters(
@@ -4704,11 +4745,33 @@ const nameAnonymousInner = (
 
 const EQUALITY_OPERATORS = new Set(["===", "!==", "==", "!="]);
 
+const OBJECT_VALUE_KINDS: ReadonlySet<StaticValue["kind"]> = new Set([
+  "element",
+  "list",
+  "object",
+  "function",
+  "class",
+  "regexp",
+  "context",
+  "react-api",
+  "namespace",
+  "native-object",
+  "method",
+  "native-function",
+  "proxy",
+]);
+
 /** Loose equality only differs from identity when both sides can coerce; null, undefined and symbols never do. */
 const mayCoerce = (value: StaticValue): boolean =>
   value.kind === "primitive"
     ? value.value !== null && value.value !== undefined
     : value.kind !== "symbol";
+
+/** Two objects compare by identity under `==` as well: coercion needs a primitive operand. */
+const mayCoerceTogether = (left: StaticValue, right: StaticValue): boolean =>
+  mayCoerce(left) &&
+  mayCoerce(right) &&
+  !(OBJECT_VALUE_KINDS.has(left.kind) && OBJECT_VALUE_KINDS.has(right.kind));
 
 /**
  * React's memo cache sentinel never reaches application values, so comparing
@@ -4739,7 +4802,7 @@ const compareEquality = (
     compareIdentity(left, right) ??
     compareGlobalToNullish(left, right, realm) ??
     compareGlobalToNullish(right, left, realm);
-  if (isEqual === false && !isStrict && mayCoerce(left) && mayCoerce(right)) isEqual = null;
+  if (isEqual === false && !isStrict && mayCoerceTogether(left, right)) isEqual = null;
   if (isEqual === null) {
     const isSentinel = (value: StaticValue): boolean =>
       value.kind === "symbol" && value.key === REACT_MEMO_CACHE_SENTINEL_KEY;

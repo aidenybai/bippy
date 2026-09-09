@@ -40,7 +40,7 @@ export const REDUX_TOOLKIT_PACKAGES = [
 export const REDUX_PACKAGES = ["redux"];
 
 export const REDUX_MODELED_EXPORTS: ModeledExports = {
-  redux: ["createStore", "legacy_createStore", "combineReducers"],
+  redux: ["createStore", "legacy_createStore", "combineReducers", "compose", "applyMiddleware"],
 };
 
 const SKIP_TOKEN: StaticSymbolValue = { kind: "symbol", key: "@reduxjs/toolkit/query/skipToken" };
@@ -65,25 +65,65 @@ const getReducerKeys = (reducer: StaticValue): readonly string[] | null =>
     ? getKnownObjectKeys(reducer)
     : (reducerKeysByReducer.get(reducer) ?? null);
 
-const haveSameKeys = (left: readonly string[], right: readonly string[]): boolean =>
-  left.length === right.length && left.every((key) => right.includes(key));
-
-/** The recorded state of the one store built from exactly these slice reducers; `undefined` when none or several were. */
+/**
+ * The recorded state of the one store whose INIT state had these keys;
+ * `undefined` when none or several did. Later actions may add keys (a root
+ * reducer wrapping `combineReducers`, redux-persist's `_persist` on PERSIST),
+ * never drop the slices INIT established.
+ */
 const findStoreState = (
   states: readonly CapturedValue[],
   reducerKeys: readonly string[],
 ): CapturedValue | undefined => {
   const matches = states.filter(
-    (state) => isCapturedRecord(state) && haveSameKeys(Object.keys(state), reducerKeys),
+    (state) => isCapturedRecord(state) && reducerKeys.every((key) => key in state),
   );
   return matches.length === 1 ? matches[0] : undefined;
 };
 
+const getSliceState = (state: StaticValue, key: string): StaticValue => {
+  if (isUndefined(state)) return UNDEFINED_VALUE;
+  return state.kind === "object"
+    ? getObjectProperty(state, key)
+    : unknownValue(`the ${key} slice of a state that is not statically known`);
+};
+
+/** `typeof value === "function"` for a reducer or action creator; an unanalyzed library export is called as one. */
+const isFunctionLike = (value: StaticValue): boolean =>
+  isCallable(value) || value.kind === "external";
+
+/** `combination(state, action)`: every slice reducer runs on its own slice; the previous state object stays when no slice changed. */
 const combineReducers = nativeFunction("combineReducers", ([reducers]) => {
-  const combined = nativeFunction("combination", () =>
-    unknownValue("state produced by a combined reducer"),
+  const keys =
+    reducers?.kind === "object"
+      ? getKnownObjectKeys(reducers)?.filter((key) =>
+          isFunctionLike(getObjectProperty(reducers, key)),
+        )
+      : null;
+  const combined = nativeFunction(
+    "combination",
+    ([state = UNDEFINED_VALUE, action = UNDEFINED_VALUE], tools) => {
+      if (reducers?.kind !== "object" || !keys)
+        return unknownValue("state produced by a combined reducer");
+      let hasChanged = !(
+        state.kind === "object" && getKnownObjectKeys(state)?.length === keys.length
+      );
+      const nextState = objectFromRecord(
+        Object.fromEntries(
+          keys.map((key) => {
+            const previousSliceState = getSliceState(state, key);
+            const nextSliceState = tools.call(getObjectProperty(reducers, key), [
+              previousSliceState,
+              action,
+            ]);
+            if (compareIdentity(nextSliceState, previousSliceState) !== true) hasChanged = true;
+            return [key, nextSliceState];
+          }),
+        ),
+      );
+      return hasChanged ? nextState : state;
+    },
   );
-  const keys = reducers === undefined ? null : getReducerKeys(reducers);
   if (keys) reducerKeysByReducer.set(combined, keys);
   return combined;
 });
@@ -178,13 +218,41 @@ const bindActionCreators = nativeFunction("bindActionCreators", ([creators, disp
     return unknownValue("bindActionCreators() over creators that are not statically known");
   }
   return objectFromRecord(
-    Object.fromEntries(keys.map((key) => [key, bind(getObjectProperty(creators, key))])),
+    Object.fromEntries(
+      keys.flatMap((key) => {
+        const creator = getObjectProperty(creators, key);
+        return isFunctionLike(creator) ? [[key, bind(creator)]] : [];
+      }),
+    ),
   );
 });
 
+const INIT_ACTION_TYPE = "@@redux/INIT";
+
+/** The state shape `createStore` establishes by dispatching INIT, which also runs a hand-written root reducer around `combineReducers`. */
+const getInitialStateKeys = (
+  reducer: StaticValue,
+  preloadedState: StaticValue,
+  tools: StubRenderTools,
+): readonly string[] | null => {
+  if (!isCallable(reducer)) return getReducerKeys(reducer);
+  const initialState = tools.call(reducer, [
+    preloadedState,
+    objectFromRecord({ type: primitiveValue(INIT_ACTION_TYPE) }),
+  ]);
+  return initialState.kind === "object"
+    ? getKnownObjectKeys(initialState)
+    : getReducerKeys(reducer);
+};
+
 /** A store whose state is the one the page recorded for exactly these reducer keys; the store is otherwise opaque. */
-const storeValue = (project: ProjectContext, reducer: StaticValue): StaticValue => {
-  const reducerKeys = getReducerKeys(reducer);
+const storeValue = (
+  project: ProjectContext,
+  reducer: StaticValue,
+  preloadedState: StaticValue,
+  tools: StubRenderTools,
+): StaticValue => {
+  const reducerKeys = getInitialStateKeys(reducer, preloadedState, tools);
   const state =
     reducerKeys && project.storeStates
       ? findStoreState(project.storeStates, reducerKeys)
@@ -204,12 +272,76 @@ const storeValue = (project: ProjectContext, reducer: StaticValue): StaticValue 
 };
 
 const configureStore = (project: ProjectContext): StaticValue =>
-  nativeFunction("configureStore", ([options]) =>
-    storeValue(project, getOptionalProperty(options, "reducer")),
+  nativeFunction("configureStore", ([options], tools) =>
+    storeValue(
+      project,
+      getOptionalProperty(options, "reducer"),
+      getOptionalProperty(options, "preloadedState"),
+      tools,
+    ),
   );
 
-const createStore = (project: ProjectContext, name: string): StaticValue =>
-  nativeFunction(name, ([reducer = UNDEFINED_VALUE]) => storeValue(project, reducer));
+/** `compose(f, g, h)(...args)` is `f(g(h(...args)))`; no functions is the identity. */
+const compose = nativeFunction("compose", (funcs) => {
+  if (funcs.length === 0) return nativeFunction("identity", ([arg = UNDEFINED_VALUE]) => arg);
+  if (funcs.length === 1) return funcs[0];
+  return nativeFunction("composed", (args, tools) =>
+    funcs
+      .slice(0, -1)
+      .reduceRight(
+        (result, func) => tools.call(func, [result]),
+        tools.call(funcs[funcs.length - 1], args),
+      ),
+  );
+});
+
+/**
+ * `applyMiddleware(...middlewares)` enhances `createStore`: each middleware
+ * receives the store API and the chain wraps `dispatch`, whose result is not
+ * statically known anyway.
+ */
+const applyMiddleware = nativeFunction("applyMiddleware", (middlewares) =>
+  nativeFunction("applyMiddlewareEnhancer", ([createStore = UNDEFINED_VALUE]) =>
+    nativeFunction("enhancedCreateStore", (args, tools) => {
+      const store = tools.call(createStore, args);
+      if (store.kind !== "object") return store;
+      const dispatch = nativeFunction("dispatch", () =>
+        unknownValue("result of dispatching at runtime"),
+      );
+      const middlewareApi = objectFromRecord({
+        getState: getObjectProperty(store, "getState"),
+        dispatch,
+      });
+      for (const middleware of middlewares) tools.call(middleware, [middlewareApi]);
+      return objectValue([
+        { kind: "spread", value: store },
+        { kind: "property", key: "dispatch", value: dispatch },
+      ]);
+    }),
+  ),
+);
+
+/**
+ * `createStore(reducer, [preloadedState], [enhancer])`: a function in second
+ * position is the enhancer, and an enhancer builds the store through
+ * `enhancer(createStore)(reducer, preloadedState)`. An enhancer the analysis
+ * cannot call (an unanalyzed library's) still yields a store whose state is
+ * the recorded one.
+ */
+const createStore = (project: ProjectContext, name: string): StaticValue => {
+  const creator: StaticValue = nativeFunction(
+    name,
+    ([reducer = UNDEFINED_VALUE, second = UNDEFINED_VALUE, third], tools) => {
+      const [preloadedState, enhancer] =
+        isFunctionLike(second) && third === undefined ? [UNDEFINED_VALUE, second] : [second, third];
+      if (enhancer !== undefined && isCallable(enhancer)) {
+        return tools.call(tools.call(enhancer, [creator]), [reducer, preloadedState]);
+      }
+      return storeValue(project, reducer, preloadedState, tools);
+    },
+  );
+  return creator;
+};
 
 const baseQueryFactory = (name: string): StaticValue =>
   nativeFunction(name, () =>
@@ -453,6 +585,12 @@ export const reduxValue: LibraryValueProvider = (specifier, importedName, projec
     case "createStore":
     case "legacy_createStore":
       return createStore(project, importedName);
+    case "bindActionCreators":
+      return bindActionCreators;
+    case "compose":
+      return compose;
+    case "applyMiddleware":
+      return applyMiddleware;
     default:
       return null;
   }

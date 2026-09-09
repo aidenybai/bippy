@@ -628,6 +628,7 @@
       "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.30.2 install --frozen-lockfile",
       "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.30.2 exec rspack serve",
       "env": {
+        "CI": "",
         "SENTRY_UI_DEV_ONLY": "1",
         "SENTRY_WEBPACK_PROXY_PORT": "7999"
       },
@@ -667,7 +668,7 @@
         },
         "maxFiberCount": 20000
       },
-      "notes": "index.tsx boots asynchronously: in SaaS mode it registers the getsentry overrides, loads the /api/client-config/ payload (window.__initialData, captured from the live page) into ConfigStore and then calls renderDom(Main), so the static side runs the same bootstrap before rendering the exported Main component. UI-only mode serves the SPA over a self-signed https certificate; the login page fetches from sentry.io and logs 403s for unauthenticated endpoints."
+      "notes": "index.tsx boots asynchronously: in SaaS mode it registers the getsentry overrides, loads the /api/client-config/ payload (window.__initialData, captured from the live page) into ConfigStore and then calls renderDom(Main), so the static side runs the same bootstrap before rendering the exported Main component. UI-only mode serves the SPA over a self-signed https certificate; the login page fetches from sentry.io and logs 403s for unauthenticated endpoints. `CI` is cleared because rspack.config.ts turns `DEV_MODE` (and with it the swc emotion plugin's `autoLabel`, which names every styled component) off when it is set, unlike a developer's `pnpm run dev-ui`."
     },
     {
       "id": "posthog",
@@ -677,6 +678,7 @@
       "framework": "spa",
       "workingDirectory": ".",
       "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.29.3 install --frozen-lockfile",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.29.3 quill:build"],
       "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/posthog-dev.sh\"",
       "url": "http://localhost:8000/login",
       "readyTimeoutMs": 900000,
@@ -2952,6 +2954,344 @@
         "tsconfig": "jsconfig.json"
       },
       "notes": "Static-only: src/index.jsx only calls render() after appService.getConfig() (GET /api/config, proxied to the NestJS server on localhost:3000) resolves, so without the server, its Postgres database and migrations no React commit ever happens (the page stays on the static 'Loading...' shell). The frontend also imports @tooljet/plugins/client, a generated entry over the checked-in plugin manifests; the setup step installs the plugins workspace and generates that entry so the webpack dev server compiles."
+    },
+    {
+      "id": "react-phone-e-commerce",
+      "repository": "https://github.com/john-smilga/react-phone-e-commerce-project",
+      "revision": "a6c25aac214915e9d0700f1789c356bdeb542759",
+      "description": "John Smilga's phone store (CRA 2 / React 16.7, legacy ReactDOM.render, class-component context provider, react-router-dom v4 Switch/Route, styled-components v4)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npx react-scripts start",
+      "env": {
+        "BROWSER": "none",
+        "CI": "true",
+        "SKIP_PREFLIGHT_CHECK": "true",
+        "PORT": "3011"
+      },
+      "url": "http://localhost:3011/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "externalPackageAllowList": [
+          "react-router-dom",
+          "react-router",
+          "history",
+          "hoist-non-react-statics",
+          "react-is",
+          "mini-create-react-context",
+          "path-to-regexp",
+          "resolve-pathname",
+          "value-equal",
+          "tiny-invariant",
+          "tiny-warning",
+          "isarray",
+          "styled-components"
+        ]
+      }
+    },
+    {
+      "id": "pizza-man",
+      "repository": "https://github.com/ruppysuppy/Pizza-Man",
+      "revision": "fbba955958c5c3eaa144fee50266b3a8c0e0f913",
+      "description": "Pizza Man online ordering landing page (CRA 3 / React 16, legacy ReactDOM.render, react-redux 7 connect, react-router-dom v5 Switch/Route behind React.lazy + Suspense, Firebase 7 auth listener)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npm install --no-audit --no-fund --legacy-peer-deps",
+      "setup": [
+        "test -f src/firebase/config.js || printf '%s\\n' 'const firebaseConfig = {' '  apiKey: \"corpus\",' '  authDomain: \"localhost\",' '  databaseURL: \"http://localhost:9/?ns=pizza-man\",' '  projectId: \"pizza-man\",' '  storageBucket: \"pizza-man.appspot.com\",' '  messagingSenderId: \"0\",' '  appId: \"1:0:web:0\",' '};' '' 'export default firebaseConfig;' > src/firebase/config.js"
+      ],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npx react-scripts start",
+      "env": {
+        "BROWSER": "none",
+        "CI": "true",
+        "SKIP_PREFLIGHT_CHECK": "true",
+        "PORT": "3012"
+      },
+      "url": "http://localhost:3012/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "externalPackageAllowList": [
+          "react-router-dom",
+          "react-router",
+          "history",
+          "hoist-non-react-statics",
+          "react-is",
+          "mini-create-react-context",
+          "path-to-regexp",
+          "resolve-pathname",
+          "value-equal",
+          "tiny-invariant",
+          "tiny-warning",
+          "isarray",
+          "react-redux"
+        ]
+      },
+      "notes": "The repository gitignores src/firebase/config.js; the setup step writes a placeholder pointing at an unreachable local database URL, which is enough for firebase.initializeApp and for the auth listener to report no signed-in user."
+    },
+    {
+      "id": "mern-ecommerce-frontend",
+      "repository": "https://github.com/coderdost/MERN-ecommerce-Frontend",
+      "revision": "89845dd6f2ec3cc9719775299a561cb2da86bfbf",
+      "description": "CoderDost MERN e-commerce frontend login page (CRA 5 / React 18, Redux Toolkit, react-router-dom v6 createBrowserRouter, react-alert, react-hook-form, Tailwind) without its Express backend",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npm start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3013"
+      },
+      "url": "http://localhost:3013/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "route": "/login",
+        "externalPackageAllowList": ["react-redux", "react-alert", "react-alert-template-basic"]
+      }
+    },
+    {
+      "id": "react-ecommerce-client",
+      "repository": "https://github.com/ed-roh/react-ecommerce",
+      "revision": "d59ca117e7d80cd67275d8b4a50946499e531fba",
+      "description": "EdRoh's React e-commerce storefront home page (CRA 5 / React 18, MUI 5 + Emotion, Redux Toolkit, react-router-dom v6 Routes, react-responsive-carousel) without its Strapi backend",
+      "framework": "react-router",
+      "workingDirectory": "client",
+      "install": "cd client && npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npx react-scripts start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3014"
+      },
+      "url": "http://localhost:3014/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "client",
+        "entry": "src/index.js",
+        "route": "/",
+        "externalPackageAllowList": [
+          "react-redux",
+          "react-responsive-carousel",
+          "react-easy-swipe",
+          "@mui/*",
+          "@emotion/*",
+          "@babel/runtime/*",
+          "clsx",
+          "prop-types",
+          "react-is",
+          "react-transition-group",
+          "@popperjs/*"
+        ]
+      }
+    },
+    {
+      "id": "mern-ecommerce",
+      "repository": "https://github.com/mohamedsamara/mern-ecommerce",
+      "revision": "7f73dfbd68a27b6945fe7fbf654067004816d09e",
+      "description": "MERN Ecommerce storefront login page (webpack 4 dev server / React 16, legacy ReactDOM.render, react-redux 7 connect, connected-react-router, react-router-dom v5 Switch/Route, reactstrap) against its Express + MongoDB backend",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npm run dev",
+      "env": {
+        "BROWSER": "none"
+      },
+      "url": "http://localhost:8080/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "client",
+        "entry": "app/index.js",
+        "envFiles": [".env"],
+        "envPrefix": "",
+        "externalPackageAllowList": [
+          "react-router-dom",
+          "react-router",
+          "history",
+          "hoist-non-react-statics",
+          "react-is",
+          "mini-create-react-context",
+          "path-to-regexp",
+          "resolve-pathname",
+          "value-equal",
+          "tiny-invariant",
+          "tiny-warning",
+          "isarray",
+          "react-redux",
+          "connected-react-router",
+          "reactstrap",
+          "react-popper",
+          "create-react-context",
+          "react-notification-system-redux",
+          "react-notification-system",
+          "create-react-class",
+          "object-assign",
+          "react-autosuggest",
+          "react-themeable",
+          "section-iterator",
+          "shallow-equal"
+        ]
+      },
+      "setup": [
+        "test -f client/.env || cp client/.env.example client/.env",
+        "test -f server/.env || printf '%s\\n' PORT=3000 MONGO_URI=mongodb://127.0.0.1:27017/mern_ecommerce JWT_SECRET=corpus CLIENT_URL=http://localhost:8080 BASE_API_URL=api GOOGLE_CLIENT_ID=corpus GOOGLE_CLIENT_SECRET=corpus GOOGLE_CALLBACK_URL=http://localhost:3000/api/auth/google/callback FACEBOOK_CLIENT_ID=corpus FACEBOOK_CLIENT_SECRET=corpus FACEBOOK_CALLBACK_URL=http://localhost:3000/api/auth/facebook/callback > server/.env"
+      ],
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/mongo.sh\" bippy-mern-ecommerce-mongo 27017"]
+    },
+    {
+      "id": "ecommerce-react",
+      "repository": "https://github.com/jgudo/ecommerce-react",
+      "revision": "8d37028200dc1475d78f27d3b352a4d0384a4ab1",
+      "description": "Salinaka eyewear storefront (Vite 3 / React 17, legacy render, react-redux 7 + redux-saga + redux-persist PersistGate, react-router-dom v5 Router/Switch, Firebase 8 auth + Firestore) without a real Firebase project",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npx vite --port 3015 --strictPort",
+      "env": {
+        "VITE_FIREBASE_API_KEY": "corpus",
+        "VITE_FIREBASE_AUTH_DOMAIN": "localhost",
+        "VITE_FIREBASE_DB_URL": "http://localhost:9/?ns=salinaka",
+        "VITE_FIREBASE_PROJECT_ID": "salinaka",
+        "VITE_FIREBASE_STORAGE_BUCKET": "salinaka.appspot.com",
+        "VITE_FIREBASE_MSG_SENDER_ID": "0",
+        "VITE_FIREBASE_APP_ID": "1:0:web:0"
+      },
+      "url": "http://localhost:3015/signin",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.jsx",
+        "tsconfig": "jsconfig.json",
+        "aliases": {
+          "@": "src"
+        },
+        "envFiles": [],
+        "externalPackageAllowList": [
+          "react-router-dom",
+          "react-router",
+          "history",
+          "hoist-non-react-statics",
+          "react-is",
+          "mini-create-react-context",
+          "path-to-regexp",
+          "resolve-pathname",
+          "value-equal",
+          "tiny-invariant",
+          "tiny-warning",
+          "isarray",
+          "react-redux",
+          "redux-persist",
+          "redux-persist/*",
+          "react-modal",
+          "exenv",
+          "warning",
+          "react-lifecycles-compat",
+          "formik",
+          "react-fast-compare",
+          "deepmerge",
+          "tslib",
+          "@ant-design/*",
+          "rc-util",
+          "rc-util/*",
+          "classnames",
+          "@ctrl/tinycolor",
+          "@babel/runtime",
+          "@babel/runtime/*"
+        ]
+      }
+    },
+    {
+      "id": "social-media-app",
+      "repository": "https://github.com/adrianhajdin/social_media_app",
+      "revision": "9fa032dd198c92aa498db82d248c0d93f28ebf5c",
+      "description": "JS Mastery Snapgram sign-in page (Vite 4 / React 18, react-router-dom v6 Routes, TanStack Query 4, react-hook-form + zod, shadcn/Radix UI, Appwrite SDK) without an Appwrite project",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npx vite --port 3016 --strictPort",
+      "env": {
+        "VITE_APPWRITE_URL": "http://localhost:9/v1",
+        "VITE_APPWRITE_PROJECT_ID": "corpus",
+        "VITE_APPWRITE_DATABASE_ID": "corpus",
+        "VITE_APPWRITE_STORAGE_ID": "corpus",
+        "VITE_APPWRITE_USER_COLLECTION_ID": "users",
+        "VITE_APPWRITE_POST_COLLECTION_ID": "posts",
+        "VITE_APPWRITE_SAVES_COLLECTION_ID": "saves"
+      },
+      "url": "http://localhost:3016/sign-in",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "route": "/sign-in",
+        "envFiles": [],
+        "externalPackageAllowList": [
+          "@tanstack/react-query",
+          "@tanstack/react-query-devtools",
+          "@radix-ui/*",
+          "class-variance-authority",
+          "clsx",
+          "tailwind-merge"
+        ]
+      }
+    },
+    {
+      "id": "social-network-client",
+      "repository": "https://github.com/misa-j/social-network",
+      "revision": "d99ef7b3c56599e95db7b3d14bbcda76ec3e6714",
+      "description": "misa-j social-network client login page (CRA 2 / React 16, legacy ReactDOM.render, react-redux 6 connect, react-router-dom v4 Switch/Route behind React.lazy + Suspense, semantic-ui-react) without its Express backend",
+      "framework": "spa",
+      "workingDirectory": "client",
+      "install": "cd client && bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npx react-scripts start",
+      "env": {
+        "BROWSER": "none",
+        "CI": "true",
+        "SKIP_PREFLIGHT_CHECK": "true",
+        "PORT": "3017"
+      },
+      "url": "http://localhost:3017/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "client",
+        "entry": "src/index.js",
+        "externalPackageAllowList": [
+          "react-router-dom",
+          "react-router",
+          "history",
+          "hoist-non-react-statics",
+          "react-is",
+          "mini-create-react-context",
+          "path-to-regexp",
+          "resolve-pathname",
+          "value-equal",
+          "tiny-invariant",
+          "tiny-warning",
+          "isarray",
+          "react-redux",
+          "semantic-ui-react",
+          "@semantic-ui-react/*",
+          "@stardust-ui/react-component-*",
+          "@fluentui/react-component-*",
+          "keyboard-key",
+          "shallowequal",
+          "classnames",
+          "lodash",
+          "lodash/*"
+        ]
+      }
     }
   ]
 }

@@ -111,6 +111,7 @@ export class ModuleResolver {
   private readonly resolvers: Record<ImporterKind, ResolverPair>;
   private readonly cache = new Map<string, ModuleResolution>();
   readonly rootDirectory: string | null;
+  readonly extensions: readonly string[] = SOURCE_EXTENSIONS;
 
   constructor(options: ModuleResolverOptions = {}) {
     this.rootDirectory = options.rootDirectory ? path.resolve(options.rootDirectory) : null;

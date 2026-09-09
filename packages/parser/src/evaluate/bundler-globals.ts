@@ -31,6 +31,10 @@ export const BUNDLER_INJECTED_NAMES = new Set([
   "__filename",
 ]);
 
+/** Webpack's per-module `require` and its build-time `require.context`, which other bundlers do not provide. */
+export const isWebpackRequireName = (name: string): boolean =>
+  name === "require" || name === "require.context";
+
 /** Of those, the names Vite leaves to the browser, where reading them throws; esbuild's CommonJS wrapper still supplies `require`. */
 const VITE_UNDECLARED_NAMES = new Set([...POLYFILLED_NODE_OBJECTS, "global", "define"]);
 

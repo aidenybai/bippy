@@ -268,10 +268,11 @@ export class StaticRenderer {
   /**
    * Evaluates the element handed to the root render call of an entry module
    * (`createRoot().render(<App />)`, `hydrateRoot(document, <App />)`), together
-   * with the statements that lead up to it. An entry without such a call (it
-   * mounts through an imported function) runs whole, and the element the first
-   * evaluated root render received is used. Null (with a diagnostic) when no
-   * root render happens.
+   * with the statements that lead up to it; the last call to run wins, and a
+   * call inside a callback sees the callback's arguments as unknowns. An entry
+   * without such a call (it mounts through an imported function) runs whole,
+   * and the element the first evaluated root render received is used. Null
+   * (with a diagnostic) when no root render happens.
    */
   evaluateEntryElement(interpreter: Interpreter, module: ModuleRecord): StaticValue | null {
     const rootCalls = findRootRenderCalls(module);
@@ -289,18 +290,26 @@ export class StaticRenderer {
     if (rootCalls.length > 1) {
       interpreter.report(
         "multiple-root-renders",
-        `${rootCalls.length} root render calls found in ${module.filePath}; using the first`,
+        `${rootCalls.length} root render calls found in ${module.filePath}; using the last to run`,
         null,
         "warning",
       );
     }
-    const rootCall = rootCalls[0];
+    const rootCall = rootCalls[rootCalls.length - 1];
     interpreter.initializeModule(
       module,
       module.sideEffectStatements.filter((statement) => statement.end <= rootCall.call.start),
     );
     const moduleContext = interpreter.createModuleContext(module);
     const context = { ...moduleContext, scope: createScope(moduleContext.scope) };
+    if (rootCall.enclosingFunction) {
+      interpreter.bindUnknownParameters(
+        rootCall.enclosingFunction.params,
+        context.scope,
+        context,
+        "argument of the callback that renders the root",
+      );
+    }
     for (const statements of rootCall.enclosingStatements) {
       interpreter.evaluateBlock(statements, context, false);
     }

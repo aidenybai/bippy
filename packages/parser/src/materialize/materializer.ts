@@ -1,6 +1,8 @@
 import type { Class } from "oxc-parser";
 import type { ComponentClass, ComponentType, Context, ExoticComponent, ReactNode } from "react";
 import {
+  getMaskedLegacyContext,
+  getStaticProperty,
   isErrorBoundaryClass,
   renderClassComponent,
   unmountClassInstance,
@@ -33,6 +35,7 @@ import {
   getStubDisplayName,
   mapValue,
   NULL_VALUE,
+  objectFromRecord,
   omitObjectKeys,
   unknownValue,
   nativeObjectValue,
@@ -50,6 +53,7 @@ import type {
   StaticElementType,
   StaticElementValue,
   StaticFunctionValue,
+  StaticObjectEntry,
   StaticObjectValue,
   StaticValue,
   StubComponent,
@@ -116,6 +120,11 @@ const CHILDLESS_HOST_TAGS = new Set([
   "wbr",
 ]);
 
+interface ClassProxyContext {
+  context: Context<StaticValue | null>;
+  value: StaticValue | null;
+}
+
 export interface MaterializerOptions {
   maxComponentDepth?: number;
   maxFiberCount?: number;
@@ -159,6 +168,8 @@ export interface MaterializeContext {
   owner: EvaluationContext | null;
   /** Inside a `<StrictMode>` subtree, where development React double-invokes hook factories. */
   isStrictMode: boolean;
+  /** The unmasked legacy context (`contextStackCursor`) at this position; null once React dropped legacy context. */
+  legacyContext: StaticValue | null;
 }
 
 /** The static element a proxy component stands for, handed to it as its only prop. */
@@ -388,7 +399,19 @@ const applyDefaultProps = (
 ): StaticObjectValue => {
   const defaults = component.properties.get("defaultProps");
   if (!defaults || !isNonNullish(defaults)) return props;
-  return { kind: "object", entries: [{ kind: "spread", value: defaults }, ...props.entries] };
+  const isDefaulted = (entry: StaticObjectEntry): boolean =>
+    entry.kind === "property" &&
+    defaults.kind === "object" &&
+    entry.value.kind === "primitive" &&
+    entry.value.value === undefined &&
+    isNonNullish(getObjectProperty(defaults, entry.key));
+  return {
+    kind: "object",
+    entries: [
+      { kind: "spread", value: defaults },
+      ...props.entries.filter((entry) => !isDefaulted(entry)),
+    ],
+  };
 };
 
 const toFunctionValue = (component: ComponentDefinition): StaticFunctionValue => {
@@ -479,10 +502,20 @@ export class Materializer {
   private isInsideComponentRender = false;
   /** `use` reads a context from any render (class bodies, Consumer render props included); older Reacts only have `useContext`. */
   private readonly useStaticContext: (context: Context<StaticValue | null>) => StaticValue | null;
-  /** Context values flow through React itself, so a proxy reads them at its own fiber, as the real hook would. */
+  /**
+   * Context values flow through React itself, so a proxy reads them at its own
+   * fiber: through the hook in a function proxy, and through `this.context` of
+   * a class proxy whose `contextType` is the analyzed class's (`readContext`
+   * is what React itself does there; hooks throw inside a class render).
+   */
+  private classProxyContext: ClassProxyContext | null = null;
   private readonly readContext: ContextReader = (definition) => {
     if (!this.isInsideComponentRender) return null;
-    const value = this.useStaticContext(this.getContext(definition));
+    const context = this.getContext(definition);
+    const value =
+      this.classProxyContext?.context === context
+        ? this.classProxyContext.value
+        : this.useStaticContext(context);
     this.contextReads?.push({ definition, value });
     return value;
   };
@@ -521,6 +554,7 @@ export class Materializer {
       alternativeDepth: 0,
       owner: null,
       isStrictMode: false,
+      legacyContext: this.interpreter.hasLegacyContext ? objectFromRecord({}) : null,
     };
   }
 
@@ -690,13 +724,20 @@ export class Materializer {
       if (serverNode !== NOT_SERVER_RENDERED) return serverNode;
     }
     if (!this.isServerEnvironment(element, context)) {
-      return this.createNode(element.type, element.key, element.props, element.location, context);
+      return this.createNode(
+        element.type,
+        element.key,
+        element.props,
+        element.location,
+        context,
+        isTopLevel,
+      );
     }
     if (this.isFlightUnwrappedFragment(element)) {
       return this.toNode(getObjectProperty(element.props, "children"), context, isTopLevel);
     }
     const props = this.serverEnvironment.stampProps(element.props);
-    return this.createNode(element.type, element.key, props, element.location, context);
+    return this.createNode(element.type, element.key, props, element.location, context, isTopLevel);
   }
 
   /** Flight serializes a key-less server `<>...</>` as its children, so the client never sees the fragment. */
@@ -752,6 +793,7 @@ export class Materializer {
     props: StaticObjectValue,
     location: SourceLocation | null,
     context: MaterializeContext,
+    isTopLevel: boolean,
   ): ReactNode {
     const { createElement } = this.runtime.react;
     if (type.kind !== "fragment" && this.materializedCount++ >= this.maxElementCount) {
@@ -812,12 +854,16 @@ export class Materializer {
         }
         return createElement(lazyType, { key: reactKey, input });
       }
-      case "fragment":
+      case "fragment": {
+        // `reconcileChildFibers` unwraps an unkeyed top-level fragment without recursing,
+        // so its children take its position and a fragment among them stays a fiber.
+        const isUnwrapped = isTopLevel && reactKey === undefined;
         return createElement(
           this.runtime.react.Fragment,
           { key: reactKey },
-          this.toNode(children, context, true),
+          this.toNode(children, context, !isUnwrapped),
         );
+      }
       case "strict-mode":
         return createElement(
           this.runtime.react.StrictMode,
@@ -1151,15 +1197,26 @@ export class Materializer {
         this.beginLayoutPhase();
         this.commitSuspenseScope(context.suspenseScope);
       };
+      const contextType = getStaticProperty(classValue, "contextType");
+      const proxyContextType =
+        contextType?.kind === "context" ? this.getContext(contextType.context) : null;
       const renderProxy = (
         input: ProxyInput,
         caught: StaticThrowError | null,
         host: ClassProxyHost,
+        contextValue: StaticValue | null,
       ): ReactNode =>
-        this.renderInsideComponent(() =>
-          this.renderClassProxy(input, component, classValue, caught, host),
-        );
+        this.renderInsideComponent(() => {
+          this.classProxyContext =
+            proxyContextType === null ? null : { context: proxyContextType, value: contextValue };
+          try {
+            return this.renderClassProxy(input, component, classValue, caught, host);
+          } finally {
+            this.classProxyContext = null;
+          }
+        });
       class ClassProxy extends this.runtime.react.Component<ProxyProps, ErrorBoundaryState> {
+        declare context: StaticValue | null;
         state: ErrorBoundaryState = { caught: null };
         private readonly instances = new Map<BoundaryRenderPath, ProxyInstance>();
         private pendingWork: EffectPhaseWork[] = [];
@@ -1179,7 +1236,7 @@ export class Materializer {
 
         render(): ReactNode {
           this.pendingWork = [];
-          return renderProxy(this.props.input, this.state.caught, this.host);
+          return renderProxy(this.props.input, this.state.caught, this.host, this.context);
         }
 
         componentDidMount(): void {
@@ -1210,6 +1267,7 @@ export class Materializer {
           }
         }
       }
+      if (proxyContextType) ClassProxy.contextType = proxyContextType;
       class ErrorBoundaryProxy extends ClassProxy {
         static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
           return {
@@ -1224,7 +1282,7 @@ export class Materializer {
         }
       }
       proxy = setFunctionName(
-        isErrorBoundaryClass(classValue.body) ? ErrorBoundaryProxy : ClassProxy,
+        isErrorBoundaryClass(classValue) ? ErrorBoundaryProxy : ClassProxy,
         getComponentDisplayName(component),
       );
       this.classProxies.set(component, proxy);
@@ -1424,6 +1482,12 @@ export class Materializer {
     instanceRef.current ??= createProxyInstance(input.context, this.interpreter);
     const [, setPass] = useState(0);
     const props = applyDefaultProps(component, input.props);
+    const legacyContext = input.context.legacyContext;
+    const contextArgument =
+      secondArgument ??
+      (legacyContext === null
+        ? null
+        : getMaskedLegacyContext(component.properties.get("contextTypes") ?? null, legacyContext));
     const { node, mount, unmount } = this.renderStateful(
       input,
       input.context,
@@ -1440,7 +1504,7 @@ export class Materializer {
           (componentContext) =>
             this.interpreter.callFunction(
               toFunctionValue(component),
-              secondArgument ? [props, secondArgument] : [props],
+              contextArgument ? [props, contextArgument] : [props],
               componentContext,
               { awaited: true },
             ),
@@ -1609,7 +1673,7 @@ export class Materializer {
     host: ClassProxyHost,
   ): ReactNode {
     const props = applyDefaultProps(component, input.props);
-    const isBoundary = isErrorBoundaryClass(classValue.body);
+    const isBoundary = isErrorBoundaryClass(classValue);
     const context: MaterializeContext = isBoundary
       ? { ...input.context, errorBoundaryDepth: input.context.errorBoundaryDepth + 1 }
       : input.context;
@@ -1635,14 +1699,18 @@ export class Materializer {
             boundaryContext,
             input.location,
             frame,
-            (componentContext) =>
-              renderClassComponent(
+            (componentContext, childContext) => {
+              const classRender = renderClassComponent(
                 this.interpreter,
                 classValue,
                 props,
+                boundaryContext.legacyContext,
                 componentContext,
                 caughtError,
-              ),
+              );
+              childContext.legacyContext = classRender.childLegacyContext;
+              return classRender.rendered;
+            },
           ),
       );
       host.queueCommitWork({ mount, unmount });
@@ -1716,7 +1784,7 @@ export class Materializer {
     context: MaterializeContext,
     location: SourceLocation | null,
     hooks: HookFrame | null,
-    render: (componentContext: EvaluationContext) => StaticValue,
+    render: (componentContext: EvaluationContext, childContext: MaterializeContext) => StaticValue,
   ): CompositeEvaluation {
     const environment = this.componentEnvironment(component, context);
     const childContext: MaterializeContext = {
@@ -1766,7 +1834,7 @@ export class Materializer {
       hooks,
     };
     childContext.owner = componentContext;
-    return { rendered: render(componentContext), childContext, componentContext };
+    return { rendered: render(componentContext, childContext), childContext, componentContext };
   }
 
   /** Under RSC an element created outside a client boundary (a module with `"use client"`) is Flight's to render. */

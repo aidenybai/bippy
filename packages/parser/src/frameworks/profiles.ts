@@ -157,6 +157,9 @@ export const NEXT_PAGES_PROFILE: FrameworkProfile = {
 // sharing one (`Router`) is spliced from both trees alike.
 const REACT_ROUTER_RUNTIME_WRAPPERS = [
   "Router",
+  // react-router 6.4-6.10's `RouterProvider` renders `<Routes />` (no children)
+  // to mount `router.routes`; 6.11 split that into `DataRoutes`.
+  "Routes",
   "DataRoutes",
   "DataRoutes2",
   "RenderErrorBoundary",

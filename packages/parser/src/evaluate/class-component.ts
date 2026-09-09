@@ -1,9 +1,9 @@
 import type { Class, ClassElement, ParamPattern } from "oxc-parser";
 import type {
-  ClassBody,
   ClassFunctionMember,
   ClassMember,
   FunctionLikeNode,
+  ReactApi,
   SourceLocation,
   StaticClassValue,
   StaticFunctionValue,
@@ -24,10 +24,12 @@ import {
   type StateCell,
 } from "./hooks.js";
 import type { Interpreter } from "./interpreter.js";
+import { providedContextValue } from "./react-calls.js";
 import { createScope } from "./scope.js";
 import {
   accessorEntry,
   describeValue,
+  getKnownObjectKeys,
   getObjectProperty,
   getTruthiness,
   isCallable,
@@ -36,6 +38,7 @@ import {
   objectFromRecord,
   objectValue,
   setObjectProperty,
+  TRUE_VALUE,
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
   unknownValue,
@@ -72,13 +75,20 @@ export const collectClassMembers = (node: Class): ClassMember[] => {
   return members;
 };
 
-export const isErrorBoundaryClass = (body: ClassBody): boolean =>
-  body.members.some(
-    (member) =>
-      (member.key === "getDerivedStateFromError" && member.isStatic) ||
-      (member.key === "componentDidCatch" && !member.isStatic),
-  ) ||
-  (body.superValue?.kind === "class" && isErrorBoundaryClass(body.superValue.body));
+const hasPresentProperty = (object: StaticObjectValue, key: string): boolean =>
+  isNullish(getObjectProperty(object, key)) !== true;
+
+export const isErrorBoundaryClass = (classValue: StaticClassValue): boolean =>
+  collectClassChain(classValue).some(
+    ({ body, properties }) =>
+      body.members.some(
+        (member) =>
+          (member.key === "getDerivedStateFromError" && member.isStatic) ||
+          (member.key === "componentDidCatch" && !member.isStatic),
+      ) ||
+      properties.has("getDerivedStateFromError") ||
+      (body.prototype !== undefined && hasPresentProperty(body.prototype, "componentDidCatch")),
+  );
 
 const collectClassChain = (classValue: StaticClassValue): StaticClassValue[] => {
   const chain: StaticClassValue[] = [classValue];
@@ -264,9 +274,45 @@ export const getStaticProperty = (
   return null;
 };
 
+/** `React.Component`/`PureComponent` define no statics (react/src/ReactBaseClasses.js). */
+const isReactBaseClass = (value: StaticValue): boolean =>
+  value.kind === "react-api" && (value.api === "Component" || value.api === "PureComponent");
+
+const reactBaseClassPrototypes = new Map<ReactApi, StaticObjectValue>();
+
+const updaterMethod = (name: string): StaticNativeFunctionValue => ({
+  kind: "native-function",
+  name,
+  call: (args, tools) => {
+    args.forEach(tools.markEscaped);
+    return unknownValue(`${name} called through React.Component.prototype`);
+  },
+});
+
+/**
+ * `Component.prototype`/`PureComponent.prototype` (react/src/ReactBaseClasses.js):
+ * `isReactComponent` marks what the reconciler constructs rather than calls.
+ */
+export const getReactBaseClassPrototype = (api: ReactApi): StaticObjectValue => {
+  const cached = reactBaseClassPrototypes.get(api);
+  if (cached) return cached;
+  const constructor: StaticValue = { kind: "react-api", api };
+  const prototype = objectFromRecord({
+    constructor,
+    isReactComponent: objectFromRecord({}),
+    setState: updaterMethod("setState"),
+    forceUpdate: updaterMethod("forceUpdate"),
+  });
+  if (api === "PureComponent") setObjectProperty(prototype, "isPureReactComponent", TRUE_VALUE);
+  reactBaseClassPrototypes.set(api, prototype);
+  return prototype;
+};
+
 /** Whether every class up the `extends` chain is known, so a missing static is `undefined`. */
-export const hasKnownStaticChain = (classValue: StaticClassValue): boolean =>
-  collectClassChain(classValue).at(-1)?.body.superValue === null;
+export const hasKnownStaticChain = (classValue: StaticClassValue): boolean => {
+  const baseValue = collectClassChain(classValue).at(-1)?.body.superValue ?? null;
+  return baseValue === null || isReactBaseClass(baseValue);
+};
 
 const caughtErrorValue = (): StaticValue =>
   objectFromRecord({
@@ -288,7 +334,7 @@ const getInstanceMethod = (
   name: string,
 ): StaticFunctionValue | null => {
   const method = getObjectProperty(instance, name);
-  return method.kind === "function" ? method : null;
+  return method.kind === "function" ? { ...method, thisValue: method.thisValue ?? instance } : null;
 };
 
 /** `assign({}, prevState, partialState)` of `getStateFromUpdate`; null and undefined leave the state as is. */
@@ -308,9 +354,82 @@ export interface ClassInstanceRecord {
   committedState: StaticValue;
   pendingCallbacks: StaticValue[];
   rendered: StaticValue | null;
+  /** `__reactInternalMemoizedMergedChildContext`: what the last render handed down, reused when the update bails out. */
+  childLegacyContext: StaticValue | null;
+}
+
+/** A rendered class component and the unmasked legacy context its children see. */
+export interface ClassRender {
+  rendered: StaticValue;
+  childLegacyContext: StaticValue | null;
 }
 
 const classInstances = new WeakMap<HookFrame, ClassInstanceRecord>();
+
+const readLegacyContextKey = (unmaskedContext: StaticValue, key: string): StaticValue =>
+  unmaskedContext.kind === "object"
+    ? getObjectProperty(unmaskedContext, key)
+    : unknownValue(`legacy context ${key}`);
+
+/** `getMaskedContext`: the keys `contextTypes` declares, read from the unmasked context; `{}` without any. */
+export const getMaskedLegacyContext = (
+  contextTypes: StaticValue | null,
+  unmaskedContext: StaticValue,
+): StaticValue => {
+  if (contextTypes === null || getTruthiness(contextTypes) === false) return objectFromRecord({});
+  const keys = contextTypes.kind === "object" ? getKnownObjectKeys(contextTypes) : null;
+  if (keys === null)
+    return unknownValue("legacy context masked by contextTypes that are not statically known");
+  return objectFromRecord(
+    Object.fromEntries(keys.map((key) => [key, readLegacyContextKey(unmaskedContext, key)])),
+  );
+};
+
+/** `readContext(ctor.contextType)` when set, otherwise the masked legacy context (`{}` once `disableLegacyContext`). */
+const getInstanceContext = (
+  interpreter: Interpreter,
+  classValue: StaticClassValue,
+  legacyContext: StaticValue | null,
+  context: EvaluationContext,
+): StaticValue => {
+  const contextType = getStaticProperty(classValue, "contextType");
+  if (contextType?.kind === "context") {
+    return providedContextValue(
+      interpreter,
+      contextType.context,
+      context.readContext(contextType.context),
+      null,
+    );
+  }
+  if (contextType && isNullish(contextType) !== true) {
+    return unknownValue(`context read through ${describeValue(contextType)}`);
+  }
+  return legacyContext === null
+    ? objectFromRecord({})
+    : getMaskedLegacyContext(getStaticProperty(classValue, "contextTypes"), legacyContext);
+};
+
+/** `processChildContext`: `Object.assign({}, parentContext, instance.getChildContext())` for a class declaring `childContextTypes`. */
+const getChildLegacyContext = (
+  interpreter: Interpreter,
+  classValue: StaticClassValue,
+  instance: StaticObjectValue,
+  parentContext: StaticValue | null,
+  context: EvaluationContext,
+): StaticValue | null => {
+  if (parentContext === null) return null;
+  const childContextTypes = getStaticProperty(classValue, "childContextTypes");
+  if (childContextTypes === null || isNullish(childContextTypes) === true) return parentContext;
+  const getChildContext = getInstanceMethod(instance, "getChildContext");
+  if (!getChildContext) return parentContext;
+  return objectValue([
+    { kind: "spread", value: parentContext },
+    {
+      kind: "spread",
+      value: interpreter.callFunction(getChildContext, [], context, { thisValue: instance }),
+    },
+  ]);
+};
 
 /**
  * `constructClassInstance` + `adoptClassInstance`: builds the `this` a class
@@ -324,16 +443,17 @@ const mountClassInstance = (
   interpreter: Interpreter,
   classValue: StaticClassValue,
   props: StaticValue,
+  instanceContext: StaticValue,
   context: EvaluationContext,
   frame: HookFrame,
 ): ClassInstanceRecord => {
   const instance = objectFromRecord({
     props,
     state: UNDEFINED_VALUE,
-    context: unknownValue("legacy class context"),
+    context: instanceContext,
     refs: objectFromRecord({}),
   });
-  initializeInstance(interpreter, classValue, instance, [props], context);
+  initializeInstance(interpreter, classValue, instance, [props, instanceContext], context);
   const initialState = getObjectProperty(instance, "state");
   const stateCell = nextStateCell(frame, `${classValue.name ?? "class"} state`, () => initialState);
   const record: ClassInstanceRecord = {
@@ -344,6 +464,7 @@ const mountClassInstance = (
     committedState: initialState,
     pendingCallbacks: [],
     rendered: null,
+    childLegacyContext: null,
   };
   const setState: StaticNativeFunctionValue = {
     kind: "native-function",
@@ -422,21 +543,25 @@ const lifecycleEffect = (
 
 /**
  * `checkShouldComponentUpdate` for an update pass: `false` only when the
- * instance's `shouldComponentUpdate(nextProps, nextState)` decidedly declines,
- * so an undecided answer renders as a forced update would.
+ * instance's `shouldComponentUpdate(nextProps, nextState, nextContext)` decidedly
+ * declines, so an undecided answer renders as a forced update would.
  */
 const shouldClassUpdate = (
   interpreter: Interpreter,
   instance: StaticObjectValue,
   props: StaticValue,
   state: StaticValue,
+  instanceContext: StaticValue,
   context: EvaluationContext,
 ): boolean => {
   const shouldComponentUpdate = getInstanceMethod(instance, "shouldComponentUpdate");
   if (!shouldComponentUpdate) return true;
-  const decision = interpreter.callFunction(shouldComponentUpdate, [props, state], context, {
-    thisValue: instance,
-  });
+  const decision = interpreter.callFunction(
+    shouldComponentUpdate,
+    [props, state, instanceContext],
+    context,
+    { thisValue: instance },
+  );
   return getTruthiness(decision) !== false;
 };
 
@@ -461,21 +586,25 @@ export const unmountClassInstance = (frame: HookFrame, call: EffectCall): void =
  * With `caughtError` the instance renders as React re-renders an error
  * boundary: with `getDerivedStateFromError` merged into state, or with null
  * children when the class only defines `componentDidCatch` (`finishClassComponent`).
+ * `legacyContext` is the unmasked legacy context at the component's position,
+ * null where React no longer threads one (`disableLegacyContext`).
  */
 export const renderClassComponent = (
   interpreter: Interpreter,
   classValue: StaticClassValue,
   props: StaticValue,
+  legacyContext: StaticValue | null,
   context: EvaluationContext,
   caughtError = false,
-): StaticValue => {
+): ClassRender => {
   const frame = context.hooks ?? createHookFrame();
+  const instanceContext = getInstanceContext(interpreter, classValue, legacyContext, context);
   let record = classInstances.get(frame);
   if (record) {
     const { stateCell } = record;
     nextStateCell(frame, stateCell.name, () => stateCell.initial);
   } else {
-    record = mountClassInstance(interpreter, classValue, props, context, frame);
+    record = mountClassInstance(interpreter, classValue, props, instanceContext, context, frame);
     classInstances.set(frame, record);
   }
   const { instance, stateCell } = record;
@@ -501,7 +630,7 @@ export const renderClassComponent = (
   }
   if (caughtError) {
     const deriveStateFromError = getStaticMethod(classValue, "getDerivedStateFromError");
-    if (!deriveStateFromError) return NULL_VALUE;
+    if (!deriveStateFromError) return { rendered: NULL_VALUE, childLegacyContext: legacyContext };
     state = mergeState(
       state,
       interpreter.callFunction(deriveStateFromError, [caughtErrorValue()], context, {
@@ -513,23 +642,36 @@ export const renderClassComponent = (
     record.isMounted &&
     !caughtError &&
     record.rendered !== null &&
-    !shouldClassUpdate(interpreter, instance, props, state, context);
+    !shouldClassUpdate(interpreter, instance, props, state, instanceContext, context);
   setObjectProperty(instance, "props", props);
   stateCell.current = state;
   setObjectProperty(instance, "state", state);
+  setObjectProperty(instance, "context", instanceContext);
   frame.effects.push({
     isLayout: true,
     callback: lifecycleEffect(record, props, state, didBailOut),
     deps: null,
     cleanup: null,
   });
-  if (didBailOut && record.rendered !== null) return record.rendered;
+  if (didBailOut && record.rendered !== null) {
+    return { rendered: record.rendered, childLegacyContext: record.childLegacyContext };
+  }
   const render = getInstanceMethod(instance, "render");
   if (!render) {
-    return unknownValue(`class ${classValue.name ?? "component"} has no static render method`);
+    return {
+      rendered: unknownValue(`class ${classValue.name ?? "component"} has no static render method`),
+      childLegacyContext: legacyContext,
+    };
   }
   record.rendered = interpreter.callFunction(render, [], context, { thisValue: instance });
-  return record.rendered;
+  record.childLegacyContext = getChildLegacyContext(
+    interpreter,
+    classValue,
+    instance,
+    legacyContext,
+    context,
+  );
+  return { rendered: record.rendered, childLegacyContext: record.childLegacyContext };
 };
 
 /** `new Class(...args)`: the instance as it is right after construction. */
@@ -627,6 +769,7 @@ const initializeInstance = (
   context: EvaluationContext,
 ): StaticClassValue[] => {
   instance.constructedBy = classValue;
+  if (classValue.body.prototype) instance.prototype = classValue.body.prototype;
   const chain = collectClassChain(classValue);
   const seen = new Set<string>();
   const layers: ClassLayer[] = chain.map((current) => {

@@ -13,18 +13,30 @@ const SOURCE_MODULE_PATH = /\.(?:[cm]?[jt]sx?)$/;
 // Dev servers serve the app's own modules one per URL under the served root;
 // dependencies come pre-bundled (`/node_modules/`, `/@fs/.../node_modules/`)
 // and the server's own client modules under `/@`. Only origins the document
-// loads module scripts from are dev servers; a classic script from elsewhere
-// would be executed anew if imported.
+// loads module scripts from (an inline one imports from its own origin) are
+// ESM dev servers; a classic script (a webpack bundle) is not in the module
+// map and would be executed anew if imported.
 const moduleScriptOrigins = (): Set<string> => {
-  const origins = new Set([location.origin]);
+  const origins = new Set<string>();
   document
-    .querySelectorAll<HTMLScriptElement>("script[type=module][src]")
-    .forEach((script) => origins.add(new URL(script.src, location.href).origin));
+    .querySelectorAll<HTMLScriptElement>("script[type=module]")
+    .forEach((script) =>
+      origins.add(script.src ? new URL(script.src, location.href).origin : location.origin),
+    );
   return origins;
 };
 
-const isSourceModuleUrl = (url: URL, origins: Set<string>): boolean =>
+const classicScriptUrls = (): Set<string> => {
+  const urls = new Set<string>();
+  document
+    .querySelectorAll<HTMLScriptElement>("script[src]:not([type=module])")
+    .forEach((script) => urls.add(new URL(script.src, location.href).href));
+  return urls;
+};
+
+const isSourceModuleUrl = (url: URL, origins: Set<string>, classicScripts: Set<string>): boolean =>
   origins.has(url.origin) &&
+  !classicScripts.has(url.href) &&
   SOURCE_MODULE_PATH.test(url.pathname) &&
   !url.pathname.includes("/node_modules/") &&
   !url.pathname.startsWith("/@");
@@ -44,11 +56,12 @@ export const readModuleExports = async (): Promise<ExportIndex> => {
   const references = new Map<object, CapturedExportReference>();
   if (typeof performance === "undefined") return NO_EXPORTS;
   const origins = moduleScriptOrigins();
+  const classicScripts = classicScriptUrls();
   const hrefs = new Set(
     performance
       .getEntriesByType("resource")
       .map((entry) => new URL(entry.name, location.href))
-      .filter((url) => isSourceModuleUrl(url, origins))
+      .filter((url) => isSourceModuleUrl(url, origins, classicScripts))
       .map((url) => url.href),
   );
   for (const href of hrefs) {

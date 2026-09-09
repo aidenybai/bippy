@@ -15,14 +15,16 @@ import { toElementType } from "../react/element-type.js";
 import type {
   ContextDefinition,
   LibraryValueProvider,
+  ProjectContext,
   StaticObjectEntry,
   StaticObjectValue,
   StaticValue,
   StubComponent,
   StubRenderTools,
 } from "../types.js";
-import { ForwardRefTag } from "../work-tags.js";
+import { ClassComponentTag, ForwardRefTag } from "../work-tags.js";
 import { describeTag } from "./component-name.js";
+import { isVersionAtLeast } from "./installed-version.js";
 
 // styled-components 5/6's fiber-visible surface (`models/StyledComponent`). A
 // styled component is a `forwardRef` named `styled.<tag>` / `Styled(<name>)`
@@ -33,8 +35,27 @@ import { describeTag } from "./component-name.js";
 // a nameless context; `createGlobalStyle` renders nothing. The package ships
 // minified, so React reports its own components (`ThemeProvider`, a global
 // style's memo) under minifier names the analysis cannot know.
+//
+// styled-components 4 (unminified `dist/*.browser.esm.js`) is class based: the
+// `styled.<tag>` forwardRef renders the `StyledComponent` class, which reads the
+// sheet and theme through `StyleSheetConsumer`/`ThemeConsumer` render props
+// (`ComponentStyle.isStatic` is false whenever `module.hot` exists or
+// `NODE_ENV` is not production, i.e. under any dev server) and, before 4.4,
+// lets props win over attrs. `ThemeProvider` is a class rendering a
+// `ThemeContext.Consumer` around its provider, `withTheme` reads the theme
+// through a consumer, and a global style renders its consumers around nothing
+// (`GlobalStyle.isStatic` skips the theme when no interpolation is a function).
 
 export const STYLED_COMPONENTS_PACKAGES = ["styled-components"];
+
+interface StyledRuntime {
+  hasConsumerFibers: boolean;
+  attrsOverrideProps: boolean;
+}
+
+const STYLED_5: StyledRuntime = { hasConsumerFibers: false, attrsOverrideProps: true };
+const STYLED_4_4: StyledRuntime = { hasConsumerFibers: true, attrsOverrideProps: true };
+const STYLED_4: StyledRuntime = { hasConsumerFibers: true, attrsOverrideProps: false };
 
 const THEME_CONTEXT: ContextDefinition = {
   name: "ThemeContext",
@@ -42,6 +63,27 @@ const THEME_CONTEXT: ContextDefinition = {
   defaultValue: UNDEFINED_VALUE,
   location: null,
 };
+
+const STYLE_SHEET_CONTEXT: ContextDefinition = {
+  name: "StyleSheetContext",
+  displayName: null,
+  defaultValue: UNDEFINED_VALUE,
+  location: null,
+};
+
+const readRuntime = (project: ProjectContext): StyledRuntime => {
+  const version = project.readPackageVersion("styled-components");
+  if (version === null || isVersionAtLeast(version, "5.0.0")) return STYLED_5;
+  return isVersionAtLeast(version, "4.4.0") ? STYLED_4_4 : STYLED_4;
+};
+
+const consumerOf = (context: ContextDefinition, render: (provided: StaticValue) => StaticValue) =>
+  element(
+    { kind: "context-consumer", context, displayName: null },
+    objectFromRecord({
+      children: nativeFunction("children", ([provided = UNDEFINED_VALUE]) => render(provided)),
+    }),
+  );
 
 interface StyledOptions {
   attrs: readonly StaticValue[];
@@ -179,8 +221,74 @@ const composePropFilters = (
   return styledTarget?.propFilters ? [...styledTarget.propFilters, filter] : [filter];
 };
 
+const themeOf = (props: StaticObjectValue, theme: StaticValue): StaticValue =>
+  firstTruthy(
+    [getObjectProperty(props, "theme"), theme],
+    "the theme prop's truthiness is not statically known",
+  );
+
+/**
+ * `renderInner`: the target (or `as`) with the attrs merged over or under the
+ * props. Version 4 picks `as` from the props before the attrs whichever wins
+ * the merge; 5+ reads `$as`/`as` off the merged props.
+ */
+const renderStyledElement = (
+  styled: StyledComponent,
+  props: StaticObjectValue,
+  theme: StaticValue,
+  runtime: StyledRuntime,
+  tools: StubRenderTools,
+): StaticValue => {
+  const attrs = objectValue(resolveAttrs(props, theme, styled.attrs, tools));
+  const ownProps: StaticObjectEntry = { kind: "spread", value: props };
+  const attrProps: StaticObjectEntry = { kind: "spread", value: attrs };
+  const computedProps = objectValue(
+    runtime.attrsOverrideProps ? [ownProps, attrProps] : [attrProps, ownProps],
+  );
+  const elementToBeCreated = firstTruthy(
+    runtime.hasConsumerFibers
+      ? [getObjectProperty(props, "as"), getObjectProperty(attrs, "as"), styled.target]
+      : [
+          getObjectProperty(computedProps, "$as"),
+          getObjectProperty(computedProps, "as"),
+          styled.target,
+        ],
+    "the `as` prop's truthiness is not statically known",
+  );
+  return mapValue(elementToBeCreated, (finalTag) => {
+    const entries = forwardedProps(computedProps, finalTag, styled.propFilters, tools);
+    entries.push({ kind: "property", key: "className", value: classNameValue() });
+    return element(toElementType(finalTag, null), objectValue(entries));
+  });
+};
+
+/** Version 4's `StyledComponent` class: `StyleSheetConsumer` -> `ThemeConsumer` -> the element. */
+const STYLED_COMPONENT_CLASS = new WeakMap<StyledComponent, StubComponent>();
+
+const styledComponentClass = (styled: StyledComponent, runtime: StyledRuntime): StubComponent => {
+  let stub = STYLED_COMPONENT_CLASS.get(styled);
+  if (stub === undefined) {
+    stub = {
+      displayName: "StyledComponent",
+      tag: ClassComponentTag,
+      render: (props, tools) =>
+        consumerOf(STYLE_SHEET_CONTEXT, () =>
+          consumerOf(THEME_CONTEXT, (theme) =>
+            renderStyledElement(styled, props, themeOf(props, theme), runtime, tools),
+          ),
+        ),
+    };
+    STYLED_COMPONENT_CLASS.set(styled, stub);
+  }
+  return stub;
+};
+
 /** `createStyledComponent(target, options, rules)`: the rules only produce class names. */
-const createStyledComponent = (target: StaticValue, options: StyledOptions): StaticValue => {
+const createStyledComponent = (
+  target: StaticValue,
+  options: StyledOptions,
+  runtime: StyledRuntime,
+): StaticValue => {
   const styledTarget = getStyledComponent(target);
   const styled: StyledComponent = {
     target: styledTarget ? styledTarget.target : target,
@@ -190,29 +298,16 @@ const createStyledComponent = (target: StaticValue, options: StyledOptions): Sta
   const stub: StubComponent = {
     displayName: options.displayName ?? generateDisplayName(target),
     tag: ForwardRefTag,
-    render: (props, tools) => {
-      const theme = firstTruthy(
-        [getObjectProperty(props, "theme"), tools.readContext(THEME_CONTEXT)],
-        "the theme prop's truthiness is not statically known",
-      );
-      const computedProps = objectValue([
-        { kind: "spread", value: props },
-        ...resolveAttrs(props, theme, styled.attrs, tools),
-      ]);
-      const elementToBeCreated = firstTruthy(
-        [
-          getObjectProperty(computedProps, "$as"),
-          getObjectProperty(computedProps, "as"),
-          styled.target,
-        ],
-        "the `as` prop's truthiness is not statically known",
-      );
-      return mapValue(elementToBeCreated, (finalTag) => {
-        const entries = forwardedProps(computedProps, finalTag, styled.propFilters, tools);
-        entries.push({ kind: "property", key: "className", value: classNameValue() });
-        return element(toElementType(finalTag, null), objectValue(entries));
-      });
-    },
+    render: (props, tools) =>
+      runtime.hasConsumerFibers
+        ? element({ kind: "stub", stub: styledComponentClass(styled, runtime) }, props)
+        : renderStyledElement(
+            styled,
+            props,
+            themeOf(props, tools.readContext(THEME_CONTEXT)),
+            runtime,
+            tools,
+          ),
   };
   STYLED_COMPONENTS.set(stub, styled);
   return stubValue(stub);
@@ -233,18 +328,22 @@ const readConfig = (options: StyledOptions, config: StaticValue): StyledOptions 
 };
 
 /** `constructWithOptions`: a template function carrying `.withConfig()` and `.attrs()`. */
-const constructWithOptions = (target: StaticValue, options: StyledOptions): StaticValue =>
+const constructWithOptions = (
+  target: StaticValue,
+  options: StyledOptions,
+  runtime: StyledRuntime,
+): StaticValue =>
   lazyProperties(
-    nativeFunction("styled", () => createStyledComponent(target, options)),
+    nativeFunction("styled", () => createStyledComponent(target, options, runtime)),
     (key) => {
       switch (key) {
         case "withConfig":
           return nativeFunction("withConfig", ([config = UNDEFINED_VALUE]) =>
-            constructWithOptions(target, readConfig(options, config)),
+            constructWithOptions(target, readConfig(options, config), runtime),
           );
         case "attrs":
           return nativeFunction("attrs", ([attr = UNDEFINED_VALUE]) =>
-            constructWithOptions(target, { ...options, attrs: [...options.attrs, attr] }),
+            constructWithOptions(target, { ...options, attrs: [...options.attrs, attr] }, runtime),
           );
         default:
           return UNDEFINED_VALUE;
@@ -253,12 +352,21 @@ const constructWithOptions = (target: StaticValue, options: StyledOptions): Stat
   );
 
 /** `styled(tag)`, which is also `styled.div`, `styled.span`, ... */
-const STYLED = lazyProperties(
-  nativeFunction("styled", ([target = UNDEFINED_VALUE]) =>
-    constructWithOptions(target, DEFAULT_OPTIONS),
-  ),
-  (key) => constructWithOptions(primitiveValue(key), DEFAULT_OPTIONS),
-);
+const STYLED_FACTORIES = new WeakMap<StyledRuntime, StaticValue>();
+
+const styledFactory = (runtime: StyledRuntime): StaticValue => {
+  let factory = STYLED_FACTORIES.get(runtime);
+  if (factory === undefined) {
+    factory = lazyProperties(
+      nativeFunction("styled", ([target = UNDEFINED_VALUE]) =>
+        constructWithOptions(target, DEFAULT_OPTIONS, runtime),
+      ),
+      (key) => constructWithOptions(primitiveValue(key), DEFAULT_OPTIONS, runtime),
+    );
+    STYLED_FACTORIES.set(runtime, factory);
+  }
+  return factory;
+};
 
 const themeProviderValue = (props: StaticObjectValue, tools: StubRenderTools): StaticValue => {
   const outerTheme = tools.readContext(THEME_CONTEXT);
@@ -289,49 +397,117 @@ const THEME_PROVIDER_STUB: StubComponent = {
   },
 };
 
+/** Version 4's `ThemeProvider` class: nothing without children, else a consumer around the provider. */
+const THEME_PROVIDER_CLASS_STUB: StubComponent = {
+  displayName: "ThemeProvider",
+  tag: ClassComponentTag,
+  render: (props, tools) => {
+    const children = getObjectProperty(props, "children");
+    return mapValue(children, (alternative) =>
+      getTruthiness(alternative) === false
+        ? primitiveValue(null)
+        : consumerOf(THEME_CONTEXT, () =>
+            element(
+              { kind: "context-provider", context: THEME_CONTEXT, displayName: null },
+              objectFromRecord({ value: themeProviderValue(props, tools), children: alternative }),
+            ),
+          ),
+    );
+  },
+};
+
 const GLOBAL_STYLE_STUB: StubComponent = { displayName: null, render: () => primitiveValue(null) };
 
-const withTheme = nativeFunction("withTheme", ([component = UNDEFINED_VALUE]) =>
-  stubValue({
-    displayName: `WithTheme(${describeTag(component)})`,
-    tag: ForwardRefTag,
-    render: (props, tools) =>
+/** `isStaticRules`: a function interpolation (other than a styled component) makes the rules dynamic. */
+const isStaticRules = (interpolations: readonly StaticValue[]): boolean | null => {
+  let isKnown = true;
+  for (const interpolation of interpolations) {
+    if (isFunctionLike(interpolation)) return false;
+    if (interpolation.kind === "unknown" || interpolation.kind === "branch") isKnown = false;
+  }
+  return isKnown ? true : null;
+};
+
+/** Version 4's `GlobalStyleComponent` class: its consumers around nothing. */
+const globalStyleClass = (interpolations: readonly StaticValue[]): StubComponent => {
+  const isStatic = isStaticRules(interpolations);
+  const themed = () => consumerOf(THEME_CONTEXT, () => primitiveValue(null));
+  return {
+    displayName: "GlobalStyleComponent",
+    tag: ClassComponentTag,
+    render: () =>
+      consumerOf(STYLE_SHEET_CONTEXT, () =>
+        isStatic === null
+          ? branchValue(
+              [primitiveValue(null), themed()],
+              "whether a global style interpolation is a function",
+              null,
+            )
+          : isStatic
+            ? primitiveValue(null)
+            : themed(),
+      ),
+  };
+};
+
+const withThemeOf = (runtime: StyledRuntime): StaticValue =>
+  nativeFunction("withTheme", ([component = UNDEFINED_VALUE]) => {
+    const themed = (props: StaticObjectValue, theme: StaticValue): StaticValue =>
       element(
         toElementType(component, null),
         objectValue([
           { kind: "spread", value: props },
-          {
-            kind: "property",
-            key: "theme",
-            value: firstTruthy(
-              [getObjectProperty(props, "theme"), tools.readContext(THEME_CONTEXT)],
-              "the theme prop's truthiness is not statically known",
-            ),
-          },
+          { kind: "property", key: "theme", value: themeOf(props, theme) },
         ]),
-      ),
-  }),
-);
+      );
+    return stubValue({
+      displayName: `WithTheme(${describeTag(component)})`,
+      tag: ForwardRefTag,
+      render: (props, tools) =>
+        runtime.hasConsumerFibers
+          ? consumerOf(THEME_CONTEXT, (theme) => themed(props, theme))
+          : themed(props, tools.readContext(THEME_CONTEXT)),
+    });
+  });
+
+const WITH_THEME = new WeakMap<StyledRuntime, StaticValue>();
+
+const withThemeFor = (runtime: StyledRuntime): StaticValue => {
+  let withTheme = WITH_THEME.get(runtime);
+  if (withTheme === undefined) {
+    withTheme = withThemeOf(runtime);
+    WITH_THEME.set(runtime, withTheme);
+  }
+  return withTheme;
+};
 
 const cssRules = (): StaticValue =>
   listValue([unknownPrimitiveValue("string", "styled-components css rules")]);
 
-export const styledComponentsValue: LibraryValueProvider = (specifier, importedName) => {
+export const styledComponentsValue: LibraryValueProvider = (specifier, importedName, project) => {
   if (specifier !== "styled-components") return null;
+  const runtime = readRuntime(project);
   switch (importedName) {
     case "default":
     case "styled":
-      return STYLED;
+      return styledFactory(runtime);
     case "ThemeProvider":
-      return stubValue(THEME_PROVIDER_STUB);
+      return stubValue(runtime.hasConsumerFibers ? THEME_PROVIDER_CLASS_STUB : THEME_PROVIDER_STUB);
     case "ThemeContext":
       return { kind: "context", context: THEME_CONTEXT };
+    case "ThemeConsumer":
+      return {
+        kind: "component-reference",
+        type: { kind: "context-consumer", context: THEME_CONTEXT, displayName: null },
+      };
     case "useTheme":
       return nativeFunction("useTheme", (_args, tools) => tools.readContext(THEME_CONTEXT));
     case "withTheme":
-      return withTheme;
+      return withThemeFor(runtime);
     case "createGlobalStyle":
-      return nativeFunction("createGlobalStyle", () => stubValue(GLOBAL_STYLE_STUB));
+      return nativeFunction("createGlobalStyle", ([, ...interpolations]) =>
+        stubValue(runtime.hasConsumerFibers ? globalStyleClass(interpolations) : GLOBAL_STYLE_STUB),
+      );
     case "css":
       return nativeFunction("css", cssRules);
     case "keyframes":

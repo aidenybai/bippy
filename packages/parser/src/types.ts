@@ -235,6 +235,8 @@ export type ClassMember = ClassFunctionMember | ClassFieldMember;
 export interface ClassBody {
   members: ClassMember[];
   superValue: StaticValue | null;
+  /** For a constructor function whose `prototype.isReactComponent` React constructs: the object its instances inherit from. */
+  prototype?: StaticObjectValue;
 }
 
 /** What `super` refers to inside a class member. */

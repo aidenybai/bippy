@@ -1,3 +1,4 @@
+import { getFibersAbsentInReact } from "../react/element-shape.js";
 import type { StaticRenderResult } from "../types.js";
 import type { ComparisonOptions, ComparisonReport } from "./compare.js";
 import { formatComparisonReport } from "./format-report.js";
@@ -24,6 +25,8 @@ export interface StaticStateSpaceOptions {
   anchor?: string;
   /** Static fibers to splice out before matching (framework wrappers synthesized by a route adapter). */
   transparentStaticFibers?: ReadonlySet<string>;
+  /** The React the runtime tree was captured with; fibers it never constructs are spliced out too. */
+  runtimeReactVersion?: string | null;
   budget?: Partial<StateSpaceBudget>;
 }
 
@@ -115,7 +118,10 @@ export const enumerateStaticStates = (
   options: StaticStateSpaceOptions = {},
 ): StaticRenderStateSpace => {
   const budget = { ...DEFAULT_STATE_SPACE_BUDGET, ...options.budget };
-  const transparent = options.transparentStaticFibers ?? new Set<string>();
+  const transparent = new Set([
+    ...(options.transparentStaticFibers ?? []),
+    ...getFibersAbsentInReact(options.runtimeReactVersion ?? null),
+  ]);
   const rootPattern = getSnapshotRootChildren(staticResult.snapshot);
   const staticChildren = flattenPatternFibers(rootPattern, transparent);
   if (isStaticRootUnresolved(rootPattern)) {

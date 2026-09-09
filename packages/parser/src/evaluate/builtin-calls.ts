@@ -52,6 +52,7 @@ import {
 } from "./native-values.js";
 import { constructFunctionFromSource } from "./function-constructor.js";
 import { callImportMetaGlob } from "./import-glob.js";
+import { callRequireContext } from "./require-context.js";
 import { createClockDateValue, isClockReading } from "./clock-date.js";
 import { createBlobValue } from "./blob.js";
 import { callEventTargetMethod } from "./event-listeners.js";
@@ -142,6 +143,7 @@ import {
   isNullish,
   isSymbolPropertyKey,
   mapValue,
+  nativeObjectValue,
   toBooleanValue,
   toJsonValue,
   NULL_VALUE,
@@ -852,7 +854,7 @@ const toObjectValue = (value: StaticValue, location: SourceLocation | null): Sta
       case "primitive":
         return alternative.value === null || alternative.value === undefined
           ? objectValue([])
-          : unknownValue(`boxed ${typeof alternative.value}`, location);
+          : nativeObjectValue(Object(alternative.value), null);
       case "unknown-primitive":
       case "symbol":
         return unknownValue(`boxed ${describeValue(alternative)}`, location);
@@ -912,6 +914,7 @@ const callGlobal = (
   }
   if (isErrorConstructorName(name)) return createErrorValue(name, args, location);
   if (name === "import.meta.glob") return callImportMetaGlob(interpreter, args, context, location);
+  if (name === "require.context") return callRequireContext(interpreter, args, context, location);
   if (isStringCodecName(name)) return callStringCodec(name, args, location);
   if (name === "Buffer.from") return createBufferValue(args, location);
   if (name === "Buffer.byteLength") return getBufferByteLength(args);
@@ -1797,6 +1800,8 @@ const callStringMethod = (
           ? receiver.slice(Number(primitiveArgs[0] ?? 0), position)
           : receiver.substring(Number(primitiveArgs[0] ?? 0), position),
       );
+    case "substr":
+      return primitiveValue(receiver.substr(Number(primitiveArgs[0] ?? 0), position));
     case "charAt":
       return primitiveValue(receiver.charAt(Number(primitiveArgs[0] ?? 0)));
     case "charCodeAt":

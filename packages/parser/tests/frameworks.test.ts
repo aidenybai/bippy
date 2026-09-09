@@ -624,6 +624,48 @@ describe("next pages router", () => {
       fiber("MyApp", "FunctionComponent", [appHead, page]),
     ]);
   });
+
+  it("splices react-router 6.4-6.10's RouterProvider stack, which mounts routes through <Routes />", () => {
+    const fiber = (
+      name: string,
+      tag: SnapshotWorkTag,
+      children: RuntimeFiberSnapshot[] = [],
+    ): RuntimeFiberSnapshot => ({ tag, name, key: null, text: null, props: {}, children });
+    const matched = fiber("RenderedRoute", "FunctionComponent", [
+      fiber("Route", "ContextProvider", [
+        fiber("LoginPage", "FunctionComponent", [fiber("form", "HostComponent")]),
+      ]),
+    ]);
+    const runtime = {
+      reactVersion: "18.2.0",
+      rendererName: null,
+      buildType: null,
+      capturedAt: "",
+      roots: [
+        fiber("HostRoot", "HostRoot", [
+          fiber("RouterProvider", "FunctionComponent", [
+            fiber("DataRouter", "ContextProvider", [
+              fiber("DataRouterState", "ContextProvider", [
+                fiber("Router", "FunctionComponent", [
+                  fiber("Navigation", "ContextProvider", [
+                    fiber("Location", "ContextProvider", [
+                      fiber("Routes", "FunctionComponent", [
+                        fiber("RenderErrorBoundary", "ClassComponent", [matched]),
+                      ]),
+                    ]),
+                  ]),
+                ]),
+              ]),
+            ]),
+          ]),
+        ]),
+      ],
+    };
+    const flattened = flattenTransparentFibers(runtime, getFrameworkProfile("react-router"));
+    expect(flattened.roots[0].children).toEqual([
+      fiber("RouterProvider", "FunctionComponent", [matched]),
+    ]);
+  });
 });
 
 describe("react router framework mode with react-router-auto-routes", () => {

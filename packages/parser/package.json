@@ -75,6 +75,7 @@
     "redux": "5.0.1",
     "string.prototype.trim": "1.2.11",
     "styled-components": "6.5.3",
+    "styled-components-v4": "npm:styled-components@4.4.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "use-sync-external-store": "1.6.0",
