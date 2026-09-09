@@ -1025,11 +1025,13 @@ const callGlobal = (
     case "Array.from": {
       const source =
         first?.kind === "object" ? (getCollectionItems(first) ?? arrayLikeToList(first)) : first;
-      if (source?.kind === "list" || source?.kind === "repeat") {
-        if (isCallable(second)) return mapList(interpreter, source, second, context, location);
-        return source;
-      }
-      return unknownValue("Array.from of dynamic iterable", location);
+      return mapValue(source ?? UNDEFINED_VALUE, (iterable) => {
+        if (iterable.kind === "list" || iterable.kind === "repeat") {
+          if (isCallable(second)) return mapList(interpreter, iterable, second, context, location);
+          return iterable;
+        }
+        return unknownValue("Array.from of dynamic iterable", location);
+      });
     }
     case "Int8Array.from":
     case "Uint8Array.from":
@@ -1400,29 +1402,29 @@ const toLength = (value: unknown): number =>
   Math.min(Math.max(Math.trunc(Number(value)) || 0, 0), Number.MAX_SAFE_INTEGER);
 
 // `{ length: n }` (and sparse array-likes) as consumed by `Array.from`.
-const arrayLikeToList = (value: Extract<StaticValue, { kind: "object" }>): StaticValue => {
-  const length = getObjectProperty(value, "length");
-  if (length.kind === "unknown-primitive" && length.primitiveType === "number") {
-    return {
-      kind: "repeat",
-      item: UNDEFINED_VALUE,
-      location: null,
-      count: length.numberRange && {
-        min: toLength(length.numberRange.min),
-        max: toLength(length.numberRange.max),
-      },
-    };
-  }
-  if (length.kind !== "primitive" || typeof length.value === "symbol") {
-    return unknownValue("Array.from of an array-like with dynamic length", null);
-  }
-  const itemCount = toLength(length.value);
-  if (itemCount > MAX_ARRAY_LIKE_LENGTH)
-    return { kind: "repeat", item: UNDEFINED_VALUE, location: null };
-  return listValue(
-    Array.from({ length: itemCount }, (_, index) => getObjectProperty(value, String(index))),
-  );
-};
+const arrayLikeToList = (value: Extract<StaticValue, { kind: "object" }>): StaticValue =>
+  mapValue(getObjectProperty(value, "length"), (length) => {
+    if (length.kind === "unknown-primitive" && length.primitiveType === "number") {
+      return {
+        kind: "repeat",
+        item: UNDEFINED_VALUE,
+        location: null,
+        count: length.numberRange && {
+          min: toLength(length.numberRange.min),
+          max: toLength(length.numberRange.max),
+        },
+      };
+    }
+    if (length.kind !== "primitive" || typeof length.value === "symbol") {
+      return unknownValue("Array.from of an array-like with dynamic length", null);
+    }
+    const itemCount = toLength(length.value);
+    if (itemCount > MAX_ARRAY_LIKE_LENGTH)
+      return { kind: "repeat", item: UNDEFINED_VALUE, location: null };
+    return listValue(
+      Array.from({ length: itemCount }, (_, index) => getObjectProperty(value, String(index))),
+    );
+  });
 
 /** A task queued from a continuation of unknown timing runs at an unknown time too. */
 const scheduledTask = (

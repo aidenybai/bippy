@@ -371,7 +371,8 @@ const liftObject = (
   if (value instanceof RegExp) {
     return { kind: "regexp", pattern: value.source, flags: value.flags, lastIndex: 0 };
   }
-  if (!isPlainObject(value)) return unknownValue(`${name}: ${interfaceName} from native code`);
+  if (value instanceof Promise) return unknownValue(`${name}: Promise from native code`);
+  if (!isPlainObject(value)) return nativeObjectValue(value, host);
   if (isReactElementTag(Reflect.get(value, "$$typeof"))) {
     const type: unknown = Reflect.get(value, "type");
     const key: unknown = Reflect.get(value, "key");

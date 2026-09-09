@@ -156,7 +156,7 @@ import { getBuiltinWitness, isInstanceOf } from "./instance-of.js";
 import { createIndexedDbFactory, isIndexedDbName } from "./indexed-db.js";
 import { getBinaryMember, getBinaryWitness } from "./typed-arrays.js";
 import { getWebCryptoMember, isWebCryptoName } from "./web-crypto.js";
-import { GLOBAL_OBJECT_VALUE } from "./host-globals.js";
+import { GLOBAL_OBJECT_VALUE, toLanguagePropertyKey } from "./host-globals.js";
 import {
   applyNumberRangeOperator,
   compareNumberRanges,
@@ -288,11 +288,17 @@ import {
   spreadListItems,
   TRUE_VALUE,
   UNDEFINED_VALUE,
+  unknownMemberValue,
   unknownPrimitiveValue,
   thrownValue,
   unknownValue,
 } from "./values.js";
-import { createPathPredicate, getTruthinessPredicate, recordNegation } from "./predicates.js";
+import {
+  createPathPredicate,
+  getTruthinessPredicate,
+  recordNegation,
+  recordRefinement,
+} from "./predicates.js";
 
 export interface InterpreterOptions {
   maxCallDepth?: number;
@@ -648,6 +654,32 @@ const markExternallyMutable = (value: StaticObjectValue, reason: string): void =
     return;
   }
   value.entries.push({ kind: "spread", value: unknownValue(reason) });
+};
+
+/**
+ * A test that is a branch over a named decision keeps that decision in what it
+ * selects: alternatives it already settles pick a side outright, the open ones
+ * nest the two-way choice on their own truthiness.
+ */
+const selectByDecision = (
+  test: StaticValue,
+  reason: string,
+  location: SourceLocation,
+  onDecided: (isTruthy: boolean, alternative: StaticValue) => StaticValue,
+  onOpen: (alternative: StaticValue) => [StaticValue, StaticValue],
+): StaticValue | null => {
+  if (test.kind !== "branch" || test.predicate === null) return null;
+  return mapValue(test, (alternative) => {
+    const truthiness = getTruthiness(alternative);
+    if (truthiness !== null) return onDecided(truthiness, alternative);
+    return branchValue(
+      onOpen(alternative),
+      reason,
+      location,
+      getPreferredTruthiness(alternative) === false ? 1 : 0,
+      getTruthinessPredicate(alternative),
+    );
+  });
 };
 
 /**
@@ -1663,7 +1695,15 @@ export class Interpreter {
         );
         if (!consequent) return alternate ?? UNDEFINED_VALUE;
         if (!alternate) return consequent;
-        return branchValue([consequent, alternate], reason, location, preferredSide, predicate);
+        return (
+          selectByDecision(
+            test,
+            reason,
+            location,
+            (isTruthy) => (isTruthy ? consequent : alternate),
+            () => [consequent, alternate],
+          ) ?? branchValue([consequent, alternate], reason, location, preferredSide, predicate)
+        );
       }
       case "LogicalExpression":
         return this.evaluateLogicalExpression(node, context);
@@ -1936,7 +1976,15 @@ export class Interpreter {
         );
         if (!right) return falsyLeft ?? falsyCounterpart(left);
         if (!falsyLeft) return right;
-        return branchValue([right, falsyLeft], reason, location, preferredSide, predicate);
+        return (
+          selectByDecision(
+            left,
+            reason,
+            location,
+            (isTruthy, alternative) => (isTruthy ? right : alternative),
+            (alternative) => [right, falsyCounterpart(alternative)],
+          ) ?? branchValue([right, falsyLeft], reason, location, preferredSide, predicate)
+        );
       }
       case "||": {
         const truthiness = getTruthiness(left);
@@ -1958,7 +2006,15 @@ export class Interpreter {
         );
         if (!truthyLeft) return right ?? left;
         if (!right) return truthyLeft;
-        return branchValue([truthyLeft, right], reason, location, preferredSide, predicate);
+        return (
+          selectByDecision(
+            left,
+            reason,
+            location,
+            (isTruthy, alternative) => (isTruthy ? alternative : right),
+            (alternative) => [truthyCounterpart(alternative), right],
+          ) ?? branchValue([truthyLeft, right], reason, location, preferredSide, predicate)
+        );
       }
       case "??": {
         const nullish = isNullish(left);
@@ -2726,6 +2782,9 @@ export class Interpreter {
         const intrinsic = getBuiltinWitness(object.name);
         if (typeof intrinsic === "function" && (key === "length" || key === "name"))
           return primitiveValue(intrinsic[key]);
+        const languageKey = intrinsic === null ? null : toLanguagePropertyKey(key);
+        if (languageKey !== null && intrinsic !== null && !(languageKey in intrinsic))
+          return UNDEFINED_VALUE;
         const declaredMember = this.getGlobal(memberName, context.environment);
         if (declaredMember) return declaredMember;
         const isOpenMember =
@@ -2794,7 +2853,9 @@ export class Interpreter {
       }
       case "unknown":
         if (object === CHAIN_SHORT_CIRCUIT) return object;
-        return object.thrown ? object : unknownValue(object.reason, location);
+        return object.thrown
+          ? object
+          : unknownMemberValue(object, key, () => object.reason, location);
     }
   }
 
@@ -3836,24 +3897,11 @@ export class Interpreter {
           const narrowing = this.narrowTest(statement.test, context);
           if (narrowing?.whenTrue === null) return runAlternate(context);
           if (narrowing?.whenFalse === null) return runConsequent(context);
-          const narrowed =
-            (value: StaticValue | null, run: StatementContinuation): StatementContinuation =>
-            (pathContext) => {
-              if (narrowing && value) {
-                applyNarrowing(context.scope, narrowing.target, value, (object) =>
-                  this.journalHeapValue(object),
-                );
-              }
-              return run(pathContext);
-            };
           return this.forkPaths(
             [
-              narrowed(narrowing?.whenTrue ?? null, (pathContext) =>
-                this.evaluateBlock([statement.consequent], pathContext, true),
-              ),
-              narrowed(narrowing?.whenFalse ?? null, (pathContext) =>
+              (pathContext) => this.evaluateBlock([statement.consequent], pathContext, true),
+              (pathContext) =>
                 alternate ? this.evaluateBlock([alternate], pathContext, true) : COMPLETES,
-              ),
             ],
             context,
             proceed,
@@ -3861,6 +3909,7 @@ export class Interpreter {
             location,
             getPreferredTruthiness(test) === false ? 1 : 0,
             getTruthinessPredicate(test),
+            narrowing,
           );
         }
         case "SwitchStatement":
@@ -4057,6 +4106,7 @@ export class Interpreter {
     location: SourceLocation,
     preferredBranch = 0,
     predicate = createPathPredicate(),
+    narrowing: TestNarrowing | null = null,
   ): StatementOutcome {
     const isTooDeep = context.forkDepth >= this.maxForkDepth;
     const forkContext: EvaluationContext = {
@@ -4065,6 +4115,10 @@ export class Interpreter {
       uncertainDepth: context.uncertainDepth + (isTooDeep ? 1 : 0),
       suspension: null,
     };
+    const narrowedBinding = narrowing?.target.key === null ? narrowing.target.name : null;
+    const narrowedSubject =
+      narrowedBinding === null ? undefined : lookupScope(context.scope, narrowedBinding);
+    let isSubjectReassigned = false;
     const entrySnapshot = snapshotScopes(context.scope);
     const hookCursor = context.hooks?.cursor ?? 0;
     const joinedSnapshots: ScopeSnapshot[][] = [];
@@ -4076,9 +4130,18 @@ export class Interpreter {
         restoreScopes(entrySnapshot);
         if (context.hooks) context.hooks.cursor = hookCursor;
       }
+      const narrowed = branchIndex === 0 ? narrowing?.whenTrue : narrowing?.whenFalse;
+      if (narrowing && narrowed) {
+        applyNarrowing(context.scope, narrowing.target, narrowed, (object) =>
+          this.journalHeapValue(object),
+        );
+      }
       const outcome = branch(forkContext);
       if (outcome.mayComplete || outcome.jump !== null) {
         joinedSnapshots.push(snapshotScopes(context.scope));
+        if (narrowedBinding !== null && lookupScope(context.scope, narrowedBinding) !== narrowed) {
+          isSubjectReassigned = true;
+        }
       }
       if (outcome.mayComplete) completedHookCursor = context.hooks?.cursor ?? hookCursor;
       journal.endPath();
@@ -4098,13 +4161,12 @@ export class Interpreter {
       journal.join(reason, location, preferredOutcome, predicate);
     }
     if (joinedSnapshots.length > 0) {
-      joinScopes(
-        joinedSnapshots,
-        reason,
-        location,
-        0,
-        joinedSnapshots.length === branches.length ? predicate : null,
-      );
+      const isJoinedByPredicate = joinedSnapshots.length === branches.length;
+      joinScopes(joinedSnapshots, reason, location, 0, isJoinedByPredicate ? predicate : null);
+      if (narrowedBinding !== null && narrowedSubject && !isSubjectReassigned) {
+        const rejoined = lookupScope(context.scope, narrowedBinding);
+        if (rejoined) recordRefinement(rejoined, narrowedSubject);
+      }
     }
     if (completingPaths.length === 0) {
       return mergeOutcomes(
@@ -4128,10 +4190,16 @@ export class Interpreter {
         null,
       );
     }
+    const completingPath = completingPaths.length === 1 ? completingPaths[0] : -1;
     const isRestPositional =
-      outcomes.slice(0, -1).every(isPureReturn) && isPureCompletion(outcomes[outcomes.length - 1]);
+      completingPath !== -1 &&
+      outcomes.every((outcome, index) =>
+        index === completingPath ? isPureCompletion(outcome) : isPureReturn(outcome),
+      );
     return mergeOutcomes(
-      [...outcomes.map((outcome) => ({ ...outcome, mayComplete: false })), rest],
+      isRestPositional
+        ? outcomes.map((outcome, index) => (index === completingPath ? rest : outcome))
+        : [...outcomes.map((outcome) => ({ ...outcome, mayComplete: false })), rest],
       reason,
       location,
       preferredOutcome,

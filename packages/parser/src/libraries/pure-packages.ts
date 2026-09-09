@@ -23,6 +23,7 @@ const PURE_PACKAGES: ReadonlySet<string> = new Set([
   "lodash",
   "lodash-es",
   "node:path",
+  "numeral",
   "object.entries",
   "path",
   "path-to-regexp",
@@ -64,9 +65,20 @@ const IMPURE_LODASH_EXPORTS: ReadonlySet<string> = new Set([
   "uniqueId",
 ]);
 
+const IMPURE_NUMERAL_EXPORTS: ReadonlySet<string> = new Set([
+  "defaultFormat",
+  "locale",
+  "nullFormat",
+  "options",
+  "register",
+  "reset",
+  "zeroFormat",
+]);
+
 const IMPURE_EXPORTS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
   ["lodash", IMPURE_LODASH_EXPORTS],
   ["lodash-es", IMPURE_LODASH_EXPORTS],
+  ["numeral", IMPURE_NUMERAL_EXPORTS],
 ]);
 
 export const isPurePackage = (packageName: string): boolean => PURE_PACKAGES.has(packageName);

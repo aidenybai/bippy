@@ -88,7 +88,7 @@ describe("browser facts stay uncertain", () => {
       manifest: { ...fixture.manifest, skipRuntime: true },
     });
     const detail = describeFixtureRun(fixture, run);
-    expect(run.staticResult.stats.branchCount, detail).toBe(2);
+    expect(run.staticResult.stats.branchCount, detail).toBe(3);
     expect(run.staticResult.stats.unknownCount, detail).toBe(1);
   });
 });

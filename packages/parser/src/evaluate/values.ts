@@ -372,8 +372,34 @@ const lookupObjectProperty = (
   return getInheritedProperty(memo, object, key);
 };
 
+const memberUnknowns = new WeakMap<StaticValue, Map<string, StaticUnknownValue>>();
+
+/** A member read whose value is unknowable: one value per source and key, so reading it twice tests one decision. */
+export const unknownMemberValue = (
+  source: StaticValue,
+  key: string,
+  describeReason: () => string,
+  location: SourceLocation | null = null,
+): StaticUnknownValue => {
+  let byKey = memberUnknowns.get(source);
+  if (!byKey) {
+    byKey = new Map();
+    memberUnknowns.set(source, byKey);
+  }
+  let member = byKey.get(key);
+  if (!member) {
+    member = unknownValue(describeReason(), location);
+    byKey.set(key, member);
+  }
+  return member;
+};
+
 const unknownSpreadProperty = (spread: StaticValue, key: string): StaticUnknownValue =>
-  unknownValue(`property "${key}" may come from a spread of ${describeValue(spread)}`);
+  unknownMemberValue(
+    spread,
+    key,
+    () => `property "${key}" may come from a spread of ${describeValue(spread)}`,
+  );
 
 const getInheritedProperty = (
   memo: LookupMemo,
@@ -1320,6 +1346,42 @@ const isInterchangeable = (left: StaticValue, right: StaticValue): boolean => {
  */
 const MAX_BRANCH_ALTERNATIVES = 64;
 
+/**
+ * The alternative a branch over `predicate` holds at `index`. A flat branch over
+ * another named decision stays nested so the two decisions remain
+ * distinguishable; one over the same decision takes the same side, so only its
+ * alternative at `index` is reachable there. Anything else folds flat.
+ */
+const positionalAlternative = (
+  alternative: StaticValue,
+  index: number,
+  predicate: string,
+  arity: number,
+): StaticValue | null => {
+  if (alternative.kind !== "branch") return alternative;
+  if (alternative.predicate === null) return null;
+  if (alternative.predicate === predicate) {
+    return alternative.alternatives.length === arity
+      ? positionalAlternative(alternative.alternatives[index], index, predicate, arity)
+      : null;
+  }
+  return alternative.alternatives.every((inner) => inner.kind !== "branch") ? alternative : null;
+};
+
+const positionalAlternatives = (
+  alternatives: StaticValue[],
+  predicate: string | null,
+): StaticValue[] | null => {
+  if (predicate === null) return null;
+  const positional: StaticValue[] = [];
+  for (const [index, alternative] of alternatives.entries()) {
+    const resolved = positionalAlternative(alternative, index, predicate, alternatives.length);
+    if (resolved === null) return null;
+    positional.push(resolved);
+  }
+  return positional;
+};
+
 export const branchValue = (
   alternatives: StaticValue[],
   reason: string,
@@ -1327,6 +1389,29 @@ export const branchValue = (
   preferredIndex = 0,
   predicate: string | null = null,
 ): StaticValue => {
+  const [first] = alternatives;
+  if (first && alternatives.every((alternative) => alternative === first)) return first;
+  if (alternatives.length > MAX_BRANCH_ALTERNATIVES) {
+    return unknownValue(`${reason}: more than ${MAX_BRANCH_ALTERNATIVES} alternatives`, location);
+  }
+  const positional = positionalAlternatives(alternatives, predicate);
+  if (positional) {
+    const [firstPositional] = positional;
+    if (
+      firstPositional &&
+      positional.every((alternative) => isInterchangeable(alternative, firstPositional))
+    ) {
+      return firstPositional;
+    }
+    return {
+      kind: "branch",
+      alternatives: positional,
+      preferredIndex,
+      reason,
+      location,
+      predicate,
+    };
+  }
   const flattened: StaticValue[] = [];
   let resolvedPreferred = 0;
   const add = (value: StaticValue): number => {
@@ -1352,16 +1437,13 @@ export const branchValue = (
   if (flattened.length > MAX_BRANCH_ALTERNATIVES) {
     return unknownValue(`${reason}: more than ${MAX_BRANCH_ALTERNATIVES} alternatives`, location);
   }
-  const isPositional =
-    flattened.length === alternatives.length &&
-    alternatives.every((alternative) => alternative.kind !== "branch");
   return {
     kind: "branch",
     alternatives: flattened,
     preferredIndex: resolvedPreferred,
     reason,
     location,
-    predicate: isPositional ? predicate : null,
+    predicate: null,
   };
 };
 

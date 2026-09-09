@@ -1383,7 +1383,7 @@
       "static": {
         "rootDirectory": ".",
         "route": "/dashboard",
-        "externalPackageAllowList": ["react-redux"]
+        "externalPackageAllowList": ["react-redux", "formik", "react-chartjs-2"]
       }
     },
     {
