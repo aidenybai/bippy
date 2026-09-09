@@ -29,8 +29,17 @@ const patternClass = (name: string): PatternFiber => patternFiber(name, [], "Cla
 const host = (name: string, children: RuntimeFiberSnapshot[] = []): RuntimeFiberSnapshot =>
   runtimeFiber(name, children, "HostComponent");
 
-const patternHost = (name: string, children: PatternFiber[] = []): PatternFiber =>
+const patternHost = (name: string, children: PatternNode[] = []): PatternFiber =>
   patternFiber(name, children, "HostComponent");
+
+const branch = (variable: string, ...alternatives: PatternNode[][]): PatternBranch => ({
+  kind: "branch",
+  variable,
+  reason: variable,
+  location: null,
+  preferredIndex: 0,
+  alternatives,
+});
 
 const opaqueFiber = (name: string, passedChildren: PatternNode[]): PatternOpaque => ({
   kind: "opaque",
@@ -352,5 +361,42 @@ describe("transparent runtime fibers", () => {
     expect(report.transparentFibers).toBe(2);
     expect(report.opaqueSkippedFibers).toBe(1);
     expect(report.coverage).toBe(1);
+  });
+
+  it("matches thousands of rows that each decide for themselves without growing the stack", () => {
+    const rowCount = 5000;
+    const rows = Array.from({ length: rowCount }, (_, rowIndex) =>
+      patternHost("tr", [
+        patternFiber("Cell", [branch(`cell${rowIndex}`, [patternHost("b")], [patternHost("i")])]),
+      ]),
+    );
+    const runtimeRows = Array.from({ length: rowCount }, (_, rowIndex) =>
+      host("tr", [runtimeFiber("Cell", [host(rowIndex % 2 === 0 ? "b" : "i")])]),
+    );
+    const report = comparePatternToRuntime(
+      [patternHost("table", rows)],
+      [host("table", runtimeRows)],
+    );
+    expect(report.status).toBe("exact");
+    expect(report.branchesResolved).toBe(rowCount);
+    expect(report.matchedFibers).toBe(rowCount * 3 + 1);
+  });
+
+  it("still forces a variable shared across self-deciding rows to agree", () => {
+    const row = (): PatternFiber =>
+      patternHost("tr", [
+        patternFiber("Cell", [branch("dense", [patternHost("b")], [patternHost("i")])]),
+      ]);
+    const pattern = patternHost("table", [row(), row()]);
+    const agreeing = host("table", [
+      host("tr", [runtimeFiber("Cell", [host("i")])]),
+      host("tr", [runtimeFiber("Cell", [host("i")])]),
+    ]);
+    const disagreeing = host("table", [
+      host("tr", [runtimeFiber("Cell", [host("b")])]),
+      host("tr", [runtimeFiber("Cell", [host("i")])]),
+    ]);
+    expect(comparePatternToRuntime([pattern], [agreeing]).status).toBe("exact");
+    expect(comparePatternToRuntime([pattern], [disagreeing]).status).toBe("mismatch");
   });
 });
