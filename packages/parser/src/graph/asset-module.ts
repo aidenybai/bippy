@@ -5,14 +5,21 @@ import type { ImportedName, ProjectContext, StaticValue } from "../types.js";
 const ASSET_PATH =
   /\.(?:apng|bmp|png|jpe?g|jfif|pjpeg|pjp|gif|svg|ico|webp|avif|cur|jxl|mp4|webm|ogg|mp3|wav|flac|aac|opus|mov|m4a|vtt|woff2?|eot|ttf|otf|webmanifest|pdf|txt)$/i;
 
-export const isAssetPath = (filePath: string): boolean => ASSET_PATH.test(filePath);
+/** Vite's `urlRE`: `?url` imports any file as the URL it is served at. */
+const URL_QUERY = /(\?|&)url(?:&|$)/;
+
+export const isUrlImport = (specifier: string): boolean => URL_QUERY.test(specifier);
+
+export const isAssetImport = (filePath: string, specifier: string): boolean =>
+  isUrlImport(specifier) || ASSET_PATH.test(filePath);
 
 export const getAssetModuleValue = (
   filePath: string,
+  specifier: string,
   imported: ImportedName,
   project: ProjectContext,
 ): StaticValue => {
-  const url = project.getImportedAssetUrl(filePath);
+  const url = project.getImportedAssetUrl(filePath, specifier);
   switch (imported.kind) {
     case "default":
       return url;

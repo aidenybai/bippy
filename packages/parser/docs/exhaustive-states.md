@@ -3,131 +3,231 @@
 The static render used to answer "what does this tree look like?" with one tree
 whose uncertain spots were inline maybe-nodes (`$Branch` rendering a preferred
 alternative, `$Repeat` absorbing any count). That is one state with hedges, not
-the set of states the source can reach. The harness now enumerates that set and
-checks the runtime capture for membership in it.
+the set of states the source can reach. The harness now reads the materialized
+tree back into one **guarded symbolic tree** — the first-class static artifact —
+and derives everything else from it: the states, the membership check of a
+runtime capture, which guard sides the captures witnessed, and the inputs a
+future run would have to install to witness the rest.
 
-## Representation (`src/harness/state-space.ts`)
+## The symbolic tree (`src/harness/symbolic-tree.ts`)
 
 ```ts
-interface StaticState {
-  tree: PatternNode[]; // concrete: no branch or repeat nodes remain
-  conditions: StateCondition[]; // the decisions that select this tree
+interface SymbolicTree {
+  inputs: InputVariable[]; // every symbolic input, with provenance
+  commits: SymbolicCommit[]; // one guarded pattern per distinct committed tree
+  stats: SymbolicTreeStats; // nodes, inputs, guards, branches, repeats, opaque, wildcards
 }
 
-interface StaticStateSpace {
-  states: StaticState[];
-  budget: StateSpaceBudget; // { maxStates, maxRepeat }
-  omitted: OmittedStateSpace | null; // non-null whenever `states` is incomplete
-  commits: PatternNode[][]; // distinct committed patterns, in commit order
+interface InputVariable {
+  id: string; // stable within one analysis: "#12", or "commit"
+  label: string; // what the interpreter saw: "fetch('/api/me').json()", "state open"
+  source: InputSourceKind; // fetch | loader | database | environment | feature-flag | viewport
+  //                          | clock | random | storage | location | state | commit | root-props
+  //                          | collection | path | unknown
+  location: string | null; // file:line:column of where the value entered
+}
+
+interface SymbolicVariable {
+  input: string; // InputVariable.id
+  path: string[]; // property path; "[]" is "an element of"
+  measure: "value" | "length" | "typeof" | "choice";
 }
 ```
 
-A condition is one of:
+A **guard** is a boolean formula over symbolic variables:
 
-- `branch` — predicate variable, reason, source location, chosen alternative
-  index out of how many;
-- `state-update` — the same, for a branch whose predicate is a `useState` /
-  `useReducer` cell (`state(<cell>)`);
-- `repeat` — repeat variable, source location, concrete cardinality;
-- `transition` — which committed tree (of how many) this state is. Effect and
-  timer driven re-renders commit new trees; each distinct committed tree is a
-  state of its own, reachable within the settle window.
+```
+constant(true|false)
+truthy(v)                    eq(v, literal)         compare(v, < <= > >=, n)
+in-set(v, [literals])        not(g)                 and(g…)      or(g…)
+```
 
-Environment assumptions (`window.innerWidth`, env vars, host values) surface as
-`branch` conditions whose reason names the host value; the interpreter has no
-way to pick a side, so both are states.
+`ne` is `not(eq(…))`, `has-length(v, n)` is `eq(len(v), n)` and
+`compare(len(v), …)`: the `length` measure of a variable is its own domain, so
+no separate connective is needed. `typeof(v)` is likewise a measure, which is
+how `typeof user === "object" && user !== null && user.role === "admin"` becomes
+`and(eq(typeof(#1), "object"), not(eq(#1, null)), eq(#1.role, "admin"))` over
+one input. Guards are serialized through a zod schema (`guardSchema`,
+`symbolicTreeSchema`) and are what `corpus/results.json` carries.
 
-`tree` is a `PatternNode[]` rather than a `RuntimeSnapshot` because a concrete
-state can still contain `opaque` subtrees (an external component whose render
-is not modeled) and wildcards; a `RuntimeSnapshot` cannot express "one subtree
-of unknown shape here". After enumeration a state's tree contains no decision
-nodes, so matching it is a plain structural diff with those two kinds of hole.
+The pattern nodes keep their shape (`static-pattern.ts`) and gain guards:
 
-## How states are produced
+- `PatternBranch` — `guards[i]` is the guard under which alternative `i` is
+  taken, `inputs` the inputs those guards mention, `variable` the identity of
+  the decision (the serialized predicate).
+- `PatternRepeat` — `cardinality` is `len(<collection variable>)`; `count` is
+  the interpreter's known range. Decisions in the body are scoped per iteration
+  and see the element variable `collection[]`.
+- `PatternOpaque` / `PatternWildcard` — honest leaves with a `reason`. They are
+  never guards: a subtree of unknown shape is a hole, not a set of states.
 
-The interpreter runs once and the materializer renders once. Every branch
-alternative is rendered by React under a `$Branch`/`$Alternative` marker and
-every repeat body under a `$Repeat` marker, so the single committed tree is the
-product of all alternatives. `enumerateStateSpace` then projects that tree onto
-each assignment of the decision variables; this is the "materialize once per
-assignment" of the design done as a selection over one materialization instead
-of one React render per assignment (256 renders of the same tree would only
-reproduce subtrees React already rendered). The one place the materializer
-does not render an alternative is when it sits more than
-`MAX_ALTERNATIVE_DEPTH` branches off the preferred path or past the element
-budget; it emits a truncated `$Unknown` there, which enumeration reports as a
-`subtree` omission.
+Multiple commits are the alternatives of the `commit` input:
+`SymbolicCommit.guard` is `eq(choice(commit), i)`.
 
-## Correlation
+### Where guards come from
 
-A branch's variable is the identity of its predicate, not its position:
+Guards are not a second inference. The interpreter records, on the uncertain
+values it creates, how each was derived (`src/evaluate/predicates.ts`):
 
-- `truthy(<id>)` where `<id>` is the identity of the uncertain value being
-  tested (`src/evaluate/predicates.ts`). `flag ? A : B` evaluated in three
-  components off one `useFlag()` result is one variable → 2 states, not 8.
-- `!truthy(<id>)` is read back as the same variable with its alternatives
-  swapped, so `!flag ? B : A` decides together with `flag ? A : B`.
-- `state(<cell>)` for a branch on a state cell.
-- `path(<n>)` for a fork of statement paths (`if` bodies, early returns,
-  loop exits): every binding joined at that fork shares the variable, as the
-  operands of one SSA phi would; `branch#N` / `repeat#N` for markers without a
-  predicate.
+- **input sources** — a value entering from a fetch response, loader data, a
+  database result, `process.env`, a feature flag, `matchMedia`/`innerWidth`,
+  `Date.now`/`Math.random`, storage, `location`, root props, or an unmodeled
+  call (`unknown`) gets an `InputSourceKind` and the location of the read;
+- **derivations** — `obj.key`, `list[i]`/`.map` elements, `.length`, `typeof`,
+  aliases, `=== literal`, `< n`, `[…].includes(x)`, and `a && b` / `a || b`
+  each record what they were computed from.
 
-Repeated variables are scoped per iteration (`variable@repeat#3[1]`) so a
-branch inside a `.map` callback is decided once per rendered item.
+`getTruthinessPredicate(test)` resolves a tested value through those records to
+a guard over the root inputs. An alias resolves to what it aliases, a negation
+flips the guard, a property walk extends the path, a comparison against a
+literal becomes `eq`/`compare`/`in-set`, and a branch value that is itself
+tested later (`const isAdmin = user.role === "admin"; if (isAdmin)`) resolves to
+its alternatives' own guards. A value with no derivation is a root input of its
+own, so two unknowns the interpreter cannot prove equal stay independent.
 
-Correlation is by value identity within one interpretation. Two calls of the
-same opaque hook produce two independent unknowns — the interpreter cannot know
-they return the same value — so they multiply.
+`&&`/`||` are modeled for what the harness uses them for — truthiness:
+`truthy(a && b)` is `and(truthy(a), truthy(b))`. Their returned _value_ is not
+resolved through the logical derivation; a later `(a && b) === "x"` is a fresh
+input rather than a wrong correlation.
+
+Identity is stable by construction: the same `StaticValue` object always maps
+to the same input id, so a hook result tested in three components, or a
+response tested at the root and again three levels down, is one variable.
+
+## Deriving states (`src/harness/enumerate-states.ts`)
+
+`enumerateStates(tree, budget)` is a generator; `enumerateStateSpace(commits,
+budget)` wraps it in the `StaticStateSpace` view the report and corpus read:
+
+```ts
+interface StaticStateSpace {
+  tree: SymbolicTree;
+  commits: PatternNode[][]; // the trees of tree.commits
+  commitStates: CommitStateSpace[]; // per commit: independent guard clusters
+  stateCount: number; // consistent states, enumerated or not
+  readonly states: StaticState[]; // the first budget.maxStates, built on first read
+  readonly omitted: OmittedStateSpace | null;
+}
+```
+
+Decisions are grouped into **clusters**: two decisions are in one cluster when
+they mention a common input (before any iteration scope) or one nests inside
+the other. Each cluster is enumerated on its own under a finite-domain solver
+(`guard-solver.ts`): a decision's side is only taken when its guard is jointly
+satisfiable with the guards already taken on this path, so contradictory
+combinations never exist rather than being enumerated and filtered.
+`stateCount` is the product of the cluster sizes; whole states are only
+instantiated when `states` is read, latest cluster varying fastest, and
+`stateAt(index)` addresses any of them by mixed radix without building the
+others.
+
+Two unrelated guards therefore cost 2 + 2 cluster states and a tree of constant
+size, not 4 trees; ten unrelated flags are 20 cluster states and 1024
+addressable whole states, of which `states` instantiates 256.
+
+Conditions on a state are unchanged:
+
+- `branch` / `state-update` — variable, reason, location, chosen alternative;
+- `repeat` — variable, location, concrete cardinality;
+- `transition` — which committed tree (of how many).
 
 ## Budget and omissions
 
-`StateSpaceBudget` defaults to `{ maxStates: 256, maxRepeat: 2 }`.
+`StateSpaceBudget` defaults to `{ maxStates: 256, maxRepeat: 2 }` and is not
+raised. Two kinds of incompleteness are kept apart:
 
-- Repeats enumerate `min .. min + maxRepeat` cardinalities, clipped to the
-  interpreter's `NumberRange` when it knows one (a mapped literal array is
-  exact and produces one count and no omission). Counts above the bound are an
-  `OmittedRepeatStates { countsAbove, max }`.
-- When `states` reaches `maxStates`, the state that would have been emitted
-  next is recorded as `OmittedState { conditions }` and every alternative the
-  enumerator can no longer expand is an `OmittedBranchStates` /
-  `OmittedRepeatStates` carrying the conditions already chosen when it was
-  reached.
-- Subtrees the materializer did not render are `OmittedSubtree`.
+- **`omissions`** — the tree itself is not fully enumerated: repeat counts
+  above `min + maxRepeat` (`OmittedRepeatStates`), alternatives or cluster
+  states a cluster stopped listing at `maxStates` (`OmittedBranchStates`,
+  `OmittedState`), and subtrees the materializer did not render
+  (`OmittedSubtree`).
+- **`droppedStates`** — whole states of a complete tree past `maxStates`,
+  counted from the cluster sizes without being instantiated.
 
-`omitted` is `null` only when every reachable state is in `states`. Nothing is
-dropped without an entry here.
+`omitted` is `null` only when every reachable state is in `states`.
 
-## Matching and status
+## Membership (`matchStateSpace`)
 
-`matchStateSpace` tries each committed pattern, latest first, with the
-assignment-aware matcher (`compare.ts`): a branch variable already decided on
-this attempt is reused, otherwise its alternatives are tried; repeats try
-concrete counts. The decisions of a successful attempt become conditions and
-are looked up in `states`.
+The runtime tree is matched against each committed pattern, latest first, by
+the assignment-aware comparer (`compare.ts`) under a `DecisionConstraint`: a
+side is only tried when its guard stays satisfiable with the sides already
+taken, and a variable met again reuses its decision. The comparer itself is
+unchanged — it still requires hierarchy, tags, names, keys, host elements and
+text to agree — the constraint only prunes decisions it may take.
 
-- `exact` — the runtime equals one enumerated state and `omitted` is `null`.
-- `truncated` — the runtime matched (an enumerated state, or an assignment
-  outside `states`, reported with `index: null`) but the space is incomplete.
-  Both the fixture suite and the corpus treat this as membership, never as
-  exactness.
-- `partial` — matched, but through an opaque subtree or wildcard.
-- `mismatch` — no committed pattern matches under any assignment. The report
-  carries the furthest divergence and `closestState`: the enumerated state that
-  agrees with the failing attempt on the most decisions.
+The decisions of a successful attempt are located cluster by cluster
+(`findState`): the member exists when every cluster lists them. Its global
+index is computed, not searched; a member past `maxStates` is reported with
+`index: null`. No whole state is instantiated to decide membership.
 
-The report (`format-report.ts`) prints the number of states, the matched
-state's conditions, the states never observed by this capture, and every
-omission. `corpus/results.json` records `stateSpace: { states, matchedState,
-closestState, omitted }` per entry, validated by the wrapper schema in
-`src/corpus/summary.ts`.
+- `exact` — the runtime is a member and `omissions` is empty. Dropped whole
+  states do not make a member inexact: the tree is complete and the member was
+  solved from it.
+- `truncated` — the runtime matched, but only under decisions the tree omitted
+  (a repeat count above the bound, an unrendered alternative, a truncated
+  cluster).
+- `partial` — matched through an opaque subtree or wildcard.
+- `mismatch` — no committed pattern matches under any satisfiable assignment;
+  `closestState` is the enumerated state agreeing on the most decisions.
+
+## Guard coverage (`src/harness/guard-coverage.ts`)
+
+`computeGuardCoverage(tree, captures)` reports every guard side — each branch
+alternative, each commit, and for each repeat its fewest count and "more than
+the fewest" — as one of:
+
+- `witnessed` — a capture's matched conditions took this side;
+- `possible` — no capture took it, but it is satisfiable together with the
+  guards on the path above it;
+- `unreachable` — it contradicts a guard above it (an `eq(user.role, "guest")`
+  test inside `eq(user.role, "admin")`).
+
+`exact` requires the capture to be a member with no mismatched guard;
+unwitnessed sides are reported as `possible`, never hidden, and never count
+against exactness — they are what the next capture should go after. Numeric
+fiber coverage (matched fibers over runtime fibers) is a separate figure and is
+unchanged. Coverage is part of the harness result and of `corpus/results.json`
+(`coverage` in `src/corpus/summary.ts`).
+
+## Witness planning (`src/harness/witness-plan.ts`)
+
+`planWitnesses(tree)` returns typed input assignments that together take every
+reachable guard side:
+
+```ts
+interface WitnessPlan {
+  witnesses: Array<{ assignments: InputAssignment[]; covers: CoveredSide[] }>;
+  unreachable: CoveredSide[]; // sides no assignment reaches
+  uncovered: CoveredSide[]; // reachable sides the planner could not pin down
+}
+interface InputAssignment {
+  input: InputVariable; // where to install it: a response, storage, the viewport…
+  variable: SymbolicVariable;
+  value: string | number | boolean | null | { typeof: TypeName };
+}
+```
+
+Each side's path condition is solved for one model; the models are candidates
+and the plan is chosen greedily, each step adding the candidate deciding the
+most sides not yet covered. Greedy set cover is within `ln(k) + 1` of the fewest
+witnesses, `k` the most sides one candidate covers. The harness does not
+execute plans; `witnessPlanSchema` is the contract for a browser capturer that
+installs the assignments.
+
+## Rendering (`formatSymbolicTree`)
+
+The agent-facing view lists every input with its provenance, the tree with the
+guard of every alternative inline (`|0 eq(user.role, "admin")`), repeats as
+`*d2 len(#3.items) in [0, ∞)`, opaque and wildcard leaves as such, and per
+commit one decision table per independent cluster, rows being consistent
+assignments (`d1|0  d2|1`).
 
 ## Where enumeration is necessarily bounded
 
 - Repeat cardinality: unbounded lists get `min .. min + maxRepeat`; the rest is
   an omission.
-- Independent branches multiply; `maxStates` cuts the product and the cut is
-  recorded per alternative.
+- A cluster whose own consistent assignments exceed `maxStates` is truncated;
+  clusters never multiply into each other before the budget is applied.
 - Alternatives nested more than `MAX_ALTERNATIVE_DEPTH` off the preferred path,
   and anything past the materializer's element budget, are not rendered.
 - Opaque externals: their subtree is a hole, not a set of states.
@@ -135,3 +235,7 @@ closestState, omitted }` per entry, validated by the wrapper schema in
   is a state this run cannot see.
 - Two unknowns the interpreter cannot prove equal are independent even when the
   program would always agree on them.
+- Whether a database-driven redirect (`prisma.user.findFirst()` deciding
+  `redirect("/auth/setup")`) is taken is a guard over a `database` input; the
+  static side lists both sides, and only a capture against a database in each
+  state can witness both.

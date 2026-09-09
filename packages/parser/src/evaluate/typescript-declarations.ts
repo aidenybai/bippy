@@ -39,7 +39,7 @@ const getEnumMemberName = (
  * numeric members, the reverse mapping (`E[5] === "B"`). Initializers may
  * reference earlier members by bare name.
  */
-export const evaluateEnumDeclaration = (
+const evaluateEnumDeclaration = (
   interpreter: Interpreter,
   node: TSEnumDeclaration,
   context: EvaluationContext,
@@ -100,7 +100,7 @@ const getDeclaredNames = (statement: Statement): string[] => {
  * `namespace N { export const a = 1; const hidden = 2 }` runs its body once and
  * exposes only the `export`ed bindings as properties of `N`.
  */
-export const evaluateNamespaceDeclaration = (
+const evaluateNamespaceDeclaration = (
   interpreter: Interpreter,
   node: TSModuleDeclaration | TSGlobalDeclaration,
   context: EvaluationContext,

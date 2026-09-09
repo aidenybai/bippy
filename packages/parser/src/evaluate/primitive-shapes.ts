@@ -6,7 +6,15 @@ import type {
   StringComposition,
   StringShape,
 } from "../types.js";
-import { distributeBinary, primitiveValue, unknownPrimitiveValue, unknownValue } from "./values.js";
+import {
+  describeValue,
+  distributeBinary,
+  hasDefiniteItems,
+  mapValue,
+  primitiveValue,
+  unknownPrimitiveValue,
+  unknownValue,
+} from "./values.js";
 
 const UNKNOWN_STRING_SHAPE: StringShape = { prefix: "", length: null };
 
@@ -86,10 +94,11 @@ export const concatenateStrings = (left: StaticValue, right: StaticValue): Stati
 };
 
 /** `Array.prototype.join`: `null` and `undefined` items read as empty, every other item as its `+` coercion. */
-const toJoinedItem = (item: StaticValue): StaticValue =>
-  item.kind === "primitive" && (item.value === null || item.value === undefined)
-    ? primitiveValue("")
-    : item;
+const toJoinedItem = (item: StaticValue): StaticValue => {
+  if (item.kind === "primitive" && (item.value === null || item.value === undefined))
+    return primitiveValue("");
+  return item.kind === "list" ? toStringValue(item) : item;
+};
 
 const concatenateAlternatives = (left: StaticValue, right: StaticValue): StaticValue =>
   distributeBinary(left, right, concatenateAlternatives) ?? concatenateStrings(left, right);
@@ -103,6 +112,16 @@ export const joinStrings = (items: StaticValue[], separator: string): StaticValu
       ),
     primitiveValue(""),
   );
+
+/** `String(value)`: primitives read as their text and arrays join their items, per alternative. */
+export const toStringValue = (value: StaticValue): StaticValue =>
+  mapValue(value, (alternative) => {
+    if (alternative.kind === "primitive") return primitiveValue(String(alternative.value));
+    if (hasDefiniteItems(alternative)) return joinStrings(alternative.items, ",");
+    if (alternative.kind === "unknown-primitive" && alternative.primitiveType === "string")
+      return alternative;
+    return unknownPrimitiveValue("string", `String(${describeValue(alternative)})`);
+  });
 
 const toIndexArgument = (argument: StaticValue | undefined): number | null | undefined => {
   if (argument === undefined) return undefined;

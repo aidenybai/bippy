@@ -14,17 +14,17 @@ import type {
   RuntimeObservations,
 } from "./types.js";
 
-export const OPAQUE_CAPTURE_KEY = "$bippyOpaque";
-export const EXPORT_CAPTURE_KEY = "$bippyExport";
-export const DATE_CAPTURE_KEY = "$bippyDate";
+const OPAQUE_CAPTURE_KEY = "$bippyOpaque";
+const EXPORT_CAPTURE_KEY = "$bippyExport";
+const DATE_CAPTURE_KEY = "$bippyDate";
 
 export const EMPTY_OBSERVATIONS: RuntimeObservations = { globals: {}, queries: [] };
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
+export const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
 
 export const isPlainObject = (value: unknown): value is Record<string, unknown> => {
-  if (!isRecord(value)) return false;
+  if (!isRecord(value) || Array.isArray(value)) return false;
   const prototype: unknown = Object.getPrototypeOf(value);
   return prototype === Object.prototype || prototype === null;
 };

@@ -23,10 +23,12 @@ const getTypescriptLib = (name: string): string =>
   path.join(TYPESCRIPT_LIB_DIRECTORY, `lib.${name}.d.ts`);
 
 /**
- * Globals `react-native/Libraries/Core/setUp*.js` installs before any app code
- * runs and that `src/types/globals.d.ts` leaves undeclared (`InitializeCore.js`
- * lists the files: setUpGlobals, setUpNavigator, setUpTimers, setUpPerformance,
- * setUpAlert).
+ * Globals `react-native/Libraries/Core/setUp*.js` and
+ * `src/private/setup/setUpDOM.js` install before any app code runs and that
+ * `src/types/globals.d.ts` leaves undeclared (`setUpDefaultReactNativeEnvironment.js`
+ * lists the files: setUpGlobals, setUpDOM, setUpPerformance, setUpTimers,
+ * setUpAlert, setUpNavigator). The DOM classes are React Native's read-only
+ * subset, so only their inheritance is declared; there is no `document`.
  */
 const REACT_NATIVE_RUNTIME_GLOBALS = `
 declare var global: typeof globalThis;
@@ -51,6 +53,17 @@ interface ReactNativePerformance {
 }
 declare var performance: ReactNativePerformance;
 declare function alert(text: string): void;
+declare class DOMRectReadOnly {}
+declare class DOMRect extends DOMRectReadOnly {}
+declare class DOMRectList {}
+declare class HTMLCollection {}
+declare class NodeList {}
+declare class Node {}
+declare class Document extends Node {}
+declare class CharacterData extends Node {}
+declare class Text extends CharacterData {}
+declare class Element extends Node {}
+declare class HTMLElement extends Element {}
 `;
 
 const PARSER_DIRECTORY = path.resolve(import.meta.dirname, "..");

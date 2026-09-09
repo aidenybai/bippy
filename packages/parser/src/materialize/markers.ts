@@ -17,18 +17,16 @@ export const MARKER_NAMES = {
   suspenseBoundary: "$SuspenseBoundary",
 } as const;
 
-export type MarkerName = (typeof MARKER_NAMES)[keyof typeof MARKER_NAMES];
-
 const markerNames: ReadonlySet<string> = new Set(Object.values(MARKER_NAMES));
 
-export const isMarkerName = (name: string | null): name is MarkerName =>
+export const isMarkerName = (name: string | null): boolean =>
   name !== null && markerNames.has(name);
 
-export interface MarkerChildrenProps {
+interface MarkerChildrenProps {
   children?: ReactNode;
 }
 
-export interface BranchMarkerProps extends MarkerChildrenProps {
+interface BranchMarkerProps extends MarkerChildrenProps {
   reason: string;
   location: string | null;
   preferredIndex: number | null;
@@ -36,20 +34,22 @@ export interface BranchMarkerProps extends MarkerChildrenProps {
   predicate: string | null;
 }
 
-export interface RepeatMarkerProps extends MarkerChildrenProps {
+interface RepeatMarkerProps extends MarkerChildrenProps {
   location: string | null;
+  /** Serialized `SymbolicCardinality`; null when the iterated collection is not an input the analysis can name. */
+  cardinality: string | null;
   countMin: number;
   countMax: number | null;
 }
 
-export interface OpaqueMarkerProps extends MarkerChildrenProps {
+interface OpaqueMarkerProps extends MarkerChildrenProps {
   displayName: string | null;
   importedName: string | null;
   packageName: string | null;
   reason: string;
 }
 
-export interface UnknownMarkerProps {
+interface UnknownMarkerProps {
   reason: string;
   /** The subtree was not materialized, so the states below it are not enumerated. */
   isTruncated: boolean;

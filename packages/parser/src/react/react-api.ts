@@ -1,3 +1,4 @@
+import { recordDerivation } from "../evaluate/predicates.js";
 import type { ReactApi, StaticExternalValue, StaticValue } from "../types.js";
 
 const REACT_PACKAGES = new Set(["react", "preact/compat"]);
@@ -159,12 +160,15 @@ export const getExternalMember = (object: StaticExternalValue, key: string): Sta
     const api = resolveReactApi(object.packageName, key);
     if (api) return { kind: "react-api", api };
   }
-  return {
-    kind: "external",
-    packageName: object.packageName,
-    importedName: `${object.importedName}.${key}`,
-    origin: "derived",
-  };
+  return recordDerivation(
+    {
+      kind: "external",
+      packageName: object.packageName,
+      importedName: `${object.importedName}.${key}`,
+      origin: "derived",
+    },
+    { kind: "property", object, key },
+  );
 };
 
 export const resolveReactApiMember = (api: ReactApi, memberName: string): StaticValue | null => {

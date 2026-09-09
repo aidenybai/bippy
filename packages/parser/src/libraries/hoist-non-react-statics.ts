@@ -1,5 +1,5 @@
 import { getObjectProperty, getTruthiness, unknownValue } from "../evaluate/values.js";
-import { nativeFunction } from "../frameworks/stubs.js";
+import { nativeFunction } from "../evaluate/stubs.js";
 import type { ExternalValueProvider, StaticValue } from "../types.js";
 
 export const HOIST_NON_REACT_STATICS_PACKAGES = ["hoist-non-react-statics"];

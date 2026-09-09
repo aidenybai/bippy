@@ -22,6 +22,7 @@
     "@emotion/is-prop-valid": "^1.4.0",
     "bippy": "workspace:*",
     "esbuild": "^0.28.2",
+    "mrmime": "^2.0.1",
     "oxc-parser": "^0.148.0",
     "oxc-resolver": "^11.24.2",
     "playwright": "^1.63.0",

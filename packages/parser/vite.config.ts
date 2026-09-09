@@ -112,7 +112,9 @@ const fixtureStylexPlugin = (): Plugin => ({
         ],
       ],
     });
-    return result?.code == null ? null : { code: result.code, map: result.map };
+    return result?.code === undefined || result.code === null
+      ? null
+      : { code: result.code, map: result.map };
   },
 });
 
