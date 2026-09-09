@@ -29,6 +29,10 @@ import {
   reactInlineSvgValue,
 } from "./react-inlinesvg.js";
 import {
+  REACT_LIFECYCLES_COMPAT_PACKAGES,
+  reactLifecyclesCompatValue,
+} from "./react-lifecycles-compat.js";
+import {
   REDUX_MODELED_EXPORTS,
   REDUX_PACKAGES,
   REDUX_TOOLKIT_PACKAGES,
@@ -90,6 +94,7 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     getValue: reactInlineSvgValue,
     modeledExports: REACT_INLINESVG_MODELED_EXPORTS,
   },
+  { packages: REACT_LIFECYCLES_COMPAT_PACKAGES, getValue: reactLifecyclesCompatValue },
   { packages: REDUX_PACKAGES, getValue: reduxValue, modeledExports: REDUX_MODELED_EXPORTS },
   { packages: REDUX_TOOLKIT_PACKAGES, getValue: reduxToolkitValue },
   { packages: REFLUX_PACKAGES, getValue: refluxValue },

@@ -1,7 +1,7 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { getRDTHook } from "bippy";
-import type { ReactNode } from "react";
+import type { Context, ReactNode } from "react";
 import { ReactRuntimeError } from "../errors.js";
 import type { ModuleResolver } from "../graph/module-resolver.js";
 import { ensureDomGlobals } from "./dom-environment.js";
@@ -26,6 +26,15 @@ export interface MountedRoot {
   unmount: () => void;
 }
 
+/** The reconciler's `readContext`, installed on the current dispatcher for every render (class bodies included). */
+export interface ContextDispatcher {
+  readContext: <T>(context: Context<T>) => T;
+}
+
+export interface LegacyReactInternals {
+  ReactCurrentDispatcher: { current: ContextDispatcher | null };
+}
+
 /**
  * The React installation the static tree is materialized with: the app's own
  * `react`/`react-dom` when they resolve from the analyzed root, so the fibers
@@ -39,6 +48,8 @@ export interface ReactRuntime {
   dom: ReactDomModule;
   createRoot: (container: Element, callbacks: RootErrorCallbacks) => MountedRoot;
   act: <T>(callback: () => T | Promise<T>) => Promise<T>;
+  /** Reads a context at the rendering fiber the way `readContext(contextType)` does for classes: `use` on React 19, the dispatcher's `readContext` before. */
+  readContext: <T>(context: Context<T>) => T;
   version: string;
 }
 
@@ -105,6 +116,29 @@ const importResolved = async (
   return unwrapModule(
     await (filePath === null ? import(specifier) : import(pathToFileURL(filePath).href)),
   );
+};
+
+const isContextDispatcher = (value: unknown): value is ContextDispatcher =>
+  isRecord(value) && typeof value.readContext === "function";
+
+const isLegacyReactInternals = (value: unknown): value is LegacyReactInternals =>
+  isRecord(value) &&
+  isRecord(value.ReactCurrentDispatcher) &&
+  "current" in value.ReactCurrentDispatcher;
+
+const loadContextReader = (react: ReactModule): ReactRuntime["readContext"] => {
+  if (react.use) return react.use;
+  const internals = Reflect.get(react, "__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED");
+  if (!isLegacyReactInternals(internals)) {
+    throw new ReactRuntimeError("react exposes neither `use` nor its current dispatcher");
+  }
+  return (context) => {
+    const dispatcher = internals.ReactCurrentDispatcher.current;
+    if (!isContextDispatcher(dispatcher)) {
+      throw new ReactRuntimeError("context read outside a React render");
+    }
+    return dispatcher.readContext(context);
+  };
 };
 
 const hasAct = (
@@ -196,6 +230,7 @@ const load = async (
     dom,
     createRoot: await loadRootFactory(dom, appResolver, rootDirectory),
     act: await loadAct(react, appResolver, rootDirectory),
+    readContext: loadContextReader(react),
     version: react.version,
   };
 };

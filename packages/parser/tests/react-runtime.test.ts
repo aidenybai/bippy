@@ -11,9 +11,12 @@ const REACT_STUB = `
 module.exports = {
   version: ${JSON.stringify(STUB_REACT_VERSION)},
   createElement: () => null,
-  createContext: () => ({}),
+  createContext: (defaultValue) => ({ _currentValue: defaultValue }),
   Component: class Component {},
   act: (callback) => callback(),
+  __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED: {
+    ReactCurrentDispatcher: { current: { readContext: (context) => context._currentValue } },
+  },
 };
 `;
 
@@ -80,6 +83,7 @@ describe("loadReactRuntime", () => {
     expect(container.textContent).toBe("legacy:tree");
     root.unmount();
     expect(container.textContent).toBe("");
+    expect(runtime.readContext(runtime.react.createContext("provided"))).toBe("provided");
   });
 
   it("materializes with the app's React when react, react-dom and react-dom/client all resolve from it", async () => {

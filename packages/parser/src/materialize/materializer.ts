@@ -477,12 +477,10 @@ export class Materializer {
     Context<StaticValue | null>
   >();
   private isInsideComponentRender = false;
-  /** `use` reads a context from any render (class bodies, Consumer render props included); older Reacts only have `useContext`. */
-  private readonly useStaticContext: (context: Context<StaticValue | null>) => StaticValue | null;
   /** Context values flow through React itself, so a proxy reads them at its own fiber, as the real hook would. */
   private readonly readContext: ContextReader = (definition) => {
     if (!this.isInsideComponentRender) return null;
-    const value = this.useStaticContext(this.getContext(definition));
+    const value = this.runtime.readContext(this.getContext(definition));
     this.contextReads?.push({ definition, value });
     return value;
   };
@@ -502,7 +500,6 @@ export class Materializer {
     this.maxRecursionPerComponent =
       options.maxRecursionPerComponent ?? DEFAULT_MAX_RECURSION_PER_COMPONENT;
     this.serverComponents = options.serverComponents ?? false;
-    this.useStaticContext = runtime.react.use ?? runtime.react.useContext;
     this.suspenseBoundaryProxy = setFunctionName(
       ({ input }: ProxyProps): ReactNode => this.renderSuspenseBoundary(input),
       MARKER_NAMES.suspenseBoundary,

@@ -24,6 +24,7 @@ import {
   type StateCell,
 } from "./hooks.js";
 import type { Interpreter } from "./interpreter.js";
+import { providedContextValue } from "./react-calls.js";
 import { createScope } from "./scope.js";
 import {
   accessorEntry,
@@ -63,8 +64,8 @@ export const collectClassMembers = (node: Class): ClassMember[] => {
       const kind = element.kind === "get" ? "getter" : element.kind;
       members.push({ key, isStatic: element.static, kind, functionNode: element.value });
     } else if (
-      element.type === "PropertyDefinition" ||
-      element.type === "TSAbstractPropertyDefinition"
+      (element.type === "PropertyDefinition" || element.type === "TSAbstractPropertyDefinition") &&
+      !element.declare
     ) {
       members.push({ key, isStatic: element.static, kind: "field", value: element.value });
     }
@@ -264,9 +265,14 @@ export const getStaticProperty = (
   return null;
 };
 
-/** Whether every class up the `extends` chain is known, so a missing static is `undefined`. */
-export const hasKnownStaticChain = (classValue: StaticClassValue): boolean =>
-  collectClassChain(classValue).at(-1)?.body.superValue === null;
+const isReactComponentBase = (value: StaticValue | null): boolean =>
+  value?.kind === "react-api" && (value.api === "Component" || value.api === "PureComponent");
+
+/** Whether every class up the `extends` chain is known (ending in nothing or `React.Component`, which has no statics), so a missing static is `undefined`. */
+export const hasKnownStaticChain = (classValue: StaticClassValue): boolean => {
+  const baseValue = collectClassChain(classValue).at(-1)?.body.superValue ?? null;
+  return baseValue === null || isReactComponentBase(baseValue);
+};
 
 const caughtErrorValue = (): StaticValue =>
   objectFromRecord({
@@ -300,6 +306,34 @@ const mergeState = (state: StaticValue, partialState: StaticValue): StaticValue 
         { kind: "spread", value: partialState },
       ]);
 
+/**
+ * The `context` a class instance is constructed and rendered with: `readContext`
+ * of a `static contextType`, else the legacy masked context (`emptyContextObject`
+ * for a class without `contextTypes`).
+ */
+const readClassContext = (
+  interpreter: Interpreter,
+  classValue: StaticClassValue,
+  context: EvaluationContext,
+): StaticValue => {
+  const contextType = getStaticProperty(classValue, "contextType");
+  if (contextType?.kind === "context") {
+    return providedContextValue(
+      interpreter,
+      contextType.context,
+      context.readContext(contextType.context),
+      null,
+    );
+  }
+  if (contextType && !isNullish(contextType)) {
+    return unknownValue(`contextType ${describeValue(contextType)}`);
+  }
+  if (!hasKnownStaticChain(classValue) || getStaticProperty(classValue, "contextTypes")) {
+    return unknownValue("legacy class context");
+  }
+  return objectFromRecord({});
+};
+
 export interface ClassInstanceRecord {
   instance: StaticObjectValue;
   stateCell: StateCell;
@@ -327,13 +361,14 @@ const mountClassInstance = (
   context: EvaluationContext,
   frame: HookFrame,
 ): ClassInstanceRecord => {
+  const instanceContext = readClassContext(interpreter, classValue, context);
   const instance = objectFromRecord({
     props,
     state: UNDEFINED_VALUE,
-    context: unknownValue("legacy class context"),
+    context: instanceContext,
     refs: objectFromRecord({}),
   });
-  initializeInstance(interpreter, classValue, instance, [props], context);
+  initializeInstance(interpreter, classValue, instance, [props, instanceContext], context);
   const initialState = getObjectProperty(instance, "state");
   const stateCell = nextStateCell(frame, `${classValue.name ?? "class"} state`, () => initialState);
   const record: ClassInstanceRecord = {
@@ -515,6 +550,9 @@ export const renderClassComponent = (
     record.rendered !== null &&
     !shouldClassUpdate(interpreter, instance, props, state, context);
   setObjectProperty(instance, "props", props);
+  if (record.isMounted) {
+    setObjectProperty(instance, "context", readClassContext(interpreter, classValue, context));
+  }
   stateCell.current = state;
   setObjectProperty(instance, "state", state);
   frame.effects.push({
