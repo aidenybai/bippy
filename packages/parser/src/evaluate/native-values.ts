@@ -670,6 +670,16 @@ const WINDOW_NATIVE_MEMBERS = new Set([
   "scrollY",
 ]);
 
+/** `new Image(width, height)`: the `<img>` of the host document it constructs, as `document.createElement("img")` would; null for dynamic arguments. */
+export const constructHostImage = (host: HostDocument, args: StaticValue[]): StaticValue | null => {
+  const constructor: unknown = Reflect.get(host.globalObject, "Image");
+  const natives = toNativeArguments(args, host);
+  if (typeof constructor !== "function" || natives === null) return null;
+  return guardNativeCall("new Image", () =>
+    fromNativeValue(Reflect.construct(constructor, natives), "new Image()", host),
+  );
+};
+
 const isEmptyQueryResult = (value: unknown): boolean =>
   value === null ||
   (typeof value === "object" && value !== null && Reflect.get(value, "length") === 0);

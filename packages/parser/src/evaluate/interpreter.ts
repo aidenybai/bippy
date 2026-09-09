@@ -41,7 +41,7 @@ import type {
   VariableDeclarator,
 } from "oxc-parser";
 import path from "node:path";
-import { getAssetModuleValue } from "../graph/asset-module.js";
+import { getAssetModuleValue, isAssetPath } from "../graph/asset-module.js";
 import { getCssModuleValue } from "../graph/css-module.js";
 import { getEsbuildDeclarationName } from "../graph/esbuild-symbol-names.js";
 import { getTransformedRuntimeSpecifier } from "../graph/helper-packages.js";
@@ -178,6 +178,8 @@ import {
   getThrownPaths,
   withoutThrows,
 } from "./thrown.js";
+import { assignEventHandlerProperty } from "./event-listeners.js";
+import { startImageLoad } from "./resource-loading.js";
 import {
   deleteNativeObjectComposedMember,
   deleteNativeObjectMember,
@@ -292,6 +294,7 @@ import {
   primitiveValue,
   setListItem,
   setListLength,
+  toIndexKey,
   spreadListItems,
   TRUE_VALUE,
   UNDEFINED_VALUE,
@@ -367,6 +370,7 @@ const UNKNOWN_PROJECT: ProjectContext = {
   getImportedAssetUrl: (filePath) => unknownValue(`URL the bundler emits for ${filePath}`),
   transpiler: "name-preserving",
   bundler: "unknown",
+  findServedFile: () => null,
   readServedAsset: () => null,
   findQuery: () => null,
   findMutations: () => null,
@@ -436,11 +440,6 @@ const REGEXP_FLAG_ACCESSORS = new Map([
 ]);
 
 /** A member read on a value whose prototype chain is fully known: absent names are `undefined`. */
-const toIndexKey = (key: string): number | null => {
-  const index = Number(key);
-  return Number.isInteger(index) && index >= 0 && String(index) === key ? index : null;
-};
-
 const prototypeMember = (
   receiver: StaticValue,
   prototype: object | null,
@@ -1255,7 +1254,19 @@ export class Interpreter {
         }
         return target;
       case "native-object":
+        if (
+          assignEventHandlerProperty(
+            this,
+            this.getRealm(context.environment),
+            target,
+            propertyName,
+            value,
+          )
+        ) {
+          return target;
+        }
         setNativeObjectMember(target, propertyName, value);
+        startImageLoad(this, target, propertyName, value, context);
         return target;
       case "proxy": {
         const trap = getObjectProperty(target.handler, "set");
@@ -2403,6 +2414,12 @@ export class Interpreter {
     target.items.push(...items);
   }
 
+  setItem(target: StaticListValue, index: number, value: StaticValue): void {
+    if (target.isFrozen) return;
+    this.recordHeapMutation(target);
+    setListItem(target, index, value);
+  }
+
   private assignDynamicEntry(
     target: StaticObjectValue,
     key: StaticValue,
@@ -2428,7 +2445,8 @@ export class Interpreter {
       );
       return;
     }
-    if (context.module.bindings.get(name)?.kind !== "variable") return;
+    const bindingKind = context.module.bindings.get(name)?.kind;
+    if (bindingKind === undefined || bindingKind === "typescript") return;
     const values = this.getModuleValues(context.module);
     if (!values.has(name)) this.evaluateModuleBinding(context.module, name);
     const previous = values.get(name);
@@ -2866,6 +2884,9 @@ export class Interpreter {
     if (isModuleRecord(target)) {
       return isRequire ? this.evaluateModuleExports(target) : { kind: "namespace", module: target };
     }
+    if (target.kind === "internal" && isAssetPath(target.filePath)) {
+      return getAssetModuleValue(target.filePath, { kind: "default" }, this.project);
+    }
     if (target.kind === "external" || target.kind === "builtin") {
       const packageName = target.kind === "external" ? target.packageName : target.specifier;
       const filePath = target.kind === "external" ? target.filePath : null;
@@ -3036,6 +3057,7 @@ export class Interpreter {
           recordStateMutation: (state) => this.recordStateMutation(state),
           realm: this.getRealm(context.environment),
           pushItems: (list, items) => this.pushItems(list, items),
+          setItem: (list, index, value) => this.setItem(list, index, value),
           nameHint: options.nameHint ?? null,
           templateArgumentNames: options.templateArgumentNames ?? null,
           environment: context.environment,
@@ -4720,14 +4742,21 @@ const applyBinaryOperator = (
         (right.kind === "primitive" && typeof right.value === "string") ||
         (left.kind === "unknown-primitive" && left.primitiveType === "string") ||
         (right.kind === "unknown-primitive" && right.primitiveType === "string");
-      return isString
-        ? concatenateStrings(left, right)
+      if (isString) return concatenateStrings(left, right);
+      return isNumberValue(left) && isNumberValue(right)
+        ? unknownPrimitiveValue("number", "+ on dynamic values")
         : unknownPrimitiveValue("any", "+ on dynamic values");
     }
     default:
       return unknownPrimitiveValue("number", `${operator} on dynamic values`);
   }
 };
+
+/** A value that is a number for sure, known or not. */
+const isNumberValue = (value: StaticValue): boolean =>
+  value.kind === "primitive"
+    ? typeof value.value === "number"
+    : value.kind === "unknown-primitive" && value.primitiveType === "number";
 
 /** React's dev `displayName` setter on `memo`/`forwardRef` also names an anonymous inner function. */
 const nameAnonymousInner = (

@@ -1405,6 +1405,7 @@ export class Materializer {
       recordStateMutation: (state) => this.interpreter.recordStateMutation(state),
       realm: this.interpreter.getRealm(context.environment),
       pushItems: (list, items) => this.interpreter.pushItems(list, items),
+      setItem: (list, index, value) => this.interpreter.setItem(list, index, value),
       nameHint: null,
       templateArgumentNames: null,
       environment: context.environment,

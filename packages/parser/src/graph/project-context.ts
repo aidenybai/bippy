@@ -1,10 +1,11 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { EMPTY_OBSERVATIONS } from "../observations.js";
 import { readPackageManifest } from "../package-manifest.js";
 import type {
   ModuleBundler,
   ModuleTranspiler,
+  ProcessEnvironment,
   ProjectContext,
   RuntimeObservations,
 } from "../types.js";
@@ -43,6 +44,8 @@ export interface ProjectContextOptions {
   origin?: string | null;
   transpiler?: ModuleTranspiler;
   bundler?: ModuleBundler;
+  /** The environment the dev server runs with, when known. */
+  environment?: ProcessEnvironment;
 }
 
 export const createProjectContext = (options: ProjectContextOptions): ProjectContext => {
@@ -53,6 +56,7 @@ export const createProjectContext = (options: ProjectContextOptions): ProjectCon
     origin = null,
     transpiler = "name-preserving",
     bundler = "unknown",
+    environment = null,
   } = options;
   const servedDirectory = options.servedDirectory ?? rootDirectory;
   const publicDirectory = options.publicDirectory ?? path.join(servedDirectory, PUBLIC_DIRECTORY);
@@ -67,23 +71,31 @@ export const createProjectContext = (options: ProjectContextOptions): ProjectCon
   const queries = new Map(observations.queries.map((query) => [query.queryHash, query]));
   const { mutations, stores } = observations;
   const hasDeclaredDependency = (packageName: string): boolean => declared.has(packageName);
+  const readPackageVersion = (packageName: string): string | null =>
+    readInstalledPackage(resolver, rootDirectory, packageName)?.version ?? null;
   const assets = createServedAssets({
     rootDirectory,
     servedDirectory,
     publicDirectory,
     origin,
+    bundler,
+    environment,
     hasDeclaredDependency,
+    readPackageVersion,
   });
   return {
     rootDirectory,
     servedDirectory,
     hasDeclaredDependency,
-    readPackageVersion: (packageName) =>
-      readInstalledPackage(resolver, rootDirectory, packageName)?.version ?? null,
+    readPackageVersion,
     transpiler,
     bundler,
     getImportedAssetUrl: assets.getImportedUrl,
-    readServedAsset: assets.read,
+    findServedFile: assets.findServedFile,
+    readServedAsset: (url) => {
+      const filePath = assets.findServedFile(url);
+      return filePath === null ? null : readFileSync(filePath, "utf8");
+    },
     findQuery: (queryHash) => queries.get(queryHash) ?? null,
     findMutations: (mutationHash) =>
       mutations?.filter((mutation) => mutation.mutationHash === mutationHash) ?? null,

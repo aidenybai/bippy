@@ -44,6 +44,7 @@ import { createErrorValue, isErrorConstructorName } from "./errors.js";
 import { callFetch } from "./fetch.js";
 import { nativeFunction } from "../frameworks/stubs.js";
 import {
+  constructHostImage,
   constructNativeObject,
   fromNativeValue,
   getNativeOwnEntries,
@@ -936,6 +937,10 @@ const callGlobal = (
   if (isConstructor && isNativeConstructorName(name) && (name !== "Date" || args.length > 0)) {
     const constructed = constructNativeObject(name, args);
     if (constructed) return constructed;
+  }
+  if (isConstructor && name === "Image" && interpreter.hostDocument) {
+    const image = constructHostImage(interpreter.hostDocument, args);
+    if (image) return image;
   }
   switch (name) {
     case "Date": {

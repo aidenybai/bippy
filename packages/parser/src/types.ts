@@ -374,6 +374,8 @@ export interface StubRenderTools {
   realm: HostRealm;
   /** Appends to a modeled list as `Array.prototype.push` would, undone on the other paths of an enclosing fork like any heap write. */
   pushItems: (list: StaticListValue, items: readonly StaticValue[]) => void;
+  /** Writes an index of a modeled list as `list[index] = value` would, undone on the other paths of an enclosing fork like any heap write. */
+  setItem: (list: StaticListValue, index: number, value: StaticValue) => void;
   /** Binding the call's result is assigned to, as build-time labelers (Emotion's babel/swc plugin) see it. */
   nameHint: string | null;
   /** For tagged templates, the identifier each `${expression}` is (null when not a bare identifier); null for other calls. */
@@ -426,6 +428,8 @@ export interface ProjectContext {
   bundler: ModuleBundler;
   /** The value an `import` of a static asset file (image, font, ...) evaluates to: the URL the bundler serves it at. */
   getImportedAssetUrl: (filePath: string) => StaticValue;
+  /** The file the dev server serves for a same-origin or root-relative URL; `null` when it serves none. */
+  findServedFile: (url: string) => string | null;
   /** The text the dev server serves for a same-origin or root-relative URL; `null` when it serves none. */
   readServedAsset: (url: string) => string | null;
   /** The captured TanStack Query cache entry for a query hash (`hashKey(queryKey)`), if the page held one. */

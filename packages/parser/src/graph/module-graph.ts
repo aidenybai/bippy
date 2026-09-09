@@ -15,7 +15,7 @@ import { readAssetModuleSource } from "./asset-modules.js";
 import { isCssModulePath } from "./css-module.js";
 import { isCompilerHelperPackage } from "./helper-packages.js";
 import { createModuleRecord, isClientModule } from "./module-record.js";
-import { ModuleResolver } from "./module-resolver.js";
+import { isInlineLoaderRequest, ModuleResolver } from "./module-resolver.js";
 
 export interface ExportNameSet {
   names: string[];
@@ -111,7 +111,7 @@ export class ModuleGraph {
     specifier: string,
   ): ModuleRecord | ModuleResolution {
     if (resolution.kind !== "internal" && resolution.kind !== "external") return resolution;
-    if (resolution.filePath === null) return resolution;
+    if (resolution.filePath === null || isInlineLoaderRequest(specifier)) return resolution;
     const assetModule = this.getAssetModule(resolution.filePath, specifier);
     if (assetModule) return assetModule;
     if (resolution.kind === "external" && !this.shouldAnalyzePackage(resolution.packageName)) {

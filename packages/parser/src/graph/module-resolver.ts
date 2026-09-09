@@ -99,6 +99,12 @@ export const getPackageNameFromFilePath = (filePath: string): string | null => {
   return getPackageNameFromSpecifier(remainder);
 };
 
+/** webpack's inline loader syntax (`loader!request`, `!!loader!request`): loaders transform the file the last segment resolves to. */
+export const isInlineLoaderRequest = (specifier: string): boolean => specifier.includes("!");
+
+const stripInlineLoaders = (specifier: string): string =>
+  specifier.slice(specifier.lastIndexOf("!") + 1);
+
 export const isInsideNodeModules = (filePath: string): boolean =>
   filePath.replaceAll("\\", "/").includes(NODE_MODULES_SEGMENT);
 
@@ -161,7 +167,7 @@ export class ModuleResolver {
     if (specifier.startsWith("node:") || isBuiltin(bareSpecifier)) {
       return { kind: "builtin", specifier };
     }
-    const cleanSpecifier = specifier.split("?")[0];
+    const cleanSpecifier = stripInlineLoaders(specifier).split("?")[0];
     let result = primary.resolveFileSync(fromFile, cleanSpecifier);
     if (!result.path) {
       const fallbackResult = fallback.resolveFileSync(fromFile, cleanSpecifier);

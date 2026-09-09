@@ -1547,6 +1547,12 @@ export const getListLength = (list: StaticListValue): StaticValue =>
 
 const MAX_LIST_GROWTH = 1_000;
 
+/** The array index a property key names, as `"3"` does and `"03"` or `"-1"` do not. */
+export const toIndexKey = (key: string): number | null => {
+  const index = Number(key);
+  return Number.isInteger(index) && index >= 0 && String(index) === key ? index : null;
+};
+
 /**
  * `list[index] = value`: fills holes up to `index` with `undefined` like JavaScript
  * does. Past a partially known prefix the slot the write lands on is unknown, so
@@ -1730,6 +1736,7 @@ export const getListItem = (
   if (!pick(items, index)) {
     return unknownValue(`index ${index} of a partially known list`, location);
   }
+  if (candidates.length === 1) return candidates[0];
   return branchValue(candidates, `item ${index} of a filtered list`, location);
 };
 

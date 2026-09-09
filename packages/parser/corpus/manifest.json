@@ -3136,7 +3136,8 @@
           "value-equal",
           "path-to-regexp",
           "isarray",
-          "prop-types"
+          "prop-types",
+          "react-apexcharts"
         ]
       }
     },
