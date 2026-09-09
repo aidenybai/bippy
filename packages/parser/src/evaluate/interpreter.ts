@@ -205,7 +205,13 @@ import {
 } from "./promises.js";
 import { applyClockOperator, TimerQueue } from "./timers.js";
 import { evaluateLoop } from "./loops.js";
-import { applyNarrowing, narrowTest, withNarrowedBinding } from "./narrowing.js";
+import {
+  type TestNarrowing,
+  applyNarrowing,
+  narrowTest,
+  narrowTestByEvaluation,
+  withNarrowedBinding,
+} from "./narrowing.js";
 import { evaluateReactApiCall } from "./react-calls.js";
 import { createScope, declareInScope, findOwningScope, lookupScope } from "./scope.js";
 import {
@@ -1821,7 +1827,7 @@ export class Interpreter {
     preferredSide: number,
     predicate: string,
   ): [Result | null, Result | null] {
-    const narrowing = narrowTest(test, (name) => lookupScope(context.scope, name));
+    const narrowing = this.narrowTest(test, context);
     if (!narrowing) {
       const [trueResult, falseResult] = this.forkValues(
         context.scope,
@@ -1882,6 +1888,18 @@ export class Interpreter {
         joinScopes(snapshots, reason, location, preferredPath, predicate);
       }
     }
+  }
+
+  private narrowTest(test: Expression, context: EvaluationContext): TestNarrowing | null {
+    const lookup = (name: string) => lookupScope(context.scope, name);
+    return (
+      narrowTest(test, lookup) ??
+      narrowTestByEvaluation(test, lookup, (name, alternative) =>
+        withNarrowedBinding(context.scope, name, alternative, () =>
+          this.evaluateExpression(test, context),
+        ),
+      )
+    );
   }
 
   private evaluateUnaryExpression(node: UnaryExpression, context: EvaluationContext): StaticValue {
@@ -3186,7 +3204,22 @@ export class Interpreter {
       }
       const pattern = param.type === "TSParameterProperty" ? param.parameter : param;
       this.bindPattern(pattern, args[index] ?? UNDEFINED_VALUE, scope, context);
+      if (param.type === "TSParameterProperty") {
+        this.assignParameterProperty(pattern, scope, context);
+      }
     });
+  }
+
+  /** `constructor(public x = 1)` declares `x` and assigns `this.x` when the constructor runs. */
+  private assignParameterProperty(
+    pattern: BindingPattern,
+    scope: Scope,
+    context: EvaluationContext,
+  ): void {
+    const target = pattern.type === "AssignmentPattern" ? pattern.left : pattern;
+    if (target.type !== "Identifier" || context.thisValue === null) return;
+    const value = lookupScope(scope, target.name);
+    if (value) this.assignProperty(context.thisValue, target.name, value, context);
   }
 
   /** `var` bindings live in the hoisted function scope; `let`/`const` in the current block. */
@@ -3460,7 +3493,7 @@ export class Interpreter {
               : proceed(pathContext);
           if (truthiness === true) return runConsequent(context);
           if (truthiness === false) return runAlternate(context);
-          const narrowing = narrowTest(statement.test, (name) => lookupScope(context.scope, name));
+          const narrowing = this.narrowTest(statement.test, context);
           if (narrowing?.whenTrue === null) return runAlternate(context);
           if (narrowing?.whenFalse === null) return runConsequent(context);
           const narrowed =
@@ -3640,6 +3673,28 @@ export class Interpreter {
       const predicate = createPathPredicate();
       journal.join(reason, location, preferredPath, predicate);
       joinScopes([ranSnapshot, entrySnapshot], reason, location, preferredPath, predicate);
+    }
+  }
+
+  /**
+   * Runs `run` once more from the state `runMaybe` left behind and discards
+   * everything it does, keeping only which bindings it would move again. A
+   * binding that still changes is loop-carried (a counter, an accumulator):
+   * after an unknown number of iterations it holds none of the enumerated
+   * alternatives in particular, so it widens to an unknown of its type.
+   */
+  widenLoopCarriedBindings(scope: Scope, run: () => void, location: SourceLocation): void {
+    const entrySnapshot = snapshotScopes(scope);
+    const journal = new HeapJournal();
+    this.heapJournals.push(journal);
+    try {
+      run();
+    } finally {
+      const ranSnapshot = snapshotScopes(scope);
+      journal.endPath();
+      this.heapJournals.pop();
+      restoreScopes(entrySnapshot);
+      widenMovedBindings(entrySnapshot, ranSnapshot, location);
     }
   }
 
@@ -3997,6 +4052,22 @@ const restoreScopes = (snapshots: ScopeSnapshot[]): void => {
   }
 };
 
+const widenMovedBindings = (
+  entryPath: ScopeSnapshot[],
+  ranPath: ScopeSnapshot[],
+  location: SourceLocation,
+): void => {
+  entryPath.forEach((snapshot, scopeIndex) => {
+    for (const [name, before] of snapshot.bindings) {
+      const after = ranPath[scopeIndex].bindings.get(name);
+      if (after === undefined || after === before) continue;
+      const joined = branchValue([before, after], "loop-carried value", location);
+      if (countAlternatives(joined) === countAlternatives(before)) continue;
+      snapshot.scope.bindings.set(name, widenValue(joined, location));
+    }
+  });
+};
+
 const joinScopes = (
   paths: ScopeSnapshot[][],
   reason: string,
@@ -4034,6 +4105,22 @@ const MAX_DISTRIBUTED_ALTERNATIVES = 16;
 
 const countAlternatives = (value: StaticValue): number =>
   value.kind === "branch" ? value.alternatives.length : 1;
+
+const getPrimitiveType = (value: StaticValue): UnknownPrimitiveType | null => {
+  if (value.kind === "unknown-primitive") return value.primitiveType;
+  if (value.kind !== "primitive") return null;
+  const type = typeof value.value;
+  return type === "string" || type === "number" || type === "boolean" ? type : null;
+};
+
+const widenValue = (value: StaticValue, location: SourceLocation): StaticValue => {
+  const alternatives = value.kind === "branch" ? value.alternatives : [value];
+  const types = new Set(alternatives.map(getPrimitiveType));
+  const [type] = types;
+  return types.size === 1 && type
+    ? unknownPrimitiveValue(type, "loop-carried value")
+    : unknownValue("loop-carried value", location);
+};
 
 const applyUnaryOperator = (
   operator: Exclude<UnaryOperator, "typeof" | "void" | "delete">,

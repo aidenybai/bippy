@@ -15,6 +15,7 @@ import {
 } from "./hoist-non-react-statics.js";
 import { JED_PACKAGES, jedValue } from "./jed.js";
 import { KEA_PACKAGES, keaValue } from "./kea.js";
+import { LINARIA_PACKAGES, linariaValue } from "./linaria.js";
 import { LINGUI_PACKAGES, linguiValue } from "./lingui.js";
 import { LODASH_MODELED_EXPORTS, LODASH_PACKAGES, lodashValue } from "./lodash.js";
 import { MOBX_PACKAGES, mobxValue } from "./mobx.js";
@@ -63,6 +64,7 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
   { packages: HOIST_NON_REACT_STATICS_PACKAGES, getValue: hoistNonReactStaticsValue },
   { packages: JED_PACKAGES, getValue: jedValue },
   { packages: KEA_PACKAGES, getValue: keaValue },
+  { packages: LINARIA_PACKAGES, getValue: linariaValue },
   { packages: LINGUI_PACKAGES, getValue: linguiValue },
   {
     packages: LODASH_PACKAGES,

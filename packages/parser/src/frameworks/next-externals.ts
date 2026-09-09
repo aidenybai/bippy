@@ -29,6 +29,7 @@ import type {
 import { ClassComponentTag, ForwardRefTag } from "../work-tags.js";
 import type { FrameworkKind } from "./framework-profile.js";
 import { toElementType } from "../react/element-type.js";
+import { legacyImageStub } from "./next-legacy-image.js";
 import { createNextIntlModel, type NextIntlModel } from "../libraries/next-intl.js";
 import { nextRequestValue } from "./next-request.js";
 import {
@@ -254,12 +255,12 @@ const IMAGE_ELEMENT_STUB: StubComponent = {
  * `priority` image: `ReactDOM.preload` and null in the App Router, a
  * `next/head` `<link rel="preload">` in the Pages Router.
  */
-const imagePreloadStub = (kind: NextRouterKind): StubComponent => ({
+const imagePreloadStub = (kind: NextRouterKind, head: StubComponent): StubComponent => ({
   displayName: "ImagePreload",
   render: (props) =>
     kind === "next-app"
       ? NULL_VALUE
-      : stubElement(HEAD_STUB, {
+      : stubElement(head, {
           children: hostElement("link", {
             rel: primitiveValue("preload"),
             href: getObjectProperty(props, "src"),
@@ -268,8 +269,8 @@ const imagePreloadStub = (kind: NextRouterKind): StubComponent => ({
         }),
 });
 
-const imageStub = (kind: NextRouterKind): StubComponent => {
-  const preloadStub = imagePreloadStub(kind);
+const imageStub = (kind: NextRouterKind, head: StubComponent): StubComponent => {
+  const preloadStub = imagePreloadStub(kind, head);
   return {
     displayName: null,
     tag: ForwardRefTag,
@@ -303,6 +304,24 @@ const propEntries = (props: StaticObjectValue): [string, StaticValue][] => {
     if (entry.kind === "property") entries.push([entry.key, entry.value]);
   }
   return entries;
+};
+
+interface NextImageStubs {
+  image: StaticValue;
+  legacyImage: StaticValue;
+}
+
+/** `next/image` before 13.0 is today's `next/legacy/image`; the inner `ImageElement` forwardRef arrived in 12.2. */
+const imageStubs = (options: NextModelOptions, head: StubComponent): NextImageStubs => {
+  const hasImageElement = options.version === null || isVersionAtLeast(options.version, "12.2.0");
+  const legacyImage = stubValue(legacyImageStub({ hasImageElement, head }));
+  return {
+    image:
+      options.version !== null && !isVersionAtLeast(options.version, "13.0.0")
+        ? legacyImage
+        : stubValue(imageStub(options.kind, head)),
+    legacyImage,
+  };
 };
 
 const formElement = (props: StaticObjectValue): StaticValue =>
@@ -565,12 +584,13 @@ export const createNextModel = (options: NextModelOptions): NextModel => {
   const url = new URL(options.route, options.origin ?? "http://static.invalid");
   const params: Record<string, string> = {};
   const linkStub = createLinkStub(options);
-  const image = imageStub(options.kind);
   const intl = createNextIntlModel({
     link: linkStub,
     navigation: (importedName) => appNavigationValue(importedName, url, params),
     version: options.nextIntlVersion,
   });
+  const head = hasClassSideEffect(options) ? CLASS_HEAD_STUB : HEAD_STUB;
+  const images = imageStubs(options, head);
   const externalValues: ExternalValueProvider = (packageName, importedName) => {
     switch (packageName) {
       case "next/link":
@@ -585,12 +605,11 @@ export const createNextModel = (options: NextModelOptions): NextModel => {
           ? stubValue(options.kind === "next-app" ? APP_FORM_STUB : FORWARD_REF_FORM_STUB)
           : null;
       case "next/image":
+        return importedName === "default" ? images.image : null;
       case "next/legacy/image":
-        return importedName === "default" ? stubValue(image) : null;
+        return importedName === "default" ? images.legacyImage : null;
       case "next/head":
-        return importedName === "default"
-          ? stubValue(hasClassSideEffect(options) ? CLASS_HEAD_STUB : HEAD_STUB)
-          : null;
+        return importedName === "default" ? stubValue(head) : null;
       case "next/script":
         return importedName === "default" ? stubValue(scriptStub(options.kind)) : null;
       case "next/dynamic":
