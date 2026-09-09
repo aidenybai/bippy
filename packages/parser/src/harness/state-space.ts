@@ -142,7 +142,10 @@ const repeatCondition = (node: PatternRepeat, count: number): RepeatCondition =>
 });
 
 /** A single commit needs no transition to select it. */
-const transitionCondition = (commit: number, commitCount: number): TransitionCondition | null =>
+export const transitionCondition = (
+  commit: number,
+  commitCount: number,
+): TransitionCondition | null =>
   commitCount > 1 ? { kind: "transition", commit, commitCount } : null;
 
 const iterationScope = (node: PatternRepeat, iteration: number): string =>

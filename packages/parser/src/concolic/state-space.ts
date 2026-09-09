@@ -4,7 +4,12 @@ import {
 } from "../frameworks/framework-profile.js";
 import type { StaticRenderStateSpace } from "../harness/compare-render.js";
 import { findSnapshotFiber, type RuntimeSnapshot } from "../harness/snapshot.js";
-import type { StateCondition, StateOmission, StaticState } from "../harness/state-space.js";
+import {
+  transitionCondition,
+  type StateCondition,
+  type StateOmission,
+  type StaticState,
+} from "../harness/state-space.js";
 import {
   flattenPatternFibers,
   formatPattern,
@@ -15,9 +20,11 @@ import type { Decision, PinnedDecision } from "./decisions.js";
 import { MAX_PATHS, type ConcolicExploration } from "./explore.js";
 import { MAX_SYMBOLIC_LIST_COUNT } from "./hooks.js";
 
-// Each explored path is one fully decided state: its committed tree under the
-// decisions it took. The paths not run (budget) and the paths that failed are
-// the omissions, so the assembled space is never mistaken for complete.
+// Each distinct committed tree is one state. The trees are fully concrete, so
+// `matchStateSpace` selects one by commit index rather than by branch decision;
+// the decisions that produced each tree stay on the explored paths. The paths
+// not run (budget) and the paths that failed are the omissions, so the
+// assembled space is never mistaken for complete.
 
 const toCondition = (decision: Decision): StateCondition => ({
   kind: "branch",
@@ -67,6 +74,8 @@ const patternOf = (
 export interface AssembledStateSpace extends StaticRenderStateSpace {
   /** Paths whose trees were identical to an earlier path's. */
   duplicatePaths: number;
+  /** Decisions of the first path that produced each state's tree. */
+  stateDecisions: StateCondition[][];
 }
 
 export const assembleStateSpace = (
@@ -78,10 +87,10 @@ export const assembleStateSpace = (
   for (const path of exploration.paths) {
     for (const decision of path.decisions) known.set(decision.key, decision);
   }
-  const states: StaticState[] = [];
   const omissions: StateOmission[] = [];
   const seen = new Set<string>();
   const commits: PatternNode[][] = [];
+  const stateDecisions: StateCondition[][] = [];
   let duplicatePaths = 0;
   let unresolved: string | null = null;
   for (const path of exploration.paths) {
@@ -104,9 +113,13 @@ export const assembleStateSpace = (
       continue;
     }
     seen.add(rendered);
-    states.push({ tree, conditions: path.decisions.map(toCondition) });
     commits.push(tree);
+    stateDecisions.push(path.decisions.map(toCondition));
   }
+  const states: StaticState[] = commits.map((tree, commit) => {
+    const transition = transitionCondition(commit, commits.length);
+    return { tree, conditions: transition ? [transition] : [] };
+  });
   for (const omitted of exploration.omitted) {
     omissions.push({ kind: "state", conditions: pinnedToConditions(omitted.pinned, known) });
   }
@@ -119,5 +132,6 @@ export const assembleStateSpace = (
     anchor,
     unresolved: states.length === 0 ? (unresolved ?? "no path committed a tree") : null,
     duplicatePaths,
+    stateDecisions,
   };
 };

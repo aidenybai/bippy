@@ -12,6 +12,7 @@ import { getFrameworkProfile } from "../frameworks/profiles.js";
 import type { BrowserCaptureResult } from "../harness/capture-browser.js";
 import type { ComparisonReport } from "../harness/compare.js";
 import { compareStaticToRuntime, type CompareRenderResult } from "../harness/compare-render.js";
+import { formatStateCondition } from "../harness/format-report.js";
 import { ModuleGraph } from "../graph/module-graph.js";
 import { ModuleResolver } from "../graph/module-resolver.js";
 import { countSnapshotFibers } from "../harness/snapshot.js";
@@ -47,6 +48,8 @@ export interface ConcolicEntryResult {
   status: ComparisonReport["status"] | "failed";
   report: ComparisonReport | null;
   matchedState: number | null;
+  /** Decisions of the path whose tree the runtime capture matched. */
+  matchedDecisions: string[];
   runtimeFibers: number;
   states: number;
   pathsExplored: number;
@@ -179,6 +182,7 @@ export const runConcolicEntry = async (
     status: "failed",
     report: null,
     matchedState: null,
+    matchedDecisions: [],
     runtimeFibers: 0,
     states: 0,
     pathsExplored: 0,
@@ -308,6 +312,10 @@ export const runConcolicEntry = async (
     result.report = comparison.report;
     result.status = comparison.report.status;
     result.matchedState = comparison.matchedState?.index ?? null;
+    result.matchedDecisions =
+      result.matchedState === null
+        ? []
+        : stateSpace.stateDecisions[result.matchedState].map(formatStateCondition);
     if (comparison.note)
       result.note = [result.note, comparison.note].filter((part) => part !== null).join("; ");
     return run;

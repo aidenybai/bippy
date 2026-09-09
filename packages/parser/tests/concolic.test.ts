@@ -11,6 +11,7 @@ import { createSpaRunner } from "../src/concolic/spa-runner.js";
 import { assembleStateSpace } from "../src/concolic/state-space.js";
 import { SPA_PROFILE } from "../src/frameworks/index.js";
 import { ModuleResolver } from "../src/graph/module-resolver.js";
+import { compareStaticToRuntime } from "../src/harness/compare-render.js";
 import type { RuntimeFiberSnapshot } from "../src/harness/snapshot.js";
 import { MARKER_NAMES } from "../src/materialize/markers.js";
 
@@ -156,6 +157,18 @@ describe("concolic exploration", () => {
     expect(stateSpace.states).toHaveLength(4);
     expect(stateSpace.omitted).toBeNull();
     expect(stateSpace.duplicatePaths).toBe(0);
+    expect(stateSpace.stateDecisions.map((decisions) => decisions.length)).toEqual([2, 2, 2, 2]);
+
+    const matches = exploration.paths.map((path) =>
+      compareStaticToRuntime(stateSpace, path.snapshot, {}),
+    );
+    expect(matches.map((match) => match.report.status)).toEqual([
+      "exact",
+      "exact",
+      "exact",
+      "exact",
+    ]);
+    expect(matches.map((match) => match.matchedState?.index)).toEqual([0, 1, 2, 3]);
   });
 });
 

@@ -111,6 +111,9 @@ for (const entry of selected) {
     records.push(result);
     if (values.verbose && result.report && run.comparison) {
       console.log(formatComparisonReport(result.report, summarizeStateSpace(run.comparison)));
+      if (result.matchedDecisions.length > 0) {
+        console.log(`matched path decisions:\n  ${result.matchedDecisions.join("\n  ")}`);
+      }
     }
     if (result.failure) console.error(`[${entry.id}] failed: ${result.failure}`);
     const leakCount = result.leaks.reduce((sum, leak) => sum + leak.count, 0);
