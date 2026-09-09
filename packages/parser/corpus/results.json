@@ -332,8 +332,8 @@
       "id": "bldrs-share",
       "revision": "4e1443551d84a24e669bbdc699f48b0ff87947ac",
       "framework": "react-router",
-      "capturedAt": "2026-09-09T15:18:13.841Z",
-      "durationMs": 3084,
+      "capturedAt": "2026-09-09T16:24:11.471Z",
+      "durationMs": 3207,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -3693,8 +3693,8 @@
       "id": "ens-app-v3",
       "revision": "89f8681d524e9f40511dadd016ee95a6abff346d",
       "framework": "next-pages",
-      "capturedAt": "2026-09-09T15:57:59.981Z",
-      "durationMs": 5865,
+      "capturedAt": "2026-09-09T16:24:26.642Z",
+      "durationMs": 5284,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -3725,12 +3725,12 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 429,
+          "fiberCount": 434,
           "textCount": 2,
-          "branchCount": 15,
+          "branchCount": 16,
           "repeatCount": 1,
           "opaqueCount": 9,
-          "unknownCount": 22,
+          "unknownCount": 23,
           "modulesLoaded": 731
         },
         "diagnostics": [
@@ -3776,7 +3776,7 @@
         "matchedState": null,
         "closestState": null,
         "omitted": {
-          "total": 8,
+          "total": 10,
           "omissions": [
             {
               "kind": "repeat",
@@ -3807,7 +3807,7 @@
                   "variable": "branch#2",
                   "reason": "if (<boolean: !== on dynamic values>)",
                   "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/UpgradeBanner/UpgradeBanner.tsx:154:3",
-                  "alternativeIndex": 1,
+                  "alternativeIndex": 0,
                   "alternativeCount": 2
                 },
                 {
@@ -3823,7 +3823,7 @@
                   "variable": "branch#4",
                   "reason": "&& on branch(true | <boolean> | unknown | undefined)",
                   "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/FaucetBanner.tsx:145:8",
-                  "alternativeIndex": 1,
+                  "alternativeIndex": 2,
                   "alternativeCount": 3
                 },
                 {
@@ -3855,7 +3855,7 @@
                   "variable": "branch#6",
                   "reason": "if (<boolean: negation of unknown>)",
                   "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/SearchInput/SearchInput.tsx:478:5",
-                  "alternativeIndex": 1,
+                  "alternativeIndex": 0,
                   "alternativeCount": 2
                 },
                 {
@@ -3863,6 +3863,22 @@
                   "variable": "repeat#7",
                   "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/SearchInput/SearchInput.tsx:513:33",
                   "count": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(273)@repeat#7[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of slice with dynamic bounds))",
+                  "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/SearchInput/SearchInput.tsx:704:13",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(273)@repeat#7[1]",
+                  "reason": "conditional on unknown(spread of unknown(call of slice with dynamic bounds))",
+                  "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/SearchInput/SearchInput.tsx:704:13",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
                 },
                 {
                   "kind": "branch",
@@ -3874,7 +3890,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(394)",
+                  "variable": "truthy(386)",
                   "reason": "&& on react-i18next#useTranslation().t()",
                   "location": "/home/ubuntu/bippy-corpus/ens-app-v3/node_modules/.pnpm/@ensdomains+thorin@1.0.0-beta.28_@vanilla-extract+css@1.15.5_babel-plugin-macros@3.1.0__5aa4b824608b8a5e61437e74b6327627/node_modules/@ensdomain…",
                   "alternativeIndex": 1,
@@ -3902,7 +3918,7 @@
                   "variable": "branch#2",
                   "reason": "if (<boolean: !== on dynamic values>)",
                   "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/UpgradeBanner/UpgradeBanner.tsx:154:3",
-                  "alternativeIndex": 1,
+                  "alternativeIndex": 0,
                   "alternativeCount": 2
                 },
                 {
@@ -3918,7 +3934,7 @@
                   "variable": "branch#4",
                   "reason": "&& on branch(true | <boolean> | unknown | undefined)",
                   "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/FaucetBanner.tsx:145:8",
-                  "alternativeIndex": 1,
+                  "alternativeIndex": 2,
                   "alternativeCount": 3
                 },
                 {
@@ -3950,7 +3966,7 @@
                   "variable": "branch#6",
                   "reason": "if (<boolean: negation of unknown>)",
                   "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/SearchInput/SearchInput.tsx:478:5",
-                  "alternativeIndex": 1,
+                  "alternativeIndex": 0,
                   "alternativeCount": 2
                 },
                 {
@@ -3958,6 +3974,174 @@
                   "variable": "repeat#7",
                   "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/SearchInput/SearchInput.tsx:513:33",
                   "count": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(273)@repeat#7[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of slice with dynamic bounds))",
+                  "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/SearchInput/SearchInput.tsx:704:13",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(273)@repeat#7[1]",
+                  "reason": "conditional on unknown(spread of unknown(call of slice with dynamic bounds))",
+                  "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/SearchInput/SearchInput.tsx:704:13",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(273)@repeat#7[1]",
+              "reason": "conditional on unknown(spread of unknown(call of slice with dynamic bounds))",
+              "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/SearchInput/SearchInput.tsx:704:13",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(<boolean> | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/NetworkNotifications/NetworkNotifications.tsx:30:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#2",
+                  "reason": "if (<boolean: !== on dynamic values>)",
+                  "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/UpgradeBanner/UpgradeBanner.tsx:154:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#3",
+                  "reason": "if (branch(true | <boolean> | false))",
+                  "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/FaucetBanner.tsx:75:3",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#4",
+                  "reason": "&& on branch(true | <boolean> | unknown | undefined)",
+                  "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/FaucetBanner.tsx:145:8",
+                  "alternativeIndex": 2,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(119)",
+                  "reason": "&& on wagmi#useAccount().address",
+                  "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/FaucetBanner.tsx:146:8",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(277)",
+                  "reason": "&& on <boolean: !== on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/SearchInput/SearchInput.tsx:179:8",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5",
+                  "reason": "if (<number: length of a partially known list>)",
+                  "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/SearchInput/SearchInput.tsx:555:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/SearchInput/SearchInput.tsx:478:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#7",
+                  "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/SearchInput/SearchInput.tsx:513:33",
+                  "count": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(273)@repeat#7[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of slice with dynamic bounds))",
+                  "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/SearchInput/SearchInput.tsx:704:13",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#6",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/SearchInput/SearchInput.tsx:478:5",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(<boolean> | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/NetworkNotifications/NetworkNotifications.tsx:30:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#2",
+                  "reason": "if (<boolean: !== on dynamic values>)",
+                  "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/UpgradeBanner/UpgradeBanner.tsx:154:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#3",
+                  "reason": "if (branch(true | <boolean> | false))",
+                  "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/FaucetBanner.tsx:75:3",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#4",
+                  "reason": "&& on branch(true | <boolean> | unknown | undefined)",
+                  "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/FaucetBanner.tsx:145:8",
+                  "alternativeIndex": 2,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(119)",
+                  "reason": "&& on wagmi#useAccount().address",
+                  "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/FaucetBanner.tsx:146:8",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(277)",
+                  "reason": "&& on <boolean: !== on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/SearchInput/SearchInput.tsx:179:8",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5",
+                  "reason": "if (<number: length of a partially known list>)",
+                  "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/SearchInput/SearchInput.tsx:555:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
                 }
               ]
             },
@@ -3981,7 +4165,7 @@
                   "variable": "branch#2",
                   "reason": "if (<boolean: !== on dynamic values>)",
                   "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/UpgradeBanner/UpgradeBanner.tsx:154:3",
-                  "alternativeIndex": 1,
+                  "alternativeIndex": 0,
                   "alternativeCount": 2
                 },
                 {
@@ -3997,7 +4181,7 @@
                   "variable": "branch#4",
                   "reason": "&& on branch(true | <boolean> | unknown | undefined)",
                   "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/FaucetBanner.tsx:145:8",
-                  "alternativeIndex": 1,
+                  "alternativeIndex": 2,
                   "alternativeCount": 3
                 },
                 {
@@ -4038,7 +4222,7 @@
                   "variable": "branch#2",
                   "reason": "if (<boolean: !== on dynamic values>)",
                   "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/UpgradeBanner/UpgradeBanner.tsx:154:3",
-                  "alternativeIndex": 1,
+                  "alternativeIndex": 0,
                   "alternativeCount": 2
                 },
                 {
@@ -4054,7 +4238,7 @@
                   "variable": "branch#4",
                   "reason": "&& on branch(true | <boolean> | unknown | undefined)",
                   "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/FaucetBanner.tsx:145:8",
-                  "alternativeIndex": 1,
+                  "alternativeIndex": 2,
                   "alternativeCount": 3
                 },
                 {
@@ -4087,7 +4271,7 @@
                   "variable": "branch#2",
                   "reason": "if (<boolean: !== on dynamic values>)",
                   "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/UpgradeBanner/UpgradeBanner.tsx:154:3",
-                  "alternativeIndex": 1,
+                  "alternativeIndex": 0,
                   "alternativeCount": 2
                 },
                 {
@@ -4103,17 +4287,17 @@
                   "variable": "branch#4",
                   "reason": "&& on branch(true | <boolean> | unknown | undefined)",
                   "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/FaucetBanner.tsx:145:8",
-                  "alternativeIndex": 1,
+                  "alternativeIndex": 2,
                   "alternativeCount": 3
                 }
               ]
             },
             {
               "kind": "branch",
-              "variable": "branch#4",
-              "reason": "&& on branch(true | <boolean> | unknown | undefined)",
-              "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/FaucetBanner.tsx:145:8",
-              "alternativeIndex": 2,
+              "variable": "branch#2",
+              "reason": "if (<boolean: !== on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/UpgradeBanner/UpgradeBanner.tsx:154:3",
+              "alternativeIndex": 1,
               "conditions": [
                 {
                   "kind": "branch",
@@ -4121,22 +4305,6 @@
                   "reason": "if (branch(<boolean> | true))",
                   "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/NetworkNotifications/NetworkNotifications.tsx:30:3",
                   "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#2",
-                  "reason": "if (<boolean: !== on dynamic values>)",
-                  "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/UpgradeBanner/UpgradeBanner.tsx:154:3",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#3",
-                  "reason": "if (branch(true | <boolean> | false))",
-                  "location": "/home/ubuntu/bippy-corpus/ens-app-v3/src/components/@molecules/FaucetBanner.tsx:75:3",
-                  "alternativeIndex": 1,
                   "alternativeCount": 2
                 }
               ]
@@ -4437,8 +4605,8 @@
       "id": "excel-collab",
       "revision": "0bcd8992021db01f28285c307a9ac4d2793d1217",
       "framework": "spa",
-      "capturedAt": "2026-09-09T15:18:26.395Z",
-      "durationMs": 878,
+      "capturedAt": "2026-09-09T16:24:24.435Z",
+      "durationMs": 951,
       "runtime": {
         "reactVersion": "19.2.8",
         "rendererName": "react-dom",
@@ -4451,12 +4619,12 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 579,
+          "fiberCount": 648,
           "textCount": 2,
-          "branchCount": 28,
+          "branchCount": 35,
           "repeatCount": 2,
           "opaqueCount": 0,
-          "unknownCount": 5,
+          "unknownCount": 11,
           "modulesLoaded": 151
         },
         "diagnostics": [
@@ -4501,7 +4669,7 @@
             },
             {
               "kind": "branch",
-              "variable": "branch#26",
+              "variable": "branch#32",
               "reason": "callback for an item that may not occur",
               "location": null,
               "alternativeIndex": 1,
@@ -4509,13 +4677,13 @@
             },
             {
               "kind": "repeat",
-              "variable": "repeat#27",
+              "variable": "repeat#33",
               "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/model/workbook.ts:91:18",
               "count": 10
             },
             {
               "kind": "branch",
-              "variable": "branch#28@repeat#27[9]",
+              "variable": "branch#34@repeat#33[9]",
               "reason": "&& on branch(unknown | \"\" | false)",
               "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/SheetBar/index.tsx:137:22",
               "alternativeIndex": 1,
@@ -4523,7 +4691,7 @@
             },
             {
               "kind": "branch",
-              "variable": "branch#28@repeat#27[8]",
+              "variable": "branch#34@repeat#33[8]",
               "reason": "&& on branch(unknown | \"\" | false)",
               "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/SheetBar/index.tsx:137:22",
               "alternativeIndex": 1,
@@ -4531,7 +4699,7 @@
             },
             {
               "kind": "branch",
-              "variable": "branch#28@repeat#27[7]",
+              "variable": "branch#34@repeat#33[7]",
               "reason": "&& on branch(unknown | \"\" | false)",
               "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/SheetBar/index.tsx:137:22",
               "alternativeIndex": 1,
@@ -4539,7 +4707,7 @@
             },
             {
               "kind": "branch",
-              "variable": "branch#28@repeat#27[6]",
+              "variable": "branch#34@repeat#33[6]",
               "reason": "&& on branch(unknown | \"\" | false)",
               "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/SheetBar/index.tsx:137:22",
               "alternativeIndex": 1,
@@ -4547,7 +4715,7 @@
             },
             {
               "kind": "branch",
-              "variable": "branch#28@repeat#27[5]",
+              "variable": "branch#34@repeat#33[5]",
               "reason": "&& on branch(unknown | \"\" | false)",
               "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/SheetBar/index.tsx:137:22",
               "alternativeIndex": 1,
@@ -4555,7 +4723,7 @@
             },
             {
               "kind": "branch",
-              "variable": "branch#28@repeat#27[4]",
+              "variable": "branch#34@repeat#33[4]",
               "reason": "&& on branch(unknown | \"\" | false)",
               "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/SheetBar/index.tsx:137:22",
               "alternativeIndex": 1,
@@ -4563,7 +4731,7 @@
             },
             {
               "kind": "branch",
-              "variable": "branch#28@repeat#27[3]",
+              "variable": "branch#34@repeat#33[3]",
               "reason": "&& on branch(unknown | \"\" | false)",
               "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/SheetBar/index.tsx:137:22",
               "alternativeIndex": 1,
@@ -4571,7 +4739,7 @@
             },
             {
               "kind": "branch",
-              "variable": "branch#28@repeat#27[2]",
+              "variable": "branch#34@repeat#33[2]",
               "reason": "&& on branch(unknown | \"\" | false)",
               "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/SheetBar/index.tsx:137:22",
               "alternativeIndex": 1,
@@ -4579,7 +4747,7 @@
             },
             {
               "kind": "branch",
-              "variable": "branch#28@repeat#27[1]",
+              "variable": "branch#34@repeat#33[1]",
               "reason": "&& on branch(unknown | \"\" | false)",
               "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/SheetBar/index.tsx:137:22",
               "alternativeIndex": 1,
@@ -4587,7 +4755,7 @@
             },
             {
               "kind": "branch",
-              "variable": "branch#28@repeat#27[0]",
+              "variable": "branch#34@repeat#33[0]",
               "reason": "&& on branch(unknown | \"\" | false)",
               "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/SheetBar/index.tsx:137:22",
               "alternativeIndex": 0,
@@ -4595,7 +4763,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(5989)",
+              "variable": "truthy(6238)",
               "reason": "&& on <boolean: > on dynamic values>",
               "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/canvas/index.tsx:130:10",
               "alternativeIndex": 1,
@@ -4769,7 +4937,7 @@
             },
             {
               "kind": "repeat",
-              "variable": "repeat#25",
+              "variable": "repeat#29",
               "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/model/workbook.ts:91:18",
               "countsAbove": 2,
               "max": null,
@@ -4937,7 +5105,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(2430)",
+                  "variable": "truthy(2429)",
                   "reason": "&& on <boolean: > on dynamic values>",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/canvas/index.tsx:130:10",
                   "alternativeIndex": 0,
@@ -4947,19 +5115,19 @@
                   "kind": "repeat",
                   "variable": "repeat#20",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/canvas/util.ts:239:5",
-                  "count": 2
+                  "count": 1
                 },
                 {
                   "kind": "branch",
                   "variable": "branch#21@repeat#20[0]",
-                  "reason": "if (<boolean: === on dynamic values>)",
-                  "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:55:5",
-                  "alternativeIndex": 0,
+                  "reason": "if (branch(<boolean> | false))",
+                  "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/canvas/util.ts:255:7",
+                  "alternativeIndex": 1,
                   "alternativeCount": 2
                 },
                 {
                   "kind": "branch",
-                  "variable": "branch#21@repeat#20[1]",
+                  "variable": "branch#25@repeat#20[0]",
                   "reason": "if (<boolean: === on dynamic values>)",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:55:5",
                   "alternativeIndex": 1,
@@ -4967,7 +5135,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "branch#22@repeat#20[1]",
+                  "variable": "branch#26@repeat#20[0]",
                   "reason": "conditional on <boolean: === on dynamic values>",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:83:15",
                   "alternativeIndex": 0,
@@ -4975,7 +5143,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "branch#23@repeat#20[1]",
+                  "variable": "branch#27@repeat#20[0]",
                   "reason": "&& on branch(<boolean> | false)",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:91:12",
                   "alternativeIndex": 0,
@@ -4983,7 +5151,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(2461)@repeat#20[1]",
+                  "variable": "truthy(2470)@repeat#20[0]",
                   "reason": "&& on <boolean: === on dynamic values>",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:175:16",
                   "alternativeIndex": 1,
@@ -4991,7 +5159,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "branch#24",
+                  "variable": "branch#28",
                   "reason": "callback for an item that may not occur",
                   "location": null,
                   "alternativeIndex": 1,
@@ -4999,13 +5167,13 @@
                 },
                 {
                   "kind": "repeat",
-                  "variable": "repeat#25",
+                  "variable": "repeat#29",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/model/workbook.ts:91:18",
                   "count": 1
                 },
                 {
                   "kind": "branch",
-                  "variable": "branch#26@repeat#25[0]",
+                  "variable": "branch#30@repeat#29[0]",
                   "reason": "&& on branch(unknown | \"\" | false)",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/SheetBar/index.tsx:137:22",
                   "alternativeIndex": 1,
@@ -5015,7 +5183,7 @@
             },
             {
               "kind": "branch",
-              "variable": "branch#26@repeat#25[0]",
+              "variable": "branch#30@repeat#29[0]",
               "reason": "&& on branch(unknown | \"\" | false)",
               "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/SheetBar/index.tsx:137:22",
               "alternativeIndex": 2,
@@ -5174,7 +5342,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(2430)",
+                  "variable": "truthy(2429)",
                   "reason": "&& on <boolean: > on dynamic values>",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/canvas/index.tsx:130:10",
                   "alternativeIndex": 0,
@@ -5184,19 +5352,19 @@
                   "kind": "repeat",
                   "variable": "repeat#20",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/canvas/util.ts:239:5",
-                  "count": 2
+                  "count": 1
                 },
                 {
                   "kind": "branch",
                   "variable": "branch#21@repeat#20[0]",
-                  "reason": "if (<boolean: === on dynamic values>)",
-                  "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:55:5",
-                  "alternativeIndex": 0,
+                  "reason": "if (branch(<boolean> | false))",
+                  "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/canvas/util.ts:255:7",
+                  "alternativeIndex": 1,
                   "alternativeCount": 2
                 },
                 {
                   "kind": "branch",
-                  "variable": "branch#21@repeat#20[1]",
+                  "variable": "branch#25@repeat#20[0]",
                   "reason": "if (<boolean: === on dynamic values>)",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:55:5",
                   "alternativeIndex": 1,
@@ -5204,7 +5372,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "branch#22@repeat#20[1]",
+                  "variable": "branch#26@repeat#20[0]",
                   "reason": "conditional on <boolean: === on dynamic values>",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:83:15",
                   "alternativeIndex": 0,
@@ -5212,7 +5380,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "branch#23@repeat#20[1]",
+                  "variable": "branch#27@repeat#20[0]",
                   "reason": "&& on branch(<boolean> | false)",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:91:12",
                   "alternativeIndex": 0,
@@ -5220,7 +5388,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(2461)@repeat#20[1]",
+                  "variable": "truthy(2470)@repeat#20[0]",
                   "reason": "&& on <boolean: === on dynamic values>",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:175:16",
                   "alternativeIndex": 1,
@@ -5228,7 +5396,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "branch#24",
+                  "variable": "branch#28",
                   "reason": "callback for an item that may not occur",
                   "location": null,
                   "alternativeIndex": 1,
@@ -5236,7 +5404,7 @@
                 },
                 {
                   "kind": "repeat",
-                  "variable": "repeat#25",
+                  "variable": "repeat#29",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/model/workbook.ts:91:18",
                   "count": 1
                 }
@@ -5244,7 +5412,7 @@
             },
             {
               "kind": "branch",
-              "variable": "branch#26@repeat#25[0]",
+              "variable": "branch#30@repeat#29[0]",
               "reason": "&& on branch(unknown | \"\" | false)",
               "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/SheetBar/index.tsx:137:22",
               "alternativeIndex": 3,
@@ -5403,7 +5571,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(2430)",
+                  "variable": "truthy(2429)",
                   "reason": "&& on <boolean: > on dynamic values>",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/canvas/index.tsx:130:10",
                   "alternativeIndex": 0,
@@ -5413,19 +5581,19 @@
                   "kind": "repeat",
                   "variable": "repeat#20",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/canvas/util.ts:239:5",
-                  "count": 2
+                  "count": 1
                 },
                 {
                   "kind": "branch",
                   "variable": "branch#21@repeat#20[0]",
-                  "reason": "if (<boolean: === on dynamic values>)",
-                  "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:55:5",
-                  "alternativeIndex": 0,
+                  "reason": "if (branch(<boolean> | false))",
+                  "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/canvas/util.ts:255:7",
+                  "alternativeIndex": 1,
                   "alternativeCount": 2
                 },
                 {
                   "kind": "branch",
-                  "variable": "branch#21@repeat#20[1]",
+                  "variable": "branch#25@repeat#20[0]",
                   "reason": "if (<boolean: === on dynamic values>)",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:55:5",
                   "alternativeIndex": 1,
@@ -5433,7 +5601,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "branch#22@repeat#20[1]",
+                  "variable": "branch#26@repeat#20[0]",
                   "reason": "conditional on <boolean: === on dynamic values>",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:83:15",
                   "alternativeIndex": 0,
@@ -5441,7 +5609,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "branch#23@repeat#20[1]",
+                  "variable": "branch#27@repeat#20[0]",
                   "reason": "&& on branch(<boolean> | false)",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:91:12",
                   "alternativeIndex": 0,
@@ -5449,7 +5617,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(2461)@repeat#20[1]",
+                  "variable": "truthy(2470)@repeat#20[0]",
                   "reason": "&& on <boolean: === on dynamic values>",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:175:16",
                   "alternativeIndex": 1,
@@ -5457,7 +5625,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "branch#24",
+                  "variable": "branch#28",
                   "reason": "callback for an item that may not occur",
                   "location": null,
                   "alternativeIndex": 1,
@@ -5465,7 +5633,7 @@
                 },
                 {
                   "kind": "repeat",
-                  "variable": "repeat#25",
+                  "variable": "repeat#29",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/model/workbook.ts:91:18",
                   "count": 1
                 }
@@ -5473,7 +5641,7 @@
             },
             {
               "kind": "repeat",
-              "variable": "repeat#25",
+              "variable": "repeat#29",
               "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/model/workbook.ts:91:18",
               "countsAbove": 1,
               "max": null,
@@ -5632,7 +5800,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(2430)",
+                  "variable": "truthy(2429)",
                   "reason": "&& on <boolean: > on dynamic values>",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/canvas/index.tsx:130:10",
                   "alternativeIndex": 0,
@@ -5642,19 +5810,19 @@
                   "kind": "repeat",
                   "variable": "repeat#20",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/canvas/util.ts:239:5",
-                  "count": 2
+                  "count": 1
                 },
                 {
                   "kind": "branch",
                   "variable": "branch#21@repeat#20[0]",
-                  "reason": "if (<boolean: === on dynamic values>)",
-                  "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:55:5",
-                  "alternativeIndex": 0,
+                  "reason": "if (branch(<boolean> | false))",
+                  "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/canvas/util.ts:255:7",
+                  "alternativeIndex": 1,
                   "alternativeCount": 2
                 },
                 {
                   "kind": "branch",
-                  "variable": "branch#21@repeat#20[1]",
+                  "variable": "branch#25@repeat#20[0]",
                   "reason": "if (<boolean: === on dynamic values>)",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:55:5",
                   "alternativeIndex": 1,
@@ -5662,7 +5830,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "branch#22@repeat#20[1]",
+                  "variable": "branch#26@repeat#20[0]",
                   "reason": "conditional on <boolean: === on dynamic values>",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:83:15",
                   "alternativeIndex": 0,
@@ -5670,7 +5838,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "branch#23@repeat#20[1]",
+                  "variable": "branch#27@repeat#20[0]",
                   "reason": "&& on branch(<boolean> | false)",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:91:12",
                   "alternativeIndex": 0,
@@ -5678,7 +5846,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(2461)@repeat#20[1]",
+                  "variable": "truthy(2470)@repeat#20[0]",
                   "reason": "&& on <boolean: === on dynamic values>",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:175:16",
                   "alternativeIndex": 1,
@@ -5686,7 +5854,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "branch#24",
+                  "variable": "branch#28",
                   "reason": "callback for an item that may not occur",
                   "location": null,
                   "alternativeIndex": 1,
@@ -5696,7 +5864,7 @@
             },
             {
               "kind": "branch",
-              "variable": "branch#23@repeat#20[1]",
+              "variable": "branch#27@repeat#20[0]",
               "reason": "&& on branch(<boolean> | false)",
               "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:91:12",
               "alternativeIndex": 1,
@@ -5855,7 +6023,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(2430)",
+                  "variable": "truthy(2429)",
                   "reason": "&& on <boolean: > on dynamic values>",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/canvas/index.tsx:130:10",
                   "alternativeIndex": 0,
@@ -5865,19 +6033,19 @@
                   "kind": "repeat",
                   "variable": "repeat#20",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/canvas/util.ts:239:5",
-                  "count": 2
+                  "count": 1
                 },
                 {
                   "kind": "branch",
                   "variable": "branch#21@repeat#20[0]",
-                  "reason": "if (<boolean: === on dynamic values>)",
-                  "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:55:5",
-                  "alternativeIndex": 0,
+                  "reason": "if (branch(<boolean> | false))",
+                  "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/canvas/util.ts:255:7",
+                  "alternativeIndex": 1,
                   "alternativeCount": 2
                 },
                 {
                   "kind": "branch",
-                  "variable": "branch#21@repeat#20[1]",
+                  "variable": "branch#25@repeat#20[0]",
                   "reason": "if (<boolean: === on dynamic values>)",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:55:5",
                   "alternativeIndex": 1,
@@ -5885,7 +6053,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "branch#22@repeat#20[1]",
+                  "variable": "branch#26@repeat#20[0]",
                   "reason": "conditional on <boolean: === on dynamic values>",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:83:15",
                   "alternativeIndex": 0,
@@ -5895,7 +6063,7 @@
             },
             {
               "kind": "branch",
-              "variable": "branch#22@repeat#20[1]",
+              "variable": "branch#26@repeat#20[0]",
               "reason": "conditional on <boolean: === on dynamic values>",
               "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:83:15",
               "alternativeIndex": 1,
@@ -6054,7 +6222,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(2430)",
+                  "variable": "truthy(2429)",
                   "reason": "&& on <boolean: > on dynamic values>",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/canvas/index.tsx:130:10",
                   "alternativeIndex": 0,
@@ -6064,19 +6232,19 @@
                   "kind": "repeat",
                   "variable": "repeat#20",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/canvas/util.ts:239:5",
-                  "count": 2
+                  "count": 1
                 },
                 {
                   "kind": "branch",
                   "variable": "branch#21@repeat#20[0]",
-                  "reason": "if (<boolean: === on dynamic values>)",
-                  "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:55:5",
-                  "alternativeIndex": 0,
+                  "reason": "if (branch(<boolean> | false))",
+                  "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/canvas/util.ts:255:7",
+                  "alternativeIndex": 1,
                   "alternativeCount": 2
                 },
                 {
                   "kind": "branch",
-                  "variable": "branch#21@repeat#20[1]",
+                  "variable": "branch#25@repeat#20[0]",
                   "reason": "if (<boolean: === on dynamic values>)",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:55:5",
                   "alternativeIndex": 1,
@@ -6085,11 +6253,11 @@
               ]
             },
             {
-              "kind": "branch",
-              "variable": "branch#21@repeat#20[0]",
-              "reason": "if (<boolean: === on dynamic values>)",
-              "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/FloatElement/FloatElement.tsx:55:5",
-              "alternativeIndex": 1,
+              "kind": "repeat",
+              "variable": "repeat#20",
+              "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/canvas/util.ts:239:5",
+              "countsAbove": 1,
+              "max": null,
               "conditions": [
                 {
                   "kind": "branch",
@@ -6245,23 +6413,17 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(2430)",
+                  "variable": "truthy(2429)",
                   "reason": "&& on <boolean: > on dynamic values>",
                   "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/canvas/index.tsx:130:10",
                   "alternativeIndex": 0,
                   "alternativeCount": 2
-                },
-                {
-                  "kind": "repeat",
-                  "variable": "repeat#20",
-                  "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/canvas/util.ts:239:5",
-                  "count": 2
                 }
               ]
             },
             {
               "kind": "branch",
-              "variable": "truthy(2430)",
+              "variable": "truthy(2429)",
               "reason": "&& on <boolean: > on dynamic values>",
               "location": "/home/ubuntu/bippy-corpus/excel-collab/packages/excel-collab/src/containers/canvas/index.tsx:130:10",
               "alternativeIndex": 1,
@@ -10593,8 +10755,8 @@
       "id": "heyform",
       "revision": "92aa9f4269a8f6b61d5154d00f8a3ca11d5c5ee3",
       "framework": "spa",
-      "capturedAt": "2026-09-09T15:18:28.422Z",
-      "durationMs": 2370007,
+      "capturedAt": "2026-09-09T16:24:37.824Z",
+      "durationMs": 2563659,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -23677,8 +23839,8 @@
       "id": "open-tacos",
       "revision": "30aa8c7f2843f077842b3ae34fb8d6845fa942b3",
       "framework": "next-app",
-      "capturedAt": "2026-09-09T15:18:23.004Z",
-      "durationMs": 2250,
+      "capturedAt": "2026-09-09T16:24:20.798Z",
+      "durationMs": 2459,
       "runtime": {
         "reactVersion": "18.3.0-canary-178c267a4e-20241218",
         "rendererName": "react-dom",
@@ -23963,7 +24125,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(472)",
+              "variable": "truthy(469)",
               "reason": "conditional on zustand#create()()()",
               "location": "/home/ubuntu/bippy-corpus/open-tacos/src/app/(default)/components/ui/GlobalAlerts.tsx:7:10",
               "alternativeIndex": 1,
@@ -23999,7 +24161,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(667)",
+              "variable": "truthy(646)",
               "reason": "&& on <boolean: == on dynamic values>",
               "location": "/home/ubuntu/bippy-corpus/open-tacos/src/components/broadcast/AppAlert.tsx:28:5",
               "alternativeIndex": 0,
@@ -24007,7 +24169,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(627)",
+              "variable": "truthy(609)",
               "reason": "conditional on branch(false | true)",
               "location": "/home/ubuntu/bippy-corpus/open-tacos/src/app/(default)/components/MobileHeader.tsx:14:15",
               "alternativeIndex": 1,
@@ -24161,7 +24323,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(472)",
+                  "variable": "truthy(469)",
                   "reason": "conditional on zustand#create()()()",
                   "location": "/home/ubuntu/bippy-corpus/open-tacos/src/app/(default)/components/ui/GlobalAlerts.tsx:7:10",
                   "alternativeIndex": 0,
@@ -24171,7 +24333,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(472)",
+              "variable": "truthy(469)",
               "reason": "conditional on zustand#create()()()",
               "location": "/home/ubuntu/bippy-corpus/open-tacos/src/app/(default)/components/ui/GlobalAlerts.tsx:7:10",
               "alternativeIndex": 1,
@@ -24547,8 +24709,8 @@
       "id": "openstatus",
       "revision": "e89b614b7b838e4831699c5789cd68f17fa8fbd6",
       "framework": "next-app",
-      "capturedAt": "2026-09-09T15:18:20.609Z",
-      "durationMs": 1262,
+      "capturedAt": "2026-09-09T16:24:18.293Z",
+      "durationMs": 1237,
       "runtime": {
         "reactVersion": "19.3.0-canary-cbb046ab-20260731",
         "rendererName": "react-dom",
@@ -53472,8 +53634,8 @@
       "id": "sqlrooms-ai-agent",
       "revision": "e32002430a308284ef021c9345aeb12fdc87ff42",
       "framework": "spa",
-      "capturedAt": "2026-09-09T15:18:18.100Z",
-      "durationMs": 1351,
+      "capturedAt": "2026-09-09T16:24:15.840Z",
+      "durationMs": 1288,
       "runtime": {
         "reactVersion": "19.2.1",
         "rendererName": "react-dom",
@@ -53542,8 +53704,8 @@
       "id": "standardnotes",
       "revision": "6fcb991e626b0388a2220fa0d94815bf6c0c9f8d",
       "framework": "spa",
-      "capturedAt": "2026-09-09T15:58:07.134Z",
-      "durationMs": 3266,
+      "capturedAt": "2026-09-09T16:24:33.113Z",
+      "durationMs": 3252,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -53572,6 +53734,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "mismatch",
         "matchedFibers": 0,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -53585,7 +53748,6 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "mismatch",
         "runtimeFibers": 3376,
         "staticFibers": 1,
         "coverage": 0,
