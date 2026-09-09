@@ -171,7 +171,7 @@ const savedCaptureSchema = z.object({
 
 // A browser capture saved by an earlier live run; static-only passes replay it so
 // evaluator changes are re-verified against the same runtime tree without a dev server.
-const readSavedCapture = (
+export const readSavedCapture = (
   outputDirectory: string,
   entry: CorpusEntry,
 ): BrowserCaptureResult | null => {

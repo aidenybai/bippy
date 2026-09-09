@@ -80,7 +80,7 @@ const findPageThroughGroups = (directory: string): string[] | null => {
  * specificity (static beats dynamic beats catch-all). Returns the directory
  * chain ending at the directory that owns `page.*`, or null when nothing matches.
  */
-const matchSegments = (
+export const matchSegments = (
   directory: string,
   remaining: string[],
   params: Record<string, string>,

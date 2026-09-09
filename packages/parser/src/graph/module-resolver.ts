@@ -52,6 +52,8 @@ const PACKAGE_ENTRY_FIELDS = z.object({
 const ESM_SYNTAX_PATTERN =
   /([\s;]|^)(import[\w,{}\s*]*from|import\s*['"*{]|export\b\s*(?:[*{]|default|class|type|function|const|var|let|async function)|import\.meta\b)/m;
 
+export const hasEsmSyntax = (sourceText: string): boolean => ESM_SYNTAX_PATTERN.test(sourceText);
+
 const getBrowserEntry = (browser: string | Record<string, unknown> | undefined): string | null => {
   if (typeof browser === "string") return browser;
   const rootEntry = browser?.["."];
@@ -76,7 +78,7 @@ const preferModuleOverNonEsmBrowserEntry = (
   const resolveFromPackage = (entry: string): string | null =>
     resolver.resolveFileSync(packageJsonPath, `./${entry}`).path ?? null;
   if (resolveFromPackage(browserEntry) !== resolvedPath) return null;
-  if (ESM_SYNTAX_PATTERN.test(readFileSync(resolvedPath, "utf8"))) return null;
+  if (hasEsmSyntax(readFileSync(resolvedPath, "utf8"))) return null;
   return resolveFromPackage(module);
 };
 

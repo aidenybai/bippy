@@ -110,3 +110,24 @@ export class ReactRuntimeError extends ParserError {}
 export class FrameworkTargetError extends ParserError {}
 
 export class ComponentKindError extends ParserError {}
+
+/** An application module the concolic instrumenter could not parse. */
+export class InstrumentationError extends ParserError {
+  constructor(
+    readonly filePath: string,
+    reason: string,
+  ) {
+    super(`cannot instrument ${filePath}: ${reason}`);
+  }
+}
+
+/** A module the concolic realm could not resolve, transform or evaluate. */
+export class ConcolicLoadError extends ParserError {
+  constructor(
+    readonly specifier: string,
+    readonly fromFile: string,
+    reason: string,
+  ) {
+    super(`cannot load "${specifier}" from ${fromFile}: ${reason}`);
+  }
+}
