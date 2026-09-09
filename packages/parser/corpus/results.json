@@ -6251,8 +6251,8 @@
       "id": "mantine-admin",
       "revision": "8b6f5dcdda08d355b9bb91a0355303ff18593995",
       "framework": "next-app",
-      "capturedAt": "2026-09-09T16:50:40.955Z",
-      "durationMs": 5461,
+      "capturedAt": "2026-09-09T17:17:37.476Z",
+      "durationMs": 7275,
       "runtime": {
         "reactVersion": "18.3.0-canary-60a927d04-20240113",
         "rendererName": "react-dom",
@@ -6348,8 +6348,8 @@
       "id": "mantine-react-table",
       "revision": "d338579598b52a93045a96c55eacadfc8db331bb",
       "framework": "next-pages",
-      "capturedAt": "2026-09-09T16:51:13.866Z",
-      "durationMs": 23222,
+      "capturedAt": "2026-09-09T17:24:16.694Z",
+      "durationMs": 28050,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -6380,10 +6380,6 @@
           "modulesLoaded": 6539
         },
         "diagnostics": [
-          {
-            "code": "max-call-depth",
-            "count": 3
-          },
           {
             "code": "dynamic-props",
             "count": 1
@@ -6960,8 +6956,8 @@
       "id": "material-kit-react",
       "revision": "69e780a40c455d664b2e13c525faf1d492a072a7",
       "framework": "react-router",
-      "capturedAt": "2026-09-09T16:50:47.881Z",
-      "durationMs": 2637,
+      "capturedAt": "2026-09-09T17:17:46.423Z",
+      "durationMs": 3737,
       "runtime": {
         "reactVersion": "19.1.0",
         "rendererName": "react-dom",
@@ -7035,8 +7031,8 @@
       "id": "material-react-table",
       "revision": "a16bafe78a547c423a72eff1dd000f3875885f86",
       "framework": "next-pages",
-      "capturedAt": "2026-09-09T16:51:04.565Z",
-      "durationMs": 7803,
+      "capturedAt": "2026-09-09T17:24:03.734Z",
+      "durationMs": 11054,
       "runtime": {
         "reactVersion": "19.0.0",
         "rendererName": "react-dom",
@@ -7113,7 +7109,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(756)",
+              "variable": "truthy(743)",
               "reason": "conditional on branch(unknown | false)",
               "location": "/home/ubuntu/bippy-corpus/material-react-table/node_modules/.pnpm/@mui+material@6.2.1_@emotion+react@11.14.0_@types+react@19.0.2_react@19.0.0__@emotion+styled@_ncstscufd3oawkjl5mfsxqev54/node_modules/\u2026",
               "alternativeIndex": 0,
@@ -7121,7 +7117,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(757)",
+              "variable": "truthy(744)",
               "reason": "conditional on branch(unknown | false)",
               "location": "/home/ubuntu/bippy-corpus/material-react-table/node_modules/.pnpm/@mui+material@6.2.1_@emotion+react@11.14.0_@types+react@19.0.2_react@19.0.0__@emotion+styled@_ncstscufd3oawkjl5mfsxqev54/node_modules/\u2026",
               "alternativeIndex": 0,
@@ -9441,8 +9437,8 @@
       "id": "react-admin-dashboard",
       "revision": "c7bf047a09745c744d020bb4e6e0da54b21378cd",
       "framework": "spa",
-      "capturedAt": "2026-09-09T16:51:38.850Z",
-      "durationMs": 294825,
+      "capturedAt": "2026-09-09T17:18:08.570Z",
+      "durationMs": 353461,
       "runtime": {
         "reactVersion": "16.13.1",
         "rendererName": "react-dom",
@@ -11398,8 +11394,8 @@
       "id": "react-material-admin",
       "revision": "dd136027c2253253cfb5b8a4cb698696fb63f8cd",
       "framework": "react-router",
-      "capturedAt": "2026-09-09T16:50:51.989Z",
-      "durationMs": 4672,
+      "capturedAt": "2026-09-09T17:17:52.039Z",
+      "durationMs": 6683,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -31335,8 +31331,8 @@
       "id": "tremor-dashboard",
       "revision": "a20f619680e4582122c331bacf2efdef6daf460f",
       "framework": "next-app",
-      "capturedAt": "2026-09-09T16:50:58.118Z",
-      "durationMs": 1437,
+      "capturedAt": "2026-09-09T17:18:04.904Z",
+      "durationMs": 2068,
       "runtime": {
         "reactVersion": "18.3.0-canary-178c267a4e-20241218",
         "rendererName": "react-dom",
@@ -31871,8 +31867,8 @@
       "id": "mui-admin-dashboard",
       "revision": "adc9e57f76b5e722bd9109a09d85035dae09d15f",
       "framework": "react-router",
-      "capturedAt": "2026-09-09T16:51:01.003Z",
-      "durationMs": 2103,
+      "capturedAt": "2026-09-09T17:18:00.427Z",
+      "durationMs": 2749,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
