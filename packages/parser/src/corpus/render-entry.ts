@@ -21,6 +21,8 @@ const rendererOptionsForEntry = (
     globals: entry.static.globals,
     defines: entry.static.defines,
     environment: readProcessEnvironment(entry, rootDirectory),
+    devCommand: entry.dev,
+    devDirectory: path.join(cloneDirectory, entry.workingDirectory),
     origin: new URL(entry.url).origin,
     observations,
     maxSteps: entry.static.maxSteps,

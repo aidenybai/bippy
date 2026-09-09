@@ -5,6 +5,7 @@ import { readPackageManifest } from "../package-manifest.js";
 import type {
   ModuleBundler,
   ModuleTranspiler,
+  ProcessEnvironment,
   ProjectContext,
   RuntimeObservations,
 } from "../types.js";
@@ -12,9 +13,7 @@ import { findInstallRoot } from "./install-root.js";
 import { readInstalledPackage } from "./installed-package.js";
 import type { ModuleResolver } from "./module-resolver.js";
 import { createServedAssets } from "./served-assets.js";
-
-/** Where Next, Vite and CRA dev servers serve static files from, at the URL root, unless configured otherwise. */
-const PUBLIC_DIRECTORY = "public";
+import { defaultViteConfig, loadViteConfig } from "./vite-config.js";
 
 export const readDeclaredDependencies = (manifestPath: string): string[] => {
   if (!existsSync(manifestPath)) return [];
@@ -35,10 +34,16 @@ export const readDeclaredDependencies = (manifestPath: string): string[] => {
 interface ProjectContextOptions {
   rootDirectory: string;
   resolver: ModuleResolver;
-  /** The bundler's served root (Vite `root`) when it is not `rootDirectory`. */
+  /** The bundler's served root (Vite `root`) when it differs from what its config declares. */
   servedDirectory?: string;
-  /** Directory served as-is at the URL root (Vite `publicDir`); `public/` under the served root by default. */
+  /** Directory served as-is at the URL root (Vite `publicDir`) when it differs from what its config declares. */
   publicDirectory?: string;
+  /** The dev server's environment, which its bundler config reads through `process.env`. */
+  environment?: ProcessEnvironment;
+  /** The command line the dev server is started with (its `--config`/`--mode` flags). */
+  devCommand?: string;
+  /** Directory the dev server is started in, where its config is looked up; `rootDirectory` when unset. */
+  devDirectory?: string;
   observations?: RuntimeObservations;
   origin?: string | null;
   transpiler?: ModuleTranspiler;
@@ -54,8 +59,6 @@ export const createProjectContext = (options: ProjectContextOptions): ProjectCon
     transpiler = "name-preserving",
     bundler = "unknown",
   } = options;
-  const servedDirectory = options.servedDirectory ?? rootDirectory;
-  const publicDirectory = options.publicDirectory ?? path.join(servedDirectory, PUBLIC_DIRECTORY);
   const declared = new Set<string>();
   const installRoot = findInstallRoot(rootDirectory);
   for (let directory = rootDirectory; ; directory = path.dirname(directory)) {
@@ -64,22 +67,42 @@ export const createProjectContext = (options: ProjectContextOptions): ProjectCon
     }
     if (directory === installRoot || path.dirname(directory) === directory) break;
   }
+  const hasDeclaredDependency = (packageName: string): boolean => declared.has(packageName);
+  const readPackageVersion = (packageName: string): string | null =>
+    readInstalledPackage(resolver, rootDirectory, packageName)?.version ?? null;
+  const viteConfig =
+    bundler === "vite"
+      ? loadViteConfig({
+          rootDirectory,
+          devDirectory: options.devDirectory,
+          resolver,
+          hasDeclaredDependency,
+          readPackageVersion,
+          environment: options.environment,
+          devCommand: options.devCommand,
+        })
+      : defaultViteConfig(rootDirectory);
+  const servedDirectory = options.servedDirectory ?? viteConfig.root;
+  const publicDirectory = options.publicDirectory ?? viteConfig.publicDir;
   const queries = new Map(observations.queries.map((query) => [query.queryHash, query]));
   const { mutations, stores } = observations;
-  const hasDeclaredDependency = (packageName: string): boolean => declared.has(packageName);
   const assets = createServedAssets({
     rootDirectory,
     servedDirectory,
     publicDirectory,
+    base: viteConfig.base,
     origin,
-    hasDeclaredDependency,
+    viteVersion:
+      bundler === "vite" || hasDeclaredDependency("vite") ? readPackageVersion("vite") : null,
+    shouldInlineAsset: viteConfig.shouldInlineAsset,
   });
   return {
     rootDirectory,
     servedDirectory,
+    baseUrl: viteConfig.base,
+    mode: viteConfig.mode,
     hasDeclaredDependency,
-    readPackageVersion: (packageName) =>
-      readInstalledPackage(resolver, rootDirectory, packageName)?.version ?? null,
+    readPackageVersion,
     transpiler,
     bundler,
     getImportedAssetUrl: assets.getImportedUrl,

@@ -91,13 +91,17 @@ export class StaticRenderer {
       rootDirectory: this.options.rootDirectory,
     });
     const { rootDirectory } = this.options;
-    const bundler = detectModuleBundler(rootDirectory);
+    const devDirectory = this.resolveOptionalPath(options.devDirectory);
+    const bundler = detectModuleBundler(devDirectory ?? rootDirectory, rootDirectory);
     this.documentShell = readDocumentShell(rootDirectory, bundler);
     this.project = createProjectContext({
       rootDirectory,
       resolver: this.resolver,
       servedDirectory: this.resolveOptionalPath(options.servedDirectory),
       publicDirectory: this.resolveOptionalPath(options.publicDirectory),
+      environment: this.options.environment,
+      devCommand: this.options.devCommand,
+      devDirectory,
       observations: this.options.observations,
       origin: this.options.origin ?? null,
       transpiler: this.options.transpiler ?? detectModuleTranspiler(this.resolver, rootDirectory),
