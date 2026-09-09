@@ -9,7 +9,7 @@ import { getRDTHook } from "bippy";
 import { ConcolicLoadError } from "../errors.js";
 import { DEFAULT_BROWSER_ENVIRONMENT } from "../evaluate/media-query.js";
 import { readAssetModuleSource } from "../graph/asset-modules.js";
-import { isAssetPath } from "../graph/asset-module.js";
+import { isAssetImport } from "../graph/asset-module.js";
 import { isCssModulePath } from "../graph/css-module.js";
 import {
   hasEsmSyntax,
@@ -407,7 +407,7 @@ const loadSyntheticModule = (
     };
   }
   if (STYLE_EXTENSIONS.has(extension)) return { __esModule: true, default: {} };
-  if (isAssetPath(filePath) || /\?url\b/.test(specifier)) {
+  if (isAssetImport(filePath, specifier)) {
     const url = `/${path.relative(options.servedDirectory, filePath).split(path.sep).join("/")}`;
     return { __esModule: true, default: url };
   }

@@ -26,7 +26,7 @@ interface NextAppRouteOptions {
 }
 
 /** One file-system segment on the matched route, from the app root down to the page. */
-interface NextAppSegment {
+export interface NextAppSegment {
   directory: string;
   layout: string | null;
   template: string | null;

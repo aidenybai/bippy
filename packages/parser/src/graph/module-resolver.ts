@@ -32,7 +32,7 @@ const EXTENSION_ALIAS: Record<string, string[]> = {
 const DEFAULT_CONDITION_NAMES = ["browser", "import", "module", "default"];
 const DEFAULT_REQUIRE_CONDITION_NAMES = ["browser", "require", "module", "default"];
 
-type ImporterKind = "esm" | "commonjs";
+export type ImporterKind = "esm" | "commonjs";
 
 const NODE_MODULES_SEGMENT = "/node_modules/";
 const JAVASCRIPT_CONFIG_FILE = "jsconfig.json";
