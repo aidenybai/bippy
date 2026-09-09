@@ -1,4 +1,44 @@
-import { useEffect, useRef, useState } from "react";
+import { Component, createRef, useEffect, useRef, useState } from "react";
+
+interface CanvasState {
+  isZooming: boolean;
+  isFullscreen: boolean;
+  hasTextSelection: boolean;
+}
+
+class Canvas extends Component<Record<string, never>, CanvasState> {
+  state: CanvasState = { isZooming: false, isFullscreen: false, hasTextSelection: false };
+  private readonly containerRef = createRef<HTMLDivElement>();
+  private readonly onGestureStart = () => this.setState({ isZooming: true });
+  private readonly onFullscreenChange = () => this.setState({ isFullscreen: true });
+  private readonly onSelect = () => this.setState({ hasTextSelection: true });
+
+  componentDidMount() {
+    const container = this.containerRef.current!;
+    const ownerDocument = container.ownerDocument;
+    ownerDocument.addEventListener("gesturestart", this.onGestureStart);
+    ownerDocument.addEventListener("fullscreenchange", this.onFullscreenChange);
+    container.addEventListener("select", this.onSelect);
+  }
+
+  componentWillUnmount() {
+    const container = this.containerRef.current!;
+    const ownerDocument = container.ownerDocument;
+    ownerDocument.removeEventListener("gesturestart", this.onGestureStart);
+    ownerDocument.removeEventListener("fullscreenchange", this.onFullscreenChange);
+    container.removeEventListener("select", this.onSelect);
+  }
+
+  render() {
+    return (
+      <div ref={this.containerRef}>
+        {this.state.isZooming && <i>zooming</i>}
+        {this.state.isFullscreen && <b>fullscreen</b>}
+        {this.state.hasTextSelection && <u>text selected</u>}
+      </div>
+    );
+  }
+}
 
 export const App = () => {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -25,6 +65,7 @@ export const App = () => {
       {hasLeft && <em>left</em>}
       {isFocused && <strong>focused</strong>}
       {hasSelection && <small>selected</small>}
+      <Canvas />
     </form>
   );
 };

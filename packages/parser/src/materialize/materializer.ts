@@ -6,6 +6,7 @@ import {
   unmountClassInstance,
 } from "../evaluate/class-component.js";
 import type { ContextReader, EvaluationContext } from "../evaluate/context.js";
+import { isUserDrivenEventHandlerProp } from "../evaluate/event-listeners.js";
 import { ComponentKindError } from "../errors.js";
 import { providedContextValue } from "../evaluate/react-calls.js";
 import {
@@ -34,8 +35,8 @@ import {
   NULL_VALUE,
   omitObjectKeys,
   unknownValue,
+  nativeObjectValue,
 } from "../evaluate/values.js";
-import { nativeObjectValue } from "../evaluate/native-values.js";
 import { formatSourceLocation } from "../parse/source-location.js";
 import { isClientModule } from "../graph/module-record.js";
 import { getFunctionComponent } from "../react/element-type.js";
@@ -230,7 +231,10 @@ const createProxyInstance = (
   context: MaterializeContext,
   interpreter: Interpreter,
 ): ProxyInstance => ({
-  frame: createHookFrame(context.isStrictMode, (cell) => interpreter.recordStateUpdate(cell)),
+  frame: createHookFrame(
+    context.isStrictMode && interpreter.doesStrictModeDoubleInvokeHookFactories,
+    (cell) => interpreter.recordStateUpdate(cell),
+  ),
   passCount: 0,
   isRenderedSinceCommit: false,
   committed: null,
@@ -490,6 +494,11 @@ export class Materializer {
       owner: null,
       isStrictMode: false,
     };
+  }
+
+  /** The element budget bounds the elements between two commits, so re-renders do not consume it. */
+  resetElementBudget(): void {
+    this.materializedCount = 0;
   }
 
   /** The React element tree for a root value, as `root.render(...)` would receive it. */
@@ -798,12 +807,12 @@ export class Materializer {
       case "portal":
         return this.runtime.dom.createPortal(
           this.toNode(children, context, true),
-          this.getPortalContainer(),
+          this.getPortalContainer(type.container),
           reactKey ?? null,
         );
       case "external": {
         this.markMaySuspend(context);
-        this.interpreter.markEscaped(props);
+        this.markEscapedExternalProps(props);
         return createElement(OpaqueMarker, {
           key: reactKey,
           displayName: type.displayName,
@@ -1040,7 +1049,23 @@ export class Materializer {
     return binding.callback;
   }
 
-  private getPortalContainer(): Element {
+  /** Props of a component that is not analyzed may reach any code, except handlers only a user gesture fires. */
+  private markEscapedExternalProps(props: StaticValue): void {
+    if (props.kind !== "object") {
+      this.interpreter.markEscaped(props);
+      return;
+    }
+    for (const entry of props.entries) {
+      if (entry.kind === "spread") this.markEscapedExternalProps(entry.value);
+      else if (!isUserDrivenEventHandlerProp(entry.key)) this.interpreter.markEscaped(entry.value);
+    }
+  }
+
+  /** The document node the program portals into; a detached one stands in for a container the analysis cannot name. */
+  private getPortalContainer(container: StaticValue): Element {
+    if (container.kind === "native-object" && container.value instanceof Element) {
+      return container.value;
+    }
     this.portalContainer ??= document.createElement("div");
     return this.portalContainer;
   }

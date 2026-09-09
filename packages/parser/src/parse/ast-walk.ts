@@ -87,8 +87,12 @@ export const getVariableDeclaration = (statement: Statement): VariableDeclaratio
 export const getDeclaredNames = (declaration: VariableDeclaration): string[] =>
   declaration.declarations.flatMap((declarator) => getPatternNames(declarator.id));
 
+const hoistedVarNamesByBody = new WeakMap<Statement[], string[]>();
+
 /** Names `var` declares anywhere in a function body (nested functions excluded); they belong to the function scope. */
 export const getHoistedVarNames = (statements: Statement[]): string[] => {
+  const cached = hoistedVarNamesByBody.get(statements);
+  if (cached) return cached;
   const names: string[] = [];
   const visit = (node: Node): void => {
     if (node.type === "VariableDeclaration" && node.kind === "var") {
@@ -97,6 +101,7 @@ export const getHoistedVarNames = (statements: Statement[]): string[] => {
     if (!isFunctionLikeNode(node)) forEachChildNode(node, visit);
   };
   statements.forEach(visit);
+  hoistedVarNamesByBody.set(statements, names);
   return names;
 };
 

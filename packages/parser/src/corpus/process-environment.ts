@@ -21,28 +21,29 @@ const readClientPrefix = (framework: FrameworkKind, rootDirectory: string): stri
   return VITE_CLIENT_PREFIX;
 };
 
-const DOTENV_LINE = /^(?:export\s+)?([\w.-]+)\s*=\s*(.*)$/;
+/** `dotenv`'s `LINE`: `KEY=value` or `KEY: value`, quoted values spanning lines, a trailing `#` comment. */
+const DOTENV_LINE =
+  /^\s*(?:export\s+)?([\w.-]+)(?:\s*=\s*?|:\s+?)(\s*'(?:\\'|[^'])*'|\s*"(?:\\"|[^"])*"|\s*`(?:\\`|[^`])*`|[^#\r\n]+)?\s*(?:#.*)?$/gm;
 
-const unquote = (rawValue: string): string => {
-  const quote = rawValue[0];
-  if ((quote === '"' || quote === "'" || quote === "`") && rawValue.indexOf(quote, 1) > 0) {
-    const value = rawValue.slice(1, rawValue.indexOf(quote, 1));
-    return quote === '"' ? value.replaceAll("\\n", "\n").replaceAll("\\r", "\r") : value;
+const QUOTED_VALUE = /^(['"`])([\s\S]*)\1$/;
+
+/** `dotenv.parse`: within one file the last assignment of a variable wins and only double quotes expand `\n`. */
+export const parseDotenv = (source: string): Record<string, string> => {
+  const variables: Record<string, string> = {};
+  for (const match of source.replaceAll(/\r\n?/g, "\n").matchAll(DOTENV_LINE)) {
+    const [, name, rawValue = ""] = match;
+    const trimmed = rawValue.trim();
+    const value = trimmed.replace(QUOTED_VALUE, "$2");
+    variables[name] =
+      trimmed[0] === '"' ? value.replaceAll("\\n", "\n").replaceAll("\\r", "\r") : value;
   }
-  return rawValue.replace(/#.*$/, "").trim();
+  return variables;
 };
 
-/** Single-line `dotenv` syntax: `KEY=value`, quoted values, `#` comments; a variable set first wins, as in `dotenv`. */
-const parseDotenv = (source: string, variables: Record<string, string>): void => {
-  for (const line of source.split(/\r?\n/)) {
-    const match = DOTENV_LINE.exec(line.trim());
-    if (match === null) continue;
-    const [, name, rawValue] = match;
-    variables[name] ??= unquote(rawValue);
-  }
-};
-
-/** The environment the entry's dev server runs with: its manifest `env` over the dotenv files the app loads. */
+/**
+ * The environment the entry's dev server runs with: its manifest `env` over the
+ * dotenv files the app loads, listed in the order the app gives them precedence.
+ */
 export const readProcessEnvironment = (
   entry: CorpusEntry,
   rootDirectory: string,
@@ -50,7 +51,8 @@ export const readProcessEnvironment = (
   if (entry.static.envFiles === undefined) return undefined;
   const variables: Record<string, string> = { ...entry.env };
   for (const file of entry.static.envFiles) {
-    parseDotenv(readFileSync(path.resolve(rootDirectory, file), "utf8"), variables);
+    const parsed = parseDotenv(readFileSync(path.resolve(rootDirectory, file), "utf8"));
+    for (const [name, value] of Object.entries(parsed)) variables[name] ??= value;
   }
   return {
     variables,

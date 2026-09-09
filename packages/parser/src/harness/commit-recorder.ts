@@ -26,6 +26,7 @@ export interface CommitRecorderOptions {
   moduleExports?: () => ExportIndex | Promise<ExportIndex>;
   /** Snapshot the roots after every commit, so intermediate committed trees are kept. */
   recordCommits?: boolean;
+  onCommit?: () => void;
 }
 
 const DEFAULT_COMMIT_TIMEOUT_MS = 5_000;
@@ -42,6 +43,7 @@ export const createCommitRecorder = ({
   reduxStores,
   moduleExports,
   recordCommits = false,
+  onCommit,
 }: CommitRecorderOptions = {}): CommitRecorder => {
   const roots = new Set<FiberRoot>();
   const committedSnapshots: RuntimeSnapshot[] = [];
@@ -58,6 +60,7 @@ export const createCommitRecorder = ({
       renderer = getRDTHook().renderers.get(rendererId) ?? renderer;
       commits++;
       if (recordCommits) committedSnapshots.push(snapshot());
+      onCommit?.();
       const waiters = commitWaiters;
       commitWaiters = [];
       for (const resolve of waiters) resolve();

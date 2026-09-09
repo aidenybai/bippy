@@ -53,22 +53,6 @@ const BUILTIN_CONSTRUCTORS: Record<string, BuiltinConstructor> = {
   ...TYPED_ARRAY_CONSTRUCTORS,
 };
 
-const BUILTIN_NAMESPACES: Record<string, object> = { Math, JSON, Reflect };
-
-const isObjectLike = (value: unknown): value is object =>
-  (typeof value === "object" || typeof value === "function") && value !== null;
-
-/** The native value a dotted builtin global names (`Object.create`, `Array.prototype.map`), or undefined for other names. */
-export const getBuiltinMember = (globalName: string): unknown => {
-  const [rootName = "", ...path] = globalName.split(".");
-  let member: unknown = BUILTIN_CONSTRUCTORS[rootName] ?? BUILTIN_NAMESPACES[rootName];
-  for (const segment of path) {
-    if (!isObjectLike(member) || !(segment in member)) return undefined;
-    member = Reflect.get(member, segment);
-  }
-  return member;
-};
-
 /** The native prototype object a `<Constructor>.prototype` global denotes, or null for other names. */
 const getBuiltinPrototype = (globalName: string): object | null => {
   const [constructorName, member, ...rest] = globalName.split(".");
@@ -93,13 +77,21 @@ const getMember = (current: unknown, member: string): unknown =>
     ? Reflect.get(current, member)
     : undefined;
 
-/** `Function.prototype.toString` of the native function a dotted global such as `Object.prototype.hasOwnProperty` denotes, or null. */
-export const getBuiltinFunctionSource = (globalName: string): string | null => {
+/** The native object or function a dotted builtin global such as `Object.prototype.hasOwnProperty` denotes, or null. */
+const getBuiltinWitness = (globalName: string): object | null => {
   const [rootName = "", ...members] = globalName.split(".");
   const witness = members.reduce<unknown>(
     getMember,
     BUILTIN_CONSTRUCTORS[rootName] ?? NAMESPACE_GLOBALS[rootName],
   );
+  return (typeof witness === "object" || typeof witness === "function") && witness !== null
+    ? witness
+    : null;
+};
+
+/** `Function.prototype.toString` of the native function a dotted global such as `Object.prototype.hasOwnProperty` denotes, or null. */
+export const getBuiltinFunctionSource = (globalName: string): string | null => {
+  const witness = getBuiltinWitness(globalName);
   return typeof witness === "function" ? Function.prototype.toString.call(witness) : null;
 };
 
@@ -149,10 +141,8 @@ export const getPrototypeWitness = (value: StaticValue): object | null => {
     case "native-function":
     case "method":
       return () => undefined;
-    case "global": {
-      const member = getBuiltinMember(value.name);
-      return isObjectLike(member) ? member : null;
-    }
+    case "global":
+      return getBuiltinWitness(value.name);
     case "proxy": {
       const trap = getObjectProperty(value.handler, "getPrototypeOf");
       return trap.kind === "primitive" && trap.value === undefined

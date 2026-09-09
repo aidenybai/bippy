@@ -3,7 +3,11 @@ import path from "node:path";
 import { Interpreter } from "../evaluate/interpreter.js";
 import { createScope } from "../evaluate/scope.js";
 import { objectValue, unknownValue } from "../evaluate/values.js";
-import { detectModuleTranspiler } from "../graph/module-transpiler.js";
+import {
+  detectModuleBundler,
+  detectModuleTranspiler,
+  readDocumentShell,
+} from "../graph/module-transpiler.js";
 import { ModuleGraph } from "../graph/module-graph.js";
 import { ModuleResolver } from "../graph/module-resolver.js";
 import { createProjectContext } from "../graph/project-context.js";
@@ -65,6 +69,7 @@ export class StaticRenderer {
   private readonly resolver: ModuleResolver;
   private readonly reactVersion: string | null;
   private readonly project: ProjectContext;
+  private readonly documentShell: string | null;
 
   constructor(options: StaticRendererOptions) {
     // oxc-resolver returns real paths, so a symlinked root must be compared as one.
@@ -81,12 +86,15 @@ export class StaticRenderer {
       rootDirectory: this.options.rootDirectory,
     });
     const { rootDirectory } = this.options;
+    const bundler = detectModuleBundler(rootDirectory);
+    this.documentShell = readDocumentShell(rootDirectory, bundler);
     this.project = createProjectContext(
       rootDirectory,
       this.resolver,
       this.options.observations,
       this.options.origin ?? null,
       this.options.transpiler ?? detectModuleTranspiler(this.resolver, rootDirectory),
+      bundler,
       this.options.publicDirectory,
     );
     this.reactVersion = this.project.readPackageVersion("react");
@@ -110,7 +118,7 @@ export class StaticRenderer {
   }
 
   private createInterpreter(assumeOuterProviders = false): Interpreter {
-    resetDomGlobals();
+    resetDomGlobals(this.documentShell);
     const interpreter = new Interpreter(this.graph, {
       maxCallDepth: this.options.maxCallDepth,
       maxSteps: this.options.maxSteps,
@@ -119,7 +127,7 @@ export class StaticRenderer {
       defines: this.options.defines,
       environment: this.options.environment,
       hostPlatform: this.options.hostPlatform,
-      hostDocument: createDomHostDocument(),
+      hostDocument: createDomHostDocument(this.documentShell !== null),
       capturedGlobals: this.options.observations?.globals,
       route: this.options.route,
       origin: this.options.origin,
@@ -177,7 +185,9 @@ export class StaticRenderer {
     });
     const rootNode = materializer.toRootNode(rootValue);
     interpreter.timers.drainMicrotasks();
-    const mounted = await mountNode(runtime, rootNode, interpreter.timers);
+    const mounted = await mountNode(runtime, rootNode, interpreter.timers, () =>
+      materializer.resetElementBudget(),
+    );
     if (interpreter.timers.hasTasks()) {
       interpreter.report(
         "timers-unsettled",

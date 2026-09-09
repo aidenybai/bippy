@@ -9,11 +9,13 @@ import type { HostDocument } from "../host/host-document.js";
 import { GLOBAL_INTERFACE_NAME } from "../host/realm-table.js";
 import { REACT_ELEMENT_SYMBOL_KEYS } from "../react/element-shape.js";
 import { EVENT_LISTENER_METHODS } from "./event-listeners.js";
+import { bytesValue, isTypedArrayName, toNativeBinary } from "./typed-arrays.js";
 import {
   getKnownObjectKeys,
   getObjectProperty,
   hasDefiniteItems,
   listValue,
+  nativeObjectValue,
   objectValue,
   primitiveValue,
   unknownPrimitiveValue,
@@ -24,9 +26,6 @@ const UNCERTAIN = Symbol("uncertain");
 
 /** Native objects a mutator was called on with arguments the analysis could not see. */
 const uncertainNativeObjects = new WeakSet<object>();
-
-/** One interpreter value per native object, so identity comparisons and collection keys hold. */
-const nativeObjectValues = new WeakMap<object, StaticNativeObjectValue>();
 
 /** Properties the program adds to DOM nodes (`node.__lexicalKey`): interpreter values that never reach the native object. */
 const expandoProperties = new WeakMap<object, Map<string, StaticValue>>();
@@ -122,23 +121,13 @@ const isIterable = (value: object): value is Iterable<unknown> =>
 const isPureMethodName = (name: string): boolean =>
   PURE_METHOD_PREFIXES.some((prefix) => name.startsWith(prefix));
 
-export const nativeObjectValue = (
-  value: object,
-  host: HostDocument | null,
-): StaticNativeObjectValue => {
-  let lifted = nativeObjectValues.get(value);
-  if (!lifted) {
-    lifted = { kind: "native-object", value, host };
-    nativeObjectValues.set(value, lifted);
-  }
-  return lifted;
-};
-
 const toNative = (value: StaticValue, host: HostDocument | null): unknown => {
   switch (value.kind) {
     case "primitive":
       return value.value;
     case "list": {
+      const binary = toNativeBinary(value);
+      if (binary !== null) return binary;
       if (!hasDefiniteItems(value)) return UNCERTAIN;
       const items: unknown[] = [];
       for (const item of value.items) {
@@ -250,7 +239,15 @@ const liftObject = (
   if (Array.isArray(value)) {
     return listValue(value.map((item, index) => liftValue(item, `${name}[${index}]`, host, path)));
   }
-  if (value instanceof Date) return nativeObjectValue(value, null);
+  if (value instanceof Date || value instanceof DataView) return nativeObjectValue(value, null);
+  if (value instanceof ArrayBuffer) return bytesValue("ArrayBuffer", new Uint8Array(value));
+  const interfaceName = getNativeInterfaceName(value);
+  if (ArrayBuffer.isView(value) && isTypedArrayName(interfaceName)) {
+    return bytesValue(
+      interfaceName,
+      new Uint8Array(value.buffer, value.byteOffset, value.byteLength),
+    );
+  }
   if (host !== null) {
     if (value === host.document) return { kind: "global", name: "document" };
     if (value === host.globalObject) return { kind: "global", name: GLOBAL_INTERFACE_NAME };
@@ -259,9 +256,7 @@ const liftObject = (
   if (value instanceof RegExp) {
     return { kind: "regexp", pattern: value.source, flags: value.flags, lastIndex: 0 };
   }
-  if (!isPlainObject(value)) {
-    return unknownValue(`${name}: ${getNativeInterfaceName(value)} from native code`);
-  }
+  if (!isPlainObject(value)) return unknownValue(`${name}: ${interfaceName} from native code`);
   if (isReactElementTag(Reflect.get(value, "$$typeof"))) {
     const type: unknown = Reflect.get(value, "type");
     const key: unknown = Reflect.get(value, "key");
@@ -375,8 +370,12 @@ export const deleteNativeObjectMember = (object: StaticNativeObjectValue, key: s
   expandoProperties.get(object.value)?.delete(key);
 };
 
-export const hasNativeObjectMember = (object: StaticNativeObjectValue, key: string): boolean =>
-  expandoProperties.get(object.value)?.has(key) === true || key in object.value;
+export const hasNativeObjectMember = (
+  object: StaticNativeObjectValue,
+  key: string | symbol,
+): boolean =>
+  (typeof key === "string" && expandoProperties.get(object.value)?.has(key) === true) ||
+  key in object.value;
 
 /** What `Object.keys`/`entries` see of a native object; null once a mutation on dynamic arguments ran. */
 export const getNativeOwnEntries = (
@@ -458,7 +457,7 @@ const DOCUMENT_NATIVE_MEMBERS = new Set([
   "adoptNode",
 ]);
 
-/** Queries the page's own markup answers; the static document only holds what React rendered, so an empty answer is a guess. */
+/** Queries the page's own markup answers; without the page's HTML shell the static document only holds what React rendered, so an empty answer is a guess. */
 const DOCUMENT_QUERY_METHODS = new Set([
   "getElementById",
   "querySelector",
@@ -468,7 +467,19 @@ const DOCUMENT_QUERY_METHODS = new Set([
   "getElementsByName",
 ]);
 
-const WINDOW_NATIVE_MEMBERS = new Set(["getSelection"]);
+/** Members the host window answers for a freshly loaded page at the configured viewport. */
+const WINDOW_NATIVE_MEMBERS = new Set([
+  "getSelection",
+  "innerWidth",
+  "innerHeight",
+  "outerWidth",
+  "outerHeight",
+  "devicePixelRatio",
+  "pageXOffset",
+  "pageYOffset",
+  "scrollX",
+  "scrollY",
+]);
 
 const isEmptyQueryResult = (value: unknown): boolean =>
   value === null ||
@@ -495,7 +506,7 @@ export const getHostDocumentMember = (
       const natives = toNativeArguments(args, host);
       if (natives === null) return unknownValue(`${name}() on dynamic arguments`);
       const found: unknown = Reflect.apply(query, target, natives);
-      return isEmptyQueryResult(found)
+      return isEmptyQueryResult(found) && !host.hasKnownMarkup
         ? unknownValue(`${name}() finds nothing in the static document`)
         : fromNativeValue(found, `${name}()`, host);
     });

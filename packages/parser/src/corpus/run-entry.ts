@@ -265,6 +265,11 @@ const writeArtifacts = (
       path.join(outputDirectory, `${entry.id}.static.txt`),
       formatPattern(getRenderPattern(staticResult)),
     );
+    if (process.env.BIPPY_DEBUG_STATIC_JSON)
+      writeFileSync(
+        path.join(outputDirectory, `${entry.id}.static.json`),
+        JSON.stringify(staticResult.snapshot),
+      );
     writeFileSync(
       path.join(outputDirectory, `${entry.id}.diagnostics.json`),
       JSON.stringify(staticResult.diagnostics, null, 2),

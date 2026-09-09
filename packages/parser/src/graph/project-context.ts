@@ -2,7 +2,12 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { EMPTY_OBSERVATIONS } from "../observations.js";
 import { readPackageManifest } from "../package-manifest.js";
-import type { ModuleTranspiler, ProjectContext, RuntimeObservations } from "../types.js";
+import type {
+  ModuleBundler,
+  ModuleTranspiler,
+  ProjectContext,
+  RuntimeObservations,
+} from "../types.js";
 import { readInstalledPackage } from "./installed-package.js";
 import type { ModuleResolver } from "./module-resolver.js";
 
@@ -45,6 +50,7 @@ export const createProjectContext = (
   observations: RuntimeObservations = EMPTY_OBSERVATIONS,
   origin: string | null = null,
   transpiler: ModuleTranspiler = "name-preserving",
+  bundler: ModuleBundler = "unknown",
   publicDirectory: string = DEFAULT_PUBLIC_DIRECTORY,
 ): ProjectContext => {
   const servedDirectory = path.join(rootDirectory, publicDirectory);
@@ -63,6 +69,7 @@ export const createProjectContext = (
     readPackageVersion: (packageName) =>
       readInstalledPackage(resolver, rootDirectory, packageName)?.version ?? null,
     transpiler,
+    bundler,
     readServedAsset: (url) => readServedAsset(servedDirectory, origin, url),
     findQuery: (queryHash) => queries.get(queryHash) ?? null,
     findMutations: (mutationHash) =>

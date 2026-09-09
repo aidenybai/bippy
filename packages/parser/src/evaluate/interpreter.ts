@@ -51,6 +51,7 @@ import {
   getDeclaredNames,
   getHoistedVarNames,
   getLeadingAwait,
+  getMemberChain,
   getPatternNames,
   getVariableDeclaration,
   isFunctionLikeExpression,
@@ -59,10 +60,12 @@ import {
 } from "../parse/ast-walk.js";
 import { getSourceLocation } from "../parse/source-location.js";
 import {
+  CONTEXT_OWN_KEYS,
   FUNCTION_OWN_KEYS,
   getStubOwnKeys,
   REACT_ELEMENT_OWN_KEYS,
   WRAPPER_OWN_KEYS,
+  doesStrictModeDoubleInvokeHookFactories,
   getReactElementSymbolKey,
   REACT_ELEMENT_SYMBOL_KEYS,
 } from "../react/element-shape.js";
@@ -139,6 +142,8 @@ import {
 } from "./session-history.js";
 import {
   BUNDLER_INJECTED_NAMES,
+  isBundlerUndeclaredName,
+  getInlinedNodeEnv,
   isEnvironmentObject,
   isUnsettableDefineName,
 } from "./bundler-globals.js";
@@ -184,7 +189,7 @@ import {
   DEFAULT_STYLED_COMPONENTS_TRANSFORM,
   STYLED_COMPONENTS_MACRO_SPECIFIER,
 } from "./styled-components-transform.js";
-import type { CallFrame, ContextReader, EvaluationContext } from "./context.js";
+import type { CallFrame, ContextReader, EvaluationContext, StepBudget } from "./context.js";
 import type { StateCell } from "./hooks.js";
 import { NO_PROVIDERS, withOutcomeHandler, withScope, withoutSuspension } from "./context.js";
 import { decodeJsxEntities } from "./jsx-entities.js";
@@ -259,6 +264,8 @@ import {
   omitObjectKeys,
   partialJsonValue,
   primitiveValue,
+  setListItem,
+  setListLength,
   spreadListItems,
   TRUE_VALUE,
   UNDEFINED_VALUE,
@@ -331,6 +338,7 @@ const UNKNOWN_PROJECT: ProjectContext = {
   hasDeclaredDependency: () => false,
   readPackageVersion: () => null,
   transpiler: "name-preserving",
+  bundler: "unknown",
   readServedAsset: () => null,
   findQuery: () => null,
   findMutations: () => null,
@@ -648,7 +656,8 @@ export class Interpreter {
   private readonly generatorYields: StaticValue[][] = [];
   private readonly elementSymbolKey: string;
   private readonly reactVersion: string | null;
-  private remainingSteps: number;
+  readonly doesStrictModeDoubleInvokeHookFactories: boolean;
+  private readonly maxSteps: number;
   private readonly moduleScopes = new Map<string, Scope>();
   private readonly moduleValues = new Map<string, ModuleValues>();
   private readonly initializedModules = new Set<string>();
@@ -673,7 +682,7 @@ export class Interpreter {
     this.timers = new TimerQueue(options.settleMs, options.timerUnderrunMs);
     this.maxCallDepth = options.maxCallDepth ?? DEFAULT_MAX_CALL_DEPTH;
     this.maxForkDepth = options.maxForkDepth ?? DEFAULT_MAX_FORK_DEPTH;
-    this.remainingSteps = options.maxSteps ?? DEFAULT_MAX_STEPS;
+    this.maxSteps = options.maxSteps ?? DEFAULT_MAX_STEPS;
     this.externalValues = options.externalValues ?? null;
     this.project = options.project ?? UNKNOWN_PROJECT;
     this.origin = options.origin ?? null;
@@ -707,6 +716,9 @@ export class Interpreter {
     }
     this.reactVersion = options.reactVersion ?? null;
     this.elementSymbolKey = getReactElementSymbolKey(this.reactVersion);
+    this.doesStrictModeDoubleInvokeHookFactories = doesStrictModeDoubleInvokeHookFactories(
+      this.reactVersion,
+    );
     this.assumeOuterProviders = options.assumeOuterProviders ?? false;
     this.styledComponentsTransform = this.project.hasDeclaredDependency(
       "babel-plugin-styled-components",
@@ -769,6 +781,7 @@ export class Interpreter {
     return {
       module,
       scope: this.getModuleScope(module),
+      budget: { remaining: this.maxSteps },
       thisValue: module.isCommonJs ? objectValue() : UNDEFINED_VALUE,
       superBinding: null,
       readContext,
@@ -1086,13 +1099,18 @@ export class Interpreter {
         if (target.isFrozen) return target;
         const index = toIndexKey(propertyName);
         if (index !== null) {
-          if (index < target.items.length) {
-            this.recordHeapMutation(target);
-            target.items[index] = value;
-          }
+          this.recordHeapMutation(target);
+          setListItem(target, index, value);
           return target;
         }
-        if (propertyName === "length") return target;
+        if (propertyName === "length") {
+          this.recordHeapMutation(target);
+          setListLength(
+            target,
+            value.kind === "primitive" && typeof value.value === "number" ? value.value : null,
+          );
+          return target;
+        }
         this.recordHeapMutation(target);
         target.properties ??= new Map();
         target.properties.set(propertyName, value);
@@ -1372,12 +1390,13 @@ export class Interpreter {
    * An unbound name reading which throws a `ReferenceError` (so `typeof` yields
    * `"undefined"`): the captured page's `window` lacked it, or, with no page
    * captured, only another host declares it. Names a bundler may inject per
-   * module (`global`, `define`) are decided by neither.
+   * module (`global`, `define`) are decided by the bundler alone.
    */
   private isAbsentGlobal(name: string, environment: RenderEnvironment | null): boolean {
-    if (BUNDLER_INJECTED_NAMES.has(name)) return false;
     if (environment === "server") return this.serverRealm.isForeignGlobal(name);
     if (this.windowGlobals.has(name)) return false;
+    if (BUNDLER_INJECTED_NAMES.has(name))
+      return isBundlerUndeclaredName(this.project.bundler, name);
     const windowKeys = this.pageState?.windowKeys;
     return windowKeys === undefined
       ? this.clientRealm.isForeignGlobal(name)
@@ -1387,6 +1406,9 @@ export class Interpreter {
   private getGlobal(name: string, renderEnvironment: RenderEnvironment | null): StaticValue | null {
     const defined = this.defines.get(name);
     if (defined) return defined;
+    if (renderEnvironment !== "server" && isBundlerUndeclaredName(this.project.bundler, name)) {
+      return null;
+    }
     const realm = this.getRealm(renderEnvironment);
     const hostName = realm.normalizeGlobalName(name);
     const observed = realm.hasDocument ? this.getObservedPageMember(hostName) : null;
@@ -1429,12 +1451,12 @@ export class Interpreter {
     }
   }
 
-  private consumeStep(location: SourceLocation | null): boolean {
-    if (this.remainingSteps <= 0) {
+  private consumeStep(budget: StepBudget, location: SourceLocation | null): boolean {
+    if (budget.remaining <= 0) {
       this.report("budget-exhausted", "evaluation step budget exhausted", location, "warning");
       return false;
     }
-    this.remainingSteps--;
+    budget.remaining--;
     return true;
   }
 
@@ -1444,7 +1466,9 @@ export class Interpreter {
     nameHint: string | null = null,
   ): StaticValue {
     const location = this.locate(context.module, node);
-    if (!this.consumeStep(location)) return unknownValue("step budget exhausted", location);
+    if (!this.consumeStep(context.budget, location)) {
+      return unknownValue("step budget exhausted", location);
+    }
     switch (node.type) {
       case "Literal":
         if ("regex" in node) {
@@ -2162,10 +2186,28 @@ export class Interpreter {
     );
   }
 
+  /**
+   * Bundlers substitute a `define`d dotted name (`process.env.NODE_ENV`) in the
+   * source text, so its root identifier is never read even where the host lacks it.
+   */
+  private getInlinedDefine(node: MemberExpression, context: EvaluationContext): StaticValue | null {
+    const chain = getMemberChain(node);
+    if (chain === null || chain[0] === "this") return null;
+    const definedName = chain.join(".");
+    const inlined = this.defines.get(definedName) ?? getInlinedNodeEnv(definedName);
+    if (inlined === null || inlined === undefined) return null;
+    const rootName = chain[0];
+    const isBound =
+      lookupScope(context.scope, rootName) !== undefined || context.module.bindings.has(rootName);
+    return isBound ? null : inlined;
+  }
+
   private evaluateMemberExpression(
     node: MemberExpression,
     context: EvaluationContext,
   ): StaticValue {
+    const inlined = this.getInlinedDefine(node, context);
+    if (inlined) return inlined;
     const object = this.evaluateExpression(node.object, context);
     const location = this.locate(context.module, node);
     if (node.property.type === "PrivateIdentifier") {
@@ -2198,11 +2240,31 @@ export class Interpreter {
   }
 
   private readComponentProperty(
+    receiver: StaticValue,
     type: StaticElementType,
     key: string,
     location: SourceLocation | null,
   ): StaticValue {
     switch (type.kind) {
+      case "host":
+        return key === "length"
+          ? primitiveValue(type.tagName.length)
+          : prototypeMember(receiver, String.prototype, key);
+      case "fragment":
+      case "strict-mode":
+      case "profiler":
+      case "suspense":
+      case "suspense-list":
+      case "activity":
+      case "view-transition":
+      case "portal":
+        return prototypeMember(receiver, Symbol.prototype, key);
+      case "context-provider":
+      case "context-consumer":
+        if (key === "displayName")
+          return type.displayName === null ? UNDEFINED_VALUE : primitiveValue(type.displayName);
+        if (CONTEXT_OWN_KEYS.has(key)) return unknownValue(`context.${key}`, location);
+        return prototypeMember(receiver, Object.prototype, key);
       case "function":
       case "class": {
         const property = type.component.properties.get(key);
@@ -2350,7 +2412,8 @@ export class Interpreter {
             ? UNDEFINED_VALUE
             : primitiveValue(object.context.displayName);
         }
-        return unknownValue(`context property "${key}"`, location);
+        if (CONTEXT_OWN_KEYS.has(key)) return unknownValue(`context.${key}`, location);
+        return prototypeMember(object, Object.prototype, key);
       case "react-api": {
         if (isCallableProtocolKey(key)) return { kind: "method", receiver: object, name: key };
         const member = resolveReactApiMember(object.api, key);
@@ -2461,7 +2524,7 @@ export class Interpreter {
         return unknownValue(`${describeValue(object)}.${key}`, location);
       }
       case "component-reference":
-        return this.readComponentProperty(object.type, key, location);
+        return this.readComponentProperty(object, object.type, key, location);
       case "repeat":
         if (key === "length") return unknownPrimitiveValue("number", "length of a repeated list");
         return { kind: "method", receiver: object, name: key };
@@ -2631,11 +2694,14 @@ export class Interpreter {
           options.nameHint ?? null,
         );
       case "method":
-      case "global": {
-        const result = evaluateBuiltinCall(this, callee, args, context, location);
-        if (result.kind === "unknown") this.markEscapes(args);
-        return result;
-      }
+        if (callee.receiver.kind === "branch") {
+          return mapValue(callee.receiver, (receiver) =>
+            this.callValue({ ...callee, receiver }, args, context, location, options),
+          );
+        }
+        return this.callBuiltin(callee, args, context, location);
+      case "global":
+        return this.callBuiltin(callee, args, context, location);
       case "external":
         this.markEscapes(args);
         return {
@@ -2726,6 +2792,17 @@ export class Interpreter {
       this.styledDisplayNames.set(module, displayNames);
     }
     return displayNames;
+  }
+
+  private callBuiltin(
+    callee: Extract<StaticValue, { kind: "method" | "global" }>,
+    args: StaticValue[],
+    context: EvaluationContext,
+    location: SourceLocation | null,
+  ): StaticValue {
+    const result = evaluateBuiltinCall(this, callee, args, context, location);
+    if (result.kind === "unknown") this.markEscapes(args);
+    return result;
   }
 
   private markEscapes(args: StaticValue[]): void {
@@ -3113,6 +3190,7 @@ export class Interpreter {
     const callContext: EvaluationContext = {
       module: functionValue.module,
       scope,
+      budget: context.budget,
       thisValue,
       superBinding: functionValue.superBinding,
       readContext: context.readContext,
@@ -3385,7 +3463,7 @@ export class Interpreter {
     for (let index = startIndex; index < statements.length; index++) {
       const statement = statements[index];
       const location = this.locate(context.module, statement);
-      if (!this.consumeStep(location))
+      if (!this.consumeStep(context.budget, location))
         return returnOutcome(unknownValue("step budget exhausted", location));
       const proceed: StatementContinuation = (pathContext) =>
         this.evaluateStatements(

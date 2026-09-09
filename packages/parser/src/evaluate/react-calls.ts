@@ -601,7 +601,7 @@ export const evaluateReactApiCall = (
       const props = objectValue(first ? [{ kind: "property", key: "children", value: first }] : []);
       return {
         kind: "element",
-        type: { kind: "portal" },
+        type: { kind: "portal", container: second ?? UNDEFINED_VALUE },
         key: third ?? null,
         props,
         location,

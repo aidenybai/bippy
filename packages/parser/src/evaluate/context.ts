@@ -46,9 +46,19 @@ export interface SuspensionPoint {
   outcomeHandlers: OutcomeHandler[];
 }
 
+/**
+ * Steps left to one entry into the interpreter (a component render, a module
+ * initialization, an effect or event callback); shared by every context
+ * derived from the entry's root context, so the whole entry is bounded together.
+ */
+export interface StepBudget {
+  remaining: number;
+}
+
 export interface EvaluationContext {
   module: ModuleRecord;
   scope: Scope;
+  budget: StepBudget;
   thisValue: StaticValue | null;
   superBinding: SuperBinding | null;
   readContext: ContextReader;

@@ -300,8 +300,8 @@
       "id": "bulletproof-react",
       "revision": "9506629ed003a561c6627735480cce4994244bb4",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:45:18.216Z",
-      "durationMs": 443,
+      "capturedAt": "2026-09-09T06:48:29.585Z",
+      "durationMs": 451,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -325,7 +325,6 @@
         "diagnostics": []
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 46,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -338,6 +337,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "status": "exact",
         "runtimeFibers": 46,
         "staticFibers": 46,
         "coverage": 1,
@@ -363,8 +363,8 @@
       "id": "cal-diy",
       "revision": "abffde336e744e15cf69626c10e436d6172bc406",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:45:18.673Z",
-      "durationMs": 1190,
+      "capturedAt": "2026-09-09T06:48:30.051Z",
+      "durationMs": 1102,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
@@ -388,7 +388,6 @@
         "diagnostics": []
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 938,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -401,6 +400,7 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
+        "status": "exact",
         "runtimeFibers": 938,
         "staticFibers": 938,
         "coverage": 1,
@@ -787,8 +787,8 @@
       "id": "documenso",
       "revision": "2cac63a000e22422bdea449f68b8025e709aa73a",
       "framework": "react-router",
-      "capturedAt": "2026-09-09T00:10:37.019Z",
-      "durationMs": 72881,
+      "capturedAt": "2026-09-09T06:48:49.346Z",
+      "durationMs": 541,
       "runtime": {
         "reactVersion": "19.2.8",
         "rendererName": "react-dom",
@@ -858,7 +858,7 @@
         "omitted": null
       },
       "anchor": null,
-      "note": null,
+      "note": "runtime replayed from 2026-09-08T11:49:10.139Z",
       "failure": null
     },
     {
@@ -1010,9 +1010,18 @@
       "id": "excalidraw",
       "revision": "214cd6e6e8ac3ad6b68486aa7aa7241abdf9445f",
       "framework": "spa",
-      "capturedAt": "2026-09-08T03:55:40.589Z",
-      "durationMs": 4905,
-      "runtime": null,
+      "capturedAt": "2026-09-08T14:40:41.548Z",
+      "durationMs": 5403,
+      "runtime": {
+        "reactVersion": "19.0.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 510,
+        "commits": 8,
+        "pageErrors": [],
+        "title": "Excalidraw Whiteboard"
+      },
       "static": {
         "stats": {
           "fiberCount": 10,
@@ -1026,22 +1035,48 @@
         "diagnostics": [
           {
             "code": "budget-exhausted",
-            "count": 74
+            "count": 102
           },
           {
             "code": "dynamic-key",
-            "count": 1
-          },
-          {
-            "code": "max-fiber-count",
-            "count": 1
+            "count": 3
           }
         ]
       },
-      "report": null,
+      "report": {
+        "status": "partial",
+        "matchedFibers": 4,
+        "matchedText": 0,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 2,
+        "slotsMatched": 1,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 503,
+        "wildcards": [
+          {
+            "path": "root > <StrictMode> [Mode] > <ExcalidrawApp> [FunctionComponent] > <TopErrorBoundary> [ClassComponent] > <Provider> (opaque) > <ExcalidrawAPIProvider> [FunctionComponent]",
+            "reason": "step budget exhausted",
+            "absorbedFibers": 503,
+            "heads": [
+              "<ExcalidrawAPIContext> [ContextProvider]"
+            ]
+          }
+        ],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "runtimeFibers": 509,
+        "staticFibers": 5,
+        "coverage": 1,
+        "strictCoverage": 0.007858546168958742,
+        "divergence": null,
+        "stepsUsed": 8,
+        "budgetExhausted": false
+      },
       "stateSpace": null,
       "anchor": null,
-      "note": "static only",
+      "note": "runtime replayed from 2026-09-08T06:25:19.421Z",
       "failure": null
     },
     {
@@ -1261,8 +1296,8 @@
       "id": "graphiql",
       "revision": "fd32cea3e191eb6eb41b785e157403308d787b12",
       "framework": "spa",
-      "capturedAt": "2026-09-08T23:45:20.324Z",
-      "durationMs": 1896,
+      "capturedAt": "2026-09-09T06:48:31.160Z",
+      "durationMs": 1371,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -1295,7 +1330,6 @@
         ]
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 376,
         "matchedText": 2,
         "opaqueSubtrees": 0,
@@ -1308,6 +1342,7 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
+        "status": "exact",
         "runtimeFibers": 378,
         "staticFibers": 405,
         "coverage": 1,
@@ -1328,7 +1363,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(5094)",
+              "variable": "truthy(3987)",
               "reason": "conditional on branch(true | undefined)",
               "location": "/home/ubuntu/bippy-corpus/graphiql/packages/graphiql-react/dist/components/execute-button/index.js:68:10",
               "alternativeIndex": 1,
@@ -1694,8 +1729,8 @@
       "id": "lexical",
       "revision": "c3b629dcf6b5111811bb9ca5a3db0665099b2856",
       "framework": "spa",
-      "capturedAt": "2026-09-08T23:45:23.512Z",
-      "durationMs": 3522,
+      "capturedAt": "2026-09-09T06:48:32.538Z",
+      "durationMs": 2138,
       "runtime": {
         "reactVersion": "19.2.5",
         "rendererName": "react-dom",
@@ -1728,7 +1763,6 @@
         ]
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 225,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -1741,6 +1775,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "status": "exact",
         "runtimeFibers": 225,
         "staticFibers": 225,
         "coverage": 1,
@@ -3412,8 +3447,8 @@
       "id": "nextjs-examples",
       "revision": "4fed8eaf197aaa60fd85371352482199a4c2107f",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:45:27.136Z",
-      "durationMs": 158,
+      "capturedAt": "2026-09-09T06:48:34.681Z",
+      "durationMs": 139,
       "runtime": {
         "reactVersion": "19.3.0-canary-cbb046ab-20260731",
         "rendererName": "react-dom",
@@ -3437,7 +3472,6 @@
         "diagnostics": []
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 77,
         "matchedText": 6,
         "opaqueSubtrees": 0,
@@ -3450,6 +3484,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "status": "exact",
         "runtimeFibers": 83,
         "staticFibers": 83,
         "coverage": 1,
@@ -4077,8 +4112,8 @@
       "id": "posthog",
       "revision": "09c5fbd37b2714276d4206debd3aeb253ce0e43a",
       "framework": "spa",
-      "capturedAt": "2026-09-08T23:45:48.575Z",
-      "durationMs": 3662,
+      "capturedAt": "2026-09-09T06:48:55.861Z",
+      "durationMs": 3861,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -4110,7 +4145,6 @@
         ]
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 184,
         "matchedText": 7,
         "opaqueSubtrees": 0,
@@ -4123,6 +4157,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "status": "exact",
         "runtimeFibers": 191,
         "staticFibers": 191,
         "coverage": 1,
@@ -4154,8 +4189,8 @@
       "id": "puck",
       "revision": "74a42c74db2b52da13ce1fc49087a07a6653dac8",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:45:27.300Z",
-      "durationMs": 9558,
+      "capturedAt": "2026-09-09T06:48:34.825Z",
+      "durationMs": 8991,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
@@ -4179,7 +4214,6 @@
         "diagnostics": []
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 444,
         "matchedText": 6,
         "opaqueSubtrees": 0,
@@ -4192,6 +4226,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "status": "exact",
         "runtimeFibers": 450,
         "staticFibers": 450,
         "coverage": 1,
@@ -4223,79 +4258,90 @@
       "id": "react-admin",
       "revision": "fa7ede4a25d36917b41f9b9e9936e9e7ab8fa8ab",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:45:36.863Z",
-      "durationMs": 4799,
+      "capturedAt": "2026-09-09T06:48:43.821Z",
+      "durationMs": 5109,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
         "buildType": "development",
         "roots": 1,
         "fibers": 5581,
-        "commits": 68,
+        "commits": 69,
         "pageErrors": [],
         "title": "React Admin"
       },
       "static": {
         "stats": {
-          "fiberCount": 36,
-          "textCount": 0,
-          "branchCount": 0,
+          "fiberCount": 5619,
+          "textCount": 66,
+          "branchCount": 3,
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 1,
-          "modulesLoaded": 2208
+          "modulesLoaded": 1902
         },
         "diagnostics": [
           {
-            "code": "budget-exhausted",
-            "count": 118
-          },
-          {
-            "code": "max-call-depth",
-            "count": 56
+            "code": "unsettled-state",
+            "count": 1
           }
         ]
       },
       "report": {
-        "status": "partial",
-        "matchedFibers": 33,
-        "matchedText": 0,
+        "matchedFibers": 5505,
+        "matchedText": 66,
         "opaqueSubtrees": 0,
         "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "wildcardAbsorbedFibers": 5538,
-        "wildcards": [
-          {
-            "path": "root > <StrictMode> [Mode] > <Admin> [FunctionComponent] > <AdminContext> [FunctionComponent] > <CoreAdminContext> [FunctionComponent] > <RouterProviderContext> [ContextProvider] > <AuthContext> [ContextProvider] > <DataProviderContext> [ContextProvider] > <StoreContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PreferencesEditorContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AdminRouter> [FunctionComponent] > <BasenameContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RouterWrapper> [FunctionComponent] > <InternalRouter> [FunctionComponent] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <I18nContextProvider> [FunctionComponent] > <I18nContext> key=\"0\" [ContextProvider] > <NotificationContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <UndoableMutationsContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ResourceDefinitionContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent]",
-            "reason": "step budget exhausted",
-            "absorbedFibers": 5538,
-            "heads": [
-              "<ThemeProvider> [FunctionComponent]"
-            ]
-          }
-        ],
-        "branchesResolved": 0,
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 3,
         "repeatIterations": 0,
+        "status": "exact",
         "runtimeFibers": 5571,
-        "staticFibers": 33,
+        "staticFibers": 5581,
         "coverage": 1,
-        "strictCoverage": 0.0059235325794291865,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 34,
+        "stepsUsed": 5576,
         "budgetExhausted": false
       },
       "stateSpace": {
-        "states": 18,
+        "states": 103,
         "matchedState": {
-          "index": 17,
+          "index": 93,
           "conditions": [
             {
               "kind": "transition",
-              "commit": 3,
-              "commitCount": 4
+              "commit": 7,
+              "commitCount": 8
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#1",
+              "reason": "&& on branch(<boolean> | unknown)",
+              "location": "/home/ubuntu/bippy-corpus/react-admin/packages/ra-ui-materialui/src/layout/LoadingIndicator.tsx:33:14",
+              "alternativeIndex": 1,
+              "alternativeCount": 3
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(19429)",
+              "reason": "if (branch(true | false))",
+              "location": "/home/ubuntu/bippy-corpus/react-admin/node_modules/@mui/material/Avatar/Avatar.js:195:3",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#2",
+              "reason": "conditional on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/react-admin/packages/ra-core/src/controller/list/ListBase.tsx:128:18",
+              "alternativeIndex": 2,
+              "alternativeCount": 3
             }
           ]
         },
@@ -4303,7 +4349,7 @@
         "omitted": null
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-08T05:50:16.241Z",
+      "note": "runtime replayed from 2026-09-09T06:26:22.350Z",
       "failure": null
     },
     {
@@ -4505,8 +4551,8 @@
       "id": "react-router-templates",
       "revision": "b68be71489a22315c7a734a86a18347745b393d2",
       "framework": "react-router",
-      "capturedAt": "2026-09-09T00:05:23.332Z",
-      "durationMs": 10250,
+      "capturedAt": "2026-09-09T06:48:48.965Z",
+      "durationMs": 135,
       "runtime": {
         "reactVersion": "19.2.7",
         "rendererName": "react-dom",
@@ -4525,12 +4571,11 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 7
+          "modulesLoaded": 5
         },
         "diagnostics": []
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 48,
         "matchedText": 2,
         "opaqueSubtrees": 0,
@@ -4543,6 +4588,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "status": "exact",
         "runtimeFibers": 50,
         "staticFibers": 50,
         "coverage": 1,
@@ -4567,7 +4613,7 @@
         "omitted": null
       },
       "anchor": null,
-      "note": null,
+      "note": "runtime replayed from 2026-09-08T11:39:09.076Z",
       "failure": null
     },
     {
@@ -6182,8 +6228,8 @@
       "id": "sentry",
       "revision": "a7b4a8a2a78a666418e527d812e81528147789da",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:45:42.983Z",
-      "durationMs": 5586,
+      "capturedAt": "2026-09-09T06:48:49.892Z",
+      "durationMs": 5961,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -6223,7 +6269,6 @@
         ]
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 558,
         "matchedText": 8,
         "opaqueSubtrees": 0,
@@ -6236,6 +6281,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "status": "exact",
         "runtimeFibers": 566,
         "staticFibers": 566,
         "coverage": 1,
@@ -6622,8 +6668,8 @@
       "id": "sonner",
       "revision": "8e4662b39255120b62138312058f5d77c0139a5e",
       "framework": "next-app",
-      "capturedAt": "2026-09-09T00:05:41.053Z",
-      "durationMs": 16649,
+      "capturedAt": "2026-09-09T06:48:49.104Z",
+      "durationMs": 72,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
@@ -6647,7 +6693,6 @@
         "diagnostics": []
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 44,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -6660,6 +6705,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "status": "exact",
         "runtimeFibers": 44,
         "staticFibers": 44,
         "coverage": 1,
@@ -6678,7 +6724,7 @@
         "omitted": null
       },
       "anchor": "body",
-      "note": null,
+      "note": "runtime replayed from 2026-09-08T11:14:51.057Z",
       "failure": null
     },
     {
@@ -6748,8 +6794,8 @@
       "id": "tanstack-router",
       "revision": "cf166d160e6397007a979bfc7065b45ff69ea543",
       "framework": "spa",
-      "capturedAt": "2026-09-08T23:45:42.216Z",
-      "durationMs": 182,
+      "capturedAt": "2026-09-09T06:48:49.180Z",
+      "durationMs": 161,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -6770,10 +6816,14 @@
           "unknownCount": 0,
           "modulesLoaded": 77
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "dynamic-props",
+            "count": 3
+          }
+        ]
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 45,
         "matchedText": 3,
         "opaqueSubtrees": 0,
@@ -6786,6 +6836,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "status": "exact",
         "runtimeFibers": 48,
         "staticFibers": 48,
         "coverage": 1,

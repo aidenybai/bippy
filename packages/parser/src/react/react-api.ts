@@ -12,6 +12,7 @@ const REACT_API_NAMES: ReadonlySet<string> = new Set<ReactApi>([
   "forwardRef",
   "lazy",
   "createContext",
+  "createRef",
   "createElement",
   "cloneElement",
   "isValidElement",
