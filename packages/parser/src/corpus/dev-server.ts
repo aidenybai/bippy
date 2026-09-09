@@ -44,7 +44,14 @@ const KILL_GRACE_MS = 3_000;
 const isPackageManagerEnvKey = (key: string): boolean => /^(npm|pnpm)_/i.test(key);
 
 const inheritedEnv = (): Record<string, string | undefined> =>
-  Object.fromEntries(Object.entries(process.env).filter(([key]) => !isPackageManagerEnvKey(key)));
+  Object.fromEntries(
+    Object.entries(process.env).filter(([key]) => !isPackageManagerEnvKey(key) && key !== "CI"),
+  );
+
+// Installs must never wait on a prompt, but the dev server runs as a developer's
+// shell would: apps read `CI` in their build config, and the static side models
+// the environment from the manifest and dotenv files, which do not set it.
+const NON_INTERACTIVE_ENV: Record<string, string> = { CI: "1" };
 
 // Race timers must not keep the process alive once the child has exited.
 const deadline = <T>(ms: number, value: T): Promise<T> => sleep(ms, value, { ref: false });
@@ -62,7 +69,7 @@ const spawnShell = (
     stdio: ["ignore", "pipe", "pipe"],
     // Clones live under bippy's tree, whose `packageManager` field would otherwise make
     // corepack refuse the yarn/npm commands the corpus repositories expect.
-    env: { ...inheritedEnv(), FORCE_COLOR: "0", CI: "1", COREPACK_ENABLE_STRICT: "0", ...env },
+    env: { ...inheritedEnv(), FORCE_COLOR: "0", COREPACK_ENABLE_STRICT: "0", ...env },
   });
   child.stdout?.pipe(log, { end: false });
   child.stderr?.pipe(log, { end: false });
@@ -98,7 +105,12 @@ const killProcessGroup = async (child: ChildProcess): Promise<void> => {
 export const runCommand = async (options: RunCommandOptions): Promise<void> => {
   const log = createWriteStream(options.logPath, { flags: "a" });
   log.write(`\n$ ${options.command}\n`);
-  const child = spawnShell(options.command, options.cwd, options.env, log);
+  const child = spawnShell(
+    options.command,
+    options.cwd,
+    { ...NON_INTERACTIVE_ENV, ...options.env },
+    log,
+  );
   const exit = new Promise<number | null>((resolveExit, rejectExit) => {
     child.once("error", rejectExit);
     child.once("exit", (code) => resolveExit(code));
