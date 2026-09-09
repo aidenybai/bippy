@@ -85,9 +85,18 @@ const fixtureSvgrPlugin = (): Plugin => ({
   },
 });
 
+const fixtureJsxInJsPlugin = (): Plugin => ({
+  name: "bippy-parser-fixture-jsx-in-js",
+  enforce: "pre",
+  transform(code, id) {
+    if (!id.endsWith(".js") || relative(fixturesDirectory, id).startsWith("..")) return null;
+    return transformWithOxc(code, id, { lang: "jsx" });
+  },
+});
+
 export default defineConfig({
   root: parserDirectory,
-  plugins: [fixtureAliasPlugin(), fixtureSvgrPlugin()],
+  plugins: [fixtureAliasPlugin(), fixtureSvgrPlugin(), fixtureJsxInJsPlugin()],
   resolve: {
     alias: [{ find: /^bippy$/, replacement: resolve(bippyDirectory, "src/index.ts") }],
   },

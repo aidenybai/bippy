@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { readCorpusManifest, type CorpusResult } from "../src/corpus/manifest.js";
@@ -12,6 +12,7 @@ import {
   formatCorpusMarkdown,
   formatCorpusTable,
   mergeCorpusResults,
+  readCorpusResults,
   type CorpusResultsFile,
 } from "../src/corpus/summary.js";
 import { BrowserCapturer } from "../src/harness/capture-browser.js";
@@ -77,11 +78,8 @@ if (unknown.length > 0) {
   process.exit(1);
 }
 
-const readResults = (): CorpusResult[] => {
-  if (!existsSync(resultsPath)) return [];
-  const parsed: CorpusResultsFile = JSON.parse(readFileSync(resultsPath, "utf8"));
-  return parsed.results;
-};
+const readResults = (): CorpusResult[] =>
+  existsSync(resultsPath) ? readCorpusResults(resultsPath).results : [];
 
 const writeResults = (results: CorpusResult[]): void => {
   mkdirSync(path.dirname(resultsPath), { recursive: true });
@@ -136,7 +134,7 @@ try {
       log: (message) => console.log(`[${entry.id}] ${message}`),
     });
     fresh.push(result);
-    if (result.report) console.log(formatComparisonReport(result.report));
+    if (result.report) console.log(formatComparisonReport(result.report, result.stateSpace));
     writeResults(mergeCorpusResults(readResults(), fresh));
   }
 } finally {

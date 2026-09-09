@@ -1,45 +1,28 @@
+import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { getRDTHook } from "bippy";
-import type { ReactNode } from "react";
 import { ReactRuntimeError } from "../errors.js";
-import { getPackageDirectoryFromFilePath, type ModuleResolver } from "../graph/module-resolver.js";
+import type { ModuleResolver } from "../graph/module-resolver.js";
 import { ensureDomGlobals } from "./dom-environment.js";
 
 export type ReactModule = typeof import("react");
+export type ReactDomClientModule = typeof import("react-dom/client");
 export type ReactDomModule = typeof import("react-dom");
-
-export interface ReactRoot {
-  render(node: ReactNode): void;
-  unmount(): void;
-}
-
-export interface ReactRootOptions {
-  onUncaughtError(error: unknown): void;
-  onCaughtError(error: unknown): void;
-  onRecoverableError(error: unknown): void;
-}
-
-/** `react-dom/client`, or the legacy `ReactDOM.render` API of a React 17 app wrapped to look like it. */
-export interface ReactRootFactory {
-  createRoot(container: Element, options: ReactRootOptions): ReactRoot;
-}
 
 /**
  * The React installation the static tree is materialized with: the app's own
  * `react`/`react-dom` when they resolve from the analyzed root, so the fibers
  * React constructs carry the same work tags and naming as the app's runtime.
+ * An app whose `react-dom` has no `client` entry (React 17) is mounted with the
+ * harness's copy of all three modules; mixing its `react` with a newer
+ * `react-dom` cannot render.
  */
 export interface ReactRuntime {
   react: ReactModule;
-  domClient: ReactRootFactory;
+  domClient: ReactDomClientModule;
   dom: ReactDomModule;
   act: <T>(callback: () => T | Promise<T>) => Promise<T>;
   version: string;
-}
-
-interface LegacyReactDomModule {
-  render(element: ReactNode, container: Element): unknown;
-  unmountComponentAtNode(container: Element): boolean;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -51,16 +34,11 @@ const isReactModule = (value: unknown): value is ReactModule =>
   typeof value.createContext === "function" &&
   typeof value.Component === "function";
 
-const isReactRootFactory = (value: unknown): value is ReactRootFactory =>
+const isReactDomClientModule = (value: unknown): value is ReactDomClientModule =>
   isRecord(value) && typeof value.createRoot === "function";
 
 const isReactDomModule = (value: unknown): value is ReactDomModule =>
   isRecord(value) && typeof value.createPortal === "function";
-
-const isLegacyReactDomModule = (value: unknown): value is LegacyReactDomModule =>
-  isRecord(value) &&
-  typeof value.render === "function" &&
-  typeof value.unmountComponentAtNode === "function";
 
 const unwrapModule = (loaded: unknown): unknown =>
   isRecord(loaded) && "default" in loaded && isRecord(loaded.default) ? loaded.default : loaded;
@@ -72,7 +50,7 @@ const resolveFromApp = (
 ): string | null => {
   if (!resolver || !fromDirectory) return null;
   const resolution = resolver.resolve(specifier, `${fromDirectory}/index.js`);
-  return resolution.kind === "external" ? resolution.filePath : null;
+  return resolution.kind === "external" && resolution.filePath ? resolution.filePath : null;
 };
 
 const importResolved = async (
@@ -81,56 +59,9 @@ const importResolved = async (
   fromDirectory: string | null,
 ): Promise<unknown> => {
   const filePath = resolveFromApp(resolver, specifier, fromDirectory);
-  return unwrapModule(await import(filePath === null ? specifier : pathToFileURL(filePath).href));
-};
-
-/** Whether `react-dom/client` resolves inside the same installed `react-dom` as the app's `react-dom` (not an ancestor `node_modules`). */
-const hasClientEntry = (
-  resolver: ModuleResolver | null,
-  fromDirectory: string | null,
-  domFilePath: string,
-): boolean => {
-  const clientFilePath = resolveFromApp(resolver, "react-dom/client", fromDirectory);
-  return (
-    clientFilePath !== null &&
-    getPackageDirectoryFromFilePath(clientFilePath) === getPackageDirectoryFromFilePath(domFilePath)
+  return unwrapModule(
+    await (filePath === null ? import(specifier) : import(pathToFileURL(filePath).href)),
   );
-};
-
-/**
- * React before 18 ships no `react-dom/client`; its `ReactDOM.render` mounts a
- * legacy root whose fibers are otherwise the same, and render errors surface
- * synchronously from `render` rather than through root callbacks.
- */
-const legacyRootFactory = (dom: LegacyReactDomModule): ReactRootFactory => ({
-  createRoot: (container) => ({
-    render: (node) => {
-      dom.render(node, container);
-    },
-    unmount: () => {
-      dom.unmountComponentAtNode(container);
-    },
-  }),
-});
-
-const loadRootFactory = async (
-  resolver: ModuleResolver | null,
-  rootDirectory: string | null,
-  dom: ReactDomModule,
-): Promise<ReactRootFactory> => {
-  const domFilePath = resolveFromApp(resolver, "react-dom", rootDirectory);
-  if (
-    domFilePath !== null &&
-    !hasClientEntry(resolver, rootDirectory, domFilePath) &&
-    isLegacyReactDomModule(dom)
-  ) {
-    return legacyRootFactory(dom);
-  }
-  const domClient = await importResolved(resolver, "react-dom/client", rootDirectory);
-  if (!isReactRootFactory(domClient)) {
-    throw new ReactRuntimeError("could not load react-dom/client");
-  }
-  return domClient;
 };
 
 const hasAct = (
@@ -170,6 +101,15 @@ export const loadReactRuntime = ({
   return pending;
 };
 
+/** React < 18 has no `react-dom/client`; a clone nested under another project would resolve that project's. */
+const hasClientEntry = (resolver: ModuleResolver | null, rootDirectory: string | null): boolean => {
+  const domPath = resolveFromApp(resolver, "react-dom", rootDirectory);
+  const clientPath = resolveFromApp(resolver, "react-dom/client", rootDirectory);
+  return (
+    domPath !== null && clientPath !== null && path.dirname(domPath) === path.dirname(clientPath)
+  );
+};
+
 const load = async (
   resolver: ModuleResolver | null,
   rootDirectory: string | null,
@@ -177,17 +117,22 @@ const load = async (
   ensureDomGlobals();
   getRDTHook();
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-  const [react, dom] = await Promise.all([
-    importResolved(resolver, "react", rootDirectory),
-    importResolved(resolver, "react-dom", rootDirectory),
+  const appResolver = hasClientEntry(resolver, rootDirectory) ? resolver : null;
+  const [react, domClient, dom] = await Promise.all([
+    importResolved(appResolver, "react", rootDirectory),
+    importResolved(appResolver, "react-dom/client", rootDirectory),
+    importResolved(appResolver, "react-dom", rootDirectory),
   ]);
   if (!isReactModule(react)) throw new ReactRuntimeError("could not load react");
+  if (!isReactDomClientModule(domClient)) {
+    throw new ReactRuntimeError("could not load react-dom/client");
+  }
   if (!isReactDomModule(dom)) throw new ReactRuntimeError("could not load react-dom");
   return {
     react,
-    domClient: await loadRootFactory(resolver, rootDirectory, dom),
+    domClient,
     dom,
-    act: await loadAct(react, resolver, rootDirectory),
+    act: await loadAct(react, appResolver, rootDirectory),
     version: react.version,
   };
 };

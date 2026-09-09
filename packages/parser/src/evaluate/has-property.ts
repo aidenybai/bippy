@@ -60,10 +60,13 @@ const hasComponentProperty = (type: StaticElementType, name: string): StaticValu
         (name === "displayName" && type.displayName !== null)
         ? TRUE_VALUE
         : FALSE_VALUE;
-    case "stub":
+    case "stub": {
       if (type.stub.properties?.has(name)) return TRUE_VALUE;
       if (name === "displayName") return primitiveValue(type.stub.displayName !== null);
-      return getStubOwnKeys(type.stub.tag).has(name) ? null : FALSE_VALUE;
+      const ownKeys = getStubOwnKeys(type.stub.tag);
+      if (!ownKeys.has(name)) return FALSE_VALUE;
+      return ownKeys === FUNCTION_OWN_KEYS ? null : TRUE_VALUE;
+    }
     default:
       return null;
   }

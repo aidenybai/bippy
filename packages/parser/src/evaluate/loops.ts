@@ -198,7 +198,7 @@ const evaluateUncertainTail = (
     const value =
       statement.type === "ForInStatement"
         ? unknownPrimitiveValue("string", "loop key")
-        : unknownValue("loop variable");
+        : unknownValue("loop variable", location);
     bindLoopLeft(interpreter, statement.left, value, loopContext);
   } else if (statement.type === "ForStatement" && statement.init?.type === "VariableDeclaration") {
     for (const declarator of statement.init.declarations) {
@@ -207,7 +207,7 @@ const evaluateUncertainTail = (
         declarator.id,
         declarator.init?.type === "Literal" && typeof declarator.init.value === "number"
           ? unknownPrimitiveValue("number", "loop counter")
-          : unknownValue("loop variable"),
+          : unknownValue("loop variable", location),
         loopContext,
       );
     }

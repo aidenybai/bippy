@@ -1,0 +1,5 @@
+{
+  "expectedStatus": "partial",
+  "minCoverage": 0.3,
+  "notes": "An inner Suspense boundary whose fallback and content are both opaque nests inside another boundary; materialization must settle instead of re-rendering forever."
+}

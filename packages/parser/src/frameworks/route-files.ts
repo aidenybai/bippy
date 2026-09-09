@@ -6,14 +6,32 @@ export const ROUTE_FILE_EXTENSIONS = [".tsx", ".ts", ".jsx", ".js", ".mjs", ".mt
 /** `createRouteId` in `@react-router/dev`: the route file relative to the app directory, minus its extension. */
 export const routeIdFromFile = (file: string): string => file.replace(/\.[a-z0-9]+$/i, "");
 
-/** Resolves `directory/baseName.<ext>` for the first extension that exists. */
-export const findRouteFile = (directory: string, baseName: string): string | null => {
-  for (const extension of ROUTE_FILE_EXTENSIONS) {
+/** `pageExtensions` that `@next/mdx` adds: routes the bundler compiles from markup rather than JavaScript. */
+export const CONTENT_ROUTE_FILE_EXTENSIONS = [".mdx", ".md"] as const;
+
+const findFileWithExtension = (
+  directory: string,
+  baseName: string,
+  extensions: readonly string[],
+): string | null => {
+  for (const extension of extensions) {
     const candidate = path.join(directory, `${baseName}${extension}`);
     if (existsSync(candidate)) return candidate;
   }
   return null;
 };
+
+/** Resolves `directory/baseName.<ext>` for the first extension that exists. */
+export const findRouteFile = (directory: string, baseName: string): string | null =>
+  findFileWithExtension(directory, baseName, ROUTE_FILE_EXTENSIONS);
+
+/** A `page.*` that is either evaluable source or bundler-compiled content (`.mdx`). */
+export const findPageFile = (directory: string): string | null =>
+  findRouteFile(directory, "page") ??
+  findFileWithExtension(directory, "page", CONTENT_ROUTE_FILE_EXTENSIONS);
+
+export const isContentRouteFile = (filePath: string): boolean =>
+  CONTENT_ROUTE_FILE_EXTENSIONS.some((extension) => extension === path.extname(filePath));
 
 export const findFirstDirectory = (rootDirectory: string, candidates: string[]): string | null => {
   for (const candidate of candidates) {

@@ -10,7 +10,8 @@ import {
 import {
   compareStaticToRuntime,
   createCommitRecorder,
-  formatComparisonReport,
+  enumerateStaticStates,
+  formatCompareRenderResult,
   formatPattern,
   formatRuntimeSnapshot,
   getRenderPattern,
@@ -20,6 +21,7 @@ import {
   type ComparisonStatus,
   type RuntimeFiberSnapshot,
   type RuntimeSnapshot,
+  type StateSpaceBudget,
 } from "../../src/harness/index.js";
 import { NODE_TIMER_UNDERRUN_MS } from "../../src/evaluate/timers.js";
 import { installReduxStoreHook } from "../../src/harness/redux-store.js";
@@ -28,6 +30,8 @@ export interface FixtureManifest {
   entry: string;
   expectedStatus: ComparisonStatus;
   minCoverage: number;
+  /** Runtime fibers that must match without wildcards or skipped opaque subtrees. */
+  minStrictCoverage?: number;
   framework: FrameworkKind;
   /** URL pathname for routed frameworks; the runtime side navigates here before mounting. */
   route?: string;
@@ -36,6 +40,12 @@ export interface FixtureManifest {
   /** Runtime state replayed into the static render, as a live capture would record it. */
   observations?: RuntimeObservations;
   skipRuntime?: boolean;
+  /** Bounds on the enumerated state space; defaults are generous enough for every fixture but the budget one. */
+  stateSpaceBudget?: Partial<StateSpaceBudget>;
+  /** How many concrete states the static render must enumerate. */
+  expectedStates?: number;
+  /** Whether the enumeration must (true) or must not (false) report omitted states. */
+  expectOmitted?: boolean;
   notes?: string;
 }
 
@@ -156,14 +166,12 @@ export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult
     };
   }
   const { snapshot: runtime, observed } = await mountFixture(fixture);
-  const comparison = compareStaticToRuntime(
-    staticResult,
-    flattenTransparentFibers(runtime, profile),
-    {
-      anchor: fixture.manifest.anchor ?? profile.defaultAnchor ?? undefined,
-      transparentStaticFibers: profile.transparentStaticFibers,
-    },
-  );
+  const stateSpace = enumerateStaticStates(staticResult, {
+    anchor: fixture.manifest.anchor ?? profile.defaultAnchor ?? undefined,
+    transparentStaticFibers: profile.transparentStaticFibers,
+    budget: fixture.manifest.stateSpaceBudget,
+  });
+  const comparison = compareStaticToRuntime(stateSpace, flattenTransparentFibers(runtime, profile));
   return { staticResult, runtime, observed, comparison };
 };
 
@@ -178,7 +186,7 @@ export const describeFixtureRun = (fixture: FixtureCase, run: FixtureRunResult):
     );
   }
   if (run.comparison) {
-    sections.push(`comparison:\n${formatComparisonReport(run.comparison.report)}`);
+    sections.push(`comparison:\n${formatCompareRenderResult(run.comparison)}`);
     if (run.comparison.note) sections.push(`note: ${run.comparison.note}`);
   }
   if (run.staticResult.diagnostics.length > 0) {

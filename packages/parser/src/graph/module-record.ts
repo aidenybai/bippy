@@ -371,6 +371,16 @@ const getWrappedRequiredSpecifier = (node: Expression): string | null => {
 const isVoidZero = (node: Expression): boolean =>
   node.type === "UnaryExpression" && node.operator === "void";
 
+/** esbuild's `module.exports = __toCommonJS(ns_exports)`: the namespace object it converts. */
+const getCommonJsNamespace = (node: Expression): Expression =>
+  node.type === "CallExpression" &&
+  node.callee.type === "Identifier" &&
+  /^_*__toCommonJS$/.test(node.callee.name) &&
+  node.arguments.length === 1 &&
+  node.arguments[0].type !== "SpreadElement"
+    ? node.arguments[0]
+    : node;
+
 const unwrapParentheses = (node: Expression): Expression =>
   node.type === "ParenthesizedExpression" ? unwrapParentheses(node.expression) : node;
 
@@ -510,8 +520,10 @@ class CommonJsCollector {
   /** Later assignments replace earlier ones, so `exports.x = void 0` placeholders yield to the real value. */
   readonly exports = new Map<string, ExportEntry>();
   readonly reExportAll: string[] = [];
+  /** esbuild's `__export(ns_exports, { name: () => value })` getters by namespace binding. */
+  private readonly namespaceGetters = new Map<string, ObjectExpression>();
   isCommonJs = false;
-  replacesModuleExports = false;
+  moduleExports: Expression | null = null;
 
   constructor(
     private readonly factoryReturns: ReadonlySet<Statement>,
@@ -541,8 +553,9 @@ class CommonJsCollector {
   }
 
   /** `module.exports = value` exposes `value` as default and its literal members as named exports. */
-  private setModuleExports(value: Expression): void {
-    this.replacesModuleExports = true;
+  private setModuleExports(assigned: Expression): void {
+    this.moduleExports = assigned;
+    const value = getCommonJsNamespace(assigned);
     const specifier = getRequiredSpecifier(value);
     if (specifier !== null) {
       this.addReExportAll(specifier);
@@ -560,9 +573,20 @@ class CommonJsCollector {
       this.exports.set("default", { ...aliased, exportedName: "default" });
       return;
     }
-    this.setExpression("default", value);
+    this.setExpression("default", assigned);
     const object = this.getConstantObject(value);
     if (object) this.collectObjectMembers(object);
+    const getters = value.type === "Identifier" ? this.namespaceGetters.get(value.name) : undefined;
+    if (getters) this.collectObjectGetters(getters);
+  }
+
+  private collectObjectGetters(object: ObjectExpression): void {
+    for (const property of object.properties) {
+      if (property.type !== "Property" || property.kind !== "init") continue;
+      const name = getStaticPropertyName(property.key, property.computed);
+      const expression = getGetterExpression(property.value);
+      if (name !== null && expression) this.setExpression(name, expression);
+    }
   }
 
   /** The literal behind `module.exports = value`: the expression itself or the `const` it names. */
@@ -641,6 +665,13 @@ class CommonJsCollector {
     }
     if (callee.type === "Identifier" && /^_*(__exportStar|exportStar)$/.test(callee.name)) {
       if (args.length === 2) this.collectExportStar(args[0], args[1]);
+      return;
+    }
+    if (callee.type === "Identifier" && /^_*__export$/.test(callee.name) && args.length === 2) {
+      const [target, members] = args;
+      if (target.type !== "Identifier" || members.type !== "ObjectExpression") return;
+      if (isExportsObject(target)) this.collectObjectGetters(members);
+      else this.namespaceGetters.set(target.name, members);
     }
   }
 
@@ -828,6 +859,6 @@ export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
     dependencies,
     sideEffectStatements,
     isCommonJs: commonJs !== null,
-    replacesModuleExports: commonJs?.replacesModuleExports ?? false,
+    moduleExports: commonJs?.moduleExports ?? null,
   };
 };

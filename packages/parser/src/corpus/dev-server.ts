@@ -62,7 +62,7 @@ const spawnShell = (
     stdio: ["ignore", "pipe", "pipe"],
     // Clones live under bippy's tree, whose `packageManager` field would otherwise make
     // corepack refuse the yarn/npm commands the corpus repositories expect.
-    env: { ...inheritedEnv(), ...env, FORCE_COLOR: "0", CI: "1", COREPACK_ENABLE_STRICT: "0" },
+    env: { ...inheritedEnv(), FORCE_COLOR: "0", CI: "1", COREPACK_ENABLE_STRICT: "0", ...env },
   });
   child.stdout?.pipe(log, { end: false });
   child.stderr?.pipe(log, { end: false });
