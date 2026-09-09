@@ -66,10 +66,11 @@ export interface HtmlTagDescriptor {
   injectTo?: "head" | "body" | "head-prepend" | "body-prepend";
 }
 
-/** Vite's `IndexHtmlTransformContext` for a dev page request, without the server. */
+/** Vite's `IndexHtmlTransformContext` for a dev page request; the server exposes the resolved config hooks read (`@vitejs/plugin-react` takes `base` from `server.config`). */
 export interface HtmlTransformContext {
   path: string;
   filename: string;
+  server: { config: object };
   originalUrl: string;
 }
 
@@ -278,6 +279,20 @@ export const applyHtmlTransformHooks = async (
     }
   }
   return page;
+};
+
+/** Runs `load` as a dev server started in `directory` would: plugins (`@lingui/vite-plugin`, cosmiconfig-based ones) search their own config from `process.cwd()`. */
+export const loadFromDirectory = async <Loaded>(
+  directory: string,
+  load: () => Loaded | Promise<Loaded>,
+): Promise<Loaded> => {
+  const previousDirectory = process.cwd();
+  process.chdir(directory);
+  try {
+    return await load();
+  } finally {
+    process.chdir(previousDirectory);
+  }
 };
 
 // HACK: bundled build tooling picks its Node or browser module shims by whether

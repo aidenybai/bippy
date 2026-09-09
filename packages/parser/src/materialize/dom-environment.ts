@@ -3,7 +3,6 @@ import { DEFAULT_BROWSER_ENVIRONMENT } from "../evaluate/media-query.js";
 import type { HostDocument } from "../host/host-document.js";
 import { loadHostRealm } from "../host/host-realm.js";
 
-const EMPTY_DOCUMENT_MARKUP = "<!doctype html><html><head></head><body></body></html>";
 const WINDOW_GLOBALS = ["window", "self", "document", "navigator", "location", "history"];
 
 // happy-dom never fires load/error on `<link rel="preload">`, but React DOM
@@ -42,14 +41,14 @@ export const ensureDomGlobals = (): void => {
  * real document (`document.body.classList`, expando properties, history), so
  * each analyzed program must start from the DOM a browser would give it, not
  * from what the previous program left behind. A document the host owns
- * (vitest's) is rewritten in place with the page's markup instead.
+ * (vitest's) is kept, and rewritten in place when the page has its own markup.
  */
 export const resetDomGlobals = (initialMarkup: string | null = null): void => {
   if (installedWindow !== null || typeof globalThis.document === "undefined") {
     installWindow(initialMarkup);
-  } else {
+  } else if (initialMarkup !== null) {
     document.open();
-    document.write(initialMarkup ?? EMPTY_DOCUMENT_MARKUP);
+    document.write(initialMarkup);
   }
 };
 

@@ -31,7 +31,7 @@ import {
 } from "../../src/harness/index.js";
 import { NODE_TIMER_UNDERRUN_MS } from "../../src/evaluate/timers.js";
 import { installReduxStoreHook } from "../../src/harness/redux-store.js";
-import { loadWithoutDom } from "../../src/graph/vite-plugins.js";
+import { loadFromDirectory, loadWithoutDom } from "../../src/graph/vite-plugins.js";
 import { resetDomGlobals } from "../../src/materialize/dom-environment.js";
 
 export interface FixtureManifest {
@@ -129,28 +129,32 @@ const settleCommits = async (recorder: CommitRecorder): Promise<void> => {
   }
 };
 
-/** The page a Vite dev server rooted at the fixture would answer with: its `index.html` after the fixture's own plugins' `transformIndexHtml` hooks. */
-const readServedDocumentShell = async (fixture: FixtureCase): Promise<string | null> => {
+const BLANK_DOCUMENT_MARKUP = "<!doctype html><html><head></head><body></body></html>";
+
+/** The page a `vite dev` started in the fixture directory would answer with: its `index.html` after the fixture's own plugins' `transformIndexHtml` hooks, else a blank page. */
+const readServedDocumentShell = async (fixture: FixtureCase): Promise<string> => {
   const indexPath = join(fixture.directory, "index.html");
-  if (!existsSync(indexPath)) return null;
-  return loadWithoutDom(async () => {
-    const { createServer } = await import("vite");
-    const server = await createServer({
-      root: fixture.directory,
-      logLevel: "silent",
-      appType: "custom",
-      server: { middlewareMode: true, watch: null },
-      optimizeDeps: { noDiscovery: true },
-    });
-    try {
-      return await server.transformIndexHtml(
-        fixture.manifest.route ?? "/",
-        readFileSync(indexPath, "utf8"),
-      );
-    } finally {
-      await server.close();
-    }
-  });
+  if (!existsSync(indexPath)) return BLANK_DOCUMENT_MARKUP;
+  return loadFromDirectory(fixture.directory, () =>
+    loadWithoutDom(async () => {
+      const { createServer } = await import("vite");
+      const server = await createServer({
+        root: fixture.directory,
+        logLevel: "silent",
+        appType: "custom",
+        server: { middlewareMode: true, watch: null },
+        optimizeDeps: { noDiscovery: true },
+      });
+      try {
+        return await server.transformIndexHtml(
+          fixture.manifest.route ?? "/",
+          readFileSync(indexPath, "utf8"),
+        );
+      } finally {
+        await server.close();
+      }
+    }),
+  );
 };
 
 const mountFixture = async (fixture: FixtureCase): Promise<MountResult> => {

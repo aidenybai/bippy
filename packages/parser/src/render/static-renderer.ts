@@ -334,7 +334,7 @@ export const createStaticRenderer = async (
   options: StaticRendererOptions,
 ): Promise<StaticRenderer> => {
   const rootDirectory = realpathSync(options.rootDirectory);
-  const viteUserPlugins = await loadViteUserPlugins(rootDirectory);
+  const viteUserPlugins = await loadViteUserPlugins(rootDirectory, options.modeledVitePlugins);
   const transforms = [
     await createTanStackRouterTransform(rootDirectory),
     viteUserPlugins === null ? null : createViteAssetTransform(viteUserPlugins),

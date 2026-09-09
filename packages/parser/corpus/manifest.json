@@ -629,7 +629,8 @@
       "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.30.2 exec rspack serve",
       "env": {
         "SENTRY_UI_DEV_ONLY": "1",
-        "SENTRY_WEBPACK_PROXY_PORT": "7999"
+        "SENTRY_WEBPACK_PROXY_PORT": "7999",
+        "CI": ""
       },
       "url": "https://localhost:7999/auth/login/",
       "readyTimeoutMs": 900000,
@@ -3155,6 +3156,124 @@
           "posthog-js",
           "uuid",
           "lodash"
+        ]
+      }
+    },
+    {
+      "id": "insforge",
+      "repository": "https://github.com/InsForge/InsForge",
+      "revision": "ccb1703242bd1b5ffbc250f0acb866cd36e56ce1",
+      "description": "InsForge self-hosting dashboard login page (Vite 8 SPA host app over the shared @insforge/dashboard package: react-router-dom BrowserRouter, TanStack Query, react-hook-form + zod, i18next, PostHog; /api proxied to a stand-in for the Express backend)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm ci --ignore-scripts",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/insforge-dev.sh\" 7141 7140",
+      "url": "http://localhost:7141/dashboard/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "frontend",
+        "entry": "src/main.tsx",
+        "route": "/dashboard/login",
+        "aliases": {
+          "@insforge/dashboard": "../packages/dashboard/src",
+          "#app": "../packages/dashboard/src/app",
+          "#assets": "../packages/dashboard/src/assets",
+          "#components": "../packages/dashboard/src/components",
+          "#features": "../packages/dashboard/src/features",
+          "#layout": "../packages/dashboard/src/layout",
+          "#lib": "../packages/dashboard/src/lib",
+          "#navigation": "../packages/dashboard/src/navigation",
+          "#router": "../packages/dashboard/src/router",
+          "#types": "../packages/dashboard/src/types",
+          "@insforge/shared-schemas": "../packages/shared-schemas/src",
+          "@insforge/ui": "../packages/ui/src"
+        },
+        "externalPackageAllowList": [
+          "@insforge/*",
+          "react-router-dom",
+          "react-router",
+          "@tanstack/react-query",
+          "@tanstack/query-core",
+          "react-hook-form",
+          "@hookform/resolvers",
+          "@hookform/resolvers/*",
+          "zod",
+          "i18next",
+          "react-i18next",
+          "lucide-react",
+          "@radix-ui/*",
+          "radix-ui",
+          "class-variance-authority",
+          "clsx",
+          "tailwind-merge",
+          "posthog-js",
+          "sonner",
+          "next-themes"
+        ]
+      },
+      "notes": "The Express backend needs the ghcr.io/insforge/postgres image plus PostgREST; `corpus/scripts/insforge-api-server.ts` stands in for it on an anonymous visit, answering `/api/auth/admin/sessions/current` and `/api/auth/admin/refresh` with the backend's 401 bodies so `RequireAuth` redirects to `/dashboard/login`, which is captured directly."
+    },
+    {
+      "id": "blinko",
+      "repository": "https://github.com/blinkospace/blinko",
+      "revision": "b2586d03fddb796252f050a96922879bf4a41fad",
+      "description": "Blinko sign-in page (Vite 6 SPA served by the Express + vite-express backend on :1111: react-router-dom BrowserRouter with lazy routes, MobX stores, HeroUI, next-themes, i18next; Prisma over a local PostgreSQL container)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bun install",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/blinko-setup.sh\""],
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-blinko-pg 5452 blinko"],
+      "dev": "cd server && bun --env-file ../.env index.ts",
+      "url": "http://localhost:1111/signin",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "app",
+        "entry": "src/main.tsx",
+        "route": "/signin",
+        "aliases": {
+          "@": "./src",
+          "@shared": "../shared"
+        },
+        "externalPackageAllowList": [
+          "react-router-dom",
+          "react-router",
+          "next-themes",
+          "mobx",
+          "mobx-react-lite",
+          "i18next",
+          "react-i18next",
+          "i18next-http-backend",
+          "i18next-browser-languagedetector",
+          "@heroui/*",
+          "@react-aria/*",
+          "@react-stately/*",
+          "@react-types/*"
+        ]
+      },
+      "notes": "Partial. The page mounts two React roots: react-dom for the sign-in form and a @react-three/fiber root for the shader gradient background (ShaderGradientCanvas, three.js WebGL that happy-dom cannot host), so the R3F root is opaque. `AppProvider` (an `observer`) maps `rootStore.providers`, which `initStore` pushes `ToastPlugin` into from a `useEffect`; the MobX model treats observability as transparent, so it never replays that reaction and the static side misses the `<provider key=\"ToastPlugin\">` subtree. HeroUI's Input/Checkbox/Button/Image run through @react-aria hooks and tailwind-variants slot functions whose props are runtime state (`useInput` focus/hover/filled, `tv()` reducers), which forks 47 branches, exhausts the state budget (256 states, incomplete) and, inside `tv()`, the step budget. framer-motion's `MotionConfig` and react-dev-inspector's `Inspector` are opaque pass-throughs. The `packageManager` field pins bun@1.2.8 but `bun install` resolves the lockfile with the ambient bun."
+    },
+    {
+      "id": "fiora-app",
+      "repository": "https://github.com/yinxin630/fiora",
+      "revision": "d741c006c5a0a5b904dec742ac09dbc51bd7860d",
+      "description": "Fiora mobile client packages/app (Expo SDK 42 / React Native 0.63, react-native-router-flux, native-base, react-redux; App.tsx wraps src/App in the redux Provider)",
+      "notes": "Not a web app: packages/app is Expo/React Native only. Its scripts are `expo start`, `expo build:android`, `expo build:ios`; app.json declares ios/android targets only; the dependencies have react-native and react-native-router-flux but no react-dom or react-native-web, and src/App.tsx renders react-native `View`s and native-base `Root` through react-native-router-flux scenes, so nothing here can be served to a browser. The repository's browser client is the separate packages/web (webpack), outside the requested root. Recorded static-only from App.tsx (`yarn install --ignore-scripts` skips the expo/jest-expo postinstall downloads).",
+      "framework": "spa",
+      "workingDirectory": "packages/app",
+      "install": "cd packages/app && yarn install --frozen-lockfile --ignore-scripts --non-interactive",
+      "dev": "yarn dev:app",
+      "url": "http://localhost:19006/",
+      "static": {
+        "rootDirectory": "packages/app",
+        "entry": "App.tsx",
+        "tsconfig": "tsconfig.json",
+        "externalPackageAllowList": [
+          "react-redux",
+          "redux",
+          "react-native-router-flux",
+          "native-base"
         ]
       }
     }

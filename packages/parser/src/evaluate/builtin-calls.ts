@@ -1031,11 +1031,14 @@ const callGlobal = (
     case "Array.from": {
       const source =
         first?.kind === "object" ? (getCollectionItems(first) ?? arrayLikeToList(first)) : first;
-      if (source?.kind === "list" || source?.kind === "repeat") {
-        if (isCallable(second)) return mapList(interpreter, source, second, context, location);
-        return source;
-      }
-      return unknownValue("Array.from of dynamic iterable", location);
+      const fromSource = (items: StaticValue): StaticValue => {
+        if (items.kind === "list" || items.kind === "repeat") {
+          if (isCallable(second)) return mapList(interpreter, items, second, context, location);
+          return items;
+        }
+        return unknownValue("Array.from of dynamic iterable", location);
+      };
+      return mapValue(source ?? UNDEFINED_VALUE, fromSource);
     }
     case "Int8Array.from":
     case "Uint8Array.from":
@@ -1389,8 +1392,9 @@ const MAX_ARRAY_LIKE_LENGTH = 1_000;
 const arrayOfLength = (length: StaticValue, location: SourceLocation | null): StaticValue => {
   if (length.kind === "unknown-primitive" && length.primitiveType === "number")
     return { kind: "repeat", item: UNDEFINED_VALUE, location, count: length.numberRange };
-  if (length.kind === "unknown" || length.kind === "branch")
-    return unknownValue("Array() with a dynamic length", location);
+  if (length.kind === "branch")
+    return mapValue(length, (alternative) => arrayOfLength(alternative, location));
+  if (length.kind === "unknown") return unknownValue("Array() with a dynamic length", location);
   if (length.kind !== "primitive" || typeof length.value !== "number") return listValue([length]);
   if (!Number.isInteger(length.value) || length.value < 0) {
     return thrownValue(
@@ -1409,8 +1413,12 @@ const toLength = (value: unknown): number =>
   Math.min(Math.max(Math.trunc(Number(value)) || 0, 0), Number.MAX_SAFE_INTEGER);
 
 // `{ length: n }` (and sparse array-likes) as consumed by `Array.from`.
-const arrayLikeToList = (value: Extract<StaticValue, { kind: "object" }>): StaticValue => {
-  const length = getObjectProperty(value, "length");
+const arrayLikeToList = (
+  value: Extract<StaticValue, { kind: "object" }>,
+  length = getObjectProperty(value, "length"),
+): StaticValue => {
+  if (length.kind === "branch")
+    return mapValue(length, (alternative) => arrayLikeToList(value, alternative));
   if (length.kind === "unknown-primitive" && length.primitiveType === "number") {
     return {
       kind: "repeat",
@@ -2200,11 +2208,21 @@ export const evaluateBuiltinCall = (
         return receiver;
       case "slice": {
         if (!isKnownList(receiver)) return receiver;
-        const start = toIndex(first, 0);
-        const end = toIndex(second, receiver.items.length);
-        if (start === null || end === null)
-          return unknownValue("slice with dynamic bounds", location);
-        return listValue(receiver.items.slice(start, end));
+        const sliceBetween = (
+          startBound: StaticValue | undefined,
+          endBound: StaticValue | undefined,
+        ): StaticValue => {
+          const start = toIndex(startBound, 0);
+          const end = toIndex(endBound, receiver.items.length);
+          if (start === null || end === null)
+            return unknownValue("slice with dynamic bounds", location);
+          return listValue(receiver.items.slice(start, end));
+        };
+        if (first && isPrimitiveBranch(first))
+          return mapValue(first, (startBound) => sliceBetween(startBound, second));
+        if (second && isPrimitiveBranch(second))
+          return mapValue(second, (endBound) => sliceBetween(first, endBound));
+        return sliceBetween(first, second);
       }
       case "concat": {
         return listValue([

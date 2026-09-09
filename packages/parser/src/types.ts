@@ -1055,6 +1055,8 @@ export interface StaticRendererOptions {
   origin?: string;
   /** Defaults to what the root's Vite config implies (Vite ≤ 7 without an swc/oxc React plugin transpiles with esbuild), else `name-preserving`. */
   transpiler?: ModuleTranspiler;
+  /** Vite plugins (by name, with their `name:` and `name-` companions) a framework model stands in for; the app's config is resolved without them. */
+  modeledVitePlugins?: readonly string[];
   /** What a running page was observed to hold; the render takes these as its runtime inputs. */
   observations?: RuntimeObservations;
   externalValues?: ExternalValueProvider;

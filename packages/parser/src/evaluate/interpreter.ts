@@ -232,6 +232,7 @@ import { applyClockOperator, TimerQueue } from "./timers.js";
 import { evaluateLoop } from "./loops.js";
 import {
   applyNarrowing,
+  getDiscriminantTargets,
   lookupNarrowingTarget,
   type NarrowingTarget,
   narrowTest,
@@ -499,6 +500,14 @@ export interface StatementContinuation {
   (context: EvaluationContext): StatementOutcome;
 }
 
+/** A fork whose returning paths still await the state the surviving paths end in. */
+interface PendingReturnJoin {
+  journal: HeapJournal;
+  reason: string;
+  location: SourceLocation;
+  preferredPath: number;
+}
+
 const completeBlock: StatementContinuation = () => COMPLETES;
 
 export const returnOutcome = (value: StaticValue): StatementOutcome => ({
@@ -723,6 +732,7 @@ export class Interpreter {
   /** Observable changes (state commits, heap mutations) so far; a timer tick that adds none is steady state. */
   changeCount = 0;
   private readonly heapJournals: HeapJournal[] = [];
+  private readonly pendingReturnJoins: PendingReturnJoin[] = [];
   /** The outcomes of the `await`s a statement is being (re-)evaluated with, each consumed by its `await`. */
   private resolvedAwaits = new Map<AwaitExpression, StaticValue>();
   private readonly generatorYields: StaticValue[][] = [];
@@ -1023,7 +1033,7 @@ export class Interpreter {
     let pendingStatements: Statement[] = [];
     const flushPendingStatements = (): void => {
       if (pendingStatements.length === 0) return;
-      this.evaluateBlock(pendingStatements, context, false);
+      this.evaluateFunctionBlock(pendingStatements, context);
       pendingStatements = [];
     };
     for (const statement of sideEffectStatements) {
@@ -3570,7 +3580,7 @@ export class Interpreter {
     for (const name of getHoistedVarNames(body.body)) {
       if (!scope.bindings.has(name)) declareInScope(scope, name, UNDEFINED_VALUE);
     }
-    const outcome = this.evaluateBlock(body.body, callContext, false);
+    const outcome = this.evaluateFunctionBlock(body.body, callContext);
     return outcomeToReturnValue(outcome, location);
   }
 
@@ -3600,7 +3610,7 @@ export class Interpreter {
       compiled.name,
     );
     declareInScope(scope, compiled.name, classValue);
-    this.evaluateBlock(compiled.setup, wrapperContext, false);
+    this.evaluateFunctionBlock(compiled.setup, wrapperContext);
     return classValue;
   }
 
@@ -4085,7 +4095,7 @@ export class Interpreter {
       journal.endPath();
       restoreScopes(entrySnapshot);
       journal.endPath();
-      this.heapJournals.pop();
+      this.removeHeapJournal(journal);
       const preferredPath = isLikelyRun ? 0 : 1;
       const predicate = createPathPredicate();
       journal.join(reason, location, preferredPath, predicate);
@@ -4103,16 +4113,74 @@ export class Interpreter {
   widenLoopCarriedBindings(scope: Scope, run: () => void, location: SourceLocation): void {
     const entrySnapshot = snapshotScopes(scope);
     const journal = new HeapJournal();
+    const pendingDepth = this.pendingReturnJoins.length;
     this.heapJournals.push(journal);
     try {
       run();
     } finally {
       const ranSnapshot = snapshotScopes(scope);
+      for (const pending of this.pendingReturnJoins.splice(pendingDepth)) {
+        this.removeHeapJournal(pending.journal);
+      }
       journal.endPath();
-      this.heapJournals.pop();
+      this.removeHeapJournal(journal);
       restoreScopes(entrySnapshot);
       widenMovedBindings(entrySnapshot, ranSnapshot, location);
     }
+  }
+
+  private removeHeapJournal(journal: HeapJournal): void {
+    const index = this.heapJournals.lastIndexOf(journal);
+    if (index !== -1) this.heapJournals.splice(index, 1);
+  }
+
+  /**
+   * When some paths return and the others `break` or `continue`, the loop goes
+   * on from the jumping paths alone; the returning paths keep their heap state
+   * aside until the function they left settles.
+   */
+  private deferReturningPaths(
+    journal: HeapJournal,
+    outcomes: StatementOutcome[],
+    preferredOutcome: number,
+    reason: string,
+    location: SourceLocation,
+  ): boolean {
+    const jumpingPaths = outcomes.flatMap((outcome, index) =>
+      outcome.jump === null ? [] : [index],
+    );
+    const returningPaths = outcomes.flatMap((outcome, index) =>
+      outcome.jump === null ? [index] : [],
+    );
+    if (jumpingPaths.length === 0 || returningPaths.length === 0) return false;
+    const preferredJumping = Math.max(jumpingPaths.indexOf(preferredOutcome), 0);
+    journal.continueFrom(jumpingPaths, reason, location, preferredJumping, null);
+    const preferredReturning = returningPaths.indexOf(preferredOutcome);
+    this.pendingReturnJoins.push({
+      journal,
+      reason,
+      location,
+      preferredPath: preferredReturning === -1 ? returningPaths.length : preferredReturning,
+    });
+    return true;
+  }
+
+  private settlePendingReturns(depth: number): void {
+    for (const pending of this.pendingReturnJoins.splice(depth).reverse()) {
+      this.removeHeapJournal(pending.journal);
+      pending.journal.endPath();
+      pending.journal.join(pending.reason, pending.location, pending.preferredPath, null);
+    }
+  }
+
+  private evaluateFunctionBlock(
+    statements: Statement[],
+    context: EvaluationContext,
+  ): StatementOutcome {
+    const pendingDepth = this.pendingReturnJoins.length;
+    const outcome = this.evaluateBlock(statements, context, false);
+    this.settlePendingReturns(pendingDepth);
+    return outcome;
   }
 
   /**
@@ -4166,8 +4234,8 @@ export class Interpreter {
     if (isMixed) {
       const preferredCompleting = Math.max(completingPaths.indexOf(preferredOutcome), 0);
       journal.continueFrom(completingPaths, reason, location, preferredCompleting, null);
-    } else {
-      this.heapJournals.pop();
+    } else if (!this.deferReturningPaths(journal, outcomes, preferredOutcome, reason, location)) {
+      this.removeHeapJournal(journal);
       journal.join(reason, location, preferredOutcome, predicate);
     }
     if (joinedSnapshots.length > 0) {
@@ -4191,15 +4259,31 @@ export class Interpreter {
     if (context.hooks) context.hooks.cursor = completedHookCursor;
     const rest = proceed(context);
     if (isMixed) {
-      this.heapJournals.pop();
       journal.endPath();
       const preferredJumping = jumpingPaths.indexOf(preferredOutcome);
-      journal.join(
-        reason,
-        location,
-        preferredJumping === -1 ? jumpingPaths.length : preferredJumping,
-        null,
-      );
+      if (isPureReturn(rest)) {
+        journal.continueFrom(
+          jumpingPaths.map((_, index) => index),
+          reason,
+          location,
+          Math.max(preferredJumping, 0),
+          null,
+        );
+        this.pendingReturnJoins.push({
+          journal,
+          reason,
+          location,
+          preferredPath: preferredJumping === -1 ? 0 : 1,
+        });
+      } else {
+        this.removeHeapJournal(journal);
+        journal.join(
+          reason,
+          location,
+          preferredJumping === -1 ? jumpingPaths.length : preferredJumping,
+          null,
+        );
+      }
     }
     const isRestPositional =
       outcomes.slice(0, -1).every(isPureReturn) && isPureCompletion(outcomes[outcomes.length - 1]);
@@ -4245,38 +4329,61 @@ export class Interpreter {
         location,
       );
     };
-    let matchIndex = -1;
-    let isDecided = true;
-    for (const [caseIndex, caseValue] of caseValues.entries()) {
-      if (caseValue === null) continue;
-      const verdict = getTruthiness(
-        applyBinaryOperator("===", discriminant, caseValue, this.getRealm(context.environment)),
-      );
-      if (verdict === true) {
-        matchIndex = caseIndex;
-        break;
+    const defaultIndex = statement.cases.findIndex((switchCase) => switchCase.test === null);
+    const realm = this.getRealm(context.environment);
+    const getMatchIndex = (value: StaticValue): number | null => {
+      for (const [caseIndex, caseValue] of caseValues.entries()) {
+        if (caseValue === null) continue;
+        const verdict = getTruthiness(applyBinaryOperator("===", value, caseValue, realm));
+        if (verdict === true) return caseIndex;
+        if (verdict === null) return null;
       }
-      if (verdict === null) {
-        isDecided = false;
-        break;
-      }
-    }
-    if (isDecided) {
-      if (matchIndex === -1)
-        matchIndex = statement.cases.findIndex((switchCase) => switchCase.test === null);
+      return defaultIndex;
+    };
+    const reason = `switch (${describeValue(discriminant)})`;
+    const matchIndex = getMatchIndex(discriminant);
+    if (matchIndex !== null) {
       return matchIndex === -1 ? proceed(context) : runThenProceed(matchIndex);
     }
-    const hasDefault = statement.cases.some((switchCase) => switchCase.test === null);
-    const branches: StatementContinuation[] = statement.cases.map(
-      (_, caseIndex) => (pathContext) => runFrom(caseIndex, pathContext),
+    const runStart = (startCase: number): StatementContinuation =>
+      startCase === -1 ? () => COMPLETES : (pathContext) => runFrom(startCase, pathContext);
+    const alternativeMatches =
+      discriminant.kind === "branch"
+        ? discriminant.alternatives.map((alternative) => getMatchIndex(alternative))
+        : [];
+    const decidedMatches = alternativeMatches.filter((match): match is number => match !== null);
+    if (discriminant.kind !== "branch" || decidedMatches.length !== alternativeMatches.length) {
+      const branches = statement.cases.map((_, caseIndex) => runStart(caseIndex));
+      if (defaultIndex === -1) branches.push(runStart(-1));
+      return this.forkPaths(branches, context, proceed, reason, location);
+    }
+    const startCases = [...new Set(decidedMatches)];
+    const targets = getDiscriminantTargets(statement.discriminant).filter(
+      (target) => lookupNarrowingTarget(context.scope, target, getObjectProperty) === discriminant,
     );
-    if (!hasDefault) branches.push(() => COMPLETES);
+    const branches = startCases.map((startCase): StatementContinuation => {
+      const matching = discriminant.alternatives.filter(
+        (_, index) => decidedMatches[index] === startCase,
+      );
+      return (pathContext) => {
+        const narrowed = branchValue(matching, discriminant.reason, discriminant.location);
+        for (const target of targets) {
+          applyNarrowing(context.scope, target, narrowed, (object) =>
+            this.journalHeapValue(object),
+          );
+        }
+        return runStart(startCase)(pathContext);
+      };
+    });
+    const isPositional = startCases.length === decidedMatches.length;
     return this.forkPaths(
       branches,
       context,
       proceed,
-      `switch (${describeValue(discriminant)})`,
+      reason,
       location,
+      startCases.indexOf(decidedMatches[discriminant.preferredIndex]),
+      isPositional && discriminant.predicate ? discriminant.predicate : createPathPredicate(),
     );
   }
 

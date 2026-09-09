@@ -10,6 +10,7 @@ import { findViteConfig, readDocumentShell } from "./module-transpiler.js";
 import {
   applyHtmlTransformHooks,
   applyTransformHooks,
+  loadFromDirectory,
   loadWithoutDom,
   type VitePlugin,
   vitePluginSchema,
@@ -30,11 +31,15 @@ const viteModuleSchema = z.object({
 const loadedConfigSchema = z
   .object({ config: z.object({ plugins: z.unknown().optional() }).passthrough() })
   .nullable();
-const resolvedConfigSchema = z.object({ plugins: z.array(z.unknown()) });
+const resolvedConfigSchema = z.object({ plugins: z.array(z.unknown()) }).passthrough();
+const namedPluginSchema = z.object({ name: z.string() });
+
+type ViteResolvedConfig = z.infer<typeof resolvedConfigSchema>;
 
 /** The plugins an app's own Vite config file contributes, resolved as `vite dev` resolves them. */
 export interface ViteUserPlugins {
   readonly rootDirectory: string;
+  readonly config: ViteResolvedConfig;
   readonly plugins: VitePlugin[];
 }
 
@@ -49,6 +54,10 @@ const flattenPlugins = async (option: unknown, into: Set<unknown>): Promise<void
   into.add(resolved);
 };
 
+/** A plugin set's members are its name and `name:`/`name-` companions (`remix`, `remix-hmr-updates`, `react-router:route-exports`). */
+const isPluginSetMember = (name: string, setName: string): boolean =>
+  name === setName || name.startsWith(`${setName}:`) || name.startsWith(`${setName}-`);
+
 /** Files Vite's own plugins turn into modules, which the parser models itself. */
 const isViteNativeFile = (filePath: string): boolean =>
   isAssetPath(filePath) || isStylesheetPath(filePath) || isCssModulePath(filePath);
@@ -57,48 +66,64 @@ const isViteNativeFile = (filePath: string): boolean =>
  * The app's Vite config resolved the way `vite dev` resolves it (config and
  * configResolved hooks run, `apply` honoured). Only the config file's own
  * plugins are kept: the parser reads JavaScript, JSON, stylesheets and static
- * assets itself, so Vite's built-in plugins must not run on them again.
+ * assets itself, so Vite's built-in plugins must not run on them again, and
+ * neither do the plugins a framework model stands in for.
  */
 export const loadViteUserPlugins = async (
   rootDirectory: string,
+  modeledPlugins: readonly string[] = [],
 ): Promise<ViteUserPlugins | null> => {
   const configPath = findViteConfig(rootDirectory);
   if (configPath === undefined) return null;
   const resolver = new ResolverFactory({ conditionNames: ["node", "import", "default"] });
   const viteEntry = resolver.sync(rootDirectory, VITE_PACKAGE).path;
   if (viteEntry === undefined) return null;
-  const plugins = await loadWithoutDom(async () => {
-    const vite = parseWithSchema(
-      viteModuleSchema,
-      await import(pathToFileURL(viteEntry).href),
-      VITE_PACKAGE,
-    );
-    const loaded = parseWithSchema(
-      loadedConfigSchema,
-      await vite.loadConfigFromFile(
-        { command: SERVE_COMMAND, mode: DEVELOPMENT_MODE },
-        configPath,
-        rootDirectory,
-      ),
-      `vite config ${configPath}`,
-    );
-    if (loaded === null) return [];
-    const userPlugins = new Set<unknown>();
-    await flattenPlugins(loaded.config.plugins, userPlugins);
-    const resolved = parseWithSchema(
-      resolvedConfigSchema,
-      await vite.resolveConfig(
-        { ...loaded.config, configFile: false, root: rootDirectory, logLevel: "silent" },
-        SERVE_COMMAND,
-        DEVELOPMENT_MODE,
-      ),
-      `vite config ${configPath}`,
-    );
-    return resolved.plugins
-      .filter((plugin) => userPlugins.has(plugin))
-      .map((plugin) => parseWithSchema(vitePluginSchema, plugin, `vite config ${configPath}`));
-  });
-  return plugins.length === 0 ? null : { rootDirectory, plugins };
+  return loadFromDirectory(rootDirectory, () =>
+    loadWithoutDom(async () => {
+      const vite = parseWithSchema(
+        viteModuleSchema,
+        await import(pathToFileURL(viteEntry).href),
+        VITE_PACKAGE,
+      );
+      const loaded = parseWithSchema(
+        loadedConfigSchema,
+        await vite.loadConfigFromFile(
+          { command: SERVE_COMMAND, mode: DEVELOPMENT_MODE },
+          configPath,
+          rootDirectory,
+        ),
+        `vite config ${configPath}`,
+      );
+      if (loaded === null) return null;
+      const configuredPlugins = new Set<unknown>();
+      await flattenPlugins(loaded.config.plugins, configuredPlugins);
+      const userPlugins = new Set(
+        [...configuredPlugins].filter((plugin) => {
+          const { name } = parseWithSchema(namedPluginSchema, plugin, `vite config ${configPath}`);
+          return !modeledPlugins.some((setName) => isPluginSetMember(name, setName));
+        }),
+      );
+      const config = parseWithSchema(
+        resolvedConfigSchema,
+        await vite.resolveConfig(
+          {
+            ...loaded.config,
+            plugins: [...userPlugins],
+            configFile: false,
+            root: rootDirectory,
+            logLevel: "silent",
+          },
+          SERVE_COMMAND,
+          DEVELOPMENT_MODE,
+        ),
+        `vite config ${configPath}`,
+      );
+      const plugins = config.plugins
+        .filter((plugin) => userPlugins.has(plugin))
+        .map((plugin) => parseWithSchema(vitePluginSchema, plugin, `vite config ${configPath}`));
+      return plugins.length === 0 ? null : { rootDirectory, config, plugins };
+    }),
+  );
 };
 
 /**
@@ -126,9 +151,12 @@ export const readViteDocumentShell = async (
 ): Promise<string | null> => {
   const html = readDocumentShell(rootDirectory);
   if (html === null || userPlugins === null) return html;
-  return applyHtmlTransformHooks(userPlugins.plugins, html, {
-    path: `/${INDEX_HTML}`,
-    filename: path.join(rootDirectory, INDEX_HTML),
-    originalUrl: route,
-  });
+  return loadFromDirectory(rootDirectory, () =>
+    applyHtmlTransformHooks(userPlugins.plugins, html, {
+      path: `/${INDEX_HTML}`,
+      filename: path.join(rootDirectory, INDEX_HTML),
+      server: { config: userPlugins.config },
+      originalUrl: route,
+    }),
+  );
 };

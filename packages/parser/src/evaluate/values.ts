@@ -708,14 +708,24 @@ const getJoinedPropertyKeys = (
  * returned as they are, so a spread chain shared through many joins stays shared.
  */
 export const omitObjectKeys = (object: StaticObjectValue, omitted: Set<string>): StaticValue => {
-  const rest = omitObjectKeysShared(object, omitted, new Map());
+  const rest = omitObjectKeysShared(object, omitted, new Map(), unknownRestOfSpread);
   return rest === object ? objectValue([...object.entries]) : rest;
 };
+
+interface OpaqueSpreadOmitter {
+  (spread: StaticValue): StaticValue;
+}
+
+const unknownRestOfSpread: OpaqueSpreadOmitter = (spread) =>
+  unknownValue(`rest of ${describeValue(spread)}`);
+
+const keepOpaqueSpread: OpaqueSpreadOmitter = (spread) => spread;
 
 const omitObjectKeysShared = (
   object: StaticObjectValue,
   omitted: Set<string>,
   results: Map<StaticObjectValue, StaticValue>,
+  omitOpaqueSpread: OpaqueSpreadOmitter,
 ): StaticValue => {
   const memoized = results.get(object);
   if (memoized) return memoized;
@@ -727,7 +737,7 @@ const omitObjectKeysShared = (
       else entries.push(entry);
       continue;
     }
-    const rest = omitSpreadKeys(entry.value, omitted, results);
+    const rest = omitSpreadKeys(entry.value, omitted, results, omitOpaqueSpread);
     if (rest.kind !== "object" && rest.kind !== "branch" && rest.kind !== "primitive") {
       results.set(object, rest);
       return rest;
@@ -748,15 +758,16 @@ const omitSpreadKeys = (
   spread: StaticValue,
   omitted: Set<string>,
   results: Map<StaticObjectValue, StaticValue>,
+  omitOpaqueSpread: OpaqueSpreadOmitter,
 ): StaticValue => {
   switch (spread.kind) {
     case "object":
-      return omitObjectKeysShared(spread, omitted, results);
+      return omitObjectKeysShared(spread, omitted, results, omitOpaqueSpread);
     case "primitive":
       return spread;
     case "branch": {
       const alternatives = spread.alternatives.map((alternative) =>
-        omitSpreadKeys(alternative, omitted, results),
+        omitSpreadKeys(alternative, omitted, results, omitOpaqueSpread),
       );
       if (alternatives.every((alternative, index) => alternative === spread.alternatives[index])) {
         return spread;
@@ -770,13 +781,13 @@ const omitSpreadKeys = (
       );
     }
     default:
-      return unknownValue(`rest of ${describeValue(spread)}`);
+      return omitOpaqueSpread(spread);
   }
 };
 
-/** `delete object[key]`: an own property vanishes; one a dynamic spread may hold stays as uncertain as that spread. */
+/** `delete object[key]`: an own property vanishes; one a dynamic spread may hold stays as uncertain as that spread, which is kept in place. */
 export const deleteObjectProperty = (object: StaticObjectValue, key: string): void => {
-  const remaining = omitObjectKeysShared(object, new Set([key]), new Map());
+  const remaining = omitObjectKeysShared(object, new Set([key]), new Map(), keepOpaqueSpread);
   if (remaining === object) return;
   object.entries.splice(
     0,

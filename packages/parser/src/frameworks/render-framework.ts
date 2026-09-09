@@ -9,7 +9,11 @@ import { renderNextAppRoute } from "./next-app-router.js";
 import { readInstalledVersion } from "../libraries/installed-version.js";
 import { createNextModel } from "./next-externals.js";
 import { renderNextPagesRoute } from "./next-pages-router.js";
-import { createReactRouterModel, renderReactRouterRoute } from "./react-router.js";
+import {
+  createReactRouterModel,
+  REACT_ROUTER_VITE_PLUGINS,
+  renderReactRouterRoute,
+} from "./react-router.js";
 
 export interface FrameworkRenderTarget {
   framework: FrameworkKind;
@@ -93,6 +97,7 @@ export const renderFrameworkTarget = async (
       const renderer = await createStaticRenderer({
         ...options,
         externalValues: model.externalValues,
+        modeledVitePlugins: REACT_ROUTER_VITE_PLUGINS,
       });
       return renderReactRouterRoute(renderer, model, {
         routesModule: target.entry,
@@ -120,6 +125,7 @@ const renderRootComponent = async (
       const renderer = await createStaticRenderer({
         ...options,
         externalValues: model.externalValues,
+        modeledVitePlugins: REACT_ROUTER_VITE_PLUGINS,
       });
       return renderer.renderComponent(entry, { exportName });
     }

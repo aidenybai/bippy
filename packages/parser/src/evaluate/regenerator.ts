@@ -13,6 +13,7 @@ import {
   getAllocationCount,
   getObjectProperty,
   isKnownList,
+  isNullish,
   objectFromRecord,
   objectValue,
   primitiveValue,
@@ -416,7 +417,7 @@ const wrap = ([innerFn, , self, tryLocsList]: StaticValue[]): StaticValue => {
   if (!innerFn) return unknownValue("regenerator wrap without a body");
   const tryEntries = readTryEntries(tryLocsList);
   if (!tryEntries) return unknownValue("regenerator wrap with dynamic try locations");
-  const receiver = self && !(self.kind === "primitive" && self.value == null) ? self : undefined;
+  const receiver = self && isNullish(self) !== true ? self : undefined;
   return createGeneratorObject(new GeneratorContext(innerFn, receiver, tryEntries));
 };
 
