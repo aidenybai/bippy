@@ -1,7 +1,12 @@
 import { readFileSync, statSync } from "node:fs";
 import { extname } from "node:path";
 import { parseSync } from "oxc-parser";
-import type { ParsedSourceFile, SourceLanguage, SourceTransform } from "../types.js";
+import type {
+  ParsedSourceFile,
+  SourceLanguage,
+  SourceTransform,
+  TransformedSource,
+} from "../types.js";
 import { readJsxPragma } from "./jsx-pragma.js";
 
 const EXTENSION_TO_LANG: Record<string, SourceLanguage> = {
@@ -83,22 +88,38 @@ export class SourceFileCache {
   }
 
   read(filePath: string): ParsedSourceFile | null {
+    return this.readTransformed(filePath, null);
+  }
+
+  /** The module a plugin serves for `filePath?query`, or `null` when no plugin claims the query. */
+  readQuery(filePath: string, query: string): ParsedSourceFile | null {
+    return this.readTransformed(filePath, query);
+  }
+
+  private readTransformed(filePath: string, query: string | null): ParsedSourceFile | null {
     const lang = getSourceLanguage(filePath);
-    const transform = this.transforms.find(
-      (candidate) => candidate.extension === extname(filePath),
+    const extension = extname(filePath);
+    const transforms = this.transforms.filter(
+      (candidate) => candidate.extension === (lang ? null : extension),
     );
-    if (!lang && !transform) return null;
+    if (!lang && transforms.length === 0) return null;
     const stats = statSync(filePath, { throwIfNoEntry: false });
     if (!stats || !stats.isFile()) return null;
-    const cached = this.entries.get(filePath);
+    const moduleKey = query === null ? filePath : `${filePath}?${query}`;
+    const cached = this.entries.get(moduleKey);
     if (cached && cached.mtimeMs === stats.mtimeMs && cached.size === stats.size) {
       return cached.file;
     }
     const fileText = readFileSync(filePath, "utf8");
-    const source = lang ? { sourceText: fileText, lang } : transform?.transform(filePath, fileText);
+    const transformed = transforms.reduce<TransformedSource | null>(
+      (previous, candidate) =>
+        candidate.transform(filePath, previous?.sourceText ?? fileText, query) ?? previous,
+      null,
+    );
+    const source = transformed ?? (lang && query === null ? { sourceText: fileText, lang } : null);
     if (!source) return null;
-    const file = parseSourceText(filePath, source.sourceText, source.lang);
-    this.entries.set(filePath, { mtimeMs: stats.mtimeMs, size: stats.size, file });
+    const file = parseSourceText(moduleKey, source.sourceText, source.lang);
+    this.entries.set(moduleKey, { mtimeMs: stats.mtimeMs, size: stats.size, file });
     return file;
   }
 

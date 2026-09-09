@@ -28,7 +28,7 @@ const observations =
         JSON.parse(readFileSync(values.capture, "utf8")).observations,
         values.capture,
       );
-const renderer = createStaticRenderer({
+const renderer = await createStaticRenderer({
   rootDirectory,
   tsconfigPath: path.join(rootDirectory, "tsconfig.json"),
   externalPackageAllowList: values.packages,

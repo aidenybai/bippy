@@ -9,7 +9,7 @@ if (!fixtureFile) {
 }
 
 const componentsDirectory = resolve(import.meta.dirname, "../tests/components");
-const renderer = createStaticRenderer({
+const renderer = await createStaticRenderer({
   rootDirectory: componentsDirectory,
   tsconfigPath: join(componentsDirectory, "tsconfig.json"),
 });

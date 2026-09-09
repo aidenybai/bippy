@@ -2952,6 +2952,41 @@
         "tsconfig": "jsconfig.json"
       },
       "notes": "Static-only: src/index.jsx only calls render() after appService.getConfig() (GET /api/config, proxied to the NestJS server on localhost:3000) resolves, so without the server, its Postgres database and migrations no React commit ever happens (the page stays on the static 'Loading...' shell). The frontend also imports @tooljet/plugins/client, a generated entry over the checked-in plugin manifests; the setup step installs the plugins workspace and generates that entry so the webpack dev server compiles."
+    },
+    {
+      "id": "fastapi-template",
+      "repository": "https://github.com/fastapi/full-stack-fastapi-template",
+      "revision": "cb740b656d7a0a6c5e12c7bf8e50343ec94ee9c7",
+      "description": "Full Stack FastAPI Template frontend login page (React 19 SPA on TanStack Router file routes + TanStack Query + shadcn/ui + react-hook-form, Vite dev server without the FastAPI backend)",
+      "framework": "spa",
+      "workingDirectory": "frontend",
+      "install": "bun install",
+      "dev": "bun run dev --port 5180",
+      "env": { "VITE_API_URL": "http://localhost:8000" },
+      "url": "http://localhost:5180/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": "frontend",
+        "entry": "src/main.tsx",
+        "aliases": { "@": "src" },
+        "externalPackageAllowList": [
+          "@tanstack/react-router",
+          "@tanstack/router-core",
+          "@tanstack/history",
+          "@tanstack/react-store",
+          "@tanstack/store",
+          "@tanstack/react-router-devtools",
+          "@tanstack/react-query",
+          "@tanstack/react-query-devtools",
+          "radix-ui",
+          "@radix-ui/*",
+          "lucide-react",
+          "next-themes",
+          "sonner",
+          "react-icons"
+        ]
+      }
     }
   ]
 }

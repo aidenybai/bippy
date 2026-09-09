@@ -40,7 +40,7 @@ const requireField = (target: FrameworkRenderTarget, field: "entry" | "route"): 
  * Renders one framework target statically. Next app-router targets always run
  * with server-component semantics because that is how Next renders `app/`.
  */
-export const renderFrameworkTarget = (
+export const renderFrameworkTarget = async (
   target: FrameworkRenderTarget,
   rendererOptions: StaticRendererOptions,
 ): Promise<StaticRenderResult> => {
@@ -48,7 +48,7 @@ export const renderFrameworkTarget = (
   if (target.rootComponent !== undefined) return renderRootComponent(target, options);
   switch (target.framework) {
     case "spa":
-      return createStaticRenderer(options).renderEntry(requireField(target, "entry"));
+      return (await createStaticRenderer(options)).renderEntry(requireField(target, "entry"));
     case "next-app": {
       const route = requireField(target, "route");
       const model = createNextModel({
@@ -59,7 +59,7 @@ export const renderFrameworkTarget = (
         version: readInstalledVersion(options.rootDirectory, "next"),
         nextIntlVersion: readInstalledVersion(options.rootDirectory, "next-intl"),
       });
-      const renderer = createStaticRenderer({
+      const renderer = await createStaticRenderer({
         ...options,
         serverComponents: true,
         externalValues: model.externalValues,
@@ -75,7 +75,10 @@ export const renderFrameworkTarget = (
         version: readInstalledVersion(options.rootDirectory, "next"),
         nextIntlVersion: readInstalledVersion(options.rootDirectory, "next-intl"),
       });
-      const renderer = createStaticRenderer({ ...options, externalValues: model.externalValues });
+      const renderer = await createStaticRenderer({
+        ...options,
+        externalValues: model.externalValues,
+      });
       return renderNextPagesRoute(renderer, model, {
         route,
         pagesDirectory: target.appDirectory,
@@ -87,7 +90,10 @@ export const renderFrameworkTarget = (
         options.rootDirectory,
         options.observations?.router ?? null,
       );
-      const renderer = createStaticRenderer({ ...options, externalValues: model.externalValues });
+      const renderer = await createStaticRenderer({
+        ...options,
+        externalValues: model.externalValues,
+      });
       return renderReactRouterRoute(renderer, model, {
         routesModule: target.entry,
         appDirectory: target.appDirectory,
@@ -96,7 +102,7 @@ export const renderFrameworkTarget = (
   }
 };
 
-const renderRootComponent = (
+const renderRootComponent = async (
   target: FrameworkRenderTarget,
   options: StaticRendererOptions,
 ): Promise<StaticRenderResult> => {
@@ -104,14 +110,17 @@ const renderRootComponent = (
   const exportName = target.rootComponent;
   switch (target.framework) {
     case "spa":
-      return createStaticRenderer(options).renderComponent(entry, { exportName });
+      return (await createStaticRenderer(options)).renderComponent(entry, { exportName });
     case "react-router": {
       const model = createReactRouterModel(
         requireField(target, "route"),
         options.rootDirectory,
         options.observations?.router ?? null,
       );
-      const renderer = createStaticRenderer({ ...options, externalValues: model.externalValues });
+      const renderer = await createStaticRenderer({
+        ...options,
+        externalValues: model.externalValues,
+      });
       return renderer.renderComponent(entry, { exportName });
     }
     case "next-app":
@@ -156,7 +165,7 @@ const getPageRoute = (url: string): string => {
 export const createRendererForEntry = (
   entry: CorpusEntry,
   cloneDirectory: string,
-): StaticRenderer => createStaticRenderer(rendererOptionsForEntry(entry, cloneDirectory));
+): Promise<StaticRenderer> => createStaticRenderer(rendererOptionsForEntry(entry, cloneDirectory));
 
 export const renderFramework = (
   entry: CorpusEntry,

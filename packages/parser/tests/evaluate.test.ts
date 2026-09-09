@@ -106,7 +106,7 @@ const evaluateExports = async (
   const rootDirectory = mkdtempSync(join(tmpdir(), "bippy-parser-evaluate-"));
   const entryFile = join(rootDirectory, "module.ts");
   writeFileSync(entryFile, source);
-  const renderer = createStaticRenderer({ rootDirectory });
+  const renderer = await createStaticRenderer({ rootDirectory });
   const described: Record<string, string> = {};
   await renderer.renderWith((interpreter) => {
     const module = renderer.loadModule(entryFile);

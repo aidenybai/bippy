@@ -106,7 +106,7 @@ export const runComponentFixture = async (
   if (!isComponentModule(loaded)) {
     throw new Error(`${fixture.name} has no default export component`);
   }
-  const renderer = createStaticRenderer({
+  const renderer = await createStaticRenderer({
     rootDirectory: COMPONENTS_DIRECTORY,
     tsconfigPath: join(COMPONENTS_DIRECTORY, "tsconfig.json"),
     settleMs: QUIET_COMMIT_MS,

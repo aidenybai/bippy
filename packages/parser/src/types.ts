@@ -46,10 +46,19 @@ export interface TransformedSource {
   lang: SourceLanguage;
 }
 
-/** A bundler loader the app applies to a non-JavaScript file extension, producing the module the bundler links in its place. */
+/**
+ * A bundler plugin the app configures, producing the module the bundler links
+ * for a file (or for a `?query` import of it) in place of its text. A loader
+ * for a non-JavaScript `extension` sees only files with that extension; a
+ * source rewriter (`extension: null`) is offered every JavaScript module.
+ */
 export interface SourceTransform {
-  extension: string;
-  transform: (filePath: string, sourceText: string) => TransformedSource | null;
+  extension: string | null;
+  transform: (
+    filePath: string,
+    sourceText: string,
+    query: string | null,
+  ) => TransformedSource | null;
 }
 
 export type DiagnosticSeverity = "info" | "warning" | "error";

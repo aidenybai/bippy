@@ -117,7 +117,23 @@ export class ModuleGraph {
     if (resolution.kind === "external" && !this.shouldAnalyzePackage(resolution.packageName)) {
       return resolution;
     }
-    return this.getModule(resolution.filePath) ?? resolution;
+    return (
+      this.getQueryModule(resolution.filePath, specifier) ??
+      this.getModule(resolution.filePath) ??
+      resolution
+    );
+  }
+
+  private getQueryModule(filePath: string, specifier: string): ModuleRecord | null {
+    const queryStart = specifier.indexOf("?");
+    if (queryStart === -1) return null;
+    const moduleKey = `${filePath}${specifier.slice(queryStart)}`;
+    const cached = this.modules.get(moduleKey);
+    if (cached !== undefined) return cached;
+    const file = this.sourceFileCache.readQuery(filePath, specifier.slice(queryStart + 1));
+    const record = file ? createModuleRecord(file) : null;
+    this.modules.set(moduleKey, record);
+    return record;
   }
 
   private getAssetModule(filePath: string, specifier: string): ModuleRecord | null {

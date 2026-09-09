@@ -1,7 +1,8 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, join, relative, resolve, sep } from "node:path";
 import { transform as transformSvgr } from "@svgr/core";
-import { defineConfig, type Plugin, transformWithOxc } from "vite-plus";
+import { tanstackRouter } from "@tanstack/router-plugin/vite";
+import { defineConfig, type Plugin, type PluginOption, transformWithOxc } from "vite-plus";
 
 const parserDirectory = import.meta.dirname;
 const bippyDirectory = resolve(parserDirectory, "../bippy");
@@ -94,9 +95,28 @@ const fixtureJsxInJsPlugin = (): Plugin => ({
   },
 });
 
+// HACK: @tanstack/router-plugin types its hooks against the hoisted vite 7 while
+// vite-plus bundles vite 8; comparing the two Plugin shapes overflows tsc.
+const fixtureTanStackRouterPlugin = (): PluginOption => {
+  const fixtureDirectory = join(fixturesDirectory, "tanstack-router-split");
+  const plugin: unknown = tanstackRouter({
+    target: "react",
+    autoCodeSplitting: true,
+    codeSplittingOptions: { addHmr: false },
+    routesDirectory: join(fixtureDirectory, "src/routes"),
+    generatedRouteTree: join(fixtureDirectory, "src/routeTree.gen.ts"),
+  });
+  return plugin as PluginOption;
+};
+
 export default defineConfig({
   root: parserDirectory,
-  plugins: [fixtureAliasPlugin(), fixtureSvgrPlugin(), fixtureJsxInJsPlugin()],
+  plugins: [
+    fixtureAliasPlugin(),
+    fixtureSvgrPlugin(),
+    fixtureJsxInJsPlugin(),
+    fixtureTanStackRouterPlugin(),
+  ],
   resolve: {
     alias: [{ find: /^bippy$/, replacement: resolve(bippyDirectory, "src/index.ts") }],
   },
