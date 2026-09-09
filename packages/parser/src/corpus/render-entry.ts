@@ -1,8 +1,5 @@
 import path from "node:path";
-import {
-  createFrameworkRenderer,
-  type FrameworkRenderer,
-} from "../frameworks/render-framework.js";
+import { createFrameworkRenderer, type FrameworkRenderer } from "../frameworks/render-framework.js";
 import type { RuntimeObservations, StaticRenderResult, StaticRendererOptions } from "../types.js";
 import { getSettleMs, type CorpusEntry } from "./manifest.js";
 import { readProcessEnvironment } from "./process-environment.js";
