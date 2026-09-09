@@ -989,7 +989,9 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
   const typedVersusOther =
     compareTypedUnknownToOther(left, right) ?? compareTypedUnknownToOther(right, left);
   if (typedVersusOther !== null) return typedVersusOther;
-  if (left.kind === "element" && right.kind === "element") return false;
+  if (left.kind === "element" && right.kind === "element") {
+    return left.props.allocation !== undefined && left.props.allocation === right.props.allocation;
+  }
   const leftComponent = getComponentIdentity(left);
   const rightComponent = getComponentIdentity(right);
   if (leftComponent && rightComponent) return leftComponent === rightComponent;
@@ -1314,6 +1316,11 @@ export const isRenderableValue = (value: StaticValue): boolean =>
   value.kind === "branch" ||
   value.kind === "unknown";
 
+const getAgreedTruthiness = (alternatives: StaticValue[]): boolean | null => {
+  const truthiness = alternatives.map(getTruthiness);
+  return truthiness.every((entry) => entry === truthiness[0]) ? (truthiness[0] ?? null) : null;
+};
+
 /** Truthiness an unknown primitive's shape already decides: a clock reading or a range that excludes zero, a string with known characters or a known length. */
 const getShapedTruthiness = (value: StaticUnknownPrimitiveValue): boolean | null => {
   if (value.clock) return true;
@@ -1342,6 +1349,8 @@ export const getTruthiness = (value: StaticValue): boolean | null => {
     case "unknown":
     case "optional":
       return null;
+    case "branch":
+      return getAgreedTruthiness(value.alternatives);
     case "external":
       return value.origin === "derived" ? null : true;
     case "element":

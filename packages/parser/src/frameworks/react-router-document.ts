@@ -132,6 +132,7 @@ const flattenDescriptors = (list: StaticValue): StaticValue[] | null => {
 
 /** What `<Meta>` renders: an unwrapped fragment, so the head elements are direct children. */
 export const renderMetaDescriptors = (meta: StaticValue): StaticValue => {
+  if (meta.kind === "unknown") return meta;
   const descriptors = flattenDescriptors(meta);
   if (!descriptors) return unknownValue("react-router: meta() result is not a static array");
   return listValue(descriptors.map(metaElement));
@@ -150,19 +151,48 @@ const linkElement = (descriptor: StaticValue): StaticValue => {
   return hostElement("link", props, jsonKey(descriptor, true));
 };
 
+const mapLinkDescriptors = (links: StaticValue): StaticValue => {
+  if (links.kind === "unknown") return links;
+  const descriptors = flattenDescriptors(links);
+  return descriptors
+    ? listValue(descriptors.map(linkElement))
+    : unknownValue("react-router: links() result is not a static array");
+};
+
 /**
  * What `<Links>` renders: `<>{criticalCss} {criticalCssLink} {links.map(...)}</>`.
  * The two leading nulls are why the mapped array becomes an implicit Fragment
  * fiber at runtime; keep them so the static tree has the same shape.
  */
-export const renderLinkDescriptors = (links: StaticValue): StaticValue => {
-  const descriptors = flattenDescriptors(links);
-  const mapped = descriptors
-    ? listValue(descriptors.map(linkElement))
-    : unknownValue("react-router: links() result is not a static array");
+export const renderLinkDescriptors = (links: StaticValue): StaticValue =>
+  element(
+    { kind: "fragment" },
+    objectFromRecord({ children: listValue([NULL_VALUE, NULL_VALUE, mapLinkDescriptors(links)]) }),
+  );
+
+/**
+ * Remix v2's `<Links>`: `<>{criticalCss ? <style /> : null} {links.map(...)}</>`.
+ * The Vite dev server inlines the stylesheets imported by the matched modules
+ * and never clears them after hydration.
+ */
+export const renderRemixLinkDescriptors = (
+  links: StaticValue,
+  hasCriticalCss: boolean,
+): StaticValue => {
+  const criticalStyle = hostElement(
+    "style",
+    objectFromRecord({
+      dangerouslySetInnerHTML: objectFromRecord({
+        __html: unknownPrimitiveValue("string", "remix dev critical css"),
+      }),
+    }),
+    UNDEFINED_VALUE,
+  );
   return element(
     { kind: "fragment" },
-    objectFromRecord({ children: listValue([NULL_VALUE, NULL_VALUE, mapped]) }),
+    objectFromRecord({
+      children: listValue([hasCriticalCss ? criticalStyle : NULL_VALUE, mapLinkDescriptors(links)]),
+    }),
   );
 };
 

@@ -341,6 +341,11 @@ class ComponentCache<T> {
 const describeComponent = (component: ComponentDefinition): string =>
   component.name ?? "anonymous component";
 
+const isEmptyChild = (value: StaticValue): boolean =>
+  (value.kind === "primitive" &&
+    (value.value === null || value.value === undefined || typeof value.value === "boolean")) ||
+  (value.kind === "unknown-primitive" && value.primitiveType === "boolean");
+
 const isNonNullish = (value: StaticValue): boolean =>
   !(value.kind === "primitive" && (value.value === null || value.value === undefined));
 
@@ -558,6 +563,7 @@ export class Materializer {
           children: [this.toNode(value.item, context, false)],
         });
       case "branch":
+        if (value.alternatives.every(isEmptyChild)) return null;
         return this.branchNode(
           value.alternatives.map((alternative, index) =>
             this.alternativeNode(alternative, index === value.preferredIndex, context, isTopLevel),

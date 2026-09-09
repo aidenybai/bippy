@@ -1,3 +1,4 @@
+import { isBundlerDedupedName } from "../harness/bundler-names.js";
 import type { RuntimeFiberSnapshot, RuntimeSnapshot } from "../harness/snapshot.js";
 
 export type FrameworkKind = "spa" | "next-app" | "next-pages" | "react-router";
@@ -35,6 +36,15 @@ export interface FrameworkProfile {
   defaultAnchor: string | null;
 }
 
+// A bundled module re-exporting a same-named component gets its own renamed
+// wrapper (`RouterProvider2` rendering `RouterProvider`); only the wrapped one
+// exists in the source.
+const isReExportWrapper = (fiber: RuntimeFiberSnapshot): boolean =>
+  fiber.name !== null &&
+  fiber.children.length === 1 &&
+  fiber.children[0].name !== null &&
+  isBundlerDedupedName(fiber.children[0].name, fiber.name);
+
 const isTransparentRuntimeFiber = (
   fiber: RuntimeFiberSnapshot,
   profile: FrameworkProfile,
@@ -54,7 +64,7 @@ export const unwrapTransparentRuntimeFiber = (
   fiber: RuntimeFiberSnapshot,
   profile: FrameworkProfile,
 ): RuntimeFiberSnapshot[] | null => {
-  if (!isTransparentRuntimeFiber(fiber, profile)) return null;
+  if (!isTransparentRuntimeFiber(fiber, profile) && !isReExportWrapper(fiber)) return null;
   const wrapped = profile.transparentRuntimeWrapperChildren.get(fiber.name ?? fiber.tag);
   const unwrap = (children: RuntimeFiberSnapshot[]): RuntimeFiberSnapshot[] =>
     children.flatMap((child) =>
