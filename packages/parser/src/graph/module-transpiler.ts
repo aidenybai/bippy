@@ -1,9 +1,15 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { parseSync } from "oxc-parser";
-import type { ModuleBundler, ModuleTranspiler } from "../types.js";
+import type { JsonValue, ModuleBundler, ModuleTranspiler } from "../types.js";
+import {
+  findExpoCliDirectory,
+  getExpoDefines,
+  getExpoResolverOptions,
+  readExpoDocumentShell,
+} from "./expo-bundler.js";
 import { readInstalledPackage } from "./installed-package.js";
-import type { ModuleResolver } from "./module-resolver.js";
+import type { ModuleResolver, ModuleResolverOptions } from "./module-resolver.js";
 
 const VITE_CONFIG_FILES = ["js", "mjs", "cjs", "ts", "mts", "cts"].map(
   (extension) => `vite.config.${extension}`,
@@ -32,15 +38,44 @@ const findViteConfig = (rootDirectory: string): string | undefined =>
     existsSync(candidate),
   );
 
-export const detectModuleBundler = (rootDirectory: string): ModuleBundler =>
-  findViteConfig(rootDirectory) === undefined ? "unknown" : "vite";
+export const detectModuleBundler = (rootDirectory: string): ModuleBundler => {
+  if (findViteConfig(rootDirectory) !== undefined) return "vite";
+  return findExpoCliDirectory(rootDirectory) === null ? "unknown" : "expo";
+};
 
-/** The HTML the bundler serves as the page: Vite's dev server answers `/` with the root `index.html`. */
+/** The Metro platform a bundler targets when the entry does not say: Expo's dev server serves the `web` bundle to browsers. */
+export const getDefaultPlatform = (bundler: ModuleBundler): string | undefined =>
+  bundler === "expo" ? "web" : undefined;
+
+/** How the bundler's own resolver rewrites requests before Node resolution applies. */
+export const getBundlerResolverOptions = (
+  rootDirectory: string,
+  bundler: ModuleBundler,
+  platform: string | undefined,
+): Pick<ModuleResolverOptions, "aliases" | "shimDirectories"> => {
+  if (bundler !== "expo" || platform === undefined) return {};
+  const expoCliDirectory = findExpoCliDirectory(rootDirectory);
+  return expoCliDirectory === null ? {} : getExpoResolverOptions(expoCliDirectory, platform);
+};
+
+/** The HTML the bundler serves as the page: Vite's dev server answers `/` with the root `index.html`, Expo's with its template. */
 export const readDocumentShell = (rootDirectory: string, bundler: ModuleBundler): string | null => {
+  if (bundler === "expo") {
+    const expoCliDirectory = findExpoCliDirectory(rootDirectory);
+    return expoCliDirectory === null ? null : readExpoDocumentShell(rootDirectory, expoCliDirectory);
+  }
   if (bundler !== "vite") return null;
   const indexPath = path.join(rootDirectory, "index.html");
   return existsSync(indexPath) ? readFileSync(indexPath, "utf8") : null;
 };
+
+/** The names the bundler inlines into every client module beyond the app's own `define`s. */
+export const getBundlerDefines = (
+  rootDirectory: string,
+  bundler: ModuleBundler,
+  platform: string | undefined,
+): Record<string, JsonValue> =>
+  bundler === "expo" && platform !== undefined ? getExpoDefines(rootDirectory, platform) : {};
 
 export const detectModuleTranspiler = (
   resolver: ModuleResolver,

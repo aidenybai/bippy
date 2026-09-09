@@ -37,6 +37,7 @@ const probeStatus = (url: string): Promise<number> =>
     request.end();
   });
 const KILL_GRACE_MS = 3_000;
+const KILL_POLL_INTERVAL_MS = 100;
 
 // The corpus CLI runs under bippy's pnpm, which advertises itself through
 // `npm_config_user_agent` and friends; tools inside a clone (prisma, nx) would
@@ -75,7 +76,7 @@ const getSystemErrorCode = (error: unknown): string | null =>
 // The group can exit between the liveness check and the signal.
 const isMissingProcessError = (error: unknown): boolean => getSystemErrorCode(error) === "ESRCH";
 
-const signalProcessGroup = (pid: number, signal: NodeJS.Signals): boolean => {
+const signalProcessGroup = (pid: number, signal: NodeJS.Signals | 0): boolean => {
   try {
     process.kill(-pid, signal);
     return true;
@@ -86,13 +87,15 @@ const signalProcessGroup = (pid: number, signal: NodeJS.Signals): boolean => {
 };
 
 // Detached children are their own process group so the whole dev-server tree
-// (package manager -> vite/next -> workers) goes away together.
+// (package manager -> vite/next -> workers) goes away together; the group is
+// polled rather than the shell, which exits ahead of servers still shutting down.
 const killProcessGroup = async (child: ChildProcess): Promise<void> => {
-  if (child.exitCode !== null || child.pid === undefined) return;
-  const exited = new Promise<void>((resolveExit) => child.once("exit", () => resolveExit()));
-  if (!signalProcessGroup(child.pid, "SIGTERM")) return;
-  const timedOut = await Promise.race([exited.then(() => false), deadline(KILL_GRACE_MS, true)]);
-  if (timedOut) signalProcessGroup(child.pid, "SIGKILL");
+  if (child.pid === undefined || !signalProcessGroup(child.pid, "SIGTERM")) return;
+  const graceDeadline = Date.now() + KILL_GRACE_MS;
+  while (Date.now() < graceDeadline && signalProcessGroup(child.pid, 0)) {
+    await sleep(KILL_POLL_INTERVAL_MS);
+  }
+  signalProcessGroup(child.pid, "SIGKILL");
 };
 
 export const runCommand = async (options: RunCommandOptions): Promise<void> => {

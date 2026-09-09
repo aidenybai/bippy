@@ -34,6 +34,15 @@ const requireInstalled = (specifier: string, getRequire: () => NodeJS.Require): 
     : null;
 };
 
+const resolveInstalled = (specifier: string, require: NodeJS.Require): string | null => {
+  try {
+    return require.resolve(specifier);
+  } catch (error) {
+    if (isResolutionError(error)) return null;
+    throw error;
+  }
+};
+
 /** The project's own installed copy of a package, loaded as the runtime would; `null` when it is not installed. */
 export class InstalledModules {
   private readonly requireFromRoot: NodeJS.Require;
@@ -54,12 +63,12 @@ export class InstalledModules {
 
   /** The file `specifier` resolves to from the project root; `null` when it is not installed. */
   resolve(specifier: string): string | null {
-    try {
-      return this.requireFromRoot.resolve(specifier);
-    } catch (error) {
-      if (isResolutionError(error)) return null;
-      throw error;
-    }
+    return resolveInstalled(specifier, this.requireFromRoot);
+  }
+
+  /** The file `specifier` resolves to from the module at `filePath`; `null` when that module cannot reach it. */
+  resolveBeside(specifier: string, filePath: string): string | null {
+    return resolveInstalled(specifier, createRequire(filePath));
   }
 
   /** `specifier` as the module at `filePath` resolves it: the copy an analyzed dependency actually imports. */

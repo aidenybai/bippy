@@ -8,8 +8,12 @@ import type { ModuleResolution } from "../types.js";
 export interface ModuleResolverOptions {
   /** Path alias config; a sibling `jsconfig.json` stands in when this file does not exist. */
   tsconfigPath?: string;
-  /** Bundler `resolve.alias`: a specifier (or its subpaths) resolved from another absolute path. */
+  /** Bundler `resolve.alias`: a specifier (or its subpaths; `name$` matches exactly) resolved from a path or another package. */
   aliases?: Record<string, string>;
+  /** Metro platform (`web`): `name.<platform>.ext` shadows `name.ext` for extension-less imports. */
+  platform?: string;
+  /** Bundler shims: a resolved `node_modules/<package path>` is replaced by `<directory>/<package path>` when that file exists. */
+  shimDirectories?: string[];
   conditionNames?: string[];
   requireConditionNames?: string[];
   /**
@@ -28,6 +32,11 @@ const EXTENSION_ALIAS: Record<string, string[]> = {
   ".mjs": [".mjs", ".mts"],
   ".cjs": [".cjs", ".cts"],
 };
+
+const getSourceExtensions = (platform: string | undefined): string[] =>
+  platform === undefined
+    ? SOURCE_EXTENSIONS
+    : SOURCE_EXTENSIONS.flatMap((extension) => [`.${platform}${extension}`, extension]);
 
 const DEFAULT_CONDITION_NAMES = ["browser", "import", "module", "default"];
 const DEFAULT_REQUIRE_CONDITION_NAMES = ["browser", "require", "module", "default"];
@@ -91,12 +100,16 @@ export const getPackageNameFromSpecifier = (specifier: string): string | null =>
   return segments[0] || null;
 };
 
-export const getPackageNameFromFilePath = (filePath: string): string | null => {
+/** `filePath` below its innermost `node_modules`: the package name plus the file's path inside it. */
+const getPackagePath = (filePath: string): string | null => {
   const posixPath = filePath.replaceAll("\\", "/");
   const index = posixPath.lastIndexOf(NODE_MODULES_SEGMENT);
-  if (index === -1) return null;
-  const remainder = posixPath.slice(index + NODE_MODULES_SEGMENT.length);
-  return getPackageNameFromSpecifier(remainder);
+  return index === -1 ? null : posixPath.slice(index + NODE_MODULES_SEGMENT.length);
+};
+
+export const getPackageNameFromFilePath = (filePath: string): string | null => {
+  const packagePath = getPackagePath(filePath);
+  return packagePath === null ? null : getPackageNameFromSpecifier(packagePath);
 };
 
 export const isInsideNodeModules = (filePath: string): boolean =>
@@ -110,13 +123,15 @@ interface ResolverPair {
 export class ModuleResolver {
   private readonly resolvers: Record<ImporterKind, ResolverPair>;
   private readonly cache = new Map<string, ModuleResolution>();
+  private readonly shimDirectories: string[];
   readonly rootDirectory: string | null;
 
   constructor(options: ModuleResolverOptions = {}) {
     this.rootDirectory = options.rootDirectory ? path.resolve(options.rootDirectory) : null;
+    this.shimDirectories = options.shimDirectories ?? [];
     const createPair = (conditionNames: string[]): ResolverPair => {
       const baseOptions = {
-        extensions: SOURCE_EXTENSIONS,
+        extensions: getSourceExtensions(options.platform),
         extensionAlias: EXTENSION_ALIAS,
         alias: Object.fromEntries(
           Object.entries(options.aliases ?? {}).map(([specifier, target]) => [specifier, [target]]),
@@ -177,7 +192,7 @@ export class ModuleResolver {
         getPackageNameFromFilePath(filePath) ??
         (specifierPackage !== null && this.isOutsideRoot(filePath) ? specifierPackage : null);
       if (packageName) {
-        return { kind: "external", packageName, filePath };
+        return { kind: "external", packageName, filePath: this.applyShim(filePath) };
       }
       return { kind: "internal", filePath };
     }
@@ -185,6 +200,15 @@ export class ModuleResolver {
       return { kind: "external", packageName: specifierPackage, filePath: null };
     }
     return { kind: "unresolved", specifier, error: result.error ?? "not found" };
+  }
+
+  private applyShim(filePath: string): string {
+    const packagePath = getPackagePath(filePath);
+    if (packagePath === null) return filePath;
+    const shim = this.shimDirectories
+      .map((directory) => path.join(directory, packagePath))
+      .find((candidate) => existsSync(candidate));
+    return shim ?? filePath;
   }
 
   private isOutsideRoot(filePath: string): boolean {

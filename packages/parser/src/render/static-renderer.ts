@@ -6,6 +6,9 @@ import { objectValue, unknownValue } from "../evaluate/values.js";
 import {
   detectModuleBundler,
   detectModuleTranspiler,
+  getBundlerDefines,
+  getBundlerResolverOptions,
+  getDefaultPlatform,
   readDocumentShell,
 } from "../graph/module-transpiler.js";
 import { ModuleGraph } from "../graph/module-graph.js";
@@ -24,6 +27,7 @@ import { SourceFileCache } from "../parse/parse-source-file.js";
 import { toElementType } from "../react/element-type.js";
 import type {
   Diagnostic,
+  JsonValue,
   ModuleRecord,
   ProjectContext,
   StaticObjectValue,
@@ -70,24 +74,36 @@ export class StaticRenderer {
   private readonly reactVersion: string | null;
   private readonly project: ProjectContext;
   private readonly documentShell: string | null;
+  private readonly defines: Record<string, JsonValue>;
 
   constructor(options: StaticRendererOptions) {
     // oxc-resolver returns real paths, so a symlinked root must be compared as one.
     this.options = { ...options, rootDirectory: realpathSync(options.rootDirectory) };
-    this.resolver = new ModuleResolver({
-      tsconfigPath: options.tsconfigPath,
-      aliases: Object.fromEntries(
-        Object.entries(options.aliases ?? {}).map(([specifier, target]) => [
-          specifier,
-          path.resolve(this.options.rootDirectory, target),
-        ]),
-      ),
-      conditionNames: options.conditionNames,
-      rootDirectory: this.options.rootDirectory,
-    });
     const { rootDirectory } = this.options;
     const bundler = detectModuleBundler(rootDirectory);
+    const platform = options.platform ?? getDefaultPlatform(bundler);
+    const bundlerResolverOptions = getBundlerResolverOptions(rootDirectory, bundler, platform);
+    this.resolver = new ModuleResolver({
+      tsconfigPath: options.tsconfigPath,
+      aliases: {
+        ...bundlerResolverOptions.aliases,
+        ...Object.fromEntries(
+          Object.entries(options.aliases ?? {}).map(([specifier, target]) => [
+            specifier,
+            path.resolve(rootDirectory, target),
+          ]),
+        ),
+      },
+      platform,
+      shimDirectories: bundlerResolverOptions.shimDirectories,
+      conditionNames: options.conditionNames,
+      rootDirectory,
+    });
     this.documentShell = readDocumentShell(rootDirectory, bundler);
+    this.defines = {
+      ...getBundlerDefines(rootDirectory, bundler, platform),
+      ...options.defines,
+    };
     this.project = createProjectContext({
       rootDirectory,
       resolver: this.resolver,
@@ -129,7 +145,7 @@ export class StaticRenderer {
       maxSteps: this.options.maxSteps,
       externalValues: this.options.externalValues,
       globals: this.options.globals,
-      defines: this.options.defines,
+      defines: this.defines,
       environment: this.options.environment,
       hostPlatform: this.options.hostPlatform,
       hostDocument: createDomHostDocument(this.documentShell !== null),
@@ -277,6 +293,7 @@ export class StaticRenderer {
     const rootCalls = findRootRenderCalls(module);
     if (rootCalls.length === 0) {
       interpreter.initializeModule(module);
+      interpreter.timers.drainMicrotasks();
       if (interpreter.rootRender.element) return interpreter.rootRender.element;
       interpreter.report(
         "no-root-render",

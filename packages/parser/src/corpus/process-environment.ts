@@ -1,14 +1,18 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { FrameworkKind } from "../frameworks/framework-profile.js";
+import { EXPO_CLIENT_PREFIX } from "../graph/expo-bundler.js";
 import { readDeclaredDependencies } from "../graph/project-context.js";
 import type { ProcessEnvironment } from "../types.js";
 import type { CorpusEntry } from "./manifest.js";
 
 const NEXT_CLIENT_PREFIX = "NEXT_PUBLIC_";
 
-/** The variables a client-only bundler inlines, by the bundler the app declares: CRA's `react-scripts`, otherwise Vite. */
-const SPA_CLIENT_PREFIXES: ReadonlyMap<string, string> = new Map([["react-scripts", "REACT_APP_"]]);
+/** The variables a client-only bundler inlines, by the bundler the app declares: CRA's `react-scripts`, Expo's Metro, otherwise Vite. */
+const SPA_CLIENT_PREFIXES: ReadonlyMap<string, string> = new Map([
+  ["react-scripts", "REACT_APP_"],
+  ["expo", EXPO_CLIENT_PREFIX],
+]);
 
 const VITE_CLIENT_PREFIX = "VITE_";
 

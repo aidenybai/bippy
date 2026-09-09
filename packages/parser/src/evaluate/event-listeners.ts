@@ -1,10 +1,11 @@
-import type { StaticValue } from "../types.js";
+import type { SourceLocation, StaticValue } from "../types.js";
 import type { HostDocument } from "../host/host-document.js";
 import type { HostRealm } from "../host/host-realm.js";
+import type { EvaluationContext } from "./context.js";
 import type { Interpreter } from "./interpreter.js";
 import { toNativeArguments } from "./native-values.js";
 import { HISTORY_TRAVERSAL_EVENTS } from "./session-history.js";
-import { UNDEFINED_VALUE } from "./values.js";
+import { UNDEFINED_VALUE, getObjectProperty, unknownValue } from "./values.js";
 
 /**
  * Events only a user gesture dispatches; none fires before the runtime snapshot
@@ -76,6 +77,21 @@ const CROSS_DOCUMENT_EVENTS = new Set(["storage"]);
 
 /** The captured page stays the visible, foreground tab from load to snapshot. */
 const DOCUMENT_VISIBILITY_EVENTS = new Set(["visibilitychange"]);
+
+/**
+ * `window` fires these for the program's own uncaught throws and unhandled
+ * rejections, which the analysis evaluates itself rather than receives from the
+ * host; a capturing listener also sees resource load failures, which it does not.
+ */
+const PROGRAM_FAULT_EVENTS = new Set(["error", "unhandledrejection", "rejectionhandled"]);
+
+const isCapturingListenerOption = (options: StaticValue | undefined): boolean => {
+  if (options === undefined) return false;
+  if (options.kind === "primitive") return Boolean(options.value);
+  if (options.kind !== "object") return true;
+  const capture = getObjectProperty(options, "capture");
+  return capture.kind !== "primitive" || Boolean(capture.value);
+};
 
 /** A freshly loaded page sits at its initial scroll offset until a user or script scrolls it. */
 const SCROLL_EVENTS = new Set(["scroll", "scrollend"]);
@@ -199,15 +215,13 @@ const isEventBeforeCapture = (
   realm: HostRealm,
   receiver: StaticValue,
   type: StaticValue | undefined,
+  options: StaticValue | undefined,
 ): boolean => {
   if (receiver.kind === "global" && receiver.name === "MediaQueryList") return false;
   if (type?.kind !== "primitive" || typeof type.value !== "string") return true;
-  if (
-    receiver.kind === "global" &&
-    realm.isGlobalAlias(receiver.name) &&
-    (VIEWPORT_EVENTS.has(type.value) || CROSS_DOCUMENT_EVENTS.has(type.value))
-  ) {
-    return false;
+  if (receiver.kind === "global" && realm.isGlobalAlias(receiver.name)) {
+    if (VIEWPORT_EVENTS.has(type.value) || CROSS_DOCUMENT_EVENTS.has(type.value)) return false;
+    if (PROGRAM_FAULT_EVENTS.has(type.value) && !isCapturingListenerOption(options)) return false;
   }
   if (
     receiver.kind === "global" &&
@@ -230,16 +244,18 @@ const isHistoryTraversalListener = (
   typeof type.value === "string" &&
   HISTORY_TRAVERSAL_EVENTS.has(type.value);
 
-/** Listener registration on `window`/`document`/DOM nodes/`MediaQueryList`; only listeners that may fire before capture escape. */
+/** Listener registration on `window`/`document`/DOM nodes/`MediaQueryList`; only listeners the host may dispatch before capture run, at unknown times. */
 export const callEventTargetMethod = (
   interpreter: Interpreter,
   realm: HostRealm,
   receiver: StaticValue,
   name: string,
   args: StaticValue[],
+  context: EvaluationContext,
+  location: SourceLocation | null,
 ): StaticValue | null => {
   if (!EVENT_LISTENER_METHODS.has(name) || !isEventTarget(realm, receiver)) return null;
-  const [type, listener] = args;
+  const [type, listener, options] = args;
   if (!listener) return UNDEFINED_VALUE;
   const isRegistration = name === "addEventListener" || name === "addListener";
   if (isHistoryTraversalListener(realm, receiver, type)) {
@@ -247,8 +263,14 @@ export const callEventTargetMethod = (
     else interpreter.history.traversalListeners.delete(listener);
     return UNDEFINED_VALUE;
   }
-  if (isRegistration && isEventBeforeCapture(realm, receiver, type))
-    interpreter.markEscaped(listener);
+  if (isRegistration && isEventBeforeCapture(realm, receiver, type, options)) {
+    interpreter.runHostDispatches(
+      listener,
+      [unknownValue("event dispatched by the host", location)],
+      context,
+      location,
+    );
+  }
   const target = toNativeEventTarget(receiver, interpreter.hostDocument);
   if (target && type?.kind === "primitive" && typeof type.value === "string") {
     if (isRegistration) attachNativeListener(interpreter, target, type.value, listener);

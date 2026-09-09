@@ -156,7 +156,7 @@ const escapedStateValue = (cell: StateCell): StaticValue =>
  * hold; a cell with deferred updates holds the synchronous state or any value
  * a continuation of unknown timing may have set by the commit.
  */
-const pendingStateValue = (cell: StateCell): StaticValue | null => {
+export const pendingStateValue = (cell: StateCell): StaticValue | null => {
   if (cell.isEscaped) return escapedStateValue(cell);
   if (cell.deferred.length === 0) return cell.next;
   return branchValue(
@@ -184,6 +184,7 @@ export const queueStateUpdate = (
   if (cell.isEscaped) return;
   if (isDeferred) {
     if (cell.deferred.some((deferred) => isSameHookValue(deferred, value))) return;
+    frame.recordUpdate?.(cell);
     cell.deferred.push(value);
   } else {
     if (isSameHookValue(value, cell.next ?? cell.current)) return;

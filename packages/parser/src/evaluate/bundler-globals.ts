@@ -94,6 +94,9 @@ export const getInlinedNodeEnv = (name: string): StaticValue | null =>
 
 const HOT_MODULE_OBJECTS = new Set(["module.hot", "import.meta.hot"]);
 
+/** Functions the bundler itself supplies to every module. */
+const BUNDLER_FUNCTIONS = new Set(["import.meta.glob", "require", "require.context"]);
+
 /** HMR handlers only run on a hot update, which never happens before the snapshot is captured. */
 const HOT_MODULE_HANDLER_METHODS = new Set([
   "accept",
@@ -129,14 +132,14 @@ const isBundlerObject = (name: string): boolean =>
 /** `typeof` of a name the bundler itself provides; null for names it leaves to the host. */
 export const getBundlerGlobalTypeof = (name: string): string | null => {
   if (isBundlerObject(name)) return "object";
-  return name === "import.meta.glob" ? "function" : null;
+  return BUNDLER_FUNCTIONS.has(name) ? "function" : null;
 };
 
 export const getBundlerGlobal = (
   name: string,
   environment: EnvironmentLookup = NO_ENVIRONMENT,
 ): StaticValue | null => {
-  if (isBundlerObject(name) || name === "import.meta.glob" || POLYFILLED_NODE_OBJECTS.has(name))
+  if (isBundlerObject(name) || BUNDLER_FUNCTIONS.has(name) || POLYFILLED_NODE_OBJECTS.has(name))
     return { kind: "global", name };
   for (const objectName of ENVIRONMENT_OBJECTS) {
     if (name.startsWith(`${objectName}.`))

@@ -107,6 +107,7 @@ import type {
   StaticObjectEntry,
   StaticObjectValue,
   StaticPrimitive,
+  StaticSpreadEntry,
   StaticValue,
   StyledComponentsTransformOptions,
   SuperBinding,
@@ -257,6 +258,7 @@ import {
   falsyCounterpart,
   truthyCounterpart,
   getClassPrototype,
+  getComposedProperty,
   getSpreadEntries,
   getSymbolDescription,
   getListItem,
@@ -269,6 +271,7 @@ import {
   getStubDisplayName,
   getTruthiness,
   isNullish,
+  isSameComposition,
   isSymbolPropertyKey,
   listValue,
   mapValue,
@@ -285,6 +288,8 @@ import {
   primitiveValue,
   setListItem,
   setListLength,
+  setObjectEntry,
+  setObjectProperty,
   spreadListItems,
   TRUE_VALUE,
   UNDEFINED_VALUE,
@@ -569,11 +574,22 @@ export const mergeOutcomes = (
   };
 };
 
-/** A counter or flag threaded through a recursion; it only bounds a walk whose data the analysis cannot see. */
-const isSameTypePrimitive = (previous: StaticValue, next: StaticValue): boolean =>
-  previous.kind === "primitive" &&
-  next.kind === "primitive" &&
-  typeof previous.value === typeof next.value;
+/**
+ * A counter, flag or path accumulator threaded through a recursion
+ * (`walk(child, depth + 1)`, `walk(child, [...path, key])`); it only bounds or
+ * describes a walk whose data the analysis cannot see.
+ */
+const isThreadedAccumulator = (previous: StaticValue, next: StaticValue): boolean => {
+  if (previous.kind === "primitive" && next.kind === "primitive") {
+    return typeof previous.value === typeof next.value;
+  }
+  return (
+    previous.kind === "list" &&
+    next.kind === "list" &&
+    previous.items.length <= next.items.length &&
+    previous.items.every((item, index) => areValuesEquivalent(item, next.items[index]))
+  );
+};
 
 const hasSameProperties = (
   previous: Map<string, StaticValue>,
@@ -620,7 +636,7 @@ const isNonProgressingRecursion = (
           areValuesEquivalent(argument, args[index]) ||
           (hasUnknownArgument &&
             ((mayBeUnknown(argument) && mayBeUnknown(args[index])) ||
-              isSameTypePrimitive(argument, args[index]))),
+              isThreadedAccumulator(argument, args[index]))),
       ),
   );
 };
@@ -905,14 +921,20 @@ export class Interpreter {
       : this.evaluateModuleExport(module, key);
   }
 
-  /** The exports of a module as an object, for `{ ...m }` / `const { a, ...rest } = m` over a namespace. */
+  /**
+   * The enumerable exports of a module as an object, for `{ ...m }` / `Object.keys(m)` over a
+   * namespace. Compiled CommonJS defines its `__esModule` flag non-enumerable.
+   */
   materializeNamespace(module: ModuleRecord): StaticValue {
     const { names, complete } = this.graph.collectExportNames(module);
     if (!complete) {
       return unknownValue(`namespace of ${module.filePath} re-exports an unanalyzed module`);
     }
+    const enumerableNames = module.isCommonJs
+      ? names.filter((name) => name !== "__esModule")
+      : names;
     return objectValue(
-      names.map((name) => ({
+      enumerableNames.map((name) => ({
         kind: "property",
         key: name,
         value: this.evaluateModuleExport(module, name),
@@ -1824,16 +1846,20 @@ export class Interpreter {
     node: ObjectExpression,
     context: EvaluationContext,
   ): StaticValue {
-    const entries: StaticObjectEntry[] = [];
+    const object = objectValue([]);
+    const addEntry = (entry: StaticObjectEntry): void => {
+      if (entry.kind === "property") setObjectEntry(object, entry);
+      else object.entries.push(entry);
+    };
     for (const property of node.properties) {
       if (property.type === "SpreadElement") {
         const spread = this.evaluateExpression(property.argument, context);
         const copied = getSpreadEntries(spread);
         if (copied) {
-          entries.push(...copied);
+          for (const entry of copied) addEntry(entry);
           continue;
         }
-        entries.push({
+        object.entries.push({
           kind: "spread",
           value: spread.kind === "namespace" ? this.materializeNamespace(spread.module) : spread,
         });
@@ -1841,39 +1867,38 @@ export class Interpreter {
       }
       const key = this.evaluatePropertyKey(property.key, property.computed, context);
       if (key === null) {
-        entries.push({
+        object.entries.push({
           kind: "spread",
           value: unknownValue("computed property key"),
         });
         continue;
       }
       if (property.kind !== "init") {
-        const accessor = this.getAccessorEntry(entries, key, context, property);
+        const accessor = this.getAccessorEntry(object, key, context, property);
         accessor[property.kind] = this.evaluateExpression(property.value, context, key);
         continue;
       }
-      entries.push({
+      addEntry({
         kind: "property",
         key,
         value: this.evaluateExpression(property.value, context, key),
       });
     }
-    const object = objectValue(entries);
     return (
       this.reactElementFromObject(object, this.locate(context.module, node), context) ?? object
     );
   }
 
   private getAccessorEntry(
-    entries: StaticObjectEntry[],
+    object: StaticObjectValue,
     key: string,
     context: EvaluationContext,
     node: ObjectProperty,
   ): StaticAccessor {
-    const existing = getObjectAccessor(objectValue(entries), key);
+    const existing = getObjectAccessor(object, key);
     if (existing) return existing;
     const accessor: StaticAccessor = { get: null, set: null };
-    entries.push(accessorEntry(key, accessor, this.locate(context.module, node)));
+    setObjectEntry(object, accessorEntry(key, accessor, this.locate(context.module, node)));
     return accessor;
   }
 
@@ -2358,7 +2383,7 @@ export class Interpreter {
     if (target.isFrozen) return;
     this.recordHeapMutation(target);
     this.escapeWalk.memo.invalidate(target, key);
-    target.entries.push({ kind: "property", key, value });
+    setObjectProperty(target, key, value);
   }
 
   pushItems(target: StaticListValue, items: readonly StaticValue[]): void {
@@ -2375,10 +2400,19 @@ export class Interpreter {
     if (target.isFrozen) return;
     this.recordHeapMutation(target);
     this.escapeWalk.memo.invalidate(target, null);
-    target.entries.push({
+    const entry: StaticSpreadEntry = {
       kind: "spread",
       value: unknownValue(`property ${describeValue(key)} set to ${describeValue(value)}`),
-    });
+    };
+    if (key.kind === "unknown-primitive" && key.composition) {
+      entry.composed = { key: key.composition, value };
+      const last = target.entries.at(-1);
+      if (last?.kind === "spread" && last.composed && isSameComposition(last.composed.key, key.composition)) {
+        target.entries[target.entries.length - 1] = entry;
+        return;
+      }
+    }
+    target.entries.push(entry);
   }
 
   private assignIdentifier(name: string, value: StaticValue, context: EvaluationContext): void {
@@ -2467,6 +2501,12 @@ export class Interpreter {
         : branchValue(candidates, "dynamic list index", location);
     }
     if (object.kind === "object") {
+      const composed =
+        key.kind === "unknown-primitive" && key.composition
+          ? getComposedProperty(object, key.composition)
+          : null;
+      if (composed === "absent") return UNDEFINED_VALUE;
+      if (composed !== null) return composed;
       const values = object.entries
         .filter((entry) => entry.kind === "property")
         .map((entry) => entry.value);
@@ -2478,6 +2518,20 @@ export class Interpreter {
       return getNativeObjectComposedMember(object, key);
     }
     return unknownValue(`dynamic member access on ${describeValue(object)}`, location);
+  }
+
+  private getFunctionConstructor(
+    callable: StaticFunctionValue | StaticClassValue,
+    context: EvaluationContext,
+    location: SourceLocation | null,
+  ): StaticValue {
+    const constructorName =
+      callable.kind === "function" ? getFunctionConstructorName(callable.node) : "Function";
+    if (constructorName === "Function")
+      return this.getGlobal("Function", context.environment) ?? unknownValue("Function", location);
+    return nativeFunction(constructorName, () =>
+      unknownValue(`${constructorName} constructor call`, location),
+    );
   }
 
   private readComponentProperty(
@@ -2763,6 +2817,7 @@ export class Interpreter {
         }
         if (key === "displayName") return UNDEFINED_VALUE;
         if (key === "name") return object.name ? primitiveValue(object.name) : primitiveValue("");
+        if (key === "constructor") return this.getFunctionConstructor(object, context, location);
         if (
           !isFunctionOwnOrInheritedKey(key) &&
           (object.kind === "function" || hasKnownStaticChain(object))
@@ -2779,10 +2834,11 @@ export class Interpreter {
       case "native-function": {
         if (key === "call" || key === "apply" || key === "bind")
           return { kind: "method", receiver: object, name: key };
-        if (object.kind === "native-function" && object.getOwnProperty) {
-          const own = object.getOwnProperty(key);
+        if (object.kind === "native-function") {
+          const own = object.getOwnProperty?.(key);
           if (own) return own;
-          if (!isFunctionOwnOrInheritedKey(key)) return UNDEFINED_VALUE;
+          if (key === "name") return primitiveValue(object.name);
+          if (object.getOwnProperty && !isFunctionOwnOrInheritedKey(key)) return UNDEFINED_VALUE;
         }
         return unknownValue(`property "${key}" of ${describeValue(object)}`, location);
       }
@@ -3245,6 +3301,56 @@ export class Interpreter {
       this.timers.isClockSettled = wasSettled;
     }
     this.markEscaped(callback);
+  }
+
+  /**
+   * A listener the host may dispatch any number of times before the capture,
+   * each at an unknown point on the timeline. An idempotent listener (one
+   * whose second dispatch leaves every value it touches equivalent to the
+   * first's) has fired either never or once; one that keeps moving state
+   * escapes, leaving what it touches uncertain.
+   */
+  runHostDispatches(
+    listener: StaticValue,
+    args: StaticValue[],
+    context: EvaluationContext,
+    location: SourceLocation | null,
+  ): void {
+    const dispatch = (): void => {
+      this.callValue(listener, args, context, location);
+    };
+    let isIdempotent = true;
+    this.timers.runDeferred(() =>
+      this.runMaybe(
+        context.scope,
+        () => {
+          dispatch();
+          isIdempotent = this.isRepeatSettled(context.scope, dispatch);
+        },
+        "event dispatched by the host",
+        location,
+        false,
+      ),
+    );
+    if (!isIdempotent) this.markEscaped(listener);
+  }
+
+  /** Runs `run` once more, discards its effects, and reports whether they left every touched value equivalent. */
+  private isRepeatSettled(scope: Scope, run: () => void): boolean {
+    const entrySnapshot = snapshotScopes(scope);
+    const journal = new HeapJournal();
+    this.heapJournals.push(journal);
+    let isSettled = false;
+    try {
+      run();
+    } finally {
+      const ranSnapshot = snapshotScopes(scope);
+      journal.endPath();
+      this.heapJournals.pop();
+      restoreScopes(entrySnapshot);
+      isSettled = journal.isPathSettled() && areSnapshotsEquivalent(entrySnapshot, ranSnapshot);
+    }
+    return isSettled;
   }
 
   /** Calls a promise continuation: updates it queues land after the captured commit. */
@@ -4545,6 +4651,18 @@ const restoreScopes = (snapshots: ScopeSnapshot[]): void => {
   }
 };
 
+const areSnapshotsEquivalent = (entryPath: ScopeSnapshot[], ranPath: ScopeSnapshot[]): boolean =>
+  entryPath.every((snapshot, scopeIndex) => {
+    const ranBindings = ranPath[scopeIndex].bindings;
+    return (
+      ranBindings.size === snapshot.bindings.size &&
+      [...snapshot.bindings].every(([name, before]) => {
+        const after = ranBindings.get(name);
+        return after !== undefined && areValuesEquivalent(before, after);
+      })
+    );
+  });
+
 const widenMovedBindings = (
   entryPath: ScopeSnapshot[],
   ranPath: ScopeSnapshot[],
@@ -4586,6 +4704,12 @@ const joinScopes = (
       );
     }
   });
+};
+
+const getFunctionConstructorName = (node: FunctionLikeNode): string => {
+  const isGenerator = node.type !== "ArrowFunctionExpression" && node.generator;
+  if (node.async) return isGenerator ? "AsyncGeneratorFunction" : "AsyncFunction";
+  return isGenerator ? "GeneratorFunction" : "Function";
 };
 
 const WRAPPER_SYMBOL_KEYS = {

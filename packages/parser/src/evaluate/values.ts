@@ -29,6 +29,7 @@ import type {
   StaticUnknownValue,
   StaticValue,
   StringComposition,
+  StringShape,
   StubComponent,
   UnknownPrimitiveType,
 } from "../types.js";
@@ -243,22 +244,24 @@ export const toJsonValue = (value: StaticValue): JsonValue | undefined => {
   }
 };
 
-/** Overwrites the own property `key` when nothing spread after it could shadow the write. */
+/** Overwrites the own property entry for `entry.key` when nothing spread after it could shadow the write. */
+export const setObjectEntry = (object: StaticObjectValue, entry: StaticPropertyEntry): void => {
+  for (let index = object.entries.length - 1; index >= 0; index--) {
+    const existing = object.entries[index];
+    if (existing.kind === "spread") break;
+    if (existing.key === entry.key) {
+      object.entries[index] = entry;
+      return;
+    }
+  }
+  object.entries.push(entry);
+};
+
 export const setObjectProperty = (
   object: StaticObjectValue,
   key: string,
   value: StaticValue,
-): void => {
-  for (let index = object.entries.length - 1; index >= 0; index--) {
-    const entry = object.entries[index];
-    if (entry.kind === "spread") break;
-    if (entry.key === key) {
-      object.entries[index] = { kind: "property", key, value };
-      return;
-    }
-  }
-  object.entries.push({ kind: "property", key, value });
-};
+): void => setObjectEntry(object, { kind: "property", key, value });
 
 /** The accessor owning `key`, unless a later spread could shadow it. */
 export const getObjectAccessor = (
@@ -949,15 +952,31 @@ const compareGlobalToPrimitive = (global: StaticValue, other: StaticValue): bool
  * A primitive of known type is never identical to a primitive of another
  * type, to `null`/`undefined`, or to a reference value.
  */
+/** Whether a string of `shape` can read `text` (or, with `text` a shape, share a string with it). */
+const mayMatchStringShape = (shape: StringShape, text: string | StringShape): boolean => {
+  if (typeof text === "string") {
+    return text.startsWith(shape.prefix) && (shape.length === null || text.length === shape.length);
+  }
+  const commonLength = Math.min(shape.prefix.length, text.prefix.length);
+  return (
+    shape.prefix.slice(0, commonLength) === text.prefix.slice(0, commonLength) &&
+    (shape.length === null || text.length === null || shape.length === text.length)
+  );
+};
+
 const compareTypedUnknownToOther = (typed: StaticValue, other: StaticValue): boolean | null => {
   if (typed.kind !== "unknown-primitive" || typed.primitiveType === "any") return null;
   if (other.kind === "primitive") {
-    return typeof other.value === typed.primitiveType ? null : false;
+    if (typeof other.value !== typed.primitiveType) return false;
+    return typed.stringShape && typeof other.value === "string" && !mayMatchStringShape(typed.stringShape, other.value)
+      ? false
+      : null;
   }
   if (other.kind === "unknown-primitive") {
-    return other.primitiveType === "any" || other.primitiveType === typed.primitiveType
-      ? null
-      : false;
+    if (other.primitiveType !== "any" && other.primitiveType !== typed.primitiveType) return false;
+    return typed.stringShape && other.stringShape && !mayMatchStringShape(typed.stringShape, other.stringShape)
+      ? false
+      : null;
   }
   return getIdentityClass(other) === null ? null : false;
 };
@@ -983,6 +1002,75 @@ export const isSameComposition = (
   left.source === right.source &&
   left.prefix === right.prefix &&
   left.suffix === right.suffix;
+
+export const matchesComposition = (name: string, composition: StringComposition): boolean =>
+  name.length >= composition.prefix.length + composition.suffix.length &&
+  name.startsWith(composition.prefix) &&
+  name.endsWith(composition.suffix);
+
+const isEitherPrefix = (left: string, right: string): boolean =>
+  left.startsWith(right) || right.startsWith(left);
+
+const isEitherSuffix = (left: string, right: string): boolean =>
+  left.endsWith(right) || right.endsWith(left);
+
+/** Whether some string could read as both compositions, so a write under one may be read under the other. */
+export const mayOverlapCompositions = (left: StringComposition, right: StringComposition): boolean =>
+  isEitherPrefix(left.prefix, right.prefix) && isEitherSuffix(left.suffix, right.suffix);
+
+/**
+ * `object[key]` for a key known only by composition: the value the last write
+ * under the same composition left, "absent" when no entry can hold the key, or
+ * null when a property or dynamic write may shadow it.
+ */
+export const getComposedProperty = (
+  object: StaticObjectValue,
+  composition: StringComposition,
+): StaticValue | "absent" | null => {
+  for (let index = object.entries.length - 1; index >= 0; index--) {
+    const entry = object.entries[index];
+    if (entry.kind === "property") {
+      if (matchesComposition(entry.key, composition)) return null;
+      continue;
+    }
+    if (entry.composed) {
+      if (isSameComposition(entry.composed.key, composition)) return entry.composed.value;
+      if (mayOverlapCompositions(entry.composed.key, composition)) return null;
+      continue;
+    }
+    const fromSpread = getComposedSpreadProperty(entry.value, composition);
+    if (fromSpread !== "absent") return fromSpread;
+  }
+  return object.prototype ? getComposedProperty(object.prototype, composition) : "absent";
+};
+
+const getComposedSpreadProperty = (
+  spread: StaticValue,
+  composition: StringComposition,
+): StaticValue | "absent" | null => {
+  switch (spread.kind) {
+    case "object":
+      return getComposedProperty(spread, composition);
+    case "primitive":
+    case "function":
+    case "class":
+      return "absent";
+    case "branch": {
+      const alternatives = spread.alternatives.map((alternative) =>
+        getComposedSpreadProperty(alternative, composition),
+      );
+      if (alternatives.every((alternative) => alternative === "absent")) return "absent";
+      const values = alternatives.map((alternative) =>
+        alternative === "absent" ? UNDEFINED_VALUE : alternative,
+      );
+      return values.every((value) => value !== null)
+        ? branchValue(values, spread.reason, spread.location, spread.preferredIndex, spread.predicate)
+        : null;
+    }
+    default:
+      return null;
+  }
+};
 
 /**
  * `===` between two values, or null when analysis cannot decide. Import
@@ -1156,15 +1244,36 @@ export const compareDeeply = (left: StaticValue, right: StaticValue, depth = 0):
   return identity;
 };
 
+const flattenAlternatives = (value: StaticValue): StaticValue[] =>
+  value.kind === "branch" ? value.alternatives.flatMap(flattenAlternatives) : [value];
+
+const coversAlternatives = (
+  alternatives: StaticValue[],
+  others: StaticValue[],
+  depth: number,
+): boolean =>
+  alternatives.every((alternative) =>
+    others.some((other) => areValuesEquivalent(alternative, other, depth + 1)),
+  );
+
 /**
  * Structural equivalence for detecting non-terminating recursion: dynamic
  * values are equivalent to each other because analysis can never tell them
  * apart, so a component re-rendering itself with them would never bottom out.
+ * A branch is the set of values it may take, so its alternatives compare as a set.
  */
 export const areValuesEquivalent = (left: StaticValue, right: StaticValue, depth = 0): boolean => {
   if (isSameValue(left, right)) return true;
-  if (left.kind !== right.kind) return false;
   if (depth >= MAX_EQUIVALENCE_DEPTH) return false;
+  if (left.kind === "branch" || right.kind === "branch") {
+    const leftAlternatives = flattenAlternatives(left);
+    const rightAlternatives = flattenAlternatives(right);
+    return (
+      coversAlternatives(leftAlternatives, rightAlternatives, depth) &&
+      coversAlternatives(rightAlternatives, leftAlternatives, depth)
+    );
+  }
+  if (left.kind !== right.kind) return false;
   switch (left.kind) {
     case "unknown":
     case "unknown-primitive":
@@ -1196,14 +1305,6 @@ export const areValuesEquivalent = (left: StaticValue, right: StaticValue, depth
       return right.kind === "repeat" && areValuesEquivalent(left.item, right.item, depth + 1);
     case "optional":
       return right.kind === "optional" && areValuesEquivalent(left.value, right.value, depth + 1);
-    case "branch":
-      return (
-        right.kind === "branch" &&
-        left.alternatives.length === right.alternatives.length &&
-        left.alternatives.every((alternative, index) =>
-          areValuesEquivalent(alternative, right.alternatives[index], depth + 1),
-        )
-      );
     case "element":
       return (
         right.kind === "element" &&

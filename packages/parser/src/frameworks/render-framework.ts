@@ -134,6 +134,8 @@ const rendererOptionsForEntry = (
     publicDirectory: entry.static.publicDirectory,
     tsconfigPath: path.join(rootDirectory, entry.static.tsconfig ?? "tsconfig.json"),
     aliases: entry.static.aliases,
+    platform: entry.static.platform,
+    hostPlatform: entry.static.hostPlatform,
     externalPackageAllowList: entry.static.externalPackageAllowList,
     bootstrap: entry.static.bootstrap,
     globals: entry.static.globals,

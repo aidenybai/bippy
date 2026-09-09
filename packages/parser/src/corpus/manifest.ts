@@ -5,6 +5,7 @@ import type { ComparisonOptions, ComparisonReport } from "../harness/compare.js"
 import type { StateSpaceSummary } from "../harness/state-space.js";
 import type { JsonValue, StaticRenderStats } from "../types.js";
 import type { FrameworkKind } from "../frameworks/framework-profile.js";
+import { HOST_PLATFORMS, type HostPlatform } from "../host/host-realm.js";
 
 // A corpus entry pins a real React repository at a revision so the static
 // renderer can be validated against the tree its dev server actually commits.
@@ -19,6 +20,10 @@ export interface CorpusStaticTarget {
   tsconfig?: string;
   /** The bundler's `resolve.alias`, targets relative to `rootDirectory`. */
   aliases?: Record<string, string>;
+  /** Metro platform the web bundle targets (`web`): `name.<platform>.ext` files shadow `name.ext`. */
+  platform?: string;
+  /** JavaScript host the client code runs on; browser when unset. */
+  hostPlatform?: HostPlatform;
   /** SPA only: module containing the `createRoot().render()` call. */
   entry?: string;
   /** Export of `entry` mounted by the boot code when the root render call is not literal. */
@@ -124,8 +129,11 @@ const jsonRecordSchema = z.record(z.string(), z.json());
 
 const staticTargetSchema: z.ZodType<CorpusStaticTarget> = z.object({
   rootDirectory: z.string(),
+  servedDirectory: z.string().optional(),
   tsconfig: z.string().optional(),
   aliases: z.record(z.string(), z.string()).optional(),
+  platform: z.string().optional(),
+  hostPlatform: z.enum(HOST_PLATFORMS).optional(),
   entry: z.string().optional(),
   rootComponent: z.string().optional(),
   route: z.string().optional(),

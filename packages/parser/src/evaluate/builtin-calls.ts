@@ -52,6 +52,7 @@ import {
 } from "./native-values.js";
 import { constructFunctionFromSource } from "./function-constructor.js";
 import { callImportMetaGlob } from "./import-glob.js";
+import { callRequireContext } from "./require-context.js";
 import { createClockDateValue, isClockReading } from "./clock-date.js";
 import { createBlobValue } from "./blob.js";
 import { callEventTargetMethod } from "./event-listeners.js";
@@ -152,6 +153,7 @@ import {
   TRUE_VALUE,
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
+  setObjectEntry,
   spreadListItems,
   thrownValue,
   unknownValue,
@@ -489,7 +491,7 @@ const defineOwnProperty = (
           key,
           value: readDescriptorValue(interpreter, target, descriptor, key, context, location),
         };
-    target.entries.push({ ...entry, isEnumerable });
+    setObjectEntry(target, { ...entry, isEnumerable });
     return;
   }
   const value = readDescriptorValue(interpreter, target, descriptor, key, context, location);
@@ -803,7 +805,15 @@ const callHostObjectMethod = (
   location: SourceLocation | null,
 ): StaticValue | null => {
   const realm = interpreter.getRealm(context.environment);
-  const listened = callEventTargetMethod(interpreter, realm, receiver, name, args);
+  const listened = callEventTargetMethod(
+    interpreter,
+    realm,
+    receiver,
+    name,
+    args,
+    context,
+    location,
+  );
   if (listened) return listened;
   if (realm.isGlobalAlias(receiver.name) && name === "matchMedia")
     return mediaQueryListValue(args[0]);
@@ -912,6 +922,16 @@ const callGlobal = (
   }
   if (isErrorConstructorName(name)) return createErrorValue(name, args, location);
   if (name === "import.meta.glob") return callImportMetaGlob(interpreter, args, context, location);
+  if (name === "require.context") return callRequireContext(interpreter, args, context, location);
+  if (name === "require") {
+    const [specifier] = args;
+    return specifier?.kind === "primitive" && typeof specifier.value === "string"
+      ? interpreter.importModule(specifier.value, context, location, true)
+      : unknownValue(
+          `require of ${specifier === undefined ? "nothing" : describeValue(specifier)}`,
+          location,
+        );
+  }
   if (isStringCodecName(name)) return callStringCodec(name, args, location);
   if (name === "Buffer.from") return createBufferValue(args, location);
   if (name === "Buffer.byteLength") return getBufferByteLength(args);
@@ -1053,7 +1073,9 @@ const callGlobal = (
     case "Object.keys":
     case "Object.values":
     case "Object.entries": {
-      const ownEntries = first ? getOwnEnumerableEntries(first) : null;
+      const enumerated =
+        first?.kind === "namespace" ? interpreter.materializeNamespace(first.module) : first;
+      const ownEntries = enumerated ? getOwnEnumerableEntries(enumerated) : null;
       if (!ownEntries)
         return unknownValue(`${name} of ${first ? describeValue(first) : "nothing"}`, location);
       if (name === "Object.keys") return listValue(ownEntries.map(([key]) => primitiveValue(key)));
@@ -2057,6 +2079,8 @@ export const evaluateBuiltinCall = (
     receiver,
     name,
     args,
+    context,
+    location,
   );
   if (listened) return listened;
 

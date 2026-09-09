@@ -132,6 +132,8 @@ export const getPrototypeWitness = (value: StaticValue): object | null => {
     }
     case "element":
       return {};
+    case "namespace":
+      return Object.create(null);
     case "regexp":
       return /witness/;
     case "native-object":

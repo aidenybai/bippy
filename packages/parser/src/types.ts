@@ -408,8 +408,8 @@ export interface InstalledPackage {
 /** What transpiles the app's `.ts`/`.tsx`/`.jsx` modules for the browser: esbuild renumbers a declaration whose name is already bound in an enclosing scope (`Foo` → `Foo2`); the others keep source names. */
 export type ModuleTranspiler = "esbuild" | "name-preserving";
 
-/** The dev bundler serving the app: Vite leaves Node's free names (`global`, `process`) undeclared in the browser, where webpack-style bundlers shim them. */
-export type ModuleBundler = "vite" | "unknown";
+/** The dev bundler serving the app: Vite leaves Node's free names (`global`, `process`) undeclared in the browser, where webpack-style bundlers and Expo's Metro shim them. */
+export type ModuleBundler = "vite" | "expo" | "unknown";
 
 /** What a library model may learn about the analyzed project: which transforms shaped the runtime, and what the running page held. */
 export interface ProjectContext {
@@ -622,8 +622,19 @@ export interface StaticPropertyEntry {
   isEnumerable?: boolean;
 }
 
+/**
+ * `composed` records `object[key] = value` under a string key known only by
+ * composition (`prefix + source + suffix`): the spread stays opaque to every
+ * other reader, while a read under the same composition finds `value`.
+ */
 export interface StaticSpreadEntry {
   kind: "spread";
+  value: StaticValue;
+  composed?: StaticComposedProperty;
+}
+
+export interface StaticComposedProperty {
+  key: StringComposition;
   value: StaticValue;
 }
 
@@ -1011,6 +1022,8 @@ export interface StaticRendererOptions {
   tsconfigPath?: string;
   /** Bundler `resolve.alias` entries, targets relative to `rootDirectory`. */
   aliases?: Record<string, string>;
+  /** Metro platform the bundle targets (`web`): `name.<platform>.ext` files shadow `name.ext`. */
+  platform?: string;
   conditionNames?: string[];
   maxComponentDepth?: number;
   maxFiberCount?: number;

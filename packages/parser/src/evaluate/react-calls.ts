@@ -23,6 +23,7 @@ import {
   invokeHookFactory,
   nextMemoCell,
   nextStateCell,
+  pendingStateValue,
   queueStateUpdate,
 } from "./hooks.js";
 import { awaitedValue } from "./promises.js";
@@ -90,12 +91,9 @@ const stateHook = (
     kind: "native-function",
     name: `set ${name}`,
     call: ([action], tools) => {
-      queueStateUpdate(
-        frame,
-        cell,
-        reduce(action, cell.next ?? cell.current, tools),
-        tools.isDeferred(),
-      );
+      const isDeferred = tools.isDeferred();
+      const base = isDeferred ? pendingStateValue(cell) : cell.next;
+      queueStateUpdate(frame, cell, reduce(action, base ?? cell.current, tools), isDeferred);
       return UNDEFINED_VALUE;
     },
     onEscape: (argumentValues) => {

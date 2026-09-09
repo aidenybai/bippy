@@ -801,6 +801,17 @@ class CommonJsCollector {
     if (specifier !== null) this.addReExportAll(specifier);
   }
 
+  /** `_a = create(), exports.A = _a.A, exports.B = _a.B`: each comma operand exports on its own. */
+  private collectExpression(expression: Expression): void {
+    if (expression.type === "SequenceExpression") {
+      for (const operand of expression.expressions) this.collectExpression(operand);
+    } else if (expression.type === "AssignmentExpression") {
+      this.collectAssignment(expression, null);
+    } else if (expression.type === "CallExpression") {
+      this.collectCall(expression);
+    }
+  }
+
   collectStatement(statement: Statement): void {
     if (statement.type === "ReturnStatement") {
       if (statement.argument && this.factoryReturns.has(statement)) {
@@ -816,9 +827,7 @@ class CommonJsCollector {
       return;
     }
     if (statement.type === "ExpressionStatement") {
-      const { expression } = statement;
-      if (expression.type === "AssignmentExpression") this.collectAssignment(expression, null);
-      else if (expression.type === "CallExpression") this.collectCall(expression);
+      this.collectExpression(statement.expression);
       return;
     }
     if (statement.type !== "VariableDeclaration") return;

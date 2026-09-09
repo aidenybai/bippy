@@ -12,6 +12,7 @@ import { getSearchParamsItems } from "./url-search-params.js";
 import {
   accessorEntry,
   branchValue,
+  compareIdentity,
   FALSE_VALUE,
   listValue,
   mapValue,
@@ -172,12 +173,28 @@ class StaticCollection implements JournaledState<CollectionState> {
     this.entries = joined;
   }
 
+  /** Whether `key` may equal a dynamic key stored under another identity (or, being dynamic itself, any other key). */
+  private mayCollide(key: StaticValue): boolean {
+    const identity = getKeyIdentity(key);
+    const isDefinite = isDefiniteKey(key);
+    for (const [entryIdentity, entry] of this.entries) {
+      if (entryIdentity === identity || (isDefinite && isDefiniteKey(entry.key))) continue;
+      if (compareIdentity(key, entry.key) !== false) return true;
+    }
+    return false;
+  }
+
   private isExact(key: StaticValue): boolean {
-    return isDefiniteKey(key) && !this.hasDynamicKeys;
+    return !this.hasDynamicKeys && !this.mayCollide(key);
   }
 
   private find(key: StaticValue): CollectionEntry | null {
-    return this.entries.get(getKeyIdentity(key)) ?? null;
+    const exact = this.entries.get(getKeyIdentity(key));
+    if (exact) return exact;
+    for (const entry of this.entries.values()) {
+      if (compareIdentity(key, entry.key) === true) return entry;
+    }
+    return null;
   }
 
   markExternallyMutable(): void {
@@ -256,9 +273,12 @@ class StaticCollection implements JournaledState<CollectionState> {
       });
       return;
     }
-    if (!isDefiniteKey(key)) {
-      this.hasDynamicKeys = true;
+    const existing = this.find(key);
+    if (existing) {
+      this.replace({ ...existing, value });
+      return;
     }
+    if (!isDefiniteKey(key) && this.mayCollide(key)) this.hasDynamicKeys = true;
     this.replace({ key, value, isDefinite: true });
   }
 

@@ -9,6 +9,7 @@ import type {
 import type { StateCell } from "./hooks.js";
 import {
   UNDEFINED_VALUE,
+  areValuesEquivalent,
   branchValue,
   getAllocationCount,
   isSameValue,
@@ -24,8 +25,23 @@ export type ModuleValues = Map<string, StaticValue | typeof IN_PROGRESS>;
 
 type ModuleBindingStates = Map<ModuleValues, Map<string, StaticValue>>;
 
-/** A hook cell's pending update; null when none is queued. */
-type PendingUpdates = Map<StateCell, StaticValue | null>;
+/** A hook cell's pending update (null when none is queued) and the values continuations of unknown timing queued. */
+interface PendingUpdate {
+  next: StaticValue | null;
+  deferred: StaticValue[];
+}
+
+type PendingUpdates = Map<StateCell, PendingUpdate>;
+
+const capturePendingUpdate = (cell: StateCell): PendingUpdate => ({
+  next: cell.next,
+  deferred: [...cell.deferred],
+});
+
+const restorePendingUpdate = (cell: StateCell, update: PendingUpdate): void => {
+  cell.next = update.next;
+  cell.deferred = [...update.deferred];
+};
 
 interface ListState {
   items: StaticValue[];
@@ -98,6 +114,27 @@ const isSameState = <Item>(
 const isUnchanged = <Item>(paths: Item[][], original: Item[]): boolean =>
   paths.every((items) => isSameState(items, original));
 
+const isEquivalentEntry = (left: StaticObjectEntry, right: StaticObjectEntry): boolean =>
+  left.kind === "property" && right.kind === "property"
+    ? left.key === right.key &&
+        left.isEnumerable === right.isEnumerable &&
+        areValuesEquivalent(left.value, right.value)
+    : left.kind === "spread" &&
+        right.kind === "spread" &&
+        areValuesEquivalent(left.value, right.value);
+
+const isEquivalentPending = (left: PendingUpdate, right: PendingUpdate): boolean =>
+  (left.next === null || right.next === null
+    ? left.next === right.next
+    : areValuesEquivalent(left.next, right.next)) &&
+  isSameState(left.deferred, right.deferred, areValuesEquivalent);
+
+const isEquivalentListState = (left: ListState, right: ListState): boolean =>
+  isSameState(left.items, right.items, areValuesEquivalent) &&
+  isSameState([...(left.properties ?? [])], [...(right.properties ?? [])], ([leftKey, leftValue], [rightKey, rightValue]) =>
+    leftKey === rightKey && areValuesEquivalent(leftValue, rightValue),
+  );
+
 /** The state every path left, when the paths agree on it. */
 const getAgreedState = <Item>(
   paths: Item[][],
@@ -156,7 +193,7 @@ export class HeapJournal {
   }
 
   recordStateUpdate(cell: StateCell): void {
-    if (!this.updates.has(cell)) this.updates.set(cell, cell.next);
+    if (!this.updates.has(cell)) this.updates.set(cell, capturePendingUpdate(cell));
   }
 
   endPath(): void {
@@ -193,8 +230,8 @@ export class HeapJournal {
       path.bindings.set(values, pathValues);
     }
     for (const [cell, original] of this.updates) {
-      path.updates.set(cell, cell.next);
-      cell.next = original;
+      path.updates.set(cell, capturePendingUpdate(cell));
+      restorePendingUpdate(cell, original);
     }
     this.paths.push(path);
   }
@@ -206,6 +243,29 @@ export class HeapJournal {
     predicate: string | null,
   ): void {
     this.applyJoin(this.paths, reason, location, preferredPath, predicate);
+  }
+
+  /** Whether every value the single ended path mutated is equivalent to what it found. */
+  isPathSettled(): boolean {
+    const [path] = this.paths;
+    if (path === undefined) return true;
+    return (
+      [...this.objects].every(([object, original]) =>
+        isSameState(path.objects.get(object) ?? original, original, isEquivalentEntry),
+      ) &&
+      [...this.lists].every(([list, original]) =>
+        isEquivalentListState(path.lists.get(list) ?? original, original),
+      ) &&
+      [...this.states].every(([state, original]) => path.states.get(state) === original) &&
+      [...this.bindings].every(([values, originals]) =>
+        [...originals].every(([name, original]) =>
+          areValuesEquivalent(path.bindings.get(values)?.get(name) ?? original, original),
+        ),
+      ) &&
+      [...this.updates].every(([cell, original]) =>
+        isEquivalentPending(path.updates.get(cell) ?? original, original),
+      )
+    );
   }
 
   /**
@@ -233,20 +293,20 @@ export class HeapJournal {
     predicate: string | null,
   ): void {
     for (const [cell, original] of this.updates) {
-      const pathUpdates = paths.map((path) =>
-        path.updates.has(cell) ? (path.updates.get(cell) ?? null) : original,
-      );
-      if (pathUpdates.every((update) => update === pathUpdates[0])) {
-        cell.next = pathUpdates[0];
-        continue;
-      }
-      cell.next = branchValue(
-        pathUpdates.map((update) => update ?? cell.current),
-        reason,
-        location,
-        preferredPath,
-        predicate,
-      );
+      const pathUpdates = paths.map((path) => path.updates.get(cell) ?? original);
+      const pathNexts = pathUpdates.map((update) => update.next);
+      cell.next = pathNexts.every((next) => next === pathNexts[0])
+        ? pathNexts[0]
+        : branchValue(
+            pathNexts.map((next) => next ?? cell.current),
+            reason,
+            location,
+            preferredPath,
+            predicate,
+          );
+      cell.deferred = pathUpdates
+        .flatMap((update) => update.deferred)
+        .filter((value, index, values) => values.indexOf(value) === index);
     }
     for (const [values, originals] of this.bindings) {
       for (const [name, original] of originals) {
