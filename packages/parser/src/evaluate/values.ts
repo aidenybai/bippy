@@ -28,6 +28,7 @@ import type {
   StaticUnknownPrimitiveValue,
   StaticUnknownValue,
   StaticValue,
+  StringComposition,
   StubComponent,
   UnknownPrimitiveType,
 } from "../types.js";
@@ -973,6 +974,16 @@ const compareIdentityAcross = (alternatives: StaticValue[], other: StaticValue):
 const INTRINSIC_GLOBAL_NAME = /^[A-Z]\w*(\.prototype)?$/;
 const isIntrinsicGlobalName = (name: string): boolean => INTRINSIC_GLOBAL_NAME.test(name);
 
+export const isSameComposition = (
+  left: StringComposition | undefined,
+  right: StringComposition | undefined,
+): boolean =>
+  left !== undefined &&
+  right !== undefined &&
+  left.source === right.source &&
+  left.prefix === right.prefix &&
+  left.suffix === right.suffix;
+
 /**
  * `===` between two values, or null when analysis cannot decide. Import
  * bindings of the same external export are the same object; a primitive can
@@ -981,6 +992,12 @@ const isIntrinsicGlobalName = (name: string): boolean => INTRINSIC_GLOBAL_NAME.t
 export const compareIdentity = (left: StaticValue, right: StaticValue): boolean | null => {
   if (left.kind === "primitive" && right.kind === "primitive") return left.value === right.value;
   if (left === right) return true;
+  if (
+    left.kind === "unknown-primitive" &&
+    right.kind === "unknown-primitive" &&
+    isSameComposition(left.composition, right.composition)
+  )
+    return true;
   if (left.kind === "function" && right.kind === "function" && left.scope !== right.scope) {
     return false;
   }
@@ -1231,6 +1248,8 @@ const haveSameShape = (
 ): boolean =>
   left.stringShape?.prefix === right.stringShape?.prefix &&
   left.stringShape?.length === right.stringShape?.length &&
+  (left.composition === right.composition ||
+    isSameComposition(left.composition, right.composition)) &&
   left.numberRange?.min === right.numberRange?.min &&
   left.numberRange?.max === right.numberRange?.max;
 

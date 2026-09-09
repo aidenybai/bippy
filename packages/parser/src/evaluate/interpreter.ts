@@ -172,8 +172,11 @@ import {
   withoutThrows,
 } from "./thrown.js";
 import {
+  deleteNativeObjectComposedMember,
   deleteNativeObjectMember,
+  getNativeObjectComposedMember,
   getNativeObjectMember,
+  setNativeObjectComposedMember,
   setNativeObjectMember,
 } from "./native-values.js";
 import {
@@ -2157,6 +2160,7 @@ export class Interpreter {
     switch (target.kind) {
       case "native-object":
         if (name !== null) deleteNativeObjectMember(target, name);
+        else if (key.kind === "unknown-primitive") deleteNativeObjectComposedMember(target, key);
         return;
       case "object":
         if (target.isFrozen) return;
@@ -2343,6 +2347,8 @@ export class Interpreter {
     const object = this.evaluateExpression(objectNode, context);
     for (const alternative of object.kind === "branch" ? object.alternatives : [object]) {
       if (alternative.kind === "object") this.assignDynamicEntry(alternative, key, value);
+      else if (alternative.kind === "native-object" && key.kind === "unknown-primitive")
+        setNativeObjectComposedMember(alternative, key, value);
       else if (alternative.kind === "unknown" || alternative.kind === "external")
         this.markEscaped(value);
     }
@@ -2446,6 +2452,14 @@ export class Interpreter {
       return this.getProperty(object, propertyName, context, location, node.optional);
     }
     if (object === CHAIN_SHORT_CIRCUIT) return object;
+    return mapValue(object, (alternative) => this.getDynamicMember(alternative, key, location));
+  }
+
+  private getDynamicMember(
+    object: StaticValue,
+    key: StaticValue,
+    location: SourceLocation | null,
+  ): StaticValue {
     if (object.kind === "list") {
       const candidates = object.items.filter((item) => item.kind !== "repeat");
       return candidates.length === 0
@@ -2459,6 +2473,9 @@ export class Interpreter {
       return values.length === 0
         ? unknownValue("dynamic key into an unknown object", location)
         : branchValue(values, "dynamic object key", location);
+    }
+    if (object.kind === "native-object" && key.kind === "unknown-primitive") {
+      return getNativeObjectComposedMember(object, key);
     }
     return unknownValue(`dynamic member access on ${describeValue(object)}`, location);
   }

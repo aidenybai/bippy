@@ -692,6 +692,17 @@ export interface StringShape {
   length: number | null;
 }
 
+/**
+ * An unknown string that reads `prefix + source + suffix`: strings composed
+ * alike from the same `source` (one `Math.random()`-derived id, say) are the
+ * same string, so a property written under one is read back under the other.
+ */
+export interface StringComposition {
+  prefix: string;
+  source: StaticUnknownPrimitiveValue;
+  suffix: string;
+}
+
 /** Inclusive bounds of an unknown number. */
 export interface NumberRange {
   min: number;
@@ -704,6 +715,7 @@ export interface StaticUnknownPrimitiveValue {
   reason: string;
   clock?: ClockReading;
   stringShape?: StringShape;
+  composition?: StringComposition;
   numberRange?: NumberRange;
 }
 
