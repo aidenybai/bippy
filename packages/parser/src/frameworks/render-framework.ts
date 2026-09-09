@@ -1,9 +1,6 @@
-import path from "node:path";
-import { getSettleMs, type CorpusEntry } from "../corpus/manifest.js";
-import { readProcessEnvironment } from "../corpus/process-environment.js";
 import { FrameworkTargetError } from "../errors.js";
 import { createStaticRenderer } from "../render/static-renderer.js";
-import type { RuntimeObservations, StaticRenderResult, StaticRendererOptions } from "../types.js";
+import type { StaticRenderResult, StaticRendererOptions } from "../types.js";
 import type { FrameworkKind } from "./framework-profile.js";
 import { renderNextAppRoute } from "./next-app-router.js";
 import { readInstalledVersion } from "../libraries/installed-version.js";
@@ -121,50 +118,3 @@ const renderRootComponent = (
       );
   }
 };
-
-const rendererOptionsForEntry = (
-  entry: CorpusEntry,
-  cloneDirectory: string,
-  observations?: RuntimeObservations,
-): StaticRendererOptions => {
-  const rootDirectory = path.join(cloneDirectory, entry.static.rootDirectory);
-  return {
-    rootDirectory,
-    servedDirectory: entry.static.servedDirectory,
-    publicDirectory: entry.static.publicDirectory,
-    tsconfigPath: path.join(rootDirectory, entry.static.tsconfig ?? "tsconfig.json"),
-    aliases: entry.static.aliases,
-    externalPackageAllowList: entry.static.externalPackageAllowList,
-    bootstrap: entry.static.bootstrap,
-    globals: entry.static.globals,
-    defines: entry.static.defines,
-    environment: readProcessEnvironment(entry, rootDirectory),
-    origin: new URL(entry.url).origin,
-    observations,
-    maxSteps: entry.static.maxSteps,
-    maxFiberCount: entry.static.maxFiberCount,
-    maxComponentDepth: entry.static.maxComponentDepth,
-    settleMs: getSettleMs(entry),
-  };
-};
-
-const getPageRoute = (url: string): string => {
-  const { pathname, search, hash } = new URL(url);
-  return `${pathname}${search}${hash}`;
-};
-
-export const renderFramework = (
-  entry: CorpusEntry,
-  cloneDirectory: string,
-  observations?: RuntimeObservations,
-): Promise<StaticRenderResult> =>
-  renderFrameworkTarget(
-    {
-      framework: entry.framework,
-      entry: entry.static.entry,
-      route: entry.static.route ?? getPageRoute(entry.url),
-      appDirectory: entry.static.appDirectory,
-      rootComponent: entry.static.rootComponent,
-    },
-    rendererOptionsForEntry(entry, cloneDirectory, observations),
-  );

@@ -126,7 +126,8 @@ are treated as client components.
 
 ### Frameworks (`src/frameworks`)
 
-`renderFramework` renders a `{ framework, entry?, route? }` target:
+`renderFrameworkTarget` renders a `{ framework, entry?, route? }` target (`src/corpus/render-entry.ts`
+builds one from a corpus entry):
 
 - `spa` — the entry module's root render call (nested blocks and callbacks included).
 - `next-app` — `app/` route matching, layout/template/page/loading composition, async server

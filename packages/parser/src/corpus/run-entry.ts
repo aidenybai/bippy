@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import { CorpusRevisionError, NoCommitsError, parseWithSchema } from "../errors.js";
-import { renderFramework } from "../frameworks/render-framework.js";
+import { renderCorpusEntry } from "./render-entry.js";
 import {
   dropInjectedFibers,
   unwrapTransparentRuntimeFiber,
@@ -327,7 +327,7 @@ export const runCorpusEntry = async (
     runtime: BrowserCaptureResult | null,
   ): Promise<StaticRenderResult> => {
     log("static render");
-    staticResult = await renderFramework(entry, directory, runtime?.observations);
+    staticResult = await renderCorpusEntry(entry, directory, runtime?.observations);
     result.static = {
       stats: staticResult.stats,
       diagnostics: summarizeDiagnostics(staticResult.diagnostics),
