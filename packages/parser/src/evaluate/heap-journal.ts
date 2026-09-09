@@ -332,6 +332,7 @@ export class HeapJournal {
         reason,
         location,
         preferredPath,
+        predicate,
       );
     }
     for (const [list, original] of this.lists) {

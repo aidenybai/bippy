@@ -1045,11 +1045,14 @@ const callGlobal = (
     case "Array.from": {
       const source =
         first?.kind === "object" ? (getCollectionItems(first) ?? arrayLikeToList(first)) : first;
-      if (source?.kind === "list" || source?.kind === "repeat") {
-        if (isCallable(second)) return mapList(interpreter, source, second, context, location);
-        return source;
-      }
-      return unknownValue("Array.from of dynamic iterable", location);
+      if (!source) return unknownValue("Array.from of dynamic iterable", location);
+      return mapValue(source, (iterable) => {
+        if (iterable.kind !== "list" && iterable.kind !== "repeat")
+          return unknownValue("Array.from of dynamic iterable", location);
+        return isCallable(second)
+          ? mapList(interpreter, iterable, second, context, location)
+          : iterable;
+      });
     }
     case "Int8Array.from":
     case "Uint8Array.from":

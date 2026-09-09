@@ -13,17 +13,19 @@ import type {
   Scope,
   SourceLocation,
   StaticAccessor,
+  StaticBranchValue,
   StaticClassValue,
   StaticElementType,
   StaticFunctionValue,
   StaticListValue,
   StaticNativeObjectValue,
   StaticObjectEntry,
-  StaticPropertyEntry,
   StaticObjectValue,
   StaticOptionalValue,
   StaticPrimitive,
   StaticPrimitiveValue,
+  StaticPropertyEntry,
+  StaticSpreadEntry,
   StaticSymbolValue,
   StaticUnknownPrimitiveValue,
   StaticUnknownValue,
@@ -1026,6 +1028,23 @@ export const mayOverlapCompositions = (left: StringComposition, right: StringCom
 export const getComposedProperty = (
   object: StaticObjectValue,
   composition: StringComposition,
+  visited: ComposedLookupMemo = new Map(),
+): StaticValue | "absent" | null => {
+  const known = visited.get(object);
+  if (known !== undefined) return known;
+  visited.set(object, "absent");
+  const value = lookupComposedProperty(object, composition, visited);
+  visited.set(object, value);
+  return value;
+};
+
+/** Objects already read within one composed lookup, so shared spread sources are read once. */
+type ComposedLookupMemo = Map<StaticObjectValue, StaticValue | "absent" | null>;
+
+const lookupComposedProperty = (
+  object: StaticObjectValue,
+  composition: StringComposition,
+  visited: ComposedLookupMemo,
 ): StaticValue | "absent" | null => {
   for (let index = object.entries.length - 1; index >= 0; index--) {
     const entry = object.entries[index];
@@ -1038,26 +1057,27 @@ export const getComposedProperty = (
       if (mayOverlapCompositions(entry.composed.key, composition)) return null;
       continue;
     }
-    const fromSpread = getComposedSpreadProperty(entry.value, composition);
+    const fromSpread = getComposedSpreadProperty(entry.value, composition, visited);
     if (fromSpread !== "absent") return fromSpread;
   }
-  return object.prototype ? getComposedProperty(object.prototype, composition) : "absent";
+  return object.prototype ? getComposedProperty(object.prototype, composition, visited) : "absent";
 };
 
 const getComposedSpreadProperty = (
   spread: StaticValue,
   composition: StringComposition,
+  visited: ComposedLookupMemo,
 ): StaticValue | "absent" | null => {
   switch (spread.kind) {
     case "object":
-      return getComposedProperty(spread, composition);
+      return getComposedProperty(spread, composition, visited);
     case "primitive":
     case "function":
     case "class":
       return "absent";
     case "branch": {
       const alternatives = spread.alternatives.map((alternative) =>
-        getComposedSpreadProperty(alternative, composition),
+        getComposedSpreadProperty(alternative, composition, visited),
       );
       if (alternatives.every((alternative) => alternative === "absent")) return "absent";
       const values = alternatives.map((alternative) =>
@@ -1067,6 +1087,129 @@ const getComposedSpreadProperty = (
         ? branchValue(values, spread.reason, spread.location, spread.preferredIndex, spread.predicate)
         : null;
     }
+    default:
+      return null;
+  }
+};
+
+/** The entry `object[key] = value` leaves for a key analysis cannot name. */
+export const dynamicEntry = (key: StaticValue, value: StaticValue): StaticSpreadEntry => ({
+  kind: "spread",
+  value: unknownValue(`property ${describeValue(key)} set to ${describeValue(value)}`),
+  ...(key.kind === "unknown-primitive" && key.composition
+    ? { composed: { key: key.composition, value } }
+    : {}),
+});
+
+/** One `object[key]` read under a key analysis cannot name, walking spreads of known objects. */
+interface DynamicReadWalk {
+  location: SourceLocation | null;
+  reading: Set<StaticObjectValue>;
+  visitCount: number;
+  isExhausted: boolean;
+}
+
+/**
+ * Own values a dynamic key may select from `object`: every own property not
+ * overridden by a later entry, into spreads of known objects; a spread of a
+ * branch keeps its predicate so reads through the same join stay correlated.
+ * Undefined when the object is provably empty; unknown when a spread source is
+ * opaque or the graph outgrows a branch.
+ */
+export const getDynamicObjectMember = (
+  object: StaticObjectValue,
+  key: StaticValue,
+  location: SourceLocation | null,
+): StaticValue => {
+  const composed =
+    key.kind === "unknown-primitive" && key.composition
+      ? getComposedProperty(object, key.composition)
+      : null;
+  if (composed === "absent") return UNDEFINED_VALUE;
+  if (composed !== null) return composed;
+  const walk: DynamicReadWalk = {
+    location,
+    reading: new Set(),
+    visitCount: 0,
+    isExhausted: false,
+  };
+  const member = readDynamicMembers(object, new Set(), walk);
+  return walk.isExhausted
+    ? unknownValue(
+        `dynamic object key: more than ${MAX_BRANCH_ALTERNATIVES} alternatives`,
+        location,
+      )
+    : member;
+};
+
+const readDynamicMembers = (
+  object: StaticObjectValue,
+  shadowed: ReadonlySet<string>,
+  walk: DynamicReadWalk,
+): StaticValue => {
+  if (walk.reading.has(object)) return UNDEFINED_VALUE;
+  if (++walk.visitCount > MAX_BRANCH_ALTERNATIVES) {
+    walk.isExhausted = true;
+    return UNDEFINED_VALUE;
+  }
+  walk.reading.add(object);
+  const ownShadowed = new Set(shadowed);
+  const candidates: StaticValue[] = [];
+  let hasOpaqueSpread = false;
+  for (let index = object.entries.length - 1; index >= 0 && !walk.isExhausted; index--) {
+    const entry = object.entries[index];
+    if (entry.kind === "property") {
+      if (ownShadowed.has(entry.key)) continue;
+      ownShadowed.add(entry.key);
+      candidates.push(entry.value);
+    } else if (entry.composed) {
+      candidates.push(entry.composed.value);
+    } else {
+      const fromSpread = readDynamicSpreadMembers(entry.value, ownShadowed, walk);
+      if (fromSpread === null) hasOpaqueSpread = true;
+      else if (fromSpread !== UNDEFINED_VALUE) candidates.push(fromSpread);
+    }
+  }
+  if (object.prototype && !walk.isExhausted) {
+    const inherited = readDynamicMembers(object.prototype, ownShadowed, walk);
+    if (inherited !== UNDEFINED_VALUE) candidates.push(inherited);
+  }
+  walk.reading.delete(object);
+  if (hasOpaqueSpread) {
+    candidates.push(unknownValue("dynamic key into an unknown object", walk.location));
+  }
+  if (candidates.length === 0) return UNDEFINED_VALUE;
+  if (candidates.length === 1) return candidates[0];
+  const member = branchValue(candidates, "dynamic object key", walk.location);
+  if (member.kind === "unknown") walk.isExhausted = true;
+  return member;
+};
+
+/** What `{...spread}[key]` may hold, or null for a spread whose entries are unknowable. */
+const readDynamicSpreadMembers = (
+  spread: StaticValue,
+  shadowed: ReadonlySet<string>,
+  walk: DynamicReadWalk,
+): StaticValue | null => {
+  switch (spread.kind) {
+    case "object":
+      return readDynamicMembers(spread, shadowed, walk);
+    case "primitive":
+    case "function":
+    case "class":
+      return UNDEFINED_VALUE;
+    case "branch":
+      return branchValue(
+        spread.alternatives.map(
+          (alternative) =>
+            readDynamicSpreadMembers(alternative, shadowed, walk) ??
+            unknownValue("dynamic key into an unknown object", walk.location),
+        ),
+        spread.reason,
+        spread.location,
+        spread.preferredIndex,
+        spread.predicate,
+      );
     default:
       return null;
   }
@@ -1251,9 +1394,10 @@ const coversAlternatives = (
   alternatives: StaticValue[],
   others: StaticValue[],
   depth: number,
+  compared: EquivalenceMemo,
 ): boolean =>
   alternatives.every((alternative) =>
-    others.some((other) => areValuesEquivalent(alternative, other, depth + 1)),
+    others.some((other) => areValuesEquivalent(alternative, other, depth + 1, compared)),
   );
 
 /**
@@ -1262,15 +1406,40 @@ const coversAlternatives = (
  * apart, so a component re-rendering itself with them would never bottom out.
  * A branch is the set of values it may take, so its alternatives compare as a set.
  */
-export const areValuesEquivalent = (left: StaticValue, right: StaticValue, depth = 0): boolean => {
+export const areValuesEquivalent = (
+  left: StaticValue,
+  right: StaticValue,
+  depth = 0,
+  compared: EquivalenceMemo = new Map(),
+): boolean => {
   if (isSameValue(left, right)) return true;
   if (depth >= MAX_EQUIVALENCE_DEPTH) return false;
+  let byRight = compared.get(left);
+  if (!byRight) compared.set(left, (byRight = new Map()));
+  let byDepth = byRight.get(right);
+  if (!byDepth) byRight.set(right, (byDepth = new Map()));
+  const known = byDepth.get(depth);
+  if (known !== undefined) return known;
+  const isEquivalent = compareEquivalence(left, right, depth, compared);
+  byDepth.set(depth, isEquivalent);
+  return isEquivalent;
+};
+
+/** Pairs already compared within one equivalence check, per depth. */
+type EquivalenceMemo = Map<StaticValue, Map<StaticValue, Map<number, boolean>>>;
+
+const compareEquivalence = (
+  left: StaticValue,
+  right: StaticValue,
+  depth: number,
+  compared: EquivalenceMemo,
+): boolean => {
   if (left.kind === "branch" || right.kind === "branch") {
     const leftAlternatives = flattenAlternatives(left);
     const rightAlternatives = flattenAlternatives(right);
     return (
-      coversAlternatives(leftAlternatives, rightAlternatives, depth) &&
-      coversAlternatives(rightAlternatives, leftAlternatives, depth)
+      coversAlternatives(leftAlternatives, rightAlternatives, depth, compared) &&
+      coversAlternatives(rightAlternatives, leftAlternatives, depth, compared)
     );
   }
   if (left.kind !== right.kind) return false;
@@ -1292,6 +1461,7 @@ export const areValuesEquivalent = (left: StaticValue, right: StaticValue, depth
             getObjectProperty(left, key),
             getObjectProperty(right, key),
             depth + 1,
+            compared,
           ),
       );
     }
@@ -1299,17 +1469,17 @@ export const areValuesEquivalent = (left: StaticValue, right: StaticValue, depth
       return (
         right.kind === "list" &&
         left.items.length === right.items.length &&
-        left.items.every((item, index) => areValuesEquivalent(item, right.items[index], depth + 1))
+        left.items.every((item, index) => areValuesEquivalent(item, right.items[index], depth + 1, compared))
       );
     case "repeat":
-      return right.kind === "repeat" && areValuesEquivalent(left.item, right.item, depth + 1);
+      return right.kind === "repeat" && areValuesEquivalent(left.item, right.item, depth + 1, compared);
     case "optional":
-      return right.kind === "optional" && areValuesEquivalent(left.value, right.value, depth + 1);
+      return right.kind === "optional" && areValuesEquivalent(left.value, right.value, depth + 1, compared);
     case "element":
       return (
         right.kind === "element" &&
         areElementTypesEquivalent(left.type, right.type) &&
-        areValuesEquivalent(left.props, right.props, depth + 1)
+        areValuesEquivalent(left.props, right.props, depth + 1, compared)
       );
     case "function":
       return right.kind === "function" && left.node === right.node;
@@ -1602,12 +1772,59 @@ export const mapValue = (
 ): StaticValue => {
   if (value.kind !== "branch") return transform(value);
   return branchValue(
-    value.alternatives.map(transform),
+    value.alternatives.map((alternative, index) =>
+      selectCorrelated(transform(alternative), value, index),
+    ),
     value.reason,
     value.location,
     value.preferredIndex,
     value.predicate,
   );
+};
+
+/** Inside alternative `index` of `decision`, a branch over the same predicate is already decided. */
+const selectCorrelated = (
+  result: StaticValue,
+  decision: StaticBranchValue,
+  index: number,
+): StaticValue =>
+  result.kind === "branch" &&
+  decision.predicate !== null &&
+  result.predicate === decision.predicate &&
+  result.alternatives.length === decision.alternatives.length
+    ? result.alternatives[index]
+    : result;
+
+/** Applies `transform` to pairs of alternatives; two branches decided by the same predicate pair up index by index. */
+export const mapPair = (
+  left: StaticValue,
+  right: StaticValue,
+  transform: (leftAlternative: StaticValue, rightAlternative: StaticValue) => StaticValue,
+): StaticValue => {
+  if (
+    left.kind === "branch" &&
+    right.kind === "branch" &&
+    left.predicate !== null &&
+    left.predicate === right.predicate &&
+    left.alternatives.length === right.alternatives.length
+  ) {
+    return branchValue(
+      left.alternatives.map((alternative, index) =>
+        selectCorrelated(transform(alternative, right.alternatives[index]), left, index),
+      ),
+      left.reason,
+      left.location,
+      left.preferredIndex,
+      left.predicate,
+    );
+  }
+  if (left.kind === "branch") {
+    return mapValue(left, (alternative) => mapPair(alternative, right, transform));
+  }
+  if (right.kind === "branch") {
+    return mapValue(right, (alternative) => transform(left, alternative));
+  }
+  return transform(left, right);
 };
 
 const MAX_DISTRIBUTED_ALTERNATIVES = 16;

@@ -18,6 +18,7 @@ const PURE_PACKAGES: ReadonlySet<string> = new Set([
   "classnames",
   "clsx",
   "date-fns",
+  "escape-string-regexp",
   "gray-matter",
   "hasown",
   "lodash",

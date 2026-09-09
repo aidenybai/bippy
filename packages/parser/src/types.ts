@@ -341,6 +341,7 @@ export interface JournaledState<Snapshot> {
     reason: string,
     location: SourceLocation | null,
     preferredPath: number,
+    predicate: string | null,
   ): void;
 }
 

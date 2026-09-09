@@ -25,11 +25,21 @@ import {
   unknownValue,
 } from "./values.js";
 
+/** The value an entry holds on each path of one fork (null where the path lacks it); entries of the same fork are present together. */
+interface EntryPresence {
+  predicate: string;
+  pathValues: (StaticValue | null)[];
+  preferredPath: number;
+  reason: string;
+  location: SourceLocation | null;
+}
+
 /** `isDefinite` is false when the entry exists on some paths only (a branch key, or a fork whose paths disagree). */
 interface CollectionEntry {
   key: StaticValue;
   value: StaticValue;
   isDefinite: boolean;
+  presence?: EntryPresence;
 }
 
 interface CollectionState {
@@ -97,6 +107,17 @@ const isDefiniteKey = (key: StaticValue): boolean =>
 /** Upper bound on key alternatives written one by one before the write counts as a dynamic key. */
 const MAX_KEY_ALTERNATIVES = 8;
 
+/** Upper bound on the states a projection enumerates from correlated presences before entries become independent optionals. */
+const MAX_PRESENCE_STATES = 16;
+
+const getPresenceStateCount = (entries: CollectionEntry[]): number => {
+  const pathCounts = new Map<string, number>();
+  for (const entry of entries) {
+    if (entry.presence) pathCounts.set(entry.presence.predicate, entry.presence.pathValues.length);
+  }
+  return [...pathCounts.values()].reduce((product, count) => product * count, 1);
+};
+
 /** A small branch whose every alternative is a definite key: the operation applies to each alternative. */
 const getDefiniteKeyBranch = (key: StaticValue): StaticBranchValue | null =>
   key.kind === "branch" &&
@@ -142,6 +163,7 @@ class StaticCollection implements JournaledState<CollectionState> {
     reason: string,
     location: SourceLocation | null,
     preferredPath: number,
+    predicate: string | null,
   ): void {
     this.hasDynamicKeys = snapshots.some((snapshot) => snapshot.hasDynamicKeys);
     this.isExternallyMutable = snapshots.some((snapshot) => snapshot.isExternallyMutable);
@@ -157,7 +179,10 @@ class StaticCollection implements JournaledState<CollectionState> {
           continue;
         }
         const present = pathEntries.filter((pathEntry) => pathEntry !== null);
+        const isEverywhere = present.length === pathEntries.length;
         const preferred = pathEntries[preferredPath];
+        const isCorrelated =
+          !isEverywhere && predicate !== null && present.every((pathEntry) => pathEntry.isDefinite);
         joined.set(identity, {
           key: entry.key,
           value: branchValue(
@@ -165,8 +190,18 @@ class StaticCollection implements JournaledState<CollectionState> {
             reason,
             location,
             preferred ? present.indexOf(preferred) : 0,
+            isEverywhere ? predicate : null,
           ),
-          isDefinite: pathEntries.every((pathEntry) => pathEntry?.isDefinite ?? false),
+          isDefinite: isEverywhere && present.every((pathEntry) => pathEntry.isDefinite),
+          presence: isCorrelated
+            ? {
+                predicate,
+                pathValues: pathEntries.map((pathEntry) => pathEntry?.value ?? null),
+                preferredPath,
+                reason,
+                location,
+              }
+            : undefined,
         });
       }
     }
@@ -224,13 +259,22 @@ class StaticCollection implements JournaledState<CollectionState> {
     }
     const entry = this.find(key);
     if (!entry) return UNDEFINED_VALUE;
-    return entry.isDefinite
-      ? entry.value
-      : branchValue(
-          [entry.value, UNDEFINED_VALUE],
-          this.describeMaybePresent("get"),
-          this.location,
-        );
+    if (entry.isDefinite) return entry.value;
+    const presence = entry.presence;
+    if (presence) {
+      return branchValue(
+        presence.pathValues.map((pathValue) => pathValue ?? UNDEFINED_VALUE),
+        presence.reason,
+        presence.location,
+        presence.preferredPath,
+        presence.predicate,
+      );
+    }
+    return branchValue(
+      [entry.value, UNDEFINED_VALUE],
+      this.describeMaybePresent("get"),
+      this.location,
+    );
   }
 
   has(key: StaticValue): StaticValue {
@@ -240,9 +284,18 @@ class StaticCollection implements JournaledState<CollectionState> {
       }
       const entry = this.find(alternative);
       if (!entry) return FALSE_VALUE;
-      return entry.isDefinite
-        ? TRUE_VALUE
-        : unknownPrimitiveValue("boolean", this.describeMaybePresent("has"));
+      if (entry.isDefinite) return TRUE_VALUE;
+      const presence = entry.presence;
+      if (presence) {
+        return branchValue(
+          presence.pathValues.map((pathValue) => (pathValue ? TRUE_VALUE : FALSE_VALUE)),
+          presence.reason,
+          presence.location,
+          presence.preferredPath,
+          presence.predicate,
+        );
+      }
+      return unknownPrimitiveValue("boolean", this.describeMaybePresent("has"));
     });
   }
 
@@ -311,7 +364,42 @@ class StaticCollection implements JournaledState<CollectionState> {
   /** Entries in insertion order; code the analysis did not see may have appended more. */
   project(select: (entry: CollectionEntry) => StaticValue): StaticValue {
     if (this.hasDynamicKeys) return unknownValue(`${this.kind} with dynamic keys`, this.location);
-    const items = [...this.entries.values()].map((entry) =>
+    const entries = [...this.entries.values()];
+    return this.projectEntries(
+      getPresenceStateCount(entries) <= MAX_PRESENCE_STATES
+        ? entries
+        : entries.map(({ presence, ...entry }) => entry),
+      select,
+    );
+  }
+
+  /** One list per combination of fork paths, so entries written on the same path stay together. */
+  private projectEntries(
+    entries: CollectionEntry[],
+    select: (entry: CollectionEntry) => StaticValue,
+  ): StaticValue {
+    const presence = entries.find((entry) => entry.presence)?.presence;
+    if (presence) {
+      return branchValue(
+        presence.pathValues.map((_, pathIndex) =>
+          this.projectEntries(
+            entries.flatMap((entry) => {
+              if (entry.presence?.predicate !== presence.predicate) return [entry];
+              const pathValue = entry.presence.pathValues[pathIndex];
+              return pathValue === null
+                ? []
+                : [{ key: entry.key, value: pathValue, isDefinite: true }];
+            }),
+            select,
+          ),
+        ),
+        presence.reason,
+        presence.location,
+        presence.preferredPath,
+        presence.predicate,
+      );
+    }
+    const items = entries.map((entry) =>
       entry.isDefinite
         ? select(entry)
         : optionalValue(select(entry), this.describeMaybePresent("entries"), this.location),

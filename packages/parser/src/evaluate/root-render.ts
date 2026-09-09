@@ -19,6 +19,7 @@ export class RootRenderState implements JournaledState<StaticValue | null> {
     reason: string,
     location: SourceLocation | null,
     preferredPath: number,
+    predicate: string | null,
   ): void {
     if (snapshots.every((snapshot) => snapshot === null)) {
       this.element = null;
@@ -27,6 +28,6 @@ export class RootRenderState implements JournaledState<StaticValue | null> {
     const alternatives = snapshots.map((snapshot) => snapshot ?? UNDEFINED_VALUE);
     this.element = alternatives.every((alternative) => alternative === alternatives[0])
       ? alternatives[0]
-      : branchValue(alternatives, reason, location, preferredPath);
+      : branchValue(alternatives, reason, location, preferredPath, predicate);
   }
 }

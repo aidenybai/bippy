@@ -98,6 +98,7 @@ import type {
   ResolvedSymbol,
   Scope,
   SourceLocation,
+  StaticBranchValue,
   StaticClassValue,
   StaticElementType,
   StaticElementValue,
@@ -107,7 +108,6 @@ import type {
   StaticObjectEntry,
   StaticObjectValue,
   StaticPrimitive,
-  StaticSpreadEntry,
   StaticValue,
   StyledComponentsTransformOptions,
   SuperBinding,
@@ -254,11 +254,12 @@ import {
   componentReference,
   countAlternatives,
   describeValue,
+  dynamicEntry,
   FALSE_VALUE,
   falsyCounterpart,
   truthyCounterpart,
   getClassPrototype,
-  getComposedProperty,
+  getDynamicObjectMember,
   getSpreadEntries,
   getSymbolDescription,
   getListItem,
@@ -274,6 +275,7 @@ import {
   isSameComposition,
   isSymbolPropertyKey,
   listValue,
+  mapPair,
   mapValue,
   distributeBinary,
   NULL_VALUE,
@@ -2400,14 +2402,23 @@ export class Interpreter {
     if (target.isFrozen) return;
     this.recordHeapMutation(target);
     this.escapeWalk.memo.invalidate(target, null);
-    const entry: StaticSpreadEntry = {
-      kind: "spread",
-      value: unknownValue(`property ${describeValue(key)} set to ${describeValue(value)}`),
-    };
-    if (key.kind === "unknown-primitive" && key.composition) {
-      entry.composed = { key: key.composition, value };
+    if (key.kind === "branch") {
+      target.entries.push({
+        kind: "spread",
+        value: mapPair(key, value, (keyAlternative, valueAlternative) => {
+          const written = objectValue();
+          const propertyName = getPropertyName(keyAlternative);
+          if (propertyName !== null) setObjectProperty(written, propertyName, valueAlternative);
+          else written.entries.push(dynamicEntry(keyAlternative, valueAlternative));
+          return written;
+        }),
+      });
+      return;
+    }
+    const entry = dynamicEntry(key, value);
+    if (entry.composed) {
       const last = target.entries.at(-1);
-      if (last?.kind === "spread" && last.composed && isSameComposition(last.composed.key, key.composition)) {
+      if (last?.kind === "spread" && last.composed && isSameComposition(last.composed.key, entry.composed.key)) {
         target.entries[target.entries.length - 1] = entry;
         return;
       }
@@ -2486,33 +2497,33 @@ export class Interpreter {
       return this.getProperty(object, propertyName, context, location, node.optional);
     }
     if (object === CHAIN_SHORT_CIRCUIT) return object;
-    return mapValue(object, (alternative) => this.getDynamicMember(alternative, key, location));
+    return this.getDynamicMember(object, key, context, location, node.optional);
   }
 
   private getDynamicMember(
     object: StaticValue,
     key: StaticValue,
+    context: EvaluationContext,
     location: SourceLocation | null,
+    optional: boolean,
   ): StaticValue {
+    if (object.kind === "branch" || key.kind === "branch") {
+      return mapPair(object, key, (objectAlternative, keyAlternative) =>
+        this.getDynamicMember(objectAlternative, keyAlternative, context, location, optional),
+      );
+    }
+    const propertyName = getPropertyName(key);
+    if (propertyName !== null) {
+      return this.getProperty(object, propertyName, context, location, optional);
+    }
+    if (object.kind === "object") {
+      return getDynamicObjectMember(object, key, location);
+    }
     if (object.kind === "list") {
       const candidates = object.items.filter((item) => item.kind !== "repeat");
       return candidates.length === 0
         ? unknownValue("index into an unknown list", location)
         : branchValue(candidates, "dynamic list index", location);
-    }
-    if (object.kind === "object") {
-      const composed =
-        key.kind === "unknown-primitive" && key.composition
-          ? getComposedProperty(object, key.composition)
-          : null;
-      if (composed === "absent") return UNDEFINED_VALUE;
-      if (composed !== null) return composed;
-      const values = object.entries
-        .filter((entry) => entry.kind === "property")
-        .map((entry) => entry.value);
-      return values.length === 0
-        ? unknownValue("dynamic key into an unknown object", location)
-        : branchValue(values, "dynamic object key", location);
     }
     if (object.kind === "native-object" && key.kind === "unknown-primitive") {
       return getNativeObjectComposedMember(object, key);
@@ -2968,21 +2979,49 @@ export class Interpreter {
       if (member.optional && isNullish(target) === true) return CHAIN_SHORT_CIRCUIT;
       return key.kind === "primitive"
         ? this.getProperty(target, String(key.value), context, location, member.optional)
-        : unknownValue("computed method call", location);
+        : this.getDynamicMember(target, key, context, location, member.optional);
     };
-    const receivers = receiver.kind === "branch" ? receiver.alternatives : [receiver];
-    const callees = receivers.map(getCallee);
-    const joinAlternatives = (values: StaticValue[]): StaticValue =>
-      receiver.kind === "branch"
-        ? branchValue(values, receiver.reason, receiver.location, receiver.preferredIndex)
-        : values[0];
-    const callee = joinAlternatives(callees);
-    if (isReceiverIndependent(callee)) return callWith(callee, null);
-    return joinAlternatives(
-      receivers.map((target, index) =>
-        callWith(callees[index], member.object.type === "Super" ? context.thisValue : target),
-      ),
+    const thisOf = (target: StaticValue): StaticValue | null =>
+      member.object.type === "Super" ? context.thisValue : target;
+    if (receiver.kind !== "branch") {
+      const callee = getCallee(receiver);
+      return callWith(callee, isReceiverIndependent(callee) ? null : thisOf(receiver));
+    }
+    const callees = receiver.alternatives.map(getCallee);
+    const callee = branchValue(
+      callees,
+      receiver.reason,
+      receiver.location,
+      receiver.preferredIndex,
+      receiver.predicate,
     );
+    if (isReceiverIndependent(callee)) return callWith(callee, null);
+    args ??= this.evaluateArguments(node.arguments, context);
+    return this.callAlternatives(receiver, context.scope, (target, index) =>
+      callWith(callees[index], thisOf(target)),
+    );
+  }
+
+  /**
+   * Calls one alternative at a time from the same state and joins the states
+   * after (`forkValues`), so what a call mutates stays conditional on its
+   * alternative being the one taken instead of leaking into the others.
+   */
+  private callAlternatives(
+    branch: StaticBranchValue,
+    scope: Scope,
+    call: (alternative: StaticValue, index: number) => StaticValue,
+  ): StaticValue {
+    const predicate = branch.predicate ?? createPathPredicate();
+    const results = this.forkValues(
+      scope,
+      branch.alternatives.map((alternative, index) => () => call(alternative, index)),
+      branch.reason,
+      branch.location,
+      branch.preferredIndex,
+      predicate,
+    );
+    return branchValue(results, branch.reason, branch.location, branch.preferredIndex, predicate);
   }
 
   callValue(
@@ -3002,7 +3041,7 @@ export class Interpreter {
     }
     switch (callee.kind) {
       case "branch":
-        return mapValue(callee, (alternative) =>
+        return this.callAlternatives(callee, context.scope, (alternative) =>
           this.callValue(alternative, args, context, location, options),
         );
       case "function":
@@ -3020,7 +3059,7 @@ export class Interpreter {
         );
       case "method":
         if (callee.receiver.kind === "branch") {
-          return mapValue(callee.receiver, (receiver) =>
+          return this.callAlternatives(callee.receiver, context.scope, (receiver) =>
             this.callValue({ ...callee, receiver }, args, context, location, options),
           );
         }
@@ -4700,7 +4739,9 @@ const joinScopes = (
       );
       snapshot.scope.bindings.set(
         name,
-        branchValue(values, reason, location, preferredPath, predicate),
+        values.every((value) => value === values[0])
+          ? values[0]
+          : branchValue(values, reason, location, preferredPath, predicate),
       );
     }
   });

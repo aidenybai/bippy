@@ -1,4 +1,5 @@
 import type { StaticValue } from "../types.js";
+import { getTruthiness } from "./values.js";
 
 // A branch predicate names the decision that picks an alternative. Two
 // branches over the same decision (the same uncertain value tested twice, both
@@ -34,7 +35,18 @@ export const getTruthinessPredicate = (test: StaticValue): string => {
     subject = operand;
     isNegated = !isNegated;
   }
-  return `${isNegated ? NEGATED_PREFIX : ""}truthy(${getSubjectId(subject)})`;
+  const decided = getDecidedPredicate(subject) ?? `truthy(${getSubjectId(subject)})`;
+  return isNegated ? getNegatedPredicate(decided) : decided;
+};
+
+/** A two-way branch whose sides differ in truthiness is tested by the decision that picked its side. */
+const getDecidedPredicate = (subject: StaticValue): string | null => {
+  if (subject.kind !== "branch" || subject.predicate === null || subject.alternatives.length !== 2)
+    return null;
+  const [first, second] = subject.alternatives.map(getTruthiness);
+  if (first === true && second === false) return subject.predicate;
+  if (first === false && second === true) return getNegatedPredicate(subject.predicate);
+  return null;
 };
 
 /** The predicate of a two-way branch taking the opposite side of `predicate`. */
