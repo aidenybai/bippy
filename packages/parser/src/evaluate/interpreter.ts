@@ -720,6 +720,8 @@ export class Interpreter {
   private readonly moduleScopes = new Map<string, Scope>();
   private readonly moduleValues = new Map<string, ModuleValues>();
   private readonly initializedModules = new Set<string>();
+  /** Modules whose top-level statements ran out of steps, leaving their state partially initialized. */
+  private readonly exhaustedModules = new Set<string>();
   /** Module bindings mutated by closures that escaped before the binding was evaluated. */
   /** Module variables mutated by escaped closures before the variable was evaluated, by file, name and property key. */
   private readonly escapedMutations = new Map<string, Map<string, Set<EscapedMutation>>>();
@@ -933,7 +935,13 @@ export class Interpreter {
     const binding = module.bindings.get(name);
     if (!binding) return null;
     this.initializeModule(module);
-    return this.evaluateDeclaredBinding(module, binding);
+    return this.exhaustedModuleValue(module) ?? this.evaluateDeclaredBinding(module, binding);
+  }
+
+  private exhaustedModuleValue(module: ModuleRecord): StaticValue | null {
+    return this.exhaustedModules.has(module.filePath)
+      ? unknownValue(`module initialization of ${module.filePath} exhausted the step budget`)
+      : null;
   }
 
   /**
@@ -1019,6 +1027,15 @@ export class Interpreter {
     }
     flushPendingStatements();
     for (const name of module.outParameterBindings) this.evaluateModuleBinding(module, name);
+    if (context.budget.remaining <= 0) {
+      this.exhaustedModules.add(module.filePath);
+      this.report(
+        "budget-exhausted",
+        `module initialization of ${module.filePath} exhausted the step budget; its exports are unknown`,
+        null,
+        "warning",
+      );
+    }
   }
 
   private initializeDependencies(module: ModuleRecord): void {
@@ -1119,6 +1136,8 @@ export class Interpreter {
       );
     }
     if (cached) return cached;
+    const exhausted = this.exhaustedModuleValue(module);
+    if (exhausted) return exhausted;
     this.exportExpressionValues.set(expression, IN_PROGRESS);
     const value = this.evaluateExpression(expression, this.createModuleContext(module), nameHint);
     this.exportExpressionValues.set(expression, value);

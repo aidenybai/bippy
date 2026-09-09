@@ -3,6 +3,7 @@ import { pathToFileURL } from "node:url";
 import { getRDTHook } from "bippy";
 import { ReactRuntimeError } from "../errors.js";
 import type { ModuleResolver } from "../graph/module-resolver.js";
+import { createCommitRecorder, getRootContainer } from "../harness/commit-recorder.js";
 import { ensureDomGlobals } from "./dom-environment.js";
 
 export type ReactModule = typeof import("react");
@@ -130,23 +131,15 @@ const hasClientEntry = (
   );
 };
 
-const load = async (
+const loadPackages = async (
   resolver: ModuleResolver | null,
   rootDirectory: string | null,
   packages: ReactPackageSpecifiers,
 ): Promise<ReactRuntime> => {
-  ensureDomGlobals();
-  getRDTHook();
-  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-  const appPackages = [packages, DEFAULT_REACT_PACKAGES].find((candidate) =>
-    hasClientEntry(resolver, rootDirectory, candidate),
-  );
-  const appResolver = appPackages ? resolver : null;
-  const loadedPackages = appPackages ?? DEFAULT_REACT_PACKAGES;
   const [react, domClient, dom] = await Promise.all([
-    importResolved(appResolver, loadedPackages.react, rootDirectory),
-    importResolved(appResolver, loadedPackages.domClient, rootDirectory),
-    importResolved(appResolver, loadedPackages.dom, rootDirectory),
+    importResolved(resolver, packages.react, rootDirectory),
+    importResolved(resolver, packages.domClient, rootDirectory),
+    importResolved(resolver, packages.dom, rootDirectory),
   ]);
   if (!isReactModule(react)) throw new ReactRuntimeError("could not load react");
   if (!isReactDomClientModule(domClient)) {
@@ -157,7 +150,51 @@ const load = async (
     react,
     domClient,
     dom,
-    act: await loadAct(react, appResolver, rootDirectory),
+    act: await loadAct(react, resolver, rootDirectory),
     version: react.version,
   };
+};
+
+/**
+ * Whether `react-dom/client` mounts roots through this `react-dom`: only then
+ * does its `flushSync` commit the root synchronously. A `client` entry that
+ * re-exports whichever `react-dom` Node resolves from it (Next 14's vendored
+ * copy) drives the app's own renderer, whose dispatcher `react` never sees.
+ */
+const isClientOfDom = (runtime: ReactRuntime): boolean => {
+  const container = document.createElement("div");
+  const recorder = createCommitRecorder({
+    rootFilter: (root) => getRootContainer(root) === container,
+  });
+  const root = runtime.domClient.createRoot(container);
+  const { error: consoleError } = console;
+  // HACK: a mismatched pair logs React warnings while this probe render mounts; they are not app output
+  console.error = () => {};
+  try {
+    runtime.dom.flushSync(() => root.render(runtime.react.createElement("div")));
+    return recorder.commitCount() > 0;
+  } finally {
+    root.unmount();
+    recorder.dispose();
+    console.error = consoleError;
+  }
+};
+
+const load = async (
+  resolver: ModuleResolver | null,
+  rootDirectory: string | null,
+  packages: ReactPackageSpecifiers,
+): Promise<ReactRuntime> => {
+  ensureDomGlobals();
+  getRDTHook();
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  const isFrameworkBuild = packages.react !== DEFAULT_REACT_PACKAGES.react;
+  if (isFrameworkBuild && hasClientEntry(resolver, rootDirectory, packages)) {
+    const framework = await loadPackages(resolver, rootDirectory, packages);
+    if (isClientOfDom(framework)) return framework;
+  }
+  const appResolver = hasClientEntry(resolver, rootDirectory, DEFAULT_REACT_PACKAGES)
+    ? resolver
+    : null;
+  return loadPackages(appResolver, rootDirectory, DEFAULT_REACT_PACKAGES);
 };

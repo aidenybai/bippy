@@ -629,7 +629,8 @@
       "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.30.2 exec rspack serve",
       "env": {
         "SENTRY_UI_DEV_ONLY": "1",
-        "SENTRY_WEBPACK_PROXY_PORT": "7999"
+        "SENTRY_WEBPACK_PROXY_PORT": "7999",
+        "CI": ""
       },
       "url": "https://localhost:7999/auth/login/",
       "readyTimeoutMs": 900000,
@@ -677,6 +678,9 @@
       "framework": "spa",
       "workingDirectory": ".",
       "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.29.3 install --frozen-lockfile",
+      "setup": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.29.3 exec turbo run build --filter='@posthog/frontend^...'"
+      ],
       "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/posthog-dev.sh\"",
       "url": "http://localhost:8000/login",
       "readyTimeoutMs": 900000,

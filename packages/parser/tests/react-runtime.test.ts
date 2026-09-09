@@ -1,4 +1,5 @@
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { version as harnessReactVersion } from "react";
@@ -22,6 +23,29 @@ const REACT_DOM_STUB = `module.exports = { version: ${JSON.stringify(STUB_REACT_
 
 const REACT_DOM_CLIENT_STUB =
   "module.exports = { createRoot: () => ({ render() {}, unmount() {} }) };";
+
+const harnessRequire = createRequire(import.meta.url);
+
+const reexport = (specifier: string, version?: string): string =>
+  `module.exports = { ...require(${JSON.stringify(harnessRequire.resolve(specifier))})${
+    version === undefined ? "" : `, version: ${JSON.stringify(version)}`
+  } };`;
+
+const VENDORED_REACT_VERSION = "19.0.0-vendored";
+
+const VENDORED_PACKAGES = {
+  react: "bundler/vendored/react",
+  dom: "bundler/vendored/react-dom",
+  domClient: "bundler/vendored/react-dom/client",
+};
+
+/** A bundled React build whose three modules share the harness's React internals. */
+const writeVendoredReact = (rootDirectory: string, clientSource: string): void => {
+  writePackage(rootDirectory, VENDORED_PACKAGES.react, reexport("react", VENDORED_REACT_VERSION));
+  writePackage(rootDirectory, VENDORED_PACKAGES.dom, reexport("react-dom"), {
+    "client.js": clientSource,
+  });
+};
 
 const writePackage = (
   rootDirectory: string,
@@ -78,20 +102,13 @@ describe("loadReactRuntime", () => {
   it("loads the build a framework bundles in place of react when its packages resolve from the app", async () => {
     const rootDirectory = createRootDirectory();
     writeReactPair(rootDirectory, true);
-    writePackage(rootDirectory, "bundler/vendored/react", REACT_STUB.replace(STUB_REACT_VERSION, "19.0.0-vendored"));
-    writePackage(rootDirectory, "bundler/vendored/react-dom", REACT_DOM_STUB, {
-      "client.js": REACT_DOM_CLIENT_STUB,
-    });
+    writeVendoredReact(rootDirectory, reexport("react-dom/client"));
     const runtime = await loadReactRuntime({
       resolver: new ModuleResolver({ rootDirectory }),
       rootDirectory,
-      packages: {
-        react: "bundler/vendored/react",
-        dom: "bundler/vendored/react-dom",
-        domClient: "bundler/vendored/react-dom/client",
-      },
+      packages: VENDORED_PACKAGES,
     });
-    expect(runtime.version).toBe("19.0.0-vendored");
+    expect(runtime.version).toBe(VENDORED_REACT_VERSION);
   });
 
   it("falls back to the app's own react when the bundled build does not resolve", async () => {
@@ -100,11 +117,19 @@ describe("loadReactRuntime", () => {
     const runtime = await loadReactRuntime({
       resolver: new ModuleResolver({ rootDirectory }),
       rootDirectory,
-      packages: {
-        react: "bundler/vendored/react",
-        dom: "bundler/vendored/react-dom",
-        domClient: "bundler/vendored/react-dom/client",
-      },
+      packages: VENDORED_PACKAGES,
+    });
+    expect(runtime.version).toBe(STUB_REACT_VERSION);
+  });
+
+  it("falls back to the app's own react when the bundled client entry mounts through another react-dom", async () => {
+    const rootDirectory = createRootDirectory();
+    writeReactPair(rootDirectory, true);
+    writeVendoredReact(rootDirectory, REACT_DOM_CLIENT_STUB);
+    const runtime = await loadReactRuntime({
+      resolver: new ModuleResolver({ rootDirectory }),
+      rootDirectory,
+      packages: VENDORED_PACKAGES,
     });
     expect(runtime.version).toBe(STUB_REACT_VERSION);
   });

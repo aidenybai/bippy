@@ -59,7 +59,7 @@ const styledWithCache = (Tag: ComponentType<StyledProps> | "div", label: string)
     const renders = useRef(0);
     renders.current += 1;
     const forwarded = useMemo(() => {
-      const { tone, ...rest } = props;
+      const { tone: _tone, ...rest } = props;
       return rest;
     }, [props]);
     const className = [props.className, `${label}-${cache.key}`].filter(Boolean).join(" ");

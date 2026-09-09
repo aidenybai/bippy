@@ -129,7 +129,9 @@ export const readNextVendoredReactPackages = (
 ): ReactPackageSpecifiers => {
   const config = evaluateNextConfig(renderer, interpreter);
   const experimental = config === null ? UNDEFINED_VALUE : readOption(config, "experimental");
-  const flags = EXPERIMENTAL_REACT_FLAGS.map((flag) => getTruthiness(readOption(experimental, flag)));
+  const flags = EXPERIMENTAL_REACT_FLAGS.map((flag) =>
+    getTruthiness(readOption(experimental, flag)),
+  );
   const isExperimental = flags.includes(true);
   if (!isExperimental && flags.includes(null)) {
     interpreter.report(

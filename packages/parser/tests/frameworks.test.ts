@@ -369,9 +369,14 @@ describe("next app router", () => {
 
   it("keeps the app's own react when Next's bundled build is absent", async () => {
     const rootDirectory = await withInstalledPackage("next-app", "next", "15.5.9");
-    await writeFile(join(rootDirectory, "next.config.js"), "module.exports = { experimental: { viewTransition: true } };");
+    await writeFile(
+      join(rootDirectory, "next.config.js"),
+      "module.exports = { experimental: { viewTransition: true } };",
+    );
     const activityRoot = await withNextVendoredReact("module.exports = {};", "", "unused");
-    await cp(join(activityRoot, "app", "activity"), join(rootDirectory, "app", "activity"), { recursive: true });
+    await cp(join(activityRoot, "app", "activity"), join(rootDirectory, "app", "activity"), {
+      recursive: true,
+    });
     const result = await renderFrameworkTarget(
       { framework: "next-app", route: "/activity" },
       { rootDirectory, tsconfigPath: join(rootDirectory, "tsconfig.json") },
