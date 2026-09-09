@@ -37,6 +37,17 @@ describe("install root", () => {
     expect(findInstallRoot(path.join(outer, "checkout"))).toBe(path.join(outer, "checkout"));
   });
 
+  it("is the workspace root when a member checks in its own lockfile", () => {
+    const { outer, app } = createLayout();
+    const checkout = path.join(outer, "checkout");
+    mkdirSync(path.join(checkout, ".git"));
+    writeFileSync(path.join(app, "package-lock.json"), "{}\n");
+    expect(findInstallRoot(app)).toBe(checkout);
+    const resolver = new ModuleResolver({ rootDirectory: app });
+    expect(readInstalledPackage(resolver, app, "react")?.version).toBe("19.0.0");
+    expect(readInstalledPackage(resolver, app, "@svgr/webpack")).toBeNull();
+  });
+
   it("does not count packages only the checkout's host installed", () => {
     const { app } = createLayout();
     const resolver = new ModuleResolver({ rootDirectory: app });
