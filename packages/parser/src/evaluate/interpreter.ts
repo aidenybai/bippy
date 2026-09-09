@@ -2454,7 +2454,9 @@ export class Interpreter {
         this.assignIdentifier(target.name, value, context);
         return;
       case "MemberExpression":
-        if (!target.computed && target.property.type === "Identifier") {
+        if (target.property.type === "PrivateIdentifier") {
+          this.assignMember(target.object, `#${target.property.name}`, value, context);
+        } else if (!target.computed && target.property.type === "Identifier") {
           this.assignMember(target.object, target.property.name, value, context);
         } else if (target.computed) {
           const key = this.evaluateExpression(target.property, context);
@@ -2496,12 +2498,12 @@ export class Interpreter {
     if (reassigned === object) return;
     if (objectNode.type === "Identifier") {
       this.assignIdentifier(objectNode.name, reassigned, context);
-    } else if (
-      objectNode.type === "MemberExpression" &&
-      !objectNode.computed &&
-      objectNode.property.type === "Identifier"
-    ) {
-      this.assignMember(objectNode.object, objectNode.property.name, reassigned, context);
+    } else if (objectNode.type === "MemberExpression") {
+      if (objectNode.property.type === "PrivateIdentifier") {
+        this.assignMember(objectNode.object, `#${objectNode.property.name}`, reassigned, context);
+      } else if (!objectNode.computed && objectNode.property.type === "Identifier") {
+        this.assignMember(objectNode.object, objectNode.property.name, reassigned, context);
+      }
     }
   }
 
