@@ -2,7 +2,13 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { CorpusRevisionError, NoCommitsError, describeError, parseWithSchema } from "../errors.js";
+import {
+  CorpusRevisionError,
+  NoCommitsError,
+  StaleCaptureError,
+  describeError,
+  parseWithSchema,
+} from "../errors.js";
 import { renderCorpusEntry } from "./render-entry.js";
 import {
   dropInjectedFibers,
@@ -168,7 +174,7 @@ const savedCaptureSchema = z.object({
 
 // A browser capture saved by an earlier live run; static-only passes replay it so
 // evaluator changes are re-verified against the same runtime tree without a dev server.
-const readSavedCapture = (
+export const readSavedCapture = (
   outputDirectory: string,
   entry: CorpusEntry,
 ): BrowserCaptureResult | null => {
@@ -179,7 +185,9 @@ const readSavedCapture = (
     JSON.parse(readFileSync(filePath, "utf8")),
     filePath,
   );
-  if (saved.revision !== entry.revision) return null;
+  if (saved.revision !== entry.revision) {
+    throw new StaleCaptureError(filePath, saved.revision, entry.revision);
+  }
   return {
     snapshot: readSnapshot(saved.snapshot),
     commits: saved.commits,

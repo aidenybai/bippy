@@ -1,3 +1,4 @@
+import { StateSpaceError } from "../errors.js";
 import {
   matchPatternToRuntime,
   type ComparisonDivergence,
@@ -502,7 +503,9 @@ export const matchStateSpace = (
     }
   }
   if (!furthest) {
-    throw new Error("a state space needs at least one committed pattern to match against");
+    throw new StateSpaceError(
+      "a state space needs at least one committed pattern to match against",
+    );
   }
   const { failure } = furthest.match;
   const closestIndex = failure
