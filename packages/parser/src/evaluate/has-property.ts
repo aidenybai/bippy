@@ -11,7 +11,7 @@ import type {
   StaticFunctionValue,
   StaticValue,
 } from "../types.js";
-import { getStaticProperty } from "./class-component.js";
+import { getStaticGetter, getStaticProperty } from "./class-component.js";
 import { createErrorValue } from "./errors.js";
 import { toLanguagePropertyKey } from "./host-globals.js";
 import { getPrototypeWitness } from "./instance-of.js";
@@ -107,7 +107,7 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
     case "class": {
       const isOwn =
         target.kind === "class"
-          ? getStaticProperty(target, name) !== null
+          ? getStaticProperty(target, name) !== null || getStaticGetter(target, name) !== null
           : target.properties.has(name);
       return isOwn ||
         isIntrinsicFunctionKey(target, name) ||

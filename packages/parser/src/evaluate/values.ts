@@ -344,8 +344,10 @@ const getInheritedProperty = (
   key: string,
 ): StaticValue => {
   if (key === "constructor" && object.constructedBy) return object.constructedBy;
-  return object.prototype
-    ? getMemoizedObjectProperty(memo, object.prototype, key, object.prototype.entries.length)
+  if (object.prototype)
+    return getMemoizedObjectProperty(memo, object.prototype, key, object.prototype.entries.length);
+  return key === "constructor" && !object.hasNullPrototype
+    ? { kind: "global", name: "Object" }
     : UNDEFINED_VALUE;
 };
 
@@ -1547,6 +1549,20 @@ export const getOwnEnumerableEntries = (
 ): [key: string, value: StaticValue][] | null => {
   if (target.kind === "object") {
     return getKnownObjectKeys(target)?.map((key) => [key, getObjectProperty(target, key)]) ?? null;
+  }
+  if (target.kind === "class") {
+    return [...target.properties].filter(
+      ([key]) =>
+        !isSymbolPropertyKey(key) &&
+        !target.body.members.some(
+          (member) => member.isStatic && member.kind === "method" && member.key === key,
+        ),
+    );
+  }
+  if (target.kind === "function") {
+    return [...target.properties].filter(
+      ([key]) => key !== "prototype" && !isSymbolPropertyKey(key),
+    );
   }
   if (!hasDefiniteItems(target)) return null;
   return [

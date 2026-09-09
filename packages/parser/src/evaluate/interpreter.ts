@@ -55,6 +55,7 @@ import {
   getLeadingAwait,
   getMemberChain,
   getPatternNames,
+  getStaticMemberKey,
   getVariableDeclaration,
   isFunctionLikeExpression,
   type LeadingAwaitOracle,
@@ -128,6 +129,7 @@ import {
   getClassLength,
   getClassPrototypeObject,
   getFunctionLength,
+  getStaticGetter,
   getStaticProperty,
   getSuperObject,
   hasKnownStaticChain,
@@ -450,10 +452,11 @@ const prototypeMember = (
   receiver: StaticValue,
   prototype: object | null,
   key: string,
-): StaticValue =>
-  prototype === null || key in prototype
-    ? { kind: "method", receiver, name: key }
-    : UNDEFINED_VALUE;
+): StaticValue => {
+  if (prototype === null) return { kind: "method", receiver, name: key };
+  if (key === "constructor") return { kind: "global", name: prototype.constructor.name };
+  return key in prototype ? { kind: "method", receiver, name: key } : UNDEFINED_VALUE;
+};
 
 export type LoopJump = "break" | "continue";
 
@@ -1433,6 +1436,7 @@ export class Interpreter {
       module: context.module,
       name,
       properties: new Map(),
+      staticGetters: new Map(),
     };
     const staticContext: EvaluationContext = {
       ...context,
@@ -1460,14 +1464,8 @@ export class Interpreter {
         thisValue: classValue,
         superBinding: { construct: null, parent: body.superValue },
       };
-      classValue.properties.set(
-        member.key,
-        member.kind === "getter"
-          ? this.callFunction(bound, [], staticContext, {
-              thisValue: classValue,
-            })
-          : bound,
-      );
+      if (member.kind === "getter") classValue.staticGetters.set(member.key, bound);
+      else classValue.properties.set(member.key, bound);
     }
     return classValue;
   }
@@ -2304,9 +2302,10 @@ export class Interpreter {
       case "Identifier":
         this.assignIdentifier(target.name, value, context);
         return;
-      case "MemberExpression":
-        if (!target.computed && target.property.type === "Identifier") {
-          this.assignMember(target.object, target.property.name, value, context);
+      case "MemberExpression": {
+        const staticKey = getStaticMemberKey(target);
+        if (staticKey !== null) {
+          this.assignMember(target.object, staticKey, value, context);
         } else if (target.computed) {
           const key = this.evaluateExpression(target.property, context);
           const propertyName = getPropertyName(key);
@@ -2317,6 +2316,7 @@ export class Interpreter {
           }
         }
         return;
+      }
       case "ObjectPattern":
       case "ArrayPattern":
         this.destructure(target, value, context.scope, context, (leaf, leafValue) => {
@@ -2347,13 +2347,11 @@ export class Interpreter {
     if (reassigned === object) return;
     if (objectNode.type === "Identifier") {
       this.assignIdentifier(objectNode.name, reassigned, context);
-    } else if (
-      objectNode.type === "MemberExpression" &&
-      !objectNode.computed &&
-      objectNode.property.type === "Identifier"
-    ) {
-      this.assignMember(objectNode.object, objectNode.property.name, reassigned, context);
+      return;
     }
+    if (objectNode.type !== "MemberExpression") return;
+    const parentKey = getStaticMemberKey(objectNode);
+    if (parentKey !== null) this.assignMember(objectNode.object, parentKey, reassigned, context);
   }
 
   private assignDynamicMember(
@@ -2763,6 +2761,9 @@ export class Interpreter {
         return unknownValue(`element.${key}`, location);
       case "function":
       case "class": {
+        const staticGetter = object.kind === "class" ? getStaticGetter(object, key) : null;
+        if (staticGetter)
+          return this.callFunction(staticGetter, [], context, { thisValue: object });
         const property =
           object.kind === "class" ? getStaticProperty(object, key) : object.properties.get(key);
         if (property) return property;

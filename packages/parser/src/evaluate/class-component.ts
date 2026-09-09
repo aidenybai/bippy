@@ -12,6 +12,8 @@ import type {
   StaticValue,
   SuperBinding,
 } from "../types.js";
+import { getPackageNameFromFilePath } from "../graph/module-resolver.js";
+import { getModeledMethod } from "../libraries/index.js";
 import type { EvaluationContext } from "./context.js";
 import {
   applyPendingState,
@@ -150,9 +152,18 @@ const bindMethods = (
     if (!boundMethod) continue;
     if (member.kind === "getter") {
       members.getters.push({ key: member.key, functionValue: boundMethod });
-    } else {
-      target.entries.push({ kind: "property", key: member.key, value: boundMethod });
+      continue;
     }
+    const modeled = getModeledMethod(
+      getPackageNameFromFilePath(classValue.module.filePath),
+      classValue.name,
+      member.key,
+    );
+    target.entries.push({
+      kind: "property",
+      key: member.key,
+      value: modeled ? modeled.model(boundMethod, interpreter.project) : boundMethod,
+    });
   }
   return members;
 };
@@ -260,6 +271,19 @@ export const getStaticProperty = (
   for (const current of collectClassChain(classValue)) {
     const property = current.properties.get(key);
     if (property) return property;
+  }
+  return null;
+};
+
+/** The class's own or inherited static getter for `key`, called with the accessed class as `this`. */
+export const getStaticGetter = (
+  classValue: StaticClassValue,
+  key: string,
+): StaticFunctionValue | null => {
+  for (const current of collectClassChain(classValue)) {
+    if (current.properties.has(key)) return null;
+    const getter = current.staticGetters.get(key);
+    if (getter) return getter;
   }
   return null;
 };

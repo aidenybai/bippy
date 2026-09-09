@@ -893,7 +893,9 @@
           "@radix-ui/*",
           "lucide-react",
           "better-auth",
-          "better-auth/*"
+          "better-auth/*",
+          "react-error-boundary",
+          "@repo/*"
         ]
       }
     },

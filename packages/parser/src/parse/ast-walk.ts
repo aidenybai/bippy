@@ -4,6 +4,7 @@ import type {
   AwaitExpression,
   BindingPattern,
   Expression,
+  MemberExpression,
   Node,
   ObjectPropertyKind,
   Statement,
@@ -267,6 +268,13 @@ export const getLeadingAwait = (
     }
   })();
   return typeof scanned === "string" ? null : scanned;
+};
+
+/** The property key of a non-computed member access (`a.b`, `this.#b`), `null` when the key is computed. */
+export const getStaticMemberKey = (node: MemberExpression): string | null => {
+  if (node.computed) return null;
+  if (node.property.type === "Identifier") return node.property.name;
+  return node.property.type === "PrivateIdentifier" ? `#${node.property.name}` : null;
 };
 
 /** `["a", "b", "c"]` for `a.b.c` (non-computed identifiers only); null for any other shape. */

@@ -370,24 +370,47 @@ const textContentToNull = (value: StaticValue): StaticValue => {
   return isTextContentChild(value) ? NULL_VALUE : value;
 };
 
-const getComponentDisplayName = (component: ComponentDefinition): string | null => {
-  const displayName = component.properties.get("displayName");
+/** A static React reads off the component type (`displayName`, `defaultProps`), through a static getter when the class declares one. */
+const readComponentStatic = (
+  interpreter: Interpreter,
+  component: ComponentDefinition,
+  key: string,
+): StaticValue | undefined => {
+  const property = component.properties.get(key);
+  if (property) return property;
+  const getter = component.staticGetters.get(key);
+  return getter
+    ? interpreter.callFunction(getter, [], interpreter.createModuleContext(component.module), {
+        thisValue: getter.thisValue ?? undefined,
+      })
+    : undefined;
+};
+
+const getComponentDisplayName = (
+  interpreter: Interpreter,
+  component: ComponentDefinition,
+): string | null => {
+  const displayName = readComponentStatic(interpreter, component, "displayName");
   if (displayName?.kind === "primitive" && typeof displayName.value === "string")
     return displayName.value;
   return component.name;
 };
 
-const hasDefaultProps = (component: ComponentDefinition): boolean => {
-  const defaults = component.properties.get("defaultProps");
-  return defaults !== undefined && isNonNullish(defaults);
+const getDefaultProps = (
+  interpreter: Interpreter,
+  component: ComponentDefinition,
+): StaticValue | null => {
+  const defaults = readComponentStatic(interpreter, component, "defaultProps");
+  return defaults !== undefined && isNonNullish(defaults) ? defaults : null;
 };
 
 const applyDefaultProps = (
+  interpreter: Interpreter,
   component: ComponentDefinition,
   props: StaticObjectValue,
 ): StaticObjectValue => {
-  const defaults = component.properties.get("defaultProps");
-  if (!defaults || !isNonNullish(defaults)) return props;
+  const defaults = getDefaultProps(interpreter, component);
+  if (!defaults) return props;
   return { kind: "object", entries: [{ kind: "spread", value: defaults }, ...props.entries] };
 };
 
@@ -423,6 +446,7 @@ const toClassValue = (component: ComponentDefinition): StaticClassValue => {
     module: component.module,
     name: component.name,
     properties: component.properties,
+    staticGetters: component.staticGetters,
     isClientReference: component.isClientReference,
   };
 };
@@ -1133,10 +1157,12 @@ export class Materializer {
       const render = setFunctionName(
         ({ input }: ProxyProps): ReactNode =>
           this.renderInsideComponent(() => this.renderFunctionProxy(input, component, null)),
-        getComponentDisplayName(component),
+        getComponentDisplayName(this.interpreter, component),
       );
       // React.memo only takes its SimpleMemoComponent fast path when the inner type has no defaultProps.
-      proxy = hasDefaultProps(component) ? Object.assign(render, { defaultProps: {} }) : render;
+      proxy = getDefaultProps(this.interpreter, component)
+        ? Object.assign(render, { defaultProps: {} })
+        : render;
       this.functionProxies.set(component, proxy);
     }
     return proxy;
@@ -1225,7 +1251,7 @@ export class Materializer {
       }
       proxy = setFunctionName(
         isErrorBoundaryClass(classValue.body) ? ErrorBoundaryProxy : ClassProxy,
-        getComponentDisplayName(component),
+        getComponentDisplayName(this.interpreter, component),
       );
       this.classProxies.set(component, proxy);
     }
@@ -1249,7 +1275,7 @@ export class Materializer {
           // React warns unless a forwardRef render function declares (props, ref).
           ({ input }: ProxyProps, _forwardedRef: unknown): ReactNode =>
             this.renderInsideComponent(() => this.renderFunctionProxy(input, component, input.ref)),
-          getComponentDisplayName(component),
+          getComponentDisplayName(this.interpreter, component),
         ),
       );
       if (type.displayName) forwarded.displayName = type.displayName;
@@ -1423,7 +1449,7 @@ export class Materializer {
     const instanceRef = useRef<ProxyInstance | null>(null);
     instanceRef.current ??= createProxyInstance(input.context, this.interpreter);
     const [, setPass] = useState(0);
-    const props = applyDefaultProps(component, input.props);
+    const props = applyDefaultProps(this.interpreter, component, input.props);
     const { node, mount, unmount } = this.renderStateful(
       input,
       input.context,
@@ -1608,7 +1634,7 @@ export class Materializer {
     caught: StaticThrowError | null,
     host: ClassProxyHost,
   ): ReactNode {
-    const props = applyDefaultProps(component, input.props);
+    const props = applyDefaultProps(this.interpreter, component, input.props);
     const isBoundary = isErrorBoundaryClass(classValue.body);
     const context: MaterializeContext = isBoundary
       ? { ...input.context, errorBoundaryDepth: input.context.errorBoundaryDepth + 1 }

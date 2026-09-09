@@ -205,6 +205,7 @@ export interface ComponentDefinition {
   /** Present for class components. */
   classBody: ClassBody | null;
   properties: Map<string, StaticValue>;
+  staticGetters: Map<string, StaticFunctionValue>;
   /** Set when the component is a `bind` result; each `bind` call is a distinct component type. */
   boundArgs?: StaticValue[];
   boundThis?: StaticValue;
@@ -447,6 +448,15 @@ export interface LibraryValueProvider {
 /** Export names a library model covers, keyed by the import specifier they are imported from. */
 export interface ModeledExports {
   readonly [specifier: string]: readonly string[];
+}
+
+/** One prototype method of a class a package defines, modeled while the rest of the class is analyzed from source. */
+export interface ModeledMethod {
+  packageName: string;
+  className: string;
+  methodName: string;
+  /** The replacement for `original`, the method bound to the instance being built; it may fall back to calling `original`. */
+  model: (original: StaticFunctionValue, project: ProjectContext) => StaticValue;
 }
 
 export type JsonValue =
@@ -781,6 +791,7 @@ export interface StaticClassValue {
   module: ModuleRecord;
   name: string | null;
   properties: Map<string, StaticValue>;
+  staticGetters: Map<string, StaticFunctionValue>;
   isClientReference?: boolean;
 }
 

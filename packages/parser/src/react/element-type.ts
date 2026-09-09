@@ -16,6 +16,7 @@ export const createFunctionComponentDefinition = (
   scope: value.scope,
   classBody: null,
   properties: value.properties,
+  staticGetters: new Map(),
   boundArgs: value.boundArgs,
   boundThis: value.boundThis,
   isClientReference: value.isClientReference ?? false,
@@ -30,6 +31,7 @@ const createClassComponentDefinition = (
   scope: value.scope,
   classBody: value.body,
   properties: value.properties,
+  staticGetters: value.staticGetters,
   isClientReference: value.isClientReference ?? false,
 });
 

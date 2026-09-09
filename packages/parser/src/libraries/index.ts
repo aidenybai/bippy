@@ -1,6 +1,6 @@
 import { objectValue, UNDEFINED_VALUE } from "../evaluate/values.js";
 import { lazyProperties } from "../evaluate/stubs.js";
-import type { LibraryValueProvider, ModeledExports } from "../types.js";
+import type { LibraryValueProvider, ModeledExports, ModeledMethod } from "../types.js";
 import { EMOTION_PACKAGES, emotionValue } from "./emotion.js";
 import { ES_SHIM_PACKAGES, esShimValue } from "./es-shims.js";
 import { FOREIGN_RENDERER_PACKAGES, foreignRendererValue } from "./foreign-renderers.js";
@@ -42,6 +42,7 @@ import { SENTRY_PACKAGES, sentryValue } from "./sentry.js";
 import { STYLED_COMPONENTS_PACKAGES, styledComponentsValue } from "./styled-components.js";
 import {
   TANSTACK_QUERY_MODELED_EXPORTS,
+  TANSTACK_QUERY_MODELED_METHODS,
   TANSTACK_QUERY_PACKAGES,
   tanstackQueryValue,
 } from "./tanstack-query.js";
@@ -56,11 +57,16 @@ import {
 // so interpreting the shipped source would only produce unknowns. A modeled
 // package is never resolved to its files unless the model lists the exports it
 // covers per specifier, in which case the rest of the package is still analyzed.
+// A model may also replace single prototype methods of classes the analyzed
+// source defines, where only that method's outcome depends on runtime data.
+// The packages one model lists are a single library (a facade re-exporting its
+// core): allowing any of them for analysis allows them all.
 
 interface LibraryModel {
   packages: readonly string[];
   getValue: LibraryValueProvider;
   modeledExports?: ModeledExports;
+  modeledMethods?: readonly ModeledMethod[];
 }
 
 const LIBRARY_MODELS: readonly LibraryModel[] = [
@@ -102,6 +108,7 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     packages: TANSTACK_QUERY_PACKAGES,
     getValue: tanstackQueryValue,
     modeledExports: TANSTACK_QUERY_MODELED_EXPORTS,
+    modeledMethods: TANSTACK_QUERY_MODELED_METHODS,
   },
   { packages: TANSTACK_STORE_PACKAGES, getValue: tanstackStoreValue },
   { packages: USE_SYNC_EXTERNAL_STORE_PACKAGES, getValue: useSyncExternalStoreValue },
@@ -109,6 +116,12 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
 
 const MODELED_PACKAGES: ReadonlySet<string> = new Set(
   LIBRARY_MODELS.filter((model) => !model.modeledExports).flatMap((model) => model.packages),
+);
+
+const LIBRARY_PACKAGES_BY_PACKAGE: ReadonlyMap<string, readonly string[]> = new Map(
+  LIBRARY_MODELS.filter((model) => model.modeledExports).flatMap((model) =>
+    model.packages.map((packageName): [string, readonly string[]] => [packageName, model.packages]),
+  ),
 );
 
 const MODELED_EXPORTS: ReadonlyMap<string, ReadonlySet<string>> = new Map(
@@ -122,8 +135,31 @@ const MODELED_EXPORTS: ReadonlyMap<string, ReadonlySet<string>> = new Map(
   ),
 );
 
+const MODELED_METHODS: ReadonlyMap<string, ModeledMethod> = new Map(
+  LIBRARY_MODELS.flatMap((model) => model.modeledMethods ?? []).map(
+    (method): [string, ModeledMethod] => [
+      `${method.packageName}\u0000${method.className}\u0000${method.methodName}`,
+      method,
+    ],
+  ),
+);
+
 export const isModeledLibraryPackage = (packageName: string): boolean =>
   MODELED_PACKAGES.has(packageName);
+
+/** The model replacing `className#methodName` of a class `packageName` defines, if any. */
+export const getModeledMethod = (
+  packageName: string | null,
+  className: string | null,
+  methodName: string,
+): ModeledMethod | null =>
+  packageName === null || className === null
+    ? null
+    : (MODELED_METHODS.get(`${packageName}\u0000${className}\u0000${methodName}`) ?? null);
+
+/** Every package of the partially modeled library `packageName` belongs to, itself included. */
+export const getModeledLibraryPackages = (packageName: string): readonly string[] =>
+  LIBRARY_PACKAGES_BY_PACKAGE.get(packageName) ?? [packageName];
 
 /** An export modeled while the rest of its package is analyzed from source. */
 export const isModeledLibraryExport = (specifier: string, exportName: string): boolean =>

@@ -5,7 +5,15 @@ import type {
   StaticValue,
   StubRenderTools,
 } from "../types.js";
-import { listValue, objectValue, thrownValue, UNDEFINED_VALUE, unknownValue } from "./values.js";
+import {
+  listValue,
+  objectFromRecord,
+  objectValue,
+  primitiveValue,
+  thrownValue,
+  UNDEFINED_VALUE,
+  unknownValue,
+} from "./values.js";
 
 export type PromiseTools = Pick<
   StubRenderTools,
@@ -289,9 +297,20 @@ export const chainPromise = (
 
 const outcomeOf = (item: StaticValue): StaticValue => getModeledPromise(item)?.settled ?? item;
 
-/** `Promise.all(items)`: the list of outcomes, pending while any item is. */
+/** The `{ status, value }` / `{ status, reason }` record `Promise.allSettled` reports for one outcome. */
+const settledRecord = (outcome: StaticValue): StaticValue =>
+  isThrownOutcome(outcome)
+    ? objectFromRecord({ status: primitiveValue("rejected"), reason: outcome.thrown })
+    : objectFromRecord({ status: primitiveValue("fulfilled"), value: outcome });
+
+/**
+ * `Promise.all(items)`: the list of outcomes, rejecting with the first
+ * rejection; `Promise.allSettled(items)`: the list of settlement records.
+ * Both pend while any item does.
+ */
 export const combinePromises = (
   items: StaticValue[],
+  combinator: "all" | "allSettled",
   tools: PromiseTools,
   location: SourceLocation | null,
 ): StaticValue => {
@@ -300,11 +319,17 @@ export const combinePromises = (
     return promise && !promise.settled ? [promise] : [];
   });
   if (pending.some((promise) => promise.isEscaped) || items.some(isPossiblyUnsettled)) {
-    return unknownValue("Promise.all of a promise settled outside the analysis", location);
+    return unknownValue(
+      `Promise.${combinator} of a promise settled outside the analysis`,
+      location,
+    );
   }
-  const rejection = items.map(outcomeOf).find(isThrownOutcome);
-  if (rejection) return resolvedPromiseValue(rejection);
-  if (pending.length === 0) return resolvedPromiseValue(listValue(items.map(outcomeOf)));
+  const combinedOutcome = (): StaticValue => {
+    const outcomes = items.map(outcomeOf);
+    if (combinator === "allSettled") return listValue(outcomes.map(settledRecord));
+    return outcomes.find(isThrownOutcome) ?? listValue(outcomes);
+  };
+  if (pending.length === 0) return resolvedPromiseValue(combinedOutcome());
   const combined = createPendingPromise();
   let remaining = pending.length;
   for (const promise of pending) {
@@ -312,9 +337,11 @@ export const combinePromises = (
       promise,
       {
         run: (outcome, runTools) => {
-          if (isThrownOutcome(outcome)) settlePromise(combined, outcome, runTools);
-          else if (--remaining === 0)
-            settlePromise(combined, listValue(items.map(outcomeOf)), runTools);
+          if (combinator === "all" && isThrownOutcome(outcome)) {
+            settlePromise(combined, outcome, runTools);
+          } else if (--remaining === 0) {
+            settlePromise(combined, combinedOutcome(), runTools);
+          }
         },
         escape: (escapeTools) => escapePromise(combined, escapeTools),
       },

@@ -52,6 +52,7 @@ import {
 } from "./native-values.js";
 import { constructFunctionFromSource } from "./function-constructor.js";
 import { callImportMetaGlob } from "./import-glob.js";
+import { stringifyJson } from "./json-stringify.js";
 import { createClockDateValue, isClockReading } from "./clock-date.js";
 import { createBlobValue } from "./blob.js";
 import { callEventTargetMethod } from "./event-listeners.js";
@@ -144,7 +145,6 @@ import {
   isSymbolPropertyKey,
   mapValue,
   toBooleanValue,
-  toJsonValue,
   NULL_VALUE,
   objectFromRecord,
   objectValue,
@@ -679,6 +679,22 @@ const hasOwnProperty = (
   return null;
 };
 
+/** `receiver.hasOwnProperty(key)`, `receiver.propertyIsEnumerable(key)` or `receiver.isPrototypeOf(value)` when the answer is decidable. */
+const introspectObject = (
+  receiver: StaticValue,
+  name: string,
+  first: StaticValue | undefined,
+): StaticValue | null => {
+  if (first === undefined) return null;
+  if (name === "hasOwnProperty" || name === "propertyIsEnumerable")
+    return hasOwnProperty(receiver, first, name);
+  if (name === "isPrototypeOf") {
+    const isOnChain = isPrototypeOf(receiver, first);
+    return isOnChain === null ? null : primitiveValue(isOnChain);
+  }
+  return null;
+};
+
 /** `Object.getPrototypeOf(value)` for values whose chain is a native one: the builtin prototype global, or null at the chain's end. */
 const getWitnessedPrototype = (
   value: StaticValue | undefined,
@@ -907,6 +923,9 @@ const callGlobal = (
         ? callHostObjectMethod(interpreter, receiver, memberName, args, context, location)
         : null;
     if (hostResult) return hostResult;
+    const introspected =
+      receiver.kind === "global" ? introspectObject(receiver, memberName, args[0]) : null;
+    if (introspected) return introspected;
     const [inspected, ...rest] = args;
     if (inspected?.kind === "branch" && INSPECTING_GLOBALS.has(name)) {
       return mapValue(inspected, (alternative) =>
@@ -1020,9 +1039,17 @@ const callGlobal = (
         thrownValue("rejected promise", first ?? UNDEFINED_VALUE, location),
       );
     case "Promise.all":
+    case "Promise.allSettled": {
+      const combinator = name === "Promise.all" ? "all" : "allSettled";
       return first?.kind === "list"
-        ? combinePromises(first.items, promiseTools(interpreter, context, location), location)
-        : unknownValue("Promise.all", location);
+        ? combinePromises(
+            first.items,
+            combinator,
+            promiseTools(interpreter, context, location),
+            location,
+          )
+        : unknownValue(`${name} of a dynamic iterable`, location);
+    }
     case "Array.isArray": {
       const verdict = first ? isArrayValue(first) : false;
       return verdict === null
@@ -1280,12 +1307,11 @@ const callGlobal = (
       if (typeofFirst.kind === "primitive" && typeofFirst.value !== "number") return FALSE_VALUE;
       return unknownPrimitiveValue("boolean", name);
     }
-    case "JSON.stringify": {
-      const json = first && args.length === 1 ? toJsonValue(first) : undefined;
-      return json === undefined
-        ? unknownPrimitiveValue("string", "JSON.stringify")
-        : primitiveValue(JSON.stringify(json));
-    }
+    case "JSON.stringify":
+      return stringifyJson(first, second, args[2], {
+        call: (callee, callArgs, thisValue) =>
+          interpreter.callValue(callee, callArgs, context, location, { thisValue }),
+      });
     case "JSON.parse":
       if (
         first?.kind === "primitive" &&
@@ -2045,14 +2071,8 @@ export const evaluateBuiltinCall = (
     return unknownValue(`function.${name}()`, location);
   }
 
-  if ((name === "hasOwnProperty" || name === "propertyIsEnumerable") && first !== undefined) {
-    const ownProperty = hasOwnProperty(receiver, first, name);
-    if (ownProperty) return ownProperty;
-  }
-  if (name === "isPrototypeOf" && first !== undefined) {
-    const isOnChain = isPrototypeOf(receiver, first);
-    if (isOnChain !== null) return primitiveValue(isOnChain);
-  }
+  const introspected = introspectObject(receiver, name, first);
+  if (introspected) return introspected;
 
   if (receiver.kind === "global")
     return callGlobal(interpreter, `${receiver.name}.${name}`, args, context, location, false);

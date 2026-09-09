@@ -1,0 +1,50 @@
+{
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "externalPackages": ["@tanstack/react-query"],
+  "notes": "Imperative `queryClient.fetchQuery` calls run `Query#fetch` of @tanstack/query-core, analyzed from source because it is the core of the allow-listed react-query facade; the fetch settles the way the captured cache entry did (the session resolved, the flags rejected), so the post-effect state is the only one left.",
+  "observations": {
+    "globals": {},
+    "queries": [
+      {
+        "queryHash": "[\"session\"]",
+        "status": "success",
+        "fetchStatus": "idle",
+        "data": {
+          "user": {
+            "name": "ada"
+          }
+        },
+        "error": null,
+        "dataUpdateCount": 1,
+        "dataUpdatedAt": 0,
+        "errorUpdateCount": 0,
+        "errorUpdatedAt": 0,
+        "fetchFailureCount": 0,
+        "fetchFailureReason": null,
+        "isInvalidated": false,
+        "isStale": false
+      },
+      {
+        "queryHash": "[\"flags\",{\"scope\":\"app\"}]",
+        "status": "error",
+        "fetchStatus": "idle",
+        "error": {
+          "name": "Error",
+          "message": "flags service unavailable"
+        },
+        "dataUpdateCount": 0,
+        "dataUpdatedAt": 0,
+        "errorUpdateCount": 1,
+        "errorUpdatedAt": 0,
+        "fetchFailureCount": 1,
+        "fetchFailureReason": {
+          "name": "Error",
+          "message": "flags service unavailable"
+        },
+        "isInvalidated": true,
+        "isStale": true
+      }
+    ]
+  }
+}

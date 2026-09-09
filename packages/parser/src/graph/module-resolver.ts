@@ -91,7 +91,7 @@ export const getPackageNameFromSpecifier = (specifier: string): string | null =>
   return segments[0] || null;
 };
 
-const getPackageNameFromFilePath = (filePath: string): string | null => {
+export const getPackageNameFromFilePath = (filePath: string): string | null => {
   const posixPath = filePath.replaceAll("\\", "/");
   const index = posixPath.lastIndexOf(NODE_MODULES_SEGMENT);
   if (index === -1) return null;

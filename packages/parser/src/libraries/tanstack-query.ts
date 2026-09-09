@@ -17,10 +17,12 @@ import {
   mapValue,
   objectFromRecord,
   primitiveValue,
+  thrownValue,
   toJsonValue,
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
+import { resolvedPromiseValue } from "../evaluate/promises.js";
 import { nativeFunction } from "../evaluate/stubs.js";
 import { hashKey } from "../observations.js";
 import type {
@@ -29,7 +31,9 @@ import type {
   CapturedValue,
   LibraryValueProvider,
   ModeledExports,
+  ModeledMethod,
   ProjectContext,
+  StaticFunctionValue,
   StaticObjectValue,
   StaticSymbolValue,
   StaticValue,
@@ -43,7 +47,9 @@ import type {
 // the result is rebuilt from that entry's state; otherwise a query that may
 // fetch has fetched (and either succeeded or failed), a disabled query
 // (`enabled: false`, `queryFn: skipToken`) is pending and idle, and no mutation
-// has been triggered unless something did so on mount.
+// has been triggered unless something did so on mount. An imperative fetch
+// (`queryClient.fetchQuery`, a router loader's `ensureQueryData`) is
+// `Query#fetch`, which settles the same way the captured cache entry did.
 
 export const TANSTACK_QUERY_PACKAGES = ["@tanstack/react-query", "@tanstack/query-core"];
 
@@ -474,3 +480,56 @@ const MODELED_EXPORT_NAMES: readonly string[] = [
 export const TANSTACK_QUERY_MODELED_EXPORTS: ModeledExports = Object.fromEntries(
   TANSTACK_QUERY_PACKAGES.map((specifier) => [specifier, MODELED_EXPORT_NAMES]),
 );
+
+/** `Query.state` once the runtime settled the fetch: the captured cache entry. */
+const capturedQueryState = (captured: CapturedQuery): StaticObjectValue => {
+  const queryName = `query ${captured.queryHash}`;
+  return objectFromRecord({
+    data: captured.data === undefined ? UNDEFINED_VALUE : capturedValue(captured.data, queryName),
+    dataUpdateCount: primitiveValue(captured.dataUpdateCount),
+    dataUpdatedAt: primitiveValue(captured.dataUpdatedAt),
+    error: capturedValue(captured.error, `${queryName} error`),
+    errorUpdateCount: primitiveValue(captured.errorUpdateCount),
+    errorUpdatedAt: primitiveValue(captured.errorUpdatedAt),
+    fetchFailureCount: primitiveValue(captured.fetchFailureCount),
+    fetchFailureReason: capturedValue(captured.fetchFailureReason, `${queryName} failure reason`),
+    fetchMeta: NULL_VALUE,
+    isInvalidated: booleanValue(captured.isInvalidated),
+    status: primitiveValue(captured.status),
+    fetchStatus: primitiveValue(captured.fetchStatus),
+  });
+};
+
+/**
+ * `Query#fetch`: the retryer's promise, resolved with the data or rejected with
+ * the error the captured entry of this query holds; a query the capture does
+ * not hold settled (or does not hold at all) fetches from source.
+ */
+const queryFetch = (original: StaticFunctionValue, project: ProjectContext): StaticValue =>
+  nativeFunction("fetch", (args, tools) => {
+    const query = original.thisValue;
+    const fetchFromSource = (): StaticValue => tools.call(original, args, query ?? undefined);
+    if (query?.kind !== "object") return fetchFromSource();
+    const queryHash = getObjectProperty(query, "queryHash");
+    const captured =
+      queryHash.kind === "primitive" && typeof queryHash.value === "string"
+        ? project.findQuery(queryHash.value)
+        : null;
+    if (!captured || captured.status === "pending") return fetchFromSource();
+    const state = capturedQueryState(captured);
+    tools.setProperty(query, "state", state);
+    return resolvedPromiseValue(
+      captured.status === "error"
+        ? thrownValue("rejected promise", getObjectProperty(state, "error"))
+        : getObjectProperty(state, "data"),
+    );
+  });
+
+export const TANSTACK_QUERY_MODELED_METHODS: readonly ModeledMethod[] = [
+  {
+    packageName: "@tanstack/query-core",
+    className: "Query",
+    methodName: "fetch",
+    model: queryFetch,
+  },
+];
