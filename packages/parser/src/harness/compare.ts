@@ -4,6 +4,7 @@ import {
   formatRepeatBounds,
   hasPatternDecisions,
   scopePatternVariables,
+  SelfContainedFiberIndex,
   type PatternBranch,
   type PatternFiber,
   type PatternNode,
@@ -296,6 +297,7 @@ class Matcher {
   /** Decisions in force on the path being tried; a variable met again must agree. */
   private readonly assignment = new Map<string, number>();
   private readonly scopedRepeatChildren = new Map<PatternRepeat, PatternNode[][]>();
+  private readonly selfContainedFibers = new SelfContainedFiberIndex();
   private readonly compareKeys: boolean;
   private readonly compareTags: boolean;
   private readonly compareText: boolean;
@@ -322,6 +324,17 @@ class Matcher {
 
   indexRuntime(roots: RuntimeFiberSnapshot[]): void {
     this.positions = indexRuntime(roots);
+  }
+
+  indexPatterns(patterns: PatternNode[]): void {
+    this.selfContainedFibers.index(patterns);
+  }
+
+  /** Fixed-width nodes consume a determinable runtime span, so they need no continuation into their siblings. */
+  private isFixedWidth(node: PatternNode): boolean {
+    return (
+      !hasPatternDecisions(node) || (node.kind === "fiber" && this.selfContainedFibers.has(node))
+    );
   }
 
   recordFailure(
@@ -366,6 +379,9 @@ class Matcher {
     }
   }
 
+  // Fixed-width nodes are matched eagerly: no later node can want them matched
+  // differently, so only nodes whose width depends on a decision chain through
+  // continuations (and the call stack).
   matchList(
     patterns: PatternNode[],
     index: number,
@@ -374,10 +390,45 @@ class Matcher {
     path: string[],
     continuation: Continuation,
   ): MatchTally | null {
-    if (index === patterns.length) return continuation(runtime, runtimeIndex);
-    return this.matchNode(patterns[index], runtime, runtimeIndex, path, (nextRuntime, nextIndex) =>
-      this.matchList(patterns, index + 1, nextRuntime, nextIndex, path, continuation),
-    );
+    let tally = EMPTY_TALLY;
+    let remaining = runtime;
+    let remainingIndex = runtimeIndex;
+    let patternIndex = index;
+    while (patternIndex < patterns.length && this.isFixedWidth(patterns[patternIndex])) {
+      const nodeTally = this.matchNode(
+        patterns[patternIndex],
+        remaining,
+        remainingIndex,
+        path,
+        (nextRuntime, nextIndex) => {
+          remaining = nextRuntime;
+          remainingIndex = nextIndex;
+          return EMPTY_TALLY;
+        },
+      );
+      if (!nodeTally) return null;
+      tally = addTally(tally, nodeTally);
+      patternIndex++;
+    }
+    const rest =
+      patternIndex === patterns.length
+        ? continuation(remaining, remainingIndex)
+        : this.matchNode(
+            patterns[patternIndex],
+            remaining,
+            remainingIndex,
+            path,
+            (nextRuntime, nextIndex) =>
+              this.matchList(
+                patterns,
+                patternIndex + 1,
+                nextRuntime,
+                nextIndex,
+                path,
+                continuation,
+              ),
+          );
+    return rest ? addTally(tally, rest) : null;
   }
 
   /** The runtime list with the wrapper at `runtimeIndex` replaced by what it stands in for, and the number of fibers that removed. */
@@ -401,7 +452,7 @@ class Matcher {
   }
 
   /** The pattern is exhausted: only framework wrappers with nothing left inside may remain. */
-  matchEnd(
+  private matchEnd(
     runtime: RuntimeFiberSnapshot[],
     runtimeIndex: number,
     path: string[],
@@ -416,26 +467,14 @@ class Matcher {
     return null;
   }
 
-  // Nothing backtracks into a decision-free subtree, so matching it eagerly
-  // keeps the continuation chain (and the call stack) proportional to the
-  // decisions rather than to the size of the tree.
-  private matchDecisionFreeList(
+  matchWholeList(
     patterns: PatternNode[],
     runtime: RuntimeFiberSnapshot[],
     path: string[],
   ): MatchTally | null {
-    let tally = EMPTY_TALLY;
-    let remaining = runtime;
-    for (const [index, pattern] of patterns.entries()) {
-      const nodeTally = this.matchNode(pattern, remaining, index, path, (nextRuntime) => {
-        remaining = nextRuntime;
-        return EMPTY_TALLY;
-      });
-      if (!nodeTally) return null;
-      tally = addTally(tally, nodeTally);
-    }
-    const end = this.matchEnd(remaining, patterns.length, path);
-    return end ? addTally(tally, end) : null;
+    return this.matchList(patterns, 0, runtime, 0, path, (rest, nextIndex) =>
+      this.matchEnd(rest, nextIndex, path),
+    );
   }
 
   private matchNode(
@@ -564,8 +603,8 @@ class Matcher {
           return null;
         }
         const childPath = [...path, describePatternNode(pattern)];
-        if (!hasPatternDecisions(pattern)) {
-          const children = this.matchDecisionFreeList(pattern.children, actual.children, childPath);
+        if (this.isFixedWidth(pattern)) {
+          const children = this.matchWholeList(pattern.children, actual.children, childPath);
           if (!children) return null;
           const rest = continuation(runtime, runtimeIndex + 1);
           return rest ? addTally(addTally(rest, children), { matchedFibers: 1 }) : null;
@@ -672,7 +711,9 @@ class Matcher {
       this.scopedRepeatChildren.set(pattern, iterations);
     }
     for (let index = iterations.length; index <= iteration; index++) {
-      iterations.push(scopePatternVariables(pattern.children, `${pattern.variable}[${index}]`));
+      const scoped = scopePatternVariables(pattern.children, `${pattern.variable}[${index}]`);
+      this.indexPatterns(scoped);
+      iterations.push(scoped);
     }
     return iterations[iteration];
   }
@@ -800,14 +841,13 @@ export const matchPatternToRuntime = (
 ): PatternMatch => {
   const matcher = new Matcher(options);
   matcher.indexRuntime(runtime);
+  matcher.indexPatterns(patterns);
   const runtimeFibers = runtime.reduce((sum, fiber) => sum + countSnapshotFibers(fiber), 0);
   const staticFibers = patterns.reduce((sum, node) => sum + countPatternFibers(node), 0);
   let tally: MatchTally | null = null;
   let budgetExhausted = false;
   try {
-    tally = matcher.matchList(patterns, 0, runtime, 0, ["root"], (rest, nextIndex) =>
-      matcher.matchEnd(rest, nextIndex, ["root"]),
-    );
+    tally = matcher.matchWholeList(patterns, runtime, ["root"]);
   } catch (error) {
     if (!(error instanceof BudgetExceeded)) throw error;
     budgetExhausted = true;

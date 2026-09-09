@@ -70,6 +70,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 59,
         "staticFibers": 59,
         "coverage": 1,
@@ -373,6 +374,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 335,
         "staticFibers": 345,
         "coverage": 0,
@@ -444,6 +446,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 46,
         "staticFibers": 46,
         "coverage": 1,
@@ -469,8 +472,8 @@
       "id": "cal-diy",
       "revision": "abffde336e744e15cf69626c10e436d6172bc406",
       "framework": "next-app",
-      "capturedAt": "2026-09-09T06:48:30.051Z",
-      "durationMs": 1102,
+      "capturedAt": "2026-09-09T07:38:50.137Z",
+      "durationMs": 1210,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
@@ -494,7 +497,6 @@
         "diagnostics": []
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 938,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -507,6 +509,8 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
+        "transparentFibers": 109,
+        "status": "exact",
         "runtimeFibers": 938,
         "staticFibers": 938,
         "coverage": 1,
@@ -952,6 +956,7 @@
         ],
         "branchesResolved": 1,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 1515,
         "staticFibers": 1681,
         "coverage": 0.054409005628517824,
@@ -3299,6 +3304,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 203,
         "staticFibers": 203,
         "coverage": 1,
@@ -3372,6 +3378,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 68,
         "staticFibers": 68,
         "coverage": 1,
@@ -3528,6 +3535,7 @@
         ],
         "branchesResolved": 1,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 509,
         "staticFibers": 5,
         "coverage": 1,
@@ -3583,6 +3591,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 145,
         "staticFibers": 145,
         "coverage": 1,
@@ -3800,6 +3809,7 @@
         ],
         "branchesResolved": 3,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 118,
         "staticFibers": 52,
         "coverage": 1,
@@ -3992,6 +4002,7 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 378,
         "staticFibers": 405,
         "coverage": 1,
@@ -4355,6 +4366,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 225,
         "staticFibers": 225,
         "coverage": 1,
@@ -4620,6 +4632,7 @@
         ],
         "branchesResolved": 17,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 1084,
         "staticFibers": 989,
         "coverage": 1,
@@ -5801,6 +5814,7 @@
         ],
         "branchesResolved": 8,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 1572,
         "staticFibers": 1563,
         "coverage": 1,
@@ -6592,6 +6606,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 5422,
         "staticFibers": 5333,
         "coverage": 1,
@@ -13761,6 +13776,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 8263,
         "staticFibers": 7235,
         "coverage": 0,
@@ -15482,6 +15498,7 @@
         ],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 26,
         "staticFibers": 10,
         "coverage": 1,
@@ -15653,6 +15670,7 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 210,
         "staticFibers": 208,
         "coverage": 1,
@@ -16037,6 +16055,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 83,
         "staticFibers": 83,
         "coverage": 1,
@@ -17014,6 +17033,7 @@
         ],
         "branchesResolved": 6,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 1088,
         "staticFibers": 268,
         "coverage": 1,
@@ -17454,6 +17474,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 7411,
         "staticFibers": 35,
         "coverage": 1,
@@ -17479,8 +17500,8 @@
       "id": "posthog",
       "revision": "09c5fbd37b2714276d4206debd3aeb253ce0e43a",
       "framework": "spa",
-      "capturedAt": "2026-09-09T06:48:55.861Z",
-      "durationMs": 3861,
+      "capturedAt": "2026-09-09T07:39:03.784Z",
+      "durationMs": 5344,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -17512,7 +17533,6 @@
         ]
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 184,
         "matchedText": 7,
         "opaqueSubtrees": 0,
@@ -17525,6 +17545,8 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
         "runtimeFibers": 191,
         "staticFibers": 191,
         "coverage": 1,
@@ -17594,6 +17616,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 450,
         "staticFibers": 450,
         "coverage": 1,
@@ -17625,8 +17648,8 @@
       "id": "react-admin",
       "revision": "fa7ede4a25d36917b41f9b9e9936e9e7ab8fa8ab",
       "framework": "react-router",
-      "capturedAt": "2026-09-09T06:48:43.821Z",
-      "durationMs": 5109,
+      "capturedAt": "2026-09-09T07:38:51.378Z",
+      "durationMs": 5502,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -17645,7 +17668,7 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 1,
-          "modulesLoaded": 1902
+          "modulesLoaded": 2205
         },
         "diagnostics": [
           {
@@ -17655,7 +17678,6 @@
         ]
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 5505,
         "matchedText": 66,
         "opaqueSubtrees": 0,
@@ -17668,6 +17690,8 @@
         "wildcards": [],
         "branchesResolved": 3,
         "repeatIterations": 0,
+        "transparentFibers": 9,
+        "status": "exact",
         "runtimeFibers": 5571,
         "staticFibers": 5581,
         "coverage": 1,
@@ -17688,15 +17712,15 @@
             },
             {
               "kind": "branch",
-              "variable": "branch#1",
-              "reason": "&& on branch(<boolean> | unknown)",
-              "location": "/home/ubuntu/bippy-corpus/react-admin/packages/ra-ui-materialui/src/layout/LoadingIndicator.tsx:33:14",
-              "alternativeIndex": 1,
+              "variable": "branch#2",
+              "reason": "conditional on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/react-admin/packages/ra-core/src/controller/list/ListBase.tsx:128:18",
+              "alternativeIndex": 2,
               "alternativeCount": 3
             },
             {
               "kind": "branch",
-              "variable": "truthy(19429)",
+              "variable": "truthy(17988)",
               "reason": "if (branch(true | false))",
               "location": "/home/ubuntu/bippy-corpus/react-admin/node_modules/@mui/material/Avatar/Avatar.js:195:3",
               "alternativeIndex": 0,
@@ -17704,10 +17728,10 @@
             },
             {
               "kind": "branch",
-              "variable": "branch#2",
-              "reason": "conditional on branch(true | false)",
-              "location": "/home/ubuntu/bippy-corpus/react-admin/packages/ra-core/src/controller/list/ListBase.tsx:128:18",
-              "alternativeIndex": 2,
+              "variable": "branch#1",
+              "reason": "&& on branch(<boolean> | unknown)",
+              "location": "/home/ubuntu/bippy-corpus/react-admin/packages/ra-ui-materialui/src/layout/LoadingIndicator.tsx:33:14",
+              "alternativeIndex": 1,
               "alternativeCount": 3
             }
           ]
@@ -17934,6 +17958,7 @@
         ],
         "branchesResolved": 5,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 615,
         "staticFibers": 77,
         "coverage": 1,
@@ -18152,6 +18177,7 @@
         ],
         "branchesResolved": 1,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 310,
         "staticFibers": 86,
         "coverage": 1,
@@ -18251,6 +18277,7 @@
         ],
         "branchesResolved": 21,
         "repeatIterations": 14,
+        "transparentFibers": 0,
         "runtimeFibers": 77,
         "staticFibers": 34,
         "coverage": 1,
@@ -19795,6 +19822,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 50,
         "staticFibers": 50,
         "coverage": 1,
@@ -20011,6 +20039,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 52,
         "staticFibers": 132,
         "coverage": 0,
@@ -20518,8 +20547,8 @@
       "id": "sentry",
       "revision": "a7b4a8a2a78a666418e527d812e81528147789da",
       "framework": "react-router",
-      "capturedAt": "2026-09-09T06:48:49.892Z",
-      "durationMs": 5961,
+      "capturedAt": "2026-09-09T07:38:56.930Z",
+      "durationMs": 6836,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -20559,7 +20588,6 @@
         ]
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 558,
         "matchedText": 8,
         "opaqueSubtrees": 0,
@@ -20572,6 +20600,8 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 9,
+        "status": "exact",
         "runtimeFibers": 566,
         "staticFibers": 566,
         "coverage": 1,
@@ -20650,6 +20680,7 @@
         ]
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 402,
         "matchedText": 17,
         "opaqueSubtrees": 79,
@@ -20747,7 +20778,7 @@
         ],
         "branchesResolved": 35,
         "repeatIterations": 12,
-        "status": "partial",
+        "transparentFibers": 0,
         "runtimeFibers": 849,
         "staticFibers": 452,
         "coverage": 0.5078787878787879,
@@ -21670,6 +21701,7 @@
         "wildcards": [],
         "branchesResolved": 19,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 1502,
         "staticFibers": 1521,
         "coverage": 1,
@@ -22200,6 +22232,7 @@
         "wildcards": [],
         "branchesResolved": 32,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 1635,
         "staticFibers": 1644,
         "coverage": 1,
@@ -23066,6 +23099,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 44,
         "staticFibers": 44,
         "coverage": 1,
@@ -23198,6 +23232,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 48,
         "staticFibers": 48,
         "coverage": 1,
@@ -23229,17 +23264,26 @@
       "id": "tanstack-table",
       "revision": "05f3ed11f36b83bcd0991e25e3d4e78c143e6df4",
       "framework": "spa",
-      "capturedAt": "2026-09-09T07:05:50.957Z",
-      "durationMs": 5804,
-      "runtime": null,
+      "capturedAt": "2026-09-09T07:33:38.200Z",
+      "durationMs": 40990,
+      "runtime": {
+        "reactVersion": "19.2.6",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 1367,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "TanStack Table - Large Table Example with createTableHook"
+      },
       "static": {
         "stats": {
-          "fiberCount": 13839,
-          "textCount": 92,
-          "branchCount": 1012,
+          "fiberCount": 13713,
+          "textCount": 70,
+          "branchCount": 989,
           "repeatCount": 24,
           "opaqueCount": 0,
-          "unknownCount": 4089,
+          "unknownCount": 4077,
           "modulesLoaded": 79
         },
         "diagnostics": [
@@ -23249,11 +23293,2122 @@
           }
         ]
       },
-      "report": null,
-      "stateSpace": null,
+      "report": {
+        "status": "partial",
+        "matchedFibers": 876,
+        "matchedText": 60,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 430,
+        "wildcards": [
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <tbody> [HostComponent] > <tr> [HostComponent] > <AppCellImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <td> [HostComponent] > <CellFlexRender> [FunctionComponent] > <FlexRender> [FunctionComponent]",
+            "reason": "function cell is not a valid React child",
+            "absorbedFibers": 6,
+            "heads": [
+              "<_temp12> [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <tbody> [HostComponent] > <tr> [HostComponent] > <AppCellImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <td> [HostComponent] > <CellFlexRender> [FunctionComponent] > <FlexRender> [FunctionComponent]",
+            "reason": "function cell is not a valid React child",
+            "absorbedFibers": 6,
+            "heads": [
+              "<_temp12> [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <tbody> [HostComponent] > <tr> [HostComponent] > <AppCellImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <td> [HostComponent] > <CellFlexRender> [FunctionComponent] > <FlexRender> [FunctionComponent]",
+            "reason": "function cell is not a valid React child",
+            "absorbedFibers": 6,
+            "heads": [
+              "<_temp12> [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <tbody> [HostComponent] > <tr> [HostComponent] > <AppCellImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <td> [HostComponent] > <CellFlexRender> [FunctionComponent] > <FlexRender> [FunctionComponent]",
+            "reason": "function cell is not a valid React child",
+            "absorbedFibers": 6,
+            "heads": [
+              "<_temp12> [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <tbody> [HostComponent] > <tr> [HostComponent] > <AppCellImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <td> [HostComponent] > <CellFlexRender> [FunctionComponent] > <FlexRender> [FunctionComponent]",
+            "reason": "function cell is not a valid React child",
+            "absorbedFibers": 6,
+            "heads": [
+              "<_temp12> [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <tbody> [HostComponent] > <tr> [HostComponent] > <AppCellImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <td> [HostComponent] > <CellFlexRender> [FunctionComponent] > <FlexRender> [FunctionComponent]",
+            "reason": "function cell is not a valid React child",
+            "absorbedFibers": 6,
+            "heads": [
+              "<_temp12> [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <tbody> [HostComponent] > <tr> [HostComponent] > <AppCellImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <td> [HostComponent] > <CellFlexRender> [FunctionComponent] > <FlexRender> [FunctionComponent]",
+            "reason": "function cell is not a valid React child",
+            "absorbedFibers": 6,
+            "heads": [
+              "<_temp12> [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <tbody> [HostComponent] > <tr> [HostComponent] > <AppCellImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <td> [HostComponent] > <CellFlexRender> [FunctionComponent] > <FlexRender> [FunctionComponent]",
+            "reason": "function cell is not a valid React child",
+            "absorbedFibers": 6,
+            "heads": [
+              "<_temp12> [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <tbody> [HostComponent] > <tr> [HostComponent] > <AppCellImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <td> [HostComponent] > <CellFlexRender> [FunctionComponent] > <FlexRender> [FunctionComponent]",
+            "reason": "function cell is not a valid React child",
+            "absorbedFibers": 6,
+            "heads": [
+              "<_temp12> [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <UsersTable> [FunctionComponent] > <AppTableImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <FunctionComponent> [FunctionComponent] > <div> [HostComponent] > <table> [HostComponent] > <tbody> [HostComponent] > <tr> [HostComponent] > <AppCellImpl> [FunctionComponent] > <ContextProvider> [ContextProvider] > <td> [HostComponent] > <CellFlexRender> [FunctionComponent] > <FlexRender> [FunctionComponent]",
+            "reason": "function cell is not a valid React child",
+            "absorbedFibers": 6,
+            "heads": [
+              "<_temp12> [FunctionComponent]"
+            ]
+          }
+        ],
+        "branchesResolved": 128,
+        "repeatIterations": 20,
+        "transparentFibers": 0,
+        "runtimeFibers": 1366,
+        "staticFibers": 790,
+        "coverage": 1,
+        "strictCoverage": 0.6852122986822841,
+        "divergence": null,
+        "stepsUsed": 25278,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 256,
+        "matchedState": {
+          "index": null,
+          "conditions": [
+            {
+              "kind": "branch",
+              "variable": "truthy(24786)",
+              "reason": "conditional on <boolean: > on dynamic values>",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(24785)",
+              "reason": "conditional on <boolean: > on dynamic values>",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(24784)",
+              "reason": "conditional on <boolean: > on dynamic values>",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#551",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+              "alternativeIndex": 0,
+              "alternativeCount": 7
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#552",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/core/row-models/createCoreRowModel.js:32:3",
+              "count": 10
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15261)@repeat#552[9]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15257)@repeat#552[9]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15253)@repeat#552[9]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15249)@repeat#552[9]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15243)@repeat#552[9]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15261)@repeat#552[8]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15257)@repeat#552[8]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15253)@repeat#552[8]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15249)@repeat#552[8]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15243)@repeat#552[8]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15261)@repeat#552[7]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15257)@repeat#552[7]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15253)@repeat#552[7]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15249)@repeat#552[7]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15243)@repeat#552[7]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15261)@repeat#552[6]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15257)@repeat#552[6]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15253)@repeat#552[6]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15249)@repeat#552[6]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15243)@repeat#552[6]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15261)@repeat#552[5]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15257)@repeat#552[5]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15253)@repeat#552[5]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15249)@repeat#552[5]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15243)@repeat#552[5]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15261)@repeat#552[4]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15257)@repeat#552[4]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15253)@repeat#552[4]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15249)@repeat#552[4]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15243)@repeat#552[4]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15261)@repeat#552[3]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15257)@repeat#552[3]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15253)@repeat#552[3]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15249)@repeat#552[3]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15243)@repeat#552[3]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15261)@repeat#552[2]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15257)@repeat#552[2]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15253)@repeat#552[2]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15249)@repeat#552[2]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15243)@repeat#552[2]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15261)@repeat#552[1]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15257)@repeat#552[1]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15253)@repeat#552[1]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15249)@repeat#552[1]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15243)@repeat#552[1]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15261)@repeat#552[0]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15257)@repeat#552[0]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15253)@repeat#552[0]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15249)@repeat#552[0]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(15243)@repeat#552[0]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(14395)",
+              "reason": "conditional on <boolean: > on dynamic values>",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(14394)",
+              "reason": "conditional on <boolean: > on dynamic values>",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(14393)",
+              "reason": "conditional on <boolean: > on dynamic values>",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#1",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+              "alternativeIndex": 0,
+              "alternativeCount": 7
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#2",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/core/row-models/createCoreRowModel.js:32:3",
+              "count": 10
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(861)@repeat#2[9]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(857)@repeat#2[9]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(853)@repeat#2[9]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(849)@repeat#2[9]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(845)@repeat#2[9]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(841)@repeat#2[9]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(835)@repeat#2[9]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(861)@repeat#2[8]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(857)@repeat#2[8]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(853)@repeat#2[8]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(849)@repeat#2[8]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(845)@repeat#2[8]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(841)@repeat#2[8]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(835)@repeat#2[8]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(861)@repeat#2[7]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(857)@repeat#2[7]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(853)@repeat#2[7]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(849)@repeat#2[7]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(845)@repeat#2[7]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(841)@repeat#2[7]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(835)@repeat#2[7]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(861)@repeat#2[6]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(857)@repeat#2[6]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(853)@repeat#2[6]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(849)@repeat#2[6]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(845)@repeat#2[6]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(841)@repeat#2[6]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(835)@repeat#2[6]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(861)@repeat#2[5]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(857)@repeat#2[5]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(853)@repeat#2[5]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(849)@repeat#2[5]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(845)@repeat#2[5]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(841)@repeat#2[5]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(835)@repeat#2[5]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(861)@repeat#2[4]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(857)@repeat#2[4]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(853)@repeat#2[4]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(849)@repeat#2[4]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(845)@repeat#2[4]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(841)@repeat#2[4]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(835)@repeat#2[4]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(861)@repeat#2[3]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(857)@repeat#2[3]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(853)@repeat#2[3]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(849)@repeat#2[3]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(845)@repeat#2[3]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(841)@repeat#2[3]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(835)@repeat#2[3]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(861)@repeat#2[2]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(857)@repeat#2[2]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(853)@repeat#2[2]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(849)@repeat#2[2]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(845)@repeat#2[2]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(841)@repeat#2[2]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(835)@repeat#2[2]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(861)@repeat#2[1]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(857)@repeat#2[1]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(853)@repeat#2[1]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(849)@repeat#2[1]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(845)@repeat#2[1]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(841)@repeat#2[1]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(835)@repeat#2[1]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(861)@repeat#2[0]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(857)@repeat#2[0]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(853)@repeat#2[0]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(849)@repeat#2[0]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(845)@repeat#2[0]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(841)@repeat#2[0]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(835)@repeat#2[0]",
+              "reason": "conditional on branch(unknown | undefined | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 23,
+          "omissions": [
+            {
+              "kind": "repeat",
+              "variable": "repeat#2",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/core/row-models/createCoreRowModel.js:32:3",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#552",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/core/row-models/createCoreRowModel.js:32:3",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "state",
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 7
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#2",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/core/row-models/createCoreRowModel.js:32:3",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14393)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14394)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14395)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#551",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 7
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#552",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/core/row-models/createCoreRowModel.js:32:3",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(15243)@repeat#552[0]",
+                  "reason": "conditional on branch(unknown | undefined | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(15249)@repeat#552[0]",
+                  "reason": "conditional on branch(unknown | undefined | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(15253)@repeat#552[0]",
+                  "reason": "conditional on branch(unknown | undefined | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(15257)@repeat#552[0]",
+                  "reason": "conditional on branch(unknown | undefined | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(15261)@repeat#552[0]",
+                  "reason": "conditional on branch(unknown | undefined | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24784)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24785)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24786)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(24786)",
+              "reason": "conditional on <boolean: > on dynamic values>",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 7
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#2",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/core/row-models/createCoreRowModel.js:32:3",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14393)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14394)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14395)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#551",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 7
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#552",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/core/row-models/createCoreRowModel.js:32:3",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(15243)@repeat#552[0]",
+                  "reason": "conditional on branch(unknown | undefined | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(15249)@repeat#552[0]",
+                  "reason": "conditional on branch(unknown | undefined | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(15253)@repeat#552[0]",
+                  "reason": "conditional on branch(unknown | undefined | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(15257)@repeat#552[0]",
+                  "reason": "conditional on branch(unknown | undefined | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(15261)@repeat#552[0]",
+                  "reason": "conditional on branch(unknown | undefined | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24784)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24785)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(24785)",
+              "reason": "conditional on <boolean: > on dynamic values>",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 7
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#2",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/core/row-models/createCoreRowModel.js:32:3",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14393)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14394)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14395)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#551",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 7
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#552",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/core/row-models/createCoreRowModel.js:32:3",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(15243)@repeat#552[0]",
+                  "reason": "conditional on branch(unknown | undefined | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(15249)@repeat#552[0]",
+                  "reason": "conditional on branch(unknown | undefined | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(15253)@repeat#552[0]",
+                  "reason": "conditional on branch(unknown | undefined | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(15257)@repeat#552[0]",
+                  "reason": "conditional on branch(unknown | undefined | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(15261)@repeat#552[0]",
+                  "reason": "conditional on branch(unknown | undefined | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24784)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(24784)",
+              "reason": "conditional on <boolean: > on dynamic values>",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 7
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#2",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/core/row-models/createCoreRowModel.js:32:3",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14393)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14394)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14395)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#551",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 7
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#552",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/core/row-models/createCoreRowModel.js:32:3",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(15243)@repeat#552[0]",
+                  "reason": "conditional on branch(unknown | undefined | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(15249)@repeat#552[0]",
+                  "reason": "conditional on branch(unknown | undefined | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(15253)@repeat#552[0]",
+                  "reason": "conditional on branch(unknown | undefined | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(15257)@repeat#552[0]",
+                  "reason": "conditional on branch(unknown | undefined | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(15261)@repeat#552[0]",
+                  "reason": "conditional on branch(unknown | undefined | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/react-table/dist/FlexRender.js:21:24",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#552",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/core/row-models/createCoreRowModel.js:32:3",
+              "countsAbove": 1,
+              "max": null,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 7
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#2",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/core/row-models/createCoreRowModel.js:32:3",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14393)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14394)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14395)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#551",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 7
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#551",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 7
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#2",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/core/row-models/createCoreRowModel.js:32:3",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14393)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14394)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14395)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#551",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+              "alternativeIndex": 2,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 7
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#2",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/core/row-models/createCoreRowModel.js:32:3",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14393)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14394)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14395)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#551",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+              "alternativeIndex": 3,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 7
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#2",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/core/row-models/createCoreRowModel.js:32:3",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14393)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14394)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14395)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#551",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+              "alternativeIndex": 4,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 7
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#2",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/core/row-models/createCoreRowModel.js:32:3",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14393)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14394)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14395)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#551",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+              "alternativeIndex": 5,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 7
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#2",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/core/row-models/createCoreRowModel.js:32:3",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14393)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14394)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14395)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#551",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+              "alternativeIndex": 6,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 7
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#2",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/core/row-models/createCoreRowModel.js:32:3",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14393)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14394)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14395)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(14395)",
+              "reason": "conditional on <boolean: > on dynamic values>",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 7
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#2",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/core/row-models/createCoreRowModel.js:32:3",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14393)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14394)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(14394)",
+              "reason": "conditional on <boolean: > on dynamic values>",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 7
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#2",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/core/row-models/createCoreRowModel.js:32:3",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(14393)",
+                  "reason": "conditional on <boolean: > on dynamic values>",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(14393)",
+              "reason": "conditional on <boolean: > on dynamic values>",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/examples/react/composable-tables/src/components/header-components.tsx:81:35",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 7
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#2",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/core/row-models/createCoreRowModel.js:32:3",
+                  "count": 0
+                }
+              ]
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#2",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/core/row-models/createCoreRowModel.js:32:3",
+              "countsAbove": 0,
+              "max": null,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 7
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#1",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+              "alternativeIndex": 1,
+              "conditions": []
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#1",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+              "alternativeIndex": 2,
+              "conditions": []
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#1",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+              "alternativeIndex": 3,
+              "conditions": []
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#1",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+              "alternativeIndex": 4,
+              "conditions": []
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#1",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+              "alternativeIndex": 5,
+              "conditions": []
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#1",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/tanstack-table/packages/table-core/dist/features/row-pagination/createPaginatedRowModel.js:34:2",
+              "alternativeIndex": 6,
+              "conditions": []
+            }
+          ]
+        }
+      },
       "anchor": null,
       "note": null,
-      "failure": "Maximum call stack size exceeded"
+      "failure": null
     },
     {
       "id": "taxonomy",
@@ -23786,6 +25941,7 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 884,
         "staticFibers": 531,
         "coverage": 1,
@@ -24037,6 +26193,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 165,
         "staticFibers": 165,
         "coverage": 1,
