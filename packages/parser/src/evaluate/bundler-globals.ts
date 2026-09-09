@@ -113,7 +113,7 @@ const HOT_MODULE_HANDLER_METHODS = new Set([
 export const isEnvironmentObject = (globalName: string): boolean =>
   ENVIRONMENT_OBJECTS.includes(globalName);
 
-export const isEnvironmentVariableName = (name: string): boolean =>
+const isEnvironmentVariableName = (name: string): boolean =>
   ENVIRONMENT_OBJECTS.some((objectName) => name.startsWith(`${objectName}.`));
 
 /** A define of `null` for these means the bundler leaves the name unset rather than inlining `null`. */

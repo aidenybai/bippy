@@ -45,7 +45,7 @@ import { getCssModuleValue } from "../graph/css-module.js";
 import { getEsbuildDeclarationName } from "../graph/esbuild-symbol-names.js";
 import { isModuleRecord, type ModuleGraph } from "../graph/module-graph.js";
 import { isInsideNodeModules } from "../graph/module-resolver.js";
-import { nativeFunction } from "../frameworks/stubs.js";
+import { nativeFunction } from "./stubs.js";
 import { getLibraryValue } from "../libraries/index.js";
 import { PurePackages } from "../libraries/pure-packages.js";
 import {
@@ -486,7 +486,7 @@ const mergeJumps = (outcomes: StatementOutcome[]): StatementOutcome["jump"] => {
   return jumps.every((jump) => jump === jumps[0]) ? jumps[0] : "uncertain";
 };
 
-export interface StatementContinuation {
+interface StatementContinuation {
   (context: EvaluationContext): StatementOutcome;
 }
 
@@ -499,7 +499,7 @@ export const returnOutcome = (value: StaticValue): StatementOutcome => ({
   isSuspended: false,
 });
 
-export const outcomeToReturnValue = (
+const outcomeToReturnValue = (
   outcome: StatementOutcome,
   location: SourceLocation | null,
 ): StaticValue => {
@@ -677,7 +677,7 @@ const markEscapedMutation = (value: StaticValue, mutation: EscapedMutation): voi
   });
 };
 
-export interface CallOptions {
+interface CallOptions {
   thisValue?: StaticValue | null;
   callStack?: CallFrame[];
   /** The caller awaits the result (route `lazy`, server components), so an async body is evaluated with `await x` as `x`. */

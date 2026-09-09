@@ -10,7 +10,7 @@ import type { StaticValue } from "../types.js";
 // a small SVG is inlined as a data URL exactly as at build time. Webpack-style
 // bundlers emit content-hashed URLs the source does not decide.
 
-export interface ServedAssetsOptions {
+interface ServedAssetsOptions {
   rootDirectory: string;
   /** The bundler's served root (Vite `root`). */
   servedDirectory: string;
@@ -20,7 +20,7 @@ export interface ServedAssetsOptions {
   hasDeclaredDependency: (packageName: string) => boolean;
 }
 
-export interface ServedAssets {
+interface ServedAssets {
   /** The value an `import` of the asset file evaluates to. */
   getImportedUrl: (filePath: string) => StaticValue;
   /** The text served for a same-origin or root-relative URL; `null` when nothing is. */

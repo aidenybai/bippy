@@ -1,3 +1,4 @@
+import { describeError } from "../errors.js";
 import type {
   StaticListValue,
   StaticNativeFunctionValue,
@@ -8,7 +9,7 @@ import type {
   StringComposition,
   StubRenderTools,
 } from "../types.js";
-import { element, nativeFunction } from "../frameworks/stubs.js";
+import { element, nativeFunction } from "./stubs.js";
 import type { HostDocument } from "../host/host-document.js";
 import { GLOBAL_INTERFACE_NAME } from "../host/realm-table.js";
 import { REACT_ELEMENT_SYMBOL_KEYS } from "../react/element-shape.js";
@@ -174,7 +175,7 @@ const PURE_METHOD_PREFIXES = [
 ];
 
 /** The interface name of a native object, read off its prototype: a `Proxy` over a DOM map (`dataset`) answers `constructor` as a lookup. */
-export const getNativeInterfaceName = (value: object): string => {
+const getNativeInterfaceName = (value: object): string => {
   const prototype = Reflect.getPrototypeOf(value);
   const constructor: unknown =
     prototype === null ? undefined : Reflect.get(prototype, "constructor");
@@ -256,9 +257,6 @@ const isPlainObject = (value: object): boolean => {
   return prototype === Object.prototype || prototype === null;
 };
 
-const describeError = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error);
-
 const guardNativeCall = (name: string, call: () => StaticValue): StaticValue => {
   try {
     return call();
@@ -267,7 +265,7 @@ const guardNativeCall = (name: string, call: () => StaticValue): StaticValue => 
   }
 };
 
-export interface NativeCallFallback {
+interface NativeCallFallback {
   (args: StaticValue[]): StaticValue;
 }
 
@@ -600,7 +598,7 @@ const NATIVE_CONSTRUCTORS = {
   ...INTL_CONSTRUCTORS,
 } satisfies Record<string, Function>;
 
-export type NativeConstructorName = keyof typeof NATIVE_CONSTRUCTORS;
+type NativeConstructorName = keyof typeof NATIVE_CONSTRUCTORS;
 
 export const isNativeConstructorName = (name: string): name is NativeConstructorName =>
   Object.hasOwn(NATIVE_CONSTRUCTORS, name);

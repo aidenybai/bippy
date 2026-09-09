@@ -9,7 +9,7 @@ import {
   UNDEFINED_VALUE,
   unknownValue,
 } from "../evaluate/values.js";
-import { nativeFunction } from "./stubs.js";
+import { nativeFunction } from "../evaluate/stubs.js";
 import type { StaticObjectValue, StaticValue } from "../types.js";
 
 // Static stand-in for `next/server`'s `NextResponse` (next@16). Each static

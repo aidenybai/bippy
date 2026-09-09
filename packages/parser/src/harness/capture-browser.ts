@@ -160,7 +160,7 @@ const waitForQuietCommits = async (
   return lastCount;
 };
 
-export interface BrowserCapturerOptions {
+interface BrowserCapturerOptions {
   headless?: boolean;
 }
 

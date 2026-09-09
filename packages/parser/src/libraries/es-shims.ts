@@ -1,5 +1,5 @@
 import { UNDEFINED_VALUE } from "../evaluate/values.js";
-import { nativeFunction } from "../frameworks/stubs.js";
+import { nativeFunction } from "../evaluate/stubs.js";
 import type { LibraryValueProvider, StaticValue } from "../types.js";
 
 // es-shims packages (`object.entries`, `array.prototype.foreach`, ...) export

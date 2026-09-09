@@ -2,8 +2,8 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { CorpusRevisionError, NoCommitsError, parseWithSchema } from "../errors.js";
-import { renderFramework } from "../frameworks/render-framework.js";
+import { CorpusRevisionError, NoCommitsError, describeError, parseWithSchema } from "../errors.js";
+import { renderCorpusEntry } from "./render-entry.js";
 import {
   dropInjectedFibers,
   unwrapTransparentRuntimeFiber,
@@ -29,7 +29,7 @@ import {
   type DiagnosticCount,
 } from "./manifest.js";
 
-export interface RunEntryOptions {
+interface RunEntryOptions {
   corpusDirectory: string;
   /** Helper scripts manifest commands may call through `$BIPPY_CORPUS_SCRIPTS`. */
   scriptsDirectory: string;
@@ -151,9 +151,6 @@ const summarizeRuntime = (capture: BrowserCaptureResult): CorpusRuntimeSummary =
   pageErrors: capture.pageErrors,
   title: capture.title,
 });
-
-const describeError = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error);
 
 const capturePath = (outputDirectory: string, entry: CorpusEntry): string =>
   path.join(outputDirectory, `${entry.id}.capture.json`);
@@ -327,7 +324,7 @@ export const runCorpusEntry = async (
     runtime: BrowserCaptureResult | null,
   ): Promise<StaticRenderResult> => {
     log("static render");
-    staticResult = await renderFramework(entry, directory, runtime?.observations);
+    staticResult = await renderCorpusEntry(entry, directory, runtime?.observations);
     result.static = {
       stats: staticResult.stats,
       diagnostics: summarizeDiagnostics(staticResult.diagnostics),

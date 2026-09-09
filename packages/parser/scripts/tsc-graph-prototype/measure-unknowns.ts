@@ -5,7 +5,7 @@ import type { Expression } from "oxc-parser";
 import ts from "typescript";
 import type { EvaluationContext } from "../../src/evaluate/context.js";
 import { Interpreter } from "../../src/evaluate/interpreter.js";
-import { renderFramework } from "../../src/frameworks/render-framework.js";
+import { renderCorpusEntry } from "../../src/corpus/render-entry.js";
 import { getSourceLocation } from "../../src/parse/source-location.js";
 import type { StaticValue } from "../../src/types.js";
 import { type TypeClassification, type TypeVerdict, classifyType } from "./classify-type.js";
@@ -305,7 +305,7 @@ const main = async (): Promise<void> => {
   for (const target of loadCorpusTargets(corpusDirectory, ids)) {
     sites.clear();
     const renderStartedAt = performance.now();
-    const rendered = await renderFramework(target.entry, target.cloneDirectory);
+    const rendered = await renderCorpusEntry(target.entry, target.cloneDirectory);
     const renderMs = performance.now() - renderStartedAt;
     const config = loadTsconfig(target.tsconfigPath);
     const built = timeSync(() => buildProgram(variant, config, target.entryFile));

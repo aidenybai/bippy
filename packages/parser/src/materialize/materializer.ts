@@ -128,12 +128,12 @@ export interface MaterializerOptions {
  * something in the primary subtree that can suspend, and `commit` tells the
  * boundary so in the layout phase of whichever proxy rendered it.
  */
-export interface SuspenseScope {
+interface SuspenseScope {
   maySuspend: boolean;
   commit: () => void;
 }
 
-export interface CompositeFrame {
+interface CompositeFrame {
   node: ComponentDefinition["node"];
   /** Closure the component was created in: a factory's components share a node but not a scope. */
   scope: Scope;
@@ -145,7 +145,7 @@ export interface CompositeFrame {
  * the static context values in scope, the RSC environment, and the guards
  * against runaway recursion.
  */
-export interface MaterializeContext {
+interface MaterializeContext {
   depth: number;
   componentStack: CompositeFrame[];
   suspenseScope: SuspenseScope | null;
@@ -162,7 +162,7 @@ export interface MaterializeContext {
 }
 
 /** The static element a proxy component stands for, handed to it as its only prop. */
-export interface ProxyInput {
+interface ProxyInput {
   props: StaticObjectValue;
   ref: StaticValue | null;
   location: SourceLocation | null;
@@ -171,7 +171,7 @@ export interface ProxyInput {
   isMemoized: boolean;
 }
 
-export interface ProxyProps {
+interface ProxyProps {
   input: ProxyInput;
 }
 
@@ -279,7 +279,7 @@ const isSamePosition = (first: MaterializeContext, second: MaterializeContext): 
   first.componentStack.every((frame, index) => isSameFrame(frame, second.componentStack[index]));
 
 /** Thrown by a proxy whose static render evaluates to a thrown value, so React's error boundaries take over. */
-export class StaticThrowError extends Error {
+class StaticThrowError extends Error {
   readonly isMaybe: boolean;
 
   constructor(reason: string, isMaybe: boolean) {

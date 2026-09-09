@@ -1,3 +1,4 @@
+import { describeError } from "../errors.js";
 import { realpathSync } from "node:fs";
 import path from "node:path";
 import { Interpreter } from "../evaluate/interpreter.js";
@@ -312,9 +313,6 @@ export class StaticRenderer {
     return this.finish(interpreter, produce(interpreter));
   }
 }
-
-const describeError = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error);
 
 export const createStaticRenderer = (options: StaticRendererOptions): StaticRenderer =>
   new StaticRenderer(options);

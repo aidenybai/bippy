@@ -1,5 +1,5 @@
 import { UNDEFINED_VALUE } from "../evaluate/values.js";
-import { nativeFunction } from "../frameworks/stubs.js";
+import { nativeFunction } from "../evaluate/stubs.js";
 import type { ExternalValueProvider, StaticValue, StubRenderTools } from "../types.js";
 
 export const USE_SYNC_EXTERNAL_STORE_PACKAGES = ["use-sync-external-store"];

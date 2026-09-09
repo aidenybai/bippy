@@ -42,7 +42,7 @@ import {
   passthroughStub,
   stubElement,
   stubValue,
-} from "./stubs.js";
+} from "../evaluate/stubs.js";
 
 // Static stand-ins for the `next/*` client surface. Shapes follow the fiber
 // trees the real components commit: `next/link` in the App Router (15.3+) is
@@ -69,7 +69,7 @@ export interface NextModel {
   request: NextRequestModel | null;
 }
 
-export type NextRouterKind = Extract<FrameworkKind, "next-app" | "next-pages">;
+type NextRouterKind = Extract<FrameworkKind, "next-app" | "next-pages">;
 
 const LINK_ONLY_PROPS: ReadonlySet<string> = new Set([
   "href",
@@ -572,7 +572,7 @@ const pagesRouterValue = (
   return importedName === "useRouter" ? nativeFunction(importedName, () => router) : router;
 };
 
-export interface NextModelOptions {
+interface NextModelOptions {
   kind: NextRouterKind;
   /** The URL being rendered (pathname plus search). */
   route: string;

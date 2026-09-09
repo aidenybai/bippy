@@ -16,40 +16,40 @@ import type { JsonValue, StaticValue, StubRenderTools } from "../types.js";
 // runtime rejects (missing values, non-function tag values) is an error the
 // caller turns into the library's fallback.
 
-export interface IcuLiteralElement {
+interface IcuLiteralElement {
   kind: "literal";
   value: string;
 }
 
-export interface IcuArgumentElement {
+interface IcuArgumentElement {
   kind: "argument";
   name: string;
 }
 
-export interface IcuStyledArgumentElement {
+interface IcuStyledArgumentElement {
   kind: "number" | "date" | "time";
   name: string;
   style: string | null;
 }
 
-export interface IcuChoiceElement {
+interface IcuChoiceElement {
   kind: "select" | "plural" | "selectordinal";
   name: string;
   offset: number;
   options: Map<string, IcuElement[]>;
 }
 
-export interface IcuPoundElement {
+interface IcuPoundElement {
   kind: "pound";
 }
 
-export interface IcuTagElement {
+interface IcuTagElement {
   kind: "tag";
   name: string;
   children: IcuElement[];
 }
 
-export type IcuElement =
+type IcuElement =
   | IcuLiteralElement
   | IcuArgumentElement
   | IcuStyledArgumentElement
@@ -57,30 +57,30 @@ export type IcuElement =
   | IcuPoundElement
   | IcuTagElement;
 
-export interface IcuFormatOptions {
+interface IcuFormatOptions {
   /** BCP 47 locale the message is formatted for; null when the running app decides it. */
   locale: string | null;
   /** Named formats (`formats.number.precise`) configured globally and per call. */
   formats: StaticValue[];
 }
 
-export interface IcuFormattedValue {
+interface IcuFormattedValue {
   kind: "value";
   value: StaticValue;
 }
 
 /** The runtime throws while formatting, so the library substitutes its fallback. */
-export interface IcuFormatError {
+interface IcuFormatError {
   kind: "error";
   reason: string;
 }
 
-export interface IcuFormatUnknown {
+interface IcuFormatUnknown {
   kind: "unknown";
   reason: string;
 }
 
-export type IcuFormatResult = IcuFormattedValue | IcuFormatError | IcuFormatUnknown;
+type IcuFormatResult = IcuFormattedValue | IcuFormatError | IcuFormatUnknown;
 
 interface Cursor {
   text: string;
@@ -344,7 +344,7 @@ const readElements = (
 };
 
 /** The message's AST, or null when it does not parse (or uses syntax this parser does not cover). */
-export const parseIcuMessage = (message: string): IcuElement[] | null => {
+const parseIcuMessage = (message: string): IcuElement[] | null => {
   const cursor: Cursor = { text: message, index: 0 };
   const elements = readElements(cursor, 0, null, false);
   return elements !== null && cursor.index === message.length ? elements : null;

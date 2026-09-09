@@ -117,7 +117,7 @@ export const isUserDrivenEventHandlerProp = (name: string): boolean => {
   return isUserDrivenEventType(type) && !VALUE_EVENTS.has(type);
 };
 
-export interface NativeEventTarget {
+interface NativeEventTarget {
   addEventListener(type: string, listener: () => void): void;
   removeEventListener(type: string, listener: () => void): void;
 }
@@ -191,7 +191,7 @@ export const EVENT_LISTENER_METHODS = new Set([
   "removeListener",
 ]);
 
-export const isEventTarget = (realm: HostRealm, receiver: StaticValue): boolean =>
+const isEventTarget = (realm: HostRealm, receiver: StaticValue): boolean =>
   isNativeEventTarget(receiver) ||
   (receiver.kind === "global" && realm.isGlobalInstanceOf(receiver.name, "EventTarget"));
 

@@ -53,11 +53,18 @@ import type {
 } from "../types.js";
 import { ForwardRefTag } from "../work-tags.js";
 import { findRouteFile, routeIdFromFile, splitPathname } from "./route-files.js";
-import { element, emptyStub, hostElement, nativeFunction, omitProps, stubValue } from "./stubs.js";
+import {
+  element,
+  emptyStub,
+  hostElement,
+  nativeFunction,
+  omitProps,
+  stubValue,
+} from "../evaluate/stubs.js";
 
 const SCROLL_RESTORATION_PROPS: ReadonlySet<string> = new Set(["getKey", "storageKey"]);
 
-export interface ReactRouterRouteOptions {
+interface ReactRouterRouteOptions {
   /**
    * Module that boots the router. Either an entry with a root render call
    * (`<RouterProvider router={router} />` or `<BrowserRouter><Routes>…`) or a
@@ -75,7 +82,7 @@ export interface ReactRouterRouteOptions {
  * an `ExternalValueProvider` that models the router's exports, and the route
  * renderer for framework-mode projects.
  */
-export interface ReactRouterModel {
+interface ReactRouterModel {
   pathname: string;
   /** Captured data-router state for this URL, when a runtime capture supplied one. */
   observed: ObservedRouterState | null;
@@ -188,7 +195,7 @@ const ROUTE_CONFIG_PACKAGE = "@react-router/dev/routes";
  * matched child route, the params accumulated down to this match, the route id
  * that keys loader data, and the URL prefix descendant `<Routes>` match after.
  */
-export const ROUTE_CONTEXT: ContextDefinition = {
+const ROUTE_CONTEXT: ContextDefinition = {
   name: "RouteContext",
   displayName: "Route",
   defaultValue: NULL_VALUE,

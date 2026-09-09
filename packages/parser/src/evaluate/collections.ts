@@ -38,7 +38,7 @@ interface CollectionState {
   isExternallyMutable: boolean;
 }
 
-export type CollectionKind = "Map" | "Set" | "WeakMap" | "WeakSet";
+type CollectionKind = "Map" | "Set" | "WeakMap" | "WeakSet";
 
 const isKeyed = (kind: CollectionKind): boolean => kind === "Map" || kind === "WeakMap";
 
