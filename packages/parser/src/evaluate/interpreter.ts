@@ -213,6 +213,7 @@ import {
   withNarrowedTarget,
 } from "./narrowing.js";
 import { evaluateReactApiCall } from "./react-calls.js";
+import { RootRenderState } from "./root-render.js";
 import { createScope, declareInScope, findOwningScope, lookupScope } from "./scope.js";
 import {
   evaluateTypeScriptDeclaration,
@@ -626,8 +627,7 @@ export class Interpreter {
   readonly storageAreas: StorageAreas;
   readonly indexedDb = createIndexedDbFactory();
   readonly timers: TimerQueue;
-  /** Elements handed to `createRoot().render`/`hydrateRoot`/`ReactDOM.render` calls that were evaluated. */
-  readonly rootRenders: StaticValue[] = [];
+  readonly rootRender = new RootRenderState();
   /** Observable changes (state commits, heap mutations) so far; a timer tick that adds none is steady state. */
   changeCount = 0;
   private readonly heapJournals: HeapJournal[] = [];
@@ -1649,6 +1649,13 @@ export class Interpreter {
       if (!journal.isPreexisting(target)) return;
       journal.record(target);
     }
+  }
+
+  /** The first root render on the current path wins; later `root.render` calls re-render the same root. */
+  recordRootRender(element: StaticValue): void {
+    if (this.rootRender.element !== null) return;
+    this.recordStateMutation(this.rootRender);
+    this.rootRender.element = element;
   }
 
   recordStateMutation(state: JournaledState<unknown>): void {

@@ -349,7 +349,7 @@ const countChildren = (children: StaticValue): StaticValue => {
 const createReactRoot = (interpreter: Interpreter): StaticValue =>
   objectFromRecord({
     render: nativeFunction("render", ([element]) => {
-      interpreter.rootRenders.push(element ?? UNDEFINED_VALUE);
+      interpreter.recordRootRender(element ?? UNDEFINED_VALUE);
       return UNDEFINED_VALUE;
     }),
     unmount: nativeFunction("unmount", () => UNDEFINED_VALUE),
@@ -599,11 +599,11 @@ export const evaluateReactApiCall = (
     case "createRoot":
       return createReactRoot(interpreter);
     case "hydrateRoot":
-      interpreter.rootRenders.push(second ?? UNDEFINED_VALUE);
+      interpreter.recordRootRender(second ?? UNDEFINED_VALUE);
       return createReactRoot(interpreter);
     case "render":
     case "hydrate":
-      interpreter.rootRenders.push(first ?? UNDEFINED_VALUE);
+      interpreter.recordRootRender(first ?? UNDEFINED_VALUE);
       return unknownValue(`${api}() root`, location);
     case "Children.map":
       return mapChildren(interpreter, first, second, third, context);

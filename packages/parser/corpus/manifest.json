@@ -1780,6 +1780,7 @@
       "url": "http://localhost:1917/",
       "readyTimeoutMs": 600000,
       "settleMs": 10000,
+      "capturedGlobals": ["supportsBigInt"],
       "static": {
         "rootDirectory": "packages/client",
         "entry": "src/client/index.tsx",

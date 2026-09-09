@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vite-plus/test";
 import { comparePatternToRuntime } from "../src/harness/compare.js";
 import type { RuntimeFiberSnapshot } from "../src/harness/snapshot.js";
-import type { PatternFiber, PatternNode, PatternOpaque } from "../src/harness/static-pattern.js";
+import type {
+  PatternBranch,
+  PatternFiber,
+  PatternNode,
+  PatternOpaque,
+  PatternWildcard,
+} from "../src/harness/static-pattern.js";
 
 const runtimeFiber = (
   name: string,
@@ -28,6 +34,21 @@ const opaqueFiber = (name: string, passedChildren: PatternNode[]): PatternOpaque
   reason: `${name} is not analyzed`,
   passedChildren,
 });
+
+const patternBranch = (alternatives: PatternNode[][]): PatternBranch => ({
+  kind: "branch",
+  variable: "choice",
+  reason: "unknown flag",
+  location: null,
+  preferredIndex: 0,
+  alternatives,
+});
+
+const patternWildcard: PatternWildcard = {
+  kind: "wildcard",
+  reason: "unknown children",
+  isTruncated: false,
+};
 
 describe("comparePatternToRuntime", () => {
   it("accepts a bundler-deconflicted `$N` suffix on the runtime name", () => {
@@ -131,6 +152,33 @@ describe("comparePatternToRuntime", () => {
     expect(report.slotsMatched).toBe(2);
     expect(report.slotsUnmatched).toBe(0);
     expect(report.opaqueRenamed).toBe(0);
+  });
+
+  it("matches a wide list of decision-free siblings beside a decision without deep recursion", () => {
+    const rows = Array.from({ length: 6000 }, () =>
+      patternFiber("Row", [patternFiber("td", [], "HostComponent")]),
+    );
+    const runtimeRows = rows.map(() =>
+      runtimeFiber("Row", [runtimeFiber("td", [], "HostComponent")]),
+    );
+    const report = comparePatternToRuntime(
+      [patternFiber("Table", [patternBranch([[patternFiber("Header")], []]), ...rows])],
+      [runtimeFiber("Table", runtimeRows)],
+    );
+    expect(report.status).toBe("exact");
+    expect(report.matchedFibers).toBe(1 + rows.length * 2);
+  });
+
+  it("counts a slot's consumed fibers once when its passed children backtrack", () => {
+    const report = comparePatternToRuntime(
+      [opaqueFiber("Layout", [patternBranch([[patternWildcard], [patternFiber("Page")]])])],
+      [runtimeFiber("Layout", [runtimeFiber("Page")])],
+    );
+    expect(report.status).toBe("partial");
+    expect(report.matchedFibers).toBe(1);
+    expect(report.wildcardAbsorbedFibers).toBe(0);
+    expect(report.opaqueSkippedFibers).toBe(1);
+    expect(report.coverage).toBe(1);
   });
 
   it("prefers the slot explaining the most runtime fibers over one that hides them in an unmatched slot", () => {

@@ -267,8 +267,7 @@ export class StaticRenderer {
     const rootCalls = findRootRenderCalls(module);
     if (rootCalls.length === 0) {
       interpreter.initializeModule(module);
-      const [rootElement] = interpreter.rootRenders;
-      if (rootElement) return rootElement;
+      if (interpreter.rootRender.element) return interpreter.rootRender.element;
       interpreter.report(
         "no-root-render",
         `no createRoot().render / hydrateRoot / ReactDOM.render call found in ${module.filePath}`,

@@ -114,6 +114,8 @@ export interface ComparisonTally {
 
 interface MatchTally extends ComparisonTally {
   decisions: MatchDecision[];
+  /** Runtime fibers the innermost open slot's passed children consumed; zeroed once that slot is tallied. */
+  slotConsumedFibers: number;
 }
 
 export interface ComparisonReport extends ComparisonTally {
@@ -145,6 +147,7 @@ const EMPTY_TALLY: MatchTally = {
   branchesResolved: 0,
   repeatIterations: 0,
   decisions: [],
+  slotConsumedFibers: 0,
 };
 
 const addTally = (left: MatchTally, right: Partial<MatchTally>): MatchTally => ({
@@ -163,6 +166,7 @@ const addTally = (left: MatchTally, right: Partial<MatchTally>): MatchTally => (
   branchesResolved: left.branchesResolved + (right.branchesResolved ?? 0),
   repeatIterations: left.repeatIterations + (right.repeatIterations ?? 0),
   decisions: right.decisions ? [...right.decisions, ...left.decisions] : left.decisions,
+  slotConsumedFibers: left.slotConsumedFibers + (right.slotConsumedFibers ?? 0),
 });
 
 interface Continuation {
@@ -364,10 +368,29 @@ class Matcher {
     path: string[],
     continuation: Continuation,
   ): MatchTally | null {
-    if (index === patterns.length) return continuation(runtimeIndex);
-    return this.matchNode(patterns[index], runtime, runtimeIndex, path, (nextIndex) =>
-      this.matchList(patterns, index + 1, runtime, nextIndex, path, continuation),
-    );
+    let prefix = EMPTY_TALLY;
+    let nextIndex = index;
+    let nextRuntimeIndex = runtimeIndex;
+    while (nextIndex < patterns.length && !hasPatternDecisions(patterns[nextIndex])) {
+      const nodeTally = this.matchNode(
+        patterns[nextIndex],
+        runtime,
+        nextRuntimeIndex,
+        path,
+        () => EMPTY_TALLY,
+      );
+      if (!nodeTally) return null;
+      prefix = addTally(prefix, nodeTally);
+      nextIndex++;
+      nextRuntimeIndex++;
+    }
+    const rest =
+      nextIndex === patterns.length
+        ? continuation(nextRuntimeIndex)
+        : this.matchNode(patterns[nextIndex], runtime, nextRuntimeIndex, path, (restIndex) =>
+            this.matchList(patterns, nextIndex + 1, runtime, restIndex, path, continuation),
+          );
+    return rest ? addTally(rest, prefix) : null;
   }
 
   // Nothing backtracks into a decision-free subtree, so matching it eagerly
@@ -673,15 +696,16 @@ class Matcher {
     start: number,
     path: string[],
   ): SlotMatch | null {
-    let consumedFibers = 0;
     const tally = this.matchList(pattern.passedChildren, 0, siblings, start, path, (nextIndex) => {
       if (nextIndex === start && siblings.length > 0) return null;
-      for (let index = start; index < nextIndex; index++) {
-        consumedFibers += countSnapshotFibers(siblings[index]);
-      }
-      return EMPTY_TALLY;
+      const slotConsumedFibers = siblings
+        .slice(start, nextIndex)
+        .reduce((total, sibling) => total + countSnapshotFibers(sibling), 0);
+      return { ...EMPTY_TALLY, slotConsumedFibers };
     });
-    return tally ? { tally, consumedFibers } : null;
+    return tally
+      ? { tally: { ...tally, slotConsumedFibers: 0 }, consumedFibers: tally.slotConsumedFibers }
+      : null;
   }
 }
 
@@ -721,7 +745,7 @@ export const matchPatternToRuntime = (
     if (!(error instanceof BudgetExceeded)) throw error;
     budgetExhausted = true;
   }
-  const { decisions, ...base } = tally ?? EMPTY_TALLY;
+  const { decisions, slotConsumedFibers: _slotConsumedFibers, ...base } = tally ?? EMPTY_TALLY;
   const denominator = Math.max(
     1,
     runtimeFibers - base.opaqueSkippedFibers - base.wildcardAbsorbedFibers,
