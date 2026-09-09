@@ -1,3 +1,4 @@
+import { isBundledDefaultExportName, isBundlerDedupedName } from "./bundler-names.js";
 import { countSnapshotFibers, type RuntimeFiberSnapshot } from "./snapshot.js";
 import {
   countPatternFibers,
@@ -38,14 +39,6 @@ const isBundlerPlaceholderName = (name: string): boolean => BUNDLER_PLACEHOLDER_
 
 const isBundlerClassName = (name: string, expected: string): boolean =>
   isBundlerPlaceholderName(name) || name === `_${expected}`;
-
-// A binding that collides with another in the bundled scope is renamed with a
-// counter: `Toaster2` by esbuild (Vite dev pre-bundling), `Toaster$1` by rollup.
-const BUNDLER_DEDUPE_SUFFIX = /^\$?\d+$/;
-
-const isBundlerDedupedName = (sourceName: string, runtimeName: string): boolean =>
-  runtimeName.startsWith(sourceName) &&
-  BUNDLER_DEDUPE_SUFFIX.test(runtimeName.slice(sourceName.length));
 
 const WRAPPED_DISPLAY_NAME = /^([^()]+)\((.+)\)$/;
 
@@ -749,6 +742,7 @@ class Matcher {
     if (isHostTag(actual.tag)) return false;
     return (
       isBundlerRenamedName(pattern.name, actual.name) ||
+      isBundledDefaultExportName(pattern.name, actual.name) ||
       (isClassTag(actual.tag) && isBundlerClassName(actual.name, pattern.name))
     );
   }

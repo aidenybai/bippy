@@ -17,6 +17,7 @@
         "shell": { "user": { "name": "Ada", "plan": "pro" }, "unreadCount": 3 },
         "0-0": { "title": "Post hello", "tags": ["react", "router"], "publishedAt": null }
       },
+      "actionData": null,
       "navigationState": "idle",
       "revalidationState": "idle",
       "fetchers": []

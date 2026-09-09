@@ -100,6 +100,7 @@ const capturedRouterStateSchema: z.ZodType<CapturedRouterState> = z.object({
   location: z.object({ pathname: z.string(), search: z.string(), hash: z.string() }),
   matches: z.array(capturedRouteMatchSchema),
   loaderData: capturedValueRecordSchema,
+  actionData: capturedValueRecordSchema.nullable().optional(),
   navigationState: routerActivityStateSchema,
   revalidationState: z.enum(["idle", "loading"]),
   fetchers: z.array(capturedFetcherSchema).optional(),

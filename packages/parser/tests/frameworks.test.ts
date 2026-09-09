@@ -672,3 +672,68 @@ describe("react router data router with JSX routes", () => {
     expect(tree).toMatch(/\|1\n\s+\?unknown\(react-router: route path is unknown\(JSON\.parse\)\)/);
   });
 });
+
+describe("remix classic compiler (remix.config.js, no client entry)", () => {
+  const target = (route: string) => render("remix-classic", { framework: "react-router", route });
+
+  it("hydrates <StrictMode><RemixBrowser /></StrictMode> like @remix-run/dev's default entry", async () => {
+    const { tree, errors } = await target("/");
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<HostRoot>\n\s+<StrictMode>\n\s+<RemixBrowser>\n\s+<Remix>\n\s+<RouterProvider>\n\s+<DataRouterState>\n\s+<Location>\n\s+<RenderedRoute>\n\s+<Route>\n\s+<default>\n\s+<html>/,
+    );
+    expect(tree).toMatch(/<LiveReload>\n\s+<script>\n\s+<Fragment>$/);
+  });
+
+  it("reads the `app/routes` file convention and never inlines critical CSS", async () => {
+    const { tree, errors } = await target("/posts/hello");
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<Links>\n\s+<Fragment>\n\s+<link>/);
+    expect(tree).toMatch(
+      /<Outlet>\n\s+<ContextProvider>\n\s+<RenderedRoute>\n\s+<Route>\n\s+<default>\n\s+<article>\n\s+<h1>/,
+    );
+    expect(tree).toContain("useActionData() is only known at runtime");
+  });
+
+  it("leaves MDX route modules to the framework's compiler as an explicit unknown", async () => {
+    const { tree, errors } = await target("/docs");
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<Route>\n\s+\?unknown\(mdx route module routes\/docs.mdx is compiled by the framework\)/,
+    );
+    expect(tree).toMatch(
+      /<Meta>\n\s+\?unknown\(meta and links of routes\/docs.mdx come from the framework's compiler\)\n\s+<Links>\n\s+\?unknown\(meta and links/,
+    );
+  });
+
+  it("keeps <Scripts>'s preloads when nothing re-renders the router after hydration", async () => {
+    const { tree } = await target("/");
+    expect(tree).toMatch(
+      /<Scripts>\n\s+<link>\n\s+<link>\n\s+<Fragment>\n\s+\?unknown\(remix: entry imports come from the build manifest\)\n\s+<link>\n\s+<link>\n\s+<Fragment>\n\s+<script>\n\s+<script>\n\s+<Fragment>\n\s+<LiveReload>/,
+    );
+  });
+});
+
+describe("remix vite plugin", () => {
+  const target = (route: string) => render("remix-vite", { framework: "react-router", route });
+
+  it("inlines critical CSS in <Links>, renders <LiveReload> as null and models useFetcher().Form", async () => {
+    const { tree, errors } = await target("/");
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<Links>\n\s+<style>\n\s+<Fragment>\n\s+<link>/);
+    expect(tree).toMatch(/<LiveReload>$/);
+    expect(tree).toMatch(/<Index>\n\s+<fetcher.Form>\n\s+<Form>\n\s+<form>\n\s+<button>/);
+  });
+
+  it("skips the manifest preload under future.v3_lazyRouteDiscovery and preloads the matched modules", async () => {
+    const { tree } = await target("/about");
+    expect(tree).toMatch(
+      /<Scripts>\n\s+<link>\n\s+<Fragment>\n\s+<link> key="\/app\/root.tsx"\n\s+<link> key="\/app\/routes\/about.tsx"\n\s+<Fragment>\n\s+<script>\n\s+<script>\n\s+<Fragment>\n\s+<LiveReload>$/,
+    );
+  });
+
+  it("re-renders <Scripts> to null once route discovery patches in a linked route", async () => {
+    const { tree } = await target("/");
+    expect(tree).toMatch(/<Link>\n\s+<Link>\n\s+<a>\n\s+<Scripts>\n\s+<LiveReload>$/);
+  });
+});
