@@ -225,7 +225,10 @@ const liftObject = (
   if (value instanceof ArrayBuffer) return bytesValue("ArrayBuffer", new Uint8Array(value));
   const interfaceName = getNativeInterfaceName(value);
   if (ArrayBuffer.isView(value) && isTypedArrayName(interfaceName)) {
-    return bytesValue(interfaceName, new Uint8Array(value.buffer, value.byteOffset, value.byteLength));
+    return bytesValue(
+      interfaceName,
+      new Uint8Array(value.buffer, value.byteOffset, value.byteLength),
+    );
   }
   if (host !== null) {
     if (value === host.document) return { kind: "global", name: "document" };

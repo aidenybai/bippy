@@ -415,11 +415,7 @@ export const forEachEscapedCallable = (value: StaticValue, walk: EscapeWalk): vo
   visitEscapedValue(value, walk, visits);
 };
 
-const visitEscapedValue = (
-  value: StaticValue,
-  walk: EscapeWalk,
-  visits: EscapeVisits,
-): void => {
+const visitEscapedValue = (value: StaticValue, walk: EscapeWalk, visits: EscapeVisits): void => {
   if (value.kind === "function") {
     invokeOnce(value, null, walk, visits);
     return;

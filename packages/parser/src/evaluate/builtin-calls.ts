@@ -1289,7 +1289,8 @@ const arrayLikeToList = (value: Extract<StaticValue, { kind: "object" }>): Stati
     return unknownValue("Array.from of an array-like with dynamic length", null);
   }
   const itemCount = toLength(length.value);
-  if (itemCount > MAX_ARRAY_LIKE_LENGTH) return { kind: "repeat", item: UNDEFINED_VALUE, location: null };
+  if (itemCount > MAX_ARRAY_LIKE_LENGTH)
+    return { kind: "repeat", item: UNDEFINED_VALUE, location: null };
   return listValue(
     Array.from({ length: itemCount }, (_, index) => getObjectProperty(value, String(index))),
   );

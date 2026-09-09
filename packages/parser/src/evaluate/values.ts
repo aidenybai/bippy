@@ -341,7 +341,8 @@ const lookupObjectProperty = (
       let fromEarlier: StaticValue | null = null;
       return branchValue(
         spread.alternatives.map((alternative) => {
-          const own = getSpreadProperty(memo, alternative, key) ?? unknownSpreadProperty(alternative, key);
+          const own =
+            getSpreadProperty(memo, alternative, key) ?? unknownSpreadProperty(alternative, key);
           if (isPresent(own)) return own;
           fromEarlier ??= getMemoizedObjectProperty(memo, object, key, index);
           return fromEarlier;
@@ -950,11 +951,7 @@ const isPlainDataObject = (object: StaticObjectValue): boolean =>
  * Deep equality as lodash `isEqual` defines it: SameValueZero on primitives,
  * arrays by index, plain objects by own enumerable keys, identity otherwise.
  */
-export const compareDeeply = (
-  left: StaticValue,
-  right: StaticValue,
-  depth = 0,
-): boolean | null => {
+export const compareDeeply = (left: StaticValue, right: StaticValue, depth = 0): boolean | null => {
   if (left === right) return true;
   if (left.kind === "primitive" && right.kind === "primitive") {
     return left.value === right.value || (left.value !== left.value && right.value !== right.value);
@@ -1256,7 +1253,11 @@ export const getTruthiness = (value: StaticValue): boolean | null => {
 /** `Boolean(value)` / `!!value`, keeping a branch's alternatives and preferred side. */
 /** A decided comparison as `true`/`false`, an undecided one as an unknown boolean. */
 export const decidedBooleanValue = (decision: boolean | null, reason: string): StaticValue =>
-  decision === null ? unknownPrimitiveValue("boolean", reason) : decision ? TRUE_VALUE : FALSE_VALUE;
+  decision === null
+    ? unknownPrimitiveValue("boolean", reason)
+    : decision
+      ? TRUE_VALUE
+      : FALSE_VALUE;
 
 export const toBooleanValue = (value: StaticValue): StaticValue =>
   mapValue(value, (alternative) => {

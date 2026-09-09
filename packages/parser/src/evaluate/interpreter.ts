@@ -1330,7 +1330,8 @@ export class Interpreter {
   private isAbsentGlobal(name: string, environment: RenderEnvironment | null): boolean {
     if (environment === "server") return this.serverRealm.isForeignGlobal(name);
     if (this.windowGlobals.has(name)) return false;
-    if (BUNDLER_INJECTED_NAMES.has(name)) return isBundlerUndeclaredName(this.project.bundler, name);
+    if (BUNDLER_INJECTED_NAMES.has(name))
+      return isBundlerUndeclaredName(this.project.bundler, name);
     const windowKeys = this.pageState?.windowKeys;
     return windowKeys === undefined
       ? this.clientRealm.isForeignGlobal(name)
@@ -2119,8 +2120,7 @@ export class Interpreter {
     if (inlined === null || inlined === undefined) return null;
     const rootName = chain[0];
     const isBound =
-      lookupScope(context.scope, rootName) !== undefined ||
-      context.module.bindings.has(rootName);
+      lookupScope(context.scope, rootName) !== undefined || context.module.bindings.has(rootName);
     return isBound ? null : inlined;
   }
 
