@@ -22,6 +22,13 @@ const shapedStringValue = (reason: string, shape: StringShape): StaticValue =>
     ? primitiveValue(shape.prefix)
     : { ...unknownPrimitiveValue("string", reason), stringShape: shape };
 
+/** An unknown string with at least one character, like a date's text forms. */
+export const nonEmptyStringValue = (reason: string): StaticValue =>
+  shapedStringValue(reason, { prefix: "", length: null, minLength: 1 });
+
+export const getShapeMinLength = (shape: StringShape): number =>
+  shape.length ?? Math.max(shape.prefix.length, shape.minLength ?? 0);
+
 export const rangedNumberValue = (
   reason: string,
   numberRange: NumberRange,
@@ -71,6 +78,7 @@ export const concatenateStrings = (left: StaticValue, right: StaticValue): Stati
       leftShape.length === null || rightShape.length === null
         ? null
         : leftShape.length + rightShape.length,
+    minLength: getShapeMinLength(leftShape) + getShapeMinLength(rightShape),
   });
   const composition = composeStrings(left, right);
   return concatenated.kind === "unknown-primitive" && composition
@@ -158,7 +166,7 @@ export const getShapedStringLength = (receiver: StaticUnknownPrimitiveValue): St
   const shape = receiver.stringShape;
   if (shape?.length !== null && shape?.length !== undefined) return primitiveValue(shape.length);
   return rangedNumberValue("length of dynamic value", {
-    min: shape?.prefix.length ?? 0,
+    min: shape ? getShapeMinLength(shape) : 0,
     max: Number.POSITIVE_INFINITY,
   });
 };

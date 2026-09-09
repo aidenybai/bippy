@@ -600,9 +600,13 @@ export interface CapturedPageState {
   userAgent?: string;
   language?: string;
   maxTouchPoints?: number;
+  /** How each image the page loaded by the snapshot had settled, by its resolved `src`; absent in older captures. */
+  images?: Record<string, ImageLoadOutcome>;
   localStorage: Record<string, string>;
   sessionStorage: Record<string, string>;
 }
+
+export type ImageLoadOutcome = "loaded" | "error";
 
 /** The environment the server process ran with, whole: unlisted variables are unset. */
 export interface ProcessEnvironment {
@@ -716,10 +720,11 @@ export interface ClockReading {
   timerUnderrunMs: number;
 }
 
-/** Leading characters of an unknown string and, when fixed, its length; see `evaluate/primitive-shapes.ts`. */
+/** Leading characters of an unknown string and its length, fixed or bounded below; see `evaluate/primitive-shapes.ts`. */
 export interface StringShape {
   prefix: string;
   length: number | null;
+  minLength?: number;
 }
 
 /**

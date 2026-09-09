@@ -1,0 +1,24 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "minStrictCoverage": 1,
+  "route": "/",
+  "origin": "http://localhost:3000",
+  "notes": "new Image() is a detached <img>; its `src` assignment settles with the load/error outcome the capture observed for that URL (keyed by resolved URL), running the `onload`/`onerror` handler and `load`/`error` listeners in a later task. Reassigning `onload` replaces the earlier handler. A URL the capture did not observe leaves the handlers escaped (an honest branch), and a missing src errors synchronously like Radix Avatar expects.",
+  "observations": {
+    "globals": {},
+    "queries": [],
+    "page": {
+      "cookie": "",
+      "localStorage": {},
+      "sessionStorage": {},
+      "images": {
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==": "loaded",
+        "http://localhost:3000/missing.png": "error"
+      }
+    }
+  },
+  "expectedStates": 7,
+  "expectOmitted": false
+}

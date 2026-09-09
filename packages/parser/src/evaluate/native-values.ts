@@ -695,6 +695,29 @@ export const constructNativeObject = (
   }
 };
 
+/** Node constructors a page may call directly; each makes a detached node of the document, as the matching `document.create*` factory does. */
+const HOST_NODE_CONSTRUCTORS: ReadonlySet<string> = new Set([
+  "DocumentFragment",
+  "Text",
+  "Comment",
+  "Image",
+]);
+
+export const isHostNodeConstructorName = (name: string): boolean =>
+  HOST_NODE_CONSTRUCTORS.has(name);
+
+/** `new <name>(...args)` against the static document's own constructor; null when an argument is uncertain or the document installs none. */
+export const constructHostNode = (
+  host: HostDocument,
+  name: string,
+  args: StaticValue[],
+): StaticValue | null => {
+  const constructor: unknown = Reflect.get(host.globalObject, name);
+  const natives = toNativeArguments(args, host);
+  if (typeof constructor !== "function" || natives === null) return null;
+  return fromNativeValue(Reflect.construct(constructor, natives), `new ${name}()`, host);
+};
+
 /**
  * `Document` members the static document answers like a fresh page's: its tree
  * roots and node factories, parser facts, and the focus and selection nothing

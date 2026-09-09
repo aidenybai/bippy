@@ -1,5 +1,5 @@
 import type { NumberRange, StaticObjectValue, StaticValue } from "../types.js";
-import { rangedNumberValue } from "./primitive-shapes.js";
+import { nonEmptyStringValue, rangedNumberValue } from "./primitive-shapes.js";
 import { objectFromRecord, objectValue, unknownPrimitiveValue } from "./values.js";
 
 const clockDates = new WeakSet<StaticObjectValue>();
@@ -71,7 +71,7 @@ export const createClockDateValue = (reading: StaticValue): StaticValue => {
     members[name] = nativeMethod(name, () => unknownPrimitiveValue("number", describe(name)));
   }
   for (const name of STRING_METHODS) {
-    members[name] = nativeMethod(name, () => unknownPrimitiveValue("string", describe(name)));
+    members[name] = nativeMethod(name, () => nonEmptyStringValue(describe(name)));
   }
   for (const name of SETTERS) {
     members[name] = nativeMethod(name, () => {

@@ -3,6 +3,7 @@
 import "./zod-jitless.js";
 import type { CapturedPageState, CapturedValue, RootObservations } from "../types.js";
 import { createCommitRecorder } from "./commit-recorder.js";
+import { installImageTracker } from "./image-outcomes.js";
 import { readKeaStores } from "./kea-store.js";
 import { readModuleExports } from "./module-exports.js";
 import { captureWithSettledPromises } from "./promise-outcomes.js";
@@ -53,6 +54,7 @@ const readWindowKeys = (): string[] => {
   return [...names];
 };
 const initialWindowKeys = readWindowKeys();
+const readImageOutcomes = installImageTracker();
 
 const readPageState = (): CapturedPageState => ({
   cookie: document.cookie,
@@ -62,6 +64,7 @@ const readPageState = (): CapturedPageState => ({
   userAgent: navigator.userAgent,
   language: navigator.language,
   maxTouchPoints: navigator.maxTouchPoints,
+  images: readImageOutcomes(),
   localStorage: initialLocalStorage,
   sessionStorage: initialSessionStorage,
 });

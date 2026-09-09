@@ -45,9 +45,11 @@ import { createErrorValue, isErrorConstructorName } from "./errors.js";
 import { callFetch } from "./fetch.js";
 import { nativeFunction } from "./stubs.js";
 import {
+  constructHostNode,
   constructNativeObject,
   fromNativeValue,
   getNativeOwnEntries,
+  isHostNodeConstructorName,
   isNativeConstructorName,
   toNativeArguments,
 } from "./native-values.js";
@@ -946,6 +948,11 @@ const callGlobal = (
   if (isConstructor && name === "TextDecoder") return createTextDecoder(first, location);
   if (isConstructor && isDomObserverName(name))
     return createDomObserver(interpreter, name, first, location);
+  if (isConstructor && isHostNodeConstructorName(name)) {
+    const host = interpreter.getHostDocument(context.environment);
+    const node = host && constructHostNode(host, name, args);
+    if (node) return node;
+  }
   if (isConstructor && isNativeConstructorName(name) && (name !== "Date" || args.length > 0)) {
     const constructed = constructNativeObject(name, args);
     if (constructed) return constructed;

@@ -46,6 +46,8 @@ export interface FixtureManifest {
   framework: FrameworkKind;
   /** URL pathname for routed frameworks; the runtime side navigates here before mounting. */
   route?: string;
+  /** Origin the page was captured at, which page-relative references (`img.src`) resolve against. */
+  origin?: string;
   anchor?: string;
   externalPackages?: string[];
   /** Runtime state replayed into the static render, as a live capture would record it. */
@@ -175,6 +177,7 @@ export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult
       rootDirectory: fixture.directory,
       tsconfigPath: join(fixture.directory, "tsconfig.json"),
       externalPackageAllowList: fixture.manifest.externalPackages,
+      origin: fixture.manifest.origin,
       observations: fixture.manifest.observations,
       settleMs: SETTLE_QUIET_MS,
       timerUnderrunMs: NODE_TIMER_UNDERRUN_MS,

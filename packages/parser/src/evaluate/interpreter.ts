@@ -48,6 +48,7 @@ import { getEsbuildDeclarationName } from "../graph/esbuild-symbol-names.js";
 import { isModuleRecord, type ModuleGraph } from "../graph/module-graph.js";
 import { isInsideNodeModules } from "../graph/module-resolver.js";
 import { nativeFunction } from "./stubs.js";
+import { assignEventHandlerAttribute, assignImageSource } from "./event-listeners.js";
 import { getLibraryValue } from "../libraries/index.js";
 import { PurePackages } from "../libraries/pure-packages.js";
 import {
@@ -730,7 +731,7 @@ export class Interpreter {
   private readonly windowGlobals = new Map<string, StaticValue>();
   private readonly defines = new Map<string, StaticValue>();
   private readonly definedEnvironmentObjects = new Set<string>();
-  private readonly pageState: CapturedPageState | null;
+  readonly pageState: CapturedPageState | null;
   private readonly processEnvironment: ProcessEnvironment | null;
   private readonly clientRealm: HostRealm;
   private readonly serverRealm: HostRealm;
@@ -872,6 +873,17 @@ export class Interpreter {
   /** The host whose globals code in this rendering environment sees: server-rendered code runs in Node whatever the client host is. */
   getRealm(environment: RenderEnvironment | null): HostRealm {
     return environment === "server" ? this.serverRealm : this.clientRealm;
+  }
+
+  getHostDocument(environment: RenderEnvironment | null): HostDocument | null {
+    return environment === "server" ? null : this.hostDocument;
+  }
+
+  /** The absolute URL a page-relative reference (`img.src`, `fetch("/api")`) names, as the captured page resolved it; null without a known page. */
+  resolvePageUrl(reference: string): string | null {
+    if (this.origin === null || this.history.route === null) return null;
+    const pageUrl = new URL(this.history.route, this.origin);
+    return URL.canParse(reference, pageUrl) ? new URL(reference, pageUrl).href : null;
   }
 
   private getReactVersionExport(packageName: string, exportedName: string): StaticValue | null {
@@ -1299,9 +1311,14 @@ export class Interpreter {
             value.kind === "primitive" && typeof value.value === "number" ? value.value : 0;
         }
         return target;
-      case "native-object":
-        setNativeObjectMember(target, propertyName, value);
+      case "native-object": {
+        const realm = this.getRealm(context.environment);
+        if (assignEventHandlerAttribute(this, realm, target, propertyName, value)) return target;
+        const assign = (): void => setNativeObjectMember(target, propertyName, value);
+        if (propertyName === "src") assignImageSource(this, target, value, context, assign);
+        else assign();
         return target;
+      }
       case "proxy": {
         const trap = getObjectProperty(target.handler, "set");
         if (trap.kind === "primitive" && trap.value === undefined) {
@@ -1603,7 +1620,7 @@ export class Interpreter {
       : null;
     return (
       pageLocationMember ??
-      getBuiltinGlobal(hostName, realm, renderEnvironment === "server" ? null : this.hostDocument, {
+      getBuiltinGlobal(hostName, realm, this.getHostDocument(renderEnvironment), {
         declared: this.processEnvironment,
         renderEnvironment,
         definedObjects: this.definedEnvironmentObjects,

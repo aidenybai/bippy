@@ -121,6 +121,7 @@ const capturedPageStateSchema: z.ZodType<CapturedPageState> = z.object({
   userAgent: z.string().optional(),
   language: z.string().optional(),
   maxTouchPoints: z.number().optional(),
+  images: z.record(z.string(), z.enum(["loaded", "error"])).optional(),
   localStorage: stringRecordSchema,
   sessionStorage: stringRecordSchema,
 });
