@@ -163,6 +163,7 @@ import {
   concatenateStrings,
   getShapedStringCharacter,
   getShapedStringLength,
+  toStringValue,
 } from "./primitive-shapes.js";
 import {
   getCaughtValue,
@@ -268,6 +269,7 @@ import {
   getPropertyName,
   getStubDisplayName,
   getTruthiness,
+  hasDefiniteItems,
   isNullish,
   isSymbolPropertyKey,
   listValue,
@@ -2918,7 +2920,13 @@ export class Interpreter {
     const callees = receivers.map(getCallee);
     const joinAlternatives = (values: StaticValue[]): StaticValue =>
       receiver.kind === "branch"
-        ? branchValue(values, receiver.reason, receiver.location, receiver.preferredIndex)
+        ? branchValue(
+            values,
+            receiver.reason,
+            receiver.location,
+            receiver.preferredIndex,
+            receiver.predicate,
+          )
         : values[0];
     const callee = joinAlternatives(callees);
     if (isReceiverIndependent(callee)) return callWith(callee, null);
@@ -4340,24 +4348,22 @@ export class Interpreter {
         value: listValue(children),
       });
     }
-    const elementKey = toElementKey(key);
-    const element = (elementType: StaticValue): StaticElementValue => ({
+    const element = (
+      elementType: StaticValue,
+      elementKey: StaticValue | null,
+    ): StaticElementValue => ({
       kind: "element",
       type: toElementType(elementType, nameHint),
-      key: elementKey,
+      key: toElementKey(elementKey),
       props,
       location,
       environment: context.environment,
     });
-    if (type.kind === "branch") {
-      return branchValue(
-        type.alternatives.map(element),
-        type.reason,
-        type.location,
-        type.preferredIndex,
-      );
-    }
-    return element(type);
+    return mapValue(type, (elementType) =>
+      key?.kind === "branch"
+        ? mapValue(key, (alternative) => element(elementType, alternative))
+        : element(elementType, key),
+    );
   }
 
   private evaluateJsxElement(node: JSXElement, context: EvaluationContext): StaticValue {
@@ -4644,6 +4650,14 @@ const applyBinaryOperator = (
   right: StaticValue,
   realm: HostRealm | null = null,
 ): StaticValue => {
+  if (operator === "+" && (hasDefiniteItems(left) || hasDefiniteItems(right))) {
+    return applyBinaryOperator(
+      operator,
+      hasDefiniteItems(left) ? toStringValue(left) : left,
+      hasDefiniteItems(right) ? toStringValue(right) : right,
+      realm,
+    );
+  }
   const distributed = distributeBinary(left, right, (leftAlternative, rightAlternative) =>
     applyBinaryOperator(operator, leftAlternative, rightAlternative, realm),
   );
