@@ -293,7 +293,10 @@ class AssignmentJoin {
 }
 
 export interface DecisionAssignment {
+  /** One condition per decision, under the variable of the earliest commit meeting it. */
   conditions: DecisionCondition[];
+  /** The same decisions under every commit's variable, so each commit finds its pin. */
+  pinnedConditions: DecisionCondition[];
   /** The enumerated states the assignment claims, in enumeration order. */
   stateIndices: number[];
 }
@@ -330,7 +333,8 @@ export const joinDecisionAssignments = (stateSpace: StaticStateSpace): DecisionA
     joint = [...extended.values()].slice(0, stateSpace.budget.maxStates);
   }
   return joint.map((assignment) => ({
-    conditions: [...assignment.values()].flat(),
+    conditions: [...assignment.values()].map(([condition]) => condition),
+    pinnedConditions: [...assignment.values()].flat(),
     stateIndices: decisionsOf.flatMap((conditions, stateIndex) =>
       join.isSubAssignment(assignment, conditions) ? [stateIndex] : [],
     ),
@@ -536,7 +540,7 @@ export const replayStateSpace = async (
   const reproduced = new Set<number>();
   for (const assignmentIndex of sample) {
     const assignment = assignments[assignmentIndex];
-    const rendered = await render(pinDecisions(stateSpace, assignment.conditions));
+    const rendered = await render(pinDecisions(stateSpace, assignment.pinnedConditions));
     const outcome = replayAssignment(
       stateSpace.states,
       assignment,
