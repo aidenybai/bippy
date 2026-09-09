@@ -1,0 +1,5 @@
+{
+  "name": "fixture-vite-plugin-modules",
+  "private": true,
+  "type": "module"
+}

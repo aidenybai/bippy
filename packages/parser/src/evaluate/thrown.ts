@@ -10,8 +10,16 @@ const combineSiblings = (left: ThrowCertainty, right: ThrowCertainty): ThrowCert
       ? "maybe"
       : "never";
 
-/** Branches, optionals and repeats are immutable, so their certainty is computed once; lists mutate in place and are re-walked. */
+/**
+ * Branches, optionals and repeats are immutable, so their certainty is computed
+ * once; lists mutate in place and are re-walked. A list written through an
+ * unknown key can hold itself, so the walk tracks the values it is inside:
+ * reaching one again adds no throw of its own and counts as "never", and
+ * nothing computed on such a walk is cached, since the list may still change.
+ */
 const certaintyCache = new WeakMap<StaticValue, ThrowCertainty>();
+const walking = new Set<StaticValue>();
+let isWalkCyclic = false;
 
 const computeThrowCertainty = (value: StaticValue): ThrowCertainty => {
   switch (value.kind) {
@@ -34,15 +42,31 @@ const computeThrowCertainty = (value: StaticValue): ThrowCertainty => {
   }
 };
 
+const walkThrowCertainty = (value: StaticValue): ThrowCertainty => {
+  if (walking.has(value)) {
+    isWalkCyclic = true;
+    return "never";
+  }
+  walking.add(value);
+  try {
+    return computeThrowCertainty(value);
+  } finally {
+    walking.delete(value);
+  }
+};
+
 /** Whether the paths `value` stands for throw; elements throw from their own proxies. */
 export const getThrowCertainty = (value: StaticValue): ThrowCertainty => {
   if (value.kind !== "branch" && value.kind !== "optional" && value.kind !== "repeat") {
-    return computeThrowCertainty(value);
+    return value.kind === "list" ? walkThrowCertainty(value) : computeThrowCertainty(value);
   }
   const cached = certaintyCache.get(value);
   if (cached) return cached;
-  const certainty = computeThrowCertainty(value);
-  certaintyCache.set(value, certainty);
+  const wasWalkCyclic = isWalkCyclic;
+  isWalkCyclic = false;
+  const certainty = walkThrowCertainty(value);
+  if (!isWalkCyclic) certaintyCache.set(value, certainty);
+  isWalkCyclic = wasWalkCyclic || isWalkCyclic;
   return certainty;
 };
 
@@ -50,22 +74,30 @@ export const getThrowCertainty = (value: StaticValue): ThrowCertainty => {
 export const getThrownOperand = (operands: StaticValue[]): StaticValue | null =>
   operands.find((operand) => getThrowCertainty(operand) === "always") ?? null;
 
-const collectThrows = (value: StaticValue, throws: StaticUnknownValue[]): void => {
+const collectThrows = (
+  value: StaticValue,
+  throws: StaticUnknownValue[],
+  visitedLists = new Set<StaticValue>(),
+): void => {
   switch (value.kind) {
     case "unknown":
       if (value.thrown) throws.push(value);
       return;
     case "list":
-      for (const item of value.items) collectThrows(item, throws);
+      if (visitedLists.has(value)) return;
+      visitedLists.add(value);
+      for (const item of value.items) collectThrows(item, throws, visitedLists);
       return;
     case "branch":
-      for (const alternative of value.alternatives) collectThrows(alternative, throws);
+      for (const alternative of value.alternatives) {
+        collectThrows(alternative, throws, visitedLists);
+      }
       return;
     case "optional":
-      collectThrows(value.value, throws);
+      collectThrows(value.value, throws, visitedLists);
       return;
     case "repeat":
-      collectThrows(value.item, throws);
+      collectThrows(value.item, throws, visitedLists);
       return;
     default:
       return;
@@ -106,6 +138,7 @@ export const describeThrow = (value: StaticValue): string => {
 
 /** `value` restricted to the paths that do not throw; a lone thrown path becomes a plain unknown. */
 export const withoutThrows = (value: StaticValue): StaticValue => {
+  if (getThrowCertainty(value) === "never") return value;
   switch (value.kind) {
     case "unknown":
       return value.thrown ? unknownValue("thrown render", value.location) : value;

@@ -27,7 +27,7 @@ const importsReplacingPlugin = (configPath: string): boolean => {
   );
 };
 
-const findViteConfig = (rootDirectory: string): string | undefined =>
+export const findViteConfig = (rootDirectory: string): string | undefined =>
   VITE_CONFIG_FILES.map((fileName) => path.join(rootDirectory, fileName)).find((candidate) =>
     existsSync(candidate),
   );

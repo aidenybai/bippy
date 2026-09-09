@@ -37,6 +37,7 @@ import type {
   UnaryExpression,
   UnaryOperator,
   UpdateExpression,
+  UpdateOperator,
   VariableDeclaration,
   VariableDeclarator,
 } from "oxc-parser";
@@ -44,6 +45,7 @@ import path from "node:path";
 import { getAssetModuleValue } from "../graph/asset-module.js";
 import { getCssModuleValue } from "../graph/css-module.js";
 import { getEsbuildDeclarationName } from "../graph/esbuild-symbol-names.js";
+import { toCssSupportsKey } from "../harness/feature-queries.js";
 import { isModuleRecord, type ModuleGraph } from "../graph/module-graph.js";
 import { isInsideNodeModules } from "../graph/module-resolver.js";
 import { nativeFunction } from "../frameworks/stubs.js";
@@ -132,7 +134,8 @@ import {
   hasKnownStaticChain,
   getValueParams,
 } from "./class-component.js";
-import { getCollectionItems, markCollectionExternallyMutable } from "./collections.js";
+import { markCollectionExternallyMutable } from "./collections.js";
+import { getIterableItems } from "./iteration-protocol.js";
 import { createGeneratorValue } from "./generators.js";
 import { getPageLocationMember } from "./page-location.js";
 import { hasExportedName } from "../graph/module-record.js";
@@ -228,6 +231,7 @@ import {
 } from "./promises.js";
 import { applyClockOperator, TimerQueue } from "./timers.js";
 import { evaluateLoop } from "./loops.js";
+import { evaluateMediaQuery } from "./media-query.js";
 import {
   applyNarrowing,
   lookupNarrowingTarget,
@@ -262,6 +266,7 @@ import {
   getSymbolDescription,
   getListItem,
   getListLength,
+  getIndefiniteItemValue,
   getFunctionPrototype,
   getObjectAccessor,
   getObjectProperty,
@@ -286,7 +291,9 @@ import {
   primitiveValue,
   setListItem,
   setListLength,
+  optionalValue,
   spreadListItems,
+  toIndexKey,
   TRUE_VALUE,
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
@@ -435,11 +442,6 @@ const REGEXP_FLAG_ACCESSORS = new Map([
 ]);
 
 /** A member read on a value whose prototype chain is fully known: absent names are `undefined`. */
-const toIndexKey = (key: string): number | null => {
-  const index = Number(key);
-  return Number.isInteger(index) && index >= 0 && String(index) === key ? index : null;
-};
-
 const prototypeMember = (
   receiver: StaticValue,
   prototype: object | null,
@@ -705,6 +707,8 @@ export class Interpreter {
   private readonly defines = new Map<string, StaticValue>();
   private readonly definedEnvironmentObjects = new Set<string>();
   private readonly pageState: CapturedPageState | null;
+  /** `navigator.languages` as captured: one frozen array for the page's lifetime. */
+  private readonly observedLanguages: StaticValue | null;
   private readonly processEnvironment: ProcessEnvironment | null;
   private readonly clientRealm: HostRealm;
   private readonly serverRealm: HostRealm;
@@ -752,6 +756,10 @@ export class Interpreter {
     this.project = options.project ?? UNKNOWN_PROJECT;
     this.origin = options.origin ?? null;
     this.pageState = options.page ?? null;
+    this.observedLanguages =
+      this.pageState?.languages === undefined
+        ? null
+        : listValue(this.pageState.languages.map((language) => primitiveValue(language)));
     this.history = createSessionHistory(this.pageState, options.route ?? null);
     this.processEnvironment = options.environment ?? null;
     this.clientRealm = loadHostRealm(options.hostPlatform ?? "browser");
@@ -809,7 +817,12 @@ export class Interpreter {
   }
 
   getWindowGlobal(name: string): StaticValue {
-    return this.windowGlobals.get(name) ?? unknownValue(`window.${name}`);
+    return this.findWindowGlobal(name) ?? unknownValue(`window.${name}`);
+  }
+
+  /** A `window` property recorded from the captured page; null when the capture did not record it. */
+  findWindowGlobal(name: string): StaticValue | null {
+    return this.windowGlobals.get(name) ?? null;
   }
 
   /** The host whose globals code in this rendering environment sees: server-rendered code runs in Node whatever the client host is. */
@@ -1491,7 +1504,7 @@ export class Interpreter {
     }
     const global = this.getGlobal(name, context.environment);
     if (global || context.environment === "server") return global;
-    return this.windowGlobals.get(name) ?? null;
+    return this.findWindowGlobal(name);
   }
 
   /**
@@ -1504,6 +1517,17 @@ export class Interpreter {
     if (environment !== "server" && BUNDLER_INJECTED_NAMES.has(name))
       return isBundlerUndeclaredName(this.project.bundler, name);
     return this.isAbsentGlobalProperty(name, environment);
+  }
+
+  /** A member the captured browser's `navigator` lacked (`navigator.userLanguage` outside IE). */
+  private isAbsentNavigatorMember(
+    objectName: string,
+    key: string,
+    environment: RenderEnvironment | null,
+  ): boolean {
+    if (environment === "server" || objectName !== "navigator") return false;
+    const navigatorKeys = this.pageState?.navigatorKeys;
+    return navigatorKeys !== undefined && !navigatorKeys.includes(key);
   }
 
   /** A property the global object lacks: bundler-provided names are free identifiers only, so `globalThis.process` reads the page's own `process`. */
@@ -1548,6 +1572,16 @@ export class Interpreter {
     );
   }
 
+  /** `matchMedia(query).matches`: the captured browser's answer when it was asked, else the modeled environment's; null when neither knows. */
+  getMediaQueryMatch(query: string): boolean | null {
+    return this.pageState?.mediaQueries?.[query] ?? evaluateMediaQuery(query);
+  }
+
+  /** `CSS.supports(...)` as the captured browser answered; null when the page never asked. */
+  getCssSupport(conditions: readonly string[]): boolean | null {
+    return this.pageState?.cssSupports?.[toCssSupportsKey(conditions)] ?? null;
+  }
+
   /** Page facts recorded from the running browser: cookies, `window.name`, and the navigator strings. */
   private getObservedPageMember(hostName: string): StaticValue | null {
     if (this.pageState === null) return null;
@@ -1564,6 +1598,8 @@ export class Interpreter {
         return this.pageState.language === undefined
           ? null
           : primitiveValue(this.pageState.language);
+      case "navigator.languages":
+        return this.observedLanguages;
       case "navigator.maxTouchPoints":
         return this.pageState.maxTouchPoints === undefined
           ? null
@@ -1737,7 +1773,9 @@ export class Interpreter {
           : UNDEFINED_VALUE;
         if (yields === undefined) return unknownValue("yield outside a generator", location);
         if (node.delegate)
-          yields.push(...spreadListItems(getCollectionItems(argument) ?? argument, location));
+          yields.push(
+            ...spreadListItems(getIterableItems(this, argument, context, location), location),
+          );
         else yields.push(argument);
         return unknownValue("value sent to the generator", location);
       }
@@ -1765,12 +1803,10 @@ export class Interpreter {
         continue;
       }
       if (element.type === "SpreadElement") {
+        const location = this.locate(context.module, element);
         const spread = this.evaluateExpression(element.argument, context);
         items.push(
-          ...spreadListItems(
-            getCollectionItems(spread) ?? spread,
-            this.locate(context.module, element),
-          ),
+          ...spreadListItems(getIterableItems(this, spread, context, location), location),
         );
         continue;
       }
@@ -2245,10 +2281,7 @@ export class Interpreter {
   ): StaticValue {
     const target = node.argument;
     const current = this.evaluateExpression(target, context);
-    const next =
-      current.kind === "primitive" && typeof current.value === "number"
-        ? primitiveValue(node.operator === "++" ? current.value + 1 : current.value - 1)
-        : unknownPrimitiveValue("number", `${node.operator} on ${describeValue(current)}`);
+    const next = applyUpdateOperator(node.operator, current);
     this.assignTarget(target, next, context);
     return node.prefix ? next : current;
   }
@@ -2355,13 +2388,51 @@ export class Interpreter {
     context: EvaluationContext,
   ): void {
     const object = this.evaluateExpression(objectNode, context);
+    const keyNames =
+      key.kind === "branch" ? key.alternatives.map(getPropertyName) : [getPropertyName(key)];
+    if (keyNames.every((name) => name !== null)) {
+      const uncertainContext = { ...context, uncertainDepth: context.uncertainDepth + 1 };
+      for (const name of new Set(keyNames)) this.assignProperty(object, name, value, uncertainContext);
+      return;
+    }
     for (const alternative of object.kind === "branch" ? object.alternatives : [object]) {
       if (alternative.kind === "object") this.assignDynamicEntry(alternative, key, value);
-      else if (alternative.kind === "native-object" && key.kind === "unknown-primitive")
+      else if (alternative.kind === "list") {
+        this.assignUnboundedListItem(
+          alternative,
+          key,
+          value,
+          this.locate(context.module, objectNode),
+        );
+      } else if (alternative.kind === "native-object" && key.kind === "unknown-primitive")
         setNativeObjectComposedMember(alternative, key, value);
       else if (alternative.kind === "unknown" || alternative.kind === "external")
         this.markEscaped(value);
     }
+  }
+
+  /** `list[index] = value` with an unbounded index: every slot may now hold `value`, as may one past the known items. */
+  private assignUnboundedListItem(
+    target: StaticListValue,
+    key: StaticValue,
+    value: StaticValue,
+    location: SourceLocation | null,
+  ): void {
+    if (target.isFrozen) return;
+    this.recordHeapMutation(target);
+    const reason = `slot written through ${describeValue(key)}`;
+    const mayHold = (item: StaticValue): StaticValue =>
+      branchValue([item, value], reason, location);
+    target.items = [
+      ...target.items.map((item) =>
+        item.kind === "repeat"
+          ? { ...item, item: mayHold(item.item) }
+          : item.kind === "optional"
+            ? { ...item, value: mayHold(item.value) }
+            : mayHold(item),
+      ),
+      optionalValue(value, reason, location, true),
+    ];
   }
 
   assignOwnProperty(target: StaticObjectValue, key: string, value: StaticValue): void {
@@ -2458,11 +2529,29 @@ export class Interpreter {
       return this.getProperty(object, node.property.name, context, location, node.optional);
     }
     const key = this.evaluateExpression(node.property, context);
+    if (object === CHAIN_SHORT_CIRCUIT) return object;
+    return this.getMember(object, key, context, location, node.optional);
+  }
+
+  private getMember(
+    object: StaticValue,
+    key: StaticValue,
+    context: EvaluationContext,
+    location: SourceLocation | null,
+    isOptional: boolean,
+  ): StaticValue {
     const propertyName = getPropertyName(key);
     if (propertyName !== null) {
-      return this.getProperty(object, propertyName, context, location, node.optional);
+      return this.getProperty(object, propertyName, context, location, isOptional);
     }
-    if (object === CHAIN_SHORT_CIRCUIT) return object;
+    if (
+      key.kind === "branch" &&
+      key.alternatives.every((alternative) => getPropertyName(alternative) !== null)
+    ) {
+      return mapValue(key, (alternative) =>
+        this.getMember(object, alternative, context, location, isOptional),
+      );
+    }
     return mapValue(object, (alternative) => this.getDynamicMember(alternative, key, location));
   }
 
@@ -2471,8 +2560,9 @@ export class Interpreter {
     key: StaticValue,
     location: SourceLocation | null,
   ): StaticValue {
+    if (object.kind === "repeat") return getIndefiniteItemValue(object);
     if (object.kind === "list") {
-      const candidates = object.items.filter((item) => item.kind !== "repeat");
+      const candidates = object.items.map(getIndefiniteItemValue);
       return candidates.length === 0
         ? unknownValue("index into an unknown list", location)
         : branchValue(candidates, "dynamic list index", location);
@@ -2627,7 +2717,19 @@ export class Interpreter {
       case "primitive":
         if (object.value === null || object.value === undefined) {
           if (optional) return CHAIN_SHORT_CIRCUIT;
-          return unknownValue(`property "${key}" of ${String(object.value)}`, location);
+          return thrownValue(
+            `property "${key}" of ${String(object.value)}`,
+            createErrorValue(
+              "TypeError",
+              [
+                primitiveValue(
+                  `Cannot read properties of ${String(object.value)} (reading '${key}')`,
+                ),
+              ],
+              location,
+            ),
+            location,
+          );
         }
         if (typeof object.value === "string") {
           if (key === "length") return primitiveValue(object.value.length);
@@ -2744,6 +2846,8 @@ export class Interpreter {
           !(key in intrinsic)
         )
           return UNDEFINED_VALUE;
+        if (this.isAbsentNavigatorMember(object.name, key, context.environment))
+          return UNDEFINED_VALUE;
         const declaredMember = this.getGlobal(memberName, context.environment);
         if (declaredMember) return declaredMember;
         const isOpenMember =
@@ -2821,7 +2925,12 @@ export class Interpreter {
     for (const argument of args) {
       if (argument.type === "SpreadElement") {
         const evaluated = this.evaluateExpression(argument.argument, context);
-        const spread = getCollectionItems(evaluated) ?? evaluated;
+        const spread = getIterableItems(
+          this,
+          evaluated,
+          context,
+          this.locate(context.module, argument),
+        );
         if (spread.kind === "list" && spread.items.every((item) => item.kind !== "repeat")) {
           values.push(...spread.items);
         } else {
@@ -2995,7 +3104,7 @@ export class Interpreter {
         return this.callBuiltin(callee, args, context, location);
       case "global":
         return this.callBuiltin(callee, args, context, location);
-      case "external":
+      case "external": {
         this.markEscapes(args);
         return {
           kind: "external",
@@ -3003,6 +3112,7 @@ export class Interpreter {
           importedName: `${callee.importedName}()`,
           origin: "derived",
         };
+      }
       case "native-function":
         return callee.call(args, {
           readContext: (definition) => context.readContext(definition) ?? definition.defaultValue,
@@ -3041,9 +3151,10 @@ export class Interpreter {
               location,
             );
       }
-      case "unknown":
+      case "unknown": {
         this.markEscapes(args);
         return unknownValue(`call of ${callee.reason}`, location);
+      }
       case "primitive":
         return unknownValue(`call of ${String(callee.value)}`, location);
       default:
@@ -3434,6 +3545,10 @@ export class Interpreter {
     const wasDeferred = frame?.isDeferred ?? false;
     const asyncCall: AsyncCall | null = functionValue.node.async ? { result: null } : null;
     const returned = this.evaluateFunctionBody(functionValue, args, context, options, asyncCall);
+    if (context.budget.remaining <= 0) {
+      this.markEscaped(functionValue);
+      this.markEscapes(args);
+    }
     const result = asyncCall?.result ? asyncCall.result.value : returned;
     // An async body runs synchronously up to its first `await` of a pending
     // promise; a modeled one resumes it when that settles, an unknown one
@@ -3710,18 +3825,19 @@ export class Interpreter {
         return;
       }
       case "ArrayPattern": {
+        const iterated = getIterableItems(this, value, context, null);
         pattern.elements.forEach((element, index) => {
           if (!element) return;
           if (element.type === "RestElement") {
             const rest =
-              value.kind === "list" &&
-              value.items.slice(0, index).every((item) => item.kind !== "repeat")
-                ? listValue(value.items.slice(index))
-                : unknownValue(`rest of ${describeValue(value)}`);
+              iterated.kind === "list" &&
+              iterated.items.slice(0, index).every((item) => item.kind !== "repeat")
+                ? listValue(iterated.items.slice(index))
+                : unknownValue(`rest of ${describeValue(iterated)}`);
             destructure(element.argument, rest);
             return;
           }
-          destructure(element, this.getProperty(value, String(index), context, null, true));
+          destructure(element, this.getProperty(iterated, String(index), context, null, true));
         });
         return;
       }
@@ -4667,6 +4783,21 @@ const applyUnaryOperator = (
       return unknownPrimitiveValue("number", "bitwise not");
   }
 };
+
+/** `++`/`--`: ToNumeric then add one, on every alternative of a branched operand. */
+const applyUpdateOperator = (operator: UpdateOperator, current: StaticValue): StaticValue =>
+  mapValue(current, (alternative) => {
+    if (getThrownOperand([alternative])) return alternative;
+    if (alternative.kind === "primitive") {
+      const step = operator === "++" ? 1 : -1;
+      return primitiveValue(
+        typeof alternative.value === "bigint"
+          ? alternative.value + BigInt(step)
+          : Number(alternative.value) + step,
+      );
+    }
+    return unknownPrimitiveValue("number", `${operator} on ${describeValue(alternative)}`);
+  });
 
 const applyBinaryOperator = (
   operator: string,

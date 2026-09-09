@@ -2,6 +2,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, join, relative, resolve, sep } from "node:path";
 import { transform as transformSvgr } from "@svgr/core";
 import { defineConfig, type Plugin, transformWithOxc } from "vite-plus";
+import { docsMetadataPlugin } from "./tests/fixtures/vite-plugin-modules/docs-metadata-plugin";
 
 const parserDirectory = import.meta.dirname;
 const bippyDirectory = resolve(parserDirectory, "../bippy");
@@ -94,9 +95,26 @@ const fixtureJsxInJsPlugin = (): Plugin => ({
   },
 });
 
+// The vite-plugin-modules fixture's own vite.config plugin, so react-dom renders the same modules the static side reads through it.
+const fixtureDocsMetadataPlugin = (): Plugin => {
+  const plugin = docsMetadataPlugin();
+  return {
+    name: plugin.name,
+    enforce: "pre",
+    transform(code, id) {
+      return relative(fixturesDirectory, id).startsWith("..") ? null : plugin.transform(code, id);
+    },
+  };
+};
+
 export default defineConfig({
   root: parserDirectory,
-  plugins: [fixtureAliasPlugin(), fixtureSvgrPlugin(), fixtureJsxInJsPlugin()],
+  plugins: [
+    fixtureAliasPlugin(),
+    fixtureSvgrPlugin(),
+    fixtureJsxInJsPlugin(),
+    fixtureDocsMetadataPlugin(),
+  ],
   resolve: {
     alias: [{ find: /^bippy$/, replacement: resolve(bippyDirectory, "src/index.ts") }],
   },

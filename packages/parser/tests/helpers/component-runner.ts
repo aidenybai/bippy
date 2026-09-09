@@ -28,6 +28,8 @@ export interface ComponentFixtureModule {
   minCoverage?: number;
   isExact?: boolean;
   isPartial?: boolean;
+  /** A tighter evaluator step budget, for fixtures exercising exhaustion. */
+  maxSteps?: number;
 }
 
 export interface ComponentRunResult {
@@ -111,6 +113,7 @@ export const runComponentFixture = async (
     tsconfigPath: join(COMPONENTS_DIRECTORY, "tsconfig.json"),
     settleMs: QUIET_COMMIT_MS,
     timerUnderrunMs: NODE_TIMER_UNDERRUN_MS,
+    maxSteps: loaded.maxSteps,
   });
   const staticResult = await renderer.renderComponent(fixture.filePath);
   const runtime = await runFromProjectRoot(() => mountComponent(loaded.default));

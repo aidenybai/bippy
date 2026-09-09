@@ -1,0 +1,24 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "CSS.supports and matchMedia answers are read from the captured page state, so module-level feature detection (a wide-gamut check gating a reactive epoch bump, a viewport query) resolves to the branch the browser actually took; a query the page never asked falls back to the modeled browser.",
+  "observations": {
+    "globals": {},
+    "queries": [],
+    "page": {
+      "cookie": "",
+      "localStorage": {},
+      "sessionStorage": {},
+      "windowKeys": ["CSS", "matchMedia", "document"],
+      "cssSupports": {
+        "color: color(display-p3 1 1 1)": true,
+        "selector(:has(a))": true
+      },
+      "mediaQueries": {
+        "(color-gamut: p3)": false,
+        "(min-width: 600px)": true
+      }
+    }
+  }
+}

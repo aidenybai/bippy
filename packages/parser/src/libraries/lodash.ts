@@ -15,9 +15,10 @@ import type { ExternalValueProvider, ModeledExports, StaticValue } from "../type
 // the first call runs synchronously. `isEqual` is decided over static values
 // directly rather than through lodash's own Stack/MapCache machinery. Every
 // other helper runs from lodash's own source as a pure package or is analyzed
-// when the package is allow-listed.
+// when the package is allow-listed. The per-method packages lodash publishes
+// (`lodash.throttle`) default-export the same helpers.
 
-export const LODASH_PACKAGES = ["lodash", "lodash-es"];
+const BUNDLE_PACKAGES = ["lodash", "lodash-es"];
 
 const TRANSPARENT_WRAPPERS = ["memoize", "once"];
 
@@ -25,15 +26,25 @@ const RATE_LIMITERS = ["debounce", "throttle"];
 
 const MODELED_HELPERS = [...TRANSPARENT_WRAPPERS, ...RATE_LIMITERS, "isEqual"];
 
-export const LODASH_MODELED_EXPORTS: ModeledExports = Object.fromEntries(
-  LODASH_PACKAGES.flatMap((packageName): Array<[string, string[]]> => [
+const STANDALONE_PACKAGE_HELPERS: Readonly<Record<string, string>> = Object.fromEntries(
+  MODELED_HELPERS.map((helperName) => [`lodash.${helperName.toLowerCase()}`, helperName]),
+);
+
+export const LODASH_PACKAGES = [...BUNDLE_PACKAGES, ...Object.keys(STANDALONE_PACKAGE_HELPERS)];
+
+export const LODASH_MODELED_EXPORTS: ModeledExports = Object.fromEntries([
+  ...BUNDLE_PACKAGES.flatMap((packageName): Array<[string, string[]]> => [
     [packageName, MODELED_HELPERS],
     ...MODELED_HELPERS.flatMap((helperName): Array<[string, string[]]> => [
       [`${packageName}/${helperName}`, ["default"]],
       [`${packageName}/${helperName}.js`, ["default"]],
     ]),
   ]),
-);
+  ...Object.keys(STANDALONE_PACKAGE_HELPERS).map((packageName): [string, string[]] => [
+    packageName,
+    ["default"],
+  ]),
+]);
 
 const transparentWrapper = (name: string): StaticValue =>
   nativeFunction(name, ([wrapped]) => wrapped);
@@ -95,13 +106,19 @@ const rateLimiter = (helperName: string): StaticValue =>
     };
   });
 
-export const lodashValue: ExternalValueProvider = (specifier, importedName) => {
+const getHelperName = (specifier: string, importedName: string): string | null => {
+  const standaloneHelper = STANDALONE_PACKAGE_HELPERS[specifier];
+  if (standaloneHelper !== undefined) return importedName === "default" ? standaloneHelper : null;
   const [packageName, ...modulePath] = specifier.split("/");
-  if (!LODASH_PACKAGES.includes(packageName)) return null;
-  const helperName =
-    modulePath.length === 1 && importedName === "default"
-      ? modulePath[0].replace(/\.js$/, "")
-      : importedName;
+  if (!BUNDLE_PACKAGES.includes(packageName)) return null;
+  return modulePath.length === 1 && importedName === "default"
+    ? modulePath[0].replace(/\.js$/, "")
+    : importedName;
+};
+
+export const lodashValue: ExternalValueProvider = (specifier, importedName) => {
+  const helperName = getHelperName(specifier, importedName);
+  if (helperName === null) return null;
   if (helperName === "isEqual") return isEqual;
   if (TRANSPARENT_WRAPPERS.includes(helperName)) return transparentWrapper(helperName);
   return RATE_LIMITERS.includes(helperName) ? rateLimiter(helperName) : null;

@@ -1,6 +1,6 @@
 import { readdirSync } from "node:fs";
 import path from "node:path";
-import type { RouteRecord } from "./react-router.js";
+import { type RouteRecord, readNoRouteContent } from "./react-router.js";
 import { routeIdFromFile } from "./route-files.js";
 
 // File-convention routes as `remix-flat-routes` (hybrid mode) derives them from
@@ -142,8 +142,7 @@ const toRecords = (routes: FlatRouteInfo[], parentId: string | undefined): Route
         id: route.id,
         path: ownPath.length === 0 ? null : ownPath,
         index: route.index,
-        element: null,
-        component: null,
+        readContent: readNoRouteContent,
         file: route.file,
         children: route.index ? [] : toRecords(routes, route.id),
         uncertainty: null,

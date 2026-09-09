@@ -9,7 +9,6 @@ import type {
 } from "oxc-parser";
 import type { SourceLocation, StaticValue } from "../types.js";
 import type { EvaluationContext } from "./context.js";
-import { getCollectionItems } from "./collections.js";
 import { withScope } from "./context.js";
 import {
   COMPLETES,
@@ -18,6 +17,7 @@ import {
   returnOutcome,
   type StatementOutcome,
 } from "./interpreter.js";
+import { getIterableItems } from "./iteration-protocol.js";
 import { createScope } from "./scope.js";
 import {
   getOwnEnumerableEntries,
@@ -81,7 +81,12 @@ const iterationValues = (
 ): StaticValue[] | null => {
   const right = interpreter.evaluateExpression(statement.right, context);
   if (statement.type === "ForOfStatement") {
-    const iterated = getCollectionItems(right) ?? right;
+    const iterated = getIterableItems(
+      interpreter,
+      right,
+      context,
+      interpreter.locate(context.module, statement.right),
+    );
     if (isKnownList(iterated)) return iterated.items;
     if (right.kind === "primitive" && typeof right.value === "string")
       return [...right.value].map(primitiveValue);

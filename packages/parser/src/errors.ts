@@ -105,6 +105,9 @@ export class HarnessInjectionError extends ParserError {
 
 export class BundleError extends ParserError {}
 
+/** The worker running the app's Vite plugins stopped answering. */
+export class VitePluginError extends ParserError {}
+
 export class ReactRuntimeError extends ParserError {}
 
 export class FrameworkTargetError extends ParserError {}

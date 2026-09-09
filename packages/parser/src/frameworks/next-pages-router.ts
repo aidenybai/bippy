@@ -141,10 +141,39 @@ const matchPage = (
 };
 
 /**
- * Composes `<App Component={Page} pageProps={…} router={…} />` (or just
- * `<Page />` without a custom `_app`). `pageProps` is `{}` unless the page
- * exports a data-fetching function, in which case it is unknown; `_document` is
- * server-only and never part of the client fiber tree.
+ * The props the pages client spreads onto `App`: `__NEXT_DATA__.props` when the
+ * capture recorded the page's bootstrap payload, otherwise `{ pageProps }` with
+ * `pageProps` `{}` unless the page exports a data-fetching function, in which
+ * case it is unknown.
+ */
+const readInitialProps = (interpreter: Interpreter, fetchesData: boolean): StaticValue => {
+  const nextData = interpreter.findWindowGlobal("__NEXT_DATA__");
+  if (nextData) {
+    return mapValue(nextData, (alternative) =>
+      alternative.kind === "object"
+        ? getObjectProperty(alternative, "props")
+        : unknownValue(`__NEXT_DATA__ is ${describeValue(alternative)}`),
+    );
+  }
+  return objectFromRecord({
+    pageProps: fetchesData
+      ? unknownValue("pageProps come from data fetching at request time")
+      : objectValue(),
+  });
+};
+
+const readPageProps = (initialProps: StaticValue): StaticValue =>
+  mapValue(initialProps, (alternative) =>
+    alternative.kind === "object"
+      ? getObjectProperty(alternative, "pageProps")
+      : unknownValue(`initial props are ${describeValue(alternative)}`),
+  );
+
+/**
+ * Composes `<App Component={Page} {...__NEXT_DATA__.props} router={…} />` (or
+ * just `<Page {...pageProps} />` without a custom `_app`), as
+ * `next/dist/client/index.js` does on hydration; `_document` is server-only and
+ * never part of the client fiber tree.
  */
 export const renderNextPagesRoute = (
   renderer: StaticRenderer,
@@ -191,9 +220,7 @@ export const renderNextPagesRoute = (
         (entry) => entry.kind !== "re-export-all" && entry.exportedName === name,
       ),
     );
-    const pageProps = fetchesData
-      ? unknownValue("pageProps come from data fetching at request time")
-      : objectValue();
+    const initialProps = readInitialProps(interpreter, fetchesData);
     const router = model.externalValues("next/router", "default") ?? unknownValue("next router");
 
     const appPath = findRouteFile(pagesDirectory, "_app");
@@ -203,7 +230,7 @@ export const renderNextPagesRoute = (
       return withReactStrictMode(
         interpreter.createElement(
           pageComponent,
-          objectValue([{ kind: "spread", value: pageProps }]),
+          objectValue([{ kind: "spread", value: readPageProps(initialProps) }]),
           null,
           [],
           null,
@@ -218,12 +245,12 @@ export const renderNextPagesRoute = (
       interpreter.createElement(
         appComponent,
         objectValue([
+          { kind: "spread", value: initialProps },
           {
             kind: "property",
             key: "Component",
             value: componentReference(toElementType(pageComponent, pageName)),
           },
-          { kind: "property", key: "pageProps", value: pageProps },
           { kind: "property", key: "router", value: router },
         ]),
         null,

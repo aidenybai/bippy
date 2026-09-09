@@ -3,11 +3,17 @@
 import "./zod-jitless.js";
 import type { CapturedPageState, CapturedValue, RootObservations } from "../types.js";
 import { createCommitRecorder } from "./commit-recorder.js";
+import { toCssSupportsKey } from "./feature-queries.js";
 import { readKeaStores } from "./kea-store.js";
 import { readModuleExports } from "./module-exports.js";
 import { toCapturedValue } from "./query-cache.js";
 import { installReduxStoreHook } from "./redux-store.js";
 import type { RuntimeSnapshot } from "./snapshot.js";
+
+interface FeatureQueryHost {
+  CSS?: { supports: (...conditions: string[]) => boolean };
+  matchMedia?: (query: string) => MediaQueryList;
+}
 
 export interface HarnessGlobals {
   __BIPPY_PARSER_SNAPSHOT__: () => RuntimeSnapshot;
@@ -43,14 +49,39 @@ const initialHistoryState = toCapturedValue(history.state) ?? null;
 const initialLocalStorage = readStorageArea(localStorage);
 const initialSessionStorage = readStorageArea(sessionStorage);
 
-const readWindowKeys = (): string[] => {
+/** Every name `in target`: own and inherited, as feature detection sees them. */
+const readPropertyKeys = (target: object): string[] => {
   const names = new Set<string>();
-  for (let object: unknown = globalThis; object; object = Object.getPrototypeOf(object)) {
+  for (let object: unknown = target; object; object = Object.getPrototypeOf(object)) {
     for (const name of Object.getOwnPropertyNames(object)) names.add(name);
   }
   return [...names];
 };
-const initialWindowKeys = readWindowKeys();
+const initialWindowKeys = readPropertyKeys(globalThis);
+const initialNavigatorKeys = readPropertyKeys(navigator);
+
+const cssSupportsAnswers: Record<string, boolean> = {};
+const mediaQueryAnswers: Record<string, boolean> = {};
+
+/** Feature detection the page's scripts perform; the static render replays the browser's answers. */
+const recordFeatureQueries = (host: FeatureQueryHost): void => {
+  const { CSS: cssNamespace, matchMedia } = host;
+  if (cssNamespace) {
+    const supports = cssNamespace.supports.bind(cssNamespace);
+    cssNamespace.supports = (...conditions) => {
+      const isSupported = supports(...conditions);
+      cssSupportsAnswers[toCssSupportsKey(conditions.map(String))] = isSupported;
+      return isSupported;
+    };
+  }
+  if (matchMedia) {
+    host.matchMedia = (query) => {
+      const list = matchMedia.call(host, query);
+      mediaQueryAnswers[String(query)] = list.matches;
+      return list;
+    };
+  }
+};
 
 const readPageState = (): CapturedPageState => ({
   cookie: document.cookie,
@@ -59,7 +90,11 @@ const readPageState = (): CapturedPageState => ({
   windowKeys: initialWindowKeys,
   userAgent: navigator.userAgent,
   language: navigator.language,
+  languages: [...navigator.languages],
   maxTouchPoints: navigator.maxTouchPoints,
+  navigatorKeys: initialNavigatorKeys,
+  cssSupports: cssSupportsAnswers,
+  mediaQueries: mediaQueryAnswers,
   localStorage: initialLocalStorage,
   sessionStorage: initialSessionStorage,
 });
@@ -68,6 +103,7 @@ const readPageState = (): CapturedPageState => ({
 // server's per-file module loads, and the loaded-module list is how the
 // harness finds the page's stores and exports.
 performance.setResourceTimingBufferSize(RESOURCE_TIMING_BUFFER_SIZE);
+recordFeatureQueries(Object(globalThis));
 const readHookedStores = installReduxStoreHook(globalThis);
 const recorder = createCommitRecorder({
   reduxStores: async () => [...readHookedStores(), ...(await readKeaStores())],

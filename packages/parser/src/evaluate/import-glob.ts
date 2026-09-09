@@ -165,13 +165,11 @@ export const callImportMetaGlob = (
     interpreter.graph.resolver.rootDirectory,
   );
   if (typeof files === "string") return unknownValue(`import.meta.glob with ${files}`, location);
-  const unloadable = files.find((file) => {
+  for (const file of files) {
     const target = interpreter.graph.resolveImportedModule(file.specifier, context.module);
-    return !isModuleRecord(target) && target.kind === "internal";
-  });
-  if (unloadable) {
+    if (isModuleRecord(target) || target.kind !== "internal" || target.filePath === null) continue;
     return unknownValue(
-      `import.meta.glob matched "${unloadable.specifier}", which only a bundler plugin can load`,
+      `import.meta.glob matched "${file.specifier}": ${interpreter.graph.describeUnsupportedModule(target.filePath)}`,
       location,
     );
   }

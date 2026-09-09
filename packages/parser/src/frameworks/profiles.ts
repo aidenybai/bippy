@@ -94,6 +94,7 @@ export const NEXT_APP_PROFILE: FrameworkProfile = {
   transparentStaticFibers: new Set(["Fragment", "ContextProvider"]),
   isInjectedRuntimeFiber: isNextAppInjectedFiber,
   defaultAnchor: "body",
+  capturedGlobals: [],
 };
 
 const NEXT_PAGES_RUNTIME_WRAPPERS = [
@@ -144,6 +145,7 @@ export const NEXT_PAGES_PROFILE: FrameworkProfile = {
   transparentStaticFibers: new Set(["Fragment", "StrictMode"]),
   isInjectedRuntimeFiber: isNextPagesInjectedFiber,
   defaultAnchor: null,
+  capturedGlobals: ["__NEXT_DATA__"],
 };
 
 // React Router 6.4+/7/8 (names observed against react-router 8 in the fixture
@@ -208,6 +210,7 @@ export const REACT_ROUTER_PROFILE: FrameworkProfile = {
   ]),
   isInjectedRuntimeFiber: isReactRouterInjectedFiber,
   defaultAnchor: null,
+  capturedGlobals: [],
 };
 
 export const getFrameworkProfile = (kind: FrameworkKind): FrameworkProfile => {

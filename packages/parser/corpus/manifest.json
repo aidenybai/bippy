@@ -581,7 +581,8 @@
         "rootDirectory": "apps/examples",
         "entry": "src/index.tsx",
         "route": "/",
-        "externalPackageAllowList": ["tldraw", "@tldraw/*"],
+        "envFiles": [],
+        "externalPackageAllowList": ["tldraw", "@tldraw/*", "react-helmet-async"],
         "maxFiberCount": 20000
       }
     },

@@ -12,6 +12,8 @@ import { getSearchParamsItems } from "./url-search-params.js";
 import {
   accessorEntry,
   branchValue,
+  getIndefiniteItemValue,
+  isIndefiniteItem,
   FALSE_VALUE,
   listValue,
   mapValue,
@@ -266,6 +268,27 @@ class StaticCollection implements JournaledState<CollectionState> {
     this.replace({ key, value, isDefinite: true });
   }
 
+  /** A member a seeding iteration may or may not have produced: present on some paths only. */
+  setPossibly(key: StaticValue, value: StaticValue): void {
+    const keyBranch = getDefiniteKeyBranch(key);
+    if (!keyBranch && !isDefiniteKey(key)) this.hasDynamicKeys = true;
+    for (const alternative of keyBranch?.alternatives ?? [key]) {
+      const existing = this.find(alternative);
+      this.replace(
+        existing
+          ? {
+              ...existing,
+              value: branchValue(
+                [existing.value, value],
+                `${this.kind} seeded from an item present on some paths only`,
+                this.location,
+              ),
+            }
+          : { key: alternative, value, isDefinite: false },
+      );
+    }
+  }
+
   delete(key: StaticValue): StaticValue {
     const keyBranch = getDefiniteKeyBranch(key);
     if (keyBranch) {
@@ -296,12 +319,26 @@ class StaticCollection implements JournaledState<CollectionState> {
 
   /** Entries in insertion order; code the analysis did not see may have appended more. */
   project(select: (entry: CollectionEntry) => StaticValue): StaticValue {
-    if (this.hasDynamicKeys) return unknownValue(`${this.kind} with dynamic keys`, this.location);
-    const items = [...this.entries.values()].map((entry) =>
-      entry.isDefinite
-        ? select(entry)
-        : optionalValue(select(entry), this.describeMaybePresent("entries"), this.location),
-    );
+    const entries = [...this.entries.values()];
+    const items: StaticValue[] = this.hasDynamicKeys
+      ? entries.length === 0
+        ? []
+        : [
+            {
+              kind: "repeat",
+              item: branchValue(
+                entries.map(select),
+                `${this.kind} with dynamic keys`,
+                this.location,
+              ),
+              location: this.location,
+            },
+          ]
+      : entries.map((entry) =>
+          entry.isDefinite
+            ? select(entry)
+            : optionalValue(select(entry), this.describeMaybePresent("entries"), this.location),
+        );
     if (this.isExternallyMutable) {
       items.push({
         kind: "repeat",
@@ -340,12 +377,16 @@ const seedCollection = (
   const items = getCollectionItems(initial) ?? initial;
   if (items.kind !== "list") return false;
   for (const item of items.items) {
+    const isDefinite = !isIndefiniteItem(item);
+    const member = getIndefiniteItemValue(item);
+    const add = (key: StaticValue, value: StaticValue): void =>
+      isDefinite ? collection.set(key, value) : collection.setPossibly(key, value);
     if (!isKeyed(kind)) {
-      collection.set(item, item);
+      add(member, member);
       continue;
     }
-    if (item.kind !== "list" || item.items.length < 2) return false;
-    collection.set(item.items[0], item.items[1]);
+    if (member.kind !== "list" || member.items.length < 2) return false;
+    add(member.items[0], member.items[1]);
   }
   return true;
 };
@@ -376,6 +417,9 @@ export const createCollectionValue = (
   initial: StaticValue | undefined,
   location: SourceLocation | null,
 ): StaticValue => {
+  if (initial?.kind === "branch") {
+    return mapValue(initial, (alternative) => createCollectionValue(kind, alternative, location));
+  }
   const self: StaticObjectValue = objectFromRecord({});
   const collection = new StaticCollection(kind, self.allocation ?? 0, location);
   if (!seedCollection(collection, kind, initial)) {

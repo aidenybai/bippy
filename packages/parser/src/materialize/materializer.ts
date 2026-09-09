@@ -155,6 +155,8 @@ export interface MaterializeContext {
   ignoresMaybeThrows: boolean;
   /** How many non-preferred branch alternatives enclose this node. */
   alternativeDepth: number;
+  /** Inside one alternative of a value branch: a render that throws here throws on that path only. */
+  isInsideAlternative: boolean;
   /** The component whose render produced this position; host refs are committed into it. */
   owner: EvaluationContext | null;
   /** Inside a `<StrictMode>` subtree, where development React double-invokes hook factories. */
@@ -275,6 +277,7 @@ const isSamePosition = (first: MaterializeContext, second: MaterializeContext): 
   first.errorBoundaryDepth === second.errorBoundaryDepth &&
   first.ignoresMaybeThrows === second.ignoresMaybeThrows &&
   first.alternativeDepth === second.alternativeDepth &&
+  first.isInsideAlternative === second.isInsideAlternative &&
   first.componentStack.length === second.componentStack.length &&
   first.componentStack.every((frame, index) => isSameFrame(frame, second.componentStack[index]));
 
@@ -519,6 +522,7 @@ export class Materializer {
       errorBoundaryDepth: 0,
       ignoresMaybeThrows: false,
       alternativeDepth: 0,
+      isInsideAlternative: false,
       owner: null,
       isStrictMode: false,
     };
@@ -565,11 +569,17 @@ export class Materializer {
           countMax: value.count?.max ?? null,
           children: [this.toNode(value.item, context, false)],
         });
-      case "branch":
+      case "branch": {
         if (value.alternatives.every(isEmptyChild)) return null;
+        const alternativeContext = { ...context, isInsideAlternative: true };
         return this.branchNode(
           value.alternatives.map((alternative, index) =>
-            this.alternativeNode(alternative, index === value.preferredIndex, context, isTopLevel),
+            this.alternativeNode(
+              alternative,
+              index === value.preferredIndex,
+              alternativeContext,
+              isTopLevel,
+            ),
           ),
           value.reason,
           value.preferredIndex,
@@ -577,9 +587,10 @@ export class Materializer {
           value.location,
           value.predicate,
         );
+      }
       case "optional":
         return this.branchNode(
-          [this.toNode(value.value, context, isTopLevel), null],
+          [this.toNode(value.value, { ...context, isInsideAlternative: true }, isTopLevel), null],
           value.reason,
           value.isAbsentPreferred ? 1 : 0,
           isTopLevel,
@@ -1671,12 +1682,13 @@ export class Materializer {
   ): ReactNode {
     const certainty = getThrowCertainty(rendered);
     if (certainty === "always") {
-      throw (
-        this.getWakeable(rendered, input.context) ??
-        new StaticThrowError(describeThrow(rendered), false)
-      );
+      const wakeable = this.getWakeable(rendered, input.context);
+      if (wakeable) throw wakeable;
+      if (!input.context.isInsideAlternative) {
+        throw new StaticThrowError(describeThrow(rendered), false);
+      }
     }
-    if (certainty === "maybe") {
+    if (certainty !== "never") {
       if (input.context.errorBoundaryDepth > 0 && !input.context.ignoresMaybeThrows) {
         throw new StaticThrowError(`component may throw: ${describeThrow(rendered)}`, true);
       }

@@ -1,6 +1,6 @@
 import { existsSync, readdirSync } from "node:fs";
 import path from "node:path";
-import type { RouteRecord } from "./react-router.js";
+import { type RouteRecord, readNoRouteContent } from "./react-router.js";
 
 // Mirrors `flatRoutesUniversal` from `@react-router/fs-routes` / `@remix-run/dev`.
 
@@ -158,8 +158,7 @@ const toRecords = (entries: FlatRouteEntry[], parentId: string | null): RouteRec
       id: entry.id,
       path: entry.path ?? null,
       index: entry.index,
-      element: null,
-      component: null,
+      readContent: readNoRouteContent,
       file: entry.file,
       children: toRecords(entries, entry.id),
       uncertainty: null,

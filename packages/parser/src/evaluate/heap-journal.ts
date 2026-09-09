@@ -11,6 +11,8 @@ import {
   UNDEFINED_VALUE,
   branchValue,
   getAllocationCount,
+  getIndefiniteItemValue,
+  isIndefiniteItem,
   isSameValue,
   joinObjectEntries,
 } from "./values.js";
@@ -97,6 +99,31 @@ const isSameState = <Item>(
 
 const isUnchanged = <Item>(paths: Item[][], original: Item[]): boolean =>
   paths.every((items) => isSameState(items, original));
+
+/** Paths that left the same number of definite items disagree slot by slot, as one decision. */
+const joinListSlots = (
+  pathItems: StaticValue[][],
+  reason: string,
+  location: SourceLocation | null,
+  preferredPath: number,
+  predicate: string | null,
+): StaticValue[] | null => {
+  const [first] = pathItems;
+  if (
+    first === undefined ||
+    pathItems.some((items) => items.length !== first.length || items.some(isIndefiniteItem))
+  )
+    return null;
+  return first.map((_, index) =>
+    branchValue(
+      pathItems.map((items) => items[index]),
+      reason,
+      location,
+      preferredPath,
+      predicate,
+    ),
+  );
+};
 
 /** The state every path left, when the paths agree on it. */
 const getAgreedState = <Item>(
@@ -292,6 +319,11 @@ export class HeapJournal {
         list.items = agreedItems;
         continue;
       }
+      const positionalItems = joinListSlots(pathItems, reason, location, preferredPath, predicate);
+      if (positionalItems) {
+        list.items = positionalItems;
+        continue;
+      }
       const isEveryPathAppending = pathItems.every((items) => isExtensionOf(items, original.items));
       const uncertainItems = isEveryPathAppending
         ? pathItems.flatMap((items) => items.slice(original.items.length))
@@ -300,7 +332,7 @@ export class HeapJournal {
       if (uncertainItems.length > 0) {
         list.items.push({
           kind: "repeat",
-          item: branchValue(uncertainItems, reason, location),
+          item: branchValue(uncertainItems.map(getIndefiniteItemValue), reason, location),
           location,
         });
       }

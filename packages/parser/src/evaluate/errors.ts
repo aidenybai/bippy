@@ -55,5 +55,25 @@ export const createErrorValue = (
   return error;
 };
 
+/** The `DOMException` a web API throws (`InvalidStateError` from a closed channel); `code` is the legacy numeric code of `name`. */
+export const createDomExceptionValue = (
+  message: string,
+  name: string,
+  location: SourceLocation | null,
+): StaticObjectValue => {
+  const witness = new DOMException(message, name);
+  const error = objectFromRecord({
+    name: primitiveValue(name),
+    message: primitiveValue(message),
+    code: primitiveValue(witness.code),
+    stack: unknownPrimitiveValue(
+      "string",
+      `${name} stack${location ? ` at ${location.filePath}:${location.line}` : ""}`,
+    ),
+  });
+  errorWitnesses.set(error, witness);
+  return error;
+};
+
 export const getErrorWitness = (value: StaticObjectValue): Error | null =>
   errorWitnesses.get(value) ?? null;

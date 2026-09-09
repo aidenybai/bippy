@@ -210,9 +210,12 @@ export const evaluateMediaQuery = (
   return results.includes(null) ? null : false;
 };
 
-export const mediaQueryListValue = (query: StaticValue | undefined): StaticValue => {
+export const mediaQueryListValue = (
+  query: StaticValue | undefined,
+  getMatch: (media: string) => boolean | null,
+): StaticValue => {
   const media = query?.kind === "primitive" && typeof query.value === "string" ? query.value : null;
-  const matches = media === null ? null : evaluateMediaQuery(media);
+  const matches = media === null ? null : getMatch(media);
   const listener = (name: string): StaticValue => ({
     kind: "method",
     receiver: { kind: "global", name: "MediaQueryList" },

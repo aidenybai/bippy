@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "The project's own vite.config plugin turns Markdown files into metadata modules, so an eager import.meta.glob over them evaluates to the plugin's output instead of an unsupported-module unknown. The test vite config mirrors the plugin for the runtime render."
+}

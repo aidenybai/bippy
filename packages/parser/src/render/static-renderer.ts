@@ -12,6 +12,7 @@ import { ModuleGraph } from "../graph/module-graph.js";
 import { ModuleResolver } from "../graph/module-resolver.js";
 import { createProjectContext } from "../graph/project-context.js";
 import { createSvgrSourceTransform } from "../graph/svgr-modules.js";
+import { createVitePluginModules } from "../graph/vite-plugin-modules.js";
 import {
   createDomHostDocument,
   ensureDomGlobals,
@@ -105,6 +106,7 @@ export class StaticRenderer {
       sourceFileCache: new SourceFileCache(svgrTransform ? [svgrTransform] : []),
       resolveExternalPackages: options.resolveExternalPackages,
       externalPackageAllowList: options.externalPackageAllowList,
+      vitePluginModules: createVitePluginModules(rootDirectory, bundler),
     });
   }
 

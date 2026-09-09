@@ -54,6 +54,8 @@ import { constructFunctionFromSource } from "./function-constructor.js";
 import { callImportMetaGlob } from "./import-glob.js";
 import { createClockDateValue, isClockReading } from "./clock-date.js";
 import { createBlobValue } from "./blob.js";
+import { createBroadcastChannel } from "./broadcast-channel.js";
+import { structuredCloneValue } from "./structured-clone.js";
 import { callEventTargetMethod } from "./event-listeners.js";
 import { hasProperty, isIntrinsicFunctionKey } from "./has-property.js";
 import {
@@ -78,6 +80,7 @@ import { callHistoryMethod, isHistoryName } from "./session-history.js";
 import { callStorageMethod, getStorageAreaName } from "./web-storage.js";
 import type { EvaluationContext } from "./context.js";
 import { createCollectionValue, getCollectionItems } from "./collections.js";
+import { getIterableItems } from "./iteration-protocol.js";
 import {
   chainPromise,
   combinePromises,
@@ -168,37 +171,6 @@ const NUMBER_PREDICATES: Record<string, (value: StaticPrimitive) => boolean> = {
 };
 
 export const isPromiseMethodName = (name: string): boolean => PROMISE_METHOD_NAMES.has(name);
-
-/** A fresh deep copy of plain data (primitives, arrays, plain objects); null when some part is not statically cloneable. */
-const structuredCloneValue = (value: StaticValue): StaticValue | null => {
-  switch (value.kind) {
-    case "primitive":
-      return typeof value.value === "symbol" ? null : value;
-    case "list": {
-      if (!hasDefiniteItems(value)) return null;
-      const items = value.items.map(structuredCloneValue);
-      return items.every((item) => item !== null) ? listValue(items) : null;
-    }
-    case "object": {
-      if (
-        getCollectionItems(value) ||
-        value.entries.some((entry) => entry.kind === "property" && entry.accessor)
-      )
-        return null;
-      const keys = getKnownObjectKeys(value);
-      if (keys === null) return null;
-      const entries: StaticObjectEntry[] = [];
-      for (const key of keys) {
-        const cloned = structuredCloneValue(getObjectProperty(value, key));
-        if (cloned === null) return null;
-        entries.push({ kind: "property", key, value: cloned });
-      }
-      return objectValue(entries);
-    }
-    default:
-      return null;
-  }
-};
 
 /**
  * The object entry one `Object.fromEntries` pair contributes: a pair that may
@@ -795,6 +767,18 @@ const splitGlobalName = (name: string): [receiver: StaticValue, memberName: stri
     : [{ kind: "global", name: name.slice(0, separator) }, name.slice(separator + 1)];
 };
 
+/** `CSS.supports(...)`: the captured browser's answer to the same condition; feature support is otherwise unknowable here. */
+const cssSupportsValue = (interpreter: Interpreter, args: StaticValue[]): StaticValue => {
+  const conditions = args.flatMap((argument) =>
+    argument.kind === "primitive" && typeof argument.value === "string" ? [argument.value] : [],
+  );
+  const isSupported =
+    conditions.length === args.length ? interpreter.getCssSupport(conditions) : null;
+  return isSupported === null
+    ? unknownPrimitiveValue("boolean", `CSS.supports(${conditions.join(", ") || "dynamic condition"})`)
+    : primitiveValue(isSupported);
+};
+
 /** Methods of host objects whose state the interpreter models: listeners, media queries, hot modules, history and storage. */
 const callHostObjectMethod = (
   interpreter: Interpreter,
@@ -808,7 +792,9 @@ const callHostObjectMethod = (
   const listened = callEventTargetMethod(interpreter, realm, receiver, name, args);
   if (listened) return listened;
   if (realm.isGlobalAlias(receiver.name) && name === "matchMedia")
-    return mediaQueryListValue(args[0]);
+    return mediaQueryListValue(args[0], (media) => interpreter.getMediaQueryMatch(media));
+  if (realm.normalizeGlobalName(receiver.name) === "CSS" && name === "supports")
+    return cssSupportsValue(interpreter, args);
   const hotModuleResult = callHotModuleMethod(receiver, name);
   if (hotModuleResult) return hotModuleResult;
   if (isHistoryName(receiver.name))
@@ -965,13 +951,20 @@ const callGlobal = (
     case "Set":
     case "WeakMap":
     case "WeakSet":
-      return createCollectionValue(name, first, location);
+      return createCollectionValue(
+        name,
+        first ? getIterableItems(interpreter, first, context, location) : first,
+        location,
+      );
     case "URLSearchParams":
       return createSearchParamsValue(first, { location });
     case "URL":
       return createUrlValue(args, location);
     case "AbortController":
       if (isConstructor) return createAbortController(interpreter, location);
+      break;
+    case "BroadcastChannel":
+      if (isConstructor) return createBroadcastChannel(interpreter, first, context, location);
       break;
     case "fetch":
       if (isConstructor) break;
@@ -1025,8 +1018,9 @@ const callGlobal = (
         : primitiveValue(verdict);
     }
     case "Array.from": {
+      const iterated = first ? getIterableItems(interpreter, first, context, location) : first;
       const source =
-        first?.kind === "object" ? (getCollectionItems(first) ?? arrayLikeToList(first)) : first;
+        iterated?.kind === "object" ? arrayLikeToList(iterated) : iterated;
       if (source?.kind === "list" || source?.kind === "repeat") {
         if (isCallable(second)) return mapList(interpreter, source, second, context, location);
         return source;
@@ -1234,7 +1228,7 @@ const callGlobal = (
       return first;
     }
     case "Object.fromEntries": {
-      const entries = first?.kind === "object" ? (getCollectionItems(first) ?? first) : first;
+      const entries = first ? getIterableItems(interpreter, first, context, location) : first;
       if (entries?.kind === "list" && !entries.items.some((item) => item.kind === "repeat")) {
         return objectValue(
           entries.items.map(

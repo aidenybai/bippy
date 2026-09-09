@@ -16,6 +16,7 @@ import { isCssModulePath } from "./css-module.js";
 import { isCompilerHelperPackage } from "./helper-packages.js";
 import { createModuleRecord, isClientModule } from "./module-record.js";
 import { ModuleResolver } from "./module-resolver.js";
+import type { VitePluginModules } from "./vite-plugin-modules.js";
 
 export interface ExportNameSet {
   names: string[];
@@ -27,7 +28,12 @@ export interface ModuleGraphOptions {
   sourceFileCache?: SourceFileCache;
   resolveExternalPackages?: boolean;
   externalPackageAllowList?: string[];
+  vitePluginModules?: VitePluginModules | null;
 }
+
+/** A file only a bundler plugin can turn into a module: no source language, stylesheet, or asset loader handles it. */
+const isBundlerPluginPath = (filePath: string): boolean =>
+  getSourceLanguage(filePath) === null && !isCssModulePath(filePath) && !isAssetPath(filePath);
 
 export const describeImportedName = (imported: ImportedName): string => {
   switch (imported.kind) {
@@ -49,9 +55,11 @@ export class ModuleGraph {
   private readonly externalScopeAllowList: Set<string>;
   /** `prefix-*` entries: unscoped workspace packages sharing a name prefix. */
   private readonly externalPackagePrefixes: string[];
+  private readonly vitePluginModules: VitePluginModules | null;
 
   constructor(options: ModuleGraphOptions) {
     this.resolver = options.resolver;
+    this.vitePluginModules = options.vitePluginModules ?? null;
     this.sourceFileCache = options.sourceFileCache ?? new SourceFileCache();
     this.resolveExternalPackages = options.resolveExternalPackages ?? false;
     const allowList = options.externalPackageAllowList ?? [];
@@ -117,7 +125,32 @@ export class ModuleGraph {
     if (resolution.kind === "external" && !this.shouldAnalyzePackage(resolution.packageName)) {
       return resolution;
     }
+    if (resolution.kind === "internal" && isBundlerPluginPath(resolution.filePath)) {
+      return this.getPluginModule(resolution.filePath, specifier) ?? resolution;
+    }
     return this.getModule(resolution.filePath) ?? resolution;
+  }
+
+  describeUnsupportedModule(filePath: string): string {
+    const failure = this.vitePluginModules?.getFailure(filePath);
+    return failure === null || failure === undefined
+      ? `unsupported module ${filePath}`
+      : `Vite plugins failed to load ${filePath}: ${failure}`;
+  }
+
+  private getPluginModule(filePath: string, specifier: string): ModuleRecord | null {
+    if (!this.vitePluginModules) return null;
+    const queryIndex = specifier.indexOf("?");
+    const moduleKey = queryIndex === -1 ? filePath : filePath + specifier.slice(queryIndex);
+    const cached = this.modules.get(moduleKey);
+    if (cached !== undefined) return cached;
+    const sourceText = this.vitePluginModules.load(filePath, moduleKey);
+    const record =
+      sourceText === null
+        ? null
+        : createModuleRecord(this.sourceFileCache.readVirtual(moduleKey, sourceText, "js"));
+    this.modules.set(moduleKey, record);
+    return record;
   }
 
   private getAssetModule(filePath: string, specifier: string): ModuleRecord | null {
@@ -230,7 +263,7 @@ export class ModuleGraph {
         if (isAssetPath(target.filePath)) {
           return { kind: "asset", filePath: target.filePath, imported };
         }
-        return { kind: "unresolved", reason: `unsupported module ${target.filePath}` };
+        return { kind: "unresolved", reason: this.describeUnsupportedModule(target.filePath) };
       case "unresolved":
         return { kind: "unresolved", reason: `cannot resolve "${specifier}": ${target.error}` };
     }

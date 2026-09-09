@@ -258,13 +258,17 @@ export interface RouteRecord {
   id: string | null;
   path: string | null;
   index: boolean;
-  element: StaticValue | null;
-  component: StaticValue | null;
   file: string | null;
   children: RouteRecord[];
-  /** Set when the route object could not be read statically (spread, lazy, dynamic). */
+  /** Set when the route object could not be read statically (spread, dynamic path). */
   uncertainty: string | null;
+  /** `element`/`Component`, awaiting `lazy` on first use as the router does only for matched routes. */
+  readContent(): RouteContent;
 }
+
+export const NO_ROUTE_CONTENT: RouteContent = { element: null, component: null, uncertainty: null };
+
+export const readNoRouteContent = (): RouteContent => NO_ROUTE_CONTENT;
 
 const readString = (value: StaticValue): string | null =>
   value.kind === "primitive" && typeof value.value === "string" ? value.value : null;
@@ -276,11 +280,10 @@ const uncertainRoute = (uncertainty: string): RouteRecord => ({
   id: null,
   path: null,
   index: false,
-  element: null,
-  component: null,
   file: null,
   children: [],
   uncertainty,
+  readContent: readNoRouteContent,
 });
 
 /** Evaluates a route's `lazy` function as the router does when it awaits the route module; null when unavailable. */
@@ -347,6 +350,15 @@ const readRouteId = (fields: StaticObjectValue, treePath: number[]): string => {
   return file === null ? treePath.join("-") : routeIdFromFile(file);
 };
 
+const memoizedRouteContent = (
+  fields: StaticObjectValue,
+  resolveLazy: LazyResolver | null,
+): (() => RouteContent) => {
+  let content: RouteContent | null = null;
+  return () =>
+    (content ??= readRouteContent(fields, getObjectProperty(fields, "lazy"), resolveLazy));
+};
+
 const readRouteObject = (
   value: StaticValue,
   resolveLazy: LazyResolver | null,
@@ -354,19 +366,15 @@ const readRouteObject = (
 ): RouteRecord => {
   if (value.kind !== "object") return uncertainRoute(`route is ${value.kind}`);
   const hasSpread = value.entries.some((entry) => entry.kind === "spread");
-  const content = readRouteContent(value, getObjectProperty(value, "lazy"), resolveLazy);
   const routePath = readRoutePath(value);
   return {
     id: readRouteId(value, treePath),
     path: routePath.path,
     index: getTruthiness(getObjectProperty(value, "index")) === true,
-    element: content.element,
-    component: content.component,
     file: readString(getObjectProperty(value, "file")),
     children: readRouteList(getObjectProperty(value, "children"), resolveLazy, treePath),
-    uncertainty: hasSpread
-      ? "route object has a spread"
-      : (routePath.uncertainty ?? content.uncertainty),
+    uncertainty: hasSpread ? "route object has a spread" : routePath.uncertainty,
+    readContent: memoizedRouteContent(value, resolveLazy),
   };
 };
 
@@ -399,17 +407,15 @@ const readRouteElements = (
     const treePath = [...parentPath, index];
     if (item.kind === "element" && item.type.kind === "stub" && item.type.stub === ROUTE_STUB) {
       const props = item.props;
-      const content = readRouteContent(props, getObjectProperty(props, "lazy"), resolveLazy);
       const routePath = readRoutePath(props);
       routes.push({
         id: readRouteId(props, treePath),
         path: routePath.path,
         index: getTruthiness(getObjectProperty(props, "index")) === true,
-        element: content.element,
-        component: content.component,
         file: null,
         children: readRouteElements(getObjectProperty(props, "children"), resolveLazy, treePath),
-        uncertainty: routePath.uncertainty ?? content.uncertainty,
+        uncertainty: routePath.uncertainty,
+        readContent: memoizedRouteContent(props, resolveLazy),
       });
     } else if (item.kind === "element" && item.type.kind === "fragment") {
       routes.push(
@@ -640,8 +646,10 @@ const composeChain = (
 };
 
 const renderDataRoute = (route: RouteRecord, outlet: StaticValue): StaticValue => {
-  if (route.element) return route.element;
-  if (route.component) return element(toElementType(route.component, null), objectValue());
+  const content = route.readContent();
+  if (content.uncertainty) return unknownValue(`react-router: ${content.uncertainty}`);
+  if (content.element) return content.element;
+  if (content.component) return element(toElementType(content.component, null), objectValue());
   return outlet;
 };
 

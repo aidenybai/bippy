@@ -223,7 +223,12 @@ const captureLive = async (
       waitForSelector: entry.waitForSelector,
       settleMs: getSettleMs(entry),
       timeoutMs: CAPTURE_TIMEOUT_MS,
-      globals: entry.capturedGlobals,
+      globals: [
+        ...new Set([
+          ...getFrameworkProfile(entry.framework).capturedGlobals,
+          ...(entry.capturedGlobals ?? []),
+        ]),
+      ],
     });
   } finally {
     await server.stop();

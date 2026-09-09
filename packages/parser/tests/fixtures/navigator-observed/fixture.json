@@ -2,7 +2,7 @@
   "entry": "src/main.tsx",
   "expectedStatus": "exact",
   "minCoverage": 1,
-  "notes": "navigator.userAgent, navigator.language and navigator.maxTouchPoints are read from the captured page state, so platform, locale and touch-screen conditionals resolve to the branch the browser actually took.",
+  "notes": "navigator.userAgent, navigator.language, navigator.languages and navigator.maxTouchPoints are read from the captured page state, so platform, locale and touch-screen conditionals resolve to the branch the browser actually took; a member the captured navigator lacked (IE's userLanguage) reads undefined.",
   "observations": {
     "globals": {},
     "queries": [],
@@ -12,7 +12,9 @@
       "sessionStorage": {},
       "userAgent": "Mozilla/5.0 (X11; Linux x64) AppleWebKit/537.36 (KHTML, like Gecko) HappyDOM/20.11.6",
       "language": "en-US",
-      "maxTouchPoints": 0
+      "languages": ["en-US", "en"],
+      "maxTouchPoints": 0,
+      "navigatorKeys": ["language", "languages", "maxTouchPoints", "userAgent", "platform"]
     }
   }
 }

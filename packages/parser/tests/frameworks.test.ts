@@ -410,6 +410,43 @@ describe("next pages router", () => {
     expect(tree).toMatch(/<App>\n\s+<div>\n\s+<Home>\n\s+<h1>/);
   });
 
+  it("leaves data-fetched pageProps uncertain when the capture has no __NEXT_DATA__", async () => {
+    const { result, tree } = await render("next-pages", {
+      framework: "next-pages",
+      route: "/profile",
+    });
+    expect(tree).toContain("<Profile>");
+    expect(tree).toContain("<h1>");
+    expect(tree).toMatch(/\?branch|\?unknown/);
+    expect(result.diagnostics.filter((diagnostic) => diagnostic.severity === "error")).toEqual([]);
+  });
+
+  it("spreads the captured __NEXT_DATA__.props onto App as the pages client does on hydration", async () => {
+    const rootDirectory = join(FIXTURES, "next-pages");
+    const result = await renderFrameworkTarget(
+      { framework: "next-pages", route: "/profile" },
+      {
+        rootDirectory,
+        tsconfigPath: join(rootDirectory, "tsconfig.json"),
+        observations: {
+          queries: [],
+          globals: {
+            __NEXT_DATA__: {
+              props: { pageProps: { name: "Ada", isAdmin: true }, __N_SSP: true },
+              page: "/profile",
+              query: {},
+              buildId: "development",
+            },
+          },
+        },
+      },
+    );
+    const tree = formatPattern(getRenderPattern(result));
+    expect(tree).toMatch(/<Profile>\n\s+<section>\n\s+<h1>\n\s+<button>/);
+    expect(tree).not.toContain("<p>");
+    expect(tree).not.toMatch(/\?branch|\?unknown/);
+  });
+
   it("models next/dynamic as a forwardRef LoadableComponent rendering the loaded module", async () => {
     const { tree } = await render("next-pages", { framework: "next-pages", route: "/" });
     expect(tree).toMatch(/<h1>\n\s+<LoadableComponent>\n\s+<Widget>\n\s+<aside>/);
@@ -737,6 +774,23 @@ describe("react router data router with JSX routes", () => {
     );
     expect(tree).toMatch(/<Outlet>\n\s+<ContextProvider>\n\s+<RenderedRoute>\n\s+<Route>\n\s+<h1>/);
     expect(tree).toMatch(/\|1\n\s+\?unknown\(react-router: route path is unknown\(JSON\.parse\)\)/);
+  });
+});
+
+describe("react router data router with lazy routes", () => {
+  const target = (route: string) =>
+    render("react-router-lazy", { framework: "react-router", route, entry: "src/main.tsx" });
+
+  it("awaits `lazy` only for the matched route, leaving other route modules unloaded", async () => {
+    const { tree, errors } = await target("/");
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<RenderedRoute>\n\s+<Route>\n\s+<Home>\n\s+<h1>\n\s+<strong>$/);
+  });
+
+  it("awaits the matched route's `lazy`, running its module's side effects", async () => {
+    const { tree, errors } = await target("/heavy");
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<RenderedRoute>\n\s+<Route>\n\s+<Heavy>\n\s+<h1>$/);
   });
 });
 

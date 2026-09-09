@@ -44,6 +44,7 @@ export const hashKey = (key: unknown): string =>
 const capturedValueSchema: z.ZodType<CapturedValue> = z.json();
 const capturedValueRecordSchema = z.record(z.string(), capturedValueSchema);
 const stringRecordSchema = z.record(z.string(), z.string());
+const booleanRecordSchema = z.record(z.string(), z.boolean());
 
 const capturedQuerySchema: z.ZodType<CapturedQuery> = z.object({
   queryHash: z.string(),
@@ -114,7 +115,11 @@ const capturedPageStateSchema: z.ZodType<CapturedPageState> = z.object({
   windowKeys: z.array(z.string()).optional(),
   userAgent: z.string().optional(),
   language: z.string().optional(),
+  languages: z.array(z.string()).optional(),
   maxTouchPoints: z.number().optional(),
+  navigatorKeys: z.array(z.string()).optional(),
+  cssSupports: booleanRecordSchema.optional(),
+  mediaQueries: booleanRecordSchema.optional(),
   localStorage: stringRecordSchema,
   sessionStorage: stringRecordSchema,
 });

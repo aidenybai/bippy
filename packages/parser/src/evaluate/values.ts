@@ -624,11 +624,19 @@ export const joinObjectEntries = (
   const pathObjects = pathEntries.map((entries) => objectValue(entries));
   const joinedKeys = getJoinedPropertyKeys(original, pathEntries);
   if (joinedKeys === null) {
+    const isEveryPathAppending = pathEntries.every(
+      (entries) =>
+        entries.length >= original.length &&
+        original.every((entry, index) => entries[index] === entry),
+    );
+    const alternatives = isEveryPathAppending
+      ? pathEntries.map((entries) => objectValue(entries.slice(original.length)))
+      : pathObjects;
     return [
       ...original,
       {
         kind: "spread",
-        value: branchValue(pathObjects, reason, location, preferredIndex, predicate),
+        value: branchValue(alternatives, reason, location, preferredIndex, predicate),
       },
     ];
   }
@@ -1561,6 +1569,19 @@ export const getStaticPrimitive = (value: StaticValue): StaticPrimitive | undefi
 
 export const isIndefiniteItem = (item: StaticValue): boolean =>
   item.kind === "repeat" || item.kind === "optional";
+
+export const toIndexKey = (key: string): number | null => {
+  const index = Number(key);
+  return Number.isInteger(index) && index >= 0 && String(index) === key ? index : null;
+};
+
+/** The element a list slot holds once its count/presence uncertainty is peeled away. */
+export const getIndefiniteItemValue = (item: StaticValue): StaticValue =>
+  item.kind === "repeat"
+    ? getIndefiniteItemValue(item.item)
+    : item.kind === "optional"
+      ? getIndefiniteItemValue(item.value)
+      : item;
 
 export const getListLength = (list: StaticListValue): StaticValue =>
   list.items.some(isIndefiniteItem)
