@@ -70,6 +70,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 232,
         "staticFibers": 235,
         "coverage": 1,
@@ -97,7 +98,7 @@
         "fibers": 1000,
         "commits": 32,
         "pageErrors": [],
-        "title": "Dashboard — Free Tailwind 4 React Next Typescript dashboard template"
+        "title": "Dashboard \u2014 Free Tailwind 4 React Next Typescript dashboard template"
       },
       "static": {
         "stats": {
@@ -159,6 +160,7 @@
         ],
         "branchesResolved": 3,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 798,
         "staticFibers": 790,
         "coverage": 1,
@@ -214,6 +216,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 306,
         "staticFibers": 306,
         "coverage": 1,
@@ -431,6 +434,7 @@
         ],
         "branchesResolved": 4,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 534,
         "staticFibers": 487,
         "coverage": 1,
@@ -541,6 +545,7 @@
         "wildcards": [],
         "branchesResolved": 22,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 351,
         "staticFibers": 990,
         "coverage": 1,
@@ -676,6 +681,7 @@
         ],
         "branchesResolved": 12,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 179,
         "staticFibers": 264,
         "coverage": 1,
@@ -839,6 +845,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 693,
         "staticFibers": 693,
         "coverage": 1,
@@ -975,6 +982,7 @@
         "wildcards": [],
         "branchesResolved": 2,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 74,
         "staticFibers": 74,
         "coverage": 1,
@@ -1052,6 +1060,7 @@
         ],
         "branchesResolved": 1,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 14,
         "staticFibers": 4,
         "coverage": 1,
@@ -1133,6 +1142,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 1525,
         "staticFibers": 21,
         "coverage": 1,
@@ -1285,6 +1295,7 @@
         ],
         "branchesResolved": 3,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 172,
         "staticFibers": 33,
         "coverage": 1,
@@ -1312,7 +1323,7 @@
         "fibers": 1439,
         "commits": 25,
         "pageErrors": [
-          "Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <Home>\n      <main className=\"container ...\">\n        <WizardProvider>\n          <InvoiceMain>\n            <FormProvider control={{...}} subscribe={function subscribe} trigger={function trigger} ...>\n              <form onSubmit={function}>\n                <div className=\"grid grid-...\">\n                  <InvoiceForm>\n                    <div className=\"@container...\">\n                      <div className=\"mx-auto ma...\">\n                        <div className=\"mb-4 flex ...\">\n                          <AutosaveIndicator>\n                          <span\n+                           className=\"text-sm font-medium text-muted-foreground\"\n-                           className=\"flex items-center gap-1.5 text-xs text-muted-foreground\"\n                          >\n+                           New Invoice\n-                           Saved · just now\n                        ...\n                  ...\n                ...\n      ...\n    ...\n"
+          "Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <Home>\n      <main className=\"container ...\">\n        <WizardProvider>\n          <InvoiceMain>\n            <FormProvider control={{...}} subscribe={function subscribe} trigger={function trigger} ...>\n              <form onSubmit={function}>\n                <div className=\"grid grid-...\">\n                  <InvoiceForm>\n                    <div className=\"@container...\">\n                      <div className=\"mx-auto ma...\">\n                        <div className=\"mb-4 flex ...\">\n                          <AutosaveIndicator>\n                          <span\n+                           className=\"text-sm font-medium text-muted-foreground\"\n-                           className=\"flex items-center gap-1.5 text-xs text-muted-foreground\"\n                          >\n+                           New Invoice\n-                           Saved \u00b7 just now\n                        ...\n                  ...\n                ...\n      ...\n    ...\n"
         ],
         "title": "Free Invoice Generator | Invoify"
       },
@@ -1342,6 +1353,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 1144,
         "staticFibers": 1144,
         "coverage": 1,
@@ -1413,6 +1425,7 @@
         "wildcards": [],
         "branchesResolved": 5,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 84,
         "staticFibers": 104,
         "coverage": 1,
@@ -1492,6 +1505,7 @@
         ],
         "branchesResolved": 15,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 235,
         "staticFibers": 321,
         "coverage": 1,
@@ -1643,7 +1657,7 @@
             "reason": "step budget exhausted",
             "absorbedFibers": 5,
             "heads": [
-              "\"© 2026 \"",
+              "\"\u00a9 2026 \"",
               "<LinkComponent> key=\"1/.$linkwarden-website-key\" [ForwardRef]",
               "\". All rights reserved.\""
             ]
@@ -1668,6 +1682,7 @@
         ],
         "branchesResolved": 16,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 66,
         "staticFibers": 68,
         "coverage": 1,
@@ -1750,6 +1765,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 0,
         "staticFibers": 0,
         "coverage": 0,
@@ -2184,7 +2200,7 @@
             "skippedFibers": 5,
             "divergence": {
               "path": "root > <body> [HostComponent] > <DirectionProvider> (opaque) > <MantineProvider> (opaque) > <ModalsProvider> (opaque) > <AppProvider> [FunctionComponent] > <QueryClientProvider> (opaque) > <DashboardLayout> [FunctionComponent] > <AppShell> (opaque) > <AppShell.Footer> (opaque) > <Text> (opaque)[0]",
-              "expected": "\"CopyRight © 2023 Jotyy\"",
+              "expected": "\"CopyRight \u00a9 2023 Jotyy\"",
               "actual": "<footer> [HostComponent]"
             }
           }
@@ -2193,6 +2209,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 1386,
         "staticFibers": 286,
         "coverage": 1,
@@ -2424,7 +2441,7 @@
             "skippedFibers": 4,
             "divergence": {
               "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Typography> (opaque)[0]",
-              "expected": "\"Hi, Welcome back 👋\"",
+              "expected": "\"Hi, Welcome back \ud83d\udc4b\"",
               "actual": "<MuiTypographyRoot> [ForwardRef]"
             }
           },
@@ -2732,6 +2749,7 @@
         ],
         "branchesResolved": 30,
         "repeatIterations": 4,
+        "transparentFibers": 0,
         "runtimeFibers": 1850,
         "staticFibers": 821,
         "coverage": 0.9551282051282052,
@@ -2787,6 +2805,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 139,
         "staticFibers": 139,
         "coverage": 1,
@@ -2917,6 +2936,7 @@
         ],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 70,
         "staticFibers": 10,
         "coverage": 1,
@@ -2977,6 +2997,7 @@
         "wildcards": [],
         "branchesResolved": 3,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 673,
         "staticFibers": 646,
         "coverage": 1,
@@ -3078,6 +3099,7 @@
         ],
         "branchesResolved": 2,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 68,
         "staticFibers": 46,
         "coverage": 1,
@@ -3133,6 +3155,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 162,
         "staticFibers": 162,
         "coverage": 1,
@@ -3259,6 +3282,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 121,
         "staticFibers": 121,
         "coverage": 1,
@@ -3322,6 +3346,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 0,
         "staticFibers": 0,
         "coverage": 0,
@@ -3382,6 +3407,7 @@
         "wildcards": [],
         "branchesResolved": 2,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 194,
         "staticFibers": 199,
         "coverage": 1,
@@ -3471,6 +3497,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 1,
         "staticFibers": 929,
         "coverage": 0,
@@ -3567,6 +3594,7 @@
         ],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 1961,
         "staticFibers": 1,
         "coverage": 1,
@@ -3646,6 +3674,7 @@
         ],
         "branchesResolved": 3,
         "repeatIterations": 32,
+        "transparentFibers": 0,
         "runtimeFibers": 1456,
         "staticFibers": 119,
         "coverage": 1,
@@ -3725,6 +3754,7 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 91,
         "staticFibers": 117,
         "coverage": 1,
@@ -4041,6 +4071,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 691,
         "staticFibers": 151,
         "coverage": 0,
@@ -4058,25 +4089,806 @@
       "id": "react-email",
       "revision": "0f0cb94e1f15581131a2d50b80f8daa13dd1c9fc",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T03:55:59.450Z",
-      "durationMs": 213,
-      "runtime": null,
+      "capturedAt": "2026-09-08T23:55:07.817Z",
+      "durationMs": 1359,
+      "runtime": {
+        "reactVersion": "9.6.0",
+        "rendererName": "@react-three/fiber",
+        "buildType": "development",
+        "roots": 3,
+        "fibers": 5522,
+        "commits": 18,
+        "pageErrors": [],
+        "title": "React Email"
+      },
       "static": {
         "stats": {
-          "fiberCount": 931,
-          "textCount": 41,
-          "branchCount": 12,
-          "repeatCount": 0,
-          "opaqueCount": 85,
-          "unknownCount": 7,
-          "modulesLoaded": 49
+          "fiberCount": 1588,
+          "textCount": 32,
+          "branchCount": 39,
+          "repeatCount": 5,
+          "opaqueCount": 21,
+          "unknownCount": 30,
+          "modulesLoaded": 1816
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 2
+          }
+        ]
       },
-      "report": null,
-      "stateSpace": null,
-      "anchor": null,
-      "note": "static only",
+      "report": {
+        "status": "partial",
+        "matchedFibers": 1001,
+        "matchedText": 30,
+        "opaqueSubtrees": 19,
+        "opaqueSkippedFibers": 74,
+        "slotsMatched": 12,
+        "slotsUnmatched": 1,
+        "opaqueRenamed": 4,
+        "unmatchedSlots": [
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <HeroSection> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <LoadableComponent> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <BailoutToCSR> [FunctionComponent] > <Tower> [FunctionComponent] > <View> [FunctionComponent] > <div> [HostComponent] > <Canvas> (opaque)",
+            "reason": "Canvas from @react-three/fiber is not analyzed",
+            "head": "<Canvas> [FunctionComponent]",
+            "skippedFibers": 7,
+            "divergence": {
+              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <HeroSection> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <LoadableComponent> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <BailoutToCSR> [FunctionComponent] > <Tower> [FunctionComponent] > <View> [FunctionComponent] > <div> [HostComponent] > <Canvas> (opaque)[0]",
+              "expected": "<Suspense> [SuspenseComponent]",
+              "actual": "<CanvasImpl> [FunctionComponent]"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 4072,
+        "wildcards": [
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <CodeBlock> [FunctionComponent] > <Highlight> (opaque)",
+            "reason": "function <anonymous> is not a valid React child",
+            "absorbedFibers": 3102,
+            "heads": [
+              "<Highlight> [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <PlaygroundSection> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <CodePreview> [FunctionComponent] > <div> [HostComponent] > <CodePreviewContent> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> key=\"tailwind\" [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <CodeBlock> key=\"tailwind\" [FunctionComponent] > <Highlight> (opaque)",
+            "reason": "function <anonymous> is not a valid React child",
+            "absorbedFibers": 913,
+            "heads": [
+              "<Highlight> [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <HeroSection> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Code> [FunctionComponent] > <Highlight> (opaque)",
+            "reason": "function <anonymous> is not a valid React child",
+            "absorbedFibers": 25,
+            "heads": [
+              "<Highlight> [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <RootWithDefault> [FunctionComponent] > <Default> [FunctionComponent] > <Root> [FunctionComponent] > <EditorFocusScope> [FunctionComponent] > <children> (opaque) > <BubbleMenuNodeSelector> [FunctionComponent] > <NodeSelectorRoot> [FunctionComponent]",
+            "reason": "alternative nested 2 branches away from the preferred path",
+            "absorbedFibers": 25,
+            "heads": [
+              "<Popover> [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <RootWithDefault> [FunctionComponent] > <Default> [FunctionComponent] > <Root> [FunctionComponent] > <EditorFocusScope> [FunctionComponent] > <children> (opaque) > <BubbleMenuLinkSelector> [FunctionComponent]",
+            "reason": "alternative nested 2 branches away from the preferred path",
+            "absorbedFibers": 6,
+            "heads": [
+              "<div> [HostComponent]"
+            ]
+          },
+          {
+            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <EditorHomepage> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <EmailEditor> [ForwardRef] > <EditorProvider> (opaque) > <EditorToolbar> [FunctionComponent] > <div> [HostComponent] > <NodeSelector> [FunctionComponent] > <Popover> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <PopoverProvider> [FunctionComponent] > <PopoverTrigger> [ForwardRef] > <PopperAnchor> [ForwardRef] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <Primitive.button.Slot> [ForwardRef] > <Primitive.button.SlotClone> [ForwardRef] > <button> [HostComponent]",
+            "reason": "value from @tiptap/react (useEditorState())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"Heading\""
+            ]
+          }
+        ],
+        "branchesResolved": 24,
+        "repeatIterations": 0,
+        "transparentFibers": 100,
+        "runtimeFibers": 5177,
+        "staticFibers": 1197,
+        "coverage": 1,
+        "strictCoverage": 0.19915008692292835,
+        "divergence": null,
+        "stepsUsed": 18815,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 256,
+        "matchedState": {
+          "index": null,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 7,
+              "commitCount": 8
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#1",
+              "reason": "Suspense boundary may be suspended when observed",
+              "location": null,
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#2",
+              "reason": "if (branch(true | false))",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/apps/web/src/webgl/tower.tsx:129:3",
+              "alternativeIndex": 2,
+              "alternativeCount": 3
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(637)",
+              "reason": "&& on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/node_modules/.pnpm/@radix-ui+react-tabs@1.1.13_@types+react-dom@19.2.3_@types+react@19.2.14__@types+react@_2ad0945e3cb98dc5bbfaaf29c105e977\u2026",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(638)",
+              "reason": "&& on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/node_modules/.pnpm/@radix-ui+react-tabs@1.1.13_@types+react-dom@19.2.3_@types+react@19.2.14__@types+react@_2ad0945e3cb98dc5bbfaaf29c105e977\u2026",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#4",
+              "reason": "&& on branch(null | unknown)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/apps/web/src/components/sections/playground/code-preview.tsx:122:10",
+              "alternativeIndex": 0,
+              "alternativeCount": 3
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(639)",
+              "reason": "&& on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/node_modules/.pnpm/@radix-ui+react-tabs@1.1.13_@types+react-dom@19.2.3_@types+react@19.2.14__@types+react@_2ad0945e3cb98dc5bbfaaf29c105e977\u2026",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(640)",
+              "reason": "&& on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/node_modules/.pnpm/@radix-ui+react-tabs@1.1.13_@types+react-dom@19.2.3_@types+react@19.2.14__@types+react@_2ad0945e3cb98dc5bbfaaf29c105e977\u2026",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(641)",
+              "reason": "&& on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/node_modules/.pnpm/@radix-ui+react-tabs@1.1.13_@types+react-dom@19.2.3_@types+react@19.2.14__@types+react@_2ad0945e3cb98dc5bbfaaf29c105e977\u2026",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#5",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#6",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1078:2",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#7",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#10",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1361:2",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#11",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1139:2",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#15",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#16",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1078:2",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#18",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#19",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1078:2",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(314)",
+              "reason": "&& on branch(<boolean> | false)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1572:165",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#21",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#22",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1078:2",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(325)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1768:211",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#24",
+              "reason": "if (branch(<boolean> | true))",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:2508:2",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#34",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/apps/web/src/components/sections/editor-toolbar.tsx:340:3",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#35",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/apps/web/src/components/sections/editor-toolbar.tsx:257:3",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "omissions": [
+            {
+              "kind": "subtree",
+              "reason": "alternative nested 2 branches away from the preferred path"
+            },
+            {
+              "kind": "state",
+              "conditions": [
+                {
+                  "kind": "transition",
+                  "commit": 0,
+                  "commitCount": 8
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#11",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#14",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#15",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1078:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#16",
+                  "reason": "if (branch(<children> | undefined))",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/node_modules/.pnpm/@radix-ui+react-slot@1.2.4_@types+react@19.2.14_react@19.2.4/node_modules/@radix-ui/react-slot/dist/index.mjs:23:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(65)",
+                  "reason": "&& on branch(<boolean> | false)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1572:165",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#17",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#18",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1078:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#19",
+                  "reason": "if (branch(<children> | undefined))",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/node_modules/.pnpm/@radix-ui+react-slot@1.2.4_@types+react@19.2.14_react@19.2.4/node_modules/@radix-ui/react-slot/dist/index.mjs:23:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(73)",
+                  "reason": "&& on <boolean: !== on dynamic values>",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1768:211",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#20",
+                  "reason": "if (branch(<boolean> | true))",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:2508:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#21",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1078:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#22",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/apps/web/src/components/sections/editor-toolbar.tsx:340:3",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#23",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/apps/web/src/components/sections/editor-toolbar.tsx:257:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#23",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/apps/web/src/components/sections/editor-toolbar.tsx:257:3",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#11",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#14",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#15",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1078:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#16",
+                  "reason": "if (branch(<children> | undefined))",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/node_modules/.pnpm/@radix-ui+react-slot@1.2.4_@types+react@19.2.14_react@19.2.4/node_modules/@radix-ui/react-slot/dist/index.mjs:23:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(65)",
+                  "reason": "&& on branch(<boolean> | false)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1572:165",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#17",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#18",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1078:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#19",
+                  "reason": "if (branch(<children> | undefined))",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/node_modules/.pnpm/@radix-ui+react-slot@1.2.4_@types+react@19.2.14_react@19.2.4/node_modules/@radix-ui/react-slot/dist/index.mjs:23:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(73)",
+                  "reason": "&& on <boolean: !== on dynamic values>",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1768:211",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#20",
+                  "reason": "if (branch(<boolean> | true))",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:2508:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#21",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1078:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#22",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/apps/web/src/components/sections/editor-toolbar.tsx:340:3",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#21",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1078:2",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#11",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#14",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#15",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1078:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#16",
+                  "reason": "if (branch(<children> | undefined))",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/node_modules/.pnpm/@radix-ui+react-slot@1.2.4_@types+react@19.2.14_react@19.2.4/node_modules/@radix-ui/react-slot/dist/index.mjs:23:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(65)",
+                  "reason": "&& on branch(<boolean> | false)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1572:165",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#17",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#18",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1078:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#19",
+                  "reason": "if (branch(<children> | undefined))",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/node_modules/.pnpm/@radix-ui+react-slot@1.2.4_@types+react@19.2.14_react@19.2.4/node_modules/@radix-ui/react-slot/dist/index.mjs:23:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(73)",
+                  "reason": "&& on <boolean: !== on dynamic values>",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1768:211",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#20",
+                  "reason": "if (branch(<boolean> | true))",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:2508:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#19",
+              "reason": "if (branch(<children> | undefined))",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/node_modules/.pnpm/@radix-ui+react-slot@1.2.4_@types+react@19.2.14_react@19.2.4/node_modules/@radix-ui/react-slot/dist/index.mjs:23:5",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#11",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#14",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#15",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1078:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#16",
+                  "reason": "if (branch(<children> | undefined))",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/node_modules/.pnpm/@radix-ui+react-slot@1.2.4_@types+react@19.2.14_react@19.2.4/node_modules/@radix-ui/react-slot/dist/index.mjs:23:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(65)",
+                  "reason": "&& on branch(<boolean> | false)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1572:165",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#17",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#18",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1078:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#16",
+              "reason": "if (branch(<children> | undefined))",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/node_modules/.pnpm/@radix-ui+react-slot@1.2.4_@types+react@19.2.14_react@19.2.4/node_modules/@radix-ui/react-slot/dist/index.mjs:23:5",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#11",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#14",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#15",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1078:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#11",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#1",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/packages/editor/dist/root-DiU3P7qT.mjs:1472:2",
+              "alternativeIndex": 1,
+              "conditions": []
+            }
+          ]
+        }
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T08:45:45.605Z",
       "failure": null
     },
     {
@@ -4164,6 +4976,7 @@
         "wildcards": [],
         "branchesResolved": 7,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 214,
         "staticFibers": 104,
         "coverage": 1,
@@ -4309,6 +5122,7 @@
         ],
         "branchesResolved": 1,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 40,
         "staticFibers": 16,
         "coverage": 1,
@@ -4373,6 +5187,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 54,
         "staticFibers": 54,
         "coverage": 1,
@@ -4428,6 +5243,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 6,
         "staticFibers": 6,
         "coverage": 1,
@@ -4499,6 +5315,7 @@
         "wildcards": [],
         "branchesResolved": 6,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 592,
         "staticFibers": 598,
         "coverage": 1,
@@ -4638,6 +5455,7 @@
         "wildcards": [],
         "branchesResolved": 5,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 747,
         "staticFibers": 823,
         "coverage": 1,
@@ -5195,6 +6013,7 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 1057,
         "staticFibers": 824,
         "coverage": 1,
@@ -5212,30 +6031,87 @@
       "id": "shadcn-ui",
       "revision": "7c9eaba1c0a6404c990c144a654792e3313c650d",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T03:55:59.807Z",
-      "durationMs": 315,
-      "runtime": null,
+      "capturedAt": "2026-09-08T23:55:00.856Z",
+      "durationMs": 5868,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-28cd4bb0-20260723",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 2345,
+        "commits": 18,
+        "pageErrors": [],
+        "title": "shadcn/ui - The Foundation for your Design System"
+      },
       "static": {
         "stats": {
-          "fiberCount": 2160,
-          "textCount": 232,
-          "branchCount": 52,
-          "repeatCount": 27,
-          "opaqueCount": 1021,
-          "unknownCount": 19,
-          "modulesLoaded": 118
+          "fiberCount": 2145,
+          "textCount": 49,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 12792
         },
         "diagnostics": [
           {
+            "code": "dynamic-props",
+            "count": 1
+          },
+          {
             "code": "dynamic-key",
-            "count": 8
+            "count": 1
           }
         ]
       },
-      "report": null,
-      "stateSpace": null,
-      "anchor": null,
-      "note": "static only",
+      "report": {
+        "status": "exact",
+        "matchedFibers": 2017,
+        "matchedText": 45,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "transparentFibers": 139,
+        "runtimeFibers": 2062,
+        "staticFibers": 2062,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 2063,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 6,
+        "matchedState": {
+          "index": 4,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 2,
+              "commitCount": 3
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(68)",
+              "reason": "conditional on <boolean: >= on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-ui/apps/v4/components/github-link.tsx:29:5",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-08T08:40:51.563Z",
       "failure": null
     },
     {
@@ -5283,6 +6159,7 @@
         "wildcards": [],
         "branchesResolved": 2,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 5,
         "staticFibers": 77,
         "coverage": 1,
@@ -5401,6 +6278,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 217,
         "staticFibers": 217,
         "coverage": 1,
@@ -5538,6 +6416,7 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 191,
         "staticFibers": 201,
         "coverage": 1,
@@ -5609,6 +6488,7 @@
         ],
         "branchesResolved": 23,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 481,
         "staticFibers": 494,
         "coverage": 1,
@@ -5956,6 +6836,7 @@
         ],
         "branchesResolved": 2,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 3748,
         "staticFibers": 104,
         "coverage": 1,
@@ -6042,6 +6923,7 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 86,
         "staticFibers": 1293,
         "coverage": 1,
@@ -6128,6 +7010,7 @@
         ],
         "branchesResolved": 6,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 62,
         "staticFibers": 58,
         "coverage": 1,

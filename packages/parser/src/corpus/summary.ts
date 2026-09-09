@@ -54,6 +54,7 @@ const reportSchema: z.ZodType<ComparisonReport> = z.object({
   ),
   branchesResolved: z.number(),
   repeatIterations: z.number(),
+  transparentFibers: z.number().default(0),
   runtimeFibers: z.number(),
   staticFibers: z.number(),
   coverage: z.number(),

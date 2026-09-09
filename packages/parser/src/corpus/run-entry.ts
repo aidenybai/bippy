@@ -4,7 +4,10 @@ import path from "node:path";
 import { z } from "zod";
 import { CorpusRevisionError, NoCommitsError, parseWithSchema } from "../errors.js";
 import { renderFramework } from "../frameworks/render-framework.js";
-import { flattenTransparentFibers } from "../frameworks/framework-profile.js";
+import {
+  dropInjectedFibers,
+  unwrapTransparentRuntimeFiber,
+} from "../frameworks/framework-profile.js";
 import { getFrameworkProfile } from "../frameworks/profiles.js";
 import { BrowserCapturer, type BrowserCaptureResult } from "../harness/capture-browser.js";
 import {
@@ -240,8 +243,11 @@ const compareEntry = (
   });
   const comparison = compareStaticToRuntime(
     stateSpace,
-    flattenTransparentFibers(capture.snapshot, profile),
-    entry.compare,
+    dropInjectedFibers(capture.snapshot, profile),
+    {
+      ...entry.compare,
+      unwrapTransparentRuntimeFiber: (fiber) => unwrapTransparentRuntimeFiber(fiber, profile),
+    },
   );
   result.runtime = summarizeRuntime(capture);
   result.report = {

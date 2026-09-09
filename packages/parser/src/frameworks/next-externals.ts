@@ -46,8 +46,9 @@ import {
 // trees the real components commit: `next/link` in the App Router (15.3+) is
 // `LinkComponent` -> LinkStatusContext provider -> <a>; before 15.3 and in the
 // Pages Router a `forwardRef` -> <a>. `next/image` is a forwardRef wrapping a forwardRef
-// `ImageElement` -> <img>. Router hooks resolve from the URL being rendered;
-// anything only the running router knows is an explicit unknown.
+// `ImageElement` -> <img>, followed by `ImagePreload` when `priority`/`preload`
+// is set. Router hooks resolve from the URL being rendered; anything only the
+// running router knows is an explicit unknown.
 
 export interface NextModel {
   externalValues: ExternalValueProvider;
@@ -214,6 +215,15 @@ const createLinkStub = (options: NextModelOptions): StubComponent => {
   return { displayName: "LinkComponent", tag: ForwardRefTag, render };
 };
 
+/**
+ * `next/head` renders its children into `<head>` through a `SideEffect` that
+ * returns null; before Next 12.2 it was an anonymous class React names `_class`.
+ */
+const HEAD_STUB: StubComponent = {
+  displayName: "Head",
+  render: () => stubElement(emptyStub("SideEffect"), {}),
+};
+
 const IMAGE_ELEMENT_STUB: StubComponent = {
   displayName: null,
   tag: ForwardRefTag,
@@ -239,7 +249,11 @@ const IMAGE_ELEMENT_STUB: StubComponent = {
   },
 };
 
-/** `ImagePreload` for a `priority` image: `ReactDOM.preload` and null in the App Router, a `next/head` `<link rel="preload">` in the Pages Router. */
+/**
+ * `ImagePreload` (next/dist/client/image-component.js) for a `preload` or
+ * `priority` image: `ReactDOM.preload` and null in the App Router, a
+ * `next/head` `<link rel="preload">` in the Pages Router.
+ */
 const imagePreloadStub = (kind: NextRouterKind): StubComponent => ({
   displayName: "ImagePreload",
   render: (props) =>
@@ -249,6 +263,7 @@ const imagePreloadStub = (kind: NextRouterKind): StubComponent => ({
           children: hostElement("link", {
             rel: primitiveValue("preload"),
             href: getObjectProperty(props, "src"),
+            as: primitiveValue("image"),
           }),
         }),
 });
@@ -260,14 +275,18 @@ const imageStub = (kind: NextRouterKind): StubComponent => {
     tag: ForwardRefTag,
     render: (props) => {
       const imageProps = Object.fromEntries(propEntries(props));
+      const isPreload = getTruthiness(getObjectProperty(props, "preload"));
       const isPriority = getTruthiness(getObjectProperty(props, "priority"));
       const preloadElement = stubElement(preloadStub, { src: getObjectProperty(props, "src") });
       const preload =
-        isPriority === null
-          ? branchValue([NULL_VALUE, preloadElement], "priority decides whether the image preloads")
-          : isPriority
-            ? preloadElement
-            : NULL_VALUE;
+        isPreload === true || isPriority === true
+          ? preloadElement
+          : isPreload === false && isPriority === false
+            ? NULL_VALUE
+            : branchValue(
+                [NULL_VALUE, preloadElement],
+                "priority decides whether the image preloads",
+              );
       return element(
         { kind: "fragment" },
         objectFromRecord({
@@ -299,15 +318,6 @@ const FORWARD_REF_FORM_STUB: StubComponent = {
   displayName: "FormComponent",
   tag: ForwardRefTag,
   render: formElement,
-};
-
-/**
- * `next/head` renders its children into `<head>` through a `SideEffect` that
- * returns null; before Next 12.2 it was an anonymous class React names `_class`.
- */
-const HEAD_STUB: StubComponent = {
-  displayName: "Head",
-  render: () => stubElement(emptyStub("SideEffect"), {}),
 };
 
 const CLASS_HEAD_STUB: StubComponent = {
@@ -342,11 +352,15 @@ const scriptStub = (kind: NextRouterKind): StubComponent => ({
 
 const BAILOUT_TO_CSR_STUB = passthroughStub("BailoutToCSR");
 
+const PRELOAD_CHUNKS_STUB = emptyStub("PreloadChunks");
+
 /**
  * `next/dynamic` at the time the page is captured: the chunk has loaded, so the
- * App Router's `LoadableComponent` commits Fragment/Suspense -> `<Lazy>` (the
- * `PreloadChunks` slot is null on the client) and the Pages Router's forwardRef
- * `LoadableComponent` renders the loaded module's default export directly.
+ * App Router's `LoadableComponent` (a server component unless client code
+ * rendered it) commits Fragment/Suspense -> `<Lazy>`, preceded by the client
+ * `PreloadChunks` only when it ran on the server, and the Pages Router's
+ * forwardRef `LoadableComponent` renders the loaded module's default export
+ * directly.
  */
 const dynamicComponent = (
   kind: NextRouterKind,
@@ -394,14 +408,24 @@ const loadableComponent = (
   if (isSsr === null || hasLoading === null) {
     return unknownValue("next/dynamic options decide its suspense boundary");
   }
+  const loadableGenerated = readOption("loadableGenerated");
+  const moduleIds =
+    loadableGenerated.kind === "object"
+      ? getObjectProperty(loadableGenerated, "modules")
+      : UNDEFINED_VALUE;
   return stubValue({
     displayName: "LoadableComponent",
-    render: (props) => {
+    isServerComponent: true,
+    render: (props, renderTools) => {
       const lazyElement = element(lazyType, props);
+      const preloadChunks =
+        renderTools.environment === "server"
+          ? stubElement(PRELOAD_CHUNKS_STUB, { moduleIds })
+          : NULL_VALUE;
       const children = isSsr
         ? element(
             { kind: "fragment" },
-            objectFromRecord({ children: listValue([NULL_VALUE, lazyElement]) }),
+            objectFromRecord({ children: listValue([preloadChunks, lazyElement]) }),
           )
         : stubElement(BAILOUT_TO_CSR_STUB, {
             reason: primitiveValue("next/dynamic"),

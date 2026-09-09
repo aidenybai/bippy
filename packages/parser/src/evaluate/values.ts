@@ -16,6 +16,7 @@ import type {
   StaticListValue,
   StaticNativeObjectValue,
   StaticObjectEntry,
+  StaticPropertyEntry,
   StaticObjectValue,
   StaticOptionalValue,
   StaticPrimitive,
@@ -271,7 +272,7 @@ export const accessorEntry = (
   key: string,
   accessor: StaticAccessor,
   location: SourceLocation | null,
-): StaticObjectEntry => ({
+): StaticPropertyEntry => ({
   kind: "property",
   key,
   value: unknownValue(`accessor property "${key}"`, location),
@@ -449,23 +450,36 @@ export const getPropertyName = (key: StaticValue): string | null => {
   return key.kind === "symbol" ? getSymbolPropertyKey(key) : null;
 };
 
+/** Own keys in definition order mapped to their enumerability (the last definition of a key decides); null when a spread source is not fully known. */
 const getKnownOwnKeys = (
   object: StaticObjectValue,
   isIncluded: (key: string) => boolean,
-): string[] | null => {
-  const keys: string[] = [];
+): Map<string, boolean> | null => {
+  const keys = new Map<string, boolean>();
   for (const entry of object.entries) {
-    const entryKeys = entry.kind === "property" ? [entry.key] : getKnownSpreadKeys(entry.value);
-    if (!entryKeys) return null;
-    for (const key of entryKeys) {
-      if (isIncluded(key) && !keys.includes(key)) keys.push(key);
+    if (entry.kind === "property") {
+      if (isIncluded(entry.key)) keys.set(entry.key, entry.isEnumerable !== false);
+      continue;
     }
+    const spreadKeys = getKnownSpreadKeys(entry.value);
+    if (!spreadKeys) return null;
+    for (const key of spreadKeys) if (isIncluded(key)) keys.set(key, true);
   }
   return keys;
 };
 
+const getEnumerableKeys = (keys: Map<string, boolean> | null): string[] | null =>
+  keys && [...keys].filter(([, isEnumerable]) => isEnumerable).map(([key]) => key);
+
+/** Own enumerable string keys in `Object.keys` order; null when the shape is not fully known. */
 export const getKnownObjectKeys = (object: StaticObjectValue): string[] | null =>
-  getKnownOwnKeys(object, (key) => !isSymbolPropertyKey(key));
+  getEnumerableKeys(getKnownOwnKeys(object, (key) => !isSymbolPropertyKey(key)));
+
+/** Own string keys including non-enumerable ones, as `Object.getOwnPropertyNames` lists them. */
+export const getKnownObjectOwnNames = (object: StaticObjectValue): string[] | null => {
+  const keys = getKnownOwnKeys(object, (key) => !isSymbolPropertyKey(key));
+  return keys && [...keys.keys()];
+};
 
 /** `Object.getOwnPropertyDescriptor(object, key)`, or null when a dynamic spread could own `key`. */
 export const getOwnPropertyDescriptor = (
@@ -474,36 +488,42 @@ export const getOwnPropertyDescriptor = (
 ): StaticValue | null => {
   const ownKeys = getKnownOwnKeys(object, () => true);
   if (!ownKeys) return null;
-  if (!ownKeys.includes(key)) return UNDEFINED_VALUE;
+  const isEnumerable = ownKeys.get(key);
+  if (isEnumerable === undefined) return UNDEFINED_VALUE;
   const isConfigurable = primitiveValue(object.isFrozen !== true);
   const accessor = getObjectAccessor(object, key);
   if (accessor) {
     return objectFromRecord({
       get: accessor.get ?? UNDEFINED_VALUE,
       set: accessor.set ?? UNDEFINED_VALUE,
-      enumerable: TRUE_VALUE,
+      enumerable: primitiveValue(isEnumerable),
       configurable: isConfigurable,
     });
   }
   return objectFromRecord({
     value: getObjectProperty(object, key),
     writable: isConfigurable,
-    enumerable: TRUE_VALUE,
+    enumerable: primitiveValue(isEnumerable),
     configurable: isConfigurable,
   });
 };
 
 /** The symbols keying own properties, as `Object.getOwnPropertySymbols` lists them. */
-export const getKnownObjectSymbols = (object: StaticObjectValue): StaticSymbolValue[] | null =>
-  getKnownOwnKeys(object, isSymbolPropertyKey)?.map((propertyKey) => {
-    const key = propertyKey.slice(SYMBOL_PROPERTY_KEY_PREFIX.length);
-    return unregisteredSymbols.get(key) ?? { kind: "symbol", key };
-  }) ?? null;
+export const getKnownObjectSymbols = (object: StaticObjectValue): StaticSymbolValue[] | null => {
+  const keys = getKnownOwnKeys(object, isSymbolPropertyKey);
+  return keys
+    ? [...keys.keys()].map((propertyKey) => {
+        const key = propertyKey.slice(SYMBOL_PROPERTY_KEY_PREFIX.length);
+        return unregisteredSymbols.get(key) ?? { kind: "symbol", key };
+      })
+    : null;
+};
 
+/** Keys `{ ...spread }` copies: the source's own enumerable string and symbol keys. */
 const getKnownSpreadKeys = (spread: StaticValue): string[] | null => {
   switch (spread.kind) {
     case "object":
-      return getKnownOwnKeys(spread, () => true);
+      return getEnumerableKeys(getKnownOwnKeys(spread, () => true));
     case "primitive":
       return [];
     case "branch": {
@@ -713,22 +733,37 @@ const isSameValue = (left: StaticValue, right: StaticValue): boolean => {
   return false;
 };
 
-const REFERENCE_KINDS = new Set<StaticValue["kind"]>([
+const CALLABLE_KINDS = new Set<StaticValue["kind"]>([
+  "function",
+  "class",
+  "native-function",
+  "method",
+]);
+
+/** Each models one runtime class of object (array, RegExp, module namespace...), so values of two kinds are never the same object. */
+const NON_CALLABLE_OBJECT_KINDS = new Set<StaticValue["kind"]>([
   "element",
   "list",
   "object",
-  "function",
-  "class",
   "regexp",
   "context",
-  "native-function",
-  "proxy",
   "native-object",
-  "method",
-  "react-api",
-  "component-reference",
   "namespace",
 ]);
+
+/** Reference values whose `typeof` (`function` or `object`) the model does not fix. */
+const REFERENCE_KINDS = new Set<StaticValue["kind"]>(["proxy", "react-api", "component-reference"]);
+
+type IdentityClass = "scalar" | "symbol" | "callable" | "object" | "reference";
+
+const isReferenceClass = (identityClass: IdentityClass): boolean =>
+  identityClass === "callable" || identityClass === "object" || identityClass === "reference";
+
+/** Whether two values of these classes may be the same value. */
+const canShareIdentityClass = (left: IdentityClass, right: IdentityClass): boolean =>
+  left === right ||
+  (left === "reference" && isReferenceClass(right)) ||
+  (right === "reference" && isReferenceClass(left));
 
 const SYMBOL_ELEMENT_KINDS = new Set<StaticElementType["kind"]>([
   "fragment",
@@ -741,7 +776,7 @@ const SYMBOL_ELEMENT_KINDS = new Set<StaticElementType["kind"]>([
 ]);
 
 /** The runtime `typeof` a value is known to have, when identity can be decided from it. */
-const getIdentityClass = (value: StaticValue): "scalar" | "symbol" | "reference" | null => {
+const getIdentityClass = (value: StaticValue): IdentityClass | null => {
   switch (value.kind) {
     case "primitive":
       return "scalar";
@@ -754,6 +789,8 @@ const getIdentityClass = (value: StaticValue): "scalar" | "symbol" | "reference"
       if (value.type.kind === "host") return "scalar";
       return value.type.kind === "external" || value.type.kind === "unknown" ? null : "reference";
     default:
+      if (CALLABLE_KINDS.has(value.kind)) return "callable";
+      if (NON_CALLABLE_OBJECT_KINDS.has(value.kind)) return "object";
       return REFERENCE_KINDS.has(value.kind) ? "reference" : null;
   }
 };
@@ -891,7 +928,8 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
   if (leftComponent && rightComponent) return leftComponent === rightComponent;
   const leftClass = getIdentityClass(left);
   const rightClass = getIdentityClass(right);
-  if (leftClass && rightClass && leftClass !== rightClass) return false;
+  if (leftClass && rightClass && !canShareIdentityClass(leftClass, rightClass)) return false;
+  if (leftClass === "object" && rightClass === "object" && left.kind !== right.kind) return false;
   return null;
 };
 
@@ -1389,6 +1427,20 @@ const repeatItem = (item: StaticValue): StaticValue => ({ kind: "repeat", item, 
 export const hasDefiniteItems = (value: StaticValue): value is StaticListValue =>
   value.kind === "list" && !value.items.some(isIndefiniteItem);
 
+/** Own enumerable string-keyed entries in `Object.keys` order; null when the shape is not fully known. */
+export const getOwnEnumerableEntries = (
+  target: StaticValue,
+): [key: string, value: StaticValue][] | null => {
+  if (target.kind === "object") {
+    return getKnownObjectKeys(target)?.map((key) => [key, getObjectProperty(target, key)]) ?? null;
+  }
+  if (!hasDefiniteItems(target)) return null;
+  return [
+    ...target.items.map((item, index): [string, StaticValue] => [String(index), item]),
+    ...[...(target.properties ?? [])].filter(([key]) => !target.nonEnumerableKeys?.has(key)),
+  ];
+};
+
 export const isKnownList = (value: StaticValue): value is StaticListValue =>
   hasDefiniteItems(value) && value.items.every((item) => item.kind !== "branch");
 
@@ -1410,6 +1462,9 @@ export const spreadListItems = (
   location: SourceLocation | null,
 ): StaticValue[] => {
   if (value.kind === "list") return value.items;
+  if (value.kind === "primitive" && typeof value.value === "string") {
+    return [...value.value].map((character) => primitiveValue(character));
+  }
   if (value.kind === "repeat") return [value];
   if (value.kind === "optional") {
     return spreadListItems(value.value, location).map((item) =>
