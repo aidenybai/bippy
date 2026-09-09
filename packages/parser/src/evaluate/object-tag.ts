@@ -24,7 +24,7 @@ const getTag = (value: StaticValue): string | null => {
       return "[object Module]";
     case "global": {
       const intrinsic = getBuiltinWitness(value.name);
-      if (intrinsic !== undefined) return tagOf(intrinsic);
+      if (intrinsic !== null) return tagOf(intrinsic);
       const witness = getPrototypeWitness(value);
       return witness === null ? null : tagOf(witness);
     }

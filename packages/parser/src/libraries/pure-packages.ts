@@ -44,6 +44,8 @@ const liftExport = (
     : fromNativeValue(exported, name, null);
 };
 
+export const isPurePackage = (packageName: string): boolean => PURE_PACKAGES.has(packageName);
+
 export class PurePackages {
   private readonly installed: InstalledModules;
 
@@ -69,7 +71,7 @@ export class PurePackages {
 
   private loadPure(specifier: string, filePath: string | null): object | null {
     const packageName = getPackageNameFromSpecifier(specifier);
-    if (packageName === null || !PURE_PACKAGES.has(packageName)) return null;
+    if (packageName === null || !isPurePackage(packageName)) return null;
     return filePath === null
       ? this.installed.load(specifier)
       : this.installed.loadBeside(specifier, filePath);

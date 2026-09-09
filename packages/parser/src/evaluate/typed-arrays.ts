@@ -93,6 +93,16 @@ export const getKnownBytes = (value: StaticValue): Uint8Array | null => {
   return new Uint8Array(typed.buffer, typed.byteOffset, typed.byteLength);
 };
 
+/** The `ArrayBuffer` or typed array a binary list stands for; null for other lists or uncertain elements. */
+export const toNativeBinary = (value: StaticListValue): ArrayBuffer | ArrayBufferView | null => {
+  const kind = binaryKinds.get(value);
+  const bytes = kind === undefined ? null : getKnownBytes(value);
+  if (kind === undefined || bytes === null) return null;
+  const buffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(buffer).set(bytes);
+  return kind === "ArrayBuffer" ? buffer : new TYPED_ARRAY_CONSTRUCTORS[kind](buffer);
+};
+
 /** The elements of `kind` over `bytes`, as a view over their buffer reads them. */
 export const bytesValue = (kind: BinaryKind, bytes: Uint8Array): StaticListValue => {
   const elements =

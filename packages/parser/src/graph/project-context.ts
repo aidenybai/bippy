@@ -2,7 +2,12 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { EMPTY_OBSERVATIONS } from "../observations.js";
 import { readPackageManifest } from "../package-manifest.js";
-import type { ModuleTranspiler, ProjectContext, RuntimeObservations } from "../types.js";
+import type {
+  ModuleBundler,
+  ModuleTranspiler,
+  ProjectContext,
+  RuntimeObservations,
+} from "../types.js";
 import { findInstallRoot } from "./install-root.js";
 import { readInstalledPackage } from "./installed-package.js";
 import type { ModuleResolver } from "./module-resolver.js";
@@ -37,6 +42,7 @@ export interface ProjectContextOptions {
   observations?: RuntimeObservations;
   origin?: string | null;
   transpiler?: ModuleTranspiler;
+  bundler?: ModuleBundler;
 }
 
 export const createProjectContext = (options: ProjectContextOptions): ProjectContext => {
@@ -46,6 +52,7 @@ export const createProjectContext = (options: ProjectContextOptions): ProjectCon
     observations = EMPTY_OBSERVATIONS,
     origin = null,
     transpiler = "name-preserving",
+    bundler = "unknown",
   } = options;
   const servedDirectory = options.servedDirectory ?? rootDirectory;
   const publicDirectory = options.publicDirectory ?? path.join(servedDirectory, PUBLIC_DIRECTORY);
@@ -74,6 +81,7 @@ export const createProjectContext = (options: ProjectContextOptions): ProjectCon
     readPackageVersion: (packageName) =>
       readInstalledPackage(resolver, rootDirectory, packageName)?.version ?? null,
     transpiler,
+    bundler,
     getImportedAssetUrl: assets.getImportedUrl,
     readServedAsset: assets.read,
     findQuery: (queryHash) => queries.get(queryHash) ?? null,

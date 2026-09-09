@@ -1,4 +1,5 @@
 import {
+  CONTEXT_OWN_KEYS,
   FUNCTION_OWN_KEYS,
   getStubOwnKeys,
   REACT_ELEMENT_OWN_KEYS,
@@ -12,6 +13,8 @@ import type {
 } from "../types.js";
 import { getStaticProperty } from "./class-component.js";
 import { createErrorValue } from "./errors.js";
+import { toLanguagePropertyKey } from "./host-globals.js";
+import { getPrototypeWitness } from "./instance-of.js";
 import { hasNativeObjectMember } from "./native-values.js";
 import {
   branchValue,
@@ -20,7 +23,6 @@ import {
   hasDefiniteItems,
   hasOwnKey,
   isIndefiniteItem,
-  isSymbolPropertyKey,
   TRUE_VALUE,
   primitiveValue,
   thrownValue,
@@ -35,16 +37,9 @@ export const OBJECT_PROTOTYPE_METHODS = new Set([
   "valueOf",
 ]);
 
-const WELL_KNOWN_SYMBOLS = new Map<string, symbol>();
-for (const name of Object.getOwnPropertyNames(Symbol)) {
-  const value = Object.getOwnPropertyDescriptor(Symbol, name)?.value;
-  if (typeof value === "symbol") WELL_KNOWN_SYMBOLS.set(`@@Symbol.${name}`, value);
-}
-
 const hasIntrinsicMember = (intrinsic: object, name: string): boolean => {
-  if (!isSymbolPropertyKey(name)) return name in intrinsic;
-  const symbol = WELL_KNOWN_SYMBOLS.get(name);
-  return symbol !== undefined && symbol in intrinsic;
+  const languageKey = toLanguagePropertyKey(name);
+  return languageKey !== null && languageKey in intrinsic;
 };
 
 /** Own keys every function object has without source assigning them; arrows have no `prototype`. */
@@ -77,6 +72,11 @@ const hasComponentProperty = (type: StaticElementType, name: string): StaticValu
       if (!ownKeys.has(name)) return FALSE_VALUE;
       return ownKeys === FUNCTION_OWN_KEYS ? null : TRUE_VALUE;
     }
+    case "context-provider":
+    case "context-consumer":
+      if (name === "displayName") return primitiveValue(type.displayName !== null);
+      if (CONTEXT_OWN_KEYS.has(name)) return null;
+      return primitiveValue(name in Object.prototype);
     default:
       return null;
   }
@@ -101,7 +101,7 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
       if (isOwn === null) return null;
       if (isOwn) return TRUE_VALUE;
       if (target.prototype) return hasNamedProperty(name, target.prototype);
-      return hasIntrinsicMember({}, name) && !target.hasNullPrototype ? TRUE_VALUE : FALSE_VALUE;
+      return hasIntrinsicMember(getPrototypeWitness(target) ?? {}, name) ? TRUE_VALUE : FALSE_VALUE;
     }
     case "function":
     case "class": {
@@ -115,8 +115,12 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
         ? TRUE_VALUE
         : FALSE_VALUE;
     }
-    case "native-object":
-      return hasNativeObjectMember(target, name) ? TRUE_VALUE : FALSE_VALUE;
+    case "native-object": {
+      const languageKey = toLanguagePropertyKey(name);
+      return languageKey !== null && hasNativeObjectMember(target, languageKey)
+        ? TRUE_VALUE
+        : FALSE_VALUE;
+    }
     case "native-function":
       return hasIntrinsicMember(Function.prototype, name) || target.getOwnProperty?.(name)
         ? TRUE_VALUE

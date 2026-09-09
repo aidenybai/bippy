@@ -16,6 +16,7 @@ import type {
 
 export const OPAQUE_CAPTURE_KEY = "$bippyOpaque";
 export const EXPORT_CAPTURE_KEY = "$bippyExport";
+export const DATE_CAPTURE_KEY = "$bippyDate";
 
 export const EMPTY_OBSERVATIONS: RuntimeObservations = { globals: {}, queries: [] };
 
@@ -145,6 +146,18 @@ export const getOpaqueCaptureDescription = (value: CapturedValue): string | null
   if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
   const description = value[OPAQUE_CAPTURE_KEY];
   return Object.keys(value).length === 1 && typeof description === "string" ? description : null;
+};
+
+/** A `Date` by its epoch milliseconds; `null` for an invalid date. */
+export const dateCapture = (date: Date): CapturedValue => ({
+  [DATE_CAPTURE_KEY]: Number.isNaN(date.getTime()) ? null : date.getTime(),
+});
+
+export const getCapturedDate = (value: CapturedValue): Date | null => {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+  if (Object.keys(value).length !== 1 || !(DATE_CAPTURE_KEY in value)) return null;
+  const time = value[DATE_CAPTURE_KEY];
+  return new Date(typeof time === "number" ? time : Number.NaN);
 };
 
 export const exportCapture = (reference: CapturedExportReference): CapturedValue => ({

@@ -4,6 +4,7 @@ import { SchemaError } from "../src/errors.js";
 import { toCapturedValue } from "../src/harness/query-cache.js";
 import {
   EMPTY_OBSERVATIONS,
+  dateCapture,
   getOpaqueCaptureDescription,
   hashKey,
   opaqueCapture,
@@ -25,6 +26,7 @@ describe("runtime observations", () => {
       notANumber: Number.NaN,
       callback: () => null,
       when: new Date(0),
+      invalidWhen: new Date(Number.NaN),
       session: new Session("secret"),
       cyclic,
       failure: Object.assign(new Error("boom"), { status: 404 }),
@@ -35,7 +37,8 @@ describe("runtime observations", () => {
       nested: { count: 0, ratio: 0.5 },
       notANumber: opaqueCapture("NaN"),
       callback: opaqueCapture("function callback"),
-      when: opaqueCapture("Date"),
+      when: dateCapture(new Date(0)),
+      invalidWhen: { $bippyDate: null },
       session: opaqueCapture("Session"),
       cyclic: { name: "loop", self: opaqueCapture("cycle") },
       failure: { name: "Error", message: "boom", status: 404 },

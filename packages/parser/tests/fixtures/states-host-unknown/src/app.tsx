@@ -1,6 +1,6 @@
-const WIDE_VIEWPORT = 600;
+const MANY_CORES = 4;
 
 export const App = () => {
-  const isWide = window.innerWidth > WIDE_VIEWPORT;
-  return <main>{isWide ? <table /> : <dl />}</main>;
+  const isPowerful = navigator.hardwareConcurrency > MANY_CORES;
+  return <main>{isPowerful ? <table /> : <dl />}</main>;
 };

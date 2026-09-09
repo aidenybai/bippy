@@ -36,6 +36,9 @@ describe("synthetic fixtures: static fiber tree vs react-dom", () => {
         ),
         detail,
       ).toEqual([]);
+      if (fixture.manifest.expectedStats) {
+        expect(run.staticResult.stats, detail).toMatchObject(fixture.manifest.expectedStats);
+      }
       if (!run.comparison) return;
       const { report, stateSpace, matchedState } = run.comparison;
       expect(report.status, detail).not.toBe("mismatch");
