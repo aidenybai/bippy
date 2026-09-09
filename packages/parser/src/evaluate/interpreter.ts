@@ -44,6 +44,7 @@ import path from "node:path";
 import { getAssetModuleValue } from "../graph/asset-module.js";
 import { getCssModuleValue } from "../graph/css-module.js";
 import { getEsbuildDeclarationName } from "../graph/esbuild-symbol-names.js";
+import { getTransformedRuntimeSpecifier } from "../graph/helper-packages.js";
 import { isModuleRecord, type ModuleGraph } from "../graph/module-graph.js";
 import { isInsideNodeModules } from "../graph/module-resolver.js";
 import { nativeFunction } from "../frameworks/stubs.js";
@@ -71,7 +72,12 @@ import {
   getReactElementSymbolKey,
   REACT_ELEMENT_SYMBOL_KEYS,
 } from "../react/element-shape.js";
-import { toClientReference, toElementKey, toElementType } from "../react/element-type.js";
+import {
+  splitElementKey,
+  toClientReference,
+  toElementKey,
+  toElementType,
+} from "../react/element-type.js";
 import {
   getExternalMember,
   isReactLikePackage,
@@ -1461,6 +1467,12 @@ export class Interpreter {
   lookupIdentifier(name: string, context: EvaluationContext): StaticValue {
     const resolved = this.resolveIdentifier(name, context);
     if (resolved) return resolved;
+    const runtimeSpecifier = getTransformedRuntimeSpecifier(
+      this.project,
+      context.module.filePath,
+      name,
+    );
+    if (runtimeSpecifier !== null) return this.importModule(runtimeSpecifier, context, null, true);
     return this.isAbsentGlobal(name, context.environment)
       ? thrownValue(
           `\`${name}\` is not defined`,
@@ -4248,7 +4260,7 @@ export class Interpreter {
     context: EvaluationContext,
   ): JsxAttributeValues {
     const entries: StaticObjectEntry[] = [];
-    let key: StaticValue | null = null;
+    let maybeKey: StaticValue = UNDEFINED_VALUE;
     for (const attribute of attributes) {
       if (attribute.type === "JSXSpreadAttribute") {
         entries.push({
@@ -4278,13 +4290,14 @@ export class Interpreter {
       } else {
         value = this.evaluateExpression(attribute.value, context, name);
       }
-      if (name === "key") {
-        key = value;
+      if (name === "key" && entries.every((entry) => entry.kind === "property")) {
+        maybeKey = value;
         continue;
       }
       entries.push({ kind: "property", key: name, value });
     }
-    return { props: objectValue(entries), key };
+    const { entries: propEntries, key } = splitElementKey(entries, maybeKey);
+    return { props: objectValue(propEntries), key };
   }
 
   evaluateJsxChildren(children: JSXChild[], context: EvaluationContext): StaticValue[] {

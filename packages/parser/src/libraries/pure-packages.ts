@@ -69,7 +69,21 @@ const IMPURE_EXPORTS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
   ["lodash-es", IMPURE_LODASH_EXPORTS],
 ]);
 
-export const isPurePackage = (packageName: string): boolean => PURE_PACKAGES.has(packageName);
+/** `lodash.mergewith`-style per-method packages: the same helper as `lodash/mergeWith`, published lowercase. */
+const LODASH_METHOD_PACKAGE_PREFIX = "lodash.";
+
+const IMPURE_LODASH_METHOD_PACKAGES: ReadonlySet<string> = new Set(
+  [...IMPURE_LODASH_EXPORTS].map(
+    (helperName) => `${LODASH_METHOD_PACKAGE_PREFIX}${helperName.toLowerCase()}`,
+  ),
+);
+
+const isPureLodashMethodPackage = (packageName: string): boolean =>
+  packageName.startsWith(LODASH_METHOD_PACKAGE_PREFIX) &&
+  !IMPURE_LODASH_METHOD_PACKAGES.has(packageName);
+
+export const isPurePackage = (packageName: string): boolean =>
+  PURE_PACKAGES.has(packageName) || isPureLodashMethodPackage(packageName);
 
 /** The helper a `lodash/isNil`-style deep import names; the imported binding otherwise. */
 const getExportName = (specifier: string, packageName: string, importedName: string): string =>

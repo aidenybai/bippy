@@ -1,17 +1,18 @@
 import {
-  FALSE_VALUE,
-  NULL_VALUE,
-  TRUE_VALUE,
-  UNDEFINED_VALUE,
   branchValue,
+  FALSE_VALUE,
   getKnownObjectKeys,
   getObjectProperty,
   hasDefiniteItems,
+  isUndefinedValue,
   listValue,
   mapValue,
+  NULL_VALUE,
   objectFromRecord,
   objectValue,
   primitiveValue,
+  TRUE_VALUE,
+  UNDEFINED_VALUE,
   unknownValue,
 } from "../evaluate/values.js";
 import {
@@ -81,9 +82,6 @@ const STORE_STATE = unknownValue("the Redux store state");
 
 const isCallable = (value: StaticValue): boolean =>
   value.kind === "function" || value.kind === "native-function" || value.kind === "proxy";
-
-const isUndefined = (value: StaticValue): boolean =>
-  value.kind === "primitive" && value.value === undefined;
 
 const pathSegment = (segment: StaticValue): string | null =>
   segment.kind === "primitive" &&
@@ -343,7 +341,7 @@ const applyPath: (input: StaticValue) => KeaBuilder = (input) => (build, tools) 
   if (build.path) return;
   const resolved = isCallable(input) ? tools.call(input, [build.key ?? UNDEFINED_VALUE]) : input;
   if (!hasDefiniteItems(resolved)) return;
-  const segments = resolved.items.filter((segment) => !isUndefined(segment));
+  const segments = resolved.items.filter((segment) => !isUndefinedValue(segment));
   build.path = build.key && !isCallable(input) ? [...segments, build.key] : segments;
 };
 
@@ -387,7 +385,7 @@ const defaultOf = (
       ]),
       key,
     );
-    return isUndefined(fromStar) ? initialValue : fromStar;
+    return isUndefinedValue(fromStar) ? initialValue : fromStar;
   }
   return initialValue;
 };
@@ -401,7 +399,7 @@ const applyReducers: (input: StaticValue) => KeaBuilder = (input) => (build, too
     const defaultValue = defaultOf(
       build,
       key,
-      isUndefined(initialValue) ? NULL_VALUE : initialValue,
+      isUndefinedValue(initialValue) ? NULL_VALUE : initialValue,
       tools,
     );
     build.defaults.set(key, defaultValue);
@@ -491,7 +489,7 @@ const applyConnect: (input: StaticValue) => KeaBuilder = (input) => (build, tool
     for (const source of connectedLogic.items) resolveConnected(source, build, tools);
   }
   const actions = getObjectProperty(resolved, "actions");
-  if (!isUndefined(actions)) {
+  if (!isUndefinedValue(actions)) {
     const pairs = connectMapping(actions);
     if (!pairs) return markUncertain(build, `kea connected actions of ${describePath(build)}`);
     for (const [source, from, to] of pairs) {
@@ -500,7 +498,7 @@ const applyConnect: (input: StaticValue) => KeaBuilder = (input) => (build, tool
     }
   }
   const values = getObjectProperty(resolved, "values");
-  if (!isUndefined(values)) {
+  if (!isUndefinedValue(values)) {
     const pairs = connectMapping(values);
     if (!pairs) return markUncertain(build, `kea connected values of ${describePath(build)}`);
     for (const [source, from, to] of pairs) {
@@ -543,7 +541,7 @@ const applyInput = (build: KeaLogicBuild, input: StaticValue, tools: StubRenderT
   if (input.kind === "object") {
     for (const [key, apply] of LEGACY_INPUT_BUILDERS) {
       const value = getObjectProperty(input, key);
-      if (!isUndefined(value)) apply(value)(build, tools);
+      if (!isUndefinedValue(value)) apply(value)(build, tools);
     }
     return;
   }

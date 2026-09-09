@@ -1458,6 +1458,9 @@ export type CallableValue = Extract<
 export const isCallable = (value: StaticValue | undefined): value is CallableValue =>
   value?.kind === "function" || value?.kind === "native-function" || value?.kind === "global";
 
+export const isUndefinedValue = (value: StaticValue): boolean =>
+  value.kind === "primitive" && value.value === undefined;
+
 export const isNullish = (value: StaticValue): boolean | null => {
   if (value.kind === "primitive") return value.value === null || value.value === undefined;
   if (value.kind === "unknown" || value.kind === "branch") return null;

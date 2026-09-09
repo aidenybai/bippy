@@ -1,6 +1,7 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { getRDTHook } from "bippy";
+import type { ReactNode } from "react";
 import { ReactRuntimeError } from "../errors.js";
 import type { ModuleResolver } from "../graph/module-resolver.js";
 import { ensureDomGlobals } from "./dom-environment.js";
@@ -9,18 +10,34 @@ export type ReactModule = typeof import("react");
 export type ReactDomClientModule = typeof import("react-dom/client");
 export type ReactDomModule = typeof import("react-dom");
 
+/** `react-dom` before 18: roots are created by `render(element, container)` and are always legacy (sync) roots. */
+export interface LegacyReactDomModule extends ReactDomModule {
+  render: (element: ReactNode, container: Element) => void;
+  unmountComponentAtNode: (container: Element) => boolean;
+}
+
+export interface RootErrorCallbacks {
+  onUncaughtError: (error: unknown) => void;
+  onCaughtError: (error: unknown) => void;
+}
+
+export interface MountedRoot {
+  render: (node: ReactNode) => void;
+  unmount: () => void;
+}
+
 /**
  * The React installation the static tree is materialized with: the app's own
  * `react`/`react-dom` when they resolve from the analyzed root, so the fibers
- * React constructs carry the same work tags and naming as the app's runtime.
- * An app whose `react-dom` has no `client` entry (React 17) is mounted with the
- * harness's copy of all three modules; mixing its `react` with a newer
- * `react-dom` cannot render.
+ * React constructs carry the same work tags, naming and reconciliation rules as
+ * the app's runtime. `createRoot` mounts a concurrent root when the app's
+ * `react-dom` has a `client` entry and a legacy `ReactDOM.render` root
+ * otherwise (React 16/17); an app without its own React uses the harness's copy.
  */
 export interface ReactRuntime {
   react: ReactModule;
-  domClient: ReactDomClientModule;
   dom: ReactDomModule;
+  createRoot: (container: Element, callbacks: RootErrorCallbacks) => MountedRoot;
   act: <T>(callback: () => T | Promise<T>) => Promise<T>;
   version: string;
 }
@@ -39,6 +56,32 @@ const isReactDomClientModule = (value: unknown): value is ReactDomClientModule =
 
 const isReactDomModule = (value: unknown): value is ReactDomModule =>
   isRecord(value) && typeof value.createPortal === "function";
+
+const isLegacyReactDomModule = (value: ReactDomModule): value is LegacyReactDomModule =>
+  "render" in value &&
+  typeof value.render === "function" &&
+  "unmountComponentAtNode" in value &&
+  typeof value.unmountComponentAtNode === "function";
+
+const noop = (): void => {};
+
+const concurrentRootFactory =
+  (domClient: ReactDomClientModule): ReactRuntime["createRoot"] =>
+  (container, callbacks) =>
+    domClient.createRoot(container, { ...callbacks, onRecoverableError: noop });
+
+/**
+ * Legacy roots have no error callbacks: an uncaught render error is rethrown
+ * synchronously out of `render`, which is how the caller observes it.
+ */
+const legacyRootFactory =
+  (dom: LegacyReactDomModule): ReactRuntime["createRoot"] =>
+  (container) => ({
+    render: (node) => dom.render(node, container),
+    unmount: () => {
+      dom.unmountComponentAtNode(container);
+    },
+  });
 
 const unwrapModule = (loaded: unknown): unknown =>
   isRecord(loaded) && "default" in loaded && isRecord(loaded.default) ? loaded.default : loaded;
@@ -101,6 +144,10 @@ export const loadReactRuntime = ({
   return pending;
 };
 
+const hasOwnReact = (resolver: ModuleResolver | null, rootDirectory: string | null): boolean =>
+  resolveFromApp(resolver, "react", rootDirectory) !== null &&
+  resolveFromApp(resolver, "react-dom", rootDirectory) !== null;
+
 /** React < 18 has no `react-dom/client`; a clone nested under another project would resolve that project's. */
 const hasClientEntry = (resolver: ModuleResolver | null, rootDirectory: string | null): boolean => {
   const domPath = resolveFromApp(resolver, "react-dom", rootDirectory);
@@ -110,6 +157,26 @@ const hasClientEntry = (resolver: ModuleResolver | null, rootDirectory: string |
   );
 };
 
+const loadRootFactory = async (
+  dom: ReactDomModule,
+  appResolver: ModuleResolver | null,
+  rootDirectory: string | null,
+): Promise<ReactRuntime["createRoot"]> => {
+  if (appResolver === null || hasClientEntry(appResolver, rootDirectory)) {
+    const domClient = await importResolved(appResolver, "react-dom/client", rootDirectory);
+    if (!isReactDomClientModule(domClient)) {
+      throw new ReactRuntimeError("could not load react-dom/client");
+    }
+    return concurrentRootFactory(domClient);
+  }
+  if (!isLegacyReactDomModule(dom)) {
+    throw new ReactRuntimeError(
+      "the app's react-dom has neither a client entry nor a legacy render export",
+    );
+  }
+  return legacyRootFactory(dom);
+};
+
 const load = async (
   resolver: ModuleResolver | null,
   rootDirectory: string | null,
@@ -117,21 +184,17 @@ const load = async (
   ensureDomGlobals();
   getRDTHook();
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-  const appResolver = hasClientEntry(resolver, rootDirectory) ? resolver : null;
-  const [react, domClient, dom] = await Promise.all([
+  const appResolver = hasOwnReact(resolver, rootDirectory) ? resolver : null;
+  const [react, dom] = await Promise.all([
     importResolved(appResolver, "react", rootDirectory),
-    importResolved(appResolver, "react-dom/client", rootDirectory),
     importResolved(appResolver, "react-dom", rootDirectory),
   ]);
   if (!isReactModule(react)) throw new ReactRuntimeError("could not load react");
-  if (!isReactDomClientModule(domClient)) {
-    throw new ReactRuntimeError("could not load react-dom/client");
-  }
   if (!isReactDomModule(dom)) throw new ReactRuntimeError("could not load react-dom");
   return {
     react,
-    domClient,
     dom,
+    createRoot: await loadRootFactory(dom, appResolver, rootDirectory),
     act: await loadAct(react, appResolver, rootDirectory),
     version: react.version,
   };

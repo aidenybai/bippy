@@ -1,15 +1,16 @@
 import {
-  FALSE_VALUE,
-  UNDEFINED_VALUE,
   compareIdentity,
   compareShallowly,
   decidedBooleanValue,
+  FALSE_VALUE,
   getObjectProperty,
   getTruthiness,
   isCallable,
   isNullish,
+  isUndefinedValue,
   mapValue,
   objectFromRecord,
+  UNDEFINED_VALUE,
   unknownValue,
 } from "../evaluate/values.js";
 import { nativeFunction } from "../frameworks/stubs.js";
@@ -54,9 +55,6 @@ let trackingStack: ModeledAtom[] = [];
 let batchDepth = 0;
 const queuedNotifications: Array<() => void> = [];
 
-const isUndefined = (value: StaticValue): boolean =>
-  value.kind === "primitive" && value.value === undefined;
-
 const isSameSnapshot = (
   atom: ModeledAtom,
   previous: StaticValue,
@@ -72,7 +70,7 @@ const readSnapshot = (atom: ModeledAtom): StaticValue =>
 
 const writeSnapshot = (atom: ModeledAtom, next: StaticValue, tools: StubRenderTools): boolean => {
   const previous = readSnapshot(atom);
-  if (!isUndefined(previous) && isSameSnapshot(atom, previous, next, tools)) return false;
+  if (!isUndefinedValue(previous) && isSameSnapshot(atom, previous, next, tools)) return false;
   tools.setProperty(atom.value, SNAPSHOT_KEY, next);
   atom.version++;
   return true;

@@ -216,12 +216,14 @@ class StaticCollection implements JournaledState<CollectionState> {
         );
   }
 
+  /** A definite entry stays present through writes under dynamic keys, so `has` on it is decided even then. */
   has(key: StaticValue): StaticValue {
     return mapValue(key, (alternative) => {
+      const entry = isDefiniteKey(alternative) ? this.find(alternative) : null;
+      if (entry?.isDefinite && !this.isExternallyMutable) return TRUE_VALUE;
       if (!this.isExact(alternative)) {
         return unknownPrimitiveValue("boolean", this.describeUncertainty("has"));
       }
-      const entry = this.find(alternative);
       if (!entry) return FALSE_VALUE;
       return entry.isDefinite
         ? TRUE_VALUE
@@ -271,12 +273,18 @@ class StaticCollection implements JournaledState<CollectionState> {
       }
       return unknownPrimitiveValue("boolean", this.describeUncertainty("delete"));
     }
-    if (!this.isExact(key)) {
-      this.hasDynamicKeys = true;
+    if (!isDefiniteKey(key)) {
+      for (const existing of this.entries.values()) {
+        this.replace({ ...existing, isDefinite: false });
+      }
       return unknownPrimitiveValue("boolean", this.describeUncertainty("delete"));
     }
     const existing = this.find(key);
-    if (!existing) return FALSE_VALUE;
+    if (!existing) {
+      return this.isExact(key)
+        ? FALSE_VALUE
+        : unknownPrimitiveValue("boolean", this.describeUncertainty("delete"));
+    }
     this.entries.delete(getKeyIdentity(key));
     return existing.isDefinite
       ? TRUE_VALUE

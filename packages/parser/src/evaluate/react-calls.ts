@@ -1,6 +1,8 @@
 import { nativeFunction } from "../frameworks/stubs.js";
 import {
   createFunctionComponentDefinition,
+  type SplitElementProps,
+  splitElementKey,
   toElementKey,
   toElementType,
 } from "../react/element-type.js";
@@ -154,32 +156,17 @@ const externalStoreHook = (
   return snapshot;
 };
 
-interface SplitProps {
-  entries: StaticObjectEntry[];
-  key: StaticValue | null;
-}
-
-const propsFromValue = (value: StaticValue | undefined, omitKey: boolean): SplitProps => {
-  if (
-    !value ||
-    (value.kind === "primitive" && (value.value === null || value.value === undefined))
-  ) {
-    return { entries: [], key: null };
-  }
-  if (value.kind === "object") {
-    const entries: StaticObjectEntry[] = [];
-    let key: StaticValue | null = null;
-    for (const entry of value.entries) {
-      if (omitKey && entry.kind === "property" && entry.key === "key") {
-        key = entry.value;
-        continue;
-      }
-      entries.push(entry);
-    }
-    return { entries, key };
-  }
-  return { entries: [{ kind: "spread", value }], key: null };
+const configEntries = (value: StaticValue | undefined): StaticObjectEntry[] => {
+  if (!value || isNullish(value) === true) return [];
+  return value.kind === "object" ? value.entries : [{ kind: "spread", value }];
 };
+
+/** `jsx(type, config, maybeKey)`: `maybeKey` is read first, so a `key` in `config` wins over it. */
+const propsFromValue = (
+  config: StaticValue | undefined,
+  maybeKey: StaticValue | undefined = UNDEFINED_VALUE,
+): SplitElementProps =>
+  splitElementKey([{ kind: "property", key: "key", value: maybeKey }, ...configEntries(config)]);
 
 const resolveLazyTarget = (
   interpreter: Interpreter,
@@ -316,7 +303,7 @@ const cloneElement = (
 ): StaticValue => {
   if (element.kind !== "element")
     return unknownValue(`cloneElement of ${describeValue(element)}`, location);
-  const { entries, key } = propsFromValue(props, true);
+  const { entries, key } = propsFromValue(props);
   const merged = objectValue([{ kind: "spread", value: element.props }, ...entries]);
   if (children.length === 1)
     merged.entries.push({ kind: "property", key: "children", value: children[0] });
@@ -385,7 +372,7 @@ export const evaluateReactApiCall = (
   switch (api) {
     case "createElement": {
       if (!first) return unknownValue("createElement without a type", location);
-      const { entries, key } = propsFromValue(second, true);
+      const { entries, key } = propsFromValue(second);
       return interpreter.createElement(
         first,
         objectValue(entries),
@@ -400,9 +387,7 @@ export const evaluateReactApiCall = (
     case "jsxs":
     case "jsxDEV": {
       if (!first) return unknownValue(`${api} without a type`, location);
-      const { entries } = propsFromValue(second, false);
-      const key =
-        third && !(third.kind === "primitive" && third.value === undefined) ? third : null;
+      const { entries, key } = propsFromValue(second, third);
       return interpreter.createElement(
         first,
         objectValue(entries),

@@ -1797,6 +1797,8 @@ const callStringMethod = (
           ? receiver.slice(Number(primitiveArgs[0] ?? 0), position)
           : receiver.substring(Number(primitiveArgs[0] ?? 0), position),
       );
+    case "substr":
+      return primitiveValue(receiver.substr(Number(primitiveArgs[0] ?? 0), position));
     case "charAt":
       return primitiveValue(receiver.charAt(Number(primitiveArgs[0] ?? 0)));
     case "charCodeAt":
