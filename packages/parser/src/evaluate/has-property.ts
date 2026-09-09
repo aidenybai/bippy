@@ -16,10 +16,10 @@ import { createErrorValue } from "./errors.js";
 import { toLanguagePropertyKey } from "./host-globals.js";
 import { getPrototypeWitness } from "./instance-of.js";
 import { hasNativeObjectMember } from "./native-values.js";
+import { toPropertyKey } from "./string-coercion.js";
 import {
   branchValue,
   FALSE_VALUE,
-  getPropertyName,
   hasDefiniteItems,
   hasOwnKey,
   isIndefiniteItem,
@@ -161,6 +161,6 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
 };
 
 export const hasProperty = (key: StaticValue, target: StaticValue): StaticValue | null => {
-  const name = getPropertyName(key);
+  const name = toPropertyKey(key);
   return name === null ? null : hasNamedProperty(name, target);
 };

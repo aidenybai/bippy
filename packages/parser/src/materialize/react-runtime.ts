@@ -9,13 +9,26 @@ export type ReactModule = typeof import("react");
 export type ReactDomClientModule = typeof import("react-dom/client");
 export type ReactDomModule = typeof import("react-dom");
 
+/** Module specifiers of the React build the analyzed app is served with. */
+export interface ReactPackageSpecifiers {
+  react: string;
+  dom: string;
+  domClient: string;
+}
+
+export const DEFAULT_REACT_PACKAGES: ReactPackageSpecifiers = {
+  react: "react",
+  dom: "react-dom",
+  domClient: "react-dom/client",
+};
+
 /**
  * The React installation the static tree is materialized with: the app's own
- * `react`/`react-dom` when they resolve from the analyzed root, so the fibers
- * React constructs carry the same work tags and naming as the app's runtime.
- * An app whose `react-dom` has no `client` entry (React 17) is mounted with the
- * harness's copy of all three modules; mixing its `react` with a newer
- * `react-dom` cannot render.
+ * `react`/`react-dom` (or the build its framework bundles in their place) when
+ * they resolve from the analyzed root, so the fibers React constructs carry the
+ * same work tags and naming as the app's runtime. An app whose `react-dom` has
+ * no `client` entry (React 17) is mounted with the harness's copy of all three
+ * modules; mixing its `react` with a newer `react-dom` cannot render.
  */
 export interface ReactRuntime {
   react: ReactModule;
@@ -84,6 +97,8 @@ export interface LoadReactRuntimeOptions {
   /** Resolves `react`/`react-dom` the way the analyzed app does; falls back to the harness's own copy. */
   resolver?: ModuleResolver;
   rootDirectory?: string;
+  /** The build to resolve from the app; `react`/`react-dom` themselves by default. */
+  packages?: ReactPackageSpecifiers;
 }
 
 const runtimeCache = new Map<string, Promise<ReactRuntime>>();
@@ -91,20 +106,25 @@ const runtimeCache = new Map<string, Promise<ReactRuntime>>();
 export const loadReactRuntime = ({
   resolver,
   rootDirectory,
+  packages = DEFAULT_REACT_PACKAGES,
 }: LoadReactRuntimeOptions = {}): Promise<ReactRuntime> => {
-  const cacheKey = rootDirectory ?? "";
+  const cacheKey = `${rootDirectory ?? ""}\n${packages.react}\n${packages.dom}\n${packages.domClient}`;
   let pending = runtimeCache.get(cacheKey);
   if (!pending) {
-    pending = load(resolver ?? null, rootDirectory ?? null);
+    pending = load(resolver ?? null, rootDirectory ?? null, packages);
     runtimeCache.set(cacheKey, pending);
   }
   return pending;
 };
 
 /** React < 18 has no `react-dom/client`; a clone nested under another project would resolve that project's. */
-const hasClientEntry = (resolver: ModuleResolver | null, rootDirectory: string | null): boolean => {
-  const domPath = resolveFromApp(resolver, "react-dom", rootDirectory);
-  const clientPath = resolveFromApp(resolver, "react-dom/client", rootDirectory);
+const hasClientEntry = (
+  resolver: ModuleResolver | null,
+  rootDirectory: string | null,
+  packages: ReactPackageSpecifiers,
+): boolean => {
+  const domPath = resolveFromApp(resolver, packages.dom, rootDirectory);
+  const clientPath = resolveFromApp(resolver, packages.domClient, rootDirectory);
   return (
     domPath !== null && clientPath !== null && path.dirname(domPath) === path.dirname(clientPath)
   );
@@ -113,15 +133,20 @@ const hasClientEntry = (resolver: ModuleResolver | null, rootDirectory: string |
 const load = async (
   resolver: ModuleResolver | null,
   rootDirectory: string | null,
+  packages: ReactPackageSpecifiers,
 ): Promise<ReactRuntime> => {
   ensureDomGlobals();
   getRDTHook();
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-  const appResolver = hasClientEntry(resolver, rootDirectory) ? resolver : null;
+  const appPackages = [packages, DEFAULT_REACT_PACKAGES].find((candidate) =>
+    hasClientEntry(resolver, rootDirectory, candidate),
+  );
+  const appResolver = appPackages ? resolver : null;
+  const loadedPackages = appPackages ?? DEFAULT_REACT_PACKAGES;
   const [react, domClient, dom] = await Promise.all([
-    importResolved(appResolver, "react", rootDirectory),
-    importResolved(appResolver, "react-dom/client", rootDirectory),
-    importResolved(appResolver, "react-dom", rootDirectory),
+    importResolved(appResolver, loadedPackages.react, rootDirectory),
+    importResolved(appResolver, loadedPackages.domClient, rootDirectory),
+    importResolved(appResolver, loadedPackages.dom, rootDirectory),
   ]);
   if (!isReactModule(react)) throw new ReactRuntimeError("could not load react");
   if (!isReactDomClientModule(domClient)) {

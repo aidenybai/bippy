@@ -56,12 +56,8 @@ import { createClockDateValue, isClockReading } from "./clock-date.js";
 import { createBlobValue } from "./blob.js";
 import { callEventTargetMethod } from "./event-listeners.js";
 import { hasProperty, isIntrinsicFunctionKey } from "./has-property.js";
-import {
-  getBuiltinFunctionSource,
-  getBuiltinPrototypeName,
-  getPrototypeWitness,
-  isPrototypeOf,
-} from "./instance-of.js";
+import { getCoercedText, getFunctionSourceText, toPropertyKey } from "./string-coercion.js";
+import { getBuiltinPrototypeName, getPrototypeWitness, isPrototypeOf } from "./instance-of.js";
 import { callIndexedDbMethod, isIndexedDbName, type IndexedDbHost } from "./indexed-db.js";
 import {
   binaryFromItems,
@@ -127,7 +123,6 @@ import {
   getListLength,
   getObjectProperty,
   getPreferredTruthiness,
-  getPropertyName,
   getSymbolPropertyKey,
   getTruthiness,
   compareIdentity,
@@ -393,7 +388,8 @@ export const getBuiltinGlobal = (
   getBundlerGlobal(name, environment) ?? getHostGlobal(realm, hostDocument, name);
 
 const toStringValue = (value: StaticValue): StaticValue => {
-  if (value.kind === "primitive") return primitiveValue(String(value.value));
+  const text = getCoercedText(value);
+  if (text !== null) return primitiveValue(text);
   return unknownPrimitiveValue("string", `String(${describeValue(value)})`);
 };
 
@@ -628,7 +624,7 @@ const hasOwnProperty = (
   key: StaticValue,
   name: string,
 ): StaticValue | null => {
-  const propertyName = getPropertyName(key);
+  const propertyName = toPropertyKey(key);
   if (propertyName === null) return null;
   if (receiver.kind === "object" || receiver.kind === "list") {
     if (receiver.kind === "list" && propertyName === "length")
@@ -694,28 +690,6 @@ const getWitnessedPrototype = (
 };
 
 const FUNCTION_INVOCATION_METHODS = new Set(["call", "apply", "bind"]);
-
-/** `Function.prototype.toString`: the source text of program functions, V8's `[native code]` form for intrinsics. */
-const getFunctionSourceText = (receiver: StaticValue): string | null => {
-  switch (receiver.kind) {
-    case "function":
-      return receiver.boundArgs || receiver.boundThis
-        ? "function () { [native code] }"
-        : receiver.module.file.sourceText.slice(receiver.node.start, receiver.node.end);
-    case "class":
-      return receiver.module.file.sourceText.slice(receiver.node.start, receiver.node.end);
-    case "method":
-      return receiver.receiver.kind === "global"
-        ? getBuiltinFunctionSource(`${receiver.receiver.name}.${receiver.name}`)
-        : receiver.receiver.kind === "external" || receiver.receiver.kind === "unknown"
-          ? null
-          : `function ${receiver.name}() { [native code] }`;
-    case "global":
-      return getBuiltinFunctionSource(receiver.name);
-    default:
-      return null;
-  }
-};
 
 /** `Function.prototype.toString.call(value)`: a `TypeError` for non-callables, an unknown string when the text is not statically known. */
 const getInvokedFunctionSource = (
@@ -1141,7 +1115,7 @@ const callGlobal = (
         : unknownValue(`${name} on an object with dynamic spreads`, location);
     }
     case "Object.getOwnPropertyDescriptor": {
-      const key = second ? getPropertyName(second) : null;
+      const key = second ? toPropertyKey(second) : null;
       if (first?.kind === "element" && key === "ref")
         return getElementRefDescriptor(first, location);
       if (first?.kind === "function" && key !== null)

@@ -4,7 +4,7 @@ import type { Interpreter } from "../evaluate/interpreter.js";
 import { objectFromRecord, objectValue, primitiveValue, unknownValue } from "../evaluate/values.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
 import type { ModuleRecord, StaticObjectValue, StaticRenderResult, StaticValue } from "../types.js";
-import { applyNextCompilerOptions } from "./next-config.js";
+import { applyNextCompilerOptions, readNextVendoredReactPackages } from "./next-config.js";
 import type { NextModel } from "./next-externals.js";
 import {
   classifySegment,
@@ -214,6 +214,7 @@ export const renderNextAppRoute = (
 
   return renderer.renderWith((interpreter) => {
     applyNextCompilerOptions(renderer, interpreter);
+    renderer.setReactPackages(readNextVendoredReactPackages(renderer, interpreter));
     if (!appDirectory) {
       interpreter.report("next-app-missing", "no app/ or src/app directory found", null, "error");
       return unknownValue("next app directory not found");

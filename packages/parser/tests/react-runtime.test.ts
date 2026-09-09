@@ -75,6 +75,40 @@ describe("loadReactRuntime", () => {
     expect(runtime.version).toBe(STUB_REACT_VERSION);
   });
 
+  it("loads the build a framework bundles in place of react when its packages resolve from the app", async () => {
+    const rootDirectory = createRootDirectory();
+    writeReactPair(rootDirectory, true);
+    writePackage(rootDirectory, "bundler/vendored/react", REACT_STUB.replace(STUB_REACT_VERSION, "19.0.0-vendored"));
+    writePackage(rootDirectory, "bundler/vendored/react-dom", REACT_DOM_STUB, {
+      "client.js": REACT_DOM_CLIENT_STUB,
+    });
+    const runtime = await loadReactRuntime({
+      resolver: new ModuleResolver({ rootDirectory }),
+      rootDirectory,
+      packages: {
+        react: "bundler/vendored/react",
+        dom: "bundler/vendored/react-dom",
+        domClient: "bundler/vendored/react-dom/client",
+      },
+    });
+    expect(runtime.version).toBe("19.0.0-vendored");
+  });
+
+  it("falls back to the app's own react when the bundled build does not resolve", async () => {
+    const rootDirectory = createRootDirectory();
+    writeReactPair(rootDirectory, true);
+    const runtime = await loadReactRuntime({
+      resolver: new ModuleResolver({ rootDirectory }),
+      rootDirectory,
+      packages: {
+        react: "bundler/vendored/react",
+        dom: "bundler/vendored/react-dom",
+        domClient: "bundler/vendored/react-dom/client",
+      },
+    });
+    expect(runtime.version).toBe(STUB_REACT_VERSION);
+  });
+
   it("falls back when react-dom/client only resolves from an ancestor's newer react-dom", async () => {
     const workspaceDirectory = createRootDirectory();
     const rootDirectory = join(workspaceDirectory, "apps/site");

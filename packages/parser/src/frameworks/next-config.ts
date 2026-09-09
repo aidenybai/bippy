@@ -10,6 +10,7 @@ import {
   UNDEFINED_VALUE,
   unknownValue,
 } from "../evaluate/values.js";
+import type { ReactPackageSpecifiers } from "../materialize/react-runtime.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
 import type { StaticValue, StyledComponentsTransformOptions } from "../types.js";
 
@@ -21,6 +22,7 @@ const NEXT_CONFIG_FILES = [
   "next.config.mts",
 ];
 const DEVELOPMENT_PHASE = "phase-development-server";
+const EXPERIMENTAL_REACT_FLAGS = ["ppr", "taint", "viewTransition", "routerBFCache"];
 
 /**
  * `next.config` as Next loads it: the default export, called with the phase
@@ -114,4 +116,33 @@ export const applyNextCompilerOptions = (
     return;
   }
   if (transform !== null) interpreter.styledComponentsTransform = transform;
+};
+
+/**
+ * The React build Next bundles for `app/` in place of the app's own
+ * (`createVendoredReactAliases`): the experimental channel when one of the
+ * `experimental` flags `needsExperimentalReact` reads is set, canary otherwise.
+ */
+export const readNextVendoredReactPackages = (
+  renderer: StaticRenderer,
+  interpreter: Interpreter,
+): ReactPackageSpecifiers => {
+  const config = evaluateNextConfig(renderer, interpreter);
+  const experimental = config === null ? UNDEFINED_VALUE : readOption(config, "experimental");
+  const flags = EXPERIMENTAL_REACT_FLAGS.map((flag) => getTruthiness(readOption(experimental, flag)));
+  const isExperimental = flags.includes(true);
+  if (!isExperimental && flags.includes(null)) {
+    interpreter.report(
+      "next-config",
+      "experimental React flags in next.config could not be evaluated; materializing with Next's canary React",
+      null,
+      "warning",
+    );
+  }
+  const channel = isExperimental ? "-experimental" : "";
+  return {
+    react: `next/dist/compiled/react${channel}`,
+    dom: `next/dist/compiled/react-dom${channel}`,
+    domClient: `next/dist/compiled/react-dom${channel}/client`,
+  };
 };

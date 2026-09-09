@@ -157,6 +157,7 @@ import { createIndexedDbFactory, isIndexedDbName } from "./indexed-db.js";
 import { getBinaryMember, getBinaryWitness } from "./typed-arrays.js";
 import { getWebCryptoMember, isWebCryptoName } from "./web-crypto.js";
 import { GLOBAL_OBJECT_VALUE } from "./host-globals.js";
+import { toPropertyKey } from "./string-coercion.js";
 import {
   applyNumberRangeOperator,
   compareNumberRanges,
@@ -265,7 +266,6 @@ import {
   getObjectAccessor,
   getObjectProperty,
   getPreferredTruthiness,
-  getPropertyName,
   getStubDisplayName,
   getTruthiness,
   isNullish,
@@ -1817,7 +1817,7 @@ export class Interpreter {
       if (key.type === "PrivateIdentifier") return `#${key.name}`;
     }
     if (key.type === "PrivateIdentifier") return `#${key.name}`;
-    return getPropertyName(this.evaluateExpression(key, context));
+    return toPropertyKey(this.evaluateExpression(key, context));
   }
 
   private evaluateObjectExpression(
@@ -2156,7 +2156,7 @@ export class Interpreter {
   }
 
   private deleteProperty(target: StaticValue, key: StaticValue): void {
-    const name = getPropertyName(key);
+    const name = toPropertyKey(key);
     switch (target.kind) {
       case "native-object":
         if (name !== null) deleteNativeObjectMember(target, name);
@@ -2217,7 +2217,7 @@ export class Interpreter {
   ): StaticValue | null {
     const realm = this.getRealm(environment);
     if (target.kind !== "global" || !realm.isGlobalAlias(target.name)) return null;
-    const name = getPropertyName(key);
+    const name = toPropertyKey(key);
     if (name === null) return null;
     if (environment !== "server") {
       if (this.windowGlobals.has(name)) return TRUE_VALUE;
@@ -2291,7 +2291,7 @@ export class Interpreter {
           this.assignMember(target.object, target.property.name, value, context);
         } else if (target.computed) {
           const key = this.evaluateExpression(target.property, context);
-          const propertyName = getPropertyName(key);
+          const propertyName = toPropertyKey(key);
           if (propertyName !== null) {
             this.assignMember(target.object, propertyName, value, context);
           } else {
@@ -2447,7 +2447,7 @@ export class Interpreter {
       return this.getProperty(object, node.property.name, context, location, node.optional);
     }
     const key = this.evaluateExpression(node.property, context);
-    const propertyName = getPropertyName(key);
+    const propertyName = toPropertyKey(key);
     if (propertyName !== null) {
       return this.getProperty(object, propertyName, context, location, node.optional);
     }

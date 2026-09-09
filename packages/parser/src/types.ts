@@ -263,6 +263,8 @@ export type StaticElementType =
       kind: "forward-ref";
       component: ComponentDefinition;
       render: StaticFunctionValue;
+      /** For a library's `forwardRef((props, ref) => func(props, ...))` wrapper: the arguments `func` receives, given the render's `props` and `ref` (Emotion's `withEmotionCache` inserts the cache from context before the ref). Absent for `forwardRef` itself: `[props, ref]`. */
+      renderArguments?: ForwardRefRenderArguments;
     } & WrapperElementType)
   | ({ kind: "lazy"; inner: StaticElementType | null } & WrapperElementType)
   | { kind: "fragment" }
@@ -283,6 +285,14 @@ export type StaticElementType =
 export interface WrapperElementType {
   displayName: string | null;
   properties: Map<string, StaticValue>;
+}
+
+export interface ForwardRefRenderArguments {
+  (
+    props: StaticObjectValue,
+    ref: StaticValue,
+    readContext: (context: ContextDefinition) => StaticValue,
+  ): StaticValue[];
 }
 
 /**

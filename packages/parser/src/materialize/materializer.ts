@@ -1132,7 +1132,9 @@ export class Materializer {
     if (!proxy) {
       const render = setFunctionName(
         ({ input }: ProxyProps): ReactNode =>
-          this.renderInsideComponent(() => this.renderFunctionProxy(input, component, null)),
+          this.renderInsideComponent(() =>
+            this.renderFunctionProxy(input, component, (props) => [props]),
+          ),
         getComponentDisplayName(component),
       );
       // React.memo only takes its SimpleMemoComponent fast path when the inner type has no defaultProps.
@@ -1248,7 +1250,21 @@ export class Materializer {
         setFunctionName(
           // React warns unless a forwardRef render function declares (props, ref).
           ({ input }: ProxyProps, _forwardedRef: unknown): ReactNode =>
-            this.renderInsideComponent(() => this.renderFunctionProxy(input, component, input.ref)),
+            this.renderInsideComponent(() =>
+              this.renderFunctionProxy(input, component, (props) => {
+                const ref = input.ref ?? NULL_VALUE;
+                return type.renderArguments
+                  ? type.renderArguments(props, ref, (definition) =>
+                      providedContextValue(
+                        this.interpreter,
+                        definition,
+                        this.readContext(definition),
+                        input.location,
+                      ),
+                    )
+                  : [props, ref];
+              }),
+            ),
           getComponentDisplayName(component),
         ),
       );
@@ -1417,7 +1433,7 @@ export class Materializer {
   renderFunctionProxy(
     input: ProxyInput,
     component: ComponentDefinition,
-    secondArgument: StaticValue | null,
+    renderArguments: (props: StaticObjectValue) => StaticValue[],
   ): ReactNode {
     const { useRef, useState, useEffect, useLayoutEffect } = this.runtime.react;
     const instanceRef = useRef<ProxyInstance | null>(null);
@@ -1440,7 +1456,7 @@ export class Materializer {
           (componentContext) =>
             this.interpreter.callFunction(
               toFunctionValue(component),
-              secondArgument ? [props, secondArgument] : [props],
+              renderArguments(props),
               componentContext,
               { awaited: true },
             ),
