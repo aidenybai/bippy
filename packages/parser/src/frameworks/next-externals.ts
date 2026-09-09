@@ -31,7 +31,8 @@ import type { FrameworkKind } from "./framework-profile.js";
 import { toElementType } from "../react/element-type.js";
 import { legacyImageStub } from "./next-legacy-image.js";
 import { createNextIntlModel, type NextIntlModel } from "../libraries/next-intl.js";
-import { nextRequestValue } from "./next-request.js";
+import { createNextRequestModel, type NextRequestModel, nextRequestValue } from "./next-request.js";
+import { nextServerValue } from "./next-server.js";
 import {
   element,
   emptyStub,
@@ -61,6 +62,11 @@ export interface NextModel {
   params: Record<string, string>;
   /** `next-intl`, whose request configuration `next.config` registers through its plugin. */
   intl: NextIntlModel;
+  /**
+   * The document request as `next/headers` reads it; null when none was
+   * captured. The route adapter replaces it with what the middleware left.
+   */
+  request: NextRequestModel | null;
 }
 
 export type NextRouterKind = Extract<FrameworkKind, "next-app" | "next-pages">;
@@ -622,7 +628,9 @@ export const createNextModel = (options: NextModelOptions): NextModel => {
       case "next/navigation":
         return appNavigationValue(importedName, url, params);
       case "next/headers":
-        return nextRequestValue(importedName, options.request ?? null, options.origin ?? null);
+        return nextRequestValue(importedName, () => model.request);
+      case "next/server":
+        return nextServerValue(importedName);
       case "next/router":
         return pagesRouterValue(importedName, url, params);
       case STYLED_JSX_SPECIFIER:
@@ -631,5 +639,13 @@ export const createNextModel = (options: NextModelOptions): NextModel => {
         return intl.externalValues(packageName, importedName);
     }
   };
-  return { externalValues, params, intl };
+  const model: NextModel = {
+    externalValues,
+    params,
+    intl,
+    request: options.request
+      ? createNextRequestModel(options.request, options.origin ?? null)
+      : null,
+  };
+  return model;
 };

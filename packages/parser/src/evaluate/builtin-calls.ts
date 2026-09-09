@@ -97,6 +97,7 @@ import {
 } from "./primitive-shapes.js";
 import { isArrayValue } from "./type-predicates.js";
 import { createSearchParamsValue } from "./url-search-params.js";
+import { createHeadersValue } from "./headers.js";
 import {
   callStringCodec,
   createBufferValue,
@@ -966,6 +967,9 @@ const callGlobal = (
       return createCollectionValue(name, first, location);
     case "URLSearchParams":
       return createSearchParamsValue(first, { location });
+    case "Headers":
+      if (isConstructor) return createHeadersValue(first, location);
+      break;
     case "URL":
       return createUrlValue(args, location);
     case "AbortController":

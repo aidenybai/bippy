@@ -9,6 +9,7 @@ import type {
 import { getGeneratorItems } from "./generators.js";
 import { getNativeIterableItems } from "./native-values.js";
 import { getSearchParamsItems } from "./url-search-params.js";
+import { getHeadersItems } from "./headers.js";
 import {
   accessorEntry,
   branchValue,
@@ -350,7 +351,8 @@ const collectionsByValue = new WeakMap<StaticObjectValue, StaticCollection>();
 export const getCollectionItems = (value: StaticValue): StaticValue | null => {
   const collection = value.kind === "object" ? collectionsByValue.get(value) : undefined;
   if (value.kind === "native-object") return getNativeIterableItems(value);
-  if (!collection) return getSearchParamsItems(value) ?? getGeneratorItems(value);
+  if (!collection)
+    return getSearchParamsItems(value) ?? getHeadersItems(value) ?? getGeneratorItems(value);
   if (collection.kind === "WeakMap" || collection.kind === "WeakSet") return null;
   return collection.iterate();
 };

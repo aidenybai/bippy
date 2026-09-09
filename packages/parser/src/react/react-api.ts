@@ -47,6 +47,7 @@ const REACT_API_NAMES: ReadonlySet<string> = new Set<ReactApi>([
   "useActionState",
   "useMemoCache",
   "startTransition",
+  "cache",
   "jsx",
   "jsxs",
   "jsxDEV",

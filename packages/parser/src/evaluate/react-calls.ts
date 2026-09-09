@@ -553,6 +553,14 @@ export const evaluateReactApiCall = (
       return UNDEFINED_VALUE;
     case "startTransition":
       return first ? interpreter.callValue(first, [], context, location) : UNDEFINED_VALUE;
+    case "cache":
+      return first
+        ? {
+            kind: "native-function",
+            name: "",
+            call: (cachedArgs, tools) => tools.call(first, cachedArgs),
+          }
+        : unknownValue("cache() without a function", location);
     case "useId": {
       const createId = (): StaticValue => unknownPrimitiveValue("string", "useId");
       return context.hooks ? nextMemoCell(context.hooks, null, createId) : createId();

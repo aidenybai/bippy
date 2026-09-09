@@ -4,7 +4,6 @@ import type {
   AssignmentExpression,
   AssignmentTarget,
   AssignmentTargetMaybeDefault,
-  AwaitExpression,
   BinaryExpression,
   BindingIdentifier,
   BindingPattern,
@@ -58,6 +57,7 @@ import {
   getVariableDeclaration,
   isFunctionLikeExpression,
   type LeadingAwaitOracle,
+  type SuspendingExpression,
   unwrapExpression,
 } from "../parse/ast-walk.js";
 import { getSourceLocation } from "../parse/source-location.js";
@@ -133,7 +133,7 @@ import {
   getValueParams,
 } from "./class-component.js";
 import { getCollectionItems, markCollectionExternallyMutable } from "./collections.js";
-import { createGeneratorValue } from "./generators.js";
+import { createGeneratorValue, type GeneratorCall } from "./generators.js";
 import { getPageLocationMember } from "./page-location.js";
 import { hasExportedName } from "../graph/module-record.js";
 import type { HostDocument } from "../host/host-document.js";
@@ -711,8 +711,8 @@ export class Interpreter {
   changeCount = 0;
   private readonly heapJournals: HeapJournal[] = [];
   /** The outcomes of the `await`s a statement is being (re-)evaluated with, each consumed by its `await`. */
-  private resolvedAwaits = new Map<AwaitExpression, StaticValue>();
-  private readonly generatorYields: StaticValue[][] = [];
+  private resolvedAwaits = new Map<SuspendingExpression, StaticValue>();
+  private readonly generatorCalls: GeneratorCall[] = [];
   private readonly elementSymbolKey: string;
   private readonly reactVersion: string | null;
   readonly doesStrictModeDoubleInvokeHookFactories: boolean;
@@ -1075,6 +1075,7 @@ export class Interpreter {
           packageName: symbol.packageName,
           importedName,
           origin: "binding",
+          ...(importedName === "*" ? { specifier: symbol.specifier } : {}),
         };
       }
       case "stylesheet":
@@ -1721,14 +1722,18 @@ export class Interpreter {
       case "Super":
         return getSuperObject(this, context, location);
       case "YieldExpression": {
-        const yields = this.generatorYields.at(-1);
+        const resolved = this.takeResolvedAwait(node);
+        if (resolved) return resolved;
+        const generatorCall = this.generatorCalls.at(-1);
         const argument = node.argument
           ? this.evaluateExpression(node.argument, context)
           : UNDEFINED_VALUE;
-        if (yields === undefined) return unknownValue("yield outside a generator", location);
-        if (node.delegate)
-          yields.push(...spreadListItems(getCollectionItems(argument) ?? argument, location));
-        else yields.push(argument);
+        if (generatorCall === undefined) return unknownValue("yield outside a generator", location);
+        if (node.delegate) {
+          generatorCall.collected.push(
+            ...spreadListItems(getCollectionItems(argument) ?? argument, location),
+          );
+        } else generatorCall.collected.push(argument);
         return unknownValue("value sent to the generator", location);
       }
       case "V8IntrinsicExpression":
@@ -2671,7 +2676,7 @@ export class Interpreter {
               kind: "external",
               packageName: object.packageName,
               imported: key === "default" ? { kind: "default" } : { kind: "named", name: key },
-              specifier: object.packageName,
+              specifier: object.specifier ?? object.packageName,
               filePath: null,
             },
             null,
@@ -3281,7 +3286,7 @@ export class Interpreter {
     );
   }
 
-  private takeResolvedAwait(node: AwaitExpression): StaticValue | null {
+  private takeResolvedAwait(node: SuspendingExpression): StaticValue | null {
     const resolved = this.resolvedAwaits.get(node) ?? null;
     this.resolvedAwaits.delete(node);
     return resolved;
@@ -3298,12 +3303,12 @@ export class Interpreter {
   }
 
   /**
-   * Evaluates the `await`s a statement reaches before anything it cannot replay.
-   * On a promise that is still pending the async body suspends: the statement
-   * is re-evaluated with the outcome once the promise settles, and the rest of
-   * the list follows, its outcome passing through the enclosing `try`
-   * statements before it settles the call's result. Settled outcomes are left
-   * for the statement's own evaluation to pick up.
+   * Evaluates the `await`s or `yield`s a statement reaches before anything it
+   * cannot replay. On a `yield`, or a promise that is still pending, the body
+   * suspends: the statement is re-evaluated with the outcome once the promise
+   * settles or `next(sent)` runs, and the rest of the list follows, its outcome
+   * passing through the enclosing `try` statements before it completes the
+   * call. Settled outcomes are left for the statement's own evaluation to pick up.
    */
   private suspendOnLeadingAwait(
     statement: Statement,
@@ -3315,32 +3320,40 @@ export class Interpreter {
     const oracle: LeadingAwaitOracle = {
       getTruthiness: (expression) => getTruthiness(this.peekExpression(expression, context)),
       isNullish: (expression) => isNullish(this.peekExpression(expression, context)),
-      isResolved: (awaitNode) => this.resolvedAwaits.has(awaitNode),
+      isResolved: (suspendingNode) => this.resolvedAwaits.has(suspendingNode),
     };
     const drainMicrotasks = () => this.timers.drainMicrotasks();
     for (;;) {
       const node = getLeadingAwait(statement, oracle);
       if (!node) return false;
       const location = this.locate(context.module, node);
-      const value = this.evaluateExpression(node.argument, context);
+      const value = node.argument
+        ? this.evaluateExpression(node.argument, context)
+        : UNDEFINED_VALUE;
+      const resume = (outcome: StaticValue, isEscaped: boolean): StaticValue | null => {
+        this.resolvedAwaits.set(node, outcome);
+        let resumed = isEscaped
+          ? this.runDeferred(context, location, resumeStatement)
+          : resumeStatement();
+        for (const handler of suspension.outcomeHandlers.toReversed()) {
+          if (resumed.isSuspended) return null;
+          resumed = handler(resumed);
+        }
+        return resumed.isSuspended ? null : outcomeToReturnValue(resumed, location);
+      };
+      if (node.type === "YieldExpression") {
+        if (suspension.call.kind !== "generator") return false;
+        const generatorCall = suspension.call;
+        generatorCall.suspension = {
+          yielded: value,
+          resume: (sent) => this.runGeneratorBody(generatorCall, () => resume(sent, false)),
+        };
+        return true;
+      }
+      if (suspension.call.kind !== "async") return false;
       const pending = getPendingPromise(value, drainMicrotasks);
       if (pending) {
-        suspendOnPromise(
-          suspension.call,
-          pending,
-          (outcome, isEscaped) => {
-            this.resolvedAwaits.set(node, outcome);
-            let resumed = isEscaped
-              ? this.runDeferred(context, location, resumeStatement)
-              : resumeStatement();
-            for (const handler of suspension.outcomeHandlers.toReversed()) {
-              if (resumed.isSuspended) return null;
-              resumed = handler(resumed);
-            }
-            return resumed.isSuspended ? null : outcomeToReturnValue(resumed, location);
-          },
-          location,
-        );
+        suspendOnPromise(suspension.call, pending, resume, location);
         return true;
       }
       const awaited = awaitedValue(value, location, drainMicrotasks);
@@ -3408,7 +3421,9 @@ export class Interpreter {
     }
     const frame = context.hooks;
     const wasDeferred = frame?.isDeferred ?? false;
-    const asyncCall: AsyncCall | null = functionValue.node.async ? { result: null } : null;
+    const asyncCall: AsyncCall | null = functionValue.node.async
+      ? { kind: "async", result: null }
+      : null;
     const returned = this.evaluateFunctionBody(functionValue, args, context, options, asyncCall);
     const result = asyncCall?.result ? asyncCall.result.value : returned;
     // An async body runs synchronously up to its first `await` of a pending
@@ -3424,25 +3439,28 @@ export class Interpreter {
     return resolvedPromiseValue(result);
   }
 
-  /**
-   * A generator body runs eagerly at the call, collecting its `yield`s for the
-   * iterator to replay; a throw it would raise on some `next()` surfaces here.
-   */
+  /** A generator body runs once the iterator's first `next()` asks for it, up to its first suspending `yield`. */
   private callGenerator(
     functionValue: Extract<StaticValue, { kind: "function" }>,
     args: StaticValue[],
     context: EvaluationContext,
     options: CallOptions,
   ): StaticValue {
-    const yields: StaticValue[] = [];
-    this.generatorYields.push(yields);
+    const generatorCall: GeneratorCall = { kind: "generator", suspension: null, collected: [] };
+    return createGeneratorValue(generatorCall, () =>
+      this.runGeneratorBody(generatorCall, () =>
+        this.evaluateFunctionBody(functionValue, args, context, options, generatorCall),
+      ),
+    );
+  }
+
+  /** Runs part of a generator body with `generatorCall` receiving the `yield`s it evaluates eagerly. */
+  private runGeneratorBody<Result>(generatorCall: GeneratorCall, run: () => Result): Result {
+    this.generatorCalls.push(generatorCall);
     try {
-      const returned = this.evaluateFunctionBody(functionValue, args, context, options, null);
-      return getThrowCertainty(returned) === "always"
-        ? returned
-        : createGeneratorValue(yields, withoutThrows(returned));
+      return run();
     } finally {
-      this.generatorYields.pop();
+      this.generatorCalls.pop();
     }
   }
 
@@ -3451,7 +3469,7 @@ export class Interpreter {
     args: StaticValue[],
     context: EvaluationContext,
     options: CallOptions,
-    asyncCall: AsyncCall | null,
+    call: AsyncCall | GeneratorCall | null,
   ): StaticValue {
     const location = this.locate(functionValue.module, functionValue.node);
     const callStack = options.callStack ?? context.callStack;
@@ -3480,7 +3498,7 @@ export class Interpreter {
       forkDepth: context.forkDepth,
       environment: context.environment,
       hooks: context.hooks,
-      suspension: asyncCall ? { call: asyncCall, outcomeHandlers: [] } : null,
+      suspension: call ? { call, outcomeHandlers: [] } : null,
     };
     if (functionValue.node.type === "FunctionExpression" && functionValue.node.id) {
       declareInScope(scope, functionValue.node.id.name, functionValue);

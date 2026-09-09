@@ -17,6 +17,7 @@ import {
 } from "../src/harness/index.js";
 import type { RuntimeFiberSnapshot, SnapshotWorkTag } from "../src/harness/snapshot.js";
 import { readInstalledVersion } from "../src/libraries/installed-version.js";
+import type { RuntimeObservations } from "../src/types.js";
 import { ForwardRefTag } from "../src/work-tags.js";
 
 // Next.js cannot mount inside happy-dom, so its adapters are checked
@@ -29,12 +30,14 @@ const render = async (
   fixture: string,
   target: FrameworkRenderTarget,
   externalPackageAllowList: string[] = [],
+  observations?: RuntimeObservations,
 ) => {
   const rootDirectory = join(FIXTURES, fixture);
   const result = await renderFrameworkTarget(target, {
     rootDirectory,
     tsconfigPath: join(rootDirectory, "tsconfig.json"),
     externalPackageAllowList,
+    observations,
   });
   return {
     result,
@@ -229,6 +232,32 @@ describe("next app router", () => {
     expect(JSON.stringify(getRenderRootChildren(result))).toContain(
       '"tag":"ForwardRef","name":"LinkComponent"',
     );
+  });
+
+  const renderWithRequest = (route: string, headers: Record<string, string>) =>
+    render("next-app", { framework: "next-app", route }, [], {
+      globals: {},
+      queries: [],
+      request: { headers },
+    });
+
+  it("runs the middleware and lets the render read the cookies and headers it set", async () => {
+    const fresh = await renderWithRequest("/locale", { host: "localhost:3000" });
+    expect(fresh.errors).toEqual([]);
+    expect(fresh.tree).toMatch(
+      /<main>\n\s+<p>\n\s+"en"\n\s+<br>\n\s+"en"\n\s+<br>\n\s+"localhost:3000"/,
+    );
+    const returning = await renderWithRequest("/locale", {
+      host: "localhost:3000",
+      cookie: "Preferred-Locale=fr",
+    });
+    expect(returning.tree).toMatch(/<p>\n\s+"fr"\n\s+<br>\n\s+"fr"\n\s+<br>/);
+  });
+
+  it("skips the middleware for routes outside config.matcher", async () => {
+    const { tree, errors } = await renderWithRequest("/locale/skipped", { host: "localhost:3000" });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<p>\n\s+"none"\n\s+<br>\n\s+"none"\n\s+<br>\n\s+"localhost:3000"/);
   });
 
   it("nests segment layouts, loading boundaries and resolves dynamic params", async () => {

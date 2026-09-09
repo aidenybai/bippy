@@ -4,6 +4,7 @@ import {
   UNDEFINED_VALUE,
   isKnownString,
   listValue,
+  mapValue,
   objectFromRecord,
   primitiveValue,
   unknownPrimitiveValue,
@@ -14,10 +15,13 @@ import type { CapturedRequest, StaticValue } from "../types.js";
 
 // Static stand-in for `next/headers` (next@16). `headers()` reads the request as
 // the render sees it: what the browser sent, less the flight headers, plus the
-// `x-forwarded-*` headers `BaseServer.handleRequest` fills in when absent.
-// `cookies()` parses the `cookie` header the same way `RequestCookies` does, and
-// `draftMode()` is enabled only by the `__prerender_bypass` cookie. Without a
-// captured request every read is an explicit unknown.
+// `x-forwarded-*` headers `BaseServer.handleRequest` fills in when absent, plus
+// whatever the middleware's response added (`resolve-routes` copies those onto
+// the request). `cookies()` parses the `cookie` header the same way
+// `RequestCookies` does and merges the cookies the middleware set
+// (`x-middleware-set-cookie`); `draftMode()` is enabled only by the
+// `__prerender_bypass` cookie. Without a captured request every read is an
+// explicit unknown.
 
 const FLIGHT_HEADERS = [
   "rsc",
@@ -28,6 +32,15 @@ const FLIGHT_HEADERS = [
 ];
 
 const PRERENDER_BYPASS_COOKIE = "__prerender_bypass";
+const MIDDLEWARE_SET_COOKIE_HEADER = "x-middleware-set-cookie";
+
+/** The document request as the render reads it, once the middleware has run. */
+export interface NextRequestModel {
+  /** Lower-cased header names; a value is a branch with `null` when the middleware sets the header on some paths only. */
+  headers: Map<string, StaticValue>;
+  /** Why headers beyond these may be present (a middleware whose response is not modeled); null when the set is complete. */
+  uncertainty: string | null;
+}
 
 interface RequestCookie {
   name: string;
@@ -51,6 +64,16 @@ const parseCookieHeader = (header: string): RequestCookie[] => {
   return [...cookies].map(([name, value]) => ({ name, value }));
 };
 
+/** `mergeMiddlewareCookies`: each `Set-Cookie` the middleware wrote overrides the browser's cookie of that name. */
+const mergeMiddlewareCookies = (cookies: RequestCookie[], setCookie: string): RequestCookie[] => {
+  const merged = new Map(cookies.map((cookie) => [cookie.name, cookie.value]));
+  for (const serialized of setCookie.split(",")) {
+    const [first] = parseCookieHeader(serialized);
+    if (first) merged.set(first.name, first.value);
+  }
+  return [...merged].map(([name, value]) => ({ name, value }));
+};
+
 const forwardedHeaders = (
   host: StaticValue | undefined,
   origin: string | null,
@@ -72,10 +95,10 @@ const forwardedHeaders = (
   };
 };
 
-const requestHeaders = (
+export const createNextRequestModel = (
   request: CapturedRequest,
   origin: string | null,
-): Map<string, StaticValue> => {
+): NextRequestModel => {
   const headers = new Map<string, StaticValue>();
   for (const [name, value] of Object.entries(request.headers)) {
     const lowerName = name.toLowerCase();
@@ -85,40 +108,91 @@ const requestHeaders = (
   for (const [name, value] of Object.entries(forwarded)) {
     if (!headers.has(name)) headers.set(name, value);
   }
-  return headers;
+  return { headers, uncertainty: null };
 };
+
+const isNull = (value: StaticValue): boolean => value.kind === "primitive" && value.value === null;
+
+const isPossiblyAbsent = (value: StaticValue): boolean =>
+  value.kind === "branch" ? value.alternatives.some(isNull) : isNull(value);
 
 const pairList = (name: string, value: StaticValue): StaticValue =>
   listValue([primitiveValue(name), value]);
 
-const headersValue = (headers: Map<string, StaticValue>): StaticValue => {
-  const entries = [...headers].map(([name, value]) => pairList(name, value));
+/** A read-only `Headers` over `headers`, as `headers()` returns. */
+export const headersValue = (model: NextRequestModel): StaticValue => {
+  const { headers } = model;
   const readName = (args: StaticValue[], read: (name: string) => StaticValue): StaticValue => {
     const [name] = args;
     return name !== undefined && isKnownString(name)
       ? read(name.value.toLowerCase())
       : unknownValue("dynamic header name");
   };
+  const readHeader = (name: string): StaticValue =>
+    headers.get(name) ??
+    (model.uncertainty === null
+      ? NULL_VALUE
+      : unknownValue(`the ${name} header may be set by ${model.uncertainty}`));
+  const whole = <Result extends StaticValue>(read: () => Result): StaticValue => {
+    if (model.uncertainty !== null) {
+      return unknownValue(`headers may be added by ${model.uncertainty}`);
+    }
+    const uncertain = [...headers].find(([, value]) => isPossiblyAbsent(value));
+    return uncertain
+      ? unknownValue(`the ${uncertain[0]} header is present on some middleware paths only`)
+      : read();
+  };
   return objectFromRecord({
-    get: nativeFunction("get", (args) => readName(args, (name) => headers.get(name) ?? NULL_VALUE)),
+    get: nativeFunction("get", (args) => readName(args, readHeader)),
     has: nativeFunction("has", (args) =>
-      readName(args, (name) => primitiveValue(headers.has(name))),
+      readName(args, (name) =>
+        mapValue(readHeader(name), (value) =>
+          value.kind === "unknown" ? value : primitiveValue(!isNull(value)),
+        ),
+      ),
     ),
-    entries: nativeFunction("entries", () => listValue(entries)),
-    keys: nativeFunction("keys", () => listValue([...headers.keys()].map(primitiveValue))),
-    values: nativeFunction("values", () => listValue([...headers.values()])),
-    forEach: nativeFunction("forEach", ([callback], tools) => {
-      if (callback === undefined) return UNDEFINED_VALUE;
-      for (const [name, value] of headers) tools.call(callback, [value, primitiveValue(name)]);
-      return UNDEFINED_VALUE;
-    }),
+    entries: nativeFunction("entries", () =>
+      whole(() => listValue([...headers].map(([name, value]) => pairList(name, value)))),
+    ),
+    keys: nativeFunction("keys", () =>
+      whole(() => listValue([...headers.keys()].map(primitiveValue))),
+    ),
+    values: nativeFunction("values", () => whole(() => listValue([...headers.values()]))),
+    forEach: nativeFunction("forEach", ([callback], tools) =>
+      whole(() => {
+        if (callback === undefined) return UNDEFINED_VALUE;
+        for (const [name, value] of headers) tools.call(callback, [value, primitiveValue(name)]);
+        return UNDEFINED_VALUE;
+      }),
+    ),
   });
 };
 
 const cookieValue = (cookie: RequestCookie): StaticValue =>
   objectFromRecord({ name: primitiveValue(cookie.name), value: primitiveValue(cookie.value) });
 
-const cookiesValue = (cookies: RequestCookie[]): StaticValue => {
+const knownCookies = (model: NextRequestModel): RequestCookie[] | null => {
+  const cookieHeader = model.headers.get("cookie");
+  const setCookie = model.headers.get(MIDDLEWARE_SET_COOKIE_HEADER);
+  if (cookieHeader !== undefined && !isKnownString(cookieHeader) && !isNull(cookieHeader)) {
+    return null;
+  }
+  if (setCookie !== undefined && !isKnownString(setCookie) && !isNull(setCookie)) return null;
+  const browserCookies =
+    cookieHeader !== undefined && isKnownString(cookieHeader)
+      ? parseCookieHeader(cookieHeader.value)
+      : [];
+  return setCookie !== undefined && isKnownString(setCookie)
+    ? mergeMiddlewareCookies(browserCookies, setCookie.value)
+    : browserCookies;
+};
+
+/** A read-only `RequestCookies` over the request's cookies, as `cookies()` returns. */
+export const cookiesValue = (model: NextRequestModel): StaticValue => {
+  const cookies = knownCookies(model);
+  if (cookies === null) {
+    return unknownValue("cookies depend on what the middleware set on this path");
+  }
   const readName = (
     args: StaticValue[],
     read: (matching: RequestCookie[]) => StaticValue,
@@ -142,36 +216,32 @@ const cookiesValue = (cookies: RequestCookie[]): StaticValue => {
   });
 };
 
-/** The `next/headers` export, or null for an export the model does not cover. */
+/** The `next/headers` export, or null for an export the model does not cover; `getModel` is read per call since the middleware may still replace the request. */
 export const nextRequestValue = (
   importedName: string,
-  request: CapturedRequest | null,
-  origin: string | null,
+  getModel: () => NextRequestModel | null,
 ): StaticValue | null => {
   if (importedName !== "headers" && importedName !== "cookies" && importedName !== "draftMode") {
     return null;
   }
-  if (request === null) {
-    return nativeFunction(importedName, () =>
-      unknownValue(`${importedName}() reads the request; none was captured`),
-    );
-  }
-  const headers = requestHeaders(request, origin);
-  const cookieHeader = headers.get("cookie");
-  const cookies =
-    cookieHeader !== undefined && isKnownString(cookieHeader)
-      ? parseCookieHeader(cookieHeader.value)
-      : [];
-  switch (importedName) {
-    case "headers":
-      return nativeFunction(importedName, () => headersValue(headers));
-    case "cookies":
-      return nativeFunction(importedName, () => cookiesValue(cookies));
-    case "draftMode":
-      return nativeFunction(importedName, () =>
-        cookies.some((cookie) => cookie.name === PRERENDER_BYPASS_COOKIE)
-          ? unknownValue("draft mode depends on the bypass cookie's value")
-          : objectFromRecord({ isEnabled: FALSE_VALUE }),
-      );
-  }
+  return nativeFunction(importedName, () => {
+    const model = getModel();
+    if (model === null) {
+      return unknownValue(`${importedName}() reads the request; none was captured`);
+    }
+    switch (importedName) {
+      case "headers":
+        return headersValue(model);
+      case "cookies":
+        return cookiesValue(model);
+      case "draftMode": {
+        const cookies = knownCookies(model);
+        return cookies === null
+          ? unknownValue("draft mode depends on the cookies the middleware set")
+          : cookies.some((cookie) => cookie.name === PRERENDER_BYPASS_COOKIE)
+            ? unknownValue("draft mode depends on the bypass cookie's value")
+            : objectFromRecord({ isEnabled: FALSE_VALUE });
+      }
+    }
+  });
 };

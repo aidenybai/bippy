@@ -550,29 +550,33 @@
       "id": "chadnext",
       "revision": "1a1f25a6de88453bd3c80efa8c3f61f9c159661c",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:17:43.639Z",
-      "durationMs": 777,
+      "capturedAt": "2026-09-09T14:13:34.579Z",
+      "durationMs": 898,
       "runtime": {
         "reactVersion": "19.3.0-canary-52684925-20251110",
         "rendererName": "react-dom",
         "buildType": "production",
         "roots": 2,
         "fibers": 797,
-        "commits": 20,
+        "commits": 17,
         "pageErrors": [],
         "title": "ChadNext"
       },
       "static": {
         "stats": {
-          "fiberCount": 559,
-          "textCount": 16,
+          "fiberCount": 601,
+          "textCount": 19,
           "branchCount": 4,
           "repeatCount": 0,
           "opaqueCount": 0,
-          "unknownCount": 16,
-          "modulesLoaded": 1638
+          "unknownCount": 0,
+          "modulesLoaded": 1630
         },
         "diagnostics": [
+          {
+            "code": "next-config",
+            "count": 1
+          },
           {
             "code": "dynamic-props",
             "count": 1
@@ -580,43 +584,26 @@
         ]
       },
       "report": {
-        "status": "partial",
-        "matchedFibers": 467,
-        "matchedText": 16,
+        "matchedFibers": 515,
+        "matchedText": 19,
         "opaqueSubtrees": 0,
         "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "wildcardAbsorbedFibers": 51,
-        "wildcards": [
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <main> [HostComponent]",
-            "reason": "promise settled asynchronously",
-            "absorbedFibers": 50,
-            "heads": [
-              "<section> [HostComponent]"
-            ]
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <_> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <p> [HostComponent]",
-            "reason": "call of value sent to the generator",
-            "absorbedFibers": 1,
-            "heads": [
-              "\"ChadNext also includes Changelog & About page built using\""
-            ]
-          }
-        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
         "branchesResolved": 4,
         "repeatIterations": 0,
-        "transparentFibers": 0,
+        "transparentFibers": 93,
+        "status": "exact",
         "runtimeFibers": 534,
-        "staticFibers": 487,
+        "staticFibers": 538,
         "coverage": 1,
-        "strictCoverage": 0.9044943820224719,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 512,
+        "stepsUsed": 542,
         "budgetExhausted": false
       },
       "stateSpace": {
@@ -631,33 +618,33 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(158)",
+              "variable": "truthy(147)",
               "reason": "&& on <boolean: includes()>",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/chadnext/node_modules/@radix-ui/react-collapsible/dist/index.mjs:135:17",
+              "location": "/home/ubuntu/bippy-corpus/chadnext/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.3_@types+react-dom@19.2.3_@types+react@19.2.7__@types+r_e05e68e8e0ddea995a0c056404226f35/node_modules/@radix-ui/re…",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
             {
               "kind": "branch",
-              "variable": "truthy(161)",
+              "variable": "truthy(144)",
               "reason": "&& on <boolean: includes()>",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/chadnext/node_modules/@radix-ui/react-collapsible/dist/index.mjs:135:17",
+              "location": "/home/ubuntu/bippy-corpus/chadnext/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.3_@types+react-dom@19.2.3_@types+react@19.2.7__@types+r_e05e68e8e0ddea995a0c056404226f35/node_modules/@radix-ui/re…",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
             {
               "kind": "branch",
-              "variable": "truthy(164)",
+              "variable": "truthy(141)",
               "reason": "&& on <boolean: includes()>",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/chadnext/node_modules/@radix-ui/react-collapsible/dist/index.mjs:135:17",
+              "location": "/home/ubuntu/bippy-corpus/chadnext/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.3_@types+react-dom@19.2.3_@types+react@19.2.7__@types+r_e05e68e8e0ddea995a0c056404226f35/node_modules/@radix-ui/re…",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
             {
               "kind": "branch",
-              "variable": "truthy(167)",
+              "variable": "truthy(138)",
               "reason": "&& on <boolean: includes()>",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/chadnext/node_modules/@radix-ui/react-collapsible/dist/index.mjs:135:17",
+              "location": "/home/ubuntu/bippy-corpus/chadnext/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.3_@types+react-dom@19.2.3_@types+react@19.2.7__@types+r_e05e68e8e0ddea995a0c056404226f35/node_modules/@radix-ui/re…",
               "alternativeIndex": 1,
               "alternativeCount": 2
             }
@@ -667,7 +654,7 @@
         "omitted": null
       },
       "anchor": "body",
-      "note": "runtime replayed from 2026-09-08T07:56:36.878Z",
+      "note": "runtime replayed from 2026-09-09T13:13:26.308Z",
       "failure": null
     },
     {

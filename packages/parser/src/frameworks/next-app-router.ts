@@ -6,6 +6,7 @@ import type { StaticRenderer } from "../render/static-renderer.js";
 import type { ModuleRecord, StaticObjectValue, StaticRenderResult, StaticValue } from "../types.js";
 import { applyNextCompilerOptions } from "./next-config.js";
 import type { NextModel } from "./next-externals.js";
+import { runNextMiddleware } from "./next-middleware.js";
 import {
   classifySegment,
   type DynamicSegment,
@@ -218,8 +219,14 @@ export const renderNextAppRoute = (
       interpreter.report("next-app-missing", "no app/ or src/app directory found", null, "error");
       return unknownValue("next app directory not found");
     }
-    const url = new URL(options.route, "http://static.invalid");
-    const segments = matchSegments(appDirectory, splitPathname(url.pathname), {});
+    const url = new URL(options.route, renderer.options.origin ?? "http://static.invalid");
+    let pathname = url.pathname;
+    if (model.request) {
+      const outcome = runNextMiddleware(renderer, interpreter, model.request, url);
+      model.request = outcome.request;
+      pathname = outcome.pathname;
+    }
+    const segments = matchSegments(appDirectory, splitPathname(pathname), {});
     if (!segments) {
       interpreter.report(
         "next-app-no-page",

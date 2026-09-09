@@ -9,6 +9,7 @@ import type {
   Statement,
   StringLiteral,
   VariableDeclaration,
+  YieldExpression,
 } from "oxc-parser";
 import type { FunctionLikeNode } from "../types.js";
 
@@ -120,15 +121,18 @@ export const unwrapExpression = (node: Expression): Expression => {
   }
 };
 
+/** An expression an async or generator body suspends at: `await`, or a `yield` that is not `yield*`. */
+export type SuspendingExpression = AwaitExpression | YieldExpression;
+
 /** Decides which side of a short-circuiting operator runs; null when the source does not decide. */
 export interface LeadingAwaitOracle {
   getTruthiness: (expression: Expression) => boolean | null;
   isNullish: (expression: Expression) => boolean | null;
-  /** Whether the await's outcome is already known, so re-evaluating it replays that outcome. */
-  isResolved: (node: AwaitExpression) => boolean;
+  /** Whether the suspension's outcome is already known, so re-evaluating it replays that outcome. */
+  isResolved: (node: SuspendingExpression) => boolean;
 }
 
-type LeadingAwaitScan = AwaitExpression | "pure" | "impure" | "short-circuited";
+type LeadingAwaitScan = SuspendingExpression | "pure" | "impure" | "short-circuited";
 
 const scanLeadingAwait = (
   operands: ReadonlyArray<Argument | ObjectPropertyKind | null | undefined>,
@@ -168,8 +172,10 @@ const scanExpressionForLeadingAwait = (
   const scan = (operands: ReadonlyArray<Argument | null | undefined>): LeadingAwaitScan =>
     scanLeadingAwait(operands, oracle);
   switch (node.type) {
-    case "AwaitExpression": {
+    case "AwaitExpression":
+    case "YieldExpression": {
       if (oracle.isResolved(node)) return "pure";
+      if (node.type === "YieldExpression" && node.delegate) return "impure";
       const operand = scan([node.argument]);
       return operand === "pure" ? node : operand;
     }
@@ -251,14 +257,15 @@ const scanExpressionForLeadingAwait = (
 };
 
 /**
- * The first `await` a statement evaluates, when everything evaluated before it
- * (names, literals, member reads, function values, decided short-circuits)
- * would evaluate the same way again; null when the statement has no such await.
+ * The first `await` or `yield` a statement evaluates, when everything evaluated
+ * before it (names, literals, member reads, function values, decided
+ * short-circuits) would evaluate the same way again; null when the statement
+ * has no such expression.
  */
 export const getLeadingAwait = (
   statement: Statement,
   oracle: LeadingAwaitOracle,
-): AwaitExpression | null => {
+): SuspendingExpression | null => {
   const scan = (expression: Expression | null | undefined): LeadingAwaitScan =>
     expression ? scanExpressionForLeadingAwait(expression, oracle) : "pure";
   const scanned = (() => {

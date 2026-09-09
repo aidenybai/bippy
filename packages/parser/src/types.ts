@@ -829,6 +829,8 @@ export interface StaticExternalValue {
    * member of one (`useQuery()`, `api.error`), whose truthiness is unknown.
    */
   origin: ExternalValueOrigin;
+  /** The subpath specifier (`next/headers`) a namespace binding was imported from; absent for the package root. */
+  specifier?: string;
 }
 
 export type ExternalValueOrigin = "binding" | "instance" | "derived";
@@ -967,6 +969,7 @@ export type ReactApi =
   | "useActionState"
   | "useMemoCache"
   | "startTransition"
+  | "cache"
   | "createPortal"
   | "flushSync"
   | "batchedUpdates"

@@ -9,6 +9,7 @@ import type {
 } from "../types.js";
 import type { HookFrame } from "./hooks.js";
 import type { StatementOutcome } from "./interpreter.js";
+import type { GeneratorCall } from "./generators.js";
 import type { AsyncCall } from "./promises.js";
 
 /** The value the nearest provider of a context supplies at the position being evaluated, or null without one. */
@@ -36,15 +37,16 @@ export interface OutcomeHandler {
 }
 
 /**
- * Where a statement list of an async body can suspend on a pending `await`:
- * `outcomeHandlers` are the enclosing `try` statements (innermost last) that
- * the outcome of the resumed rest of the body still has to pass through before
- * it settles `call`. Null where a statement's outcome is consumed by code that
- * is not in continuation style (loops, forked paths, `switch` cases), so an
- * `await` there evaluates to an unknown value instead.
+ * Where a statement list of an async body can suspend on a pending `await`, or
+ * one of a generator body on a `yield`: `outcomeHandlers` are the enclosing
+ * `try` statements (innermost last) that the outcome of the resumed rest of the
+ * body still has to pass through before it completes `call`. Null where a
+ * statement's outcome is consumed by code that is not in continuation style
+ * (loops, forked paths, `switch` cases), so an `await` there evaluates to an
+ * unknown value and a `yield` runs eagerly instead.
  */
 export interface SuspensionPoint {
-  call: AsyncCall;
+  call: AsyncCall | GeneratorCall;
   outcomeHandlers: OutcomeHandler[];
 }
 

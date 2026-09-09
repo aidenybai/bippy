@@ -789,7 +789,8 @@ export const isSameValue = (left: StaticValue, right: StaticValue): boolean => {
     left.origin === "binding" &&
     right.origin === "binding" &&
     left.packageName === right.packageName &&
-    left.importedName === right.importedName
+    left.importedName === right.importedName &&
+    left.specifier === right.specifier
   );
 };
 
@@ -1036,7 +1037,9 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
     left.origin === "binding" &&
     right.origin === "binding"
   ) {
-    return left.packageName === right.packageName && left.importedName === right.importedName
+    return left.packageName === right.packageName &&
+      left.importedName === right.importedName &&
+      left.specifier === right.specifier
       ? true
       : null;
   }

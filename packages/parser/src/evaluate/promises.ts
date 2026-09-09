@@ -33,6 +33,7 @@ export interface ModeledPromise {
 
 /** An async function activation; `result` is the promise it returned, created once its body suspends at an `await`. */
 export interface AsyncCall {
+  kind: "async";
   result: ModeledPromise | null;
 }
 

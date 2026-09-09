@@ -9,6 +9,7 @@ import { isNativeInstanceOf } from "./native-values.js";
 import { getModeledPromise } from "./promises.js";
 import { getBinaryWitness, TYPED_ARRAY_CONSTRUCTORS } from "./typed-arrays.js";
 import { isSearchParamsValue } from "./url-search-params.js";
+import { isHeadersValue } from "./headers.js";
 import { isUrlValue } from "./url.js";
 import { getObjectProperty } from "./values.js";
 
@@ -116,6 +117,7 @@ export const getPrototypeWitness = (value: StaticValue): object | null => {
       const collectionKind = getCollectionKind(value);
       if (collectionKind !== null) return COLLECTION_WITNESSES[collectionKind];
       if (isSearchParamsValue(value)) return new URLSearchParams();
+      if (isHeadersValue(value)) return new Headers();
       if (isUrlValue(value)) return new URL("http://witness.invalid");
       if (isClockDateValue(value)) return new Date(0);
       if (isBlobValue(value)) return new Blob();
