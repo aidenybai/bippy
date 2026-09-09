@@ -95,6 +95,7 @@ import {
   callShapedPrimitiveMethod,
   joinStrings,
   rangedNumberValue,
+  toStringValue,
 } from "./primitive-shapes.js";
 import { isArrayValue } from "./type-predicates.js";
 import { createSearchParamsValue } from "./url-search-params.js";
@@ -118,6 +119,7 @@ import {
   branchValue,
   createSymbolValue,
   describeValue,
+  distributeObjectBranches,
   FALSE_VALUE,
   getClassPrototype,
   getKnownObjectKeys,
@@ -386,11 +388,6 @@ export const getBuiltinGlobal = (
   environment?: EnvironmentLookup,
 ): StaticValue | null =>
   getBundlerGlobal(name, environment) ?? getHostGlobal(realm, hostDocument, name);
-
-const toStringValue = (value: StaticValue): StaticValue => {
-  if (value.kind === "primitive") return primitiveValue(String(value.value));
-  return unknownPrimitiveValue("string", `String(${describeValue(value)})`);
-};
 
 const toNumberValue = (value: StaticValue): StaticValue => {
   if (value.kind === "primitive" && typeof value.value !== "bigint")
@@ -960,7 +957,9 @@ const callGlobal = (
     case "WeakSet":
       return createCollectionValue(name, first, location);
     case "URLSearchParams":
-      return createSearchParamsValue(first, { location });
+      return mapValue(distributeObjectBranches(first ?? UNDEFINED_VALUE), (init) =>
+        createSearchParamsValue(init, { location }),
+      );
     case "URL":
       return createUrlValue(args, location);
     case "AbortController":
@@ -1048,12 +1047,18 @@ const callGlobal = (
     case "Object.keys":
     case "Object.values":
     case "Object.entries": {
-      const ownEntries = first ? getOwnEnumerableEntries(first) : null;
-      if (!ownEntries)
-        return unknownValue(`${name} of ${first ? describeValue(first) : "nothing"}`, location);
-      if (name === "Object.keys") return listValue(ownEntries.map(([key]) => primitiveValue(key)));
-      if (name === "Object.values") return listValue(ownEntries.map(([, value]) => value));
-      return listValue(ownEntries.map(([key, value]) => listValue([primitiveValue(key), value])));
+      const inspect = (target: StaticValue): StaticValue => {
+        const ownEntries = getOwnEnumerableEntries(target);
+        if (!ownEntries) return unknownValue(`${name} of ${describeValue(target)}`, location);
+        if (name === "Object.keys")
+          return listValue(ownEntries.map(([key]) => primitiveValue(key)));
+        if (name === "Object.values") return listValue(ownEntries.map(([, value]) => value));
+        return listValue(ownEntries.map(([key, value]) => listValue([primitiveValue(key), value])));
+      };
+      const target = first ?? UNDEFINED_VALUE;
+      return getOwnEnumerableEntries(target)
+        ? inspect(target)
+        : mapValue(distributeObjectBranches(target), inspect);
     }
     case "Object.assign":
       if (
@@ -1269,10 +1274,13 @@ const callGlobal = (
       return unknownPrimitiveValue("boolean", name);
     }
     case "JSON.stringify": {
-      const json = first && args.length === 1 ? toJsonValue(first) : undefined;
-      return json === undefined
-        ? unknownPrimitiveValue("string", "JSON.stringify")
-        : primitiveValue(JSON.stringify(json));
+      if (!first || args.length !== 1) return unknownPrimitiveValue("string", "JSON.stringify");
+      return mapValue(distributeObjectBranches(first), (alternative) => {
+        const json = toJsonValue(alternative);
+        return json === undefined
+          ? unknownPrimitiveValue("string", "JSON.stringify")
+          : primitiveValue(JSON.stringify(json));
+      });
     }
     case "JSON.parse":
       if (

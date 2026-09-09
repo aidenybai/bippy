@@ -1,10 +1,12 @@
 import {
   NULL_VALUE,
   UNDEFINED_VALUE,
+  distributeObjectBranches,
   getKnownObjectKeys,
   getObjectProperty,
   isNullish,
   listValue,
+  mapValue,
   objectFromRecord,
   objectValue,
   omitObjectKeys,
@@ -131,12 +133,13 @@ const flattenDescriptors = (list: StaticValue): StaticValue[] | null => {
 };
 
 /** What `<Meta>` renders: an unwrapped fragment, so the head elements are direct children. */
-export const renderMetaDescriptors = (meta: StaticValue): StaticValue => {
-  if (meta.kind === "unknown") return meta;
-  const descriptors = flattenDescriptors(meta);
-  if (!descriptors) return unknownValue("react-router: meta() result is not a static array");
-  return listValue(descriptors.map(metaElement));
-};
+export const renderMetaDescriptors = (meta: StaticValue): StaticValue =>
+  mapValue(distributeObjectBranches(meta), (alternative) => {
+    if (alternative.kind === "unknown") return alternative;
+    const descriptors = flattenDescriptors(alternative);
+    if (!descriptors) return unknownValue("react-router: meta() result is not a static array");
+    return listValue(descriptors.map(metaElement));
+  });
 
 const linkElement = (descriptor: StaticValue): StaticValue => {
   if (descriptor.kind !== "object") {
@@ -151,13 +154,14 @@ const linkElement = (descriptor: StaticValue): StaticValue => {
   return hostElement("link", props, jsonKey(descriptor, true));
 };
 
-const mapLinkDescriptors = (links: StaticValue): StaticValue => {
-  if (links.kind === "unknown") return links;
-  const descriptors = flattenDescriptors(links);
-  return descriptors
-    ? listValue(descriptors.map(linkElement))
-    : unknownValue("react-router: links() result is not a static array");
-};
+const mapLinkDescriptors = (links: StaticValue): StaticValue =>
+  mapValue(links, (alternative) => {
+    if (alternative.kind === "unknown") return alternative;
+    const descriptors = flattenDescriptors(alternative);
+    return descriptors
+      ? listValue(descriptors.map(linkElement))
+      : unknownValue("react-router: links() result is not a static array");
+  });
 
 /**
  * What `<Links>` renders: `<>{criticalCss} {criticalCssLink} {links.map(...)}</>`.
@@ -197,24 +201,26 @@ export const renderRemixLinkDescriptors = (
 };
 
 /** Concatenates each match's `links()` and drops descriptors whose (sorted) key repeats. */
-export const dedupeLinkDescriptors = (perMatch: StaticValue[]): StaticValue => {
-  const seen = new Set<string>();
-  const kept: StaticValue[] = [];
-  for (const result of perMatch) {
-    const descriptors = flattenDescriptors(result);
-    if (!descriptors) return unknownValue("react-router: links() result is not a static array");
-    for (const descriptor of descriptors) {
-      if (descriptor.kind !== "object") {
+export const dedupeLinkDescriptors = (perMatch: StaticValue[]): StaticValue =>
+  mapValue(distributeObjectBranches(listValue(perMatch)), (alternative) => {
+    if (alternative.kind !== "list") return alternative;
+    const seen = new Set<string>();
+    const kept: StaticValue[] = [];
+    for (const result of alternative.items) {
+      const descriptors = flattenDescriptors(result);
+      if (!descriptors) return unknownValue("react-router: links() result is not a static array");
+      for (const descriptor of descriptors) {
+        if (descriptor.kind !== "object") {
+          kept.push(descriptor);
+          continue;
+        }
+        const key = jsonKey(descriptor, true);
+        if (key.kind === "primitive" && typeof key.value === "string") {
+          if (seen.has(key.value)) continue;
+          seen.add(key.value);
+        }
         kept.push(descriptor);
-        continue;
       }
-      const key = jsonKey(descriptor, true);
-      if (key.kind === "primitive" && typeof key.value === "string") {
-        if (seen.has(key.value)) continue;
-        seen.add(key.value);
-      }
-      kept.push(descriptor);
     }
-  }
-  return listValue(kept);
-};
+    return listValue(kept);
+  });
