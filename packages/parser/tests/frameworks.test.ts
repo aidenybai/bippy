@@ -441,6 +441,15 @@ describe("next pages router", () => {
     expect(tree).toMatch(/<h1>\n\s+"Post "\n\s+"42"/);
   });
 
+  it("reports the matched page file's route as useRouter().pathname", async () => {
+    const post = await render("next-pages", { framework: "next-pages", route: "/posts/42" });
+    expect(post.tree).toMatch(/<h1>\n\s+"Post "\n\s+"42"\n\s+<em>/);
+    expect(post.tree).not.toContain("?branch");
+    const home = await render("next-pages", { framework: "next-pages", route: "/" });
+    expect(home.tree).toContain("<code>");
+    expect(home.tree).not.toContain("<s>");
+  });
+
   it("matches catch-all pages", async () => {
     const { tree, errors } = await render("next-pages", {
       framework: "next-pages",
@@ -574,6 +583,14 @@ describe("next pages router", () => {
     expect(tree).toMatch(/<Image>\n\s+<span>\n\s+<img>\n\s+<Head>\n\s+<_class>/);
     expect(tree).not.toContain("<ImageElement>");
     expect(findFiberTags(pattern, "_class")).toEqual(["ClassComponent", "ClassComponent"]);
+  });
+
+  it("follows the installed next version: 12.1.1 introduced ImageElement while head stays a class", async () => {
+    const { tree } = await renderPagesWithNext("12.1.5", "/media");
+    expect(tree).toMatch(
+      /<Head>\n\s+<_class>\n\s+<Image>\n\s+<span>\n\s+<span>\n\s+<img>\n\s+<ImageElement>\n\s+<img>\n\s+<noscript>/,
+    );
+    expect(tree).toMatch(/<Image>\n\s+<span>\n\s+<ImageElement>\n\s+<img>\n\s+<Head>\n\s+<_class>/);
   });
 
   it("splices out the client bootstrap around _app: StrictMode, the head commit hook and the route announcer portal", () => {

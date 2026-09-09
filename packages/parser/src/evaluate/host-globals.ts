@@ -72,6 +72,12 @@ export const getLanguageObject = (name: string): object | null => {
     : null;
 };
 
+/** Whether a dotted path reaches a language object that lacks the final member, so only the program can give it a value. */
+export const isAbsentLanguageMember = (name: string): boolean => {
+  const reading = readLanguagePath(name);
+  return reading !== null && reading.value === undefined;
+};
+
 /** The property key a static key (`length`, `@@Symbol.toStringTag`) denotes on a language object; null for symbols the program allocated. */
 export const toLanguagePropertyKey = (key: string): string | symbol | null => {
   if (!isSymbolPropertyKey(key)) return key;

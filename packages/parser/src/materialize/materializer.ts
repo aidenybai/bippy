@@ -1,6 +1,8 @@
 import type { Class } from "oxc-parser";
 import type { ComponentClass, ComponentType, Context, ExoticComponent, ReactNode } from "react";
 import {
+  type CompositeRender,
+  getStaticProperty,
   isErrorBoundaryClass,
   renderClassComponent,
   unmountClassInstance,
@@ -33,6 +35,7 @@ import {
   getStubDisplayName,
   mapValue,
   NULL_VALUE,
+  objectFromRecord,
   omitObjectKeys,
   unknownValue,
   nativeObjectValue,
@@ -159,6 +162,8 @@ export interface MaterializeContext {
   owner: EvaluationContext | null;
   /** Inside a `<StrictMode>` subtree, where development React double-invokes hook factories. */
   isStrictMode: boolean;
+  /** The unmasked legacy context at this position; null in React 19+, which removed legacy context. */
+  legacyContext: StaticValue | null;
 }
 
 /** The static element a proxy component stands for, handed to it as its only prop. */
@@ -229,6 +234,8 @@ interface ClassProxyHost {
   getInstance: (path: BoundaryRenderPath) => ProxyInstance;
   rerender: () => void;
   queueCommitWork: (work: EffectPhaseWork) => void;
+  /** Reads through the proxy's own `contextType`: a class render has no hook dispatcher to read from. */
+  readContext: ContextReader;
 }
 
 const createProxyInstance = (
@@ -482,10 +489,15 @@ export class Materializer {
   /** Context values flow through React itself, so a proxy reads them at its own fiber, as the real hook would. */
   private readonly readContext: ContextReader = (definition) => {
     if (!this.isInsideComponentRender) return null;
-    const value = this.useStaticContext(this.getContext(definition));
+    return this.recordContextRead(definition, this.useStaticContext(this.getContext(definition)));
+  };
+  private recordContextRead(
+    definition: ContextDefinition,
+    value: StaticValue | null,
+  ): StaticValue | null {
     this.contextReads?.push({ definition, value });
     return value;
-  };
+  }
   private contextReads: ContextRead[] | null = null;
   private readonly stubProxies = new WeakMap<StubComponent, ComponentType<ProxyProps>>();
   private readonly suspenseBoundaryProxy: ComponentType<ProxyProps>;
@@ -521,6 +533,7 @@ export class Materializer {
       alternativeDepth: 0,
       owner: null,
       isStrictMode: false,
+      legacyContext: this.interpreter.hasLegacyContext ? objectFromRecord({}) : null,
     };
   }
 
@@ -1147,6 +1160,11 @@ export class Materializer {
     if (!proxy) {
       const classValue = toClassValue(component);
       const { interpreter } = this;
+      const contextType = getStaticProperty(classValue, "contextType");
+      const contextDefinition = contextType?.kind === "context" ? contextType.context : null;
+      const readContext: ContextReader = (definition) => this.readContext(definition);
+      const recordContextRead = (definition: ContextDefinition, value: StaticValue | null) =>
+        this.recordContextRead(definition, value);
       const beginLayoutPhase = (context: MaterializeContext): void => {
         this.beginLayoutPhase();
         this.commitSuspenseScope(context.suspenseScope);
@@ -1160,6 +1178,7 @@ export class Materializer {
           this.renderClassProxy(input, component, classValue, caught, host),
         );
       class ClassProxy extends this.runtime.react.Component<ProxyProps, ErrorBoundaryState> {
+        declare context: StaticValue | null;
         state: ErrorBoundaryState = { caught: null };
         private readonly instances = new Map<BoundaryRenderPath, ProxyInstance>();
         private pendingWork: EffectPhaseWork[] = [];
@@ -1175,6 +1194,10 @@ export class Materializer {
           },
           rerender: () => this.forceUpdate(),
           queueCommitWork: (work) => this.pendingWork.push(work),
+          readContext: (definition) =>
+            definition === contextDefinition
+              ? recordContextRead(definition, this.context)
+              : readContext(definition),
         };
 
         render(): ReactNode {
@@ -1227,6 +1250,7 @@ export class Materializer {
         isErrorBoundaryClass(classValue.body) ? ErrorBoundaryProxy : ClassProxy,
         getComponentDisplayName(component),
       );
+      if (contextDefinition) proxy.contextType = this.getContext(contextDefinition);
       this.classProxies.set(component, proxy);
     }
     return proxy;
@@ -1430,6 +1454,7 @@ export class Materializer {
       component,
       instanceRef.current,
       () => setPass((pass) => pass + 1),
+      this.readContext,
       (frame) =>
         this.evaluateComposite(
           component,
@@ -1494,6 +1519,7 @@ export class Materializer {
     component: ComponentDefinition,
     instance: ProxyInstance,
     rerender: () => void,
+    readContext: ContextReader,
     evaluate: (frame: HookFrame) => CompositeEvaluation,
   ): StatefulRender {
     const { frame } = instance;
@@ -1504,7 +1530,7 @@ export class Materializer {
       previous &&
       isRetainedInput(previous.input, input) &&
       previous.context.ignoresMaybeThrows === context.ignoresMaybeThrows &&
-      previous.contextReads.every((read) => this.readContext(read.definition) === read.value)
+      previous.contextReads.every((read) => readContext(read.definition) === read.value)
     ) {
       return this.commitRender(instance, previous, input.location);
     }
@@ -1628,6 +1654,7 @@ export class Materializer {
         component,
         host.getInstance(path),
         host.rerender,
+        host.readContext,
         (frame) =>
           this.evaluateComposite(
             component,
@@ -1640,6 +1667,16 @@ export class Materializer {
                 this.interpreter,
                 classValue,
                 props,
+                {
+                  readContext: (definition) =>
+                    providedContextValue(
+                      this.interpreter,
+                      definition,
+                      host.readContext(definition),
+                      input.location,
+                    ),
+                  legacyContext: boundaryContext.legacyContext,
+                },
                 componentContext,
                 caughtError,
               ),
@@ -1716,7 +1753,7 @@ export class Materializer {
     context: MaterializeContext,
     location: SourceLocation | null,
     hooks: HookFrame | null,
-    render: (componentContext: EvaluationContext) => StaticValue,
+    render: (componentContext: EvaluationContext) => StaticValue | CompositeRender,
   ): CompositeEvaluation {
     const environment = this.componentEnvironment(component, context);
     const childContext: MaterializeContext = {
@@ -1766,7 +1803,10 @@ export class Materializer {
       hooks,
     };
     childContext.owner = componentContext;
-    return { rendered: render(componentContext), childContext, componentContext };
+    const rendered = render(componentContext);
+    if ("kind" in rendered) return { rendered, childContext, componentContext };
+    if (rendered.childLegacyContext) childContext.legacyContext = rendered.childLegacyContext;
+    return { rendered: rendered.rendered, childContext, componentContext };
   }
 
   /** Under RSC an element created outside a client boundary (a module with `"use client"`) is Flight's to render. */

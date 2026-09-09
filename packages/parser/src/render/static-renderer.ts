@@ -301,10 +301,18 @@ export class StaticRenderer {
     );
     const moduleContext = interpreter.createModuleContext(module);
     const context = { ...moduleContext, scope: createScope(moduleContext.scope) };
-    for (const statements of rootCall.enclosingStatements) {
-      interpreter.evaluateBlock(statements, context, false);
+    if (rootCall.enclosingBlocks.length === 0) {
+      return interpreter.evaluateExpression(rootCall.element, context);
     }
-    return interpreter.evaluateExpression(rootCall.element, context);
+    const blocks = rootCall.enclosingBlocks.map((block, index) =>
+      index === rootCall.enclosingBlocks.length - 1
+        ? [...block.statementsBefore, block.statement]
+        : block.statementsBefore,
+    );
+    return (
+      interpreter.evaluateNestedRootRender(blocks, context) ??
+      interpreter.evaluateExpression(rootCall.element, context)
+    );
   }
 
   renderWith(produce: (interpreter: Interpreter) => StaticValue): Promise<StaticRenderResult> {

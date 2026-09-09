@@ -1,8 +1,10 @@
 import type { Class, ClassElement, ParamPattern } from "oxc-parser";
 import type {
   ClassBody,
+  ClassFieldMember,
   ClassFunctionMember,
   ClassMember,
+  ContextDefinition,
   FunctionLikeNode,
   SourceLocation,
   StaticClassValue,
@@ -27,14 +29,15 @@ import type { Interpreter } from "./interpreter.js";
 import { createScope } from "./scope.js";
 import {
   accessorEntry,
+  assignedObject,
   describeValue,
+  getKnownObjectKeys,
   getObjectProperty,
   getTruthiness,
   isCallable,
   isNullish,
   NULL_VALUE,
   objectFromRecord,
-  objectValue,
   setObjectProperty,
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
@@ -56,6 +59,10 @@ const getElementName = (element: ClassElement): string | null => {
 export const collectClassMembers = (node: Class): ClassMember[] => {
   const members: ClassMember[] = [];
   for (const element of node.body.body) {
+    if (element.type === "StaticBlock") {
+      members.push({ kind: "static-block", isStatic: true, body: element.body });
+      continue;
+    }
     const key = getElementName(element);
     if (key === null) continue;
     if (element.type === "MethodDefinition" || element.type === "TSAbstractMethodDefinition") {
@@ -63,8 +70,8 @@ export const collectClassMembers = (node: Class): ClassMember[] => {
       const kind = element.kind === "get" ? "getter" : element.kind;
       members.push({ key, isStatic: element.static, kind, functionNode: element.value });
     } else if (
-      element.type === "PropertyDefinition" ||
-      element.type === "TSAbstractPropertyDefinition"
+      (element.type === "PropertyDefinition" || element.type === "TSAbstractPropertyDefinition") &&
+      !element.declare
     ) {
       members.push({ key, isStatic: element.static, kind: "field", value: element.value });
     }
@@ -75,8 +82,9 @@ export const collectClassMembers = (node: Class): ClassMember[] => {
 export const isErrorBoundaryClass = (body: ClassBody): boolean =>
   body.members.some(
     (member) =>
-      (member.key === "getDerivedStateFromError" && member.isStatic) ||
-      (member.key === "componentDidCatch" && !member.isStatic),
+      member.kind !== "static-block" &&
+      ((member.key === "getDerivedStateFromError" && member.isStatic) ||
+        (member.key === "componentDidCatch" && !member.isStatic)),
   ) ||
   (body.superValue?.kind === "class" && isErrorBoundaryClass(body.superValue.body));
 
@@ -99,7 +107,7 @@ interface InstanceGetter {
 
 interface InstanceMembers {
   constructor: StaticFunctionValue | null;
-  fields: ClassMember[];
+  fields: ClassFieldMember[];
   getters: InstanceGetter[];
 }
 
@@ -293,12 +301,7 @@ const getInstanceMethod = (
 
 /** `assign({}, prevState, partialState)` of `getStateFromUpdate`; null and undefined leave the state as is. */
 const mergeState = (state: StaticValue, partialState: StaticValue): StaticValue =>
-  isNullish(partialState) === true
-    ? state
-    : objectValue([
-        { kind: "spread", value: state },
-        { kind: "spread", value: partialState },
-      ]);
+  isNullish(partialState) === true ? state : assignedObject([state, partialState]);
 
 export interface ClassInstanceRecord {
   instance: StaticObjectValue;
@@ -308,9 +311,84 @@ export interface ClassInstanceRecord {
   committedState: StaticValue;
   pendingCallbacks: StaticValue[];
   rendered: StaticValue | null;
+  childLegacyContext: StaticValue | null;
 }
 
 const classInstances = new WeakMap<HookFrame, ClassInstanceRecord>();
+
+/** The contexts a component can read at its position in the tree. */
+export interface ContextSource {
+  readContext: (definition: ContextDefinition) => StaticValue;
+  /** The unmasked legacy context (`ReactFiberLegacyContext`); null in React 19+, which removed legacy context. */
+  legacyContext: StaticValue | null;
+}
+
+export interface CompositeRender {
+  rendered: StaticValue;
+  /** The legacy context the children observe; null when the component does not provide one. */
+  childLegacyContext: StaticValue | null;
+}
+
+const isDefinedStatic = (value: StaticValue | null): value is StaticValue =>
+  value !== null && isNullish(value) !== true;
+
+/**
+ * The `context` an instance is constructed with and reads as `this.context`
+ * (`constructClassInstance`/`mountClassInstance`): the value of a static
+ * `contextType`, else the legacy context masked to the keys of `contextTypes`
+ * (`getMaskedContext`), else the empty context object.
+ */
+const getInstanceContext = (
+  interpreter: Interpreter,
+  classValue: StaticClassValue,
+  source: ContextSource,
+  context: EvaluationContext,
+): StaticValue => {
+  const contextType = getStaticProperty(classValue, "contextType");
+  if (contextType?.kind === "context") return source.readContext(contextType.context);
+  if (isDefinedStatic(contextType) && contextType.kind !== "primitive") {
+    return unknownValue(`context read from ${describeValue(contextType)}`);
+  }
+  const contextTypes = getStaticProperty(classValue, "contextTypes");
+  if (source.legacyContext === null || !isDefinedStatic(contextTypes)) return objectFromRecord({});
+  const keys = contextTypes.kind === "object" ? getKnownObjectKeys(contextTypes) : null;
+  if (keys === null) {
+    return unknownValue(`legacy context masked by ${describeValue(contextTypes)}`);
+  }
+  const { legacyContext } = source;
+  return objectFromRecord(
+    Object.fromEntries(
+      keys.map((key) => [key, interpreter.getProperty(legacyContext, key, context, null)]),
+    ),
+  );
+};
+
+/**
+ * `processChildContext` for a class with `childContextTypes`: the parent's
+ * legacy context merged with `getChildContext()`; a class without the method
+ * passes the parent's context through, a class without the static provides nothing.
+ */
+const getChildLegacyContext = (
+  interpreter: Interpreter,
+  classValue: StaticClassValue,
+  instance: StaticObjectValue,
+  source: ContextSource,
+  context: EvaluationContext,
+): StaticValue | null => {
+  const { legacyContext } = source;
+  if (
+    legacyContext === null ||
+    !isDefinedStatic(getStaticProperty(classValue, "childContextTypes"))
+  ) {
+    return null;
+  }
+  const getChildContext = getInstanceMethod(instance, "getChildContext");
+  if (!getChildContext) return legacyContext;
+  return assignedObject([
+    legacyContext,
+    interpreter.callFunction(getChildContext, [], context, { thisValue: instance }),
+  ]);
+};
 
 /**
  * `constructClassInstance` + `adoptClassInstance`: builds the `this` a class
@@ -324,16 +402,17 @@ const mountClassInstance = (
   interpreter: Interpreter,
   classValue: StaticClassValue,
   props: StaticValue,
+  instanceContext: StaticValue,
   context: EvaluationContext,
   frame: HookFrame,
 ): ClassInstanceRecord => {
   const instance = objectFromRecord({
     props,
     state: UNDEFINED_VALUE,
-    context: unknownValue("legacy class context"),
+    context: instanceContext,
     refs: objectFromRecord({}),
   });
-  initializeInstance(interpreter, classValue, instance, [props], context);
+  initializeInstance(interpreter, classValue, instance, [props, instanceContext], context);
   const initialState = getObjectProperty(instance, "state");
   const stateCell = nextStateCell(frame, `${classValue.name ?? "class"} state`, () => initialState);
   const record: ClassInstanceRecord = {
@@ -344,6 +423,7 @@ const mountClassInstance = (
     committedState: initialState,
     pendingCallbacks: [],
     rendered: null,
+    childLegacyContext: null,
   };
   const setState: StaticNativeFunctionValue = {
     kind: "native-function",
@@ -466,16 +546,19 @@ export const renderClassComponent = (
   interpreter: Interpreter,
   classValue: StaticClassValue,
   props: StaticValue,
+  source: ContextSource,
   context: EvaluationContext,
-  caughtError = false,
-): StaticValue => {
+  caughtError: boolean,
+): CompositeRender => {
   const frame = context.hooks ?? createHookFrame();
+  const instanceContext = getInstanceContext(interpreter, classValue, source, context);
   let record = classInstances.get(frame);
   if (record) {
     const { stateCell } = record;
     nextStateCell(frame, stateCell.name, () => stateCell.initial);
+    setObjectProperty(record.instance, "context", instanceContext);
   } else {
-    record = mountClassInstance(interpreter, classValue, props, context, frame);
+    record = mountClassInstance(interpreter, classValue, props, instanceContext, context, frame);
     classInstances.set(frame, record);
   }
   const { instance, stateCell } = record;
@@ -501,7 +584,7 @@ export const renderClassComponent = (
   }
   if (caughtError) {
     const deriveStateFromError = getStaticMethod(classValue, "getDerivedStateFromError");
-    if (!deriveStateFromError) return NULL_VALUE;
+    if (!deriveStateFromError) return { rendered: NULL_VALUE, childLegacyContext: null };
     state = mergeState(
       state,
       interpreter.callFunction(deriveStateFromError, [caughtErrorValue()], context, {
@@ -523,13 +606,21 @@ export const renderClassComponent = (
     deps: null,
     cleanup: null,
   });
-  if (didBailOut && record.rendered !== null) return record.rendered;
-  const render = getInstanceMethod(instance, "render");
-  if (!render) {
-    return unknownValue(`class ${classValue.name ?? "component"} has no static render method`);
+  if (didBailOut && record.rendered !== null) {
+    return { rendered: record.rendered, childLegacyContext: record.childLegacyContext };
   }
-  record.rendered = interpreter.callFunction(render, [], context, { thisValue: instance });
-  return record.rendered;
+  const render = getInstanceMethod(instance, "render");
+  record.rendered = render
+    ? interpreter.callFunction(render, [], context, { thisValue: instance })
+    : unknownValue(`class ${classValue.name ?? "component"} has no static render method`);
+  record.childLegacyContext = getChildLegacyContext(
+    interpreter,
+    classValue,
+    instance,
+    source,
+    context,
+  );
+  return { rendered: record.rendered, childLegacyContext: record.childLegacyContext };
 };
 
 /** `new Class(...args)`: the instance as it is right after construction. */
@@ -567,10 +658,9 @@ const initializeFields = (
       ...layer.methodContext,
       scope: createScope(layer.current.scope),
     };
-    const value =
-      field.kind === "field" && field.value
-        ? interpreter.evaluateExpression(field.value, fieldContext, field.key)
-        : UNDEFINED_VALUE;
+    const value = field.value
+      ? interpreter.evaluateExpression(field.value, fieldContext, field.key)
+      : UNDEFINED_VALUE;
     instance.entries.push({ kind: "property", key: field.key, value });
   }
 };

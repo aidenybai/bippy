@@ -19,11 +19,14 @@ import { callUncertainCallback } from "./builtin-calls.js";
 import { countChildrenExactly, mapChildrenExactly } from "./react-children.js";
 import type { EvaluationContext } from "./context.js";
 import {
+  escapeReducerDispatch,
   escapeStateCell,
   invokeHookFactory,
   nextMemoCell,
   nextStateCell,
   queueStateUpdate,
+  type HookFrame,
+  type StateCell,
 } from "./hooks.js";
 import { awaitedValue } from "./promises.js";
 import { isElementValue } from "./type-predicates.js";
@@ -72,7 +75,7 @@ const stateHook = (
     current: StaticValue,
     tools: StubRenderTools,
   ) => StaticValue,
-  reduceEscaped: (action: StaticValue | undefined) => StaticValue | null,
+  escapeDispatch: (frame: HookFrame, cell: StateCell, action: StaticValue) => void,
 ): StaticValue => {
   const frame = context.hooks;
   if (!frame) {
@@ -99,8 +102,11 @@ const stateHook = (
       return UNDEFINED_VALUE;
     },
     onEscape: (argumentValues) => {
-      const action = argumentValues?.[0];
-      escapeStateCell(frame, cell, action === null ? null : reduceEscaped(action));
+      if (argumentValues === null || argumentValues[0] === null) {
+        escapeStateCell(frame, cell, null);
+        return;
+      }
+      escapeDispatch(frame, cell, argumentValues[0] ?? UNDEFINED_VALUE);
     },
   };
   return listValue([cell.current, cell.setter]);
@@ -264,6 +270,7 @@ const mapUncertainChildren = (
                 callback,
                 [item.item, unknownPrimitiveValue("number", "index")],
                 context,
+                true,
               ),
               location: item.location,
             }
@@ -279,6 +286,7 @@ const mapUncertainChildren = (
         callback,
         [children.item, unknownPrimitiveValue("number", "index")],
         context,
+        true,
       ),
       location: children.location,
     };
@@ -485,7 +493,7 @@ export const evaluateReactApiCall = (
         computeInitial,
         (action, current, tools) =>
           action?.kind === "function" ? tools.call(action, [current]) : (action ?? UNDEFINED_VALUE),
-        (action) => (isCallable(action) ? null : (action ?? UNDEFINED_VALUE)),
+        (frame, cell, action) => escapeStateCell(frame, cell, isCallable(action) ? null : action),
       );
     }
     case "useReducer": {
@@ -501,7 +509,15 @@ export const evaluateReactApiCall = (
           first
             ? tools.call(first, [current, action ?? UNDEFINED_VALUE])
             : unknownValue("reducer state after dispatch"),
-        () => null,
+        (frame, cell, action) => {
+          if (!first) {
+            escapeStateCell(frame, cell, null);
+            return;
+          }
+          escapeReducerDispatch(frame, cell, (state) =>
+            interpreter.callValue(first, [state, action], context, location),
+          );
+        },
       );
     }
     case "useMemo": {

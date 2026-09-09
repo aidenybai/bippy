@@ -37,6 +37,43 @@ const uncertainNativeObjects = new WeakSet<object>();
 /** Properties the program adds to DOM nodes (`node.__lexicalKey`): interpreter values that never reach the native object. */
 const expandoProperties = new WeakMap<object, Map<string, StaticValue>>();
 
+/**
+ * Native stand-ins for the interpreter's functions and classes: a callable
+ * native code may hold, compare and pass back (`isPlainObject(spec)`,
+ * `defaults({}, handlers)`), but whose call or inspection throws, so a pure
+ * call that depends on the function's behavior stays uncertain.
+ */
+const standIns = new WeakMap<StaticValue, object>();
+const standInValues = new WeakMap<object, StaticValue>();
+
+const refuseStandInAccess = (): never => {
+  throw new Error("a function the analysis holds cannot run natively");
+};
+
+const STAND_IN_HANDLER: ProxyHandler<() => void> = {
+  apply: refuseStandInAccess,
+  construct: refuseStandInAccess,
+  defineProperty: refuseStandInAccess,
+  deleteProperty: refuseStandInAccess,
+  get: (_target, key) => (key === Symbol.toStringTag ? undefined : refuseStandInAccess()),
+  getOwnPropertyDescriptor: refuseStandInAccess,
+  getPrototypeOf: refuseStandInAccess,
+  has: (_target, key) => (key === Symbol.toStringTag ? false : refuseStandInAccess()),
+  ownKeys: refuseStandInAccess,
+  set: refuseStandInAccess,
+  setPrototypeOf: refuseStandInAccess,
+};
+
+const toStandIn = (value: StaticValue): object => {
+  let standIn = standIns.get(value);
+  if (!standIn) {
+    standIn = new Proxy(() => {}, STAND_IN_HANDLER);
+    standIns.set(value, standIn);
+    standInValues.set(standIn, value);
+  }
+  return standIn;
+};
+
 /** Expandos written under a key composed from a dynamic string (`node[\`__lexicalKey_${editorKey}\`]`). */
 const composedExpandoProperties = new WeakMap<object, ComposedExpando[]>();
 
@@ -232,6 +269,10 @@ const toNative = (value: StaticValue, host: HostDocument | null): unknown => {
       return uncertainNativeObjects.has(value.value) ? UNCERTAIN : value.value;
     case "global":
       return value.name === "document" && host !== null ? host.document : UNCERTAIN;
+    case "function":
+    case "class":
+    case "native-function":
+      return toStandIn(value);
     default:
       return UNCERTAIN;
   }
@@ -404,8 +445,11 @@ const liftValue = (
     case "symbol":
       return unknownValue(`${name}: symbol from native code`);
     case "function":
-      return pureNativeFunction(name, value, undefined, host, () =>
-        unknownValue(`${name}() on dynamic arguments`),
+      return (
+        standInValues.get(value) ??
+        pureNativeFunction(name, value, undefined, host, () =>
+          unknownValue(`${name}() on dynamic arguments`),
+        )
       );
     case "object":
       return value === null ? primitiveValue(null) : liftObject(value, name, host, ancestors);
@@ -456,6 +500,8 @@ export const getNativeObjectMember = (
     return nativeFunction(name, () => unknownValue(`${name}() depends on rasterization`));
   }
   if (typeof member !== "function") return fromNativeValue(member, name, object.host);
+  const heldValue = standInValues.get(member);
+  if (heldValue) return heldValue;
   return pureNativeFunction(name, member, object.value, object.host, () => {
     if (!isPureMethodName(key)) uncertainNativeObjects.add(object.value);
     return unknownValue(`${name}() on dynamic arguments`);

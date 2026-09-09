@@ -13,6 +13,7 @@ import {
   getAllocationCount,
   isSameValue,
   joinObjectEntries,
+  optionalValue,
 } from "./values.js";
 
 export type MutableHeapValue = StaticObjectValue | StaticListValue;
@@ -199,13 +200,15 @@ export class HeapJournal {
     this.paths.push(path);
   }
 
+  /** `mayRepeat`: the ran path stands for any number of runs (a loop body), not at most one. */
   join(
     reason: string,
     location: SourceLocation | null,
     preferredPath: number,
     predicate: string | null,
+    mayRepeat = false,
   ): void {
-    this.applyJoin(this.paths, reason, location, preferredPath, predicate);
+    this.applyJoin(this.paths, reason, location, preferredPath, predicate, mayRepeat);
   }
 
   /**
@@ -231,6 +234,7 @@ export class HeapJournal {
     location: SourceLocation | null,
     preferredPath: number,
     predicate: string | null,
+    mayRepeat = false,
   ): void {
     for (const [cell, original] of this.updates) {
       const pathUpdates = paths.map((path) =>
@@ -293,8 +297,21 @@ export class HeapJournal {
         continue;
       }
       const isEveryPathAppending = pathItems.every((items) => isExtensionOf(items, original.items));
+      const appendingPaths = pathItems
+        .map((items, pathIndex) => ({ pathIndex, appended: items.slice(original.items.length) }))
+        .filter(({ appended }) => appended.length > 0);
+      if (isEveryPathAppending && !mayRepeat && appendingPaths.length === 1) {
+        const [{ pathIndex, appended }] = appendingPaths;
+        list.items = [
+          ...original.items,
+          ...appended.map((item) =>
+            optionalValue(item, reason, location, preferredPath !== pathIndex),
+          ),
+        ];
+        continue;
+      }
       const uncertainItems = isEveryPathAppending
-        ? pathItems.flatMap((items) => items.slice(original.items.length))
+        ? appendingPaths.flatMap(({ appended }) => appended)
         : pathItems.flat();
       list.items = isEveryPathAppending ? [...original.items] : [];
       if (uncertainItems.length > 0) {

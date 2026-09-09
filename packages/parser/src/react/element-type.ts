@@ -1,5 +1,17 @@
-import type { ComponentDefinition, StaticElementType, StaticValue } from "../types.js";
+import type { ComponentDefinition, ReactApi, StaticElementType, StaticValue } from "../types.js";
 import { primitiveValue } from "../evaluate/values.js";
+
+/** `shared/ReactSymbols`: the registered symbols React accepts as built-in element types. */
+const REACT_TYPE_SYMBOL_APIS = new Map<string, ReactApi>([
+  ["react.fragment", "Fragment"],
+  ["react.strict_mode", "StrictMode"],
+  ["react.profiler", "Profiler"],
+  ["react.suspense", "Suspense"],
+  ["react.suspense_list", "SuspenseList"],
+  ["react.offscreen", "Activity"],
+  ["react.activity", "Activity"],
+  ["react.view_transition", "ViewTransition"],
+]);
 
 export const toElementKey = (key: StaticValue | null): StaticValue | null => {
   if (key?.kind !== "primitive") return key;
@@ -122,13 +134,18 @@ export const toElementType = (value: StaticValue, nameHint: string | null): Stat
         displayName: nameHint,
         reason: `dynamic ${value.primitiveType} element type`,
       };
+    case "symbol": {
+      const api =
+        value.description === undefined ? REACT_TYPE_SYMBOL_APIS.get(value.key) : undefined;
+      if (api) return toElementType({ kind: "react-api", api }, nameHint);
+      return { kind: "unknown", displayName: nameHint, reason: "invalid element type (symbol)" };
+    }
     case "element":
     case "list":
     case "repeat":
     case "optional":
     case "object":
     case "regexp":
-    case "symbol":
     case "namespace":
     case "global":
     case "method":

@@ -1,6 +1,7 @@
 import type {
   BindingPattern,
   BindingRestElement,
+  JSXElement,
   MemberExpression,
   Node,
   ParamPattern,
@@ -15,6 +16,7 @@ import type {
 } from "../types.js";
 import { forEachChildNode, isFunctionLikeNode } from "../parse/ast-walk.js";
 import type { EscapeArguments, EscapeDependency, EscapeMemo, EscapeTuple } from "./escape-memo.js";
+import { isUserDrivenEventHandlerProp } from "./event-listeners.js";
 import { findOwningScope } from "./scope.js";
 import { getObjectProperty, primitiveValue } from "./values.js";
 
@@ -22,14 +24,15 @@ import { getObjectProperty, primitiveValue } from "./values.js";
 export type AccessPath = string[];
 
 /**
- * An in-place mutation a closure body performs: `editor._dirty = true`
- * assigns `key` on the object at `target`, `obj[dynamic] = v` assigns an
- * unknown key, and `cache.set(k, v)` or `items.push(x)` calls a mutating method.
+ * A mutation a closure body performs: `editor._dirty = true` assigns `key` on
+ * the object at `target`, `obj[dynamic] = v` assigns an unknown key,
+ * `cache.set(k, v)` or `items.push(x)` calls the mutating method `key`, and
+ * `found = x` rebinds the captured variable at `target`.
  */
 export interface EscapedMutation {
   target: AccessPath;
   key: string | null;
-  isMethodCall: boolean;
+  kind: "member" | "method" | "rebinding";
   bindings: ItemBinding[];
 }
 
@@ -244,8 +247,38 @@ const forEachChildWithBindings = (
   });
 };
 
+/**
+ * An element an escaped closure creates is rendered by whoever the closure
+ * returned it to: its `ref` and props reach code the walk cannot follow, the
+ * way props of an opaque component do, except handlers only a user gesture fires.
+ */
+const getElementPaths = (element: JSXElement): AccessPath[] => {
+  const paths: AccessPath[] = [];
+  for (const attribute of element.openingElement.attributes) {
+    if (attribute.type === "JSXSpreadAttribute") {
+      collectAccessPaths(attribute.argument, paths);
+      continue;
+    }
+    const { name, value } = attribute;
+    if (name.type === "JSXIdentifier" && isUserDrivenEventHandlerProp(name.name)) continue;
+    if (value?.type === "JSXExpressionContainer") collectAccessPaths(value.expression, paths);
+  }
+  for (const child of element.children) {
+    if (child.type === "JSXExpressionContainer") collectAccessPaths(child.expression, paths);
+  }
+  return paths;
+};
+
 const collectClosureShape = (node: Node, shape: ClosureShape, bindings: ItemBinding[]): void => {
   switch (node.type) {
+    case "JSXElement":
+      shape.callSites.push({
+        callee: null,
+        arguments: [],
+        nestedPaths: getElementPaths(node),
+        bindings,
+      });
+      break;
     case "CallExpression":
     case "NewExpression": {
       const nestedPaths: AccessPath[] = [];
@@ -322,10 +355,15 @@ const MUTATING_METHODS = new Set([
   "copyWithin",
 ]);
 
-const getMemberMutation = (member: Node, bindings: ItemBinding[]): EscapedMutation | null => {
-  if (member.type !== "MemberExpression") return null;
-  const target = getAccessPath(member.object);
-  return target ? { target, key: getStaticMemberKey(member), isMethodCall: false, bindings } : null;
+const getAssignedMutation = (assigned: Node, bindings: ItemBinding[]): EscapedMutation | null => {
+  if (assigned.type === "Identifier") {
+    return { target: [assigned.name], key: null, kind: "rebinding", bindings };
+  }
+  if (assigned.type !== "MemberExpression") return null;
+  const target = getAccessPath(assigned.object);
+  return target
+    ? { target, key: getStaticMemberKey(assigned), kind: "member", bindings }
+    : null;
 };
 
 const getMutation = (node: Node, bindings: ItemBinding[]): EscapedMutation | null => {
@@ -336,14 +374,16 @@ const getMutation = (node: Node, bindings: ItemBinding[]): EscapedMutation | nul
       const method = callee.computed ? null : callee.property;
       if (method?.type !== "Identifier" || !MUTATING_METHODS.has(method.name)) return null;
       const target = getAccessPath(callee.object);
-      return target ? { target, key: null, isMethodCall: true, bindings } : null;
+      return target ? { target, key: method.name, kind: "method", bindings } : null;
     }
     case "AssignmentExpression":
-      return getMemberMutation(node.left, bindings);
+      return getAssignedMutation(node.left, bindings);
     case "UpdateExpression":
-      return getMemberMutation(node.argument, bindings);
+      return getAssignedMutation(node.argument, bindings);
     case "UnaryExpression":
-      return node.operator === "delete" ? getMemberMutation(node.argument, bindings) : null;
+      return node.operator === "delete" && node.argument.type === "MemberExpression"
+        ? getAssignedMutation(node.argument, bindings)
+        : null;
     default:
       return null;
   }

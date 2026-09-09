@@ -100,6 +100,11 @@ export class PurePackages {
 
   /** `require(specifier)`: the installed module's `module.exports`, whatever shape it has. */
   getRequired(specifier: string, filePath: string | null): StaticValue | null {
+    const packageName = getPackageNameFromSpecifier(specifier);
+    if (packageName === null) return null;
+    if (IMPURE_EXPORTS.get(packageName)?.has(getExportName(specifier, packageName, "default"))) {
+      return null;
+    }
     const module = this.loadPure(specifier, filePath);
     return module === null ? null : liftExport(specifier, "module.exports", module);
   }

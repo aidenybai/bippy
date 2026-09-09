@@ -85,3 +85,9 @@ export const doesStrictModeDoubleInvokeHookFactories = (reactVersion: string | n
   const major = getReactMajor(reactVersion);
   return major === null || major >= 19;
 };
+
+/** Whether classes still receive `contextTypes`/`childContextTypes` legacy context; 19 removed it (`disableLegacyContext`). */
+export const hasLegacyContext = (reactVersion: string | null): boolean => {
+  const major = getReactMajor(reactVersion);
+  return major !== null && major < 19;
+};

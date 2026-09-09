@@ -1,4 +1,4 @@
-import { objectValue, UNDEFINED_VALUE } from "../evaluate/values.js";
+import { objectValue, TRUE_VALUE, UNDEFINED_VALUE } from "../evaluate/values.js";
 import { lazyProperties } from "../frameworks/stubs.js";
 import type { LibraryValueProvider, ModeledExports } from "../types.js";
 import { EMOTION_PACKAGES, emotionValue } from "./emotion.js";
@@ -137,6 +137,9 @@ export const getLibraryValue: LibraryValueProvider = (specifier, importedName, p
     defaultExport?.kind === "native-function" || defaultExport?.kind === "function"
       ? defaultExport
       : objectValue(),
-    (key) => getLibraryValue(specifier, key, project) ?? UNDEFINED_VALUE,
+    (key) =>
+      key === "__esModule" && defaultExport
+        ? TRUE_VALUE
+        : (getLibraryValue(specifier, key, project) ?? UNDEFINED_VALUE),
   );
 };

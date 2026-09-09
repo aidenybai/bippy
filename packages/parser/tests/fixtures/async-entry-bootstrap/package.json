@@ -1,0 +1,5 @@
+{
+  "name": "fixture-async-entry-bootstrap",
+  "private": true,
+  "type": "module"
+}
