@@ -262,6 +262,86 @@ export const hasPatternDecisions = (node: PatternNode): boolean => {
   return result;
 };
 
+const addVariableCounts = (into: Map<string, number>, from: Map<string, number>): void => {
+  for (const [variable, count] of from) into.set(variable, (into.get(variable) ?? 0) + count);
+};
+
+const countVariables = (nodes: PatternNode[], counts: Map<string, number>): void => {
+  for (const node of nodes) {
+    switch (node.kind) {
+      case "fiber":
+        countVariables(node.children, counts);
+        break;
+      case "opaque":
+        countVariables(node.passedChildren, counts);
+        break;
+      case "branch":
+        counts.set(node.variable, (counts.get(node.variable) ?? 0) + 1);
+        for (const alternative of node.alternatives) countVariables(alternative, counts);
+        break;
+      case "repeat":
+        counts.set(node.variable, (counts.get(node.variable) ?? 0) + 1);
+        countVariables(node.children, counts);
+        break;
+      case "text":
+      case "wildcard":
+        break;
+    }
+  }
+};
+
+/**
+ * Which fibers own every occurrence of the decision variables inside them: such a fiber's
+ * children can be matched to completion on their own, without a continuation into its siblings.
+ */
+export class SelfContainedFiberIndex {
+  private readonly totals = new Map<string, number>();
+  private readonly selfContained = new Map<PatternFiber, boolean>();
+
+  index(nodes: PatternNode[]): void {
+    countVariables(nodes, this.totals);
+    this.mark(nodes);
+  }
+
+  has(node: PatternFiber): boolean {
+    return this.selfContained.get(node) ?? false;
+  }
+
+  private mark(nodes: PatternNode[]): Map<string, number> {
+    const inside = new Map<string, number>();
+    for (const node of nodes) {
+      switch (node.kind) {
+        case "fiber": {
+          if (!hasPatternDecisions(node)) break;
+          const own = this.mark(node.children);
+          this.selfContained.set(
+            node,
+            [...own].every(([variable, count]) => this.totals.get(variable) === count),
+          );
+          addVariableCounts(inside, own);
+          break;
+        }
+        case "opaque":
+          addVariableCounts(inside, this.mark(node.passedChildren));
+          break;
+        case "branch":
+          inside.set(node.variable, (inside.get(node.variable) ?? 0) + 1);
+          for (const alternative of node.alternatives)
+            addVariableCounts(inside, this.mark(alternative));
+          break;
+        case "repeat":
+          inside.set(node.variable, (inside.get(node.variable) ?? 0) + 1);
+          addVariableCounts(inside, this.mark(node.children));
+          break;
+        case "text":
+        case "wildcard":
+          break;
+      }
+    }
+    return inside;
+  }
+}
+
 /** Renames every decision variable inside `nodes` into `scope`, so one repeat iteration decides independently of the next. */
 export const scopePatternVariables = (nodes: PatternNode[], scope: string): PatternNode[] =>
   nodes.map((node) => {
