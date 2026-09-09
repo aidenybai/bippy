@@ -140,6 +140,8 @@ export interface ModuleRecord {
   isCommonJs: boolean;
   /** The `value` of `module.exports = value`, whose runtime members are the exports a bundler imports. */
   moduleExports: Expression | null;
+  /** Names assigned onto that value afterwards (`module.exports.compile = compile`). */
+  moduleExportsMembers: string[];
 }
 
 export type ModuleResolution =
@@ -408,8 +410,8 @@ export interface InstalledPackage {
 /** What transpiles the app's `.ts`/`.tsx`/`.jsx` modules for the browser: esbuild renumbers a declaration whose name is already bound in an enclosing scope (`Foo` → `Foo2`); the others keep source names. */
 export type ModuleTranspiler = "esbuild" | "name-preserving";
 
-/** The dev bundler serving the app: Vite leaves Node's free names (`global`, `process`) undeclared in the browser, where webpack-style bundlers shim them. */
-export type ModuleBundler = "vite" | "unknown";
+/** The dev bundler serving the app: Vite leaves Node's free names (`global`, `process`) undeclared in the browser, where webpack-style bundlers (Create React App's `react-scripts` among them) shim them. */
+export type ModuleBundler = "vite" | "react-scripts" | "unknown";
 
 /** What a library model may learn about the analyzed project: which transforms shaped the runtime, and what the running page held. */
 export interface ProjectContext {

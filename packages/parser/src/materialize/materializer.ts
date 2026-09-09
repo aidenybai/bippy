@@ -55,6 +55,7 @@ import type {
   StubComponent,
   StubHooks,
   StubRenderTools,
+  WrapperElementType,
 } from "../types.js";
 import { ClassComponentTag, ForwardRefTag, type WorkTag } from "../work-tags.js";
 import {
@@ -383,10 +384,10 @@ const hasDefaultProps = (component: ComponentDefinition): boolean => {
 };
 
 const applyDefaultProps = (
-  component: ComponentDefinition,
+  owner: ComponentDefinition | WrapperElementType,
   props: StaticObjectValue,
 ): StaticObjectValue => {
-  const defaults = component.properties.get("defaultProps");
+  const defaults = owner.properties.get("defaultProps");
   if (!defaults || !isNonNullish(defaults)) return props;
   return { kind: "object", entries: [{ kind: "spread", value: defaults }, ...props.entries] };
 };
@@ -782,7 +783,7 @@ export class Materializer {
           return this.unknownElementNode(`memo of ${type.inner.kind} element type`, context);
         return createElement(memoType, {
           key: reactKey,
-          input: { ...input, isMemoized: !type.hasCompare },
+          input: { ...input, props: applyDefaultProps(type, props), isMemoized: !type.hasCompare },
         });
       }
       case "forward-ref": {
@@ -792,7 +793,7 @@ export class Materializer {
           key: reactKey,
           input: {
             ...input,
-            props: renderProps.kind === "object" ? renderProps : props,
+            props: applyDefaultProps(type, renderProps.kind === "object" ? renderProps : props),
             ref: ref.kind === "primitive" && ref.value === undefined ? NULL_VALUE : ref,
           },
         });

@@ -2952,6 +2952,277 @@
         "tsconfig": "jsconfig.json"
       },
       "notes": "Static-only: src/index.jsx only calls render() after appService.getConfig() (GET /api/config, proxied to the NestJS server on localhost:3000) resolves, so without the server, its Postgres database and migrations no React commit ever happens (the page stays on the static 'Loading...' shell). The frontend also imports @tooljet/plugins/client, a generated entry over the checked-in plugin manifests; the setup step installs the plugins workspace and generates that entry so the webpack dev server compiles."
+    },
+    {
+      "id": "material-dashboard-react",
+      "repository": "https://github.com/creativetimofficial/material-dashboard-react",
+      "revision": "a4db3e60d3b9e152c1db4aaa93b311aa164ad68b",
+      "description": "Creative Tim Material Dashboard 2 React (CRA 5, React 18, MUI 5 + Emotion, react-router-dom 6 declarative routes, react-chartjs-2 charts over local data, reducer context for the sidenav/configurator)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npm start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3010"
+      },
+      "url": "http://localhost:3010/dashboard",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "jsconfig.json",
+        "entry": "src/index.js",
+        "route": "/dashboard",
+        "externalPackageAllowList": [
+          "@mui/*",
+          "@emotion/*",
+          "@babel/runtime/*",
+          "react-table",
+          "chroma-js",
+          "prop-types",
+          "react-github-btn",
+          "react-chartjs-2",
+          "chart.js",
+          "stylis",
+          "stylis-plugin-rtl",
+          "clsx",
+          "react-is",
+          "react-transition-group",
+          "@popperjs/*",
+          "hoist-non-react-statics",
+          "yup"
+        ],
+        "maxFiberCount": 20000
+      }
+    },
+    {
+      "id": "soft-ui-dashboard-react",
+      "repository": "https://github.com/creativetimofficial/soft-ui-dashboard-react",
+      "revision": "e282bac09a784b2bab0371e18fd5fd024e798d9e",
+      "description": "Creative Tim Soft UI Dashboard React (CRA 5, React 18, MUI 5 + Emotion, react-router-dom 6 declarative routes, react-chartjs-2 charts, react-countup)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps react@18.2.0 react-dom@18.2.0",
+      "dev": "npm start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3011"
+      },
+      "url": "http://localhost:3011/dashboard",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "jsconfig.json",
+        "entry": "src/index.js",
+        "route": "/dashboard"
+      },
+      "notes": "package.json declares react/react-dom as `>=16.8.0` with no committed lockfile, so a plain install resolves React 19, on which the template crashes at mount (theme palette lookup `undefined.main`); the install pins the React 18.2 the template shipped against."
+    },
+    {
+      "id": "argon-dashboard-react",
+      "repository": "https://github.com/creativetimofficial/argon-dashboard-react",
+      "revision": "04b58c36799220d0af4bb8f6e4b1f4a563f17994",
+      "description": "Creative Tim Argon Dashboard React (CRA 5, React 18, reactstrap/Bootstrap, react-router-dom 6 nested layout routes, react-chartjs-2 charts)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npm start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3012"
+      },
+      "url": "http://localhost:3012/admin/index",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "jsconfig.json",
+        "entry": "src/index.js",
+        "route": "/admin/index",
+        "externalPackageAllowList": [
+          "reactstrap",
+          "react-popper",
+          "@hypnosphi/create-react-context",
+          "react-transition-group",
+          "react-chartjs-2",
+          "@babel/runtime/*",
+          "prop-types",
+          "classnames",
+          "react-copy-to-clipboard",
+          "copy-to-clipboard",
+          "warning",
+          "deep-equal",
+          "react-datetime"
+        ]
+      }
+    },
+    {
+      "id": "black-dashboard-react",
+      "repository": "https://github.com/creativetimofficial/black-dashboard-react",
+      "revision": "26b59be1f1e5e3111f67461ebae393c31f95fa50",
+      "description": "Creative Tim Black Dashboard React (CRA 5, React 18, reactstrap/Bootstrap, react-router-dom 6 nested layout routes, perfect-scrollbar, react-chartjs-2 charts, theme + background color contexts)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps react@18.2.0 react-dom@18.2.0",
+      "dev": "npm start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3013"
+      },
+      "url": "http://localhost:3013/admin/dashboard",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "jsconfig.json",
+        "entry": "src/index.js",
+        "route": "/admin/dashboard",
+        "externalPackageAllowList": [
+          "reactstrap",
+          "react-popper",
+          "@hypnosphi/create-react-context",
+          "react-transition-group",
+          "react-chartjs-2",
+          "react-notification-alert",
+          "@babel/runtime/*",
+          "prop-types",
+          "classnames",
+          "warning",
+          "deep-equal"
+        ]
+      },
+      "notes": "package.json declares react/react-dom as `>=16.8.0` with no committed lockfile, so a plain install resolves React 19, on which the template crashes at mount (reactstrap 8 renders an undefined element type in `Nav`); the install pins the React 18.2 the template shipped against."
+    },
+    {
+      "id": "purity-ui-dashboard",
+      "repository": "https://github.com/creativetimofficial/purity-ui-dashboard",
+      "revision": "0cdbec0b17661abd280d3e38fafee8b8a3d81d97",
+      "description": "Creative Tim Purity UI Dashboard (CRA 5, React 16, Chakra UI 1 + Emotion + framer-motion, react-router-dom 5 HashRouter Switch/Route, react-apexcharts)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 20 npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 20 npm start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3014"
+      },
+      "url": "http://localhost:3014/#/admin/dashboard",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "jsconfig.json",
+        "entry": "src/index.js",
+        "externalPackageAllowList": [
+          "react-router-dom",
+          "react-router",
+          "history",
+          "mini-create-react-context",
+          "hoist-non-react-statics",
+          "react-is",
+          "@chakra-ui/*",
+          "@emotion/*",
+          "@babel/runtime/*",
+          "framer-motion",
+          "stylis",
+          "react-icons",
+          "react-icons/*",
+          "react-fast-compare",
+          "tiny-invariant",
+          "tiny-warning",
+          "resolve-pathname",
+          "value-equal",
+          "path-to-regexp",
+          "isarray",
+          "prop-types"
+        ]
+      }
+    },
+    {
+      "id": "windmill-dashboard-react",
+      "repository": "https://github.com/estevanmaito/windmill-dashboard-react",
+      "revision": "da542836f945d08639fc34a3b6f91315965dc030",
+      "description": "Windmill Dashboard React (CRA 3 / React 16, legacy ReactDOM.render, react-router-dom 5 Switch/Route with lazy pages under Suspense, @windmill/react-ui, react-chartjs-2, faker table data)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npm start",
+      "env": {
+        "BROWSER": "none",
+        "CI": "true",
+        "PORT": "3015",
+        "SKIP_PREFLIGHT_CHECK": "true"
+      },
+      "url": "http://localhost:3015/app",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "externalPackageAllowList": [
+          "react-router-dom",
+          "react-router",
+          "history",
+          "mini-create-react-context",
+          "hoist-non-react-statics",
+          "react-is",
+          "@windmill/react-ui",
+          "@babel/runtime/*",
+          "tiny-invariant",
+          "tiny-warning",
+          "resolve-pathname",
+          "value-equal",
+          "path-to-regexp",
+          "isarray",
+          "prop-types",
+          "classnames",
+          "react-chartjs-2",
+          "chart.js"
+        ]
+      }
+    },
+    {
+      "id": "material-tailwind-dashboard-react",
+      "repository": "https://github.com/creativetimofficial/material-tailwind-dashboard-react",
+      "revision": "721f312c444ee7caa300963a042915c6bdcc883b",
+      "description": "Creative Tim Material Tailwind Dashboard React (Vite SPA, React 18 StrictMode, @material-tailwind/react, react-router-dom 6 nested layout routes, react-apexcharts)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npx vite --port 5174 --strictPort",
+      "url": "http://localhost:5174/dashboard/home",
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "jsconfig.json",
+        "entry": "src/main.jsx",
+        "route": "/dashboard/home",
+        "aliases": {
+          "@": "src"
+        }
+      }
+    },
+    {
+      "id": "antd-multipurpose-dashboard",
+      "repository": "https://github.com/design-sparx/antd-multipurpose-dashboard",
+      "revision": "8e0844adca5413aab1f7ddec1274161ed6d4f481",
+      "description": "design-sparx antd multipurpose dashboard home page (Vite SPA, React 18 StrictMode, antd 5, redux-toolkit + redux-persist, TanStack Query, react-helmet-async, createBrowserRouter data router)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "pnpm install --frozen-lockfile --dangerously-allow-all-builds",
+      "dev": "pnpm exec vite --port 5175 --strictPort",
+      "url": "http://localhost:5175/",
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "route": "/",
+        "aliases": {
+          "@mocks": "public/mocks"
+        }
+      }
     }
   ]
 }

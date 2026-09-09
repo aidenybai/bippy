@@ -87,7 +87,7 @@ export class StaticRenderer {
     });
     const { rootDirectory } = this.options;
     const bundler = detectModuleBundler(rootDirectory);
-    this.documentShell = readDocumentShell(rootDirectory, bundler);
+    this.documentShell = readDocumentShell(rootDirectory, bundler, options.environment ?? null);
     this.project = createProjectContext({
       rootDirectory,
       resolver: this.resolver,

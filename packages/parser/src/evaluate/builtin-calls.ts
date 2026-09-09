@@ -1023,8 +1023,7 @@ const callGlobal = (
         : primitiveValue(verdict);
     }
     case "Array.from": {
-      const source =
-        first?.kind === "object" ? (getCollectionItems(first) ?? arrayLikeToList(first)) : first;
+      const source = getArrayFromSource(first);
       if (source?.kind === "list" || source?.kind === "repeat") {
         if (isCallable(second)) return mapList(interpreter, source, second, context, location);
         return source;
@@ -1040,8 +1039,7 @@ const callGlobal = (
     case "Uint32Array.from":
     case "Float32Array.from":
     case "Float64Array.from": {
-      const source =
-        first?.kind === "object" ? (getCollectionItems(first) ?? arrayLikeToList(first)) : first;
+      const source = getArrayFromSource(first);
       if (source?.kind !== "list") return unknownValue(`${name} of dynamic iterable`, location);
       const mapped = isCallable(second)
         ? mapList(interpreter, source, second, context, location)
@@ -1398,6 +1396,13 @@ const arrayOfLength = (length: StaticValue, location: SourceLocation | null): St
 /** ECMAScript `ToLength`: integral, clamped to `[0, 2^53 - 1]`. */
 const toLength = (value: unknown): number =>
   Math.min(Math.max(Math.trunc(Number(value)) || 0, 0), Number.MAX_SAFE_INTEGER);
+
+/** What `Array.from(source)` copies: an iterable's items (including a native `NodeList`), else an array-like's indexed entries. */
+const getArrayFromSource = (source: StaticValue | undefined): StaticValue | null => {
+  if (source?.kind === "object") return getCollectionItems(source) ?? arrayLikeToList(source);
+  if (source?.kind === "native-object") return getCollectionItems(source);
+  return source ?? null;
+};
 
 // `{ length: n }` (and sparse array-likes) as consumed by `Array.from`.
 const arrayLikeToList = (value: Extract<StaticValue, { kind: "object" }>): StaticValue => {

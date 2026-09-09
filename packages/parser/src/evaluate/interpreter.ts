@@ -45,6 +45,7 @@ import { getAssetModuleValue } from "../graph/asset-module.js";
 import { getCssModuleValue } from "../graph/css-module.js";
 import { getEsbuildDeclarationName } from "../graph/esbuild-symbol-names.js";
 import { getTransformedRuntimeSpecifier } from "../graph/helper-packages.js";
+import { getReactScriptsClientEnvironment } from "../graph/react-scripts.js";
 import { isModuleRecord, type ModuleGraph } from "../graph/module-graph.js";
 import { isInsideNodeModules } from "../graph/module-resolver.js";
 import { nativeFunction } from "../frameworks/stubs.js";
@@ -779,6 +780,16 @@ export class Interpreter {
       const isUnset = json === null && isUnsettableDefineName(name);
       this.defines.set(name, isUnset ? UNDEFINED_VALUE : jsonValue(json));
     }
+    if (this.project.bundler === "react-scripts" && this.project.rootDirectory !== null) {
+      const clientEnvironment = getReactScriptsClientEnvironment(
+        this.project.rootDirectory,
+        this.processEnvironment,
+      );
+      for (const [variable, value] of Object.entries(clientEnvironment)) {
+        const name = `process.env.${variable}`;
+        if (!this.defines.has(name)) this.defines.set(name, primitiveValue(value));
+      }
+    }
     this.reactVersion = options.reactVersion ?? null;
     this.elementSymbolKey = getReactElementSymbolKey(this.reactVersion);
     this.doesStrictModeDoubleInvokeHookFactories = doesStrictModeDoubleInvokeHookFactories(
@@ -881,7 +892,7 @@ export class Interpreter {
 
   private evaluateModuleExports(module: ModuleRecord): StaticValue {
     if (!module.moduleExports) return { kind: "namespace", module };
-    return this.resolvedSymbolToValue(
+    const value = this.resolvedSymbolToValue(
       {
         kind: "expression",
         module,
@@ -891,6 +902,14 @@ export class Interpreter {
       },
       "default",
     );
+    if (value.kind === "function" || value.kind === "class") {
+      for (const name of module.moduleExportsMembers) {
+        if (!value.properties.has(name)) {
+          value.properties.set(name, this.evaluateModuleExport(module, name));
+        }
+      }
+    }
+    return value;
   }
 
   /**
@@ -2221,6 +2240,7 @@ export class Interpreter {
   /**
    * `name in window`: a name the page assigned, one the captured browser exposed, or,
    * without a capture, one the host declares outright (optional members stay open).
+   * `name in history`: a member the host declares on the global's interface.
    */
   private hasGlobalObjectProperty(
     key: StaticValue,
@@ -2228,9 +2248,13 @@ export class Interpreter {
     environment: RenderEnvironment | null,
   ): StaticValue | null {
     const realm = this.getRealm(environment);
-    if (target.kind !== "global" || !realm.isGlobalAlias(target.name)) return null;
+    if (target.kind !== "global") return null;
     const name = getPropertyName(key);
     if (name === null) return null;
+    if (!realm.isGlobalAlias(target.name)) {
+      const declared = realm.getGlobal(`${target.name}.${name}`);
+      return declared !== null && !declared.type.isNullable ? TRUE_VALUE : null;
+    }
     if (environment !== "server") {
       if (this.windowGlobals.has(name)) return TRUE_VALUE;
       const windowKeys = this.pageState?.windowKeys;

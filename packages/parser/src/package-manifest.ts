@@ -5,6 +5,7 @@ import { parseWithSchema } from "./errors.js";
 export interface PackageManifest {
   name?: string;
   version?: string;
+  homepage?: string;
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
@@ -16,6 +17,7 @@ const dependenciesSchema = z.record(z.string(), z.string()).optional();
 const packageManifestSchema: z.ZodType<PackageManifest> = z.object({
   name: z.string().optional(),
   version: z.string().optional(),
+  homepage: z.string().optional(),
   dependencies: dependenciesSchema,
   devDependencies: dependenciesSchema,
   peerDependencies: dependenciesSchema,
