@@ -1,4 +1,5 @@
 import type { HostDocument } from "../host/host-document.js";
+import { GLOBAL_INTERFACE_NAME } from "../host/realm-table.js";
 import type { Class } from "oxc-parser";
 import type {
   FunctionLikeNode,
@@ -27,6 +28,7 @@ import type {
   UnknownPrimitiveType,
 } from "../types.js";
 import { getExternalMember, getReactApiTypeof } from "../react/react-api.js";
+import { recordBranchOrigin, recordDerivation } from "./predicates.js";
 
 export const isKnownString = (
   value: StaticValue,
@@ -935,6 +937,10 @@ const compareIdentityAcross = (alternatives: StaticValue[], other: StaticValue):
 const INTRINSIC_GLOBAL_NAME = /^[A-Z]\w*(\.prototype)?$/;
 const isIntrinsicGlobalName = (name: string): boolean => INTRINSIC_GLOBAL_NAME.test(name);
 
+/** The document or global object, which native code hands back as this global rather than as a native object. */
+const isHostObjectGlobal = (value: StaticValue): boolean =>
+  value.kind === "global" && (value.name === "document" || value.name === GLOBAL_INTERFACE_NAME);
+
 export const isSameComposition = (
   left: StringComposition | undefined,
   right: StringComposition | undefined,
@@ -968,6 +974,14 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
     return left.allocation === right.allocation;
   }
   if (left.kind === "symbol" && right.kind === "symbol") return left.key === right.key;
+  if (left.kind === "native-object" && right.kind === "native-object") {
+    return left.value === right.value;
+  }
+  if (
+    (isHostObjectGlobal(left) && right.kind === "native-object") ||
+    (isHostObjectGlobal(right) && left.kind === "native-object")
+  )
+    return false;
   if (left.kind === "namespace" && right.kind === "namespace")
     return left.module.filePath === right.module.filePath;
   if (left.kind === "global" && right.kind === "global") {
@@ -1290,6 +1304,8 @@ export const branchValue = (
   preferredIndex = 0,
   predicate: string | null = null,
 ): StaticValue => {
+  const [first] = alternatives;
+  if (first && alternatives.every((alternative) => alternative === first)) return first;
   const flattened: StaticValue[] = [];
   let resolvedPreferred = 0;
   const add = (value: StaticValue): number => {
@@ -1393,7 +1409,10 @@ export const toBooleanValue = (value: StaticValue): StaticValue =>
   mapValue(value, (alternative) => {
     const truthiness = getTruthiness(alternative);
     if (truthiness === null) {
-      return unknownPrimitiveValue("boolean", `Boolean(${describeValue(alternative)})`);
+      return recordDerivation(
+        unknownPrimitiveValue("boolean", `Boolean(${describeValue(alternative)})`),
+        { kind: "alias", operand: alternative },
+      );
     }
     return truthiness ? TRUE_VALUE : FALSE_VALUE;
   });
@@ -1454,13 +1473,32 @@ export const mapValue = (
   transform: (alternative: StaticValue, index: number) => StaticValue,
 ): StaticValue => {
   if (value.kind !== "branch") return transform(value, 0);
-  return branchValue(
+  return joinMappedAlternatives(
+    value,
     value.alternatives.map((alternative, index) => transform(alternative, index)),
-    value.reason,
-    value.location,
-    value.preferredIndex,
-    value.predicate,
   );
+};
+
+/** Rebuilds `source` around one mapped value per alternative, keeping the decision it stands for. */
+export const joinMappedAlternatives = (
+  source: StaticBranchValue,
+  alternatives: StaticValue[],
+): StaticValue => {
+  const mapped = branchValue(
+    alternatives,
+    source.reason,
+    source.location,
+    source.preferredIndex,
+    source.predicate,
+  );
+  if (
+    mapped.kind === "branch" &&
+    mapped.predicate === null &&
+    alternatives.every((alternative) => alternative.kind !== "branch")
+  ) {
+    recordBranchOrigin(mapped, source);
+  }
+  return mapped;
 };
 
 const MAX_DISTRIBUTED_ALTERNATIVES = 16;

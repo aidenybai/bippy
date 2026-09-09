@@ -4,11 +4,11 @@ import type {
   RenderEnvironment,
   StaticValue,
 } from "../types.js";
+import { optionalInputValue, recordInputSource } from "./predicates.js";
 import {
   FALSE_VALUE,
   TRUE_VALUE,
   UNDEFINED_VALUE,
-  branchValue,
   objectFromRecord,
   primitiveValue,
   unknownPrimitiveValue,
@@ -86,7 +86,15 @@ const getEnvironmentVariable = (
   if (declared !== null) return declared;
   if (environment.definedObjects?.has(objectName)) return UNDEFINED_VALUE;
   const reason = `environment variable ${variable}`;
-  return branchValue([UNDEFINED_VALUE, unknownPrimitiveValue("string", reason)], reason, null);
+  return optionalInputValue(
+    recordInputSource(
+      unknownPrimitiveValue("string", reason),
+      "environment",
+      null,
+      `${objectName}.${variable}`,
+    ),
+    reason,
+  );
 };
 
 /** Vite and webpack replace these in the source text of every client module, whether or not `process` exists at runtime. */

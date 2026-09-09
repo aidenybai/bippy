@@ -95,7 +95,6 @@ export class StaticRenderer {
     const { rootDirectory } = this.options;
     const devDirectory = this.resolveOptionalPath(options.devDirectory);
     const bundler = detectModuleBundler(devDirectory ?? rootDirectory, rootDirectory);
-    this.documentShell = readDocumentShell(rootDirectory, bundler);
     this.project = createProjectContext({
       rootDirectory,
       resolver: this.resolver,
@@ -109,6 +108,7 @@ export class StaticRenderer {
       transpiler: this.options.transpiler ?? detectModuleTranspiler(this.resolver, rootDirectory),
       bundler,
     });
+    this.documentShell = readDocumentShell(this.project.servedDirectory, bundler);
     this.reactVersion = this.project.readPackageVersion("react");
     const sourceTransforms = [
       createSvgrSourceTransform(this.project, this.resolver, rootDirectory),

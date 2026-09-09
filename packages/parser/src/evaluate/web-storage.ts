@@ -1,4 +1,5 @@
 import type { CapturedPageState, SourceLocation, StaticValue } from "../types.js";
+import { recordInputSource } from "./predicates.js";
 import { NULL_VALUE, UNDEFINED_VALUE, primitiveValue, unknownValue } from "./values.js";
 
 /**
@@ -54,7 +55,11 @@ export const callStorageMethod = (
   const [first, second] = args;
   const key = toStorageString(first);
   const describe = (detail: string) =>
-    unknownValue(`${areaName}.${methodName} ${detail}`, location);
+    recordInputSource(
+      unknownValue(`${areaName}.${methodName} ${detail}`, location),
+      "storage",
+      location,
+    );
 
   switch (methodName) {
     case "getItem": {

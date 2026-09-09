@@ -533,16 +533,22 @@ const getClassifiedMember = (
   return null;
 };
 
+const isLayoutMember = (object: StaticNativeObjectValue, key: string): boolean =>
+  object.host !== null &&
+  isClassifiedMember(object.host.realm, LAYOUT_MEMBERS, getNativeInterfaceName(object.value), key);
+
 /**
  * `object.key = value`: native properties take the native form of a known
- * value (a dynamic one makes the object unknown); any other key is an expando
- * kept on the interpreter's side.
+ * value (a dynamic one makes the object unknown, except layout state, which
+ * reads as unknown regardless); any other key is an expando kept on the
+ * interpreter's side.
  */
 export const setNativeObjectMember = (
   object: StaticNativeObjectValue,
   key: string,
   value: StaticValue,
 ): void => {
+  if (isLayoutMember(object, key)) return;
   if (key in object.value || getNativeInterfaceName(object.value) === "DOMStringMap") {
     const native = toNative(value, object.host);
     if (native === UNCERTAIN) uncertainNativeObjects.add(object.value);
@@ -778,6 +784,21 @@ const isTreeQuery = (realm: HostRealm, member: HostMember): boolean => {
 const isEmptyQueryResult = (value: unknown): boolean =>
   value === null ||
   (typeof value === "object" && value !== null && Reflect.get(value, "length") === 0);
+
+const hostDocumentValue = (host: HostDocument): StaticNativeObjectValue =>
+  nativeObjectValue(host.document, host);
+
+export const hasHostDocumentMember = (host: HostDocument, member: string): boolean =>
+  hasNativeObjectMember(hostDocumentValue(host), member);
+
+export const getHostDocumentExpando = (host: HostDocument, member: string): StaticValue | null =>
+  expandoProperties.get(host.document)?.get(member) ?? null;
+
+export const setHostDocumentMember = (
+  host: HostDocument,
+  member: string,
+  value: StaticValue,
+): void => setNativeObjectMember(hostDocumentValue(host), member, value);
 
 /**
  * A member of `document` or the global object (`objectPath` empty) served by the

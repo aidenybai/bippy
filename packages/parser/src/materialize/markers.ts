@@ -17,6 +17,11 @@ export const MARKER_NAMES = {
   suspenseBoundary: "$SuspenseBoundary",
 } as const;
 
+const markerNames: ReadonlySet<string> = new Set(Object.values(MARKER_NAMES));
+
+export const isMarkerName = (name: string | null): boolean =>
+  name !== null && markerNames.has(name);
+
 interface MarkerChildrenProps {
   children?: ReactNode;
 }
@@ -31,6 +36,8 @@ interface BranchMarkerProps extends MarkerChildrenProps {
 
 interface RepeatMarkerProps extends MarkerChildrenProps {
   location: string | null;
+  /** Serialized `SymbolicCardinality`; null when the iterated collection is not an input the analysis can name. */
+  cardinality: string | null;
   countMin: number;
   countMax: number | null;
 }

@@ -27,10 +27,13 @@ const importsReplacingPlugin = (configPath: string): boolean => {
 export const detectModuleBundler = (...directories: string[]): ModuleBundler =>
   directories.some((directory) => findViteConfig(directory) !== undefined) ? "vite" : "unknown";
 
-/** The HTML the bundler serves as the page: Vite's dev server answers `/` with the root `index.html`. */
-export const readDocumentShell = (rootDirectory: string, bundler: ModuleBundler): string | null => {
-  if (bundler !== "vite") return null;
-  const indexPath = path.join(rootDirectory, "index.html");
+/** The HTML the bundler serves as the page: Vite's dev server answers `/` with the served root's `index.html`. */
+export const readDocumentShell = (
+  servedDirectory: string | null,
+  bundler: ModuleBundler,
+): string | null => {
+  if (bundler !== "vite" || servedDirectory === null) return null;
+  const indexPath = path.join(servedDirectory, "index.html");
   return existsSync(indexPath) ? readFileSync(indexPath, "utf8") : null;
 };
 

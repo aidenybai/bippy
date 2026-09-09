@@ -16,6 +16,7 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
+import { recordInputSource } from "../evaluate/predicates.js";
 import { createSearchParamsValue, getSearchParamsString } from "../evaluate/url-search-params.js";
 import { toElementType } from "../react/element-type.js";
 import { findRootRenderCalls } from "../render/find-root-elements.js";
@@ -1970,7 +1971,13 @@ const renderFrameworkRoutes = (
     };
     model.framework.readRouteHandle = readRouteHandle;
     const loaderDataFor = (routeId: string): StaticValue =>
-      observed?.loaderData(routeId) ?? unknownValue("loader data is only known at request time");
+      observed?.loaderData(routeId) ??
+      recordInputSource(
+        unknownValue("loader data is only known at request time"),
+        "loader",
+        null,
+        `loaderData(${routeId})`,
+      );
     const matchesValue = (): StaticValue =>
       observed?.matches(readRouteHandle) ??
       unknownValue("route matches are only known at request time");
