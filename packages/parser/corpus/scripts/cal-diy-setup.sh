@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Points a cal.diy clone at the corpus PostgreSQL container and seeds it.
-# Run from the clone root after `yarn install`.
+# Runs after `yarn install`, from anywhere inside the clone.
 set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
 
 database_url="postgresql://postgres:postgres@localhost:5450/calendso"
 

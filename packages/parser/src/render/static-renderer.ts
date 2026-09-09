@@ -1,3 +1,4 @@
+import { describeError } from "../errors.js";
 import { realpathSync } from "node:fs";
 import path from "node:path";
 import { Interpreter } from "../evaluate/interpreter.js";
@@ -12,14 +13,11 @@ import { ModuleGraph } from "../graph/module-graph.js";
 import { ModuleResolver } from "../graph/module-resolver.js";
 import { createProjectContext } from "../graph/project-context.js";
 import { createSvgrSourceTransform } from "../graph/svgr-modules.js";
-import {
-  createDomHostDocument,
-  ensureDomGlobals,
-  resetDomGlobals,
-} from "../materialize/dom-environment.js";
+import { ensureDomGlobals, resetDomGlobals } from "../materialize/dom-environment.js";
 import { Materializer } from "../materialize/materializer.js";
 import { mountNode } from "../materialize/mount.js";
 import { loadReactRuntime, type ReactRuntime } from "../materialize/react-runtime.js";
+import type { RendererHost } from "../materialize/renderer-host.js";
 import { SourceFileCache } from "../parse/parse-source-file.js";
 import { toElementType } from "../react/element-type.js";
 import type {
@@ -33,6 +31,7 @@ import type {
   StaticRendererOptions,
   StaticValue,
 } from "../types.js";
+import { createDomHost } from "./dom-host.js";
 import { findRootRenderCalls } from "./find-root-elements.js";
 import { computeRenderStats } from "./render-stats.js";
 
@@ -41,6 +40,12 @@ export interface RenderComponentOptions {
   props?: StaticObjectValue;
   /** The component is rendered somewhere inside a larger app, so unprovided contexts may still be provided. */
   isolated?: boolean;
+}
+
+/** One analysis: the interpreter over a fresh document, and the renderer host that mounts what it evaluates. */
+interface AnalysisRun {
+  interpreter: Interpreter;
+  host: RendererHost<Element>;
 }
 
 interface BootstrapCall {
@@ -119,13 +124,17 @@ export class StaticRenderer {
       conditionNames: options.conditionNames,
       rootDirectory,
     });
-    const bundler = detectModuleBundler(rootDirectory);
+    const devDirectory = this.resolveOptionalPath(options.devDirectory);
+    const bundler = detectModuleBundler(devDirectory ?? rootDirectory, rootDirectory);
     const documentShell = readDocumentShell(rootDirectory, bundler);
     const project = createProjectContext({
       rootDirectory,
       resolver,
       servedDirectory: this.resolveOptionalPath(options.servedDirectory),
       publicDirectory: this.resolveOptionalPath(options.publicDirectory),
+      environment: options.environment,
+      devCommand: options.devCommand,
+      devDirectory,
       observations: options.observations,
       origin: options.origin ?? null,
       transpiler: options.transpiler ?? detectModuleTranspiler(resolver, rootDirectory),
@@ -174,8 +183,9 @@ export class StaticRenderer {
     return this.graph.getModule(this.resolvePath(filePath));
   }
 
-  private createInterpreter(assumeOuterProviders = false): Interpreter {
+  private startRun(assumeOuterProviders = false): AnalysisRun {
     resetDomGlobals(this.documentShell);
+    const host = createDomHost(this.documentShell !== null);
     const interpreter = new Interpreter(this.graph, {
       maxCallDepth: this.options.maxCallDepth,
       maxSteps: this.options.maxSteps,
@@ -184,7 +194,7 @@ export class StaticRenderer {
       defines: this.options.defines,
       environment: this.options.environment,
       hostPlatform: this.options.hostPlatform,
-      hostDocument: createDomHostDocument(this.documentShell !== null),
+      hostDocument: host.hostDocument,
       capturedGlobals: this.options.observations?.globals,
       route: this.options.route,
       origin: this.options.origin,
@@ -196,7 +206,7 @@ export class StaticRenderer {
       timerUnderrunMs: this.options.timerUnderrunMs,
     });
     for (const bootstrap of this.options.bootstrap ?? []) this.runBootstrap(interpreter, bootstrap);
-    return interpreter;
+    return { interpreter, host };
   }
 
   private runBootstrap(interpreter: Interpreter, bootstrap: string): void {
@@ -230,11 +240,11 @@ export class StaticRenderer {
    * app's own react-dom and records the committed fibers.
    */
   private async finish(
-    interpreter: Interpreter,
+    { interpreter, host }: AnalysisRun,
     rootValue: StaticValue,
   ): Promise<StaticRenderResult> {
     const runtime = await this.loadRuntime();
-    const materializer = new Materializer(interpreter, runtime, {
+    const materializer = new Materializer(interpreter, runtime, host, {
       maxComponentDepth: this.options.maxComponentDepth,
       maxFiberCount: this.options.maxFiberCount,
       maxRecursionPerComponent: this.options.maxRecursionPerComponent,
@@ -243,7 +253,7 @@ export class StaticRenderer {
     });
     const rootNode = materializer.toRootNode(rootValue);
     interpreter.timers.drainMicrotasks();
-    const mounted = await mountNode(runtime, rootNode, interpreter.timers, () =>
+    const mounted = await mountNode(runtime, host, rootNode, interpreter.timers, () =>
       materializer.resetElementBudget(),
     );
     if (interpreter.timers.hasTasks()) {
@@ -271,15 +281,15 @@ export class StaticRenderer {
   }
 
   private missingModuleResult(filePath: string, message: string): Promise<StaticRenderResult> {
-    const interpreter = this.createInterpreter();
+    const run = this.startRun();
     const diagnostic: Diagnostic = {
       severity: "error",
       code: "module-not-found",
       message,
       location: null,
     };
-    interpreter.diagnostics.push(diagnostic);
-    return this.finish(interpreter, unknownValue(`${filePath}: ${message}`));
+    run.interpreter.diagnostics.push(diagnostic);
+    return this.finish(run, unknownValue(`${filePath}: ${message}`));
   }
 
   renderComponent(
@@ -290,8 +300,8 @@ export class StaticRenderer {
     const module = this.graph.getModule(absolutePath);
     if (!module) return this.missingModuleResult(absolutePath, `could not parse ${absolutePath}`);
     const exportName = options.exportName ?? "default";
-    const interpreter = this.createInterpreter(options.isolated ?? false);
-    const componentValue = interpreter.evaluateModuleExport(module, exportName);
+    const run = this.startRun(options.isolated ?? false);
+    const componentValue = run.interpreter.evaluateModuleExport(module, exportName);
     const type = toElementType(
       componentValue,
       exportName === "default"
@@ -306,16 +316,16 @@ export class StaticRenderer {
       location: null,
       environment: null,
     };
-    return this.finish(interpreter, element);
+    return this.finish(run, element);
   }
 
   renderEntry(filePath: string): Promise<StaticRenderResult> {
     const absolutePath = this.resolvePath(filePath);
     const module = this.graph.getModule(absolutePath);
     if (!module) return this.missingModuleResult(absolutePath, `could not parse ${absolutePath}`);
-    const interpreter = this.createInterpreter();
-    const entry = this.evaluateEntryElement(interpreter, module);
-    return this.finish(interpreter, entry ?? unknownValue("no root render call"));
+    const run = this.startRun();
+    const entry = this.evaluateEntryElement(run.interpreter, module);
+    return this.finish(run, entry ?? unknownValue("no root render call"));
   }
 
   /**
@@ -361,13 +371,10 @@ export class StaticRenderer {
   }
 
   renderWith(produce: (interpreter: Interpreter) => StaticValue): Promise<StaticRenderResult> {
-    const interpreter = this.createInterpreter();
-    return this.finish(interpreter, produce(interpreter));
+    const run = this.startRun();
+    return this.finish(run, produce(run.interpreter));
   }
 }
-
-const describeError = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error);
 
 export const createStaticRenderer = (options: StaticRendererOptions): StaticRenderer =>
   new StaticRenderer(options);

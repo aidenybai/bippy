@@ -17,19 +17,12 @@ export const MARKER_NAMES = {
   suspenseBoundary: "$SuspenseBoundary",
 } as const;
 
-export type MarkerName = (typeof MARKER_NAMES)[keyof typeof MARKER_NAMES];
-
-const markerNames: ReadonlySet<string> = new Set(Object.values(MARKER_NAMES));
-
-export const isMarkerName = (name: string | null): name is MarkerName =>
-  name !== null && markerNames.has(name);
-
-export interface MarkerChildrenProps {
+interface MarkerChildrenProps {
   children?: ReactNode;
 }
 
 /** Props every decision marker carries so a replay can find the same decision again. */
-export interface DecisionMarkerProps extends MarkerChildrenProps {
+interface DecisionMarkerProps extends MarkerChildrenProps {
   location: string | null;
   /** Digest of the decision's structural path, numbered per decision scope in materialization order. */
   decision: string;
@@ -37,7 +30,7 @@ export interface DecisionMarkerProps extends MarkerChildrenProps {
   sharesScope: boolean;
 }
 
-export interface BranchMarkerProps extends DecisionMarkerProps {
+interface BranchMarkerProps extends DecisionMarkerProps {
   reason: string;
   preferredIndex: number | null;
   /** Identity of the decision; branches sharing one are selected together. */
@@ -46,7 +39,7 @@ export interface BranchMarkerProps extends DecisionMarkerProps {
   pinnedIndex: number | null;
 }
 
-export interface RepeatMarkerProps extends DecisionMarkerProps {
+interface RepeatMarkerProps extends DecisionMarkerProps {
   countMin: number;
   countMax: number | null;
   /** How many iterations were rendered, when a replay pinned this repeat. */
@@ -65,14 +58,14 @@ export const isNegatedBranchPredicate = (
 export const stripNegatedPredicate = (predicate: string): string =>
   predicate.slice(NEGATED_PREDICATE_PREFIX.length);
 
-export interface OpaqueMarkerProps extends MarkerChildrenProps {
+interface OpaqueMarkerProps extends MarkerChildrenProps {
   displayName: string | null;
   importedName: string | null;
   packageName: string | null;
   reason: string;
 }
 
-export interface UnknownMarkerProps {
+interface UnknownMarkerProps {
   reason: string;
   /** The subtree was not materialized, so the states below it are not enumerated. */
   isTruncated: boolean;

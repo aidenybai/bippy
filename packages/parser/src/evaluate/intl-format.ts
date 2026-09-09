@@ -1,4 +1,4 @@
-import { nativeFunction } from "../frameworks/stubs.js";
+import { nativeFunction } from "./stubs.js";
 import type { JsonValue, SourceLocation, StaticValue } from "../types.js";
 import { createErrorValue } from "./errors.js";
 import {

@@ -16,6 +16,7 @@ import {
   type PatternNode,
 } from "../src/harness/index.js";
 import type { RuntimeFiberSnapshot, SnapshotWorkTag } from "../src/harness/snapshot.js";
+import { enumerateStateSpace } from "../src/harness/state-space.js";
 import { readInstalledVersion } from "../src/libraries/installed-version.js";
 import { ForwardRefTag } from "../src/work-tags.js";
 
@@ -704,6 +705,58 @@ describe("react router framework mode with react-router-auto-routes", () => {
       /<fetcher\.Form>\n\s+<Form>\n\s+<form>\n\s+<input>\n\s+<button>\n\s+\?branch/,
     );
     expect(tree).toContain("react-router fetcher state is only known at runtime");
+    expect(tree).not.toContain("?unknown");
+  });
+});
+
+describe("react router framework mode with branchy route descriptors", () => {
+  it("enumerates a branch inside links()/meta() as concrete head elements correlated with the page", async () => {
+    const { result, tree, errors } = await render("react-router-branchy-links", {
+      framework: "react-router",
+      route: "/",
+      entry: "app/routes.ts",
+    });
+    expect(errors).toEqual([]);
+    expect(tree.slice(0, tree.indexOf("<body>"))).not.toContain("?unknown");
+    expect(tree).toMatch(
+      /<Links>\n\s+\?branch\(conditional on[^\n]*\n\s+\|0 \(preferred\)\n\s+<Fragment>\n\s+<link> key="\{\\"href\\":\\"\/app.css\\",\\"rel\\":\\"stylesheet\\"\}"\n\s+<link> key="\{\\"href\\":\\"\/icon@2x.png\\",\\"rel\\":\\"icon\\"\}"\n\s+\|1\n\s+<Fragment>\n\s+<link> key="\{\\"href\\":\\"\/app.css\\",\\"rel\\":\\"stylesheet\\"\}"\n\s+<link> key="\{\\"href\\":\\"\/icon.png\\",\\"rel\\":\\"icon\\"\}"/,
+    );
+    expect(tree).toMatch(
+      /<Meta>\n\s+\?branch\(conditional on[^\n]*\n\s+\|0 \(preferred\)\n\s+<title> key="title"\n\s+<meta> key="\{\\"name\\":\\"description\\",\\"content\\":\\"Sharp home\\"\}"\n\s+\|1\n\s+<title> key="title"\n\s+<meta> key="\{\\"name\\":\\"description\\",\\"content\\":\\"Home\\"\}"/,
+    );
+    const space = enumerateStateSpace([getRenderPattern(result)]);
+    expect(space.omitted).toBeNull();
+    expect(space.states).toHaveLength(2);
+  });
+
+  it("reads a match's handle from the route module for useMatches()", async () => {
+    const rootDirectory = join(FIXTURES, "react-router-branchy-links");
+    const result = await renderFrameworkTarget(
+      { framework: "react-router", route: "/", entry: "app/routes.ts" },
+      {
+        rootDirectory,
+        tsconfigPath: join(rootDirectory, "tsconfig.json"),
+        observations: {
+          globals: {},
+          queries: [],
+          router: {
+            location: { pathname: "/", search: "", hash: "" },
+            matches: [
+              { id: "root", pathname: "/", params: {} },
+              { id: "routes/home", pathname: "/", params: {} },
+            ],
+            loaderData: {},
+            navigationState: "idle",
+            revalidationState: "idle",
+          },
+        },
+      },
+    );
+    const tree = formatPattern(getRenderPattern(result));
+    expect(result.diagnostics.filter((diagnostic) => diagnostic.severity === "error")).toEqual([]);
+    expect(tree).toMatch(
+      /<Breadcrumbs>\n\s+<nav>\n\s+\?branch\(conditional on[^\n]*\n\s+\|0 \(preferred\)\n\s+<span> key="Retina home"\n\s+\|1\n\s+<span> key="Home"/,
+    );
     expect(tree).not.toContain("?unknown");
   });
 });

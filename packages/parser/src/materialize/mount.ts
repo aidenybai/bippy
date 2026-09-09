@@ -3,6 +3,7 @@ import type { TimerQueue } from "../evaluate/timers.js";
 import { createCommitRecorder, getRootContainer } from "../harness/commit-recorder.js";
 import type { RuntimeSnapshot } from "../harness/snapshot.js";
 import type { ReactRuntime } from "./react-runtime.js";
+import type { RendererHost } from "./renderer-host.js";
 
 const SETTLE_ROUNDS = 8;
 const MAX_TIMER_ROUNDS = 512;
@@ -27,12 +28,13 @@ export interface MountResult {
  */
 export const mountNode = async (
   runtime: ReactRuntime,
+  host: RendererHost<Element>,
   node: ReactNode,
   timers: TimerQueue,
   onCommit: () => void,
 ): Promise<MountResult> => {
-  const container = document.createElement("div");
-  document.body.appendChild(container);
+  const container = host.createContainer();
+  const detachContainer = host.attachContainer(container);
   const recorder = createCommitRecorder({
     rootFilter: (root) => getRootContainer(root) === container,
     recordCommits: true,
@@ -75,6 +77,6 @@ export const mountNode = async (
     console.error = consoleError;
     console.warn = consoleWarn;
     recorder.dispose();
-    container.remove();
+    detachContainer();
   }
 };

@@ -1,6 +1,7 @@
 import path from "node:path";
 import type {
   Node,
+  ParamPattern,
   TSConditionalType,
   TSImportType,
   TSImportTypeQualifier,
@@ -33,6 +34,7 @@ import {
   type HostRealmTable,
   type HostType,
   type HostValueKind,
+  propertyMember,
 } from "./realm-table.js";
 
 export type ResolutionGapReason =
@@ -152,6 +154,81 @@ const getSignatureName = (signature: TSSignature): string | null => {
   return key.type === "Literal" && typeof key.value === "string" ? key.value : null;
 };
 
+const getParameterName = (parameter: ParamPattern): string => {
+  switch (parameter.type) {
+    case "Identifier":
+      return parameter.name;
+    case "AssignmentPattern":
+      return getParameterName(parameter.left);
+    case "RestElement":
+      return getParameterName(parameter.argument);
+    case "TSParameterProperty":
+      return getParameterName(parameter.parameter);
+    default:
+      return "_";
+  }
+};
+
+const getParameterType = (parameter: ParamPattern): TSType | null => {
+  switch (parameter.type) {
+    case "Identifier":
+    case "RestElement":
+      return parameter.typeAnnotation?.typeAnnotation ?? null;
+    default:
+      return null;
+  }
+};
+
+const isTypeParameterReference = (type: TSType, name: string): boolean =>
+  type.type === "TSTypeReference" &&
+  type.typeName.type === "Identifier" &&
+  type.typeName.name === name;
+
+/**
+ * Whether a value of this type carries elements of type `name` into the
+ * receiver (`fill(value: T)`, `concat(...items: ConcatArray<T>[])`); a callback
+ * merely handed a `T` (`sort(compareFn: (a: T, b: T) => number)`) does not.
+ */
+const mentionsElementType = (type: TSType, name: string): boolean => {
+  switch (type.type) {
+    case "TSTypeReference":
+      return (
+        isTypeParameterReference(type, name) ||
+        (type.typeArguments?.params ?? []).some((argument) => mentionsElementType(argument, name))
+      );
+    case "TSArrayType":
+      return mentionsElementType(type.elementType, name);
+    case "TSUnionType":
+    case "TSIntersectionType":
+      return type.types.some((member) => mentionsElementType(member, name));
+    case "TSParenthesizedType":
+    case "TSTypeOperator":
+      return mentionsElementType(type.typeAnnotation, name);
+    case "TSFunctionType":
+      return mentionsElementType(type.returnType.typeAnnotation, name);
+    default:
+      return false;
+  }
+};
+
+/** `addEventListener<K extends keyof HTMLElementEventMap>(type: K, ...)`: the map the target's events are keyed by. */
+const getEventMapReference = (declarations: MemberDeclaration[]): [string[], Scope] | null => {
+  for (const declaration of declarations) {
+    if (declaration.form !== "method") continue;
+    const [typeParameter] = declaration.parameters;
+    const parameterType = typeParameter === undefined ? null : getParameterType(typeParameter);
+    if (parameterType?.type !== "TSTypeReference" || parameterType.typeName.type !== "Identifier")
+      continue;
+    const constraint = declaration.scope.typeParameters.get(parameterType.typeName.name);
+    if (constraint?.type !== "TSTypeOperator" || constraint.operator !== "keyof") continue;
+    const operand = constraint.typeAnnotation;
+    if (operand.type !== "TSTypeReference") continue;
+    const name = getQualifiedName(operand.typeName);
+    if (name !== null) return [name, declaration.scope];
+  }
+  return null;
+};
+
 /**
  * Resolves what the checker would for value declarations in `lib.*.d.ts` and
  * `@types/*`: the `typeof` of every global and member and the interface it
@@ -203,7 +280,9 @@ export class HostDeclarationIndex {
       const record = this.catalog.interfaces.get(name);
       if (!record || name in interfaces) continue;
       const members: Record<string, HostMember> = {};
-      interfaces[name] = { extendsNames: this.getExtendsNames(name), members };
+      const eventMapName = this.getEventMapName(record.members.get("addEventListener"));
+      if (eventMapName !== null) pending.push(eventMapName);
+      interfaces[name] = { extendsNames: this.getExtendsNames(name), members, eventMapName };
       for (const parent of interfaces[name].extendsNames) pending.push(parent);
       for (const [memberName, declarations] of record.members) {
         const member = this.resolveDeclarations(name, memberName, declarations);
@@ -216,6 +295,11 @@ export class HostDeclarationIndex {
       table: { globalObjectInterfaces, interfaces },
       gaps: [...this.gaps.values()].sort((left, right) => left.site.localeCompare(right.site)),
     };
+  }
+
+  private getEventMapName(declarations: MemberDeclaration[] | undefined): string | null {
+    const reference = declarations === undefined ? null : getEventMapReference(declarations);
+    return reference === null ? null : this.lookupInterface(reference[0], reference[1]);
   }
 
   private loadPendingModules(): void {
@@ -279,7 +363,7 @@ export class HostDeclarationIndex {
   }
 
   private getGlobalObjectMember(memberName: string): HostMember | null {
-    if (memberName === GLOBAL_INTERFACE_NAME) return { type: GLOBAL_OBJECT_TYPE, returnType: null };
+    if (memberName === GLOBAL_INTERFACE_NAME) return propertyMember(GLOBAL_OBJECT_TYPE);
     for (const interfaceName of this.getGlobalObjectInterfaces()) {
       const member = this.getMember(interfaceName, memberName);
       if (member) return member;
@@ -553,7 +637,7 @@ export class HostDeclarationIndex {
       const target = this.lookupPath(module.exportEquals, module.scope, "value");
       return target === null ? null : this.targetValue(target);
     }
-    return { type: interfaceType(module.valueHolder, false), returnType: null };
+    return propertyMember(interfaceType(module.valueHolder, false));
   }
 
   /** A type key (interface or alias) for a qualified type name. */
@@ -597,6 +681,9 @@ export class HostDeclarationIndex {
     });
     const types: HostType[] = [];
     const returnTypes: HostType[] = [];
+    let parameterNames: string[] | null = null;
+    let isReceiverItemsReturn = false;
+    let hasElementParameter = false;
     for (const declaration of declarations) {
       switch (declaration.form) {
         case "property": {
@@ -616,6 +703,24 @@ export class HostDeclarationIndex {
               ? this.resolveType(declaration.returnType, context)
               : this.report(context, "declared-any", "untyped return"),
           );
+          const names = declaration.parameters
+            .map(getParameterName)
+            .filter((name) => name !== "this");
+          if (parameterNames === null || names.length > parameterNames.length) {
+            parameterNames = names;
+          }
+          const elementName = declaration.scope.elementTypeParameter;
+          isReceiverItemsReturn ||= this.returnsReceiverItems(
+            declaration.returnType,
+            returnTypes.at(-1) ?? null,
+            elementName,
+          );
+          hasElementParameter ||=
+            elementName !== null &&
+            declaration.parameters.some((parameter) => {
+              const parameterType = getParameterType(parameter);
+              return parameterType !== null && mentionsElementType(parameterType, elementName);
+            });
           break;
         }
         case "reference":
@@ -625,8 +730,36 @@ export class HostDeclarationIndex {
     }
     const reportingContext = contextFor(this.catalog.global.scope);
     const type = this.mergeDeclaredTypes(types, reportingContext);
-    if (returnTypes.length === 0 || type.kind !== "function") return { type, returnType: null };
-    return { type, returnType: this.joinTypes(returnTypes, reportingContext, "overloads") };
+    if (returnTypes.length === 0 || type.kind !== "function") return propertyMember(type);
+    return {
+      type,
+      returnType: this.joinTypes(returnTypes, reportingContext, "overloads"),
+      parameterNames,
+      returnsReceiverItems: isReceiverItemsReturn && !hasElementParameter,
+    };
+  }
+
+  /** `this`, `T[]` or an iterator of `T` for the receiver's element type `T`: a result made of the receiver's own items. */
+  private returnsReceiverItems(
+    returnType: TSType | null,
+    resolvedReturnType: HostType | null,
+    elementName: string | null,
+  ): boolean {
+    if (returnType === null) return false;
+    if (returnType.type === "TSThisType") return true;
+    if (elementName === null) return false;
+    if (returnType.type === "TSArrayType") {
+      return isTypeParameterReference(returnType.elementType, elementName);
+    }
+    if (returnType.type !== "TSTypeReference") return false;
+    const [firstArgument] = returnType.typeArguments?.params ?? [];
+    return (
+      firstArgument !== undefined &&
+      isTypeParameterReference(firstArgument, elementName) &&
+      resolvedReturnType?.interfaceName !== null &&
+      resolvedReturnType !== null &&
+      this.isSubtype(resolvedReturnType.interfaceName, "Iterator")
+    );
   }
 
   /**
@@ -710,6 +843,7 @@ export class HostDeclarationIndex {
       case "TSConstructorType":
         return FUNCTION_TYPE;
       case "TSTypeLiteral":
+        if (type.members.length === 0) return this.report(context, "declared-any", "{}");
         return type.members.some(
           (member) =>
             member.type === "TSCallSignatureDeclaration" ||
@@ -775,13 +909,24 @@ export class HostDeclarationIndex {
       const bound = context.bindings.get(name[0]);
       if (bound) return bound;
       if (context.scope.typeParameters.has(name[0])) {
-        return this.report(context, "type-parameter", name[0]);
+        return this.resolveTypeParameter(name[0], context);
       }
     }
     const typeName = this.lookupType(name, context.scope);
     return typeName === null
       ? this.report(context, "unresolved-name", name.join("."))
       : this.resolveNamedType(typeName, type.typeArguments, context);
+  }
+
+  /** An uninstantiated type parameter is anything within its `extends` bound, so the bound's `typeof` is its `typeof`. */
+  private resolveTypeParameter(name: string, context: ResolutionContext): HostType {
+    const constraint = context.scope.typeParameters.get(name);
+    if (!constraint) return this.report(context, "type-parameter", name);
+    const scope = {
+      ...context.scope,
+      typeParameters: new Map([...context.scope.typeParameters].filter(([key]) => key !== name)),
+    };
+    return this.resolveType(constraint, { ...context, scope });
   }
 
   private resolveNamedType(
@@ -863,8 +1008,15 @@ export class HostDeclarationIndex {
     context: ResolutionContext,
   ): HostType {
     const object = this.resolveType(objectType, context);
+    if (indexType.type === "TSTypeOperator" && indexType.operator === "keyof") {
+      return this.joinMembers(object, context);
+    }
     if (indexType.type === "TSTypeReference" && indexType.typeName.type === "Identifier") {
       const { name } = indexType.typeName;
+      const constraint = context.scope.typeParameters.get(name);
+      if (constraint?.type === "TSTypeOperator" && constraint.operator === "keyof") {
+        return this.joinMembers(object, context);
+      }
       if (context.scope.typeParameters.has(name) || context.bindings.has(name)) {
         return this.report(context, "type-parameter", name);
       }
@@ -878,6 +1030,57 @@ export class HostDeclarationIndex {
     }
     const member = this.memberOf(object, key);
     return member?.type ?? this.report(context, "unresolved-name", `[${JSON.stringify(key)}]`);
+  }
+
+  /** `Map[K]` for `K extends keyof Map`: whichever key, the value is one of the members. */
+  private joinMembers(object: HostType, context: ResolutionContext): HostType {
+    if (object.interfaceName === null) {
+      return this.report(context, "unsupported", `indexed access on ${object.kind}`);
+    }
+    const types: HostType[] = [];
+    for (const memberName of this.collectMemberNames(object.interfaceName)) {
+      const member = this.getMember(object.interfaceName, memberName);
+      if (member) types.push(member.type);
+    }
+    return this.joinTypes(types, context, "mixed-union");
+  }
+
+  private collectMemberNames(interfaceName: string, seen = new Set<string>()): Set<string> {
+    const names = new Set<string>();
+    if (seen.has(interfaceName)) return names;
+    seen.add(interfaceName);
+    for (const name of this.catalog.interfaces.get(interfaceName)?.members.keys() ?? []) {
+      names.add(name);
+    }
+    for (const parent of this.getExtendsNames(interfaceName)) {
+      for (const name of this.collectMemberNames(parent, seen)) names.add(name);
+    }
+    return names;
+  }
+
+  /** The most derived interface every one of `names` extends, when there is exactly one. */
+  private commonAncestor(names: string[]): string | null {
+    const ancestorsOf = (name: string): Set<string> => {
+      const ancestors = new Set<string>();
+      const pending = [name];
+      for (let current = pending.pop(); current !== undefined; current = pending.pop()) {
+        if (ancestors.has(current)) continue;
+        ancestors.add(current);
+        pending.push(...this.getExtendsNames(current));
+      }
+      return ancestors;
+    };
+    const [first, ...rest] = names;
+    let shared = ancestorsOf(first);
+    for (const name of rest) {
+      const ancestors = ancestorsOf(name);
+      shared = new Set([...shared].filter((ancestor) => ancestors.has(ancestor)));
+    }
+    const candidates = [...shared];
+    const mostDerived = candidates.filter((candidate) =>
+      candidates.every((other) => this.isSubtype(candidate, other)),
+    );
+    return mostDerived.length === 1 ? mostDerived[0] : null;
   }
 
   private resolveConditional(type: TSConditionalType, context: ResolutionContext): HostType {
@@ -969,11 +1172,15 @@ export class HostDeclarationIndex {
     if (!present.every((part) => part.kind === first.kind)) {
       return this.report(context, disagreement, present.map((part) => part.kind).join(" | "));
     }
+    const interfaceNames = [...new Set(present.flatMap((part) => part.interfaceName ?? []))];
+    const hasInterfaces = present.every((part) => part.interfaceName !== null);
     return {
       kind: first.kind,
-      interfaceName: present.every((part) => part.interfaceName === first.interfaceName)
-        ? first.interfaceName
-        : null,
+      interfaceName: !hasInterfaces
+        ? null
+        : interfaceNames.length === 1
+          ? interfaceNames[0]
+          : this.commonAncestor(interfaceNames),
       isNullable: isNullable || present.some((part) => part.isNullable),
     };
   }

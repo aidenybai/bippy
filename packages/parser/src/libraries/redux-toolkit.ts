@@ -2,6 +2,7 @@ import {
   FALSE_VALUE,
   TRUE_VALUE,
   UNDEFINED_VALUE,
+  booleanValue,
   branchValue,
   compareIdentity,
   getKnownObjectKeys,
@@ -9,6 +10,7 @@ import {
   getTruthiness,
   isCallable,
   isKnownString,
+  isUndefinedValue,
   mapValue,
   objectFromRecord,
   objectValue,
@@ -17,7 +19,7 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
-import { lazyProperties, nativeFunction } from "../frameworks/stubs.js";
+import { lazyProperties, nativeFunction } from "../evaluate/stubs.js";
 import { hashKey } from "../observations.js";
 import type {
   CapturedValue,
@@ -48,11 +50,6 @@ const SKIP_TOKEN: StaticSymbolValue = { kind: "symbol", key: "@reduxjs/toolkit/q
 type RequestStatus = "uninitialized" | "pending" | "fulfilled" | "rejected";
 
 const reducerKeysByReducer = new WeakMap<StaticValue, readonly string[]>();
-
-const booleanValue = (value: boolean): StaticValue => (value ? TRUE_VALUE : FALSE_VALUE);
-
-const isUndefined = (value: StaticValue): boolean =>
-  value.kind === "primitive" && value.value === undefined;
 
 const isCapturedRecord = (value: CapturedValue): value is Record<string, CapturedValue> =>
   value !== null && typeof value === "object" && !Array.isArray(value);
@@ -244,7 +241,7 @@ const queryHookResult = (
   isSkipped: boolean,
 ): StaticValue => {
   const data = substate.data ?? UNDEFINED_VALUE;
-  const hasData = !isUndefined(data);
+  const hasData = !isUndefinedValue(data);
   const isFetching = status === "pending";
   const selected: Record<string, StaticValue> = {
     ...substate,
@@ -340,7 +337,7 @@ const serializeQueryArgs = (
   queryArgs: StaticValue,
   tools: StubRenderTools,
 ): string | null => {
-  if (!isUndefined(api.serializeQueryArgs)) {
+  if (!isUndefinedValue(api.serializeQueryArgs)) {
     const serialized = tools.call(api.serializeQueryArgs, [
       objectFromRecord({
         queryArgs,
@@ -350,7 +347,7 @@ const serializeQueryArgs = (
     ]);
     return isKnownString(serialized) ? serialized.value : null;
   }
-  if (isUndefined(queryArgs)) return `${endpointName}(undefined)`;
+  if (isUndefinedValue(queryArgs)) return `${endpointName}(undefined)`;
   const json = toJsonValue(queryArgs);
   return json === undefined ? null : `${endpointName}(${hashKey(json)})`;
 };

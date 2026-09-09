@@ -29,12 +29,10 @@ export const TYPED_ARRAY_CONSTRUCTORS = {
   Float64Array,
 };
 
-export const TYPED_ARRAY_NAMES = Object.keys(TYPED_ARRAY_CONSTRUCTORS);
-
 export const isTypedArrayName = (name: string): name is keyof typeof TYPED_ARRAY_CONSTRUCTORS =>
   Object.hasOwn(TYPED_ARRAY_CONSTRUCTORS, name);
 
-export type BinaryKind = keyof typeof TYPED_ARRAY_CONSTRUCTORS | "ArrayBuffer";
+type BinaryKind = keyof typeof TYPED_ARRAY_CONSTRUCTORS | "ArrayBuffer";
 
 const binaryKinds = new WeakMap<StaticListValue, BinaryKind>();
 
