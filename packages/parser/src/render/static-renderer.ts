@@ -98,7 +98,7 @@ export class StaticRenderer {
       this.options.publicDirectory,
     );
     this.reactVersion = this.project.readPackageVersion("react");
-    const svgrTransform = createSvgrSourceTransform(this.resolver, rootDirectory);
+    const svgrTransform = createSvgrSourceTransform(this.project, this.resolver, rootDirectory);
     this.graph = new ModuleGraph({
       resolver: this.resolver,
       sourceFileCache: new SourceFileCache(svgrTransform ? [svgrTransform] : []),

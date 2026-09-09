@@ -95,8 +95,10 @@ export const formatStateSpaceSummary = (
       lines.push(`  … and ${unobserved.length - MAX_REPORTED_STATES} more`);
   }
   if (summary.omitted) {
-    lines.push(`omitted (${summary.omitted.omissions.length}):`);
-    for (const omission of summary.omitted.omissions) lines.push(`  ${formatOmission(omission)}`);
+    const { total, omissions } = summary.omitted;
+    lines.push(`omitted (${total}):`);
+    for (const omission of omissions) lines.push(`  ${formatOmission(omission)}`);
+    if (total > omissions.length) lines.push(`  … and ${total - omissions.length} more`);
   }
   return lines;
 };

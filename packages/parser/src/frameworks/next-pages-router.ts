@@ -1,10 +1,24 @@
 import path from "node:path";
-import { componentReference, objectValue, unknownValue } from "../evaluate/values.js";
+import type { Interpreter } from "../evaluate/interpreter.js";
+import {
+  FALSE_VALUE,
+  branchValue,
+  componentReference,
+  describeValue,
+  getObjectProperty,
+  getTruthiness,
+  mapValue,
+  objectFromRecord,
+  objectValue,
+  toBooleanValue,
+  unknownValue,
+} from "../evaluate/values.js";
 import { toElementType } from "../react/element-type.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
-import type { StaticRenderResult } from "../types.js";
-import { applyNextCompilerOptions } from "./next-config.js";
+import type { StaticRenderResult, StaticValue } from "../types.js";
+import { applyNextCompilerOptions, evaluateNextConfig } from "./next-config.js";
 import type { NextModel } from "./next-externals.js";
+import { element } from "./stubs.js";
 import {
   type DynamicSegment,
   classifySegment,
@@ -25,6 +39,34 @@ export interface NextPagesRouteOptions {
 
 const RESERVED_PAGES = new Set(["_app", "_document", "_error", "404", "500", "api"]);
 const DATA_FETCHING_EXPORTS = ["getServerSideProps", "getStaticProps", "getInitialProps"];
+/**
+ * `reactStrictMode` from `next.config`, which the pages client reads as
+ * `process.env.__NEXT_STRICT_MODE` (`false` when unset).
+ */
+const readReactStrictMode = (renderer: StaticRenderer, interpreter: Interpreter): StaticValue => {
+  const config = evaluateNextConfig(renderer, interpreter);
+  if (config === null) return FALSE_VALUE;
+  return mapValue(config, (alternative) => {
+    if (alternative.kind !== "object") {
+      return unknownValue(`next.config is ${describeValue(alternative)}`);
+    }
+    return toBooleanValue(getObjectProperty(alternative, "reactStrictMode"));
+  });
+};
+
+const withReactStrictMode = (tree: StaticValue, isStrictMode: StaticValue): StaticValue => {
+  const strictTree = element({ kind: "strict-mode" }, objectFromRecord({ children: tree }));
+  return mapValue(isStrictMode, (alternative) => {
+    const truthiness = getTruthiness(alternative);
+    if (truthiness === null) {
+      return branchValue(
+        [tree, strictTree],
+        `next.config reactStrictMode is ${describeValue(alternative)}`,
+      );
+    }
+    return truthiness ? strictTree : tree;
+  });
+};
 
 export interface NextPageMatch {
   file: string;
@@ -156,34 +198,41 @@ export const renderNextPagesRoute = (
 
     const appPath = findRouteFile(pagesDirectory, "_app");
     const appModule = appPath ? renderer.loadModule(appPath) : null;
+    const isStrictMode = readReactStrictMode(renderer, interpreter);
     if (!appModule) {
-      return interpreter.createElement(
-        pageComponent,
-        objectValue([{ kind: "spread", value: pageProps }]),
-        null,
-        [],
-        null,
-        pageName,
-        interpreter.createModuleContext(pageModule),
+      return withReactStrictMode(
+        interpreter.createElement(
+          pageComponent,
+          objectValue([{ kind: "spread", value: pageProps }]),
+          null,
+          [],
+          null,
+          pageName,
+          interpreter.createModuleContext(pageModule),
+        ),
+        isStrictMode,
       );
     }
     const appComponent = interpreter.evaluateModuleExport(appModule, "default");
-    return interpreter.createElement(
-      appComponent,
-      objectValue([
-        {
-          kind: "property",
-          key: "Component",
-          value: componentReference(toElementType(pageComponent, pageName)),
-        },
-        { kind: "property", key: "pageProps", value: pageProps },
-        { kind: "property", key: "router", value: router },
-      ]),
-      null,
-      [],
-      null,
-      "App",
-      interpreter.createModuleContext(appModule),
+    return withReactStrictMode(
+      interpreter.createElement(
+        appComponent,
+        objectValue([
+          {
+            kind: "property",
+            key: "Component",
+            value: componentReference(toElementType(pageComponent, pageName)),
+          },
+          { kind: "property", key: "pageProps", value: pageProps },
+          { kind: "property", key: "router", value: router },
+        ]),
+        null,
+        [],
+        null,
+        "App",
+        interpreter.createModuleContext(appModule),
+      ),
+      isStrictMode,
     );
   });
 };

@@ -7,8 +7,9 @@ import type {
   StaticRenderStats,
 } from "../../src/index.js";
 import {
-  flattenTransparentFibers,
+  dropInjectedFibers,
   getFrameworkProfile,
+  unwrapTransparentRuntimeFiber,
   renderFrameworkTarget,
   type FrameworkKind,
 } from "../../src/frameworks/index.js";
@@ -178,7 +179,9 @@ export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult
     transparentStaticFibers: profile.transparentStaticFibers,
     budget: fixture.manifest.stateSpaceBudget,
   });
-  const comparison = compareStaticToRuntime(stateSpace, flattenTransparentFibers(runtime, profile));
+  const comparison = compareStaticToRuntime(stateSpace, dropInjectedFibers(runtime, profile), {
+    unwrapTransparentRuntimeFiber: (fiber) => unwrapTransparentRuntimeFiber(fiber, profile),
+  });
   return { staticResult, runtime, observed, comparison };
 };
 

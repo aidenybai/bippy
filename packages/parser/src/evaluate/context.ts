@@ -27,6 +27,8 @@ export interface CallFrame {
   changeCount: number;
   /** `EvaluationContext.forkDepth` at the call site. */
   forkDepth: number;
+  /** The callee's own properties when the activation began. */
+  properties: Map<string, StaticValue>;
 }
 
 export interface OutcomeHandler {

@@ -16,21 +16,26 @@ import type { StaticValue, StyledComponentsTransformOptions } from "../types.js"
 const NEXT_CONFIG_FILES = [
   "next.config.js",
   "next.config.mjs",
+  "next.config.cjs",
   "next.config.ts",
   "next.config.mts",
 ];
 const DEVELOPMENT_PHASE = "phase-development-server";
 
-/** `next.config` as Next loads it: the default export, called with the phase when it is a function. */
-const evaluateNextConfig = (
+/**
+ * `next.config` as Next loads it: the default export, called with the phase
+ * when it is a function; null when the project has no config file.
+ */
+export const evaluateNextConfig = (
   renderer: StaticRenderer,
   interpreter: Interpreter,
 ): StaticValue | null => {
   const configPath = NEXT_CONFIG_FILES.map((fileName) => renderer.resolvePath(fileName)).find(
     (candidate) => existsSync(candidate),
   );
-  const module = configPath === undefined ? null : renderer.loadModule(configPath);
-  if (!module) return null;
+  if (configPath === undefined) return null;
+  const module = renderer.loadModule(configPath);
+  if (!module) return unknownValue("next.config could not be parsed");
   const exported = interpreter.evaluateModuleExport(module, "default");
   if (exported.kind !== "function") return exported;
   const phaseArguments = [

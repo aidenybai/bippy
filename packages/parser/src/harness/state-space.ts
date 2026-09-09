@@ -366,13 +366,27 @@ export interface StateSpaceMatch {
   closest: ClosestState | null;
 }
 
+/** Omissions kept verbatim in a summary; the rest are only counted in `total`. */
+const MAX_SUMMARIZED_OMISSIONS = 32;
+
+export interface OmittedStateSummary {
+  total: number;
+  omissions: StateOmission[];
+}
+
 /** What a comparison learned about the state space, small enough to persist alongside the report. */
 export interface StateSpaceSummary {
   states: number;
   matchedState: MatchedState | null;
   closestState: ClosestState | null;
-  omitted: OmittedStateSpace | null;
+  omitted: OmittedStateSummary | null;
 }
+
+export const summarizeOmissions = (omitted: OmittedStateSpace | null): OmittedStateSummary | null =>
+  omitted && {
+    total: omitted.omissions.length,
+    omissions: omitted.omissions.slice(0, MAX_SUMMARIZED_OMISSIONS),
+  };
 
 const toCondition = (decision: MatchDecision): StateCondition =>
   decision.node.kind === "branch"

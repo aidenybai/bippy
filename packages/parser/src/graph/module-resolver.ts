@@ -1,7 +1,8 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { isBuiltin } from "node:module";
 import path from "node:path";
-import { ResolverFactory } from "oxc-resolver";
+import { ResolverFactory, type ResolveResult } from "oxc-resolver";
+import { z } from "zod";
 import type { ModuleResolution } from "../types.js";
 
 export interface ModuleResolverOptions {
@@ -40,6 +41,43 @@ const getPathAliasConfigFile = (tsconfigPath: string): string => {
   if (existsSync(tsconfigPath)) return tsconfigPath;
   const jsconfigPath = path.join(path.dirname(tsconfigPath), JAVASCRIPT_CONFIG_FILE);
   return existsSync(jsconfigPath) ? jsconfigPath : tsconfigPath;
+};
+
+const PACKAGE_ENTRY_FIELDS = z.object({
+  exports: z.unknown().optional(),
+  browser: z.union([z.string(), z.record(z.string(), z.unknown())]).optional(),
+  module: z.string().optional(),
+});
+
+const ESM_SYNTAX_PATTERN =
+  /([\s;]|^)(import[\w,{}\s*]*from|import\s*['"*{]|export\b\s*(?:[*{]|default|class|type|function|const|var|let|async function)|import\.meta\b)/m;
+
+const getBrowserEntry = (browser: string | Record<string, unknown> | undefined): string | null => {
+  if (typeof browser === "string") return browser;
+  const rootEntry = browser?.["."];
+  return typeof rootEntry === "string" ? rootEntry : null;
+};
+
+/**
+ * Vite's `resolvePackageEntry`: a `browser` entry without ESM syntax (UMD/IIFE)
+ * loses to the package's `module` entry; `exports` wins unless it picked an `.mjs`.
+ */
+const preferModuleOverNonEsmBrowserEntry = (
+  { path: resolvedPath, packageJsonPath }: ResolveResult,
+  resolver: ResolverFactory,
+): string | null => {
+  if (resolvedPath === undefined || packageJsonPath === undefined) return null;
+  const parsed = PACKAGE_ENTRY_FIELDS.safeParse(JSON.parse(readFileSync(packageJsonPath, "utf8")));
+  if (!parsed.success) return null;
+  const { exports, browser, module } = parsed.data;
+  const browserEntry = getBrowserEntry(browser);
+  if (browserEntry === null || module === undefined || browserEntry === module) return null;
+  if (exports !== undefined && !resolvedPath.endsWith(".mjs")) return null;
+  const resolveFromPackage = (entry: string): string | null =>
+    resolver.resolveFileSync(packageJsonPath, `./${entry}`).path ?? null;
+  if (resolveFromPackage(browserEntry) !== resolvedPath) return null;
+  if (ESM_SYNTAX_PATTERN.test(readFileSync(resolvedPath, "utf8"))) return null;
+  return resolveFromPackage(module);
 };
 
 export const getPackageNameFromSpecifier = (specifier: string): string | null => {
@@ -108,7 +146,7 @@ export class ModuleResolver {
     const cacheKey = `${importer}\u0000${fromFile}\u0000${specifier}`;
     const cached = this.cache.get(cacheKey);
     if (cached) return cached;
-    const resolution = this.resolveUncached(specifier, fromFile, this.resolvers[importer]);
+    const resolution = this.resolveUncached(specifier, fromFile, importer);
     this.cache.set(cacheKey, resolution);
     return resolution;
   }
@@ -116,8 +154,9 @@ export class ModuleResolver {
   private resolveUncached(
     specifier: string,
     fromFile: string,
-    { primary, fallback }: ResolverPair,
+    importer: ImporterKind,
   ): ModuleResolution {
+    const { primary, fallback } = this.resolvers[importer];
     const bareSpecifier = specifier.replace(/^node:/, "");
     if (specifier.startsWith("node:") || isBuiltin(bareSpecifier)) {
       return { kind: "builtin", specifier };
@@ -130,13 +169,17 @@ export class ModuleResolver {
     }
     const specifierPackage = getPackageNameFromSpecifier(cleanSpecifier);
     if (result.path) {
+      const isPackageRootImport = importer === "esm" && specifierPackage === cleanSpecifier;
+      const filePath =
+        (isPackageRootImport ? preferModuleOverNonEsmBrowserEntry(result, fallback) : null) ??
+        result.path;
       const packageName =
-        getPackageNameFromFilePath(result.path) ??
-        (specifierPackage !== null && this.isOutsideRoot(result.path) ? specifierPackage : null);
+        getPackageNameFromFilePath(filePath) ??
+        (specifierPackage !== null && this.isOutsideRoot(filePath) ? specifierPackage : null);
       if (packageName) {
-        return { kind: "external", packageName, filePath: result.path };
+        return { kind: "external", packageName, filePath };
       }
-      return { kind: "internal", filePath: result.path };
+      return { kind: "internal", filePath };
     }
     if (specifierPackage) {
       return { kind: "external", packageName: specifierPackage, filePath: null };

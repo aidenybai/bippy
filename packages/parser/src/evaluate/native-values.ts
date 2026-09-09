@@ -57,10 +57,7 @@ const LAYOUT_MEMBERS = new Set([
   "caretPositionFromPoint",
 ]);
 
-/**
- * Canvas members whose runtime value depends on rasterization, which the static
- * document never performs: happy-dom answers them with null or empty pixels.
- */
+/** Canvas members whose value comes from rasterizing, which the static document only answers with placeholders. */
 const RASTER_MEMBERS = new Set([
   "getContext",
   "toDataURL",
@@ -68,12 +65,6 @@ const RASTER_MEMBERS = new Set([
   "captureStream",
   "transferControlToOffscreen",
 ]);
-
-const getStubbedMemberReason = (key: string): string | null => {
-  if (LAYOUT_MEMBERS.has(key)) return "layout";
-  if (RASTER_MEMBERS.has(key)) return "rasterization";
-  return null;
-};
 
 const PURE_METHOD_PREFIXES = [
   "get",
@@ -104,6 +95,9 @@ const PURE_METHOD_PREFIXES = [
   "toTimeString",
   "toUTCString",
   "valueOf",
+  "format",
+  "select",
+  "resolvedOptions",
 ];
 
 /** The interface name of a native object, read off its prototype: a `Proxy` over a DOM map (`dataset`) answers `constructor` as a lookup. */
@@ -114,6 +108,17 @@ export const getNativeInterfaceName = (value: object): string => {
   if (typeof constructor === "function" && constructor.name) return constructor.name;
   return Object.prototype.toString.call(value).slice("[object ".length, -1);
 };
+
+/** Immutable `Intl` services whose output depends on locale data alone (not the clock or time zone). */
+const INTL_CONSTRUCTORS = {
+  "Intl.Collator": Intl.Collator,
+  "Intl.ListFormat": Intl.ListFormat,
+  "Intl.PluralRules": Intl.PluralRules,
+  "Intl.RelativeTimeFormat": Intl.RelativeTimeFormat,
+};
+
+const isIntlObject = (value: object): boolean =>
+  Object.values(INTL_CONSTRUCTORS).some((constructor) => value instanceof constructor);
 
 const isIterable = (value: object): value is Iterable<unknown> =>
   typeof Reflect.get(value, Symbol.iterator) === "function";
@@ -181,6 +186,14 @@ const isPlainObject = (value: object): boolean => {
 const describeError = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
+const guardNativeCall = (name: string, call: () => StaticValue): StaticValue => {
+  try {
+    return call();
+  } catch (error) {
+    return unknownValue(`${name}() threw: ${describeError(error)}`);
+  }
+};
+
 export interface NativeCallFallback {
   (args: StaticValue[]): StaticValue;
 }
@@ -204,11 +217,9 @@ export const pureNativeFunction = (
       for (const argument of args) tools.markEscaped(argument);
       return onUncertain(args);
     }
-    try {
-      return fromNativeValue(Reflect.apply(callee, thisValue, natives), `${name}()`, host);
-    } catch (error) {
-      return unknownValue(`${name}() threw: ${describeError(error)}`);
-    }
+    return guardNativeCall(name, () =>
+      fromNativeValue(Reflect.apply(callee, thisValue, natives), `${name}()`, host),
+    );
   });
 
 const isReactElementTag = (tag: unknown): boolean =>
@@ -239,7 +250,9 @@ const liftObject = (
   if (Array.isArray(value)) {
     return listValue(value.map((item, index) => liftValue(item, `${name}[${index}]`, host, path)));
   }
-  if (value instanceof Date || value instanceof DataView) return nativeObjectValue(value, null);
+  if (value instanceof Date || value instanceof DataView || isIntlObject(value)) {
+    return nativeObjectValue(value, null);
+  }
   if (value instanceof ArrayBuffer) return bytesValue("ArrayBuffer", new Uint8Array(value));
   const interfaceName = getNativeInterfaceName(value);
   if (ArrayBuffer.isView(value) && isTypedArrayName(interfaceName)) {
@@ -329,11 +342,13 @@ export const getNativeObjectMember = (
   } catch (error) {
     return unknownValue(`${name} threw: ${describeError(error)}`);
   }
-  const stubbedReason = getStubbedMemberReason(key);
-  if (stubbedReason !== null) {
+  if (LAYOUT_MEMBERS.has(key)) {
     return typeof member === "function"
-      ? nativeFunction(name, () => unknownValue(`${name}() depends on ${stubbedReason}`))
-      : unknownPrimitiveValue("number", `${name} depends on ${stubbedReason}`);
+      ? nativeFunction(name, () => unknownValue(`${name}() depends on layout`))
+      : unknownPrimitiveValue("number", `${name} depends on layout`);
+  }
+  if (RASTER_MEMBERS.has(key) && typeof member === "function") {
+    return nativeFunction(name, () => unknownValue(`${name}() depends on rasterization`));
   }
   if (typeof member !== "function") return fromNativeValue(member, name, object.host);
   return pureNativeFunction(name, member, object.value, object.host, () => {
@@ -409,7 +424,12 @@ export const isNativeInstanceOf = (
   interfaceName: string,
 ): boolean | null => object.host?.isInstanceOf(object.value, interfaceName) ?? null;
 
-const NATIVE_CONSTRUCTORS = { Date, ArrayBuffer, DataView } satisfies Record<string, Function>;
+const NATIVE_CONSTRUCTORS = {
+  Date,
+  ArrayBuffer,
+  DataView,
+  ...INTL_CONSTRUCTORS,
+} satisfies Record<string, Function>;
 
 export type NativeConstructorName = keyof typeof NATIVE_CONSTRUCTORS;
 
@@ -505,10 +525,12 @@ export const getHostDocumentMember = (
     return nativeFunction(name, (args) => {
       const natives = toNativeArguments(args, host);
       if (natives === null) return unknownValue(`${name}() on dynamic arguments`);
-      const found: unknown = Reflect.apply(query, target, natives);
-      return isEmptyQueryResult(found) && !host.hasKnownMarkup
-        ? unknownValue(`${name}() finds nothing in the static document`)
-        : fromNativeValue(found, `${name}()`, host);
+      return guardNativeCall(name, () => {
+        const found: unknown = Reflect.apply(query, target, natives);
+        return isEmptyQueryResult(found) && !host.hasKnownMarkup
+          ? unknownValue(`${name}() finds nothing in the static document`)
+          : fromNativeValue(found, `${name}()`, host);
+      });
     });
   }
   if (!(isDocument ? DOCUMENT_NATIVE_MEMBERS : WINDOW_NATIVE_MEMBERS).has(member)) return null;

@@ -69,7 +69,7 @@ import {
   getReactElementSymbolKey,
   REACT_ELEMENT_SYMBOL_KEYS,
 } from "../react/element-shape.js";
-import { toClientReference, toElementType } from "../react/element-type.js";
+import { toClientReference, toElementKey, toElementType } from "../react/element-type.js";
 import {
   getExternalMember,
   isReactLikePackage,
@@ -219,7 +219,13 @@ import {
 } from "./promises.js";
 import { applyClockOperator, TimerQueue } from "./timers.js";
 import { evaluateLoop } from "./loops.js";
-import { applyNarrowing, narrowTest, withNarrowedBinding } from "./narrowing.js";
+import {
+  type TestNarrowing,
+  applyNarrowing,
+  narrowTest,
+  narrowTestByEvaluation,
+  withNarrowedBinding,
+} from "./narrowing.js";
 import { evaluateReactApiCall } from "./react-calls.js";
 import { createScope, declareInScope, findOwningScope, lookupScope } from "./scope.js";
 import {
@@ -234,6 +240,7 @@ import {
   compareIdentity,
   completeChain,
   componentReference,
+  countAlternatives,
   describeValue,
   FALSE_VALUE,
   falsyCounterpart,
@@ -376,6 +383,17 @@ const isFunctionOwnOrInheritedKey = (key: string): boolean =>
 /** Methods every callable inherits from `Function.prototype` and `Object.prototype`. */
 const isCallableProtocolKey = (key: string): boolean =>
   key === "call" || key === "apply" || key === "bind" || OBJECT_PROTOTYPE_METHODS.has(key);
+
+const REGEXP_FLAG_ACCESSORS = new Map([
+  ["global", "g"],
+  ["ignoreCase", "i"],
+  ["multiline", "m"],
+  ["dotAll", "s"],
+  ["unicode", "u"],
+  ["unicodeSets", "v"],
+  ["sticky", "y"],
+  ["hasIndices", "d"],
+]);
 
 /** A member read on a value whose prototype chain is fully known: absent names are `undefined`. */
 const toIndexKey = (key: string): number | null => {
@@ -524,6 +542,12 @@ const isSameTypePrimitive = (previous: StaticValue, next: StaticValue): boolean 
   next.kind === "primitive" &&
   typeof previous.value === typeof next.value;
 
+const hasSameProperties = (
+  previous: Map<string, StaticValue>,
+  next: Map<string, StaticValue>,
+): boolean =>
+  previous.size === next.size && [...previous].every(([key, value]) => next.get(key) === value);
+
 /**
  * A recursive call whose arguments are equivalent to those of an activation
  * already on the stack, with nothing written since that activation began,
@@ -537,7 +561,9 @@ const isSameTypePrimitive = (previous: StaticValue, next: StaticValue): boolean 
  * recurses, so how deep it goes is unknown, as for a loop with an uncertain
  * exit. A call that makes progress over known data (walking a tree,
  * re-entering a batch flush after a counter changed) is followed until the
- * call-depth limit.
+ * call-depth limit, as is a function re-entered after rewriting its own
+ * properties (a proxy that swaps in the real implementation on first call
+ * and calls itself again).
  */
 const isNonProgressingRecursion = (
   callStack: CallFrame[],
@@ -555,6 +581,7 @@ const isNonProgressingRecursion = (
       frame.args.length === args.length &&
       areValuesEquivalent(frame.thisValue ?? UNDEFINED_VALUE, thisValue ?? UNDEFINED_VALUE) &&
       (hasUnknownArgument || frame.changeCount === changeCount || frame.forkDepth < forkDepth) &&
+      hasSameProperties(frame.properties, functionValue.properties) &&
       frame.args.every(
         (argument, index) =>
           areValuesEquivalent(argument, args[index]) ||
@@ -1100,7 +1127,15 @@ export class Interpreter {
         const index = toIndexKey(propertyName);
         if (index !== null) {
           this.recordHeapMutation(target);
-          setListItem(target, index, value);
+          if (context.uncertainDepth > 0 && index >= target.items.length) {
+            target.items.push({ kind: "repeat", item: value, location: null });
+          } else {
+            setListItem(
+              target,
+              index,
+              this.withUncertainAssignment(target.items[index], value, `[${index}]`, context),
+            );
+          }
           return target;
         }
         if (propertyName === "length") {
@@ -1118,6 +1153,7 @@ export class Interpreter {
       }
       case "function":
       case "class":
+        this.changeCount++;
         if (target.kind === "function") this.escapeWalk.memo.invalidate(target, propertyName);
         target.properties.set(propertyName, value);
         return target;
@@ -1536,21 +1572,22 @@ export class Interpreter {
         const truthiness = getTruthiness(test);
         if (truthiness === true) return this.evaluateExpression(node.consequent, context);
         if (truthiness === false) return this.evaluateExpression(node.alternate, context);
+        const reason = `conditional on ${describeValue(test)}`;
+        const preferredSide = getPreferredTruthiness(test) === false ? 1 : 0;
+        const predicate = getTruthinessPredicate(test);
         const [consequent, alternate] = this.evaluateTestedPaths(
           node.test,
           context,
           () => this.evaluateExpression(node.consequent, context),
           () => this.evaluateExpression(node.alternate, context),
+          reason,
+          location,
+          preferredSide,
+          predicate,
         );
         if (!consequent) return alternate ?? UNDEFINED_VALUE;
         if (!alternate) return consequent;
-        return branchValue(
-          [consequent, alternate],
-          `conditional on ${describeValue(test)}`,
-          location,
-          getPreferredTruthiness(test) === false ? 1 : 0,
-          getTruthinessPredicate(test),
-        );
+        return branchValue([consequent, alternate], reason, location, preferredSide, predicate);
       }
       case "LogicalExpression":
         return this.evaluateLogicalExpression(node, context);
@@ -1796,42 +1833,44 @@ export class Interpreter {
         const truthiness = getTruthiness(left);
         if (truthiness === true) return this.evaluateExpression(node.right, context);
         if (truthiness === false) return left;
+        const reason = `&& on ${describeValue(left)}`;
+        const preferredSide = getPreferredTruthiness(left) === false ? 1 : 0;
+        const predicate = getTruthinessPredicate(left);
         const [right, falsyLeft] = this.evaluateTestedPaths(
           node.left,
           context,
           () => this.evaluateExpression(node.right, context),
           (narrowed) =>
             narrowed ? this.evaluateExpression(node.left, context) : falsyCounterpart(left),
+          reason,
+          location,
+          preferredSide,
+          predicate,
         );
         if (!right) return falsyLeft ?? falsyCounterpart(left);
         if (!falsyLeft) return right;
-        return branchValue(
-          [right, falsyLeft],
-          `&& on ${describeValue(left)}`,
-          location,
-          getPreferredTruthiness(left) === false ? 1 : 0,
-          getTruthinessPredicate(left),
-        );
+        return branchValue([right, falsyLeft], reason, location, preferredSide, predicate);
       }
       case "||": {
         const truthiness = getTruthiness(left);
         if (truthiness === true) return left;
         if (truthiness === false) return this.evaluateExpression(node.right, context);
+        const reason = `|| on ${describeValue(left)}`;
+        const preferredSide = getPreferredTruthiness(left) === false ? 1 : 0;
+        const predicate = getTruthinessPredicate(left);
         const [truthyLeft, right] = this.evaluateTestedPaths(
           node.left,
           context,
           (narrowed) => (narrowed ? this.evaluateExpression(node.left, context) : left),
           () => this.evaluateExpression(node.right, context),
+          reason,
+          location,
+          preferredSide,
+          predicate,
         );
         if (!truthyLeft) return right ?? left;
         if (!right) return truthyLeft;
-        return branchValue(
-          [truthyLeft, right],
-          `|| on ${describeValue(left)}`,
-          location,
-          getPreferredTruthiness(left) === false ? 1 : 0,
-          getTruthinessPredicate(left),
-        );
+        return branchValue([truthyLeft, right], reason, location, preferredSide, predicate);
       }
       case "??": {
         const nullish = isNullish(left);
@@ -1854,20 +1893,92 @@ export class Interpreter {
    * Evaluates the two sides of an uncertain test with the tested identifier
    * narrowed to what it must be on each side; a side the narrowing rules out
    * is `null`. The callbacks receive the narrowed value when there is one.
+   * Both sides start from the same state and their states are joined after,
+   * so an assignment inside one operand stays conditional.
    */
   private evaluateTestedPaths<Result>(
     test: Expression,
     context: EvaluationContext,
     onTrue: (narrowed: StaticValue | null) => Result,
     onFalse: (narrowed: StaticValue | null) => Result,
+    reason: string,
+    location: SourceLocation | null,
+    preferredSide: number,
+    predicate: string,
   ): [Result | null, Result | null] {
-    const narrowing = narrowTest(test, (name) => lookupScope(context.scope, name));
-    if (!narrowing) return [onTrue(null), onFalse(null)];
-    const runSide = (value: StaticValue | null, run: (narrowed: StaticValue | null) => Result) =>
-      value === null
-        ? null
-        : withNarrowedBinding(context.scope, narrowing.name, value, () => run(value));
-    return [runSide(narrowing.whenTrue, onTrue), runSide(narrowing.whenFalse, onFalse)];
+    const narrowing = this.narrowTest(test, context);
+    if (!narrowing) {
+      const [trueResult, falseResult] = this.forkValues(
+        context.scope,
+        [() => onTrue(null), () => onFalse(null)],
+        reason,
+        location,
+        preferredSide,
+        predicate,
+      );
+      return [trueResult, falseResult];
+    }
+    const { name, whenTrue, whenFalse } = narrowing;
+    const narrowedSide =
+      (value: StaticValue, run: (narrowed: StaticValue | null) => Result) => (): Result =>
+        withNarrowedBinding(context.scope, name, value, () => run(value));
+    if (whenTrue === null) return [null, whenFalse && narrowedSide(whenFalse, onFalse)()];
+    if (whenFalse === null) return [narrowedSide(whenTrue, onTrue)(), null];
+    const [trueResult, falseResult] = this.forkValues(
+      context.scope,
+      [narrowedSide(whenTrue, onTrue), narrowedSide(whenFalse, onFalse)],
+      reason,
+      location,
+      preferredSide,
+      predicate,
+    );
+    return [trueResult, falseResult];
+  }
+
+  /**
+   * Runs each path from the same scope state and joins the states afterwards
+   * (`forkPaths` for expressions): bindings, objects and lists a path changed
+   * hold one alternative per path.
+   */
+  private forkValues<Result>(
+    scope: Scope,
+    paths: Array<() => Result>,
+    reason: string,
+    location: SourceLocation | null,
+    preferredPath: number,
+    predicate: string,
+  ): Result[] {
+    const entrySnapshot = snapshotScopes(scope);
+    const journal = new HeapJournal();
+    this.heapJournals.push(journal);
+    const snapshots: ScopeSnapshot[][] = [];
+    try {
+      return paths.map((path, pathIndex) => {
+        if (pathIndex > 0) restoreScopes(entrySnapshot);
+        const result = path();
+        snapshots.push(snapshotScopes(scope));
+        journal.endPath();
+        return result;
+      });
+    } finally {
+      this.heapJournals.pop();
+      if (snapshots.length === paths.length) {
+        journal.join(reason, location, preferredPath, predicate);
+        joinScopes(snapshots, reason, location, preferredPath, predicate);
+      }
+    }
+  }
+
+  private narrowTest(test: Expression, context: EvaluationContext): TestNarrowing | null {
+    const lookup = (name: string) => lookupScope(context.scope, name);
+    return (
+      narrowTest(test, lookup) ??
+      narrowTestByEvaluation(test, lookup, (name, alternative) =>
+        withNarrowedBinding(context.scope, name, alternative, () =>
+          this.evaluateExpression(test, context),
+        ),
+      )
+    );
   }
 
   private evaluateUnaryExpression(node: UnaryExpression, context: EvaluationContext): StaticValue {
@@ -2361,12 +2472,14 @@ export class Interpreter {
           object.reason,
           object.location,
         );
-      case "regexp":
+      case "regexp": {
         if (key === "source") return primitiveValue(object.pattern);
         if (key === "flags") return primitiveValue(object.flags);
-        if (key === "global") return primitiveValue(object.flags.includes("g"));
         if (key === "lastIndex") return primitiveValue(object.lastIndex);
+        const flag = REGEXP_FLAG_ACCESSORS.get(key);
+        if (flag !== undefined) return primitiveValue(object.flags.includes(flag));
         return prototypeMember(object, RegExp.prototype, key);
+      }
       case "symbol":
         if (key === "description") return primitiveValue(getSymbolDescription(object));
         return prototypeMember(object, Symbol.prototype, key);
@@ -3203,6 +3316,7 @@ export class Interpreter {
           thisValue,
           changeCount: this.changeCount,
           forkDepth: context.forkDepth,
+          properties: new Map(functionValue.properties),
         },
       ],
       uncertainDepth: context.uncertainDepth,
@@ -3276,7 +3390,22 @@ export class Interpreter {
       }
       const pattern = param.type === "TSParameterProperty" ? param.parameter : param;
       this.bindPattern(pattern, args[index] ?? UNDEFINED_VALUE, scope, context);
+      if (param.type === "TSParameterProperty") {
+        this.assignParameterProperty(pattern, scope, context);
+      }
     });
+  }
+
+  /** `constructor(public x = 1)` declares `x` and assigns `this.x` when the constructor runs. */
+  private assignParameterProperty(
+    pattern: BindingPattern,
+    scope: Scope,
+    context: EvaluationContext,
+  ): void {
+    const target = pattern.type === "AssignmentPattern" ? pattern.left : pattern;
+    if (target.type !== "Identifier" || context.thisValue === null) return;
+    const value = lookupScope(scope, target.name);
+    if (value) this.assignProperty(context.thisValue, target.name, value, context);
   }
 
   /** `var` bindings live in the hoisted function scope; `let`/`const` in the current block. */
@@ -3550,7 +3679,7 @@ export class Interpreter {
               : proceed(pathContext);
           if (truthiness === true) return runConsequent(context);
           if (truthiness === false) return runAlternate(context);
-          const narrowing = narrowTest(statement.test, (name) => lookupScope(context.scope, name));
+          const narrowing = this.narrowTest(statement.test, context);
           if (narrowing?.whenTrue === null) return runAlternate(context);
           if (narrowing?.whenFalse === null) return runConsequent(context);
           const narrowed =
@@ -3730,6 +3859,28 @@ export class Interpreter {
       const predicate = createPathPredicate();
       journal.join(reason, location, preferredPath, predicate);
       joinScopes([ranSnapshot, entrySnapshot], reason, location, preferredPath, predicate);
+    }
+  }
+
+  /**
+   * Runs `run` once more from the state `runMaybe` left behind and discards
+   * everything it does, keeping only which bindings it would move again. A
+   * binding that still changes is loop-carried (a counter, an accumulator):
+   * after an unknown number of iterations it holds none of the enumerated
+   * alternatives in particular, so it widens to an unknown of its type.
+   */
+  widenLoopCarriedBindings(scope: Scope, run: () => void, location: SourceLocation): void {
+    const entrySnapshot = snapshotScopes(scope);
+    const journal = new HeapJournal();
+    this.heapJournals.push(journal);
+    try {
+      run();
+    } finally {
+      const ranSnapshot = snapshotScopes(scope);
+      journal.endPath();
+      this.heapJournals.pop();
+      restoreScopes(entrySnapshot);
+      widenMovedBindings(entrySnapshot, ranSnapshot, location);
     }
   }
 
@@ -4010,10 +4161,11 @@ export class Interpreter {
         value: listValue(children),
       });
     }
+    const elementKey = toElementKey(key);
     const element = (elementType: StaticValue): StaticElementValue => ({
       kind: "element",
       type: toElementType(elementType, nameHint),
-      key,
+      key: elementKey,
       props,
       location,
       environment: context.environment,
@@ -4214,6 +4366,22 @@ const restoreScopes = (snapshots: ScopeSnapshot[]): void => {
   }
 };
 
+const widenMovedBindings = (
+  entryPath: ScopeSnapshot[],
+  ranPath: ScopeSnapshot[],
+  location: SourceLocation,
+): void => {
+  entryPath.forEach((snapshot, scopeIndex) => {
+    for (const [name, before] of snapshot.bindings) {
+      const after = ranPath[scopeIndex].bindings.get(name);
+      if (after === undefined || after === before) continue;
+      const joined = branchValue([before, after], "loop-carried value", location);
+      if (countAlternatives(joined) === countAlternatives(before)) continue;
+      snapshot.scope.bindings.set(name, widenValue(joined, location));
+    }
+  });
+};
+
 const joinScopes = (
   paths: ScopeSnapshot[][],
   reason: string,
@@ -4246,6 +4414,22 @@ const WRAPPER_SYMBOL_KEYS = {
   "forward-ref": "react.forward_ref",
   lazy: "react.lazy",
 } as const;
+
+const getPrimitiveType = (value: StaticValue): UnknownPrimitiveType | null => {
+  if (value.kind === "unknown-primitive") return value.primitiveType;
+  if (value.kind !== "primitive") return null;
+  const type = typeof value.value;
+  return type === "string" || type === "number" || type === "boolean" ? type : null;
+};
+
+const widenValue = (value: StaticValue, location: SourceLocation): StaticValue => {
+  const alternatives = value.kind === "branch" ? value.alternatives : [value];
+  const types = new Set(alternatives.map(getPrimitiveType));
+  const [type] = types;
+  return types.size === 1 && type
+    ? unknownPrimitiveValue(type, "loop-carried value")
+    : unknownValue("loop-carried value", location);
+};
 
 const applyUnaryOperator = (
   operator: Exclude<UnaryOperator, "typeof" | "void" | "delete">,
