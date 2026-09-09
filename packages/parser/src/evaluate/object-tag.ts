@@ -1,12 +1,7 @@
 import type { StaticValue } from "../types.js";
+import { getPrimitiveWitness } from "./host-globals.js";
 import { getBuiltinWitness, getPrototypeWitness } from "./instance-of.js";
 import { describeValue, mapValue, primitiveValue, unknownPrimitiveValue } from "./values.js";
-
-const PRIMITIVE_WITNESSES: Record<string, unknown> = {
-  string: "",
-  number: 0,
-  boolean: false,
-};
 
 const tagOf = (witness: unknown): string => Object.prototype.toString.call(witness);
 
@@ -17,7 +12,7 @@ const getTag = (value: StaticValue): string | null => {
     case "symbol":
       return tagOf(Symbol.iterator);
     case "unknown-primitive":
-      return value.primitiveType === "any" ? null : tagOf(PRIMITIVE_WITNESSES[value.primitiveType]);
+      return value.primitiveType === "any" ? null : tagOf(getPrimitiveWitness(value.primitiveType));
     case "repeat":
       return tagOf([]);
     case "namespace":

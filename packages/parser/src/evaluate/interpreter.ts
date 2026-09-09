@@ -156,7 +156,7 @@ import { getBuiltinWitness, isInstanceOf } from "./instance-of.js";
 import { createIndexedDbFactory, isIndexedDbName } from "./indexed-db.js";
 import { getBinaryMember, getBinaryWitness } from "./typed-arrays.js";
 import { getWebCryptoMember, isWebCryptoName } from "./web-crypto.js";
-import { GLOBAL_OBJECT_VALUE } from "./host-globals.js";
+import { GLOBAL_OBJECT_VALUE, getPrimitiveWitness } from "./host-globals.js";
 import {
   applyNumberRangeOperator,
   compareNumberRanges,
@@ -380,13 +380,6 @@ const MAX_INTERVAL_TICKS = 1_000;
 const USE_STRICT_DIRECTIVE = "use strict";
 const FS_URL_PREFIX = "/@fs/";
 const SERVER_HOST_PLATFORM: HostPlatform = "node";
-
-const PRIMITIVE_PROTOTYPES: Record<UnknownPrimitiveType, object | null> = {
-  string: String.prototype,
-  number: Number.prototype,
-  boolean: Boolean.prototype,
-  any: null,
-};
 
 const FUNCTION_INSTANCE_KEYS = new Set(["length", "prototype", "arguments", "caller"]);
 
@@ -2633,7 +2626,12 @@ export class Interpreter {
         const index = toIndexKey(key);
         if (index !== null && object.primitiveType === "string")
           return getShapedStringCharacter(object, index);
-        return prototypeMember(object, PRIMITIVE_PROTOTYPES[object.primitiveType], key);
+        const witness = getPrimitiveWitness(object.primitiveType);
+        return prototypeMember(
+          object,
+          witness === undefined ? null : Object.getPrototypeOf(Object(witness)),
+          key,
+        );
       }
       case "context":
         if (key === "Provider") {
