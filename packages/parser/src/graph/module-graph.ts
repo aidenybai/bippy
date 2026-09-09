@@ -9,6 +9,7 @@ import type {
   ResolvedSymbol,
 } from "../types.js";
 import { isModeledLibraryExport, isModeledLibraryPackage } from "../libraries/index.js";
+import { isPurePackage } from "../libraries/pure-packages.js";
 import { readAssetModuleSource } from "./asset-modules.js";
 import { isCompilerHelperPackage } from "./helper-packages.js";
 import { createModuleRecord, isClientModule } from "./module-record.js";
@@ -168,11 +169,13 @@ export class ModuleGraph {
 
   private shouldAnalyzePackage(packageName: string): boolean {
     if (isCompilerHelperPackage(packageName) || isModeledLibraryPackage(packageName)) return false;
-    return (
-      this.resolveExternalPackages ||
+    if (
       this.externalPackageAllowList.has(packageName) ||
       this.externalScopeAllowList.has(packageName.split("/")[0])
-    );
+    ) {
+      return true;
+    }
+    return this.resolveExternalPackages && !isPurePackage(packageName);
   }
 
   private resolveImportedName(

@@ -506,6 +506,12 @@ const isSameTypePrimitive = (previous: StaticValue, next: StaticValue): boolean 
   next.kind === "primitive" &&
   typeof previous.value === typeof next.value;
 
+const hasSameProperties = (
+  previous: Map<string, StaticValue>,
+  next: Map<string, StaticValue>,
+): boolean =>
+  previous.size === next.size && [...previous].every(([key, value]) => next.get(key) === value);
+
 /**
  * A recursive call whose arguments are equivalent to those of an activation
  * already on the stack, with nothing written since that activation began,
@@ -514,7 +520,9 @@ const isSameTypePrimitive = (previous: StaticValue, next: StaticValue): boolean 
  * (`walk(node.child, depth + 1)` over an unknown `node`): every level sees
  * the same unknown data, so the result is unknown either way. A call that
  * makes progress over known data (walking a tree, re-entering a batch
- * flush after a counter changed) is followed until the call-depth limit.
+ * flush after a counter changed) is followed until the call-depth limit, as
+ * is a function re-entered after rewriting its own properties (a proxy that
+ * swaps in the real implementation on first call and calls itself again).
  */
 const isNonProgressingRecursion = (
   callStack: CallFrame[],
@@ -529,6 +537,7 @@ const isNonProgressingRecursion = (
       frame.scope === functionValue.scope &&
       frame.args.length === args.length &&
       (hasUnknownArgument || frame.changeCount === changeCount) &&
+      hasSameProperties(frame.properties, functionValue.properties) &&
       frame.args.every(
         (argument, index) =>
           areValuesEquivalent(argument, args[index]) ||
@@ -1080,6 +1089,7 @@ export class Interpreter {
       }
       case "function":
       case "class":
+        this.changeCount++;
         if (target.kind === "function") this.escapeWalk.memo.invalidate(target, propertyName);
         target.properties.set(propertyName, value);
         return target;
@@ -3107,6 +3117,7 @@ export class Interpreter {
           scope: functionValue.scope,
           args,
           changeCount: this.changeCount,
+          properties: new Map(functionValue.properties),
         },
       ],
       uncertainDepth: context.uncertainDepth,

@@ -92,6 +92,13 @@ const describeSymbolKeys = (): string => {
   ].join(",");
 };
 
+const percent = new Intl.NumberFormat("en-GB", { style: "percent" });
+const listFormat = new Intl.ListFormat("en", { type: "conjunction" });
+const plurals = new Intl.PluralRules("en");
+
+const formatLocale = (scale: number, items: string[]): string =>
+  `${percent.format(scale)} ${listFormat.format(items)} ${plurals.select(items.length)}`;
+
 const Row = ({ text }: { text: string }) => (
   <li>
     {text}
@@ -113,6 +120,8 @@ export default function ThrowsAndNatives() {
       <Row text={cache.has({}) ? "hit" : "miss"} />
       <Row text={listProxyKeys()} />
       <Row text={describeSymbolKeys()} />
+      <Row text={formatLocale(1, ["pen", "brush"])} />
+      <Row text={formatLocale(0.5, ["eraser"])} />
     </ul>
   );
 }

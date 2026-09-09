@@ -19,7 +19,6 @@ import { LINGUI_PACKAGES, linguiValue } from "./lingui.js";
 import { LODASH_MODELED_EXPORTS, LODASH_PACKAGES, lodashValue } from "./lodash.js";
 import { MOBX_PACKAGES, mobxValue } from "./mobx.js";
 import { NODE_FS_PACKAGES, nodeFsValue } from "./node-fs.js";
-import { isPurePackage } from "./pure-packages.js";
 import { REACT_HOOK_FORM_PACKAGES, reactHookFormValue } from "./react-hook-form.js";
 import {
   REACT_INLINESVG_MODELED_EXPORTS,
@@ -106,7 +105,7 @@ const MODELED_EXPORTS: ReadonlyMap<string, ReadonlySet<string>> = new Map(
 );
 
 export const isModeledLibraryPackage = (packageName: string): boolean =>
-  MODELED_PACKAGES.has(packageName) || isPurePackage(packageName);
+  MODELED_PACKAGES.has(packageName);
 
 /** An export modeled while the rest of its package is analyzed from source. */
 export const isModeledLibraryExport = (specifier: string, exportName: string): boolean =>

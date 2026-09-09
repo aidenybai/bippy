@@ -516,7 +516,7 @@ export interface RootObservations extends CapturedQueryCaches {
   stores?: CapturedValue[];
 }
 
-/** The origin's persisted state (`document.cookie`, Web Storage) as the settled page held it. */
+/** The origin's persisted state: `document.cookie` as the settled page held it, Web Storage as its first script found it. */
 export interface CapturedPageState {
   cookie: string;
   /** `window.name`; absent in captures taken before it was recorded. */
