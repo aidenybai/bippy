@@ -719,10 +719,10 @@ describe("react router framework mode with branchy route descriptors", () => {
     expect(errors).toEqual([]);
     expect(tree.slice(0, tree.indexOf("<body>"))).not.toContain("?unknown");
     expect(tree).toMatch(
-      /<Links>\n\s+\?branch\(conditional on[^\n]*\n\s+\|0 \(preferred\)\n\s+<Fragment>\n\s+<link> key="\{\\"href\\":\\"\/app.css\\",\\"rel\\":\\"stylesheet\\"\}"\n\s+<link> key="\{\\"href\\":\\"\/icon@2x.png\\",\\"rel\\":\\"icon\\"\}"\n\s+\|1\n\s+<Fragment>\n\s+<link> key="\{\\"href\\":\\"\/app.css\\",\\"rel\\":\\"stylesheet\\"\}"\n\s+<link> key="\{\\"href\\":\\"\/icon.png\\",\\"rel\\":\\"icon\\"\}"/,
+      /<Links>\n\s+\?branch\(conditional on[^\n]*\n\s+\|0\n\s+<Fragment>\n\s+<link> key="\{\\"href\\":\\"\/app.css\\",\\"rel\\":\\"stylesheet\\"\}"\n\s+<link> key="\{\\"href\\":\\"\/icon.png\\",\\"rel\\":\\"icon\\"\}"\n\s+\|1 \(preferred\)\n\s+<Fragment>\n\s+<link> key="\{\\"href\\":\\"\/app.css\\",\\"rel\\":\\"stylesheet\\"\}"\n\s+<link> key="\{\\"href\\":\\"\/icon@2x.png\\",\\"rel\\":\\"icon\\"\}"/,
     );
     expect(tree).toMatch(
-      /<Meta>\n\s+\?branch\(conditional on[^\n]*\n\s+\|0 \(preferred\)\n\s+<title> key="title"\n\s+<meta> key="\{\\"name\\":\\"description\\",\\"content\\":\\"Sharp home\\"\}"\n\s+\|1\n\s+<title> key="title"\n\s+<meta> key="\{\\"name\\":\\"description\\",\\"content\\":\\"Home\\"\}"/,
+      /<Meta>\n\s+\?branch\(conditional on[^\n]*\n\s+\|0\n\s+<title> key="title"\n\s+<meta> key="\{\\"name\\":\\"description\\",\\"content\\":\\"Home\\"\}"\n\s+\|1 \(preferred\)\n\s+<title> key="title"\n\s+<meta> key="\{\\"name\\":\\"description\\",\\"content\\":\\"Sharp home\\"\}"/,
     );
     const space = enumerateStateSpace([getRenderPattern(result)]);
     expect(space.omitted).toBeNull();
@@ -755,7 +755,7 @@ describe("react router framework mode with branchy route descriptors", () => {
     const tree = formatPattern(getRenderPattern(result));
     expect(result.diagnostics.filter((diagnostic) => diagnostic.severity === "error")).toEqual([]);
     expect(tree).toMatch(
-      /<Breadcrumbs>\n\s+<nav>\n\s+\?branch\(conditional on[^\n]*\n\s+\|0 \(preferred\)\n\s+<span> key="Retina home"\n\s+\|1\n\s+<span> key="Home"/,
+      /<Breadcrumbs>\n\s+<nav>\n\s+\?branch\(conditional on[^\n]*\n\s+\|0\n\s+<span> key="Home"\n\s+\|1 \(preferred\)\n\s+<span> key="Retina home"/,
     );
     expect(tree).not.toContain("?unknown");
   });

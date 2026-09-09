@@ -7,6 +7,7 @@ import {
 } from "../evaluate/class-component.js";
 import type { ContextReader, EvaluationContext } from "../evaluate/context.js";
 import { isUserDrivenEventHandlerProp } from "../evaluate/event-listeners.js";
+import { getRepeatCardinality } from "../evaluate/predicates.js";
 import { ComponentKindError } from "../errors.js";
 import { providedContextValue } from "../evaluate/react-calls.js";
 import {
@@ -547,6 +548,7 @@ export class Materializer {
       case "repeat":
         return this.runtime.react.createElement(RepeatMarker, {
           location: value.location && formatSourceLocation(value.location),
+          cardinality: getRepeatCardinality(value),
           countMin: value.count?.min ?? 0,
           countMax: value.count?.max ?? null,
           children: [this.toNode(value.item, context, false)],
